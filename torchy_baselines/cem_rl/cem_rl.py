@@ -194,6 +194,8 @@ class CEMRL(TD3):
 
                     obs = new_obs
                     episode_timesteps += 1
+                    # Note: if put on the outer, it will explore start_timesteps for each actor
+                    self.num_timesteps += 1
 
                 if self.verbose > 1:
                     print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
@@ -204,7 +206,7 @@ class CEMRL(TD3):
 
             self.es.tell(self.es_params, self.fitnesses)
 
-            self.num_timesteps += actor_steps
+            # self.num_timesteps += actor_steps
             timesteps_since_eval += actor_steps
         return self
 

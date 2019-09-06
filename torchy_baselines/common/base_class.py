@@ -19,11 +19,10 @@ class BaseRLModel(ABC):
     """
 
     def __init__(self, policy, env, policy_base, policy_kwargs=None, verbose=0):
-        # if isinstance(policy, str) and policy_base is not None:
-        #     self.policy = get_policy_from_name(policy_base, policy)
-        # else:
-        #     self.policy = policy
-        self.policy = None
+        if isinstance(policy, str) and policy_base is not None:
+            self.policy = get_policy_from_name(policy_base, policy)
+        else:
+            self.policy = policy
         self.env = env
         self.verbose = verbose
         self.policy_kwargs = {} if policy_kwargs is None else policy_kwargs

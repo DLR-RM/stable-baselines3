@@ -1,7 +1,7 @@
-from abc import ABC
+import torch.nn as nn
 
 
-class BasePolicy(ABC):
+class BasePolicy(nn.Module):
     """
     The base policy object
 
@@ -10,16 +10,13 @@ class BasePolicy(ABC):
     """
 
     def __init__(self, observation_space, action_space, device='cpu'):
+        super(BasePolicy, self).__init__()
         self.observation_space = observation_space
         self.action_space = action_space
         self.device = device
 
 
-_policy_registry = {
-    # ActorCriticPolicy: {
-    #     "MlpPolicy": MlpPolicy,
-    # }
-}
+_policy_registry = dict()
 
 
 def get_policy_from_name(base_policy_type, name):

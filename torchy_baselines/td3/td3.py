@@ -5,6 +5,7 @@ import numpy as np
 from torchy_baselines.common.base_class import BaseRLModel
 from torchy_baselines.common.replay_buffer import ReplayBuffer
 from torchy_baselines.common.utils import set_random_seed
+from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.td3.policies import TD3Policy
 
 
@@ -17,13 +18,12 @@ class TD3(BaseRLModel):
 
     def __init__(self, policy, env, policy_kwargs=None, verbose=0,
                  buffer_size=int(1e6), learning_rate=1e-3, seed=0, device='cpu',
-                 action_noise_std=0.1, start_timesteps=10000, _init_setup_model=True):
+                 action_noise_std=0.1, start_timesteps=100, _init_setup_model=True):
 
         super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose)
 
         self.max_action = float(self.action_space.high)
         self.replay_buffer = None
-        self.policy = None
         self.device = device
         self.action_noise_std = action_noise_std
         self.learning_rate = learning_rate
@@ -39,8 +39,8 @@ class TD3(BaseRLModel):
         set_random_seed(self.seed, using_cuda=self.device != 'cpu')
 
         self.replay_buffer = ReplayBuffer(self.buffer_size, state_dim, action_dim, self.device)
-        self.policy = TD3Policy(self.observation_space, self.action_space,
-                                self.learning_rate, device=self.device, **self.policy_kwargs)
+        self.policy = self.policy(self.observation_space, self.action_space,
+                                  self.learning_rate, device=self.device, **self.policy_kwargs)
         self._create_aliases()
 
     def _create_aliases(self):
@@ -75,7 +75,7 @@ class TD3(BaseRLModel):
             state, action, next_state, done, reward = self.replay_buffer.sample(batch_size)
 
             # Select action according to policy and add clipped noise
-            noise = action.data.normal_(0, policy_noise).to(self.device)
+            noise = action.clone().data.normal_(0, policy_noise)
             noise = noise.clamp(-noise_clip, noise_clip)
             next_action = (self.actor_target(next_state) + noise).clamp(-1, 1)
 
@@ -114,24 +114,33 @@ class TD3(BaseRLModel):
                     target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
 
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100,
-              tb_log_name="TD3", reset_num_timesteps=True):
-        num_timesteps = 0
+              eval_freq=-1, n_eval_episodes=5, tb_log_name="TD3", reset_num_timesteps=True):
+
         timesteps_since_eval = 0
         episode_num = 0
         done = True
+        evaluations = []
 
-        while num_timesteps < total_timesteps:
+        while self.num_timesteps < total_timesteps:
+
+            if callback is not None:
+                # Only stop training if return value is False, not when it is None.
+                if callback(locals(), globals()) is False:
+                    break
 
             if done:
-                if num_timesteps > 0:
-                    print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
-                          num_timesteps, episode_num, episode_timesteps, episode_reward))
+                if self.num_timesteps > 0:
+                    if self.verbose > 1:
+                        print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
+                              self.num_timesteps, episode_num, episode_timesteps, episode_reward))
                     self.train(episode_timesteps)
 
                 # Evaluate episode
-                # if timesteps_since_eval >= args.eval_freq:
-                # 	timesteps_since_eval %= args.eval_freq
-                # 	evaluations.append(evaluate_policy(policy))
+                if eval_freq > 0 and timesteps_since_eval >= eval_freq:
+                    timesteps_since_eval %= eval_freq
+                    evaluations.append(evaluate_policy(self, self.env, n_eval_episodes))
+                    if self.verbose > 0:
+                        print("Eval num_timesteps={}, mean_reward={:.2f}".format(self.num_timesteps, evaluations[-1]))
 
                 # Reset environment
                 obs = self.env.reset()
@@ -140,10 +149,10 @@ class TD3(BaseRLModel):
                 episode_num += 1
 
             # Select action randomly or according to policy
-            if num_timesteps < self.start_timesteps:
+            if self.num_timesteps < self.start_timesteps:
                 action = self.env.action_space.sample()
             else:
-                action = self.policy.select_action(np.array(obs))
+                action = self.select_action(np.array(obs))
 
             if self.action_noise_std > 0:
                 # NOTE: in the original implementation, the noise is applied to the unscaled action
@@ -162,8 +171,9 @@ class TD3(BaseRLModel):
             obs = new_obs
 
             episode_timesteps += 1
-            num_timesteps += 1
+            self.num_timesteps += 1
             timesteps_since_eval += 1
+        return self
 
     def save(self, path):
         if not path.endswith('.pth'):

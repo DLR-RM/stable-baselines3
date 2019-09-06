@@ -1,7 +1,7 @@
 import torch as th
 import torch.nn as nn
 
-from torchy_baselines.common.policies import BasePolicy
+from torchy_baselines.common.policies import BasePolicy, register_policy
 
 
 class Actor(nn.Module):
@@ -80,3 +80,7 @@ class TD3Policy(BasePolicy):
 
     def make_critic(self):
         return Critic(self.state_dim, self.action_dim, self.net_arch).to(self.device)
+
+MlpPolicy = TD3Policy
+
+register_policy("MlpPolicy", MlpPolicy)

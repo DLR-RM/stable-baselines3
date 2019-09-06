@@ -1,4 +1,5 @@
 import sys
+import time
 
 import torch as th
 import torch.nn.functional as F
@@ -125,6 +126,7 @@ class TD3(BaseRLModel):
         episode_num = 0
         done = True
         evaluations = []
+        start_time = time.time()
 
         while self.num_timesteps < total_timesteps:
 
@@ -146,6 +148,7 @@ class TD3(BaseRLModel):
                     evaluations.append(evaluate_policy(self, self.env, n_eval_episodes))
                     if self.verbose > 0:
                         print("Eval num_timesteps={}, mean_reward={:.2f}".format(self.num_timesteps, evaluations[-1]))
+                        print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - start_time)))
                         sys.stdout.flush()
 
                 # Reset environment
@@ -167,7 +170,12 @@ class TD3(BaseRLModel):
 
             # Rescale and perform action
             new_obs, reward, done, _ = self.env.step(self.max_action * action)
-            done_bool = 0 if episode_timesteps + 1 == self.env._max_episode_steps else float(done)
+
+            if hasattr(self.env, '_max_episode_steps'):
+                done_bool = 0 if episode_timesteps + 1 == self.env._max_episode_steps else float(done)
+            else:
+                done_bool = float(done)
+
             episode_reward += reward
 
             # Store data in replay buffer

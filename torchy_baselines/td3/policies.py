@@ -11,6 +11,8 @@ class Actor(nn.Module):
         if net_arch is None:
             net_arch = [400, 300]
 
+        # TODO: orthogonal initialization?
+
         self.actor_net = nn.Sequential(
             nn.Linear(state_dim, net_arch[0]),
             nn.ReLU(),
@@ -52,7 +54,7 @@ class Critic(nn.Module):
         return self.q1_net(qvalue_input), self.q2_net(qvalue_input)
 
     def q1_forward(self, obs, action):
-        return self.q1_net( th.cat([obs, action], dim=1))
+        return self.q1_net(th.cat([obs, action], dim=1))
 
 
 class TD3Policy(BasePolicy):

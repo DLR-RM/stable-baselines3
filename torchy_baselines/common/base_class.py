@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 
 
 import numpy as np
@@ -7,7 +7,7 @@ import gym
 from torchy_baselines.common.policies import get_policy_from_name
 
 
-class BaseRLModel(ABC):
+class BaseRLModel(object):
     """
     The base RL model
 
@@ -17,6 +17,7 @@ class BaseRLModel(ABC):
     :param verbose: (int) the verbosity level: 0 none, 1 training information, 2 debug
     :param policy_base: (BasePolicy) the base policy used by this method
     """
+    __metaclass__ = ABCMeta
 
     def __init__(self, policy, env, policy_base, policy_kwargs=None, verbose=0):
         if isinstance(policy, str) and policy_base is not None:

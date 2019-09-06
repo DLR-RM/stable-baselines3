@@ -34,6 +34,9 @@ class BaseRLModel(object):
         self.params = None
 
         if env is not None:
+            if env is not None:
+                if isinstance(env, str):
+                    env = gym.make(env)
             self.env = env
             self.n_envs = 1
             self.observation_space = env.observation_space

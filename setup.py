@@ -9,7 +9,7 @@ setup(name='torchy_baselines',
       install_requires=[
           'gym[classic_control]>=0.10.9',
           'numpy',
-          'torch>=1.2.0' # torch>=1.2.0+cpu
+          'torch>=1.2.0'
       ],
       extras_require={
         'tests': [

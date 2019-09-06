@@ -49,23 +49,6 @@ class CEMRL(TD3):
                       pop_size=self.pop_size, antithetic=not self.pop_size % 2, parents=self.pop_size // 2,
                       elitism=self.elitism)
 
-    def select_action(self, observation):
-        with th.no_grad():
-            observation = th.FloatTensor(observation.reshape(1, -1)).to(self.device)
-            return self.actor(observation).cpu().data.numpy().flatten()
-
-    def predict(self, observation, state=None, mask=None, deterministic=True):
-        """
-        Get the model's action from an observation
-
-        :param observation: (np.ndarray) the input observation
-        :param state: (np.ndarray) The last states (can be None, used in recurrent policies)
-        :param mask: (np.ndarray) The last masks (can be None, used in recurrent policies)
-        :param deterministic: (bool) Whether or not to return deterministic actions.
-        :return: (np.ndarray, np.ndarray) the model's action and the next state (used in recurrent policies)
-        """
-        return self.max_action * self.select_action(observation)
-
     def train_critic(self, n_iterations, batch_size=100, discount=0.99,
                      policy_noise=0.2, noise_clip=0.5):
 
@@ -119,52 +102,6 @@ class CEMRL(TD3):
             for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
                 target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
 
-    def train(self, n_iterations, batch_size=100, discount=0.99,
-              tau=0.005, policy_noise=0.2, noise_clip=0.5, policy_freq=2):
-
-        for it in range(n_iterations):
-
-            # Sample replay buffer
-            state, action, next_state, done, reward = self.replay_buffer.sample(batch_size)
-
-            # Select action according to policy and add clipped noise
-            noise = action.clone().data.normal_(0, policy_noise)
-            noise = noise.clamp(-noise_clip, noise_clip)
-            next_action = (self.actor_target(next_state) + noise).clamp(-1, 1)
-
-            # Compute the target Q value
-            target_q1, target_q2 = self.critic_target(next_state, next_action)
-            target_q = th.min(target_q1, target_q2)
-            target_q = reward + ((1 - done) * discount * target_q).detach()
-
-            # Get current Q estimates
-            current_q1, current_q2 = self.critic(state, action)
-
-            # Compute critic loss
-            critic_loss = F.mse_loss(current_q1, target_q) + F.mse_loss(current_q2, target_q)
-
-            # Optimize the critic
-            self.critic.optimizer.zero_grad()
-            critic_loss.backward()
-            self.critic.optimizer.step()
-
-            # Delayed policy updates
-            if it % policy_freq == 0:
-
-                # Compute actor loss
-                actor_loss = -self.critic.q1_forward(state, self.actor(state)).mean()
-
-                # Optimize the actor
-                self.actor.optimizer.zero_grad()
-                actor_loss.backward()
-                self.actor.optimizer.step()
-
-                # Update the frozen target models
-                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                    target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
-
-                for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
-                    target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
               eval_freq=-1, n_eval_episodes=5, tb_log_name="CEMRL", reset_num_timesteps=True):

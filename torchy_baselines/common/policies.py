@@ -15,6 +15,41 @@ class BasePolicy(nn.Module):
         self.action_space = action_space
         self.device = device
 
+    def forward(self, *_args, **kwargs):
+        raise NotImplementedError()
+
+    def save(self, path):
+        """
+        Save model to a given location.
+
+        :param path: (str)
+        """
+        th.save(self.state_dict(), path)
+
+    def load(self, path):
+        """
+        Load saved model from path.
+
+        :param path: (str)
+        """
+        self.load_state_dict(th.load(path))
+
+    def load_from_vector(self, vector):
+        """
+        Load parameters from a 1D vector.
+
+        :param vector: (np.ndarray)
+        """
+        th.nn.utils.vector_to_parameters(th.FloatTensor(vector).to(self.device), self.parameters())
+
+    def parameters_to_vector(self):
+        """
+        Convert the parameters to a 1D vector.
+
+        :return: (np.ndarray)
+        """
+        return th.nn.utils.parameters_to_vector(self.parameters())
+
 
 _policy_registry = dict()
 

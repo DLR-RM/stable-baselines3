@@ -4,7 +4,31 @@ import torch.nn as nn
 from torchy_baselines.common.policies import BasePolicy, register_policy
 
 
-class Actor(nn.Module):
+class BaseNetwork(nn.Module):
+    """docstring for BaseNetwork."""
+
+    def __init__(self, device='cpu'):
+        super(BaseNetwork, self).__init__()
+
+    def load_from_vector(self, vector):
+        """
+        Load parameters from a 1D vector.
+
+        :param vector: (np.ndarray)
+        """
+        device = next(self.parameters()).device
+        th.nn.utils.vector_to_parameters(th.FloatTensor(vector).to(device), self.parameters())
+
+    def parameters_to_vector(self):
+        """
+        Convert the parameters to a 1D vector.
+
+        :return: (np.ndarray)
+        """
+        return th.nn.utils.parameters_to_vector(self.parameters()).detach().numpy()
+
+
+class Actor(BaseNetwork):
     def __init__(self, state_dim, action_dim, net_arch=None):
         super(Actor, self).__init__()
 
@@ -26,7 +50,7 @@ class Actor(nn.Module):
         return self.actor_net(x)
 
 
-class Critic(nn.Module):
+class Critic(BaseNetwork):
     def __init__(self, state_dim, action_dim, net_arch=None):
         super(Critic, self).__init__()
 

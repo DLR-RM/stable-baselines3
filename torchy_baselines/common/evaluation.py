@@ -5,7 +5,7 @@ def evaluate_policy(model, env, n_eval_episodes=10, deterministic=True, render=F
     """
     Runs policy for n episodes and returns average reward
     """
-    mean_reward = 0.0
+    mean_reward, n_steps = 0.0, 0
     for _ in range(n_eval_episodes):
         obs = env.reset()
         done = False
@@ -13,9 +13,10 @@ def evaluate_policy(model, env, n_eval_episodes=10, deterministic=True, render=F
             action = model.predict(np.array(obs), deterministic=deterministic)
             obs, reward, done, _ = env.step(action)
             mean_reward += reward
+            n_steps += 1
             if render:
                 env.render()
 
     mean_reward /= n_eval_episodes
 
-    return mean_reward
+    return mean_reward, n_steps

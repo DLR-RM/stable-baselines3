@@ -20,10 +20,13 @@ class TD3(BaseRLModel):
     """
 
     def __init__(self, policy, env, policy_kwargs=None, verbose=0,
-                 buffer_size=int(1e6), learning_rate=1e-3, seed=0, device='cpu',
+                 buffer_size=int(1e6), learning_rate=1e-3, seed=0, device='auto',
                  action_noise_std=0.1, start_timesteps=100, _init_setup_model=True):
 
         super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose)
+
+        if device == 'auto':
+            device = 'cuda' if th.cuda.is_available() else 'cpu'
 
         self.max_action = np.abs(self.action_space.high)
         self.replay_buffer = None
@@ -32,7 +35,7 @@ class TD3(BaseRLModel):
         self.learning_rate = learning_rate
         self.buffer_size = buffer_size
         self.start_timesteps = start_timesteps
-        self.seed = 0
+        self.seed = seed
 
         if _init_setup_model:
             self._setup_model()
@@ -143,9 +146,10 @@ class TD3(BaseRLModel):
                     self.train(episode_timesteps)
 
                 # Evaluate episode
-                if eval_freq > 0 and timesteps_since_eval >= eval_freq:
+                if 0 < eval_freq <= timesteps_since_eval:
                     timesteps_since_eval %= eval_freq
-                    evaluations.append(evaluate_policy(self, self.env, n_eval_episodes))
+                    mean_reward, _ = evaluate_policy(self, self.env, n_eval_episodes)
+                    evaluations.append(mean_reward)
                     if self.verbose > 0:
                         print("Eval num_timesteps={}, mean_reward={:.2f}".format(self.num_timesteps, evaluations[-1]))
                         print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - start_time)))

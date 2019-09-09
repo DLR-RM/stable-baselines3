@@ -16,11 +16,10 @@ class CEMRL(TD3):
     Paper: https://arxiv.org/abs/1810.01222
     Code: https://github.com/apourchot/CEM-RL
     """
-
     def __init__(self, policy, env, policy_kwargs=None, verbose=0,
                  sigma_init=1e-3, pop_size=10, damp=1e-3, damp_limit=1e-5,
                  elitism=False, n_grad=5, policy_freq=2, batch_size=100,
-                 buffer_size=int(1e6), learning_rate=1e-3, seed=0, device='cpu',
+                 buffer_size=int(1e6), learning_rate=1e-3, seed=0, device='auto',
                  action_noise_std=0.0, start_timesteps=100, _init_setup_model=True):
 
         super(CEMRL, self).__init__(policy, env, policy_kwargs, verbose,
@@ -149,7 +148,6 @@ class CEMRL(TD3):
                     episode_reward += reward
 
                     # Store data in replay buffer
-                    # self.replay_buffer.add(state, next_state, action, reward, done)
                     self.replay_buffer.add(obs, new_obs, action, reward, done_bool)
 
                     obs = new_obs

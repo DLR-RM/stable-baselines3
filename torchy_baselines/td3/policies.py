@@ -25,11 +25,11 @@ class BaseNetwork(nn.Module):
 
         :return: (np.ndarray)
         """
-        return th.nn.utils.parameters_to_vector(self.parameters()).detach().numpy()
+        return th.nn.utils.parameters_to_vector(self.parameters()).detach().cpu().numpy()
 
 
 class Actor(BaseNetwork):
-    def __init__(self, state_dim, action_dim, net_arch=None):
+    def __init__(self, state_dim, action_dim, net_arch=None, activation_fn=nn.ReLU):
         super(Actor, self).__init__()
 
         if net_arch is None:
@@ -39,9 +39,9 @@ class Actor(BaseNetwork):
 
         self.actor_net = nn.Sequential(
             nn.Linear(state_dim, net_arch[0]),
-            nn.ReLU(),
+            activation_fn(),
             nn.Linear(net_arch[0], net_arch[1]),
-            nn.ReLU(),
+            activation_fn(),
             nn.Linear(net_arch[1], action_dim),
             nn.Tanh(),
         )
@@ -51,7 +51,7 @@ class Actor(BaseNetwork):
 
 
 class Critic(BaseNetwork):
-    def __init__(self, state_dim, action_dim, net_arch=None):
+    def __init__(self, state_dim, action_dim, net_arch=None, activation_fn=nn.ReLU):
         super(Critic, self).__init__()
 
         if net_arch is None:
@@ -59,17 +59,17 @@ class Critic(BaseNetwork):
 
         self.q1_net = nn.Sequential(
             nn.Linear(state_dim + action_dim, net_arch[0]),
-            nn.ReLU(),
+            activation_fn(),
             nn.Linear(net_arch[0], net_arch[1]),
-            nn.ReLU(),
+            activation_fn(),
             nn.Linear(net_arch[1], 1),
         )
 
         self.q2_net = nn.Sequential(
             nn.Linear(state_dim + action_dim, net_arch[0]),
-            nn.ReLU(),
+            activation_fn(),
             nn.Linear(net_arch[0], net_arch[1]),
-            nn.ReLU(),
+            activation_fn(),
             nn.Linear(net_arch[1], 1),
         )
 
@@ -83,11 +83,15 @@ class Critic(BaseNetwork):
 
 class TD3Policy(BasePolicy):
     def __init__(self, observation_space, action_space,
-                 learning_rate=1e-3, net_arch=None, device='cpu'):
+                 learning_rate=1e-3, net_arch=None, device='cpu',
+                 activation_fn=nn.ReLU):
         super(TD3Policy, self).__init__(observation_space, action_space, device)
         self.state_dim = self.observation_space.shape[0]
         self.action_dim = self.action_space.shape[0]
         self.net_arch = net_arch
+        self.activation_fn = activation_fn
+        self.actor, self.actor_target = None, None
+        self.critic, self.critic_target = None, None
         self._build(learning_rate)
 
     def _build(self, learning_rate):
@@ -102,10 +106,10 @@ class TD3Policy(BasePolicy):
         self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=learning_rate)
 
     def make_actor(self):
-        return Actor(self.state_dim, self.action_dim, self.net_arch).to(self.device)
+        return Actor(self.state_dim, self.action_dim, self.net_arch, self.activation_fn).to(self.device)
 
     def make_critic(self):
-        return Critic(self.state_dim, self.action_dim, self.net_arch).to(self.device)
+        return Critic(self.state_dim, self.action_dim, self.net_arch, self.activation_fn).to(self.device)
 
 MlpPolicy = TD3Policy
 

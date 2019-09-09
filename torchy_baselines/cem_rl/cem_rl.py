@@ -20,13 +20,15 @@ class CEMRL(TD3):
 
     def __init__(self, policy, env, policy_kwargs=None, verbose=0,
                  sigma_init=1e-3, pop_size=10, damp=1e-3, damp_limit=1e-5,
-                 elitism=False, n_grad=5,
+                 elitism=False, n_grad=5, policy_freq=2, batch_size=100,
                  buffer_size=int(1e6), learning_rate=1e-3, seed=0, device='cpu',
                  action_noise_std=0.0, start_timesteps=100, _init_setup_model=True):
 
         super(CEMRL, self).__init__(policy, env, policy_kwargs, verbose,
                                     buffer_size, learning_rate, seed, device,
-                                    action_noise_std, start_timesteps, _init_setup_model=False)
+                                    action_noise_std, start_timesteps,
+                                    policy_freq=policy_freq, batch_size=batch_size,
+                                    _init_setup_model=False)
 
         self.es = None
         self.sigma_init = sigma_init
@@ -48,60 +50,6 @@ class CEMRL(TD3):
                       sigma_init=self.sigma_init, damp=self.damp, damp_limit=self.damp_limit,
                       pop_size=self.pop_size, antithetic=not self.pop_size % 2, parents=self.pop_size // 2,
                       elitism=self.elitism)
-
-    def train_critic(self, n_iterations, batch_size=100, discount=0.99,
-                     policy_noise=0.2, noise_clip=0.5):
-
-        for it in range(n_iterations):
-            # Sample replay buffer
-            state, action, next_state, done, reward = self.replay_buffer.sample(batch_size)
-
-            # Select action according to policy and add clipped noise
-            noise = action.clone().data.normal_(0, policy_noise)
-            noise = noise.clamp(-noise_clip, noise_clip)
-            next_action = (self.actor_target(next_state) + noise).clamp(-1, 1)
-
-            # Compute the target Q value
-            target_q1, target_q2 = self.critic_target(next_state, next_action)
-            target_q = th.min(target_q1, target_q2)
-            target_q = reward + ((1 - done) * discount * target_q).detach()
-
-            # Get current Q estimates
-            current_q1, current_q2 = self.critic(state, action)
-
-            # Compute critic loss
-            critic_loss = F.mse_loss(current_q1, target_q) + F.mse_loss(current_q2, target_q)
-
-            # Optimize the critic
-            self.critic.optimizer.zero_grad()
-            critic_loss.backward()
-            self.critic.optimizer.step()
-
-            # # Update the frozen target models
-            # for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-            #     target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
-
-    def train_actor(self, n_iterations, batch_size=100, tau=0.005):
-
-        for it in range(n_iterations):
-            # Sample replay buffer
-            state, action, next_state, done, reward = self.replay_buffer.sample(batch_size)
-
-            # Compute actor loss
-            actor_loss = -self.critic.q1_forward(state, self.actor(state)).mean()
-
-            # Optimize the actor
-            self.actor.optimizer.zero_grad()
-            actor_loss.backward()
-            self.actor.optimizer.step()
-
-            # Update the frozen target models
-            for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
-
-            for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
-                target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
-
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
               eval_freq=-1, n_eval_episodes=5, tb_log_name="CEMRL", reset_num_timesteps=True):
@@ -132,9 +80,23 @@ class CEMRL(TD3):
                     self.actor.optimizer = th.optim.Adam(self.actor.parameters(), lr=self.learning_rate)
 
                     # In the paper: 2 * actor_steps // self.n_grad
-                    self.train_critic(actor_steps // self.n_grad)
+                    # From the original implementation:
+                    # Difference: the target critic is updated in the train_critic()
+                    # instead of the train_actor()
+                    # Issue: the bigger the population, the slower the code
+                    # self.train_critic(actor_steps // self.n_grad)
+                    # self.train_actor(actor_steps)
 
-                    self.train_actor(actor_steps)
+                    # Closer to td3: policy delay and it scales
+                    # with a bigger population
+                    for it in range(2 * (actor_steps // self.n_grad)):
+                        # Sample replay buffer
+                        replay_data = self.replay_buffer.sample(self.batch_size)
+                        self.train_critic(replay_data=replay_data)
+
+                        # Delayed policy updates
+                        if it % self.policy_freq == 0:
+                            self.train_actor(replay_data=replay_data)
 
                     # Get the params back in the population
                     self.es_params[i] = self.actor.parameters_to_vector()

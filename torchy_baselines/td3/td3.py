@@ -21,7 +21,9 @@ class TD3(BaseRLModel):
 
     def __init__(self, policy, env, policy_kwargs=None, verbose=0,
                  buffer_size=int(1e6), learning_rate=1e-3, seed=0, device='auto',
-                 action_noise_std=0.1, start_timesteps=100, _init_setup_model=True):
+                 action_noise_std=0.1, start_timesteps=100, policy_freq=2,
+                 batch_size=100,
+                _init_setup_model=True):
 
         super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose)
 
@@ -36,6 +38,8 @@ class TD3(BaseRLModel):
         self.buffer_size = buffer_size
         self.start_timesteps = start_timesteps
         self.seed = seed
+        self.policy_freq = policy_freq
+        self.batch_size = batch_size
 
         if _init_setup_model:
             self._setup_model()
@@ -75,13 +79,15 @@ class TD3(BaseRLModel):
         """
         return self.max_action * self.select_action(observation)
 
-    def train(self, n_iterations, batch_size=100, discount=0.99,
-              tau=0.005, policy_noise=0.2, noise_clip=0.5, policy_freq=2):
+    def train_critic(self, n_iterations=1, batch_size=100, discount=0.99,
+                     policy_noise=0.2, noise_clip=0.5, replay_data=None):
 
         for it in range(n_iterations):
-
             # Sample replay buffer
-            state, action, next_state, done, reward = self.replay_buffer.sample(batch_size)
+            if replay_data is None:
+                state, action, next_state, done, reward = self.replay_buffer.sample(batch_size)
+            else:
+                state, action, next_state, done, reward = replay_data
 
             # Select action according to policy and add clipped noise
             noise = action.clone().data.normal_(0, policy_noise)
@@ -104,23 +110,42 @@ class TD3(BaseRLModel):
             critic_loss.backward()
             self.critic.optimizer.step()
 
+    def train_actor(self, n_iterations=1, batch_size=100, tau=0.005, replay_data=None):
+
+        for it in range(n_iterations):
+            # Sample replay buffer
+            if replay_data is None:
+                state, action, next_state, done, reward = self.replay_buffer.sample(batch_size)
+            else:
+                state, action, next_state, done, reward = replay_data
+
+            # Compute actor loss
+            actor_loss = -self.critic.q1_forward(state, self.actor(state)).mean()
+
+            # Optimize the actor
+            self.actor.optimizer.zero_grad()
+            actor_loss.backward()
+            self.actor.optimizer.step()
+
+            # Update the frozen target models
+            for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
+                target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
+
+            for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
+                target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
+
+    def train(self, n_iterations, batch_size=100, discount=0.99,
+              tau=0.005, policy_noise=0.2, noise_clip=0.5, policy_freq=2):
+
+        for it in range(n_iterations):
+
+            # Sample replay buffer
+            replay_data = self.replay_buffer.sample(batch_size)
+            self.train_critic(replay_data=replay_data)
+
             # Delayed policy updates
             if it % policy_freq == 0:
-
-                # Compute actor loss
-                actor_loss = -self.critic.q1_forward(state, self.actor(state)).mean()
-
-                # Optimize the actor
-                self.actor.optimizer.zero_grad()
-                actor_loss.backward()
-                self.actor.optimizer.step()
-
-                # Update the frozen target models
-                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                    target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
-
-                for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
-                    target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
+                self.train_actor(replay_data=replay_data)
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
               eval_freq=-1, n_eval_episodes=5, tb_log_name="TD3", reset_num_timesteps=True):
@@ -143,7 +168,7 @@ class TD3(BaseRLModel):
                     if self.verbose > 1:
                         print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
                               self.num_timesteps, episode_num, episode_timesteps, episode_reward))
-                    self.train(episode_timesteps)
+                    self.train(episode_timesteps, batch_size=self.batch_size, policy_freq=self.policy_freq)
 
                 # Evaluate episode
                 if 0 < eval_freq <= timesteps_since_eval:

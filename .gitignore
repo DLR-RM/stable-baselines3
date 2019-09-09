@@ -39,5 +39,7 @@ src
 
 *.egg-info
 .cache
+*.lprof
+*.prof
 
 MUJOCO_LOG.TXT

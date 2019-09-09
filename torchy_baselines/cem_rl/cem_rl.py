@@ -1,4 +1,3 @@
-import sys
 import time
 
 import torch as th
@@ -113,7 +112,6 @@ class CEMRL(TD3):
                 if self.verbose > 0:
                     print("Eval num_timesteps={}, mean_reward={:.2f}".format(self.num_timesteps, evaluations[-1]))
                     print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - start_time)))
-                    sys.stdout.flush()
 
             actor_steps = 0
             # evaluate all actors

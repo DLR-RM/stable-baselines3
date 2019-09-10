@@ -90,6 +90,12 @@ class TD3Policy(BasePolicy):
         self.action_dim = self.action_space.shape[0]
         self.net_arch = net_arch
         self.activation_fn = activation_fn
+        self.net_args = {
+            'state_dim': self.state_dim,
+            'action_dim': self.action_dim,
+            'net_arch': self.net_arch,
+            'activation_fn': self.activation_fn
+        }
         self.actor, self.actor_target = None, None
         self.critic, self.critic_target = None, None
         self._build(learning_rate)
@@ -106,10 +112,10 @@ class TD3Policy(BasePolicy):
         self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=learning_rate)
 
     def make_actor(self):
-        return Actor(self.state_dim, self.action_dim, self.net_arch, self.activation_fn).to(self.device)
+        return Actor(**self.net_args).to(self.device)
 
     def make_critic(self):
-        return Critic(self.state_dim, self.action_dim, self.net_arch, self.activation_fn).to(self.device)
+        return Critic(**self.net_args).to(self.device)
 
 MlpPolicy = TD3Policy
 

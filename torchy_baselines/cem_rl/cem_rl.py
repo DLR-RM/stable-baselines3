@@ -20,7 +20,8 @@ class CEMRL(TD3):
                  sigma_init=1e-3, pop_size=10, damp=1e-3, damp_limit=1e-5,
                  elitism=False, n_grad=5, policy_freq=2, batch_size=100,
                  buffer_size=int(1e6), learning_rate=1e-3, seed=0, device='auto',
-                 action_noise_std=0.0, start_timesteps=100, _init_setup_model=True):
+                 action_noise_std=0.0, start_timesteps=100, update_style='original',
+                 _init_setup_model=True):
 
         super(CEMRL, self).__init__(policy, env, policy_kwargs, verbose,
                                     buffer_size, learning_rate, seed, device,
@@ -36,6 +37,7 @@ class CEMRL(TD3):
         self.elitism = elitism
         self.n_grad = n_grad
         self.es_params = None
+        self.update_style = update_style
         self.fitnesses = []
 
         if _init_setup_model:
@@ -78,23 +80,26 @@ class CEMRL(TD3):
                     self.actor.optimizer = th.optim.Adam(self.actor.parameters(), lr=self.learning_rate)
 
                     # In the paper: 2 * actor_steps // self.n_grad
-                    # From the original implementation:
-                    # Difference: the target critic is updated in the train_critic()
+                    # In the original implementation: actor_steps // self.n_grad
+                    # Difference with current implementation:
+                    # the target critic is updated in the train_critic()
                     # instead of the train_actor()
-                    # Issue: the bigger the population, the slower the code
-                    # self.train_critic(actor_steps // self.n_grad)
-                    # self.train_actor(actor_steps)
+                    # Issue with this update style: the bigger the population, the slower the code
+                    if self.update_style == 'original':
+                        self.train_critic(actor_steps // self.n_grad)
+                        self.train_actor(actor_steps)
+                    else:
+                        # Closer to td3: policy delay and it scales
+                        # with a bigger population
+                        # but less training steps per agent
+                        for it in range(2 * (actor_steps // self.n_grad)):
+                            # Sample replay buffer
+                            replay_data = self.replay_buffer.sample(self.batch_size)
+                            self.train_critic(replay_data=replay_data)
 
-                    # Closer to td3: policy delay and it scales
-                    # with a bigger population
-                    for it in range(2 * (actor_steps // self.n_grad)):
-                        # Sample replay buffer
-                        replay_data = self.replay_buffer.sample(self.batch_size)
-                        self.train_critic(replay_data=replay_data)
-
-                        # Delayed policy updates
-                        if it % self.policy_freq == 0:
-                            self.train_actor(replay_data=replay_data)
+                            # Delayed policy updates
+                            if it % self.policy_freq == 0:
+                                self.train_actor(replay_data=replay_data)
 
                     # Get the params back in the population
                     self.es_params[i] = self.actor.parameters_to_vector()

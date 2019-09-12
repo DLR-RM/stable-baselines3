@@ -76,7 +76,7 @@ class TD3(BaseRLModel):
         return self.max_action * self.select_action(observation)
 
     def train_critic(self, n_iterations=1, batch_size=100, discount=0.99,
-                     policy_noise=0.2, noise_clip=0.5, replay_data=None):
+                     policy_noise=0.2, noise_clip=0.5, replay_data=None, tau=0.0):
 
         for it in range(n_iterations):
             # Sample replay buffer
@@ -106,7 +106,14 @@ class TD3(BaseRLModel):
             critic_loss.backward()
             self.critic.optimizer.step()
 
-    def train_actor(self, n_iterations=1, batch_size=100, tau=0.005, replay_data=None):
+            # Update the frozen target models
+            # Note: by default, for TD3, this update is done in train_actor
+            # however, for CEMRL it is done here
+            if tau > 0:
+                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
+                    target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
+
+    def train_actor(self, n_iterations=1, batch_size=100, tau_actor=0.005, tau_critic=0.005, replay_data=None):
 
         for it in range(n_iterations):
             # Sample replay buffer
@@ -124,11 +131,12 @@ class TD3(BaseRLModel):
             self.actor.optimizer.step()
 
             # Update the frozen target models
-            for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
+            if tau_critic > 0:
+                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
+                    target_param.data.copy_(tau_critic * param.data + (1 - tau_critic) * target_param.data)
 
             for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
-                target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
+                target_param.data.copy_(tau_actor * param.data + (1 - tau_actor) * target_param.data)
 
     def train(self, n_iterations, batch_size=100, discount=0.99,
               tau=0.005, policy_noise=0.2, noise_clip=0.5, policy_freq=2):

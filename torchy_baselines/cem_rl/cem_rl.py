@@ -80,12 +80,15 @@ class CEMRL(TD3):
 
                     # In the paper: 2 * actor_steps // self.n_grad
                     # In the original implementation: actor_steps // self.n_grad
-                    # Difference with current implementation:
+                    # Difference with TD3 implementation:
                     # the target critic is updated in the train_critic()
-                    # instead of the train_actor()
+                    # instead of the train_actor() and no policy delay
                     # Issue with this update style: the bigger the population, the slower the code
                     if self.update_style == 'original':
-                        self.train_critic(actor_steps // self.n_grad)
+                        self.train_critic(actor_steps // self.n_grad, tau=0.005)
+                        self.train_actor(actor_steps, tau_critic=0.0)
+                    elif self.update_style == 'original_td3':
+                        self.train_critic(actor_steps // self.n_grad, tau=0.0)
                         self.train_actor(actor_steps)
                     else:
                         # Closer to td3: with policy delay

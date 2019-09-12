@@ -7,7 +7,7 @@ import numpy as np
 class CEM(object):
 
     """
-    Cross-entropy methods.
+    Cross-entropy method with diagonal covariance (separable CEM)
     """
 
     def __init__(self, num_params,

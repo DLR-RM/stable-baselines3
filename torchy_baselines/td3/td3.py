@@ -24,14 +24,10 @@ class TD3(BaseRLModel):
                  batch_size=100,
                 _init_setup_model=True):
 
-        super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose)
-
-        if device == 'auto':
-            device = 'cuda' if th.cuda.is_available() else 'cpu'
+        super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device)
 
         self.max_action = np.abs(self.action_space.high)
         self.replay_buffer = None
-        self.device = device
         self.action_noise_std = action_noise_std
         self.learning_rate = learning_rate
         self.buffer_size = buffer_size
@@ -45,7 +41,7 @@ class TD3(BaseRLModel):
 
     def _setup_model(self, seed=None):
         state_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
-        set_random_seed(self.seed, using_cuda=self.device != 'cpu')
+        set_random_seed(self.seed, using_cuda=self.device == th.device('cuda'))
 
         if self.env is not None:
             self.env.seed(self.seed)

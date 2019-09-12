@@ -89,10 +89,14 @@ class CEMRL(TD3):
                         self.train_critic(actor_steps // self.n_grad)
                         self.train_actor(actor_steps)
                     else:
-                        # Closer to td3: policy delay and it scales
-                        # with a bigger population
-                        # but less training steps per agent
-                        for it in range(2 * (actor_steps // self.n_grad)):
+                        # Closer to td3: with policy delay
+                        if self.update_style == 'td3_like':
+                            n_training_steps = actor_steps
+                        else:
+                            # scales with a bigger population
+                            # but less training steps per agent
+                            n_training_steps == 2 * (actor_steps // self.n_grad)
+                        for it in range(n_training_steps):
                             # Sample replay buffer
                             replay_data = self.replay_buffer.sample(self.batch_size)
                             self.train_critic(replay_data=replay_data)

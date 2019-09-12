@@ -1,8 +1,9 @@
 from abc import ABCMeta, abstractmethod
 
 
-import numpy as np
 import gym
+import torch as th
+import numpy as np
 
 from torchy_baselines.common.policies import get_policy_from_name
 
@@ -16,14 +17,25 @@ class BaseRLModel(object):
                 (if registered in Gym, can be str. Can be None for loading trained models)
     :param verbose: (int) the verbosity level: 0 none, 1 training information, 2 debug
     :param policy_base: (BasePolicy) the base policy used by this method
+    :param device: (str or th.device) Device on which the code should.
+        By default, it will try to use a Cuda compatible device and fallback to cpu
+        if it is not possible.
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, policy, env, policy_base, policy_kwargs=None, verbose=0):
+    def __init__(self, policy, env, policy_base, policy_kwargs=None, verbose=0, device='auto'):
         if isinstance(policy, str) and policy_base is not None:
             self.policy = get_policy_from_name(policy_base, policy)
         else:
             self.policy = policy
+
+        if device == 'auto':
+            device = 'cuda' if th.cuda.is_available() else 'cpu'
+
+        self.device = th.device(device)
+        if verbose > 0:
+            print("Using {} device".format(self.device))
+
         self.env = env
         self.verbose = verbose
         self.policy_kwargs = {} if policy_kwargs is None else policy_kwargs

@@ -13,7 +13,7 @@ def test_pendulum():
 
 
 def test_cemrl():
-    model = CEMRL('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[16, 16]), pop_size=2, n_grad=1,
+    model = CEMRL('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[16]), pop_size=2, n_grad=1,
                  start_timesteps=100, verbose=1)
     model.learn(total_timesteps=1000, eval_freq=500)
     model.save("test_save")

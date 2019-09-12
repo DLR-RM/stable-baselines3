@@ -4,10 +4,24 @@ import torch.nn as nn
 from torchy_baselines.common.policies import BasePolicy, register_policy
 
 
+def create_mlp(input_dim, output_dim, net_arch,
+               activation_fn=nn.ReLU, squash_out=False):
+    modules = [nn.Linear(input_dim, net_arch[0]), activation_fn()]
+
+    for idx in range(len(net_arch) - 1):
+        modules.append(nn.Linear(net_arch[idx], net_arch[idx + 1]))
+        modules.append(activation_fn())
+
+    modules.append(nn.Linear(net_arch[-1], output_dim))
+    if squash_out:
+        modules.append(nn.Tanh())
+    return modules
+
+
 class BaseNetwork(nn.Module):
     """docstring for BaseNetwork."""
 
-    def __init__(self, device='cpu'):
+    def __init__(self):
         super(BaseNetwork, self).__init__()
 
     def load_from_vector(self, vector):
@@ -36,49 +50,41 @@ class Actor(BaseNetwork):
             net_arch = [400, 300]
 
         # TODO: orthogonal initialization?
-
-        self.actor_net = nn.Sequential(
-            nn.Linear(state_dim, net_arch[0]),
-            activation_fn(),
-            nn.Linear(net_arch[0], net_arch[1]),
-            activation_fn(),
-            nn.Linear(net_arch[1], action_dim),
-            nn.Tanh(),
-        )
+        actor_net = create_mlp(state_dim, action_dim, net_arch, activation_fn, squash_out=True)
+        self.actor_net = nn.Sequential(*actor_net)
 
     def forward(self, x):
         return self.actor_net(x)
 
 
 class Critic(BaseNetwork):
-    def __init__(self, state_dim, action_dim, net_arch=None, activation_fn=nn.ReLU):
+    def __init__(self, state_dim, action_dim,
+                 net_arch=None, activation_fn=nn.ReLU):
         super(Critic, self).__init__()
 
         if net_arch is None:
             net_arch = [400, 300]
 
-        self.q1_net = nn.Sequential(
-            nn.Linear(state_dim + action_dim, net_arch[0]),
-            activation_fn(),
-            nn.Linear(net_arch[0], net_arch[1]),
-            activation_fn(),
-            nn.Linear(net_arch[1], 1),
-        )
+        # TODO: solve  pytorch parameter registration
+        # for _ in range(n_critics):
+        #     q_net = create_mlp(state_dim + action_dim, 1, net_arch, activation_fn)
+        #     self.q_net = nn.Sequential(*q_net)
+        #     self.q_networks.append(self.q_net)
 
-        self.q2_net = nn.Sequential(
-            nn.Linear(state_dim + action_dim, net_arch[0]),
-            activation_fn(),
-            nn.Linear(net_arch[0], net_arch[1]),
-            activation_fn(),
-            nn.Linear(net_arch[1], 1),
-        )
+        q1_net = create_mlp(state_dim + action_dim, 1, net_arch, activation_fn)
+        self.q1_net = nn.Sequential(*q1_net)
+
+        q2_net = create_mlp(state_dim + action_dim, 1, net_arch, activation_fn)
+        self.q2_net = nn.Sequential(*q2_net)
+
+        self.q_networks = [self.q1_net, self.q2_net]
 
     def forward(self, obs, action):
         qvalue_input = th.cat([obs, action], dim=1)
-        return self.q1_net(qvalue_input), self.q2_net(qvalue_input)
+        return [q_net(qvalue_input) for q_net in self.q_networks]
 
     def q1_forward(self, obs, action):
-        return self.q1_net(th.cat([obs, action], dim=1))
+        return self.q_networks[0](th.cat([obs, action], dim=1))
 
 
 class TD3Policy(BasePolicy):

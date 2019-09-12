@@ -54,8 +54,7 @@ class CEMRL(TD3):
     def learn(self, total_timesteps, callback=None, log_interval=100,
               eval_freq=-1, n_eval_episodes=5, tb_log_name="CEMRL", reset_num_timesteps=True):
 
-        timesteps_since_eval = 0
-        actor_steps = 0
+        timesteps_since_eval, actor_steps = 0, 0
         episode_num = 0
         evaluations = []
         start_time = time.time()
@@ -127,53 +126,24 @@ class CEMRL(TD3):
 
                 self.actor.load_from_vector(params)
 
-                # Reset environment
-                obs = self.env.reset()
-                episode_reward = 0
-                episode_timesteps = 0
+                episode_reward, episode_timesteps = self.collect_rollouts(self.env, n_episodes=1,
+                                                                          action_noise_std=self.action_noise_std,
+                                                                          deterministic=False, callback=None,
+                                                                          start_timesteps=self.start_timesteps,
+                                                                          num_timesteps=self.num_timesteps,
+                                                                          replay_buffer=self.replay_buffer)
                 episode_num += 1
-                done = False
-
-                while not done:
-                    # Select action randomly or according to policy
-                    if self.num_timesteps < self.start_timesteps:
-                        action = self.env.action_space.sample()
-                    else:
-                        action = self.select_action(np.array(obs))
-
-                    if self.action_noise_std > 0:
-                        # NOTE: in the original implementation, the noise is applied to the unscaled action
-                        action_noise = np.random.normal(0, self.action_noise_std, size=self.action_space.shape[0])
-                        action = (action + action_noise).clip(-1, 1)
-
-                    # Rescale and perform action
-                    new_obs, reward, done, _ = self.env.step(self.max_action * action)
-
-                    if hasattr(self.env, '_max_episode_steps'):
-                        done_bool = 0 if episode_timesteps + 1 == self.env._max_episode_steps else float(done)
-                    else:
-                        done_bool = float(done)
-
-                    episode_reward += reward
-
-                    # Store data in replay buffer
-                    self.replay_buffer.add(obs, new_obs, action, reward, done_bool)
-
-                    obs = new_obs
-                    episode_timesteps += 1
-                    # Note: if put on the outer, it will explore start_timesteps for each actor
-                    self.num_timesteps += 1
+                self.num_timesteps += episode_timesteps
+                timesteps_since_eval += episode_timesteps
+                actor_steps += episode_timesteps
+                self.fitnesses.append(episode_reward)
 
                 if self.verbose > 1:
                     print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
                         self.num_timesteps, episode_num, episode_timesteps, episode_reward))
 
-                actor_steps += episode_timesteps
-                self.fitnesses.append(episode_reward)
 
             self.es.tell(self.es_params, self.fitnesses)
-
-            # self.num_timesteps += actor_steps
             timesteps_since_eval += actor_steps
         return self
 

@@ -27,7 +27,6 @@ class TD3(BaseRLModel):
         super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device)
 
         self.max_action = np.abs(self.action_space.high)
-        self.replay_buffer = None
         self.action_noise_std = action_noise_std
         self.learning_rate = learning_rate
         self.buffer_size = buffer_size
@@ -58,6 +57,8 @@ class TD3(BaseRLModel):
         self.critic_target = self.policy.critic_target
 
     def select_action(self, observation):
+        # Normally not needed
+        observation = np.array(observation)
         with th.no_grad():
             observation = th.FloatTensor(observation.reshape(1, -1)).to(self.device)
             return self.actor(observation).cpu().data.numpy().flatten()
@@ -147,7 +148,6 @@ class TD3(BaseRLModel):
 
         timesteps_since_eval = 0
         episode_num = 0
-        done = True
         evaluations = []
         start_time = time.time()
 
@@ -158,58 +158,31 @@ class TD3(BaseRLModel):
                 if callback(locals(), globals()) is False:
                     break
 
-            if done:
-                if self.num_timesteps > 0:
-                    if self.verbose > 1:
-                        print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
-                              self.num_timesteps, episode_num, episode_timesteps, episode_reward))
-                    self.train(episode_timesteps, batch_size=self.batch_size, policy_freq=self.policy_freq)
+            episode_reward, episode_timesteps = self.collect_rollouts(self.env, n_episodes=1,
+                                                                      action_noise_std=self.action_noise_std,
+                                                                      deterministic=False, callback=None,
+                                                                      start_timesteps=self.start_timesteps,
+                                                                      num_timesteps=self.num_timesteps,
+                                                                      replay_buffer=self.replay_buffer)
+            episode_num += 1
+            self.num_timesteps += episode_timesteps
+            timesteps_since_eval += episode_timesteps
 
-                # Evaluate episode
-                if 0 < eval_freq <= timesteps_since_eval:
-                    timesteps_since_eval %= eval_freq
-                    mean_reward, _ = evaluate_policy(self, self.env, n_eval_episodes)
-                    evaluations.append(mean_reward)
-                    if self.verbose > 0:
-                        print("Eval num_timesteps={}, mean_reward={:.2f}".format(self.num_timesteps, evaluations[-1]))
-                        print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - start_time)))
+            if self.num_timesteps > 0:
+                if self.verbose > 1:
+                    print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
+                          self.num_timesteps, episode_num, episode_timesteps, episode_reward))
+                self.train(episode_timesteps, batch_size=self.batch_size, policy_freq=self.policy_freq)
 
-                # Reset environment
-                obs = self.env.reset()
-                episode_reward = 0
-                episode_timesteps = 0
-                episode_num += 1
+            # Evaluate episode
+            if 0 < eval_freq <= timesteps_since_eval:
+                timesteps_since_eval %= eval_freq
+                mean_reward, _ = evaluate_policy(self, self.env, n_eval_episodes)
+                evaluations.append(mean_reward)
+                if self.verbose > 0:
+                    print("Eval num_timesteps={}, mean_reward={:.2f}".format(self.num_timesteps, evaluations[-1]))
+                    print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - start_time)))
 
-            # Select action randomly or according to policy
-            if self.num_timesteps < self.start_timesteps:
-                action = self.env.action_space.sample()
-            else:
-                action = self.select_action(np.array(obs))
-
-            if self.action_noise_std > 0:
-                # NOTE: in the original implementation, the noise is applied to the unscaled action
-                action_noise = np.random.normal(0, self.action_noise_std, size=self.action_space.shape[0])
-                action = (action + action_noise).clip(-1, 1)
-
-            # Rescale and perform action
-            new_obs, reward, done, _ = self.env.step(self.max_action * action)
-
-            if hasattr(self.env, '_max_episode_steps'):
-                done_bool = 0 if episode_timesteps + 1 == self.env._max_episode_steps else float(done)
-            else:
-                done_bool = float(done)
-
-            episode_reward += reward
-
-            # Store data in replay buffer
-            # self.replay_buffer.add(state, next_state, action, reward, done)
-            self.replay_buffer.add(obs, new_obs, action, reward, done_bool)
-
-            obs = new_obs
-
-            episode_timesteps += 1
-            self.num_timesteps += 1
-            timesteps_since_eval += 1
         return self
 
     def save(self, path):

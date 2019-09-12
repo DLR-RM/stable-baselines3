@@ -44,6 +44,7 @@ class BaseRLModel(object):
         self.n_envs = None
         self.num_timesteps = 0
         self.params = None
+        self.replay_buffer = None
 
         if env is not None:
             if env is not None:
@@ -180,3 +181,51 @@ class BaseRLModel(object):
         :param kwargs: extra arguments to change the model when loading
         """
         raise NotImplementedError()
+
+    def collect_rollouts(self, env, n_episodes=1, action_noise_std=0.0,
+                         deterministic=False, callback=None,
+                         start_timesteps=0, num_timesteps=0, replay_buffer=None):
+
+        episode_rewards = []
+        total_timesteps = []
+
+        for _ in range(n_episodes):
+            done = False
+            # Reset environment
+            obs = env.reset()
+            episode_reward, episode_timesteps = 0.0, 0
+            while not done:
+                # Select action randomly or according to policy
+                if num_timesteps < start_timesteps:
+                    action = env.action_space.sample()
+                else:
+                    action = self.predict(obs, deterministic=deterministic) / self.max_action
+
+                if action_noise_std > 0:
+                    # NOTE: in the original implementation, the noise is applied to the unscaled action
+                    action_noise = np.random.normal(0, action_noise_std, size=self.action_space.shape[0])
+                    action = (action + action_noise).clip(-1, 1)
+
+                # Rescale and perform action
+                new_obs, reward, done, _ = env.step(self.max_action * action)
+
+                if hasattr(self.env, '_max_episode_steps'):
+                    done_bool = 0 if episode_timesteps + 1 == env._max_episode_steps else float(done)
+                else:
+                    done_bool = float(done)
+
+                episode_reward += reward
+
+                # Store data in replay buffer
+                if replay_buffer is not None:
+                    replay_buffer.add(obs, new_obs, action, reward, done_bool)
+
+                obs = new_obs
+
+                num_timesteps += 1
+                episode_timesteps += 1
+
+            episode_rewards.append(episode_reward)
+            total_timesteps.append(episode_timesteps)
+
+        return np.mean(episode_rewards), np.sum(total_timesteps)

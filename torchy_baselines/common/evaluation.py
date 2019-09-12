@@ -10,7 +10,7 @@ def evaluate_policy(model, env, n_eval_episodes=10, deterministic=True, render=F
         obs = env.reset()
         done = False
         while not done:
-            action = model.predict(np.array(obs), deterministic=deterministic)
+            action = model.predict(obs, deterministic=deterministic)
             obs, reward, done, _ = env.step(action)
             mean_reward += reward
             n_steps += 1

@@ -34,7 +34,6 @@ class PPOPolicy(BasePolicy):
         self.optimizer = th.optim.Adam(self.parameters(), lr=learning_rate)
 
     def forward(self, state):
-
         state = th.FloatTensor(state).to(self.device)
         latent = self.shared_net(state)
         # TODO: initialize pi_mean weights properly
@@ -64,6 +63,24 @@ class PPOPolicy(BasePolicy):
         # Sample from the gaussian
         action = action_distribution.rsample()
         return action
+
+    def get_policy_stats(self, state, action):
+        state = th.FloatTensor(state).to(self.device)
+        latent = self.shared_net(state)
+        # TODO: initialize pi_mean weights properly
+        # TODO: change when multiple envs
+        mean_actions = self.actor_net(latent)
+        action_std = th.ones(mean_actions.size()) * self.log_std.exp()
+        action_distribution = Normal(mean_actions, action_std)
+        log_prob = action_distribution.log_prob(action)
+        entropy = action_distribution.entropy()
+        if len(log_prob.shape) > 1:
+            log_prob = log_prob.sum(axis=1)
+        else:
+            log_prob = log_prob.sum()
+        # entropy = action_distribution.entropy()
+        value = self.value_net(latent)
+        return value, log_prob, entropy
 
     def value_forward(self):
         pass

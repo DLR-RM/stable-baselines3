@@ -87,7 +87,7 @@ class PPO(BaseRLModel):
             # No grad ok?
             with th.no_grad():
                 action, value, log_prob = self.policy.forward(obs)
-            action = action[0].detach().cpu().numpy()
+            action = action[0].cpu().numpy()
 
             # Rescale and perform action
             new_obs, reward, done, _ = env.step(np.clip(action, -self.max_action, self.max_action))
@@ -97,11 +97,11 @@ class PPO(BaseRLModel):
 
             obs = new_obs
 
-        if done:
-            value = 0.0
-            obs = None
+            if done:
+                value = 0.0
+                obs = None
 
-        rollout_buffer.finish_path(last_value=value)
+            rollout_buffer.finish_path(last_value=value)
 
         return obs
 
@@ -111,9 +111,10 @@ class PPO(BaseRLModel):
         for it in range(n_iterations):
             # Sample replay buffer
             replay_data = self.rollout_buffer.sample(batch_size)
-            state, _, _, _, _, _, old_log_prob, advantage, return_batch = replay_data
+            state, action, _, _, _, _, old_log_prob, advantage, return_batch = replay_data
 
-            _, values, log_prob = self.policy.forward(state)
+            # _, values, log_prob = self.policy.forward(state)
+            values, log_prob, entropy = self.policy.get_policy_stats(state, action)
 
             # Normalize advantage
             # advs = returns - values
@@ -123,14 +124,13 @@ class PPO(BaseRLModel):
             policy_loss_1 = advantage * ratio
             policy_loss_2 = advantage * th.clamp(ratio, 1 - self.clip_range, 1 + self.clip_range)
             policy_loss = -th.min(policy_loss_1, policy_loss_2).mean()
-            # value_loss = th.mean((returns - value)**2)
-            value_loss = F.mse_loss(return_batch.detach(), values)
-            # Approximate entropy
-            # TODO: replace by distribution entropy
-            entropy_loss = th.mean(-log_prob)
+            # value_loss = th.mean((return_batch - value)**2)
+            value_loss = F.mse_loss(return_batch, values)
+            entropy_loss = th.mean(entropy)
             loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
             # loss = policy_loss
             # TODO: check kl div
+            # self.approxkl = .5 * tf.reduce_mean(tf.square(neglogpac - self.old_neglog_pac_ph))
             # approx_kl_div = th.mean(old_log_prob - log_prob)
             # Optimization step
             self.policy.optimizer.zero_grad()
@@ -155,8 +155,9 @@ class PPO(BaseRLModel):
                 if callback(locals(), globals()) is False:
                     break
 
+            # TODO: avoid reset using obs=obs and test env
             obs = self.collect_rollouts(self.env, self.rollout_buffer, n_rollout_steps=self.n_steps,
-                                        obs=obs)
+                                        obs=None)
             episode_num += 1
             self.num_timesteps += self.n_steps
             timesteps_since_eval += self.n_steps

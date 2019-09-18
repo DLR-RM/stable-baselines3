@@ -55,13 +55,17 @@ class PPOPolicy(BasePolicy):
         value = self.value_net(latent)
         return action, value, log_prob
 
-    def actor_forward(self, state):
+    def actor_forward(self, state, deterministic=False):
         latent = self.shared_net(state)
         # TODO: initialize pi_mean weights properly
         mean_actions = self.actor_net(latent)
-        action_distribution = Normal(mean_actions, self.log_std)
+        action_std = th.ones(mean_actions.size()) * self.log_std.exp()
+        action_distribution = Normal(mean_actions, action_std)
         # Sample from the gaussian
-        action = action_distribution.rsample()
+        if deterministic:
+            action = mean_actions
+        else:
+            action = action_distribution.rsample()
         return action
 
     def get_policy_stats(self, state, action):

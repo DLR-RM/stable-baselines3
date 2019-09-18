@@ -58,7 +58,7 @@ class PPO(BaseRLModel):
         observation = np.array(observation)
         with th.no_grad():
             observation = th.FloatTensor(observation.reshape(1, -1)).to(self.device)
-            return self.policy.actor_forward(observation).cpu().data.numpy().flatten()
+            return self.policy.actor_forward(observation, deterministic=False).cpu().data.numpy().flatten()
 
     def predict(self, observation, state=None, mask=None, deterministic=True):
         """

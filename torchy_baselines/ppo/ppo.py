@@ -20,7 +20,7 @@ class PPO(BaseRLModel):
     """
 
     def __init__(self, policy, env, policy_kwargs=None, verbose=0,
-                 learning_rate=1e-3, seed=0, device='auto',
+                 learning_rate=3e-4, seed=0, device='auto',
                  n_optim=5, batch_size=64, n_steps=256,
                  gamma=0.99, lambda_=0.95, clip_range=0.2,
                  ent_coef=0.01, vf_coef=0.5,
@@ -111,24 +111,25 @@ class PPO(BaseRLModel):
         for it in range(n_iterations):
             # Sample replay buffer
             replay_data = self.rollout_buffer.sample(batch_size)
-            state, action, next_state, done, reward, _, old_log_prob, advantage, return_batch = replay_data
+            state, _, _, _, _, _, old_log_prob, advantage, return_batch = replay_data
 
-            _, value, log_prob = self.policy.forward(state)
+            _, values, log_prob = self.policy.forward(state)
 
             # Normalize advantage
             # advs = returns - values
             advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
 
             ratio = th.exp(log_prob - old_log_prob)
-            policy_loss_1 = -advantage * ratio
-            policy_loss_2 = -advantage * th.clamp(ratio, 1 - self.clip_range, 1 + self.clip_range)
+            policy_loss_1 = advantage * ratio
+            policy_loss_2 = advantage * th.clamp(ratio, 1 - self.clip_range, 1 + self.clip_range)
             policy_loss = -th.min(policy_loss_1, policy_loss_2).mean()
             # value_loss = th.mean((returns - value)**2)
-            value_loss = F.mse_loss(return_batch, value)
+            value_loss = F.mse_loss(return_batch.detach(), values)
             # Approximate entropy
             # TODO: replace by distribution entropy
             entropy_loss = th.mean(-log_prob)
             loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
+            # loss = policy_loss
             # TODO: check kl div
             # approx_kl_div = th.mean(old_log_prob - log_prob)
             # Optimization step

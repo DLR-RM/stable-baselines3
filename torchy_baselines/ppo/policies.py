@@ -30,18 +30,28 @@ class PPOPolicy(BasePolicy):
         self.shared_net = nn.Sequential(*shared_net).to(self.device)
         self.actor_net = nn.Linear(self.net_arch[-1], self.action_dim)
         self.value_net = nn.Linear(self.net_arch[-1], 1)
-        self.log_std = nn.Parameter(th.zeros(self.action_dim, 1))
+        self.log_std = nn.Parameter(th.zeros(self.action_dim))
         self.optimizer = th.optim.Adam(self.parameters(), lr=learning_rate)
 
     def forward(self, state):
+
         state = th.FloatTensor(state).to(self.device)
         latent = self.shared_net(state)
         # TODO: initialize pi_mean weights properly
+        # TODO: change when multiple envs
         mean_actions = self.actor_net(latent)
-        action_distribution = Normal(mean_actions, self.log_std)
+        action_std = th.ones(mean_actions.size()) * self.log_std.exp()
+        action_distribution = Normal(mean_actions, action_std)
         # Sample from the gaussian
+        # rsample: reparametrization trick
         action = action_distribution.rsample()
+        # TODO: handle shape properly
+        # sum(axis=1)
         log_prob = action_distribution.log_prob(action)
+        if len(log_prob.shape) > 1:
+            log_prob = log_prob.sum(axis=1)
+        else:
+            log_prob = log_prob.sum()
         # entropy = action_distribution.entropy()
         value = self.value_net(latent)
         return action, value, log_prob

@@ -5,10 +5,9 @@ import torch.nn.functional as F
 import numpy as np
 
 from torchy_baselines.common.base_class import BaseRLModel
-from torchy_baselines.common.utils import set_random_seed
 from torchy_baselines.common.evaluation import evaluate_policy
-from torchy_baselines.ppo.policies import ActorCriticPolicy
-from torchy_baselines.common.replay_buffer import ReplayBuffer
+from torchy_baselines.ppo.policies import PPOPolicy
+from torchy_baselines.common.replay_buffer import RolloutBuffer
 
 
 class PPO(BaseRLModel):
@@ -16,15 +15,18 @@ class PPO(BaseRLModel):
     Implementation of Proximal Policy Optimization (PPO) (clip version)
     Paper: https://arxiv.org/abs/1707.06347
     Code: https://github.com/openai/spinningup/
+    and https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail
+    and stable_baselines
     """
 
     def __init__(self, policy, env, policy_kwargs=None, verbose=0,
                  learning_rate=1e-3, seed=0, device='auto',
-                 n_optim=5, batch_size=100, n_steps=256,
-                 gamma=0.99, lambda_=0.95,
-                _init_setup_model=True):
+                 n_optim=5, batch_size=64, n_steps=256,
+                 gamma=0.99, lambda_=0.95, clip_range=0.2,
+                 ent_coef=0.01, vf_coef=0.5,
+                 _init_setup_model=True):
 
-        super(PPO, self).__init__(policy, env, ActorCriticPolicy, policy_kwargs, verbose, device)
+        super(PPO, self).__init__(policy, env, PPOPolicy, policy_kwargs, verbose, device)
 
         self.max_action = np.abs(self.action_space.high)
         self.learning_rate = learning_rate
@@ -34,7 +36,10 @@ class PPO(BaseRLModel):
         self.n_steps = n_steps
         self.gamma = gamma
         self.lambda_ = lambda_
-        self.buffer_rollouts = None
+        self.clip_range = clip_range
+        self.ent_coef = ent_coef
+        self.vf_coef = vf_coef
+        self.rollout_buffer = None
 
         if _init_setup_model:
             self._setup_model()
@@ -43,9 +48,10 @@ class PPO(BaseRLModel):
         state_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
         self.seed(self._seed)
 
+        self.rollout_buffer = RolloutBuffer(self.n_steps, state_dim, action_dim, self.device,
+                                            gamma=self.gamma, lambda_=self.lambda_)
         self.policy = self.policy(self.observation_space, self.action_space,
                                   self.learning_rate, device=self.device, **self.policy_kwargs)
-
 
     def select_action(self, observation):
         # Normally not needed
@@ -66,52 +72,80 @@ class PPO(BaseRLModel):
         """
         return np.clip(self.select_action(observation), -self.max_action, self.max_action)
 
+    def collect_rollouts(self, env, rollout_buffer, n_rollout_steps=256, callback=None,
+                         obs=None):
 
-    def train_actor(self, n_iterations=1, batch_size=100, tau_actor=0.005, tau_critic=0.005, replay_data=None):
+        n_steps = 0
+        done = obs is None
+        rollout_buffer.reset()
 
+        while n_steps < n_rollout_steps:
+            # Reset environment
+            if done:
+                obs = env.reset()
+
+            # No grad ok?
+            with th.no_grad():
+                action, value, log_prob = self.policy.forward(obs)
+            action = action[0].detach().cpu().numpy()
+
+            # Rescale and perform action
+            new_obs, reward, done, _ = env.step(np.clip(action, -self.max_action, self.max_action))
+
+            n_steps += 1
+            rollout_buffer.add(obs, new_obs, action, reward, float(done), value, log_prob)
+
+            obs = new_obs
+
+        if done:
+            value = 0.0
+            obs = None
+
+        rollout_buffer.finish_path(last_value=value)
+
+        return obs
+
+    def train(self, n_iterations, batch_size=64):
+
+        # TODO: replace with iterator?
         for it in range(n_iterations):
             # Sample replay buffer
-            if replay_data is None:
-                state, action, next_state, done, reward = self.replay_buffer.sample(batch_size)
-            else:
-                state, action, next_state, done, reward = replay_data
+            replay_data = self.rollout_buffer.sample(batch_size)
+            state, action, next_state, done, reward, _, old_log_prob, advantage, return_batch = replay_data
 
-            # Compute actor loss
-            actor_loss = -self.critic.q1_forward(state, self.actor(state)).mean()
+            _, value, log_prob = self.policy.forward(state)
 
-            # Optimize the actor
-            self.actor.optimizer.zero_grad()
-            actor_loss.backward()
-            self.actor.optimizer.step()
+            # Normalize advantage
+            # advs = returns - values
+            advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
 
-            # Update the frozen target models
-            if tau_critic > 0:
-                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                    target_param.data.copy_(tau_critic * param.data + (1 - tau_critic) * target_param.data)
-
-            for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
-                target_param.data.copy_(tau_actor * param.data + (1 - tau_actor) * target_param.data)
-
-    def train(self, n_iterations, batch_size=100, discount=0.99,
-              tau=0.005, policy_noise=0.2, noise_clip=0.5, policy_freq=2):
-
-        for it in range(n_iterations):
-
-            # Sample replay buffer
-            replay_data = self.replay_buffer.sample(batch_size)
-            self.train_critic(replay_data=replay_data)
-
-            # Delayed policy updates
-            if it % policy_freq == 0:
-                self.train_actor(replay_data=replay_data)
+            ratio = th.exp(log_prob - old_log_prob)
+            policy_loss_1 = -advantage * ratio
+            policy_loss_2 = -advantage * th.clamp(ratio, 1 - self.clip_range, 1 + self.clip_range)
+            policy_loss = -th.min(policy_loss_1, policy_loss_2).mean()
+            # value_loss = th.mean((returns - value)**2)
+            value_loss = F.mse_loss(return_batch, value)
+            # Approximate entropy
+            # TODO: replace by distribution entropy
+            entropy_loss = th.mean(-log_prob)
+            loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
+            # TODO: check kl div
+            # approx_kl_div = th.mean(old_log_prob - log_prob)
+            # Optimization step
+            self.policy.optimizer.zero_grad()
+            loss.backward()
+            # TODO: clip grad norm?
+            # nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+            self.policy.optimizer.step()
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
-              eval_freq=-1, n_eval_episodes=5, tb_log_name="TD3", reset_num_timesteps=True):
+              eval_freq=-1, n_eval_episodes=5, tb_log_name="PPO", reset_num_timesteps=True):
 
         timesteps_since_eval = 0
         episode_num = 0
         evaluations = []
         start_time = time.time()
+        obs = None
 
         while self.num_timesteps < total_timesteps:
 
@@ -120,21 +154,13 @@ class PPO(BaseRLModel):
                 if callback(locals(), globals()) is False:
                     break
 
-            episode_reward, episode_timesteps = self.collect_rollouts(self.env, n_episodes=1,
-                                                                      action_noise_std=self.action_noise_std,
-                                                                      deterministic=False, callback=None,
-                                                                      start_timesteps=self.start_timesteps,
-                                                                      num_timesteps=self.num_timesteps,
-                                                                      replay_buffer=self.buffer_rollouts)
+            obs = self.collect_rollouts(self.env, self.rollout_buffer, n_rollout_steps=self.n_steps,
+                                        obs=obs)
             episode_num += 1
-            self.num_timesteps += episode_timesteps
-            timesteps_since_eval += episode_timesteps
+            self.num_timesteps += self.n_steps
+            timesteps_since_eval += self.n_steps
 
-            if self.num_timesteps > 0:
-                if self.verbose > 1:
-                    print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
-                          self.num_timesteps, episode_num, episode_timesteps, episode_reward))
-                self.train(episode_timesteps, batch_size=self.batch_size, policy_freq=self.policy_freq)
+            self.train(self.n_optim, batch_size=self.batch_size)
 
             # Evaluate episode
             if 0 < eval_freq <= timesteps_since_eval:
@@ -158,33 +184,3 @@ class PPO(BaseRLModel):
         if env is not None:
             pass
         self.policy.load_state_dict(th.load(path))
-
-
-class PPOBuffer(ReplayBuffer):
-    """docstring for PPOBuffer."""
-
-    def __init__(self, buffer_size, state_dim, action_dim, device='cpu',
-                lambda=0.95):
-        super(PPOBuffer, self).__init__(buffer_size, state_dim, action_dim, device)
-
-        self.returns = th.zeros(self.buffer_size, 1)
-        self.values = th.zeros(self.buffer_size, 1)
-        self.log_probs = th.zeros(self.buffer_size, 1)
-        self.advantages = th.zeros(self.buffer_size, 1)
-
-    def compute_gae(self):
-        """
-        From https://github.com/openai/spinningup/blob/master/spinup/algos/ppo/ppo.py
-        """
-        path_slice = slice(self.path_start_idx, self.pos)
-        rews = np.append(self.rewards[path_slice], last_val)
-        vals = np.append(self.val_buf[path_slice], last_val)
-
-        # the next two lines implement GAE-Lambda advantage calculation
-        deltas = rews[:-1] + self.gamma * vals[1:] - vals[:-1]
-        self.advantages[path_slice] = core.discount_cumsum(deltas, self.gamma * self.lam)
-
-        # the next line computes rewards-to-go, to be targets for the value function
-        self.ret_buf[path_slice] = core.discount_cumsum(rews, self.gamma)[:-1]
-
-        self.path_start_idx = self.pos

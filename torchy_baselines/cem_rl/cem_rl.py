@@ -4,7 +4,7 @@ import torch as th
 import torch.nn.functional as F
 import numpy as np
 
-from torchy_baselines import TD3
+from torchy_baselines.td3.td3 import TD3
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.cem_rl.cem import CEM
 

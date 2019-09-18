@@ -6,6 +6,7 @@ import torch as th
 import numpy as np
 
 from torchy_baselines.common.policies import get_policy_from_name
+from torchy_baselines.common.utils import set_random_seed
 
 
 class BaseRLModel(object):
@@ -182,8 +183,13 @@ class BaseRLModel(object):
         """
         raise NotImplementedError()
 
+    def seed(self, seed=0):
+        set_random_seed(seed, using_cuda=self.device == th.device('cuda'))
+        if self.env is not None:
+            self.env.seed(seed)
+
     def collect_rollouts(self, env, n_episodes=1, action_noise_std=0.0,
-                         deterministic=False, callback=None,
+                         deterministic=False, callback=None, remove_timelimits=True,
                          start_timesteps=0, num_timesteps=0, replay_buffer=None):
 
         episode_rewards = []
@@ -209,7 +215,7 @@ class BaseRLModel(object):
                 # Rescale and perform action
                 new_obs, reward, done, _ = env.step(self.max_action * action)
 
-                if hasattr(self.env, '_max_episode_steps'):
+                if hasattr(self.env, '_max_episode_steps') and remove_timelimits:
                     done_bool = 0 if episode_timesteps + 1 == env._max_episode_steps else float(done)
                 else:
                     done_bool = float(done)

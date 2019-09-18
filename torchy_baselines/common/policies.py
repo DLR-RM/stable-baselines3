@@ -48,7 +48,46 @@ class BasePolicy(nn.Module):
 
         :return: (np.ndarray)
         """
-        return th.nn.utils.parameters_to_vector(self.parameters())
+        return th.nn.utils.parameters_to_vector(self.parameters()).detach().cpu().numpy()
+
+
+def create_mlp(input_dim, output_dim, net_arch,
+               activation_fn=nn.ReLU, squash_out=False):
+    modules = [nn.Linear(input_dim, net_arch[0]), activation_fn()]
+
+    for idx in range(len(net_arch) - 1):
+        modules.append(nn.Linear(net_arch[idx], net_arch[idx + 1]))
+        modules.append(activation_fn())
+
+    if output_dim > 0:
+        modules.append(nn.Linear(net_arch[-1], output_dim))
+    if squash_out:
+        modules.append(nn.Tanh())
+    return modules
+
+
+class BaseNetwork(nn.Module):
+    """docstring for BaseNetwork."""
+
+    def __init__(self):
+        super(BaseNetwork, self).__init__()
+
+    def load_from_vector(self, vector):
+        """
+        Load parameters from a 1D vector.
+
+        :param vector: (np.ndarray)
+        """
+        device = next(self.parameters()).device
+        th.nn.utils.vector_to_parameters(th.FloatTensor(vector).to(device), self.parameters())
+
+    def parameters_to_vector(self):
+        """
+        Convert the parameters to a 1D vector.
+
+        :return: (np.ndarray)
+        """
+        return th.nn.utils.parameters_to_vector(self.parameters()).detach().cpu().numpy()
 
 
 _policy_registry = dict()

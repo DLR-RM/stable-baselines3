@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import numpy as np
 
 from torchy_baselines.common.base_class import BaseRLModel
-from torchy_baselines.common.replay_buffer import ReplayBuffer
+from torchy_baselines.common.buffers import ReplayBuffer
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.td3.policies import TD3Policy
 

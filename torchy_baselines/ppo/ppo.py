@@ -7,7 +7,7 @@ import numpy as np
 from torchy_baselines.common.base_class import BaseRLModel
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.ppo.policies import PPOPolicy
-from torchy_baselines.common.replay_buffer import RolloutBuffer
+from torchy_baselines.common.buffers import RolloutBuffer
 
 
 class PPO(BaseRLModel):
@@ -58,7 +58,7 @@ class PPO(BaseRLModel):
         observation = np.array(observation)
         with th.no_grad():
             observation = th.FloatTensor(observation.reshape(1, -1)).to(self.device)
-            return self.policy.actor_forward(observation, deterministic=False).cpu().data.numpy().flatten()
+            return self.policy.actor_forward(observation, deterministic=False).flatten()
 
     def predict(self, observation, state=None, mask=None, deterministic=True):
         """
@@ -90,12 +90,10 @@ class PPO(BaseRLModel):
             action = action[0].cpu().numpy()
 
             # Rescale and perform action
-            new_obs, reward, done, _ = env.step(np.clip(action, -self.max_action, self.max_action))
+            obs, reward, done, _ = env.step(np.clip(action, -self.max_action, self.max_action))
 
             n_steps += 1
-            rollout_buffer.add(obs, new_obs, action, reward, float(done), value, log_prob)
-
-            obs = new_obs
+            rollout_buffer.add(obs, action, reward, float(done), value, log_prob)
 
             if done:
                 value = 0.0
@@ -110,34 +108,35 @@ class PPO(BaseRLModel):
         # TODO: replace with iterator?
         for it in range(n_iterations):
             # Sample replay buffer
-            replay_data = self.rollout_buffer.sample(batch_size)
-            state, action, _, _, _, _, old_log_prob, advantage, return_batch = replay_data
+            for replay_data in self.rollout_buffer.get(batch_size):
+                # Unpack
+                state, action, old_log_prob, advantage, return_batch = replay_data
 
-            # _, values, log_prob = self.policy.forward(state)
-            values, log_prob, entropy = self.policy.get_policy_stats(state, action)
+                # _, values, log_prob = self.policy.forward(state)
+                values, log_prob, entropy = self.policy.get_policy_stats(state, action)
 
-            # Normalize advantage
-            # advs = returns - values
-            advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
+                # Normalize advantage
+                # advs = returns - values
+                advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
 
-            ratio = th.exp(log_prob - old_log_prob)
-            policy_loss_1 = advantage * ratio
-            policy_loss_2 = advantage * th.clamp(ratio, 1 - self.clip_range, 1 + self.clip_range)
-            policy_loss = -th.min(policy_loss_1, policy_loss_2).mean()
-            # value_loss = th.mean((return_batch - value)**2)
-            value_loss = F.mse_loss(return_batch, values)
-            entropy_loss = th.mean(entropy)
-            loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
-            # loss = policy_loss
-            # TODO: check kl div
-            # self.approxkl = .5 * tf.reduce_mean(tf.square(neglogpac - self.old_neglog_pac_ph))
-            # approx_kl_div = th.mean(old_log_prob - log_prob)
-            # Optimization step
-            self.policy.optimizer.zero_grad()
-            loss.backward()
-            # TODO: clip grad norm?
-            # nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
-            self.policy.optimizer.step()
+                ratio = th.exp(log_prob - old_log_prob)
+                policy_loss_1 = advantage * ratio
+                policy_loss_2 = advantage * th.clamp(ratio, 1 - self.clip_range, 1 + self.clip_range)
+                policy_loss = -th.min(policy_loss_1, policy_loss_2).mean()
+                # value_loss = th.mean((return_batch - value)**2)
+                value_loss = F.mse_loss(return_batch, values)
+                entropy_loss = th.mean(entropy)
+                loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
+                # loss = policy_loss
+                # TODO: check kl div
+                # self.approxkl = .5 * tf.reduce_mean(tf.square(neglogpac - self.old_neglog_pac_ph))
+                # approx_kl_div = th.mean(old_log_prob - log_prob)
+                # Optimization step
+                self.policy.optimizer.zero_grad()
+                loss.backward()
+                # TODO: clip grad norm?
+                # nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+                self.policy.optimizer.step()
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
               eval_freq=-1, n_eval_episodes=5, tb_log_name="PPO", reset_num_timesteps=True):

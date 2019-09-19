@@ -88,19 +88,19 @@ class PPO(BaseRLModel):
             # No grad ok?
             with th.no_grad():
                 action, value, log_prob = self.policy.forward(obs)
-            action = action[0].cpu().numpy()
+            action = action.flatten().cpu().numpy()
 
             # Rescale and perform action
-            obs, reward, done, _ = env.step(np.clip(action, -self.max_action, self.max_action))
+            new_obs, reward, done, _ = env.step(np.clip(action, -self.max_action, self.max_action))
 
             n_steps += 1
             rollout_buffer.add(obs, action, reward, float(done), value, log_prob)
 
+            obs = new_obs
             if done:
-                value = 0.0
                 obs = None
 
-            rollout_buffer.finish_path(last_value=value)
+        rollout_buffer.compute_returns_and_advantage(value, done=done)
 
         return obs
 
@@ -113,7 +113,6 @@ class PPO(BaseRLModel):
                 # Unpack
                 state, action, old_log_prob, advantage, return_batch = replay_data
 
-                # _, values, log_prob = self.policy.forward(state)
                 values, log_prob, entropy = self.policy.get_policy_stats(state, action)
 
                 # Normalize advantage
@@ -121,11 +120,12 @@ class PPO(BaseRLModel):
                 advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
 
                 ratio = th.exp(log_prob - old_log_prob)
+
                 policy_loss_1 = advantage * ratio
                 policy_loss_2 = advantage * th.clamp(ratio, 1 - self.clip_range, 1 + self.clip_range)
                 policy_loss = -th.min(policy_loss_1, policy_loss_2).mean()
                 # value_loss = th.mean((return_batch - value)**2)
-                value_loss = F.mse_loss(return_batch, values)
+                value_loss = F.mse_loss(return_batch, values.flatten())
                 entropy_loss = th.mean(entropy)
                 loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
                 # loss = policy_loss
@@ -138,7 +138,8 @@ class PPO(BaseRLModel):
                 # TODO: clip grad norm?
                 # nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                 self.policy.optimizer.step()
-        print(explained_variance(return_batch.numpy()[:, 0], values[:, 0].detach().cpu().numpy()))
+        # print(value_loss.item())
+        # print(explained_variance(return_batch.numpy(), values.flatten().detach().cpu().numpy()))
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
               eval_freq=-1, n_eval_episodes=5, tb_log_name="PPO", reset_num_timesteps=True):

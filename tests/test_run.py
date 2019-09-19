@@ -11,7 +11,6 @@ def test_pendulum():
     model.load("test_save")
     os.remove("test_save.pth")
 
-
 def test_cemrl():
     model = CEMRL('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[16]), pop_size=2, n_grad=1,
                  start_timesteps=100, verbose=1)

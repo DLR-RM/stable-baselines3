@@ -1,11 +1,8 @@
 import numpy as np
 import torch as th
 
-from torchy_baselines.common.utils import  discount_cumsum
 
 class BaseBuffer(object):
-    """docstring for BaseBuffer."""
-
     def __init__(self, buffer_size, state_dim, action_dim, device='cpu'):
         super(BaseBuffer, self).__init__()
         self.buffer_size = buffer_size
@@ -88,25 +85,23 @@ class RolloutBuffer(BaseBuffer):
         self.values = th.zeros(self.buffer_size, 1)
         self.log_probs = th.zeros(self.buffer_size, 1)
         self.advantages = th.zeros(self.buffer_size, 1)
-        self.path_start_idx = 0
 
-    def finish_path(self, last_value=0):
+    def compute_returns_and_advantage(self, last_value, done=False):
         """
-        From https://github.com/openai/spinningup/blob/master/spinup/algos/ppo/ppo.py
+        From PPO2
         """
-        # No use of dones?
-        path_slice = slice(self.path_start_idx, self.pos)
-        rewards = np.append(self.rewards[path_slice].detach().cpu().numpy(), last_value)
-        values = np.append(self.values[path_slice].detach().cpu().numpy(), last_value)
-
-        # the next two lines implement GAE-Lambda advantage calculation
-        deltas = rewards[:-1] + self.gamma * values[1:] - values[:-1]
-
-        self.advantages[path_slice, 0] = th.FloatTensor(discount_cumsum(deltas, self.gamma * self.lambda_).copy())
-        # the next line computes rewards-to-go, to be targets for the value function
-        self.returns[path_slice, 0] = th.FloatTensor(discount_cumsum(rewards, self.gamma)[:-1].copy())
-
-        self.path_start_idx = self.pos
+        last_gae_lam = 0
+        for step in reversed(range(self.buffer_size)):
+            if step == self.buffer_size - 1:
+                next_non_terminal = 1.0 - float(done)
+                next_value = last_value
+            else:
+                next_non_terminal = 1.0 - self.dones[step + 1]
+                next_value = self.values[step + 1]
+            delta = self.rewards[step] + self.gamma * next_value * next_non_terminal - self.values[step]
+            last_gae_lam = delta + self.gamma * self.lambda_ * next_non_terminal * last_gae_lam
+            self.advantages[step] = last_gae_lam
+        self.returns = self.advantages + self.values
 
     def add(self, state, action, reward, done, value, log_prob):
         self.values[self.pos] = th.FloatTensor([value])
@@ -119,14 +114,9 @@ class RolloutBuffer(BaseBuffer):
         if self.pos == self.buffer_size:
             self.full = True
 
-    def reset(self):
-        self.path_start_idx = 0
-        super(RolloutBuffer, self).reset()
-
     def get(self, batch_size):
         assert self.full
         indices = th.randperm(self.buffer_size)
-        minibatch_indices = []
         start_idx = 0
         while start_idx < self.buffer_size:
             yield self._get_samples(indices[start_idx:start_idx + batch_size])
@@ -135,6 +125,6 @@ class RolloutBuffer(BaseBuffer):
     def _get_samples(self, batch_inds):
         return (self.states[batch_inds].to(self.device),
                 self.actions[batch_inds].to(self.device),
-                self.log_probs[batch_inds].to(self.device),
-                self.advantages[batch_inds].to(self.device),
-                self.returns[batch_inds].to(self.device))
+                self.log_probs[batch_inds].flatten().to(self.device),
+                self.advantages[batch_inds].flatten().to(self.device),
+                self.returns[batch_inds].flatten().to(self.device))

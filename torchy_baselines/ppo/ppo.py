@@ -8,6 +8,7 @@ from torchy_baselines.common.base_class import BaseRLModel
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.ppo.policies import PPOPolicy
 from torchy_baselines.common.buffers import RolloutBuffer
+from torchy_baselines.common.utils import explained_variance
 
 
 class PPO(BaseRLModel):
@@ -137,6 +138,7 @@ class PPO(BaseRLModel):
                 # TODO: clip grad norm?
                 # nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                 self.policy.optimizer.step()
+        print(explained_variance(return_batch.numpy()[:, 0], values[:, 0].detach().cpu().numpy()))
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
               eval_freq=-1, n_eval_episodes=5, tb_log_name="PPO", reset_num_timesteps=True):

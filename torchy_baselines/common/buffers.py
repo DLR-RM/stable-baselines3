@@ -125,6 +125,7 @@ class RolloutBuffer(BaseBuffer):
     def _get_samples(self, batch_inds):
         return (self.states[batch_inds].to(self.device),
                 self.actions[batch_inds].to(self.device),
+                self.values[batch_inds].flatten().to(self.device),
                 self.log_probs[batch_inds].flatten().to(self.device),
                 self.advantages[batch_inds].flatten().to(self.device),
                 self.returns[batch_inds].flatten().to(self.device))

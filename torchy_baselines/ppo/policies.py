@@ -8,7 +8,7 @@ from torchy_baselines.common.policies import BasePolicy, register_policy, create
 class PPOPolicy(BasePolicy):
     def __init__(self, observation_space, action_space,
                  learning_rate=1e-3, net_arch=None, device='cpu',
-                 activation_fn=nn.Tanh):
+                 activation_fn=nn.Tanh, adam_epsilon=1e-5):
         super(PPOPolicy, self).__init__(observation_space, action_space, device)
         self.state_dim = self.observation_space.shape[0]
         self.action_dim = self.action_space.shape[0]
@@ -16,6 +16,7 @@ class PPOPolicy(BasePolicy):
             net_arch = [64, 64]
         self.net_arch = net_arch
         self.activation_fn = activation_fn
+        self.adam_epsilon = adam_epsilon
         self.net_args = {
             'input_dim': self.state_dim,
             'output_dim': -1,
@@ -41,7 +42,7 @@ class PPOPolicy(BasePolicy):
         for module in [self.shared_net, self.actor_net, self.value_net]:
             module.apply(self.init_weights)
 
-        self.optimizer = th.optim.Adam(self.parameters(), lr=learning_rate)
+        self.optimizer = th.optim.Adam(self.parameters(), lr=learning_rate, eps=self.adam_epsilon)
 
     def forward(self, state, deterministic=False):
         state = th.FloatTensor(state).to(self.device)

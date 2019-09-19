@@ -110,7 +110,7 @@ class BaseRLModel(object):
 
     @abstractmethod
     def learn(self, total_timesteps, callback=None, log_interval=100, tb_log_name="run",
-              reset_num_timesteps=True):
+              eval_env=None, eval_freq=-1, n_eval_episodes=5, reset_num_timesteps=True):
         """
         Return a trained model.
 

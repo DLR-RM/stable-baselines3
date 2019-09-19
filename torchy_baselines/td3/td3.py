@@ -147,7 +147,7 @@ class TD3(BaseRLModel):
                 self.train_actor(replay_data=replay_data)
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
-              eval_freq=-1, n_eval_episodes=5, tb_log_name="TD3", reset_num_timesteps=True):
+              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="TD3", reset_num_timesteps=True):
 
         timesteps_since_eval = 0
         episode_num = 0
@@ -178,9 +178,9 @@ class TD3(BaseRLModel):
                 self.train(episode_timesteps, batch_size=self.batch_size, policy_freq=self.policy_freq)
 
             # Evaluate episode
-            if 0 < eval_freq <= timesteps_since_eval:
+            if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
                 timesteps_since_eval %= eval_freq
-                mean_reward, _ = evaluate_policy(self, self.env, n_eval_episodes)
+                mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
                 evaluations.append(mean_reward)
                 if self.verbose > 0:
                     print("Eval num_timesteps={}, mean_reward={:.2f}".format(self.num_timesteps, evaluations[-1]))

@@ -52,7 +52,7 @@ class CEMRL(TD3):
                       elitism=self.elitism)
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
-              eval_freq=-1, n_eval_episodes=5, tb_log_name="CEMRL", reset_num_timesteps=True):
+              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="CEMRL", reset_num_timesteps=True):
 
         timesteps_since_eval, actor_steps = 0, 0
         episode_num = 0
@@ -110,13 +110,13 @@ class CEMRL(TD3):
                     # Get the params back in the population
                     self.es_params[i] = self.actor.parameters_to_vector()
 
-            # Evaluate episode
-            if 0 < eval_freq <= timesteps_since_eval:
+            # Evaluate agent
+            if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
                 timesteps_since_eval %= eval_freq
 
                 self.actor.load_from_vector(self.es.mu)
 
-                mean_reward, _ = evaluate_policy(self, self.env, n_eval_episodes)
+                mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
                 evaluations.append(mean_reward)
 
                 if self.verbose > 0:

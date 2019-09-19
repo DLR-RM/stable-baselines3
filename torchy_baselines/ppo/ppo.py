@@ -24,7 +24,8 @@ class PPO(BaseRLModel):
                  learning_rate=3e-4, seed=0, device='auto',
                  n_optim=5, batch_size=64, n_steps=256,
                  gamma=0.99, lambda_=0.95, clip_range=0.2,
-                 ent_coef=0.01, vf_coef=0.5,
+                 ent_coef=0.01, vf_coef=0.5, max_grad_norm=0.5,
+                 target_kl=None, clip_range_vf=None,
                  _init_setup_model=True):
 
         super(PPO, self).__init__(policy, env, PPOPolicy, policy_kwargs, verbose, device)
@@ -40,7 +41,10 @@ class PPO(BaseRLModel):
         self.clip_range = clip_range
         self.ent_coef = ent_coef
         self.vf_coef = vf_coef
+        self.max_grad_norm = max_grad_norm
         self.rollout_buffer = None
+        self.target_kl = target_kl
+        self.clip_range_vf = clip_range_vf
 
         if _init_setup_model:
             self._setup_model()
@@ -91,6 +95,7 @@ class PPO(BaseRLModel):
             action = action.flatten().cpu().numpy()
 
             # Rescale and perform action
+            # TODO: clip only when using Box action space
             new_obs, reward, done, _ = env.step(np.clip(action, -self.max_action, self.max_action))
 
             n_steps += 1
@@ -108,41 +113,61 @@ class PPO(BaseRLModel):
 
         # TODO: replace with iterator?
         for it in range(n_iterations):
+            approx_kl_divs = []
             # Sample replay buffer
             for replay_data in self.rollout_buffer.get(batch_size):
                 # Unpack
-                state, action, old_log_prob, advantage, return_batch = replay_data
+                state, action, old_values, old_log_prob, advantage, return_batch = replay_data
 
                 values, log_prob, entropy = self.policy.get_policy_stats(state, action)
+                values = values.flatten()
 
                 # Normalize advantage
-                # advs = returns - values
                 advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
 
+                # ratio between old and new policy, should be one at the first iteration
                 ratio = th.exp(log_prob - old_log_prob)
 
+                # clipped surrogate loss
                 policy_loss_1 = advantage * ratio
                 policy_loss_2 = advantage * th.clamp(ratio, 1 - self.clip_range, 1 + self.clip_range)
                 policy_loss = -th.min(policy_loss_1, policy_loss_2).mean()
-                # value_loss = th.mean((return_batch - value)**2)
-                value_loss = F.mse_loss(return_batch, values.flatten())
+
+                if self.clip_range_vf is None:
+                    # No clipping
+                    values_pred = values
+                else:
+                    # Clip the different between old and new value
+                    # NOTE: this depends on the reward scaling
+                    values_pred = old_values + th.clamp(values - old_values, -self.clip_range_vf, self.clip_range_vf)
+
+                # Value loss using the TD(lambda_) target
+                value_loss = F.mse_loss(return_batch, values_pred)
+
+
+                # Entropy loss favor exploration
                 entropy_loss = th.mean(entropy)
+
                 loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
-                # loss = policy_loss
-                # TODO: check kl div
-                # self.approxkl = .5 * tf.reduce_mean(tf.square(neglogpac - self.old_neglog_pac_ph))
-                # approx_kl_div = th.mean(old_log_prob - log_prob)
+
                 # Optimization step
                 self.policy.optimizer.zero_grad()
                 loss.backward()
-                # TODO: clip grad norm?
-                # nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+                # Clip grad norm
+                th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                 self.policy.optimizer.step()
-        # print(value_loss.item())
-        # print(explained_variance(return_batch.numpy(), values.flatten().detach().cpu().numpy()))
+
+                approx_kl_divs.append(th.mean(old_log_prob - log_prob).detach().cpu().numpy())
+
+            if self.target_kl is not None and np.mean(approx_kl_divs) > 1.5 * self.target_kl:
+                print("Early stopping at step {} due to reaching max kl: {:.2f}".format(it, np.mean(approx_kl_divs)))
+                break
+
+        # print(explained_variance(self.rollout_buffer.returns.flatten().cpu().numpy(),
+        #                          self.rollout_buffer.values.flatten().cpu().numpy()))
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
-              eval_freq=-1, n_eval_episodes=5, tb_log_name="PPO", reset_num_timesteps=True):
+              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="PPO", reset_num_timesteps=True):
 
         timesteps_since_eval = 0
         episode_num = 0
@@ -157,19 +182,18 @@ class PPO(BaseRLModel):
                 if callback(locals(), globals()) is False:
                     break
 
-            # TODO: avoid reset using obs=obs and test env
             obs = self.collect_rollouts(self.env, self.rollout_buffer, n_rollout_steps=self.n_steps,
-                                        obs=None)
+                                        obs=obs)
             episode_num += 1
             self.num_timesteps += self.n_steps
             timesteps_since_eval += self.n_steps
 
             self.train(self.n_optim, batch_size=self.batch_size)
 
-            # Evaluate episode
-            if 0 < eval_freq <= timesteps_since_eval:
+            # Evaluate agent
+            if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
                 timesteps_since_eval %= eval_freq
-                mean_reward, _ = evaluate_policy(self, self.env, n_eval_episodes)
+                mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
                 evaluations.append(mean_reward)
                 if self.verbose > 0:
                     print("Eval num_timesteps={}, mean_reward={:.2f}".format(self.num_timesteps, evaluations[-1]))

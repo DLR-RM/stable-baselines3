@@ -27,12 +27,6 @@ class Critic(BaseNetwork):
         if net_arch is None:
             net_arch = [400, 300]
 
-        # TODO: solve  pytorch parameter registration
-        # for _ in range(n_critics):
-        #     q_net = create_mlp(state_dim + action_dim, 1, net_arch, activation_fn)
-        #     self.q_net = nn.Sequential(*q_net)
-        #     self.q_networks.append(self.q_net)
-
         q1_net = create_mlp(state_dim + action_dim, 1, net_arch, activation_fn)
         self.q1_net = nn.Sequential(*q1_net)
 

@@ -20,10 +20,11 @@ class TD3(BaseRLModel):
     def __init__(self, policy, env, policy_kwargs=None, verbose=0,
                  buffer_size=int(1e6), learning_rate=1e-3, seed=0, device='auto',
                  action_noise_std=0.1, start_timesteps=100, policy_freq=2,
-                 batch_size=100,
+                 batch_size=100, create_eval_env=False,
                 _init_setup_model=True):
 
-        super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device)
+        super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device,
+                                  create_eval_env=create_eval_env)
 
         self.max_action = np.abs(self.action_space.high)
         self.action_noise_std = action_noise_std
@@ -43,6 +44,7 @@ class TD3(BaseRLModel):
         self.replay_buffer = ReplayBuffer(self.buffer_size, state_dim, action_dim, self.device)
         self.policy = self.policy(self.observation_space, self.action_space,
                                   self.learning_rate, device=self.device, **self.policy_kwargs)
+        self.policy = self.policy.to(self.device)
         self._create_aliases()
 
     def _create_aliases(self):
@@ -56,7 +58,7 @@ class TD3(BaseRLModel):
         observation = np.array(observation)
         with th.no_grad():
             observation = th.FloatTensor(observation.reshape(1, -1)).to(self.device)
-            return self.actor(observation).cpu().data.numpy().flatten()
+            return self.actor(observation).cpu().data.numpy()
 
     def predict(self, observation, state=None, mask=None, deterministic=True):
         """
@@ -153,6 +155,7 @@ class TD3(BaseRLModel):
         episode_num = 0
         evaluations = []
         start_time = time.time()
+        eval_env = self._get_eval_env(eval_env)
 
         while self.num_timesteps < total_timesteps:
 

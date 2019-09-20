@@ -54,7 +54,7 @@ class PPOPolicy(BasePolicy):
 
     def _get_action_dist_from_latent(self, latent, deterministic=False):
         mean_actions = self.actor_net(latent)
-        action_std = th.ones(mean_actions.size()) * self.log_std.exp()
+        action_std = th.ones_like(mean_actions) * self.log_std.exp()
         action_distribution = Normal(mean_actions, action_std)
         # Sample from the gaussian
         if deterministic:
@@ -73,13 +73,11 @@ class PPOPolicy(BasePolicy):
         return log_prob
 
     def actor_forward(self, state, deterministic=False):
-        state = th.FloatTensor(state).to(self.device)
         latent = self.shared_net(state)
         action, _ = self._get_action_dist_from_latent(latent, deterministic=deterministic)
         return action.detach().cpu().numpy()
 
     def get_policy_stats(self, state, action):
-        state = th.FloatTensor(state).to(self.device)
         latent = self.shared_net(state)
         _, action_distribution = self._get_action_dist_from_latent(latent)
         log_prob = self._get_log_prob(action_distribution, action)

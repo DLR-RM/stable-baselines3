@@ -10,7 +10,6 @@ from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.ppo.policies import PPOPolicy
 from torchy_baselines.common.buffers import RolloutBuffer
 from torchy_baselines.common.utils import explained_variance
-from torchy_baselines.common.vec_env import VecEnv, DummyVecEnv
 
 
 class PPO(BaseRLModel):
@@ -27,11 +26,11 @@ class PPO(BaseRLModel):
                  n_optim=5, batch_size=64, n_steps=256,
                  gamma=0.99, lambda_=0.95, clip_range=0.2,
                  ent_coef=0.01, vf_coef=0.5, max_grad_norm=0.5,
-                 target_kl=None, clip_range_vf=None,
+                 target_kl=None, clip_range_vf=None, create_eval_env=False,
                  _init_setup_model=True):
 
         super(PPO, self).__init__(policy, env, PPOPolicy, policy_kwargs,
-                                  verbose, device, support_multi_env=True)
+                                  verbose, device, create_eval_env=create_eval_env, support_multi_env=True)
 
         self.learning_rate = learning_rate
         self._seed = seed
@@ -53,12 +52,15 @@ class PPO(BaseRLModel):
 
     def _setup_model(self):
         state_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
-        self.seed(self._seed)
+        # TODO: different seed for each env when n_envs > 1
+        if self.n_envs == 1:
+            self.seed(self._seed)
 
         self.rollout_buffer = RolloutBuffer(self.n_steps, state_dim, action_dim, self.device,
                                             gamma=self.gamma, lambda_=self.lambda_, n_envs=self.n_envs)
         self.policy = self.policy(self.observation_space, self.action_space,
                                   self.learning_rate, device=self.device, **self.policy_kwargs)
+        self.policy = self.policy.to(self.device)
 
     def select_action(self, observation):
         # Normally not needed
@@ -99,7 +101,6 @@ class PPO(BaseRLModel):
 
             n_steps += 1
             rollout_buffer.add(obs, actions, rewards, dones, values, log_probs)
-
             obs = new_obs
 
         rollout_buffer.compute_returns_and_advantage(values, dones=dones)
@@ -123,7 +124,6 @@ class PPO(BaseRLModel):
 
                 # ratio between old and new policy, should be one at the first iteration
                 ratio = th.exp(log_prob - old_log_prob)
-
                 # clipped surrogate loss
                 policy_loss_1 = advantage * ratio
                 policy_loss_2 = advantage * th.clamp(ratio, 1 - self.clip_range, 1 + self.clip_range)
@@ -136,7 +136,6 @@ class PPO(BaseRLModel):
                     # Clip the different between old and new value
                     # NOTE: this depends on the reward scaling
                     values_pred = old_values + th.clamp(values - old_values, -self.clip_range_vf, self.clip_range_vf)
-
                 # Value loss using the TD(lambda_) target
                 value_loss = F.mse_loss(return_batch, values_pred)
 
@@ -152,7 +151,6 @@ class PPO(BaseRLModel):
                 # Clip grad norm
                 th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                 self.policy.optimizer.step()
-
                 approx_kl_divs.append(th.mean(old_log_prob - log_prob).detach().cpu().numpy())
 
             if self.target_kl is not None and np.mean(approx_kl_divs) > 1.5 * self.target_kl:
@@ -170,11 +168,7 @@ class PPO(BaseRLModel):
         evaluations = []
         start_time = time.time()
         obs = self.env.reset()
-
-        if eval_env is not None and not isinstance(eval_env, VecEnv):
-            eval_env = DummyVecEnv([lambda: eval_env])
-
-        assert eval_env.num_envs == 1
+        eval_env = self._get_eval_env(eval_env)
 
         while self.num_timesteps < total_timesteps:
 

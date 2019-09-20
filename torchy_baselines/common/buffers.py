@@ -67,11 +67,12 @@ class ReplayBuffer(BaseBuffer):
         self.dones = th.zeros(self.buffer_size, self.n_envs)
 
     def add(self, state, next_state, action, reward, done):
-        self.states[self.pos] = th.FloatTensor(state)
-        self.next_states[self.pos] = th.FloatTensor(next_state)
-        self.actions[self.pos] = th.FloatTensor(action)
-        self.rewards[self.pos] = th.FloatTensor(reward)
-        self.dones[self.pos] = th.FloatTensor(done)
+        # Copy to avoid modification by reference
+        self.states[self.pos] = th.FloatTensor(np.array(state))
+        self.next_states[self.pos] = th.FloatTensor(np.array(next_state))
+        self.actions[self.pos] = th.FloatTensor(np.array(action))
+        self.rewards[self.pos] = th.FloatTensor(np.array(reward))
+        self.dones[self.pos] = th.FloatTensor(np.array(done))
 
         self.pos += 1
         if self.pos == self.buffer_size:
@@ -90,7 +91,7 @@ class RolloutBuffer(BaseBuffer):
     def __init__(self, buffer_size, state_dim, action_dim, device='cpu',
                 lambda_=1, gamma=0.99, n_envs=1):
         super(RolloutBuffer, self).__init__(buffer_size, state_dim, action_dim, device, n_envs=n_envs)
-
+        # TODO: try the buffer on the gpu?
         self.lambda_ = lambda_
         self.gamma = gamma
         self.states, self.actions, self.rewards, self.advantages = None, None, None, None
@@ -118,7 +119,7 @@ class RolloutBuffer(BaseBuffer):
         for step in reversed(range(self.buffer_size)):
             if step == self.buffer_size - 1:
                 next_non_terminal = th.FloatTensor(1.0 - dones)
-                next_value = last_value.flatten()
+                next_value = last_value.clone().cpu().flatten()
             else:
                 next_non_terminal = 1.0 - self.dones[step + 1]
                 next_value = self.values[step + 1]
@@ -128,12 +129,12 @@ class RolloutBuffer(BaseBuffer):
         self.returns = self.advantages + self.values
 
     def add(self, state, action, reward, done, value, log_prob):
-        self.values[self.pos] = th.FloatTensor(value.flatten())
-        self.log_probs[self.pos] = th.FloatTensor(log_prob)
-        self.states[self.pos] = th.FloatTensor(state)
-        self.actions[self.pos] = th.FloatTensor(action)
-        self.rewards[self.pos] = th.FloatTensor(reward)
-        self.dones[self.pos] = th.FloatTensor(done)
+        self.values[self.pos] = th.FloatTensor(value.clone().cpu().flatten())
+        self.log_probs[self.pos] = th.FloatTensor(log_prob.cpu().clone())
+        self.states[self.pos] = th.FloatTensor(np.array(state))
+        self.actions[self.pos] = th.FloatTensor(np.array(action))
+        self.rewards[self.pos] = th.FloatTensor(np.array(reward))
+        self.dones[self.pos] = th.FloatTensor(np.array(done))
         self.pos += 1
         if self.pos == self.buffer_size:
             self.full = True

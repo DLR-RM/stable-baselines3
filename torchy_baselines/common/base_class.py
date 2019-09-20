@@ -26,7 +26,7 @@ class BaseRLModel(object):
     __metaclass__ = ABCMeta
 
     def __init__(self, policy, env, policy_base, policy_kwargs=None,
-                 verbose=0, device='auto', support_multi_env=False):
+                 verbose=0, device='auto', support_multi_env=False, create_eval_env=False):
         if isinstance(policy, str) and policy_base is not None:
             self.policy = get_policy_from_name(policy_base, policy)
         else:
@@ -47,10 +47,13 @@ class BaseRLModel(object):
         self.n_envs = None
         self.num_timesteps = 0
         self.params = None
+        self.eval_env = None
         self.replay_buffer = None
 
         if env is not None:
             if isinstance(env, str):
+                if create_eval_env:
+                    self.eval_env = DummyVecEnv([lambda: gym.make(env)])
                 if self.verbose >= 1:
                     print("Creating environment from the given name, wrapped in a DummyVecEnv.")
                 env = DummyVecEnv([lambda: gym.make(env)])
@@ -68,14 +71,15 @@ class BaseRLModel(object):
                 raise ValueError("Error: the model does not support multiple envs requires a single vectorized"
                                  " environment.")
 
-        # if env is not None:
-        #     if env is not None:
-        #         if isinstance(env, str):
-        #             env = gym.make(env)
-        #     self.env = env
-        #     self.n_envs = 1
-        #     self.observation_space = env.observation_space
-        #     self.action_space = env.action_space
+    def _get_eval_env(self, eval_env):
+        if eval_env is None:
+            eval_env = self.eval_env
+
+        if eval_env is not None:
+            if not isinstance(eval_env, VecEnv):
+                eval_env = DummyVecEnv([lambda: eval_env])
+            assert eval_env.num_envs == 1
+        return eval_env
 
     def get_env(self):
         """
@@ -216,6 +220,9 @@ class BaseRLModel(object):
         episode_rewards = []
         total_timesteps = []
 
+        assert isinstance(env, VecEnv)
+        assert env.num_envs == 1
+
         for _ in range(n_episodes):
             done = False
             # Reset environment
@@ -224,7 +231,7 @@ class BaseRLModel(object):
             while not done:
                 # Select action randomly or according to policy
                 if num_timesteps < start_timesteps:
-                    action = env.action_space.sample()
+                    action = [env.action_space.sample()]
                 else:
                     action = self.predict(obs, deterministic=deterministic) / self.max_action
 
@@ -236,11 +243,12 @@ class BaseRLModel(object):
                 # Rescale and perform action
                 new_obs, reward, done, _ = env.step(self.max_action * action)
 
-                if hasattr(self.env, '_max_episode_steps') and remove_timelimits:
-                    done_bool = 0 if episode_timesteps + 1 == env._max_episode_steps else float(done)
-                else:
-                    done_bool = float(done)
-
+                # TODO: fix for VecEnv
+                # if hasattr(self.env, '_max_episode_steps') and remove_timelimits:
+                #     done_bool = 0 if episode_timesteps + 1 == env._max_episode_steps else float(done)
+                # else:
+                #     done_bool = float(done)
+                done_bool = [float(done[0])]
                 episode_reward += reward
 
                 # Store data in replay buffer

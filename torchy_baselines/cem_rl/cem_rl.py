@@ -21,12 +21,14 @@ class CEMRL(TD3):
                  elitism=False, n_grad=5, policy_freq=2, batch_size=100,
                  buffer_size=int(1e6), learning_rate=1e-3, seed=0, device='auto',
                  action_noise_std=0.0, start_timesteps=100, update_style='original',
+                 create_eval_env=False,
                  _init_setup_model=True):
 
         super(CEMRL, self).__init__(policy, env, policy_kwargs, verbose,
                                     buffer_size, learning_rate, seed, device,
                                     action_noise_std, start_timesteps,
                                     policy_freq=policy_freq, batch_size=batch_size,
+                                    create_eval_env=create_eval_env,
                                     _init_setup_model=False)
 
         self.es = None
@@ -58,6 +60,7 @@ class CEMRL(TD3):
         episode_num = 0
         evaluations = []
         start_time = time.time()
+        eval_env = self._get_eval_env(eval_env)
 
         while self.num_timesteps < total_timesteps:
 

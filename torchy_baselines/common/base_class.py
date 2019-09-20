@@ -7,6 +7,7 @@ import numpy as np
 
 from torchy_baselines.common.policies import get_policy_from_name
 from torchy_baselines.common.utils import set_random_seed
+from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv
 
 
 class BaseRLModel(object):
@@ -24,7 +25,8 @@ class BaseRLModel(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, policy, env, policy_base, policy_kwargs=None, verbose=0, device='auto'):
+    def __init__(self, policy, env, policy_base, policy_kwargs=None,
+                 verbose=0, device='auto', support_multi_env=False):
         if isinstance(policy, str) and policy_base is not None:
             self.policy = get_policy_from_name(policy_base, policy)
         else:
@@ -48,13 +50,32 @@ class BaseRLModel(object):
         self.replay_buffer = None
 
         if env is not None:
-            if env is not None:
-                if isinstance(env, str):
-                    env = gym.make(env)
-            self.env = env
-            self.n_envs = 1
+            if isinstance(env, str):
+                if self.verbose >= 1:
+                    print("Creating environment from the given name, wrapped in a DummyVecEnv.")
+                env = DummyVecEnv([lambda: gym.make(env)])
+
             self.observation_space = env.observation_space
             self.action_space = env.action_space
+            if not isinstance(env, VecEnv):
+                if self.verbose >= 1:
+                    print("Wrapping the env in a DummyVecEnv.")
+                env = DummyVecEnv([lambda: env])
+            self.n_envs = env.num_envs
+            self.env = env
+
+            if not support_multi_env and self.n_envs > 1:
+                raise ValueError("Error: the model does not support multiple envs requires a single vectorized"
+                                 " environment.")
+
+        # if env is not None:
+        #     if env is not None:
+        #         if isinstance(env, str):
+        #             env = gym.make(env)
+        #     self.env = env
+        #     self.n_envs = 1
+        #     self.observation_space = env.observation_space
+        #     self.action_space = env.action_space
 
     def get_env(self):
         """

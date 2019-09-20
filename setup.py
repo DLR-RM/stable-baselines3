@@ -9,7 +9,8 @@ setup(name='torchy_baselines',
       install_requires=[
           'gym[classic_control]>=0.10.9',
           'numpy',
-          'torch>=1.2.0'
+          'torch>=1.2.0',
+          'cloudpickle'
       ],
       extras_require={
         'tests': [
@@ -33,7 +34,7 @@ setup(name='torchy_baselines',
       license="MIT",
       long_description="",
       long_description_content_type='text/markdown',
-      version="0.0.2",
+      version="0.0.3",
       )
 
 # python setup.py sdist

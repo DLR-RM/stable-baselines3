@@ -1,5 +1,6 @@
 import time
 
+import gym
 import torch as th
 import torch.nn.functional as F
 import numpy as np
@@ -9,6 +10,7 @@ from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.ppo.policies import PPOPolicy
 from torchy_baselines.common.buffers import RolloutBuffer
 from torchy_baselines.common.utils import explained_variance
+from torchy_baselines.common.vec_env import VecEnv, DummyVecEnv
 
 
 class PPO(BaseRLModel):
@@ -28,9 +30,9 @@ class PPO(BaseRLModel):
                  target_kl=None, clip_range_vf=None,
                  _init_setup_model=True):
 
-        super(PPO, self).__init__(policy, env, PPOPolicy, policy_kwargs, verbose, device)
+        super(PPO, self).__init__(policy, env, PPOPolicy, policy_kwargs,
+                                  verbose, device, support_multi_env=True)
 
-        self.max_action = np.abs(self.action_space.high)
         self.learning_rate = learning_rate
         self._seed = seed
         self.batch_size = batch_size
@@ -54,7 +56,7 @@ class PPO(BaseRLModel):
         self.seed(self._seed)
 
         self.rollout_buffer = RolloutBuffer(self.n_steps, state_dim, action_dim, self.device,
-                                            gamma=self.gamma, lambda_=self.lambda_)
+                                            gamma=self.gamma, lambda_=self.lambda_, n_envs=self.n_envs)
         self.policy = self.policy(self.observation_space, self.action_space,
                                   self.learning_rate, device=self.device, **self.policy_kwargs)
 
@@ -63,7 +65,7 @@ class PPO(BaseRLModel):
         observation = np.array(observation)
         with th.no_grad():
             observation = th.FloatTensor(observation.reshape(1, -1)).to(self.device)
-            return self.policy.actor_forward(observation, deterministic=False).flatten()
+            return self.policy.actor_forward(observation, deterministic=False)
 
     def predict(self, observation, state=None, mask=None, deterministic=True):
         """
@@ -75,37 +77,32 @@ class PPO(BaseRLModel):
         :param deterministic: (bool) Whether or not to return deterministic actions.
         :return: (np.ndarray, np.ndarray) the model's action and the next state (used in recurrent policies)
         """
-        return np.clip(self.select_action(observation), -self.max_action, self.max_action)
+        return np.clip(self.select_action(observation), self.action_space.low, self.action_space.high)
 
     def collect_rollouts(self, env, rollout_buffer, n_rollout_steps=256, callback=None,
                          obs=None):
 
         n_steps = 0
-        done = obs is None
         rollout_buffer.reset()
 
         while n_steps < n_rollout_steps:
-            # Reset environment
-            if done:
-                obs = env.reset()
-
-            # No grad ok?
             with th.no_grad():
-                action, value, log_prob = self.policy.forward(obs)
-            action = action.flatten().cpu().numpy()
+                actions, values, log_probs = self.policy.forward(obs)
+            actions = actions.cpu().numpy()
 
             # Rescale and perform action
-            # TODO: clip only when using Box action space
-            new_obs, reward, done, _ = env.step(np.clip(action, -self.max_action, self.max_action))
+            clipped_actions = actions
+            # Clip the actions to avoid out of bound error
+            if isinstance(self.action_space, gym.spaces.Box):
+                clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
+            new_obs, rewards, dones, _ = env.step(clipped_actions)
 
             n_steps += 1
-            rollout_buffer.add(obs, action, reward, float(done), value, log_prob)
+            rollout_buffer.add(obs, actions, rewards, dones, values, log_probs)
 
             obs = new_obs
-            if done:
-                obs = None
 
-        rollout_buffer.compute_returns_and_advantage(value, done=done)
+        rollout_buffer.compute_returns_and_advantage(values, dones=dones)
 
         return obs
 
@@ -121,7 +118,6 @@ class PPO(BaseRLModel):
 
                 values, log_prob, entropy = self.policy.get_policy_stats(state, action)
                 values = values.flatten()
-
                 # Normalize advantage
                 advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
 
@@ -173,7 +169,12 @@ class PPO(BaseRLModel):
         episode_num = 0
         evaluations = []
         start_time = time.time()
-        obs = None
+        obs = self.env.reset()
+
+        if eval_env is not None and not isinstance(eval_env, VecEnv):
+            eval_env = DummyVecEnv([lambda: eval_env])
+
+        assert eval_env.num_envs == 1
 
         while self.num_timesteps < total_timesteps:
 
@@ -185,8 +186,8 @@ class PPO(BaseRLModel):
             obs = self.collect_rollouts(self.env, self.rollout_buffer, n_rollout_steps=self.n_steps,
                                         obs=obs)
             episode_num += 1
-            self.num_timesteps += self.n_steps
-            timesteps_since_eval += self.n_steps
+            self.num_timesteps += self.n_steps * self.n_envs
+            timesteps_since_eval += self.n_steps * self.n_envs
 
             self.train(self.n_optim, batch_size=self.batch_size)
 

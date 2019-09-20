@@ -68,11 +68,11 @@ class ReplayBuffer(BaseBuffer):
 
     def add(self, state, next_state, action, reward, done):
         # Copy to avoid modification by reference
-        self.states[self.pos] = th.FloatTensor(np.array(state))
-        self.next_states[self.pos] = th.FloatTensor(np.array(next_state))
-        self.actions[self.pos] = th.FloatTensor(np.array(action))
-        self.rewards[self.pos] = th.FloatTensor(np.array(reward))
-        self.dones[self.pos] = th.FloatTensor(np.array(done))
+        self.states[self.pos] = th.FloatTensor(np.array(state).copy())
+        self.next_states[self.pos] = th.FloatTensor(np.array(next_state).copy())
+        self.actions[self.pos] = th.FloatTensor(np.array(action).copy())
+        self.rewards[self.pos] = th.FloatTensor(np.array(reward).copy())
+        self.dones[self.pos] = th.FloatTensor(np.array(done).copy())
 
         self.pos += 1
         if self.pos == self.buffer_size:
@@ -131,10 +131,10 @@ class RolloutBuffer(BaseBuffer):
     def add(self, state, action, reward, done, value, log_prob):
         self.values[self.pos] = th.FloatTensor(value.clone().cpu().flatten())
         self.log_probs[self.pos] = th.FloatTensor(log_prob.cpu().clone())
-        self.states[self.pos] = th.FloatTensor(np.array(state))
-        self.actions[self.pos] = th.FloatTensor(np.array(action))
-        self.rewards[self.pos] = th.FloatTensor(np.array(reward))
-        self.dones[self.pos] = th.FloatTensor(np.array(done))
+        self.states[self.pos] = th.FloatTensor(np.array(state).copy())
+        self.actions[self.pos] = th.FloatTensor(np.array(action).copy())
+        self.rewards[self.pos] = th.FloatTensor(np.array(reward).copy())
+        self.dones[self.pos] = th.FloatTensor(np.array(done).copy())
         self.pos += 1
         if self.pos == self.buffer_size:
             self.full = True

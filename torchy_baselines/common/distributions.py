@@ -1,6 +1,7 @@
 import torch as th
 from torch.distributions import Normal
 
+
 class Distribution(object):
     def __init__(self):
         super(Distribution, self).__init__()

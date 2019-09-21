@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
 
-
 import gym
 import torch as th
 import numpy as np
@@ -215,7 +214,6 @@ class BaseRLModel(object):
             self.env.seed(seed)
         if self.eval_env is not None:
             self.eval_env.seed(seed)
-
 
     def collect_rollouts(self, env, n_episodes=1, action_noise_std=0.0,
                          deterministic=False, callback=None, remove_timelimits=True,

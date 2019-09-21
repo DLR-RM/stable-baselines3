@@ -52,10 +52,12 @@ class BaseBuffer(object):
     def _get_samples(self, batch_inds):
         raise NotImplementedError()
 
+
 class ReplayBuffer(BaseBuffer):
     """
     Taken from https://github.com/apourchot/CEM-RL
     """
+
     def __init__(self, buffer_size, state_dim, action_dim, device='cpu', n_envs=1):
         super(ReplayBuffer, self).__init__(buffer_size, state_dim, action_dim, device, n_envs=n_envs)
 
@@ -89,7 +91,7 @@ class ReplayBuffer(BaseBuffer):
 
 class RolloutBuffer(BaseBuffer):
     def __init__(self, buffer_size, state_dim, action_dim, device='cpu',
-                lambda_=1, gamma=0.99, n_envs=1):
+                 lambda_=1, gamma=0.99, n_envs=1):
         super(RolloutBuffer, self).__init__(buffer_size, state_dim, action_dim, device, n_envs=n_envs)
         # TODO: try the buffer on the gpu?
         self.lambda_ = lambda_

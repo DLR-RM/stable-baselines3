@@ -1,12 +1,10 @@
 import time
 
 import torch as th
-import torch.nn.functional as F
-import numpy as np
 
-from torchy_baselines.td3.td3 import TD3
-from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.cem_rl.cem import CEM
+from torchy_baselines.common.evaluation import evaluate_policy
+from torchy_baselines.td3.td3 import TD3
 
 
 class CEMRL(TD3):
@@ -16,6 +14,7 @@ class CEMRL(TD3):
     Paper: https://arxiv.org/abs/1810.01222
     Code: https://github.com/apourchot/CEM-RL
     """
+
     def __init__(self, policy, env, policy_kwargs=None, verbose=0,
                  sigma_init=1e-3, pop_size=10, damp=1e-3, damp_limit=1e-5,
                  elitism=False, n_grad=5, policy_freq=2, batch_size=100,
@@ -100,7 +99,7 @@ class CEMRL(TD3):
                         else:
                             # scales with a bigger population
                             # but less training steps per agent
-                            n_training_steps == 2 * (actor_steps // self.n_grad)
+                            n_training_steps = 2 * (actor_steps // self.n_grad)
                         for it in range(n_training_steps):
                             # Sample replay buffer
                             replay_data = self.replay_buffer.sample(self.batch_size)
@@ -147,7 +146,6 @@ class CEMRL(TD3):
                 if self.verbose > 1:
                     print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
                         self.num_timesteps, episode_num, episode_timesteps, episode_reward))
-
 
             self.es.tell(self.es_params, self.fitnesses)
             timesteps_since_eval += actor_steps

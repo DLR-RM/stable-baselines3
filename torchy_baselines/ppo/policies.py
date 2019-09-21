@@ -44,7 +44,6 @@ class PPOPolicy(BasePolicy):
         self.log_std = nn.Parameter(th.zeros(self.action_dim))
         # Init weights: use orthogonal initialization
         for module in [self.shared_net, self.actor_net, self.value_net]:
-            gain = 0.01 if module == self.actor_net else 1.0
             # Values from stable-baselines check why
             gain = {
                 self.shared_net: np.sqrt(2),
@@ -97,6 +96,7 @@ class PPOPolicy(BasePolicy):
 
     def value_forward(self):
         pass
+
 
 MlpPolicy = PPOPolicy
 

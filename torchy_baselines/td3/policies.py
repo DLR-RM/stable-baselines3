@@ -79,6 +79,7 @@ class TD3Policy(BasePolicy):
     def make_critic(self):
         return Critic(**self.net_args).to(self.device)
 
+
 MlpPolicy = TD3Policy
 
 register_policy("MlpPolicy", MlpPolicy)

@@ -21,7 +21,7 @@ class TD3(BaseRLModel):
                  buffer_size=int(1e6), learning_rate=1e-3, seed=0, device='auto',
                  action_noise_std=0.1, start_timesteps=100, policy_freq=2,
                  batch_size=100, create_eval_env=False,
-                _init_setup_model=True):
+                 _init_setup_model=True):
 
         super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device,
                                   create_eval_env=create_eval_env)
@@ -135,8 +135,7 @@ class TD3(BaseRLModel):
             for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
                 target_param.data.copy_(tau_actor * param.data + (1 - tau_actor) * target_param.data)
 
-    def train(self, n_iterations, batch_size=100, discount=0.99,
-              tau=0.005, policy_noise=0.2, noise_clip=0.5, policy_freq=2):
+    def train(self, n_iterations, batch_size=100, policy_freq=2):
 
         for it in range(n_iterations):
 
@@ -177,7 +176,7 @@ class TD3(BaseRLModel):
             if self.num_timesteps > 0:
                 if self.verbose > 1:
                     print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
-                          self.num_timesteps, episode_num, episode_timesteps, episode_reward))
+                        self.num_timesteps, episode_num, episode_timesteps, episode_reward))
                 self.train(episode_timesteps, batch_size=self.batch_size, policy_freq=self.policy_freq)
 
             # Evaluate episode

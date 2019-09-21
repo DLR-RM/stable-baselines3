@@ -1,8 +1,7 @@
 import random
 
-import scipy.signal
-import torch as th
 import numpy as np
+import torch as th
 
 
 def set_random_seed(seed, using_cuda=False):

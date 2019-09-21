@@ -1,6 +1,9 @@
+from functools import partial
+
 import torch as th
 import torch.nn as nn
 from torch.distributions import Normal
+import numpy as np
 
 from torchy_baselines.common.policies import BasePolicy, register_policy, create_mlp
 
@@ -27,21 +30,29 @@ class PPOPolicy(BasePolicy):
         self._build(learning_rate)
 
     @staticmethod
-    def init_weights(module):
+    def init_weights(module, gain=1):
         if type(module) == nn.Linear:
-            nn.init.orthogonal_(module.weight, gain=1)
+            nn.init.orthogonal_(module.weight, gain=gain)
             module.bias.data.fill_(0.0)
 
     def _build(self, learning_rate):
+        # TODO: support non-shared network
         shared_net = create_mlp(self.state_dim, output_dim=-1, net_arch=self.net_arch, activation_fn=self.activation_fn)
         self.shared_net = nn.Sequential(*shared_net).to(self.device)
         self.actor_net = nn.Linear(self.net_arch[-1], self.action_dim)
         self.value_net = nn.Linear(self.net_arch[-1], 1)
         self.log_std = nn.Parameter(th.zeros(self.action_dim))
-        # Init weights:
+        # Init weights: use orthogonal initialization
         for module in [self.shared_net, self.actor_net, self.value_net]:
-            module.apply(self.init_weights)
-
+            gain = 0.01 if module == self.actor_net else 1.0
+            # Values from stable-baselines check why
+            gain = {
+                self.shared_net: np.sqrt(2),
+                self.actor_net: 0.01,
+                self.value_net: 1
+            }[module]
+            module.apply(partial(self.init_weights, gain=gain))
+        # TODO: support linear decay of the learning rate
         self.optimizer = th.optim.Adam(self.parameters(), lr=learning_rate, eps=self.adam_epsilon)
 
     def forward(self, state, deterministic=False):

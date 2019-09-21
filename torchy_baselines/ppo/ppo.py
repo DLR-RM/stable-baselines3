@@ -1,4 +1,5 @@
 import time
+from copy import deepcopy
 
 import gym
 import torch as th
@@ -7,9 +8,10 @@ import numpy as np
 
 from torchy_baselines.common.base_class import BaseRLModel
 from torchy_baselines.common.evaluation import evaluate_policy
-from torchy_baselines.ppo.policies import PPOPolicy
 from torchy_baselines.common.buffers import RolloutBuffer
 from torchy_baselines.common.utils import explained_variance
+from torchy_baselines.common.vec_env import VecNormalize
+from torchy_baselines.ppo.policies import PPOPolicy
 
 
 class PPO(BaseRLModel):
@@ -188,6 +190,9 @@ class PPO(BaseRLModel):
             # Evaluate agent
             if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
                 timesteps_since_eval %= eval_freq
+                # Sync eval env and train env when using VecNormalize
+                if isinstance(self.env, VecNormalize):
+                    eval_env.obs_rms = deepcopy(self.env.obs_rms)
                 mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
                 evaluations.append(mean_reward)
                 if self.verbose > 0:

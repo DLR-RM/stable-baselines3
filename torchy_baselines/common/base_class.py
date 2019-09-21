@@ -210,8 +210,12 @@ class BaseRLModel(object):
 
     def seed(self, seed=0):
         set_random_seed(seed, using_cuda=self.device == th.device('cuda'))
+        self.action_space.seed(seed)
         if self.env is not None:
             self.env.seed(seed)
+        if self.eval_env is not None:
+            self.eval_env.seed(seed)
+
 
     def collect_rollouts(self, env, n_episodes=1, action_noise_std=0.0,
                          deterministic=False, callback=None, remove_timelimits=True,
@@ -219,7 +223,6 @@ class BaseRLModel(object):
 
         episode_rewards = []
         total_timesteps = []
-
         assert isinstance(env, VecEnv)
         assert env.num_envs == 1
 
@@ -231,7 +234,7 @@ class BaseRLModel(object):
             while not done:
                 # Select action randomly or according to policy
                 if num_timesteps < start_timesteps:
-                    action = [env.action_space.sample()]
+                    action = [self.action_space.sample()]
                 else:
                     action = self.predict(obs, deterministic=deterministic) / self.max_action
 

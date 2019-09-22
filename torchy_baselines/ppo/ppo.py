@@ -126,7 +126,6 @@ class PPO(BaseRLModel):
             for replay_data in self.rollout_buffer.get(batch_size):
                 # Unpack
                 state, action, old_values, old_log_prob, advantage, return_batch = replay_data
-
                 values, log_prob, entropy = self.policy.get_policy_stats(state, action)
                 values = values.flatten()
                 # Normalize advantage

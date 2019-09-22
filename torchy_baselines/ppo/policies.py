@@ -29,8 +29,8 @@ class PPOPolicy(BasePolicy):
         self.shared_net = None
         self.pi_net, self.vf_net = None, None
         # Action distribution
-        # self.action_dist = DiagGaussianDistribution(self.action_dim)
-        self.action_dist = SquashedDiagGaussianDistribution(self.action_dim)
+        self.action_dist = DiagGaussianDistribution(self.action_dim)
+        # self.action_dist = SquashedDiagGaussianDistribution(self.action_dim)
         self._build(learning_rate)
 
     @staticmethod

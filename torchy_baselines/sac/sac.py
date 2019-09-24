@@ -52,7 +52,7 @@ class SAC(BaseRLModel):
             self._setup_model()
 
     def _setup_model(self):
-        state_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
+        obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
         self.seed(self._seed)
 
         # Target entropy is used when learning the entropy coefficient
@@ -88,7 +88,7 @@ class SAC(BaseRLModel):
             # is passed
             self.ent_coef = float(self.ent_coef)
 
-        self.replay_buffer = ReplayBuffer(self.buffer_size, state_dim, action_dim, self.device)
+        self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
         self.policy = self.policy(self.observation_space, self.action_space,
                                   self.learning_rate, device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
@@ -125,10 +125,10 @@ class SAC(BaseRLModel):
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size)
 
-            state, action_batch, next_state, done, reward = replay_data
+            obs, action_batch, next_obs, done, reward = replay_data
 
             # Action by the current actor for the sampled state
-            action_pi, log_prob = self.actor.action_log_prob(state)
+            action_pi, log_prob = self.actor.action_log_prob(obs)
             log_prob = log_prob.reshape(-1, 1)
 
             ent_coef_loss = None
@@ -143,10 +143,10 @@ class SAC(BaseRLModel):
                 self.ent_coef_optimizer.step()
 
             # Select action according to policy
-            next_action, next_log_prob = self.actor.action_log_prob(next_state)
+            next_action, next_log_prob = self.actor.action_log_prob(next_obs)
 
             # Compute the target Q value
-            target_q1, target_q2 = self.critic_target(next_state, next_action)
+            target_q1, target_q2 = self.critic_target(next_obs, next_action)
             target_q = th.min(target_q1, target_q2)
             target_q = reward + ((1 - done) * self.gamma * target_q).detach()
 
@@ -155,7 +155,7 @@ class SAC(BaseRLModel):
 
             # Get current Q estimates
             # using action from the replay buffer
-            current_q1, current_q2 = self.critic(state, action_batch)
+            current_q1, current_q2 = self.critic(obs, action_batch)
 
             # Compute critic loss
             critic_loss = 0.5 * (F.mse_loss(current_q1, q_backup) + F.mse_loss(current_q2, q_backup))
@@ -167,7 +167,7 @@ class SAC(BaseRLModel):
 
             # Compute actor loss
             # Alternative: actor_loss = th.mean(log_prob - min_qf_pi)
-            actor_loss = (self.ent_coef * log_prob - self.critic.q1_forward(state, action_pi)).mean()
+            actor_loss = (self.ent_coef * log_prob - self.critic.q1_forward(obs, action_pi)).mean()
 
             # Optimize the actor
             self.actor.optimizer.zero_grad()

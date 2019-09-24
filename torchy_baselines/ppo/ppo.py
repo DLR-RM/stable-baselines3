@@ -31,7 +31,7 @@ class PPO(BaseRLModel):
     def __init__(self, policy, env, policy_kwargs=None, verbose=0,
                  learning_rate=3e-4, seed=0, device='auto',
                  n_optim=5, batch_size=64, n_steps=256,
-                 gamma=0.99, lambda_=0.95, clip_range=0.2,
+                 gamma=0.99, gae_lambda=0.95, clip_range=0.2,
                  ent_coef=0.01, vf_coef=0.5, max_grad_norm=0.5,
                  target_kl=None, clip_range_vf=None, create_eval_env=False,
                  tensorboard_log=None,
@@ -46,7 +46,7 @@ class PPO(BaseRLModel):
         self.n_optim = n_optim
         self.n_steps = n_steps
         self.gamma = gamma
-        self.lambda_ = lambda_
+        self.gae_lambda = gae_lambda
         self.clip_range = clip_range
         self.ent_coef = ent_coef
         self.vf_coef = vf_coef
@@ -67,7 +67,7 @@ class PPO(BaseRLModel):
             self.seed(self._seed)
 
         self.rollout_buffer = RolloutBuffer(self.n_steps, state_dim, action_dim, self.device,
-                                            gamma=self.gamma, lambda_=self.lambda_, n_envs=self.n_envs)
+                                            gamma=self.gamma, gae_lambda=self.gae_lambda, n_envs=self.n_envs)
         self.policy = self.policy(self.observation_space, self.action_space,
                                   self.learning_rate, device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
@@ -125,8 +125,8 @@ class PPO(BaseRLModel):
             # Sample replay buffer
             for replay_data in self.rollout_buffer.get(batch_size):
                 # Unpack
-                state, action, old_values, old_log_prob, advantage, return_batch = replay_data
-                values, log_prob, entropy = self.policy.get_policy_stats(state, action)
+                obs, action, old_values, old_log_prob, advantage, return_batch = replay_data
+                values, log_prob, entropy = self.policy.get_policy_stats(obs, action)
                 values = values.flatten()
                 # Normalize advantage
                 advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
@@ -145,7 +145,7 @@ class PPO(BaseRLModel):
                     # Clip the different between old and new value
                     # NOTE: this depends on the reward scaling
                     values_pred = old_values + th.clamp(values - old_values, -self.clip_range_vf, self.clip_range_vf)
-                # Value loss using the TD(lambda_) target
+                # Value loss using the TD(gae_lambda) target
                 value_loss = F.mse_loss(return_batch, values_pred)
 
 

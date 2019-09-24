@@ -16,7 +16,6 @@ class TD3(BaseRLModel):
     Paper: https://arxiv.org/abs/1802.09477
     Code: https://github.com/sfujim/TD3
     """
-
     def __init__(self, policy, env, policy_kwargs=None, verbose=0,
                  buffer_size=int(1e6), learning_rate=1e-3, seed=0, device='auto',
                  action_noise_std=0.1, start_timesteps=100, policy_freq=2,
@@ -39,9 +38,9 @@ class TD3(BaseRLModel):
             self._setup_model()
 
     def _setup_model(self):
-        state_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
+        obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
         self.seed(self._seed)
-        self.replay_buffer = ReplayBuffer(self.buffer_size, state_dim, action_dim, self.device)
+        self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
         self.policy = self.policy(self.observation_space, self.action_space,
                                   self.learning_rate, device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
@@ -78,22 +77,22 @@ class TD3(BaseRLModel):
         for it in range(n_iterations):
             # Sample replay buffer
             if replay_data is None:
-                state, action, next_state, done, reward = self.replay_buffer.sample(batch_size)
+                obs, action, next_obs, done, reward = self.replay_buffer.sample(batch_size)
             else:
-                state, action, next_state, done, reward = replay_data
+                obs, action, next_obs, done, reward = replay_data
 
             # Select action according to policy and add clipped noise
             noise = action.clone().data.normal_(0, policy_noise)
             noise = noise.clamp(-noise_clip, noise_clip)
-            next_action = (self.actor_target(next_state) + noise).clamp(-1, 1)
+            next_action = (self.actor_target(next_obs) + noise).clamp(-1, 1)
 
             # Compute the target Q value
-            target_q1, target_q2 = self.critic_target(next_state, next_action)
+            target_q1, target_q2 = self.critic_target(next_obs, next_action)
             target_q = th.min(target_q1, target_q2)
             target_q = reward + ((1 - done) * discount * target_q).detach()
 
             # Get current Q estimates
-            current_q1, current_q2 = self.critic(state, action)
+            current_q1, current_q2 = self.critic(obs, action)
 
             # Compute critic loss
             critic_loss = F.mse_loss(current_q1, target_q) + F.mse_loss(current_q2, target_q)
@@ -115,12 +114,12 @@ class TD3(BaseRLModel):
         for it in range(n_iterations):
             # Sample replay buffer
             if replay_data is None:
-                state, _, next_state, done, reward = self.replay_buffer.sample(batch_size)
+                obs, _, next_obs, done, reward = self.replay_buffer.sample(batch_size)
             else:
-                state, _, next_state, done, reward = replay_data
+                obs, _, next_obs, done, reward = replay_data
 
             # Compute actor loss
-            actor_loss = -self.critic.q1_forward(state, self.actor(state)).mean()
+            actor_loss = -self.critic.q1_forward(obs, self.actor(obs)).mean()
 
             # Optimize the actor
             self.actor.optimizer.zero_grad()

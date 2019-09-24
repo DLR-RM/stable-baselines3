@@ -10,51 +10,51 @@ LOG_STD_MIN = -20
 
 
 class Actor(BaseNetwork):
-    def __init__(self, state_dim, action_dim, net_arch=None, activation_fn=nn.ReLU):
+    def __init__(self, obs_dim, action_dim, net_arch=None, activation_fn=nn.ReLU):
         super(Actor, self).__init__()
 
         if net_arch is None:
             net_arch = [256, 256]
 
         # TODO: orthogonal initialization?
-        actor_net = create_mlp(state_dim, -1, net_arch, activation_fn)
+        actor_net = create_mlp(obs_dim, -1, net_arch, activation_fn)
         self.actor_net = nn.Sequential(*actor_net)
 
         self.action_dist = SquashedDiagGaussianDistribution(action_dim)
         self.mu = nn.Linear(net_arch[-1], action_dim)
         self.log_std = nn.Linear(net_arch[-1], action_dim)
 
-    def get_action_dist_params(self, state):
-        latent = self.actor_net(state)
+    def get_action_dist_params(self, obs):
+        latent = self.actor_net(obs)
         mean_actions, log_std = self.mu(latent), self.log_std(latent)
         # Original Implementation to cap the standard deviation
         log_std = th.clamp(log_std, LOG_STD_MIN, LOG_STD_MAX)
         return mean_actions, log_std
 
-    def forward(self, state, deterministic=False):
-        mean_actions, log_std = self.get_action_dist_params(state)
+    def forward(self, obs, deterministic=False):
+        mean_actions, log_std = self.get_action_dist_params(obs)
         # Note the action is squashed
         action, _ = self.action_dist.proba_distribution(mean_actions, log_std, deterministic=deterministic)
         return action
 
-    def action_log_prob(self, state):
-        mean_actions, log_std = self.get_action_dist_params(state)
+    def action_log_prob(self, obs):
+        mean_actions, log_std = self.get_action_dist_params(obs)
         action, log_prob = self.action_dist.log_prob_from_params(mean_actions, log_std)
         return action, log_prob
 
 
 class Critic(BaseNetwork):
-    def __init__(self, state_dim, action_dim,
+    def __init__(self, obs_dim, action_dim,
                  net_arch=None, activation_fn=nn.ReLU):
         super(Critic, self).__init__()
 
         if net_arch is None:
             net_arch = [256, 256]
 
-        q1_net = create_mlp(state_dim + action_dim, 1, net_arch, activation_fn)
+        q1_net = create_mlp(obs_dim + action_dim, 1, net_arch, activation_fn)
         self.q1_net = nn.Sequential(*q1_net)
 
-        q2_net = create_mlp(state_dim + action_dim, 1, net_arch, activation_fn)
+        q2_net = create_mlp(obs_dim + action_dim, 1, net_arch, activation_fn)
         self.q2_net = nn.Sequential(*q2_net)
 
         self.q_networks = [self.q1_net, self.q2_net]
@@ -72,12 +72,12 @@ class SACPolicy(BasePolicy):
                  learning_rate=1e-3, net_arch=None, device='cpu',
                  activation_fn=nn.ReLU):
         super(SACPolicy, self).__init__(observation_space, action_space, device)
-        self.state_dim = self.observation_space.shape[0]
+        self.obs_dim = self.observation_space.shape[0]
         self.action_dim = self.action_space.shape[0]
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.net_args = {
-            'state_dim': self.state_dim,
+            'obs_dim': self.obs_dim,
             'action_dim': self.action_dim,
             'net_arch': self.net_arch,
             'activation_fn': self.activation_fn

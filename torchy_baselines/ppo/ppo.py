@@ -40,7 +40,7 @@ class PPO(BaseRLModel):
                                   verbose, device, create_eval_env=create_eval_env, support_multi_env=True)
 
         self.learning_rate = learning_rate
-        self._seed = seed
+        self.seed = seed
         self.batch_size = batch_size
         self.n_optim = n_optim
         self.n_steps = n_steps
@@ -63,7 +63,7 @@ class PPO(BaseRLModel):
         state_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
         # TODO: different seed for each env when n_envs > 1
         if self.n_envs == 1:
-            self.seed(self._seed)
+            self.set_random_seed(self.seed)
 
         self.rollout_buffer = RolloutBuffer(self.n_steps, state_dim, action_dim, self.device,
                                             gamma=self.gamma, gae_lambda=self.gae_lambda, n_envs=self.n_envs)

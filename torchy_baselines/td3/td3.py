@@ -57,7 +57,7 @@ class TD3(BaseRLModel):
         self.max_action = np.abs(self.action_space.high)
         self.action_noise_std = action_noise_std
         self.buffer_size = buffer_size
-        self._seed = seed
+        self.seed = seed
 
         self.buffer_size = buffer_size
         # TODO: accept callables
@@ -78,7 +78,7 @@ class TD3(BaseRLModel):
 
     def _setup_model(self):
         obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
-        self.seed(self._seed)
+        self.set_random_seed(self.seed)
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
         self.policy = self.policy(self.observation_space, self.action_space,
                                   self.learning_rate, device=self.device, **self.policy_kwargs)

@@ -207,7 +207,7 @@ class BaseRLModel(object):
         """
         raise NotImplementedError()
 
-    def seed(self, seed=0):
+    def set_random_seed(self, seed=0):
         set_random_seed(seed, using_cuda=self.device == th.device('cuda'))
         self.action_space.seed(seed)
         if self.env is not None:

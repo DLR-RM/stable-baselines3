@@ -55,7 +55,7 @@ class SAC(BaseRLModel):
                  tau=0.005, ent_coef='auto', target_update_interval=1,
                  gradient_steps=1, target_entropy='auto', action_noise=None,
                  gamma=0.99, action_noise_std=0.0, create_eval_env=False,
-                 policy_kwargs=None, verbose=0, seed=0,
+                 policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
 
         super(SAC, self).__init__(policy, env, SACPolicy, policy_kwargs, verbose, device,
@@ -64,7 +64,7 @@ class SAC(BaseRLModel):
         self.max_action = np.abs(self.action_space.high)
         self.action_noise_std = action_noise_std
         self.learning_rate = learning_rate
-        self._seed = seed
+        self.seed = seed
         self.target_entropy = target_entropy
         self.log_ent_coef = None
         # self.target_update_interval = target_update_interval
@@ -89,7 +89,7 @@ class SAC(BaseRLModel):
 
     def _setup_model(self):
         obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
-        self.seed(self._seed)
+        self.set_random_seed(self.seed)
 
         # Target entropy is used when learning the entropy coefficient
         if self.target_entropy == 'auto':

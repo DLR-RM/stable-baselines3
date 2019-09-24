@@ -7,7 +7,6 @@
 PyTorch version of [Stable Baselines](https://github.com/hill-a/stable-baselines), a set of improved implementations of reinforcement learning algorithms.
 
 TODO:
-- SAC
 - save/load
 - automatic choice for action distribution
 - predict

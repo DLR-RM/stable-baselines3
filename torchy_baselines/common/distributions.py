@@ -97,7 +97,13 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         return th.tanh(self.distribution.mean)
 
     def sample(self):
-        return th.tanh(self.distribution.rsample())
+        self.gaussian_action = self.distribution.rsample()
+        return th.tanh(self.gaussian_action)
+
+    def log_prob_from_params(self, mean_actions, log_std):
+        action, _ = self.proba_distribution(mean_actions, log_std)
+        log_prob = self.log_prob(action, self.gaussian_action)
+        return action, log_prob
 
     def log_prob(self, action, gaussian_action=None):
         # Inverse tanh

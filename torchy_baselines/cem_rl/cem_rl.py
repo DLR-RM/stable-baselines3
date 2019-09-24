@@ -17,16 +17,17 @@ class CEMRL(TD3):
 
     def __init__(self, policy, env, policy_kwargs=None, verbose=0,
                  sigma_init=1e-3, pop_size=10, damp=1e-3, damp_limit=1e-5,
-                 elitism=False, n_grad=5, policy_freq=2, batch_size=100,
+                 elitism=False, n_grad=5, policy_delay=2, batch_size=100,
                  buffer_size=int(1e6), learning_rate=1e-3, seed=0, device='auto',
-                 action_noise_std=0.0, start_timesteps=100, update_style='original',
+                 action_noise_std=0.0, learning_starts=100, update_style='original',
                  create_eval_env=False,
                  _init_setup_model=True):
 
-        super(CEMRL, self).__init__(policy, env, policy_kwargs, verbose,
-                                    buffer_size, learning_rate, seed, device,
-                                    action_noise_std, start_timesteps,
-                                    policy_freq=policy_freq, batch_size=batch_size,
+        super(CEMRL, self).__init__(policy, env,
+                                    buffer_size=buffer_size, learning_rate=learning_rate, seed=seed, device=device,
+                                    action_noise_std=action_noise_std, learning_starts=learning_starts,
+                                    policy_kwargs=policy_kwargs, verbose=verbose,
+                                    policy_delay=policy_delay, batch_size=batch_size,
                                     create_eval_env=create_eval_env,
                                     _init_setup_model=False)
 
@@ -106,7 +107,7 @@ class CEMRL(TD3):
                             self.train_critic(replay_data=replay_data)
 
                             # Delayed policy updates
-                            if it % self.policy_freq == 0:
+                            if it % self.policy_delay == 0:
                                 self.train_actor(replay_data=replay_data)
 
                     # Get the params back in the population
@@ -134,7 +135,7 @@ class CEMRL(TD3):
                 episode_reward, episode_timesteps = self.collect_rollouts(self.env, n_episodes=1,
                                                                           action_noise_std=self.action_noise_std,
                                                                           deterministic=False, callback=None,
-                                                                          start_timesteps=self.start_timesteps,
+                                                                          learning_starts=self.learning_starts,
                                                                           num_timesteps=self.num_timesteps,
                                                                           replay_buffer=self.replay_buffer)
                 episode_num += 1

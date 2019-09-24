@@ -216,8 +216,8 @@ class BaseRLModel(object):
             self.eval_env.seed(seed)
 
     def collect_rollouts(self, env, n_episodes=1, action_noise_std=0.0,
-                         deterministic=False, callback=None, remove_timelimits=True,
-                         start_timesteps=0, num_timesteps=0, replay_buffer=None):
+                         deterministic=False, callback=None,
+                         learning_starts=0, num_timesteps=0, replay_buffer=None):
 
         episode_rewards = []
         total_timesteps = []
@@ -231,24 +231,19 @@ class BaseRLModel(object):
             episode_reward, episode_timesteps = 0.0, 0
             while not done:
                 # Select action randomly or according to policy
-                if num_timesteps < start_timesteps:
+                if num_timesteps < learning_starts:
                     action = [self.action_space.sample()]
                 else:
                     action = self.predict(obs, deterministic=deterministic) / self.max_action
 
                 if action_noise_std > 0:
-                    # NOTE: in the original implementation, the noise is applied to the unscaled action
+                    # NOTE: in the original implementation of TD3, the noise was applied to the unscaled action
                     action_noise = np.random.normal(0, action_noise_std, size=self.action_space.shape[0])
                     action = (action + action_noise).clip(-1, 1)
 
                 # Rescale and perform action
                 new_obs, reward, done, _ = env.step(self.max_action * action)
 
-                # TODO: fix for VecEnv
-                # if hasattr(self.env, '_max_episode_steps') and remove_timelimits:
-                #     done_bool = 0 if episode_timesteps + 1 == env._max_episode_steps else float(done)
-                # else:
-                #     done_bool = float(done)
                 done_bool = [float(done[0])]
                 episode_reward += reward
 

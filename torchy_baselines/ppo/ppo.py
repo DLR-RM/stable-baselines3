@@ -27,7 +27,6 @@ class PPO(BaseRLModel):
     and https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail
     and stable_baselines
     """
-
     def __init__(self, policy, env, policy_kwargs=None, verbose=0,
                  learning_rate=3e-4, seed=0, device='auto',
                  n_optim=5, batch_size=64, n_steps=256,

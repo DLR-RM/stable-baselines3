@@ -12,22 +12,50 @@ from torchy_baselines.sac.policies import SACPolicy
 
 class SAC(BaseRLModel):
     """
-    Implementation of Soft Actor-Critic (SAC)
+    Soft Actor-Critic (SAC)
     Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor,
-    Paper: https://arxiv.org/abs/1801.01290
-    Code: This implementation borrows code from original implementation (https://github.com/haarnoja/sac)
-    from OpenAI Spinning Up (https://github.com/openai/spinningup) and from the Softlearning repo
+    This implementation borrows code from original implementation (https://github.com/haarnoja/sac)
+    from OpenAI Spinning Up (https://github.com/openai/spinningup), from the softlearning repo
     (https://github.com/rail-berkeley/softlearning/)
+    and from Stable Baselines (https://github.com/hill-a/stable-baselines)
+    Paper: https://arxiv.org/abs/1801.01290
+    Introduction to SAC: https://spinningup.openai.com/en/latest/algorithms/sac.html
 
     Note: we use double q target and not value target as discussed
     in https://github.com/hill-a/stable-baselines/issues/270
-    """
 
-    def __init__(self, policy, env, policy_kwargs=None, verbose=0,
-                 buffer_size=int(1e6), learning_rate=3e-4, seed=0, device='auto',
-                 ent_coef='auto', target_entropy='auto', gamma=0.99,
-                 action_noise_std=0.0, start_timesteps=100,
-                 batch_size=64, create_eval_env=False,
+    :param policy: (SACPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
+    :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
+    :param learning_rate: (float or callable) learning rate for adam optimizer,
+        the same learning rate will be used for all networks (Q-Values, Actor and Value function)
+        it can be a function of the current progress (from 1 to 0)
+    :param buffer_size: (int) size of the replay buffer
+    :param batch_size: (int) Minibatch size for each gradient update
+    :param tau: (float) the soft update coefficient ("polyak update", between 0 and 1)
+    :param ent_coef: (str or float) Entropy regularization coefficient. (Equivalent to
+        inverse of reward scale in the original SAC paper.)  Controlling exploration/exploitation trade-off.
+        Set it to 'auto' to learn it automatically (and 'auto_0.1' for using 0.1 as initial value)
+    :param train_freq: (int) Update the model every `train_freq` steps.
+    :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
+    :param target_update_interval: (int) update the target network every `target_network_update_freq` steps.
+    :param gradient_steps: (int) How many gradient update after each step
+    :param target_entropy: (str or float) target entropy when learning ent_coef (ent_coef = 'auto')
+    :param action_noise: (ActionNoise) the action noise type (None by default), this can help
+        for hard exploration problem. Cf DDPG for the different action noise type.
+    :param gamma: (float) the discount factor
+    :param create_eval_env: (bool) Whether to create a second environment that will be
+        used for evaluating the agent periodically. (Only available when passing string for the environment)
+    :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
+    :param verbose: (int) the verbosity level: 0 none, 1 training information, 2 tensorflow debug
+    :param seed: (int) Seed for the pseudo random generators
+    :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
+    """
+    def __init__(self, policy, env, learning_rate=3e-4, buffer_size=int(1e6),
+                 learning_starts=100, train_freq=1, batch_size=64,
+                 tau=0.005, ent_coef='auto', target_update_interval=1,
+                 gradient_steps=1, target_entropy='auto', action_noise=None,
+                 gamma=0.99, action_noise_std=0.0, create_eval_env=False,
+                 policy_kwargs=None, verbose=0, seed=0,
                  _init_setup_model=True):
 
         super(SAC, self).__init__(policy, env, SACPolicy, policy_kwargs, verbose, device,
@@ -36,16 +64,24 @@ class SAC(BaseRLModel):
         self.max_action = np.abs(self.action_space.high)
         self.action_noise_std = action_noise_std
         self.learning_rate = learning_rate
-        self.buffer_size = buffer_size
-        self.start_timesteps = start_timesteps
         self._seed = seed
-        self.batch_size = batch_size
-
-        self.ent_coef = ent_coef
         self.target_entropy = target_entropy
         self.log_ent_coef = None
         # self.target_update_interval = target_update_interval
         # self.gradient_steps = gradient_steps
+        self.buffer_size = buffer_size
+        # In the original paper, same learning rate is used for all networks
+        self.learning_rate = learning_rate
+        self.learning_starts = learning_starts
+        self.batch_size = batch_size
+        self.tau = tau
+        # Entropy coefficient / Entropy temperature
+        # Inverse of the reward scale
+        self.ent_coef = ent_coef
+        self.target_update_interval = target_update_interval
+        # self.train_freq = train_freq
+        # self.gradient_steps = gradient_steps
+        # self.action_noise = action_noise
         self.gamma = gamma
 
         if _init_setup_model:
@@ -118,7 +154,7 @@ class SAC(BaseRLModel):
         """
         return self.max_action * self.select_action(observation)
 
-    def train(self, n_iterations, batch_size=64, tau=0.005):
+    def train(self, n_iterations, batch_size=64):
 
         for it in range(n_iterations):
 
@@ -176,7 +212,7 @@ class SAC(BaseRLModel):
 
             # Update target networks
             for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
+                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="TD3", reset_num_timesteps=True):
@@ -197,7 +233,7 @@ class SAC(BaseRLModel):
             episode_reward, episode_timesteps = self.collect_rollouts(self.env, n_episodes=1,
                                                                       action_noise_std=self.action_noise_std,
                                                                       deterministic=False, callback=None,
-                                                                      start_timesteps=self.start_timesteps,
+                                                                      learning_starts=self.learning_starts,
                                                                       num_timesteps=self.num_timesteps,
                                                                       replay_buffer=self.replay_buffer)
             episode_num += 1

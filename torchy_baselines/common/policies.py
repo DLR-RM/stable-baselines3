@@ -16,6 +16,12 @@ class BasePolicy(nn.Module):
         self.action_space = action_space
         self.device = device
 
+    @staticmethod
+    def init_weights(module, gain=1):
+        if type(module) == nn.Linear:
+            nn.init.orthogonal_(module.weight, gain=gain)
+            module.bias.data.fill_(0.0)
+
     def forward(self, *_args, **kwargs):
         raise NotImplementedError()
 

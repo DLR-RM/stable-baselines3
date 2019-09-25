@@ -8,13 +8,13 @@ PyTorch version of [Stable Baselines](https://github.com/hill-a/stable-baselines
 
 TODO:
 - save/load
-- automatic choice for action distribution
 - predict
 - better rescale (min + action * range)
 - documentation
 - flexible mlp
 - logger
 - better monitor wrapper?
+- automatic choice for action distribution
 
 Later:
 - get_parameters / set_parameters

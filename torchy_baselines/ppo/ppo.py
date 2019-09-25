@@ -116,10 +116,9 @@ class PPO(BaseRLModel):
 
         return obs
 
-    def train(self, n_iterations, batch_size=64):
+    def train(self, gradient_steps, batch_size=64):
 
-        # TODO: replace with iterator?
-        for it in range(n_iterations):
+        for gradient_step in range(gradient_steps):
             approx_kl_divs = []
             # Sample replay buffer
             for replay_data in self.rollout_buffer.get(batch_size):

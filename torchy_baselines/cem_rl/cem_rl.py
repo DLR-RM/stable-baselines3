@@ -19,13 +19,15 @@ class CEMRL(TD3):
                  sigma_init=1e-3, pop_size=10, damp=1e-3, damp_limit=1e-5,
                  elitism=False, n_grad=5, policy_delay=2, batch_size=100,
                  buffer_size=int(1e6), learning_rate=1e-3, seed=0, device='auto',
-                 action_noise_std=0.0, learning_starts=100, update_style='original',
+                 action_noise_std=0.0, learning_starts=100, tau=0.005,
+                 n_episodes_rollout=1, update_style='original',
                  create_eval_env=False,
                  _init_setup_model=True):
 
         super(CEMRL, self).__init__(policy, env,
                                     buffer_size=buffer_size, learning_rate=learning_rate, seed=seed, device=device,
                                     action_noise_std=action_noise_std, learning_starts=learning_starts,
+                                    n_episodes_rollout=n_episodes_rollout, tau=tau,
                                     policy_kwargs=policy_kwargs, verbose=verbose,
                                     policy_delay=policy_delay, batch_size=batch_size,
                                     create_eval_env=create_eval_env,
@@ -61,6 +63,7 @@ class CEMRL(TD3):
         evaluations = []
         start_time = time.time()
         eval_env = self._get_eval_env(eval_env)
+        obs = self.env.reset()
 
         while self.num_timesteps < total_timesteps:
 
@@ -88,11 +91,11 @@ class CEMRL(TD3):
                     # instead of the train_actor() and no policy delay
                     # Issue with this update style: the bigger the population, the slower the code
                     if self.update_style == 'original':
-                        self.train_critic(actor_steps // self.n_grad, tau=0.005)
-                        self.train_actor(actor_steps, tau_critic=0.0)
+                        self.train_critic(actor_steps // self.n_grad, tau=self.tau)
+                        self.train_actor(actor_steps, tau_actor=self.tau, tau_critic=0.0)
                     elif self.update_style == 'original_td3':
                         self.train_critic(actor_steps // self.n_grad, tau=0.0)
-                        self.train_actor(actor_steps)
+                        self.train_actor(actor_steps, tau_actor=self.tau, tau_critic=self.tau)
                     else:
                         # Closer to td3: with policy delay
                         if self.update_style == 'td3_like':
@@ -108,7 +111,7 @@ class CEMRL(TD3):
 
                             # Delayed policy updates
                             if it % self.policy_delay == 0:
-                                self.train_actor(replay_data=replay_data)
+                                self.train_actor(replay_data=replay_data, tau_actor=self.tau, tau_critic=self.tau)
 
                     # Get the params back in the population
                     self.es_params[i] = self.actor.parameters_to_vector()
@@ -132,13 +135,18 @@ class CEMRL(TD3):
 
                 self.actor.load_from_vector(params)
 
-                episode_reward, episode_timesteps = self.collect_rollouts(self.env, n_episodes=1,
-                                                                          action_noise_std=self.action_noise_std,
-                                                                          deterministic=False, callback=None,
-                                                                          learning_starts=self.learning_starts,
-                                                                          num_timesteps=self.num_timesteps,
-                                                                          replay_buffer=self.replay_buffer)
-                episode_num += 1
+                rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,
+                                                n_steps=-1, action_noise_std=self.action_noise_std,
+                                                deterministic=False, callback=None,
+                                                learning_starts=self.learning_starts,
+                                                num_timesteps=self.num_timesteps,
+                                                replay_buffer=self.replay_buffer,
+                                                obs=obs)
+
+                # Unpack
+                episode_reward, episode_timesteps, n_episodes, obs = rollout
+
+                episode_num += n_episodes
                 self.num_timesteps += episode_timesteps
                 timesteps_since_eval += episode_timesteps
                 actor_steps += episode_timesteps

@@ -215,20 +215,23 @@ class BaseRLModel(object):
         if self.eval_env is not None:
             self.eval_env.seed(seed)
 
-    def collect_rollouts(self, env, n_episodes=1, action_noise_std=0.0,
+    def collect_rollouts(self, env, n_episodes=1, n_steps=-1, action_noise_std=0.0,
                          deterministic=False, callback=None,
-                         learning_starts=0, num_timesteps=0, replay_buffer=None):
+                         learning_starts=0, num_timesteps=0,
+                         replay_buffer=None, obs=None):
 
         episode_rewards = []
         total_timesteps = []
+        total_steps, total_episodes = 0, 0
         assert isinstance(env, VecEnv)
         assert env.num_envs == 1
 
-        for _ in range(n_episodes):
+        while total_steps < n_steps or total_episodes < n_episodes:
             done = False
-            # Reset environment
-            obs = env.reset()
+            # Reset environment: not needed for VecEnv
+            # obs = env.reset()
             episode_reward, episode_timesteps = 0.0, 0
+
             while not done:
                 # Select action randomly or according to policy
                 if num_timesteps < learning_starts:
@@ -242,6 +245,7 @@ class BaseRLModel(object):
                     action = (action + action_noise).clip(-1, 1)
 
                 # Rescale and perform action
+                # TODO: better rescale
                 new_obs, reward, done, _ = env.step(self.max_action * action)
 
                 done_bool = [float(done[0])]
@@ -255,8 +259,15 @@ class BaseRLModel(object):
 
                 num_timesteps += 1
                 episode_timesteps += 1
+                total_steps += 1
+                if n_steps > 0 and total_steps >= n_steps:
+                    break
 
-            episode_rewards.append(episode_reward)
-            total_timesteps.append(episode_timesteps)
+            if done:
+                total_episodes += 1
+                episode_rewards.append(episode_reward)
+                total_timesteps.append(episode_timesteps)
 
-        return np.mean(episode_rewards), np.sum(total_timesteps)
+        mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
+
+        return mean_reward, total_steps, total_episodes, obs

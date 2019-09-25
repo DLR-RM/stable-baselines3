@@ -46,7 +46,8 @@ class TD3(BaseRLModel):
     """
     def __init__(self, policy, env, buffer_size=int(1e6), learning_rate=1e-3,
                  action_noise_std=0.1, policy_delay=2, learning_starts=100,
-                 gamma=0.99, batch_size=100, train_freq=1000, gradient_steps=1000,
+                 gamma=0.99, batch_size=100,
+                 train_freq=-1, gradient_steps=-1, n_episodes_rollout=1,
                  tau=0.005, action_noise=None, target_policy_noise=0.2, target_noise_clip=0.5,
                  create_eval_env=False, policy_kwargs=None, verbose=0,
                  seed=0, device='auto', _init_setup_model=True):
@@ -63,10 +64,11 @@ class TD3(BaseRLModel):
         # TODO: accept callables
         self.learning_rate = learning_rate
         self.learning_starts = learning_starts
-        # self.train_freq = train_freq
-        # self.gradient_steps = gradient_steps
+        self.train_freq = train_freq
+        self.gradient_steps = gradient_steps
+        self.n_episodes_rollout = n_episodes_rollout
         self.batch_size = batch_size
-        # self.tau = tau
+        self.tau = tau
         self.gamma = gamma
         # self.action_noise = action_noise
         self.policy_delay = policy_delay
@@ -109,12 +111,13 @@ class TD3(BaseRLModel):
         :return: (np.ndarray, np.ndarray) the model's action and the next state (used in recurrent policies)
         """
         # Rescale the action (no need for symmetric action space)
-        return self.action_space.low +\
-            (0.5 * (self.select_action(observation) + 1.0) * (self.action_space.high -  self.action_space.low))
+        # return self.action_space.low +\
+        #     (0.5 * (self.select_action(observation) + 1.0) * (self.action_space.high -  self.action_space.low))
+        return self.max_action * self.select_action(observation)
 
-    def train_critic(self, n_iterations=1, batch_size=100, replay_data=None, tau=0.0):
+    def train_critic(self, gradient_steps=1, batch_size=100, replay_data=None, tau=0.0):
 
-        for it in range(n_iterations):
+        for gradient_step in range(gradient_steps):
             # Sample replay buffer
             if replay_data is None:
                 obs, action, next_obs, done, reward = self.replay_buffer.sample(batch_size)
@@ -149,9 +152,9 @@ class TD3(BaseRLModel):
                 for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
                     target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
 
-    def train_actor(self, n_iterations=1, batch_size=100, tau_actor=0.005, tau_critic=0.005, replay_data=None):
+    def train_actor(self, gradient_steps=1, batch_size=100, tau_actor=0.005, tau_critic=0.005, replay_data=None):
 
-        for it in range(n_iterations):
+        for gradient_step in range(gradient_steps):
             # Sample replay buffer
             if replay_data is None:
                 obs, _, next_obs, done, reward = self.replay_buffer.sample(batch_size)
@@ -174,17 +177,17 @@ class TD3(BaseRLModel):
             for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
                 target_param.data.copy_(tau_actor * param.data + (1 - tau_actor) * target_param.data)
 
-    def train(self, n_iterations, batch_size=100, policy_delay=2):
+    def train(self, gradient_steps, batch_size=100, policy_delay=2):
 
-        for it in range(n_iterations):
+        for gradient_step in range(gradient_steps):
 
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size)
             self.train_critic(replay_data=replay_data)
 
             # Delayed policy updates
-            if it % policy_delay == 0:
-                self.train_actor(replay_data=replay_data)
+            if gradient_step % policy_delay == 0:
+                self.train_actor(replay_data=replay_data, tau_actor=self.tau, tau_critic=self.tau)
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="TD3", reset_num_timesteps=True):
@@ -194,6 +197,7 @@ class TD3(BaseRLModel):
         evaluations = []
         start_time = time.time()
         eval_env = self._get_eval_env(eval_env)
+        obs = self.env.reset()
 
         while self.num_timesteps < total_timesteps:
 
@@ -202,13 +206,17 @@ class TD3(BaseRLModel):
                 if callback(locals(), globals()) is False:
                     break
 
-            episode_reward, episode_timesteps = self.collect_rollouts(self.env, n_episodes=1,
-                                                                      action_noise_std=self.action_noise_std,
-                                                                      deterministic=False, callback=None,
-                                                                      learning_starts=self.learning_starts,
-                                                                      num_timesteps=self.num_timesteps,
-                                                                      replay_buffer=self.replay_buffer)
-            episode_num += 1
+            rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,
+                                            n_steps=self.train_freq, action_noise_std=self.action_noise_std,
+                                            deterministic=False, callback=None,
+                                            learning_starts=self.learning_starts,
+                                            num_timesteps=self.num_timesteps,
+                                            replay_buffer=self.replay_buffer,
+                                            obs=obs)
+            # Unpack
+            episode_reward, episode_timesteps, n_episodes, obs = rollout
+
+            episode_num += n_episodes
             self.num_timesteps += episode_timesteps
             timesteps_since_eval += episode_timesteps
 
@@ -216,7 +224,9 @@ class TD3(BaseRLModel):
                 if self.verbose > 1:
                     print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
                         self.num_timesteps, episode_num, episode_timesteps, episode_reward))
-                self.train(episode_timesteps, batch_size=self.batch_size, policy_delay=self.policy_delay)
+
+                gradient_steps = self.gradient_steps if self.gradient_steps > 0 else episode_timesteps
+                self.train(gradient_steps, batch_size=self.batch_size, policy_delay=self.policy_delay)
 
             # Evaluate episode
             if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:

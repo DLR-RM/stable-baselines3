@@ -33,12 +33,6 @@ class PPOPolicy(BasePolicy):
         # self.action_dist = SquashedDiagGaussianDistribution(self.action_dim)
         self._build(learning_rate)
 
-    @staticmethod
-    def init_weights(module, gain=1):
-        if type(module) == nn.Linear:
-            nn.init.orthogonal_(module.weight, gain=gain)
-            module.bias.data.fill_(0.0)
-
     def _build(self, learning_rate):
         # TODO: support shared network
         # shared_net = create_mlp(self.obs_dim, output_dim=-1, net_arch=self.net_arch, activation_fn=self.activation_fn)

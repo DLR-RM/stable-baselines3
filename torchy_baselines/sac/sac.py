@@ -35,9 +35,9 @@ class SAC(BaseRLModel):
     :param ent_coef: (str or float) Entropy regularization coefficient. (Equivalent to
         inverse of reward scale in the original SAC paper.)  Controlling exploration/exploitation trade-off.
         Set it to 'auto' to learn it automatically (and 'auto_0.1' for using 0.1 as initial value)
-    :param train_freq: (int) Update the model every `train_freq` steps.
     :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
     :param target_update_interval: (int) update the target network every `target_network_update_freq` steps.
+    :param train_freq: (int) Update the model every `train_freq` steps.
     :param gradient_steps: (int) How many gradient update after each step
     :param target_entropy: (str or float) target entropy when learning ent_coef (ent_coef = 'auto')
     :param action_noise: (ActionNoise) the action noise type (None by default), this can help
@@ -51,9 +51,10 @@ class SAC(BaseRLModel):
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
     def __init__(self, policy, env, learning_rate=3e-4, buffer_size=int(1e6),
-                 learning_starts=100, train_freq=1, batch_size=64,
+                 learning_starts=100, batch_size=64,
                  tau=0.005, ent_coef='auto', target_update_interval=1,
-                 gradient_steps=1, target_entropy='auto', action_noise=None,
+                 train_freq=1, gradient_steps=1, n_episodes_rollout=-1,
+                 target_entropy='auto', action_noise=None,
                  gamma=0.99, action_noise_std=0.0, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
@@ -67,8 +68,7 @@ class SAC(BaseRLModel):
         self.seed = seed
         self.target_entropy = target_entropy
         self.log_ent_coef = None
-        # self.target_update_interval = target_update_interval
-        # self.gradient_steps = gradient_steps
+        self.target_update_interval = target_update_interval
         self.buffer_size = buffer_size
         # In the original paper, same learning rate is used for all networks
         self.learning_rate = learning_rate
@@ -79,8 +79,9 @@ class SAC(BaseRLModel):
         # Inverse of the reward scale
         self.ent_coef = ent_coef
         self.target_update_interval = target_update_interval
-        # self.train_freq = train_freq
-        # self.gradient_steps = gradient_steps
+        self.train_freq = train_freq
+        self.gradient_steps = gradient_steps
+        self.n_episodes_rollout = n_episodes_rollout
         # self.action_noise = action_noise
         self.gamma = gamma
 
@@ -154,9 +155,9 @@ class SAC(BaseRLModel):
         """
         return self.max_action * self.select_action(observation)
 
-    def train(self, n_iterations, batch_size=64):
+    def train(self, gradient_steps, batch_size=64):
 
-        for it in range(n_iterations):
+        for gradient_step in range(gradient_steps):
 
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size)
@@ -211,17 +212,19 @@ class SAC(BaseRLModel):
             self.actor.optimizer.step()
 
             # Update target networks
-            for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+            if gradient_step % self.target_update_interval == 0:
+                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
+                    target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
-              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="TD3", reset_num_timesteps=True):
+              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="SAC", reset_num_timesteps=True):
 
         timesteps_since_eval = 0
         episode_num = 0
         evaluations = []
         start_time = time.time()
         eval_env = self._get_eval_env(eval_env)
+        obs = self.env.reset()
 
         while self.num_timesteps < total_timesteps:
 
@@ -230,21 +233,27 @@ class SAC(BaseRLModel):
                 if callback(locals(), globals()) is False:
                     break
 
-            episode_reward, episode_timesteps = self.collect_rollouts(self.env, n_episodes=1,
-                                                                      action_noise_std=self.action_noise_std,
-                                                                      deterministic=False, callback=None,
-                                                                      learning_starts=self.learning_starts,
-                                                                      num_timesteps=self.num_timesteps,
-                                                                      replay_buffer=self.replay_buffer)
-            episode_num += 1
+            rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,
+                                            n_steps=self.train_freq, action_noise_std=self.action_noise_std,
+                                            deterministic=False, callback=None,
+                                            learning_starts=self.learning_starts,
+                                            num_timesteps=self.num_timesteps,
+                                            replay_buffer=self.replay_buffer,
+                                            obs=obs)
+            # Unpack
+            episode_reward, episode_timesteps, n_episodes, obs = rollout
+
             self.num_timesteps += episode_timesteps
+            episode_num += n_episodes
             timesteps_since_eval += episode_timesteps
 
             if self.num_timesteps > 0:
                 if self.verbose > 1:
                     print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
                         self.num_timesteps, episode_num, episode_timesteps, episode_reward))
-                self.train(episode_timesteps, batch_size=self.batch_size)
+                gradient_steps = self.gradient_steps if self.gradient_steps > 0 else episode_timesteps
+
+                self.train(gradient_steps, batch_size=self.batch_size)
 
             # Evaluate episode
             if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:

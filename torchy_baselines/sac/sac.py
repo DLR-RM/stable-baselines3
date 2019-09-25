@@ -53,7 +53,7 @@ class SAC(BaseRLModel):
     def __init__(self, policy, env, learning_rate=3e-4, buffer_size=int(1e6),
                  learning_starts=100, batch_size=64,
                  tau=0.005, ent_coef='auto', target_update_interval=1,
-                 train_freq=1, gradient_steps=1, n_episodes_rollout=-1,
+                 train_freq=-1, gradient_steps=-1, n_episodes_rollout=1,
                  target_entropy='auto', action_noise=None,
                  gamma=0.99, action_noise_std=0.0, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',
@@ -114,10 +114,6 @@ class SAC(BaseRLModel):
             # Note: we optimize the log of the entropy coeff which is slightly different from the paper
             # as discussed in https://github.com/rail-berkeley/softlearning/issues/37
             self.log_ent_coef = th.log(th.ones(1, device=self.device) * init_value).requires_grad_(True)
-            # Important: detach the variable from the graph
-            # so we don't change it with other losses
-            # see https://github.com/rail-berkeley/softlearning/issues/60
-            self.ent_coef = th.exp(self.log_ent_coef.detach())
             self.ent_coef_optimizer = th.optim.Adam([self.log_ent_coef], lr=self.learning_rate)
         else:
             # Force conversion to float
@@ -156,9 +152,7 @@ class SAC(BaseRLModel):
         return self.max_action * self.select_action(observation)
 
     def train(self, gradient_steps, batch_size=64):
-
         for gradient_step in range(gradient_steps):
-
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size)
 
@@ -170,7 +164,13 @@ class SAC(BaseRLModel):
 
             ent_coef_loss = None
             if not isinstance(self.ent_coef, float):
+                # Important: detach the variable from the graph
+                # so we don't change it with other losses
+                # see https://github.com/rail-berkeley/softlearning/issues/60
+                ent_coef = th.exp(self.log_ent_coef.detach())
                 ent_coef_loss = -(self.log_ent_coef * (log_prob + self.target_entropy).detach()).mean()
+            else:
+                ent_coef = self.ent_coef
 
             # Optimize entropy coefficient, also called
             # entropy temperature or alpha in the paper
@@ -182,13 +182,13 @@ class SAC(BaseRLModel):
             # Select action according to policy
             next_action, next_log_prob = self.actor.action_log_prob(next_obs)
 
-            # Compute the target Q value
-            target_q1, target_q2 = self.critic_target(next_obs, next_action)
-            target_q = th.min(target_q1, target_q2)
-            target_q = reward + ((1 - done) * self.gamma * target_q).detach()
-
-            # td error + entropy term
-            q_backup = (target_q - self.ent_coef * next_log_prob.reshape(-1, 1)).detach()
+            with th.no_grad():
+                # Compute the target Q value
+                target_q1, target_q2 = self.critic_target(next_obs, next_action)
+                target_q = th.min(target_q1, target_q2)
+                target_q = reward + (1 - done) * self.gamma * target_q
+                # td error + entropy term
+                q_backup = target_q - ent_coef * next_log_prob.reshape(-1, 1)
 
             # Get current Q estimates
             # using action from the replay buffer
@@ -203,8 +203,10 @@ class SAC(BaseRLModel):
             self.critic.optimizer.step()
 
             # Compute actor loss
-            # Alternative: actor_loss = th.mean(log_prob - min_qf_pi)
-            actor_loss = (self.ent_coef * log_prob - self.critic.q1_forward(obs, action_pi)).mean()
+            # Alternative: actor_loss = th.mean(log_prob - qf1_pi)
+            qf1_pi, qf2_pi = self.critic.forward(obs, action_pi)
+            min_qf_pi = th.min(qf1_pi, qf2_pi)
+            actor_loss = (ent_coef * log_prob - min_qf_pi).mean()
 
             # Optimize the actor
             self.actor.optimizer.zero_grad()

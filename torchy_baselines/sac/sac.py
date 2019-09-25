@@ -53,7 +53,7 @@ class SAC(BaseRLModel):
     def __init__(self, policy, env, learning_rate=3e-4, buffer_size=int(1e6),
                  learning_starts=100, batch_size=64,
                  tau=0.005, ent_coef='auto', target_update_interval=1,
-                 train_freq=-1, gradient_steps=-1, n_episodes_rollout=1,
+                 train_freq=1, gradient_steps=1, n_episodes_rollout=-1,
                  target_entropy='auto', action_noise=None,
                  gamma=0.99, action_noise_std=0.0, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',

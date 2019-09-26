@@ -11,7 +11,7 @@ from torchy_baselines.common.distributions import DiagGaussianDistribution, Squa
 class PPOPolicy(BasePolicy):
     def __init__(self, observation_space, action_space,
                  learning_rate=1e-3, net_arch=None, device='cpu',
-                 activation_fn=nn.Tanh, adam_epsilon=1e-5):
+                 activation_fn=nn.Tanh, adam_epsilon=1e-5, ortho_init=True):
         super(PPOPolicy, self).__init__(observation_space, action_space, device)
         self.obs_dim = self.observation_space.shape[0]
         self.action_dim = self.action_space.shape[0]
@@ -20,6 +20,7 @@ class PPOPolicy(BasePolicy):
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.adam_epsilon = adam_epsilon
+        self.ortho_init = ortho_init
         self.net_args = {
             'input_dim': self.obs_dim,
             'output_dim': -1,
@@ -48,16 +49,18 @@ class PPOPolicy(BasePolicy):
         self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=self.net_arch[-1])
         self.value_net = nn.Linear(self.net_arch[-1], 1)
         # Init weights: use orthogonal initialization
-        for module in [self.pi_net, self.vf_net, self.action_net, self.value_net]:
-            # Values from stable-baselines check why
-            gain = {
-                self.pi_net: np.sqrt(2),
-                self.vf_net: np.sqrt(2),
-                self.shared_net: np.sqrt(2),
-                self.action_net: 0.01,
-                self.value_net: 1
-            }[module]
-            module.apply(partial(self.init_weights, gain=gain))
+        # with small initial weight for the output
+        if self.ortho_init:
+            for module in [self.pi_net, self.vf_net, self.action_net, self.value_net]:
+                # Values from stable-baselines check why
+                gain = {
+                    self.pi_net: np.sqrt(2),
+                    self.vf_net: np.sqrt(2),
+                    self.shared_net: np.sqrt(2),
+                    self.action_net: 0.01,
+                    self.value_net: 1
+                }[module]
+                module.apply(partial(self.init_weights, gain=gain))
         # TODO: support linear decay of the learning rate
         self.optimizer = th.optim.Adam(self.parameters(), lr=learning_rate, eps=self.adam_epsilon)
 

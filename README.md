@@ -6,15 +6,25 @@
 
 PyTorch version of [Stable Baselines](https://github.com/hill-a/stable-baselines), a set of improved implementations of reinforcement learning algorithms.
 
+## Implemented Algorithms
+
+- CEM-RL (with TD3)
+- PPO
+- SAC
+- TD3
+
+
+## Roadmap
+
 TODO:
 - save/load
 - predict
 - better rescale (min + action * range)
-- documentation
 - flexible mlp
 - logger
 - better monitor wrapper?
 - automatic choice for action distribution
+- A2C
 
 Later:
 - get_parameters / set_parameters
@@ -22,6 +32,6 @@ Later:
 - tensorboard support
 - DQN
 - TRPO
-- A2C
 - ACER
+- DDPG
 - HER -> use stable-baselines because does not depends on tf?

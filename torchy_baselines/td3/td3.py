@@ -42,6 +42,8 @@ class TD3(BaseRLModel):
     :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
     :param verbose: (int) the verbosity level: 0 none, 1 training information, 2 tensorflow debug
     :param seed: (int) Seed for the pseudo random generators
+    :param device: (str or th.device) Device (cpu, cuda, ...) on which the code should be run.
+        Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
     def __init__(self, policy, env, buffer_size=int(1e6), learning_rate=1e-3,

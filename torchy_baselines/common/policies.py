@@ -124,10 +124,14 @@ def register_policy(name, policy):
     :param policy: (subclass of BasePolicy) the policy
     """
     sub_class = None
-    for cls in BasePolicy.__subclasses__():
-        if issubclass(policy, cls):
-            sub_class = cls
-            break
+    # For building the doc
+    try:
+        for cls in BasePolicy.__subclasses__():
+            if issubclass(policy, cls):
+                sub_class = cls
+                break
+    except AttributeError:
+        sub_class = str(th.random.randint(100))
     if sub_class is None:
         raise ValueError("Error: the policy {} is not of any known subclasses of BasePolicy!".format(policy))
 

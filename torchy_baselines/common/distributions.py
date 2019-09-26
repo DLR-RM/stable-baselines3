@@ -52,6 +52,7 @@ class DiagGaussianDistribution(Distribution):
 
     def proba_distribution_net(self, latent_dim, log_std_init=0.0):
         mean_actions = nn.Linear(latent_dim, self.action_dim)
+        # TODO: allow action dependent std
         log_std = nn.Parameter(th.ones(self.action_dim) * log_std_init)
         return mean_actions, log_std
 
@@ -73,6 +74,11 @@ class DiagGaussianDistribution(Distribution):
     def entropy(self):
         return self.distribution.entropy()
 
+    def log_prob_from_params(self, mean_actions, log_std):
+        action, _ = self.proba_distribution(mean_actions, log_std)
+        log_prob = self.log_prob(action)
+        return action, log_prob
+
     def log_prob(self, action):
         log_prob = self.distribution.log_prob(action)
         if len(log_prob.shape) > 1:
@@ -87,6 +93,7 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         super(SquashedDiagGaussianDistribution, self).__init__(action_dim)
         # Avoid NaN (prevents division by zero or log of zero)
         self.epsilon = epsilon
+        self.gaussian_action = None
 
     def proba_distribution(self, mean_actions, log_std, deterministic=False):
         action, _ = super(SquashedDiagGaussianDistribution, self).proba_distribution(mean_actions, log_std, deterministic)
@@ -114,6 +121,6 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
 
         # Log likelihood for a gaussian distribution
         log_prob = super(SquashedDiagGaussianDistribution, self).log_prob(gaussian_action)
-        # Squash correction (from original implementation)
+        # Squash correction (from original SAC implementation)
         log_prob -= th.sum(th.log(1 - action ** 2 + self.epsilon), dim=1)
         return log_prob

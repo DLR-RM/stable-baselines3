@@ -5,6 +5,7 @@ from copy import deepcopy
 import gym
 import torch as th
 import torch.nn.functional as F
+# Check if tensorboard is available for pytorch
 try:
     from torch.utils.tensorboard import SummaryWriter
 except ImportError:
@@ -21,28 +22,63 @@ from torchy_baselines.ppo.policies import PPOPolicy
 
 class PPO(BaseRLModel):
     """
-    Implementation of Proximal Policy Optimization (PPO) (clip version)
+    Proximal Policy Optimization algorithm (PPO) (clip version)
+
     Paper: https://arxiv.org/abs/1707.06347
-    Code: https://github.com/openai/spinningup/
-    and https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail
-    and stable_baselines
+    Code: This implementation borrows code from OpenAI spinningup (https://github.com/openai/spinningup/)
+    https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail and
+    and Stable Baselines (PPO2 from https://github.com/hill-a/stable-baselines)
+
+    Introduction to PPO: https://spinningup.openai.com/en/latest/algorithms/ppo.html
+
+    :param policy: (PPOPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
+    :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
+    :param learning_rate: (float or callable) The learning rate, it can be a function
+    :param n_steps: (int) The number of steps to run for each environment per update
+        (i.e. batch size is n_steps * n_env where n_env is number of environment copies running in parallel)
+    :param batch_size: (int) Minibatch size
+    :param n_epochs: (int) Number of epoch when optimizing the surrogate loss
+    :param gamma: (float) Discount factor
+    :param gae_lambda: (float) Factor for trade-off of bias vs variance for Generalized Advantage Estimator
+    :param clip_range: (float or callable) Clipping parameter, it can be a function
+    :param clip_range_vf: (float or callable) Clipping parameter for the value function, it can be a function.
+        This is a parameter specific to the OpenAI implementation. If None is passed (default),
+        no clipping will be done on the value function.
+        IMPORTANT: this clipping depends on the reward scaling.
+    :param ent_coef: (float) Entropy coefficient for the loss calculation
+    :param vf_coef: (float) Value function coefficient for the loss calculation
+    :param max_grad_norm: (float) The maximum value for the gradient clipping
+    :param target_kl: (float) Limit the KL divergence between updates,
+        because the clipping is not enough to prevent large update
+        see issue #213 (cf https://github.com/hill-a/stable-baselines/issues/213)
+        By default, there is no limit on the kl div.
+    :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
+    :param create_eval_env: (bool) Whether to create a second environment that will be
+        used for evaluating the agent periodically. (Only available when passing string for the environment)
+    :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
+    :param verbose: (int) the verbosity level: 0 none, 1 training information, 2 tensorflow debug
+    :param seed: (int) Seed for the pseudo random generators
+    :param device: (str or th.device) Device (cpu, cuda, ...) on which the code should be run.
+        Setting it to auto, the code will be run on the GPU if possible.
+    :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
-    def __init__(self, policy, env, policy_kwargs=None, verbose=0,
-                 learning_rate=3e-4, seed=0, device='auto',
-                 n_optim=5, batch_size=64, n_steps=256,
-                 gamma=0.99, gae_lambda=0.95, clip_range=0.2,
-                 ent_coef=0.01, vf_coef=0.5, max_grad_norm=0.5,
-                 target_kl=None, clip_range_vf=None, create_eval_env=False,
-                 tensorboard_log=None,
+
+    def __init__(self, policy, env, learning_rate=3e-4,
+                 n_steps=2048, batch_size=64, n_epochs=10,
+                 gamma=0.99, gae_lambda=0.95, clip_range=0.2, clip_range_vf=None,
+                 ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5,
+                 target_kl=None, tensorboard_log=None, create_eval_env=False,
+                 policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
 
-        super(PPO, self).__init__(policy, env, PPOPolicy, policy_kwargs,
-                                  verbose, device, create_eval_env=create_eval_env, support_multi_env=True)
+        super(PPO, self).__init__(policy, env, PPOPolicy, policy_kwargs=policy_kwargs,
+                                  verbose=verbose, device=device,
+                                  create_eval_env=create_eval_env, support_multi_env=True)
 
         self.learning_rate = learning_rate
         self.seed = seed
         self.batch_size = batch_size
-        self.n_optim = n_optim
+        self.n_epochs = n_epochs
         self.n_steps = n_steps
         self.gamma = gamma
         self.gae_lambda = gae_lambda
@@ -177,7 +213,7 @@ class PPO(BaseRLModel):
         obs = self.env.reset()
         eval_env = self._get_eval_env(eval_env)
 
-        if self.tensorboard_log is not None:
+        if self.tensorboard_log is not None and SummaryWriter is not None:
             self.tb_writer = SummaryWriter(log_dir=os.path.join(self.tensorboard_log, tb_log_name))
 
         while self.num_timesteps < total_timesteps:
@@ -193,7 +229,7 @@ class PPO(BaseRLModel):
             self.num_timesteps += self.n_steps * self.n_envs
             timesteps_since_eval += self.n_steps * self.n_envs
 
-            self.train(self.n_optim, batch_size=self.batch_size)
+            self.train(self.n_epochs, batch_size=self.batch_size)
 
             # Evaluate agent
             if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:

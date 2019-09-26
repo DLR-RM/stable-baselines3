@@ -69,7 +69,7 @@ class Critic(BaseNetwork):
 
 class SACPolicy(BasePolicy):
     def __init__(self, observation_space, action_space,
-                 learning_rate=1e-3, net_arch=None, device='cpu',
+                 learning_rate=3e-4, net_arch=None, device='cpu',
                  activation_fn=nn.ReLU):
         super(SACPolicy, self).__init__(observation_space, action_space, device)
         self.obs_dim = self.observation_space.shape[0]
@@ -95,9 +95,6 @@ class SACPolicy(BasePolicy):
         self.critic_target = self.make_critic()
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=learning_rate)
-
-    def actor_forward(self, state, deterministic=False):
-        pass
 
     def make_actor(self):
         return Actor(**self.net_args).to(self.device)

@@ -1,0 +1,83 @@
+.. _ppo2:
+
+.. automodule:: torchy_baselines.ppo
+
+PPO
+===
+
+The `Proximal Policy Optimization <https://arxiv.org/abs/1707.06347>`_ algorithm combines ideas from A2C (having multiple workers)
+and TRPO (it uses a trust region to improve the actor).
+
+The main idea is that after an update, the new policy should be not too far form the old policy.
+For that, ppo uses clipping to avoid too large update.
+
+
+.. note::
+
+  PPO contains several modifications from the original algorithm not documented
+  by OpenAI: advantages are normalized and value function can be also clipped .
+
+
+Notes
+-----
+
+- Original paper: https://arxiv.org/abs/1707.06347
+- Clear explanation of PPO on Arxiv Insights channel: https://www.youtube.com/watch?v=5P7I-xPq8u8
+- OpenAI blog post: https://blog.openai.com/openai-baselines-ppo/
+
+
+Can I use?
+----------
+
+-  Recurrent policies: ❌
+-  Multi processing: ✔️
+-  Gym spaces:
+
+
+============= ====== ===========
+Space         Action Observation
+============= ====== ===========
+Discrete      ❌      ❌
+Box           ✔️      ✔️
+MultiDiscrete ❌     ❌
+MultiBinary   ❌      ❌
+============= ====== ===========
+
+Example
+-------
+
+Train a PPO agent on `Pendulum-v0` using 4 processes.
+
+.. code-block:: python
+
+   import gym
+
+   from torchy_baselines.ppo.policies import MlpPolicy
+   from torchy_baselines.common.vec_env import SubprocVecEnv
+   from torchy_baselines import PPO
+
+   # multiprocess environment
+   n_cpu = 4
+   env = SubprocVecEnv([lambda: gym.make('Pendulum-v0') for i in range(n_cpu)])
+
+   model = PPO(MlpPolicy, env, verbose=1)
+   model.learn(total_timesteps=25000)
+   model.save("ppo2_cartpole")
+
+   del model # remove to demonstrate saving and loading
+
+   model = PPO.load("ppo2_cartpole")
+
+   # Enjoy trained agent
+   obs = env.reset()
+   while True:
+       action, _states = model.predict(obs)
+       obs, rewards, dones, info = env.step(action)
+       env.render()
+
+Parameters
+----------
+
+.. autoclass:: PPO
+  :members:
+  :inherited-members:

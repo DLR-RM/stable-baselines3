@@ -251,7 +251,7 @@ class SAC(BaseRLModel):
             episode_num += n_episodes
             timesteps_since_eval += episode_timesteps
 
-            if self.num_timesteps > 0:
+            if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
                 if self.verbose > 1:
                     print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
                         self.num_timesteps, episode_num, episode_timesteps, episode_reward))

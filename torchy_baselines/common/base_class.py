@@ -251,9 +251,12 @@ class BaseRLModel(object):
             while not done:
                 # Select action randomly or according to policy
                 if num_timesteps < learning_starts:
-                    action = [self.action_space.sample()]
+                    action = np.array([self.action_space.sample()])
                 else:
-                    action = self.scale_action(self.predict(obs, deterministic=deterministic))
+                    action = self.predict(obs, deterministic=deterministic)
+
+                # Rescale the action from [low, high] to [-1, 1]
+                action = self.scale_action(action)
 
                 # Add noise to the action (improve exploration)
                 if action_noise is not None:

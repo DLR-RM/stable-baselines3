@@ -19,7 +19,6 @@ PyTorch version of [Stable Baselines](https://github.com/hill-a/stable-baselines
 TODO:
 - save/load
 - predict
-- better rescale (min + action * range)
 - flexible mlp
 - logger
 - better monitor wrapper?

@@ -80,6 +80,22 @@ class BaseRLModel(object):
             assert eval_env.num_envs == 1
         return eval_env
 
+    def scale_action(self, action):
+        """
+        Rescale the action from [low, high] to [-1, 1]
+        (no need for symmetric action space)
+        """
+        low, high = self.action_space.low, self.action_space.high
+        return 2.0 * ((action - low) / (high - low)) - 1.0
+
+    def unscale_action(self, scaled_action):
+        """
+        Rescale the action from [-1, 1] to [low, high]
+        (no need for symmetric action space)
+        """
+        low, high = self.action_space.low, self.action_space.high
+        return low + (0.5 * (scaled_action + 1.0) * (high -  low))
+
     def get_env(self):
         """
         returns the current environment (can be None if not defined)
@@ -215,7 +231,7 @@ class BaseRLModel(object):
         if self.eval_env is not None:
             self.eval_env.seed(seed)
 
-    def collect_rollouts(self, env, n_episodes=1, n_steps=-1, action_noise_std=0.0,
+    def collect_rollouts(self, env, n_episodes=1, n_steps=-1, action_noise=None,
                          deterministic=False, callback=None,
                          learning_starts=0, num_timesteps=0,
                          replay_buffer=None, obs=None):
@@ -237,16 +253,15 @@ class BaseRLModel(object):
                 if num_timesteps < learning_starts:
                     action = [self.action_space.sample()]
                 else:
-                    action = self.predict(obs, deterministic=deterministic) / self.max_action
+                    action = self.scale_action(self.predict(obs, deterministic=deterministic))
 
-                if action_noise_std > 0:
+                # Add noise to the action (improve exploration)
+                if action_noise is not None:
                     # NOTE: in the original implementation of TD3, the noise was applied to the unscaled action
-                    action_noise = np.random.normal(0, action_noise_std, size=self.action_space.shape[0])
-                    action = (action + action_noise).clip(-1, 1)
+                    action = np.clip(action + action_noise(), -1, 1)
 
                 # Rescale and perform action
-                # TODO: better rescale
-                new_obs, reward, done, _ = env.step(self.max_action * action)
+                new_obs, reward, done, _ = env.step(self.unscale_action(action))
 
                 done_bool = [float(done[0])]
                 episode_reward += reward
@@ -267,6 +282,8 @@ class BaseRLModel(object):
                 total_episodes += 1
                 episode_rewards.append(episode_reward)
                 total_timesteps.append(episode_timesteps)
+                if action_noise is not None:
+                    action_noise.reset()
 
         mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
 

@@ -19,14 +19,14 @@ class CEMRL(TD3):
                  sigma_init=1e-3, pop_size=10, damp=1e-3, damp_limit=1e-5,
                  elitism=False, n_grad=5, policy_delay=2, batch_size=100,
                  buffer_size=int(1e6), learning_rate=1e-3, seed=0, device='auto',
-                 action_noise_std=0.0, learning_starts=100, tau=0.005,
+                 action_noise=None, learning_starts=100, tau=0.005,
                  n_episodes_rollout=1, update_style='original',
                  create_eval_env=False,
                  _init_setup_model=True):
 
         super(CEMRL, self).__init__(policy, env,
                                     buffer_size=buffer_size, learning_rate=learning_rate, seed=seed, device=device,
-                                    action_noise_std=action_noise_std, learning_starts=learning_starts,
+                                    action_noise=action_noise, learning_starts=learning_starts,
                                     n_episodes_rollout=n_episodes_rollout, tau=tau,
                                     policy_kwargs=policy_kwargs, verbose=verbose,
                                     policy_delay=policy_delay, batch_size=batch_size,
@@ -136,7 +136,7 @@ class CEMRL(TD3):
                 self.actor.load_from_vector(params)
 
                 rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,
-                                                n_steps=-1, action_noise_std=self.action_noise_std,
+                                                n_steps=-1, action_noise=self.action_noise,
                                                 deterministic=False, callback=None,
                                                 learning_starts=self.learning_starts,
                                                 num_timesteps=self.num_timesteps,

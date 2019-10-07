@@ -33,7 +33,7 @@ class TD3(BaseRLModel):
     :param train_freq: (int) Update the model every `train_freq` steps.
     :param gradient_steps: (int) How many gradient update after each step
     :param tau: (float) the soft update coefficient ("polyak update" of the target networks, between 0 and 1)
-    :param action_noise: (ActionNoise) the action noise type. Cf DDPG for the different action noise type.
+    :param action_noise: (ActionNoise) the action noise type. Cf common.noise for the different action noise type.
     :param target_policy_noise: (float) Standard deviation of gaussian noise added to target policy
         (smoothing noise)
     :param target_noise_clip: (float) Limit for absolute value of target policy smoothing noise.
@@ -47,8 +47,7 @@ class TD3(BaseRLModel):
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
     def __init__(self, policy, env, buffer_size=int(1e6), learning_rate=1e-3,
-                 action_noise_std=0.1, policy_delay=2, learning_starts=100,
-                 gamma=0.99, batch_size=100,
+                 policy_delay=2, learning_starts=100, gamma=0.99, batch_size=100,
                  train_freq=-1, gradient_steps=-1, n_episodes_rollout=1,
                  tau=0.005, action_noise=None, target_policy_noise=0.2, target_noise_clip=0.5,
                  create_eval_env=False, policy_kwargs=None, verbose=0,
@@ -57,8 +56,6 @@ class TD3(BaseRLModel):
         super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device,
                                   create_eval_env=create_eval_env)
 
-        self.max_action = np.abs(self.action_space.high)
-        self.action_noise_std = action_noise_std
         self.buffer_size = buffer_size
         self.seed = seed
 
@@ -72,7 +69,7 @@ class TD3(BaseRLModel):
         self.batch_size = batch_size
         self.tau = tau
         self.gamma = gamma
-        # self.action_noise = action_noise
+        self.action_noise = action_noise
         self.policy_delay = policy_delay
         self.target_noise_clip = target_noise_clip
         self.target_policy_noise = target_policy_noise
@@ -112,10 +109,7 @@ class TD3(BaseRLModel):
         :param deterministic: (bool) Whether or not to return deterministic actions.
         :return: (np.ndarray, np.ndarray) the model's action and the next state (used in recurrent policies)
         """
-        # Rescale the action (no need for symmetric action space)
-        # return self.action_space.low +\
-        #     (0.5 * (self.select_action(observation) + 1.0) * (self.action_space.high -  self.action_space.low))
-        return self.max_action * self.select_action(observation)
+        return self.unscale_action(self.select_action(observation))
 
     def train_critic(self, gradient_steps=1, batch_size=100, replay_data=None, tau=0.0):
 
@@ -200,6 +194,8 @@ class TD3(BaseRLModel):
         start_time = time.time()
         eval_env = self._get_eval_env(eval_env)
         obs = self.env.reset()
+        if self.action_noise is not None:
+            self.action_noise.reset()
 
         while self.num_timesteps < total_timesteps:
 
@@ -209,7 +205,7 @@ class TD3(BaseRLModel):
                     break
 
             rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,
-                                            n_steps=self.train_freq, action_noise_std=self.action_noise_std,
+                                            n_steps=self.train_freq, action_noise=self.action_noise,
                                             deterministic=False, callback=None,
                                             learning_starts=self.learning_starts,
                                             num_timesteps=self.num_timesteps,

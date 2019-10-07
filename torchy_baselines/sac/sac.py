@@ -41,7 +41,7 @@ class SAC(BaseRLModel):
     :param gradient_steps: (int) How many gradient update after each step
     :param target_entropy: (str or float) target entropy when learning ent_coef (ent_coef = 'auto')
     :param action_noise: (ActionNoise) the action noise type (None by default), this can help
-        for hard exploration problem. Cf DDPG for the different action noise type.
+        for hard exploration problem. Cf common.noise for the different action noise type.
     :param gamma: (float) the discount factor
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
@@ -57,15 +57,13 @@ class SAC(BaseRLModel):
                  tau=0.005, ent_coef='auto', target_update_interval=1,
                  train_freq=1, gradient_steps=1, n_episodes_rollout=-1,
                  target_entropy='auto', action_noise=None,
-                 gamma=0.99, action_noise_std=0.0, create_eval_env=False,
+                 gamma=0.99, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
 
         super(SAC, self).__init__(policy, env, SACPolicy, policy_kwargs, verbose, device,
                                   create_eval_env=create_eval_env)
 
-        self.max_action = np.abs(self.action_space.high)
-        self.action_noise_std = action_noise_std
         self.learning_rate = learning_rate
         self.seed = seed
         self.target_entropy = target_entropy
@@ -84,7 +82,7 @@ class SAC(BaseRLModel):
         self.train_freq = train_freq
         self.gradient_steps = gradient_steps
         self.n_episodes_rollout = n_episodes_rollout
-        # self.action_noise = action_noise
+        self.action_noise = action_noise
         self.gamma = gamma
 
         if _init_setup_model:
@@ -151,7 +149,7 @@ class SAC(BaseRLModel):
         :param deterministic: (bool) Whether or not to return deterministic actions.
         :return: (np.ndarray, np.ndarray) the model's action and the next state (used in recurrent policies)
         """
-        return self.max_action * self.select_action(observation)
+        return self.unscale_action(self.select_action(observation))
 
     def train(self, gradient_steps, batch_size=64):
         for gradient_step in range(gradient_steps):
@@ -238,7 +236,7 @@ class SAC(BaseRLModel):
                     break
 
             rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,
-                                            n_steps=self.train_freq, action_noise_std=self.action_noise_std,
+                                            n_steps=self.train_freq, action_noise=self.action_noise,
                                             deterministic=False, callback=None,
                                             learning_starts=self.learning_starts,
                                             num_timesteps=self.num_timesteps,

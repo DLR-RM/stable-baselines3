@@ -1,5 +1,6 @@
 import os
 
+import pytest
 import numpy as np
 
 from torchy_baselines import TD3, CEMRL, PPO, SAC
@@ -27,8 +28,9 @@ def test_cemrl():
     os.remove("test_save.pth")
 
 
-def test_ppo():
-    model = PPO('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
+@pytest.mark.parametrize("env_id", ['CartPole-v1', 'Pendulum-v0'])
+def test_ppo(env_id):
+    model = PPO('MlpPolicy', env_id, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
     model.learn(total_timesteps=1000, eval_freq=500)
     # model.save("test_save")
     # model.load("test_save")

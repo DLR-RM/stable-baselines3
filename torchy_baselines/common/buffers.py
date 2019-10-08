@@ -131,6 +131,9 @@ class RolloutBuffer(BaseBuffer):
         self.returns = self.advantages + self.values
 
     def add(self, obs, action, reward, done, value, log_prob):
+        if len(log_prob.shape) == 0:
+            # Reshape 0-d tensor to avoid error
+            log_prob = log_prob.reshape(-1, 1)
         self.observations[self.pos] = th.FloatTensor(np.array(obs).copy())
         self.actions[self.pos] = th.FloatTensor(np.array(action).copy())
         self.rewards[self.pos] = th.FloatTensor(np.array(reward).copy())

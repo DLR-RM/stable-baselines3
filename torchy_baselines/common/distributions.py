@@ -1,7 +1,8 @@
 import numpy as np
 import torch as th
 import torch.nn as nn
-from torch.distributions import Normal
+from torch.distributions import Normal, Categorical
+from gym import spaces
 
 class Distribution(object):
     def __init__(self):
@@ -100,8 +101,9 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         return action, self
 
     def mode(self):
+        self.gaussian_action = self.distribution.mean
         # Squash the output
-        return th.tanh(self.distribution.mean)
+        return th.tanh(self.gaussian_action)
 
     def sample(self):
         self.gaussian_action = self.distribution.rsample()
@@ -124,3 +126,62 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         # Squash correction (from original SAC implementation)
         log_prob -= th.sum(th.log(1 - action ** 2 + self.epsilon), dim=1)
         return log_prob
+
+
+class CategoricalDistribution(Distribution):
+    def __init__(self, action_dim):
+        super(CategoricalDistribution, self).__init__()
+        self.distribution = None
+        self.action_dim = action_dim
+
+    def proba_distribution_net(self, latent_dim):
+        action_logits = nn.Linear(latent_dim, self.action_dim)
+        return action_logits
+
+    def proba_distribution(self, action_logits, deterministic=False):
+        self.distribution = Categorical(logits=action_logits)
+        if deterministic:
+            action = self.mode()
+        else:
+            action = self.sample()
+        return action, self
+
+    def mode(self):
+        return th.argmax(self.distribution.probs, dim=1)
+
+    def sample(self):
+        return self.distribution.sample()
+
+    def entropy(self):
+        return self.distribution.entropy()
+
+    def log_prob_from_params(self, action_logits):
+        action, _ = self.proba_distribution(action_logits)
+        log_prob = self.log_prob(action)
+        return action, log_prob
+
+    def log_prob(self, action):
+        log_prob = self.distribution.log_prob(action)
+        return log_prob
+
+
+def make_proba_distribution(action_space):
+    """
+    Return an instance of Distribution for the correct type of action space
+
+    :param action_space: (Gym Space) the input action space
+    :return: (Distribution) the approriate Distribution object
+    """
+    if isinstance(action_space, spaces.Box):
+        assert len(action_space.shape) == 1, "Error: the action space must be a vector"
+        return DiagGaussianDistribution(action_space.shape[0])
+    elif isinstance(action_space, spaces.Discrete):
+        return CategoricalDistribution(action_space.n)
+    # elif isinstance(action_space, spaces.MultiDiscrete):
+    #     return MultiCategoricalDistribution(action_space.nvec)
+    # elif isinstance(action_space, spaces.MultiBinary):
+    #     return BernoulliDistribution(action_space.n)
+    else:
+        raise NotImplementedError("Error: probability distribution, not implemented for action space of type {}."
+                                  .format(type(action_space)) +
+                                  " Must be of type Gym Spaces: Box, Discrete, MultiDiscrete or MultiBinary.")

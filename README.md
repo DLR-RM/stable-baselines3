@@ -22,7 +22,6 @@ TODO:
 - flexible mlp
 - logger
 - better monitor wrapper?
-- automatic choice for action distribution
 - A2C
 
 Later:

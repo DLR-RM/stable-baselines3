@@ -3,6 +3,7 @@ import time
 from copy import deepcopy
 
 import gym
+from gym import spaces
 import torch as th
 import torch.nn.functional as F
 # Check if tensorboard is available for pytorch
@@ -96,7 +97,15 @@ class PPO(BaseRLModel):
             self._setup_model()
 
     def _setup_model(self):
-        state_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
+        # TODO: preprocessing: one hot vector for obs discrete
+        state_dim = self.observation_space.shape[0]
+        if isinstance(self.action_space, spaces.Box):
+            # Action is a 1D vector
+            action_dim = self.action_space.shape[0]
+        elif isinstance(self.action_space, spaces.Discrete):
+            # Action is a scalar
+            action_dim = 1
+
         # TODO: different seed for each env when n_envs > 1
         if self.n_envs == 1:
             self.set_random_seed(self.seed)
@@ -124,7 +133,10 @@ class PPO(BaseRLModel):
         :param deterministic: (bool) Whether or not to return deterministic actions.
         :return: (np.ndarray, np.ndarray) the model's action and the next state (used in recurrent policies)
         """
-        return np.clip(self.select_action(observation), self.action_space.low, self.action_space.high)
+        clipped_actions = self.select_action(observation)
+        if isinstance(self.action_space, gym.spaces.Box):
+            clipped_actions = np.clip(clipped_actions, self.action_space.low, self.action_space.high)
+        return clipped_actions
 
     def collect_rollouts(self, env, rollout_buffer, n_rollout_steps=256, callback=None,
                          obs=None):
@@ -160,6 +172,11 @@ class PPO(BaseRLModel):
             for replay_data in self.rollout_buffer.get(batch_size):
                 # Unpack
                 obs, action, old_values, old_log_prob, advantage, return_batch = replay_data
+
+                if isinstance(self.action_space, spaces.Discrete):
+                    # Convert discrete action for float to long
+                    action = action.long().flatten()
+
                 values, log_prob, entropy = self.policy.get_policy_stats(obs, action)
                 values = values.flatten()
                 # Normalize advantage

@@ -5,7 +5,7 @@ import torch.nn as nn
 import numpy as np
 
 from torchy_baselines.common.policies import BasePolicy, register_policy, create_mlp
-from torchy_baselines.common.distributions import DiagGaussianDistribution, SquashedDiagGaussianDistribution
+from torchy_baselines.common.distributions import make_proba_distribution, DiagGaussianDistribution, CategoricalDistribution
 
 
 class PPOPolicy(BasePolicy):
@@ -14,7 +14,6 @@ class PPOPolicy(BasePolicy):
                  activation_fn=nn.Tanh, adam_epsilon=1e-5, ortho_init=True):
         super(PPOPolicy, self).__init__(observation_space, action_space, device)
         self.obs_dim = self.observation_space.shape[0]
-        self.action_dim = self.action_space.shape[0]
         if net_arch is None:
             net_arch = [64, 64]
         self.net_arch = net_arch
@@ -30,8 +29,7 @@ class PPOPolicy(BasePolicy):
         self.shared_net = None
         self.pi_net, self.vf_net = None, None
         # Action distribution
-        self.action_dist = DiagGaussianDistribution(self.action_dim)
-        # self.action_dist = SquashedDiagGaussianDistribution(self.action_dim)
+        self.action_dist = make_proba_distribution(action_space)
         self._build(learning_rate)
 
     def _build(self, learning_rate):
@@ -46,7 +44,11 @@ class PPOPolicy(BasePolicy):
 
         # self.action_net = nn.Linear(self.net_arch[-1], self.action_dim)
         # self.log_std = nn.Parameter(th.zeros(self.action_dim))
-        self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=self.net_arch[-1])
+        if isinstance(self.action_dist, DiagGaussianDistribution):
+            self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=self.net_arch[-1])
+        elif isinstance(self.action_dist, CategoricalDistribution):
+            self.action_net = self.action_dist.proba_distribution_net(latent_dim=self.net_arch[-1])
+
         self.value_net = nn.Linear(self.net_arch[-1], 1)
         # Init weights: use orthogonal initialization
         # with small initial weight for the output
@@ -64,6 +66,14 @@ class PPOPolicy(BasePolicy):
         # TODO: support linear decay of the learning rate
         self.optimizer = th.optim.Adam(self.parameters(), lr=learning_rate, eps=self.adam_epsilon)
 
+    # def get_action_dist_params(self, obs):
+    #     latent_pi, _ = self._get_latent(obs)
+    #     mean_actions = self.pi_net(latent_pi)
+    #     if isinstance(self.action_dist, DiagGaussianDistribution):
+    #         return {'mean_actions': mean_actions,  'log_std': self.log_std}
+    #     elif isinstance(self.action_dist, CategoricalDistribution):
+    #         return {'action_logits': mean_actions}
+
     def forward(self, obs, deterministic=False):
         if not isinstance(obs, th.Tensor):
             obs = th.FloatTensor(obs).to(self.device)
@@ -71,6 +81,8 @@ class PPOPolicy(BasePolicy):
         value = self.value_net(latent_vf)
         action, action_distribution = self._get_action_dist_from_latent(latent_pi, deterministic=deterministic)
         log_prob = action_distribution.log_prob(action)
+        # mean_actions, log_std = self.get_action_dist_params(obs)
+        # action, log_prob = self.action_dist.log_prob_from_params(**self.get_action_dist_params(obs))
         return action, value, log_prob
 
     def _get_latent(self, obs):
@@ -82,7 +94,10 @@ class PPOPolicy(BasePolicy):
 
     def _get_action_dist_from_latent(self, latent, deterministic=False):
         mean_actions = self.action_net(latent)
-        return self.action_dist.proba_distribution(mean_actions, self.log_std, deterministic=deterministic)
+        if isinstance(self.action_dist, DiagGaussianDistribution):
+            return self.action_dist.proba_distribution(mean_actions, self.log_std, deterministic=deterministic)
+        elif isinstance(self.action_dist, CategoricalDistribution):
+            return self.action_dist.proba_distribution(mean_actions, deterministic=deterministic)
 
     def actor_forward(self, obs, deterministic=False):
         latent_pi, _ = self._get_latent(obs)

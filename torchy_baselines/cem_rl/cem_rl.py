@@ -55,15 +55,10 @@ class CEMRL(TD3):
                       pop_size=self.pop_size, antithetic=not self.pop_size % 2, parents=self.pop_size // 2,
                       elitism=self.elitism)
 
-    def learn(self, total_timesteps, callback=None, log_interval=100,
+    def learn(self, total_timesteps, callback=None, log_interval=4,
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="CEMRL", reset_num_timesteps=True):
 
-        timesteps_since_eval, actor_steps = 0, 0
-        episode_num = 0
-        evaluations = []
-        start_time = time.time()
-        eval_env = self._get_eval_env(eval_env)
-        obs = self.env.reset()
+        timesteps_since_eval, episode_num, evaluations, obs, eval_env = self._setup_learn(eval_env)
 
         while self.num_timesteps < total_timesteps:
 
@@ -127,7 +122,7 @@ class CEMRL(TD3):
 
                 if self.verbose > 0:
                     print("Eval num_timesteps={}, mean_reward={:.2f}".format(self.num_timesteps, evaluations[-1]))
-                    print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - start_time)))
+                    print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - self.start_time)))
 
             actor_steps = 0
             # evaluate all actors
@@ -141,7 +136,8 @@ class CEMRL(TD3):
                                                 learning_starts=self.learning_starts,
                                                 num_timesteps=self.num_timesteps,
                                                 replay_buffer=self.replay_buffer,
-                                                obs=obs)
+                                                obs=obs, episode_num=episode_num,
+                                                log_interval=log_interval)
 
                 # Unpack
                 episode_reward, episode_timesteps, n_episodes, obs = rollout

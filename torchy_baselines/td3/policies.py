@@ -5,11 +5,8 @@ from torchy_baselines.common.policies import BasePolicy, register_policy, create
 
 
 class Actor(BaseNetwork):
-    def __init__(self, obs_dim, action_dim, net_arch=None, activation_fn=nn.ReLU):
+    def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU):
         super(Actor, self).__init__()
-
-        if net_arch is None:
-            net_arch = [400, 300]
 
         # TODO: orthogonal initialization?
         actor_net = create_mlp(obs_dim, action_dim, net_arch, activation_fn, squash_out=True)
@@ -21,11 +18,8 @@ class Actor(BaseNetwork):
 
 class Critic(BaseNetwork):
     def __init__(self, obs_dim, action_dim,
-                 net_arch=None, activation_fn=nn.ReLU):
+                 net_arch, activation_fn=nn.ReLU):
         super(Critic, self).__init__()
-
-        if net_arch is None:
-            net_arch = [400, 300]
 
         q1_net = create_mlp(obs_dim + action_dim, 1, net_arch, activation_fn)
         self.q1_net = nn.Sequential(*q1_net)
@@ -48,6 +42,10 @@ class TD3Policy(BasePolicy):
                  learning_rate=1e-3, net_arch=None, device='cpu',
                  activation_fn=nn.ReLU):
         super(TD3Policy, self).__init__(observation_space, action_space, device)
+
+        if net_arch is None:
+            net_arch = [400, 300]
+
         self.obs_dim = self.observation_space.shape[0]
         self.action_dim = self.action_space.shape[0]
         self.net_arch = net_arch

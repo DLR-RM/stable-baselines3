@@ -1,4 +1,6 @@
+import time
 from abc import ABCMeta, abstractmethod
+from collections import deque
 
 import gym
 import torch as th
@@ -7,6 +9,8 @@ import numpy as np
 from torchy_baselines.common.policies import get_policy_from_name
 from torchy_baselines.common.utils import set_random_seed
 from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv
+from torchy_baselines.common.monitor import Monitor
+from torchy_baselines.common import logger
 
 
 class BaseRLModel(object):
@@ -21,11 +25,14 @@ class BaseRLModel(object):
     :param device: (str or th.device) Device on which the code should.
         By default, it will try to use a Cuda compatible device and fallback to cpu
         if it is not possible.
+    :param monitor_wrapper: (bool) When creating an environment, whether to wrap it
+        or not in a Monitor wrapper.
     """
     __metaclass__ = ABCMeta
 
     def __init__(self, policy, env, policy_base, policy_kwargs=None,
-                 verbose=0, device='auto', support_multi_env=False, create_eval_env=False):
+                 verbose=0, device='auto', support_multi_env=False,
+                 create_eval_env=False, monitor_wrapper=True, seed=None):
         if isinstance(policy, str) and policy_base is not None:
             self.policy = get_policy_from_name(policy_base, policy)
         else:
@@ -48,14 +55,22 @@ class BaseRLModel(object):
         self.params = None
         self.eval_env = None
         self.replay_buffer = None
+        self.seed = seed
 
         if env is not None:
             if isinstance(env, str):
                 if create_eval_env:
-                    self.eval_env = DummyVecEnv([lambda: gym.make(env)])
+                    eval_env = gym.make(env)
+                    if monitor_wrapper:
+                        eval_env = Monitor(eval_env, filename=None)
+                    self.eval_env = DummyVecEnv([lambda: eval_env])
                 if self.verbose >= 1:
                     print("Creating environment from the given name, wrapped in a DummyVecEnv.")
-                env = DummyVecEnv([lambda: gym.make(env)])
+
+                env = gym.make(env)
+                if monitor_wrapper:
+                    env = Monitor(env, filename=None)
+                env = DummyVecEnv([lambda: env])
 
             self.observation_space = env.observation_space
             self.action_space = env.action_space
@@ -95,6 +110,17 @@ class BaseRLModel(object):
         """
         low, high = self.action_space.low, self.action_space.high
         return low + (0.5 * (scaled_action + 1.0) * (high -  low))
+
+    @staticmethod
+    def safe_mean(arr):
+        """
+        Compute the mean of an array if there is at least one element.
+        For empty array, return nan. It is used for logging only.
+
+        :param arr: (np.ndarray)
+        :return: (float)
+        """
+        return np.nan if len(arr) == 0 else np.mean(arr)
 
     def get_env(self):
         """
@@ -231,10 +257,24 @@ class BaseRLModel(object):
         if self.eval_env is not None:
             self.eval_env.seed(seed)
 
+    def _setup_learn(self, eval_env):
+        self.start_time = time.time()
+        self.ep_info_buffer = deque(maxlen=100)
+        if self.action_noise is not None:
+            self.action_noise.reset()
+        timesteps_since_eval, episode_num = 0, 0
+        evaluations = []
+        if eval_env is not None and self.seed is not None:
+            eval_env.seed(self.seed)
+        eval_env = self._get_eval_env(eval_env)
+        obs = self.env.reset()
+        return timesteps_since_eval, episode_num, evaluations, obs, eval_env
+
     def collect_rollouts(self, env, n_episodes=1, n_steps=-1, action_noise=None,
                          deterministic=False, callback=None,
                          learning_starts=0, num_timesteps=0,
-                         replay_buffer=None, obs=None):
+                         replay_buffer=None, obs=None,
+                         episode_num=0, log_interval=None):
 
         episode_rewards = []
         total_timesteps = []
@@ -264,10 +304,16 @@ class BaseRLModel(object):
                     action = np.clip(action + action_noise(), -1, 1)
 
                 # Rescale and perform action
-                new_obs, reward, done, _ = env.step(self.unscale_action(action))
+                new_obs, reward, done, infos = env.step(self.unscale_action(action))
 
                 done_bool = [float(done[0])]
                 episode_reward += reward
+
+                # Retrieve reward and episode length if using Monitor wrapper
+                for info in infos:
+                    maybe_ep_info = info.get('episode')
+                    if maybe_ep_info is not None:
+                        self.ep_info_buffer.extend([maybe_ep_info])
 
                 # Store data in replay buffer
                 if replay_buffer is not None:
@@ -287,6 +333,21 @@ class BaseRLModel(object):
                 total_timesteps.append(episode_timesteps)
                 if action_noise is not None:
                     action_noise.reset()
+
+                # Display training infos
+                if self.verbose >= 1 and log_interval is not None and (episode_num + total_episodes) % log_interval == 0:
+                    fps = int(num_timesteps / (time.time() - self.start_time))
+                    logger.logkv("episodes", episode_num + total_episodes)
+                    # logger.logkv("mean 100 episode reward", mean_reward)
+                    if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
+                        logger.logkv('ep_rew_mean', self.safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
+                        logger.logkv('ep_len_mean', self.safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
+                    # logger.logkv("n_updates", n_updates)
+                    # logger.logkv("current_lr", current_lr)
+                    logger.logkv("fps", fps)
+                    logger.logkv('time_elapsed', int(time.time() - self.start_time))
+                    logger.logkv("total timesteps", num_timesteps)
+                    logger.dumpkvs()
 
         mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
 

@@ -62,10 +62,9 @@ class SAC(BaseRLModel):
                  _init_setup_model=True):
 
         super(SAC, self).__init__(policy, env, SACPolicy, policy_kwargs, verbose, device,
-                                  create_eval_env=create_eval_env)
+                                  create_eval_env=create_eval_env, seed=seed)
 
         self.learning_rate = learning_rate
-        self.seed = seed
         self.target_entropy = target_entropy
         self.log_ent_coef = None
         self.target_update_interval = target_update_interval
@@ -90,7 +89,8 @@ class SAC(BaseRLModel):
 
     def _setup_model(self):
         obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
-        self.set_random_seed(self.seed)
+        if self.seed is not None:
+            self.set_random_seed(self.seed)
 
         # Target entropy is used when learning the entropy coefficient
         if self.target_entropy == 'auto':
@@ -218,15 +218,11 @@ class SAC(BaseRLModel):
                 for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
                     target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
-    def learn(self, total_timesteps, callback=None, log_interval=100,
-              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="SAC", reset_num_timesteps=True):
+    def learn(self, total_timesteps, callback=None, log_interval=4,
+              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="SAC",
+              reset_num_timesteps=True):
 
-        timesteps_since_eval = 0
-        episode_num = 0
-        evaluations = []
-        start_time = time.time()
-        eval_env = self._get_eval_env(eval_env)
-        obs = self.env.reset()
+        timesteps_since_eval, episode_num, evaluations, obs, eval_env = self._setup_learn(eval_env)
 
         while self.num_timesteps < total_timesteps:
 
@@ -241,7 +237,8 @@ class SAC(BaseRLModel):
                                             learning_starts=self.learning_starts,
                                             num_timesteps=self.num_timesteps,
                                             replay_buffer=self.replay_buffer,
-                                            obs=obs)
+                                            obs=obs, episode_num=episode_num,
+                                            log_interval=log_interval)
             # Unpack
             episode_reward, episode_timesteps, n_episodes, obs = rollout
 
@@ -264,7 +261,7 @@ class SAC(BaseRLModel):
                 evaluations.append(mean_reward)
                 if self.verbose > 0:
                     print("Eval num_timesteps={}, mean_reward={:.2f}".format(self.num_timesteps, evaluations[-1]))
-                    print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - start_time)))
+                    print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - self.start_time)))
 
         return self
 

@@ -54,10 +54,7 @@ class TD3(BaseRLModel):
                  seed=0, device='auto', _init_setup_model=True):
 
         super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device,
-                                  create_eval_env=create_eval_env)
-
-        self.buffer_size = buffer_size
-        self.seed = seed
+                                  create_eval_env=create_eval_env, seed=seed)
 
         self.buffer_size = buffer_size
         # TODO: accept callables
@@ -185,17 +182,10 @@ class TD3(BaseRLModel):
             if gradient_step % policy_delay == 0:
                 self.train_actor(replay_data=replay_data, tau_actor=self.tau, tau_critic=self.tau)
 
-    def learn(self, total_timesteps, callback=None, log_interval=100,
+    def learn(self, total_timesteps, callback=None, log_interval=4,
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="TD3", reset_num_timesteps=True):
 
-        timesteps_since_eval = 0
-        episode_num = 0
-        evaluations = []
-        start_time = time.time()
-        eval_env = self._get_eval_env(eval_env)
-        obs = self.env.reset()
-        if self.action_noise is not None:
-            self.action_noise.reset()
+        timesteps_since_eval, episode_num, evaluations, obs, eval_env = self._setup_learn(eval_env)
 
         while self.num_timesteps < total_timesteps:
 
@@ -210,7 +200,8 @@ class TD3(BaseRLModel):
                                             learning_starts=self.learning_starts,
                                             num_timesteps=self.num_timesteps,
                                             replay_buffer=self.replay_buffer,
-                                            obs=obs)
+                                            obs=obs, episode_num=episode_num,
+                                            log_interval=log_interval)
             # Unpack
             episode_reward, episode_timesteps, n_episodes, obs = rollout
 
@@ -233,7 +224,7 @@ class TD3(BaseRLModel):
                 evaluations.append(mean_reward)
                 if self.verbose > 0:
                     print("Eval num_timesteps={}, mean_reward={:.2f}".format(self.num_timesteps, evaluations[-1]))
-                    print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - start_time)))
+                    print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - self.start_time)))
 
         return self
 

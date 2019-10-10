@@ -74,10 +74,9 @@ class PPO(BaseRLModel):
 
         super(PPO, self).__init__(policy, env, PPOPolicy, policy_kwargs=policy_kwargs,
                                   verbose=verbose, device=device,
-                                  create_eval_env=create_eval_env, support_multi_env=True)
+                                  create_eval_env=create_eval_env, support_multi_env=True, seed=seed)
 
         self.learning_rate = learning_rate
-        self.seed = seed
         self.batch_size = batch_size
         self.n_epochs = n_epochs
         self.n_steps = n_steps

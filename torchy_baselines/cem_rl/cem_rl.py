@@ -15,13 +15,14 @@ class CEMRL(TD3):
     Code: https://github.com/apourchot/CEM-RL
     """
 
-    def __init__(self, policy, env, policy_kwargs=None, verbose=0,
-                 sigma_init=1e-3, pop_size=10, damp=1e-3, damp_limit=1e-5,
-                 elitism=False, n_grad=5, policy_delay=2, batch_size=100,
-                 buffer_size=int(1e6), learning_rate=1e-3, seed=0, device='auto',
+    def __init__(self, policy, env, sigma_init=1e-3, pop_size=10,
+                 damp=1e-3, damp_limit=1e-5, elitism=False, n_grad=5,
+                 policy_delay=2, batch_size=100,
+                 buffer_size=int(1e6), learning_rate=1e-3,
                  action_noise=None, learning_starts=100, tau=0.005,
                  n_episodes_rollout=1, update_style='original',
-                 create_eval_env=False,
+                 tensorboard_log=None, create_eval_env=False,
+                 policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
 
         super(CEMRL, self).__init__(policy, env,

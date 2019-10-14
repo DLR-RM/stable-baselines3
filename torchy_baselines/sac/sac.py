@@ -57,7 +57,7 @@ class SAC(BaseRLModel):
                  tau=0.005, ent_coef='auto', target_update_interval=1,
                  train_freq=1, gradient_steps=1, n_episodes_rollout=-1,
                  target_entropy='auto', action_noise=None,
-                 gamma=0.99, create_eval_env=False,
+                 gamma=0.99, tensorboard_log=None, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
 

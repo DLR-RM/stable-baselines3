@@ -50,7 +50,7 @@ class TD3(BaseRLModel):
                  policy_delay=2, learning_starts=100, gamma=0.99, batch_size=100,
                  train_freq=-1, gradient_steps=-1, n_episodes_rollout=1,
                  tau=0.005, action_noise=None, target_policy_noise=0.2, target_noise_clip=0.5,
-                 create_eval_env=False, policy_kwargs=None, verbose=0,
+                 tensorboard_log=None, create_eval_env=False, policy_kwargs=None, verbose=0,
                  seed=0, device='auto', _init_setup_model=True):
 
         super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device,

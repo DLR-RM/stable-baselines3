@@ -1,4 +1,6 @@
 from collections import OrderedDict
+from copy import deepcopy
+
 import numpy as np
 
 from torchy_baselines.common.vec_env import VecEnv
@@ -44,7 +46,7 @@ class DummyVecEnv(VecEnv):
                 obs = self.envs[env_idx].reset()
             self._save_obs(env_idx, obs)
         return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones),
-                self.buf_infos.copy())
+                deepcopy(self.buf_infos))
 
     def reset(self):
         for env_idx in range(self.num_envs):
@@ -97,8 +99,11 @@ class DummyVecEnv(VecEnv):
         for env_i in target_envs:
             setattr(env_i, attr_name, value)
 
-    def env_method(self, method_name, *method_args, indices=None, **method_kwargs):
+    def env_method(self, method_name, *method_args, **method_kwargs):
         """Call instance methods of vectorized environments."""
+        indices = method_kwargs.get('indices')
+        if 'indices' in method_kwargs:
+            del method_kwargs['indices']
         target_envs = self._get_target_envs(indices)
         return [getattr(env_i, method_name)(*method_args, **method_kwargs) for env_i in target_envs]
 

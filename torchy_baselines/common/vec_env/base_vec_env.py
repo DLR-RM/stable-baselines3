@@ -112,7 +112,7 @@ class VecEnv(object):
         pass
 
     @abstractmethod
-    def env_method(self, method_name, *method_args, indices=None, **method_kwargs):
+    def env_method(self, method_name, *method_args, **method_kwargs):
         """
         Call instance methods of vectorized environments.
 
@@ -222,8 +222,8 @@ class VecEnvWrapper(VecEnv):
     def set_attr(self, attr_name, value, indices=None):
         return self.venv.set_attr(attr_name, value, indices)
 
-    def env_method(self, method_name, *method_args, indices=None, **method_kwargs):
-        return self.venv.env_method(method_name, *method_args, indices=indices, **method_kwargs)
+    def env_method(self, method_name, *method_args, **method_kwargs):
+        return self.venv.env_method(method_name, *method_args, **method_kwargs)
 
     def __getattr__(self, name):
         """Find attribute from wrapped venv(s) if this wrapper does not have it.

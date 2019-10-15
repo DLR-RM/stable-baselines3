@@ -153,7 +153,8 @@ class SubprocVecEnv(VecEnv):
         for pipe in self.remotes:
             # gather images from subprocesses
             # `mode` will be taken into account later
-            pipe.send(('render', (args, {'mode': 'rgb_array', **kwargs})))
+            kwargs.update({'mode': 'rgb_array'})
+            pipe.send(('render', (args, kwargs)))
         imgs = [pipe.recv() for pipe in self.remotes]
         # Create a big image by tiling images from subprocesses
         bigimg = tile_images(imgs)
@@ -187,8 +188,11 @@ class SubprocVecEnv(VecEnv):
         for remote in target_remotes:
             remote.recv()
 
-    def env_method(self, method_name, *method_args, indices=None, **method_kwargs):
+    def env_method(self, method_name, *method_args, **method_kwargs):
         """Call instance methods of vectorized environments."""
+        indices = method_kwargs.get('indices')
+        if 'indices' in method_kwargs:
+            del method_kwargs['indices']
         target_remotes = self._get_target_remotes(indices)
         for remote in target_remotes:
             remote.send(('env_method', (method_name, method_args, method_kwargs)))

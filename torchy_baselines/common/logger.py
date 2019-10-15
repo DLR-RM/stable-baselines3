@@ -282,7 +282,7 @@ def getkvs():
     return Logger.CURRENT.name2val
 
 
-def log(*args, level=INFO):
+def log(*args, **kwargs):
     """
     Write the sequence of args, with no separators,
     to the console and output files (if you've configured an output file).
@@ -293,6 +293,7 @@ def log(*args, level=INFO):
     :param args: (list) log the arguments
     :param level: (int) the logging level (can be DEBUG=10, INFO=20, WARN=30, ERROR=40, DISABLED=50)
     """
+    level = kwargs.get('level', INFO)
     Logger.CURRENT.log(*args, level=level)
 
 
@@ -433,7 +434,7 @@ class Logger(object):
         self.name2val.clear()
         self.name2cnt.clear()
 
-    def log(self, *args, level=INFO):
+    def log(self, *args, **kwargs):
         """
         Write the sequence of args, with no separators,
         to the console and output files (if you've configured an output file).
@@ -444,6 +445,7 @@ class Logger(object):
         :param args: (list) log the arguments
         :param level: (int) the logging level (can be DEBUG=10, INFO=20, WARN=30, ERROR=40, DISABLED=50)
         """
+        level = kwargs.get('level', INFO)
         if self.level <= level:
             self._do_log(args)
 

@@ -56,6 +56,7 @@ class BaseRLModel(object):
         self.eval_env = None
         self.replay_buffer = None
         self.seed = seed
+        self.action_noise = None
 
         if env is not None:
             if isinstance(env, str):
@@ -270,6 +271,16 @@ class BaseRLModel(object):
         obs = self.env.reset()
         return timesteps_since_eval, episode_num, evaluations, obs, eval_env
 
+    def _update_info_buffer(self, infos):
+        """
+        Retrieve reward and episode length if using Monitor wrapper.
+        :param infos: ([dict])
+        """
+        for info in infos:
+            maybe_ep_info = info.get('episode')
+            if maybe_ep_info is not None:
+                self.ep_info_buffer.extend([maybe_ep_info])
+
     def collect_rollouts(self, env, n_episodes=1, n_steps=-1, action_noise=None,
                          deterministic=False, callback=None,
                          learning_starts=0, num_timesteps=0,
@@ -310,10 +321,7 @@ class BaseRLModel(object):
                 episode_reward += reward
 
                 # Retrieve reward and episode length if using Monitor wrapper
-                for info in infos:
-                    maybe_ep_info = info.get('episode')
-                    if maybe_ep_info is not None:
-                        self.ep_info_buffer.extend([maybe_ep_info])
+                self._update_info_buffer(infos)
 
                 # Store data in replay buffer
                 if replay_buffer is not None:

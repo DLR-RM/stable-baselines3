@@ -158,6 +158,9 @@ class PPO(BaseRLModel):
 
             self._update_info_buffer(infos)
             n_steps += 1
+            if isinstance(self.action_space, gym.spaces.Discrete):
+                # Reshape in case of discrete action
+                actions = actions.reshape(-1, 1)
             rollout_buffer.add(obs, actions, rewards, dones, values, log_probs)
             obs = new_obs
 

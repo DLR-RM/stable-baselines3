@@ -27,6 +27,9 @@ class A2C(PPO):
     :param ent_coef: (float) Entropy coefficient for the loss calculation
     :param vf_coef: (float) Value function coefficient for the loss calculation
     :param max_grad_norm: (float) The maximum value for the gradient clipping
+    :param rms_prop_eps: (float) RMSProp epsilon. It stabilizes square root computation in denominator
+        of RMSProp update
+    :param use_rms_prop: (bool) Whether to use RMSprop (default) or Adam as optimizer
     :param normalize_advantage: (bool) Whether to normalize or not the advantage
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param create_eval_env: (bool) Whether to create a second environment that will be
@@ -39,10 +42,11 @@ class A2C(PPO):
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
 
-    def __init__(self, policy, env, learning_rate=3e-4,
-                 n_steps=5, gamma=0.99, gae_lambda=0.95,
+    def __init__(self, policy, env, learning_rate=7e-4,
+                 n_steps=5, gamma=0.99, gae_lambda=1.0,
                  ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5,
-                 normalize_advantage=True, tensorboard_log=None, create_eval_env=False,
+                 rms_prop_eps=1e-5, use_rms_prop=True,
+                 normalize_advantage=False, tensorboard_log=None, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
 
@@ -54,10 +58,19 @@ class A2C(PPO):
                                   verbose=verbose, device=device, create_eval_env=create_eval_env,
                                   seed=seed, _init_setup_model=False)
 
-        # Note: in the original implementation, this is RMSProp that is used
         self.normalize_advantage = normalize_advantage
+        self.rms_prop_eps = rms_prop_eps
+        self.use_rms_prop = use_rms_prop
+
         if _init_setup_model:
             self._setup_model()
+
+    def _setup_model(self):
+        super(A2C, self)._setup_model()
+        if self.use_rms_prop:
+            self.policy.optimizer = th.optim.RMSprop(self.policy.parameters(),
+                                                     lr=self.learning_rate, alpha=0.99,
+                                                     eps=self.rms_prop_eps, weight_decay=0)
 
     def train(self, gradient_steps, batch_size=64):
 

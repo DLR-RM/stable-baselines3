@@ -148,7 +148,6 @@ class PPOPolicy(BasePolicy):
                     self.value_net: 1
                 }[module]
                 module.apply(partial(self.init_weights, gain=gain))
-        # TODO: support linear decay of the learning rate
         self.optimizer = th.optim.Adam(self.parameters(), lr=learning_rate(1), eps=self.adam_epsilon)
 
     def forward(self, obs, deterministic=False):

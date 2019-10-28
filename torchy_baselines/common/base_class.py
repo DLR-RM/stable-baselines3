@@ -129,6 +129,14 @@ class BaseRLModel(object):
         self._current_progress = 1.0 - float(num_timesteps) / float(total_timesteps)
 
     def _update_learning_rate(self, optimizers):
+        """
+        Update the optimizers learning rate using the current learning rate schedule
+        and the current progress (from 1 to 0).
+
+        :param optimizers: ([th.optim.Optimizer] or Optimizer) An optimizer
+            or a list of optimizer.
+        """
+        # Log the current learning rate
         logger.logkv("learning_rate", self.learning_rate(self._current_progress))
 
         if not isinstance(optimizers, list):

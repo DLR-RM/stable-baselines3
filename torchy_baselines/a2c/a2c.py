@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torchy_baselines.common.utils import explained_variance
 from torchy_baselines.ppo.ppo import PPO
 from torchy_baselines.ppo.policies import PPOPolicy
+from torchy_baselines.common import logger
 
 
 class A2C(PPO):
@@ -30,6 +31,8 @@ class A2C(PPO):
     :param rms_prop_eps: (float) RMSProp epsilon. It stabilizes square root computation in denominator
         of RMSProp update
     :param use_rms_prop: (bool) Whether to use RMSprop (default) or Adam as optimizer
+    :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
+        instead of action noise exploration (default: False)
     :param normalize_advantage: (bool) Whether to normalize or not the advantage
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param create_eval_env: (bool) Whether to create a second environment that will be
@@ -45,7 +48,7 @@ class A2C(PPO):
     def __init__(self, policy, env, learning_rate=7e-4,
                  n_steps=5, gamma=0.99, gae_lambda=1.0,
                  ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5,
-                 rms_prop_eps=1e-5, use_rms_prop=True,
+                 rms_prop_eps=1e-5, use_rms_prop=True, use_sde=False,
                  normalize_advantage=False, tensorboard_log=None, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
@@ -53,7 +56,7 @@ class A2C(PPO):
         super(A2C, self).__init__(policy, env, learning_rate=learning_rate,
                                   n_steps=n_steps, batch_size=None, n_epochs=1,
                                   gamma=gamma, gae_lambda=gae_lambda, ent_coef=ent_coef,
-                                  vf_coef=vf_coef, max_grad_norm=max_grad_norm,
+                                  vf_coef=vf_coef, max_grad_norm=max_grad_norm, use_sde=use_sde,
                                   tensorboard_log=tensorboard_log, policy_kwargs=policy_kwargs,
                                   verbose=verbose, device=device, create_eval_env=create_eval_env,
                                   seed=seed, _init_setup_model=False)
@@ -73,6 +76,8 @@ class A2C(PPO):
                                                      eps=self.rms_prop_eps, weight_decay=0)
 
     def train(self, gradient_steps, batch_size=None):
+        if self.use_sde:
+            logger.logkv("noise net std", th.exp(self.policy.log_std).mean().item())
 
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)

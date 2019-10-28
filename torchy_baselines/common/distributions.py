@@ -165,15 +165,80 @@ class CategoricalDistribution(Distribution):
         return log_prob
 
 
-def make_proba_distribution(action_space):
+class StateDependentNoiseDistribution(Distribution):
+    def __init__(self, features_dim, action_dim):
+        super(StateDependentNoiseDistribution, self).__init__()
+        self.distribution = None
+        self.action_dim = action_dim
+        self.features_dim = features_dim
+        self.mean_actions = None
+        self.log_std = None
+        self.weights_dist = None
+        self.noise_weights = None
+
+    @staticmethod
+    def get_std(log_std):
+        # TODO: use expln instead of exp only to avoid sigma growing too fast
+        return th.exp(log_std)
+
+    def sample_weights(self, log_std):
+        self.weights_dist = Normal(th.zeros_like(log_std), self.get_std(log_std))
+        self.noise_weights = self.weights_dist.rsample()
+
+    def proba_distribution_net(self, latent_dim, log_std_init=0.0):
+        mean_actions = nn.Linear(latent_dim, self.action_dim)
+        log_std = nn.Parameter(th.zeros(self.features_dim, self.action_dim))
+        self.sample_weights(log_std)
+        return mean_actions, log_std
+
+    def proba_distribution(self, mean_actions, log_std, observations, deterministic=False):
+        variance = th.mm(observations ** 2, self.get_std(log_std) ** 2)
+        self.distribution = Normal(mean_actions, th.sqrt(variance))
+
+        if deterministic:
+            action = self.mode()
+        else:
+            action = self.sample(observations)
+        return action, self
+
+    def mode(self):
+        return self.distribution.mean
+
+    def sample(self, observations):
+        noise = th.mm(observations, self.noise_weights)
+        return self.distribution.mean + noise
+
+    def entropy(self):
+        return self.distribution.entropy()
+
+    def log_prob_from_params(self, mean_actions, log_std, observations):
+        action, _ = self.proba_distribution(mean_actions, log_std, observations)
+        log_prob = self.log_prob(action)
+        return action, log_prob
+
+    def log_prob(self, action):
+        log_prob = self.distribution.log_prob(action)
+        if len(log_prob.shape) > 1:
+            log_prob = log_prob.sum(axis=1)
+        else:
+            log_prob = log_prob.sum()
+        return log_prob
+
+
+def make_proba_distribution(action_space, features_dim=None, use_sde=False):
     """
     Return an instance of Distribution for the correct type of action space
 
     :param action_space: (Gym Space) the input action space
+    :param feature_dim: (int) Dimension of the feature vector
+    :param use_sde: (bool) Force the use of StateDependentNoiseDistribution
+        instead of DiagGaussianDistribution
     :return: (Distribution) the approriate Distribution object
     """
     if isinstance(action_space, spaces.Box):
         assert len(action_space.shape) == 1, "Error: the action space must be a vector"
+        if use_sde:
+            return StateDependentNoiseDistribution(features_dim, action_space.shape[0])
         return DiagGaussianDistribution(action_space.shape[0])
     elif isinstance(action_space, spaces.Discrete):
         return CategoricalDistribution(action_space.n)

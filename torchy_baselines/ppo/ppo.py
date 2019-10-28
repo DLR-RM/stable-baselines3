@@ -52,6 +52,8 @@ class PPO(BaseRLModel):
     :param ent_coef: (float) Entropy coefficient for the loss calculation
     :param vf_coef: (float) Value function coefficient for the loss calculation
     :param max_grad_norm: (float) The maximum value for the gradient clipping
+    :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
+        instead of action noise exploration (default: False)
     :param target_kl: (float) Limit the KL divergence between updates,
         because the clipping is not enough to prevent large update
         see issue #213 (cf https://github.com/hill-a/stable-baselines/issues/213)
@@ -70,7 +72,7 @@ class PPO(BaseRLModel):
     def __init__(self, policy, env, learning_rate=3e-4,
                  n_steps=2048, batch_size=64, n_epochs=10,
                  gamma=0.99, gae_lambda=0.95, clip_range=0.2, clip_range_vf=None,
-                 ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5,
+                 ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5, use_sde=False,
                  target_kl=None, tensorboard_log=None, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
@@ -94,6 +96,7 @@ class PPO(BaseRLModel):
         self.target_kl = target_kl
         self.tensorboard_log = tensorboard_log
         self.tb_writer = None
+        self.use_sde = use_sde
 
         if _init_setup_model:
             self._setup_model()
@@ -116,7 +119,8 @@ class PPO(BaseRLModel):
         self.rollout_buffer = RolloutBuffer(self.n_steps, state_dim, action_dim, self.device,
                                             gamma=self.gamma, gae_lambda=self.gae_lambda, n_envs=self.n_envs)
         self.policy = self.policy(self.observation_space, self.action_space,
-                                  self.learning_rate, device=self.device, **self.policy_kwargs)
+                                  self.learning_rate, use_sde=self.use_sde, device=self.device,
+                                  **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
 
         self.clip_range = get_schedule_fn(self.clip_range)
@@ -150,6 +154,10 @@ class PPO(BaseRLModel):
 
         n_steps = 0
         rollout_buffer.reset()
+        # Sample new weights for the state dependent exploration
+        # TODO: ensure episodic setting?
+        if self.use_sde:
+            self.policy.reset_noise_net()
 
         while n_steps < n_rollout_steps:
             with th.no_grad():

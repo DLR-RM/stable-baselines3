@@ -205,7 +205,7 @@ class PPO(BaseRLModel):
 
 
                 # Entropy loss favor exploration
-                entropy_loss = th.mean(entropy)
+                entropy_loss = -th.mean(entropy)
 
                 loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
 

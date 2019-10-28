@@ -7,7 +7,7 @@ import torch as th
 import numpy as np
 
 from torchy_baselines.common.policies import get_policy_from_name
-from torchy_baselines.common.utils import set_random_seed
+from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate
 from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv
 from torchy_baselines.common.monitor import Monitor
 from torchy_baselines.common import logger
@@ -57,6 +57,9 @@ class BaseRLModel(object):
         self.replay_buffer = None
         self.seed = seed
         self.action_noise = None
+        # Track the training progress (from 1 to 0)
+        # this is used to update the learning rate
+        self._current_progress = 1
 
         if env is not None:
             if isinstance(env, str):
@@ -111,6 +114,35 @@ class BaseRLModel(object):
         """
         low, high = self.action_space.low, self.action_space.high
         return low + (0.5 * (scaled_action + 1.0) * (high -  low))
+
+    def _setup_learning_rate(self):
+        """Transform to callable if needed."""
+        self.learning_rate = get_schedule_fn(self.learning_rate)
+
+    def _update_current_progress(self, num_timesteps, total_timesteps):
+        """
+        Compute current progress (from 1 to 0)
+
+        :param num_timesteps: (int)
+        :param total_timesteps: (int)
+        """
+        self._current_progress = 1.0 - float(num_timesteps) / float(total_timesteps)
+
+    def _update_learning_rate(self, optimizers):
+        """
+        Update the optimizers learning rate using the current learning rate schedule
+        and the current progress (from 1 to 0).
+
+        :param optimizers: ([th.optim.Optimizer] or Optimizer) An optimizer
+            or a list of optimizer.
+        """
+        # Log the current learning rate
+        logger.logkv("learning_rate", self.learning_rate(self._current_progress))
+
+        if not isinstance(optimizers, list):
+            optimizers = [optimizers]
+        for optimizer in optimizers:
+            update_learning_rate(optimizer, self.learning_rate(self._current_progress))
 
     @staticmethod
     def safe_mean(arr):

@@ -8,6 +8,7 @@ PyTorch version of [Stable Baselines](https://github.com/hill-a/stable-baselines
 
 ## Implemented Algorithms
 
+- A2C
 - CEM-RL (with TD3)
 - PPO
 - SAC
@@ -18,11 +19,8 @@ PyTorch version of [Stable Baselines](https://github.com/hill-a/stable-baselines
 
 TODO:
 - save/load
-- predict
-- flexible mlp
-- logger
-- better monitor wrapper?
-- A2C
+- better predict
+- complete logger
 
 Later:
 - get_parameters / set_parameters

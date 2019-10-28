@@ -3,7 +3,7 @@ import os
 import pytest
 import numpy as np
 
-from torchy_baselines import TD3, CEMRL, PPO, SAC
+from torchy_baselines import A2C, CEMRL, PPO, SAC, TD3
 from torchy_baselines.common.noise import NormalActionNoise
 
 
@@ -28,9 +28,10 @@ def test_cemrl():
     os.remove("test_save.pth")
 
 
+@pytest.mark.parametrize("model_class", [A2C, PPO])
 @pytest.mark.parametrize("env_id", ['CartPole-v1', 'Pendulum-v0'])
-def test_ppo(env_id):
-    model = PPO('MlpPolicy', env_id, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
+def test_onpolicy(model_class, env_id):
+    model = model_class('MlpPolicy', env_id, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
     model.learn(total_timesteps=1000, eval_freq=500)
     # model.save("test_save")
     # model.load("test_save")

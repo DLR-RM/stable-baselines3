@@ -134,6 +134,7 @@ class RolloutBuffer(BaseBuffer):
         if len(log_prob.shape) == 0:
             # Reshape 0-d tensor to avoid error
             log_prob = log_prob.reshape(-1, 1)
+
         self.observations[self.pos] = th.FloatTensor(np.array(obs).copy())
         self.actions[self.pos] = th.FloatTensor(np.array(action).copy())
         self.rewards[self.pos] = th.FloatTensor(np.array(reward).copy())
@@ -144,7 +145,7 @@ class RolloutBuffer(BaseBuffer):
         if self.pos == self.buffer_size:
             self.full = True
 
-    def get(self, batch_size):
+    def get(self, batch_size=None):
         assert self.full
         indices = th.randperm(self.buffer_size * self.n_envs)
         # Prepare the data
@@ -153,6 +154,10 @@ class RolloutBuffer(BaseBuffer):
                            'log_probs', 'advantages', 'returns']:
                 self.__dict__[tensor] = self.swap_and_flatten(self.__dict__[tensor])
             self.generator_ready = True
+
+        # Return everything, don't create minibatches
+        if batch_size is None:
+            batch_size = self.buffer_size * self.n_envs
 
         start_idx = 0
         while start_idx < self.buffer_size * self.n_envs:

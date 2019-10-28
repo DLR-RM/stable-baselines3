@@ -75,6 +75,7 @@ class TD3(BaseRLModel):
             self._setup_model()
 
     def _setup_model(self):
+        self._setup_learning_rate()
         obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
         self.set_random_seed(self.seed)
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
@@ -109,6 +110,8 @@ class TD3(BaseRLModel):
         return self.unscale_action(self.select_action(observation))
 
     def train_critic(self, gradient_steps=1, batch_size=100, replay_data=None, tau=0.0):
+        # Update optimizer learning rate
+        self._update_learning_rate(self.critic.optimizer)
 
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
@@ -146,6 +149,8 @@ class TD3(BaseRLModel):
                     target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
 
     def train_actor(self, gradient_steps=1, batch_size=100, tau_actor=0.005, tau_critic=0.005, replay_data=None):
+        # Update optimizer learning rate
+        self._update_learning_rate(self.actor.optimizer)
 
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
@@ -208,6 +213,7 @@ class TD3(BaseRLModel):
             episode_num += n_episodes
             self.num_timesteps += episode_timesteps
             timesteps_since_eval += episode_timesteps
+            self._update_current_progress(self.num_timesteps, total_timesteps)
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
                 if self.verbose > 1:

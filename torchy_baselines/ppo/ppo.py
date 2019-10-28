@@ -16,7 +16,7 @@ import numpy as np
 from torchy_baselines.common.base_class import BaseRLModel
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.common.buffers import RolloutBuffer
-from torchy_baselines.common.utils import explained_variance
+from torchy_baselines.common.utils import explained_variance, get_schedule_fn
 from torchy_baselines.common.vec_env import VecNormalize
 from torchy_baselines.common import logger
 from torchy_baselines.ppo.policies import PPOPolicy
@@ -36,14 +36,16 @@ class PPO(BaseRLModel):
     :param policy: (PPOPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
     :param learning_rate: (float or callable) The learning rate, it can be a function
+        of the current progress (from 1 to 0)
     :param n_steps: (int) The number of steps to run for each environment per update
         (i.e. batch size is n_steps * n_env where n_env is number of environment copies running in parallel)
     :param batch_size: (int) Minibatch size
     :param n_epochs: (int) Number of epoch when optimizing the surrogate loss
     :param gamma: (float) Discount factor
     :param gae_lambda: (float) Factor for trade-off of bias vs variance for Generalized Advantage Estimator
-    :param clip_range: (float or callable) Clipping parameter, it can be a function
-    :param clip_range_vf: (float or callable) Clipping parameter for the value function, it can be a function.
+    :param clip_range: (float or callable) Clipping parameter, it can be a function of the current progress (from 1 to 0).
+    :param clip_range_vf: (float or callable) Clipping parameter for the value function,
+        it can be a function of the current progress (from 1 to 0).
         This is a parameter specific to the OpenAI implementation. If None is passed (default),
         no clipping will be done on the value function.
         IMPORTANT: this clipping depends on the reward scaling.
@@ -84,12 +86,12 @@ class PPO(BaseRLModel):
         self.gamma = gamma
         self.gae_lambda = gae_lambda
         self.clip_range = clip_range
+        self.clip_range_vf = clip_range_vf
         self.ent_coef = ent_coef
         self.vf_coef = vf_coef
         self.max_grad_norm = max_grad_norm
         self.rollout_buffer = None
         self.target_kl = target_kl
-        self.clip_range_vf = clip_range_vf
         self.tensorboard_log = tensorboard_log
         self.tb_writer = None
 
@@ -97,6 +99,7 @@ class PPO(BaseRLModel):
             self._setup_model()
 
     def _setup_model(self):
+        self._setup_learning_rate()
         # TODO: preprocessing: one hot vector for obs discrete
         state_dim = self.observation_space.shape[0]
         if isinstance(self.action_space, spaces.Box):
@@ -115,6 +118,10 @@ class PPO(BaseRLModel):
         self.policy = self.policy(self.observation_space, self.action_space,
                                   self.learning_rate, device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
+
+        self.clip_range = get_schedule_fn(self.clip_range)
+        if self.clip_range_vf is not None:
+            self.clip_range_vf = get_schedule_fn(self.clip_range_vf)
 
     def select_action(self, observation):
         # Normally not needed
@@ -169,6 +176,15 @@ class PPO(BaseRLModel):
         return obs
 
     def train(self, gradient_steps, batch_size=64):
+        # Update optimizer learning rate
+        self._update_learning_rate(self.policy.optimizer)
+        # Compute current clip range
+        clip_range = self.clip_range(self._current_progress)
+        logger.logkv("clip_range", clip_range)
+        if self.clip_range_vf is not None:
+            clip_range_vf = self.clip_range_vf(self._current_progress)
+            logger.logkv("clip_range_vf", clip_range_vf)
+
 
         for gradient_step in range(gradient_steps):
             approx_kl_divs = []
@@ -190,7 +206,7 @@ class PPO(BaseRLModel):
                 ratio = th.exp(log_prob - old_log_prob)
                 # clipped surrogate loss
                 policy_loss_1 = advantage * ratio
-                policy_loss_2 = advantage * th.clamp(ratio, 1 - self.clip_range, 1 + self.clip_range)
+                policy_loss_2 = advantage * th.clamp(ratio, 1 - clip_range, 1 + clip_range)
                 policy_loss = -th.min(policy_loss_1, policy_loss_2).mean()
 
                 if self.clip_range_vf is None:
@@ -199,7 +215,7 @@ class PPO(BaseRLModel):
                 else:
                     # Clip the different between old and new value
                     # NOTE: this depends on the reward scaling
-                    values_pred = old_values + th.clamp(values - old_values, -self.clip_range_vf, self.clip_range_vf)
+                    values_pred = old_values + th.clamp(values - old_values, -clip_range_vf, clip_range_vf)
                 # Value loss using the TD(gae_lambda) target
                 value_loss = F.mse_loss(return_batch, values_pred)
 
@@ -244,6 +260,7 @@ class PPO(BaseRLModel):
             iteration += 1
             self.num_timesteps += self.n_steps * self.n_envs
             timesteps_since_eval += self.n_steps * self.n_envs
+            self._update_current_progress(self.num_timesteps, total_timesteps)
 
             # Display training infos
             if self.verbose >= 1 and log_interval is not None and iteration % log_interval == 0:

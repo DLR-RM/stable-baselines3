@@ -88,6 +88,7 @@ class SAC(BaseRLModel):
             self._setup_model()
 
     def _setup_model(self):
+        self._setup_learning_rate()
         obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
         if self.seed is not None:
             self.set_random_seed(self.seed)
@@ -114,7 +115,7 @@ class SAC(BaseRLModel):
             # Note: we optimize the log of the entropy coeff which is slightly different from the paper
             # as discussed in https://github.com/rail-berkeley/softlearning/issues/37
             self.log_ent_coef = th.log(th.ones(1, device=self.device) * init_value).requires_grad_(True)
-            self.ent_coef_optimizer = th.optim.Adam([self.log_ent_coef], lr=self.learning_rate)
+            self.ent_coef_optimizer = th.optim.Adam([self.log_ent_coef], lr=self.learning_rate(1))
         else:
             # Force conversion to float
             # this will throw an error if a malformed string (different from 'auto')
@@ -152,6 +153,13 @@ class SAC(BaseRLModel):
         return self.unscale_action(self.select_action(observation))
 
     def train(self, gradient_steps, batch_size=64):
+        # Update optimizers learning rate
+        optimizers = [self.actor.optimizer, self.critic.optimizer]
+        if self.ent_coef_optimizer is not None:
+            optimizers += [self.ent_coef_optimizer]
+
+        self._update_learning_rate(optimizers)
+
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size)
@@ -245,6 +253,7 @@ class SAC(BaseRLModel):
             self.num_timesteps += episode_timesteps
             episode_num += n_episodes
             timesteps_since_eval += episode_timesteps
+            self._update_current_progress(self.num_timesteps, total_timesteps)
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
                 if self.verbose > 1:

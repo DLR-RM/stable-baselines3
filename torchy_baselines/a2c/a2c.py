@@ -69,11 +69,13 @@ class A2C(PPO):
         super(A2C, self)._setup_model()
         if self.use_rms_prop:
             self.policy.optimizer = th.optim.RMSprop(self.policy.parameters(),
-                                                     lr=self.learning_rate, alpha=0.99,
+                                                     lr=self.learning_rate(1), alpha=0.99,
                                                      eps=self.rms_prop_eps, weight_decay=0)
 
     def train(self, gradient_steps, batch_size=None):
 
+        # Update optimizer learning rate
+        self._update_learning_rate(self.policy.optimizer)
         # A2C with gradient_steps > 1 does not make sense
         assert gradient_steps == 1
         # We do not use minibatches for A2C

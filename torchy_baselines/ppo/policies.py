@@ -100,7 +100,7 @@ class MlpExtractor(nn.Module):
 
 class PPOPolicy(BasePolicy):
     def __init__(self, observation_space, action_space,
-                 learning_rate=1e-3, net_arch=None, device='cpu',
+                 learning_rate, net_arch=None, device='cpu',
                  activation_fn=nn.Tanh, adam_epsilon=1e-5, ortho_init=True):
         super(PPOPolicy, self).__init__(observation_space, action_space, device)
         self.obs_dim = self.observation_space.shape[0]
@@ -149,7 +149,7 @@ class PPOPolicy(BasePolicy):
                 }[module]
                 module.apply(partial(self.init_weights, gain=gain))
         # TODO: support linear decay of the learning rate
-        self.optimizer = th.optim.Adam(self.parameters(), lr=learning_rate, eps=self.adam_epsilon)
+        self.optimizer = th.optim.Adam(self.parameters(), lr=learning_rate(1), eps=self.adam_epsilon)
 
     def forward(self, obs, deterministic=False):
         if not isinstance(obs, th.Tensor):

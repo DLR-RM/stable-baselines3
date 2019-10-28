@@ -78,7 +78,7 @@ class CEMRL(TD3):
                     # set params
                     self.actor.load_from_vector(self.es_params[i])
                     self.actor_target.load_from_vector(self.es_params[i])
-                    self.actor.optimizer = th.optim.Adam(self.actor.parameters(), lr=self.learning_rate)
+                    self.actor.optimizer = th.optim.Adam(self.actor.parameters(), lr=self.learning_rate(self._current_progress))
 
                     # In the paper: 2 * actor_steps // self.n_grad
                     # In the original implementation: actor_steps // self.n_grad
@@ -153,6 +153,7 @@ class CEMRL(TD3):
                     print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
                         self.num_timesteps, episode_num, episode_timesteps, episode_reward))
 
+            self._update_current_progress(self.num_timesteps, total_timesteps)
             self.es.tell(self.es_params, self.fitnesses)
             timesteps_since_eval += actor_steps
         return self

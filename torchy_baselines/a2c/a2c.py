@@ -76,9 +76,6 @@ class A2C(PPO):
                                                      eps=self.rms_prop_eps, weight_decay=0)
 
     def train(self, gradient_steps, batch_size=None):
-        if self.use_sde:
-            logger.logkv("noise net std", th.exp(self.policy.log_std).mean().item())
-
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
         # A2C with gradient_steps > 1 does not make sense
@@ -118,10 +115,19 @@ class A2C(PPO):
             # Clip grad norm
             th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.policy.optimizer.step()
-            # approx_kl_divs.append(th.mean(old_log_prob - log_prob).detach().cpu().numpy())
 
-        # print(explained_variance(self.rollout_buffer.returns.flatten().cpu().numpy(),
-        #                          self.rollout_buffer.values.flatten().cpu().numpy()))
+        explained_var = explained_variance(self.rollout_buffer.returns.flatten().cpu().numpy(),
+                                           self.rollout_buffer.values.flatten().cpu().numpy())
+
+        logger.logkv("explained_variance", explained_var)
+        logger.logkv("entropy", entropy.mean().item())
+        logger.logkv("policy_loss", policy_loss.item())
+        logger.logkv("value_loss", value_loss.item())
+
+        if self.use_sde:
+            logger.logkv("noise net std", th.exp(self.policy.log_std).mean().item())
+            # print(th.exp(self.policy.log_std).detach())
+
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="A2C", reset_num_timesteps=True):

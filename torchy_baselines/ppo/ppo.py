@@ -245,8 +245,14 @@ class PPO(BaseRLModel):
                 print("Early stopping at step {} due to reaching max kl: {:.2f}".format(it, np.mean(approx_kl_divs)))
                 break
 
-        # print(explained_variance(self.rollout_buffer.returns.flatten().cpu().numpy(),
-        #                          self.rollout_buffer.values.flatten().cpu().numpy()))
+        explained_var = explained_variance(self.rollout_buffer.returns.flatten().cpu().numpy(),
+                                           self.rollout_buffer.values.flatten().cpu().numpy())
+
+        logger.logkv("explained_variance", explained_var)
+        # TODO: gather stats for the entropy and other losses?
+        logger.logkv("entropy", entropy.mean().item())
+        logger.logkv("policy_loss", policy_loss.item())
+        logger.logkv("value_loss", value_loss.item())
 
     def learn(self, total_timesteps, callback=None, log_interval=1,
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="PPO", reset_num_timesteps=True):

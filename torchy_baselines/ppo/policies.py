@@ -103,7 +103,7 @@ class PPOPolicy(BasePolicy):
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',
                  activation_fn=nn.Tanh, adam_epsilon=1e-5,
-                 ortho_init=True, use_sde=False):
+                 ortho_init=True, use_sde=False, log_std_init=0.0):
         super(PPOPolicy, self).__init__(observation_space, action_space, device)
         self.obs_dim = self.observation_space.shape[0]
         if net_arch is None:
@@ -123,6 +123,7 @@ class PPOPolicy(BasePolicy):
         # In the future, feature_extractor will be replaced with a CNN
         self.features_extractor = nn.Flatten()
         self.features_dim = self.obs_dim
+        self.log_std_init = log_std_init
         # Action distribution
         self.action_dist = make_proba_distribution(action_space, self.features_dim, use_sde=use_sde)
 
@@ -130,22 +131,14 @@ class PPOPolicy(BasePolicy):
 
     def reset_noise_net(self):
         self.action_dist.sample_weights(self.log_std)
-        # weights_dist = Normal(th.zeros_like(self.noise_log_sigma), th.exp(self.noise_log_sigma))
-        # self.noise_net = weights_dist.rsample()
-        # noise = th.mm(state, weights)
-        # variance = th.mm(state ** 2, sigma ** 2)
-        # action_dist = Normal(mu, th.sqrt(variance))
-        # # action_dist.log_prob((mu + noise).detach())
-        # action_dist.log_prob(action)
-        # # action_dist = Normal(mu_j + noise_j, sum of s_i * sigma_ij)
-        # # log_prob = distribution.log_prob(self.noise_net)
 
     def _build(self, learning_rate):
         self.mlp_extractor = MlpExtractor(self.features_dim, net_arch=self.net_arch,
                                           activation_fn=self.activation_fn, device=self.device)
 
         if isinstance(self.action_dist, (DiagGaussianDistribution, StateDependentNoiseDistribution)):
-            self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=self.mlp_extractor.latent_dim_pi)
+            self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=self.mlp_extractor.latent_dim_pi,
+                                                                                    log_std_init=self.log_std_init)
         elif isinstance(self.action_dist, CategoricalDistribution):
             self.action_net = self.action_dist.proba_distribution_net(latent_dim=self.mlp_extractor.latent_dim_pi)
 
@@ -177,10 +170,13 @@ class PPOPolicy(BasePolicy):
 
     def _get_action_dist_from_latent(self, latent, obs, deterministic=False):
         mean_actions = self.action_net(latent)
+
         if isinstance(self.action_dist, DiagGaussianDistribution):
             return self.action_dist.proba_distribution(mean_actions, self.log_std, deterministic=deterministic)
+
         elif isinstance(self.action_dist, CategoricalDistribution):
             return self.action_dist.proba_distribution(mean_actions, deterministic=deterministic)
+
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
             return self.action_dist.proba_distribution(mean_actions, self.log_std, obs, deterministic=deterministic)
 

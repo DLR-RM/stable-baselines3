@@ -180,7 +180,7 @@ class StateDependentNoiseDistribution(Distribution):
     def get_std(self, log_std):
         if self.use_expln:
             # From SDE paper, it allows to keep variance
-            # above zero and prevent it from growing too fast 
+            # above zero and prevent it from growing too fast
             if log_std <= 0:
                 return th.exp(log_std)
             else:
@@ -192,8 +192,7 @@ class StateDependentNoiseDistribution(Distribution):
         self.weights_dist = Normal(th.zeros_like(log_std), self.get_std(log_std))
         self.noise_weights = self.weights_dist.rsample()
 
-    def proba_distribution_net(self, latent_dim, log_std_init=-3):
-        print("Log std init:", log_std_init)
+    def proba_distribution_net(self, latent_dim, log_std_init=-1):
         mean_actions = nn.Linear(latent_dim, self.action_dim)
         # TODO: log_std_init depending on the number of layers?
         log_std = nn.Parameter(th.ones(self.features_dim, self.action_dim) * log_std_init)

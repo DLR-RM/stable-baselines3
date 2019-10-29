@@ -112,6 +112,7 @@ class A2C(PPO):
             # Optimization step
             self.policy.optimizer.zero_grad()
             loss.backward()
+
             # Clip grad norm
             th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.policy.optimizer.step()
@@ -123,9 +124,10 @@ class A2C(PPO):
         logger.logkv("entropy", entropy.mean().item())
         logger.logkv("policy_loss", policy_loss.item())
         logger.logkv("value_loss", value_loss.item())
+        logger.logkv("std", th.exp(self.policy.log_std).mean().item())
 
         if self.use_sde:
-            logger.logkv("noise net std", th.exp(self.policy.log_std).mean().item())
+            pass
             # print(th.exp(self.policy.log_std).detach())
 
 

@@ -43,5 +43,6 @@ def test_state_dependent_exploration():
 
 @pytest.mark.parametrize("model_class", [A2C])
 def test_state_dependent_noise(model_class):
-    model = model_class('MlpPolicy', 'Pendulum-v0', n_steps=200, use_sde=True, verbose=1, create_eval_env=True)
+    model = model_class('MlpPolicy', 'Pendulum-v0', n_steps=200,
+                        use_sde=True, ent_coef=0.0, verbose=1, create_eval_env=True)
     model.learn(total_timesteps=int(1e6), log_interval=10, eval_freq=10000)

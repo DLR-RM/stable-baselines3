@@ -119,7 +119,9 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         # Naive implementation (not stable): 0.5 * torch.log((1 + x ) / (1 - x))
         # We use numpy to avoid numerical instability
         if gaussian_action is None:
-            gaussian_action = th.from_numpy(np.arctanh(action.cpu().numpy())).to(action.device)
+            # Clip to avoid NaN
+            clipped_action = np.clip(action.cpu().numpy(), -1.0 + self.epsilon, 1.0 + self.epsilon)
+            gaussian_action = th.from_numpy(np.arctanh(clipped_action)).to(action.device)
 
         # Log likelihood for a gaussian distribution
         log_prob = super(SquashedDiagGaussianDistribution, self).log_prob(gaussian_action)
@@ -166,7 +168,8 @@ class CategoricalDistribution(Distribution):
 
 
 class StateDependentNoiseDistribution(Distribution):
-    def __init__(self, features_dim, action_dim, use_expln=False):
+    def __init__(self, features_dim, action_dim, use_expln=False,
+                 squash_output=True, epsilon=1e-6):
         super(StateDependentNoiseDistribution, self).__init__()
         self.distribution = None
         self.action_dim = action_dim
@@ -175,7 +178,10 @@ class StateDependentNoiseDistribution(Distribution):
         self.log_std = None
         self.weights_dist = None
         self.noise_weights = None
+        self.gaussian_action = None
         self.use_expln = use_expln
+        self.squash_output = squash_output
+        self.epsilon = epsilon
 
     def get_std(self, log_std):
         if self.use_expln:
@@ -210,13 +216,20 @@ class StateDependentNoiseDistribution(Distribution):
         return action, self
 
     def mode(self):
-        return self.distribution.mean
+        self.gaussian_action = self.distribution.mean
+        if self.squash_output:
+            return th.tanh(self.gaussian_action)
+        return self.gaussian_action
 
     def sample(self, observations):
         noise = th.mm(observations, self.noise_weights)
-        return self.distribution.mean + noise
+        self.gaussian_action = self.distribution.mean + noise
+        if self.squash_output:
+            return th.tanh(self.gaussian_action)
+        return self.gaussian_action
 
     def entropy(self):
+        # TODO: account for the squashing?
         return self.distribution.entropy()
 
     def log_prob_from_params(self, mean_actions, log_std, observations):
@@ -225,11 +238,20 @@ class StateDependentNoiseDistribution(Distribution):
         return action, log_prob
 
     def log_prob(self, action):
-        log_prob = self.distribution.log_prob(action)
+        if self.squash_output:
+            gaussian_action = self.gaussian_action
+        else:
+            gaussian_action = action
+        # log likelihood for a gaussian
+        log_prob = self.distribution.log_prob(gaussian_action)
+        # log_prob = self.distribution.log_prob(action)
         if len(log_prob.shape) > 1:
             log_prob = log_prob.sum(axis=1)
         else:
             log_prob = log_prob.sum()
+        if self.squash_output:
+            # Squash correction (from original SAC implementation)
+            log_prob -= th.sum(th.log(1 - action ** 2 + self.epsilon), dim=1)
         return log_prob
 
 

@@ -199,9 +199,8 @@ class StateDependentNoiseDistribution(Distribution):
         self.weights_dist = Normal(th.zeros_like(log_std), self.get_std(log_std))
         self.exploration_mat = self.weights_dist.rsample()
 
-    def proba_distribution_net(self, latent_dim, log_std_init=-1):
+    def proba_distribution_net(self, latent_dim, log_std_init=0.0):
         mean_actions = nn.Linear(latent_dim, self.action_dim)
-        # TODO: log_std_init depending on the number of layers?
         log_std = nn.Parameter(th.ones(latent_dim, self.action_dim) * log_std_init)
         self.sample_weights(log_std)
         return mean_actions, log_std

@@ -123,7 +123,8 @@ class A2C(PPO):
         logger.logkv("entropy", entropy.mean().item())
         logger.logkv("policy_loss", policy_loss.item())
         logger.logkv("value_loss", value_loss.item())
-        logger.logkv("std", th.exp(self.policy.log_std).mean().item())
+        if hasattr(self.policy, 'log_std'):
+            logger.logkv("std", th.exp(self.policy.log_std).mean().item())
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="A2C", reset_num_timesteps=True):

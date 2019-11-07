@@ -327,6 +327,9 @@ class BaseRLModel(object):
         assert isinstance(env, VecEnv)
         assert env.num_envs == 1
 
+        if hasattr(self, 'use_sde') and self.use_sde:
+            self.policy.reset_noise()
+
         while total_steps < n_steps or total_episodes < n_episodes:
             done = False
             # Reset environment: not needed for VecEnv
@@ -338,6 +341,8 @@ class BaseRLModel(object):
                 if num_timesteps < learning_starts:
                     action = np.array([self.action_space.sample()])
                 else:
+                    if hasattr(self, 'use_sde'):
+                        deterministic = not self.use_sde
                     action = self.predict(obs, deterministic=deterministic)
 
                 # Rescale the action from [low, high] to [-1, 1]

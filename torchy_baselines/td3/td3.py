@@ -37,6 +37,8 @@ class TD3(BaseRLModel):
     :param target_policy_noise: (float) Standard deviation of gaussian noise added to target policy
         (smoothing noise)
     :param target_noise_clip: (float) Limit for absolute value of target policy smoothing noise.
+    :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
+        instead of action noise exploration (default: False)
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
@@ -50,6 +52,7 @@ class TD3(BaseRLModel):
                  policy_delay=2, learning_starts=100, gamma=0.99, batch_size=100,
                  train_freq=-1, gradient_steps=-1, n_episodes_rollout=1,
                  tau=0.005, action_noise=None, target_policy_noise=0.2, target_noise_clip=0.5,
+                 use_sde=False,
                  tensorboard_log=None, create_eval_env=False, policy_kwargs=None, verbose=0,
                  seed=0, device='auto', _init_setup_model=True):
 
@@ -70,6 +73,7 @@ class TD3(BaseRLModel):
         self.policy_delay = policy_delay
         self.target_noise_clip = target_noise_clip
         self.target_policy_noise = target_policy_noise
+        self.use_sde = use_sde
 
         if _init_setup_model:
             self._setup_model()
@@ -79,8 +83,8 @@ class TD3(BaseRLModel):
         obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
         self.set_random_seed(self.seed)
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
-        self.policy = self.policy(self.observation_space, self.action_space,
-                                  self.learning_rate, device=self.device, **self.policy_kwargs)
+        self.policy = self.policy(self.observation_space, self.action_space, self.learning_rate,
+                                  use_sde=self.use_sde, device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
         self._create_aliases()
 
@@ -90,12 +94,12 @@ class TD3(BaseRLModel):
         self.critic = self.policy.critic
         self.critic_target = self.policy.critic_target
 
-    def select_action(self, observation):
+    def select_action(self, observation, deterministic=True):
         # Normally not needed
         observation = np.array(observation)
         with th.no_grad():
             observation = th.FloatTensor(observation.reshape(1, -1)).to(self.device)
-            return self.actor(observation).cpu().numpy()
+            return self.actor(observation, deterministic=deterministic).cpu().numpy()
 
     def predict(self, observation, state=None, mask=None, deterministic=True):
         """
@@ -107,7 +111,7 @@ class TD3(BaseRLModel):
         :param deterministic: (bool) Whether or not to return deterministic actions.
         :return: (np.ndarray, np.ndarray) the model's action and the next state (used in recurrent policies)
         """
-        return self.unscale_action(self.select_action(observation))
+        return self.unscale_action(self.select_action(observation, deterministic=deterministic))
 
     def train_critic(self, gradient_steps=1, batch_size=100, replay_data=None, tau=0.0):
         # Update optimizer learning rate

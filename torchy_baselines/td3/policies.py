@@ -1,19 +1,46 @@
 import torch as th
 import torch.nn as nn
+from torch.distributions import Normal
 
 from torchy_baselines.common.policies import BasePolicy, register_policy, create_mlp, BaseNetwork
 
 
 class Actor(BaseNetwork):
-    def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU):
+    def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU,
+                 use_sde=False, log_std_init=0.0, clip_noise=0.1):
         super(Actor, self).__init__()
 
-        # TODO: orthogonal initialization?
-        actor_net = create_mlp(obs_dim, action_dim, net_arch, activation_fn, squash_out=True)
-        self.actor_net = nn.Sequential(*actor_net)
+        self.latent_pi, self.log_std = None, None
+        self.weights_dist, self.exploration_mat = None, None
+        self.use_sde = use_sde
 
-    def forward(self, obs):
-        return self.actor_net(obs)
+        if use_sde:
+            latent_dim = net_arch[-1]
+            latent_pi = create_mlp(obs_dim, -1, net_arch, activation_fn, squash_out=False)
+            self.latent_pi = nn.Sequential(*latent_pi)
+            self.log_std = nn.Parameter(th.ones(latent_dim, action_dim) * log_std_init)
+            self.actor_net = nn.Sequential(nn.Linear(net_arch[-1], action_dim), nn.Tanh())
+            self.clip_noise = clip_noise
+            self.reset_noise()
+        else:
+            actor_net = create_mlp(obs_dim, action_dim, net_arch, activation_fn, squash_out=True)
+            self.actor_net = nn.Sequential(*actor_net)
+
+    def reset_noise(self):
+        self.weights_dist = Normal(th.zeros_like(self.log_std), th.exp(self.log_std))
+        self.exploration_mat = self.weights_dist.rsample()
+
+    def forward(self, obs, deterministic=True):
+        if self.use_sde:
+            latent_pi = self.latent_pi(obs)
+            if deterministic:
+                return self.actor_net(latent_pi)
+            noise = th.mm(latent_pi.detach(), self.exploration_mat)
+            # noise = th.clamp(noise, -self.clip_noise, self.clip_noise)
+            # TODO: fix clipping
+            return th.clamp(self.actor_net(latent_pi) + noise, -1, 1)
+        else:
+            return self.actor_net(obs)
 
 
 class Critic(BaseNetwork):
@@ -40,7 +67,7 @@ class Critic(BaseNetwork):
 class TD3Policy(BasePolicy):
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',
-                 activation_fn=nn.ReLU):
+                 activation_fn=nn.ReLU, use_sde=False, log_std_init=0.0):
         super(TD3Policy, self).__init__(observation_space, action_space, device)
 
         if net_arch is None:
@@ -56,8 +83,14 @@ class TD3Policy(BasePolicy):
             'net_arch': self.net_arch,
             'activation_fn': self.activation_fn
         }
+        self.actor_kwargs = self.net_args.copy()
+        self.actor_kwargs['use_sde'] = use_sde
+        self.actor_kwargs['log_std_init'] = log_std_init
+
         self.actor, self.actor_target = None, None
         self.critic, self.critic_target = None, None
+        self.use_sde = use_sde
+        self.log_std_init = log_std_init
         self._build(learning_rate)
 
     def _build(self, learning_rate):
@@ -71,14 +104,17 @@ class TD3Policy(BasePolicy):
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=learning_rate(1))
 
+    def reset_noise(self):
+        return self.actor.reset_noise()
+
     def make_actor(self):
-        return Actor(**self.net_args).to(self.device)
+        return Actor(**self.actor_kwargs).to(self.device)
 
     def make_critic(self):
         return Critic(**self.net_args).to(self.device)
 
-    def forward(self, obs):
-        return self.actor(obs)
+    def forward(self, obs, deterministic=True):
+        return self.actor(obs, deterministic=deterministic)
 
 
 MlpPolicy = TD3Policy

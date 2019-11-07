@@ -180,6 +180,7 @@ class StateDependentNoiseDistribution(Distribution):
         self.exploration_mat = None
         self.use_expln = use_expln
         if squash_output:
+            print("== Using TanhBijector ===")
             self.bijector = TanhBijector(epsilon)
         else:
             self.bijector = None
@@ -206,7 +207,6 @@ class StateDependentNoiseDistribution(Distribution):
         return mean_actions, log_std
 
     def proba_distribution(self, mean_actions, log_std, latent_pi, deterministic=False):
-        # TODO: try without detach
         variance = th.mm(latent_pi.detach() ** 2, self.get_std(log_std) ** 2)
         self.distribution = Normal(mean_actions, th.sqrt(variance))
 

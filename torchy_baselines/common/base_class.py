@@ -328,7 +328,7 @@ class BaseRLModel(object):
         assert env.num_envs == 1
 
         if hasattr(self, 'use_sde') and self.use_sde:
-            self.policy.reset_noise()
+            self.actor.reset_noise()
 
         while total_steps < n_steps or total_episodes < n_episodes:
             done = False
@@ -394,6 +394,8 @@ class BaseRLModel(object):
                     logger.logkv("fps", fps)
                     logger.logkv('time_elapsed', int(time.time() - self.start_time))
                     logger.logkv("total timesteps", num_timesteps)
+                    if hasattr(self, 'use_sde') and self.use_sde:
+                        logger.logkv("std", th.exp(self.actor.log_std).mean().item())
                     logger.dumpkvs()
 
         mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0

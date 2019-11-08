@@ -7,7 +7,7 @@ from torchy_baselines.common.policies import BasePolicy, register_policy, create
 
 class Actor(BaseNetwork):
     def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU,
-                 use_sde=False, log_std_init=-2, clip_noise=0.1):
+                 use_sde=False, log_std_init=-2, clip_noise=0.5):
         super(Actor, self).__init__()
 
         self.latent_pi, self.log_std = None, None
@@ -67,7 +67,7 @@ class Critic(BaseNetwork):
 class TD3Policy(BasePolicy):
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',
-                 activation_fn=nn.ReLU, use_sde=False, log_std_init=-2, clip_noise=0.1):
+                 activation_fn=nn.ReLU, use_sde=False, log_std_init=-2, clip_noise=0.5):
         super(TD3Policy, self).__init__(observation_space, action_space, device)
 
         if net_arch is None:

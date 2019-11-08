@@ -7,7 +7,7 @@ from torchy_baselines.common.policies import BasePolicy, register_policy, create
 
 class Actor(BaseNetwork):
     def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU,
-                 use_sde=False, log_std_init=0.0, clip_noise=0.1):
+                 use_sde=False, log_std_init=-2, clip_noise=0.1):
         super(Actor, self).__init__()
 
         self.latent_pi, self.log_std = None, None
@@ -36,8 +36,8 @@ class Actor(BaseNetwork):
             if deterministic:
                 return self.actor_net(latent_pi)
             noise = th.mm(latent_pi.detach(), self.exploration_mat)
-            # noise = th.clamp(noise, -self.clip_noise, self.clip_noise)
-            # TODO: fix clipping
+            noise = th.clamp(noise, -self.clip_noise, self.clip_noise)
+            # TODO: fix clipping with squashing ?
             return th.clamp(self.actor_net(latent_pi) + noise, -1, 1)
         else:
             return self.actor_net(obs)
@@ -67,7 +67,7 @@ class Critic(BaseNetwork):
 class TD3Policy(BasePolicy):
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',
-                 activation_fn=nn.ReLU, use_sde=False, log_std_init=0.0):
+                 activation_fn=nn.ReLU, use_sde=False, log_std_init=-2, clip_noise=0.1):
         super(TD3Policy, self).__init__(observation_space, action_space, device)
 
         if net_arch is None:
@@ -86,6 +86,7 @@ class TD3Policy(BasePolicy):
         self.actor_kwargs = self.net_args.copy()
         self.actor_kwargs['use_sde'] = use_sde
         self.actor_kwargs['log_std_init'] = log_std_init
+        self.actor_kwargs['clip_noise'] = clip_noise
 
         self.actor, self.actor_target = None, None
         self.critic, self.critic_target = None, None

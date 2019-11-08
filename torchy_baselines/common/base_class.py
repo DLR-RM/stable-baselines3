@@ -351,6 +351,7 @@ class BaseRLModel(object):
                 # Add noise to the action (improve exploration)
                 if action_noise is not None:
                     # NOTE: in the original implementation of TD3, the noise was applied to the unscaled action
+                    # Update(October 2019): Not anymore
                     action = np.clip(action + action_noise(), -1, 1)
 
                 # Rescale and perform action

@@ -124,3 +124,15 @@ class A2C(PPO):
         return super(A2C, self).learn(total_timesteps=total_timesteps, callback=callback, log_interval=log_interval,
                   eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,
                   tb_log_name=tb_log_name, reset_num_timesteps=reset_num_timesteps)
+
+    def save(self, path):
+        if not path.endswith('.pth'):
+            path += '.pth'
+        th.save(self.policy.state_dict(), path)
+
+    def load(self, path, env=None, **_kwargs):
+        if not path.endswith('.pth'):
+            path += '.pth'
+        if env is not None:
+            pass
+        self.policy.load_state_dict(th.load(path))

@@ -12,6 +12,12 @@ from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv
 from torchy_baselines.common.monitor import Monitor
 from torchy_baselines.common import logger
 
+# for storing and loging
+import os
+import io
+import zipfile
+from torchy_baselines.common.save_util import (data_to_json, json_to_data)
+
 
 class BaseRLModel(object):
     """
@@ -57,6 +63,7 @@ class BaseRLModel(object):
         self.replay_buffer = None
         self.seed = seed
         self.action_noise = None
+        self.params = None
         # Track the training progress (from 1 to 0)
         # this is used to update the learning rate
         self._current_progress = 1
@@ -113,7 +120,7 @@ class BaseRLModel(object):
         (no need for symmetric action space)
         """
         low, high = self.action_space.low, self.action_space.high
-        return low + (0.5 * (scaled_action + 1.0) * (high -  low))
+        return low + (0.5 * (scaled_action + 1.0) * (high - low))
 
     def _setup_learning_rate(self):
         """Transform to callable if needed."""
@@ -179,7 +186,7 @@ class BaseRLModel(object):
 
         :return: (list) List of pytorch Variables
         """
-        pass
+        return self.params
 
     def get_parameters(self):
         """
@@ -187,7 +194,7 @@ class BaseRLModel(object):
 
         :return: (OrderedDict) Dictionary of variable name -> ndarray of model's parameters.
         """
-        raise NotImplementedError()
+        return self.policy.state_dict()
 
     def pretrain(self, dataset, n_epochs=10, learning_rate=1e-4,
                  adam_epsilon=1e-8, val_interval=None):
@@ -237,14 +244,11 @@ class BaseRLModel(object):
         """
         pass
 
-    def load_parameters(self, load_path_or_dict, exact_match=True):
+    def load_parameters(self, load_dict, exact_match=True):
         """
-        Load model parameters from a file or a dictionary
+        Load model parameters from a dictionary
 
-        Dictionary keys should be tensorflow variable names, which can be obtained
-        with ``get_parameters`` function. If ``exact_match`` is True, dictionary
-        should contain keys for all model's parameters, otherwise RunTimeError
-        is raised. If False, only variables included in the dictionary will be updated.
+        Dictionary should be of shape torch model.state_dict()
 
         This does not load agent's hyper-parameters.
 
@@ -252,13 +256,10 @@ class BaseRLModel(object):
             This function does not update trainer/optimizer variables (e.g. momentum).
             As such training after using this function may lead to less-than-optimal results.
 
-        :param load_path_or_dict: (str or file-like or dict) Save parameter location
-            or dict of parameters as variable.name -> ndarrays to be loaded.
-        :param exact_match: (bool) If True, expects load dictionary to contain keys for
-            all variables in the model. If False, loads parameters only for variables
-            mentioned in the dictionary. Defaults to True.
+
+        :param load_path_or_dict: (dict) dict of parameters from model.state_dict()
         """
-        raise NotImplementedError()
+        self.policy.load_state_dict(load_dict)
 
     @abstractmethod
     def save(self, save_path):
@@ -280,7 +281,103 @@ class BaseRLModel(object):
             (can be None if you only need prediction from a trained model)
         :param kwargs: extra arguments to change the model when loading
         """
-        raise NotImplementedError()
+        data, params = cls._load_from_file(load_path)
+
+        if 'policy_kwargs' in kwargs and kwargs['policy_kwargs'] != data['policy_kwargs']:
+            raise ValueError("The specified policy kwargs do not equal the stored policy kwargs."
+                             "Stored kwargs: {}, specified kwargs: {}".format(data['policy_kwargs'],kwargs['policy_kwargs']))
+
+        model = cls(policy=data["policy"],env=None, _init_setup_model=False)
+        model.__dict__.update(data)
+        model.__dict__.update(kwargs)
+        model.set_env(env)
+        model.load_parameters(params)
+
+        return model
+
+
+    @staticmethod
+    def _save_to_file_zip(save_path, data=None, params=None):
+        """Save model to a zip archive
+
+        :param save_path: (str or file-like) Where to store the model
+        :param data: (OrderedDict) Class parameters being stored
+        :param params: (OrderedDict) Model parameters being stored expexted to be state_dict
+        """
+
+        # data/params can be None, so do not
+        # try to serialize them blindly
+        if data is not None:
+            serialized_data = data_to_json(data)
+
+        # Check postfix if save_path is a string
+        if isinstance(save_path, str):
+            _, ext = os.path.splitext(save_path)
+            if ext == "":
+                save_path += ".zip"
+
+        # Create a zip-archive and write our objects
+        # there. This works when save_path is either
+        # str or a file-like
+        with zipfile.ZipFile(save_path, "w") as file_:
+            # Do not try to save "None" elements
+            if data is not None:
+                file_.writestr("data",serialized_data)
+            if params is not None:
+                with file_.open('param.pth', mode="w") as param_file:
+                    th.save(params,param_file)
+
+    @staticmethod
+    def _load_from_file(load_path, load_data = True):
+        """ Load model data from a .zip archive
+
+        :param load_path: (str or file-like) Where to load the model from
+        :param load_data: (bool) Whether we should load and return data
+            (class parameters). Mainly used by 'load_parameters' to only load model parameters (weights)
+        :return: (dict. OrderedDict),(dict. OrderedDict) Class parameters and model parameters (state_dict)
+        """
+        # Check if file exists if load_path is a string
+        if isinstance(load_path, str):
+            if not os.path.exists(load_path):
+                if os.path.exists(load_path + ".zip"):
+                    load_path += ".zip"
+                else:
+                    raise ValueError("Error: the file {} could not be found".format(load_path))
+
+        # Open the zip archive and load data
+        try:
+            with zipfile.ZipFile(load_path,"r") as file_:
+                namelist = file_.namelist()
+                # If data or parameters is not in the
+                # zip archive, assume they were stored
+                # as None (_save_to_file_zip allows this).
+                data = None
+                params = None
+                if "data" in namelist and load_data:
+                    # Load class parameters and convert to string
+                    json_data = file_.read("data").decode()
+                    data = json_to_data(json_data)
+
+                if "param.pth" in namelist:
+                    # Load parameters with build in torch function
+                    with file_.open("param.pth", mode="r") as param_file:
+                        # File has to be seekable so load in BytesIO first
+                        file_content = io.BytesIO()
+                        file_content.write(param_file.read())
+                        # go to start of file
+                        file_content.seek(0)
+                        params = th.load(file_content)
+        except zipfile.BadZipFile:
+            # load_path wasn't a zip file
+            raise ValueError("Error: the file {} wasn't a zip-file".format(load_path))
+
+        return data, params
+
+
+
+
+
+
 
     def set_random_seed(self, seed=0):
         set_random_seed(seed, using_cuda=self.device == th.device('cuda'))
@@ -375,7 +472,8 @@ class BaseRLModel(object):
                     action_noise.reset()
 
                 # Display training infos
-                if self.verbose >= 1 and log_interval is not None and (episode_num + total_episodes) % log_interval == 0:
+                if self.verbose >= 1 and log_interval is not None and (
+                        episode_num + total_episodes) % log_interval == 0:
                     fps = int(num_timesteps / (time.time() - self.start_time))
                     logger.logkv("episodes", episode_num + total_episodes)
                     # logger.logkv("mean 100 episode reward", mean_reward)

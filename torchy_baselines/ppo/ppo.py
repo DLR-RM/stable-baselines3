@@ -6,6 +6,7 @@ import gym
 from gym import spaces
 import torch as th
 import torch.nn.functional as F
+
 # Check if tensorboard is available for pytorch
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -185,7 +186,6 @@ class PPO(BaseRLModel):
             clip_range_vf = self.clip_range_vf(self._current_progress)
             logger.logkv("clip_range_vf", clip_range_vf)
 
-
         for gradient_step in range(gradient_steps):
             approx_kl_divs = []
             # Sample replay buffer
@@ -219,7 +219,6 @@ class PPO(BaseRLModel):
                 # Value loss using the TD(gae_lambda) target
                 value_loss = F.mse_loss(return_batch, values_pred)
 
-
                 # Entropy loss favor exploration
                 entropy_loss = -th.mean(entropy)
 
@@ -234,7 +233,7 @@ class PPO(BaseRLModel):
                 approx_kl_divs.append(th.mean(old_log_prob - log_prob).detach().cpu().numpy())
 
             if self.target_kl is not None and np.mean(approx_kl_divs) > 1.5 * self.target_kl:
-                print("Early stopping at step {} due to reaching max kl: {:.2f}".format(it, np.mean(approx_kl_divs)))
+                print("Early stopping at step {} due to reaching max kl: {:.2f}".format(gradient_step, np.mean(approx_kl_divs)))
                 break
 
         # print(explained_variance(self.rollout_buffer.returns.flatten().cpu().numpy(),
@@ -294,13 +293,39 @@ class PPO(BaseRLModel):
         return self
 
     def save(self, path):
-        if not path.endswith('.pth'):
-            path += '.pth'
-        th.save(self.policy.state_dict(), path)
+        """
+        saves all the params from init and pytorch params in a file for continous learning
 
-    def load(self, path, env=None, **_kwargs):
+        :param path: path to the file where the data should be safed
+        :return:
+        """
+
+        data = {
+            "gamma": self.gamma,
+            "n_steps": self.n_steps,
+            "vf_coef": self.vf_coef,
+            "ent_coef": self.ent_coef,
+            "max_grad_norm": self.max_grad_norm,
+            "learning_rate": self.learning_rate,
+            "gae_lambda": self.gae_lambda,
+            "n_epochs": self.n_epochs,
+            "clip_range": self.clip_range,
+            "clip_range_vf": self.clip_range_vf,
+            "batch_size": self.batch_size,
+            "target_kl": self.target_kl,
+            "tensorboard_log": self.tensorboard_log,
+            "policy_kwargs": self.policy_kwargs,
+            "policy": self.policy,
+
+        }
+
+        params_to_save = self.get_parameters()
+
+        self._save_to_file_zip(path, data=data, params=params_to_save)
+
+    """def load(self, path, env=None, **_kwargs):
         if not path.endswith('.pth'):
             path += '.pth'
         if env is not None:
             pass
-        self.policy.load_state_dict(th.load(path))
+        self.policy.load_state_dict(th.load(path))"""

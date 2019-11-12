@@ -57,6 +57,8 @@ class BaseRLModel(object):
         self.replay_buffer = None
         self.seed = seed
         self.action_noise = None
+        # Used for SDE only
+        self.rollout_data = None
         # Track the training progress (from 1 to 0)
         # this is used to update the learning rate
         self._current_progress = 1
@@ -113,7 +115,7 @@ class BaseRLModel(object):
         (no need for symmetric action space)
         """
         low, high = self.action_space.low, self.action_space.high
-        return low + (0.5 * (scaled_action + 1.0) * (high -  low))
+        return low + (0.5 * (scaled_action + 1.0) * (high - low))
 
     def _setup_learning_rate(self):
         """Transform to callable if needed."""
@@ -214,12 +216,14 @@ class BaseRLModel(object):
         Return a trained model.
 
         :param total_timesteps: (int) The total number of samples to train on
-        :param seed: (int) The initial seed for training, if None: keep current seed
         :param callback: (function (dict, dict)) -> boolean function called at every steps with state of the algorithm.
             It takes the local and global variables. If it returns False, training is aborted.
         :param log_interval: (int) The number of timesteps before logging.
         :param tb_log_name: (str) the name of the run for tensorboard log
         :param reset_num_timesteps: (bool) whether or not to reset the current timestep number (used in logging)
+        :param eval_env: (gym.Env)
+        :param eval_freq: (int)
+        :param n_eval_episodes: (int)
         :return: (BaseRLModel) the trained model
         """
         pass
@@ -327,8 +331,12 @@ class BaseRLModel(object):
         assert isinstance(env, VecEnv)
         assert env.num_envs == 1
 
+        self.rollout_data = None
         if hasattr(self, 'use_sde') and self.use_sde:
             self.actor.reset_noise()
+            # Reset rollout data
+            self.rollout_data = {key: [] for key in ['observations', 'actions', 'rewards', 'dones']}
+            # self.rollout_data = {'observations': [], 'actions': [], 'rewards': [], 'returns': [], 'dones': []}
 
         while total_steps < n_steps or total_episodes < n_episodes:
             done = False
@@ -367,12 +375,19 @@ class BaseRLModel(object):
                 if replay_buffer is not None:
                     replay_buffer.add(obs, new_obs, action, reward, done_bool)
 
+                if self.rollout_data is not None:
+                    # Assume only one env
+                    self.rollout_data['observations'].append(obs[0].copy())
+                    self.rollout_data['actions'].append(action[0].copy())
+                    self.rollout_data['rewards'].append(reward[0].copy())
+                    self.rollout_data['dones'].append(np.array(done_bool[0]).copy())
+
                 obs = new_obs
 
                 num_timesteps += 1
                 episode_timesteps += 1
                 total_steps += 1
-                if n_steps > 0 and total_steps >= n_steps:
+                if 0 < n_steps <= total_steps:
                     break
 
             if done:
@@ -383,7 +398,8 @@ class BaseRLModel(object):
                     action_noise.reset()
 
                 # Display training infos
-                if self.verbose >= 1 and log_interval is not None and (episode_num + total_episodes) % log_interval == 0:
+                if self.verbose >= 1 and log_interval is not None and (
+                        episode_num + total_episodes) % log_interval == 0:
                     fps = int(num_timesteps / (time.time() - self.start_time))
                     logger.logkv("episodes", episode_num + total_episodes)
                     # logger.logkv("mean 100 episode reward", mean_reward)
@@ -400,5 +416,21 @@ class BaseRLModel(object):
                     logger.dumpkvs()
 
         mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
+
+        # Post processing
+        if self.rollout_data is not None:
+            for key in ['observations', 'actions', 'rewards', 'dones']:
+                self.rollout_data[key] = th.FloatTensor(np.array(self.rollout_data[key])).to(self.device)
+
+            self.rollout_data['returns'] = self.rollout_data['rewards'].clone()
+            # Compute return
+            last_return = 0.0
+            for step in reversed(range(len(self.rollout_data['rewards']))):
+                if step == len(self.rollout_data['rewards']) - 1:
+                    last_return = self.rollout_data['rewards'][step]
+                else:
+                    next_non_terminal = 1.0 - self.rollout_data['dones'][step + 1]
+                    last_return = self.rollout_data['rewards'][step] + self.gamma * last_return * next_non_terminal
+                self.rollout_data['returns'][step] = last_return
 
         return mean_reward, total_steps, total_episodes, obs

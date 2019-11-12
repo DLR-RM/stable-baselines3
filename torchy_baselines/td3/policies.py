@@ -7,12 +7,12 @@ from torchy_baselines.common.policies import BasePolicy, register_policy, create
 
 class Actor(BaseNetwork):
     def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU,
-                 use_sde=False, log_std_init=-2, clip_noise=0.5):
+                 use_sde=False, log_std_init=-2, clip_noise=None, lr_sde=3e-4):
         super(Actor, self).__init__()
 
         self.latent_pi, self.log_std = None, None
         self.weights_dist, self.exploration_mat = None, None
-        self.use_sde = use_sde
+        self.use_sde, self.sde_optimizer = use_sde, None
 
         if use_sde:
             latent_dim = net_arch[-1]
@@ -21,10 +21,24 @@ class Actor(BaseNetwork):
             self.log_std = nn.Parameter(th.ones(latent_dim, action_dim) * log_std_init)
             self.actor_net = nn.Sequential(nn.Linear(net_arch[-1], action_dim), nn.Tanh())
             self.clip_noise = clip_noise
+            self.sde_optimizer = th.optim.Adam([self.log_std], lr=lr_sde)
             self.reset_noise()
         else:
             actor_net = create_mlp(obs_dim, action_dim, net_arch, activation_fn, squash_out=True)
             self.actor_net = nn.Sequential(*actor_net)
+
+    def get_distribution_stats(self, obs, action):
+        with th.no_grad():
+            latent_pi = self.latent_pi(obs)
+            mean_actions = self.actor_net(latent_pi)
+        variance = th.mm(latent_pi ** 2, th.exp(self.log_std) ** 2)
+        distribution = Normal(mean_actions, th.sqrt(variance))
+        log_prob = distribution.log_prob(action)
+        if len(log_prob.shape) > 1:
+            log_prob = log_prob.sum(axis=1)
+        else:
+            log_prob = log_prob.sum()
+        return log_prob, distribution.entropy()
 
     def reset_noise(self):
         self.weights_dist = Normal(th.zeros_like(self.log_std), th.exp(self.log_std))
@@ -36,7 +50,8 @@ class Actor(BaseNetwork):
             if deterministic:
                 return self.actor_net(latent_pi)
             noise = th.mm(latent_pi.detach(), self.exploration_mat)
-            noise = th.clamp(noise, -self.clip_noise, self.clip_noise)
+            if self.clip_noise is not None:
+                noise = th.clamp(noise, -self.clip_noise, self.clip_noise)
             # TODO: fix clipping with squashing ?
             return th.clamp(self.actor_net(latent_pi) + noise, -1, 1)
         else:
@@ -67,7 +82,7 @@ class Critic(BaseNetwork):
 class TD3Policy(BasePolicy):
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',
-                 activation_fn=nn.ReLU, use_sde=False, log_std_init=-2, clip_noise=0.5):
+                 activation_fn=nn.ReLU, use_sde=False, log_std_init=-2, clip_noise=None):
         super(TD3Policy, self).__init__(observation_space, action_space, device)
 
         if net_arch is None:

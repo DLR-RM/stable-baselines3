@@ -52,7 +52,7 @@ class TD3(BaseRLModel):
                  policy_delay=2, learning_starts=100, gamma=0.99, batch_size=100,
                  train_freq=-1, gradient_steps=-1, n_episodes_rollout=1,
                  tau=0.005, action_noise=None, target_policy_noise=0.2, target_noise_clip=0.5,
-                 use_sde=False,
+                 use_sde=False, sde_max_grad_norm=1, sde_ent_coef=0.0,
                  tensorboard_log=None, create_eval_env=False, policy_kwargs=None, verbose=0,
                  seed=0, device='auto', _init_setup_model=True):
 
@@ -73,7 +73,10 @@ class TD3(BaseRLModel):
         self.policy_delay = policy_delay
         self.target_noise_clip = target_noise_clip
         self.target_policy_noise = target_policy_noise
+
         self.use_sde = use_sde
+        self.sde_max_grad_norm = sde_max_grad_norm
+        self.sde_ent_coef = sde_ent_coef
 
         if _init_setup_model:
             self._setup_model()
@@ -191,6 +194,37 @@ class TD3(BaseRLModel):
             if gradient_step % policy_delay == 0:
                 self.train_actor(replay_data=replay_data, tau_actor=self.tau, tau_critic=self.tau)
 
+    def train_sde(self):
+        # Update optimizer learning rate
+        # self._update_learning_rate(self.policy.optimizer)
+
+        # Unpack
+        obs, action, returns = self.rollout_data['observations'], self.rollout_data['actions'], self.rollout_data['returns']
+
+        # TODO: avoid second computation of everything because of the gradient
+        log_prob, entropy = self.actor.get_distribution_stats(obs, action)
+
+        # Normalize returns
+        # returns = (returns - returns.mean()) / (returns.std() + 1e-8)
+
+        policy_loss = -(returns * log_prob).mean()
+
+        # Entropy loss favor exploration
+        entropy_loss = -th.mean(entropy)
+
+        loss = policy_loss + self.sde_ent_coef * entropy_loss
+
+        # Optimization step
+        self.actor.sde_optimizer.zero_grad()
+        loss.backward()
+        # print(self.actor.log_std.grad.mean().item(), self.actor.log_std.grad.max().item(), self.actor.log_std.grad.min().item())
+        # print(self.actor.log_std.mean().item(), self.actor.log_std.max().item(), self.actor.log_std.min().item())
+        # Clip grad norm
+        th.nn.utils.clip_grad_norm_([self.actor.log_std], self.sde_max_grad_norm)
+        self.actor.sde_optimizer.step()
+
+        del self.rollout_data
+
     def learn(self, total_timesteps, callback=None, log_interval=4,
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="TD3", reset_num_timesteps=True):
 
@@ -226,6 +260,8 @@ class TD3(BaseRLModel):
 
                 gradient_steps = self.gradient_steps if self.gradient_steps > 0 else episode_timesteps
                 self.train(gradient_steps, batch_size=self.batch_size, policy_delay=self.policy_delay)
+                if self.use_sde:
+                    self.train_sde()
 
             # Evaluate episode
             if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:

@@ -82,7 +82,8 @@ class Critic(BaseNetwork):
 class TD3Policy(BasePolicy):
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',
-                 activation_fn=nn.ReLU, use_sde=False, log_std_init=-2, clip_noise=None):
+                 activation_fn=nn.ReLU, use_sde=False, log_std_init=-2,
+                 clip_noise=None, lr_sde=3e-4):
         super(TD3Policy, self).__init__(observation_space, action_space, device)
 
         if net_arch is None:
@@ -102,6 +103,7 @@ class TD3Policy(BasePolicy):
         self.actor_kwargs['use_sde'] = use_sde
         self.actor_kwargs['log_std_init'] = log_std_init
         self.actor_kwargs['clip_noise'] = clip_noise
+        self.actor_kwargs['lr_sde'] = lr_sde
 
         self.actor, self.actor_target = None, None
         self.critic, self.critic_target = None, None

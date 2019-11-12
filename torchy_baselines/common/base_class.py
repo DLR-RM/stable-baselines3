@@ -1,6 +1,9 @@
 import time
 from abc import ABCMeta, abstractmethod
 from collections import deque
+import os
+import io
+import zipfile
 
 import gym
 import torch as th
@@ -11,12 +14,7 @@ from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, upda
 from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv
 from torchy_baselines.common.monitor import Monitor
 from torchy_baselines.common import logger
-
-# for storing and loging
-import os
-import io
-import zipfile
-from torchy_baselines.common.save_util import (data_to_json, json_to_data)
+from torchy_baselines.common.save_util import data_to_json, json_to_data
 
 
 class BaseRLModel(object):

@@ -206,6 +206,7 @@ class TD3(BaseRLModel):
 
         # Normalize returns
         # returns = (returns - returns.mean()) / (returns.std() + 1e-8)
+        returns = (returns - returns.mean())
 
         policy_loss = -(returns * log_prob).mean()
 

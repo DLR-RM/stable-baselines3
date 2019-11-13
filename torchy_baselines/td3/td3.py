@@ -206,7 +206,11 @@ class TD3(BaseRLModel):
 
         # Normalize returns
         # returns = (returns - returns.mean()) / (returns.std() + 1e-8)
-        returns = (returns - returns.mean())
+        # returns = (returns - returns.mean())
+        with th.no_grad():
+            current_q1, current_q2 = self.critic(obs, action)
+        # Alternatively use the q value
+        returns = (returns - th.min(current_q1, current_q2))
 
         policy_loss = -(returns * log_prob).mean()
 
@@ -218,6 +222,11 @@ class TD3(BaseRLModel):
         # Optimization step
         self.actor.sde_optimizer.zero_grad()
         loss.backward()
+
+        assert not th.isnan(log_prob).any(), log_prob
+        assert not th.isnan(entropy).any()
+        assert not th.isnan(self.actor.log_std.grad).any()
+        assert not th.isnan(self.actor.log_std).any()
         # print(self.actor.log_std.grad.mean().item(), self.actor.log_std.grad.max().item(), self.actor.log_std.grad.min().item())
         # print(self.actor.log_std.mean().item(), self.actor.log_std.max().item(), self.actor.log_std.min().item())
         # Clip grad norm
@@ -259,10 +268,12 @@ class TD3(BaseRLModel):
                     print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
                         self.num_timesteps, episode_num, episode_timesteps, episode_reward))
 
-                gradient_steps = self.gradient_steps if self.gradient_steps > 0 else episode_timesteps
-                self.train(gradient_steps, batch_size=self.batch_size, policy_delay=self.policy_delay)
                 if self.use_sde:
                     self.train_sde()
+
+                gradient_steps = self.gradient_steps if self.gradient_steps > 0 else episode_timesteps
+                self.train(gradient_steps, batch_size=self.batch_size, policy_delay=self.policy_delay)
+
 
             # Evaluate episode
             if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:

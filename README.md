@@ -24,6 +24,7 @@ TODO:
 - SDE: reduce the number of parameters (only n_features instead of n_features x n_actions) for A2C
 (done for TD3)
 - SDE: learn the feature extractor?
+- DEBUG normalization with replay buffer (apparently pb with observation normalization)
 
 Later:
 - get_parameters / set_parameters

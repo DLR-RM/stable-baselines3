@@ -8,7 +8,7 @@ import numpy as np
 
 from torchy_baselines.common.policies import get_policy_from_name
 from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate
-from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv
+from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize
 from torchy_baselines.common.monitor import Monitor
 from torchy_baselines.common import logger
 
@@ -46,6 +46,8 @@ class BaseRLModel(object):
             print("Using {} device".format(self.device))
 
         self.env = env
+        # get VecNormalize object if needed
+        self._vec_normalize_env = unwrap_vec_normalize(env)
         self.verbose = verbose
         self.policy_kwargs = {} if policy_kwargs is None else policy_kwargs
         self.observation_space = None
@@ -373,6 +375,13 @@ class BaseRLModel(object):
 
                 # Store data in replay buffer
                 if replay_buffer is not None:
+                    # Store only the unnormalized version
+                    if self._vec_normalize_env is not None:
+                        # TODO: save it instead of unnormalizing
+                        obs = self._vec_normalize_env.unnormalize_obs(obs)
+                        new_obs = self._vec_normalize_env.get_original_obs()
+                        reward = self._vec_normalize_env.get_original_reward()
+
                     replay_buffer.add(obs, new_obs, action, reward, done_bool)
 
                 if self.rollout_data is not None:

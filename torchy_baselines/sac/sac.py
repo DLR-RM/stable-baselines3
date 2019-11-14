@@ -8,6 +8,7 @@ from torchy_baselines.common.base_class import BaseRLModel
 from torchy_baselines.common.buffers import ReplayBuffer
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.sac.policies import SACPolicy
+from torchy_baselines.common.vec_env import sync_envs_normalization
 
 
 class SAC(BaseRLModel):
@@ -162,7 +163,7 @@ class SAC(BaseRLModel):
 
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
-            replay_data = self.replay_buffer.sample(batch_size)
+            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
             obs, action_batch, next_obs, done, reward = replay_data
 
@@ -266,6 +267,7 @@ class SAC(BaseRLModel):
             # Evaluate episode
             if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
                 timesteps_since_eval %= eval_freq
+                sync_envs_normalization(self.env, eval_env)
                 mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
                 evaluations.append(mean_reward)
                 if self.verbose > 0:

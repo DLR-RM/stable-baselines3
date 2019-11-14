@@ -1,6 +1,8 @@
 import numpy as np
 import torch as th
 
+from torchy_baselines.common.vec_env import unwrap_vec_normalize
+
 
 class BaseBuffer(object):
     def __init__(self, buffer_size, obs_dim, action_dim, device='cpu', n_envs=1):
@@ -43,14 +45,25 @@ class BaseBuffer(object):
         self.pos = 0
         self.full = False
 
-    def sample(self, batch_size):
+    def sample(self, batch_size, env=None):
         upper_bound = self.buffer_size if self.full else self.pos
         batch_inds = th.LongTensor(
             np.random.randint(0, upper_bound, size=batch_size))
-        return self._get_samples(batch_inds)
+        return self._get_samples(batch_inds, env=env)
 
-    def _get_samples(self, batch_inds):
+    def _get_samples(self, batch_inds, env=None):
         raise NotImplementedError()
+
+    def _normalize_obs(self, obs, env=None):
+        if env is not None:
+            # TODO: get rid of pytorch - numpy conversion
+            return th.FloatTensor(env.normalize_obs(obs.numpy()))
+        return obs
+
+    def _normalize_reward(self, reward, env=None):
+        if env is not None:
+            return th.FloatTensor(env.normalize_reward(reward.numpy()))
+        return reward
 
 
 class ReplayBuffer(BaseBuffer):
@@ -81,12 +94,12 @@ class ReplayBuffer(BaseBuffer):
             self.full = True
             self.pos = 0
 
-    def _get_samples(self, batch_inds):
-        return (self.observations[batch_inds, 0, :].to(self.device),
+    def _get_samples(self, batch_inds, env=None):
+        return (self._normalize_obs(self.observations[batch_inds, 0, :], env).to(self.device),
                 self.actions[batch_inds, 0, :].to(self.device),
-                self.next_observations[batch_inds, 0, :].to(self.device),
+                self._normalize_obs(self.next_observations[batch_inds, 0, :], env).to(self.device),
                 self.dones[batch_inds].to(self.device),
-                self.rewards[batch_inds].to(self.device))
+                self._normalize_reward(self.rewards[batch_inds], env).to(self.device))
 
 
 class RolloutBuffer(BaseBuffer):
@@ -184,7 +197,7 @@ class RolloutBuffer(BaseBuffer):
             yield self._get_samples(indices[start_idx:start_idx + batch_size])
             start_idx += batch_size
 
-    def _get_samples(self, batch_inds):
+    def _get_samples(self, batch_inds, env=None):
         return (self.observations[batch_inds].to(self.device),
                 self.actions[batch_inds].to(self.device),
                 self.values[batch_inds].flatten().to(self.device),

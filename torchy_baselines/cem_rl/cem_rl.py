@@ -5,6 +5,7 @@ import torch as th
 from torchy_baselines.cem_rl.cem import CEM
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.td3.td3 import TD3
+from torchy_baselines.common.vec_env import sync_envs_normalization
 
 
 class CEMRL(TD3):
@@ -102,7 +103,7 @@ class CEMRL(TD3):
                             n_training_steps = 2 * (actor_steps // self.n_grad)
                         for it in range(n_training_steps):
                             # Sample replay buffer
-                            replay_data = self.replay_buffer.sample(self.batch_size)
+                            replay_data = self.replay_buffer.sample(self.batch_size, env=self._vec_normalize_env)
                             self.train_critic(replay_data=replay_data)
 
                             # Delayed policy updates
@@ -117,6 +118,7 @@ class CEMRL(TD3):
                 timesteps_since_eval %= eval_freq
 
                 self.actor.load_from_vector(self.es.mu)
+                sync_envs_normalization(self.env, eval_env)
 
                 mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
                 evaluations.append(mean_reward)

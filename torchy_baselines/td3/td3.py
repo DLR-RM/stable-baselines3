@@ -8,6 +8,7 @@ from torchy_baselines.common.base_class import BaseRLModel
 from torchy_baselines.common.buffers import ReplayBuffer
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.td3.policies import TD3Policy
+from torchy_baselines.common.vec_env import sync_envs_normalization
 
 
 class TD3(BaseRLModel):
@@ -123,7 +124,7 @@ class TD3(BaseRLModel):
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
             if replay_data is None:
-                obs, action, next_obs, done, reward = self.replay_buffer.sample(batch_size)
+                obs, action, next_obs, done, reward = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
             else:
                 obs, action, next_obs, done, reward = replay_data
 
@@ -162,7 +163,7 @@ class TD3(BaseRLModel):
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
             if replay_data is None:
-                obs, _, next_obs, done, reward = self.replay_buffer.sample(batch_size)
+                obs, _, next_obs, done, reward = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
             else:
                 obs, _, next_obs, done, reward = replay_data
 
@@ -187,7 +188,7 @@ class TD3(BaseRLModel):
         for gradient_step in range(gradient_steps):
 
             # Sample replay buffer
-            replay_data = self.replay_buffer.sample(batch_size)
+            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
             self.train_critic(replay_data=replay_data)
 
             # Delayed policy updates
@@ -278,6 +279,7 @@ class TD3(BaseRLModel):
             # Evaluate episode
             if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
                 timesteps_since_eval %= eval_freq
+                sync_envs_normalization(self.env, eval_env)
                 mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
                 evaluations.append(mean_reward)
                 if self.verbose > 0:

@@ -1,6 +1,5 @@
 import os
 import time
-from copy import deepcopy
 
 import gym
 from gym import spaces
@@ -17,7 +16,7 @@ from torchy_baselines.common.base_class import BaseRLModel
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.common.buffers import RolloutBuffer
 from torchy_baselines.common.utils import explained_variance, get_schedule_fn
-from torchy_baselines.common.vec_env import VecNormalize, VecEnvWrapper
+from torchy_baselines.common.vec_env import sync_envs_normalization
 from torchy_baselines.common import logger
 from torchy_baselines.ppo.policies import PPOPolicy
 
@@ -295,14 +294,8 @@ class PPO(BaseRLModel):
             # Evaluate agent
             if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
                 timesteps_since_eval %= eval_freq
-                # TODO: move that to the base class
-                # Sync eval env and train env when using VecNormalize
-                env_tmp, eval_env_tmp = self.env, eval_env
-                while isinstance(env_tmp, VecEnvWrapper):
-                    if isinstance(env_tmp, VecNormalize):
-                        eval_env_tmp.obs_rms = deepcopy(env_tmp.obs_rms)
-                    env_tmp = env_tmp.venv
-                    eval_env_tmp.venv
+                sync_envs_normalization(self.env, eval_env)
+
                 mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
                 if self.tb_writer is not None:
                     self.tb_writer.add_scalar('Eval/reward', mean_reward, self.num_timesteps)

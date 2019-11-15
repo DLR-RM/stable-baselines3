@@ -333,6 +333,11 @@ class BaseRLModel(object):
         assert isinstance(env, VecEnv)
         assert env.num_envs == 1
 
+        # Retrieve unnormalized observation for saving into the buffer
+        if self._vec_normalize_env is not None:
+            obs_ = self._vec_normalize_env.get_original_obs()
+
+
         self.rollout_data = None
         if hasattr(self, 'use_sde') and self.use_sde:
             self.actor.reset_noise()
@@ -377,12 +382,13 @@ class BaseRLModel(object):
                 if replay_buffer is not None:
                     # Store only the unnormalized version
                     if self._vec_normalize_env is not None:
-                        # TODO: save it instead of unnormalizing
-                        obs = self._vec_normalize_env.unnormalize_obs(obs)
-                        new_obs = self._vec_normalize_env.get_original_obs()
-                        reward = self._vec_normalize_env.get_original_reward()
+                        new_obs_ = self._vec_normalize_env.get_original_obs()
+                        reward_ = self._vec_normalize_env.get_original_reward()
+                    else:
+                        # Avoid changing the original ones
+                        obs_, new_obs_, reward_ = obs, new_obs, reward
 
-                    replay_buffer.add(obs, new_obs, action, reward, done_bool)
+                    replay_buffer.add(obs_, new_obs_, action, reward_, done_bool)
 
                 if self.rollout_data is not None:
                     # Assume only one env
@@ -392,6 +398,11 @@ class BaseRLModel(object):
                     self.rollout_data['dones'].append(np.array(done_bool[0]).copy())
 
                 obs = new_obs
+                # Save the true unnormalized observation
+                # otherwise obs_ = self._vec_normalize_env.unnormalize_obs(obs)
+                # is a good approximation
+                if self._vec_normalize_env is not None:
+                    obs_ = new_obs_
 
                 num_timesteps += 1
                 episode_timesteps += 1

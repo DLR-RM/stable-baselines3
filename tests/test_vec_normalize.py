@@ -46,10 +46,10 @@ def test_vec_env():
 @pytest.mark.parametrize("model_class", [SAC, TD3, CEMRL])
 def test_offpolicy_normalization(model_class):
     env = DummyVecEnv([lambda: gym.make(ENV_ID)])
-    env = VecNormalize(env, norm_obs=False, norm_reward=False, clip_obs=10., clip_reward=10.)
+    env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10., clip_reward=10.)
 
     eval_env = DummyVecEnv([lambda: gym.make(ENV_ID)])
     eval_env = VecNormalize(eval_env, norm_obs=True, norm_reward=False, clip_obs=10., clip_reward=10.)
 
     model = model_class('MlpPolicy', env, verbose=1)
-    model.learn(total_timesteps=10000, eval_env=eval_env, eval_freq=1000)
+    model.learn(total_timesteps=1000, eval_env=eval_env, eval_freq=500)

@@ -45,6 +45,11 @@ class Distribution(object):
 
 
 class DiagGaussianDistribution(Distribution):
+    """
+    Gaussian distribution with diagonal covariance matrix.
+
+    :param action_dim: (int) Number of actions
+    """
     def __init__(self, action_dim):
         super(DiagGaussianDistribution, self).__init__()
         self.distribution = None
@@ -53,12 +58,28 @@ class DiagGaussianDistribution(Distribution):
         self.log_std = None
 
     def proba_distribution_net(self, latent_dim, log_std_init=0.0):
+        """
+        Create the layers and parameter that represent the distribution:
+        one output will be the mean of the gaussian, the other parameter will be the
+        standard deviation (log std in fact to allow negative values)
+
+        :param latent_dim: (int) Dimension og the last layer of the policy (before the action layer)
+        :param log_std_init: (float) Initial value for the log standard deviation
+        """
         mean_actions = nn.Linear(latent_dim, self.action_dim)
         # TODO: allow action dependent std
         log_std = nn.Parameter(th.ones(self.action_dim) * log_std_init)
         return mean_actions, log_std
 
     def proba_distribution(self, mean_actions, log_std, deterministic=False):
+        """
+        Create and sample for the distribution given its parameters (mean, std)
+
+        :param mean_actions: (th.Tensor)
+        :param log_std: (th.Tensor)
+        :param deterministic: (bool)
+        :return: (th.Tensor)
+        """
         action_std = th.ones_like(mean_actions) * log_std.exp()
         self.distribution = Normal(mean_actions, action_std)
         if deterministic:
@@ -77,6 +98,14 @@ class DiagGaussianDistribution(Distribution):
         return self.distribution.entropy()
 
     def log_prob_from_params(self, mean_actions, log_std):
+        """
+        Compute the log probabilty of taking an action
+        given the distribution parameters.
+
+        :param mean_actions: (th.Tensor)
+        :param log_std: (th.Tensor)
+        :return: (th.Tensor, th.Tensor)
+        """
         action, _ = self.proba_distribution(mean_actions, log_std)
         log_prob = self.log_prob(action)
         return action, log_prob

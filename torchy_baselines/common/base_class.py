@@ -283,6 +283,12 @@ class BaseRLModel(object):
         raise NotImplementedError()
 
     def set_random_seed(self, seed=None):
+        """
+        Set the seed of the pseudo-random generators
+        (python, numpy, pytorch, gym, action_space)
+
+        :param seed: (int)
+        """
         if seed is None:
             return
         set_random_seed(seed, using_cuda=self.device == th.device('cuda'))

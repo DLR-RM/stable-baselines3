@@ -1,17 +1,25 @@
 import pytest
 
+import gym
 import torch as th
 from torch.distributions import Normal
 
 from torchy_baselines import A2C, TD3
+from torchy_baselines.common.vec_env import DummyVecEnv, VecNormalize
+from torchy_baselines.common.monitor import Monitor
 
 
 def test_state_dependent_exploration():
+    """
+    Check that the gradient correspond to the expected one
+    """
     n_states = 2
     state_dim = 3
     # TODO: fix for action_dim > 1
     action_dim = 1
-    sigma = th.ones(state_dim, action_dim, requires_grad=True)
+    sigma = th.ones(state_dim, 1, requires_grad=True)
+    # Reduce the number of parameters
+    # sigma_ = th.ones(state_dim, action_dim) * sigma_
 
     # weights_dist = Normal(th.zeros_like(log_sigma), th.exp(log_sigma))
     th.manual_seed(2)
@@ -42,19 +50,13 @@ def test_state_dependent_exploration():
 
 @pytest.mark.parametrize("model_class", [A2C])
 def test_state_dependent_noise(model_class):
-    import gym
-    from torchy_baselines.common.vec_env import DummyVecEnv, VecNormalize
-    from torchy_baselines.common.monitor import Monitor
-
-    # env_id = 'Pendulum-v0'
     env_id = 'MountainCarContinuous-v0'
-    # env_id = 'LunarLanderContinuous-v2'
+
     env = VecNormalize(DummyVecEnv([lambda: Monitor(gym.make(env_id))]), norm_reward=True)
     eval_env = VecNormalize(DummyVecEnv([lambda: Monitor(gym.make(env_id))]), training=False, norm_reward=False)
-    model = model_class('MlpPolicy', env, n_steps=200, max_grad_norm=1, use_rms_prop=False,
-                        use_sde=True, ent_coef=0.00, verbose=1, create_eval_env=True, learning_rate=3e-4,
-                        policy_kwargs=dict(log_std_init=0.0, ortho_init=False, net_arch=[256, dict(pi=[256], vf=[256])]),
-                        seed=None)
+
+    model = model_class('MlpPolicy', env, n_steps=200, use_sde=True, ent_coef=0.00, verbose=1, learning_rate=3e-4,
+                        policy_kwargs=dict(log_std_init=0.0, ortho_init=False), seed=None)
     model.learn(total_timesteps=int(1000), log_interval=5, eval_freq=500, eval_env=eval_env)
 
 

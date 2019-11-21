@@ -190,7 +190,7 @@ class BaseRLModel(object):
         """
         Get current model policy parameters as dictionary of variable name -> tensors.
 
-        :return: (OrderedDict) Dictionary of variable name -> tensor of model's policy parameters.
+        :return: (dict) Dictionary of variable name -> tensor of model's policy parameters.
         """
         return self.policy.state_dict()
 
@@ -198,7 +198,7 @@ class BaseRLModel(object):
     def get_opt_parameters(self):
         """
         Get current model optimizer parameters as dictionary of variable names -> tensors
-        :return: (OrderedDict) Dictionary of variable name -> tensor of model's optimizer parameters
+        :return: (dict) Dictionary of variable name -> tensor of model's optimizer parameters
         """
         raise NotImplementedError()
 
@@ -254,7 +254,7 @@ class BaseRLModel(object):
         """
         Load model parameters from a dictionary
 
-        Dictionary should be of shape torch model.state_dict()
+        Dictionary should contain all entries of torch model.state_dict()
 
         This does not load agent's hyper-parameters.
 
@@ -311,7 +311,7 @@ class BaseRLModel(object):
         :param load_path: (str or file-like) Where to load the model from
         :param load_data: (bool) Whether we should load and return data
             (class parameters). Mainly used by 'load_parameters' to only load model parameters (weights)
-        :return: (dict. OrderedDict),(dict. OrderedDict),(dict. OrderedDict) Class parameters, model parameters (state_dict) and dict of optimizer parameters (dict of state_dict)
+        :return: (dict),(dict),(dict) Class parameters, model parameters (state_dict) and dict of optimizer parameters (dict of state_dict)
         """
         # Check if file exists if load_path is a string
         if isinstance(load_path, str):
@@ -336,9 +336,9 @@ class BaseRLModel(object):
                     json_data = file_.read("data").decode()
                     data = json_to_data(json_data)
 
-                if "param.pth" in namelist:
+                if "params.pth" in namelist:
                     # Load parameters with build in torch function
-                    with file_.open("param.pth", mode="r") as param_file:
+                    with file_.open("params.pth", mode="r") as param_file:
                         # File has to be seekable so load in BytesIO first
                         file_content = io.BytesIO()
                         file_content.write(param_file.read())
@@ -347,7 +347,7 @@ class BaseRLModel(object):
                         params = th.load(file_content)
                 # check for all other .pth files
                 other_files = [file_name for file_name in namelist if
-                               os.path.splitext(file_name)[1] == ".pth" and file_name != "param.pth"]
+                               os.path.splitext(file_name)[1] == ".pth" and file_name != "params.pth"]
                 if len(other_files) > 0:
                     opt_params = dict()
                     for file in other_files:
@@ -480,9 +480,9 @@ class BaseRLModel(object):
         """Save model to a zip archive
     
         :param save_path: (str or file-like) Where to store the model
-        :param data: (OrderedDict) Class parameters being stored
-        :param params: (OrderedDict) Model parameters being stored expected to be state_dict
-        :param opt_params: (OrderedDict) Optimizer parameters being stored expected to contain an entry for every
+        :param data: (dict) Class parameters being stored
+        :param params: (dict) Model parameters being stored expected to be state_dict
+        :param opt_params: (dict) Optimizer parameters being stored expected to contain an entry for every
                                          optimizer with its name and the state_dict            
         """
 

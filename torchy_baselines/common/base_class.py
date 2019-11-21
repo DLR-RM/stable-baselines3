@@ -186,13 +186,20 @@ class BaseRLModel(object):
         """
         return self.params
 
-    def get_parameters(self):
+    def get_policy_parameters(self):
         """
-        Get current model parameters as dictionary of variable name -> ndarray.
+        Get current model policy parameters as dictionary of variable name -> tensors.
 
-        :return: (OrderedDict) Dictionary of variable name -> ndarray of model's parameters.
+        :return: (OrderedDict) Dictionary of variable name -> tensor of model's policy parameters.
         """
         return self.policy.state_dict()
+
+    def get_optim_parameters(self):
+        """
+        Get current model optimizer parameters as dictionary of variable names -> tensors
+        :return: (OrderedDict) Dictionary of variable name -> tensor of model's optimizer parameters
+        """
+        raise NotImplementedError()
 
     def pretrain(self, dataset, n_epochs=10, learning_rate=1e-4,
                  adam_epsilon=1e-8, val_interval=None):

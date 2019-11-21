@@ -319,7 +319,7 @@ class PPO(BaseRLModel):
 
         }
 
-        params_to_save = self.get_parameters()
+        params_to_save = self.get_policy_parameters()
 
         self._save_to_file_zip(path, data=data, params=params_to_save)
 

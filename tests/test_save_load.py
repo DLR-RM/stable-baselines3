@@ -38,15 +38,11 @@ def test_save_load(model_class):
     # Update model parameters with the new random values
     model.load_parameters(random_params, opt_params)
 
-    # Get items that are the same in params and new_params
     new_params = model.get_policy_parameters()
-    shared_items = {k: params[k] for k in params if k in new_params and th.all(th.eq(params[k], new_params[k]))}
-
-    # Check that the there are at least some parameters new random parameters
-    #for k in params.key():
-    #    assert not th.allclose(params[k], new_params[k])
-    assert not len(shared_items) == len(new_params), "Selected actions did not change " \
-                                                     "after changing model parameters."
+    # Check that all params are different now
+    for k in params:
+        assert not th.allclose(params[k], new_params[k]), "Selected actions did not change " \
+                                                          "after changing model parameters."
 
     params = new_params
 
@@ -56,9 +52,16 @@ def test_save_load(model_class):
     del model
     model = model_class.load("test_save")
 
-    #check if params are still the same after load
+    # check if params are still the same after load
     new_params = model.get_policy_parameters()
-    shared_items = {k: params[k] for k in params if k in new_params and th.all(th.eq(params[k], new_params[k]))}
-    # Check that at least some actions are chosen different now
-    assert len(shared_items) == len(new_params), "Parameters not the same after save and load."
+
+    # Check that all params are the same as before save load procedure now
+    for k in params:
+        assert th.allclose(params[k], new_params[k]), "Model parameters not the same after save and load."
+
+    # check if optimizer params are still the same after load
+    new_opt_params = model.get_opt_parameters()
+    # check if keys are the same
+    assert opt_params.keys() == new_opt_params.keys()
+    # check if values are the same: don't know how to to that
     os.remove("test_save.zip")

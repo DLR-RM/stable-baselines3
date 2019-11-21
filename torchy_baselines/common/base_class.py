@@ -505,7 +505,7 @@ class BaseRLModel(object):
             if data is not None:
                 file_.writestr("data", serialized_data)
             if params is not None:
-                with file_.open('param.pth', mode="w") as param_file:
+                with file_.open('params.pth', mode="w") as param_file:
                     th.save(params, param_file)
             if opt_params is not None:
                 for file_name, dict in opt_params.items():

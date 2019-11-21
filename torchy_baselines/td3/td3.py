@@ -46,6 +46,7 @@ class TD3(BaseRLModel):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
+
     def __init__(self, policy, env, buffer_size=int(1e6), learning_rate=1e-3,
                  policy_delay=2, learning_starts=100, gamma=0.99, batch_size=100,
                  train_freq=-1, gradient_steps=-1, n_episodes_rollout=1,
@@ -148,7 +149,8 @@ class TD3(BaseRLModel):
                 for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
                     target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
 
-    def train_actor(self, gradient_steps: object = 1, batch_size: object = 100, tau_actor: object = 0.005, tau_critic: object = 0.005,
+    def train_actor(self, gradient_steps: object = 1, batch_size: object = 100, tau_actor: object = 0.005,
+                    tau_critic: object = 0.005,
                     replay_data: object = None) -> object:
         # Update optimizer learning rate
         self._update_learning_rate(self.actor.optimizer)
@@ -235,15 +237,26 @@ class TD3(BaseRLModel):
 
         return self
 
-    def save(self, path):
-        if not path.endswith('.pth'):
-            path += '.pth'
-        th.save(self.policy.state_dict(), path)
+    def get_opt_parameters(self):
+        """
+        returns a dict of all the optimizers and their parameters
 
-    def load(self, path, env=None, **_kwargs):
-        if not path.endswith('.pth'):
-            path += '.pth'
-        if env is not None:
-            pass
-        self.policy.load_state_dict(th.load(path))
-        self._create_aliases()
+        :return: (Dict) of optimizer names and their state_dict 
+        """
+        return {"actor": self.actor.optimizer.state_dict(), "critic": self.critic.optimizer.state_dict()}
+
+    def load_parameters(self, load_dict, opt_params):
+        """
+        Load model parameters and optimizer parameters from a dictionary
+
+        Dictionary should be of shape torch model.state_dict()
+
+        This does not load agent's hyper-parameters.
+
+
+        :param load_dict: (dict) dict of parameters from model.state_dict()
+        :param opt_params: (dict of dicts) dict of optimizer state_dicts should be handled in child_class
+        """
+        self.actor.optimizer.load_state_dict(opt_params["actor"])
+        self.critic.optimizer.load_state_dict(opt_params["critic"])
+        self.policy.load_state_dict(load_dict)

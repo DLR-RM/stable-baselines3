@@ -314,15 +314,3 @@ class PPO(BaseRLModel):
         """
         self.policy.optimizer.load_state_dict(opt_params["opt"])
         self.policy.load_state_dict(load_dict)
-
-    def save(self, path):
-        """
-        saves all the params from init and pytorch params in a file for continous learning
-
-        :param path: path to the file where the data should be safed
-        :return:
-        """
-        data = self.__dict__
-        params_to_save = self.get_policy_parameters()
-        opt_params_to_save = self.get_opt_parameters()
-        self._save_to_file_zip(path, data=data, params=params_to_save,opt_params=opt_params_to_save)

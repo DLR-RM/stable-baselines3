@@ -157,16 +157,3 @@ class CEMRL(TD3):
             self.es.tell(self.es_params, self.fitnesses)
             timesteps_since_eval += actor_steps
         return self
-
-    def save(self, path):
-        if not path.endswith('.pth'):
-            path += '.pth'
-        th.save(self.policy.state_dict(), path)
-
-    def load(self, path, env=None, **_kwargs):
-        if not path.endswith('.pth'):
-            path += '.pth'
-        if env is not None:
-            pass
-        self.policy.load_state_dict(th.load(path))
-        self._create_aliases()

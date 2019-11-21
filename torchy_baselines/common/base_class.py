@@ -511,3 +511,16 @@ class BaseRLModel(object):
                 for file_name, dict in opt_params.items():
                     with file_.open(file_name + '.pth', mode="w") as opt_param_file:
                         th.save(dict, opt_param_file)
+
+
+    def save(self, path):
+        """
+        saves all the params from init and pytorch params in a file for continous learning
+
+        :param path: path to the file where the data should be safed
+        :return:
+        """
+        data = self.__dict__
+        params_to_save = self.get_policy_parameters()
+        opt_params_to_save = self.get_opt_parameters()
+        self._save_to_file_zip(path, data=data, params=params_to_save,opt_params=opt_params_to_save)

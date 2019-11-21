@@ -124,16 +124,3 @@ class A2C(PPO):
         return super(A2C, self).learn(total_timesteps=total_timesteps, callback=callback, log_interval=log_interval,
                                       eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,
                                       tb_log_name=tb_log_name, reset_num_timesteps=reset_num_timesteps)
-
-    def save(self, path):
-        """
-        saves all the params from init and pytorch params in a file for continous learning
-
-        :param path: path to the file where the data should be safed
-        :return:
-        """
-
-        data = self.__dict__
-        params_to_save = self.get_policy_parameters()
-        opt_params_to_save = self.get_opt_parameters()
-        self._save_to_file_zip(path, data=data, params=params_to_save, opt_params=opt_params_to_save)

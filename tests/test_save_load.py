@@ -11,6 +11,8 @@ from torchy_baselines.common.identity_env import IdentityEnvBox
 MODEL_LIST = [
     PPO,
     A2C,
+    TD3,
+    SAC,
 ]
 
 
@@ -52,7 +54,6 @@ def test_save_load(model_class):
     model.save("test_save.zip")
     del model
     model = model_class.load("test_save")
-    model.learn(total_timesteps=1000, eval_freq=500)
 
     # check if params are still the same after load
     new_params = model.get_policy_parameters()
@@ -66,4 +67,9 @@ def test_save_load(model_class):
     # check if keys are the same
     assert opt_params.keys() == new_opt_params.keys()
     # check if values are the same: don't know how to to that
+
+    # check if learn still works
+    model.learn(total_timesteps=1000, eval_freq=500)
+
+    # clear file from os
     os.remove("test_save.zip")

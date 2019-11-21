@@ -248,11 +248,8 @@ class TD3(BaseRLModel):
     def load_parameters(self, load_dict, opt_params):
         """
         Load model parameters and optimizer parameters from a dictionary
-
         Dictionary should be of shape torch model.state_dict()
-
         This does not load agent's hyper-parameters.
-
 
         :param load_dict: (dict) dict of parameters from model.state_dict()
         :param opt_params: (dict of dicts) dict of optimizer state_dicts should be handled in child_class

@@ -303,9 +303,7 @@ class PPO(BaseRLModel):
     def load_parameters(self, load_dict, opt_params):
         """
         Load model parameters and optimizer parameters from a dictionary
-
         Dictionary should be of shape torch model.state_dict()
-
         This does not load agent's hyper-parameters.
 
 

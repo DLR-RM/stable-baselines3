@@ -16,7 +16,6 @@ import os
 import sys
 from unittest.mock import MagicMock
 
-import torchy_baselines
 # source code directory, relative to this file, for sphinx-autobuild
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -44,6 +43,10 @@ MOCK_MODULES = ['joblib', 'scipy', 'scipy.signal',
                 'gym.wrappers', 'gym.wrappers.monitoring', 'zmq']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
+
+import torchy_baselines
+
+
 # -- Project information -----------------------------------------------------
 
 project = 'Torchy Baselines'
@@ -54,6 +57,7 @@ author = 'Torchy Baselines Contributors'
 version = 'master (' + torchy_baselines.__version__ + ' )'
 # The full version, including alpha/beta/rc tags
 release = torchy_baselines.__version__
+
 
 # -- General configuration ---------------------------------------------------
 
@@ -99,6 +103,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -116,7 +121,6 @@ html_logo = '_static/img/logo.png'
 
 def setup(app):
     app.add_stylesheet("css/baselines_theme.css")
-
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -144,6 +148,7 @@ html_static_path = ['_static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'TorchyBaselinesdoc'
+
 
 # -- Options for LaTeX output ------------------------------------------------
 
@@ -173,6 +178,7 @@ latex_documents = [
      'Torchy Baselines Contributors', 'manual'),
 ]
 
+
 # -- Options for manual page output ------------------------------------------
 
 # One entry per manual page. List of tuples
@@ -181,6 +187,7 @@ man_pages = [
     (master_doc, 'torchybaselines', 'Torchy Baselines Documentation',
      [author], 1)
 ]
+
 
 # -- Options for Texinfo output ----------------------------------------------
 

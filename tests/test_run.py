@@ -32,8 +32,8 @@ def test_cemrl():
 def test_onpolicy(model_class, env_id):
     model = model_class('MlpPolicy', env_id, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
     model.learn(total_timesteps=1000, eval_freq=500)
-    model.save("test_save")
-    model.load("test_save")
+    #model.save("test_save")
+    #model.load("test_save")
     #os.remove("test_save.pth")
 
 

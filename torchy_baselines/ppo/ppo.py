@@ -292,6 +292,29 @@ class PPO(BaseRLModel):
 
         return self
 
+    def get_opt_parameters(self):
+        """
+        returns a dict of all the optimizers and their parameters
+        
+        :return: (Dict) of optimizer names and their state_dict 
+        """
+        return {"opt": self.policy.optimizer.state_dict()}
+
+    def load_parameters(self, load_dict, opt_params):
+        """
+        Load model parameters and optimizer parameters from a dictionary
+
+        Dictionary should be of shape torch model.state_dict()
+
+        This does not load agent's hyper-parameters.
+
+
+        :param load_dict: (dict) dict of parameters from model.state_dict()
+        :param opt_params: (dict of dicts) dict of optimizer state_dicts should be handled in child_class
+        """
+        self.policy.optimizer.load_state_dict(opt_params["opt"])
+        self.policy.load_state_dict(load_dict)
+
     def save(self, path):
         """
         saves all the params from init and pytorch params in a file for continous learning
@@ -320,12 +343,5 @@ class PPO(BaseRLModel):
         }
 
         params_to_save = self.get_policy_parameters()
-
-        _save_to_file_zip(path, data=data, params=params_to_save)
-
-    """def load(self, path, env=None, **_kwargs):
-        if not path.endswith('.pth'):
-            path += '.pth'
-        if env is not None:
-            pass
-        self.policy.load_state_dict(th.load(path))"""
+        opt_params_to_save = self.get_opt_parameters()
+        self._save_to_file_zip(path, data=data, params=params_to_save,opt_params=opt_params_to_save)

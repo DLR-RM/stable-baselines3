@@ -17,7 +17,7 @@ from torchy_baselines.common.base_class import BaseRLModel
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.common.buffers import RolloutBuffer
 from torchy_baselines.common.utils import explained_variance, get_schedule_fn
-from torchy_baselines.common.vec_env import VecNormalize
+from torchy_baselines.common.vec_env import VecNormalize, VecEnvWrapper
 from torchy_baselines.common import logger
 from torchy_baselines.ppo.policies import PPOPolicy
 
@@ -52,6 +52,8 @@ class PPO(BaseRLModel):
     :param ent_coef: (float) Entropy coefficient for the loss calculation
     :param vf_coef: (float) Value function coefficient for the loss calculation
     :param max_grad_norm: (float) The maximum value for the gradient clipping
+    :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
+        instead of action noise exploration (default: False)
     :param target_kl: (float) Limit the KL divergence between updates,
         because the clipping is not enough to prevent large update
         see issue #213 (cf https://github.com/hill-a/stable-baselines/issues/213)
@@ -70,7 +72,7 @@ class PPO(BaseRLModel):
     def __init__(self, policy, env, learning_rate=3e-4,
                  n_steps=2048, batch_size=64, n_epochs=10,
                  gamma=0.99, gae_lambda=0.95, clip_range=0.2, clip_range_vf=None,
-                 ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5,
+                 ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5, use_sde=False,
                  target_kl=None, tensorboard_log=None, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
@@ -94,6 +96,7 @@ class PPO(BaseRLModel):
         self.target_kl = target_kl
         self.tensorboard_log = tensorboard_log
         self.tb_writer = None
+        self.use_sde = use_sde
 
         if _init_setup_model:
             self._setup_model()
@@ -116,21 +119,22 @@ class PPO(BaseRLModel):
         self.rollout_buffer = RolloutBuffer(self.n_steps, state_dim, action_dim, self.device,
                                             gamma=self.gamma, gae_lambda=self.gae_lambda, n_envs=self.n_envs)
         self.policy = self.policy(self.observation_space, self.action_space,
-                                  self.learning_rate, device=self.device, **self.policy_kwargs)
+                                  self.learning_rate, use_sde=self.use_sde, device=self.device,
+                                  **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
 
         self.clip_range = get_schedule_fn(self.clip_range)
         if self.clip_range_vf is not None:
             self.clip_range_vf = get_schedule_fn(self.clip_range_vf)
 
-    def select_action(self, observation):
+    def select_action(self, observation, deterministic=False):
         # Normally not needed
         observation = np.array(observation)
         with th.no_grad():
             observation = th.FloatTensor(observation.reshape(1, -1)).to(self.device)
-            return self.policy.actor_forward(observation, deterministic=False)
+            return self.policy.actor_forward(observation, deterministic=deterministic)
 
-    def predict(self, observation, state=None, mask=None, deterministic=True):
+    def predict(self, observation, state=None, mask=None, deterministic=False):
         """
         Get the model's action from an observation
 
@@ -140,7 +144,7 @@ class PPO(BaseRLModel):
         :param deterministic: (bool) Whether or not to return deterministic actions.
         :return: (np.ndarray, np.ndarray) the model's action and the next state (used in recurrent policies)
         """
-        clipped_actions = self.select_action(observation)
+        clipped_actions = self.select_action(observation, deterministic=deterministic)
         if isinstance(self.action_space, gym.spaces.Box):
             clipped_actions = np.clip(clipped_actions, self.action_space.low, self.action_space.high)
         return clipped_actions
@@ -150,6 +154,10 @@ class PPO(BaseRLModel):
 
         n_steps = 0
         rollout_buffer.reset()
+        # Sample new weights for the state dependent exploration
+        # TODO: ensure episodic setting?
+        if self.use_sde:
+            self.policy.reset_noise_net()
 
         while n_steps < n_rollout_steps:
             with th.no_grad():
@@ -237,8 +245,16 @@ class PPO(BaseRLModel):
                 print("Early stopping at step {} due to reaching max kl: {:.2f}".format(it, np.mean(approx_kl_divs)))
                 break
 
-        # print(explained_variance(self.rollout_buffer.returns.flatten().cpu().numpy(),
-        #                          self.rollout_buffer.values.flatten().cpu().numpy()))
+        explained_var = explained_variance(self.rollout_buffer.returns.flatten().cpu().numpy(),
+                                           self.rollout_buffer.values.flatten().cpu().numpy())
+
+        logger.logkv("explained_variance", explained_var)
+        # TODO: gather stats for the entropy and other losses?
+        logger.logkv("entropy", entropy.mean().item())
+        logger.logkv("policy_loss", policy_loss.item())
+        logger.logkv("value_loss", value_loss.item())
+        if hasattr(self.policy, 'log_std'):
+            logger.logkv("std", th.exp(self.policy.log_std).mean().item())
 
     def learn(self, total_timesteps, callback=None, log_interval=1,
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="PPO", reset_num_timesteps=True):
@@ -279,9 +295,14 @@ class PPO(BaseRLModel):
             # Evaluate agent
             if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
                 timesteps_since_eval %= eval_freq
+                # TODO: move that to the base class
                 # Sync eval env and train env when using VecNormalize
-                if isinstance(self.env, VecNormalize):
-                    eval_env.obs_rms = deepcopy(self.env.obs_rms)
+                env_tmp, eval_env_tmp = self.env, eval_env
+                while isinstance(env_tmp, VecEnvWrapper):
+                    if isinstance(env_tmp, VecNormalize):
+                        eval_env_tmp.obs_rms = deepcopy(env_tmp.obs_rms)
+                    env_tmp = env_tmp.venv
+                    eval_env_tmp.venv
                 mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
                 if self.tb_writer is not None:
                     self.tb_writer.add_scalar('Eval/reward', mean_reward, self.num_timesteps)

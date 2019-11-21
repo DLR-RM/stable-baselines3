@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch.distributions import Normal, Categorical
 from gym import spaces
 
+
 class Distribution(object):
     def __init__(self):
         super(Distribution, self).__init__()
@@ -97,7 +98,8 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         self.gaussian_action = None
 
     def proba_distribution(self, mean_actions, log_std, deterministic=False):
-        action, _ = super(SquashedDiagGaussianDistribution, self).proba_distribution(mean_actions, log_std, deterministic)
+        action, _ = super(SquashedDiagGaussianDistribution, self).proba_distribution(mean_actions, log_std,
+                                                                                     deterministic)
         return action, self
 
     def mode(self):

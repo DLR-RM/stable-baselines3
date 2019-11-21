@@ -290,9 +290,10 @@ class BaseRLModel(object):
 
         if 'policy_kwargs' in kwargs and kwargs['policy_kwargs'] != data['policy_kwargs']:
             raise ValueError("The specified policy kwargs do not equal the stored policy kwargs."
-                             "Stored kwargs: {}, specified kwargs: {}".format(data['policy_kwargs'],kwargs['policy_kwargs']))
+                             "Stored kwargs: {}, specified kwargs: {}".format(data['policy_kwargs'],
+                                                                              kwargs['policy_kwargs']))
 
-        model = cls(policy=data["policy"],env=None, _init_setup_model=False)
+        model = cls(policy=data["policy"], env=None, _init_setup_model=False)
         model.__dict__.update(data)
         model.__dict__.update(kwargs)
         model.set_env(env)
@@ -300,40 +301,8 @@ class BaseRLModel(object):
 
         return model
 
-
     @staticmethod
-    def _save_to_file_zip(save_path, data=None, params=None):
-        """Save model to a zip archive
-
-        :param save_path: (str or file-like) Where to store the model
-        :param data: (OrderedDict) Class parameters being stored
-        :param params: (OrderedDict) Model parameters being stored expexted to be state_dict
-        """
-
-        # data/params can be None, so do not
-        # try to serialize them blindly
-        if data is not None:
-            serialized_data = data_to_json(data)
-
-        # Check postfix if save_path is a string
-        if isinstance(save_path, str):
-            _, ext = os.path.splitext(save_path)
-            if ext == "":
-                save_path += ".zip"
-
-        # Create a zip-archive and write our objects
-        # there. This works when save_path is either
-        # str or a file-like
-        with zipfile.ZipFile(save_path, "w") as file_:
-            # Do not try to save "None" elements
-            if data is not None:
-                file_.writestr("data",serialized_data)
-            if params is not None:
-                with file_.open('param.pth', mode="w") as param_file:
-                    th.save(params,param_file)
-
-    @staticmethod
-    def _load_from_file(load_path, load_data = True):
+    def _load_from_file(load_path, load_data=True):
         """ Load model data from a .zip archive
 
         :param load_path: (str or file-like) Where to load the model from
@@ -351,7 +320,7 @@ class BaseRLModel(object):
 
         # Open the zip archive and load data
         try:
-            with zipfile.ZipFile(load_path,"r") as file_:
+            with zipfile.ZipFile(load_path, "r") as file_:
                 namelist = file_.namelist()
                 # If data or parameters is not in the
                 # zip archive, assume they were stored
@@ -377,12 +346,6 @@ class BaseRLModel(object):
             raise ValueError("Error: the file {} wasn't a zip-file".format(load_path))
 
         return data, params
-
-
-
-
-
-
 
     def set_random_seed(self, seed=0):
         set_random_seed(seed, using_cuda=self.device == th.device('cuda'))
@@ -478,7 +441,7 @@ class BaseRLModel(object):
 
                 # Display training infos
                 if self.verbose >= 1 and log_interval is not None and (
-                        episode_num + total_episodes) % log_interval == 0:
+                            episode_num + total_episodes) % log_interval == 0:
                     fps = int(num_timesteps / (time.time() - self.start_time))
                     logger.logkv("episodes", episode_num + total_episodes)
                     # logger.logkv("mean 100 episode reward", mean_reward)
@@ -495,3 +458,34 @@ class BaseRLModel(object):
         mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
 
         return mean_reward, total_steps, total_episodes, obs
+
+
+def _save_to_file_zip(save_path, data=None, params=None):
+    """Save model to a zip archive
+
+    :param save_path: (str or file-like) Where to store the model
+    :param data: (OrderedDict) Class parameters being stored
+    :param params: (OrderedDict) Model parameters being stored expexted to be state_dict
+    """
+
+    # data/params can be None, so do not
+    # try to serialize them blindly
+    if data is not None:
+        serialized_data = data_to_json(data)
+
+    # Check postfix if save_path is a string
+    if isinstance(save_path, str):
+        _, ext = os.path.splitext(save_path)
+        if ext == "":
+            save_path += ".zip"
+
+    # Create a zip-archive and write our objects
+    # there. This works when save_path is either
+    # str or a file-like
+    with zipfile.ZipFile(save_path, "w") as file_:
+        # Do not try to save "None" elements
+        if data is not None:
+            file_.writestr("data", serialized_data)
+        if params is not None:
+            with file_.open('param.pth', mode="w") as param_file:
+                th.save(params, param_file)

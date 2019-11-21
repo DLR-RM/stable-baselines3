@@ -59,8 +59,10 @@ class CustomGymEnv(gym.Env):
 @pytest.mark.parametrize('vec_env_wrapper', VEC_ENV_WRAPPERS)
 def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
     """Test access to methods/attributes of vectorized environments"""
+
     def make_env():
         return CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)))
+
     vec_env = vec_env_class([make_env for _ in range(N_ENVS)])
 
     if vec_env_wrapper is not None:
@@ -91,7 +93,6 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
     assert (env_method_subset[0] == np.ones((1, 3))).all()
     assert (env_method_subset[1] == np.ones((1, 3))).all()
     assert len(env_method_subset) == 2
-
 
     # Test to change value for all the environments
     setattr_result = vec_env.set_attr('current_step', 42, indices=None)
@@ -193,8 +194,10 @@ SPACES = collections.OrderedDict([
     ('continuous', gym.spaces.Box(low=np.zeros(2), high=np.ones(2))),
 ])
 
+
 def check_vecenv_spaces(vec_env_class, space, obs_assert):
     """Helper method to check observation spaces in vectorized environments."""
+
     def make_env():
         return CustomGymEnv(space)
 
@@ -228,6 +231,7 @@ def test_vecenv_single_space(vec_env_class, space):
 
 class _UnorderedDictSpace(gym.spaces.Dict):
     """Like DictSpace, but returns an unordered dict when sampling."""
+
     def sample(self):
         return dict(super().sample())
 
@@ -301,14 +305,17 @@ class CustomWrapperB(VecNormalize):
     def name_test(self):
         return self.__class__
 
+
 class CustomWrapperBB(CustomWrapperB):
     def __init__(self, venv):
         CustomWrapperB.__init__(self, venv)
         self.var_bb = 'bb'
 
+
 def test_vecenv_wrapper_getattr():
     def make_env():
         return CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)))
+
     vec_env = DummyVecEnv([make_env for _ in range(N_ENVS)])
     wrapped = CustomWrapperA(CustomWrapperBB(vec_env))
     assert wrapped.var_a == 'a'

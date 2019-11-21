@@ -115,15 +115,15 @@ class A2C(PPO):
             self.policy.optimizer.step()
             # approx_kl_divs.append(th.mean(old_log_prob - log_prob).detach().cpu().numpy())
 
-        # print(explained_variance(self.rollout_buffer.returns.flatten().cpu().numpy(),
-        #                          self.rollout_buffer.values.flatten().cpu().numpy()))
+            # print(explained_variance(self.rollout_buffer.returns.flatten().cpu().numpy(),
+            #                          self.rollout_buffer.values.flatten().cpu().numpy()))
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="A2C", reset_num_timesteps=True):
 
         return super(A2C, self).learn(total_timesteps=total_timesteps, callback=callback, log_interval=log_interval,
-                  eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,
-                  tb_log_name=tb_log_name, reset_num_timesteps=reset_num_timesteps)
+                                      eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,
+                                      tb_log_name=tb_log_name, reset_num_timesteps=reset_num_timesteps)
 
     def save(self, path):
         if not path.endswith('.pth'):

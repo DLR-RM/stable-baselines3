@@ -50,7 +50,7 @@ def test_save_load(model_class):
     model.save("test_save.zip")
     model = model.load("test_save")
 
-    #check if params are still the same after load
+    # check if params are still the same after load
     new_params = model.get_policy_parameters()
     shared_items = {k: params[k] for k in params if k in new_params and th.all(th.eq(params[k], new_params[k]))}
     # Check that at least some actions are chosen different now

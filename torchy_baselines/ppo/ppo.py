@@ -322,26 +322,7 @@ class PPO(BaseRLModel):
         :param path: path to the file where the data should be safed
         :return:
         """
-
-        data = {
-            "gamma": self.gamma,
-            "n_steps": self.n_steps,
-            "vf_coef": self.vf_coef,
-            "ent_coef": self.ent_coef,
-            "max_grad_norm": self.max_grad_norm,
-            "learning_rate": self.learning_rate,
-            "gae_lambda": self.gae_lambda,
-            "n_epochs": self.n_epochs,
-            "clip_range": self.clip_range,
-            "clip_range_vf": self.clip_range_vf,
-            "batch_size": self.batch_size,
-            "target_kl": self.target_kl,
-            "tensorboard_log": self.tensorboard_log,
-            "policy_kwargs": self.policy_kwargs,
-            "policy": self.policy,
-
-        }
-
+        data = self.__dict__
         params_to_save = self.get_policy_parameters()
         opt_params_to_save = self.get_opt_parameters()
         self._save_to_file_zip(path, data=data, params=params_to_save,opt_params=opt_params_to_save)

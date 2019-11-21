@@ -126,13 +126,14 @@ class A2C(PPO):
                                       tb_log_name=tb_log_name, reset_num_timesteps=reset_num_timesteps)
 
     def save(self, path):
-        if not path.endswith('.pth'):
-            path += '.pth'
-        th.save(self.policy.state_dict(), path)
+        """
+        saves all the params from init and pytorch params in a file for continous learning
 
-    def load(self, path, env=None, **_kwargs):
-        if not path.endswith('.pth'):
-            path += '.pth'
-        if env is not None:
-            pass
-        self.policy.load_state_dict(th.load(path))
+        :param path: path to the file where the data should be safed
+        :return:
+        """
+
+        data = self.__dict__
+        params_to_save = self.get_policy_parameters()
+        opt_params_to_save = self.get_opt_parameters()
+        self._save_to_file_zip(path, data=data, params=params_to_save, opt_params=opt_params_to_save)

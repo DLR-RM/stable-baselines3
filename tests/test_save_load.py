@@ -9,7 +9,8 @@ from torchy_baselines.common.vec_env import DummyVecEnv
 from torchy_baselines.common.identity_env import IdentityEnvBox
 
 MODEL_LIST = [
-    PPO
+    PPO,
+    A2C,
 ]
 
 
@@ -51,6 +52,7 @@ def test_save_load(model_class):
     model.save("test_save.zip")
     del model
     model = model_class.load("test_save")
+    model.learn(total_timesteps=1000, eval_freq=500)
 
     # check if params are still the same after load
     new_params = model.get_policy_parameters()

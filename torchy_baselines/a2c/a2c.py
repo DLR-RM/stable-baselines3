@@ -92,7 +92,7 @@ class A2C(PPO):
                 action = action.long().flatten()
 
             # TODO: avoid second computation of everything because of the gradient
-            values, log_prob, entropy = self.policy.get_policy_stats(obs, action)
+            values, log_prob, entropy = self.policy.evaluate_actions(obs, action)
             values = values.flatten()
 
             # Normalize advantage (not present in the original implementation)

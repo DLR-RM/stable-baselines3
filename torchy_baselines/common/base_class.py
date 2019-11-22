@@ -107,6 +107,9 @@ class BaseRLModel(object):
         """
         Rescale the action from [low, high] to [-1, 1]
         (no need for symmetric action space)
+
+        :param action: (np.ndarray)
+        :return: (np.ndarray)
         """
         low, high = self.action_space.low, self.action_space.high
         return 2.0 * ((action - low) / (high - low)) - 1.0
@@ -115,6 +118,9 @@ class BaseRLModel(object):
         """
         Rescale the action from [-1, 1] to [low, high]
         (no need for symmetric action space)
+
+        :param scaled_action: (np.ndarray)
+        :return: (np.ndarray)
         """
         low, high = self.action_space.low, self.action_space.high
         return low + (0.5 * (scaled_action + 1.0) * (high - low))
@@ -343,13 +349,11 @@ class BaseRLModel(object):
         if self._vec_normalize_env is not None:
             obs_ = self._vec_normalize_env.get_original_obs()
 
-
         self.rollout_data = None
         if hasattr(self, 'use_sde') and self.use_sde:
             self.actor.reset_noise()
             # Reset rollout data
             self.rollout_data = {key: [] for key in ['observations', 'actions', 'rewards', 'dones']}
-            # self.rollout_data = {'observations': [], 'actions': [], 'rewards': [], 'returns': [], 'dones': []}
 
         while total_steps < n_steps or total_episodes < n_episodes:
             done = False

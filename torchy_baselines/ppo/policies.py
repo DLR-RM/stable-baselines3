@@ -5,7 +5,7 @@ import torch as th
 import torch.nn as nn
 import numpy as np
 
-from torchy_baselines.common.policies import BasePolicy, register_policy, create_mlp
+from torchy_baselines.common.policies import BasePolicy, register_policy
 from torchy_baselines.common.distributions import make_proba_distribution,\
     DiagGaussianDistribution, CategoricalDistribution, StateDependentNoiseDistribution
 
@@ -30,7 +30,7 @@ class MlpExtractor(nn.Module):
 
     Adapted from Stable Baselines.
 
-    :param flat_observations: (th.Tensor) The observations to base policy and value function on.
+    :param feature_dim: (int) Dimension of the feature vector (can be the output of a CNN)
     :param net_arch: ([int or dict]) The specification of the policy and value networks.
         See above for details on its formatting.
     :param activation_fn: (nn.Module) The activation function to use for the networks.
@@ -185,7 +185,7 @@ class PPOPolicy(BasePolicy):
         action, _ = self._get_action_dist_from_latent(latent_pi, deterministic=deterministic)
         return action.detach().cpu().numpy()
 
-    def get_policy_stats(self, obs, action, deterministic=False):
+    def evaluate_actions(self, obs, action, deterministic=False):
         latent_pi, latent_vf = self._get_latent(obs)
         _, action_distribution = self._get_action_dist_from_latent(latent_pi, deterministic=deterministic)
         log_prob = action_distribution.log_prob(action)

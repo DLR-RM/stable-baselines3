@@ -204,7 +204,7 @@ class PPO(BaseRLModel):
                     # Convert discrete action for float to long
                     action = action.long().flatten()
 
-                values, log_prob, entropy = self.policy.get_policy_stats(obs, action)
+                values, log_prob, entropy = self.policy.evaluate_actions(obs, action)
                 values = values.flatten()
                 # Normalize advantage
                 advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
@@ -241,7 +241,7 @@ class PPO(BaseRLModel):
                 approx_kl_divs.append(th.mean(old_log_prob - log_prob).detach().cpu().numpy())
 
             if self.target_kl is not None and np.mean(approx_kl_divs) > 1.5 * self.target_kl:
-                print("Early stopping at step {} due to reaching max kl: {:.2f}".format(it, np.mean(approx_kl_divs)))
+                print("Early stopping at step {} due to reaching max kl: {:.2f}".format(gradient_step, np.mean(approx_kl_divs)))
                 break
 
         explained_var = explained_variance(self.rollout_buffer.returns.flatten().cpu().numpy(),

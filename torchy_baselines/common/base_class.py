@@ -23,7 +23,7 @@ class BaseRLModel(object):
     :param policy_base: (BasePolicy) the base policy used by this method
     :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
     :param verbose: (int) the verbosity level: 0 none, 1 training information, 2 debug
-    :param device: (str or th.device) Device on which the code should.
+    :param device: (str or th.device) Device on which the code should run.
         By default, it will try to use a Cuda compatible device and fallback to cpu
         if it is not possible.
     :param support_multi_env: (bool) Whether the algorithm supports training

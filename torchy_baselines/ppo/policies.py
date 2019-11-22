@@ -10,6 +10,20 @@ from torchy_baselines.common.distributions import make_proba_distribution,\
 
 
 class PPOPolicy(BasePolicy):
+    """
+    Policy class (with both actor and critic) for A2C and derivates (PPO).
+
+    :param observation_space: (gym.spaces.Space) Observation space
+    :param action_dim: (gym.spaces.Space) Action space
+    :param learning_rate: (callable) Learning rate schedule (could be constant)
+    :param net_arch: ([int or dict]) The specification of the policy and value networks.
+    :param device: (str or th.device) Device on which the code should run.
+    :param activation_fn: (nn.Module) Activation function
+    :param adam_epsilon: (float) Small values to avoid NaN in ADAM optimizer
+    :param ortho_init: (bool) Whether to use or not orthogonal initialization
+    :param use_sde: (bool) Whether to use State Dependent Exploration or not
+    :param log_std_init: (float) Initial value for the log standard deviation
+    """
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',
                  activation_fn=nn.Tanh, adam_epsilon=1e-5,
@@ -100,14 +114,25 @@ class PPOPolicy(BasePolicy):
         return action.detach().cpu().numpy()
 
     def evaluate_actions(self, obs, action, deterministic=False):
+        """
+        Evaluate actions according to the current policy,
+        given the observations.
+
+        :param obs: (th.Tensor)
+        :param action: (th.Tensor)
+        :param deterministic: (bool)
+        :return: (th.Tensor, th.Tensor, th.Tensor) estimated value, log likelihood of taking those actions
+            and entropy of the action distribution.
+        """
         latent_pi, latent_vf = self._get_latent(obs)
         _, action_distribution = self._get_action_dist_from_latent(latent_pi, deterministic=deterministic)
         log_prob = action_distribution.log_prob(action)
         value = self.value_net(latent_vf)
         return value, log_prob, action_distribution.entropy()
 
-    def value_forward(self):
-        pass
+    def value_forward(self, obs):
+        _, latent_vf = self._get_latent(obs)
+        return self.value_net(latent_vf)
 
 
 MlpPolicy = PPOPolicy

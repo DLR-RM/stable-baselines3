@@ -6,6 +6,20 @@ from torchy_baselines.common.policies import BasePolicy, register_policy, create
 
 
 class Actor(BaseNetwork):
+    """
+    Actor network (policy) for TD3.
+
+    :param obs_dim: (int) Dimension of the observation
+    :param action_dim: (int) Dimension of the action space
+    :param net_arch: ([int]) Network architecture
+    :param activation_fn: (nn.Module) Activation function
+    :param use_sde: (bool) Whether to use State Dependent Exploration or not
+    :param log_std_init: (float) Initial value for the log standard deviation
+    :param clip_noise: (float) Clip the magnitude of the noise
+    :param lr_sde: (float) Learning rate for the standard deviation of the noise
+    :param full_std: (bool) Whether to use (n_features x n_actions) parameters
+        for the std instead of only (n_features,)
+    """
     def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU,
                  use_sde=False, log_std_init=-2, clip_noise=None,
                  lr_sde=3e-4, full_std=False):
@@ -43,6 +57,15 @@ class Actor(BaseNetwork):
         return th.ones((self.latent_dim, self.action_dim)).to(self.log_std.device) * self.log_std
 
     def evaluate_actions(self, obs, action):
+        """
+        Evaluate actions according to the current policy,
+        given the observations. Only useful when using SDE.
+
+        :param obs: (th.Tensor)
+        :param action: (th.Tensor)
+        :return: (th.Tensor, th.Tensor) log likelihood of taking those actions
+            and entropy of the action distribution.
+        """
         with th.no_grad():
             latent_pi = self.latent_pi(obs)
             mean_actions = self.actor_net(latent_pi)
@@ -77,6 +100,15 @@ class Actor(BaseNetwork):
 
 
 class Critic(BaseNetwork):
+    """
+    Critic network for TD3,
+    in fact it represents the action-state value function (Q-value function)
+
+    :param obs_dim: (int) Dimension of the observation
+    :param action_dim: (int) Dimension of the action space
+    :param net_arch: ([int]) Network architecture
+    :param activation_fn: (nn.Module) Activation function
+    """
     def __init__(self, obs_dim, action_dim,
                  net_arch, activation_fn=nn.ReLU):
         super(Critic, self).__init__()
@@ -98,12 +130,25 @@ class Critic(BaseNetwork):
 
 
 class TD3Policy(BasePolicy):
+    """
+    Policy class (with both actor and critic) for TD3.
+
+    :param observation_space: (gym.spaces.Space) Observation space
+    :param action_dim: (gym.spaces.Space) Action space
+    :param learning_rate: (callable) Learning rate schedule (could be constant)
+    :param net_arch: ([int or dict]) The specification of the policy and value networks.
+    :param device: (str or th.device) Device on which the code should run.
+    :param activation_fn: (nn.Module) Activation function
+    :param use_sde: (bool) Whether to use State Dependent Exploration or not
+    :param log_std_init: (float) Initial value for the log standard deviation
+    """
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',
                  activation_fn=nn.ReLU, use_sde=False, log_std_init=-2,
                  clip_noise=None, lr_sde=3e-4):
         super(TD3Policy, self).__init__(observation_space, action_space, device)
 
+        # Default network architecture, from the original paper
         if net_arch is None:
             net_arch = [400, 300]
 

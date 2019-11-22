@@ -52,6 +52,7 @@ class TD3(BaseRLModel):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
+
     def __init__(self, policy, env, buffer_size=int(1e6), learning_rate=1e-3,
                  policy_delay=2, learning_starts=100, gamma=0.99, batch_size=100,
                  train_freq=-1, gradient_steps=-1, n_episodes_rollout=1,
@@ -64,7 +65,6 @@ class TD3(BaseRLModel):
                                   create_eval_env=create_eval_env, seed=seed)
 
         self.buffer_size = buffer_size
-        # TODO: accept callables
         self.learning_rate = learning_rate
         self.learning_starts = learning_starts
         self.train_freq = train_freq
@@ -78,6 +78,7 @@ class TD3(BaseRLModel):
         self.target_noise_clip = target_noise_clip
         self.target_policy_noise = target_policy_noise
 
+        # State Dependent Exploration
         self.use_sde = use_sde
         self.sde_max_grad_norm = sde_max_grad_norm
         self.sde_ent_coef = sde_ent_coef
@@ -204,10 +205,10 @@ class TD3(BaseRLModel):
         # self._update_learning_rate(self.policy.optimizer)
 
         # Unpack
-        obs, action, returns = self.rollout_data['observations'], self.rollout_data['actions'], self.rollout_data['returns']
+        obs, action, returns = [self.rollout_data[key] for key in ['observations', 'actions', 'returns']]
 
         # TODO: avoid second computation of everything because of the gradient
-        log_prob, entropy = self.actor.get_distribution_stats(obs, action)
+        log_prob, entropy = self.actor.evaluate_actions(obs, action)
 
         # Normalize returns
         # returns = (returns - returns.mean()) / (returns.std() + 1e-8)
@@ -280,7 +281,6 @@ class TD3(BaseRLModel):
 
                 gradient_steps = self.gradient_steps if self.gradient_steps > 0 else episode_timesteps
                 self.train(gradient_steps, batch_size=self.batch_size, policy_delay=self.policy_delay)
-
 
             # Evaluate episode
             if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:

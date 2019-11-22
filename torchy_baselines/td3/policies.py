@@ -22,10 +22,10 @@ class Actor(BaseNetwork):
             latent_pi = create_mlp(obs_dim, -1, net_arch, activation_fn, squash_out=False)
             self.latent_pi = nn.Sequential(*latent_pi)
             if full_std:
-                self.log_std = nn.Parameter(th.ones(latent_dim, action_dim) * log_std_init)
+                self.log_std = nn.Parameter(th.ones(latent_dim, action_dim) * log_std_init, requires_grad=True)
             else:
                 # Reduce the number of parameters:
-                self.log_std = nn.Parameter(th.ones(latent_dim, 1) * log_std_init)
+                self.log_std = nn.Parameter(th.ones(latent_dim, 1) * log_std_init, requires_grad=True)
 
             self.latent_dim = latent_dim
             self.actor_net = nn.Sequential(nn.Linear(net_arch[-1], action_dim), nn.Tanh())
@@ -42,7 +42,7 @@ class Actor(BaseNetwork):
         # Reduce the number of parameters:
         return th.ones((self.latent_dim, self.action_dim)).to(self.log_std.device) * self.log_std
 
-    def get_distribution_stats(self, obs, action):
+    def evaluate_actions(self, obs, action):
         with th.no_grad():
             latent_pi = self.latent_pi(obs)
             mean_actions = self.actor_net(latent_pi)
@@ -68,8 +68,10 @@ class Actor(BaseNetwork):
             noise = th.mm(latent_pi.detach(), self.exploration_mat)
             if self.clip_noise is not None:
                 noise = th.clamp(noise, -self.clip_noise, self.clip_noise)
-            # TODO: fix clipping with squashing ?
-            return th.clamp(self.actor_net(latent_pi) + noise, -1, 1)
+            # TODO: Replace with squashing -> need to account for that in the sde update
+            # return th.clamp(self.actor_net(latent_pi) + noise, -1, 1)
+            # NOTE: the clipping is done in the rollout for now
+            return self.actor_net(latent_pi) + noise
         else:
             return self.actor_net(obs)
 

@@ -67,6 +67,7 @@ class BaseRLModel(object):
         self.action_noise = None
         # Used for SDE only
         self.rollout_data = None
+        self.use_sde = False
         # Track the training progress (from 1 to 0)
         # this is used to update the learning rate
         self._current_progress = 1
@@ -391,7 +392,7 @@ class BaseRLModel(object):
             obs_ = self._vec_normalize_env.get_original_obs()
 
         self.rollout_data = None
-        if hasattr(self, 'use_sde') and self.use_sde:
+        if self.use_sde:
             self.actor.reset_noise()
             # Reset rollout data
             self.rollout_data = {key: [] for key in ['observations', 'actions', 'rewards', 'dones']}
@@ -405,23 +406,29 @@ class BaseRLModel(object):
             while not done:
                 # Select action randomly or according to policy
                 if num_timesteps < learning_starts:
-                    action = np.array([self.action_space.sample()])
+                    # Warmup phase
+                    unscaled_action = np.array([self.action_space.sample()])
                 else:
-                    if hasattr(self, 'use_sde'):
-                        deterministic = not self.use_sde
-                    action = self.predict(obs, deterministic=deterministic)
+                    unscaled_action = self.predict(obs, deterministic=not self.use_sde)
 
                 # Rescale the action from [low, high] to [-1, 1]
-                action = self.scale_action(action)
+                scaled_action = self.scale_action(unscaled_action)
+
+                if self.use_sde:
+                    # When using SDE, the action can be out of bounds
+                    # TODO: fix with squashing and account for that in the proba distribution
+                    clipped_action = np.clip(scaled_action, -1, 1)
+                else:
+                    clipped_action = scaled_action
 
                 # Add noise to the action (improve exploration)
                 if action_noise is not None:
                     # NOTE: in the original implementation of TD3, the noise was applied to the unscaled action
                     # Update(October 2019): Not anymore
-                    action = np.clip(action + action_noise(), -1, 1)
+                    clipped_action = np.clip(clipped_action + action_noise(), -1, 1)
 
                 # Rescale and perform action
-                new_obs, reward, done, infos = env.step(self.unscale_action(action))
+                new_obs, reward, done, infos = env.step(self.unscale_action(clipped_action))
 
                 done_bool = [float(done[0])]
                 episode_reward += reward
@@ -439,12 +446,12 @@ class BaseRLModel(object):
                         # Avoid changing the original ones
                         obs_, new_obs_, reward_ = obs, new_obs, reward
 
-                    replay_buffer.add(obs_, new_obs_, action, reward_, done_bool)
+                    replay_buffer.add(obs_, new_obs_, clipped_action, reward_, done_bool)
 
                 if self.rollout_data is not None:
                     # Assume only one env
                     self.rollout_data['observations'].append(obs[0].copy())
-                    self.rollout_data['actions'].append(action[0].copy())
+                    self.rollout_data['actions'].append(scaled_action[0].copy())
                     self.rollout_data['rewards'].append(reward[0].copy())
                     self.rollout_data['dones'].append(np.array(done_bool[0]).copy())
 
@@ -480,7 +487,7 @@ class BaseRLModel(object):
                     logger.logkv("fps", fps)
                     logger.logkv('time_elapsed', int(time.time() - self.start_time))
                     logger.logkv("total timesteps", num_timesteps)
-                    if hasattr(self, 'use_sde') and self.use_sde:
+                    if self.use_sde:
                         logger.logkv("std", th.exp(self.actor.log_std).mean().item())
                     logger.dumpkvs()
 

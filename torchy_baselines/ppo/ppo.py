@@ -5,6 +5,7 @@ import gym
 from gym import spaces
 import torch as th
 import torch.nn.functional as F
+
 # Check if tensorboard is available for pytorch
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -192,7 +193,6 @@ class PPO(BaseRLModel):
             clip_range_vf = self.clip_range_vf(self._current_progress)
             logger.logkv("clip_range_vf", clip_range_vf)
 
-
         for gradient_step in range(gradient_steps):
             approx_kl_divs = []
             # Sample replay buffer
@@ -226,7 +226,6 @@ class PPO(BaseRLModel):
                 # Value loss using the TD(gae_lambda) target
                 value_loss = F.mse_loss(return_batch, values_pred)
 
-
                 # Entropy loss favor exploration
                 entropy_loss = -th.mean(entropy)
 
@@ -241,7 +240,8 @@ class PPO(BaseRLModel):
                 approx_kl_divs.append(th.mean(old_log_prob - log_prob).detach().cpu().numpy())
 
             if self.target_kl is not None and np.mean(approx_kl_divs) > 1.5 * self.target_kl:
-                print("Early stopping at step {} due to reaching max kl: {:.2f}".format(gradient_step, np.mean(approx_kl_divs)))
+                print("Early stopping at step {} due to reaching max kl: {:.2f}".format(gradient_step,
+                                                                                        np.mean(approx_kl_divs)))
                 break
 
         explained_var = explained_variance(self.rollout_buffer.returns.flatten().cpu().numpy(),

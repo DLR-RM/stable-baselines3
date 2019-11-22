@@ -19,9 +19,9 @@ class CEMRL(TD3):
     :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
     :param sigma_init: (float) Initial standard deviation of the population distribution
     :param pop_size: (int) Number of individuals in the population
-    :param damp: (float) Damping for preventing from early convergence.
-    :param damp_limit: (float) Final value of damping
-    :param elitism: (bool)
+    :param damping_init: (float)  Initial value of damping for preventing from early convergence.
+    :param damping_final: (float) Final value of damping
+    :param elitism: (bool) Keep the best known individual in the population
     :param n_grad: (int) Number of individuals that will receive a gradient update.
         Half of the population size in the paper.
     :param buffer_size: (int) size of the replay buffer
@@ -48,7 +48,7 @@ class CEMRL(TD3):
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
     def __init__(self, policy, env, sigma_init=1e-3, pop_size=10,
-                 damp=1e-3, damp_limit=1e-5, elitism=False, n_grad=5,
+                 damping_init=1e-3, damping_final=1e-5, elitism=False, n_grad=5,
                  buffer_size=int(1e6), learning_rate=1e-3, policy_delay=2,
                  learning_starts=100, gamma=0.99, batch_size=100, tau=0.005,
                  action_noise=None, target_policy_noise=0.2, target_noise_clip=0.5,
@@ -72,8 +72,8 @@ class CEMRL(TD3):
         self.es = None
         self.sigma_init = sigma_init
         self.pop_size = pop_size
-        self.damp = damp
-        self.damp_limit = damp_limit
+        self.damping_init = damping_init
+        self.damping_final = damping_final
         self.elitism = elitism
         self.n_grad = n_grad
         self.es_params = None
@@ -87,7 +87,7 @@ class CEMRL(TD3):
         super(CEMRL, self)._setup_model()
         params_vector = self.actor.parameters_to_vector()
         self.es = CEM(len(params_vector), mu_init=params_vector,
-                      sigma_init=self.sigma_init, damp=self.damp, damp_limit=self.damp_limit,
+                      sigma_init=self.sigma_init, damping_init=self.damping_init, damping_final=self.damping_final,
                       pop_size=self.pop_size, antithetic=not self.pop_size % 2, parents=self.pop_size // 2,
                       elitism=self.elitism)
 

@@ -1,5 +1,6 @@
 import numpy as np
 
+
 # TODO: add more from https://github.com/hardmaru/estool/blob/master/es.py
 # or https://github.com/facebookresearch/nevergrad
 
@@ -19,6 +20,7 @@ class CEM(object):
     :param antithetic: (bool) Use a finite difference like method for sampling
         (mu + epsilon, mu - epsilon)
     """
+
     def __init__(self, num_params, mu_init=None, sigma_init=1e-3,
                  pop_size=256, damp=1e-3, damp_limit=1e-5,
                  parents=None, elitism=False, antithetic=False):

@@ -186,10 +186,6 @@ class CEMRL(TD3):
                 actor_steps += episode_timesteps
                 self.fitnesses.append(episode_reward)
 
-                if self.verbose > 1:
-                    print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
-                        self.num_timesteps, episode_num, episode_timesteps, episode_reward))
-
             self._update_current_progress(self.num_timesteps, total_timesteps)
             self.es.tell(self.es_params, self.fitnesses)
             timesteps_since_eval += actor_steps

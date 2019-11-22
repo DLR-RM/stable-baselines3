@@ -20,13 +20,19 @@ class BaseRLModel(object):
     :param policy: (BasePolicy) Policy object
     :param env: (Gym environment) The environment to learn from
                 (if registered in Gym, can be str. Can be None for loading trained models)
-    :param verbose: (int) the verbosity level: 0 none, 1 training information, 2 debug
     :param policy_base: (BasePolicy) the base policy used by this method
+    :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
+    :param verbose: (int) the verbosity level: 0 none, 1 training information, 2 debug
     :param device: (str or th.device) Device on which the code should.
         By default, it will try to use a Cuda compatible device and fallback to cpu
         if it is not possible.
+    :param support_multi_env: (bool) Whether the algorithm supports training
+        with multiple environments (as in A2C)
+    :param create_eval_env: (bool) Whether to create a second environment that will be
+        used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param monitor_wrapper: (bool) When creating an environment, whether to wrap it
         or not in a Monitor wrapper.
+    :param seed: (int) Seed for the pseudo random generators
     """
     __metaclass__ = ABCMeta
 
@@ -65,6 +71,7 @@ class BaseRLModel(object):
         # this is used to update the learning rate
         self._current_progress = 1
 
+        # Create and wrap the env if needed
         if env is not None:
             if isinstance(env, str):
                 if create_eval_env:
@@ -94,6 +101,12 @@ class BaseRLModel(object):
                                  " environment.")
 
     def _get_eval_env(self, eval_env):
+        """
+        Return the environment that will be used for evaluation.
+
+        :param eval_env: (gym.Env or VecEnv)
+        :return: (VecEnv)
+        """
         if eval_env is None:
             eval_env = self.eval_env
 
@@ -133,7 +146,7 @@ class BaseRLModel(object):
         """
         Compute current progress (from 1 to 0)
 
-        :param num_timesteps: (int)
+        :param num_timesteps: (int) current number of timesteps
         :param total_timesteps: (int)
         """
         self._current_progress = 1.0 - float(num_timesteps) / float(total_timesteps)
@@ -169,7 +182,7 @@ class BaseRLModel(object):
         """
         returns the current environment (can be None if not defined)
 
-        :return: (Gym Environment) The current environment
+        :return: (gym.Env) The current environment
         """
         return self.env
 
@@ -177,7 +190,7 @@ class BaseRLModel(object):
         """
         Checks the validity of the environment, and if it is coherent, set it as the current environment.
 
-        :param env: (Gym Environment) The environment for learning a policy
+        :param env: (gym.Env) The environment for learning a policy
         """
         pass
 
@@ -311,21 +324,33 @@ class BaseRLModel(object):
             self.eval_env.seed(seed)
 
     def _setup_learn(self, eval_env):
+        """
+        Initialize different variables needed for training.
+
+        :param eval_env: (gym.Env or VecEnv)
+        :return: (int, int, [float], np.ndarray, VecEnv)
+        """
         self.start_time = time.time()
         self.ep_info_buffer = deque(maxlen=100)
+
         if self.action_noise is not None:
             self.action_noise.reset()
+
         timesteps_since_eval, episode_num = 0, 0
         evaluations = []
+
         if eval_env is not None and self.seed is not None:
             eval_env.seed(self.seed)
+
         eval_env = self._get_eval_env(eval_env)
         obs = self.env.reset()
         return timesteps_since_eval, episode_num, evaluations, obs, eval_env
 
     def _update_info_buffer(self, infos):
         """
-        Retrieve reward and episode length if using Monitor wrapper.
+        Retrieve reward and episode length and update the buffer
+        if using Monitor wrapper.
+
         :param infos: ([dict])
         """
         for info in infos:
@@ -338,7 +363,23 @@ class BaseRLModel(object):
                          learning_starts=0, num_timesteps=0,
                          replay_buffer=None, obs=None,
                          episode_num=0, log_interval=None):
+        """
+        Collect rollout using the current policy (and possibly fill the replay buffer)
+        TODO: move this method to off-policy base class.
 
+        :param env: (VecEnv)
+        :param n_episodes: (int)
+        :param n_steps: (int)
+        :param action_noise: (ActionNoise)
+        :param deterministic: (bool)
+        :param callback: (callable)
+        :param learning_starts: (int)
+        :param num_timesteps: (int)
+        :param replay_buffer: (ReplayBuffer)
+        :param obs: (np.ndarray)
+        :param episode_num: (int)
+        :param log_interval: (int)
+        """
         episode_rewards = []
         total_timesteps = []
         total_steps, total_episodes = 0, 0
@@ -432,12 +473,10 @@ class BaseRLModel(object):
                         episode_num + total_episodes) % log_interval == 0:
                     fps = int(num_timesteps / (time.time() - self.start_time))
                     logger.logkv("episodes", episode_num + total_episodes)
-                    # logger.logkv("mean 100 episode reward", mean_reward)
                     if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
                         logger.logkv('ep_rew_mean', self.safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
                         logger.logkv('ep_len_mean', self.safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
                     # logger.logkv("n_updates", n_updates)
-                    # logger.logkv("current_lr", current_lr)
                     logger.logkv("fps", fps)
                     logger.logkv('time_elapsed', int(time.time() - self.start_time))
                     logger.logkv("total timesteps", num_timesteps)

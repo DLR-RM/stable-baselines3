@@ -25,6 +25,7 @@ class A2C(PPO):
         (i.e. batch size is n_steps * n_env where n_env is number of environment copies running in parallel)
     :param gamma: (float) Discount factor
     :param gae_lambda: (float) Factor for trade-off of bias vs variance for Generalized Advantage Estimator
+        Equivalent to classic advantage when set to 1.
     :param ent_coef: (float) Entropy coefficient for the loss calculation
     :param vf_coef: (float) Value function coefficient for the loss calculation
     :param max_grad_norm: (float) The maximum value for the gradient clipping

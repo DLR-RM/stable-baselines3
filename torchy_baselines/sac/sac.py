@@ -257,9 +257,6 @@ class SAC(BaseRLModel):
             self._update_current_progress(self.num_timesteps, total_timesteps)
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
-                if self.verbose > 1:
-                    print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
-                        self.num_timesteps, episode_num, episode_timesteps, episode_reward))
                 gradient_steps = self.gradient_steps if self.gradient_steps > 0 else episode_timesteps
 
                 self.train(gradient_steps, batch_size=self.batch_size)

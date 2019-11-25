@@ -297,7 +297,7 @@ class StateDependentNoiseDistribution(Distribution):
         self.weights_dist = Normal(th.zeros_like(std), std)
         self.exploration_mat = self.weights_dist.rsample()
 
-    def proba_distribution_net(self, latent_dim, log_std_init=0.0):
+    def proba_distribution_net(self, latent_dim, log_std_init=-2.0):
         """
         Create the layers and parameter that represent the distribution:
         one output will be the deterministic action, the other parameter will be the
@@ -423,26 +423,30 @@ class TanhBijector(object):
         return th.log(1 - th.tanh(x) ** 2 + self.epsilon)
 
 
-def make_proba_distribution(action_space, use_sde=False):
+def make_proba_distribution(action_space, use_sde=False, dist_kwargs=None):
     """
     Return an instance of Distribution for the correct type of action space
 
     :param action_space: (Gym Space) the input action space
     :param use_sde: (bool) Force the use of StateDependentNoiseDistribution
         instead of DiagGaussianDistribution
+    :param dist_kwargs: (dict) Keyword arguments to pass to the probabilty distribution
     :return: (Distribution) the approriate Distribution object
     """
+    if dist_kwargs is None:
+        dist_kwargs = {}
+
     if isinstance(action_space, spaces.Box):
         assert len(action_space.shape) == 1, "Error: the action space must be a vector"
         if use_sde:
-            return StateDependentNoiseDistribution(action_space.shape[0])
-        return DiagGaussianDistribution(action_space.shape[0])
+            return StateDependentNoiseDistribution(action_space.shape[0], **dist_kwargs)
+        return DiagGaussianDistribution(action_space.shape[0], **dist_kwargs)
     elif isinstance(action_space, spaces.Discrete):
-        return CategoricalDistribution(action_space.n)
+        return CategoricalDistribution(action_space.n, **dist_kwargs)
     # elif isinstance(action_space, spaces.MultiDiscrete):
-    #     return MultiCategoricalDistribution(action_space.nvec)
+    #     return MultiCategoricalDistribution(action_space.nvec, **dist_kwargs)
     # elif isinstance(action_space, spaces.MultiBinary):
-    #     return BernoulliDistribution(action_space.n)
+    #     return BernoulliDistribution(action_space.n, **dist_kwargs)
     else:
         raise NotImplementedError("Error: probability distribution, not implemented for action space of type {}."
                                   .format(type(action_space)) +

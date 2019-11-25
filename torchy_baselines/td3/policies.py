@@ -18,7 +18,7 @@ class Actor(BaseNetwork):
     :param clip_noise: (float) Clip the magnitude of the noise
     :param lr_sde: (float) Learning rate for the standard deviation of the noise
     :param full_std: (bool) Whether to use (n_features x n_actions) parameters
-        for the std instead of only (n_features,)
+        for the std instead of only (n_features,) when using SDE.
     """
     def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU,
                  use_sde=False, log_std_init=-2, clip_noise=None,

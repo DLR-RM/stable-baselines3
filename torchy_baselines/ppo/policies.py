@@ -23,11 +23,14 @@ class PPOPolicy(BasePolicy):
     :param ortho_init: (bool) Whether to use or not orthogonal initialization
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
+    :param full_std: (bool) Whether to use (n_features x n_actions) parameters
+        for the std instead of only (n_features,) when using SDE
     """
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',
                  activation_fn=nn.Tanh, adam_epsilon=1e-5,
-                 ortho_init=True, use_sde=False, log_std_init=0.0):
+                 ortho_init=True, use_sde=False,
+                 log_std_init=0.0, full_std=True):
         super(PPOPolicy, self).__init__(observation_space, action_space, device)
         self.obs_dim = self.observation_space.shape[0]
 
@@ -52,8 +55,17 @@ class PPOPolicy(BasePolicy):
         self.features_extractor = nn.Flatten()
         self.features_dim = self.obs_dim
         self.log_std_init = log_std_init
+        dist_kwargs = None
+        # Keyword arguments for SDE distribution
+        if use_sde:
+            dist_kwargs = {
+                'full_std': full_std,
+                'squash_output': False,
+                'use_expln': False
+            }
+
         # Action distribution
-        self.action_dist = make_proba_distribution(action_space, use_sde=use_sde)
+        self.action_dist = make_proba_distribution(action_space, use_sde=use_sde, dist_kwargs=dist_kwargs)
 
         self._build(learning_rate)
 

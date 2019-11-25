@@ -241,14 +241,17 @@ class StateDependentNoiseDistribution(Distribution):
         above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
     :param squash_output: (bool) Whether to squash the output using a tanh function,
         this allows to ensure boundaries.
+    :param learn_features: (bool) Whether to learn features for SDE or not.
+        This will enable gradients to be backpropagated through the features
+        `latent_sde` in the code.
     :param epsilon: (float) small value to avoid NaN due to numerical imprecision.
     """
     def __init__(self, action_dim, full_std=True, use_expln=False,
-                 squash_output=False, epsilon=1e-6):
+                 squash_output=False, learn_features=False, epsilon=1e-6):
         super(StateDependentNoiseDistribution, self).__init__()
         self.distribution = None
         self.action_dim = action_dim
-        self.latent_dim = None
+        self.latent_sde_dim = None
         self.mean_actions = None
         self.log_std = None
         self.weights_dist = None
@@ -256,6 +259,7 @@ class StateDependentNoiseDistribution(Distribution):
         self.use_expln = use_expln
         self.full_std = full_std
         self.epsilon = epsilon
+        self.learn_features = learn_features
         if squash_output:
             print("== Using TanhBijector ===")
             self.bijector = TanhBijector(epsilon)
@@ -284,7 +288,7 @@ class StateDependentNoiseDistribution(Distribution):
         if self.full_std:
             return std
         # Reduce the number of parameters:
-        return th.ones((self.latent_dim, self.action_dim)).to(log_std.device) * std
+        return th.ones((self.latent_sde_dim, self.action_dim)).to(log_std.device) * std
 
     def sample_weights(self, log_std):
         """
@@ -297,29 +301,32 @@ class StateDependentNoiseDistribution(Distribution):
         self.weights_dist = Normal(th.zeros_like(std), std)
         self.exploration_mat = self.weights_dist.rsample()
 
-    def proba_distribution_net(self, latent_dim, log_std_init=-2.0):
+    def proba_distribution_net(self, latent_dim, log_std_init=-2.0, latent_sde_dim=None):
         """
         Create the layers and parameter that represent the distribution:
         one output will be the deterministic action, the other parameter will be the
         standard deviation of the distribution that control the weights of the noise matrix.
 
-        :param latent_dim: (int) Dimension og the last layer of the policy (before the action layer)
+        :param latent_dim: (int) Dimension of the last layer of the policy (before the action layer)
         :param log_std_init: (float) Initial value for the log standard deviation
+        :param latent_sde_dim: (int) Dimension of the last layer of the feature extractor
+            for SDE. By default, it is shared with the policy network.
         :return: (nn.Linear, nn.Parameter)
         """
         # Network for the deterministic action, it represents the mean of the distribution
         mean_actions_net = nn.Linear(latent_dim, self.action_dim)
-
-        self.latent_dim = latent_dim
+        # When we learn features for the noise, the feature dimension
+        # can be different between the policy and the noise network
+        self.latent_sde_dim = latent_dim if latent_sde_dim is None else latent_sde_dim
         # Reduce the number of parameters if needed
-        log_std = th.ones(latent_dim, self.action_dim) if self.full_std else th.ones(latent_dim, 1)
+        log_std = th.ones(self.latent_sde_dim, self.action_dim) if self.full_std else th.ones(self.latent_sde_dim, 1)
         # Transform it to a parameter so it can be optimized
         log_std = nn.Parameter(log_std * log_std_init)
         # Sample an exploration matrix
         self.sample_weights(log_std)
         return mean_actions_net, log_std
 
-    def proba_distribution(self, mean_actions, log_std, latent_pi, deterministic=False):
+    def proba_distribution(self, mean_actions, log_std, latent_sde, deterministic=False):
         """
         Create and sample for the distribution given its parameters (mean, std)
 
@@ -328,13 +335,15 @@ class StateDependentNoiseDistribution(Distribution):
         :param deterministic: (bool)
         :return: (th.Tensor)
         """
-        variance = th.mm(latent_pi.detach() ** 2, self.get_std(log_std) ** 2)
+        # Stop gradient if we don't want to influence the features
+        latent_sde = latent_sde if self.learn_features else latent_sde.detach()
+        variance = th.mm(latent_sde ** 2, self.get_std(log_std) ** 2)
         self.distribution = Normal(mean_actions, th.sqrt(variance + self.epsilon))
 
         if deterministic:
             action = self.mode()
         else:
-            action = self.sample(latent_pi)
+            action = self.sample(latent_sde)
         return action, self
 
     def mode(self):
@@ -343,11 +352,12 @@ class StateDependentNoiseDistribution(Distribution):
             return self.bijector.forward(action)
         return action
 
-    def get_noise(self, latent_pi):
-        return th.mm(latent_pi.detach(), self.exploration_mat)
+    def get_noise(self, latent_sde):
+        latent_sde = latent_sde if self.learn_features else latent_sde.detach()
+        return th.mm(latent_sde, self.exploration_mat)
 
-    def sample(self, latent_pi):
-        noise = self.get_noise(latent_pi)
+    def sample(self, latent_sde):
+        noise = self.get_noise(latent_sde)
         action = self.distribution.mean + noise
         if self.bijector is not None:
             return self.bijector.forward(action)
@@ -357,8 +367,8 @@ class StateDependentNoiseDistribution(Distribution):
         # TODO: account for the squashing?
         return self.distribution.entropy()
 
-    def log_prob_from_params(self, mean_actions, log_std, latent_pi):
-        action, _ = self.proba_distribution(mean_actions, log_std, latent_pi)
+    def log_prob_from_params(self, mean_actions, log_std, latent_sde):
+        action, _ = self.proba_distribution(mean_actions, log_std, latent_sde)
         log_prob = self.log_prob(action)
         return action, log_prob
 

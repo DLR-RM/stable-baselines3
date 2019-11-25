@@ -49,14 +49,15 @@ def test_state_dependent_exploration():
 
 
 @pytest.mark.parametrize("model_class", [A2C])
-def test_state_dependent_noise(model_class):
+@pytest.mark.parametrize("sde_net_arch", [None, [64, 64]])
+def test_state_dependent_noise(model_class, sde_net_arch):
     env_id = 'MountainCarContinuous-v0'
 
     env = VecNormalize(DummyVecEnv([lambda: Monitor(gym.make(env_id))]), norm_reward=True)
     eval_env = VecNormalize(DummyVecEnv([lambda: Monitor(gym.make(env_id))]), training=False, norm_reward=False)
 
     model = model_class('MlpPolicy', env, n_steps=200, use_sde=True, ent_coef=0.00, verbose=1, learning_rate=3e-4,
-                        policy_kwargs=dict(log_std_init=0.0, ortho_init=False), seed=None)
+                        policy_kwargs=dict(log_std_init=0.0, ortho_init=False, sde_net_arch=sde_net_arch), seed=None)
     model.learn(total_timesteps=int(1000), log_interval=5, eval_freq=500, eval_env=eval_env)
 
 

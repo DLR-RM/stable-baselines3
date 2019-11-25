@@ -4,7 +4,7 @@ import torch as th
 import torch.nn as nn
 import numpy as np
 
-from torchy_baselines.common.policies import BasePolicy, register_policy, MlpExtractor
+from torchy_baselines.common.policies import BasePolicy, register_policy, MlpExtractor, create_mlp
 from torchy_baselines.common.distributions import make_proba_distribution,\
     DiagGaussianDistribution, CategoricalDistribution, StateDependentNoiseDistribution
 
@@ -30,7 +30,7 @@ class PPOPolicy(BasePolicy):
                  learning_rate, net_arch=None, device='cpu',
                  activation_fn=nn.Tanh, adam_epsilon=1e-5,
                  ortho_init=True, use_sde=False,
-                 log_std_init=0.0, full_std=True):
+                 log_std_init=0.0, full_std=True, sde_net_arch=None):
         super(PPOPolicy, self).__init__(observation_space, action_space, device)
         self.obs_dim = self.observation_space.shape[0]
 
@@ -61,8 +61,12 @@ class PPOPolicy(BasePolicy):
             dist_kwargs = {
                 'full_std': full_std,
                 'squash_output': False,
-                'use_expln': False
+                'use_expln': False,
+                'learn_features': sde_net_arch is not None
             }
+
+        self.sde_feature_extractor = None
+        self.sde_net_arch = sde_net_arch
 
         # Action distribution
         self.action_dist = make_proba_distribution(action_space, use_sde=use_sde, dist_kwargs=dist_kwargs)
@@ -79,8 +83,19 @@ class PPOPolicy(BasePolicy):
         self.mlp_extractor = MlpExtractor(self.features_dim, net_arch=self.net_arch,
                                           activation_fn=self.activation_fn, device=self.device)
 
+        # Separate feature extractor for SDE
+        if self.sde_net_arch is not None:
+            latent_sde = create_mlp(self.features_dim, -1, self.sde_net_arch,
+                                    activation_fn=self.activation_fn, squash_out=False)
+            self.sde_feature_extractor = nn.Sequential(*latent_sde)
+
         if isinstance(self.action_dist, (DiagGaussianDistribution, StateDependentNoiseDistribution)):
             self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=self.mlp_extractor.latent_dim_pi,
+                                                                                    log_std_init=self.log_std_init)
+        elif isinstance(self.action_dist, StateDependentNoiseDistribution):
+            latent_sde_dim = self.mlp_extractor.latent_dim_pi if self.sde_net_arch is None else self.sde_net_arch[-1]
+            self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=self.mlp_extractor.latent_dim_pi,
+                                                                                    latent_sde_dim=latent_sde_dim,
                                                                                     log_std_init=self.log_std_init)
         elif isinstance(self.action_dist, CategoricalDistribution):
             self.action_net = self.action_dist.proba_distribution_net(latent_dim=self.mlp_extractor.latent_dim_pi)
@@ -102,16 +117,23 @@ class PPOPolicy(BasePolicy):
     def forward(self, obs, deterministic=False):
         if not isinstance(obs, th.Tensor):
             obs = th.FloatTensor(obs).to(self.device)
-        latent_pi, latent_vf = self._get_latent(obs)
+        latent_pi, latent_vf, latent_sde = self._get_latent(obs)
         value = self.value_net(latent_vf)
-        action, action_distribution = self._get_action_dist_from_latent(latent_pi, deterministic=deterministic)
+        action, action_distribution = self._get_action_dist_from_latent(latent_pi, latent_sde=latent_sde,
+                                                                        deterministic=deterministic)
         log_prob = action_distribution.log_prob(action)
         return action, value, log_prob
 
     def _get_latent(self, obs):
-        return self.mlp_extractor(self.features_extractor(obs))
+        features = self.features_extractor(obs)
+        latent_pi, latent_vf = self.mlp_extractor(features)
+        # Features for sde
+        latent_sde = latent_pi
+        if self.sde_feature_extractor is not None:
+            latent_sde = self.sde_feature_extractor(features)
+        return latent_pi, latent_vf, latent_sde
 
-    def _get_action_dist_from_latent(self, latent_pi, deterministic=False):
+    def _get_action_dist_from_latent(self, latent_pi, latent_sde=None, deterministic=False):
         mean_actions = self.action_net(latent_pi)
 
         if isinstance(self.action_dist, DiagGaussianDistribution):
@@ -121,11 +143,11 @@ class PPOPolicy(BasePolicy):
             return self.action_dist.proba_distribution(mean_actions, deterministic=deterministic)
 
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
-            return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_pi, deterministic=deterministic)
+            return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde, deterministic=deterministic)
 
     def actor_forward(self, obs, deterministic=False):
-        latent_pi, _ = self._get_latent(obs)
-        action, _ = self._get_action_dist_from_latent(latent_pi, deterministic=deterministic)
+        latent_pi, _, latent_sde = self._get_latent(obs)
+        action, _ = self._get_action_dist_from_latent(latent_pi, latent_sde, deterministic=deterministic)
         return action.detach().cpu().numpy()
 
     def evaluate_actions(self, obs, action, deterministic=False):
@@ -139,14 +161,14 @@ class PPOPolicy(BasePolicy):
         :return: (th.Tensor, th.Tensor, th.Tensor) estimated value, log likelihood of taking those actions
             and entropy of the action distribution.
         """
-        latent_pi, latent_vf = self._get_latent(obs)
-        _, action_distribution = self._get_action_dist_from_latent(latent_pi, deterministic=deterministic)
+        latent_pi, latent_vf, latent_sde = self._get_latent(obs)
+        _, action_distribution = self._get_action_dist_from_latent(latent_pi, latent_sde, deterministic=deterministic)
         log_prob = action_distribution.log_prob(action)
         value = self.value_net(latent_vf)
         return value, log_prob, action_distribution.entropy()
 
     def value_forward(self, obs):
-        _, latent_vf = self._get_latent(obs)
+        _, latent_vf, _ = self._get_latent(obs)
         return self.value_net(latent_vf)
 
 

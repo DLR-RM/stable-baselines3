@@ -234,6 +234,8 @@ class StateDependentNoiseDistribution(Distribution):
     compute the log probabilty of an action with that noise.
 
     :param action_dim: (int) Number of continuous actions
+    :param full_std: (bool) Whether to use (n_features x n_actions) parameters
+        for the std instead of only (n_features,)
     :param use_expln: (bool) Use `expln()` function instead of `exp()` to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
@@ -241,16 +243,19 @@ class StateDependentNoiseDistribution(Distribution):
         this allows to ensure boundaries.
     :param epsilon: (float) small value to avoid NaN due to numerical imprecision.
     """
-    def __init__(self, action_dim, use_expln=False,
+    def __init__(self, action_dim, full_std=True, use_expln=False,
                  squash_output=False, epsilon=1e-6):
         super(StateDependentNoiseDistribution, self).__init__()
         self.distribution = None
         self.action_dim = action_dim
+        self.latent_dim = None
         self.mean_actions = None
         self.log_std = None
         self.weights_dist = None
         self.exploration_mat = None
         self.use_expln = use_expln
+        self.full_std = full_std
+        self.epsilon = epsilon
         if squash_output:
             print("== Using TanhBijector ===")
             self.bijector = TanhBijector(epsilon)
@@ -269,12 +274,17 @@ class StateDependentNoiseDistribution(Distribution):
             # From SDE paper, it allows to keep variance
             # above zero and prevent it from growing too fast
             if log_std <= 0:
-                return th.exp(log_std)
+                std = th.exp(log_std)
             else:
-                return th.log(log_std + 1.0) + 1.0
+                std = th.log(log_std + 1.0) + 1.0
         else:
             # Use normal exponential
-            return th.exp(log_std)
+            std = th.exp(log_std)
+
+        if self.full_std:
+            return std
+        # Reduce the number of parameters:
+        return th.ones((self.latent_dim, self.action_dim)).to(log_std.device) * std
 
     def sample_weights(self, log_std):
         """
@@ -283,8 +293,8 @@ class StateDependentNoiseDistribution(Distribution):
 
         :param log_std: (th.Tensor)
         """
-        # TODO: reduce the number of learned dimensions (cf TD3)
-        self.weights_dist = Normal(th.zeros_like(log_std), self.get_std(log_std))
+        std = self.get_std(log_std)
+        self.weights_dist = Normal(th.zeros_like(std), std)
         self.exploration_mat = self.weights_dist.rsample()
 
     def proba_distribution_net(self, latent_dim, log_std_init=0.0):
@@ -297,10 +307,17 @@ class StateDependentNoiseDistribution(Distribution):
         :param log_std_init: (float) Initial value for the log standard deviation
         :return: (nn.Linear, nn.Parameter)
         """
-        mean_actions = nn.Linear(latent_dim, self.action_dim)
-        log_std = nn.Parameter(th.ones(latent_dim, self.action_dim) * log_std_init)
+        # Network for the deterministic action, it represents the mean of the distribution
+        mean_actions_net = nn.Linear(latent_dim, self.action_dim)
+
+        self.latent_dim = latent_dim
+        # Reduce the number of parameters if needed
+        log_std = th.ones(latent_dim, self.action_dim) if self.full_std else th.ones(latent_dim, 1)
+        # Transform it to a parameter so it can be optimized
+        log_std = nn.Parameter(log_std * log_std_init)
+        # Sample an exploration matrix
         self.sample_weights(log_std)
-        return mean_actions, log_std
+        return mean_actions_net, log_std
 
     def proba_distribution(self, mean_actions, log_std, latent_pi, deterministic=False):
         """
@@ -312,7 +329,7 @@ class StateDependentNoiseDistribution(Distribution):
         :return: (th.Tensor)
         """
         variance = th.mm(latent_pi.detach() ** 2, self.get_std(log_std) ** 2)
-        self.distribution = Normal(mean_actions, th.sqrt(variance))
+        self.distribution = Normal(mean_actions, th.sqrt(variance + self.epsilon))
 
         if deterministic:
             action = self.mode()
@@ -326,8 +343,11 @@ class StateDependentNoiseDistribution(Distribution):
             return self.bijector.forward(action)
         return action
 
+    def get_noise(self, latent_pi):
+        return th.mm(latent_pi.detach(), self.exploration_mat)
+
     def sample(self, latent_pi):
-        noise = th.mm(latent_pi.detach(), self.exploration_mat)
+        noise = self.get_noise(latent_pi)
         action = self.distribution.mean + noise
         if self.bijector is not None:
             return self.bijector.forward(action)

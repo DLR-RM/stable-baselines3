@@ -58,6 +58,9 @@ class PPOPolicy(BasePolicy):
         self._build(learning_rate)
 
     def reset_noise_net(self):
+        """
+        Sample new weights for the exploration matrix.
+        """
         self.action_dist.sample_weights(self.log_std)
 
     def _build(self, learning_rate):
@@ -75,7 +78,7 @@ class PPOPolicy(BasePolicy):
         # with small initial weight for the output
         if self.ortho_init:
             for module in [self.mlp_extractor, self.action_net, self.value_net]:
-                # Values from stable-baselines check why
+                # Values from stable-baselines, TODO: check why
                 gain = {
                     self.mlp_extractor: np.sqrt(2),
                     self.action_net: 0.01,

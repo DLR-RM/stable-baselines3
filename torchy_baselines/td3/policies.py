@@ -1,8 +1,8 @@
 import torch as th
 import torch.nn as nn
-from torch.distributions import Normal
 
 from torchy_baselines.common.policies import BasePolicy, register_policy, create_mlp, BaseNetwork
+from torchy_baselines.common.distributions import StateDependentNoiseDistribution
 
 
 class Actor(BaseNetwork):
@@ -32,17 +32,15 @@ class Actor(BaseNetwork):
         self.full_std = full_std
 
         if use_sde:
-            latent_dim = net_arch[-1]
             latent_pi = create_mlp(obs_dim, -1, net_arch, activation_fn, squash_out=False)
             self.latent_pi = nn.Sequential(*latent_pi)
-            if full_std:
-                self.log_std = nn.Parameter(th.ones(latent_dim, action_dim) * log_std_init, requires_grad=True)
-            else:
-                # Reduce the number of parameters:
-                self.log_std = nn.Parameter(th.ones(latent_dim, 1) * log_std_init, requires_grad=True)
-
-            self.latent_dim = latent_dim
-            self.actor_net = nn.Sequential(nn.Linear(net_arch[-1], action_dim), nn.Tanh())
+            # Create state dependent noise matrix (SDE)
+            self.action_dist = StateDependentNoiseDistribution(action_dim, full_std=full_std, use_expln=False,
+                                                               squash_output=False)
+            action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=net_arch[-1],
+                                                                               log_std_init=log_std_init)
+            # Squash output
+            self.actor_net = nn.Sequential(action_net, nn.Tanh())
             self.clip_noise = clip_noise
             self.sde_optimizer = th.optim.Adam([self.log_std], lr=lr_sde)
             self.reset_noise()
@@ -50,11 +48,21 @@ class Actor(BaseNetwork):
             actor_net = create_mlp(obs_dim, action_dim, net_arch, activation_fn, squash_out=True)
             self.actor_net = nn.Sequential(*actor_net)
 
-    def get_log_std(self):
-        if self.full_std:
-            return self.log_std
-        # Reduce the number of parameters:
-        return th.ones((self.latent_dim, self.action_dim)).to(self.log_std.device) * self.log_std
+    def get_std(self):
+        """
+        Retrieve the standard deviation of the action distribution.
+        Only useful when using SDE.
+        It corresponds to `th.exp(log_std)` in the normal case,
+        but is slightly different when using `expln` function
+        (cf StateDependentNoiseDistribution doc).
+
+        :return: (th.Tensor)
+        """
+        return self.action_dist.get_std(self.log_std)
+
+    def _get_action_dist_from_latent(self, latent_pi):
+        mean_actions = self.actor_net(latent_pi)
+        return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_pi)
 
     def evaluate_actions(self, obs, action):
         """
@@ -63,38 +71,37 @@ class Actor(BaseNetwork):
 
         :param obs: (th.Tensor)
         :param action: (th.Tensor)
+        :param deterministic: (bool)
         :return: (th.Tensor, th.Tensor) log likelihood of taking those actions
             and entropy of the action distribution.
         """
         with th.no_grad():
             latent_pi = self.latent_pi(obs)
-            mean_actions = self.actor_net(latent_pi)
-
-        variance = th.mm(latent_pi ** 2, th.exp(self.get_log_std()) ** 2)
-        distribution = Normal(mean_actions, th.sqrt(variance + 1e-5))
+        _, distribution = self._get_action_dist_from_latent(latent_pi)
         log_prob = distribution.log_prob(action)
-        if len(log_prob.shape) > 1:
-            log_prob = log_prob.sum(axis=1)
-        else:
-            log_prob = log_prob.sum()
+        # value = self.value_net(latent_vf)
         return log_prob, distribution.entropy()
 
     def reset_noise(self):
-        self.weights_dist = Normal(th.zeros_like(self.get_log_std()), th.exp(self.get_log_std()))
-        self.exploration_mat = self.weights_dist.rsample()
+        """
+        Sample new weights for the exploration matrix.
+        """
+        self.action_dist.sample_weights(self.log_std)
 
     def forward(self, obs, deterministic=True):
         if self.use_sde:
             latent_pi = self.latent_pi(obs)
             if deterministic:
                 return self.actor_net(latent_pi)
-            noise = th.mm(latent_pi.detach(), self.exploration_mat)
+            noise = self.action_dist.get_noise(latent_pi)
             if self.clip_noise is not None:
                 noise = th.clamp(noise, -self.clip_noise, self.clip_noise)
             # TODO: Replace with squashing -> need to account for that in the sde update
-            # return th.clamp(self.actor_net(latent_pi) + noise, -1, 1)
+            # -> set squash_out=True in the action_dist?
             # NOTE: the clipping is done in the rollout for now
             return self.actor_net(latent_pi) + noise
+            # action, _ = self._get_action_dist_from_latent(latent_pi)
+            # return action
         else:
             return self.actor_net(obs)
 

@@ -488,7 +488,7 @@ class BaseRLModel(object):
                     logger.logkv('time_elapsed', int(time.time() - self.start_time))
                     logger.logkv("total timesteps", num_timesteps)
                     if self.use_sde:
-                        logger.logkv("std", th.exp(self.actor.log_std).mean().item())
+                        logger.logkv("std", (self.actor.get_std()).mean().item())
                     logger.dumpkvs()
 
         mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0

@@ -89,7 +89,7 @@ class PPOPolicy(BasePolicy):
                                     activation_fn=self.activation_fn, squash_out=False)
             self.sde_feature_extractor = nn.Sequential(*latent_sde)
 
-        if isinstance(self.action_dist, (DiagGaussianDistribution, StateDependentNoiseDistribution)):
+        if isinstance(self.action_dist, DiagGaussianDistribution):
             self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=self.mlp_extractor.latent_dim_pi,
                                                                                     log_std_init=self.log_std_init)
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):

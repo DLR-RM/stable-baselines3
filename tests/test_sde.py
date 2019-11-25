@@ -49,7 +49,7 @@ def test_state_dependent_exploration():
 
 
 @pytest.mark.parametrize("model_class", [A2C])
-@pytest.mark.parametrize("sde_net_arch", [None, [64, 64]])
+@pytest.mark.parametrize("sde_net_arch", [None, [32, 16]])
 def test_state_dependent_noise(model_class, sde_net_arch):
     env_id = 'MountainCarContinuous-v0'
 

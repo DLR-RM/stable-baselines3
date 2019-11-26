@@ -44,6 +44,8 @@ class SAC(BaseRLModel):
     :param action_noise: (ActionNoise) the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
     :param gamma: (float) the discount factor
+    :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
+        instead of action noise exploration (default: False)
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
@@ -58,12 +60,12 @@ class SAC(BaseRLModel):
                  tau=0.005, ent_coef='auto', target_update_interval=1,
                  train_freq=1, gradient_steps=1, n_episodes_rollout=-1,
                  target_entropy='auto', action_noise=None,
-                 gamma=0.99, tensorboard_log=None, create_eval_env=False,
+                 gamma=0.99, use_sde=False, tensorboard_log=None, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
 
         super(SAC, self).__init__(policy, env, SACPolicy, policy_kwargs, verbose, device,
-                                  create_eval_env=create_eval_env, seed=seed)
+                                  create_eval_env=create_eval_env, seed=seed, use_sde=use_sde)
 
         self.learning_rate = learning_rate
         self.target_entropy = target_entropy
@@ -124,8 +126,8 @@ class SAC(BaseRLModel):
             self.ent_coef = float(self.ent_coef)
 
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
-        self.policy = self.policy(self.observation_space, self.action_space,
-                                  self.learning_rate, device=self.device, **self.policy_kwargs)
+        self.policy = self.policy(self.observation_space, self.action_space, learning_rate=self.learning_rate,
+                                  use_sde=self.use_sde, device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
         self._create_aliases()
 
@@ -167,6 +169,11 @@ class SAC(BaseRLModel):
 
             obs, action_batch, next_obs, done, reward = replay_data
 
+            # TODO: check if there is another way to fix pytorch complain
+            # if we don't sample the weights again
+            # (Trying to backward through the graph a second time)
+            if self.use_sde:
+                self.actor.reset_noise()
             # Action by the current actor for the sampled state
             action_pi, log_prob = self.actor.action_log_prob(obs)
             log_prob = log_prob.reshape(-1, 1)

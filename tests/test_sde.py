@@ -4,7 +4,7 @@ import gym
 import torch as th
 from torch.distributions import Normal
 
-from torchy_baselines import A2C, TD3
+from torchy_baselines import A2C, TD3, SAC
 from torchy_baselines.common.vec_env import DummyVecEnv, VecNormalize
 from torchy_baselines.common.monitor import Monitor
 
@@ -73,7 +73,7 @@ def test_state_dependent_noise(model_class, sde_net_arch):
     model.learn(total_timesteps=int(1000), log_interval=5, eval_freq=500, eval_env=eval_env)
 
 
-@pytest.mark.parametrize("model_class", [TD3])
+@pytest.mark.parametrize("model_class", [TD3, SAC])
 def test_state_dependent_offpolicy_noise(model_class):
     model = model_class('MlpPolicy', 'Pendulum-v0', use_sde=True, seed=None, create_eval_env=True,
                         verbose=1, policy_kwargs=dict(log_std_init=-2))

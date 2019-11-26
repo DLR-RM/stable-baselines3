@@ -21,7 +21,7 @@ class Actor(BaseNetwork):
         for the std instead of only (n_features,) when using SDE.
     """
     def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU,
-                 use_sde=False, log_std_init=-2, clip_noise=None,
+                 use_sde=False, log_std_init=-3, clip_noise=None,
                  lr_sde=3e-4, full_std=False):
         super(Actor, self).__init__()
 
@@ -84,7 +84,7 @@ class Actor(BaseNetwork):
 
     def reset_noise(self):
         """
-        Sample new weights for the exploration matrix.
+        Sample new weights for the exploration matrix, when using SDE.
         """
         self.action_dist.sample_weights(self.log_std)
 
@@ -151,7 +151,7 @@ class TD3Policy(BasePolicy):
     """
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',
-                 activation_fn=nn.ReLU, use_sde=False, log_std_init=-2,
+                 activation_fn=nn.ReLU, use_sde=False, log_std_init=-3,
                  clip_noise=None, lr_sde=3e-4):
         super(TD3Policy, self).__init__(observation_space, action_space, device)
 

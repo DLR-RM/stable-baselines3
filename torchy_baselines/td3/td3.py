@@ -62,7 +62,7 @@ class TD3(BaseRLModel):
                  seed=0, device='auto', _init_setup_model=True):
 
         super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device,
-                                  create_eval_env=create_eval_env, seed=seed)
+                                  create_eval_env=create_eval_env, seed=seed, use_sde=use_sde)
 
         self.buffer_size = buffer_size
         self.learning_rate = learning_rate
@@ -79,10 +79,10 @@ class TD3(BaseRLModel):
         self.target_policy_noise = target_policy_noise
 
         # State Dependent Exploration
-        self.use_sde = use_sde
         self.sde_max_grad_norm = sde_max_grad_norm
         self.sde_ent_coef = sde_ent_coef
         self.sde_log_std_scheduler = sde_log_std_scheduler
+        self.on_policy_exploration = True
 
         if _init_setup_model:
             self._setup_model()

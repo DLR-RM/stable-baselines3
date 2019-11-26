@@ -33,12 +33,14 @@ class BaseRLModel(object):
     :param monitor_wrapper: (bool) When creating an environment, whether to wrap it
         or not in a Monitor wrapper.
     :param seed: (int) Seed for the pseudo random generators
+    :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
+        instead of action noise exploration (default: False)
     """
     __metaclass__ = ABCMeta
 
     def __init__(self, policy, env, policy_base, policy_kwargs=None,
                  verbose=0, device='auto', support_multi_env=False,
-                 create_eval_env=False, monitor_wrapper=True, seed=None):
+                 create_eval_env=False, monitor_wrapper=True, seed=None, use_sde=False):
         if isinstance(policy, str) and policy_base is not None:
             self.policy = get_policy_from_name(policy_base, policy)
         else:
@@ -67,7 +69,8 @@ class BaseRLModel(object):
         self.action_noise = None
         # Used for SDE only
         self.rollout_data = None
-        self.use_sde = False
+        self.on_policy_exploration = False
+        self.use_sde = use_sde
         # Track the training progress (from 1 to 0)
         # this is used to update the learning rate
         self._current_progress = 1
@@ -395,7 +398,8 @@ class BaseRLModel(object):
         if self.use_sde:
             self.actor.reset_noise()
             # Reset rollout data
-            self.rollout_data = {key: [] for key in ['observations', 'actions', 'rewards', 'dones']}
+            if self.on_policy_exploration:
+                self.rollout_data = {key: [] for key in ['observations', 'actions', 'rewards', 'dones']}
 
         while total_steps < n_steps or total_episodes < n_episodes:
             done = False

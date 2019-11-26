@@ -23,7 +23,7 @@ class Actor(BaseNetwork):
         for the std instead of only (n_features,) when using SDE.
     """
     def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU,
-                 use_sde=False, log_std_init=-3, full_std=False):
+                 use_sde=False, log_std_init=-3, full_std=True):
         super(Actor, self).__init__()
 
         actor_net = create_mlp(obs_dim, -1, net_arch, activation_fn)

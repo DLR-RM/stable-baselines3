@@ -9,6 +9,7 @@ from torchy_baselines.common.buffers import ReplayBuffer
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.sac.policies import SACPolicy
 from torchy_baselines.common.vec_env import sync_envs_normalization
+from torchy_baselines.common import logger
 
 
 class SAC(BaseRLModel):
@@ -233,6 +234,11 @@ class SAC(BaseRLModel):
             if gradient_step % self.target_update_interval == 0:
                 for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
                     target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+
+        # TODO: average
+        logger.logkv("ent_coef", ent_coef.item())
+        logger.logkv("actor_loss", actor_loss.item())
+        logger.logkv("critic_loss", critic_loss.item())
 
     def learn(self, total_timesteps, callback=None, log_interval=4,
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="SAC",

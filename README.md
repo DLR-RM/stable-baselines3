@@ -21,13 +21,15 @@ TODO:
 - save/load
 - better predict
 - complete logger
-- SDE: learn the feature extractor?
 - Refactor: buffer with numpy array instead of pytorch
 - Refactor: remove duplicated code for evaluation
+
 - plotting? -> zoo
 
 Later:
 - get_parameters / set_parameters
+- SDE: use [affine transform](https://www.tensorflow.org/probability/api_docs/python/tfp/bijectors/Affine)
+  to scale the noise after a tanh transform?
 - CNN policies + normalization
 - tensorboard support
 - DQN

@@ -170,11 +170,13 @@ class SAC(BaseRLModel):
 
             obs, action_batch, next_obs, done, reward = replay_data
 
-            # TODO: check if there is another way to fix pytorch complain
-            # if we don't sample the weights again
-            # (Trying to backward through the graph a second time)
-            if self.use_sde:
-                self.actor.reset_noise()
+            # Two options: retain_graph=True in the actor_loss.backward()
+            # or sample again the noise matrix
+            # otherwise the intermediate step `std = th.exp(log_std)`
+            # is lost and we cannot backpropagate through again
+            # if self.use_sde:
+            #     self.actor.reset_noise()
+
             # Action by the current actor for the sampled state
             action_pi, log_prob = self.actor.action_log_prob(obs)
             log_prob = log_prob.reshape(-1, 1)
@@ -196,10 +198,10 @@ class SAC(BaseRLModel):
                 ent_coef_loss.backward()
                 self.ent_coef_optimizer.step()
 
-            # Select action according to policy
-            next_action, next_log_prob = self.actor.action_log_prob(next_obs)
 
             with th.no_grad():
+                # Select action according to policy
+                next_action, next_log_prob = self.actor.action_log_prob(next_obs)
                 # Compute the target Q value
                 target_q1, target_q2 = self.critic_target(next_obs, next_action)
                 target_q = th.min(target_q1, target_q2)
@@ -227,7 +229,10 @@ class SAC(BaseRLModel):
 
             # Optimize the actor
             self.actor.optimizer.zero_grad()
-            actor_loss.backward()
+            # Cf comment above, otherwise pytorch raises an error
+            # ("Trying to backward through the graph a second time")
+            retain_graph = True if self.use_sde and gradient_steps > 1 else False
+            actor_loss.backward(retain_graph=retain_graph)
             self.actor.optimizer.step()
 
             # Update target networks
@@ -239,6 +244,8 @@ class SAC(BaseRLModel):
         logger.logkv("ent_coef", ent_coef.item())
         logger.logkv("actor_loss", actor_loss.item())
         logger.logkv("critic_loss", critic_loss.item())
+        if ent_coef_loss is not None:
+            logger.logkv("ent_coef_loss", ent_coef_loss.item())
 
     def learn(self, total_timesteps, callback=None, log_interval=4,
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="SAC",

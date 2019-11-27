@@ -33,7 +33,7 @@ class Actor(BaseNetwork):
         if self.use_sde:
             # TODO: check for the learn_features
             self.action_dist = StateDependentNoiseDistribution(action_dim, full_std=full_std, use_expln=False,
-                                                               learn_features=False, squash_output=True)
+                                                               learn_features=True, squash_output=True)
             self.mu, self.log_std = self.action_dist.proba_distribution_net(latent_dim=net_arch[-1],
                                                                             log_std_init=log_std_init)
         else:

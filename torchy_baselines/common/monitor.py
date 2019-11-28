@@ -13,7 +13,7 @@ class Monitor(Wrapper):
     EXT = "monitor.csv"
     file_handler = None
 
-    def __init__(self, env, filename, allow_early_resets=True, reset_keywords=(), info_keywords=()):
+    def __init__(self, env, filename=None, allow_early_resets=True, reset_keywords=(), info_keywords=()):
         """
         A monitor wrapper for Gym environments, it is used to know the episode reward, length, time and other data.
 

@@ -355,7 +355,15 @@ class BaseRLModel(object):
 
         return data, params, opt_params
 
-    def set_random_seed(self, seed=0):
+    def set_random_seed(self, seed=None):
+        """
+        Set the seed of the pseudo-random generators
+        (python, numpy, pytorch, gym, action_space)
+
+        :param seed: (int)
+        """
+        if seed is None:
+            return
         set_random_seed(seed, using_cuda=self.device == th.device('cuda'))
         self.action_space.seed(seed)
         if self.env is not None:

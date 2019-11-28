@@ -292,7 +292,8 @@ class BaseRLModel(object):
         model.__dict__.update(kwargs)
         model.set_env(env)
         model.load_parameters(params, opt_params)
-
+        # resetup modul after load
+        model._resetup_model()
         return model
 
     @staticmethod
@@ -511,15 +512,40 @@ class BaseRLModel(object):
                     with file_.open(file_name + '.pth', mode="w") as opt_param_file:
                         th.save(dict, opt_param_file)
 
-    def save(self, path, include=None):#TODO
+    def excluded_save_params(self):
+        """
+        returns the names of the parameters that should be excluded from save
+        :return: (list) List of parameters that should be excluded from save
+        """
+        return ["replay_buffer"]
+
+    def _resetup_model(self):
+        """
+        Function will be called at the end of load and should resetup anything that might not have been saved
+        warning: this function should always be in compliance with excluded_save_params
+        :return: 
+        """
+        pass
+
+    def save(self, path, include=None):
         """
         saves all the params from init and pytorch params in a file for continuous learning
 
         :param path: (str) path to the file where the data should be saved
+        :param include: (list) name of parameters that might be excluded but should be included anyway
         :return:
         """
         data = self.__dict__
-        data.pop("replay_buffer")
+        # get list of params to be excluded
+        exclude = self.excluded_save_params()
+        # do not exclude params if they are specifically included
+        if include is not None:
+            exclude = [param_name for param_name in exclude if param_name not in include]
+
+        # remove parameter entries of parameters which are to be excluded
+        for param_name in exclude:
+            data.pop(param_name, None)
+
         params_to_save = self.get_policy_parameters()
         opt_params_to_save = self.get_opt_parameters()
         self._save_to_file_zip(path, data=data, params=params_to_save, opt_params=opt_params_to_save)

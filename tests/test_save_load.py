@@ -10,9 +10,9 @@ from torchy_baselines.common.identity_env import IdentityEnvBox
 
 MODEL_LIST = [
     PPO,
-    #A2C,
-    #TD3,
-    #SAC,
+    A2C,
+    TD3,
+    SAC,
 ]
 
 
@@ -30,7 +30,7 @@ def test_save_load(model_class):
 
     # create model
     model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
-    model.learn(total_timesteps=1000, eval_freq=500)
+    model.learn(total_timesteps=500, eval_freq=250)
 
     # Get dictionary of current parameters
     params = deepcopy(model.get_policy_parameters())
@@ -45,8 +45,7 @@ def test_save_load(model_class):
     new_params = model.get_policy_parameters()
     # Check that all params are different now
     for k in params:
-        assert not th.allclose(params[k], new_params[k]), "Selected actions did not change " \
-                                                          "after changing model parameters."
+        assert not th.allclose(params[k], new_params[k]), "Parameters did not change as expected."
 
     params = new_params
 
@@ -67,13 +66,17 @@ def test_save_load(model_class):
     # check if keys are the same
     assert opt_params.keys() == new_opt_params.keys()
     # check if values are the same: only tested for Adam and RMSProp so far
-    for optimizer,opt_state in opt_params.items():
-        for step_entry, entry_dict in opt_state['state'].items():
-            for value_key,value in entry_dict.items():
-                print(value == new_opt_params[optimizer][step_entry][value_key])
-
-
-
+    # comparing states not implemented so far. hashes of state_entries are not the same for equal tensors
+    # comparing every sub_entry does not work because of bool value of Tensor with more than one value is ambiguous
+    # so far only comparing param_lists
+    for optimizer, opt_state in opt_params.items():
+        for param_group_idx, param_group in enumerate(opt_state['param_groups']):
+            for param_key, param_value in param_group.items():
+                if param_key == 'params':  # don't know how to handle params correctly, therefore only check if we have the same amount
+                    assert len(param_value) == len(
+                        new_opt_params[optimizer]['param_groups'][param_group_idx][param_key])
+                else:
+                    assert param_value == new_opt_params[optimizer]['param_groups'][param_group_idx][param_key]
 
     # check if learn still works
     model.learn(total_timesteps=1000, eval_freq=500)

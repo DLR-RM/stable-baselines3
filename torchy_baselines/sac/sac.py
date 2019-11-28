@@ -128,6 +128,15 @@ class SAC(BaseRLModel):
         self.policy = self.policy.to(self.device)
         self._create_aliases()
 
+    def _resetup_model(self):
+        """
+        method used to resetup anything that was not saved 
+        :return: 
+        """
+        if self.replay_buffer is None:
+            obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
+            self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
+
     def _create_aliases(self):
         self.actor = self.policy.actor
         self.critic = self.policy.critic

@@ -119,7 +119,7 @@ class PPO(BaseRLModel):
 
         self.rollout_buffer = RolloutBuffer(self.n_steps, state_dim, action_dim, self.device,
                                             gamma=self.gamma, gae_lambda=self.gae_lambda, n_envs=self.n_envs)
-        self.policy = self.policy(self.observation_space, self.action_space,
+        self.policy = self.policy_class(self.observation_space, self.action_space,
                                   self.learning_rate, use_sde=self.use_sde, device=self.device,
                                   **self.policy_kwargs)
         self.policy = self.policy.to(self.device)

@@ -38,9 +38,9 @@ class BaseRLModel(object):
                  verbose=0, device='auto', support_multi_env=False,
                  create_eval_env=False, monitor_wrapper=True, seed=None):
         if isinstance(policy, str) and policy_base is not None:
-            self.policy = get_policy_from_name(policy_base, policy)
+            self.policy_class = get_policy_from_name(policy_base, policy)
         else:
-            self.policy = policy
+            self.policy_class = policy
 
         if device == 'auto':
             device = 'cuda' if th.cuda.is_available() else 'cpu'
@@ -293,7 +293,7 @@ class BaseRLModel(object):
         model.set_env(env)
         model.load_parameters(params, opt_params)
         # resetup modul after load
-        model._resetup_model()
+        #model._setup_model()
         return model
 
     @staticmethod

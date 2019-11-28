@@ -1,6 +1,7 @@
 import os
 import pytest
 from copy import deepcopy
+import numpy as np
 
 import torch as th
 
@@ -32,6 +33,11 @@ def test_save_load(model_class):
     model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
     model.learn(total_timesteps=500, eval_freq=250)
 
+    env.reset()
+    observations = np.array([env.step(env.action_space.sample())[0] for _ in range(10)])
+    observations = np.squeeze(observations)
+
+
     # Get dictionary of current parameters
     params = deepcopy(model.get_policy_parameters())
     opt_params = deepcopy(model.get_opt_parameters())
@@ -48,6 +54,10 @@ def test_save_load(model_class):
         assert not th.allclose(params[k], new_params[k]), "Parameters did not change as expected."
 
     params = new_params
+
+
+    #get selected actions
+    selected_actions = [model.predict(observation, deterministic=True) for observation in observations]
 
     # Check
     model.save("test_save.zip")
@@ -77,6 +87,11 @@ def test_save_load(model_class):
                         new_opt_params[optimizer]['param_groups'][param_group_idx][param_key])
                 else:
                     assert param_value == new_opt_params[optimizer]['param_groups'][param_group_idx][param_key]
+
+    # check if model still selects the same actions
+    new_selected_actions = [model.predict(observation, deterministic=True) for observation in observations]
+    for i in range(len(selected_actions)):
+        assert selected_actions[i] == new_selected_actions[i]
 
     # check if learn still works
     model.learn(total_timesteps=1000, eval_freq=500)

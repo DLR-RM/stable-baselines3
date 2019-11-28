@@ -123,19 +123,10 @@ class SAC(BaseRLModel):
             self.ent_coef = float(self.ent_coef)
 
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
-        self.policy = self.policy(self.observation_space, self.action_space,
+        self.policy = self.policy_class(self.observation_space, self.action_space,
                                   self.learning_rate, device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
         self._create_aliases()
-
-    def _resetup_model(self):
-        """
-        method used to resetup anything that was not saved 
-        :return: 
-        """
-        if self.replay_buffer is None:
-            obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
-            self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
 
     def _create_aliases(self):
         self.actor = self.policy.actor

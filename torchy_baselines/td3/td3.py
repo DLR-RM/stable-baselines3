@@ -80,7 +80,7 @@ class TD3(BaseRLModel):
         obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
         self.set_random_seed(self.seed)
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
-        self.policy = self.policy(self.observation_space, self.action_space,
+        self.policy = self.policy_class(self.observation_space, self.action_space,
                                   self.learning_rate, device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
         self._create_aliases()

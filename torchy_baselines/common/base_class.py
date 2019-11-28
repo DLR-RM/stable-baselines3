@@ -250,7 +250,7 @@ class BaseRLModel(object):
         """
         pass
 
-    def load_parameters(self, load_dict, opt_params=None, exact_match=True):
+    def load_parameters(self, load_dict, opt_params=None):
         """
         Load model parameters from a dictionary
 

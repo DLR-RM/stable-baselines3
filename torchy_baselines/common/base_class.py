@@ -275,7 +275,7 @@ class BaseRLModel(object):
         """
         Load the model from file
 
-        :param load_path: (str or file-like) the saved parameter location
+        :param load_path: (str) the saved parameter location
         :param env: (Gym Envrionment) the new environment to run the loaded model on
             (can be None if you only need prediction from a trained model)
         :param kwargs: extra arguments to change the model when loading
@@ -507,7 +507,7 @@ class BaseRLModel(object):
         """
         saves all the params from init and pytorch params in a file for continuous learning
 
-        :param path: path to the file where the data should be saved
+        :param path: (str) path to the file where the data should be saved
         :return:
         """
         data = self.__dict__

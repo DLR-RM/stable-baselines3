@@ -287,13 +287,13 @@ class BaseRLModel(object):
                              "Stored kwargs: {}, specified kwargs: {}".format(data['policy_kwargs'],
                                                                               kwargs['policy_kwargs']))
 
-        model = cls(policy=data["policy"], env=data["env"], _init_setup_model=False)
+        model = cls(policy=data["policy_class"], env=data["env"], _init_setup_model=True)
         model.__dict__.update(data)
         model.__dict__.update(kwargs)
         model.set_env(env)
         model.load_parameters(params, opt_params)
         # resetup modul after load
-        #model._setup_model()
+        # model._setup_model()
         return model
 
     @staticmethod

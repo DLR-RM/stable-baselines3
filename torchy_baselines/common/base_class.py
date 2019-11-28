@@ -56,12 +56,10 @@ class BaseRLModel(object):
         self.action_space = None
         self.n_envs = None
         self.num_timesteps = 0
-        self.params = None
         self.eval_env = None
         self.replay_buffer = None
         self.seed = seed
         self.action_noise = None
-        self.params = None
         # Track the training progress (from 1 to 0)
         # this is used to update the learning rate
         self._current_progress = 1
@@ -176,16 +174,6 @@ class BaseRLModel(object):
         """
         pass
 
-    def get_parameter_list(self):
-        """
-        Get pytorch Variables of model's parameters
-
-        This includes all variables necessary for continuing training (saving / loading).
-
-        :return: (list) List of pytorch Variables
-        """
-        return self.params
-
     def get_policy_parameters(self):
         """
         Get current model policy parameters as dictionary of variable name -> tensors.
@@ -253,14 +241,8 @@ class BaseRLModel(object):
     def load_parameters(self, load_dict, opt_params=None):
         """
         Load model parameters from a dictionary
-
-        Dictionary should contain all entries of torch model.state_dict()
-
-        This does not load agent's hyper-parameters.
-
-        .. warning::
-            This function does not update trainer/optimizer variables (e.g. momentum).
-            As such training after using this function may lead to less-than-optimal results.
+        load_dict should contain all keys from torch.model.state_dict()
+        If opt_params are given this does also load agent's optimizer-parameters, but can only be handled in child classes.
 
 
         :param load_dict: (dict) dict of parameters from model.state_dict()
@@ -273,11 +255,11 @@ class BaseRLModel(object):
     @classmethod
     def load(cls, load_path, env=None, **kwargs):
         """
-        Load the model from file
+        Load the model from a zip-file
 
-        :param load_path: (str) the saved parameter location
+        :param load_path: (str) the location of the saved data
         :param env: (Gym Envrionment) the new environment to run the loaded model on
-            (can be None if you only need prediction from a trained model)
+            (can be None if you only need prediction from a trained model) has priority over any saved environment
         :param kwargs: extra arguments to change the model when loading
         """
         data, params, opt_params = cls._load_from_file(load_path)
@@ -287,7 +269,9 @@ class BaseRLModel(object):
                              "Stored kwargs: {}, specified kwargs: {}".format(data['policy_kwargs'],
                                                                               kwargs['policy_kwargs']))
 
-        model = cls(policy=data["policy_class"], env=data["env"], _init_setup_model=True)
+        if env is None and "env" in data:
+            env = data["env"]
+        model = cls(policy=data["policy_class"], env=env, _init_setup_model=True)
         model.__dict__.update(data)
         model.__dict__.update(kwargs)
         model.set_env(env)
@@ -298,7 +282,7 @@ class BaseRLModel(object):
     def _load_from_file(load_path, load_data=True):
         """ Load model data from a .zip archive
 
-        :param load_path: (str or file-like) Where to load the model from
+        :param load_path: (str) Where to load the model from
         :param load_data: (bool) Whether we should load and return data
             (class parameters). Mainly used by 'load_parameters' to only load model parameters (weights)
         :return: (dict),(dict),(dict) Class parameters, model parameters (state_dict) and dict of optimizer parameters (dict of state_dict)
@@ -477,7 +461,7 @@ class BaseRLModel(object):
     def _save_to_file_zip(save_path, data=None, params=None, opt_params=None):
         """Save model to a zip archive
     
-        :param save_path: (str or file-like) Where to store the model
+        :param save_path: (str) Where to store the model
         :param data: (dict) Class parameters being stored
         :param params: (dict) Model parameters being stored expected to be state_dict
         :param opt_params: (dict) Optimizer parameters being stored expected to contain an entry for every
@@ -519,7 +503,7 @@ class BaseRLModel(object):
 
     def save(self, path, exclude=None, include=None):
         """
-        saves all the params from init and pytorch params in a file for continuous learning
+        saves all the params from init and pytorch params in a zip-file for continuous learning
 
         :param path: (str) path to the file where the data should be saved
         :param exclude: (list) name of parameters that should be excluded, use standard exclude params if None

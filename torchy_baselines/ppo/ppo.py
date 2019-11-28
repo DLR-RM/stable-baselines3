@@ -315,7 +315,7 @@ class PPO(BaseRLModel):
 
     def get_opt_parameters(self):
         """
-        returns a dict of all the optimizers and their parameters
+        Returns a dict of all the optimizers and their parameters
         
         :return: (Dict) of optimizer names and their state_dict 
         """
@@ -324,12 +324,11 @@ class PPO(BaseRLModel):
     def load_parameters(self, load_dict, opt_params):
         """
         Load model parameters and optimizer parameters from a dictionary
-        Dictionary should be of shape torch model.state_dict()
+        load_dict should contain all keys from torch.model.state_dict()
         This does not load agent's hyper-parameters.
 
-
         :param load_dict: (dict) dict of parameters from model.state_dict()
-        :param opt_params: (dict of dicts) dict of optimizer state_dicts should be handled in child_class
+        :param opt_params: (dict of dicts) dict of optimizer state_dicts
         """
         self.policy.optimizer.load_state_dict(opt_params["opt"])
         self.policy.load_state_dict(load_dict)

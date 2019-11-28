@@ -239,7 +239,7 @@ class TD3(BaseRLModel):
 
     def get_opt_parameters(self):
         """
-        returns a dict of all the optimizers and their parameters
+        Returns a dict of all the optimizers and their parameters
 
         :return: (Dict) of optimizer names and their state_dict 
         """
@@ -248,7 +248,7 @@ class TD3(BaseRLModel):
     def load_parameters(self, load_dict, opt_params):
         """
         Load model parameters and optimizer parameters from a dictionary
-        Dictionary should be of shape torch model.state_dict()
+        load_dict should contain all keys from torch.model.state_dict()
         This does not load agent's hyper-parameters.
 
         :param load_dict: (dict) dict of parameters from model.state_dict()

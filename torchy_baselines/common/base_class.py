@@ -503,7 +503,7 @@ class BaseRLModel(object):
                     with file_.open(file_name + '.pth', mode="w") as opt_param_file:
                         th.save(dict, opt_param_file)
 
-    def save(self, path):
+    def save(self, path, include=None):#TODO
         """
         saves all the params from init and pytorch params in a file for continuous learning
 
@@ -512,18 +512,6 @@ class BaseRLModel(object):
         """
         data = self.__dict__
         data.pop("replay_buffer")
-        params_to_save = self.get_policy_parameters()
-        opt_params_to_save = self.get_opt_parameters()
-        self._save_to_file_zip(path, data=data, params=params_to_save, opt_params=opt_params_to_save)
-
-    def save_with_replay_buffer(self, path):
-        """
-        saves all the params from init and pytorch params in a file for continuous learning
-
-        :param path: path to the file where the data should be saved
-        :return:
-        """
-        data = self.__dict__
         params_to_save = self.get_policy_parameters()
         opt_params_to_save = self.get_opt_parameters()
         self._save_to_file_zip(path, data=data, params=params_to_save, opt_params=opt_params_to_save)

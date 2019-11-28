@@ -124,14 +124,14 @@ class PPO(BaseRLModel):
         if self.clip_range_vf is not None:
             self.clip_range_vf = get_schedule_fn(self.clip_range_vf)
 
-    def select_action(self, observation):
+    def select_action(self, observation,deterministic=False):
         # Normally not needed
         observation = np.array(observation)
         with th.no_grad():
             observation = th.FloatTensor(observation.reshape(1, -1)).to(self.device)
-            return self.policy.actor_forward(observation, deterministic=False)
+            return self.policy.actor_forward(observation, deterministic)
 
-    def predict(self, observation, state=None, mask=None, deterministic=True):
+    def predict(self, observation, state=None, mask=None, deterministic=False):
         """
         Get the model's action from an observation
 

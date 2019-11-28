@@ -10,9 +10,9 @@ from torchy_baselines.common.identity_env import IdentityEnvBox
 
 MODEL_LIST = [
     PPO,
-    A2C,
-    TD3,
-    SAC,
+    #A2C,
+    #TD3,
+    #SAC,
 ]
 
 
@@ -30,6 +30,7 @@ def test_save_load(model_class):
 
     # create model
     model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
+    model.learn(total_timesteps=1000, eval_freq=500)
 
     # Get dictionary of current parameters
     params = deepcopy(model.get_policy_parameters())
@@ -50,7 +51,6 @@ def test_save_load(model_class):
     params = new_params
 
     # Check
-    model.learn(total_timesteps=1000, eval_freq=500)
     model.save("test_save.zip")
     del model
     model = model_class.load("test_save")
@@ -66,7 +66,14 @@ def test_save_load(model_class):
     new_opt_params = model.get_opt_parameters()
     # check if keys are the same
     assert opt_params.keys() == new_opt_params.keys()
-    # check if values are the same: don't know how to to that
+    # check if values are the same: only tested for Adam and RMSProp so far
+    for optimizer,opt_state in opt_params.items():
+        for step_entry, entry_dict in opt_state['state'].items():
+            for value_key,value in entry_dict.items():
+                print(value == new_opt_params[optimizer][step_entry][value_key])
+
+
+
 
     # check if learn still works
     model.learn(total_timesteps=1000, eval_freq=500)

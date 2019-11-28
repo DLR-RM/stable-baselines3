@@ -120,8 +120,8 @@ class PPO(BaseRLModel):
         self.rollout_buffer = RolloutBuffer(self.n_steps, state_dim, action_dim, self.device,
                                             gamma=self.gamma, gae_lambda=self.gae_lambda, n_envs=self.n_envs)
         self.policy = self.policy_class(self.observation_space, self.action_space,
-                                  self.learning_rate, use_sde=self.use_sde, device=self.device,
-                                  **self.policy_kwargs)
+                                        self.learning_rate, use_sde=self.use_sde, device=self.device,
+                                        **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
 
         self.clip_range = get_schedule_fn(self.clip_range)
@@ -226,7 +226,6 @@ class PPO(BaseRLModel):
                     values_pred = old_values + th.clamp(values - old_values, -clip_range_vf, clip_range_vf)
                 # Value loss using the TD(gae_lambda) target
                 value_loss = F.mse_loss(return_batch, values_pred)
-
 
                 # Entropy loss favor exploration
                 entropy_loss = -th.mean(entropy)

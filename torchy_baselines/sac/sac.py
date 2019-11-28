@@ -52,6 +52,7 @@ class SAC(BaseRLModel):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
+
     def __init__(self, policy, env, learning_rate=3e-4, buffer_size=int(1e6),
                  learning_starts=100, batch_size=64,
                  tau=0.005, ent_coef='auto', target_update_interval=1,
@@ -124,7 +125,7 @@ class SAC(BaseRLModel):
 
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
         self.policy = self.policy_class(self.observation_space, self.action_space,
-                                  self.learning_rate, device=self.device, **self.policy_kwargs)
+                                        self.learning_rate, device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
         self._create_aliases()
 
@@ -281,7 +282,8 @@ class SAC(BaseRLModel):
         :return: (Dict) of optimizer names and their state_dict 
         """
         if self.ent_coef_optimizer is not None:
-            return {"actor": self.actor.optimizer.state_dict(), "critic": self.critic.optimizer.state_dict(),"ent_coef_optimizer": self.ent_coef_optimizer.state_dict()}
+            return {"actor": self.actor.optimizer.state_dict(), "critic": self.critic.optimizer.state_dict(),
+                    "ent_coef_optimizer": self.ent_coef_optimizer.state_dict()}
         else:
             return {"actor": self.actor.optimizer.state_dict(), "critic": self.critic.optimizer.state_dict()}
 

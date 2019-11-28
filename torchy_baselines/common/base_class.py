@@ -292,8 +292,6 @@ class BaseRLModel(object):
         model.__dict__.update(kwargs)
         model.set_env(env)
         model.load_parameters(params, opt_params)
-        # resetup modul after load
-        # model._setup_model()
         return model
 
     @staticmethod
@@ -518,14 +516,6 @@ class BaseRLModel(object):
         :return: (list) List of parameters that should be excluded from save
         """
         return ["replay_buffer"]
-
-    def _resetup_model(self):
-        """
-        Function will be called at the end of load and should resetup anything that might not have been saved
-        warning: this function should always be in compliance with excluded_save_params
-        :return: 
-        """
-        pass
 
     def save(self, path, include=None):
         """

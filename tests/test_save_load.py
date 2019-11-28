@@ -10,6 +10,7 @@ from torchy_baselines.common.vec_env import DummyVecEnv
 from torchy_baselines.common.identity_env import IdentityEnvBox
 
 MODEL_LIST = [
+    CEMRL,
     PPO,
     A2C,
     TD3,
@@ -37,7 +38,6 @@ def test_save_load(model_class):
     observations = np.array([env.step(env.action_space.sample())[0] for _ in range(10)])
     observations = np.squeeze(observations)
 
-
     # Get dictionary of current parameters
     params = deepcopy(model.get_policy_parameters())
     opt_params = deepcopy(model.get_opt_parameters())
@@ -55,8 +55,7 @@ def test_save_load(model_class):
 
     params = new_params
 
-
-    #get selected actions
+    # get selected actions
     selected_actions = [model.predict(observation, deterministic=True) for observation in observations]
 
     # Check

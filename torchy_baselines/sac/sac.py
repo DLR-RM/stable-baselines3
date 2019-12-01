@@ -87,6 +87,7 @@ class SAC(BaseRLModel):
         self.n_episodes_rollout = n_episodes_rollout
         self.action_noise = action_noise
         self.gamma = gamma
+        self.ent_coef_optimizer = None
 
         if _init_setup_model:
             self._setup_model()
@@ -124,7 +125,7 @@ class SAC(BaseRLModel):
             # Force conversion to float
             # this will throw an error if a malformed string (different from 'auto')
             # is passed
-            self.ent_coef = float(self.ent_coef)
+            self.ent_coef = th.tensor(float(self.ent_coef)).to(self.device)
 
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
         self.policy = self.policy(self.observation_space, self.action_space, learning_rate=self.learning_rate,
@@ -174,15 +175,15 @@ class SAC(BaseRLModel):
             # or sample again the noise matrix
             # otherwise the intermediate step `std = th.exp(log_std)`
             # is lost and we cannot backpropagate through again
-            # if self.use_sde:
-            #     self.actor.reset_noise()
+            if self.use_sde:
+                self.actor.reset_noise(batch_size=batch_size)
 
             # Action by the current actor for the sampled state
             action_pi, log_prob = self.actor.action_log_prob(obs)
             log_prob = log_prob.reshape(-1, 1)
 
             ent_coef_loss = None
-            if not isinstance(self.ent_coef, float):
+            if self.ent_coef_optimizer is not None:
                 # Important: detach the variable from the graph
                 # so we don't change it with other losses
                 # see https://github.com/rail-berkeley/softlearning/issues/60
@@ -200,6 +201,8 @@ class SAC(BaseRLModel):
 
 
             with th.no_grad():
+                if self.use_sde:
+                    self.actor.reset_noise(batch_size=batch_size)
                 # Select action according to policy
                 next_action, next_log_prob = self.actor.action_log_prob(next_obs)
                 # Compute the target Q value
@@ -231,8 +234,8 @@ class SAC(BaseRLModel):
             self.actor.optimizer.zero_grad()
             # Cf comment above, otherwise pytorch raises an error
             # ("Trying to backward through the graph a second time")
-            retain_graph = True if self.use_sde and gradient_steps > 1 else False
-            actor_loss.backward(retain_graph=retain_graph)
+            # retain_graph = True if self.use_sde and gradient_steps > 1 else False
+            actor_loss.backward(retain_graph=False)
             self.actor.optimizer.step()
 
             # Update target networks

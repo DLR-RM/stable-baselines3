@@ -53,11 +53,13 @@ class Actor(BaseNetwork):
         """
         return self.action_dist.get_std(self.log_std)
 
-    def reset_noise(self):
+    def reset_noise(self, batch_size=1):
         """
         Sample new weights for the exploration matrix, when using SDE.
+
+        :param batch_size: (int)
         """
-        self.action_dist.sample_weights(self.log_std)
+        self.action_dist.sample_weights(self.log_std, batch_size=batch_size)
 
     def get_action_dist_params(self, obs):
         latent = self.actor_net(obs)

@@ -290,7 +290,7 @@ class StateDependentNoiseDistribution(Distribution):
         # Reduce the number of parameters:
         return th.ones(self.latent_sde_dim, self.action_dim).to(log_std.device) * std
 
-    def sample_weights(self, log_std):
+    def sample_weights(self, log_std, batch_size=1):
         """
         Sample weights for the noise exploration matrix,
         using a centered gaussian distribution.
@@ -300,6 +300,7 @@ class StateDependentNoiseDistribution(Distribution):
         std = self.get_std(log_std)
         self.weights_dist = Normal(th.zeros_like(std), std)
         self.exploration_mat = self.weights_dist.rsample()
+        self.exploration_matrices = self.weights_dist.rsample((batch_size,))
 
     def proba_distribution_net(self, latent_dim, log_std_init=-2.0, latent_sde_dim=None):
         """
@@ -354,7 +355,13 @@ class StateDependentNoiseDistribution(Distribution):
 
     def get_noise(self, latent_sde):
         latent_sde = latent_sde if self.learn_features else latent_sde.detach()
-        return th.mm(latent_sde, self.exploration_mat)
+        if len(latent_sde) != len(self.exploration_matrices):
+            return th.mm(latent_sde, self.exploration_mat)
+        # (batch_size, n_features) -> (batch_size, 1, n_features)
+        latent_sde = latent_sde.unsqueeze(1)
+        # (batch_size, 1, n_actions)
+        noise = th.bmm(latent_sde, self.exploration_matrices)
+        return noise.squeeze(1)
 
     def sample(self, latent_sde):
         noise = self.get_noise(latent_sde)

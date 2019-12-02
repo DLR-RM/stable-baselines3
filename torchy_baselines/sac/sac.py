@@ -175,8 +175,10 @@ class SAC(BaseRLModel):
             # or sample again the noise matrix
             # otherwise the intermediate step `std = th.exp(log_std)`
             # is lost and we cannot backpropagate through again
+            # anyway, we need to sample because `log_std` may have changed between two gradient steps
             if self.use_sde:
-                self.actor.reset_noise(batch_size=batch_size)
+                # self.actor.reset_noise(batch_size=batch_size)
+                self.actor.reset_noise()
 
             # Action by the current actor for the sampled state
             action_pi, log_prob = self.actor.action_log_prob(obs)
@@ -201,8 +203,8 @@ class SAC(BaseRLModel):
 
 
             with th.no_grad():
-                if self.use_sde:
-                    self.actor.reset_noise(batch_size=batch_size)
+                # if self.use_sde:
+                #     self.actor.reset_noise(batch_size=batch_size)
                 # Select action according to policy
                 next_action, next_log_prob = self.actor.action_log_prob(next_obs)
                 # Compute the target Q value
@@ -232,10 +234,7 @@ class SAC(BaseRLModel):
 
             # Optimize the actor
             self.actor.optimizer.zero_grad()
-            # Cf comment above, otherwise pytorch raises an error
-            # ("Trying to backward through the graph a second time")
-            # retain_graph = True if self.use_sde and gradient_steps > 1 else False
-            actor_loss.backward(retain_graph=False)
+            actor_loss.backward()
             self.actor.optimizer.step()
 
             # Update target networks

@@ -157,7 +157,7 @@ class PPO(BaseRLModel):
         # Sample new weights for the state dependent exploration
         # TODO: ensure episodic setting?
         if self.use_sde:
-            self.policy.reset_noise_net()
+            self.policy.reset_noise_net(env.num_envs)
 
         while n_steps < n_rollout_steps:
             with th.no_grad():

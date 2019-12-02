@@ -1,7 +1,8 @@
 import torch as th
 import torch.nn as nn
 
-from torchy_baselines.common.policies import BasePolicy, register_policy, create_mlp, BaseNetwork, create_sde_feature_extractor
+from torchy_baselines.common.policies import BasePolicy, register_policy, create_mlp, BaseNetwork, \
+    create_sde_feature_extractor
 from torchy_baselines.common.distributions import SquashedDiagGaussianDistribution, StateDependentNoiseDistribution
 
 # CAP the standard deviation of the actor
@@ -38,7 +39,8 @@ class Actor(BaseNetwork):
             latent_sde_dim = net_arch[-1]
             # Separate feature extractor for SDE
             if sde_net_arch is not None:
-                self.sde_feature_extractor, latent_sde_dim = create_sde_feature_extractor(obs_dim, sde_net_arch, activation_fn)
+                self.sde_feature_extractor, latent_sde_dim = create_sde_feature_extractor(obs_dim, sde_net_arch,
+                                                                                          activation_fn)
 
             # TODO: check for the learn_features
             self.action_dist = StateDependentNoiseDistribution(action_dim, full_std=full_std, use_expln=False,
@@ -95,10 +97,12 @@ class Actor(BaseNetwork):
         mean_actions, log_std, latent_sde = self.get_action_dist_params(obs)
         if self.use_sde:
             # Note the action is squashed
-            action, _ = self.action_dist.proba_distribution(mean_actions, log_std, latent_sde, deterministic=deterministic)
+            action, _ = self.action_dist.proba_distribution(mean_actions, log_std, latent_sde,
+                                                            deterministic=deterministic)
         else:
             # Note the action is squashed
-            action, _ = self.action_dist.proba_distribution(mean_actions, log_std, deterministic=deterministic)
+            action, _ = self.action_dist.proba_distribution(mean_actions, log_std,
+                                                            deterministic=deterministic)
         return action
 
     def action_log_prob(self, obs):
@@ -145,7 +149,7 @@ class SACPolicy(BasePolicy):
     Policy class (with both actor and critic) for SAC.
 
     :param observation_space: (gym.spaces.Space) Observation space
-    :param action_dim: (gym.spaces.Space) Action space
+    :param action_space: (gym.spaces.Space) Action space
     :param learning_rate: (callable) Learning rate schedule (could be constant)
     :param net_arch: ([int or dict]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.

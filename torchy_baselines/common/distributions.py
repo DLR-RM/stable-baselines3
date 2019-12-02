@@ -1,9 +1,8 @@
-import numpy as np
 import torch as th
 import torch.nn as nn
 from torch.distributions import Normal, Categorical
-import torch.nn.functional as F
 from gym import spaces
+
 
 class Distribution(object):
     def __init__(self):
@@ -13,25 +12,25 @@ class Distribution(object):
         """
         returns the log likelihood
 
-        :param x: (str) the labels of each index
-        :return: ([float]) The log likelihood of the distribution
+        :param x: (object) the taken action
+        :return: (th.Tensor) The log likelihood of the distribution
         """
         raise NotImplementedError
 
-    def kl_div(self, other):
-        """
-        Calculates the Kullback-Leibler divergence from the given probabilty distribution
-
-        :param other: ([float]) the distribution to compare with
-        :return: (float) the KL divergence of the two distributions
-        """
-        raise NotImplementedError
+    # def kl_div(self, other):
+    #     """
+    #     Calculates the Kullback-Leibler divergence from the given probabilty distribution
+    #
+    #     :param other: ([float]) the distribution to compare with
+    #     :return: (float) the KL divergence of the two distributions
+    #     """
+    #     raise NotImplementedError
 
     def entropy(self):
         """
         Returns shannon's entropy of the probability
 
-        :return: (float) the entropy
+        :return: (th.Tensor) the entropy
         """
         raise NotImplementedError
 
@@ -39,7 +38,7 @@ class Distribution(object):
         """
         returns a sample from the probabilty distribution
 
-        :return: (Tensorflow Tensor) the stochastic action
+        :return: (th.Tensor) the stochastic action
         """
         raise NotImplementedError
 
@@ -51,6 +50,7 @@ class DiagGaussianDistribution(Distribution):
 
     :param action_dim: (int)  Number of continuous actions
     """
+
     def __init__(self, action_dim):
         super(DiagGaussianDistribution, self).__init__()
         self.distribution = None
@@ -137,6 +137,7 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
     :param action_dim: (int) Number of continuous actions
     :param epsilon: (float) small value to avoid NaN due to numerical imprecision.
     """
+
     def __init__(self, action_dim, epsilon=1e-6):
         super(SquashedDiagGaussianDistribution, self).__init__(action_dim)
         # Avoid NaN (prevents division by zero or log of zero)
@@ -144,7 +145,8 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         self.gaussian_action = None
 
     def proba_distribution(self, mean_actions, log_std, deterministic=False):
-        action, _ = super(SquashedDiagGaussianDistribution, self).proba_distribution(mean_actions, log_std, deterministic)
+        action, _ = super(SquashedDiagGaussianDistribution, self).proba_distribution(mean_actions, log_std,
+                                                                                     deterministic)
         return action, self
 
     def mode(self):
@@ -183,6 +185,7 @@ class CategoricalDistribution(Distribution):
 
     :param action_dim: (int) Number of discrete actions
     """
+
     def __init__(self, action_dim):
         super(CategoricalDistribution, self).__init__()
         self.distribution = None
@@ -246,6 +249,7 @@ class StateDependentNoiseDistribution(Distribution):
         `latent_sde` in the code.
     :param epsilon: (float) small value to avoid NaN due to numerical imprecision.
     """
+
     def __init__(self, action_dim, full_std=True, use_expln=False,
                  squash_output=False, learn_features=False, epsilon=1e-6):
         super(StateDependentNoiseDistribution, self).__init__()
@@ -256,12 +260,12 @@ class StateDependentNoiseDistribution(Distribution):
         self.log_std = None
         self.weights_dist = None
         self.exploration_mat = None
+        self.exploration_matrices = None
         self.use_expln = use_expln
         self.full_std = full_std
         self.epsilon = epsilon
         self.learn_features = learn_features
         if squash_output:
-            print("== Using TanhBijector ===")
             self.bijector = TanhBijector(epsilon)
         else:
             self.bijector = None
@@ -296,6 +300,7 @@ class StateDependentNoiseDistribution(Distribution):
         using a centered gaussian distribution.
 
         :param log_std: (th.Tensor)
+        :param batch_size: (int)
         """
         std = self.get_std(log_std)
         self.weights_dist = Normal(th.zeros_like(std), std)
@@ -333,6 +338,7 @@ class StateDependentNoiseDistribution(Distribution):
 
         :param mean_actions: (th.Tensor)
         :param log_std: (th.Tensor)
+        :param latent_sde: (th.Tensor)
         :param deterministic: (bool)
         :return: (th.Tensor)
         """
@@ -408,6 +414,7 @@ class TanhBijector(object):
 
     :param epsilon: (float) small value to avoid NaN due to numerical imprecision.
     """
+
     def __init__(self, epsilon=1e-6):
         super(TanhBijector, self).__init__()
         self.epsilon = epsilon
@@ -439,7 +446,7 @@ class TanhBijector(object):
 
     def log_prob_correction(self, x):
         # Squash correction (from original SAC implementation)
-        return th.log(1 - th.tanh(x) ** 2 + self.epsilon)
+        return th.log(1.0 - th.tanh(x) ** 2 + self.epsilon)
 
 
 def make_proba_distribution(action_space, use_sde=False, dist_kwargs=None):

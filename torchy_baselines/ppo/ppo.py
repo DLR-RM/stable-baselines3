@@ -43,7 +43,8 @@ class PPO(BaseRLModel):
     :param n_epochs: (int) Number of epoch when optimizing the surrogate loss
     :param gamma: (float) Discount factor
     :param gae_lambda: (float) Factor for trade-off of bias vs variance for Generalized Advantage Estimator
-    :param clip_range: (float or callable) Clipping parameter, it can be a function of the current progress (from 1 to 0).
+    :param clip_range: (float or callable) Clipping parameter, it can be a function of the current progress
+        (from 1 to 0).
     :param clip_range_vf: (float or callable) Clipping parameter for the value function,
         it can be a function of the current progress (from 1 to 0).
         This is a parameter specific to the OpenAI implementation. If None is passed (default),

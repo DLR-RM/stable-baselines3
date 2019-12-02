@@ -4,7 +4,8 @@ import torch as th
 import torch.nn as nn
 import numpy as np
 
-from torchy_baselines.common.policies import BasePolicy, register_policy, MlpExtractor, create_mlp, create_sde_feature_extractor
+from torchy_baselines.common.policies import BasePolicy, register_policy, MlpExtractor, \
+    create_sde_feature_extractor
 from torchy_baselines.common.distributions import make_proba_distribution,\
     DiagGaussianDistribution, CategoricalDistribution, StateDependentNoiseDistribution
 
@@ -14,7 +15,7 @@ class PPOPolicy(BasePolicy):
     Policy class (with both actor and critic) for A2C and derivates (PPO).
 
     :param observation_space: (gym.spaces.Space) Observation space
-    :param action_dim: (gym.spaces.Space) Action space
+    :param action_space: (gym.spaces.Space) Action space
     :param learning_rate: (callable) Learning rate schedule (could be constant)
     :param net_arch: ([int or dict]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.
@@ -87,21 +88,24 @@ class PPOPolicy(BasePolicy):
         self.mlp_extractor = MlpExtractor(self.features_dim, net_arch=self.net_arch,
                                           activation_fn=self.activation_fn, device=self.device)
 
+        latent_dim_pi = self.mlp_extractor.latent_dim_pi
+
         # Separate feature extractor for SDE
         if self.sde_net_arch is not None:
-            self.sde_feature_extractor, latent_sde_dim = create_sde_feature_extractor(self.features_dim, self.sde_net_arch,
+            self.sde_feature_extractor, latent_sde_dim = create_sde_feature_extractor(self.features_dim,
+                                                                                      self.sde_net_arch,
                                                                                       self.activation_fn)
 
         if isinstance(self.action_dist, DiagGaussianDistribution):
-            self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=self.mlp_extractor.latent_dim_pi,
+            self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi,
                                                                                     log_std_init=self.log_std_init)
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
-            latent_sde_dim = self.mlp_extractor.latent_dim_pi if self.sde_net_arch is None else latent_sde_dim
-            self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=self.mlp_extractor.latent_dim_pi,
+            latent_sde_dim = latent_dim_pi if self.sde_net_arch is None else latent_sde_dim
+            self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi,
                                                                                     latent_sde_dim=latent_sde_dim,
                                                                                     log_std_init=self.log_std_init)
         elif isinstance(self.action_dist, CategoricalDistribution):
-            self.action_net = self.action_dist.proba_distribution_net(latent_dim=self.mlp_extractor.latent_dim_pi)
+            self.action_net = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi)
 
         self.value_net = nn.Linear(self.mlp_extractor.latent_dim_vf, 1)
         # Init weights: use orthogonal initialization

@@ -1,7 +1,8 @@
 import torch as th
 import torch.nn as nn
 
-from torchy_baselines.common.policies import BasePolicy, register_policy, create_mlp, BaseNetwork, create_sde_feature_extractor
+from torchy_baselines.common.policies import BasePolicy, register_policy, create_mlp, BaseNetwork, \
+    create_sde_feature_extractor
 from torchy_baselines.common.distributions import StateDependentNoiseDistribution
 
 
@@ -43,7 +44,8 @@ class Actor(BaseNetwork):
 
             # Separate feature extractor for SDE
             if sde_net_arch is not None:
-                self.sde_feature_extractor, latent_sde_dim = create_sde_feature_extractor(obs_dim, sde_net_arch, activation_fn)
+                self.sde_feature_extractor, latent_sde_dim = create_sde_feature_extractor(obs_dim, sde_net_arch,
+                                                                                          activation_fn)
 
             # Create state dependent noise matrix (SDE)
             self.action_dist = StateDependentNoiseDistribution(action_dim, full_std=full_std, use_expln=False,
@@ -92,7 +94,6 @@ class Actor(BaseNetwork):
 
         :param obs: (th.Tensor)
         :param action: (th.Tensor)
-        :param deterministic: (bool)
         :return: (th.Tensor, th.Tensor) log likelihood of taking those actions
             and entropy of the action distribution.
         """
@@ -162,7 +163,7 @@ class TD3Policy(BasePolicy):
     Policy class (with both actor and critic) for TD3.
 
     :param observation_space: (gym.spaces.Space) Observation space
-    :param action_dim: (gym.spaces.Space) Action space
+    :param action_space: (gym.spaces.Space) Action space
     :param learning_rate: (callable) Learning rate schedule (could be constant)
     :param net_arch: ([int or dict]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.

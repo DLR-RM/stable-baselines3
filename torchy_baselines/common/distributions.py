@@ -355,8 +355,10 @@ class StateDependentNoiseDistribution(Distribution):
 
     def get_noise(self, latent_sde):
         latent_sde = latent_sde if self.learn_features else latent_sde.detach()
-        if len(latent_sde) != len(self.exploration_matrices):
+        # Default case: only one exploration matrix
+        if len(latent_sde) == 1 or len(latent_sde) != len(self.exploration_matrices):
             return th.mm(latent_sde, self.exploration_mat)
+        # Use batch matrix multiplication for efficient computation
         # (batch_size, n_features) -> (batch_size, 1, n_features)
         latent_sde = latent_sde.unsqueeze(1)
         # (batch_size, 1, n_actions)

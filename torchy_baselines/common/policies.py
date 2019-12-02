@@ -62,7 +62,25 @@ class BasePolicy(nn.Module):
 
 def create_mlp(input_dim, output_dim, net_arch,
                activation_fn=nn.ReLU, squash_out=False):
-    modules = [nn.Linear(input_dim, net_arch[0]), activation_fn()]
+    """
+    Create a multi layer perceptron (MLP), which is
+    a collection of fully-connected layers each followed by an activation function.
+
+    :param input_dim: (int) Dimension of the input vector
+    :param output_dim: (int)
+    :param net_arch: ([int]) Architecture of the neural net
+        It represents the number of units per layer.
+        The length of this list is the number of layers.
+    :param activation_fn: (th.nn.Module) The activation function
+        to use after each layer.
+    :param squash_out: (bool) Whether to squash the output using a Tanh
+        activation function
+    """
+
+    if len(net_arch) > 0:
+        modules = [nn.Linear(input_dim, net_arch[0]), activation_fn()]
+    else:
+        modules = []
 
     for idx in range(len(net_arch) - 1):
         modules.append(nn.Linear(net_arch[idx], net_arch[idx + 1]))

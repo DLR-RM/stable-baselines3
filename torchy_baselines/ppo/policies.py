@@ -4,7 +4,7 @@ import torch as th
 import torch.nn as nn
 import numpy as np
 
-from torchy_baselines.common.policies import BasePolicy, register_policy, MlpExtractor, create_mlp
+from torchy_baselines.common.policies import BasePolicy, register_policy, MlpExtractor, create_mlp, create_sde_feature_extractor
 from torchy_baselines.common.distributions import make_proba_distribution,\
     DiagGaussianDistribution, CategoricalDistribution, StateDependentNoiseDistribution
 
@@ -143,6 +143,7 @@ class PPOPolicy(BasePolicy):
             return self.action_dist.proba_distribution(mean_actions, self.log_std, deterministic=deterministic)
 
         elif isinstance(self.action_dist, CategoricalDistribution):
+            # Here mean_actions are the logits before the softmax
             return self.action_dist.proba_distribution(mean_actions, deterministic=deterministic)
 
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):

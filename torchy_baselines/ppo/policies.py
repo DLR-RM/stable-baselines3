@@ -25,6 +25,9 @@ class PPOPolicy(BasePolicy):
     :param log_std_init: (float) Initial value for the log standard deviation
     :param full_std: (bool) Whether to use (n_features x n_actions) parameters
         for the std instead of only (n_features,) when using SDE
+    :param sde_net_arch: ([int]) Network architecture for extracting features
+        when using SDE. If None, the latent features from the policy will be used.
+        Pass an empty list to use the states as features.
     """
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',
@@ -33,7 +36,6 @@ class PPOPolicy(BasePolicy):
                  log_std_init=0.0, full_std=True, sde_net_arch=None):
         super(PPOPolicy, self).__init__(observation_space, action_space, device)
         self.obs_dim = self.observation_space.shape[0]
-
 
         # Default network architecture, from stable-baselines
         if net_arch is None:
@@ -87,13 +89,8 @@ class PPOPolicy(BasePolicy):
 
         # Separate feature extractor for SDE
         if self.sde_net_arch is not None:
-            # Special case: when using states as features (i.e. sde_net_arch is an empty list)
-            # don't use any activation function
-            sde_activation = self.activation_fn if len(self.sde_net_arch) > 0 else None
-            latent_sde = create_mlp(self.features_dim, -1, self.sde_net_arch,
-                                    activation_fn=sde_activation, squash_out=False)
-            self.sde_feature_extractor = nn.Sequential(*latent_sde)
-            latent_sde_dim = self.sde_net_arch[-1] if len(self.sde_net_arch) > 0 else self.features_dim
+            self.sde_feature_extractor, latent_sde_dim = create_sde_feature_extractor(self.features_dim, self.sde_net_arch,
+                                                                                      self.activation_fn)
 
         if isinstance(self.action_dist, DiagGaussianDistribution):
             self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=self.mlp_extractor.latent_dim_pi,

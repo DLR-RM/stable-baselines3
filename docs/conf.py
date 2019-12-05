@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 class Mock(MagicMock):
     __subclasses__ = []
+
     @classmethod
     def __getattr__(cls, name):
         return MagicMock()

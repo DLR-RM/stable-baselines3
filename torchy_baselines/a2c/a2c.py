@@ -131,5 +131,5 @@ class A2C(PPO):
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="A2C", reset_num_timesteps=True):
 
         return super(A2C, self).learn(total_timesteps=total_timesteps, callback=callback, log_interval=log_interval,
-                  eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,
-                  tb_log_name=tb_log_name, reset_num_timesteps=reset_num_timesteps)
+                                      eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,
+                                      tb_log_name=tb_log_name, reset_num_timesteps=reset_num_timesteps)

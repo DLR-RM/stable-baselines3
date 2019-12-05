@@ -547,7 +547,9 @@ class BaseRLModel(object):
     @staticmethod
     def excluded_save_params():
         """
-        returns the names of the parameters that should be excluded from save
+        Returns the names of the parameters that should be excluded by default
+        when saving the model.
+        
         :return: ([str]) List of parameters that should be excluded from save
         """
         return ["env", "eval_env", "replay_buffer", "rollout_buffer"]

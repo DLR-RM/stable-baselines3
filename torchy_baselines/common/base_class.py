@@ -507,7 +507,7 @@ class BaseRLModel(object):
 
         :param path: (str) path to the file where the data should be saved
         :param exclude: ([str]) name of parameters that should be excluded in addition to the default one
-        :param include: (list) name of parameters that might be excluded but should be included anyway
+        :param include: ([str]) name of parameters that might be excluded but should be included anyway
         :return:
         """
         data = self.__dict__

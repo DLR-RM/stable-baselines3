@@ -330,11 +330,11 @@ class BaseRLModel(object):
                         file_content.seek(0)
                         params = th.load(file_content)
                 # check for all other .pth files
-                other_files = [file_name for file_name in namelist if
+                other_file = [file_name for file_name in namelist if
                                os.path.splitext(file_name)[1] == ".pth" and file_name != "params.pth"]
-                if len(other_files) > 0:
+                if len(other_file) > 0:
                     opt_params = dict()
-                    for file in other_files:
+                    for file in other_file:
                         with file_.open(file, mode="r") as opt_param_file:
                             # File has to be seekable so load in BytesIO first
                             file_content = io.BytesIO()

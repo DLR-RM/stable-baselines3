@@ -339,8 +339,8 @@ class BaseRLModel(object):
 
         # Open the zip archive and load data
         try:
-            with zipfile.ZipFile(load_path, "r") as file_:
-                namelist = file_.namelist()
+            with zipfile.ZipFile(load_path, "r") as archive:
+                namelist = archive.namelist()
                 # If data or parameters is not in the
                 # zip archive, assume they were stored
                 # as None (_save_to_file_zip allows this).
@@ -349,12 +349,12 @@ class BaseRLModel(object):
                 opt_params = None
                 if "data" in namelist and load_data:
                     # Load class parameters and convert to string
-                    json_data = file_.read("data").decode()
+                    json_data = archive.read("data").decode()
                     data = json_to_data(json_data)
 
                 if "params.pth" in namelist:
                     # Load parameters with build in torch function
-                    with file_.open("params.pth", mode="r") as param_file:
+                    with archive.open("params.pth", mode="r") as param_file:
                         # File has to be seekable so load in BytesIO first
                         file_content = io.BytesIO()
                         file_content.write(param_file.read())
@@ -363,21 +363,21 @@ class BaseRLModel(object):
                         params = th.load(file_content)
 
                 # check for all other .pth files
-                other_file = [file_name for file_name in namelist if
+                other_files = [file_name for file_name in namelist if
                               os.path.splitext(file_name)[1] == ".pth" and file_name != "params.pth"]
                 # if there are any other files which end with .pth and aren't "params.pth"
                 # assume that they each are optimizer parameters
-                if len(other_file) > 0:
+                if len(other_files) > 0:
                     opt_params = dict()
-                    for file in other_file:
-                        with file_.open(file, mode="r") as opt_param_file:
+                    for file_path in other_files:
+                        with archive.open(file_path, mode="r") as opt_param_file:
                             # File has to be seekable so load in BytesIO first
                             file_content = io.BytesIO()
                             file_content.write(opt_param_file.read())
                             # go to start of file
                             file_content.seek(0)
                             # save the parameters in dict with file name but trim file ending
-                            opt_params[os.path.splitext(file)[0]] = th.load(file_content)
+                            opt_params[os.path.splitext(file_path)[0]] = th.load(file_content)
         except zipfile.BadZipFile:
             # load_path wasn't a zip file
             raise ValueError("Error: the file {} wasn't a zip-file".format(load_path))
@@ -528,16 +528,16 @@ class BaseRLModel(object):
         # Create a zip-archive and write our objects
         # there. This works when save_path is either
         # str or a file-like
-        with zipfile.ZipFile(save_path, "w") as file_:
+        with zipfile.ZipFile(save_path, "w") as archive:
             # Do not try to save "None" elements
             if data is not None:
-                file_.writestr("data", serialized_data)
+                archive.writestr("data", serialized_data)
             if params is not None:
-                with file_.open('params.pth', mode="w") as param_file:
+                with archive.open('params.pth', mode="w") as param_file:
                     th.save(params, param_file)
             if opt_params is not None:
                 for file_name, dict in opt_params.items():
-                    with file_.open(file_name + '.pth', mode="w") as opt_param_file:
+                    with archive.open(file_name + '.pth', mode="w") as opt_param_file:
                         th.save(dict, opt_param_file)
 
     def excluded_save_params(self):

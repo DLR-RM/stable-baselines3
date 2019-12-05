@@ -556,7 +556,7 @@ class BaseRLModel(object):
 
     def save(self, path, exclude=None, include=None):
         """
-        Save all the attributes of the object and the model parameters in a zip-file for continuous learning
+        Save all the attributes of the object and the model parameters in a zip-file.
 
         :param path: (str) path to the file where the rl agent should be saved
         :param exclude: ([str]) name of parameters that should be excluded in addition to the default one

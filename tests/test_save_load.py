@@ -89,14 +89,19 @@ def test_save_load(model_class):
 
     # check if model still selects the same actions
     new_selected_actions = [model.predict(observation, deterministic=True) for observation in observations]
-    for i in range(len(selected_actions)):
-        assert selected_actions[i] == new_selected_actions[i]
+    # for i in range(len(selected_actionsselected_actions)):
+    assert np.allclose(selected_actions, new_selected_actions)
 
     # check if learn still works
     model.learn(total_timesteps=1000, eval_freq=500)
 
     # clear file from os
     os.remove("test_save.zip")
+
+
+@pytest.mark.parametrize("model_class", MODEL_LIST)
+def test_set_env(model_class):
+    pass
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
@@ -125,7 +130,6 @@ def test_exclude_include_saved_params(model_class):
     del model
     model = model_class.load("test_save")
     assert model.verbose == 2
-
 
     # clear file from os
     os.remove("test_save.zip")

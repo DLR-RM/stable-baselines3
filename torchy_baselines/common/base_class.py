@@ -166,6 +166,22 @@ class BaseRLModel(object):
         """
         return self.env
 
+    @staticmethod
+    def check_env(env, observation_space, action_space):
+        """
+        Checks the validity of the environment and returns if it is coherent
+        Checked parameters:
+         - observation_space
+         - action_space
+        :return: (bool) True if environment seems to be coherent
+        """
+        if observation_space != env.observation_space:
+            return False
+        if action_space != env.action_space:
+            return False
+        # return true if no check failed
+        return True
+
     def set_env(self, env):
         """
         Checks the validity of the environment, and if it is coherent, set it as the current environment.
@@ -175,21 +191,20 @@ class BaseRLModel(object):
 
         :param env: (Gym Environment) The environment for learning a policy
         """
-
-        if self.observation_space != env.observation_space:
-            raise ValueError("The given environment has a observation_space that doesn't fit the current model")
-
-        if self.action_space != env.action_space:
-            raise ValueError("The given environment has a action_space that doesn't fit the current model")
+        if self.check_env(env, self.observation_space, self.action_space) is False:
+            raise ValueError("Given environment is not compatible with model")
         # if all fits save new env
         self.env = env
+        # and update observation and action space
+        self.observation_space = env.observation_space
+        self.action_space = env.action_space
 
     def get_parameter_list(self):
         """
         Returns policy and optimizer parameters as a tuple
         :return: (dict,dict) policy_parameters, opt_parameters
         """
-        return self.get_policy_parameters(),self.get_opt_parameters()
+        return self.get_policy_parameters(), self.get_opt_parameters()
 
     def get_policy_parameters(self):
         """
@@ -286,15 +301,22 @@ class BaseRLModel(object):
                              "Stored kwargs: {}, specified kwargs: {}".format(data['policy_kwargs'],
                                                                               kwargs['policy_kwargs']))
 
+        # check if observation space and action space is given
+        if ("observation_space" not in data or "action_space" not in data) and "env" not in data:
+            raise ValueError("The observation_space and action_space was not given, can't verify new environments")
+        # check if given env is valid
+        if env is not None and cls.check_env(env, data["observation_space"], data["action_space"]) is False:
+            raise ValueError("The given environment does not comply to the model")
+        # if no new env was given use stored env if possible
         if env is None and "env" in data:
             env = data["env"]
-        if env is not None:
-            model = cls(policy=data["policy_class"], env=env, _init_setup_model=True)
-        else:
-            model = cls(policy=data["policy_class"], env=env, _init_setup_model=False)
+
+        # first create model, but only setup if a env was given
+        model = cls(policy=data["policy_class"], env=env, _init_setup_model=env is not None)
+
+        # load parameters
         model.__dict__.update(data)
         model.__dict__.update(kwargs)
-        model.set_env(env)
         model.load_parameters(params, opt_params)
         return model
 
@@ -342,7 +364,7 @@ class BaseRLModel(object):
 
                 # check for all other .pth files
                 other_file = [file_name for file_name in namelist if
-                               os.path.splitext(file_name)[1] == ".pth" and file_name != "params.pth"]
+                              os.path.splitext(file_name)[1] == ".pth" and file_name != "params.pth"]
                 # if there are any other files which end with .pth and aren't "params.pth"
                 # assume that they each are optimizer parameters
                 if len(other_file) > 0:

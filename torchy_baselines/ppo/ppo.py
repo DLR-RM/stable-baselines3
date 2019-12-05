@@ -6,6 +6,7 @@ import gym
 from gym import spaces
 import torch as th
 import torch.nn.functional as F
+
 # Check if tensorboard is available for pytorch
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -118,9 +119,9 @@ class PPO(BaseRLModel):
 
         self.rollout_buffer = RolloutBuffer(self.n_steps, state_dim, action_dim, self.device,
                                             gamma=self.gamma, gae_lambda=self.gae_lambda, n_envs=self.n_envs)
-        self.policy = self.policy(self.observation_space, self.action_space,
-                                  self.learning_rate, use_sde=self.use_sde, device=self.device,
-                                  **self.policy_kwargs)
+        self.policy = self.policy_class(self.observation_space, self.action_space,
+                                        self.learning_rate, use_sde=self.use_sde, device=self.device,
+                                        **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
 
         self.clip_range = get_schedule_fn(self.clip_range)
@@ -193,7 +194,6 @@ class PPO(BaseRLModel):
             clip_range_vf = self.clip_range_vf(self._current_progress)
             logger.logkv("clip_range_vf", clip_range_vf)
 
-
         for gradient_step in range(gradient_steps):
             approx_kl_divs = []
             # Sample replay buffer
@@ -226,7 +226,6 @@ class PPO(BaseRLModel):
                     values_pred = old_values + th.clamp(values - old_values, -clip_range_vf, clip_range_vf)
                 # Value loss using the TD(gae_lambda) target
                 value_loss = F.mse_loss(return_batch, values_pred)
-
 
                 # Entropy loss favor exploration
                 entropy_loss = -th.mean(entropy)
@@ -314,14 +313,22 @@ class PPO(BaseRLModel):
 
         return self
 
-    def save(self, path):
-        if not path.endswith('.pth'):
-            path += '.pth'
-        th.save(self.policy.state_dict(), path)
+    def get_opt_parameters(self):
+        """
+        Returns a dict of all the optimizers and their parameters
+        
+        :return: (dict) of optimizer names and their state_dict 
+        """
+        return {"opt": self.policy.optimizer.state_dict()}
 
-    def load(self, path, env=None, **_kwargs):
-        if not path.endswith('.pth'):
-            path += '.pth'
-        if env is not None:
-            pass
-        self.policy.load_state_dict(th.load(path))
+    def load_parameters(self, load_dict, opt_params):
+        """
+        Load model parameters and optimizer parameters from a dictionary
+        load_dict should contain all keys from torch.model.state_dict()
+        This does not load agent's hyper-parameters.
+
+        :param load_dict: (dict) dict of parameters from model.state_dict()
+        :param opt_params: (dict of dicts) dict of optimizer state_dicts
+        """
+        self.policy.optimizer.load_state_dict(opt_params["opt"])
+        self.policy.load_state_dict(load_dict)

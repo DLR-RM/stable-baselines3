@@ -52,6 +52,7 @@ class SAC(BaseRLModel):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
+
     def __init__(self, policy, env, learning_rate=3e-4, buffer_size=int(1e6),
                  learning_starts=100, batch_size=64,
                  tau=0.005, ent_coef='auto', target_update_interval=1,
@@ -123,8 +124,8 @@ class SAC(BaseRLModel):
             self.ent_coef = float(self.ent_coef)
 
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
-        self.policy = self.policy(self.observation_space, self.action_space,
-                                  self.learning_rate, device=self.device, **self.policy_kwargs)
+        self.policy = self.policy_class(self.observation_space, self.action_space,
+                                        self.learning_rate, device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
         self._create_aliases()
 
@@ -274,15 +275,28 @@ class SAC(BaseRLModel):
 
         return self
 
-    def save(self, path):
-        if not path.endswith('.pth'):
-            path += '.pth'
-        th.save(self.policy.state_dict(), path)
+    def get_opt_parameters(self):
+        """
+        Returns a dict of all the optimizers and their parameters
 
-    def load(self, path, env=None, **_kwargs):
-        if not path.endswith('.pth'):
-            path += '.pth'
-        if env is not None:
-            pass
-        self.policy.load_state_dict(th.load(path))
-        self._create_aliases()
+        :return: (Dict) of optimizer names and their state_dict 
+        """
+        opt_dict = {"actor": self.actor.optimizer.state_dict(), "critic": self.critic.optimizer.state_dict()}
+        if self.ent_coef_optimizer is not None:
+            opt_dict.update({"ent_coef_optimizer": self.ent_coef_optimizer.state_dict()})
+        return opt_dict
+
+    def load_parameters(self, load_dict, opt_params):
+        """
+        Load model parameters and optimizer parameters from a dictionary
+        load_dict should contain all keys from torch.model.state_dict()
+        This does not load agent's hyper-parameters.
+
+        :param load_dict: (dict) dict of parameters from model.state_dict()
+        :param opt_params: (dict of dicts) dict of optimizer state_dicts should be handled in child_class
+        """
+        self.actor.optimizer.load_state_dict(opt_params["actor"])
+        self.critic.optimizer.load_state_dict(opt_params["critic"])
+        if "ent_coef_optimizer" in opt_params:
+            self.ent_coef_optimizer.load_state_dict(opt_params["ent_coef_optimizer"])
+        self.policy.load_state_dict(load_dict)

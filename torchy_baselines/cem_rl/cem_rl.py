@@ -78,7 +78,8 @@ class CEMRL(TD3):
                     # set params
                     self.actor.load_from_vector(self.es_params[i])
                     self.actor_target.load_from_vector(self.es_params[i])
-                    self.actor.optimizer = th.optim.Adam(self.actor.parameters(), lr=self.learning_rate(self._current_progress))
+                    self.actor.optimizer = th.optim.Adam(self.actor.parameters(),
+                                                         lr=self.learning_rate(self._current_progress))
 
                     # In the paper: 2 * actor_steps // self.n_grad
                     # In the original implementation: actor_steps // self.n_grad
@@ -157,16 +158,3 @@ class CEMRL(TD3):
             self.es.tell(self.es_params, self.fitnesses)
             timesteps_since_eval += actor_steps
         return self
-
-    def save(self, path):
-        if not path.endswith('.pth'):
-            path += '.pth'
-        th.save(self.policy.state_dict(), path)
-
-    def load(self, path, env=None, **_kwargs):
-        if not path.endswith('.pth'):
-            path += '.pth'
-        if env is not None:
-            pass
-        self.policy.load_state_dict(th.load(path))
-        self._create_aliases()

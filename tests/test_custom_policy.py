@@ -5,6 +5,7 @@ import pytest
 
 from torchy_baselines import PPO
 
+
 @pytest.mark.parametrize('net_arch', [
     [12, dict(vf=[16], pi=[8])],
     [4],

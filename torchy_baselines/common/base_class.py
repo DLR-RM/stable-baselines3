@@ -305,7 +305,7 @@ class BaseRLModel(object):
                              "Stored kwargs: {}, specified kwargs: {}".format(data['policy_kwargs'],
                                                                               kwargs['policy_kwargs']))
 
-        # check if observation space and action space is given
+        # check if observation space and action space are part of the saved parameters
         if ("observation_space" not in data or "action_space" not in data) and "env" not in data:
             raise ValueError("The observation_space and action_space was not given, can't verify new environments")
         # check if given env is valid

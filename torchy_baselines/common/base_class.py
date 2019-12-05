@@ -359,7 +359,8 @@ class BaseRLModel(object):
                 if "params.pth" in namelist:
                     # Load parameters with build in torch function
                     with archive.open("params.pth", mode="r") as param_file:
-                        # File has to be seekable so load in BytesIO first
+                        # File has to be seekable, but param_file is not, so load in BytesIO first
+                        # fixed in python >= 3.7
                         file_content = io.BytesIO()
                         file_content.write(param_file.read())
                         # go to start of file
@@ -375,7 +376,8 @@ class BaseRLModel(object):
                     opt_params = dict()
                     for file_path in other_files:
                         with archive.open(file_path, mode="r") as opt_param_file:
-                            # File has to be seekable so load in BytesIO first
+                            # File has to be seekable, but opt_param_file is not, so load in BytesIO first
+                            # fixed in python >= 3.7
                             file_content = io.BytesIO()
                             file_content.write(opt_param_file.read())
                             # go to start of file

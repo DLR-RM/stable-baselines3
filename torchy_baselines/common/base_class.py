@@ -271,7 +271,10 @@ class BaseRLModel(object):
 
         if env is None and "env" in data:
             env = data["env"]
-        model = cls(policy=data["policy_class"], env=env, _init_setup_model=True)
+        if env is not None:
+            model = cls(policy=data["policy_class"], env=env, _init_setup_model=True)
+        else:
+            model = cls(policy=data["policy_class"], env=env, _init_setup_model=False)
         model.__dict__.update(data)
         model.__dict__.update(kwargs)
         model.set_env(env)
@@ -508,19 +511,23 @@ class BaseRLModel(object):
         :param path: (str) path to the file where the data should be saved
         :param exclude: ([str]) name of parameters that should be excluded in addition to the default one
         :param include: ([str]) name of parameters that might be excluded but should be included anyway
-        :return:
         """
-        data = self.__dict__
+        # copy parameter list so we don't mutate the original dict
+        data = self.__dict__.copy()
         # use standard list of excluded parameters if none given
         if exclude is None:
             exclude = self.excluded_save_params()
+        else:
+            # append standard exclude params to the given params
+            exclude.extend([param for param in self.excluded_save_params() if param not in exclude])
         # do not exclude params if they are specifically included
         if include is not None:
             exclude = [param_name for param_name in exclude if param_name not in include]
 
         # remove parameter entries of parameters which are to be excluded
         for param_name in exclude:
-            data.pop(param_name, None)
+            if param_name in data:
+                data.pop(param_name, None)
 
         params_to_save = self.get_policy_parameters()
         opt_params_to_save = self.get_opt_parameters()

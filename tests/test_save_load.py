@@ -61,7 +61,7 @@ def test_save_load(model_class):
     # Check
     model.save("test_save.zip")
     del model
-    model = model_class.load("test_save")
+    model = model_class.load("test_save", env=env)
 
     # check if params are still the same after load
     new_params = model.get_policy_parameters()
@@ -108,10 +108,8 @@ def test_exclude_include_saved_params(model_class):
     """
     env = DummyVecEnv([lambda: IdentityEnvBox(10)])
 
-    # create model
-    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
-    # set verbose as something different then standard settings
-    model.verbose = 2
+    # create model, set verbose as 2, which is not standard
+    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=2, create_eval_env=True)
 
     # Check if exclude works
     model.save("test_save.zip", exclude=["verbose"])

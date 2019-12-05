@@ -185,6 +185,7 @@ class BaseRLModel(object):
     def set_env(self, env):
         """
         Checks the validity of the environment, and if it is coherent, set it as the current environment.
+        Furthermore wrap any non vectorized env into a vectorized
         checked parameters:
          - observation_space
          - action_space
@@ -193,13 +194,16 @@ class BaseRLModel(object):
         """
         if self.check_env(env, self.observation_space, self.action_space) is False:
             raise ValueError("Given environment is not compatible with model")
-        # if all fits save new env
+        # it must be coherent now
+        # if it is not a VecEnv, make it a VecEnv
+        if not isinstance(env, VecEnv):
+            if self.verbose >= 1:
+                print("Wrapping the env in a DummyVecEnv.")
+            env = DummyVecEnv([lambda: env])
+        self.n_envs = env.num_envs
         self.env = env
-        # and update observation and action space
-        self.observation_space = env.observation_space
-        self.action_space = env.action_space
 
-    def get_parameter_list(self):
+    def get_parameters(self):
         """
         Returns policy and optimizer parameters as a tuple
         :return: (dict,dict) policy_parameters, opt_parameters
@@ -540,7 +544,8 @@ class BaseRLModel(object):
                     with archive.open(file_name + '.pth', mode="w") as opt_param_file:
                         th.save(dict, opt_param_file)
 
-    def excluded_save_params(self):
+    @staticmethod
+    def excluded_save_params():
         """
         returns the names of the parameters that should be excluded from save
         :return: ([str]) List of parameters that should be excluded from save

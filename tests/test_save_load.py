@@ -7,7 +7,7 @@ import torch as th
 
 from torchy_baselines import A2C, CEMRL, PPO, SAC, TD3
 from torchy_baselines.common.vec_env import DummyVecEnv
-from torchy_baselines.common.identity_env import IdentityEnvBox
+from torchy_baselines.common.identity_env import IdentityEnvBox, IdentityEnv
 
 MODEL_LIST = [
     CEMRL,
@@ -101,7 +101,28 @@ def test_save_load(model_class):
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 def test_set_env(model_class):
-    pass
+    """
+    Test if set_env function does work correct
+    :param model_class: (BaseRLModel) A RL model
+    """
+    env = DummyVecEnv([lambda: IdentityEnvBox(10)])
+    env2 = DummyVecEnv([lambda: IdentityEnvBox(10)])
+    env3 = IdentityEnvBox(10)
+
+    # create model
+    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), create_eval_env=True)
+    # learn
+    model.learn(total_timesteps=1000, eval_freq=500)
+
+    # change env
+    model.set_env(env2)
+    # learn again
+    model.learn(total_timesteps=1000, eval_freq=500)
+
+    # change env test wrapping
+    model.set_env(env3)
+    # learn again
+    model.learn(total_timesteps=1000, eval_freq=500)
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)

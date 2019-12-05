@@ -193,7 +193,7 @@ class BaseRLModel(object):
         :param env: (Gym Environment) The environment for learning a policy
         """
         if self.check_env(env, self.observation_space, self.action_space) is False:
-            raise ValueError("Given environment is not compatible with model")
+            raise ValueError("The given environment is not compatible with model: observation and action spaces do not match")
         # it must be coherent now
         # if it is not a VecEnv, make it a VecEnv
         if not isinstance(env, VecEnv):

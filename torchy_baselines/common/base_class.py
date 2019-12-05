@@ -1,6 +1,9 @@
 import time
 from abc import ABCMeta, abstractmethod
 from collections import deque
+import os
+import io
+import zipfile
 
 import gym
 import torch as th
@@ -11,6 +14,7 @@ from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, upda
 from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize
 from torchy_baselines.common.monitor import Monitor
 from torchy_baselines.common import logger
+from torchy_baselines.common.save_util import data_to_json, json_to_data
 
 
 class BaseRLModel(object):
@@ -42,9 +46,9 @@ class BaseRLModel(object):
                  verbose=0, device='auto', support_multi_env=False,
                  create_eval_env=False, monitor_wrapper=True, seed=None, use_sde=False):
         if isinstance(policy, str) and policy_base is not None:
-            self.policy = get_policy_from_name(policy_base, policy)
+            self.policy_class = get_policy_from_name(policy_base, policy)
         else:
-            self.policy = policy
+            self.policy_class = policy
 
         if device == 'auto':
             device = 'cuda' if th.cuda.is_available() else 'cpu'
@@ -62,7 +66,6 @@ class BaseRLModel(object):
         self.action_space = None
         self.n_envs = None
         self.num_timesteps = 0
-        self.params = None
         self.eval_env = None
         self.replay_buffer = None
         self.seed = seed
@@ -190,29 +193,63 @@ class BaseRLModel(object):
         """
         return self.env
 
+    @staticmethod
+    def check_env(env, observation_space, action_space):
+        """
+        Checks the validity of the environment and returns if it is coherent
+        Checked parameters:
+         - observation_space
+         - action_space
+        :return: (bool) True if environment seems to be coherent
+        """
+        if observation_space != env.observation_space:
+            return False
+        if action_space != env.action_space:
+            return False
+        # return true if no check failed
+        return True
+
     def set_env(self, env):
         """
         Checks the validity of the environment, and if it is coherent, set it as the current environment.
+        Furthermore wrap any non vectorized env into a vectorized
+        checked parameters:
+         - observation_space
+         - action_space
 
         :param env: (gym.Env) The environment for learning a policy
         """
-        pass
-
-    def get_parameter_list(self):
-        """
-        Get pytorch Variables of model's parameters
-
-        This includes all variables necessary for continuing training (saving / loading).
-
-        :return: (list) List of pytorch Variables
-        """
-        pass
+        if self.check_env(env, self.observation_space, self.action_space) is False:
+            raise ValueError("The given environment is not compatible with model: observation and action spaces do not match")
+        # it must be coherent now
+        # if it is not a VecEnv, make it a VecEnv
+        if not isinstance(env, VecEnv):
+            if self.verbose >= 1:
+                print("Wrapping the env in a DummyVecEnv.")
+            env = DummyVecEnv([lambda: env])
+        self.n_envs = env.num_envs
+        self.env = env
 
     def get_parameters(self):
         """
-        Get current model parameters as dictionary of variable name -> ndarray.
+        Returns policy and optimizer parameters as a tuple
+        :return: (dict,dict) policy_parameters, opt_parameters
+        """
+        return self.get_policy_parameters(), self.get_opt_parameters()
 
-        :return: (OrderedDict) Dictionary of variable name -> ndarray of model's parameters.
+    def get_policy_parameters(self):
+        """
+        Get current model policy parameters as dictionary of variable name -> tensors.
+
+        :return: (dict) Dictionary of variable name -> tensor of model's policy parameters.
+        """
+        return self.policy.state_dict()
+
+    @abstractmethod
+    def get_opt_parameters(self):
+        """
+        Get current model optimizer parameters as dictionary of variable names -> tensors
+        :return: (dict) Dictionary of variable name -> tensor of model's optimizer parameters
         """
         raise NotImplementedError()
 
@@ -266,50 +303,121 @@ class BaseRLModel(object):
         """
         pass
 
-    def load_parameters(self, load_path_or_dict, exact_match=True):
+    def load_parameters(self, load_dict, opt_params=None):
         """
-        Load model parameters from a file or a dictionary
+        Load model parameters from a dictionary
+        load_dict should contain all keys from torch.model.state_dict()
+        If opt_params are given this does also load agent's optimizer-parameters, but can only be handled in child classes.
 
-        Dictionary keys should be tensorflow variable names, which can be obtained
-        with ``get_parameters`` function. If ``exact_match`` is True, dictionary
-        should contain keys for all model's parameters, otherwise RunTimeError
-        is raised. If False, only variables included in the dictionary will be updated.
 
-        This does not load agent's hyper-parameters.
-
-        .. warning::
-            This function does not update trainer/optimizer variables (e.g. momentum).
-            As such training after using this function may lead to less-than-optimal results.
-
-        :param load_path_or_dict: (str or file-like or dict) Save parameter location
-            or dict of parameters as variable.name -> ndarrays to be loaded.
-        :param exact_match: (bool) If True, expects load dictionary to contain keys for
-            all variables in the model. If False, loads parameters only for variables
-            mentioned in the dictionary. Defaults to True.
+        :param load_dict: (dict) dict of parameters from model.state_dict()
+        :param opt_params: (dict of dicts) dict of optimizer state_dicts should be handled in child_class
         """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def save(self, save_path):
-        """
-        Save the current parameters to file
-
-        :param save_path: (str or file-like object) the save location
-        """
-        raise NotImplementedError()
+        if opt_params is not None:
+            raise ValueError("Optimizer Parameters where given but no overloaded load function exists for this class")
+        self.policy.load_state_dict(load_dict)
 
     @classmethod
-    @abstractmethod
     def load(cls, load_path, env=None, **kwargs):
         """
-        Load the model from file
+        Load the model from a zip-file
 
-        :param load_path: (str or file-like) the saved parameter location
+        :param load_path: (str) the location of the saved data
         :param env: (Gym Envrionment) the new environment to run the loaded model on
-            (can be None if you only need prediction from a trained model)
+            (can be None if you only need prediction from a trained model) has priority over any saved environment
         :param kwargs: extra arguments to change the model when loading
         """
-        raise NotImplementedError()
+        data, params, opt_params = cls._load_from_file(load_path)
+
+        if 'policy_kwargs' in kwargs and kwargs['policy_kwargs'] != data['policy_kwargs']:
+            raise ValueError("The specified policy kwargs do not equal the stored policy kwargs."
+                             "Stored kwargs: {}, specified kwargs: {}".format(data['policy_kwargs'],
+                                                                              kwargs['policy_kwargs']))
+
+        # check if observation space and action space are part of the saved parameters
+        if ("observation_space" not in data or "action_space" not in data) and "env" not in data:
+            raise ValueError("The observation_space and action_space was not given, can't verify new environments")
+        # check if given env is valid
+        if env is not None and cls.check_env(env, data["observation_space"], data["action_space"]) is False:
+            raise ValueError("The given environment does not comply to the model")
+        # if no new env was given use stored env if possible
+        if env is None and "env" in data:
+            env = data["env"]
+
+        # first create model, but only setup if a env was given
+        model = cls(policy=data["policy_class"], env=env, _init_setup_model=env is not None)
+
+        # load parameters
+        model.__dict__.update(data)
+        model.__dict__.update(kwargs)
+        model.load_parameters(params, opt_params)
+        return model
+
+    @staticmethod
+    def _load_from_file(load_path, load_data=True):
+        """ Load model data from a .zip archive
+
+        :param load_path: (str) Where to load the model from
+        :param load_data: (bool) Whether we should load and return data
+            (class parameters). Mainly used by 'load_parameters' to only load model parameters (weights)
+        :return: (dict),(dict),(dict) Class parameters, model parameters (state_dict) and dict of optimizer parameters (dict of state_dict)
+        """
+        # Check if file exists if load_path is a string
+        if isinstance(load_path, str):
+            if not os.path.exists(load_path):
+                if os.path.exists(load_path + ".zip"):
+                    load_path += ".zip"
+                else:
+                    raise ValueError("Error: the file {} could not be found".format(load_path))
+
+        # Open the zip archive and load data
+        try:
+            with zipfile.ZipFile(load_path, "r") as archive:
+                namelist = archive.namelist()
+                # If data or parameters is not in the
+                # zip archive, assume they were stored
+                # as None (_save_to_file_zip allows this).
+                data = None
+                params = None
+                opt_params = None
+                if "data" in namelist and load_data:
+                    # Load class parameters and convert to string
+                    json_data = archive.read("data").decode()
+                    data = json_to_data(json_data)
+
+                if "params.pth" in namelist:
+                    # Load parameters with build in torch function
+                    with archive.open("params.pth", mode="r") as param_file:
+                        # File has to be seekable, but param_file is not, so load in BytesIO first
+                        # fixed in python >= 3.7
+                        file_content = io.BytesIO()
+                        file_content.write(param_file.read())
+                        # go to start of file
+                        file_content.seek(0)
+                        params = th.load(file_content)
+
+                # check for all other .pth files
+                other_files = [file_name for file_name in namelist if
+                              os.path.splitext(file_name)[1] == ".pth" and file_name != "params.pth"]
+                # if there are any other files which end with .pth and aren't "params.pth"
+                # assume that they each are optimizer parameters
+                if len(other_files) > 0:
+                    opt_params = dict()
+                    for file_path in other_files:
+                        with archive.open(file_path, mode="r") as opt_param_file:
+                            # File has to be seekable, but opt_param_file is not, so load in BytesIO first
+                            # fixed in python >= 3.7
+                            file_content = io.BytesIO()
+                            file_content.write(opt_param_file.read())
+                            # go to start of file
+                            file_content.seek(0)
+                            # save the parameters in dict with file name but trim file ending
+                            opt_params[os.path.splitext(file_path)[0]] = th.load(file_content)
+        except zipfile.BadZipFile:
+            # load_path wasn't a zip file
+            raise ValueError("Error: the file {} wasn't a zip-file".format(load_path))
+
+        return data, params, opt_params
 
     def set_random_seed(self, seed=None):
         """
@@ -481,7 +589,7 @@ class BaseRLModel(object):
 
                 # Display training infos
                 if self.verbose >= 1 and log_interval is not None and (
-                        episode_num + total_episodes) % log_interval == 0:
+                            episode_num + total_episodes) % log_interval == 0:
                     fps = int(num_timesteps / (time.time() - self.start_time))
                     logger.logkv("episodes", episode_num + total_episodes)
                     if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
@@ -514,3 +622,79 @@ class BaseRLModel(object):
                 self.rollout_data['returns'][step] = last_return
 
         return mean_reward, total_steps, total_episodes, obs
+
+    @staticmethod
+    def _save_to_file_zip(save_path, data=None, params=None, opt_params=None):
+        """Save model to a zip archive
+
+        :param save_path: (str) Where to store the model
+        :param data: (dict) Class parameters being stored
+        :param params: (dict) Model parameters being stored expected to be state_dict
+        :param opt_params: (dict) Optimizer parameters being stored expected to contain an entry for every
+                                         optimizer with its name and the state_dict
+        """
+
+        # data/params can be None, so do not
+        # try to serialize them blindly
+        if data is not None:
+            serialized_data = data_to_json(data)
+
+        # Check postfix if save_path is a string
+        if isinstance(save_path, str):
+            _, ext = os.path.splitext(save_path)
+            if ext == "":
+                save_path += ".zip"
+
+        # Create a zip-archive and write our objects
+        # there. This works when save_path is either
+        # str or a file-like
+        with zipfile.ZipFile(save_path, "w") as archive:
+            # Do not try to save "None" elements
+            if data is not None:
+                archive.writestr("data", serialized_data)
+            if params is not None:
+                with archive.open('params.pth', mode="w") as param_file:
+                    th.save(params, param_file)
+            if opt_params is not None:
+                for file_name, dict in opt_params.items():
+                    with archive.open(file_name + '.pth', mode="w") as opt_param_file:
+                        th.save(dict, opt_param_file)
+
+    @staticmethod
+    def excluded_save_params():
+        """
+        Returns the names of the parameters that should be excluded by default
+        when saving the model.
+
+        :return: ([str]) List of parameters that should be excluded from save
+        """
+        return ["env", "eval_env", "replay_buffer", "rollout_buffer", "_vec_normalize_env"]
+
+    def save(self, path, exclude=None, include=None):
+        """
+        Save all the attributes of the object and the model parameters in a zip-file.
+
+        :param path: (str) path to the file where the rl agent should be saved
+        :param exclude: ([str]) name of parameters that should be excluded in addition to the default one
+        :param include: ([str]) name of parameters that might be excluded but should be included anyway
+        """
+        # copy parameter list so we don't mutate the original dict
+        data = self.__dict__.copy()
+        # use standard list of excluded parameters if none given
+        if exclude is None:
+            exclude = self.excluded_save_params()
+        else:
+            # append standard exclude params to the given params
+            exclude.extend([param for param in self.excluded_save_params() if param not in exclude])
+        # do not exclude params if they are specifically included
+        if include is not None:
+            exclude = [param_name for param_name in exclude if param_name not in include]
+
+        # remove parameter entries of parameters which are to be excluded
+        for param_name in exclude:
+            if param_name in data:
+                data.pop(param_name, None)
+
+        params_to_save = self.get_policy_parameters()
+        opt_params_to_save = self.get_opt_parameters()
+        self._save_to_file_zip(path, data=data, params=params_to_save, opt_params=opt_params_to_save)

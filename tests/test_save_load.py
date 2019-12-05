@@ -118,7 +118,7 @@ def test_exclude_include_saved_params(model_class):
     del model
     model = model_class.load("test_save")
     # check if verbose was not saved
-    assert not model.verbose == 2
+    assert model.verbose != 2
 
     # set verbose as something different then standard settings
     model.verbose = 2

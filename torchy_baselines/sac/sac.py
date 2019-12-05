@@ -281,11 +281,10 @@ class SAC(BaseRLModel):
 
         :return: (Dict) of optimizer names and their state_dict 
         """
+        opt_dict = {"actor": self.actor.optimizer.state_dict(), "critic": self.critic.optimizer.state_dict()}
         if self.ent_coef_optimizer is not None:
-            return {"actor": self.actor.optimizer.state_dict(), "critic": self.critic.optimizer.state_dict(),
-                    "ent_coef_optimizer": self.ent_coef_optimizer.state_dict()}
-        else:
-            return {"actor": self.actor.optimizer.state_dict(), "critic": self.critic.optimizer.state_dict()}
+            opt_dict.update({"ent_coef_optimizer": self.ent_coef_optimizer.state_dict()})
+        return opt_dict
 
     def load_parameters(self, load_dict, opt_params):
         """

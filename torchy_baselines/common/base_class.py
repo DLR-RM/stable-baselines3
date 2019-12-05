@@ -558,7 +558,7 @@ class BaseRLModel(object):
         """
         Save all the attributes of the object and the model parameters in a zip-file for continuous learning
 
-        :param path: (str) path to the file where the data should be saved
+        :param path: (str) path to the file where the rl agent should be saved
         :param exclude: ([str]) name of parameters that should be excluded in addition to the default one
         :param include: ([str]) name of parameters that might be excluded but should be included anyway
         """

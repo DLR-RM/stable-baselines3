@@ -503,7 +503,7 @@ class BaseRLModel(object):
 
     def save(self, path, exclude=None, include=None):
         """
-        saves all the params from init and pytorch params in a zip-file for continuous learning
+        Save all the attributes of the object and the model parameters in a zip-file for continuous learning
 
         :param path: (str) path to the file where the data should be saved
         :param exclude: (list) name of parameters that should be excluded, use standard exclude params if None

@@ -23,7 +23,7 @@ TODO:
 - Refactor: buffer with numpy array instead of pytorch
 - Refactor: remove duplicated code for evaluation
 - double check the shape of log prob
-
+- try squashing both mean and output when using SAC + SDE
 - plotting? -> zoo
 
 Later:

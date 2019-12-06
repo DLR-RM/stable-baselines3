@@ -311,8 +311,8 @@ class PPO(BaseRLModel):
     def get_opt_parameters(self):
         """
         Returns a dict of all the optimizers and their parameters
-        
-        :return: (dict) of optimizer names and their state_dict 
+
+        :return: (dict) of optimizer names and their state_dict
         """
         return {"opt": self.policy.optimizer.state_dict()}
 

@@ -17,15 +17,6 @@ class Distribution(object):
         """
         raise NotImplementedError
 
-    # def kl_div(self, other):
-    #     """
-    #     Calculates the Kullback-Leibler divergence from the given probabilty distribution
-    #
-    #     :param other: ([float]) the distribution to compare with
-    #     :return: (float) the KL divergence of the two distributions
-    #     """
-    #     raise NotImplementedError
-
     def entropy(self):
         """
         Returns shannon's entropy of the probability

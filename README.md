@@ -18,11 +18,11 @@ PyTorch version of [Stable Baselines](https://github.com/hill-a/stable-baselines
 ## Roadmap
 
 TODO:
-- save/load
 - better predict
 - complete logger
 - Refactor: buffer with numpy array instead of pytorch
 - Refactor: remove duplicated code for evaluation
+- double check the shape of log prob
 
 - plotting? -> zoo
 
@@ -30,6 +30,7 @@ Later:
 - get_parameters / set_parameters
 - SDE: use [affine transform](https://www.tensorflow.org/probability/api_docs/python/tfp/bijectors/Affine)
   to scale the noise after a tanh transform?
+- Use MultivariateNormal with full covariance matrix?
 - CNN policies + normalization
 - tensorboard support
 - DQN

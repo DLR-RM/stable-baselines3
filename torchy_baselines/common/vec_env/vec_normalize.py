@@ -36,6 +36,7 @@ class VecNormalize(VecEnvWrapper):
         self.norm_obs = norm_obs
         self.norm_reward = norm_reward
         self.old_obs = np.array([])
+        self.old_reward = np.array([])
 
     def step_wait(self):
         """
@@ -46,12 +47,13 @@ class VecNormalize(VecEnvWrapper):
         """
         obs, rews, news, infos = self.venv.step_wait()
         self.ret = self.ret * self.gamma + rews
-        self.old_obs = obs
+        self.old_obs = obs.copy()
+        self.old_reward = rews.copy()
         obs = self._normalize_observation(obs)
         if self.norm_reward:
             if self.training:
                 self.ret_rms.update(self.ret)
-            rews = np.clip(rews / np.sqrt(self.ret_rms.var + self.epsilon), -self.clip_reward, self.clip_reward)
+            rews = self.normalize_reward(rews)
         self.ret[news] = 0
         return obs, rews, news, infos
 
@@ -62,11 +64,30 @@ class VecNormalize(VecEnvWrapper):
         if self.norm_obs:
             if self.training:
                 self.obs_rms.update(obs)
-            obs = np.clip((obs - self.obs_rms.mean) / np.sqrt(self.obs_rms.var + self.epsilon), -self.clip_obs,
-                          self.clip_obs)
-            return obs
+            return self.normalize_obs(obs)
         else:
             return obs
+
+    def normalize_obs(self, obs):
+        if self.norm_obs:
+            return np.clip((obs - self.obs_rms.mean) / np.sqrt(self.obs_rms.var + self.epsilon), -self.clip_obs,
+                          self.clip_obs)
+        return obs
+
+    def normalize_reward(self, reward):
+        if self.norm_reward:
+            return np.clip(reward / np.sqrt(self.ret_rms.var + self.epsilon), -self.clip_reward, self.clip_reward)
+        return reward
+
+    def unnormalize_obs(self, obs):
+        if self.norm_obs:
+            return (obs * np.sqrt(self.obs_rms.var + self.epsilon)) + self.obs_rms.mean
+        return obs
+
+    def unnormalize_reward(self, reward):
+        if self.norm_reward:
+            return reward * np.sqrt(self.ret_rms.var + self.epsilon)
+        return reward
 
     def get_original_obs(self):
         """
@@ -75,6 +96,14 @@ class VecNormalize(VecEnvWrapper):
         :return: (numpy float)
         """
         return self.old_obs
+
+    def get_original_reward(self):
+        """
+        returns the unnormalized observation
+
+        :return: (numpy float)
+        """
+        return self.old_reward
 
     def reset(self):
         """

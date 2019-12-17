@@ -11,7 +11,7 @@ import numpy as np
 
 from torchy_baselines.common.policies import get_policy_from_name
 from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate
-from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv
+from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize
 from torchy_baselines.common.monitor import Monitor
 from torchy_baselines.common import logger
 from torchy_baselines.common.save_util import data_to_json, json_to_data
@@ -24,13 +24,19 @@ class BaseRLModel(object):
     :param policy: (BasePolicy) Policy object
     :param env: (Gym environment) The environment to learn from
                 (if registered in Gym, can be str. Can be None for loading trained models)
-    :param verbose: (int) the verbosity level: 0 none, 1 training information, 2 debug
     :param policy_base: (BasePolicy) the base policy used by this method
-    :param device: (str or th.device) Device on which the code should.
+    :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
+    :param verbose: (int) the verbosity level: 0 none, 1 training information, 2 debug
+    :param device: (str or th.device) Device on which the code should run.
         By default, it will try to use a Cuda compatible device and fallback to cpu
         if it is not possible.
+    :param support_multi_env: (bool) Whether the algorithm supports training
+        with multiple environments (as in A2C)
+    :param create_eval_env: (bool) Whether to create a second environment that will be
+        used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param monitor_wrapper: (bool) When creating an environment, whether to wrap it
         or not in a Monitor wrapper.
+    :param seed: (int) Seed for the pseudo random generators
     """
     __metaclass__ = ABCMeta
 
@@ -50,6 +56,8 @@ class BaseRLModel(object):
             print("Using {} device".format(self.device))
 
         self.env = env
+        # get VecNormalize object if needed
+        self._vec_normalize_env = unwrap_vec_normalize(env)
         self.verbose = verbose
         self.policy_kwargs = {} if policy_kwargs is None else policy_kwargs
         self.observation_space = None
@@ -60,10 +68,14 @@ class BaseRLModel(object):
         self.replay_buffer = None
         self.seed = seed
         self.action_noise = None
+        # Used for SDE only
+        self.rollout_data = None
+        self.use_sde = False
         # Track the training progress (from 1 to 0)
         # this is used to update the learning rate
         self._current_progress = 1
 
+        # Create and wrap the env if needed
         if env is not None:
             if isinstance(env, str):
                 if create_eval_env:
@@ -93,6 +105,12 @@ class BaseRLModel(object):
                                  " environment.")
 
     def _get_eval_env(self, eval_env):
+        """
+        Return the environment that will be used for evaluation.
+
+        :param eval_env: (gym.Env or VecEnv)
+        :return: (VecEnv)
+        """
         if eval_env is None:
             eval_env = self.eval_env
 
@@ -106,6 +124,9 @@ class BaseRLModel(object):
         """
         Rescale the action from [low, high] to [-1, 1]
         (no need for symmetric action space)
+
+        :param action: (np.ndarray)
+        :return: (np.ndarray)
         """
         low, high = self.action_space.low, self.action_space.high
         return 2.0 * ((action - low) / (high - low)) - 1.0
@@ -114,6 +135,9 @@ class BaseRLModel(object):
         """
         Rescale the action from [-1, 1] to [low, high]
         (no need for symmetric action space)
+
+        :param scaled_action: (np.ndarray)
+        :return: (np.ndarray)
         """
         low, high = self.action_space.low, self.action_space.high
         return low + (0.5 * (scaled_action + 1.0) * (high - low))
@@ -126,7 +150,7 @@ class BaseRLModel(object):
         """
         Compute current progress (from 1 to 0)
 
-        :param num_timesteps: (int)
+        :param num_timesteps: (int) current number of timesteps
         :param total_timesteps: (int)
         """
         self._current_progress = 1.0 - float(num_timesteps) / float(total_timesteps)
@@ -162,7 +186,7 @@ class BaseRLModel(object):
         """
         returns the current environment (can be None if not defined)
 
-        :return: (Gym Environment) The current environment
+        :return: (gym.Env) The current environment
         """
         return self.env
 
@@ -190,7 +214,7 @@ class BaseRLModel(object):
          - observation_space
          - action_space
 
-        :param env: (Gym Environment) The environment for learning a policy
+        :param env: (gym.Env) The environment for learning a policy
         """
         if self.check_env(env, self.observation_space, self.action_space) is False:
             raise ValueError("The given environment is not compatible with model: observation and action spaces do not match")
@@ -251,12 +275,14 @@ class BaseRLModel(object):
         Return a trained model.
 
         :param total_timesteps: (int) The total number of samples to train on
-        :param seed: (int) The initial seed for training, if None: keep current seed
         :param callback: (function (dict, dict)) -> boolean function called at every steps with state of the algorithm.
             It takes the local and global variables. If it returns False, training is aborted.
         :param log_interval: (int) The number of timesteps before logging.
         :param tb_log_name: (str) the name of the run for tensorboard log
         :param reset_num_timesteps: (bool) whether or not to reset the current timestep number (used in logging)
+        :param eval_env: (gym.Env)
+        :param eval_freq: (int)
+        :param n_eval_episodes: (int)
         :return: (BaseRLModel) the trained model
         """
         pass
@@ -407,21 +433,33 @@ class BaseRLModel(object):
             self.eval_env.seed(seed)
 
     def _setup_learn(self, eval_env):
+        """
+        Initialize different variables needed for training.
+
+        :param eval_env: (gym.Env or VecEnv)
+        :return: (int, int, [float], np.ndarray, VecEnv)
+        """
         self.start_time = time.time()
         self.ep_info_buffer = deque(maxlen=100)
+
         if self.action_noise is not None:
             self.action_noise.reset()
+
         timesteps_since_eval, episode_num = 0, 0
         evaluations = []
+
         if eval_env is not None and self.seed is not None:
             eval_env.seed(self.seed)
+
         eval_env = self._get_eval_env(eval_env)
         obs = self.env.reset()
         return timesteps_since_eval, episode_num, evaluations, obs, eval_env
 
     def _update_info_buffer(self, infos):
         """
-        Retrieve reward and episode length if using Monitor wrapper.
+        Retrieve reward and episode length and update the buffer
+        if using Monitor wrapper.
+
         :param infos: ([dict])
         """
         for info in infos:
@@ -434,12 +472,38 @@ class BaseRLModel(object):
                          learning_starts=0, num_timesteps=0,
                          replay_buffer=None, obs=None,
                          episode_num=0, log_interval=None):
+        """
+        Collect rollout using the current policy (and possibly fill the replay buffer)
+        TODO: move this method to off-policy base class.
 
+        :param env: (VecEnv)
+        :param n_episodes: (int)
+        :param n_steps: (int)
+        :param action_noise: (ActionNoise)
+        :param deterministic: (bool)
+        :param callback: (callable)
+        :param learning_starts: (int)
+        :param num_timesteps: (int)
+        :param replay_buffer: (ReplayBuffer)
+        :param obs: (np.ndarray)
+        :param episode_num: (int)
+        :param log_interval: (int)
+        """
         episode_rewards = []
         total_timesteps = []
         total_steps, total_episodes = 0, 0
         assert isinstance(env, VecEnv)
         assert env.num_envs == 1
+
+        # Retrieve unnormalized observation for saving into the buffer
+        if self._vec_normalize_env is not None:
+            obs_ = self._vec_normalize_env.get_original_obs()
+
+        self.rollout_data = None
+        if self.use_sde:
+            self.actor.reset_noise()
+            # Reset rollout data
+            self.rollout_data = {key: [] for key in ['observations', 'actions', 'rewards', 'dones']}
 
         while total_steps < n_steps or total_episodes < n_episodes:
             done = False
@@ -450,20 +514,29 @@ class BaseRLModel(object):
             while not done:
                 # Select action randomly or according to policy
                 if num_timesteps < learning_starts:
-                    action = np.array([self.action_space.sample()])
+                    # Warmup phase
+                    unscaled_action = np.array([self.action_space.sample()])
                 else:
-                    action = self.predict(obs, deterministic=deterministic)
+                    unscaled_action = self.predict(obs, deterministic=not self.use_sde)
 
                 # Rescale the action from [low, high] to [-1, 1]
-                action = self.scale_action(action)
+                scaled_action = self.scale_action(unscaled_action)
+
+                if self.use_sde:
+                    # When using SDE, the action can be out of bounds
+                    # TODO: fix with squashing and account for that in the proba distribution
+                    clipped_action = np.clip(scaled_action, -1, 1)
+                else:
+                    clipped_action = scaled_action
 
                 # Add noise to the action (improve exploration)
                 if action_noise is not None:
                     # NOTE: in the original implementation of TD3, the noise was applied to the unscaled action
-                    action = np.clip(action + action_noise(), -1, 1)
+                    # Update(October 2019): Not anymore
+                    clipped_action = np.clip(clipped_action + action_noise(), -1, 1)
 
                 # Rescale and perform action
-                new_obs, reward, done, infos = env.step(self.unscale_action(action))
+                new_obs, reward, done, infos = env.step(self.unscale_action(clipped_action))
 
                 done_bool = [float(done[0])]
                 episode_reward += reward
@@ -473,14 +546,34 @@ class BaseRLModel(object):
 
                 # Store data in replay buffer
                 if replay_buffer is not None:
-                    replay_buffer.add(obs, new_obs, action, reward, done_bool)
+                    # Store only the unnormalized version
+                    if self._vec_normalize_env is not None:
+                        new_obs_ = self._vec_normalize_env.get_original_obs()
+                        reward_ = self._vec_normalize_env.get_original_reward()
+                    else:
+                        # Avoid changing the original ones
+                        obs_, new_obs_, reward_ = obs, new_obs, reward
+
+                    replay_buffer.add(obs_, new_obs_, clipped_action, reward_, done_bool)
+
+                if self.rollout_data is not None:
+                    # Assume only one env
+                    self.rollout_data['observations'].append(obs[0].copy())
+                    self.rollout_data['actions'].append(scaled_action[0].copy())
+                    self.rollout_data['rewards'].append(reward[0].copy())
+                    self.rollout_data['dones'].append(np.array(done_bool[0]).copy())
 
                 obs = new_obs
+                # Save the true unnormalized observation
+                # otherwise obs_ = self._vec_normalize_env.unnormalize_obs(obs)
+                # is a good approximation
+                if self._vec_normalize_env is not None:
+                    obs_ = new_obs_
 
                 num_timesteps += 1
                 episode_timesteps += 1
                 total_steps += 1
-                if n_steps > 0 and total_steps >= n_steps:
+                if 0 < n_steps <= total_steps:
                     break
 
             if done:
@@ -495,29 +588,46 @@ class BaseRLModel(object):
                             episode_num + total_episodes) % log_interval == 0:
                     fps = int(num_timesteps / (time.time() - self.start_time))
                     logger.logkv("episodes", episode_num + total_episodes)
-                    # logger.logkv("mean 100 episode reward", mean_reward)
                     if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
                         logger.logkv('ep_rew_mean', self.safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
                         logger.logkv('ep_len_mean', self.safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
                     # logger.logkv("n_updates", n_updates)
-                    # logger.logkv("current_lr", current_lr)
                     logger.logkv("fps", fps)
                     logger.logkv('time_elapsed', int(time.time() - self.start_time))
                     logger.logkv("total timesteps", num_timesteps)
+                    if self.use_sde:
+                        logger.logkv("std", (self.actor.get_std()).mean().item())
                     logger.dumpkvs()
 
         mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
+
+        # Post processing
+        if self.rollout_data is not None:
+            for key in ['observations', 'actions', 'rewards', 'dones']:
+                self.rollout_data[key] = th.FloatTensor(np.array(self.rollout_data[key])).to(self.device)
+
+            self.rollout_data['returns'] = self.rollout_data['rewards'].clone()
+            # Compute return
+            last_return = 0.0
+            for step in reversed(range(len(self.rollout_data['rewards']))):
+                if step == len(self.rollout_data['rewards']) - 1:
+                    last_return = self.rollout_data['rewards'][step]
+                else:
+                    next_non_terminal = 1.0 - self.rollout_data['dones'][step + 1]
+                    last_return = self.rollout_data['rewards'][step] + self.gamma * last_return * next_non_terminal
+                self.rollout_data['returns'][step] = last_return
+
         return mean_reward, total_steps, total_episodes, obs
 
     @staticmethod
     def _save_to_file_zip(save_path, data=None, params=None, opt_params=None):
         """Save model to a zip archive
-    
+
         :param save_path: (str) Where to store the model
         :param data: (dict) Class parameters being stored
         :param params: (dict) Model parameters being stored expected to be state_dict
         :param opt_params: (dict) Optimizer parameters being stored expected to contain an entry for every
-                                         optimizer with its name and the state_dict            
+                                         optimizer with its name and the state_dict
         """
 
         # data/params can be None, so do not
@@ -551,7 +661,7 @@ class BaseRLModel(object):
         """
         Returns the names of the parameters that should be excluded by default
         when saving the model.
-        
+
         :return: ([str]) List of parameters that should be excluded from save
         """
         return ["env", "eval_env", "replay_buffer", "rollout_buffer"]

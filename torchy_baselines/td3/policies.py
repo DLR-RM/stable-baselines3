@@ -2,21 +2,120 @@ import torch as th
 import torch.nn as nn
 
 from torchy_baselines.common.policies import BasePolicy, register_policy, create_mlp, BaseNetwork
+from torchy_baselines.common.distributions import StateDependentNoiseDistribution
 
 
 class Actor(BaseNetwork):
-    def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU):
+    """
+    Actor network (policy) for TD3.
+
+    :param obs_dim: (int) Dimension of the observation
+    :param action_dim: (int) Dimension of the action space
+    :param net_arch: ([int]) Network architecture
+    :param activation_fn: (nn.Module) Activation function
+    :param use_sde: (bool) Whether to use State Dependent Exploration or not
+    :param log_std_init: (float) Initial value for the log standard deviation
+    :param clip_noise: (float) Clip the magnitude of the noise
+    :param lr_sde: (float) Learning rate for the standard deviation of the noise
+    :param full_std: (bool) Whether to use (n_features x n_actions) parameters
+        for the std instead of only (n_features,) when using SDE.
+    """
+    def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU,
+                 use_sde=False, log_std_init=-2, clip_noise=None,
+                 lr_sde=3e-4, full_std=False):
         super(Actor, self).__init__()
 
-        # TODO: orthogonal initialization?
-        actor_net = create_mlp(obs_dim, action_dim, net_arch, activation_fn, squash_out=True)
-        self.actor_net = nn.Sequential(*actor_net)
+        self.latent_pi, self.log_std = None, None
+        self.weights_dist, self.exploration_mat = None, None
+        self.use_sde, self.sde_optimizer = use_sde, None
+        self.action_dim = action_dim
+        self.full_std = full_std
 
-    def forward(self, obs):
-        return self.actor_net(obs)
+        if use_sde:
+            latent_pi = create_mlp(obs_dim, -1, net_arch, activation_fn, squash_out=False)
+            self.latent_pi = nn.Sequential(*latent_pi)
+            # Create state dependent noise matrix (SDE)
+            self.action_dist = StateDependentNoiseDistribution(action_dim, full_std=full_std, use_expln=False,
+                                                               squash_output=False)
+            action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=net_arch[-1],
+                                                                               log_std_init=log_std_init)
+            # Squash output
+            self.actor_net = nn.Sequential(action_net, nn.Tanh())
+            self.clip_noise = clip_noise
+            self.sde_optimizer = th.optim.Adam([self.log_std], lr=lr_sde)
+            self.reset_noise()
+        else:
+            actor_net = create_mlp(obs_dim, action_dim, net_arch, activation_fn, squash_out=True)
+            self.actor_net = nn.Sequential(*actor_net)
+
+    def get_std(self):
+        """
+        Retrieve the standard deviation of the action distribution.
+        Only useful when using SDE.
+        It corresponds to `th.exp(log_std)` in the normal case,
+        but is slightly different when using `expln` function
+        (cf StateDependentNoiseDistribution doc).
+
+        :return: (th.Tensor)
+        """
+        return self.action_dist.get_std(self.log_std)
+
+    def _get_action_dist_from_latent(self, latent_pi):
+        mean_actions = self.actor_net(latent_pi)
+        return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_pi)
+
+    def evaluate_actions(self, obs, action):
+        """
+        Evaluate actions according to the current policy,
+        given the observations. Only useful when using SDE.
+
+        :param obs: (th.Tensor)
+        :param action: (th.Tensor)
+        :param deterministic: (bool)
+        :return: (th.Tensor, th.Tensor) log likelihood of taking those actions
+            and entropy of the action distribution.
+        """
+        with th.no_grad():
+            latent_pi = self.latent_pi(obs)
+        _, distribution = self._get_action_dist_from_latent(latent_pi)
+        log_prob = distribution.log_prob(action)
+        # value = self.value_net(latent_vf)
+        return log_prob, distribution.entropy()
+
+    def reset_noise(self):
+        """
+        Sample new weights for the exploration matrix.
+        """
+        self.action_dist.sample_weights(self.log_std)
+
+    def forward(self, obs, deterministic=True):
+        if self.use_sde:
+            latent_pi = self.latent_pi(obs)
+            if deterministic:
+                return self.actor_net(latent_pi)
+            noise = self.action_dist.get_noise(latent_pi)
+            if self.clip_noise is not None:
+                noise = th.clamp(noise, -self.clip_noise, self.clip_noise)
+            # TODO: Replace with squashing -> need to account for that in the sde update
+            # -> set squash_out=True in the action_dist?
+            # NOTE: the clipping is done in the rollout for now
+            return self.actor_net(latent_pi) + noise
+            # action, _ = self._get_action_dist_from_latent(latent_pi)
+            # return action
+        else:
+            return self.actor_net(obs)
 
 
 class Critic(BaseNetwork):
+    """
+    Critic network for TD3,
+    in fact it represents the action-state value function (Q-value function)
+
+    :param obs_dim: (int) Dimension of the observation
+    :param action_dim: (int) Dimension of the action space
+    :param net_arch: ([int]) Network architecture
+    :param activation_fn: (nn.Module) Activation function
+    """
     def __init__(self, obs_dim, action_dim,
                  net_arch, activation_fn=nn.ReLU):
         super(Critic, self).__init__()
@@ -38,11 +137,25 @@ class Critic(BaseNetwork):
 
 
 class TD3Policy(BasePolicy):
+    """
+    Policy class (with both actor and critic) for TD3.
+
+    :param observation_space: (gym.spaces.Space) Observation space
+    :param action_dim: (gym.spaces.Space) Action space
+    :param learning_rate: (callable) Learning rate schedule (could be constant)
+    :param net_arch: ([int or dict]) The specification of the policy and value networks.
+    :param device: (str or th.device) Device on which the code should run.
+    :param activation_fn: (nn.Module) Activation function
+    :param use_sde: (bool) Whether to use State Dependent Exploration or not
+    :param log_std_init: (float) Initial value for the log standard deviation
+    """
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',
-                 activation_fn=nn.ReLU):
+                 activation_fn=nn.ReLU, use_sde=False, log_std_init=-2,
+                 clip_noise=None, lr_sde=3e-4):
         super(TD3Policy, self).__init__(observation_space, action_space, device)
 
+        # Default network architecture, from the original paper
         if net_arch is None:
             net_arch = [400, 300]
 
@@ -56,8 +169,16 @@ class TD3Policy(BasePolicy):
             'net_arch': self.net_arch,
             'activation_fn': self.activation_fn
         }
+        self.actor_kwargs = self.net_args.copy()
+        self.actor_kwargs['use_sde'] = use_sde
+        self.actor_kwargs['log_std_init'] = log_std_init
+        self.actor_kwargs['clip_noise'] = clip_noise
+        self.actor_kwargs['lr_sde'] = lr_sde
+
         self.actor, self.actor_target = None, None
         self.critic, self.critic_target = None, None
+        self.use_sde = use_sde
+        self.log_std_init = log_std_init
         self._build(learning_rate)
 
     def _build(self, learning_rate):
@@ -71,14 +192,17 @@ class TD3Policy(BasePolicy):
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=learning_rate(1))
 
+    def reset_noise(self):
+        return self.actor.reset_noise()
+
     def make_actor(self):
-        return Actor(**self.net_args).to(self.device)
+        return Actor(**self.actor_kwargs).to(self.device)
 
     def make_critic(self):
         return Critic(**self.net_args).to(self.device)
 
-    def forward(self, obs):
-        return self.actor(obs)
+    def forward(self, obs, deterministic=True):
+        return self.actor(obs, deterministic=deterministic)
 
 
 MlpPolicy = TD3Policy

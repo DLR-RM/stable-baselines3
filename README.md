@@ -21,6 +21,10 @@ TODO:
 - save/load
 - better predict
 - complete logger
+- SDE: learn the feature extractor?
+- Refactor: buffer with numpy array instead of pytorch
+- Refactor: remove duplicated code for evaluation
+- plotting? -> zoo
 
 Later:
 - get_parameters / set_parameters

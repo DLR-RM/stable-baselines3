@@ -4,7 +4,7 @@ import gym
 import torch as th
 from torch.distributions import Normal
 
-from torchy_baselines import A2C
+from torchy_baselines import A2C, TD3
 from torchy_baselines.common.vec_env import DummyVecEnv, VecNormalize
 from torchy_baselines.common.monitor import Monitor
 
@@ -58,3 +58,20 @@ def test_state_dependent_noise(model_class):
     model = model_class('MlpPolicy', env, n_steps=200, use_sde=True, ent_coef=0.00, verbose=1, learning_rate=3e-4,
                         policy_kwargs=dict(log_std_init=0.0, ortho_init=False), seed=None)
     model.learn(total_timesteps=int(1000), log_interval=5, eval_freq=500, eval_env=eval_env)
+
+
+@pytest.mark.parametrize("model_class", [TD3])
+def test_state_dependent_offpolicy_noise(model_class):
+    model = model_class('MlpPolicy', 'Pendulum-v0', use_sde=True, seed=None, create_eval_env=True,
+                        verbose=1, policy_kwargs=dict(log_std_init=-2))
+    model.learn(total_timesteps=int(1000), eval_freq=500)
+
+
+def test_scheduler():
+    def scheduler(progress):
+        return -2.0 * progress + 1
+
+    model = TD3('MlpPolicy', 'Pendulum-v0', use_sde=True, seed=None, create_eval_env=True,
+                        verbose=1, sde_log_std_scheduler=scheduler)
+    model.learn(total_timesteps=int(1000), eval_freq=500)
+    assert th.isclose(model.actor.log_std, th.ones_like(model.actor.log_std)).all()

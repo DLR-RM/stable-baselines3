@@ -8,6 +8,7 @@ from torchy_baselines.common.base_class import BaseRLModel
 from torchy_baselines.common.buffers import ReplayBuffer
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.sac.policies import SACPolicy
+from torchy_baselines.common.vec_env import sync_envs_normalization
 
 
 class SAC(BaseRLModel):
@@ -54,7 +55,7 @@ class SAC(BaseRLModel):
     """
 
     def __init__(self, policy, env, learning_rate=3e-4, buffer_size=int(1e6),
-                 learning_starts=100, batch_size=64,
+                 learning_starts=100, batch_size=256,
                  tau=0.005, ent_coef='auto', target_update_interval=1,
                  train_freq=1, gradient_steps=1, n_episodes_rollout=-1,
                  target_entropy='auto', action_noise=None,
@@ -163,7 +164,7 @@ class SAC(BaseRLModel):
 
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
-            replay_data = self.replay_buffer.sample(batch_size)
+            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
             obs, action_batch, next_obs, done, reward = replay_data
 
@@ -257,9 +258,6 @@ class SAC(BaseRLModel):
             self._update_current_progress(self.num_timesteps, total_timesteps)
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
-                if self.verbose > 1:
-                    print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
-                        self.num_timesteps, episode_num, episode_timesteps, episode_reward))
                 gradient_steps = self.gradient_steps if self.gradient_steps > 0 else episode_timesteps
 
                 self.train(gradient_steps, batch_size=self.batch_size)
@@ -267,6 +265,7 @@ class SAC(BaseRLModel):
             # Evaluate episode
             if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
                 timesteps_since_eval %= eval_freq
+                sync_envs_normalization(self.env, eval_env)
                 mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
                 evaluations.append(mean_reward)
                 if self.verbose > 0:

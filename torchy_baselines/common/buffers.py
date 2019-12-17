@@ -1,8 +1,19 @@
 import numpy as np
 import torch as th
 
+from torchy_baselines.common.vec_env import unwrap_vec_normalize
+
 
 class BaseBuffer(object):
+    """
+    Base class that represent a buffer (rollout or replay)
+
+    :param buffer_size: (int) Max number of element in the buffer
+    :param obs_dim: (int) Dimension of the observation
+    :param action_dim: (int) Dimension of the action space
+    :param device: (th.device)
+    :param n_envs: (int) Number of parallel environments
+    """
     def __init__(self, buffer_size, obs_dim, action_dim, device='cpu', n_envs=1):
         super(BaseBuffer, self).__init__()
         self.buffer_size = buffer_size
@@ -29,35 +40,68 @@ class BaseBuffer(object):
         return tensor.transpose(0, 1).reshape(shape[0] * shape[1], *shape[2:])
 
     def size(self):
+        """
+        :return: (int) The current size of the buffer
+        """
         if self.full:
             return self.buffer_size
         return self.pos
 
-    def get_pos(self):
-        return self.pos
-
     def add(self, *args, **kwargs):
+        """
+        Add elements to the buffer.
+        """
         raise NotImplementedError()
 
     def reset(self):
+        """
+        Reset the buffer.
+        """
         self.pos = 0
         self.full = False
 
-    def sample(self, batch_size):
+    def sample(self, batch_size, env=None):
+        """
+        :param batch_size: (int) Number of element to sample
+        :param env: (VecNormalize) [Optional] associated gym VecEnv
+            to normalize the observations/rewards when sampling
+        """
         upper_bound = self.buffer_size if self.full else self.pos
         batch_inds = th.LongTensor(
             np.random.randint(0, upper_bound, size=batch_size))
-        return self._get_samples(batch_inds)
+        return self._get_samples(batch_inds, env=env)
 
-    def _get_samples(self, batch_inds):
+    def _get_samples(self, batch_inds, env=None):
+        """
+        :param batch_inds: (th.Tensor)
+        :param env: (gym.Env)
+        :return: ([th.Tensor])
+        """
         raise NotImplementedError()
+
+    def _normalize_obs(self, obs, env=None):
+        if env is not None:
+            # TODO: get rid of pytorch - numpy conversion
+            return th.FloatTensor(env.normalize_obs(obs.numpy()))
+        return obs
+
+    def _normalize_reward(self, reward, env=None):
+        if env is not None:
+            return th.FloatTensor(env.normalize_reward(reward.numpy()))
+        return reward
 
 
 class ReplayBuffer(BaseBuffer):
     """
-    Taken from https://github.com/apourchot/CEM-RL
-    """
+    Replay buffer used in off-policy algorithms like SAC/TD3.
+    Adapted from from https://github.com/apourchot/CEM-RL
 
+    :param buffer_size: (int) Max number of element in the buffer
+    :param obs_dim: (int) Dimension of the observation
+    :param action_dim: (int) Dimension of the action space
+    :param device: (th.device)
+    :param n_envs: (int) Number of parallel environments
+    """
     def __init__(self, buffer_size, obs_dim, action_dim, device='cpu', n_envs=1):
         super(ReplayBuffer, self).__init__(buffer_size, obs_dim, action_dim, device, n_envs=n_envs)
 
@@ -81,15 +125,27 @@ class ReplayBuffer(BaseBuffer):
             self.full = True
             self.pos = 0
 
-    def _get_samples(self, batch_inds):
-        return (self.observations[batch_inds, 0, :].to(self.device),
+    def _get_samples(self, batch_inds, env=None):
+        return (self._normalize_obs(self.observations[batch_inds, 0, :], env).to(self.device),
                 self.actions[batch_inds, 0, :].to(self.device),
-                self.next_observations[batch_inds, 0, :].to(self.device),
+                self._normalize_obs(self.next_observations[batch_inds, 0, :], env).to(self.device),
                 self.dones[batch_inds].to(self.device),
-                self.rewards[batch_inds].to(self.device))
+                self._normalize_reward(self.rewards[batch_inds], env).to(self.device))
 
 
 class RolloutBuffer(BaseBuffer):
+    """
+    Rollout buffer used in on-policy algorithms like A2C/PPO.
+
+    :param buffer_size: (int) Max number of element in the buffer
+    :param obs_dim: (int) Dimension of the observation
+    :param action_dim: (int) Dimension of the action space
+    :param device: (th.device)
+    :param gae_lambda: (float) Factor for trade-off of bias vs variance for Generalized Advantage Estimator
+        Equivalent to classic advantage when set to 1.
+    :param gamma: (float) Discount factor
+    :param n_envs: (int) Number of parallel environments
+    """
     def __init__(self, buffer_size, obs_dim, action_dim, device='cpu',
                  gae_lambda=1, gamma=0.99, n_envs=1):
         super(RolloutBuffer, self).__init__(buffer_size, obs_dim, action_dim, device, n_envs=n_envs)
@@ -115,7 +171,10 @@ class RolloutBuffer(BaseBuffer):
 
     def compute_returns_and_advantage(self, last_value, dones=False, use_gae=True):
         """
-        From Stable-Baselines PPO2
+        Post-processing step: compute the returns (sum of discounted rewards)
+        and advantage (A(s) = R - V(S)).
+        Adapted from Stable-Baselines PPO2.
+
         :param last_value: (th.Tensor)
         :param dones: ([bool])
         :param use_gae: (bool) Whether to use Generalized Advantage Estimation
@@ -151,6 +210,16 @@ class RolloutBuffer(BaseBuffer):
             self.advantages = self.returns - self.values
 
     def add(self, obs, action, reward, done, value, log_prob):
+        """
+        :param obs: (np.ndarray) Observation
+        :param action: (np.ndarray) Action
+        :param reward: (np.ndarray)
+        :param done: (np.ndarray) End of episode signal.
+        :param value: (th.Tensor) estimated value of the current state
+            following the current policy.
+        :param log_prob: (th.Tensor) log probability of the action
+            following the current policy.
+        """
         if len(log_prob.shape) == 0:
             # Reshape 0-d tensor to avoid error
             log_prob = log_prob.reshape(-1, 1)
@@ -184,7 +253,7 @@ class RolloutBuffer(BaseBuffer):
             yield self._get_samples(indices[start_idx:start_idx + batch_size])
             start_idx += batch_size
 
-    def _get_samples(self, batch_inds):
+    def _get_samples(self, batch_inds, env=None):
         return (self.observations[batch_inds].to(self.device),
                 self.actions[batch_inds].to(self.device),
                 self.values[batch_inds].flatten().to(self.device),

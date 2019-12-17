@@ -8,6 +8,7 @@ from torchy_baselines.common.base_class import BaseRLModel
 from torchy_baselines.common.buffers import ReplayBuffer
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.td3.policies import TD3Policy
+from torchy_baselines.common.vec_env import sync_envs_normalization
 
 
 class TD3(BaseRLModel):
@@ -37,6 +38,11 @@ class TD3(BaseRLModel):
     :param target_policy_noise: (float) Standard deviation of gaussian noise added to target policy
         (smoothing noise)
     :param target_noise_clip: (float) Limit for absolute value of target policy smoothing noise.
+    :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
+        instead of action noise exploration (default: False)
+    :param sde_max_grad_norm: (float)
+    :param sde_ent_coef: (float)
+    :param sde_log_std_scheduler: (callable)
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
@@ -51,6 +57,7 @@ class TD3(BaseRLModel):
                  policy_delay=2, learning_starts=100, gamma=0.99, batch_size=100,
                  train_freq=-1, gradient_steps=-1, n_episodes_rollout=1,
                  tau=0.005, action_noise=None, target_policy_noise=0.2, target_noise_clip=0.5,
+                 use_sde=False, sde_max_grad_norm=1, sde_ent_coef=0.0, sde_log_std_scheduler=None,
                  tensorboard_log=None, create_eval_env=False, policy_kwargs=None, verbose=0,
                  seed=0, device='auto', _init_setup_model=True):
 
@@ -58,7 +65,6 @@ class TD3(BaseRLModel):
                                   create_eval_env=create_eval_env, seed=seed)
 
         self.buffer_size = buffer_size
-        # TODO: accept callables
         self.learning_rate = learning_rate
         self.learning_starts = learning_starts
         self.train_freq = train_freq
@@ -72,6 +78,12 @@ class TD3(BaseRLModel):
         self.target_noise_clip = target_noise_clip
         self.target_policy_noise = target_policy_noise
 
+        # State Dependent Exploration
+        self.use_sde = use_sde
+        self.sde_max_grad_norm = sde_max_grad_norm
+        self.sde_ent_coef = sde_ent_coef
+        self.sde_log_std_scheduler = sde_log_std_scheduler
+
         if _init_setup_model:
             self._setup_model()
 
@@ -81,7 +93,7 @@ class TD3(BaseRLModel):
         self.set_random_seed(self.seed)
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
         self.policy = self.policy_class(self.observation_space, self.action_space,
-                                        self.learning_rate, device=self.device, **self.policy_kwargs)
+                                        self.learning_rate, use_sde=self.use_sde, device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
         self._create_aliases()
 
@@ -91,12 +103,12 @@ class TD3(BaseRLModel):
         self.critic = self.policy.critic
         self.critic_target = self.policy.critic_target
 
-    def select_action(self, observation):
+    def select_action(self, observation, deterministic=True):
         # Normally not needed
         observation = np.array(observation)
         with th.no_grad():
             observation = th.FloatTensor(observation.reshape(1, -1)).to(self.device)
-            return self.actor(observation).cpu().numpy()
+            return self.actor(observation, deterministic=deterministic).cpu().numpy()
 
     def predict(self, observation, state=None, mask=None, deterministic=True):
         """
@@ -108,7 +120,7 @@ class TD3(BaseRLModel):
         :param deterministic: (bool) Whether or not to return deterministic actions.
         :return: (np.ndarray, np.ndarray) the model's action and the next state (used in recurrent policies)
         """
-        return self.unscale_action(self.select_action(observation))
+        return self.unscale_action(self.select_action(observation, deterministic=deterministic))
 
     def train_critic(self, gradient_steps=1, batch_size=100, replay_data=None, tau=0.0):
         # Update optimizer learning rate
@@ -117,7 +129,7 @@ class TD3(BaseRLModel):
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
             if replay_data is None:
-                obs, action, next_obs, done, reward = self.replay_buffer.sample(batch_size)
+                obs, action, next_obs, done, reward = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
             else:
                 obs, action, next_obs, done, reward = replay_data
 
@@ -158,7 +170,7 @@ class TD3(BaseRLModel):
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
             if replay_data is None:
-                obs, _, next_obs, done, reward = self.replay_buffer.sample(batch_size)
+                obs, _, next_obs, done, reward = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
             else:
                 obs, _, next_obs, done, reward = replay_data
 
@@ -183,12 +195,52 @@ class TD3(BaseRLModel):
         for gradient_step in range(gradient_steps):
 
             # Sample replay buffer
-            replay_data = self.replay_buffer.sample(batch_size)
+            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
             self.train_critic(replay_data=replay_data)
 
             # Delayed policy updates
             if gradient_step % policy_delay == 0:
                 self.train_actor(replay_data=replay_data, tau_actor=self.tau, tau_critic=self.tau)
+
+    def train_sde(self):
+        # Update optimizer learning rate
+        # self._update_learning_rate(self.policy.optimizer)
+
+        # Unpack
+        obs, action, returns = [self.rollout_data[key] for key in ['observations', 'actions', 'returns']]
+
+        # TODO: avoid second computation of everything because of the gradient
+        log_prob, entropy = self.actor.evaluate_actions(obs, action)
+
+        # Normalize returns
+        # returns = (returns - returns.mean()) / (returns.std() + 1e-8)
+        # returns = (returns - returns.mean())
+        with th.no_grad():
+            current_q1, current_q2 = self.critic(obs, action)
+        # Alternatively use the q value
+        returns = (returns - th.min(current_q1, current_q2))
+
+        policy_loss = -(returns * log_prob).mean()
+
+        # Entropy loss favor exploration
+        entropy_loss = -th.mean(entropy)
+
+        loss = policy_loss + self.sde_ent_coef * entropy_loss
+
+        # Optimization step
+        self.actor.sde_optimizer.zero_grad()
+        loss.backward()
+
+        assert not th.isnan(log_prob).any(), log_prob
+        assert not th.isnan(entropy).any()
+        assert not th.isnan(self.actor.log_std.grad).any()
+        assert not th.isnan(self.actor.log_std).any()
+
+        # Clip grad norm
+        th.nn.utils.clip_grad_norm_([self.actor.log_std], self.sde_max_grad_norm)
+        self.actor.sde_optimizer.step()
+
+        del self.rollout_data
 
     def learn(self, total_timesteps, callback=None, log_interval=4,
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="TD3", reset_num_timesteps=True):
@@ -219,9 +271,15 @@ class TD3(BaseRLModel):
             self._update_current_progress(self.num_timesteps, total_timesteps)
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
-                if self.verbose > 1:
-                    print("Total T: {} Episode Num: {} Episode T: {} Reward: {}".format(
-                        self.num_timesteps, episode_num, episode_timesteps, episode_reward))
+
+                if self.use_sde:
+                    if self.sde_log_std_scheduler is not None:
+                        # Call the scheduler
+                        value = self.sde_log_std_scheduler(self._current_progress)
+                        self.actor.log_std.data = th.ones_like(self.actor.log_std) * value
+                    else:
+                        # On-policy gradient
+                        self.train_sde()
 
                 gradient_steps = self.gradient_steps if self.gradient_steps > 0 else episode_timesteps
                 self.train(gradient_steps, batch_size=self.batch_size, policy_delay=self.policy_delay)
@@ -229,6 +287,7 @@ class TD3(BaseRLModel):
             # Evaluate episode
             if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
                 timesteps_since_eval %= eval_freq
+                sync_envs_normalization(self.env, eval_env)
                 mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
                 evaluations.append(mean_reward)
                 if self.verbose > 0:
@@ -241,7 +300,7 @@ class TD3(BaseRLModel):
         """
         Returns a dict of all the optimizers and their parameters
 
-        :return: (Dict) of optimizer names and their state_dict 
+        :return: (Dict) of optimizer names and their state_dict
         """
         return {"actor": self.actor.optimizer.state_dict(), "critic": self.critic.optimizer.state_dict()}
 

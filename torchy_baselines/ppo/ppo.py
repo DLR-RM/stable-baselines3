@@ -1,6 +1,5 @@
 import os
 import time
-from copy import deepcopy
 
 import gym
 from gym import spaces
@@ -18,7 +17,7 @@ from torchy_baselines.common.base_class import BaseRLModel
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.common.buffers import RolloutBuffer
 from torchy_baselines.common.utils import explained_variance, get_schedule_fn
-from torchy_baselines.common.vec_env import VecNormalize, VecEnvWrapper
+from torchy_baselines.common.vec_env import sync_envs_normalization
 from torchy_baselines.common import logger
 from torchy_baselines.ppo.policies import PPOPolicy
 
@@ -205,7 +204,7 @@ class PPO(BaseRLModel):
                     # Convert discrete action for float to long
                     action = action.long().flatten()
 
-                values, log_prob, entropy = self.policy.get_policy_stats(obs, action)
+                values, log_prob, entropy = self.policy.evaluate_actions(obs, action)
                 values = values.flatten()
                 # Normalize advantage
                 advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
@@ -241,7 +240,8 @@ class PPO(BaseRLModel):
                 approx_kl_divs.append(th.mean(old_log_prob - log_prob).detach().cpu().numpy())
 
             if self.target_kl is not None and np.mean(approx_kl_divs) > 1.5 * self.target_kl:
-                print("Early stopping at step {} due to reaching max kl: {:.2f}".format(it, np.mean(approx_kl_divs)))
+                print("Early stopping at step {} due to reaching max kl: {:.2f}".format(gradient_step,
+                                                                                        np.mean(approx_kl_divs)))
                 break
 
         explained_var = explained_variance(self.rollout_buffer.returns.flatten().cpu().numpy(),
@@ -294,14 +294,8 @@ class PPO(BaseRLModel):
             # Evaluate agent
             if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
                 timesteps_since_eval %= eval_freq
-                # TODO: move that to the base class
-                # Sync eval env and train env when using VecNormalize
-                env_tmp, eval_env_tmp = self.env, eval_env
-                while isinstance(env_tmp, VecEnvWrapper):
-                    if isinstance(env_tmp, VecNormalize):
-                        eval_env_tmp.obs_rms = deepcopy(env_tmp.obs_rms)
-                    env_tmp = env_tmp.venv
-                    eval_env_tmp.venv
+                sync_envs_normalization(self.env, eval_env)
+
                 mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
                 if self.tb_writer is not None:
                     self.tb_writer.add_scalar('Eval/reward', mean_reward, self.num_timesteps)

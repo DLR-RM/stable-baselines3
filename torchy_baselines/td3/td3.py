@@ -9,6 +9,7 @@ from torchy_baselines.common.buffers import ReplayBuffer
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.td3.policies import TD3Policy
 from torchy_baselines.common.vec_env import sync_envs_normalization
+from torchy_baselines.ppo.policies import MlpPolicy
 
 
 class TD3(BaseRLModel):
@@ -85,6 +86,7 @@ class TD3(BaseRLModel):
         self.sde_ent_coef = sde_ent_coef
         self.sde_log_std_scheduler = sde_log_std_scheduler
         self.on_policy_exploration = True
+        self.sde_vf = None
 
         if _init_setup_model:
             self._setup_model()
@@ -104,6 +106,7 @@ class TD3(BaseRLModel):
         self.actor_target = self.policy.actor_target
         self.critic = self.policy.critic
         self.critic_target = self.policy.critic_target
+        self.vf_net = self.policy.vf_net
 
     def select_action(self, observation, deterministic=True):
         # Normally not needed
@@ -209,25 +212,26 @@ class TD3(BaseRLModel):
         # self._update_learning_rate(self.policy.optimizer)
 
         # Unpack
-        obs, action, returns = [self.rollout_data[key] for key in ['observations', 'actions', 'returns']]
+        obs, action, advantage, returns = [self.rollout_data[key] for key in ['observations', 'actions', 'advantage', 'returns']]
 
-        # TODO: avoid second computation of everything because of the gradient
         log_prob, entropy = self.actor.evaluate_actions(obs, action)
+        values = self.vf_net(obs).flatten()
 
-        # Normalize returns
-        # returns = (returns - returns.mean()) / (returns.std() + 1e-8)
-        # returns = (returns - returns.mean())
-        with th.no_grad():
-            current_q1, current_q2 = self.critic(obs, action)
-        # Alternatively use the q value
-        returns = (returns - th.min(current_q1, current_q2))
+        # Normalize advantage
+        # if self.normalize_advantage:
+        #     advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
 
-        policy_loss = -(returns * log_prob).mean()
+        # Value loss using the TD(gae_lambda) target
+        value_loss = F.mse_loss(returns, values)
+
+        # A2C loss
+        policy_loss = -(advantage * log_prob).mean()
 
         # Entropy loss favor exploration
         entropy_loss = -th.mean(entropy)
 
-        loss = policy_loss + self.sde_ent_coef * entropy_loss
+        vf_coef = 0.5
+        loss = policy_loss + self.sde_ent_coef * entropy_loss + vf_coef * value_loss
 
         # Optimization step
         self.actor.sde_optimizer.zero_grad()

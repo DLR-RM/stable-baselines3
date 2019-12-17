@@ -158,6 +158,27 @@ class Critic(BaseNetwork):
         return self.q_networks[0](th.cat([obs, action], dim=1))
 
 
+class ValueFunction(BaseNetwork):
+    """
+    Value function for TD3 when doing on-policy exploration with SDE.
+
+    :param obs_dim: (int) Dimension of the observation
+    :param net_arch: ([int]) Network architecture
+    :param activation_fn: (nn.Module) Activation function
+    """
+    def __init__(self, obs_dim, net_arch=None, activation_fn=nn.Tanh):
+        super(ValueFunction, self).__init__()
+
+        if net_arch is None:
+            net_arch = [64, 64]
+
+        vf_net = create_mlp(obs_dim, 1, net_arch, activation_fn)
+        self.vf_net = nn.Sequential(*vf_net)
+
+    def forward(self, obs):
+        return self.vf_net(obs)
+
+
 class TD3Policy(BasePolicy):
     """
     Policy class (with both actor and critic) for TD3.
@@ -206,7 +227,9 @@ class TD3Policy(BasePolicy):
 
         self.actor, self.actor_target = None, None
         self.critic, self.critic_target = None, None
+        # For SDE only
         self.use_sde = use_sde
+        self.vf_net = None
         self.log_std_init = log_std_init
         self._build(learning_rate)
 
@@ -220,6 +243,10 @@ class TD3Policy(BasePolicy):
         self.critic_target = self.make_critic()
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=learning_rate(1))
+
+        if self.use_sde:
+            self.vf_net = ValueFunction(self.obs_dim)
+            self.actor.sde_optimizer.add_param_group({'params': self.vf_net.parameters()})
 
     def reset_noise(self):
         return self.actor.reset_noise()

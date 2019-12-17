@@ -511,7 +511,7 @@ class BaseRLModel(object):
             self.actor.reset_noise()
             # Reset rollout data
             if self.on_policy_exploration:
-                self.rollout_data = {key: [] for key in ['observations', 'actions', 'rewards', 'dones']}
+                self.rollout_data = {key: [] for key in ['observations', 'actions', 'rewards', 'dones', 'values']}
 
         while total_steps < n_steps or total_episodes < n_episodes:
             done = False
@@ -574,6 +574,7 @@ class BaseRLModel(object):
                     self.rollout_data['actions'].append(scaled_action[0].copy())
                     self.rollout_data['rewards'].append(reward[0].copy())
                     self.rollout_data['dones'].append(np.array(done_bool[0]).copy())
+                    self.rollout_data['values'].append(self.vf_net(th.FloatTensor(obs).to(self.device))[0].cpu().detach().numpy())
 
                 obs = new_obs
                 # Save the true unnormalized observation
@@ -615,19 +616,24 @@ class BaseRLModel(object):
 
         # Post processing
         if self.rollout_data is not None:
-            for key in ['observations', 'actions', 'rewards', 'dones']:
+            for key in ['observations', 'actions', 'rewards', 'dones', 'values']:
                 self.rollout_data[key] = th.FloatTensor(np.array(self.rollout_data[key])).to(self.device)
 
             self.rollout_data['returns'] = self.rollout_data['rewards'].clone()
-            # Compute return
+            self.rollout_data['advantage'] = self.rollout_data['rewards'].clone()
+
+            # Compute return and advantage
             last_return = 0.0
             for step in reversed(range(len(self.rollout_data['rewards']))):
                 if step == len(self.rollout_data['rewards']) - 1:
-                    last_return = self.rollout_data['rewards'][step]
+                    next_non_terminal = 1.0 - done[0]
+                    next_value = self.vf_net(th.FloatTensor(obs).to(self.device))[0].detach()
+                    last_return = self.rollout_data['rewards'][step] + next_non_terminal * next_value
                 else:
                     next_non_terminal = 1.0 - self.rollout_data['dones'][step + 1]
                     last_return = self.rollout_data['rewards'][step] + self.gamma * last_return * next_non_terminal
                 self.rollout_data['returns'][step] = last_return
+            self.rollout_data['advantage'] = self.rollout_data['returns'] - self.rollout_data['values']
 
         return mean_reward, total_steps, total_episodes, obs
 

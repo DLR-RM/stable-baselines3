@@ -48,6 +48,8 @@ class SAC(BaseRLModel):
     :param gamma: (float) the discount factor
     :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
         instead of action noise exploration (default: False)
+    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
+        Default: -1 (only sample at the beginning of the rollout)
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
@@ -63,12 +65,13 @@ class SAC(BaseRLModel):
                  tau=0.005, ent_coef='auto', target_update_interval=1,
                  train_freq=1, gradient_steps=1, n_episodes_rollout=-1,
                  target_entropy='auto', action_noise=None, max_grad_norm=None,
-                 gamma=0.99, use_sde=False, tensorboard_log=None, create_eval_env=False,
+                 gamma=0.99, use_sde=False, sde_sample_freq=-1,
+                 tensorboard_log=None, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
 
         super(SAC, self).__init__(policy, env, SACPolicy, policy_kwargs, verbose, device,
-                                  create_eval_env=create_eval_env, seed=seed, use_sde=use_sde)
+                                  create_eval_env=create_eval_env, seed=seed, use_sde=use_sde, sde_sample_freq=sde_sample_freq)
 
         self.learning_rate = learning_rate
         self.target_entropy = target_entropy

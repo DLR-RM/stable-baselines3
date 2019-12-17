@@ -76,7 +76,7 @@ class PPOPolicy(BasePolicy):
 
         self._build(learning_rate)
 
-    def reset_noise_net(self, n_envs=1):
+    def reset_noise(self, n_envs=1):
         """
         Sample new weights for the exploration matrix.
 

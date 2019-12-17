@@ -55,6 +55,8 @@ class PPO(BaseRLModel):
     :param max_grad_norm: (float) The maximum value for the gradient clipping
     :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
         instead of action noise exploration (default: False)
+    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
+        Default: -1 (only sample at the beginning of the rollout)    
     :param target_kl: (float) Limit the KL divergence between updates,
         because the clipping is not enough to prevent large update
         see issue #213 (cf https://github.com/hill-a/stable-baselines/issues/213)
@@ -69,17 +71,17 @@ class PPO(BaseRLModel):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
-
     def __init__(self, policy, env, learning_rate=3e-4,
                  n_steps=2048, batch_size=64, n_epochs=10,
                  gamma=0.99, gae_lambda=0.95, clip_range=0.2, clip_range_vf=None,
-                 ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5, use_sde=False,
+                 ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5,
+                 use_sde=False, sde_sample_freq=-1,
                  target_kl=None, tensorboard_log=None, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
 
         super(PPO, self).__init__(policy, env, PPOPolicy, policy_kwargs=policy_kwargs,
-                                  verbose=verbose, device=device,
+                                  verbose=verbose, device=device, use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                   create_eval_env=create_eval_env, support_multi_env=True, seed=seed)
 
         self.learning_rate = learning_rate
@@ -97,7 +99,6 @@ class PPO(BaseRLModel):
         self.target_kl = target_kl
         self.tensorboard_log = tensorboard_log
         self.tb_writer = None
-        self.use_sde = use_sde
 
         if _init_setup_model:
             self._setup_model()
@@ -158,9 +159,13 @@ class PPO(BaseRLModel):
         # Sample new weights for the state dependent exploration
         # TODO: ensure episodic setting?
         if self.use_sde:
-            self.policy.reset_noise_net(env.num_envs)
+            self.policy.reset_noise(env.num_envs)
 
         while n_steps < n_rollout_steps:
+            if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
+                # Sample a new noise matrix
+                self.policy.reset_noise(env.num_envs)
+
             with th.no_grad():
                 actions, values, log_probs = self.policy.forward(obs)
             actions = actions.cpu().numpy()

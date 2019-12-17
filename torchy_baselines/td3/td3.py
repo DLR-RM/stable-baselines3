@@ -40,6 +40,8 @@ class TD3(BaseRLModel):
     :param target_noise_clip: (float) Limit for absolute value of target policy smoothing noise.
     :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
         instead of action noise exploration (default: False)
+    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
+        Default: -1 (only sample at the beginning of the rollout)
     :param sde_max_grad_norm: (float)
     :param sde_ent_coef: (float)
     :param sde_log_std_scheduler: (callable)
@@ -57,12 +59,12 @@ class TD3(BaseRLModel):
                  policy_delay=2, learning_starts=100, gamma=0.99, batch_size=100,
                  train_freq=-1, gradient_steps=-1, n_episodes_rollout=1,
                  tau=0.005, action_noise=None, target_policy_noise=0.2, target_noise_clip=0.5,
-                 use_sde=False, sde_max_grad_norm=1, sde_ent_coef=0.0, sde_log_std_scheduler=None,
+                 use_sde=False, sde_sample_freq=-1, sde_max_grad_norm=1, sde_ent_coef=0.0, sde_log_std_scheduler=None,
                  tensorboard_log=None, create_eval_env=False, policy_kwargs=None, verbose=0,
                  seed=0, device='auto', _init_setup_model=True):
 
         super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device,
-                                  create_eval_env=create_eval_env, seed=seed, use_sde=use_sde)
+                                  create_eval_env=create_eval_env, seed=seed, use_sde=use_sde, sde_sample_freq=sde_sample_freq)
 
         self.buffer_size = buffer_size
         self.learning_rate = learning_rate

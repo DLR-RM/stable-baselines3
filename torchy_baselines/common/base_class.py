@@ -39,12 +39,15 @@ class BaseRLModel(object):
     :param seed: (int) Seed for the pseudo random generators
     :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
         instead of action noise exploration (default: False)
+    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
+        Default: -1 (only sample at the beginning of the rollout)
     """
     __metaclass__ = ABCMeta
 
     def __init__(self, policy, env, policy_base, policy_kwargs=None,
                  verbose=0, device='auto', support_multi_env=False,
-                 create_eval_env=False, monitor_wrapper=True, seed=None, use_sde=False):
+                 create_eval_env=False, monitor_wrapper=True, seed=None,
+                 use_sde=False, sde_sample_freq=-1):
         if isinstance(policy, str) and policy_base is not None:
             self.policy_class = get_policy_from_name(policy_base, policy)
         else:
@@ -74,6 +77,7 @@ class BaseRLModel(object):
         self.rollout_data = None
         self.on_policy_exploration = False
         self.use_sde = use_sde
+        self.sde_sample_freq = sde_sample_freq
         # Track the training progress (from 1 to 0)
         # this is used to update the learning rate
         self._current_progress = 1
@@ -516,6 +520,10 @@ class BaseRLModel(object):
             episode_reward, episode_timesteps = 0.0, 0
 
             while not done:
+                if self.use_sde and self.sde_sample_freq > 0 and  n_steps % self.sde_sample_freq == 0:
+                    # Sample a new noise matrix
+                    self.actor.reset_noise()
+
                 # Select action randomly or according to policy
                 if num_timesteps < learning_starts:
                     # Warmup phase

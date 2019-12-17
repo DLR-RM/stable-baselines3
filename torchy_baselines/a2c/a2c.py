@@ -33,6 +33,8 @@ class A2C(PPO):
     :param use_rms_prop: (bool) Whether to use RMSprop (default) or Adam as optimizer
     :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
         instead of action noise exploration (default: False)
+    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
+        Default: -1 (only sample at the beginning of the rollout)
     :param normalize_advantage: (bool) Whether to normalize or not the advantage
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param create_eval_env: (bool) Whether to create a second environment that will be
@@ -44,11 +46,10 @@ class A2C(PPO):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
-
     def __init__(self, policy, env, learning_rate=7e-4,
                  n_steps=5, gamma=0.99, gae_lambda=1.0,
                  ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5,
-                 rms_prop_eps=1e-5, use_rms_prop=True, use_sde=False,
+                 rms_prop_eps=1e-5, use_rms_prop=True, use_sde=False, sde_sample_freq=-1,
                  normalize_advantage=False, tensorboard_log=None, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
@@ -56,7 +57,8 @@ class A2C(PPO):
         super(A2C, self).__init__(policy, env, learning_rate=learning_rate,
                                   n_steps=n_steps, batch_size=None, n_epochs=1,
                                   gamma=gamma, gae_lambda=gae_lambda, ent_coef=ent_coef,
-                                  vf_coef=vf_coef, max_grad_norm=max_grad_norm, use_sde=use_sde,
+                                  vf_coef=vf_coef, max_grad_norm=max_grad_norm,
+                                  use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                   tensorboard_log=tensorboard_log, policy_kwargs=policy_kwargs,
                                   verbose=verbose, device=device, create_eval_env=create_eval_env,
                                   seed=seed, _init_setup_model=False)

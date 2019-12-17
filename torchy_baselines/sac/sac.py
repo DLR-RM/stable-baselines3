@@ -202,6 +202,9 @@ class SAC(BaseRLModel):
             if ent_coef_loss is not None:
                 self.ent_coef_optimizer.zero_grad()
                 ent_coef_loss.backward()
+                # Clip grad norm
+                if self.max_grad_norm is not None:
+                    th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                 self.ent_coef_optimizer.step()
 
 
@@ -227,6 +230,9 @@ class SAC(BaseRLModel):
             # Optimize the critic
             self.critic.optimizer.zero_grad()
             critic_loss.backward()
+            # Clip grad norm
+            if self.max_grad_norm is not None:
+                th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.critic.optimizer.step()
 
             # Compute actor loss

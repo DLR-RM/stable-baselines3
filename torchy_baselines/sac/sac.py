@@ -44,7 +44,6 @@ class SAC(BaseRLModel):
     :param target_entropy: (str or float) target entropy when learning ent_coef (ent_coef = 'auto')
     :param action_noise: (ActionNoise) the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
-    :param max_grad_norm: (float) The maximum value for the gradient clipping (None by default)
     :param gamma: (float) the discount factor
     :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
         instead of action noise exploration (default: False)
@@ -64,7 +63,7 @@ class SAC(BaseRLModel):
                  learning_starts=100, batch_size=256,
                  tau=0.005, ent_coef='auto', target_update_interval=1,
                  train_freq=1, gradient_steps=1, n_episodes_rollout=-1,
-                 target_entropy='auto', action_noise=None, max_grad_norm=None,
+                 target_entropy='auto', action_noise=None,
                  gamma=0.99, use_sde=False, sde_sample_freq=-1,
                  tensorboard_log=None, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',
@@ -93,7 +92,6 @@ class SAC(BaseRLModel):
         self.action_noise = action_noise
         self.gamma = gamma
         self.ent_coef_optimizer = None
-        self.max_grad_norm = max_grad_norm
 
         if _init_setup_model:
             self._setup_model()
@@ -205,9 +203,6 @@ class SAC(BaseRLModel):
             if ent_coef_loss is not None:
                 self.ent_coef_optimizer.zero_grad()
                 ent_coef_loss.backward()
-                # Clip grad norm
-                if self.max_grad_norm is not None:
-                    th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                 self.ent_coef_optimizer.step()
 
 
@@ -233,9 +228,6 @@ class SAC(BaseRLModel):
             # Optimize the critic
             self.critic.optimizer.zero_grad()
             critic_loss.backward()
-            # Clip grad norm
-            if self.max_grad_norm is not None:
-                th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.critic.optimizer.step()
 
             # Compute actor loss
@@ -247,9 +239,6 @@ class SAC(BaseRLModel):
             # Optimize the actor
             self.actor.optimizer.zero_grad()
             actor_loss.backward()
-            # Clip grad norm
-            if self.max_grad_norm is not None:
-                th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.actor.optimizer.step()
 
             # Update target networks

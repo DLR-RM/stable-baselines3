@@ -14,27 +14,9 @@ PyTorch version of [Stable Baselines](https://github.com/hill-a/stable-baselines
 - SAC
 - TD3
 
+- SDE support for A2C, PPO, SAC and TD3.
+
 
 ## Roadmap
 
-TODO:
-- better predict
-- complete logger
-- Refactor: buffer with numpy array instead of pytorch
-- Refactor: remove duplicated code for evaluation
-- double check the shape of log prob
-- try squashing both mean and output when using SAC + SDE
-- plotting? -> zoo
-
-Later:
-- get_parameters / set_parameters
-- SDE: use [affine transform](https://www.tensorflow.org/probability/api_docs/python/tfp/bijectors/Affine)
-  to scale the noise after a tanh transform?
-- Use MultivariateNormal with full covariance matrix?
-- CNN policies + normalization
-- tensorboard support
-- DQN
-- TRPO
-- ACER
-- DDPG
-- HER -> use stable-baselines because does not depends on tf?
+- cf github Roadmap

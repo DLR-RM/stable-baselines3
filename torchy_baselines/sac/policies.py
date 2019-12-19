@@ -10,6 +10,28 @@ LOG_STD_MAX = 2
 LOG_STD_MIN = -20
 
 
+class LeakyClip(nn.Module):
+    """
+    Cip values outside a certain range
+    (it is not a hard clip, there is a small slope to have non-zero gradient)
+
+    :param min_val: (float)
+    :param max_val: (float)
+    :param slope: (float)
+    """
+    def __init__(self, min_val=-2.0, max_val=2.0, slope=0.01):
+        super(LeakyClip, self).__init__()
+        self.min_val = min_val
+        self.max_val = max_val
+        self.slope = slope
+
+    def forward(self, x):
+        linear_part = x * (x >= self.min_val) * (x <= self.max_val)
+        above_max_val = self.slope * (x - self.max_val) * (x > self.max_val)
+        below_min_val = self.slope * (x - self.min_val) * (x < self.min_val)
+        return linear_part + below_min_val + above_max_val
+
+
 class Actor(BaseNetwork):
     """
     Actor network (policy) for SAC.
@@ -50,8 +72,9 @@ class Actor(BaseNetwork):
                                                                             log_std_init=log_std_init)
             # Avoid saturation by limiting the mean of the gaussian to be in [-1, 1]
             # self.mu = nn.Sequential(self.mu, nn.Tanh())
-            # TODO: test with small positive slope to have non zero gradient
-            self.mu = nn.Sequential(self.mu, nn.Hardtanh(min_val=-3.0, max_val=3.0))
+            self.mu = nn.Sequential(self.mu, nn.Hardtanh(min_val=-2.0, max_val=2.0))
+            # Small positive slope to have non-zero gradient
+            self.mu = nn.Sequential(self.mu, LeakyClip())
         else:
             self.action_dist = SquashedDiagGaussianDistribution(action_dim)
             self.mu = nn.Linear(net_arch[-1], action_dim)

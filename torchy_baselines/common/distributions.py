@@ -272,10 +272,11 @@ class StateDependentNoiseDistribution(Distribution):
         if self.use_expln:
             # From SDE paper, it allows to keep variance
             # above zero and prevent it from growing too fast
-            if log_std <= 0:
-                std = th.exp(log_std)
-            else:
-                std = th.log(log_std + 1.0) + 1.0
+            below_threshold = th.exp(log_std) * (log_std <= 0)
+            # Avoid NaN: zeros values that are below zero
+            safe_log_std = log_std * (log_std > 0) + self.epsilon
+            above_threshold = (th.log1p(safe_log_std) + 1.0) * (log_std > 0)
+            std = below_threshold + above_threshold
         else:
             # Use normal exponential
             std = th.exp(log_std)

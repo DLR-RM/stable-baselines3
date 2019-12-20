@@ -47,9 +47,13 @@ class Actor(BaseNetwork):
     :param sde_net_arch: ([int]) Network architecture for extracting features
         when using SDE. If None, the latent features from the policy will be used.
         Pass an empty list to use the states as features.
+    :param use_expln: (bool) Use `expln()` function instead of `exp()` when using SDE to ensure
+        a positive standard deviation (cf paper). It allows to keep variance
+        above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
     """
     def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU,
-                 use_sde=False, log_std_init=-3, full_std=True, sde_net_arch=None):
+                 use_sde=False, log_std_init=-3, full_std=True,
+                 sde_net_arch=None, use_expln=False):
         super(Actor, self).__init__()
 
         latent_pi_net = create_mlp(obs_dim, -1, net_arch, activation_fn)
@@ -65,7 +69,7 @@ class Actor(BaseNetwork):
                                                                                           activation_fn)
 
             # TODO: check for the learn_features
-            self.action_dist = StateDependentNoiseDistribution(action_dim, full_std=full_std, use_expln=False,
+            self.action_dist = StateDependentNoiseDistribution(action_dim, full_std=full_std, use_expln=use_expln,
                                                                learn_features=True, squash_output=True)
             self.mu, self.log_std = self.action_dist.proba_distribution_net(latent_dim=net_arch[-1],
                                                                             latent_sde_dim=latent_sde_dim,
@@ -186,11 +190,14 @@ class SACPolicy(BasePolicy):
     :param sde_net_arch: ([int]) Network architecture for extracting features
         when using SDE. If None, the latent features from the policy will be used.
         Pass an empty list to use the states as features.
+    :param use_expln: (bool) Use `expln()` function instead of `exp()` when using SDE to ensure
+        a positive standard deviation (cf paper). It allows to keep variance
+        above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
     """
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',
                  activation_fn=nn.ReLU, use_sde=False,
-                 log_std_init=-3, sde_net_arch=None):
+                 log_std_init=-3, sde_net_arch=None, use_expln=False):
         super(SACPolicy, self).__init__(observation_space, action_space, device)
 
         if net_arch is None:
@@ -210,7 +217,8 @@ class SACPolicy(BasePolicy):
         sde_kwargs = {
             'use_sde': use_sde,
             'log_std_init': log_std_init,
-            'sde_net_arch': sde_net_arch
+            'sde_net_arch': sde_net_arch,
+            'use_expln': use_expln
         }
         self.actor_kwargs.update(sde_kwargs)
         self.actor, self.actor_target = None, None

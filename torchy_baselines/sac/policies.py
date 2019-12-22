@@ -76,9 +76,9 @@ class Actor(BaseNetwork):
                                                                             log_std_init=log_std_init)
             # Avoid saturation by limiting the mean of the gaussian to be in [-1, 1]
             # self.mu = nn.Sequential(self.mu, nn.Tanh())
-            # self.mu = nn.Sequential(self.mu, nn.Hardtanh(min_val=-2.0, max_val=2.0))
+            self.mu = nn.Sequential(self.mu, nn.Hardtanh(min_val=-2.0, max_val=2.0))
             # Small positive slope to have non-zero gradient
-            self.mu = nn.Sequential(self.mu, LeakyClip())
+            # self.mu = nn.Sequential(self.mu, LeakyClip())
         else:
             self.action_dist = SquashedDiagGaussianDistribution(action_dim)
             self.mu = nn.Linear(net_arch[-1], action_dim)

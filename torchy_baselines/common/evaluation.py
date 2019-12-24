@@ -19,4 +19,4 @@ def evaluate_policy(model, env, n_eval_episodes=10, deterministic=True, render=F
                 env.render()
         episode_rewards.append(episode_reward)
 
-    return np.mean(episode_rewards), n_steps
+    return np.mean(episode_rewards), np.std(episode_rewards)

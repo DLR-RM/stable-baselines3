@@ -188,6 +188,17 @@ class SubprocVecEnv(VecEnv):
         for remote in target_remotes:
             remote.recv()
 
+    def seed(self, seed, indices=None):
+        """
+        :param seed: (int or [int])
+        :param indices: ([int])
+        """
+        indices = self._get_indices(indices)
+        if not hasattr(seed, 'len'):
+            seed = [seed] * len(indices)
+        assert len(seed) == len(indices)
+        return [self.env_method('seed', seed[i], indices=i) for i in indices]
+
     def env_method(self, method_name, *method_args, **method_kwargs):
         """Call instance methods of vectorized environments."""
         indices = method_kwargs.get('indices')

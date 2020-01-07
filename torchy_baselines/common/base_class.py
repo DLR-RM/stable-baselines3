@@ -9,11 +9,12 @@ import gym
 import torch as th
 import numpy as np
 
+from torchy_baselines.common import logger
 from torchy_baselines.common.policies import get_policy_from_name
 from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate
-from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize
+from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, sync_envs_normalization
 from torchy_baselines.common.monitor import Monitor
-from torchy_baselines.common import logger
+from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.common.save_util import data_to_json, json_to_data
 
 
@@ -287,9 +288,9 @@ class BaseRLModel(object):
         :param log_interval: (int) The number of timesteps before logging.
         :param tb_log_name: (str) the name of the run for tensorboard log
         :param reset_num_timesteps: (bool) whether or not to reset the current timestep number (used in logging)
-        :param eval_env: (gym.Env)
-        :param eval_freq: (int)
-        :param n_eval_episodes: (int)
+        :param eval_env: (gym.Env) Environment that will be used to evaluate the agent
+        :param eval_freq: (int) Evaluate the agent every `eval_freq` timesteps (this may vary a little)
+        :param n_eval_episodes: (int) Number of episode to evaluate the agent
         :return: (BaseRLModel) the trained model
         """
         pass
@@ -712,3 +713,26 @@ class BaseRLModel(object):
         params_to_save = self.get_policy_parameters()
         opt_params_to_save = self.get_opt_parameters()
         self._save_to_file_zip(path, data=data, params=params_to_save, opt_params=opt_params_to_save)
+
+    def _eval_policy(self, eval_freq, eval_env, n_eval_episodes,
+                     timesteps_since_eval, deterministic=True):
+        """
+        Evaluate the current policy on a test environment.
+
+        :param eval_env: (gym.Env) Environment that will be used to evaluate the agent
+        :param eval_freq: (int) Evaluate the agent every `eval_freq` timesteps (this may vary a little)
+        :param n_eval_episodes: (int) Number of episode to evaluate the agent
+        :parma timesteps_since_eval: (int) Number of timesteps since last evaluation
+        :param deterministic: (bool) Whether to use deterministic or stochastic actions
+        :return: (int) Number of timesteps since last evaluation
+        """
+        if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
+            timesteps_since_eval %= eval_freq
+            # Synchronise the normalization stats if needed
+            sync_envs_normalization(self.env, eval_env)
+            mean_reward, std_reward = evaluate_policy(self, eval_env, n_eval_episodes, deterministic=deterministic)
+            if self.verbose > 0:
+                print("Eval num_timesteps={}, "
+                      "episode_reward={:.2f} +/- {:.2f}".format(self.num_timesteps, mean_reward, std_reward))
+                print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - self.start_time)))
+        return timesteps_since_eval

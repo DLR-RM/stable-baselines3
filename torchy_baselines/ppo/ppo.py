@@ -14,10 +14,8 @@ except ImportError:
 import numpy as np
 
 from torchy_baselines.common.base_class import BaseRLModel
-from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.common.buffers import RolloutBuffer
 from torchy_baselines.common.utils import explained_variance, get_schedule_fn
-from torchy_baselines.common.vec_env import sync_envs_normalization
 from torchy_baselines.common import logger
 from torchy_baselines.ppo.policies import PPOPolicy
 
@@ -303,19 +301,12 @@ class PPO(BaseRLModel):
 
             self.train(self.n_epochs, batch_size=self.batch_size)
 
-            # Evaluate agent
-            if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
-                timesteps_since_eval %= eval_freq
-                sync_envs_normalization(self.env, eval_env)
-
-                mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
-                if self.tb_writer is not None:
-                    self.tb_writer.add_scalar('Eval/reward', mean_reward, self.num_timesteps)
-
-                evaluations.append(mean_reward)
-                if self.verbose > 0:
-                    print("Eval num_timesteps={}, mean_reward={:.2f}".format(self.num_timesteps, evaluations[-1]))
-                    print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - self.start_time)))
+            # Evaluate the agent
+            timesteps_since_eval = self._eval_policy(eval_freq, eval_env, n_eval_episodes,
+                                                     timesteps_since_eval, deterministic=True)
+            # For tensorboard integration
+            # if self.tb_writer is not None:
+            #     self.tb_writer.add_scalar('Eval/reward', mean_reward, self.num_timesteps)
 
         return self
 

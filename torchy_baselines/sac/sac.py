@@ -6,9 +6,7 @@ import numpy as np
 
 from torchy_baselines.common.base_class import BaseRLModel
 from torchy_baselines.common.buffers import ReplayBuffer
-from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.sac.policies import SACPolicy
-from torchy_baselines.common.vec_env import sync_envs_normalization
 from torchy_baselines.common import logger
 
 
@@ -287,15 +285,8 @@ class SAC(BaseRLModel):
 
                 self.train(gradient_steps, batch_size=self.batch_size)
 
-            # Evaluate episode
-            if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
-                timesteps_since_eval %= eval_freq
-                sync_envs_normalization(self.env, eval_env)
-                mean_reward, std_reward = evaluate_policy(self, eval_env, n_eval_episodes)
-                evaluations.append(mean_reward)
-                if self.verbose > 0:
-                    print("Eval num_timesteps={}, mean_reward={:.2f}, std_reward={:.2f}".format(self.num_timesteps, mean_reward, std_reward))
-                    print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - self.start_time)))
+            timesteps_since_eval = self._eval_policy(eval_freq, eval_env, n_eval_episodes,
+                                                     timesteps_since_eval, deterministic=True)
 
         return self
 

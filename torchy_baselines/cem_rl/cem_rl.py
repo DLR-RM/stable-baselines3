@@ -155,11 +155,12 @@ class CEMRL(TD3):
                 self.actor.load_from_vector(self.es.mu)
                 sync_envs_normalization(self.env, eval_env)
 
-                mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
+                mean_reward, std_reward = evaluate_policy(self, eval_env, n_eval_episodes)
                 evaluations.append(mean_reward)
 
                 if self.verbose > 0:
-                    print("Eval num_timesteps={}, mean_reward={:.2f}".format(self.num_timesteps, evaluations[-1]))
+                    print("Eval num_timesteps={}, "
+                          "episode_reward={:.2f} +/- {:.2f}".format(self.num_timesteps, mean_reward, std_reward))
                     print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - self.start_time)))
 
             actor_steps = 0

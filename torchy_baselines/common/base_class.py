@@ -526,6 +526,8 @@ class BaseRLModel(object):
                     self.actor.reset_noise()
 
                 # Select action randomly or according to policy
+                # TODO: use action from policy when using SDE during the warmup phase?
+                # if num_timesteps < learning_starts and not self.use_sde:
                 if num_timesteps < learning_starts:
                     # Warmup phase
                     unscaled_action = np.array([self.action_space.sample()])

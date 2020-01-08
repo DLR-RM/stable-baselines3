@@ -23,10 +23,13 @@ class Actor(BaseNetwork):
     :param sde_net_arch: ([int]) Network architecture for extracting features
         when using SDE. If None, the latent features from the policy will be used.
         Pass an empty list to use the states as features.
+    :param use_expln: (bool) Use `expln()` function instead of `exp()` when using SDE to ensure
+        a positive standard deviation (cf paper). It allows to keep variance
+        above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
     """
     def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU,
                  use_sde=False, log_std_init=-3, clip_noise=None,
-                 lr_sde=3e-4, full_std=False, sde_net_arch=None):
+                 lr_sde=3e-4, full_std=False, sde_net_arch=None, use_expln=False):
         super(Actor, self).__init__()
 
         self.latent_pi, self.log_std = None, None
@@ -48,7 +51,7 @@ class Actor(BaseNetwork):
                                                                                           activation_fn)
 
             # Create state dependent noise matrix (SDE)
-            self.action_dist = StateDependentNoiseDistribution(action_dim, full_std=full_std, use_expln=False,
+            self.action_dist = StateDependentNoiseDistribution(action_dim, full_std=full_std, use_expln=use_expln,
                                                                squash_output=False, learn_features=learn_features)
             action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=net_arch[-1],
                                                                                latent_sde_dim=latent_sde_dim,
@@ -194,11 +197,14 @@ class TD3Policy(BasePolicy):
     :param sde_net_arch: ([int]) Network architecture for extracting features
         when using SDE. If None, the latent features from the policy will be used.
         Pass an empty list to use the states as features.
+    :param use_expln: (bool) Use `expln()` function instead of `exp()` when using SDE to ensure
+        a positive standard deviation (cf paper). It allows to keep variance
+        above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
     """
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',
                  activation_fn=nn.ReLU, use_sde=False, log_std_init=-3,
-                 clip_noise=None, lr_sde=3e-4, sde_net_arch=None):
+                 clip_noise=None, lr_sde=3e-4, sde_net_arch=None, use_expln=False):
         super(TD3Policy, self).__init__(observation_space, action_space, device)
 
         # Default network architecture, from the original paper
@@ -221,7 +227,8 @@ class TD3Policy(BasePolicy):
             'log_std_init': log_std_init,
             'clip_noise': clip_noise,
             'lr_sde': lr_sde,
-            'sde_net_arch': sde_net_arch
+            'sde_net_arch': sde_net_arch,
+            'use_expln': use_expln
         }
         self.actor_kwargs.update(sde_kwargs)
 

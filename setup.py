@@ -24,8 +24,11 @@ setup(name='torchy_baselines',
             'sphinx-autobuild',
             'sphinx-rtd-theme'
         ],
-        'render': [
-            'opencv-python'
+        'extra': [
+            # For render
+            'opencv-python',
+            # For reading logs
+            'pandas'
         ]
       },
       description='Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.',

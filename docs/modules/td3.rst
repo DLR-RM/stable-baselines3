@@ -66,7 +66,7 @@ Example
 
   from torchy_baselines import TD3
   from torchy_baselines.td3.policies import MlpPolicy
-  from torchy_baselines.ddpg.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
+  from torchy_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 
   # The noise objects for TD3
   n_actions = env.action_space.shape[-1]

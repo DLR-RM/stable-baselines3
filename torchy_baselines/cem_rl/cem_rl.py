@@ -35,9 +35,17 @@ class CEMRL(TD3):
     :param batch_size: (int) Minibatch size for each gradient update
     :param tau: (float) the soft update coefficient ("polyak update" of the target networks, between 0 and 1)
     :param action_noise: (ActionNoise) the action noise type. Cf common.noise for the different action noise type.
-    :param target_policy_noise: (float) Standard deviation of gaussian noise added to target policy
+    :param target_policy_noise: (float) Standard deviation of Gaussian noise added to target policy
         (smoothing noise)
     :param target_noise_clip: (float) Limit for absolute value of target policy smoothing noise.
+    :param n_episodes_rollout: (int) Update the model every `n_episodes_rollout` episodes.
+        Note that this cannot be used at the same time as `train_freq`
+    :param update_style: (str) Update style for the individual that will use the gradient:
+        - original: original implementation (actor_steps // n_grad steps for the critic
+        and actor_steps gradient steps per individual)
+        - original_td3: same as before but the target networks are only update afterward
+        - td3_like: use policy delay and `actor_steps` steps for both the critic and the individual
+        - other: `2 * (actor_steps // self.n_grad)` for the critic and the individual
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation

@@ -74,7 +74,7 @@ class Actor(BaseNetwork):
             self.mu, self.log_std = self.action_dist.proba_distribution_net(latent_dim=net_arch[-1],
                                                                             latent_sde_dim=latent_sde_dim,
                                                                             log_std_init=log_std_init)
-            # Avoid saturation by limiting the mean of the gaussian to be in [-1, 1]
+            # Avoid saturation by limiting the mean of the Gaussian to be in [-1, 1]
             # self.mu = nn.Sequential(self.mu, nn.Tanh())
             self.mu = nn.Sequential(self.mu, nn.Hardtanh(min_val=-2.0, max_val=2.0))
             # Small positive slope to have non-zero gradient

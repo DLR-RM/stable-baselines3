@@ -162,7 +162,7 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
             # It will be clipped to avoid NaN when inversing tanh
             gaussian_action = TanhBijector.inverse(action)
 
-        # Log likelihood for a gaussian distribution
+        # Log likelihood for a Gaussian distribution
         log_prob = super(SquashedDiagGaussianDistribution, self).log_prob(gaussian_action)
         # Squash correction (from original SAC implementation)
         # this comes from the fact that tanh is bijective and differentiable
@@ -289,7 +289,7 @@ class StateDependentNoiseDistribution(Distribution):
     def sample_weights(self, log_std, batch_size=1):
         """
         Sample weights for the noise exploration matrix,
-        using a centered gaussian distribution.
+        using a centered Gaussian distribution.
 
         :param log_std: (th.Tensor)
         :param batch_size: (int)

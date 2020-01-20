@@ -22,7 +22,9 @@ setup(name='torchy_baselines',
         'docs': [
             'sphinx',
             'sphinx-autobuild',
-            'sphinx-rtd-theme'
+            'sphinx-rtd-theme',
+            # For spelling
+            'sphinxcontrib.spelling'
         ],
         'extra': [
             # For render
@@ -40,7 +42,7 @@ setup(name='torchy_baselines',
       license="MIT",
       long_description="",
       long_description_content_type='text/markdown',
-      version="0.1.0",
+      version="0.2.0a0",
       )
 
 # python setup.py sdist

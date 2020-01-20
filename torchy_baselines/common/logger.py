@@ -1,11 +1,10 @@
 """
 Taken from stable-baselines
 """
-import os
 import sys
-import json
-import time
 import datetime
+import json
+import os
 import tempfile
 import warnings
 from collections import defaultdict
@@ -183,15 +182,6 @@ class CSVOutputFormat(KVWriter):
         closes the file
         """
         self.file.close()
-
-
-def summary_val(key, value):
-    """
-    :param key: (str)
-    :param value: (float)
-    """
-    kwargs = {'tag': key, 'simple_value': float(value)}
-    return tf.Summary.Value(**kwargs)
 
 
 def valid_float_value(value):
@@ -515,3 +505,68 @@ def configure(folder=None, format_strs=None):
 
     Logger.CURRENT = Logger(folder=folder, output_formats=output_formats)
     log('Logging to %s' % folder)
+
+
+def reset():
+    """
+    reset the current logger
+    """
+    if Logger.CURRENT is not Logger.DEFAULT:
+        Logger.CURRENT.close()
+        Logger.CURRENT = Logger.DEFAULT
+        log('Reset logger')
+
+
+class ScopedConfigure(object):
+    def __init__(self, folder=None, format_strs=None):
+        """
+        Class for using context manager while logging
+
+        usage:
+        with ScopedConfigure(folder=None, format_strs=None):
+            {code}
+
+        :param folder: (str) the logging folder
+        :param format_strs: ([str]) the list of output logging format
+        """
+        self.dir = folder
+        self.format_strs = format_strs
+        self.prevlogger = None
+
+    def __enter__(self):
+        self.prevlogger = Logger.CURRENT
+        configure(folder=self.dir, format_strs=self.format_strs)
+
+    def __exit__(self, *args):
+        Logger.CURRENT.close()
+        Logger.CURRENT = self.prevlogger
+
+
+# ================================================================
+# Readers
+# ================================================================
+
+def read_json(fname):
+    """
+    read a json file using pandas
+
+    :param fname: (str) the file path to read
+    :return: (pandas DataFrame) the data in the json
+    """
+    import pandas
+    data = []
+    with open(fname, 'rt') as file_handler:
+        for line in file_handler:
+            data.append(json.loads(line))
+    return pandas.DataFrame(data)
+
+
+def read_csv(fname):
+    """
+    read a csv file using pandas
+
+    :param fname: (str) the file path to read
+    :return: (pandas DataFrame) the data in the csv
+    """
+    import pandas
+    return pandas.read_csv(fname, index_col=None, comment='#')

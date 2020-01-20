@@ -1,14 +1,11 @@
-import time
-
 import torch as th
 import torch.nn.functional as F
 import numpy as np
 
 from torchy_baselines.common.base_class import BaseRLModel
 from torchy_baselines.common.buffers import ReplayBuffer
-from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.sac.policies import SACPolicy
-from torchy_baselines.common.vec_env import sync_envs_normalization
+from torchy_baselines.common import logger
 
 
 class SAC(BaseRLModel):
@@ -44,6 +41,10 @@ class SAC(BaseRLModel):
     :param action_noise: (ActionNoise) the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
     :param gamma: (float) the discount factor
+    :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
+        instead of action noise exploration (default: False)
+    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
+        Default: -1 (only sample at the beginning of the rollout)
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
@@ -59,12 +60,14 @@ class SAC(BaseRLModel):
                  tau=0.005, ent_coef='auto', target_update_interval=1,
                  train_freq=1, gradient_steps=1, n_episodes_rollout=-1,
                  target_entropy='auto', action_noise=None,
-                 gamma=0.99, tensorboard_log=None, create_eval_env=False,
+                 gamma=0.99, use_sde=False, sde_sample_freq=-1,
+                 tensorboard_log=None, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
 
         super(SAC, self).__init__(policy, env, SACPolicy, policy_kwargs, verbose, device,
-                                  create_eval_env=create_eval_env, seed=seed)
+                                  create_eval_env=create_eval_env, seed=seed,
+                                  use_sde=use_sde, sde_sample_freq=sde_sample_freq)
 
         self.learning_rate = learning_rate
         self.target_entropy = target_entropy
@@ -85,6 +88,7 @@ class SAC(BaseRLModel):
         self.n_episodes_rollout = n_episodes_rollout
         self.action_noise = action_noise
         self.gamma = gamma
+        self.ent_coef_optimizer = None
 
         if _init_setup_model:
             self._setup_model()
@@ -122,11 +126,12 @@ class SAC(BaseRLModel):
             # Force conversion to float
             # this will throw an error if a malformed string (different from 'auto')
             # is passed
-            self.ent_coef = float(self.ent_coef)
+            self.ent_coef = th.tensor(float(self.ent_coef)).to(self.device)
 
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
         self.policy = self.policy_class(self.observation_space, self.action_space,
-                                        self.learning_rate, device=self.device, **self.policy_kwargs)
+                                        self.learning_rate, use_sde=self.use_sde,
+                                        device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
         self._create_aliases()
 
@@ -168,12 +173,21 @@ class SAC(BaseRLModel):
 
             obs, action_batch, next_obs, done, reward = replay_data
 
+            # Two options: retain_graph=True in the actor_loss.backward()
+            # or sample again the noise matrix
+            # otherwise the intermediate step `std = th.exp(log_std)`
+            # is lost and we cannot backpropagate through again
+            # anyway, we need to sample because `log_std` may have changed between two gradient steps
+            if self.use_sde:
+                self.actor.reset_noise(batch_size=batch_size)
+                # self.actor.reset_noise()
+
             # Action by the current actor for the sampled state
             action_pi, log_prob = self.actor.action_log_prob(obs)
             log_prob = log_prob.reshape(-1, 1)
 
             ent_coef_loss = None
-            if not isinstance(self.ent_coef, float):
+            if self.ent_coef_optimizer is not None:
                 # Important: detach the variable from the graph
                 # so we don't change it with other losses
                 # see https://github.com/rail-berkeley/softlearning/issues/60
@@ -189,10 +203,11 @@ class SAC(BaseRLModel):
                 ent_coef_loss.backward()
                 self.ent_coef_optimizer.step()
 
-            # Select action according to policy
-            next_action, next_log_prob = self.actor.action_log_prob(next_obs)
-
             with th.no_grad():
+                # if self.use_sde:
+                #     self.actor.reset_noise(batch_size=batch_size)
+                # Select action according to policy
+                next_action, next_log_prob = self.actor.action_log_prob(next_obs)
                 # Compute the target Q value
                 target_q1, target_q2 = self.critic_target(next_obs, next_action)
                 target_q = th.min(target_q1, target_q2)
@@ -228,6 +243,13 @@ class SAC(BaseRLModel):
                 for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
                     target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
+        # TODO: average
+        logger.logkv("ent_coef", ent_coef.item())
+        logger.logkv("actor_loss", actor_loss.item())
+        logger.logkv("critic_loss", critic_loss.item())
+        if ent_coef_loss is not None:
+            logger.logkv("ent_coef_loss", ent_coef_loss.item())
+
     def learn(self, total_timesteps, callback=None, log_interval=4,
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="SAC",
               reset_num_timesteps=True):
@@ -262,15 +284,8 @@ class SAC(BaseRLModel):
 
                 self.train(gradient_steps, batch_size=self.batch_size)
 
-            # Evaluate episode
-            if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
-                timesteps_since_eval %= eval_freq
-                sync_envs_normalization(self.env, eval_env)
-                mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
-                evaluations.append(mean_reward)
-                if self.verbose > 0:
-                    print("Eval num_timesteps={}, mean_reward={:.2f}".format(self.num_timesteps, evaluations[-1]))
-                    print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - self.start_time)))
+            timesteps_since_eval = self._eval_policy(eval_freq, eval_env, n_eval_episodes,
+                                                     timesteps_since_eval, deterministic=True)
 
         return self
 
@@ -278,7 +293,7 @@ class SAC(BaseRLModel):
         """
         Returns a dict of all the optimizers and their parameters
 
-        :return: (Dict) of optimizer names and their state_dict 
+        :return: (Dict) of optimizer names and their state_dict
         """
         opt_dict = {"actor": self.actor.optimizer.state_dict(), "critic": self.critic.optimizer.state_dict()}
         if self.ent_coef_optimizer is not None:

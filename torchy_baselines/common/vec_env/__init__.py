@@ -35,4 +35,4 @@ def sync_envs_normalization(env, eval_env):
         if isinstance(env_tmp, VecNormalize):
             eval_env_tmp.obs_rms = deepcopy(env_tmp.obs_rms)
         env_tmp = env_tmp.venv
-        eval_env_tmp.venv
+        eval_env_tmp = eval_env_tmp.venv

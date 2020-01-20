@@ -1,14 +1,10 @@
-import time
-
 import torch as th
 import torch.nn.functional as F
 import numpy as np
 
 from torchy_baselines.common.base_class import BaseRLModel
 from torchy_baselines.common.buffers import ReplayBuffer
-from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.td3.policies import TD3Policy
-from torchy_baselines.common.vec_env import sync_envs_normalization
 
 
 class TD3(BaseRLModel):
@@ -40,6 +36,8 @@ class TD3(BaseRLModel):
     :param target_noise_clip: (float) Limit for absolute value of target policy smoothing noise.
     :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
         instead of action noise exploration (default: False)
+    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
+        Default: -1 (only sample at the beginning of the rollout)
     :param sde_max_grad_norm: (float)
     :param sde_ent_coef: (float)
     :param sde_log_std_scheduler: (callable)
@@ -57,12 +55,13 @@ class TD3(BaseRLModel):
                  policy_delay=2, learning_starts=100, gamma=0.99, batch_size=100,
                  train_freq=-1, gradient_steps=-1, n_episodes_rollout=1,
                  tau=0.005, action_noise=None, target_policy_noise=0.2, target_noise_clip=0.5,
-                 use_sde=False, sde_max_grad_norm=1, sde_ent_coef=0.0, sde_log_std_scheduler=None,
+                 use_sde=False, sde_sample_freq=-1, sde_max_grad_norm=1, sde_ent_coef=0.0, sde_log_std_scheduler=None,
                  tensorboard_log=None, create_eval_env=False, policy_kwargs=None, verbose=0,
                  seed=0, device='auto', _init_setup_model=True):
 
         super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device,
-                                  create_eval_env=create_eval_env, seed=seed)
+                                  create_eval_env=create_eval_env, seed=seed,
+                                  use_sde=use_sde, sde_sample_freq=sde_sample_freq)
 
         self.buffer_size = buffer_size
         self.learning_rate = learning_rate
@@ -79,10 +78,11 @@ class TD3(BaseRLModel):
         self.target_policy_noise = target_policy_noise
 
         # State Dependent Exploration
-        self.use_sde = use_sde
         self.sde_max_grad_norm = sde_max_grad_norm
         self.sde_ent_coef = sde_ent_coef
         self.sde_log_std_scheduler = sde_log_std_scheduler
+        self.on_policy_exploration = True
+        self.sde_vf = None
 
         if _init_setup_model:
             self._setup_model()
@@ -93,7 +93,8 @@ class TD3(BaseRLModel):
         self.set_random_seed(self.seed)
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
         self.policy = self.policy_class(self.observation_space, self.action_space,
-                                        self.learning_rate, use_sde=self.use_sde, device=self.device, **self.policy_kwargs)
+                                        self.learning_rate, use_sde=self.use_sde,
+                                        device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
         self._create_aliases()
 
@@ -102,6 +103,7 @@ class TD3(BaseRLModel):
         self.actor_target = self.policy.actor_target
         self.critic = self.policy.critic
         self.critic_target = self.policy.critic_target
+        self.vf_net = self.policy.vf_net
 
     def select_action(self, observation, deterministic=True):
         # Normally not needed
@@ -207,25 +209,27 @@ class TD3(BaseRLModel):
         # self._update_learning_rate(self.policy.optimizer)
 
         # Unpack
-        obs, action, returns = [self.rollout_data[key] for key in ['observations', 'actions', 'returns']]
+        obs, action, advantage, returns = [self.rollout_data[key] for key in
+                                           ['observations', 'actions', 'advantage', 'returns']]
 
-        # TODO: avoid second computation of everything because of the gradient
         log_prob, entropy = self.actor.evaluate_actions(obs, action)
+        values = self.vf_net(obs).flatten()
 
-        # Normalize returns
-        # returns = (returns - returns.mean()) / (returns.std() + 1e-8)
-        # returns = (returns - returns.mean())
-        with th.no_grad():
-            current_q1, current_q2 = self.critic(obs, action)
-        # Alternatively use the q value
-        returns = (returns - th.min(current_q1, current_q2))
+        # Normalize advantage
+        # if self.normalize_advantage:
+        #     advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
 
-        policy_loss = -(returns * log_prob).mean()
+        # Value loss using the TD(gae_lambda) target
+        value_loss = F.mse_loss(returns, values)
+
+        # A2C loss
+        policy_loss = -(advantage * log_prob).mean()
 
         # Entropy loss favor exploration
         entropy_loss = -th.mean(entropy)
 
-        loss = policy_loss + self.sde_ent_coef * entropy_loss
+        vf_coef = 0.5
+        loss = policy_loss + self.sde_ent_coef * entropy_loss + vf_coef * value_loss
 
         # Optimization step
         self.actor.sde_optimizer.zero_grad()
@@ -284,15 +288,9 @@ class TD3(BaseRLModel):
                 gradient_steps = self.gradient_steps if self.gradient_steps > 0 else episode_timesteps
                 self.train(gradient_steps, batch_size=self.batch_size, policy_delay=self.policy_delay)
 
-            # Evaluate episode
-            if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
-                timesteps_since_eval %= eval_freq
-                sync_envs_normalization(self.env, eval_env)
-                mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
-                evaluations.append(mean_reward)
-                if self.verbose > 0:
-                    print("Eval num_timesteps={}, mean_reward={:.2f}".format(self.num_timesteps, evaluations[-1]))
-                    print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - self.start_time)))
+            # Evaluate the agent
+            timesteps_since_eval = self._eval_policy(eval_freq, eval_env, n_eval_episodes,
+                                                     timesteps_since_eval, deterministic=True)
 
         return self
 

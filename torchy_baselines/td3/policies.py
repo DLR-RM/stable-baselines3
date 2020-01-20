@@ -1,7 +1,8 @@
 import torch as th
 import torch.nn as nn
 
-from torchy_baselines.common.policies import BasePolicy, register_policy, create_mlp, BaseNetwork
+from torchy_baselines.common.policies import BasePolicy, register_policy, create_mlp, BaseNetwork, \
+    create_sde_feature_extractor
 from torchy_baselines.common.distributions import StateDependentNoiseDistribution
 
 
@@ -19,10 +20,16 @@ class Actor(BaseNetwork):
     :param lr_sde: (float) Learning rate for the standard deviation of the noise
     :param full_std: (bool) Whether to use (n_features x n_actions) parameters
         for the std instead of only (n_features,) when using SDE.
+    :param sde_net_arch: ([int]) Network architecture for extracting features
+        when using SDE. If None, the latent features from the policy will be used.
+        Pass an empty list to use the states as features.
+    :param use_expln: (bool) Use `expln()` function instead of `exp()` when using SDE to ensure
+        a positive standard deviation (cf paper). It allows to keep variance
+        above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
     """
     def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU,
-                 use_sde=False, log_std_init=-2, clip_noise=None,
-                 lr_sde=3e-4, full_std=False):
+                 use_sde=False, log_std_init=-3, clip_noise=None,
+                 lr_sde=3e-4, full_std=False, sde_net_arch=None, use_expln=False):
         super(Actor, self).__init__()
 
         self.latent_pi, self.log_std = None, None
@@ -30,23 +37,33 @@ class Actor(BaseNetwork):
         self.use_sde, self.sde_optimizer = use_sde, None
         self.action_dim = action_dim
         self.full_std = full_std
+        self.sde_feature_extractor = None
 
         if use_sde:
-            latent_pi = create_mlp(obs_dim, -1, net_arch, activation_fn, squash_out=False)
-            self.latent_pi = nn.Sequential(*latent_pi)
+            latent_pi_net = create_mlp(obs_dim, -1, net_arch, activation_fn, squash_out=False)
+            self.latent_pi = nn.Sequential(*latent_pi_net)
+            latent_sde_dim = net_arch[-1]
+            learn_features = sde_net_arch is not None
+
+            # Separate feature extractor for SDE
+            if sde_net_arch is not None:
+                self.sde_feature_extractor, latent_sde_dim = create_sde_feature_extractor(obs_dim, sde_net_arch,
+                                                                                          activation_fn)
+
             # Create state dependent noise matrix (SDE)
-            self.action_dist = StateDependentNoiseDistribution(action_dim, full_std=full_std, use_expln=False,
-                                                               squash_output=False)
+            self.action_dist = StateDependentNoiseDistribution(action_dim, full_std=full_std, use_expln=use_expln,
+                                                               squash_output=False, learn_features=learn_features)
             action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=net_arch[-1],
+                                                                               latent_sde_dim=latent_sde_dim,
                                                                                log_std_init=log_std_init)
             # Squash output
-            self.actor_net = nn.Sequential(action_net, nn.Tanh())
+            self.mu = nn.Sequential(action_net, nn.Tanh())
             self.clip_noise = clip_noise
             self.sde_optimizer = th.optim.Adam([self.log_std], lr=lr_sde)
             self.reset_noise()
         else:
             actor_net = create_mlp(obs_dim, action_dim, net_arch, activation_fn, squash_out=True)
-            self.actor_net = nn.Sequential(*actor_net)
+            self.mu = nn.Sequential(*actor_net)
 
     def get_std(self):
         """
@@ -60,9 +77,18 @@ class Actor(BaseNetwork):
         """
         return self.action_dist.get_std(self.log_std)
 
-    def _get_action_dist_from_latent(self, latent_pi):
-        mean_actions = self.actor_net(latent_pi)
-        return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_pi)
+    def _get_action_dist_from_latent(self, latent_pi, latent_sde):
+        mean_actions = self.mu(latent_pi)
+        return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)
+
+    def _get_latent(self, obs):
+        latent_pi = self.latent_pi(obs)
+
+        if self.sde_feature_extractor is not None:
+            latent_sde = self.sde_feature_extractor(obs)
+        else:
+            latent_sde = latent_pi
+        return latent_pi, latent_sde
 
     def evaluate_actions(self, obs, action):
         """
@@ -71,39 +97,38 @@ class Actor(BaseNetwork):
 
         :param obs: (th.Tensor)
         :param action: (th.Tensor)
-        :param deterministic: (bool)
         :return: (th.Tensor, th.Tensor) log likelihood of taking those actions
             and entropy of the action distribution.
         """
-        with th.no_grad():
-            latent_pi = self.latent_pi(obs)
-        _, distribution = self._get_action_dist_from_latent(latent_pi)
+        latent_pi, latent_sde = self._get_latent(obs)
+        _, distribution = self._get_action_dist_from_latent(latent_pi, latent_sde)
         log_prob = distribution.log_prob(action)
         # value = self.value_net(latent_vf)
         return log_prob, distribution.entropy()
 
     def reset_noise(self):
         """
-        Sample new weights for the exploration matrix.
+        Sample new weights for the exploration matrix, when using SDE.
         """
         self.action_dist.sample_weights(self.log_std)
 
     def forward(self, obs, deterministic=True):
         if self.use_sde:
-            latent_pi = self.latent_pi(obs)
+            latent_pi, latent_sde = self._get_latent(obs)
             if deterministic:
-                return self.actor_net(latent_pi)
-            noise = self.action_dist.get_noise(latent_pi)
+                return self.mu(latent_pi)
+
+            noise = self.action_dist.get_noise(latent_sde)
             if self.clip_noise is not None:
                 noise = th.clamp(noise, -self.clip_noise, self.clip_noise)
             # TODO: Replace with squashing -> need to account for that in the sde update
             # -> set squash_out=True in the action_dist?
             # NOTE: the clipping is done in the rollout for now
-            return self.actor_net(latent_pi) + noise
+            return self.mu(latent_pi) + noise
             # action, _ = self._get_action_dist_from_latent(latent_pi)
             # return action
         else:
-            return self.actor_net(obs)
+            return self.mu(obs)
 
 
 class Critic(BaseNetwork):
@@ -136,23 +161,50 @@ class Critic(BaseNetwork):
         return self.q_networks[0](th.cat([obs, action], dim=1))
 
 
+class ValueFunction(BaseNetwork):
+    """
+    Value function for TD3 when doing on-policy exploration with SDE.
+
+    :param obs_dim: (int) Dimension of the observation
+    :param net_arch: ([int]) Network architecture
+    :param activation_fn: (nn.Module) Activation function
+    """
+    def __init__(self, obs_dim, net_arch=None, activation_fn=nn.Tanh):
+        super(ValueFunction, self).__init__()
+
+        if net_arch is None:
+            net_arch = [64, 64]
+
+        vf_net = create_mlp(obs_dim, 1, net_arch, activation_fn)
+        self.vf_net = nn.Sequential(*vf_net)
+
+    def forward(self, obs):
+        return self.vf_net(obs)
+
+
 class TD3Policy(BasePolicy):
     """
     Policy class (with both actor and critic) for TD3.
 
     :param observation_space: (gym.spaces.Space) Observation space
-    :param action_dim: (gym.spaces.Space) Action space
+    :param action_space: (gym.spaces.Space) Action space
     :param learning_rate: (callable) Learning rate schedule (could be constant)
     :param net_arch: ([int or dict]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (nn.Module) Activation function
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
+    :param sde_net_arch: ([int]) Network architecture for extracting features
+        when using SDE. If None, the latent features from the policy will be used.
+        Pass an empty list to use the states as features.
+    :param use_expln: (bool) Use `expln()` function instead of `exp()` when using SDE to ensure
+        a positive standard deviation (cf paper). It allows to keep variance
+        above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
     """
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',
-                 activation_fn=nn.ReLU, use_sde=False, log_std_init=-2,
-                 clip_noise=None, lr_sde=3e-4):
+                 activation_fn=nn.ReLU, use_sde=False, log_std_init=-3,
+                 clip_noise=None, lr_sde=3e-4, sde_net_arch=None, use_expln=False):
         super(TD3Policy, self).__init__(observation_space, action_space, device)
 
         # Default network architecture, from the original paper
@@ -170,14 +222,21 @@ class TD3Policy(BasePolicy):
             'activation_fn': self.activation_fn
         }
         self.actor_kwargs = self.net_args.copy()
-        self.actor_kwargs['use_sde'] = use_sde
-        self.actor_kwargs['log_std_init'] = log_std_init
-        self.actor_kwargs['clip_noise'] = clip_noise
-        self.actor_kwargs['lr_sde'] = lr_sde
+        sde_kwargs = {
+            'use_sde': use_sde,
+            'log_std_init': log_std_init,
+            'clip_noise': clip_noise,
+            'lr_sde': lr_sde,
+            'sde_net_arch': sde_net_arch,
+            'use_expln': use_expln
+        }
+        self.actor_kwargs.update(sde_kwargs)
 
         self.actor, self.actor_target = None, None
         self.critic, self.critic_target = None, None
+        # For SDE only
         self.use_sde = use_sde
+        self.vf_net = None
         self.log_std_init = log_std_init
         self._build(learning_rate)
 
@@ -191,6 +250,10 @@ class TD3Policy(BasePolicy):
         self.critic_target = self.make_critic()
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=learning_rate(1))
+
+        if self.use_sde:
+            self.vf_net = ValueFunction(self.obs_dim)
+            self.actor.sde_optimizer.add_param_group({'params': self.vf_net.parameters()})
 
     def reset_noise(self):
         return self.actor.reset_noise()

@@ -325,9 +325,8 @@ def test_vecenv_wrapper_getattr():
     assert wrapped.name_test() == CustomWrapperBB
 
     double_wrapped = CustomWrapperA(CustomWrapperB(wrapped))
-    dummy = double_wrapped.var_a  # should not raise as it is directly defined here
+    _ = double_wrapped.var_a  # should not raise as it is directly defined here
     with pytest.raises(AttributeError):  # should raise due to ambiguity
-        dummy = double_wrapped.var_b
+        _ = double_wrapped.var_b
     with pytest.raises(AttributeError):  # should raise as does not exist
-        dummy = double_wrapped.nonexistent_attribute
-    del dummy  # keep linter happy
+        _ = double_wrapped.nonexistent_attribute

@@ -14,10 +14,8 @@ except ImportError:
 import numpy as np
 
 from torchy_baselines.common.base_class import BaseRLModel
-from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.common.buffers import RolloutBuffer
 from torchy_baselines.common.utils import explained_variance, get_schedule_fn
-from torchy_baselines.common.vec_env import sync_envs_normalization
 from torchy_baselines.common import logger
 from torchy_baselines.ppo.policies import PPOPolicy
 
@@ -43,7 +41,8 @@ class PPO(BaseRLModel):
     :param n_epochs: (int) Number of epoch when optimizing the surrogate loss
     :param gamma: (float) Discount factor
     :param gae_lambda: (float) Factor for trade-off of bias vs variance for Generalized Advantage Estimator
-    :param clip_range: (float or callable) Clipping parameter, it can be a function of the current progress (from 1 to 0).
+    :param clip_range: (float or callable) Clipping parameter, it can be a function of the current progress
+        (from 1 to 0).
     :param clip_range_vf: (float or callable) Clipping parameter for the value function,
         it can be a function of the current progress (from 1 to 0).
         This is a parameter specific to the OpenAI implementation. If None is passed (default),
@@ -54,6 +53,8 @@ class PPO(BaseRLModel):
     :param max_grad_norm: (float) The maximum value for the gradient clipping
     :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
         instead of action noise exploration (default: False)
+    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
+        Default: -1 (only sample at the beginning of the rollout)
     :param target_kl: (float) Limit the KL divergence between updates,
         because the clipping is not enough to prevent large update
         see issue #213 (cf https://github.com/hill-a/stable-baselines/issues/213)
@@ -68,17 +69,17 @@ class PPO(BaseRLModel):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
-
     def __init__(self, policy, env, learning_rate=3e-4,
                  n_steps=2048, batch_size=64, n_epochs=10,
                  gamma=0.99, gae_lambda=0.95, clip_range=0.2, clip_range_vf=None,
-                 ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5, use_sde=False,
+                 ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5,
+                 use_sde=False, sde_sample_freq=-1,
                  target_kl=None, tensorboard_log=None, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
 
         super(PPO, self).__init__(policy, env, PPOPolicy, policy_kwargs=policy_kwargs,
-                                  verbose=verbose, device=device,
+                                  verbose=verbose, device=device, use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                   create_eval_env=create_eval_env, support_multi_env=True, seed=seed)
 
         self.learning_rate = learning_rate
@@ -96,7 +97,6 @@ class PPO(BaseRLModel):
         self.target_kl = target_kl
         self.tensorboard_log = tensorboard_log
         self.tb_writer = None
-        self.use_sde = use_sde
 
         if _init_setup_model:
             self._setup_model()
@@ -157,9 +157,13 @@ class PPO(BaseRLModel):
         # Sample new weights for the state dependent exploration
         # TODO: ensure episodic setting?
         if self.use_sde:
-            self.policy.reset_noise_net()
+            self.policy.reset_noise(env.num_envs)
 
         while n_steps < n_rollout_steps:
+            if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
+                # Sample a new noise matrix
+                self.policy.reset_noise(env.num_envs)
+
             with th.no_grad():
                 actions, values, log_probs = self.policy.forward(obs)
             actions = actions.cpu().numpy()
@@ -203,6 +207,12 @@ class PPO(BaseRLModel):
                 if isinstance(self.action_space, spaces.Discrete):
                     # Convert discrete action for float to long
                     action = action.long().flatten()
+
+                # Re-sample the noise matrix because the log_std has changed
+                # TODO: investigate why there is no issue with the gradient
+                # if that line is commented (as in SAC)
+                if self.use_sde:
+                    self.policy.reset_noise(batch_size)
 
                 values, log_prob, entropy = self.policy.evaluate_actions(obs, action)
                 values = values.flatten()
@@ -291,27 +301,20 @@ class PPO(BaseRLModel):
 
             self.train(self.n_epochs, batch_size=self.batch_size)
 
-            # Evaluate agent
-            if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
-                timesteps_since_eval %= eval_freq
-                sync_envs_normalization(self.env, eval_env)
-
-                mean_reward, _ = evaluate_policy(self, eval_env, n_eval_episodes)
-                if self.tb_writer is not None:
-                    self.tb_writer.add_scalar('Eval/reward', mean_reward, self.num_timesteps)
-
-                evaluations.append(mean_reward)
-                if self.verbose > 0:
-                    print("Eval num_timesteps={}, mean_reward={:.2f}".format(self.num_timesteps, evaluations[-1]))
-                    print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - self.start_time)))
+            # Evaluate the agent
+            timesteps_since_eval = self._eval_policy(eval_freq, eval_env, n_eval_episodes,
+                                                     timesteps_since_eval, deterministic=True)
+            # For tensorboard integration
+            # if self.tb_writer is not None:
+            #     self.tb_writer.add_scalar('Eval/reward', mean_reward, self.num_timesteps)
 
         return self
 
     def get_opt_parameters(self):
         """
         Returns a dict of all the optimizers and their parameters
-        
-        :return: (dict) of optimizer names and their state_dict 
+
+        :return: (dict) of optimizer names and their state_dict
         """
         return {"opt": self.policy.optimizer.state_dict()}
 

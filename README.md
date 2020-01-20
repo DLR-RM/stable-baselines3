@@ -14,24 +14,9 @@ PyTorch version of [Stable Baselines](https://github.com/hill-a/stable-baselines
 - SAC
 - TD3
 
+- SDE support for A2C, PPO, SAC and TD3.
+
 
 ## Roadmap
 
-TODO:
-- save/load
-- better predict
-- complete logger
-- SDE: learn the feature extractor?
-- Refactor: buffer with numpy array instead of pytorch
-- Refactor: remove duplicated code for evaluation
-- plotting? -> zoo
-
-Later:
-- get_parameters / set_parameters
-- CNN policies + normalization
-- tensorboard support
-- DQN
-- TRPO
-- ACER
-- DDPG
-- HER -> use stable-baselines because does not depends on tf?
+- cf github Roadmap

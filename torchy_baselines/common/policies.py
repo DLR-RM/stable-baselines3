@@ -62,7 +62,25 @@ class BasePolicy(nn.Module):
 
 def create_mlp(input_dim, output_dim, net_arch,
                activation_fn=nn.ReLU, squash_out=False):
-    modules = [nn.Linear(input_dim, net_arch[0]), activation_fn()]
+    """
+    Create a multi layer perceptron (MLP), which is
+    a collection of fully-connected layers each followed by an activation function.
+
+    :param input_dim: (int) Dimension of the input vector
+    :param output_dim: (int)
+    :param net_arch: ([int]) Architecture of the neural net
+        It represents the number of units per layer.
+        The length of this list is the number of layers.
+    :param activation_fn: (th.nn.Module) The activation function
+        to use after each layer.
+    :param squash_out: (bool) Whether to squash the output using a Tanh
+        activation function
+    """
+
+    if len(net_arch) > 0:
+        modules = [nn.Linear(input_dim, net_arch[0]), activation_fn()]
+    else:
+        modules = []
 
     for idx in range(len(net_arch) - 1):
         modules.append(nn.Linear(net_arch[idx], net_arch[idx + 1]))
@@ -75,9 +93,30 @@ def create_mlp(input_dim, output_dim, net_arch,
     return modules
 
 
-class BaseNetwork(nn.Module):
-    """docstring for BaseNetwork."""
+def create_sde_feature_extractor(features_dim, sde_net_arch, activation_fn):
+    """
+    Create the neural network that will be used to extract features
+    for the SDE.
 
+    :param features_dim: (int)
+    :param sde_net_arch: ([int])
+    :param activation_fn: (nn.Module)
+    :return: (nn.Sequential, int)
+    """
+    # Special case: when using states as features (i.e. sde_net_arch is an empty list)
+    # don't use any activation function
+    sde_activation = activation_fn if len(sde_net_arch) > 0 else None
+    latent_sde_net = create_mlp(features_dim, -1, sde_net_arch, activation_fn=sde_activation, squash_out=False)
+    latent_sde_dim = sde_net_arch[-1] if len(sde_net_arch) > 0 else features_dim
+    sde_feature_extractor = nn.Sequential(*latent_sde_net)
+    return sde_feature_extractor, latent_sde_dim
+
+
+class BaseNetwork(nn.Module):
+    """
+    Abstract class for the different networks (actor/critic)
+    that implements two helpers for using CEM with their weights.
+    """
     def __init__(self):
         super(BaseNetwork, self).__init__()
 

@@ -1,6 +1,3 @@
-import os
-
-import gym
 import pytest
 
 from torchy_baselines import PPO
@@ -15,4 +12,4 @@ from torchy_baselines import PPO
     [12, dict(pi=[8])],
 ])
 def test_flexible_mlp(net_arch):
-    model = PPO('MlpPolicy', 'CartPole-v1', policy_kwargs=dict(net_arch=net_arch), n_steps=100).learn(1000)
+    _ = PPO('MlpPolicy', 'CartPole-v1', policy_kwargs=dict(net_arch=net_arch), n_steps=100).learn(1000)

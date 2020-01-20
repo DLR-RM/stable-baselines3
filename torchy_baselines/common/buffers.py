@@ -1,8 +1,6 @@
 import numpy as np
 import torch as th
 
-from torchy_baselines.common.vec_env import unwrap_vec_normalize
-
 
 class BaseBuffer(object):
     """
@@ -79,7 +77,8 @@ class BaseBuffer(object):
         """
         raise NotImplementedError()
 
-    def _normalize_obs(self, obs, env=None):
+    @staticmethod
+    def _normalize_obs(obs, env=None):
         if env is not None:
             # TODO: get rid of pytorch - numpy conversion
             return th.FloatTensor(env.normalize_obs(obs.numpy()))

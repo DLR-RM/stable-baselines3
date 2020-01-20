@@ -23,6 +23,12 @@ setup(name='torchy_baselines',
             'sphinx',
             'sphinx-autobuild',
             'sphinx-rtd-theme'
+        ],
+        'extra': [
+            # For render
+            'opencv-python',
+            # For reading logs
+            'pandas'
         ]
       },
       description='Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.',
@@ -34,7 +40,7 @@ setup(name='torchy_baselines',
       license="MIT",
       long_description="",
       long_description_content_type='text/markdown',
-      version="0.0.6a",
+      version="0.0.8a0",
       )
 
 # python setup.py sdist

@@ -37,6 +37,8 @@ class SAC(BaseRLModel):
     :param target_update_interval: (int) update the target network every `target_network_update_freq` steps.
     :param train_freq: (int) Update the model every `train_freq` steps.
     :param gradient_steps: (int) How many gradient update after each step
+    :param n_episodes_rollout: (int) Update the model every `n_episodes_rollout` episodes.
+        Note that this cannot be used at the same time as `train_freq`
     :param target_entropy: (str or float) target entropy when learning ent_coef (ent_coef = 'auto')
     :param action_noise: (ActionNoise) the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.

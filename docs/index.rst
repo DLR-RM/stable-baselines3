@@ -28,6 +28,8 @@ RL Baselines zoo also offers a simple interface to train, evaluate agents and do
   :caption: RL Algorithms
 
   modules/base
+  modules/a2c
+  modules/cem_rl
   modules/ppo
   modules/sac
   modules/td3
@@ -47,12 +49,12 @@ To cite this project in publications:
 .. code-block:: bibtex
 
     @misc{torchy-baselines,
-      author = {Raffin, Antonin and Hill, Ashley and Ernestus, Maximilian and Gleave, Adam and Kanervisto, Anssi},
+      author = {Raffin, Antonin and Dormann, Noah and Hill, Ashley and Ernestus, Maximilian and Gleave, Adam and Kanervisto, Anssi},
       title = {Torchy Baselines},
       year = {2019},
       publisher = {GitHub},
       journal = {GitHub repository},
-      howpublished = {\url{https://github.com/hill-a/stable-baselines}},
+      howpublished = {\url{https://github.com/araffin/torchy-baselines}},
     }
 
 Indices and tables

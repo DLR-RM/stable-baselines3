@@ -16,6 +16,14 @@ import os
 import sys
 from unittest.mock import MagicMock
 
+# We CANNOT enable 'sphinxcontrib.spelling' because ReadTheDocs.org does not support
+# PyEnchant.
+try:
+    import sphinxcontrib.spelling
+    enable_spell_check = True
+except ImportError:
+    enable_spell_check = False
+
 # source code directory, relative to this file, for sphinx-autobuild
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -31,16 +39,8 @@ class Mock(MagicMock):
 # Mock modules that requires C modules
 # Note: because of that we cannot test examples using CI
 # 'torch', 'torch.nn', 'torch.nn.functional',
-MOCK_MODULES = ['joblib', 'scipy', 'scipy.signal',
-                'pandas', 'mpi4py', 'mujoco-py', 'cv2',
-                'tensorflow', 'torch', 'torch.nn', 'torch.nn.functional',
-                'torch.distributions',
-                'tensorflow.contrib', 'tensorflow.contrib.layers',
-                'tensorflow.python', 'tensorflow.python.client', 'tensorflow.python.ops',
-                'tqdm', 'cloudpickle', 'matplotlib', 'matplotlib.pyplot',
-                'seaborn', 'gym', 'gym.spaces', 'gym.core',
-                'tensorflow.core', 'tensorflow.core.util', 'tensorflow.python.util',
-                'gym.wrappers', 'gym.wrappers.monitoring', 'zmq']
+# DO not mock modules for now, we will need to do that for read the docs later
+MOCK_MODULES = []
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
@@ -75,6 +75,9 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
 ]
+
+if enable_spell_check:
+    extensions.append('sphinxcontrib.spelling')
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

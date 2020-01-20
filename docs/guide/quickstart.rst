@@ -16,8 +16,7 @@ Here is a quick example of how to train and run SAC on a Pendulum environment:
   from torchy_baselines.common.vec_env import DummyVecEnv
   from torchy_baselines import SAC
 
-  # The algorithms require a vectorized environment to run
-  env = DummyVecEnv([lambda: gym.make('Pendulum-v0')])
+  env = gym.make('Pendulum-v0')
 
   model = SAC(MlpPolicy, env, verbose=1)
   model.learn(total_timesteps=10000)

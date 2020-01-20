@@ -17,7 +17,7 @@ class ActionNoise(object):
 
 class NormalActionNoise(ActionNoise):
     """
-    A gaussian action noise
+    A Gaussian action noise
 
     :param mean: (float) the mean value of the noise
     :param sigma: (float) the scale of the noise (std here)

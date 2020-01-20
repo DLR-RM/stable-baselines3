@@ -183,7 +183,7 @@ class BaseRLModel(object):
     def safe_mean(arr):
         """
         Compute the mean of an array if there is at least one element.
-        For empty array, return nan. It is used for logging only.
+        For empty array, return NaN. It is used for logging only.
 
         :param arr: (np.ndarray)
         :return: (float)
@@ -192,7 +192,7 @@ class BaseRLModel(object):
 
     def get_env(self):
         """
-        returns the current environment (can be None if not defined)
+        Returns the current environment (can be None if not defined).
 
         :return: (gym.Env) The current environment
         """
@@ -201,10 +201,10 @@ class BaseRLModel(object):
     @staticmethod
     def check_env(env, observation_space, action_space):
         """
-        Checks the validity of the environment and returns if it is coherent
+        Checks the validity of the environment and returns if it is consistent.
         Checked parameters:
-         - observation_space
-         - action_space
+        - observation_space
+        - action_space
         :return: (bool) True if environment seems to be coherent
         """
         if observation_space != env.observation_space:
@@ -219,8 +219,8 @@ class BaseRLModel(object):
         Checks the validity of the environment, and if it is coherent, set it as the current environment.
         Furthermore wrap any non vectorized env into a vectorized
         checked parameters:
-         - observation_space
-         - action_space
+        - observation_space
+        - action_space
 
         :param env: (gym.Env) The environment for learning a policy
         """
@@ -312,7 +312,7 @@ class BaseRLModel(object):
         Load the model from a zip-file
 
         :param load_path: (str) the location of the saved data
-        :param env: (Gym Envrionment) the new environment to run the loaded model on
+        :param env: (Gym Environment) the new environment to run the loaded model on
             (can be None if you only need prediction from a trained model) has priority over any saved environment
         :param kwargs: extra arguments to change the model when loading
         """

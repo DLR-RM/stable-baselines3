@@ -1,11 +1,10 @@
 """
 Taken from stable-baselines
 """
-import os
 import sys
-import json
-import time
 import datetime
+import json
+import os
 import tempfile
 import warnings
 from collections import defaultdict
@@ -183,15 +182,6 @@ class CSVOutputFormat(KVWriter):
         closes the file
         """
         self.file.close()
-
-
-def summary_val(key, value):
-    """
-    :param key: (str)
-    :param value: (float)
-    """
-    kwargs = {'tag': key, 'simple_value': float(value)}
-    return tf.Summary.Value(**kwargs)
 
 
 def valid_float_value(value):

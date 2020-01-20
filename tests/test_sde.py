@@ -1,12 +1,8 @@
 import pytest
-
-import gym
 import torch as th
 from torch.distributions import Normal
 
 from torchy_baselines import A2C, TD3, SAC
-from torchy_baselines.common.vec_env import DummyVecEnv, VecNormalize
-from torchy_baselines.common.monitor import Monitor
 
 
 def test_state_dependent_exploration_grad():
@@ -35,7 +31,7 @@ def test_state_dependent_exploration_grad():
     action_dist = Normal(mu, th.sqrt(variance))
 
     # Sum over the action dimension because we assume they are independent
-    loss = action_dist.log_prob((action).detach()).sum(dim=-1).mean()
+    loss = action_dist.log_prob(action.detach()).sum(dim=-1).mean()
     loss.backward()
 
     # From Rueckstiess paper: check that the computed gradient
@@ -72,6 +68,6 @@ def test_scheduler():
         return -2.0 * progress + 1
 
     model = TD3('MlpPolicy', 'Pendulum-v0', use_sde=True, seed=None, create_eval_env=True,
-                        verbose=1, sde_log_std_scheduler=scheduler)
+                verbose=1, sde_log_std_scheduler=scheduler)
     model.learn(total_timesteps=int(1000), eval_freq=500)
     assert th.isclose(model.actor.log_std, th.ones_like(model.actor.log_std)).all()

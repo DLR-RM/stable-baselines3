@@ -225,7 +225,8 @@ class BaseRLModel(object):
         :param env: (gym.Env) The environment for learning a policy
         """
         if self.check_env(env, self.observation_space, self.action_space) is False:
-            raise ValueError("The given environment is not compatible with model: observation and action spaces do not match")
+            raise ValueError("The given environment is not compatible with model: "
+                             "observation and action spaces do not match")
         # it must be coherent now
         # if it is not a VecEnv, make it a VecEnv
         if not isinstance(env, VecEnv):
@@ -255,24 +256,6 @@ class BaseRLModel(object):
         """
         Get current model optimizer parameters as dictionary of variable names -> tensors
         :return: (dict) Dictionary of variable name -> tensor of model's optimizer parameters
-        """
-        raise NotImplementedError()
-
-    def pretrain(self, dataset, n_epochs=10, learning_rate=1e-4,
-                 adam_epsilon=1e-8, val_interval=None):
-        """
-        Pretrain a model using behavior cloning:
-        supervised learning given an expert dataset.
-
-        NOTE: only Box and Discrete spaces are supported for now.
-
-        :param dataset: (ExpertDataset) Dataset manager
-        :param n_epochs: (int) Number of iterations on the training set
-        :param learning_rate: (float) Learning rate
-        :param adam_epsilon: (float) the epsilon value for the adam optimizer
-        :param val_interval: (int) Report training and validation losses every n epochs.
-            By default, every 10th of the maximum number of epochs.
-        :return: (BaseRLModel) the pretrained model
         """
         raise NotImplementedError()
 
@@ -308,11 +291,12 @@ class BaseRLModel(object):
         """
         pass
 
-    def load_parameters(self, load_dict, opt_params=None):
+    def load_parameters(self, load_dict, opt_params):
         """
         Load model parameters from a dictionary
         load_dict should contain all keys from torch.model.state_dict()
-        If opt_params are given this does also load agent's optimizer-parameters, but can only be handled in child classes.
+        If opt_params are given this does also load agent's optimizer-parameters,
+        but can only be handled in child classes.
 
 
         :param load_dict: (dict) dict of parameters from model.state_dict()
@@ -350,6 +334,7 @@ class BaseRLModel(object):
             env = data["env"]
 
         # first create model, but only setup if a env was given
+        # noinspection PyArgumentList
         model = cls(policy=data["policy_class"], env=env, _init_setup_model=env is not None)
 
         # load parameters
@@ -365,7 +350,8 @@ class BaseRLModel(object):
         :param load_path: (str) Where to load the model from
         :param load_data: (bool) Whether we should load and return data
             (class parameters). Mainly used by 'load_parameters' to only load model parameters (weights)
-        :return: (dict),(dict),(dict) Class parameters, model parameters (state_dict) and dict of optimizer parameters (dict of state_dict)
+        :return: (dict),(dict),(dict) Class parameters, model parameters (state_dict)
+            and dict of optimizer parameters (dict of state_dict)
         """
         # Check if file exists if load_path is a string
         if isinstance(load_path, str):
@@ -403,7 +389,7 @@ class BaseRLModel(object):
 
                 # check for all other .pth files
                 other_files = [file_name for file_name in namelist if
-                              os.path.splitext(file_name)[1] == ".pth" and file_name != "params.pth"]
+                               os.path.splitext(file_name)[1] == ".pth" and file_name != "params.pth"]
                 # if there are any other files which end with .pth and aren't "params.pth"
                 # assume that they each are optimizer parameters
                 if len(other_files) > 0:
@@ -521,7 +507,7 @@ class BaseRLModel(object):
             episode_reward, episode_timesteps = 0.0, 0
 
             while not done:
-                if self.use_sde and self.sde_sample_freq > 0 and  n_steps % self.sde_sample_freq == 0:
+                if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
                     # Sample a new noise matrix
                     self.actor.reset_noise()
 
@@ -577,7 +563,8 @@ class BaseRLModel(object):
                     self.rollout_data['actions'].append(scaled_action[0].copy())
                     self.rollout_data['rewards'].append(reward[0].copy())
                     self.rollout_data['dones'].append(np.array(done_bool[0]).copy())
-                    self.rollout_data['values'].append(self.vf_net(th.FloatTensor(obs).to(self.device))[0].cpu().detach().numpy())
+                    obs_tensor = th.FloatTensor(obs).to(self.device)
+                    self.rollout_data['values'].append(self.vf_net(obs_tensor)[0].cpu().detach().numpy())
 
                 obs = new_obs
                 # Save the true unnormalized observation
@@ -674,9 +661,9 @@ class BaseRLModel(object):
                 with archive.open('params.pth', mode="w") as param_file:
                     th.save(params, param_file)
             if opt_params is not None:
-                for file_name, dict in opt_params.items():
+                for file_name, dict_ in opt_params.items():
                     with archive.open(file_name + '.pth', mode="w") as opt_param_file:
-                        th.save(dict, opt_param_file)
+                        th.save(dict_, opt_param_file)
 
     @staticmethod
     def excluded_save_params():

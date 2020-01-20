@@ -411,7 +411,8 @@ class TanhBijector(object):
         super(TanhBijector, self).__init__()
         self.epsilon = epsilon
 
-    def forward(self, x):
+    @staticmethod
+    def forward(x):
         return th.tanh(x)
 
     @staticmethod

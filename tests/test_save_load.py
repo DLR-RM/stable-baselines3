@@ -1,13 +1,12 @@
+import numpy as np
 import os
 import pytest
-from copy import deepcopy
-import numpy as np
-
 import torch as th
+from copy import deepcopy
 
 from torchy_baselines import A2C, CEMRL, PPO, SAC, TD3
+from torchy_baselines.common.identity_env import IdentityEnvBox
 from torchy_baselines.common.vec_env import DummyVecEnv
-from torchy_baselines.common.identity_env import IdentityEnvBox, IdentityEnv
 
 MODEL_LIST = [
     CEMRL,
@@ -81,7 +80,8 @@ def test_save_load(model_class):
     for optimizer, opt_state in opt_params.items():
         for param_group_idx, param_group in enumerate(opt_state['param_groups']):
             for param_key, param_value in param_group.items():
-                if param_key == 'params':  # don't know how to handle params correctly, therefore only check if we have the same amount
+                # don't know how to handle params correctly, therefore only check if we have the same amount
+                if param_key == 'params':
                     assert len(param_value) == len(
                         new_opt_params[optimizer]['param_groups'][param_group_idx][param_key])
                 else:

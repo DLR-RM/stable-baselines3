@@ -1,5 +1,3 @@
-import time
-
 import torch as th
 import torch.nn.functional as F
 import numpy as np
@@ -62,7 +60,8 @@ class TD3(BaseRLModel):
                  seed=0, device='auto', _init_setup_model=True):
 
         super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device,
-                                  create_eval_env=create_eval_env, seed=seed, use_sde=use_sde, sde_sample_freq=sde_sample_freq)
+                                  create_eval_env=create_eval_env, seed=seed,
+                                  use_sde=use_sde, sde_sample_freq=sde_sample_freq)
 
         self.buffer_size = buffer_size
         self.learning_rate = learning_rate
@@ -94,7 +93,8 @@ class TD3(BaseRLModel):
         self.set_random_seed(self.seed)
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
         self.policy = self.policy_class(self.observation_space, self.action_space,
-                                        self.learning_rate, use_sde=self.use_sde, device=self.device, **self.policy_kwargs)
+                                        self.learning_rate, use_sde=self.use_sde,
+                                        device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
         self._create_aliases()
 
@@ -209,7 +209,8 @@ class TD3(BaseRLModel):
         # self._update_learning_rate(self.policy.optimizer)
 
         # Unpack
-        obs, action, advantage, returns = [self.rollout_data[key] for key in ['observations', 'actions', 'advantage', 'returns']]
+        obs, action, advantage, returns = [self.rollout_data[key] for key in
+                                           ['observations', 'actions', 'advantage', 'returns']]
 
         log_prob, entropy = self.actor.evaluate_actions(obs, action)
         values = self.vf_net(obs).flatten()

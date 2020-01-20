@@ -157,7 +157,8 @@ class PPOPolicy(BasePolicy):
             return self.action_dist.proba_distribution(mean_actions, deterministic=deterministic)
 
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
-            return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde, deterministic=deterministic)
+            return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde,
+                                                       deterministic=deterministic)
 
     def actor_forward(self, obs, deterministic=False):
         latent_pi, _, latent_sde = self._get_latent(obs)

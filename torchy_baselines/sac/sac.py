@@ -1,5 +1,3 @@
-import time
-
 import torch as th
 import torch.nn.functional as F
 import numpy as np
@@ -68,7 +66,8 @@ class SAC(BaseRLModel):
                  _init_setup_model=True):
 
         super(SAC, self).__init__(policy, env, SACPolicy, policy_kwargs, verbose, device,
-                                  create_eval_env=create_eval_env, seed=seed, use_sde=use_sde, sde_sample_freq=sde_sample_freq)
+                                  create_eval_env=create_eval_env, seed=seed,
+                                  use_sde=use_sde, sde_sample_freq=sde_sample_freq)
 
         self.learning_rate = learning_rate
         self.target_entropy = target_entropy
@@ -131,7 +130,8 @@ class SAC(BaseRLModel):
 
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
         self.policy = self.policy_class(self.observation_space, self.action_space,
-                                        self.learning_rate, use_sde=self.use_sde, device=self.device, **self.policy_kwargs)
+                                        self.learning_rate, use_sde=self.use_sde,
+                                        device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
         self._create_aliases()
 
@@ -202,7 +202,6 @@ class SAC(BaseRLModel):
                 self.ent_coef_optimizer.zero_grad()
                 ent_coef_loss.backward()
                 self.ent_coef_optimizer.step()
-
 
             with th.no_grad():
                 # if self.use_sde:

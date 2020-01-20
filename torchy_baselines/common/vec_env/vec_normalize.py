@@ -71,7 +71,7 @@ class VecNormalize(VecEnvWrapper):
     def normalize_obs(self, obs):
         if self.norm_obs:
             return np.clip((obs - self.obs_rms.mean) / np.sqrt(self.obs_rms.var + self.epsilon), -self.clip_obs,
-                          self.clip_obs)
+                           self.clip_obs)
         return obs
 
     def normalize_reward(self, reward):

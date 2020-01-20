@@ -1,10 +1,9 @@
 import pytest
-import numpy as np
 import torch as th
 
+from torchy_baselines.common.distributions import DiagGaussianDistribution, TanhBijector, \
+    StateDependentNoiseDistribution
 from torchy_baselines.common.utils import set_random_seed
-from torchy_baselines.common.distributions import DiagGaussianDistribution, SquashedDiagGaussianDistribution,\
-    CategoricalDistribution, TanhBijector, StateDependentNoiseDistribution
 
 
 # TODO: more tests for the other distributions
@@ -42,6 +41,7 @@ def test_sde_distribution():
 
 
 N_ACTIONS = 1
+
 
 # TODO: fix for num action > 1
 # TODO: analytical form for squashed Gaussian?

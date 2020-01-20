@@ -241,6 +241,9 @@ class SACPolicy(BasePolicy):
     def make_critic(self):
         return Critic(**self.net_args).to(self.device)
 
+    def forward(self, obs):
+        return self.actor(obs)
+
 
 MlpPolicy = SACPolicy
 

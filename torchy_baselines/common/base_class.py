@@ -276,7 +276,7 @@ class BaseRLModel(object):
         :param n_eval_episodes: (int) Number of episode to evaluate the agent
         :return: (BaseRLModel) the trained model
         """
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def predict(self, observation, state=None, mask=None, deterministic=False):
@@ -289,7 +289,7 @@ class BaseRLModel(object):
         :param deterministic: (bool) Whether or not to return deterministic actions.
         :return: (np.ndarray, np.ndarray) the model's action and the next state (used in recurrent policies)
         """
-        pass
+        raise NotImplementedError()
 
     def load_parameters(self, load_dict, opt_params):
         """

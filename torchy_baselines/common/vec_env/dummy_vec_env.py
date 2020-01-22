@@ -99,11 +99,8 @@ class DummyVecEnv(VecEnv):
         for env_i in target_envs:
             setattr(env_i, attr_name, value)
 
-    def env_method(self, method_name, *method_args, **method_kwargs):
+    def env_method(self, method_name, *method_args, indices=None, **method_kwargs):
         """Call instance methods of vectorized environments."""
-        indices = method_kwargs.get('indices')
-        if 'indices' in method_kwargs:
-            del method_kwargs['indices']
         target_envs = self._get_target_envs(indices)
         return [getattr(env_i, method_name)(*method_args, **method_kwargs) for env_i in target_envs]
 

@@ -1,6 +1,6 @@
-from abc import ABCMeta, abstractmethod
 import inspect
 import pickle
+from abc import ABC, abstractmethod
 
 import cloudpickle
 
@@ -27,7 +27,7 @@ class NotSteppingError(Exception):
         Exception.__init__(self, msg)
 
 
-class VecEnv(object):
+class VecEnv(ABC):
     """
     An abstract asynchronous, vectorized environment.
 
@@ -38,8 +38,6 @@ class VecEnv(object):
     metadata = {
         'render.modes': ['human', 'rgb_array']
     }
-
-    __metaclass__ = ABCMeta
 
     def __init__(self, num_envs, observation_space, action_space):
         self.num_envs = num_envs
@@ -112,7 +110,7 @@ class VecEnv(object):
         raise NotImplementedError()
 
     @abstractmethod
-    def env_method(self, method_name, *method_args, **method_kwargs):
+    def env_method(self, method_name, *method_args, indices=None, **method_kwargs):
         """
         Call instance methods of vectorized environments.
 
@@ -222,8 +220,8 @@ class VecEnvWrapper(VecEnv):
     def set_attr(self, attr_name, value, indices=None):
         return self.venv.set_attr(attr_name, value, indices)
 
-    def env_method(self, method_name, *method_args, **method_kwargs):
-        return self.venv.env_method(method_name, *method_args, **method_kwargs)
+    def env_method(self, method_name, *method_args, indices=None, **method_kwargs):
+        return self.venv.env_method(method_name, *method_args, indices=indices, **method_kwargs)
 
     def __getattr__(self, name):
         """Find attribute from wrapped venv(s) if this wrapper does not have it.

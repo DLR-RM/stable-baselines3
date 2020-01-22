@@ -12,6 +12,7 @@ __pycache__/
 _build/
 *.npz
 *.pth
+.pytype/
 
 # Setuptools distribution and build folders.
 /dist/

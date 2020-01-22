@@ -1,9 +1,9 @@
 import time
-from abc import ABCMeta, abstractmethod
-from collections import deque
 import os
 import io
 import zipfile
+from abc import ABC, abstractmethod
+from collections import deque
 
 import gym
 import torch as th
@@ -18,7 +18,7 @@ from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.common.save_util import data_to_json, json_to_data
 
 
-class BaseRLModel(object):
+class BaseRLModel(ABC):
     """
     The base RL model
 
@@ -43,8 +43,6 @@ class BaseRLModel(object):
     :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
         Default: -1 (only sample at the beginning of the rollout)
     """
-    __metaclass__ = ABCMeta
-
     def __init__(self, policy, env, policy_base, policy_kwargs=None,
                  verbose=0, device='auto', support_multi_env=False,
                  create_eval_env=False, monitor_wrapper=True, seed=None,

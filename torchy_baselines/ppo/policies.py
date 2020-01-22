@@ -76,18 +76,20 @@ class PPOPolicy(BasePolicy):
 
         self.sde_feature_extractor = None
         self.sde_net_arch = sde_net_arch
+        self.use_sde = use_sde
 
         # Action distribution
         self.action_dist = make_proba_distribution(action_space, use_sde=use_sde, dist_kwargs=dist_kwargs)
 
         self._build(learning_rate)
 
-    def reset_noise(self, n_envs=1):
+    def reset_noise(self, n_envs: int = 1):
         """
         Sample new weights for the exploration matrix.
 
         :param n_envs: (int)
         """
+        assert isinstance(self.action_dist, StateDependentNoiseDistribution), 'reset_noise() is only available when using SDE'
         self.action_dist.sample_weights(self.log_std, batch_size=n_envs)
 
     def _build(self, learning_rate):

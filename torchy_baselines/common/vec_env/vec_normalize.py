@@ -2,7 +2,7 @@ import pickle
 
 import numpy as np
 
-from torchy_baselines.common.vec_env import VecEnvWrapper
+from torchy_baselines.common.vec_env.base_vec_env import VecEnvWrapper
 from torchy_baselines.common.running_mean_std import RunningMeanStd
 
 

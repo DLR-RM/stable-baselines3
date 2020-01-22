@@ -3,7 +3,7 @@ from copy import deepcopy
 
 import numpy as np
 
-from torchy_baselines.common.vec_env import VecEnv
+from torchy_baselines.common.vec_env.base_vec_env import VecEnv
 from torchy_baselines.common.vec_env.util import copy_obs_dict, dict_to_obs, obs_space_info
 
 
@@ -53,17 +53,6 @@ class DummyVecEnv(VecEnv):
             obs = self.envs[env_idx].reset()
             self._save_obs(env_idx, obs)
         return self._obs_from_buf()
-
-    def seed(self, seed, indices=None):
-        """
-        :param seed: (int or [int])
-        :param indices: ([int])
-        """
-        indices = self._get_indices(indices)
-        if not hasattr(seed, 'len'):
-            seed = [seed] * len(indices)
-        assert len(seed) == len(indices)
-        return [self.envs[i].seed(seed[i]) for i in indices]
 
     def close(self):
         for env in self.envs:

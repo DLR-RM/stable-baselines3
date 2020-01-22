@@ -39,7 +39,7 @@ class SAC(BaseRLModel):
     :param gradient_steps: (int) How many gradient update after each step
     :param n_episodes_rollout: (int) Update the model every `n_episodes_rollout` episodes.
         Note that this cannot be used at the same time as `train_freq`
-    :param target_entropy: (str or float) target entropy when learning ent_coef (ent_coef = 'auto')
+    :param target_entropy: (str or float) target entropy when learning `ent_coef` (`ent_coef = 'auto'`)
     :param action_noise: (ActionNoise) the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
     :param gamma: (float) the discount factor
@@ -161,13 +161,16 @@ class SAC(BaseRLModel):
         """
         return self.unscale_action(self.select_action(observation))
 
-    def train(self, gradient_steps, batch_size=64):
+    def train(self, gradient_steps: int, batch_size: int = 64):
         # Update optimizers learning rate
         optimizers = [self.actor.optimizer, self.critic.optimizer]
         if self.ent_coef_optimizer is not None:
             optimizers += [self.ent_coef_optimizer]
 
         self._update_learning_rate(optimizers)
+
+        ent_coef_loss, ent_coef = th.zeros(1), th.zeros(1)
+        actor_loss, critic_loss = th.zeros(1), th.zeros(1)
 
         for gradient_step in range(gradient_steps):
             # Sample replay buffer

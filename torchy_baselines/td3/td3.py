@@ -31,7 +31,7 @@ class TD3(BaseRLModel):
     :param gradient_steps: (int) How many gradient update after each step
     :param n_episodes_rollout: (int) Update the model every `n_episodes_rollout` episodes.
         Note that this cannot be used at the same time as `train_freq`
-    :param tau: (float) the soft update coefficient ("polyak update" of the target networks, between 0 and 1)
+    :param tau: (float) the soft update coefficient ("Polyak update" of the target networks, between 0 and 1)
     :param action_noise: (ActionNoise) the action noise type. Cf common.noise for the different action noise type.
     :param target_policy_noise: (float) Standard deviation of Gaussian noise added to target policy
         (smoothing noise)

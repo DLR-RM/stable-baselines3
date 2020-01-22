@@ -2,6 +2,8 @@ import time
 import os
 import io
 import zipfile
+import typing
+from typing import Union, Type, Optional
 from abc import ABC, abstractmethod
 from collections import deque
 
@@ -10,12 +12,15 @@ import torch as th
 import numpy as np
 
 from torchy_baselines.common import logger
-from torchy_baselines.common.policies import get_policy_from_name
+from torchy_baselines.common.policies import BasePolicy, get_policy_from_name
 from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate
 from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, sync_envs_normalization
 from torchy_baselines.common.monitor import Monitor
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.common.save_util import data_to_json, json_to_data
+
+if typing.TYPE_CHECKING:
+    from torchy_baselines.common.noise import ActionNoise
 
 
 class BaseRLModel(ABC):
@@ -43,7 +48,7 @@ class BaseRLModel(ABC):
     :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
         Default: -1 (only sample at the beginning of the rollout)
     """
-    def __init__(self, policy, env, policy_base, policy_kwargs=None,
+    def __init__(self, policy: Type[BasePolicy], env: Union[gym.Env, VecEnv, str], policy_base, policy_kwargs=None,
                  verbose=0, device='auto', support_multi_env=False,
                  create_eval_env=False, monitor_wrapper=True, seed=None,
                  use_sde=False, sde_sample_freq=-1):
@@ -59,7 +64,7 @@ class BaseRLModel(ABC):
         if verbose > 0:
             print(f"Using {self.device} device")
 
-        self.env = env
+        self.env = None  # type: Union[gym.Env, VecEnv]
         # get VecNormalize object if needed
         self._vec_normalize_env = unwrap_vec_normalize(env)
         self.verbose = verbose
@@ -71,7 +76,10 @@ class BaseRLModel(ABC):
         self.eval_env = None
         self.replay_buffer = None
         self.seed = seed
-        self.action_noise = None
+        self.action_noise = None  # type: ActionNoise
+        self.start_time = None
+        self.policy, self.actor = None, None
+        self.learning_rate = None
         # Used for SDE only
         self.rollout_data = None
         self.on_policy_exploration = False
@@ -407,7 +415,7 @@ class BaseRLModel(ABC):
 
         return data, params, opt_params
 
-    def set_random_seed(self, seed=None):
+    def set_random_seed(self, seed: Optional[int] = None):
         """
         Set the seed of the pseudo-random generators
         (python, numpy, pytorch, gym, action_space)
@@ -443,7 +451,7 @@ class BaseRLModel(ABC):
             eval_env.seed(self.seed)
 
         eval_env = self._get_eval_env(eval_env)
-        obs = self.env.reset()
+        obs = self.env.reset()  # type: Union[gym.Env, VecEnv]
         return timesteps_since_eval, episode_num, evaluations, obs, eval_env
 
     def _update_info_buffer(self, infos):

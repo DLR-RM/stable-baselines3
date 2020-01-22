@@ -3,10 +3,10 @@ SHELL=/bin/bash
 pytest:
 	./scripts/run_tests.sh
 
-pytype:
+type:
 	pytype
 
-doc:
+docs:
 	cd docs && make html
 
 spelling:

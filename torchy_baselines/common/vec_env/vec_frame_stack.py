@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 from gym import spaces
 
-from torchy_baselines.common.vec_env import VecEnvWrapper
+from torchy_baselines.common.vec_env.base_vec_env import VecEnvWrapper
 
 
 class VecFrameStack(VecEnvWrapper):

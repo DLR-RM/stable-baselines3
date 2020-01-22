@@ -146,6 +146,17 @@ class VecEnv(ABC):
         """
         raise NotImplementedError()
 
+    def seed(self, seed, indices=None):
+        """
+        :param seed: (int or [int])
+        :param indices: ([int])
+        """
+        indices = self._get_indices(indices)
+        if not hasattr(seed, 'len'):
+            seed = [seed] * len(indices)
+        assert len(seed) == len(indices)
+        return [self.env_method('seed', seed[i], indices=i) for i in indices]
+
     @property
     def unwrapped(self):
         if isinstance(self, VecEnvWrapper):

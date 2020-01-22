@@ -30,7 +30,7 @@ class NormalActionNoise(ActionNoise):
         return np.random.normal(self._mu, self._sigma)
 
     def __repr__(self):
-        return 'NormalActionNoise(mu={}, sigma={})'.format(self._mu, self._sigma)
+        return f'NormalActionNoise(mu={self._mu}, sigma={self._sigma})'
 
 
 class OrnsteinUhlenbeckActionNoise(ActionNoise):
@@ -68,4 +68,4 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         self.noise_prev = self.initial_noise if self.initial_noise is not None else np.zeros_like(self._mu)
 
     def __repr__(self):
-        return 'OrnsteinUhlenbeckActionNoise(mu={}, sigma={})'.format(self._mu, self._sigma)
+        return f'OrnsteinUhlenbeckActionNoise(mu={self._mu}, sigma={self._sigma})'

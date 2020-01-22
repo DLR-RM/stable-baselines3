@@ -57,7 +57,7 @@ class BaseRLModel(ABC):
 
         self.device = th.device(device)
         if verbose > 0:
-            print("Using {} device".format(self.device))
+            print(f"Using {self.device} device")
 
         self.env = env
         # get VecNormalize object if needed
@@ -317,9 +317,8 @@ class BaseRLModel(ABC):
         data, params, opt_params = cls._load_from_file(load_path)
 
         if 'policy_kwargs' in kwargs and kwargs['policy_kwargs'] != data['policy_kwargs']:
-            raise ValueError("The specified policy kwargs do not equal the stored policy kwargs."
-                             "Stored kwargs: {}, specified kwargs: {}".format(data['policy_kwargs'],
-                                                                              kwargs['policy_kwargs']))
+            raise ValueError(f"The specified policy kwargs do not equal the stored policy kwargs."
+                             "Stored kwargs: {data['policy_kwargs']}, specified kwargs: {kwargs['policy_kwargs']}")
 
         # check if observation space and action space are part of the saved parameters
         if ("observation_space" not in data or "action_space" not in data) and "env" not in data:
@@ -357,7 +356,7 @@ class BaseRLModel(ABC):
                 if os.path.exists(load_path + ".zip"):
                     load_path += ".zip"
                 else:
-                    raise ValueError("Error: the file {} could not be found".format(load_path))
+                    raise ValueError(f"Error: the file {load_path} could not be found")
 
         # Open the zip archive and load data
         try:
@@ -404,7 +403,7 @@ class BaseRLModel(ABC):
                             opt_params[os.path.splitext(file_path)[0]] = th.load(file_content)
         except zipfile.BadZipFile:
             # load_path wasn't a zip file
-            raise ValueError("Error: the file {} wasn't a zip-file".format(load_path))
+            raise ValueError(f"Error: the file {load_path} wasn't a zip-file")
 
         return data, params, opt_params
 
@@ -720,7 +719,7 @@ class BaseRLModel(ABC):
             sync_envs_normalization(self.env, eval_env)
             mean_reward, std_reward = evaluate_policy(self, eval_env, n_eval_episodes, deterministic=deterministic)
             if self.verbose > 0:
-                print("Eval num_timesteps={}, "
-                      "episode_reward={:.2f} +/- {:.2f}".format(self.num_timesteps, mean_reward, std_reward))
-                print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - self.start_time)))
+                print(f"Eval num_timesteps={self.num_timesteps}, "
+                      "episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
+                print(f"FPS: {self.num_timesteps / (time.time() - self.start_time):.2f}")
         return timesteps_since_eval

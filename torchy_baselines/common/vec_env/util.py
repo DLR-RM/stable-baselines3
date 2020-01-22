@@ -15,7 +15,7 @@ def copy_obs_dict(obs):
     :param obs: (OrderedDict<ndarray>): a dict of numpy arrays.
     :return (OrderedDict<ndarray>) a dict of copied numpy arrays.
     """
-    assert isinstance(obs, OrderedDict), "unexpected type for observations '{}'".format(type(obs))
+    assert isinstance(obs, OrderedDict), f"unexpected type for observations '{type(obs)}'"
     return OrderedDict([(k, np.copy(v)) for k, v in obs.items()])
 
 
@@ -61,7 +61,7 @@ def obs_space_info(obs_space):
     elif isinstance(obs_space, gym.spaces.Tuple):
         subspaces = {i: space for i, space in enumerate(obs_space.spaces)}
     else:
-        assert not hasattr(obs_space, 'spaces'), "Unsupported structured space '{}'".format(type(obs_space))
+        assert not hasattr(obs_space, 'spaces'), f"Unsupported structured space '{type(obs_space)}'"
         subspaces = {None: obs_space}
     keys = []
     shapes = {}

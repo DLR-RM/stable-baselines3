@@ -123,7 +123,7 @@ def json_to_data(json_string, custom_objects=None):
                 )
             except pickle.UnpicklingError:
                 raise RuntimeError(
-                    "Could not deserialize object {}. ".format(data_key) +
+                    f"Could not deserialize object {data_key}. " +
                     "Consider using `custom_objects` argument to replace " +
                     "this object."
                 )

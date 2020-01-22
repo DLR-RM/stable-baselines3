@@ -467,6 +467,5 @@ def make_proba_distribution(action_space, use_sde=False, dist_kwargs=None):
     # elif isinstance(action_space, spaces.MultiBinary):
     #     return BernoulliDistribution(action_space.n, **dist_kwargs)
     else:
-        raise NotImplementedError("Error: probability distribution, not implemented for action space of type {}."
-                                  .format(type(action_space)) +
+        raise NotImplementedError(f"Error: probability distribution, not implemented for action space of type {type(action_space)}."
                                   " Must be of type Gym Spaces: Box, Discrete, MultiDiscrete or MultiBinary.")

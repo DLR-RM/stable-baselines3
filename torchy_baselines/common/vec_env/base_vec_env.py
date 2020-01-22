@@ -161,7 +161,7 @@ class VecEnv(ABC):
         :return: (str or None) name of module whose attribute is being shadowed, if any.
         """
         if hasattr(self, name) and already_found:
-            return "{0}.{1}".format(type(self).__module__, type(self).__name__)
+            return f"{type(self).__module__}.{type(self).__name__}"
         else:
             return None
 
@@ -230,10 +230,10 @@ class VecEnvWrapper(VecEnv):
         """
         blocked_class = self.getattr_depth_check(name, already_found=False)
         if blocked_class is not None:
-            own_class = "{0}.{1}".format(type(self).__module__, type(self).__name__)
-            format_str = ("Error: Recursive attribute lookup for {0} from {1} is "
-                          "ambiguous and hides attribute from {2}")
-            raise AttributeError(format_str.format(name, own_class, blocked_class))
+            own_class = f"{type(self).__module__}.{type(self).__name__}"
+            error_str = (f"Error: Recursive attribute lookup for {name} from {own_class} is "
+                          "ambiguous and hides attribute from {blocked_class}")
+            raise AttributeError(error_str)
 
         return self.getattr_recursive(name)
 
@@ -272,7 +272,7 @@ class VecEnvWrapper(VecEnv):
         all_attributes = self._get_all_attributes()
         if name in all_attributes and already_found:
             # this venv's attribute is being hidden because of a higher venv.
-            shadowed_wrapper_class = "{0}.{1}".format(type(self).__module__, type(self).__name__)
+            shadowed_wrapper_class = f"{type(self).__module__}.{type(self).__name__}"
         elif name in all_attributes and not already_found:
             # we have found the first reference to the attribute. Now check for duplicates.
             shadowed_wrapper_class = self.venv.getattr_depth_check(name, True)

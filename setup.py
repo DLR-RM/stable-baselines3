@@ -25,7 +25,9 @@ setup(name='torchy_baselines',
             'sphinx-autobuild',
             'sphinx-rtd-theme',
             # For spelling
-            'sphinxcontrib.spelling'
+            'sphinxcontrib.spelling',
+            # Type hints support
+            'sphinx-autodoc-typehints'
         ],
         'extra': [
             # For render

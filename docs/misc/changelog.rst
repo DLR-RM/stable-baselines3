@@ -12,6 +12,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Add `seed()` method to `VecEnv` class
 
 Bug Fixes:
 ^^^^^^^^^^

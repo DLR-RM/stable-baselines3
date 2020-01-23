@@ -653,13 +653,15 @@ class BaseRLModel(ABC):
         return mean_reward, total_steps, total_episodes, obs
 
     @staticmethod
-    def _save_to_file_zip(save_path, data=None, params=None, opt_params=None):
-        """Save model to a zip archive
+    def _save_to_file_zip(save_path: str, data: Dict[str, Any] = None,
+                          params:  Dict[str, Any] = None, opt_params:  Dict[str, Any] = None) -> None:
+        """
+        Save model to a zip archive.
 
-        :param save_path: (str) Where to store the model
-        :param data: (dict) Class parameters being stored
-        :param params: (dict) Model parameters being stored expected to be state_dict
-        :param opt_params: (dict) Optimizer parameters being stored expected to contain an entry for every
+        :param save_path: Where to store the model
+        :param data: Class parameters being stored
+        :param params: Model parameters being stored expected to be state_dict
+        :param opt_params: Optimizer parameters being stored expected to contain an entry for every
                                          optimizer with its name and the state_dict
         """
 
@@ -690,7 +692,7 @@ class BaseRLModel(ABC):
                         th.save(dict_, opt_param_file)
 
     @staticmethod
-    def excluded_save_params():
+    def excluded_save_params() -> List[str]:
         """
         Returns the names of the parameters that should be excluded by default
         when saving the model.
@@ -699,13 +701,13 @@ class BaseRLModel(ABC):
         """
         return ["env", "eval_env", "replay_buffer", "rollout_buffer", "_vec_normalize_env"]
 
-    def save(self, path, exclude=None, include=None):
+    def save(self, path: str, exclude: Optional[List[str]] = None, include: Optional[List[str]] = None) -> None:
         """
         Save all the attributes of the object and the model parameters in a zip-file.
 
-        :param path: (str) path to the file where the rl agent should be saved
-        :param exclude: ([str]) name of parameters that should be excluded in addition to the default one
-        :param include: ([str]) name of parameters that might be excluded but should be included anyway
+        :param path: path to the file where the rl agent should be saved
+        :param exclude: name of parameters that should be excluded in addition to the default one
+        :param include: name of parameters that might be excluded but should be included anyway
         """
         # copy parameter list so we don't mutate the original dict
         data = self.__dict__.copy()
@@ -728,25 +730,26 @@ class BaseRLModel(ABC):
         opt_params_to_save = self.get_opt_parameters()
         self._save_to_file_zip(path, data=data, params=params_to_save, opt_params=opt_params_to_save)
 
-    def _eval_policy(self, eval_freq, eval_env, n_eval_episodes,
-                     timesteps_since_eval, deterministic=True):
+    def _eval_policy(self, eval_freq: int, eval_env: int, n_eval_episodes: int,
+                     timesteps_since_eval: int, render: bool = False, deterministic: bool = True) -> int:
         """
         Evaluate the current policy on a test environment.
 
-        :param eval_env: (gym.Env) Environment that will be used to evaluate the agent
-        :param eval_freq: (int) Evaluate the agent every `eval_freq` timesteps (this may vary a little)
-        :param n_eval_episodes: (int) Number of episode to evaluate the agent
-        :parma timesteps_since_eval: (int) Number of timesteps since last evaluation
-        :param deterministic: (bool) Whether to use deterministic or stochastic actions
-        :return: (int) Number of timesteps since last evaluation
+        :param eval_freq: Evaluate the agent every `eval_freq` timesteps (this may vary a little)
+        :param n_eval_episodes: Number of episode to evaluate the agent
+        :parma timesteps_since_eval: Number of timesteps since last evaluation
+        :param deterministic: Whether to use deterministic or stochastic actions
+        :param render: Whether to render the eval env or not
+        :return: Number of timesteps since last evaluation
         """
         if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
             timesteps_since_eval %= eval_freq
             # Synchronise the normalization stats if needed
             sync_envs_normalization(self.env, eval_env)
-            mean_reward, std_reward = evaluate_policy(self, eval_env, n_eval_episodes, deterministic=deterministic)
+            mean_reward, std_reward = evaluate_policy(self, eval_env, n_eval_episodes,
+                                                      render=render, deterministic=deterministic)
             if self.verbose > 0:
                 print(f"Eval num_timesteps={self.num_timesteps}, "
-                      "episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
+                      f"episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
                 print(f"FPS: {self.num_timesteps / (time.time() - self.start_time):.2f}")
         return timesteps_since_eval

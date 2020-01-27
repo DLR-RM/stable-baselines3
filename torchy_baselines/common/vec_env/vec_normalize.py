@@ -2,7 +2,7 @@ import pickle
 
 import numpy as np
 
-from torchy_baselines.common.vec_env import VecEnvWrapper
+from torchy_baselines.common.vec_env.base_vec_env import VecEnvWrapper
 from torchy_baselines.common.running_mean_std import RunningMeanStd
 
 
@@ -182,7 +182,7 @@ class VecNormalize(VecEnvWrapper):
         :param path: (str) path to log dir
         """
         for rms, name in zip([self.obs_rms, self.ret_rms], ['obs_rms', 'ret_rms']):
-            with open("{}/{}.pkl".format(path, name), 'wb') as file_handler:
+            with open(f"{path}/{name}.pkl", 'wb') as file_handler:
                 pickle.dump(rms, file_handler)
 
     def load_running_average(self, path):
@@ -190,5 +190,5 @@ class VecNormalize(VecEnvWrapper):
         :param path: (str) path to log dir
         """
         for name in ['obs_rms', 'ret_rms']:
-            with open("{}/{}.pkl".format(path, name), 'rb') as file_handler:
+            with open(f"{path}/{name}.pkl", 'rb') as file_handler:
                 setattr(self, name, pickle.load(file_handler))

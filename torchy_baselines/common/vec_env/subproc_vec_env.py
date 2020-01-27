@@ -4,7 +4,7 @@ from collections import OrderedDict
 import gym
 import numpy as np
 
-from torchy_baselines.common.vec_env import VecEnv, CloudpickleWrapper
+from torchy_baselines.common.vec_env.base_vec_env import VecEnv, CloudpickleWrapper
 
 
 def _worker(remote, parent_remote, env_fn_wrapper):
@@ -111,7 +111,7 @@ class SubprocVecEnv(VecEnv):
         for work_remote, remote, env_fn in zip(self.work_remotes, self.remotes, env_fns):
             args = (work_remote, remote, CloudpickleWrapper(env_fn))
             # daemon=True: if the main process crashes, we should not cause things to hang
-            process = ctx.Process(target=_worker, args=args, daemon=True)
+            process = ctx.Process(target=_worker, args=args, daemon=True)  # pytype:disable=attribute-error
             process.start()
             self.processes.append(process)
             work_remote.close()
@@ -153,8 +153,7 @@ class SubprocVecEnv(VecEnv):
         for pipe in self.remotes:
             # gather images from subprocesses
             # `mode` will be taken into account later
-            kwargs.update({'mode': 'rgb_array'})
-            pipe.send(('render', (args, kwargs)))
+            pipe.send(('render', (args, {'mode': 'rgb_array', **kwargs})))
         imgs = [pipe.recv() for pipe in self.remotes]
         # Create a big image by tiling images from subprocesses
         bigimg = tile_images(imgs)
@@ -188,22 +187,8 @@ class SubprocVecEnv(VecEnv):
         for remote in target_remotes:
             remote.recv()
 
-    def seed(self, seed, indices=None):
-        """
-        :param seed: (int or [int])
-        :param indices: ([int])
-        """
-        indices = self._get_indices(indices)
-        if not hasattr(seed, 'len'):
-            seed = [seed] * len(indices)
-        assert len(seed) == len(indices)
-        return [self.env_method('seed', seed[i], indices=i) for i in indices]
-
-    def env_method(self, method_name, *method_args, **method_kwargs):
+    def env_method(self, method_name, *method_args, indices=None, **method_kwargs):
         """Call instance methods of vectorized environments."""
-        indices = method_kwargs.get('indices')
-        if 'indices' in method_kwargs:
-            del method_kwargs['indices']
         target_remotes = self._get_target_remotes(indices)
         for remote in target_remotes:
             remote.send(('env_method', (method_name, method_args, method_kwargs)))

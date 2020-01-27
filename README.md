@@ -6,6 +6,8 @@
 
 PyTorch version of [Stable Baselines](https://github.com/hill-a/stable-baselines), a set of improved implementations of reinforcement learning algorithms.
 
+NOTE: Python 3.6 is required!
+
 ## Implemented Algorithms
 
 - A2C
@@ -20,6 +22,34 @@ PyTorch version of [Stable Baselines](https://github.com/hill-a/stable-baselines
 ## Roadmap
 
 - cf github Roadmap
+
+
+## Run the Tests
+
+```
+pip install -e .[tests]
+make pytest
+```
+
+## Type check
+
+```
+pip install -e .[tests]
+make type
+```
+
+## Build the Documentation
+
+```
+pip install -e .[docs]
+make docs
+```
+
+Spell check for the documentation:
+
+```
+make spelling
+```
 
 
 ## Citing the Project

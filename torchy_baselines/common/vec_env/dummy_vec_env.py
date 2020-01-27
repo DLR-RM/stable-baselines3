@@ -3,7 +3,7 @@ from copy import deepcopy
 
 import numpy as np
 
-from torchy_baselines.common.vec_env import VecEnv
+from torchy_baselines.common.vec_env.base_vec_env import VecEnv
 from torchy_baselines.common.vec_env.util import copy_obs_dict, dict_to_obs, obs_space_info
 
 
@@ -54,17 +54,6 @@ class DummyVecEnv(VecEnv):
             self._save_obs(env_idx, obs)
         return self._obs_from_buf()
 
-    def seed(self, seed, indices=None):
-        """
-        :param seed: (int or [int])
-        :param indices: ([int])
-        """
-        indices = self._get_indices(indices)
-        if not hasattr(seed, 'len'):
-            seed = [seed] * len(indices)
-        assert len(seed) == len(indices)
-        return [self.envs[i].seed(seed[i]) for i in indices]
-
     def close(self):
         for env in self.envs:
             env.close()
@@ -99,11 +88,8 @@ class DummyVecEnv(VecEnv):
         for env_i in target_envs:
             setattr(env_i, attr_name, value)
 
-    def env_method(self, method_name, *method_args, **method_kwargs):
+    def env_method(self, method_name, *method_args, indices=None, **method_kwargs):
         """Call instance methods of vectorized environments."""
-        indices = method_kwargs.get('indices')
-        if 'indices' in method_kwargs:
-            del method_kwargs['indices']
         target_envs = self._get_target_envs(indices)
         return [getattr(env_i, method_name)(*method_args, **method_kwargs) for env_i in target_envs]
 

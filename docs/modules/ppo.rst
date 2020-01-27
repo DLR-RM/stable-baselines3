@@ -24,6 +24,7 @@ Notes
 - Original paper: https://arxiv.org/abs/1707.06347
 - Clear explanation of PPO on Arxiv Insights channel: https://www.youtube.com/watch?v=5P7I-xPq8u8
 - OpenAI blog post: https://blog.openai.com/openai-baselines-ppo/
+- Spinning Up guide: https://spinningup.openai.com/en/latest/algorithms/ppo.html
 
 
 Can I use?

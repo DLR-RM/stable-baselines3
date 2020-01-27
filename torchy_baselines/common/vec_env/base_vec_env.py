@@ -1,6 +1,6 @@
-from abc import ABCMeta, abstractmethod
 import inspect
 import pickle
+from abc import ABC, abstractmethod
 
 import cloudpickle
 
@@ -27,7 +27,7 @@ class NotSteppingError(Exception):
         Exception.__init__(self, msg)
 
 
-class VecEnv(object):
+class VecEnv(ABC):
     """
     An abstract asynchronous, vectorized environment.
 
@@ -38,8 +38,6 @@ class VecEnv(object):
     metadata = {
         'render.modes': ['human', 'rgb_array']
     }
-
-    __metaclass__ = ABCMeta
 
     def __init__(self, num_envs, observation_space, action_space):
         self.num_envs = num_envs
@@ -112,7 +110,7 @@ class VecEnv(object):
         raise NotImplementedError()
 
     @abstractmethod
-    def env_method(self, method_name, *method_args, **method_kwargs):
+    def env_method(self, method_name, *method_args, indices=None, **method_kwargs):
         """
         Call instance methods of vectorized environments.
 
@@ -148,6 +146,17 @@ class VecEnv(object):
         """
         raise NotImplementedError()
 
+    def seed(self, seed, indices=None):
+        """
+        :param seed: (int or [int])
+        :param indices: ([int])
+        """
+        indices = self._get_indices(indices)
+        if not hasattr(seed, 'len'):
+            seed = [seed] * len(indices)
+        assert len(seed) == len(indices)
+        return [self.env_method('seed', seed[i], indices=i) for i in indices]
+
     @property
     def unwrapped(self):
         if isinstance(self, VecEnvWrapper):
@@ -163,7 +172,7 @@ class VecEnv(object):
         :return: (str or None) name of module whose attribute is being shadowed, if any.
         """
         if hasattr(self, name) and already_found:
-            return "{0}.{1}".format(type(self).__module__, type(self).__name__)
+            return f"{type(self).__module__}.{type(self).__name__}"
         else:
             return None
 
@@ -222,8 +231,8 @@ class VecEnvWrapper(VecEnv):
     def set_attr(self, attr_name, value, indices=None):
         return self.venv.set_attr(attr_name, value, indices)
 
-    def env_method(self, method_name, *method_args, **method_kwargs):
-        return self.venv.env_method(method_name, *method_args, **method_kwargs)
+    def env_method(self, method_name, *method_args, indices=None, **method_kwargs):
+        return self.venv.env_method(method_name, *method_args, indices=indices, **method_kwargs)
 
     def __getattr__(self, name):
         """Find attribute from wrapped venv(s) if this wrapper does not have it.
@@ -232,10 +241,10 @@ class VecEnvWrapper(VecEnv):
         """
         blocked_class = self.getattr_depth_check(name, already_found=False)
         if blocked_class is not None:
-            own_class = "{0}.{1}".format(type(self).__module__, type(self).__name__)
-            format_str = ("Error: Recursive attribute lookup for {0} from {1} is "
-                          "ambiguous and hides attribute from {2}")
-            raise AttributeError(format_str.format(name, own_class, blocked_class))
+            own_class = f"{type(self).__module__}.{type(self).__name__}"
+            error_str = (f"Error: Recursive attribute lookup for {name} from {own_class} is "
+                          "ambiguous and hides attribute from {blocked_class}")
+            raise AttributeError(error_str)
 
         return self.getattr_recursive(name)
 
@@ -274,7 +283,7 @@ class VecEnvWrapper(VecEnv):
         all_attributes = self._get_all_attributes()
         if name in all_attributes and already_found:
             # this venv's attribute is being hidden because of a higher venv.
-            shadowed_wrapper_class = "{0}.{1}".format(type(self).__module__, type(self).__name__)
+            shadowed_wrapper_class = f"{type(self).__module__}.{type(self).__name__}"
         elif name in all_attributes and not already_found:
             # we have found the first reference to the attribute. Now check for duplicates.
             shadowed_wrapper_class = self.venv.getattr_depth_check(name, True)

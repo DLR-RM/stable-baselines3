@@ -33,7 +33,7 @@ class CEMRL(TD3):
     :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
     :param gamma: (float) the discount factor
     :param batch_size: (int) Minibatch size for each gradient update
-    :param tau: (float) the soft update coefficient ("polyak update" of the target networks, between 0 and 1)
+    :param tau: (float) the soft update coefficient ("Polyak update" of the target networks, between 0 and 1)
     :param action_noise: (ActionNoise) the action noise type. Cf common.noise for the different action noise type.
     :param target_policy_noise: (float) Standard deviation of Gaussian noise added to target policy
         (smoothing noise)
@@ -103,6 +103,7 @@ class CEMRL(TD3):
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="CEMRL", reset_num_timesteps=True):
 
         timesteps_since_eval, episode_num, evaluations, obs, eval_env = self._setup_learn(eval_env)
+        actor_steps = 0
 
         while self.num_timesteps < total_timesteps:
 

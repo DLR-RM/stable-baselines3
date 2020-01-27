@@ -94,6 +94,7 @@ class Actor(BaseNetwork):
 
         :return: (th.Tensor)
         """
+        assert isinstance(self.action_dist, StateDependentNoiseDistribution), 'get_std() is only available when using SDE'
         return self.action_dist.get_std(self.log_std)
 
     def reset_noise(self, batch_size=1):
@@ -102,6 +103,7 @@ class Actor(BaseNetwork):
 
         :param batch_size: (int)
         """
+        assert isinstance(self.action_dist, StateDependentNoiseDistribution), 'reset_noise() is only available when using SDE'
         self.action_dist.sample_weights(self.log_std, batch_size=batch_size)
 
     def _get_latent(self, obs):

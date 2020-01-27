@@ -70,6 +70,7 @@ release = torchy_baselines.__version__
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx_autodoc_typehints',
     'sphinx.ext.autosummary',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',

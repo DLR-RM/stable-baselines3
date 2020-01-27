@@ -8,9 +8,11 @@ Pre-Release 0.2.0a0 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Python 2 support was dropped, Torchy Baselines now requires Python 3.6 or above
 
 New Features:
 ^^^^^^^^^^^^^
+- Add `seed()` method to `VecEnv` class
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -18,9 +20,10 @@ Bug Fixes:
 Deprecations:
 ^^^^^^^^^^^^^
 
-
 Others:
 ^^^^^^^
+- Add type check
+- Converted all format string to f-strings
 
 Documentation:
 ^^^^^^^^^^^^^^

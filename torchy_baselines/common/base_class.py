@@ -1,54 +1,68 @@
 import time
-from abc import ABCMeta, abstractmethod
-from collections import deque
 import os
 import io
 import zipfile
+import typing
+from typing import Union, Type, Optional, Dict, Any, List, Tuple
+from abc import ABC, abstractmethod
+from collections import deque
 
 import gym
 import torch as th
 import numpy as np
 
 from torchy_baselines.common import logger
-from torchy_baselines.common.policies import get_policy_from_name
+from torchy_baselines.common.policies import BasePolicy, get_policy_from_name
 from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate
 from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, sync_envs_normalization
 from torchy_baselines.common.monitor import Monitor
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.common.save_util import data_to_json, json_to_data
 
+# TODO: define aliases, ex GymEnv = Union[gym.Env, VecEnv]
+if typing.TYPE_CHECKING:
+    from torchy_baselines.common.noise import ActionNoise
 
-class BaseRLModel(object):
+
+class BaseRLModel(ABC):
     """
     The base RL model
 
-    :param policy: (BasePolicy) Policy object
-    :param env: (Gym environment) The environment to learn from
+    :param policy: Policy object
+    :param env: The environment to learn from
                 (if registered in Gym, can be str. Can be None for loading trained models)
-    :param policy_base: (BasePolicy) the base policy used by this method
-    :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
-    :param verbose: (int) the verbosity level: 0 none, 1 training information, 2 debug
-    :param device: (str or th.device) Device on which the code should run.
+    :param policy_base: The base policy used by this method
+    :param policy_kwargs: Additional arguments to be passed to the policy on creation
+    :param verbose: The verbosity level: 0 none, 1 training information, 2 debug
+    :param device: Device on which the code should run.
         By default, it will try to use a Cuda compatible device and fallback to cpu
         if it is not possible.
-    :param support_multi_env: (bool) Whether the algorithm supports training
+    :param support_multi_env: Whether the algorithm supports training
         with multiple environments (as in A2C)
-    :param create_eval_env: (bool) Whether to create a second environment that will be
+    :param create_eval_env: Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
-    :param monitor_wrapper: (bool) When creating an environment, whether to wrap it
+    :param monitor_wrapper: When creating an environment, whether to wrap it
         or not in a Monitor wrapper.
-    :param seed: (int) Seed for the pseudo random generators
-    :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
+    :param seed: Seed for the pseudo random generators
+    :param use_sde: Whether to use State Dependent Exploration (SDE)
         instead of action noise exploration (default: False)
-    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
+    :param sde_sample_freq: Sample a new noise matrix every n steps when using SDE
         Default: -1 (only sample at the beginning of the rollout)
     """
-    __metaclass__ = ABCMeta
+    def __init__(self,
+                 policy: Type[BasePolicy],
+                 env: Union[gym.Env, VecEnv, str],
+                 policy_base: Type[BasePolicy],
+                 policy_kwargs : Dict[str, Any] = None,
+                 verbose: int = 0,
+                 device: Union[th.device, str] = 'auto',
+                 support_multi_env: bool = False,
+                 create_eval_env: bool = False,
+                 monitor_wrapper: bool = True,
+                 seed: Optional[int] = None,
+                 use_sde: bool = False,
+                 sde_sample_freq: int = -1):
 
-    def __init__(self, policy, env, policy_base, policy_kwargs=None,
-                 verbose=0, device='auto', support_multi_env=False,
-                 create_eval_env=False, monitor_wrapper=True, seed=None,
-                 use_sde=False, sde_sample_freq=-1):
         if isinstance(policy, str) and policy_base is not None:
             self.policy_class = get_policy_from_name(policy_base, policy)
         else:
@@ -59,9 +73,9 @@ class BaseRLModel(object):
 
         self.device = th.device(device)
         if verbose > 0:
-            print("Using {} device".format(self.device))
+            print(f"Using {self.device} device")
 
-        self.env = env
+        self.env = None  # type: Union[gym.Env, VecEnv]
         # get VecNormalize object if needed
         self._vec_normalize_env = unwrap_vec_normalize(env)
         self.verbose = verbose
@@ -73,7 +87,10 @@ class BaseRLModel(object):
         self.eval_env = None
         self.replay_buffer = None
         self.seed = seed
-        self.action_noise = None
+        self.action_noise = None  # type: ActionNoise
+        self.start_time = None
+        self.policy, self.actor = None, None
+        self.learning_rate = None
         # Used for SDE only
         self.rollout_data = None
         self.on_policy_exploration = False
@@ -112,12 +129,12 @@ class BaseRLModel(object):
                 raise ValueError("Error: the model does not support multiple envs requires a single vectorized"
                                  " environment.")
 
-    def _get_eval_env(self, eval_env):
+    def _get_eval_env(self, eval_env: Union[gym.Env, VecEnv, None]) -> Union[gym.Env, VecEnv, None]:
         """
         Return the environment that will be used for evaluation.
 
-        :param eval_env: (gym.Env or VecEnv)
-        :return: (VecEnv)
+        :param eval_env:
+        :return:
         """
         if eval_env is None:
             eval_env = self.eval_env
@@ -128,48 +145,47 @@ class BaseRLModel(object):
             assert eval_env.num_envs == 1
         return eval_env
 
-    def scale_action(self, action):
+    def scale_action(self, action: np.ndarray) -> np.ndarray:
         """
         Rescale the action from [low, high] to [-1, 1]
         (no need for symmetric action space)
 
-        :param action: (np.ndarray)
-        :return: (np.ndarray)
+        :param action:
+        :return:
         """
         low, high = self.action_space.low, self.action_space.high
         return 2.0 * ((action - low) / (high - low)) - 1.0
 
-    def unscale_action(self, scaled_action):
+    def unscale_action(self, scaled_action: np.ndarray) -> np.ndarray:
         """
         Rescale the action from [-1, 1] to [low, high]
         (no need for symmetric action space)
 
-        :param scaled_action: (np.ndarray)
-        :return: (np.ndarray)
+        :param scaled_action:
+        :return:
         """
         low, high = self.action_space.low, self.action_space.high
         return low + (0.5 * (scaled_action + 1.0) * (high - low))
 
-    def _setup_learning_rate(self):
+    def _setup_learning_rate(self) -> None:
         """Transform to callable if needed."""
         self.learning_rate = get_schedule_fn(self.learning_rate)
 
-    def _update_current_progress(self, num_timesteps, total_timesteps):
+    def _update_current_progress(self, num_timesteps: int, total_timesteps: int) -> None:
         """
         Compute current progress (from 1 to 0)
 
-        :param num_timesteps: (int) current number of timesteps
-        :param total_timesteps: (int)
+        :param num_timesteps: current number of timesteps
+        :param total_timesteps:
         """
         self._current_progress = 1.0 - float(num_timesteps) / float(total_timesteps)
 
-    def _update_learning_rate(self, optimizers):
+    def _update_learning_rate(self, optimizers: Union[List[th.optim.Optimizer], th.optim.Optimizer]) -> None:
         """
         Update the optimizers learning rate using the current learning rate schedule
         and the current progress (from 1 to 0).
 
-        :param optimizers: ([th.optim.Optimizer] or Optimizer) An optimizer
-            or a list of optimizer.
+        :param optimizers: An optimizer or a list of optimizer.
         """
         # Log the current learning rate
         logger.logkv("learning_rate", self.learning_rate(self._current_progress))
@@ -180,32 +196,32 @@ class BaseRLModel(object):
             update_learning_rate(optimizer, self.learning_rate(self._current_progress))
 
     @staticmethod
-    def safe_mean(arr):
+    def safe_mean(arr: Union[np.ndarray, list]) -> np.ndarray:
         """
         Compute the mean of an array if there is at least one element.
         For empty array, return NaN. It is used for logging only.
 
-        :param arr: (np.ndarray)
-        :return: (float)
+        :param arr:
+        :return:
         """
         return np.nan if len(arr) == 0 else np.mean(arr)
 
-    def get_env(self):
+    def get_env(self) -> Union[VecEnv, None]:
         """
         Returns the current environment (can be None if not defined).
 
-        :return: (gym.Env) The current environment
+        :return: The current environment
         """
         return self.env
 
     @staticmethod
-    def check_env(env, observation_space, action_space):
+    def check_env(env, observation_space: gym.spaces.Space, action_space: gym.spaces.Space) -> bool:
         """
         Checks the validity of the environment and returns if it is consistent.
         Checked parameters:
         - observation_space
         - action_space
-        :return: (bool) True if environment seems to be coherent
+        :return: True if environment seems to be coherent
         """
         if observation_space != env.observation_space:
             return False
@@ -214,7 +230,7 @@ class BaseRLModel(object):
         # return true if no check failed
         return True
 
-    def set_env(self, env):
+    def set_env(self, env: Union[gym.Env, VecEnv]) -> None:
         """
         Checks the validity of the environment, and if it is coherent, set it as the current environment.
         Furthermore wrap any non vectorized env into a vectorized
@@ -222,7 +238,7 @@ class BaseRLModel(object):
         - observation_space
         - action_space
 
-        :param env: (gym.Env) The environment for learning a policy
+        :param env: The environment for learning a policy
         """
         if self.check_env(env, self.observation_space, self.action_space) is False:
             raise ValueError("The given environment is not compatible with model: "
@@ -236,23 +252,24 @@ class BaseRLModel(object):
         self.n_envs = env.num_envs
         self.env = env
 
-    def get_parameters(self):
+    def get_parameters(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Returns policy and optimizer parameters as a tuple
-        :return: (dict,dict) policy_parameters, opt_parameters
+
+        :return: policy_parameters, opt_parameters
         """
         return self.get_policy_parameters(), self.get_opt_parameters()
 
-    def get_policy_parameters(self):
+    def get_policy_parameters(self) -> Dict[str, Any]:
         """
         Get current model policy parameters as dictionary of variable name -> tensors.
 
-        :return: (dict) Dictionary of variable name -> tensor of model's policy parameters.
+        :return: Dictionary of variable name -> tensor of model's policy parameters.
         """
         return self.policy.state_dict()
 
     @abstractmethod
-    def get_opt_parameters(self):
+    def get_opt_parameters(self)-> Dict[str, Any]:
         """
         Get current model optimizer parameters as dictionary of variable names -> tensors
         :return: (dict) Dictionary of variable name -> tensor of model's optimizer parameters
@@ -260,8 +277,13 @@ class BaseRLModel(object):
         raise NotImplementedError()
 
     @abstractmethod
-    def learn(self, total_timesteps, callback=None, log_interval=100, tb_log_name="run",
-              eval_env=None, eval_freq=-1, n_eval_episodes=5, reset_num_timesteps=True):
+    def learn(self, total_timesteps: int,
+              callback=None, log_interval: int = 100,
+              tb_log_name: str = "run",
+              eval_env: Union[gym.Env, VecEnv, None] = None,
+              eval_freq: int = -1,
+              n_eval_episodes: int = 5,
+              reset_num_timesteps: bool = True):
         """
         Return a trained model.
 
@@ -279,19 +301,22 @@ class BaseRLModel(object):
         raise NotImplementedError()
 
     @abstractmethod
-    def predict(self, observation, state=None, mask=None, deterministic=False):
+    def predict(self, observation: np.ndarray,
+                state: Optional[np.ndarray] = None,
+                mask: Optional[np.ndarray] = None,
+                deterministic: bool = False) -> np.ndarray:
         """
         Get the model's action from an observation
 
-        :param observation: (np.ndarray) the input observation
-        :param state: (np.ndarray) The last states (can be None, used in recurrent policies)
-        :param mask: (np.ndarray) The last masks (can be None, used in recurrent policies)
-        :param deterministic: (bool) Whether or not to return deterministic actions.
-        :return: (np.ndarray, np.ndarray) the model's action and the next state (used in recurrent policies)
+        :param observation: the input observation
+        :param state: The last states (can be None, used in recurrent policies)
+        :param mask: The last masks (can be None, used in recurrent policies)
+        :param deterministic: Whether or not to return deterministic actions.
+        :return: the model's action and the next state (used in recurrent policies)
         """
         raise NotImplementedError()
 
-    def load_parameters(self, load_dict, opt_params):
+    def load_parameters(self, load_dict: Dict[str, Any], opt_params: Dict[str, Any]) -> None:
         """
         Load model parameters from a dictionary
         load_dict should contain all keys from torch.model.state_dict()
@@ -299,29 +324,28 @@ class BaseRLModel(object):
         but can only be handled in child classes.
 
 
-        :param load_dict: (dict) dict of parameters from model.state_dict()
-        :param opt_params: (dict of dicts) dict of optimizer state_dicts should be handled in child_class
+        :param load_dict: dict of parameters from model.state_dict()
+        :param opt_params: dict of optimizer state_dicts should be handled in child_class
         """
         if opt_params is not None:
             raise ValueError("Optimizer Parameters where given but no overloaded load function exists for this class")
         self.policy.load_state_dict(load_dict)
 
     @classmethod
-    def load(cls, load_path, env=None, **kwargs):
+    def load(cls, load_path: str, env: Union[gym.Env, VecEnv, None] = None, **kwargs):
         """
         Load the model from a zip-file
 
-        :param load_path: (str) the location of the saved data
-        :param env: (Gym Environment) the new environment to run the loaded model on
+        :param load_path: the location of the saved data
+        :param env: the new environment to run the loaded model on
             (can be None if you only need prediction from a trained model) has priority over any saved environment
         :param kwargs: extra arguments to change the model when loading
         """
         data, params, opt_params = cls._load_from_file(load_path)
 
         if 'policy_kwargs' in kwargs and kwargs['policy_kwargs'] != data['policy_kwargs']:
-            raise ValueError("The specified policy kwargs do not equal the stored policy kwargs."
-                             "Stored kwargs: {}, specified kwargs: {}".format(data['policy_kwargs'],
-                                                                              kwargs['policy_kwargs']))
+            raise ValueError(f"The specified policy kwargs do not equal the stored policy kwargs."
+                             "Stored kwargs: {data['policy_kwargs']}, specified kwargs: {kwargs['policy_kwargs']}")
 
         # check if observation space and action space are part of the saved parameters
         if ("observation_space" not in data or "action_space" not in data) and "env" not in data:
@@ -344,11 +368,11 @@ class BaseRLModel(object):
         return model
 
     @staticmethod
-    def _load_from_file(load_path, load_data=True):
+    def _load_from_file(load_path: str, load_data: bool = True):
         """ Load model data from a .zip archive
 
-        :param load_path: (str) Where to load the model from
-        :param load_data: (bool) Whether we should load and return data
+        :param load_path: Where to load the model from
+        :param load_data: Whether we should load and return data
             (class parameters). Mainly used by 'load_parameters' to only load model parameters (weights)
         :return: (dict),(dict),(dict) Class parameters, model parameters (state_dict)
             and dict of optimizer parameters (dict of state_dict)
@@ -359,7 +383,7 @@ class BaseRLModel(object):
                 if os.path.exists(load_path + ".zip"):
                     load_path += ".zip"
                 else:
-                    raise ValueError("Error: the file {} could not be found".format(load_path))
+                    raise ValueError(f"Error: the file {load_path} could not be found")
 
         # Open the zip archive and load data
         try:
@@ -406,11 +430,11 @@ class BaseRLModel(object):
                             opt_params[os.path.splitext(file_path)[0]] = th.load(file_content)
         except zipfile.BadZipFile:
             # load_path wasn't a zip file
-            raise ValueError("Error: the file {} wasn't a zip-file".format(load_path))
+            raise ValueError(f"Error: the file {load_path} wasn't a zip-file")
 
         return data, params, opt_params
 
-    def set_random_seed(self, seed=None):
+    def set_random_seed(self, seed: Optional[int] = None) -> None:
         """
         Set the seed of the pseudo-random generators
         (python, numpy, pytorch, gym, action_space)
@@ -446,7 +470,7 @@ class BaseRLModel(object):
             eval_env.seed(self.seed)
 
         eval_env = self._get_eval_env(eval_env)
-        obs = self.env.reset()
+        obs = self.env.reset()  # type: Union[gym.Env, VecEnv]
         return timesteps_since_eval, episode_num, evaluations, obs, eval_env
 
     def _update_info_buffer(self, infos):
@@ -629,13 +653,15 @@ class BaseRLModel(object):
         return mean_reward, total_steps, total_episodes, obs
 
     @staticmethod
-    def _save_to_file_zip(save_path, data=None, params=None, opt_params=None):
-        """Save model to a zip archive
+    def _save_to_file_zip(save_path: str, data: Dict[str, Any] = None,
+                          params:  Dict[str, Any] = None, opt_params:  Dict[str, Any] = None) -> None:
+        """
+        Save model to a zip archive.
 
-        :param save_path: (str) Where to store the model
-        :param data: (dict) Class parameters being stored
-        :param params: (dict) Model parameters being stored expected to be state_dict
-        :param opt_params: (dict) Optimizer parameters being stored expected to contain an entry for every
+        :param save_path: Where to store the model
+        :param data: Class parameters being stored
+        :param params: Model parameters being stored expected to be state_dict
+        :param opt_params: Optimizer parameters being stored expected to contain an entry for every
                                          optimizer with its name and the state_dict
         """
 
@@ -666,7 +692,7 @@ class BaseRLModel(object):
                         th.save(dict_, opt_param_file)
 
     @staticmethod
-    def excluded_save_params():
+    def excluded_save_params() -> List[str]:
         """
         Returns the names of the parameters that should be excluded by default
         when saving the model.
@@ -675,13 +701,13 @@ class BaseRLModel(object):
         """
         return ["env", "eval_env", "replay_buffer", "rollout_buffer", "_vec_normalize_env"]
 
-    def save(self, path, exclude=None, include=None):
+    def save(self, path: str, exclude: Optional[List[str]] = None, include: Optional[List[str]] = None) -> None:
         """
         Save all the attributes of the object and the model parameters in a zip-file.
 
-        :param path: (str) path to the file where the rl agent should be saved
-        :param exclude: ([str]) name of parameters that should be excluded in addition to the default one
-        :param include: ([str]) name of parameters that might be excluded but should be included anyway
+        :param path: path to the file where the rl agent should be saved
+        :param exclude: name of parameters that should be excluded in addition to the default one
+        :param include: name of parameters that might be excluded but should be included anyway
         """
         # copy parameter list so we don't mutate the original dict
         data = self.__dict__.copy()
@@ -704,25 +730,26 @@ class BaseRLModel(object):
         opt_params_to_save = self.get_opt_parameters()
         self._save_to_file_zip(path, data=data, params=params_to_save, opt_params=opt_params_to_save)
 
-    def _eval_policy(self, eval_freq, eval_env, n_eval_episodes,
-                     timesteps_since_eval, deterministic=True):
+    def _eval_policy(self, eval_freq: int, eval_env: int, n_eval_episodes: int,
+                     timesteps_since_eval: int, render: bool = False, deterministic: bool = True) -> int:
         """
         Evaluate the current policy on a test environment.
 
-        :param eval_env: (gym.Env) Environment that will be used to evaluate the agent
-        :param eval_freq: (int) Evaluate the agent every `eval_freq` timesteps (this may vary a little)
-        :param n_eval_episodes: (int) Number of episode to evaluate the agent
-        :parma timesteps_since_eval: (int) Number of timesteps since last evaluation
-        :param deterministic: (bool) Whether to use deterministic or stochastic actions
-        :return: (int) Number of timesteps since last evaluation
+        :param eval_freq: Evaluate the agent every `eval_freq` timesteps (this may vary a little)
+        :param n_eval_episodes: Number of episode to evaluate the agent
+        :parma timesteps_since_eval: Number of timesteps since last evaluation
+        :param deterministic: Whether to use deterministic or stochastic actions
+        :param render: Whether to render the eval env or not
+        :return: Number of timesteps since last evaluation
         """
         if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
             timesteps_since_eval %= eval_freq
             # Synchronise the normalization stats if needed
             sync_envs_normalization(self.env, eval_env)
-            mean_reward, std_reward = evaluate_policy(self, eval_env, n_eval_episodes, deterministic=deterministic)
+            mean_reward, std_reward = evaluate_policy(self, eval_env, n_eval_episodes,
+                                                      render=render, deterministic=deterministic)
             if self.verbose > 0:
-                print("Eval num_timesteps={}, "
-                      "episode_reward={:.2f} +/- {:.2f}".format(self.num_timesteps, mean_reward, std_reward))
-                print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - self.start_time)))
+                print(f"Eval num_timesteps={self.num_timesteps}, "
+                      f"episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
+                print(f"FPS: {self.num_timesteps / (time.time() - self.start_time):.2f}")
         return timesteps_since_eval

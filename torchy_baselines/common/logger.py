@@ -53,7 +53,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             self.file = open(filename_or_file, 'wt')
             self.own_file = True
         else:
-            assert hasattr(filename_or_file, 'write'), 'Expected file or str, got {}'.format(filename_or_file)
+            assert hasattr(filename_or_file, 'write'), f'Expected file or str, got {filename_or_file}'
             self.file = filename_or_file
             self.own_file = False
 
@@ -272,7 +272,7 @@ def getkvs():
     return Logger.CURRENT.name2val
 
 
-def log(*args, **kwargs):
+def log(*args, level=INFO):
     """
     Write the sequence of args, with no separators,
     to the console and output files (if you've configured an output file).
@@ -283,7 +283,6 @@ def log(*args, **kwargs):
     :param args: (list) log the arguments
     :param level: (int) the logging level (can be DEBUG=10, INFO=20, WARN=30, ERROR=40, DISABLED=50)
     """
-    level = kwargs.get('level', INFO)
     Logger.CURRENT.log(*args, level=level)
 
 
@@ -424,7 +423,7 @@ class Logger(object):
         self.name2val.clear()
         self.name2cnt.clear()
 
-    def log(self, *args, **kwargs):
+    def log(self, *args, level=INFO):
         """
         Write the sequence of args, with no separators,
         to the console and output files (if you've configured an output file).
@@ -435,7 +434,6 @@ class Logger(object):
         :param args: (list) log the arguments
         :param level: (int) the logging level (can be DEBUG=10, INFO=20, WARN=30, ERROR=40, DISABLED=50)
         """
-        level = kwargs.get('level', INFO)
         if self.level <= level:
             self._do_log(args)
 

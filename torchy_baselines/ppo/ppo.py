@@ -25,7 +25,7 @@ class PPO(BaseRLModel):
     Proximal Policy Optimization algorithm (PPO) (clip version)
 
     Paper: https://arxiv.org/abs/1707.06347
-    Code: This implementation borrows code from OpenAI spinningup (https://github.com/openai/spinningup/)
+    Code: This implementation borrows code from OpenAI Spinning Up (https://github.com/openai/spinningup/)
     https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail and
     and Stable Baselines (PPO2 from https://github.com/hill-a/stable-baselines)
 

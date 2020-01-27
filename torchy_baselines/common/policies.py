@@ -150,10 +150,10 @@ def get_policy_from_name(base_policy_type, name):
     :return: (base_policy_type) the policy
     """
     if base_policy_type not in _policy_registry:
-        raise ValueError("Error: the policy type {} is not registered!".format(base_policy_type))
+        raise ValueError(f"Error: the policy type {base_policy_type} is not registered!")
     if name not in _policy_registry[base_policy_type]:
-        raise ValueError("Error: unknown policy type {}, the only registed policy type are: {}!"
-                         .format(name, list(_policy_registry[base_policy_type].keys())))
+        raise ValueError(f"Error: unknown policy type {name},"
+                         "the only registed policy type are: {list(_policy_registry[base_policy_type].keys())}!")
     return _policy_registry[base_policy_type][name]
 
 
@@ -174,13 +174,12 @@ def register_policy(name, policy):
     except AttributeError:
         sub_class = str(th.random.randint(100))
     if sub_class is None:
-        raise ValueError("Error: the policy {} is not of any known subclasses of BasePolicy!".format(policy))
+        raise ValueError(f"Error: the policy {policy} is not of any known subclasses of BasePolicy!")
 
     if sub_class not in _policy_registry:
         _policy_registry[sub_class] = {}
     if name in _policy_registry[sub_class]:
-        raise ValueError("Error: the name {} is alreay registered for a different policy, will not override."
-                         .format(name))
+        raise ValueError(f"Error: the name {name} is alreay registered for a different policy, will not override.")
     _policy_registry[sub_class][name] = policy
 
 

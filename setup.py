@@ -18,13 +18,16 @@ setup(name='torchy_baselines',
             'pytest-cov',
             'pytest-env',
             'pytest-xdist',
+            'pytype',
         ],
         'docs': [
             'sphinx',
             'sphinx-autobuild',
             'sphinx-rtd-theme',
             # For spelling
-            'sphinxcontrib.spelling'
+            'sphinxcontrib.spelling',
+            # Type hints support
+            'sphinx-autodoc-typehints'
         ],
         'extra': [
             # For render

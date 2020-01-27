@@ -1,14 +1,17 @@
 import os
 from abc import ABC, abstractmethod
+import typing
 from typing import Union, List, Dict, Any, Optional
 
 import gym
 import numpy as np
 
-from torchy_baselines.common.base_class import BaseRLModel # pytype: disable=pyi-error
 from torchy_baselines.common.vec_env import VecEnv, sync_envs_normalization
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.common.logger import Logger
+
+if typing.TYPE_CHECKING:
+    from torchy_baselines.common.base_class import BaseRLModel  # pytype: disable=pyi-error
 
 
 class BaseCallback(ABC):
@@ -31,7 +34,8 @@ class BaseCallback(ABC):
         # to have access to the parent object
         self.parent = None  # type: Optional[BaseCallback]
 
-    def init_callback(self, model: BaseRLModel) -> None:
+    # Type hint as string to avoid circular import
+    def init_callback(self, model: 'BaseRLModel') -> None:
         """
         Initialize the callback by saving references to the
         RL model and the training environment for convenience.
@@ -105,16 +109,21 @@ class EventCallback(BaseCallback):
         if callback is not None:
             self.callback.parent = self
 
-    def init_callback(self, model: BaseRLModel) -> None:
+    def init_callback(self, model: 'BaseRLModel') -> None:
         super(EventCallback, self).init_callback(model)
-        self.callback.init_callback(self.model)
+        if self.callback is not None:
+            self.callback.init_callback(self.model)
 
     def _on_training_start(self) -> None:
-        self.callback.on_training_start(self.locals, self.globals)
+        if self.callback is not None:
+            self.callback.on_training_start(self.locals, self.globals)
 
     def _on_event(self) -> bool:
         if self.callback is not None:
             return self.callback()
+        return True
+
+    def _on_step(self) -> bool:
         return True
 
 
@@ -179,7 +188,7 @@ class ConvertCallback(BaseCallback):
     """
     Convert functional callback (old-style) to object.
 
-    :param on_step: (callable)
+    :param callback: (callable)
     :param verbose: (int)
     """
     def __init__(self, callback, verbose=0):
@@ -207,6 +216,7 @@ class EvalCallback(EventCallback):
         according to performance on the eval env will be saved.
     :param deterministic: (bool) Whether the evaluation should
         use a stochastic or deterministic actions.
+    :param deterministic: (bool) Whether to render or not the environment during evaluation
     :param verbose: (int)
     """
     def __init__(self, eval_env: Union[gym.Env, VecEnv],
@@ -216,12 +226,15 @@ class EvalCallback(EventCallback):
                  log_path: str = None,
                  best_model_save_path: str = None,
                  deterministic: bool = True,
+                 render: bool = False,
                  verbose: int = 1):
         super(EvalCallback, self).__init__(callback_on_new_best, verbose=verbose)
         self.n_eval_episodes = n_eval_episodes
         self.eval_freq = eval_freq
         self.best_mean_reward = -np.inf
         self.deterministic = deterministic
+        self.render = render
+
         if isinstance(eval_env, VecEnv):
             assert eval_env.num_envs == 1, "You must pass only one environment for evaluation"
 
@@ -230,6 +243,7 @@ class EvalCallback(EventCallback):
         self.log_path = log_path
         self.evaluations_results = []
         self.evaluations_timesteps = []
+        self.evaluations_length = []
 
     def _init_callback(self):
         # Does not work when eval_env is a gym.Env and training_env is a VecEnv
@@ -244,22 +258,30 @@ class EvalCallback(EventCallback):
 
     def _on_step(self) -> bool:
 
-        if self.n_calls % self.eval_freq == 0:
+        if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
             # Sync training and eval env if there is VecNormalize
             sync_envs_normalization(self.training_env, self.eval_env)
 
-            episode_rewards, _ = evaluate_policy(self.model, self.eval_env, n_eval_episodes=self.n_eval_episodes,
-                                                 deterministic=self.deterministic, return_episode_rewards=True)
+            episode_rewards, episode_lengths = evaluate_policy(self.model, self.eval_env,
+                                                               n_eval_episodes=self.n_eval_episodes,
+                                                               render=self.render,
+                                                               deterministic=self.deterministic,
+                                                               return_episode_rewards=True)
 
             if self.log_path is not None:
                 self.evaluations_timesteps.append(self.num_timesteps)
                 self.evaluations_results.append(episode_rewards)
-                np.savez(self.log_path, timesteps=self.evaluations_timesteps, results=self.evaluations_results)
+                self.evaluations_length.append(episode_lengths)
+                np.savez(self.log_path, timesteps=self.evaluations_timesteps,
+                         results=self.evaluations_results, ep_lengths=self.evaluations_length)
 
             mean_reward, std_reward = np.mean(episode_rewards), np.std(episode_rewards)
+            mean_ep_length, std_ep_length = np.mean(episode_lengths), np.std(episode_lengths)
+
             if self.verbose > 0:
                 print(f"Eval num_timesteps={self.num_timesteps}, "
                       f"episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
+                print(f"Episode length: {mean_ep_length:.2f} +/- {std_ep_length:.2f}")
 
             if mean_reward > self.best_mean_reward:
                 if self.verbose > 0:

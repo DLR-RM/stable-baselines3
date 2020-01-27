@@ -193,6 +193,8 @@ class PPO(BaseRLModel):
 
             self._update_info_buffer(infos)
             n_steps += 1
+            self.num_timesteps += env.num_envs
+
             if isinstance(self.action_space, gym.spaces.Discrete):
                 # Reshape in case of discrete action
                 actions = actions.reshape(-1, 1)
@@ -284,9 +286,11 @@ class PPO(BaseRLModel):
             logger.logkv("std", th.exp(self.policy.log_std).mean().item())
 
     def learn(self, total_timesteps, callback=None, log_interval=1,
-              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="PPO", reset_num_timesteps=True):
+              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="PPO",
+              eval_log_path=None, reset_num_timesteps=True):
 
-        timesteps_since_eval, iteration, evaluations, obs, eval_env, callback = self._setup_learn(eval_env, callback)
+        episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq, n_eval_episodes, eval_log_path)
+        iteration = 0
 
         if self.tensorboard_log is not None and SummaryWriter is not None:
             self.tb_writer = SummaryWriter(log_dir=os.path.join(self.tensorboard_log, tb_log_name))
@@ -295,15 +299,15 @@ class PPO(BaseRLModel):
 
         while self.num_timesteps < total_timesteps:
 
-            obs, continue_training = self.collect_rollouts(self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps,
+            obs, continue_training = self.collect_rollouts(self.env, callback,
+                                                           self.rollout_buffer,
+                                                           n_rollout_steps=self.n_steps,
                                                            obs=obs)
 
             if continue_training is False:
                 break
 
             iteration += 1
-            self.num_timesteps += self.n_steps * self.n_envs
-            timesteps_since_eval += self.n_steps * self.n_envs
             self._update_current_progress(self.num_timesteps, total_timesteps)
 
             # Display training infos
@@ -320,9 +324,6 @@ class PPO(BaseRLModel):
 
             self.train(self.n_epochs, batch_size=self.batch_size)
 
-            # Evaluate the agent
-            timesteps_since_eval = self._eval_policy(eval_freq, eval_env, n_eval_episodes,
-                                                     timesteps_since_eval, deterministic=True)
             # For tensorboard integration
             # if self.tb_writer is not None:
             #     self.tb_writer.add_scalar('Eval/reward', mean_reward, self.num_timesteps)

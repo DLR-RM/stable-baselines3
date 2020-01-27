@@ -257,9 +257,9 @@ class SAC(BaseRLModel):
 
     def learn(self, total_timesteps, callback=None, log_interval=4,
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="SAC",
-              reset_num_timesteps=True):
+              eval_log_path=None, reset_num_timesteps=True):
 
-        timesteps_since_eval, episode_num, evaluations, obs, eval_env, callback = self._setup_learn(eval_env, callback)
+        episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq, n_eval_episodes, eval_log_path)
 
         callback.on_training_start(locals(), globals())
 
@@ -268,7 +268,6 @@ class SAC(BaseRLModel):
                                             n_steps=self.train_freq, action_noise=self.action_noise,
                                             deterministic=False, callback=callback,
                                             learning_starts=self.learning_starts,
-                                            num_timesteps=self.num_timesteps,
                                             replay_buffer=self.replay_buffer,
                                             obs=obs, episode_num=episode_num,
                                             log_interval=log_interval)
@@ -278,18 +277,13 @@ class SAC(BaseRLModel):
             if continue_training is False:
                 break
 
-            self.num_timesteps += episode_timesteps
             episode_num += n_episodes
-            timesteps_since_eval += episode_timesteps
             self._update_current_progress(self.num_timesteps, total_timesteps)
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
                 gradient_steps = self.gradient_steps if self.gradient_steps > 0 else episode_timesteps
 
                 self.train(gradient_steps, batch_size=self.batch_size)
-
-            timesteps_since_eval = self._eval_policy(eval_freq, eval_env, n_eval_episodes,
-                                                     timesteps_since_eval, deterministic=True)
 
         callback.on_training_end()
         return self

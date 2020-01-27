@@ -100,9 +100,10 @@ class CEMRL(TD3):
                       elitism=self.elitism)
 
     def learn(self, total_timesteps, callback=None, log_interval=4,
-              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="CEMRL", reset_num_timesteps=True):
+              eval_env=None, eval_freq=-1, n_eval_episodes=5,
+              tb_log_name="CEMRL", eval_log_path=None, reset_num_timesteps=True):
 
-        timesteps_since_eval, episode_num, evaluations, obs, eval_env, callback = self._setup_learn(eval_env, callback)
+        episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq, n_eval_episodes, eval_log_path)
         actor_steps = 0
         continue_training = True
 
@@ -155,21 +156,6 @@ class CEMRL(TD3):
                     # Get the params back in the population
                     self.es_params[i] = self.actor.parameters_to_vector()
 
-            # Evaluate agent
-            if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
-                timesteps_since_eval %= eval_freq
-
-                self.actor.load_from_vector(self.es.mu)
-                sync_envs_normalization(self.env, eval_env)
-
-                mean_reward, std_reward = evaluate_policy(self, eval_env, n_eval_episodes)
-                evaluations.append(mean_reward)
-
-                if self.verbose > 0:
-                    print("Eval num_timesteps={}, "
-                          "episode_reward={:.2f} +/- {:.2f}".format(self.num_timesteps, mean_reward, std_reward))
-                    print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - self.start_time)))
-
             actor_steps = 0
             # evaluate all actors
             for params in self.es_params:
@@ -180,7 +166,6 @@ class CEMRL(TD3):
                                                 n_steps=-1, action_noise=self.action_noise,
                                                 deterministic=False, callback=callback,
                                                 learning_starts=self.learning_starts,
-                                                num_timesteps=self.num_timesteps,
                                                 replay_buffer=self.replay_buffer,
                                                 obs=obs, episode_num=episode_num,
                                                 log_interval=log_interval)
@@ -192,8 +177,6 @@ class CEMRL(TD3):
                     break
 
                 episode_num += n_episodes
-                self.num_timesteps += episode_timesteps
-                timesteps_since_eval += episode_timesteps
                 actor_steps += episode_timesteps
                 self.fitnesses.append(episode_reward)
 
@@ -202,7 +185,6 @@ class CEMRL(TD3):
 
             self._update_current_progress(self.num_timesteps, total_timesteps)
             self.es.tell(self.es_params, self.fitnesses)
-            timesteps_since_eval += actor_steps
 
         callback.on_training_end()
 

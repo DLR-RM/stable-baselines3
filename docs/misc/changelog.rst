@@ -13,6 +13,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Add `seed()` method to `VecEnv` class
+- Add support for Callback (cf https://github.com/hill-a/stable-baselines/pull/644)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -24,6 +25,7 @@ Others:
 ^^^^^^^
 - Add type check
 - Converted all format string to f-strings
+- Add test for `OrnsteinUhlenbeckActionNoise`
 
 Documentation:
 ^^^^^^^^^^^^^^

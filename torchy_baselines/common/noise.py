@@ -1,19 +1,26 @@
 """
 Taken from stable-baselines
 """
+from abc import ABC, abstractmethod
 import numpy as np
 
 
-class ActionNoise(object):
+class ActionNoise(ABC):
     """
     The action noise base class
     """
+    def __init__(self):
+        super(ActionNoise, self).__init__()
+
     def reset(self):
         """
         call end of episode reset for the noise
         """
         pass
 
+    @abstractmethod
+    def __call__(self):
+        pass
 
 class NormalActionNoise(ActionNoise):
     """
@@ -25,6 +32,7 @@ class NormalActionNoise(ActionNoise):
     def __init__(self, mean, sigma):
         self._mu = mean
         self._sigma = sigma
+        super(NormalActionNoise, self).__init__()
 
     def __call__(self):
         return np.random.normal(self._mu, self._sigma)
@@ -54,6 +62,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         self.initial_noise = initial_noise
         self.noise_prev = None
         self.reset()
+        super(OrnsteinUhlenbeckActionNoise, self).__init__()
 
     def __call__(self):
         noise = self.noise_prev + self._theta * (self._mu - self.noise_prev) * self._dt + \

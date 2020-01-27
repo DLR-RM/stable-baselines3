@@ -1,3 +1,6 @@
+from typing import List, Tuple, Callable, Optional
+
+import torch
 import torch as th
 import torch.nn as nn
 
@@ -27,9 +30,18 @@ class Actor(BaseNetwork):
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
     """
-    def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU,
-                 use_sde=False, log_std_init=-3, clip_noise=None,
-                 lr_sde=3e-4, full_std=False, sde_net_arch=None, use_expln=False):
+    def __init__(self,
+                 obs_dim: int,
+                 action_dim: int,
+                 net_arch: List[int],
+                 activation_fn: nn.Module = nn.ReLU,
+                 use_sde: bool = False,
+                 log_std_init: float = -3,
+                 clip_noise: Optional[float] = None,
+                 lr_sde: float = 3e-4,
+                 full_std: bool = False,
+                 sde_net_arch: Optional[List[int]] = None,
+                 use_expln: bool = False):
         super(Actor, self).__init__()
 
         self.latent_pi, self.log_std = None, None
@@ -65,7 +77,7 @@ class Actor(BaseNetwork):
             actor_net = create_mlp(obs_dim, action_dim, net_arch, activation_fn, squash_out=True)
             self.mu = nn.Sequential(*actor_net)
 
-    def get_std(self):
+    def get_std(self) -> torch.Tensor:
         """
         Retrieve the standard deviation of the action distribution.
         Only useful when using SDE.
@@ -81,7 +93,7 @@ class Actor(BaseNetwork):
         mean_actions = self.mu(latent_pi)
         return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)
 
-    def _get_latent(self, obs):
+    def _get_latent(self, obs) -> Tuple[torch.Tensor, torch.Tensor]:
         latent_pi = self.latent_pi(obs)
 
         if self.sde_feature_extractor is not None:
@@ -90,7 +102,7 @@ class Actor(BaseNetwork):
             latent_sde = latent_pi
         return latent_pi, latent_sde
 
-    def evaluate_actions(self, obs, action):
+    def evaluate_actions(self, obs: torch.Tensor, action: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Evaluate actions according to the current policy,
         given the observations. Only useful when using SDE.
@@ -106,13 +118,13 @@ class Actor(BaseNetwork):
         # value = self.value_net(latent_vf)
         return log_prob, distribution.entropy()
 
-    def reset_noise(self):
+    def reset_noise(self) -> None:
         """
         Sample new weights for the exploration matrix, when using SDE.
         """
         self.action_dist.sample_weights(self.log_std)
 
-    def forward(self, obs, deterministic=True):
+    def forward(self, obs: torch.Tensor, deterministic: bool = True) -> torch.Tensor:
         if self.use_sde:
             latent_pi, latent_sde = self._get_latent(obs)
             if deterministic:
@@ -141,8 +153,8 @@ class Critic(BaseNetwork):
     :param net_arch: ([int]) Network architecture
     :param activation_fn: (nn.Module) Activation function
     """
-    def __init__(self, obs_dim, action_dim,
-                 net_arch, activation_fn=nn.ReLU):
+    def __init__(self, obs_dim: int, action_dim: int,
+                 net_arch: List[int], activation_fn: nn.Module = nn.ReLU):
         super(Critic, self).__init__()
 
         q1_net = create_mlp(obs_dim + action_dim, 1, net_arch, activation_fn)
@@ -151,14 +163,12 @@ class Critic(BaseNetwork):
         q2_net = create_mlp(obs_dim + action_dim, 1, net_arch, activation_fn)
         self.q2_net = nn.Sequential(*q2_net)
 
-        self.q_networks = [self.q1_net, self.q2_net]
-
-    def forward(self, obs, action):
+    def forward(self, obs: torch.Tensor, action: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         qvalue_input = th.cat([obs, action], dim=1)
-        return [q_net(qvalue_input) for q_net in self.q_networks]
+        return self.q1_net(qvalue_input), self.q2_net(qvalue_input)
 
-    def q1_forward(self, obs, action):
-        return self.q_networks[0](th.cat([obs, action], dim=1))
+    def q1_forward(self, obs: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
+        return self.q1_net(th.cat([obs, action], dim=1))
 
 
 class ValueFunction(BaseNetwork):

@@ -251,25 +251,25 @@ class TD3(BaseRLModel):
     def learn(self, total_timesteps, callback=None, log_interval=4,
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="TD3", reset_num_timesteps=True):
 
-        timesteps_since_eval, episode_num, evaluations, obs, eval_env = self._setup_learn(eval_env)
+        timesteps_since_eval, episode_num, evaluations, obs, eval_env, callback = self._setup_learn(eval_env, callback)
+
+        callback.on_training_start(locals(), globals())
 
         while self.num_timesteps < total_timesteps:
 
-            if callback is not None:
-                # Only stop training if return value is False, not when it is None.
-                if callback(locals(), globals()) is False:
-                    break
-
             rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,
                                             n_steps=self.train_freq, action_noise=self.action_noise,
-                                            deterministic=False, callback=None,
+                                            deterministic=False, callback=callback,
                                             learning_starts=self.learning_starts,
                                             num_timesteps=self.num_timesteps,
                                             replay_buffer=self.replay_buffer,
                                             obs=obs, episode_num=episode_num,
                                             log_interval=log_interval)
             # Unpack
-            episode_reward, episode_timesteps, n_episodes, obs = rollout
+            episode_reward, episode_timesteps, n_episodes, obs, continue_training = rollout
+
+            if continue_training is False:
+                break
 
             episode_num += n_episodes
             self.num_timesteps += episode_timesteps
@@ -293,6 +293,8 @@ class TD3(BaseRLModel):
             # Evaluate the agent
             timesteps_since_eval = self._eval_policy(eval_freq, eval_env, n_eval_episodes,
                                                      timesteps_since_eval, deterministic=True)
+
+        callback.on_training_end()
 
         return self
 

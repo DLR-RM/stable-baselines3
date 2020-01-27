@@ -18,10 +18,11 @@ from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_norm
 from torchy_baselines.common.monitor import Monitor
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.common.save_util import data_to_json, json_to_data
+from torchy_baselines.common.type_aliases import GymEnv, TensorDict, OptimizerStateDict
+from torchy_baselines.common.noise import ActionNoise
 
-# TODO: define aliases, ex GymEnv = Union[gym.Env, VecEnv]
 if typing.TYPE_CHECKING:
-    from torchy_baselines.common.noise import ActionNoise
+    from torchy_baselines.common.callbacks import BaseCallback
 
 
 class BaseRLModel(ABC):
@@ -51,7 +52,7 @@ class BaseRLModel(ABC):
     """
     def __init__(self,
                  policy: Type[BasePolicy],
-                 env: Union[gym.Env, VecEnv, str],
+                 env: Union[GymEnv, str],
                  policy_base: Type[BasePolicy],
                  policy_kwargs : Dict[str, Any] = None,
                  verbose: int = 0,
@@ -75,7 +76,7 @@ class BaseRLModel(ABC):
         if verbose > 0:
             print(f"Using {self.device} device")
 
-        self.env = None  # type: Union[gym.Env, VecEnv]
+        self.env = None  # type: GymEnv
         # get VecNormalize object if needed
         self._vec_normalize_env = unwrap_vec_normalize(env)
         self.verbose = verbose
@@ -129,7 +130,7 @@ class BaseRLModel(ABC):
                 raise ValueError("Error: the model does not support multiple envs requires a single vectorized"
                                  " environment.")
 
-    def _get_eval_env(self, eval_env: Union[gym.Env, VecEnv, None]) -> Union[gym.Env, VecEnv, None]:
+    def _get_eval_env(self, eval_env: Optional[GymEnv]) -> Optional[GymEnv]:
         """
         Return the environment that will be used for evaluation.
 
@@ -144,6 +145,27 @@ class BaseRLModel(ABC):
                 eval_env = DummyVecEnv([lambda: eval_env])
             assert eval_env.num_envs == 1
         return eval_env
+
+    # Type hint as string to avoid circular import
+    def _init_callback(self, callback) -> 'BaseCallback':
+        """
+        Note: we cannot use type hint here because of circular import.
+
+        :param callback: (Union[callable, [BaseCallback], BaseCallback, None])
+        :return: (BaseCallback)
+        """
+        # Avoid circular import
+        from torchy_baselines.common.callbacks import BaseCallback, CallbackList, ConvertCallback
+
+        # Convert a list of callbacks into a callback
+        if isinstance(callback, list):
+            callback = CallbackList(callback)
+        # Convert functional callback to object
+        if not isinstance(callback, BaseCallback):
+            callback = ConvertCallback(callback)
+
+        callback.init_callback(self)
+        return callback
 
     def scale_action(self, action: np.ndarray) -> np.ndarray:
         """
@@ -206,7 +228,7 @@ class BaseRLModel(ABC):
         """
         return np.nan if len(arr) == 0 else np.mean(arr)
 
-    def get_env(self) -> Union[VecEnv, None]:
+    def get_env(self) -> Optional[VecEnv]:
         """
         Returns the current environment (can be None if not defined).
 
@@ -230,7 +252,7 @@ class BaseRLModel(ABC):
         # return true if no check failed
         return True
 
-    def set_env(self, env: Union[gym.Env, VecEnv]) -> None:
+    def set_env(self, env: GymEnv) -> None:
         """
         Checks the validity of the environment, and if it is coherent, set it as the current environment.
         Furthermore wrap any non vectorized env into a vectorized
@@ -252,7 +274,7 @@ class BaseRLModel(ABC):
         self.n_envs = env.num_envs
         self.env = env
 
-    def get_parameters(self) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def get_parameters(self) -> Tuple[TensorDict, OptimizerStateDict]:
         """
         Returns policy and optimizer parameters as a tuple
 
@@ -260,7 +282,7 @@ class BaseRLModel(ABC):
         """
         return self.get_policy_parameters(), self.get_opt_parameters()
 
-    def get_policy_parameters(self) -> Dict[str, Any]:
+    def get_policy_parameters(self) -> TensorDict:
         """
         Get current model policy parameters as dictionary of variable name -> tensors.
 
@@ -269,7 +291,7 @@ class BaseRLModel(ABC):
         return self.policy.state_dict()
 
     @abstractmethod
-    def get_opt_parameters(self)-> Dict[str, Any]:
+    def get_opt_parameters(self)-> OptimizerStateDict:
         """
         Get current model optimizer parameters as dictionary of variable names -> tensors
         :return: (dict) Dictionary of variable name -> tensor of model's optimizer parameters
@@ -280,7 +302,7 @@ class BaseRLModel(ABC):
     def learn(self, total_timesteps: int,
               callback=None, log_interval: int = 100,
               tb_log_name: str = "run",
-              eval_env: Union[gym.Env, VecEnv, None] = None,
+              eval_env: Optional[GymEnv] = None,
               eval_freq: int = -1,
               n_eval_episodes: int = 5,
               reset_num_timesteps: bool = True):
@@ -316,7 +338,7 @@ class BaseRLModel(ABC):
         """
         raise NotImplementedError()
 
-    def load_parameters(self, load_dict: Dict[str, Any], opt_params: Dict[str, Any]) -> None:
+    def load_parameters(self, load_dict: TensorDict, opt_params: OptimizerStateDict) -> None:
         """
         Load model parameters from a dictionary
         load_dict should contain all keys from torch.model.state_dict()
@@ -325,14 +347,14 @@ class BaseRLModel(ABC):
 
 
         :param load_dict: dict of parameters from model.state_dict()
-        :param opt_params: dict of optimizer state_dicts should be handled in child_class
+        :param opt_params: dict of optimizer state_dicts should be handled in child class
         """
         if opt_params is not None:
             raise ValueError("Optimizer Parameters where given but no overloaded load function exists for this class")
         self.policy.load_state_dict(load_dict)
 
     @classmethod
-    def load(cls, load_path: str, env: Union[gym.Env, VecEnv, None] = None, **kwargs):
+    def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs):
         """
         Load the model from a zip-file
 
@@ -368,7 +390,8 @@ class BaseRLModel(ABC):
         return model
 
     @staticmethod
-    def _load_from_file(load_path: str, load_data: bool = True):
+    def _load_from_file(load_path: str, load_data: bool = True) -> (Tuple[Optional[Dict[str, Any]],
+        Optional[TensorDict], Optional[OptimizerStateDict]]):
         """ Load model data from a .zip archive
 
         :param load_path: Where to load the model from
@@ -450,18 +473,22 @@ class BaseRLModel(ABC):
         if self.eval_env is not None:
             self.eval_env.seed(seed)
 
-    def _setup_learn(self, eval_env):
+    def _setup_learn(self, eval_env: Optional[GymEnv], callback=None) -> (Tuple[int, int,
+            List[Any], np.ndarray, Optional[VecEnv], Any]):
         """
         Initialize different variables needed for training.
 
-        :param eval_env: (gym.Env or VecEnv)
-        :return: (int, int, [float], np.ndarray, VecEnv)
+        :param eval_env: (Optional[GymEnv])
+        :param callback: (Union[None, BaseCallback, List[BaseCallback, Callable]])
+        :return: (int, int, [float], np.ndarray, VecEnv, BaseCallback)
         """
         self.start_time = time.time()
         self.ep_info_buffer = deque(maxlen=100)
 
         if self.action_noise is not None:
             self.action_noise.reset()
+
+        callback = self._init_callback(callback)
 
         timesteps_since_eval, episode_num = 0, 0
         evaluations = []
@@ -470,10 +497,11 @@ class BaseRLModel(ABC):
             eval_env.seed(self.seed)
 
         eval_env = self._get_eval_env(eval_env)
-        obs = self.env.reset()  # type: Union[gym.Env, VecEnv]
-        return timesteps_since_eval, episode_num, evaluations, obs, eval_env
+        obs = self.env.reset()  # type: GymEnv
 
-    def _update_info_buffer(self, infos):
+        return timesteps_since_eval, episode_num, evaluations, obs, eval_env, callback
+
+    def _update_info_buffer(self, infos: List[Dict[str, Any]]) -> None:
         """
         Retrieve reward and episode length and update the buffer
         if using Monitor wrapper.
@@ -485,11 +513,19 @@ class BaseRLModel(ABC):
             if maybe_ep_info is not None:
                 self.ep_info_buffer.extend([maybe_ep_info])
 
-    def collect_rollouts(self, env, n_episodes=1, n_steps=-1, action_noise=None,
-                         deterministic=False, callback=None,
-                         learning_starts=0, num_timesteps=0,
-                         replay_buffer=None, obs=None,
-                         episode_num=0, log_interval=None):
+    def collect_rollouts(self,
+                         env: VecEnv,
+                         callback: 'BaseCallback',  # Type hint as string to avoid circular import
+                         n_episodes: int = 1,
+                         n_steps: int = -1,
+                         action_noise: Optional[ActionNoise] = None,
+                         deterministic: bool = False,
+                         learning_starts: int = 0,
+                         num_timesteps: int = 0,
+                         replay_buffer=None,
+                         obs: Optional[np.ndarray] = None,
+                         episode_num: int = 0,
+                         log_interval: Optional[int] = None) -> Tuple[float, int, int, Optional[np.ndarray], bool]:
         """
         Collect rollout using the current policy (and possibly fill the replay buffer)
         TODO: move this method to off-policy base class.
@@ -499,7 +535,7 @@ class BaseRLModel(ABC):
         :param n_steps: (int)
         :param action_noise: (ActionNoise)
         :param deterministic: (bool)
-        :param callback: (callable)
+        :param callback: (BaseCallback)
         :param learning_starts: (int)
         :param num_timesteps: (int)
         :param replay_buffer: (ReplayBuffer)
@@ -524,6 +560,9 @@ class BaseRLModel(ABC):
             if self.on_policy_exploration:
                 self.rollout_data = {key: [] for key in ['observations', 'actions', 'rewards', 'dones', 'values']}
 
+        callback.on_rollout_start()
+        continue_training = True
+
         while total_steps < n_steps or total_episodes < n_episodes:
             done = False
             # Reset environment: not needed for VecEnv
@@ -531,6 +570,12 @@ class BaseRLModel(ABC):
             episode_reward, episode_timesteps = 0.0, 0
 
             while not done:
+
+                # Only stop training if return value is False, not when it is None.
+                if callback() is False:
+                    continue_training = False
+                    return 0.0, total_steps, total_episodes, None, continue_training
+
                 if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
                     # Sample a new noise matrix
                     self.actor.reset_noise()
@@ -650,11 +695,13 @@ class BaseRLModel(ABC):
                 self.rollout_data['returns'][step] = last_return
             self.rollout_data['advantage'] = self.rollout_data['returns'] - self.rollout_data['values']
 
-        return mean_reward, total_steps, total_episodes, obs
+        callback.on_rollout_end()
+
+        return mean_reward, total_steps, total_episodes, obs, continue_training
 
     @staticmethod
     def _save_to_file_zip(save_path: str, data: Dict[str, Any] = None,
-                          params:  Dict[str, Any] = None, opt_params:  Dict[str, Any] = None) -> None:
+                          params: TensorDict = None, opt_params:  OptimizerStateDict = None) -> None:
         """
         Save model to a zip archive.
 
@@ -730,7 +777,7 @@ class BaseRLModel(ABC):
         opt_params_to_save = self.get_opt_parameters()
         self._save_to_file_zip(path, data=data, params=params_to_save, opt_params=opt_params_to_save)
 
-    def _eval_policy(self, eval_freq: int, eval_env: int, n_eval_episodes: int,
+    def _eval_policy(self, eval_freq: int, eval_env: GymEnv, n_eval_episodes: int,
                      timesteps_since_eval: int, render: bool = False, deterministic: bool = True) -> int:
         """
         Evaluate the current policy on a test environment.

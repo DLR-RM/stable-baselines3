@@ -9,6 +9,7 @@ Pre-Release 0.2.0a0 (WIP)
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Python 2 support was dropped, Torchy Baselines now requires Python 3.6 or above
+- Return type of `evaluation.evaluate_policy()` has been changed
 
 New Features:
 ^^^^^^^^^^^^^
@@ -26,6 +27,7 @@ Others:
 - Add type check
 - Converted all format string to f-strings
 - Add test for `OrnsteinUhlenbeckActionNoise`
+- Add type aliases in `common.type_aliases`
 
 Documentation:
 ^^^^^^^^^^^^^^

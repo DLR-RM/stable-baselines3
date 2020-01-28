@@ -210,7 +210,10 @@ class BaseRLModel(ABC):
         Checked parameters:
         - observation_space
         - action_space
-        :return: True if environment seems to be coherent
+
+        :param observation_space: (gym.spaces.Space)
+        :param action_space: (gym.spaces.Space)
+        :return: (bool) True if environment seems to be coherent
         """
         if observation_space != env.observation_space:
             return False

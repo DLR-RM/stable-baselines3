@@ -6,8 +6,11 @@ pytest:
 type:
 	pytype
 
-docs:
+doc:
 	cd docs && make html
 
 spelling:
 	cd docs && make spelling
+
+clean:
+	cd docs && make clean

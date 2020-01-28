@@ -75,6 +75,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
+    # 'sphinx.ext.intersphinx',
 ]
 
 if enable_spell_check:
@@ -206,3 +207,10 @@ texinfo_documents = [
 
 
 # -- Extension configuration -------------------------------------------------
+
+# Example configuration for intersphinx: refer to the Python standard library.
+# intersphinx_mapping = {
+#     'python': ('https://docs.python.org/3/', None),
+#     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+#     'torch': ('http://pytorch.org/docs/master/', None),
+# }

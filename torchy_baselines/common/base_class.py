@@ -487,11 +487,8 @@ class BaseRLModel(ABC):
 
         # Create eval callback in charge of the evaluation
         if eval_env is not None:
-            # Same folder as the rest
-            best_model_save_path = os.path.dirname(log_path) if log_path is not None else None
-
             eval_callback = EvalCallback(eval_env,
-                                         best_model_save_path=best_model_save_path,
+                                         best_model_save_path=log_path,
                                          log_path=log_path, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes)
             callback = CallbackList([callback, eval_callback])
 
@@ -513,7 +510,7 @@ class BaseRLModel(ABC):
         :param callback: (Union[None, BaseCallback, List[BaseCallback, Callable]])
         :param eval_freq: (int)
         :param n_eval_episodes: (int)
-        :param log_path (Optional[str]):
+        :param log_path (Optional[str]): Path to a log folder
         :param reset_num_timesteps: (bool) Whether to reset or not the `num_timesteps` attribute
         :return: (Tuple[int, np.ndarray, BaseCallback])
         """

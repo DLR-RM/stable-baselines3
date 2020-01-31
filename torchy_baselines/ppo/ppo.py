@@ -290,7 +290,8 @@ class PPO(BaseRLModel):
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="PPO",
               eval_log_path=None, reset_num_timesteps=True):
 
-        episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq, n_eval_episodes, eval_log_path)
+        episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq,
+                                                       n_eval_episodes, eval_log_path, reset_num_timesteps)
         iteration = 0
 
         if self.tensorboard_log is not None and SummaryWriter is not None:

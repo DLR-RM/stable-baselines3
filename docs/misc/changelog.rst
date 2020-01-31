@@ -19,6 +19,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fix loading model on CPU that were trained on GPU
+- Fix `reset_num_timesteps` that was not used
 
 Deprecations:
 ^^^^^^^^^^^^^

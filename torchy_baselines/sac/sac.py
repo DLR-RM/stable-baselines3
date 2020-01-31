@@ -261,8 +261,8 @@ class SAC(BaseRLModel):
               eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="SAC",
               eval_log_path=None, reset_num_timesteps=True):
 
-        episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq, n_eval_episodes, eval_log_path)
-
+        episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq,
+                                                       n_eval_episodes, eval_log_path, reset_num_timesteps)
         callback.on_training_start(locals(), globals())
 
         while self.num_timesteps < total_timesteps:

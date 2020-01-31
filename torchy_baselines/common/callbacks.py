@@ -210,7 +210,7 @@ class EvalCallback(EventCallback):
         when there is a new best model according to the `mean_reward`
     :param n_eval_episodes: (int) The number of episodes to test the agent
     :param eval_freq: (int) Evaluate the agent every eval_freq call of the callback.
-    :param log_path: (str) Path to a log file (.npz) where the evaluations
+    :param log_path: (str) Path to a folder where the evaluations (`evaluations.npz`)
         will be saved. It will be updated at each evaluation.
     :param best_model_save_path: (str) Path to a folder where the best model
         according to performance on the eval env will be saved.
@@ -240,7 +240,7 @@ class EvalCallback(EventCallback):
 
         self.eval_env = eval_env
         self.best_model_save_path = best_model_save_path
-        self.log_path = log_path
+        self.log_path = os.path.join(log_path, 'evaluations')
         self.evaluations_results = []
         self.evaluations_timesteps = []
         self.evaluations_length = []

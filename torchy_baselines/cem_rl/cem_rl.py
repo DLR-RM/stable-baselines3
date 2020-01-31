@@ -160,7 +160,6 @@ class CEMRL(TD3):
             actor_steps = 0
             # evaluate all actors
             for params in self.es_params:
-
                 self.actor.load_from_vector(params)
 
                 rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,

@@ -1,6 +1,6 @@
 import os
 import time
-from typing import List, Tuple
+from typing import Optional, Tuple, List
 
 import gym
 from gym import spaces
@@ -17,6 +17,8 @@ import numpy as np
 from torchy_baselines.common.base_class import BaseRLModel
 from torchy_baselines.common.buffers import RolloutBuffer
 from torchy_baselines.common.utils import explained_variance, get_schedule_fn
+from torchy_baselines.common.vec_env import VecEnv
+from torchy_baselines.common.callbacks import BaseCallback
 from torchy_baselines.common import logger
 from torchy_baselines.ppo.policies import PPOPolicy
 
@@ -151,17 +153,30 @@ class PPO(BaseRLModel):
             clipped_actions = np.clip(clipped_actions, self.action_space.low, self.action_space.high)
         return clipped_actions
 
-    def collect_rollouts(self, env, rollout_buffer, n_rollout_steps=256, callback=None,
-                         obs=None):
+    def collect_rollouts(self,
+                        env: VecEnv,
+                        callback: BaseCallback,
+                        rollout_buffer: RolloutBuffer,
+                        n_rollout_steps: int = 256,
+                        obs: Optional[np.ndarray] = None) -> Tuple[Optional[np.ndarray], bool]:
 
         n_steps = 0
+        continue_training = True
         rollout_buffer.reset()
         # Sample new weights for the state dependent exploration
         # TODO: ensure episodic setting?
         if self.use_sde:
             self.policy.reset_noise(env.num_envs)
 
+        callback.on_rollout_start()
+
         while n_steps < n_rollout_steps:
+
+            if callback() is False:
+                continue_training = False
+                return None, continue_training
+
+
             if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
                 # Sample a new noise matrix
                 self.policy.reset_noise(env.num_envs)
@@ -179,6 +194,8 @@ class PPO(BaseRLModel):
 
             self._update_info_buffer(infos)
             n_steps += 1
+            self.num_timesteps += env.num_envs
+
             if isinstance(self.action_space, gym.spaces.Discrete):
                 # Reshape in case of discrete action
                 actions = actions.reshape(-1, 1)
@@ -187,7 +204,9 @@ class PPO(BaseRLModel):
 
         rollout_buffer.compute_returns_and_advantage(values, dones=dones)
 
-        return obs
+        callback.on_rollout_end()
+
+        return obs, continue_training
 
     def train(self, gradient_steps, batch_size=64):
         # Update optimizer learning rate
@@ -268,25 +287,29 @@ class PPO(BaseRLModel):
             logger.logkv("std", th.exp(self.policy.log_std).mean().item())
 
     def learn(self, total_timesteps, callback=None, log_interval=1,
-              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="PPO", reset_num_timesteps=True):
+              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="PPO",
+              eval_log_path=None, reset_num_timesteps=True):
 
-        timesteps_since_eval, iteration, evaluations, obs, eval_env = self._setup_learn(eval_env)
+        episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq,
+                                                       n_eval_episodes, eval_log_path, reset_num_timesteps)
+        iteration = 0
 
         if self.tensorboard_log is not None and SummaryWriter is not None:
             self.tb_writer = SummaryWriter(log_dir=os.path.join(self.tensorboard_log, tb_log_name))
 
+        callback.on_training_start(locals(), globals())
+
         while self.num_timesteps < total_timesteps:
 
-            if callback is not None:
-                # Only stop training if return value is False, not when it is None.
-                if callback(locals(), globals()) is False:
-                    break
+            obs, continue_training = self.collect_rollouts(self.env, callback,
+                                                           self.rollout_buffer,
+                                                           n_rollout_steps=self.n_steps,
+                                                           obs=obs)
 
-            obs = self.collect_rollouts(self.env, self.rollout_buffer, n_rollout_steps=self.n_steps,
-                                        obs=obs)
+            if continue_training is False:
+                break
+
             iteration += 1
-            self.num_timesteps += self.n_steps * self.n_envs
-            timesteps_since_eval += self.n_steps * self.n_envs
             self._update_current_progress(self.num_timesteps, total_timesteps)
 
             # Display training infos
@@ -303,12 +326,11 @@ class PPO(BaseRLModel):
 
             self.train(self.n_epochs, batch_size=self.batch_size)
 
-            # Evaluate the agent
-            timesteps_since_eval = self._eval_policy(eval_freq, eval_env, n_eval_episodes,
-                                                     timesteps_since_eval, deterministic=True)
             # For tensorboard integration
             # if self.tb_writer is not None:
             #     self.tb_writer.add_scalar('Eval/reward', mean_reward, self.num_timesteps)
+
+        callback.on_training_end()
 
         return self
 

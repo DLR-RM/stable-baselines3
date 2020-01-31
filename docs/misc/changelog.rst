@@ -9,14 +9,17 @@ Pre-Release 0.2.0a0 (WIP)
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Python 2 support was dropped, Torchy Baselines now requires Python 3.6 or above
+- Return type of `evaluation.evaluate_policy()` has been changed
 
 New Features:
 ^^^^^^^^^^^^^
 - Add `seed()` method to `VecEnv` class
+- Add support for Callback (cf https://github.com/hill-a/stable-baselines/pull/644)
 
 Bug Fixes:
 ^^^^^^^^^^
 - Fix loading model on CPU that were trained on GPU
+- Fix `reset_num_timesteps` that was not used
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -25,6 +28,8 @@ Others:
 ^^^^^^^
 - Add type check
 - Converted all format string to f-strings
+- Add test for `OrnsteinUhlenbeckActionNoise`
+- Add type aliases in `common.type_aliases`
 
 Documentation:
 ^^^^^^^^^^^^^^

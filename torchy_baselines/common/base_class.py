@@ -2,8 +2,7 @@ import time
 import os
 import io
 import zipfile
-import typing
-from typing import Union, Type, Optional, Dict, Any, List, Tuple
+from typing import Union, Type, Optional, Dict, Any, List, Tuple, Callable
 from abc import ABC, abstractmethod
 from collections import deque
 
@@ -14,14 +13,12 @@ import numpy as np
 from torchy_baselines.common import logger
 from torchy_baselines.common.policies import BasePolicy, get_policy_from_name
 from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate
-from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, sync_envs_normalization
+from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize
 from torchy_baselines.common.monitor import Monitor
-from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.common.save_util import data_to_json, json_to_data, recursive_getattr, recursive_setattr
-
-# TODO: define aliases, ex GymEnv = Union[gym.Env, VecEnv]
-if typing.TYPE_CHECKING:
-    from torchy_baselines.common.noise import ActionNoise
+from torchy_baselines.common.type_aliases import GymEnv, TensorDict, OptimizerStateDict
+from torchy_baselines.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
+from torchy_baselines.common.noise import ActionNoise
 
 
 class BaseRLModel(ABC):
@@ -52,7 +49,7 @@ class BaseRLModel(ABC):
 
     def __init__(self,
                  policy: Type[BasePolicy],
-                 env: Union[gym.Env, VecEnv, str],
+                 env: Union[GymEnv, str],
                  policy_base: Type[BasePolicy],
                  policy_kwargs: Dict[str, Any] = None,
                  verbose: int = 0,
@@ -76,7 +73,7 @@ class BaseRLModel(ABC):
         if verbose > 0:
             print(f"Using {self.device} device")
 
-        self.env = None  # type: Union[gym.Env, VecEnv]
+        self.env = None  # type: GymEnv
         # get VecNormalize object if needed
         self._vec_normalize_env = unwrap_vec_normalize(env)
         self.verbose = verbose
@@ -134,16 +131,12 @@ class BaseRLModel(ABC):
     def _setup_model(self) -> None:
         """
         Setup model so state_dict can be loaded
-
         """
         raise NotImplementedError()
 
-    def _get_eval_env(self, eval_env: Union[gym.Env, VecEnv, None]) -> Union[gym.Env, VecEnv, None]:
+    def _get_eval_env(self, eval_env: Optional[GymEnv]) -> Optional[GymEnv]:
         """
         Return the environment that will be used for evaluation.
-
-        :param eval_env:
-        :return:
         """
         if eval_env is None:
             eval_env = self.eval_env
@@ -159,8 +152,7 @@ class BaseRLModel(ABC):
         Rescale the action from [low, high] to [-1, 1]
         (no need for symmetric action space)
 
-        :param action:
-        :return:
+        :param action: Action to scale
         """
         low, high = self.action_space.low, self.action_space.high
         return 2.0 * ((action - low) / (high - low)) - 1.0
@@ -170,8 +162,7 @@ class BaseRLModel(ABC):
         Rescale the action from [-1, 1] to [low, high]
         (no need for symmetric action space)
 
-        :param scaled_action:
-        :return:
+        :param scaled_action: Action to un-scale
         """
         low, high = self.action_space.low, self.action_space.high
         return low + (0.5 * (scaled_action + 1.0) * (high - low))
@@ -215,7 +206,7 @@ class BaseRLModel(ABC):
         """
         return np.nan if len(arr) == 0 else np.mean(arr)
 
-    def get_env(self) -> Union[VecEnv, None]:
+    def get_env(self) -> Optional[VecEnv]:
         """
         Returns the current environment (can be None if not defined).
 
@@ -230,7 +221,10 @@ class BaseRLModel(ABC):
         Checked parameters:
         - observation_space
         - action_space
-        :return: True if environment seems to be coherent
+
+        :param observation_space: (gym.spaces.Space)
+        :param action_space: (gym.spaces.Space)
+        :return: (bool) True if environment seems to be coherent
         """
         if observation_space != env.observation_space:
             return False
@@ -239,7 +233,7 @@ class BaseRLModel(ABC):
         # return true if no check failed
         return True
 
-    def set_env(self, env: Union[gym.Env, VecEnv]) -> None:
+    def set_env(self, env: GymEnv) -> None:
         """
         Checks the validity of the environment, and if it is coherent, set it as the current environment.
         Furthermore wrap any non vectorized env into a vectorized
@@ -276,11 +270,13 @@ class BaseRLModel(ABC):
 
     @abstractmethod
     def learn(self, total_timesteps: int,
-              callback=None, log_interval: int = 100,
+              callback: Union[None, Callable, List[BaseCallback], BaseCallback] = None,
+              log_interval: int = 100,
               tb_log_name: str = "run",
-              eval_env: Union[gym.Env, VecEnv, None] = None,
+              eval_env: Optional[GymEnv] = None,
               eval_freq: int = -1,
               n_eval_episodes: int = 5,
+              eval_log_path: Optional[str] = None,
               reset_num_timesteps: bool = True):
         """
         Return a trained model.
@@ -294,6 +290,8 @@ class BaseRLModel(ABC):
         :param eval_env: (gym.Env) Environment that will be used to evaluate the agent
         :param eval_freq: (int) Evaluate the agent every `eval_freq` timesteps (this may vary a little)
         :param n_eval_episodes: (int) Number of episode to evaluate the agent
+        :param eval_log_path: (Optional[str]) Path to a folder where the evaluations will be saved
+        :param reset_num_timesteps: (bool)
         :return: (BaseRLModel) the trained model
         """
         raise NotImplementedError()
@@ -315,7 +313,7 @@ class BaseRLModel(ABC):
         raise NotImplementedError()
 
     @classmethod
-    def load(cls, load_path: str, env: Union[gym.Env, VecEnv, None] = None, **kwargs):
+    def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs):
         """
         Load the model from a zip-file
 
@@ -364,7 +362,9 @@ class BaseRLModel(ABC):
         return model
 
     @staticmethod
-    def _load_from_file(load_path: str, load_data: bool = True):
+    def _load_from_file(load_path: str, load_data: bool = True) -> (Tuple[Optional[Dict[str, Any]],
+                                                                          Optional[TensorDict],
+                                                                          Optional[TensorDict]]):
         """ Load model data from a .zip archive
 
         :param load_path: Where to load the model from
@@ -397,7 +397,7 @@ class BaseRLModel(ABC):
                 data = None
                 tensors = None
                 params = {}
-                
+
                 if "data" in namelist and load_data:
                     # Load class parameters and convert to string
                     json_data = archive.read("data").decode()
@@ -467,12 +467,52 @@ class BaseRLModel(ABC):
         if self.eval_env is not None:
             self.eval_env.seed(seed)
 
-    def _setup_learn(self, eval_env):
+    def _init_callback(self,
+                       callback: Union[None, Callable, List[BaseCallback], BaseCallback],
+                       eval_env: Optional[VecEnv] = None,
+                       eval_freq: int = 10000,
+                       n_eval_episodes: int = 5,
+                       log_path: Optional[str] = None) -> BaseCallback:
+        """
+        :param callback: (Union[callable, [BaseCallback], BaseCallback, None])
+        :return: (BaseCallback)
+        """
+        # Convert a list of callbacks into a callback
+        if isinstance(callback, list):
+            callback = CallbackList(callback)
+
+        # Convert functional callback to object
+        if not isinstance(callback, BaseCallback):
+            callback = ConvertCallback(callback)
+
+        # Create eval callback in charge of the evaluation
+        if eval_env is not None:
+            eval_callback = EvalCallback(eval_env,
+                                         best_model_save_path=log_path,
+                                         log_path=log_path, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes)
+            callback = CallbackList([callback, eval_callback])
+
+        callback.init_callback(self)
+        return callback
+
+    def _setup_learn(self,
+                     eval_env: Optional[GymEnv],
+                     callback: Union[None, Callable, List[BaseCallback], BaseCallback] = None,
+                     eval_freq: int = 10000,
+                     n_eval_episodes: int = 5,
+                     log_path: Optional[str] = None,
+                     reset_num_timesteps: bool = True,
+                     ) -> Tuple[int, np.ndarray, BaseCallback]:
         """
         Initialize different variables needed for training.
 
-        :param eval_env: (gym.Env or VecEnv)
-        :return: (int, int, [float], np.ndarray, VecEnv)
+        :param eval_env: (Optional[GymEnv])
+        :param callback: (Union[None, BaseCallback, List[BaseCallback, Callable]])
+        :param eval_freq: (int)
+        :param n_eval_episodes: (int)
+        :param log_path (Optional[str]): Path to a log folder
+        :param reset_num_timesteps: (bool) Whether to reset or not the `num_timesteps` attribute
+        :return: (Tuple[int, np.ndarray, BaseCallback])
         """
         self.start_time = time.time()
         self.ep_info_buffer = deque(maxlen=100)
@@ -481,16 +521,22 @@ class BaseRLModel(ABC):
             self.action_noise.reset()
 
         timesteps_since_eval, episode_num = 0, 0
-        evaluations = []
+
+        if reset_num_timesteps:
+            self.num_timesteps = 0
 
         if eval_env is not None and self.seed is not None:
             eval_env.seed(self.seed)
 
         eval_env = self._get_eval_env(eval_env)
-        obs = self.env.reset()  # type: Union[gym.Env, VecEnv]
-        return timesteps_since_eval, episode_num, evaluations, obs, eval_env
+        obs = self.env.reset()
 
-    def _update_info_buffer(self, infos):
+        # Create eval callback if needed
+        callback = self._init_callback(callback, eval_env, eval_freq, n_eval_episodes, log_path)
+
+        return episode_num, obs, callback
+
+    def _update_info_buffer(self, infos: List[Dict[str, Any]]) -> None:
         """
         Retrieve reward and episode length and update the buffer
         if using Monitor wrapper.
@@ -502,11 +548,18 @@ class BaseRLModel(ABC):
             if maybe_ep_info is not None:
                 self.ep_info_buffer.extend([maybe_ep_info])
 
-    def collect_rollouts(self, env, n_episodes=1, n_steps=-1, action_noise=None,
-                         deterministic=False, callback=None,
-                         learning_starts=0, num_timesteps=0,
-                         replay_buffer=None, obs=None,
-                         episode_num=0, log_interval=None):
+    def collect_rollouts(self,
+                         env: VecEnv,
+                         callback: 'BaseCallback',  # Type hint as string to avoid circular import
+                         n_episodes: int = 1,
+                         n_steps: int = -1,
+                         action_noise: Optional[ActionNoise] = None,
+                         deterministic: bool = False,
+                         learning_starts: int = 0,
+                         replay_buffer=None,
+                         obs: Optional[np.ndarray] = None,
+                         episode_num: int = 0,
+                         log_interval: Optional[int] = None) -> Tuple[float, int, int, Optional[np.ndarray], bool]:
         """
         Collect rollout using the current policy (and possibly fill the replay buffer)
         TODO: move this method to off-policy base class.
@@ -516,9 +569,8 @@ class BaseRLModel(ABC):
         :param n_steps: (int)
         :param action_noise: (ActionNoise)
         :param deterministic: (bool)
-        :param callback: (callable)
+        :param callback: (BaseCallback)
         :param learning_starts: (int)
-        :param num_timesteps: (int)
         :param replay_buffer: (ReplayBuffer)
         :param obs: (np.ndarray)
         :param episode_num: (int)
@@ -541,6 +593,9 @@ class BaseRLModel(ABC):
             if self.on_policy_exploration:
                 self.rollout_data = {key: [] for key in ['observations', 'actions', 'rewards', 'dones', 'values']}
 
+        callback.on_rollout_start()
+        continue_training = True
+
         while total_steps < n_steps or total_episodes < n_episodes:
             done = False
             # Reset environment: not needed for VecEnv
@@ -548,6 +603,12 @@ class BaseRLModel(ABC):
             episode_reward, episode_timesteps = 0.0, 0
 
             while not done:
+
+                # Only stop training if return value is False, not when it is None.
+                if callback() is False:
+                    continue_training = False
+                    return 0.0, total_steps, total_episodes, None, continue_training
+
                 if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
                     # Sample a new noise matrix
                     self.actor.reset_noise()
@@ -555,7 +616,7 @@ class BaseRLModel(ABC):
                 # Select action randomly or according to policy
                 # TODO: use action from policy when using SDE during the warmup phase?
                 # if num_timesteps < learning_starts and not self.use_sde:
-                if num_timesteps < learning_starts:
+                if self.num_timesteps < learning_starts:
                     # Warmup phase
                     unscaled_action = np.array([self.action_space.sample()])
                 else:
@@ -614,7 +675,7 @@ class BaseRLModel(ABC):
                 if self._vec_normalize_env is not None:
                     obs_ = new_obs_
 
-                num_timesteps += 1
+                self.num_timesteps += 1
                 episode_timesteps += 1
                 total_steps += 1
                 if 0 < n_steps <= total_steps:
@@ -630,8 +691,8 @@ class BaseRLModel(ABC):
 
                 # Display training infos
                 if self.verbose >= 1 and log_interval is not None and (
-                            episode_num + total_episodes) % log_interval == 0:
-                    fps = int(num_timesteps / (time.time() - self.start_time))
+                        episode_num + total_episodes) % log_interval == 0:
+                    fps = int(self.num_timesteps / (time.time() - self.start_time))
                     logger.logkv("episodes", episode_num + total_episodes)
                     if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
                         logger.logkv('ep_rew_mean', self.safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
@@ -639,7 +700,7 @@ class BaseRLModel(ABC):
                     # logger.logkv("n_updates", n_updates)
                     logger.logkv("fps", fps)
                     logger.logkv('time_elapsed', int(time.time() - self.start_time))
-                    logger.logkv("total timesteps", num_timesteps)
+                    logger.logkv("total timesteps", self.num_timesteps)
                     if self.use_sde:
                         logger.logkv("std", (self.actor.get_std()).mean().item())
                     logger.dumpkvs()
@@ -667,7 +728,9 @@ class BaseRLModel(ABC):
                 self.rollout_data['returns'][step] = last_return
             self.rollout_data['advantage'] = self.rollout_data['returns'] - self.rollout_data['values']
 
-        return mean_reward, total_steps, total_episodes, obs
+        callback.on_rollout_end()
+
+        return mean_reward, total_steps, total_episodes, obs, continue_training
 
     @staticmethod
     def _save_to_file_zip(save_path: str, data: Dict[str, Any] = None,
@@ -767,27 +830,3 @@ class BaseRLModel(ABC):
             params_to_save[name] = attr.state_dict()
 
         self._save_to_file_zip(path, data=data, params=params_to_save, tensors=tensors)
-
-    def _eval_policy(self, eval_freq: int, eval_env: int, n_eval_episodes: int,
-                     timesteps_since_eval: int, render: bool = False, deterministic: bool = True) -> int:
-        """
-        Evaluate the current policy on a test environment.
-
-        :param eval_freq: Evaluate the agent every `eval_freq` timesteps (this may vary a little)
-        :param n_eval_episodes: Number of episode to evaluate the agent
-        :parma timesteps_since_eval: Number of timesteps since last evaluation
-        :param deterministic: Whether to use deterministic or stochastic actions
-        :param render: Whether to render the eval env or not
-        :return: Number of timesteps since last evaluation
-        """
-        if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
-            timesteps_since_eval %= eval_freq
-            # Synchronise the normalization stats if needed
-            sync_envs_normalization(self.env, eval_env)
-            mean_reward, std_reward = evaluate_policy(self, eval_env, n_eval_episodes,
-                                                      render=render, deterministic=deterministic)
-            if self.verbose > 0:
-                print(f"Eval num_timesteps={self.num_timesteps}, "
-                      f"episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
-                print(f"FPS: {self.num_timesteps / (time.time() - self.start_time):.2f}")
-        return timesteps_since_eval

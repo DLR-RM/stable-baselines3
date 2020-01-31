@@ -130,8 +130,10 @@ class A2C(PPO):
             logger.logkv("std", th.exp(self.policy.log_std).mean().item())
 
     def learn(self, total_timesteps, callback=None, log_interval=100,
-              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="A2C", reset_num_timesteps=True):
+              eval_env=None, eval_freq=-1, n_eval_episodes=5,
+              tb_log_name="A2C", eval_log_path=None, reset_num_timesteps=True):
 
         return super(A2C, self).learn(total_timesteps=total_timesteps, callback=callback, log_interval=log_interval,
                                       eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,
-                                      tb_log_name=tb_log_name, reset_num_timesteps=reset_num_timesteps)
+                                      tb_log_name=tb_log_name, eval_log_path=eval_log_path,
+                                      reset_num_timesteps=reset_num_timesteps)

@@ -69,7 +69,7 @@ def test_save_load(model_class):
 
     # check if model still selects the same actions
     new_selected_actions = [model.predict(observation, deterministic=True) for observation in observations]
-    assert np.allclose(selected_actions, new_selected_actions)
+    assert np.allclose(selected_actions, new_selected_actions, 1e-4)
 
     # check if learn still works
     model.learn(total_timesteps=1000, eval_freq=500)

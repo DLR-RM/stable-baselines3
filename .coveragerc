@@ -8,3 +8,4 @@ omit =
 exclude_lines =
     pragma: no cover
     raise NotImplementedError()
+    if typing.TYPE_CHECKING:

@@ -100,20 +100,20 @@ class CEMRL(TD3):
                       elitism=self.elitism)
 
     def learn(self, total_timesteps, callback=None, log_interval=4,
-              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="CEMRL", reset_num_timesteps=True):
+              eval_env=None, eval_freq=-1, n_eval_episodes=5,
+              tb_log_name="CEMRL", eval_log_path=None, reset_num_timesteps=True):
 
-        timesteps_since_eval, episode_num, evaluations, obs, eval_env = self._setup_learn(eval_env)
+        episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq,
+                                                       n_eval_episodes, eval_log_path, reset_num_timesteps)
         actor_steps = 0
+        continue_training = True
+
+        callback.on_training_start(locals(), globals())
 
         while self.num_timesteps < total_timesteps:
 
             self.fitnesses = []
             self.es_params = self.es.ask(self.pop_size)
-
-            if callback is not None:
-                # Only stop training if return value is False, not when it is None.
-                if callback(locals(), globals()) is False:
-                    break
 
             if self.num_timesteps > 0:
                 # self.train(episode_timesteps)
@@ -157,46 +157,35 @@ class CEMRL(TD3):
                     # Get the params back in the population
                     self.es_params[i] = self.actor.parameters_to_vector()
 
-            # Evaluate agent
-            if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
-                timesteps_since_eval %= eval_freq
-
-                self.actor.load_from_vector(self.es.mu)
-                sync_envs_normalization(self.env, eval_env)
-
-                mean_reward, std_reward = evaluate_policy(self, eval_env, n_eval_episodes)
-                evaluations.append(mean_reward)
-
-                if self.verbose > 0:
-                    print("Eval num_timesteps={}, "
-                          "episode_reward={:.2f} +/- {:.2f}".format(self.num_timesteps, mean_reward, std_reward))
-                    print("FPS: {:.2f}".format(self.num_timesteps / (time.time() - self.start_time)))
-
             actor_steps = 0
             # evaluate all actors
             for params in self.es_params:
-
                 self.actor.load_from_vector(params)
 
                 rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,
                                                 n_steps=-1, action_noise=self.action_noise,
-                                                deterministic=False, callback=None,
+                                                deterministic=False, callback=callback,
                                                 learning_starts=self.learning_starts,
-                                                num_timesteps=self.num_timesteps,
                                                 replay_buffer=self.replay_buffer,
                                                 obs=obs, episode_num=episode_num,
                                                 log_interval=log_interval)
 
                 # Unpack
-                episode_reward, episode_timesteps, n_episodes, obs = rollout
+                episode_reward, episode_timesteps, n_episodes, obs, continue_training = rollout
+
+                if continue_training is False:
+                    break
 
                 episode_num += n_episodes
-                self.num_timesteps += episode_timesteps
-                timesteps_since_eval += episode_timesteps
                 actor_steps += episode_timesteps
                 self.fitnesses.append(episode_reward)
 
+            if continue_training is False:
+                break
+
             self._update_current_progress(self.num_timesteps, total_timesteps)
             self.es.tell(self.es_params, self.fitnesses)
-            timesteps_since_eval += actor_steps
+
+        callback.on_training_end()
+
         return self

@@ -1,3 +1,5 @@
+from typing import List, Tuple
+
 import torch as th
 import torch.nn.functional as F
 import numpy as np
@@ -296,23 +298,19 @@ class TD3(BaseRLModel):
 
         return self
 
-    def get_opt_parameters(self):
+    def excluded_save_params(self) -> List[str]:
         """
-        Returns a dict of all the optimizers and their parameters
+        Returns the names of the parameters that should be excluded by default
+        when saving the model.
 
-        :return: (Dict) of optimizer names and their state_dict
+        :return: (List[str]) List of parameters that should be excluded from save
         """
-        return {"actor": self.actor.optimizer.state_dict(), "critic": self.critic.optimizer.state_dict()}
+        # Exclude aliases
+        return super(TD3, self).excluded_save_params() + ["actor", "critic", "vf_net", "actor_target", "critic_target"]
 
-    def load_parameters(self, load_dict, opt_params):
+    def get_torch_variables(self) -> Tuple[List[str], List[str]]:
         """
-        Load model parameters and optimizer parameters from a dictionary
-        load_dict should contain all keys from torch.model.state_dict()
-        This does not load agent's hyper-parameters.
-
-        :param load_dict: (dict) dict of parameters from model.state_dict()
-        :param opt_params: (dict of dicts) dict of optimizer state_dicts should be handled in child_class
+        cf base class
         """
-        self.actor.optimizer.load_state_dict(opt_params["actor"])
-        self.critic.optimizer.load_state_dict(opt_params["critic"])
-        self.policy.load_state_dict(load_dict)
+        state_dicts = ["policy", "actor.optimizer", "critic.optimizer"]
+        return state_dicts, []

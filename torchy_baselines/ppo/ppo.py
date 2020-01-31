@@ -1,5 +1,6 @@
 import os
 import time
+from typing import List, Tuple
 
 import gym
 from gym import spaces
@@ -69,6 +70,7 @@ class PPO(BaseRLModel):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
+
     def __init__(self, policy, env, learning_rate=3e-4,
                  n_steps=2048, batch_size=64, n_epochs=10,
                  gamma=0.99, gae_lambda=0.95, clip_range=0.2, clip_range_vf=None,
@@ -310,22 +312,10 @@ class PPO(BaseRLModel):
 
         return self
 
-    def get_opt_parameters(self):
+    def get_torch_variables(self) -> Tuple[List[str], List[str]]:
         """
-        Returns a dict of all the optimizers and their parameters
+        cf base class
+        """
+        state_dicts = ["policy", "policy.optimizer"]
 
-        :return: (dict) of optimizer names and their state_dict
-        """
-        return {"opt": self.policy.optimizer.state_dict()}
-
-    def load_parameters(self, load_dict, opt_params):
-        """
-        Load model parameters and optimizer parameters from a dictionary
-        load_dict should contain all keys from torch.model.state_dict()
-        This does not load agent's hyper-parameters.
-
-        :param load_dict: (dict) dict of parameters from model.state_dict()
-        :param opt_params: (dict of dicts) dict of optimizer state_dicts
-        """
-        self.policy.optimizer.load_state_dict(opt_params["opt"])
-        self.policy.load_state_dict(load_dict)
+        return state_dicts, []

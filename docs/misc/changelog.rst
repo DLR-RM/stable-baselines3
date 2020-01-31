@@ -16,6 +16,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fix loading model on CPU that were trained on GPU
 
 Deprecations:
 ^^^^^^^^^^^^^

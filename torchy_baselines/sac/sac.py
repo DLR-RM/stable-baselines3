@@ -1,3 +1,5 @@
+from typing import List, Tuple
+
 import torch as th
 import torch.nn.functional as F
 import numpy as np
@@ -128,7 +130,7 @@ class SAC(BaseRLModel):
             # Force conversion to float
             # this will throw an error if a malformed string (different from 'auto')
             # is passed
-            self.ent_coef = th.tensor(float(self.ent_coef)).to(self.device)
+            self.ent_coef_tensor = th.tensor(float(self.ent_coef)).to(self.device)
 
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
         self.policy = self.policy_class(self.observation_space, self.action_space,
@@ -199,7 +201,7 @@ class SAC(BaseRLModel):
                 ent_coef = th.exp(self.log_ent_coef.detach())
                 ent_coef_loss = -(self.log_ent_coef * (log_prob + self.target_entropy).detach()).mean()
             else:
-                ent_coef = self.ent_coef
+                ent_coef = self.ent_coef_tensor
 
             # Optimize entropy coefficient, also called
             # entropy temperature or alpha in the paper
@@ -288,28 +290,24 @@ class SAC(BaseRLModel):
         callback.on_training_end()
         return self
 
-    def get_opt_parameters(self):
+    def excluded_save_params(self) -> List[str]:
         """
-        Returns a dict of all the optimizers and their parameters
+        Returns the names of the parameters that should be excluded by default
+        when saving the model.
 
-        :return: (Dict) of optimizer names and their state_dict
+        :return: (List[str]) List of parameters that should be excluded from save
         """
-        opt_dict = {"actor": self.actor.optimizer.state_dict(), "critic": self.critic.optimizer.state_dict()}
+        # Exclude aliases
+        return super(SAC, self).excluded_save_params() + ["actor", "critic", "critic_target"]
+
+    def get_torch_variables(self) -> Tuple[List[str], List[str]]:
+        """
+        cf base class
+        """
+        state_dicts = ["policy", "actor.optimizer", "critic.optimizer"]
+        saved_tensors = ['log_ent_coef']
         if self.ent_coef_optimizer is not None:
-            opt_dict.update({"ent_coef_optimizer": self.ent_coef_optimizer.state_dict()})
-        return opt_dict
-
-    def load_parameters(self, load_dict, opt_params):
-        """
-        Load model parameters and optimizer parameters from a dictionary
-        load_dict should contain all keys from torch.model.state_dict()
-        This does not load agent's hyper-parameters.
-
-        :param load_dict: (dict) dict of parameters from model.state_dict()
-        :param opt_params: (dict of dicts) dict of optimizer state_dicts should be handled in child_class
-        """
-        self.actor.optimizer.load_state_dict(opt_params["actor"])
-        self.critic.optimizer.load_state_dict(opt_params["critic"])
-        if "ent_coef_optimizer" in opt_params:
-            self.ent_coef_optimizer.load_state_dict(opt_params["ent_coef_optimizer"])
-        self.policy.load_state_dict(load_dict)
+            state_dicts.append('ent_coef_optimizer')
+        else:
+            saved_tensors.append('ent_coef_tensor')
+        return state_dicts, saved_tensors

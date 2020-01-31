@@ -2,15 +2,51 @@
 Save util taken from stable_baselines
 used to serialize data (class parameters) of model classes
 """
-
-
 import json
 import base64
-import pickle
+import functools
+from typing import Dict, Any, Optional, Union
+
+import torch as th
 import cloudpickle
+import warnings
 
 
-def is_json_serializable(item):
+def recursive_getattr(obj: Any, attr: str, *args) -> Any:
+    """
+    Recursive version of getattr
+    taken from https://stackoverflow.com/questions/31174295
+
+    Ex:
+    > MyObject.sub_object = SubObject(name='test')
+    > recursive_getattr(MyObject, 'sub_object.name')  # return test
+    :param obj: (Any)
+    :param attr: (str) Attribute to retrieve
+    :return: (Any) The attribute
+    """
+    def _getattr(obj: Any, attr: str) -> Any:
+        return getattr(obj, attr, *args)
+
+    return functools.reduce(_getattr, [obj] + attr.split('.'))
+
+
+def recursive_setattr(obj: Any, attr: str, val: Any) -> None:
+    """
+    Recursive version of setattr
+    taken from https://stackoverflow.com/questions/31174295
+
+    Ex:
+    > MyObject.sub_object = SubObject(name='test')
+    > recursive_setattr(MyObject, 'sub_object.name', 'hello')
+    :param obj: (Any)
+    :param attr: (str) Attribute to set
+    :param val: (Any) New value of the attribute
+    """
+    pre, _, post = attr.rpartition('.')
+    return setattr(recursive_getattr(obj, pre) if pre else obj, post, val)
+
+
+def is_json_serializable(item: Any) -> bool:
     """
     Test if an object is serializable into JSON
 
@@ -26,11 +62,11 @@ def is_json_serializable(item):
     return json_serializable
 
 
-def data_to_json(data):
+def data_to_json(data: Dict[str, Any]) -> str:
     """
     Turn data (class parameters) into a JSON string for storing
 
-    :param data: (Dict) Dictionary of class parameters to be
+    :param data: (Dict[str, Any]) Dictionary of class parameters to be
         stored. Items that are not JSON serializable will be
         pickled with Cloudpickle and stored as bytearray in
         the JSON file
@@ -85,12 +121,15 @@ def data_to_json(data):
     return json_string
 
 
-def json_to_data(json_string, custom_objects=None):
+def json_to_data(json_string: str,
+                 device: Union[th.device, str] = 'cpu',
+                 custom_objects: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Turn JSON serialization of class-parameters back into dictionary.
 
     :param json_string: (str) JSON serialization of the class-parameters
         that should be loaded.
+    :param device: torch.device device to which the data should be mapped if errors occur
     :param custom_objects: (dict) Dictionary of objects to replace
         upon loading. If a variable is present in this dictionary as a
         key, it will not be deserialized and the corresponding item
@@ -118,15 +157,12 @@ def json_to_data(json_string, custom_objects=None):
             # errors. If so, we can tell bit more information to
             # user.
             try:
-                deserialized_object = cloudpickle.loads(
-                    base64.b64decode(serialization.encode())
-                )
-            except pickle.UnpicklingError:
-                raise RuntimeError(
-                    f"Could not deserialize object {data_key}. " +
-                    "Consider using `custom_objects` argument to replace " +
-                    "this object."
-                )
+                base64_object = base64.b64decode(serialization.encode())
+                deserialized_object = cloudpickle.loads(base64_object)
+            except RuntimeError:
+                warnings.warn(f"Could not deserialize object {data_key}. " +
+                              "Consider using `custom_objects` argument to replace " +
+                              "this object.")
             return_data[data_key] = deserialized_object
         else:
             # Read as it is

@@ -15,7 +15,7 @@ from torchy_baselines.common.policies import BasePolicy, get_policy_from_name
 from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate
 from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize
 from torchy_baselines.common.monitor import Monitor
-from torchy_baselines.common.save_util import data_to_json, json_to_data
+from torchy_baselines.common.save_util import data_to_json, json_to_data, recursive_getattr, recursive_setattr
 from torchy_baselines.common.type_aliases import GymEnv, TensorDict, OptimizerStateDict
 from torchy_baselines.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
 from torchy_baselines.common.noise import ActionNoise
@@ -126,6 +126,13 @@ class BaseRLModel(ABC):
             if not support_multi_env and self.n_envs > 1:
                 raise ValueError("Error: the model does not support multiple envs requires a single vectorized"
                                  " environment.")
+
+    @abstractmethod
+    def _setup_model(self) -> None:
+        """
+        Setup model so state_dict can be loaded
+        """
+        raise NotImplementedError()
 
     def _get_eval_env(self, eval_env: Optional[GymEnv]) -> Optional[GymEnv]:
         """
@@ -248,29 +255,18 @@ class BaseRLModel(ABC):
         self.n_envs = env.num_envs
         self.env = env
 
-    def get_parameters(self) -> Tuple[TensorDict, OptimizerStateDict]:
+    def get_torch_variables(self) -> Tuple[List[str], List[str]]:
         """
-        Returns policy and optimizer parameters as a tuple
+        Get the name of the torch variable that will be saved.
+        `th.save` and `th.load` will be used with the right device
+        instead of the default pickling strategy.
 
-        :return: policy_parameters, opt_parameters
+        :return: (Tuple[List[str], List[str]])
+            name of the variables with state dicts to save, name of additional torch tensors,
         """
-        return self.get_policy_parameters(), self.get_opt_parameters()
+        state_dicts = ["policy"]
 
-    def get_policy_parameters(self) -> TensorDict:
-        """
-        Get current model policy parameters as dictionary of variable name -> tensors.
-
-        :return: Dictionary of variable name -> tensor of model's policy parameters.
-        """
-        return self.policy.state_dict()
-
-    @abstractmethod
-    def get_opt_parameters(self) -> OptimizerStateDict:
-        """
-        Get current model optimizer parameters as dictionary of variable names -> tensors
-        :return: (dict) Dictionary of variable name -> tensor of model's optimizer parameters
-        """
-        raise NotImplementedError()
+        return state_dicts, []
 
     @abstractmethod
     def learn(self, total_timesteps: int,
@@ -316,21 +312,6 @@ class BaseRLModel(ABC):
         """
         raise NotImplementedError()
 
-    def load_parameters(self, load_dict: TensorDict, opt_params: OptimizerStateDict) -> None:
-        """
-        Load model parameters from a dictionary
-        load_dict should contain all keys from torch.model.state_dict()
-        If opt_params are given this does also load agent's optimizer-parameters,
-        but can only be handled in child classes.
-
-
-        :param load_dict: dict of parameters from model.state_dict()
-        :param opt_params: dict of optimizer state_dicts should be handled in child class
-        """
-        if opt_params is not None:
-            raise ValueError("Optimizer Parameters where given but no overloaded load function exists for this class")
-        self.policy.load_state_dict(load_dict)
-
     @classmethod
     def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs):
         """
@@ -341,7 +322,7 @@ class BaseRLModel(ABC):
             (can be None if you only need prediction from a trained model) has priority over any saved environment
         :param kwargs: extra arguments to change the model when loading
         """
-        data, params, opt_params = cls._load_from_file(load_path)
+        data, params, tensors = cls._load_from_file(load_path)
 
         if 'policy_kwargs' in kwargs and kwargs['policy_kwargs'] != data['policy_kwargs']:
             raise ValueError(f"The specified policy kwargs do not equal the stored policy kwargs."
@@ -359,12 +340,25 @@ class BaseRLModel(ABC):
 
         # first create model, but only setup if a env was given
         # noinspection PyArgumentList
-        model = cls(policy=data["policy_class"], env=env, _init_setup_model=env is not None)
+        model = cls(policy=data["policy_class"], env=env, device='auto', _init_setup_model=env is not None)
 
         # load parameters
         model.__dict__.update(data)
         model.__dict__.update(kwargs)
-        model.load_parameters(params, opt_params)
+        if not hasattr(model, "_setup_model") and len(params) > 0:
+            raise NotImplementedError("loading was executed on a model that has no means to create the policies")
+        model._setup_model()
+
+        # put state_dicts back in place
+        for name in params:
+            attr = recursive_getattr(model, name)
+            attr.load_state_dict(params[name])
+
+        # put tensors back in place
+        if tensors is not None:
+            for name in tensors:
+                recursive_setattr(model, name, tensors[name])
+
         return model
 
     @staticmethod
@@ -376,8 +370,8 @@ class BaseRLModel(ABC):
         :param load_path: Where to load the model from
         :param load_data: Whether we should load and return data
             (class parameters). Mainly used by 'load_parameters' to only load model parameters (weights)
-        :return: (dict),(dict),(dict) Class parameters, model parameters (state_dict)
-            and dict of optimizer parameters (dict of state_dict)
+        :return: (dict),(dict),(dict) Class parameters, model state_dicts (dict of state_dict)
+            and dict of extra tensors
         """
         # Check if file exists if load_path is a string
         if isinstance(load_path, str):
@@ -387,6 +381,12 @@ class BaseRLModel(ABC):
                 else:
                     raise ValueError(f"Error: the file {load_path} could not be found")
 
+        # set device to cpu if cuda is not available
+        if th.cuda.is_available():
+            device = th.device('cuda')
+        else:
+            device = th.device('cpu')
+
         # Open the zip archive and load data
         try:
             with zipfile.ZipFile(load_path, "r") as archive:
@@ -395,31 +395,32 @@ class BaseRLModel(ABC):
                 # zip archive, assume they were stored
                 # as None (_save_to_file_zip allows this).
                 data = None
-                params = None
-                opt_params = None
+                tensors = None
+                params = {}
+
                 if "data" in namelist and load_data:
                     # Load class parameters and convert to string
                     json_data = archive.read("data").decode()
-                    data = json_to_data(json_data)
+                    data = json_to_data(json_data, device)
 
-                if "params.pth" in namelist:
-                    # Load parameters with build in torch function
-                    with archive.open("params.pth", mode="r") as param_file:
-                        # File has to be seekable, but param_file is not, so load in BytesIO first
+                if "tensors.pth" in namelist and load_data:
+                    # Load extra tensors
+                    with archive.open('tensors.pth', mode="r") as tensor_file:
+                        # File has to be seekable, but opt_param_file is not, so load in BytesIO first
                         # fixed in python >= 3.7
                         file_content = io.BytesIO()
-                        file_content.write(param_file.read())
+                        file_content.write(tensor_file.read())
                         # go to start of file
                         file_content.seek(0)
-                        params = th.load(file_content)
+                        # load the parameters with the right `map_location`
+                        tensors = th.load(file_content, map_location=device)
 
                 # check for all other .pth files
                 other_files = [file_name for file_name in namelist if
-                               os.path.splitext(file_name)[1] == ".pth" and file_name != "params.pth"]
+                               os.path.splitext(file_name)[1] == ".pth" and file_name != "tensors.pth"]
                 # if there are any other files which end with .pth and aren't "params.pth"
                 # assume that they each are optimizer parameters
                 if len(other_files) > 0:
-                    opt_params = dict()
                     for file_path in other_files:
                         with archive.open(file_path, mode="r") as opt_param_file:
                             # File has to be seekable, but opt_param_file is not, so load in BytesIO first
@@ -428,13 +429,27 @@ class BaseRLModel(ABC):
                             file_content.write(opt_param_file.read())
                             # go to start of file
                             file_content.seek(0)
-                            # save the parameters in dict with file name but trim file ending
-                            opt_params[os.path.splitext(file_path)[0]] = th.load(file_content)
+                            # load the parameters with the right `map_location`
+                            params[os.path.splitext(file_path)[0]] = th.load(file_content, map_location=device)
+
+                # for backward compatibility
+                if params.get('params') is not None:
+                    params_copy = {}
+                    for name in params:
+                        if name == 'params':
+                            params_copy['policy'] = params[name]
+                        elif name == 'opt':
+                            params_copy['policy.optimizer'] = params[name]
+                        # Special case for SAC
+                        elif name == 'ent_coef_optimizer':
+                            params_copy[name] = params[name]
+                        else:
+                            params_copy[name + '.optimizer'] = params[name]
+                    params = params_copy
         except zipfile.BadZipFile:
             # load_path wasn't a zip file
             raise ValueError(f"Error: the file {load_path} wasn't a zip-file")
-
-        return data, params, opt_params
+        return data, params, tensors
 
     def set_random_seed(self, seed: Optional[int] = None) -> None:
         """
@@ -717,15 +732,15 @@ class BaseRLModel(ABC):
 
     @staticmethod
     def _save_to_file_zip(save_path: str, data: Dict[str, Any] = None,
-                          params: TensorDict = None, opt_params: OptimizerStateDict = None) -> None:
+                          params: Dict[str, Any] = None, tensors: Dict[str, Any] = None) -> None:
         """
         Save model to a zip archive.
 
         :param save_path: Where to store the model
         :param data: Class parameters being stored
-        :param params: Model parameters being stored expected to be state_dict
-        :param opt_params: Optimizer parameters being stored expected to contain an entry for every
-                                         optimizer with its name and the state_dict
+        :param params: Model parameters being stored expected to contain an entry for every
+                       state_dict with its name and the state_dict
+        :param tensors: Extra tensor variables expected to contain name and value of tensors
         """
 
         # data/params can be None, so do not
@@ -746,23 +761,22 @@ class BaseRLModel(ABC):
             # Do not try to save "None" elements
             if data is not None:
                 archive.writestr("data", serialized_data)
+            if tensors is not None:
+                with archive.open('tensors.pth', mode="w") as tensors_file:
+                    th.save(tensors, tensors_file)
             if params is not None:
-                with archive.open('params.pth', mode="w") as param_file:
-                    th.save(params, param_file)
-            if opt_params is not None:
-                for file_name, dict_ in opt_params.items():
-                    with archive.open(file_name + '.pth', mode="w") as opt_param_file:
-                        th.save(dict_, opt_param_file)
+                for file_name, dict_ in params.items():
+                    with archive.open(file_name + '.pth', mode="w") as param_file:
+                        th.save(dict_, param_file)
 
-    @staticmethod
-    def excluded_save_params() -> List[str]:
+    def excluded_save_params(self) -> List[str]:
         """
         Returns the names of the parameters that should be excluded by default
         when saving the model.
 
         :return: ([str]) List of parameters that should be excluded from save
         """
-        return ["env", "eval_env", "replay_buffer", "rollout_buffer", "_vec_normalize_env"]
+        return ["policy", "device", "env", "eval_env", "replay_buffer", "rollout_buffer", "_vec_normalize_env"]
 
     def save(self, path: str, exclude: Optional[List[str]] = None, include: Optional[List[str]] = None) -> None:
         """
@@ -780,15 +794,61 @@ class BaseRLModel(ABC):
         else:
             # append standard exclude params to the given params
             exclude.extend([param for param in self.excluded_save_params() if param not in exclude])
+
         # do not exclude params if they are specifically included
         if include is not None:
             exclude = [param_name for param_name in exclude if param_name not in include]
 
-        # remove parameter entries of parameters which are to be excluded
+        state_dicts_names, tensors_names = self.get_torch_variables()
+        # any params that are in the save vars must not be saved by data
+        torch_variables = state_dicts_names + tensors_names
+        for torch_var in torch_variables:
+            # we need to get only the name of the top most module as we'll remove that
+            var_name = torch_var.split('.')[0]
+            exclude.append(var_name)
+
+        # Remove parameter entries of parameters which are to be excluded
         for param_name in exclude:
             if param_name in data:
                 data.pop(param_name, None)
 
-        params_to_save = self.get_policy_parameters()
-        opt_params_to_save = self.get_opt_parameters()
-        self._save_to_file_zip(path, data=data, params=params_to_save, opt_params=opt_params_to_save)
+        # Build dict of tensor variables
+        tensors = None
+        if tensors_names is not None:
+            tensors = {}
+            for name in tensors_names:
+                attr = recursive_getattr(self, name)
+                tensors[name] = attr
+
+        # Build dict of state_dicts
+        params_to_save = {}
+        for name in state_dicts_names:
+            attr = recursive_getattr(self, name)
+            # Retrieve state dict
+            params_to_save[name] = attr.state_dict()
+
+        self._save_to_file_zip(path, data=data, params=params_to_save, tensors=tensors)
+
+    def _eval_policy(self, eval_freq: int, eval_env: int, n_eval_episodes: int,
+                     timesteps_since_eval: int, render: bool = False, deterministic: bool = True) -> int:
+        """
+        Evaluate the current policy on a test environment.
+
+        :param eval_freq: Evaluate the agent every `eval_freq` timesteps (this may vary a little)
+        :param n_eval_episodes: Number of episode to evaluate the agent
+        :parma timesteps_since_eval: Number of timesteps since last evaluation
+        :param deterministic: Whether to use deterministic or stochastic actions
+        :param render: Whether to render the eval env or not
+        :return: Number of timesteps since last evaluation
+        """
+        if 0 < eval_freq <= timesteps_since_eval and eval_env is not None:
+            timesteps_since_eval %= eval_freq
+            # Synchronise the normalization stats if needed
+            sync_envs_normalization(self.env, eval_env)
+            mean_reward, std_reward = evaluate_policy(self, eval_env, n_eval_episodes,
+                                                      render=render, deterministic=deterministic)
+            if self.verbose > 0:
+                print(f"Eval num_timesteps={self.num_timesteps}, "
+                      f"episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
+                print(f"FPS: {self.num_timesteps / (time.time() - self.start_time):.2f}")
+        return timesteps_since_eval

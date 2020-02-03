@@ -92,10 +92,10 @@ class BaseBuffer(object):
         """
         raise NotImplementedError()
 
-    def to_torch(self, array: np.ndarray, copy: bool = False) -> th.Tensor:
+    def to_torch(self, array: np.ndarray, copy: bool = True) -> th.Tensor:
         """
         Convert a numpy array to a PyTorch tensor.
-        Note: it does not copy the data by default
+        Note: it copies the data by default
 
         :param array: (np.ndarray)
         :param copy: (bool) Whether to copy or not the data

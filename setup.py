@@ -10,7 +10,9 @@ setup(name='torchy_baselines',
           'gym[classic_control]>=0.10.9',
           'numpy',
           'torch>=1.2.0',
-          'cloudpickle'
+          'cloudpickle',
+          # For reading logs
+          'pandas'
       ],
       extras_require={
         'tests': [
@@ -32,8 +34,6 @@ setup(name='torchy_baselines',
         'extra': [
             # For render
             'opencv-python',
-            # For reading logs
-            'pandas'
         ]
       },
       description='Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.',

@@ -49,7 +49,7 @@ To cite this project in publications:
 .. code-block:: bibtex
 
     @misc{torchy-baselines,
-      author = {Raffin, Antonin and Dormann, Noah and Hill, Ashley and Ernestus, Maximilian and Gleave, Adam and Kanervisto, Anssi},
+      author = {Raffin, Antonin and Hill, Ashley and Ernestus, Maximilian and Gleave, Adam and Kanervisto, Anssi and Dormann, Noah},
       title = {Torchy Baselines},
       year = {2019},
       publisher = {GitHub},

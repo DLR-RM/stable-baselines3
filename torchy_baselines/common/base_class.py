@@ -699,6 +699,12 @@ class OffPolicyRLModel(BaseRLModel):
         self.ep_info_buffer = None  # type: deque
         self.use_sde_at_warmup = use_sde_at_warmup
 
+    def save_replay_buffer(self):
+        pass
+
+    def load_replay_buffer(self, path):
+        pass
+
     def collect_rollouts(self,
                          env: VecEnv,
                          # Type hint as string to avoid circular import
@@ -706,7 +712,6 @@ class OffPolicyRLModel(BaseRLModel):
                          n_episodes: int = 1,
                          n_steps: int = -1,
                          action_noise: Optional[ActionNoise] = None,
-                         deterministic: bool = False,
                          learning_starts: int = 0,
                          replay_buffer: Optional[ReplayBuffer] = None,
                          obs: Optional[np.ndarray] = None,
@@ -715,23 +720,27 @@ class OffPolicyRLModel(BaseRLModel):
         """
         Collect rollout using the current policy (and possibly fill the replay buffer)
 
-        :param env: (VecEnv)
-        :param n_episodes: (int)
-        :param n_steps: (int)
-        :param action_noise: (ActionNoise)
-        :param deterministic: (bool)
-        :param callback: (BaseCallback)
-        :param learning_starts: (int)
+        :param env: (VecEnv) The training environment
+        :param n_episodes: (int) Number of episodes to use to collect rollout data
+            You can also specify a `n_steps` instead
+        :param n_steps: (int) Number of steps to use to collect rollout data
+            You can also specify a `n_episodes` instead.
+        :param action_noise: (Optional[ActionNoise]) Action noise that will be used for exploration
+            Required for deterministic policy (e.g. TD3). This can also be used
+            in addition to the stochastic policy for SAC.
+        :param callback: (BaseCallback) Callback that will be called at each step
+            (and at the beginning and end of the rollout)
+        :param learning_starts: (int) Number of steps before learning for the warm-up phase.
         :param replay_buffer: (ReplayBuffer)
-        :param obs: (np.ndarray)
-        :param episode_num: (int)
-        :param log_interval: (int)
+        :param obs: (np.ndarray) Last observation from the environment
+        :param episode_num: (int) Episode index
+        :param log_interval: (int) Log data every `log_interval` episodes
         """
-        episode_rewards = []
-        total_timesteps = []
+        episode_rewards, total_timesteps = [], []
         total_steps, total_episodes = 0, 0
-        assert isinstance(env, VecEnv)
-        assert env.num_envs == 1
+
+        assert isinstance(env, VecEnv), "You must pass a VecEnv"
+        assert env.num_envs == 1, "OffPolicyRLModel only support single environment"
 
         # Retrieve unnormalized observation for saving into the buffer
         if self._vec_normalize_env is not None:
@@ -749,8 +758,6 @@ class OffPolicyRLModel(BaseRLModel):
 
         while total_steps < n_steps or total_episodes < n_episodes:
             done = False
-            # Reset environment: not needed for VecEnv
-            # obs = env.reset()
             episode_reward, episode_timesteps = 0.0, 0
 
             while not done:

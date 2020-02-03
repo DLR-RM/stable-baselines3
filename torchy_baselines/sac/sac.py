@@ -272,7 +272,7 @@ class SAC(OffPolicyRLModel):
         while self.num_timesteps < total_timesteps:
             rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,
                                             n_steps=self.train_freq, action_noise=self.action_noise,
-                                            deterministic=False, callback=callback,
+                                            callback=callback,
                                             learning_starts=self.learning_starts,
                                             replay_buffer=self.replay_buffer,
                                             obs=obs, episode_num=episode_num,

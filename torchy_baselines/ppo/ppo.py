@@ -275,8 +275,8 @@ class PPO(BaseRLModel):
                                                                                         np.mean(approx_kl_divs)))
                 break
 
-        explained_var = explained_variance(self.rollout_buffer.returns.flatten().cpu().numpy(),
-                                           self.rollout_buffer.values.flatten().cpu().numpy())
+        explained_var = explained_variance(self.rollout_buffer.returns.flatten(),
+                                           self.rollout_buffer.values.flatten())
 
         logger.logkv("explained_variance", explained_var)
         # TODO: gather stats for the entropy and other losses?

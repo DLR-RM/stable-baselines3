@@ -42,7 +42,7 @@ make type
 
 ```
 pip install -e .[docs]
-make docs
+make doc
 ```
 
 Spell check for the documentation:
@@ -58,7 +58,7 @@ To cite this repository in publications:
 
 ```
 @misc{torchy-baselines,
-  author = {Raffin, Antonin and Dormann, Noah and Hill, Ashley and Ernestus, Maximilian and Gleave, Adam and Kanervisto, Anssi},
+  author = {Raffin, Antonin and Hill, Ashley and Ernestus, Maximilian and Gleave, Adam and Kanervisto, Anssi and Dormann, Noah},
   title = {Torchy Baselines},
   year = {2019},
   publisher = {GitHub},

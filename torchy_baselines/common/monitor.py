@@ -1,29 +1,37 @@
-"""
-Taken from stable-baselines
-"""
+__all__ = ['Monitor', 'get_monitor_files', 'load_results']
+
 import csv
 import json
 import os
 import time
+from glob import glob
+from typing import Tuple, Dict, Any, List, Optional
 
-from gym.core import Wrapper
+import gym
+import pandas
+import numpy as np
 
 
-class Monitor(Wrapper):
+class Monitor(gym.Wrapper):
     EXT = "monitor.csv"
     file_handler = None
 
-    def __init__(self, env, filename=None, allow_early_resets=True, reset_keywords=(), info_keywords=()):
+    def __init__(self,
+                 env: gym.Env,
+                 filename: Optional[str],
+                 allow_early_resets: bool = True,
+                 reset_keywords=(),
+                 info_keywords=()):
         """
         A monitor wrapper for Gym environments, it is used to know the episode reward, length, time and other data.
 
-        :param env: (Gym environment) The environment
-        :param filename: (str) the location to save a log file, can be None for no log
+        :param env: (gym.Env) The environment
+        :param filename: (Optional[str]) the location to save a log file, can be None for no log
         :param allow_early_resets: (bool) allows the reset of the environment before it is done
         :param reset_keywords: (tuple) extra keywords for the reset call, if extra parameters are needed at reset
         :param info_keywords: (tuple) extra information to log, from the information return of environment.step
         """
-        Wrapper.__init__(self, env=env)
+        super(Monitor, self).__init__(env=env)
         self.t_start = time.time()
         if filename is None:
             self.file_handler = None
@@ -52,12 +60,12 @@ class Monitor(Wrapper):
         self.total_steps = 0
         self.current_reset_info = {}  # extra info about the current episode, that was passed in during reset()
 
-    def reset(self, **kwargs):
+    def reset(self, **kwargs) -> np.ndarray:
         """
         Calls the Gym environment reset. Can only be called if the environment is over, or if allow_early_resets is True
 
         :param kwargs: Extra keywords saved for the next episode. only if defined by reset_keywords
-        :return: ([int] or [float]) the first observation of the environment
+        :return: (np.ndarray) the first observation of the environment
         """
         if not self.allow_early_resets and not self.needs_reset:
             raise RuntimeError("Tried to reset an environment before done. If you want to allow early resets, "
@@ -67,16 +75,16 @@ class Monitor(Wrapper):
         for key in self.reset_keywords:
             value = kwargs.get(key)
             if value is None:
-                raise ValueError('Expected you to pass kwarg %s into reset' % key)
+                raise ValueError('Expected you to pass kwarg {} into reset'.format(key))
             self.current_reset_info[key] = value
         return self.env.reset(**kwargs)
 
-    def step(self, action):
+    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, Dict[Any, Any]]:
         """
         Step the environment with the given action
 
-        :param action: ([int] or [float]) the action
-        :return: ([int] or [float], [float], [bool], dict) observation, reward, done, information
+        :param action: (np.ndarray) the action
+        :return: (Tuple[np.ndarray, float, bool, Dict[Any, Any]]) observation, reward, done, information
         """
         if self.needs_reset:
             raise RuntimeError("Tried to step environment that needs reset")
@@ -104,10 +112,11 @@ class Monitor(Wrapper):
         """
         Closes the environment
         """
+        super(Monitor, self).close()
         if self.file_handler is not None:
             self.file_handler.close()
 
-    def get_total_steps(self):
+    def get_total_steps(self) -> int:
         """
         Returns the total number of timesteps
 
@@ -115,7 +124,7 @@ class Monitor(Wrapper):
         """
         return self.total_steps
 
-    def get_episode_rewards(self):
+    def get_episode_rewards(self) -> List[float]:
         """
         Returns the rewards of all the episodes
 
@@ -123,7 +132,7 @@ class Monitor(Wrapper):
         """
         return self.episode_rewards
 
-    def get_episode_lengths(self):
+    def get_episode_lengths(self) -> List[int]:
         """
         Returns the number of timesteps of all the episodes
 
@@ -131,10 +140,69 @@ class Monitor(Wrapper):
         """
         return self.episode_lengths
 
-    def get_episode_times(self):
+    def get_episode_times(self) -> List[float]:
         """
         Returns the runtime in seconds of all the episodes
 
         :return: ([float])
         """
         return self.episode_times
+
+
+class LoadMonitorResultsError(Exception):
+    """
+    Raised when loading the monitor log fails.
+    """
+    pass
+
+
+def get_monitor_files(path: str) -> List[str]:
+    """
+    get all the monitor files in the given path
+
+    :param path: (str) the logging folder
+    :return: ([str]) the log files
+    """
+    return glob(os.path.join(path, "*" + Monitor.EXT))
+
+
+def load_results(path: str) -> pandas.DataFrame:
+    """
+    Load all Monitor logs from a given directory path matching ``*monitor.csv`` and ``*monitor.json``
+
+    :param path: (str) the directory path containing the log file(s)
+    :return: (pandas.DataFrame) the logged data
+    """
+    # get both csv and (old) json files
+    monitor_files = (glob(os.path.join(path, "*monitor.json")) + get_monitor_files(path))
+    if not monitor_files:
+        raise LoadMonitorResultsError("no monitor files of the form *%s found in %s" % (Monitor.EXT, path))
+    data_frames = []
+    headers = []
+    for file_name in monitor_files:
+        with open(file_name, 'rt') as file_handler:
+            if file_name.endswith('csv'):
+                first_line = file_handler.readline()
+                assert first_line[0] == '#'
+                header = json.loads(first_line[1:])
+                data_frame = pandas.read_csv(file_handler, index_col=None)
+                headers.append(header)
+            elif file_name.endswith('json'):  # Deprecated json format
+                episodes = []
+                lines = file_handler.readlines()
+                header = json.loads(lines[0])
+                headers.append(header)
+                for line in lines[1:]:
+                    episode = json.loads(line)
+                    episodes.append(episode)
+                data_frame = pandas.DataFrame(episodes)
+            else:
+                assert 0, 'unreachable'
+            data_frame['t'] += header['t_start']
+        data_frames.append(data_frame)
+    data_frame = pandas.concat(data_frames)
+    data_frame.sort_values('t', inplace=True)
+    data_frame.reset_index(inplace=True)
+    data_frame['t'] -= min(header['t_start'] for header in headers)
+    # data_frame.headers = headers  # HACK to preserve backwards compatibility
+    return data_frame

@@ -119,8 +119,8 @@ class A2C(PPO):
             th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.policy.optimizer.step()
 
-        explained_var = explained_variance(self.rollout_buffer.returns.flatten().cpu().numpy(),
-                                           self.rollout_buffer.values.flatten().cpu().numpy())
+        explained_var = explained_variance(self.rollout_buffer.returns.flatten(),
+                                           self.rollout_buffer.values.flatten())
 
         logger.logkv("explained_variance", explained_var)
         logger.logkv("entropy", entropy.mean().item())

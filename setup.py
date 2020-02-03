@@ -10,7 +10,9 @@ setup(name='torchy_baselines',
           'gym[classic_control]>=0.10.9',
           'numpy',
           'torch>=1.2.0',
-          'cloudpickle'
+          'cloudpickle',
+          # For reading logs
+          'pandas'
       ],
       extras_require={
         'tests': [
@@ -32,8 +34,6 @@ setup(name='torchy_baselines',
         'extra': [
             # For render
             'opencv-python',
-            # For reading logs
-            'pandas'
         ]
       },
       description='Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.',
@@ -45,7 +45,7 @@ setup(name='torchy_baselines',
       license="MIT",
       long_description="",
       long_description_content_type='text/markdown',
-      version="0.2.0a0",
+      version="0.2.0a1",
       )
 
 # python setup.py sdist

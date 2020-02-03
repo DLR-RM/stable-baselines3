@@ -45,7 +45,7 @@ setup(name='torchy_baselines',
       license="MIT",
       long_description="",
       long_description_content_type='text/markdown',
-      version="0.2.0a0",
+      version="0.2.0a1",
       )
 
 # python setup.py sdist

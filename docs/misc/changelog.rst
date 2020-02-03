@@ -3,13 +3,14 @@
 Changelog
 ==========
 
-Pre-Release 0.2.0a0 (WIP)
+Pre-Release 0.2.0a1 (WIP)
 ------------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Python 2 support was dropped, Torchy Baselines now requires Python 3.6 or above
 - Return type of `evaluation.evaluate_policy()` has been changed
+- Refactored the replay buffer to avoid transformation between PyTorch and NumPy
 
 New Features:
 ^^^^^^^^^^^^^

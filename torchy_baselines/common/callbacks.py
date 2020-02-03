@@ -242,7 +242,7 @@ class EvalCallback(EventCallback):
         self.best_model_save_path = best_model_save_path
         # Logs will be written in `evaluations.npz`
         if log_path is not None:
-            os.path.join(log_path, 'evaluations')
+            log_path = os.path.join(log_path, 'evaluations')
         self.log_path = log_path
         self.evaluations_results = []
         self.evaluations_timesteps = []

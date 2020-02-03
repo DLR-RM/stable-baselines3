@@ -4,13 +4,13 @@ import torch as th
 import torch.nn.functional as F
 import numpy as np
 
-from torchy_baselines.common.base_class import BaseRLModel
+from torchy_baselines.common.base_class import OffPolicyRLModel
 from torchy_baselines.common.buffers import ReplayBuffer
 from torchy_baselines.sac.policies import SACPolicy
 from torchy_baselines.common import logger
 
 
-class SAC(BaseRLModel):
+class SAC(OffPolicyRLModel):
     """
     Soft Actor-Critic (SAC)
     Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor,
@@ -49,6 +49,8 @@ class SAC(BaseRLModel):
         instead of action noise exploration (default: False)
     :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
         Default: -1 (only sample at the beginning of the rollout)
+    :param use_sde_at_warmup: (bool) Whether to use SDE instead of uniform sampling
+        during the warm up phase (before learning starts)
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
@@ -65,13 +67,15 @@ class SAC(BaseRLModel):
                  train_freq=1, gradient_steps=1, n_episodes_rollout=-1,
                  target_entropy='auto', action_noise=None,
                  gamma=0.99, use_sde=False, sde_sample_freq=-1,
+                 use_sde_at_warmup=False,
                  tensorboard_log=None, create_eval_env=False,
                  policy_kwargs=None, verbose=0, seed=0, device='auto',
                  _init_setup_model=True):
 
         super(SAC, self).__init__(policy, env, SACPolicy, policy_kwargs, verbose, device,
                                   create_eval_env=create_eval_env, seed=seed,
-                                  use_sde=use_sde, sde_sample_freq=sde_sample_freq)
+                                  use_sde=use_sde, sde_sample_freq=sde_sample_freq,
+                                  use_sde_at_warmup=use_sde_at_warmup)
 
         self.learning_rate = learning_rate
         self.target_entropy = target_entropy

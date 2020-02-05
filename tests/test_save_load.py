@@ -133,3 +133,25 @@ def test_exclude_include_saved_params(model_class):
 
     # clear file from os
     os.remove("test_save.zip")
+
+@pytest.mark.parametrize("model_class", [SAC, TD3])
+def test_save_load_replay_buffer(model_class):
+    log_folder = 'logs'
+    replay_path = os.path.join('logs', 'replay_buffer.pkl')
+    os.makedirs(log_folder, exist_ok=True)
+    buffer_size = 10000
+    model = model_class('MlpPolicy', 'Pendulum-v0', buffer_size=buffer_size)
+    model.learn(500)
+    old_replay_buffer = deepcopy(model.replay_buffer)
+    model.save_replay_buffer(log_folder)
+    model.replay_buffer = None
+    model.load_replay_buffer(replay_path)
+
+    assert np.allclose(old_replay_buffer.observations, model.replay_buffer.observations)
+    assert np.allclose(old_replay_buffer.actions, model.replay_buffer.actions)
+    assert np.allclose(old_replay_buffer.next_observations, model.replay_buffer.next_observations)
+    assert np.allclose(old_replay_buffer.rewards, model.replay_buffer.rewards)
+    assert np.allclose(old_replay_buffer.dones, model.replay_buffer.dones)
+
+    # clear file from os
+    os.remove(replay_path)

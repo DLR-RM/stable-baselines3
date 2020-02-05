@@ -2,6 +2,7 @@ import time
 import os
 import io
 import zipfile
+import pickle
 from typing import Union, Type, Optional, Dict, Any, List, Tuple, Callable
 from abc import ABC, abstractmethod
 from collections import deque
@@ -707,11 +708,24 @@ class OffPolicyRLModel(BaseRLModel):
         self.replay_buffer = None  # type: Optional[ReplayBuffer]
         self.use_sde_at_warmup = use_sde_at_warmup
 
-    def save_replay_buffer(self):
-        pass
+    def save_replay_buffer(self, path: str):
+        """
+        Save the replay buffer as a pickle file.
 
-    def load_replay_buffer(self, path):
-        pass
+        :param path: (str) Path to a log folder
+        """
+        assert self.replay_buffer is not None, "The replay buffer is not defined"
+        with open(os.path.join(path, 'replay_buffer.pkl'), 'wb') as file_handler:
+            pickle.dump(self.replay_buffer, file_handler)
+
+    def load_replay_buffer(self, path: str):
+        """
+
+        :param path: (str) Path to the pickled replay buffer.
+        """
+        with open(path, 'rb') as file_handler:
+            self.replay_buffer = pickle.load(file_handler)
+        assert isinstance(self.replay_buffer, ReplayBuffer), 'The replay buffer must inherit from ReplayBuffer class'
 
     def collect_rollouts(self,
                          env: VecEnv,

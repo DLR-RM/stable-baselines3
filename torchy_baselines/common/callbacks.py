@@ -232,6 +232,7 @@ class EvalCallback(EventCallback):
         self.n_eval_episodes = n_eval_episodes
         self.eval_freq = eval_freq
         self.best_mean_reward = -np.inf
+        self.last_mean_reward = -np.inf
         self.deterministic = deterministic
         self.render = render
 
@@ -280,6 +281,7 @@ class EvalCallback(EventCallback):
 
             mean_reward, std_reward = np.mean(episode_rewards), np.std(episode_rewards)
             mean_ep_length, std_ep_length = np.mean(episode_lengths), np.std(episode_lengths)
+            self.last_mean_reward = mean_reward
 
             if self.verbose > 0:
                 print(f"Eval num_timesteps={self.num_timesteps}, "

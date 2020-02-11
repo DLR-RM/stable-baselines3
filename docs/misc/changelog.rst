@@ -11,11 +11,14 @@ Breaking Changes:
 - Python 2 support was dropped, Torchy Baselines now requires Python 3.6 or above
 - Return type of `evaluation.evaluate_policy()` has been changed
 - Refactored the replay buffer to avoid transformation between PyTorch and NumPy
+- Created `OffPolicyRLModel` base class
 
 New Features:
 ^^^^^^^^^^^^^
 - Add `seed()` method to `VecEnv` class
 - Add support for Callback (cf https://github.com/hill-a/stable-baselines/pull/644)
+- Add methods for saving and loading replay buffer
+- Add `extend()` method to the buffers
 
 Bug Fixes:
 ^^^^^^^^^^

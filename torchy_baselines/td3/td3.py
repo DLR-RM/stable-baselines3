@@ -4,12 +4,12 @@ import torch as th
 import torch.nn.functional as F
 import numpy as np
 
-from torchy_baselines.common.base_class import BaseRLModel
+from torchy_baselines.common.base_class import OffPolicyRLModel
 from torchy_baselines.common.buffers import ReplayBuffer
 from torchy_baselines.td3.policies import TD3Policy
 
 
-class TD3(BaseRLModel):
+class TD3(OffPolicyRLModel):
     """
     Twin Delayed DDPG (TD3)
     Addressing Function Approximation Error in Actor-Critic Methods.
@@ -45,6 +45,8 @@ class TD3(BaseRLModel):
     :param sde_max_grad_norm: (float)
     :param sde_ent_coef: (float)
     :param sde_log_std_scheduler: (callable)
+    :param use_sde_at_warmup: (bool) Whether to use SDE instead of uniform sampling
+        during the warm up phase (before learning starts)
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
@@ -59,13 +61,15 @@ class TD3(BaseRLModel):
                  policy_delay=2, learning_starts=100, gamma=0.99, batch_size=100,
                  train_freq=-1, gradient_steps=-1, n_episodes_rollout=1,
                  tau=0.005, action_noise=None, target_policy_noise=0.2, target_noise_clip=0.5,
-                 use_sde=False, sde_sample_freq=-1, sde_max_grad_norm=1, sde_ent_coef=0.0, sde_log_std_scheduler=None,
+                 use_sde=False, sde_sample_freq=-1, sde_max_grad_norm=1,
+                 sde_ent_coef=0.0, sde_log_std_scheduler=None, use_sde_at_warmup=False,
                  tensorboard_log=None, create_eval_env=False, policy_kwargs=None, verbose=0,
                  seed=0, device='auto', _init_setup_model=True):
 
         super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device,
                                   create_eval_env=create_eval_env, seed=seed,
-                                  use_sde=use_sde, sde_sample_freq=sde_sample_freq)
+                                  use_sde=use_sde, sde_sample_freq=sde_sample_freq,
+                                  use_sde_at_warmup=use_sde_at_warmup)
 
         self.buffer_size = buffer_size
         self.learning_rate = learning_rate
@@ -263,7 +267,7 @@ class TD3(BaseRLModel):
 
             rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,
                                             n_steps=self.train_freq, action_noise=self.action_noise,
-                                            deterministic=False, callback=callback,
+                                            callback=callback,
                                             learning_starts=self.learning_starts,
                                             replay_buffer=self.replay_buffer,
                                             obs=obs, episode_num=episode_num,

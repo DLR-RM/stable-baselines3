@@ -18,7 +18,7 @@ class Monitor(gym.Wrapper):
 
     def __init__(self,
                  env: gym.Env,
-                 filename: Optional[str],
+                 filename: Optional[str] = None,
                  allow_early_resets: bool = True,
                  reset_keywords=(),
                  info_keywords=()):

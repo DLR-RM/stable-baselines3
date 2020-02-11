@@ -137,10 +137,9 @@ def test_exclude_include_saved_params(model_class):
 @pytest.mark.parametrize("model_class", [SAC, TD3])
 def test_save_load_replay_buffer(model_class):
     log_folder = 'logs'
-    replay_path = os.path.join('logs', 'replay_buffer.pkl')
+    replay_path = os.path.join(log_folder, 'replay_buffer.pkl')
     os.makedirs(log_folder, exist_ok=True)
-    buffer_size = 1000
-    model = model_class('MlpPolicy', 'Pendulum-v0', buffer_size=buffer_size)
+    model = model_class('MlpPolicy', 'Pendulum-v0', buffer_size=1000)
     model.learn(500)
     old_replay_buffer = deepcopy(model.replay_buffer)
     model.save_replay_buffer(log_folder)

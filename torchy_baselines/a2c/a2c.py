@@ -77,7 +77,7 @@ class A2C(PPO):
                                                      lr=self.learning_rate(1), alpha=0.99,
                                                      eps=self.rms_prop_eps, weight_decay=0)
 
-    def train(self, gradient_steps, batch_size=None):
+    def train(self, gradient_steps: int, batch_size=None):
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
         # A2C with gradient_steps > 1 does not make sense
@@ -107,7 +107,11 @@ class A2C(PPO):
             value_loss = F.mse_loss(return_batch, values)
 
             # Entropy loss favor exploration
-            entropy_loss = -th.mean(entropy)
+            if entropy is None:
+                # Approximate entropy when no analytical form
+                entropy_loss = -log_prob.mean()
+            else:
+                entropy_loss = -th.mean(entropy)
 
             loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
 
@@ -123,7 +127,7 @@ class A2C(PPO):
                                            self.rollout_buffer.values.flatten())
 
         logger.logkv("explained_variance", explained_var)
-        logger.logkv("entropy", entropy.mean().item())
+        logger.logkv("entropy_loss", entropy_loss.item())
         logger.logkv("policy_loss", policy_loss.item())
         logger.logkv("value_loss", value_loss.item())
         if hasattr(self.policy, 'log_std'):

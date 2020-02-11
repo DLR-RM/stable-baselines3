@@ -152,8 +152,9 @@ class VecEnv(ABC):
         :param indices: ([int])
         """
         indices = self._get_indices(indices)
+        # Different seed per environment
         if not hasattr(seed, 'len'):
-            seed = [seed] * len(indices)
+            seed = [seed + i for i in range(len(indices))]
         assert len(seed) == len(indices)
         return [self.env_method('seed', seed[i], indices=i) for i in indices]
 

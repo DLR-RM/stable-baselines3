@@ -4,6 +4,7 @@ import numpy as np
 import torch as th
 
 from torchy_baselines.common.vec_env import VecNormalize
+from torchy_baselines.common.type_aliases import RolloutBufferSamples, ReplayBufferSamples
 
 
 class BaseBuffer(object):
@@ -177,7 +178,7 @@ class ReplayBuffer(BaseBuffer):
     def _get_samples(self,
                      batch_inds: np.ndarray,
                      env: Optional[VecNormalize] = None
-                     ) -> Tuple[th.Tensor, ...]:
+                     ) -> ReplayBufferSamples:
         data = (self._normalize_obs(self.observations[batch_inds, 0, :], env),
                 self.actions[batch_inds, 0, :],
                 self._normalize_obs(self.next_observations[batch_inds, 0, :], env),
@@ -305,7 +306,7 @@ class RolloutBuffer(BaseBuffer):
         if self.pos == self.buffer_size:
             self.full = True
 
-    def get(self, batch_size: Optional[int] = None) -> Generator[Tuple[th.Tensor, ...], None, None]:
+    def get(self, batch_size: Optional[int] = None) -> Generator[RolloutBufferSamples, None, None]:
         assert self.full, ''
         indices = np.random.permutation(self.buffer_size * self.n_envs)
         # Prepare the data
@@ -325,7 +326,7 @@ class RolloutBuffer(BaseBuffer):
             start_idx += batch_size
 
     def _get_samples(self, batch_inds: np.ndarray,
-                     env: Optional[VecNormalize] = None) -> Tuple[th.Tensor, ...]:
+                     env: Optional[VecNormalize] = None) -> RolloutBufferSamples:
         data = (self.observations[batch_inds],
                 self.actions[batch_inds],
                 self.values[batch_inds].flatten(),

@@ -6,6 +6,7 @@ import numpy as np
 
 from torchy_baselines.common.base_class import OffPolicyRLModel
 from torchy_baselines.common.buffers import ReplayBuffer
+from torchy_baselines.common.type_aliases import ReplayBufferSamples
 from torchy_baselines.td3.policies import TD3Policy
 
 
@@ -134,7 +135,7 @@ class TD3(OffPolicyRLModel):
 
     def train_critic(self, gradient_steps: int = 1,
                     batch_size: int = 100,
-                    replay_data: Optional[Tuple[th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor]] = None,
+                    replay_data: Optional[ReplayBufferSamples] = None,
                     tau: float = 0.0):
         # Update optimizer learning rate
         self._update_learning_rate(self.critic.optimizer)
@@ -178,7 +179,7 @@ class TD3(OffPolicyRLModel):
                     batch_size: int = 100,
                     tau_actor: float = 0.005,
                     tau_critic: float = 0.005,
-                    replay_data: Optional[Tuple[th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor]] = None):
+                    replay_data: Optional[ReplayBufferSamples] = None):
         # Update optimizer learning rate
         self._update_learning_rate(self.actor.optimizer)
 

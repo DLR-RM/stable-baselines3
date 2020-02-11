@@ -139,7 +139,7 @@ def test_save_load_replay_buffer(model_class):
     log_folder = 'logs'
     replay_path = os.path.join('logs', 'replay_buffer.pkl')
     os.makedirs(log_folder, exist_ok=True)
-    buffer_size = 10000
+    buffer_size = 1000
     model = model_class('MlpPolicy', 'Pendulum-v0', buffer_size=buffer_size)
     model.learn(500)
     old_replay_buffer = deepcopy(model.replay_buffer)
@@ -152,6 +152,10 @@ def test_save_load_replay_buffer(model_class):
     assert np.allclose(old_replay_buffer.next_observations, model.replay_buffer.next_observations)
     assert np.allclose(old_replay_buffer.rewards, model.replay_buffer.rewards)
     assert np.allclose(old_replay_buffer.dones, model.replay_buffer.dones)
+
+    # test extending replay buffer
+    model.replay_buffer.extend(old_replay_buffer.observations, old_replay_buffer.next_observations,
+                               old_replay_buffer.actions, old_replay_buffer.rewards, old_replay_buffer.dones)
 
     # clear file from os
     os.remove(replay_path)

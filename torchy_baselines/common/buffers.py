@@ -61,6 +61,14 @@ class BaseBuffer(object):
         """
         raise NotImplementedError()
 
+    def extend(self, *args, **kwargs) -> None:
+        """
+        Add a new batch of transitions to the buffer
+        """
+        # Do a for loop along the batch axis
+        for data in zip(*args):
+            self.add(*data)
+
     def reset(self) -> None:
         """
         Reset the buffer.

@@ -18,6 +18,7 @@ New Features:
 - Add `seed()` method to `VecEnv` class
 - Add support for Callback (cf https://github.com/hill-a/stable-baselines/pull/644)
 - Add methods for saving and loading replay buffer
+- Add `extend()` method to the buffers
 
 Bug Fixes:
 ^^^^^^^^^^

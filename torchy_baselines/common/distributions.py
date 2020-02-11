@@ -1,3 +1,5 @@
+from typing import Optional
+
 import torch as th
 import torch.nn as nn
 from torch.distributions import Normal, Categorical
@@ -8,24 +10,25 @@ class Distribution(object):
     def __init__(self):
         super(Distribution, self).__init__()
 
-    def log_prob(self, x):
+    def log_prob(self, x: th.Tensor) -> th.Tensor:
         """
         returns the log likelihood
 
-        :param x: (object) the taken action
+        :param x: (th.Tensor) the taken action
         :return: (th.Tensor) The log likelihood of the distribution
         """
         raise NotImplementedError
 
-    def entropy(self):
+    def entropy(self) -> Optional[th.Tensor]:
         """
         Returns shannon's entropy of the probability
 
-        :return: (th.Tensor) the entropy
+        :return: (Optional[th.Tensor]) the entropy,
+            return None if no analytical form is known
         """
         raise NotImplementedError
 
-    def sample(self):
+    def sample(self) -> th.Tensor:
         """
         returns a sample from the probabilty distribution
 
@@ -144,6 +147,11 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         self.gaussian_action = self.distribution.mean
         # Squash the output
         return th.tanh(self.gaussian_action)
+
+    def entropy(self):
+        # No analytical form,
+        # entropy needs to be estimated using -log_prob.mean()
+        return None
 
     def sample(self):
         self.gaussian_action = self.distribution.rsample()
@@ -371,7 +379,10 @@ class StateDependentNoiseDistribution(Distribution):
         return action
 
     def entropy(self):
-        # TODO: account for the squashing?
+        # No analytical form,
+        # entropy needs to be estimated using -log_prob.mean()
+        if self.bijector is not None:
+            return None
         return self.distribution.entropy()
 
     def log_prob_from_params(self, mean_actions, log_std, latent_sde):

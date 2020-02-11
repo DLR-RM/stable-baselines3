@@ -116,9 +116,7 @@ class PPO(BaseRLModel):
             # Action is a scalar
             action_dim = 1
 
-        # TODO: different seed for each env when n_envs > 1
-        if self.n_envs == 1:
-            self.set_random_seed(self.seed)
+        self.set_random_seed(self.seed)
 
         self.rollout_buffer = RolloutBuffer(self.n_steps, state_dim, action_dim, self.device,
                                             gamma=self.gamma, gae_lambda=self.gae_lambda, n_envs=self.n_envs)
@@ -208,15 +206,14 @@ class PPO(BaseRLModel):
 
         return obs, continue_training
 
-    def train(self, gradient_steps, batch_size=64):
+    def train(self, gradient_steps: int, batch_size: int = 64) -> None:
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
         # Compute current clip range
         clip_range = self.clip_range(self._current_progress)
-        logger.logkv("clip_range", clip_range)
+        # Optional: clip range for the value function
         if self.clip_range_vf is not None:
             clip_range_vf = self.clip_range_vf(self._current_progress)
-            logger.logkv("clip_range_vf", clip_range_vf)
 
         for gradient_step in range(gradient_steps):
             approx_kl_divs = []
@@ -258,7 +255,11 @@ class PPO(BaseRLModel):
                 value_loss = F.mse_loss(return_batch, values_pred)
 
                 # Entropy loss favor exploration
-                entropy_loss = -th.mean(entropy)
+                if entropy is None:
+                    # Approximate entropy when no analytical form
+                    entropy_loss = -log_prob.mean()
+                else:
+                    entropy_loss = -th.mean(entropy)
 
                 loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
 
@@ -278,9 +279,14 @@ class PPO(BaseRLModel):
         explained_var = explained_variance(self.rollout_buffer.returns.flatten(),
                                            self.rollout_buffer.values.flatten())
 
+        logger.logkv("clip_range", clip_range)
+        if self.clip_range_vf is not None:
+            logger.logkv("clip_range_vf", clip_range_vf)
+
+
         logger.logkv("explained_variance", explained_var)
         # TODO: gather stats for the entropy and other losses?
-        logger.logkv("entropy", entropy.mean().item())
+        logger.logkv("entropy_loss", entropy_loss.item())
         logger.logkv("policy_loss", policy_loss.item())
         logger.logkv("value_loss", value_loss.item())
         if hasattr(self.policy, 'log_std'):

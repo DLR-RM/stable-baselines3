@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import torch as th
 import torch.nn.functional as F
@@ -132,7 +132,10 @@ class TD3(OffPolicyRLModel):
         """
         return self.unscale_action(self.select_action(observation, deterministic=deterministic))
 
-    def train_critic(self, gradient_steps=1, batch_size=100, replay_data=None, tau=0.0):
+    def train_critic(self, gradient_steps: int = 1,
+                    batch_size: int = 100,
+                    replay_data: Optional[Tuple[th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor]] = None,
+                    tau: float = 0.0):
         # Update optimizer learning rate
         self._update_learning_rate(self.critic.optimizer)
 
@@ -171,9 +174,11 @@ class TD3(OffPolicyRLModel):
                 for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
                     target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
 
-    def train_actor(self, gradient_steps=1, batch_size=100, tau_actor=0.005,
-                    tau_critic=0.005,
-                    replay_data=None):
+    def train_actor(self, gradient_steps: int = 1,
+                    batch_size: int = 100,
+                    tau_actor: float = 0.005,
+                    tau_critic: float = 0.005,
+                    replay_data: Optional[Tuple[th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor]] = None):
         # Update optimizer learning rate
         self._update_learning_rate(self.actor.optimizer)
 
@@ -200,7 +205,7 @@ class TD3(OffPolicyRLModel):
             for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
                 target_param.data.copy_(tau_actor * param.data + (1 - tau_actor) * target_param.data)
 
-    def train(self, gradient_steps, batch_size=100, policy_delay=2):
+    def train(self, gradient_steps: int, batch_size: int = 100, policy_delay: int = 2):
 
         for gradient_step in range(gradient_steps):
 
@@ -234,7 +239,11 @@ class TD3(OffPolicyRLModel):
         policy_loss = -(advantage * log_prob).mean()
 
         # Entropy loss favor exploration
-        entropy_loss = -th.mean(entropy)
+        if entropy is None:
+            # Approximate entropy when no analytical form
+            entropy_loss = -log_prob.mean()
+        else:
+            entropy_loss = -th.mean(entropy)
 
         vf_coef = 0.5
         loss = policy_loss + self.sde_ent_coef * entropy_loss + vf_coef * value_loss

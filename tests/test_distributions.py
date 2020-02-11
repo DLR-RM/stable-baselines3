@@ -1,6 +1,7 @@
 import pytest
 import torch as th
 
+from torchy_baselines import A2C, PPO
 from torchy_baselines.common.distributions import DiagGaussianDistribution, TanhBijector, \
     StateDependentNoiseDistribution
 from torchy_baselines.common.utils import set_random_seed
@@ -20,6 +21,14 @@ def test_bijector():
     assert th.max(th.abs(squashed_actions)) <= 1.0
     # Check the inverse method
     assert th.isclose(TanhBijector.inverse(squashed_actions), actions).all()
+
+@pytest.mark.parametrize("model_class", [A2C, PPO])
+def test_squashed_gaussian(model_class):
+    """
+    Test run with squashed Gaussian (notably entropy computation)
+    """
+    model = model_class('MlpPolicy', 'Pendulum-v0', use_sde=True, n_steps=100, policy_kwargs=dict(squash_output=True))
+    model.learn(500)
 
 
 def test_sde_distribution():

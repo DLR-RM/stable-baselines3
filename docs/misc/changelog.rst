@@ -24,6 +24,8 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fix loading model on CPU that were trained on GPU
 - Fix `reset_num_timesteps` that was not used
+- Fix entropy computation for squashed Gaussian (approximate it now)
+- Fix seeding when using multiple environments (different seed per env)
 
 Deprecations:
 ^^^^^^^^^^^^^

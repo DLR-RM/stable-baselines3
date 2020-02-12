@@ -277,6 +277,9 @@ class TD3Policy(BasePolicy):
     def forward(self, obs, deterministic=True):
         return self.actor(obs, deterministic=deterministic)
 
+    def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+        return self.forward(observation, deterministic)
+
 
 MlpPolicy = TD3Policy
 

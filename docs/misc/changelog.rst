@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.2.0a1 (WIP)
+Pre-Release 0.2.0a2 (WIP)
 ------------------------------
 
 Breaking Changes:
@@ -20,7 +20,8 @@ New Features:
 - Add methods for saving and loading replay buffer
 - Add `extend()` method to the buffers
 - Add `get_vec_normalize_env()` to `BaseRLModel` to retrieve `VecNormalize` wrapper when it exists
-- Add `¶results_plotter` from Stable Baselines
+- Add `results_plotter` from Stable Baselines
+- Improve `predict()` method to handle different type of observations (single, vectorized, ...)
 
 Bug Fixes:
 ^^^^^^^^^^

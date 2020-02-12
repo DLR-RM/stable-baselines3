@@ -114,25 +114,6 @@ class TD3(OffPolicyRLModel):
         self.critic_target = self.policy.critic_target
         self.vf_net = self.policy.vf_net
 
-    def select_action(self, observation, deterministic=True):
-        # Normally not needed
-        observation = np.array(observation)
-        with th.no_grad():
-            observation = th.FloatTensor(observation.reshape(1, -1)).to(self.device)
-            return self.actor(observation, deterministic=deterministic).cpu().numpy()
-
-    def predict(self, observation, state=None, mask=None, deterministic=True):
-        """
-        Get the model's action from an observation
-
-        :param observation: (np.ndarray) the input observation
-        :param state: (np.ndarray) The last states (can be None, used in recurrent policies)
-        :param mask: (np.ndarray) The last masks (can be None, used in recurrent policies)
-        :param deterministic: (bool) Whether or not to return deterministic actions.
-        :return: (np.ndarray, np.ndarray) the model's action and the next state (used in recurrent policies)
-        """
-        return self.unscale_action(self.select_action(observation, deterministic=deterministic))
-
     def train_critic(self, gradient_steps: int = 1,
                     batch_size: int = 100,
                     replay_data: Optional[ReplayBufferSamples] = None,

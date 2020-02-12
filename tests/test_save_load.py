@@ -34,7 +34,7 @@ def test_save_load(model_class):
 
     env.reset()
     observations = np.array([env.step(env.action_space.sample())[0] for _ in range(10)])
-    observations = np.squeeze(observations)
+    observations = observations.reshape(10, -1)
 
     # Get dictionary of current parameters
     params = deepcopy(model.policy.state_dict())
@@ -53,7 +53,7 @@ def test_save_load(model_class):
     params = new_params
 
     # get selected actions
-    selected_actions = [model.predict(observation, deterministic=True) for observation in observations]
+    selected_actions = model.predict(observations, deterministic=True)
 
     # Check
     model.save("test_save.zip")
@@ -68,7 +68,7 @@ def test_save_load(model_class):
         assert th.allclose(params[key], new_params[key]), "Model parameters not the same after save and load."
 
     # check if model still selects the same actions
-    new_selected_actions = [model.predict(observation, deterministic=True) for observation in observations]
+    new_selected_actions = model.predict(observations, deterministic=True)
     assert np.allclose(selected_actions, new_selected_actions, 1e-4)
 
     # check if learn still works

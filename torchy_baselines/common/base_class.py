@@ -306,21 +306,104 @@ class BaseRLModel(ABC):
         """
         raise NotImplementedError()
 
-    @abstractmethod
+    @staticmethod
+    def _is_vectorized_observation(observation: np.ndarray, observation_space: gym.spaces.Space) -> bool:
+        """
+        For every observation type, detects and validates the shape,
+        then returns whether or not the observation is vectorized.
+
+        :param observation: (np.ndarray) the input observation to validate
+        :param observation_space: (gym.spaces) the observation space
+        :return: (bool) whether the given observation is vectorized or not
+        """
+        if isinstance(observation_space, gym.spaces.Box):
+            if observation.shape == observation_space.shape:
+                return False
+            elif observation.shape[1:] == observation_space.shape:
+                return True
+            else:
+                raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape) +
+                                 "Box environment, please use {} ".format(observation_space.shape) +
+                                 "or (n_env, {}) for the observation shape."
+                                 .format(", ".join(map(str, observation_space.shape))))
+        elif isinstance(observation_space, gym.spaces.Discrete):
+            if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
+                return False
+            elif len(observation.shape) == 1:
+                return True
+            else:
+                raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape) +
+                                 "Discrete environment, please use (1,) or (n_env, 1) for the observation shape.")
+        elif isinstance(observation_space, gym.spaces.MultiDiscrete):
+            if observation.shape == (len(observation_space.nvec),):
+                return False
+            elif len(observation.shape) == 2 and observation.shape[1] == len(observation_space.nvec):
+                return True
+            else:
+                raise ValueError("Error: Unexpected observation shape {} for MultiDiscrete ".format(observation.shape) +
+                                 "environment, please use ({},) or ".format(len(observation_space.nvec)) +
+                                 "(n_env, {}) for the observation shape.".format(len(observation_space.nvec)))
+        elif isinstance(observation_space, gym.spaces.MultiBinary):
+            if observation.shape == (observation_space.n,):
+                return False
+            elif len(observation.shape) == 2 and observation.shape[1] == observation_space.n:
+                return True
+            else:
+                raise ValueError("Error: Unexpected observation shape {} for MultiBinary ".format(observation.shape) +
+                                 "environment, please use ({},) or ".format(observation_space.n) +
+                                 "(n_env, {}) for the observation shape.".format(observation_space.n))
+        else:
+            raise ValueError("Error: Cannot determine if the observation is vectorized with the space type {}."
+                             .format(observation_space))
+
     def predict(self, observation: np.ndarray,
                 state: Optional[np.ndarray] = None,
                 mask: Optional[np.ndarray] = None,
                 deterministic: bool = False) -> np.ndarray:
         """
-        Get the model's action from an observation
+        Get the model's action(s) from an observation
 
-        :param observation: the input observation
-        :param state: The last states (can be None, used in recurrent policies)
-        :param mask: The last masks (can be None, used in recurrent policies)
-        :param deterministic: Whether or not to return deterministic actions.
-        :return: the model's action and the next state (used in recurrent policies)
+        :param observation: (np.ndarray) the input observation
+        :param state: (Optional[np.ndarray]) The last states (can be None, used in recurrent policies)
+        :param mask: (Optional[np.ndarray]) The last masks (can be None, used in recurrent policies)
+        :param deterministic: (bool) Whether or not to return deterministic actions.
+        :return: (np.ndarray) the model's action and the next state (used in recurrent policies)
         """
-        raise NotImplementedError()
+        # if state is None:
+        #     state = self.initial_state
+        # if mask is None:
+        #     mask = [False for _ in range(self.n_envs)]
+        observation = np.array(observation)
+        vectorized_env = self._is_vectorized_observation(observation, self.observation_space)
+
+        observation = observation.reshape((-1,) + self.observation_space.shape)
+        # Convert to float pytorch
+        # TODO: replace with preprocessing
+        observation = th.as_tensor(observation).float().to(self.device)
+        with th.no_grad():
+            actions = self.policy.predict(observation, deterministic=deterministic)
+        # Convert to numpy
+        actions = actions.cpu().numpy()
+
+        # Rescale to proper domain when using squashing
+        # TODO: should not be used for a Gaussian distribution?
+        if isinstance(self.action_space, gym.spaces.Box):
+            actions = self.unscale_action(actions)
+
+        clipped_actions = actions
+        # Clip the actions to avoid out of bound error when using gaussian distribution
+        if isinstance(self.action_space, gym.spaces.Box):
+            clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
+
+        if not vectorized_env:
+            if state is not None:
+                raise ValueError("Error: The environment must be vectorized when using recurrent policies.")
+            clipped_actions = clipped_actions[0]
+
+        # TODO: switch to stable baselines API
+        # return clipped_actions, state
+        return clipped_actions
+
 
     @classmethod
     def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs):
@@ -806,7 +889,9 @@ class OffPolicyRLModel(BaseRLModel):
                     # Warmup phase
                     unscaled_action = np.array([self.action_space.sample()])
                 else:
-                    unscaled_action = self.predict(obs, deterministic=not self.use_sde)
+                    # Note: we assume that the policy uses tanh to scale the action
+                    # We use non-deterministic action in the case of SAC, for TD3, it does not matter
+                    unscaled_action = self.predict(obs, deterministic=False)
 
                 # Rescale the action from [low, high] to [-1, 1]
                 scaled_action = self.scale_action(unscaled_action)

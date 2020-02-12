@@ -129,11 +129,11 @@ class Actor(BaseNetwork):
     def forward(self, obs, deterministic=False):
         mean_actions, log_std, latent_sde = self.get_action_dist_params(obs)
         if self.use_sde:
-            # Note the action is squashed
+            # Note: the action is squashed
             action, _ = self.action_dist.proba_distribution(mean_actions, log_std, latent_sde,
                                                             deterministic=deterministic)
         else:
-            # Note the action is squashed
+            # Note: the action is squashed
             action, _ = self.action_dist.proba_distribution(mean_actions, log_std,
                                                             deterministic=deterministic)
         return action
@@ -246,6 +246,8 @@ class SACPolicy(BasePolicy):
     def forward(self, obs):
         return self.actor(obs)
 
+    def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+        return self.actor.forward(observation, deterministic)
 
 MlpPolicy = SACPolicy
 

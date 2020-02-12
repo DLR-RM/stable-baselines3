@@ -1,25 +1,30 @@
+from typing import Union
+
 from itertools import zip_longest
 
+import gym
 import torch as th
 import torch.nn as nn
+import numpy as np
 
 
 class BasePolicy(nn.Module):
     """
     The base policy object
 
-    :param observation_space: (Gym Space) The observation space of the environment
-    :param action_space: (Gym Space) The action space of the environment
+    :param observation_space: (gym.spaces.Space) The observation space of the environment
+    :param action_space: (gym.spaces.Space) The action space of the environment
     """
 
-    def __init__(self, observation_space, action_space, device='cpu'):
+    def __init__(self, observation_space: gym.spaces.Space,
+                 action_space: gym.spaces.Space, device: Union[th.device, str] = 'cpu'):
         super(BasePolicy, self).__init__()
         self.observation_space = observation_space
         self.action_space = action_space
         self.device = device
 
     @staticmethod
-    def init_weights(module, gain=1):
+    def init_weights(module: nn.Module, gain: float = 1):
         if type(module) == nn.Linear:
             nn.init.orthogonal_(module.weight, gain=gain)
             module.bias.data.fill_(0.0)
@@ -27,7 +32,13 @@ class BasePolicy(nn.Module):
     def forward(self, *_args, **kwargs):
         raise NotImplementedError()
 
-    def save(self, path):
+    def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+        """
+        Get the action according to the policy for a given observation.
+        """
+        raise NotImplementedError()
+
+    def save(self, path: str) -> None:
         """
         Save model to a given location.
 
@@ -35,7 +46,7 @@ class BasePolicy(nn.Module):
         """
         th.save(self.state_dict(), path)
 
-    def load(self, path):
+    def load(self, path: str) -> None:
         """
         Load saved model from path.
 
@@ -43,7 +54,7 @@ class BasePolicy(nn.Module):
         """
         self.load_state_dict(th.load(path))
 
-    def load_from_vector(self, vector):
+    def load_from_vector(self, vector: np.ndarray):
         """
         Load parameters from a 1D vector.
 
@@ -51,7 +62,7 @@ class BasePolicy(nn.Module):
         """
         th.nn.utils.vector_to_parameters(th.FloatTensor(vector).to(self.device), self.parameters())
 
-    def parameters_to_vector(self):
+    def parameters_to_vector(self) -> np.ndarray:
         """
         Convert the parameters to a 1D vector.
 

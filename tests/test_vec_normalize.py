@@ -123,6 +123,8 @@ def test_offpolicy_normalization(model_class):
 
     model = model_class('MlpPolicy', env, verbose=1)
     model.learn(total_timesteps=1000, eval_env=eval_env, eval_freq=500)
+    # Check getter
+    assert isinstance(model.get_vec_normalize_env(), VecNormalize)
 
 
 def test_sync_vec_normalize():

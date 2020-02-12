@@ -14,7 +14,7 @@ import numpy as np
 from torchy_baselines.common import logger
 from torchy_baselines.common.policies import BasePolicy, get_policy_from_name
 from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate
-from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize
+from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize
 from torchy_baselines.common.save_util import data_to_json, json_to_data, recursive_getattr, recursive_setattr
 from torchy_baselines.common.type_aliases import GymEnv, TensorDict, OptimizerStateDict
 from torchy_baselines.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
@@ -212,9 +212,17 @@ class BaseRLModel(ABC):
         """
         Returns the current environment (can be None if not defined).
 
-        :return: The current environment
+        :return: (Optional[VecEnv]) The current environment
         """
         return self.env
+
+    def get_vec_normalize_env(self) -> Optional[VecNormalize]:
+        """
+        Return the `VecNormalize` wrapper of the training env
+        if it exists.
+        :return: Optional[VecNormalize] The `VecNormalize` env.
+        """
+        return self._vec_normalize_env
 
     @staticmethod
     def check_env(env, observation_space: gym.spaces.Space, action_space: gym.spaces.Space) -> bool:

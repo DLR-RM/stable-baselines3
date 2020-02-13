@@ -225,13 +225,14 @@ class BaseRLModel(ABC):
         return self._vec_normalize_env
 
     @staticmethod
-    def check_env(env, observation_space: gym.spaces.Space, action_space: gym.spaces.Space) -> bool:
+    def check_env(env: GymEnv, observation_space: gym.spaces.Space, action_space: gym.spaces.Space) -> bool:
         """
         Checks the validity of the environment and returns if it is consistent.
         Checked parameters:
         - observation_space
         - action_space
 
+        :param env: (GymEnv)
         :param observation_space: (gym.spaces.Space)
         :param action_space: (gym.spaces.Space)
         :return: (bool) True if environment seems to be coherent
@@ -403,7 +404,6 @@ class BaseRLModel(ABC):
         # TODO: switch to stable baselines API
         # return clipped_actions, state
         return clipped_actions
-
 
     @classmethod
     def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs):
@@ -774,6 +774,7 @@ class OffPolicyRLModel(BaseRLModel):
     :param use_sde_at_warmup: (bool) Whether to use SDE instead of uniform sampling
         during the warm up phase (before learning starts)
     """
+
     def __init__(self,
                  policy: Type[BasePolicy],
                  env: Union[GymEnv, str],
@@ -790,8 +791,8 @@ class OffPolicyRLModel(BaseRLModel):
                  use_sde_at_warmup: bool = False):
 
         super(OffPolicyRLModel, self).__init__(policy, env, policy_base, policy_kwargs, verbose,
-                                                device, support_multi_env, create_eval_env, monitor_wrapper,
-                                                seed, use_sde, sde_sample_freq)
+                                               device, support_multi_env, create_eval_env, monitor_wrapper,
+                                               seed, use_sde, sde_sample_freq)
         # For SDE only
         self.rollout_data = None
         self.on_policy_exploration = False

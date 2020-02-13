@@ -2,12 +2,12 @@ from typing import Tuple, Callable, List, Optional
 
 import numpy as np
 import pandas as pd
-import matplotlib
+# import matplotlib
+# matplotlib.use('TkAgg')  # Can change to 'Agg' for non-interactive mode
 import matplotlib.pyplot as plt
 
 from torchy_baselines.common.monitor import load_results
 
-# matplotlib.use('TkAgg')  # Can change to 'Agg' for non-interactive mode
 plt.rcParams['svg.fonttype'] = 'none'
 
 X_TIMESTEPS = 'timesteps'

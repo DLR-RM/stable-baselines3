@@ -14,22 +14,21 @@ import numpy as np
 
 class Monitor(gym.Wrapper):
     EXT = "monitor.csv"
-    file_handler = None
 
     def __init__(self,
                  env: gym.Env,
                  filename: Optional[str] = None,
                  allow_early_resets: bool = True,
-                 reset_keywords=(),
-                 info_keywords=()):
+                 reset_keywords: Tuple[str, ...] = (),
+                 info_keywords: Tuple[str, ...] = ()):
         """
         A monitor wrapper for Gym environments, it is used to know the episode reward, length, time and other data.
 
         :param env: (gym.Env) The environment
         :param filename: (Optional[str]) the location to save a log file, can be None for no log
         :param allow_early_resets: (bool) allows the reset of the environment before it is done
-        :param reset_keywords: (tuple) extra keywords for the reset call, if extra parameters are needed at reset
-        :param info_keywords: (tuple) extra information to log, from the information return of environment.step
+        :param reset_keywords: (Tuple[str, ...]) extra keywords for the reset call, if extra parameters are needed at reset
+        :param info_keywords: (Tuple[str, ...]) extra information to log, from the information return of environment.step
         """
         super(Monitor, self).__init__(env=env)
         self.t_start = time.time()
@@ -93,12 +92,12 @@ class Monitor(gym.Wrapper):
         if done:
             self.needs_reset = True
             ep_rew = sum(self.rewards)
-            eplen = len(self.rewards)
-            ep_info = {"r": round(ep_rew, 6), "l": eplen, "t": round(time.time() - self.t_start, 6)}
+            ep_len = len(self.rewards)
+            ep_info = {"r": round(ep_rew, 6), "l": ep_len, "t": round(time.time() - self.t_start, 6)}
             for key in self.info_keywords:
                 ep_info[key] = info[key]
             self.episode_rewards.append(ep_rew)
-            self.episode_lengths.append(eplen)
+            self.episode_lengths.append(ep_len)
             self.episode_times.append(time.time() - self.t_start)
             ep_info.update(self.current_reset_info)
             if self.logger:
@@ -168,41 +167,26 @@ def get_monitor_files(path: str) -> List[str]:
 
 def load_results(path: str) -> pandas.DataFrame:
     """
-    Load all Monitor logs from a given directory path matching ``*monitor.csv`` and ``*monitor.json``
+    Load all Monitor logs from a given directory path matching ``*monitor.csv``
 
     :param path: (str) the directory path containing the log file(s)
     :return: (pandas.DataFrame) the logged data
     """
-    # get both csv and (old) json files
-    monitor_files = (glob(os.path.join(path, "*monitor.json")) + get_monitor_files(path))
-    if not monitor_files:
+    monitor_files = get_monitor_files(path)
+    if len(monitor_files) == 0:
         raise LoadMonitorResultsError("no monitor files of the form *%s found in %s" % (Monitor.EXT, path))
-    data_frames = []
-    headers = []
+    data_frames, headers = [], []
     for file_name in monitor_files:
         with open(file_name, 'rt') as file_handler:
-            if file_name.endswith('csv'):
-                first_line = file_handler.readline()
-                assert first_line[0] == '#'
-                header = json.loads(first_line[1:])
-                data_frame = pandas.read_csv(file_handler, index_col=None)
-                headers.append(header)
-            elif file_name.endswith('json'):  # Deprecated json format
-                episodes = []
-                lines = file_handler.readlines()
-                header = json.loads(lines[0])
-                headers.append(header)
-                for line in lines[1:]:
-                    episode = json.loads(line)
-                    episodes.append(episode)
-                data_frame = pandas.DataFrame(episodes)
-            else:
-                assert 0, 'unreachable'
+            first_line = file_handler.readline()
+            assert first_line[0] == '#'
+            header = json.loads(first_line[1:])
+            data_frame = pandas.read_csv(file_handler, index_col=None)
+            headers.append(header)
             data_frame['t'] += header['t_start']
         data_frames.append(data_frame)
     data_frame = pandas.concat(data_frames)
     data_frame.sort_values('t', inplace=True)
     data_frame.reset_index(inplace=True)
     data_frame['t'] -= min(header['t_start'] for header in headers)
-    # data_frame.headers = headers  # HACK to preserve backwards compatibility
     return data_frame

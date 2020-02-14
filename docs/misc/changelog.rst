@@ -12,6 +12,7 @@ Breaking Changes:
 - Return type of `evaluation.evaluate_policy()` has been changed
 - Refactored the replay buffer to avoid transformation between PyTorch and NumPy
 - Created `OffPolicyRLModel` base class
+- Remove deprecated JSON format for `Monitor`
 
 New Features:
 ^^^^^^^^^^^^^

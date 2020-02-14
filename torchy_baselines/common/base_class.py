@@ -86,7 +86,7 @@ class BaseRLModel(ABC):
         self.num_timesteps = 0
         self.eval_env = None
         self.seed = seed
-        self.action_noise = None  # type: ActionNoise
+        self.action_noise = None  # type: Optional[ActionNoise]
         self.start_time = None
         self.policy = None
         self.learning_rate = None
@@ -97,8 +97,8 @@ class BaseRLModel(ABC):
         # this is used to update the learning rate
         self._current_progress = 1
         # Buffers for logging
-        self.ep_info_buffer = None  # type: deque
-        self.ep_success_buffer = None  # type: deque
+        self.ep_info_buffer = None  # type: Optional[deque]
+        self.ep_success_buffer = None  # type: Optional[deque]
 
         # Create and wrap the env if needed
         if env is not None:
@@ -387,13 +387,12 @@ class BaseRLModel(ABC):
         actions = actions.cpu().numpy()
 
         # Rescale to proper domain when using squashing
-        # TODO: should not be used for a Gaussian distribution?
-        if isinstance(self.action_space, gym.spaces.Box):
+        if isinstance(self.action_space, gym.spaces.Box) and self.policy.squash_output:
             actions = self.unscale_action(actions)
 
         clipped_actions = actions
         # Clip the actions to avoid out of bound error when using gaussian distribution
-        if isinstance(self.action_space, gym.spaces.Box):
+        if isinstance(self.action_space, gym.spaces.Box) and not self.policy.squash_output:
             clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
 
         if not vectorized_env:

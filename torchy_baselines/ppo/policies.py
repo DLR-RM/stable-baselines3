@@ -41,7 +41,7 @@ class PPOPolicy(BasePolicy):
                  ortho_init=True, use_sde=False,
                  log_std_init=0.0, full_std=True,
                  sde_net_arch=None, use_expln=False, squash_output=False):
-        super(PPOPolicy, self).__init__(observation_space, action_space, device)
+        super(PPOPolicy, self).__init__(observation_space, action_space, device, squash_output=squash_output)
         self.obs_dim = self.observation_space.shape[0]
 
         # Default network architecture, from stable-baselines

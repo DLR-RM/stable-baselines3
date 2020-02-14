@@ -22,14 +22,14 @@ class BaseCallback(ABC):
     """
     def __init__(self, verbose: int = 0):
         super(BaseCallback, self).__init__()
-        self.model = None  # type: BaseRLModel
+        self.model = None  # type: Optional[BaseRLModel]
         self.training_env = None  # type: Union[gym.Env, VecEnv, None]
         self.n_calls = 0  # type: int
         self.num_timesteps = 0  # type: int
         self.verbose = verbose
-        self.locals = None  # type: Dict[str, Any]
-        self.globals = None  # type: Dict[str, Any]
-        self.logger = None  # type: Logger
+        self.locals = None  # type: Optional[Dict[str, Any]]
+        self.globals = None  # type: Optional[Dict[str, Any]]
+        self.logger = None  # type: Optional[Logger]
         # Sometimes, for event callback, it is useful
         # to have access to the parent object
         self.parent = None  # type: Optional[BaseCallback]

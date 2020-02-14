@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Type, Dict, List, Tuple
 
 from itertools import zip_longest
 
@@ -14,14 +14,24 @@ class BasePolicy(nn.Module):
 
     :param observation_space: (gym.spaces.Space) The observation space of the environment
     :param action_space: (gym.spaces.Space) The action space of the environment
+    :param device: (Union[th.device, str]) Device on which the code should run.
+    :param squash_output: (bool) For continuous actions, whether the output is squashed
+        or not using a `tanh()` function.
     """
-
     def __init__(self, observation_space: gym.spaces.Space,
-                 action_space: gym.spaces.Space, device: Union[th.device, str] = 'cpu'):
+                 action_space: gym.spaces.Space,
+                 device: Union[th.device, str] = 'cpu',
+                 squash_output: bool = False):
         super(BasePolicy, self).__init__()
         self.observation_space = observation_space
         self.action_space = action_space
         self.device = device
+        self._squash_output = squash_output
+
+    @property
+    def squash_output(self) -> bool:
+        """ (bool) Getter for squash_output."""
+        return self._squash_output
 
     @staticmethod
     def init_weights(module: nn.Module, gain: float = 1):
@@ -71,21 +81,25 @@ class BasePolicy(nn.Module):
         return th.nn.utils.parameters_to_vector(self.parameters()).detach().cpu().numpy()
 
 
-def create_mlp(input_dim, output_dim, net_arch,
-               activation_fn=nn.ReLU, squash_out=False):
+def create_mlp(input_dim: int,
+               output_dim: int,
+               net_arch: List[int],
+               activation_fn: nn.Module = nn.ReLU,
+               squash_output: bool = False) -> List[nn.Module]:
     """
     Create a multi layer perceptron (MLP), which is
     a collection of fully-connected layers each followed by an activation function.
 
     :param input_dim: (int) Dimension of the input vector
     :param output_dim: (int)
-    :param net_arch: ([int]) Architecture of the neural net
+    :param net_arch: (List[int]) Architecture of the neural net
         It represents the number of units per layer.
         The length of this list is the number of layers.
-    :param activation_fn: (th.nn.Module) The activation function
+    :param activation_fn: (nn.Module) The activation function
         to use after each layer.
-    :param squash_out: (bool) Whether to squash the output using a Tanh
+    :param squash_output: (bool) Whether to squash the output using a Tanh
         activation function
+    :return: (List[nn.Module])
     """
 
     if len(net_arch) > 0:
@@ -99,12 +113,14 @@ def create_mlp(input_dim, output_dim, net_arch,
 
     if output_dim > 0:
         modules.append(nn.Linear(net_arch[-1], output_dim))
-    if squash_out:
+    if squash_output:
         modules.append(nn.Tanh())
     return modules
 
 
-def create_sde_feature_extractor(features_dim, sde_net_arch, activation_fn):
+def create_sde_feature_extractor(features_dim: int,
+                                 sde_net_arch: List[int],
+                                 activation_fn: nn.Module) -> Tuple[nn.Sequential, int]:
     """
     Create the neural network that will be used to extract features
     for the SDE.
@@ -117,7 +133,7 @@ def create_sde_feature_extractor(features_dim, sde_net_arch, activation_fn):
     # Special case: when using states as features (i.e. sde_net_arch is an empty list)
     # don't use any activation function
     sde_activation = activation_fn if len(sde_net_arch) > 0 else None
-    latent_sde_net = create_mlp(features_dim, -1, sde_net_arch, activation_fn=sde_activation, squash_out=False)
+    latent_sde_net = create_mlp(features_dim, -1, sde_net_arch, activation_fn=sde_activation, squash_output=False)
     latent_sde_dim = sde_net_arch[-1] if len(sde_net_arch) > 0 else features_dim
     sde_feature_extractor = nn.Sequential(*latent_sde_net)
     return sde_feature_extractor, latent_sde_dim
@@ -131,7 +147,7 @@ class BaseNetwork(nn.Module):
     def __init__(self):
         super(BaseNetwork, self).__init__()
 
-    def load_from_vector(self, vector):
+    def load_from_vector(self, vector: np.ndarray):
         """
         Load parameters from a 1D vector.
 
@@ -140,7 +156,7 @@ class BaseNetwork(nn.Module):
         device = next(self.parameters()).device
         th.nn.utils.vector_to_parameters(th.FloatTensor(vector).to(device), self.parameters())
 
-    def parameters_to_vector(self):
+    def parameters_to_vector(self) -> np.ndarray:
         """
         Convert the parameters to a 1D vector.
 
@@ -149,16 +165,16 @@ class BaseNetwork(nn.Module):
         return th.nn.utils.parameters_to_vector(self.parameters()).detach().cpu().numpy()
 
 
-_policy_registry = dict()
+_policy_registry = dict()  # type: Dict[Type[BasePolicy], Dict[str, Type[BasePolicy]]]
 
 
-def get_policy_from_name(base_policy_type, name):
+def get_policy_from_name(base_policy_type: Type[BasePolicy], name: str) -> Type[BasePolicy]:
     """
-    returns the registed policy from the base type and name
+    Returns the registered policy from the base type and name
 
-    :param base_policy_type: (BasePolicy) the base policy object
+    :param base_policy_type: (Type[BasePolicy]) the base policy class
     :param name: (str) the policy name
-    :return: (base_policy_type) the policy
+    :return: (Type[BasePolicy]) the policy
     """
     if base_policy_type not in _policy_registry:
         raise ValueError(f"Error: the policy type {base_policy_type} is not registered!")
@@ -168,12 +184,13 @@ def get_policy_from_name(base_policy_type, name):
     return _policy_registry[base_policy_type][name]
 
 
-def register_policy(name, policy):
+def register_policy(name: str, policy: Type[BasePolicy]) -> None:
     """
-    returns the registed policy from the base type and name
+    Register a policy, so it can be called using its name.
+    e.g. SAC('MlpPolicy', ...) instead of SAC(MlpPolicy, ...)
 
     :param name: (str) the policy name
-    :param policy: (subclass of BasePolicy) the policy
+    :param policy: (Type[BasePolicy]) the policy class
     """
     sub_class = None
     # For building the doc

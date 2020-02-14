@@ -200,7 +200,7 @@ class SACPolicy(BasePolicy):
                  learning_rate, net_arch=None, device='cpu',
                  activation_fn=nn.ReLU, use_sde=False,
                  log_std_init=-3, sde_net_arch=None, use_expln=False):
-        super(SACPolicy, self).__init__(observation_space, action_space, device)
+        super(SACPolicy, self).__init__(observation_space, action_space, device, squash_output=True)
 
         if net_arch is None:
             net_arch = [256, 256]

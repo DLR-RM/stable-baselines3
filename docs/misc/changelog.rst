@@ -3,8 +3,33 @@
 Changelog
 ==========
 
-Pre-Release 0.2.0a2 (WIP)
+
+Pre-Release 0.3.0a0 (WIP)
 ------------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
+Pre-Release 0.2.0 (2020-02-14)
+------------------------------
+
+**Python 3.6+ required, type checking, callbacks, doc build**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^

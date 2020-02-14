@@ -8,32 +8,46 @@ import gym
 from torchy_baselines.common.monitor import Monitor, get_monitor_files, load_results
 
 
-def test_monitor():
+def test_monitor(tmp_path):
     """
     test the monitor wrapper
     """
     env = gym.make("CartPole-v1")
     env.seed(0)
-    monitor_file = "/tmp/stable_baselines-test-{}.monitor.csv".format(uuid.uuid4())
+    monitor_file = os.path.join(str(tmp_path), "stable_baselines-test-{}.monitor.csv".format(uuid.uuid4()))
     monitor_env = Monitor(env, monitor_file)
     monitor_env.reset()
-    for _ in range(1000):
-        _, _, done, _ = monitor_env.step(0)
+    total_steps = 1000
+    ep_rewards = []
+    ep_lengths = []
+    ep_len, ep_reward = 0, 0
+    for _ in range(total_steps):
+        _, reward, done, _ = monitor_env.step(0)
+        ep_len += 1
+        ep_reward += reward
         if done:
+            ep_rewards.append(ep_reward)
+            ep_lengths.append(ep_len)
             monitor_env.reset()
+            ep_len, ep_reward = 0, 0
 
-    file_handler = open(monitor_file, 'rt')
+    monitor_env.close()
+    assert monitor_env.get_total_steps() == total_steps
+    assert sum(ep_lengths) == sum(monitor_env.get_episode_lengths())
+    assert sum(monitor_env.get_episode_rewards()) == sum(ep_rewards)
+    _ = monitor_env.get_episode_times()
 
-    first_line = file_handler.readline()
-    assert first_line.startswith('#')
-    metadata = json.loads(first_line[1:])
-    assert metadata['env_id'] == "CartPole-v1"
-    assert set(metadata.keys()) == {'env_id', 't_start'}, "Incorrect keys in monitor metadata"
+    with open(monitor_file, 'rt') as file_handler:
+        first_line = file_handler.readline()
+        assert first_line.startswith('#')
+        metadata = json.loads(first_line[1:])
+        assert metadata['env_id'] == "CartPole-v1"
+        assert set(metadata.keys()) == {'env_id', 't_start'}, "Incorrect keys in monitor metadata"
 
-    last_logline = pandas.read_csv(file_handler, index_col=None)
-    assert set(last_logline.keys()) == {'l', 't', 'r'}, "Incorrect keys in monitor logline"
-    file_handler.close()
+        last_logline = pandas.read_csv(file_handler, index_col=None)
+        assert set(last_logline.keys()) == {'l', 't', 'r'}, "Incorrect keys in monitor logline"
     os.remove(monitor_file)
+
 
 def test_monitor_load_results(tmp_path):
     """

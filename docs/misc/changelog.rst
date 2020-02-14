@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.2.0a1 (WIP)
+Pre-Release 0.2.0a2 (WIP)
 ------------------------------
 
 Breaking Changes:
@@ -12,6 +12,7 @@ Breaking Changes:
 - Return type of `evaluation.evaluate_policy()` has been changed
 - Refactored the replay buffer to avoid transformation between PyTorch and NumPy
 - Created `OffPolicyRLModel` base class
+- Remove deprecated JSON format for `Monitor`
 
 New Features:
 ^^^^^^^^^^^^^
@@ -19,6 +20,9 @@ New Features:
 - Add support for Callback (cf https://github.com/hill-a/stable-baselines/pull/644)
 - Add methods for saving and loading replay buffer
 - Add `extend()` method to the buffers
+- Add `get_vec_normalize_env()` to `BaseRLModel` to retrieve `VecNormalize` wrapper when it exists
+- Add `results_plotter` from Stable Baselines
+- Improve `predict()` method to handle different type of observations (single, vectorized, ...)
 
 Bug Fixes:
 ^^^^^^^^^^

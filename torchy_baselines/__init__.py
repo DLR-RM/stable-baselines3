@@ -4,4 +4,4 @@ from torchy_baselines.ppo import PPO
 from torchy_baselines.sac import SAC
 from torchy_baselines.td3 import TD3
 
-__version__ = "0.2.0a1"
+__version__ = "0.2.0a2"

@@ -129,11 +129,11 @@ class Actor(BaseNetwork):
     def forward(self, obs, deterministic=False):
         mean_actions, log_std, latent_sde = self.get_action_dist_params(obs)
         if self.use_sde:
-            # Note the action is squashed
+            # Note: the action is squashed
             action, _ = self.action_dist.proba_distribution(mean_actions, log_std, latent_sde,
                                                             deterministic=deterministic)
         else:
-            # Note the action is squashed
+            # Note: the action is squashed
             action, _ = self.action_dist.proba_distribution(mean_actions, log_std,
                                                             deterministic=deterministic)
         return action
@@ -200,7 +200,7 @@ class SACPolicy(BasePolicy):
                  learning_rate, net_arch=None, device='cpu',
                  activation_fn=nn.ReLU, use_sde=False,
                  log_std_init=-3, sde_net_arch=None, use_expln=False):
-        super(SACPolicy, self).__init__(observation_space, action_space, device)
+        super(SACPolicy, self).__init__(observation_space, action_space, device, squash_output=True)
 
         if net_arch is None:
             net_arch = [256, 256]
@@ -246,6 +246,8 @@ class SACPolicy(BasePolicy):
     def forward(self, obs):
         return self.actor(obs)
 
+    def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+        return self.actor.forward(observation, deterministic)
 
 MlpPolicy = SACPolicy
 

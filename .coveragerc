@@ -3,6 +3,8 @@ branch = False
 omit =
     tests/*
     setup.py
+    # Require graphical interface
+    torchy_baselines/common/results_plotter.py
 
 [report]
 exclude_lines =

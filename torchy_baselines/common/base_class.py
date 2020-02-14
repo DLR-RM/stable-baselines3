@@ -14,7 +14,7 @@ import numpy as np
 from torchy_baselines.common import logger
 from torchy_baselines.common.policies import BasePolicy, get_policy_from_name
 from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate
-from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize
+from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize
 from torchy_baselines.common.save_util import data_to_json, json_to_data, recursive_getattr, recursive_setattr
 from torchy_baselines.common.type_aliases import GymEnv, TensorDict, OptimizerStateDict
 from torchy_baselines.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
@@ -86,7 +86,7 @@ class BaseRLModel(ABC):
         self.num_timesteps = 0
         self.eval_env = None
         self.seed = seed
-        self.action_noise = None  # type: ActionNoise
+        self.action_noise = None  # type: Optional[ActionNoise]
         self.start_time = None
         self.policy = None
         self.learning_rate = None
@@ -97,8 +97,8 @@ class BaseRLModel(ABC):
         # this is used to update the learning rate
         self._current_progress = 1
         # Buffers for logging
-        self.ep_info_buffer = None  # type: deque
-        self.ep_success_buffer = None  # type: deque
+        self.ep_info_buffer = None  # type: Optional[deque]
+        self.ep_success_buffer = None  # type: Optional[deque]
 
         # Create and wrap the env if needed
         if env is not None:
@@ -212,18 +212,27 @@ class BaseRLModel(ABC):
         """
         Returns the current environment (can be None if not defined).
 
-        :return: The current environment
+        :return: (Optional[VecEnv]) The current environment
         """
         return self.env
 
+    def get_vec_normalize_env(self) -> Optional[VecNormalize]:
+        """
+        Return the `VecNormalize` wrapper of the training env
+        if it exists.
+        :return: Optional[VecNormalize] The `VecNormalize` env.
+        """
+        return self._vec_normalize_env
+
     @staticmethod
-    def check_env(env, observation_space: gym.spaces.Space, action_space: gym.spaces.Space) -> bool:
+    def check_env(env: GymEnv, observation_space: gym.spaces.Space, action_space: gym.spaces.Space) -> bool:
         """
         Checks the validity of the environment and returns if it is consistent.
         Checked parameters:
         - observation_space
         - action_space
 
+        :param env: (GymEnv)
         :param observation_space: (gym.spaces.Space)
         :param action_space: (gym.spaces.Space)
         :return: (bool) True if environment seems to be coherent
@@ -298,21 +307,103 @@ class BaseRLModel(ABC):
         """
         raise NotImplementedError()
 
-    @abstractmethod
+    @staticmethod
+    def _is_vectorized_observation(observation: np.ndarray, observation_space: gym.spaces.Space) -> bool:
+        """
+        For every observation type, detects and validates the shape,
+        then returns whether or not the observation is vectorized.
+
+        :param observation: (np.ndarray) the input observation to validate
+        :param observation_space: (gym.spaces) the observation space
+        :return: (bool) whether the given observation is vectorized or not
+        """
+        if isinstance(observation_space, gym.spaces.Box):
+            if observation.shape == observation_space.shape:
+                return False
+            elif observation.shape[1:] == observation_space.shape:
+                return True
+            else:
+                raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape) +
+                                 "Box environment, please use {} ".format(observation_space.shape) +
+                                 "or (n_env, {}) for the observation shape."
+                                 .format(", ".join(map(str, observation_space.shape))))
+        # TODO: add support for Discrete, MultiDiscrete and MultiBinary observation spaces
+        # elif isinstance(observation_space, gym.spaces.Discrete):
+        #     if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
+        #         return False
+        #     elif len(observation.shape) == 1:
+        #         return True
+        #     else:
+        #         raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape) +
+        #                          "Discrete environment, please use (1,) or (n_env, 1) for the observation shape.")
+        # elif isinstance(observation_space, gym.spaces.MultiDiscrete):
+        #     if observation.shape == (len(observation_space.nvec),):
+        #         return False
+        #     elif len(observation.shape) == 2 and observation.shape[1] == len(observation_space.nvec):
+        #         return True
+        #     else:
+        #         raise ValueError("Error: Unexpected observation shape {} for MultiDiscrete ".format(observation.shape) +
+        #                          "environment, please use ({},) or ".format(len(observation_space.nvec)) +
+        #                          "(n_env, {}) for the observation shape.".format(len(observation_space.nvec)))
+        # elif isinstance(observation_space, gym.spaces.MultiBinary):
+        #     if observation.shape == (observation_space.n,):
+        #         return False
+        #     elif len(observation.shape) == 2 and observation.shape[1] == observation_space.n:
+        #         return True
+        #     else:
+        #         raise ValueError("Error: Unexpected observation shape {} for MultiBinary ".format(observation.shape) +
+        #                          "environment, please use ({},) or ".format(observation_space.n) +
+        #                          "(n_env, {}) for the observation shape.".format(observation_space.n))
+        else:
+            raise ValueError("Error: Cannot determine if the observation is vectorized with the space type {}."
+                             .format(observation_space))
+
     def predict(self, observation: np.ndarray,
                 state: Optional[np.ndarray] = None,
                 mask: Optional[np.ndarray] = None,
                 deterministic: bool = False) -> np.ndarray:
         """
-        Get the model's action from an observation
+        Get the model's action(s) from an observation
 
-        :param observation: the input observation
-        :param state: The last states (can be None, used in recurrent policies)
-        :param mask: The last masks (can be None, used in recurrent policies)
-        :param deterministic: Whether or not to return deterministic actions.
-        :return: the model's action and the next state (used in recurrent policies)
+        :param observation: (np.ndarray) the input observation
+        :param state: (Optional[np.ndarray]) The last states (can be None, used in recurrent policies)
+        :param mask: (Optional[np.ndarray]) The last masks (can be None, used in recurrent policies)
+        :param deterministic: (bool) Whether or not to return deterministic actions.
+        :return: (np.ndarray) the model's action and the next state (used in recurrent policies)
         """
-        raise NotImplementedError()
+        # if state is None:
+        #     state = self.initial_state
+        # if mask is None:
+        #     mask = [False for _ in range(self.n_envs)]
+        observation = np.array(observation)
+        vectorized_env = self._is_vectorized_observation(observation, self.observation_space)
+
+        observation = observation.reshape((-1,) + self.observation_space.shape)
+        # Convert to float pytorch
+        # TODO: replace with preprocessing
+        observation = th.as_tensor(observation).float().to(self.device)
+        with th.no_grad():
+            actions = self.policy.predict(observation, deterministic=deterministic)
+        # Convert to numpy
+        actions = actions.cpu().numpy()
+
+        # Rescale to proper domain when using squashing
+        if isinstance(self.action_space, gym.spaces.Box) and self.policy.squash_output:
+            actions = self.unscale_action(actions)
+
+        clipped_actions = actions
+        # Clip the actions to avoid out of bound error when using gaussian distribution
+        if isinstance(self.action_space, gym.spaces.Box) and not self.policy.squash_output:
+            clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
+
+        if not vectorized_env:
+            if state is not None:
+                raise ValueError("Error: The environment must be vectorized when using recurrent policies.")
+            clipped_actions = clipped_actions[0]
+
+        # TODO: switch to stable baselines API
+        # return clipped_actions, state
+        return clipped_actions
 
     @classmethod
     def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs):
@@ -683,6 +774,7 @@ class OffPolicyRLModel(BaseRLModel):
     :param use_sde_at_warmup: (bool) Whether to use SDE instead of uniform sampling
         during the warm up phase (before learning starts)
     """
+
     def __init__(self,
                  policy: Type[BasePolicy],
                  env: Union[GymEnv, str],
@@ -699,8 +791,8 @@ class OffPolicyRLModel(BaseRLModel):
                  use_sde_at_warmup: bool = False):
 
         super(OffPolicyRLModel, self).__init__(policy, env, policy_base, policy_kwargs, verbose,
-                                                device, support_multi_env, create_eval_env, monitor_wrapper,
-                                                seed, use_sde, sde_sample_freq)
+                                               device, support_multi_env, create_eval_env, monitor_wrapper,
+                                               seed, use_sde, sde_sample_freq)
         # For SDE only
         self.rollout_data = None
         self.on_policy_exploration = False
@@ -798,7 +890,9 @@ class OffPolicyRLModel(BaseRLModel):
                     # Warmup phase
                     unscaled_action = np.array([self.action_space.sample()])
                 else:
-                    unscaled_action = self.predict(obs, deterministic=not self.use_sde)
+                    # Note: we assume that the policy uses tanh to scale the action
+                    # We use non-deterministic action in the case of SAC, for TD3, it does not matter
+                    unscaled_action = self.predict(obs, deterministic=False)
 
                 # Rescale the action from [low, high] to [-1, 1]
                 scaled_action = self.scale_action(unscaled_action)

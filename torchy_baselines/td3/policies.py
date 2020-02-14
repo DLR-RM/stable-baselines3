@@ -52,7 +52,7 @@ class Actor(BaseNetwork):
         self.sde_feature_extractor = None
 
         if use_sde:
-            latent_pi_net = create_mlp(obs_dim, -1, net_arch, activation_fn, squash_out=False)
+            latent_pi_net = create_mlp(obs_dim, -1, net_arch, activation_fn, squash_output=False)
             self.latent_pi = nn.Sequential(*latent_pi_net)
             latent_sde_dim = net_arch[-1]
             learn_features = sde_net_arch is not None
@@ -74,7 +74,7 @@ class Actor(BaseNetwork):
             self.sde_optimizer = th.optim.Adam([self.log_std], lr=lr_sde)
             self.reset_noise()
         else:
-            actor_net = create_mlp(obs_dim, action_dim, net_arch, activation_fn, squash_out=True)
+            actor_net = create_mlp(obs_dim, action_dim, net_arch, activation_fn, squash_output=True)
             self.mu = nn.Sequential(*actor_net)
 
     def get_std(self) -> torch.Tensor:
@@ -134,7 +134,7 @@ class Actor(BaseNetwork):
             if self.clip_noise is not None:
                 noise = th.clamp(noise, -self.clip_noise, self.clip_noise)
             # TODO: Replace with squashing -> need to account for that in the sde update
-            # -> set squash_out=True in the action_dist?
+            # -> set squash_output=True in the action_dist?
             # NOTE: the clipping is done in the rollout for now
             return self.mu(latent_pi) + noise
             # action, _ = self._get_action_dist_from_latent(latent_pi)
@@ -215,7 +215,7 @@ class TD3Policy(BasePolicy):
                  learning_rate, net_arch=None, device='cpu',
                  activation_fn=nn.ReLU, use_sde=False, log_std_init=-3,
                  clip_noise=None, lr_sde=3e-4, sde_net_arch=None, use_expln=False):
-        super(TD3Policy, self).__init__(observation_space, action_space, device)
+        super(TD3Policy, self).__init__(observation_space, action_space, device, squash_output=True)
 
         # Default network architecture, from the original paper
         if net_arch is None:
@@ -276,6 +276,9 @@ class TD3Policy(BasePolicy):
 
     def forward(self, obs, deterministic=True):
         return self.actor(obs, deterministic=deterministic)
+
+    def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+        return self.forward(observation, deterministic)
 
 
 MlpPolicy = TD3Policy

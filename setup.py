@@ -12,7 +12,9 @@ setup(name='torchy_baselines',
           'torch>=1.2.0',
           'cloudpickle',
           # For reading logs
-          'pandas'
+          'pandas',
+          # Plotting learning curves
+          'matplotlib'
       ],
       extras_require={
         'tests': [
@@ -45,7 +47,7 @@ setup(name='torchy_baselines',
       license="MIT",
       long_description="",
       long_description_content_type='text/markdown',
-      version="0.2.0a1",
+      version="0.2.0a2",
       )
 
 # python setup.py sdist

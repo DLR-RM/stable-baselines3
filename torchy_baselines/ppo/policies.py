@@ -41,7 +41,7 @@ class PPOPolicy(BasePolicy):
                  ortho_init=True, use_sde=False,
                  log_std_init=0.0, full_std=True,
                  sde_net_arch=None, use_expln=False, squash_output=False):
-        super(PPOPolicy, self).__init__(observation_space, action_space, device)
+        super(PPOPolicy, self).__init__(observation_space, action_space, device, squash_output=squash_output)
         self.obs_dim = self.observation_space.shape[0]
 
         # Default network architecture, from stable-baselines
@@ -161,11 +161,13 @@ class PPOPolicy(BasePolicy):
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
             return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde,
                                                        deterministic=deterministic)
+        else:
+            raise ValueError('Invalid action distribution')
 
-    def actor_forward(self, obs, deterministic=False):
-        latent_pi, _, latent_sde = self._get_latent(obs)
+    def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+        latent_pi, _, latent_sde = self._get_latent(observation)
         action, _ = self._get_action_dist_from_latent(latent_pi, latent_sde, deterministic=deterministic)
-        return action.detach().cpu().numpy()
+        return action
 
     def evaluate_actions(self, obs, action, deterministic=False):
         """

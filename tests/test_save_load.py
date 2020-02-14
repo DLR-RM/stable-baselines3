@@ -134,6 +134,7 @@ def test_exclude_include_saved_params(model_class):
     # clear file from os
     os.remove("test_save.zip")
 
+
 @pytest.mark.parametrize("model_class", [SAC, TD3])
 def test_save_load_replay_buffer(model_class):
     log_folder = 'logs'

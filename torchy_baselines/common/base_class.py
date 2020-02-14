@@ -327,15 +327,15 @@ class BaseRLModel(ABC):
                                  "Box environment, please use {} ".format(observation_space.shape) +
                                  "or (n_env, {}) for the observation shape."
                                  .format(", ".join(map(str, observation_space.shape))))
-        elif isinstance(observation_space, gym.spaces.Discrete):
-            if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
-                return False
-            elif len(observation.shape) == 1:
-                return True
-            else:
-                raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape) +
-                                 "Discrete environment, please use (1,) or (n_env, 1) for the observation shape.")
-        # TODO: add support for MultiDiscrete and MultiBinary action spaces
+        # TODO: add support for Discrete, MultiDiscrete and MultiBinary observation spaces
+        # elif isinstance(observation_space, gym.spaces.Discrete):
+        #     if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
+        #         return False
+        #     elif len(observation.shape) == 1:
+        #         return True
+        #     else:
+        #         raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape) +
+        #                          "Discrete environment, please use (1,) or (n_env, 1) for the observation shape.")
         # elif isinstance(observation_space, gym.spaces.MultiDiscrete):
         #     if observation.shape == (len(observation_space.nvec),):
         #         return False

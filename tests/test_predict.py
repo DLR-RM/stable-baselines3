@@ -22,32 +22,19 @@ def test_auto_wrap(model_class):
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
-def test_predict(model_class):
+@pytest.mark.parametrize("env_id", ['Pendulum-v0', 'CartPole-v1'])
+def test_predict(model_class, env_id):
+    if env_id == 'CartPole-v1' and model_class not in [PPO, A2C]:
+        return
+
     # test detection of different shapes by the predict method
-    model = model_class('MlpPolicy', 'Pendulum-v0')
-    env = gym.make('Pendulum-v0')
-    vec_env = DummyVecEnv([lambda: gym.make('Pendulum-v0'), lambda: gym.make('Pendulum-v0')])
+    model = model_class('MlpPolicy', env_id)
+    env = gym.make(env_id)
+    vec_env = DummyVecEnv([lambda: gym.make(env_id), lambda: gym.make(env_id)])
 
     obs = env.reset()
     action = model.predict(obs)
     assert action.shape == env.action_space.shape
-    assert env.action_space.contains(action)
-
-    vec_env_obs = vec_env.reset()
-    action = model.predict(vec_env_obs)
-    assert action.shape[0] == vec_env_obs.shape[0]
-
-
-@pytest.mark.parametrize("model_class", [A2C, PPO])
-def test_predict_discrete(model_class):
-    # test detection of different shapes by the predict method
-    model = model_class('MlpPolicy', 'CartPole-v1')
-    env = gym.make('CartPole-v1')
-    vec_env = DummyVecEnv([lambda: gym.make('CartPole-v1'), lambda: gym.make('CartPole-v1')])
-
-    obs = env.reset()
-    action = model.predict(obs)
-    assert action.shape == ()
     assert env.action_space.contains(action)
 
     vec_env_obs = vec_env.reset()

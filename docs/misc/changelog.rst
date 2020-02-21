@@ -21,6 +21,7 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- SAC with SDE now sample only one matrix
 
 Documentation:
 ^^^^^^^^^^^^^^

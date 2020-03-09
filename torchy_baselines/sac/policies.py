@@ -1,3 +1,5 @@
+from typing import Optional, List, Tuple
+
 import torch as th
 import torch.nn as nn
 
@@ -8,28 +10,6 @@ from torchy_baselines.common.distributions import SquashedDiagGaussianDistributi
 # CAP the standard deviation of the actor
 LOG_STD_MAX = 2
 LOG_STD_MIN = -20
-
-
-class LeakyClip(nn.Module):
-    """
-    Cip values outside a certain range
-    (it is not a hard clip, there is a small slope to have non-zero gradient)
-
-    :param min_val: (float)
-    :param max_val: (float)
-    :param slope: (float)
-    """
-    def __init__(self, min_val=-2.0, max_val=2.0, slope=0.01):
-        super(LeakyClip, self).__init__()
-        self.min_val = min_val
-        self.max_val = max_val
-        self.slope = slope
-
-    def forward(self, x):
-        linear_part = x * (x >= self.min_val) * (x <= self.max_val)
-        above_max_val = self.slope * (x - self.max_val) * (x > self.max_val)
-        below_min_val = self.slope * (x - self.min_val) * (x < self.min_val)
-        return linear_part + below_min_val + above_max_val
 
 
 class Actor(BaseNetwork):
@@ -50,10 +30,18 @@ class Actor(BaseNetwork):
     :param use_expln: (bool) Use `expln()` function instead of `exp()` when using SDE to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
+    :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
     """
-    def __init__(self, obs_dim, action_dim, net_arch, activation_fn=nn.ReLU,
-                 use_sde=False, log_std_init=-3, full_std=True,
-                 sde_net_arch=None, use_expln=False):
+    def __init__(self, obs_dim: int,
+                 action_dim: int,
+                 net_arch: List[int],
+                 activation_fn: nn.Module = nn.ReLU,
+                 use_sde: bool = False,
+                 log_std_init: float = -3,
+                 full_std: bool = True,
+                 sde_net_arch: Optional[List[int]] = None,
+                 use_expln: bool = False,
+                 clip_mean: float = 2.0):
         super(Actor, self).__init__()
 
         latent_pi_net = create_mlp(obs_dim, -1, net_arch, activation_fn)
@@ -68,23 +56,21 @@ class Actor(BaseNetwork):
                 self.sde_feature_extractor, latent_sde_dim = create_sde_feature_extractor(obs_dim, sde_net_arch,
                                                                                           activation_fn)
 
-            # TODO: check for the learn_features
             self.action_dist = StateDependentNoiseDistribution(action_dim, full_std=full_std, use_expln=use_expln,
                                                                learn_features=True, squash_output=True)
             self.mu, self.log_std = self.action_dist.proba_distribution_net(latent_dim=net_arch[-1],
                                                                             latent_sde_dim=latent_sde_dim,
                                                                             log_std_init=log_std_init)
-            # Avoid saturation by limiting the mean of the Gaussian to be in [-1, 1]
-            # self.mu = nn.Sequential(self.mu, nn.Tanh())
-            self.mu = nn.Sequential(self.mu, nn.Hardtanh(min_val=-2.0, max_val=2.0))
-            # Small positive slope to have non-zero gradient
-            # self.mu = nn.Sequential(self.mu, LeakyClip())
+            # Avoid numerical issues by limiting the mean of the Gaussian
+            # to be in [-clip_mean, clip_mean]
+            if clip_mean > 0.0:
+                self.mu = nn.Sequential(self.mu, nn.Hardtanh(min_val=-clip_mean, max_val=clip_mean))
         else:
             self.action_dist = SquashedDiagGaussianDistribution(action_dim)
             self.mu = nn.Linear(net_arch[-1], action_dim)
             self.log_std = nn.Linear(net_arch[-1], action_dim)
 
-    def get_std(self):
+    def get_std(self) -> th.Tensor:
         """
         Retrieve the standard deviation of the action distribution.
         Only useful when using SDE.
@@ -97,7 +83,7 @@ class Actor(BaseNetwork):
         assert isinstance(self.action_dist, StateDependentNoiseDistribution), 'get_std() is only available when using SDE'
         return self.action_dist.get_std(self.log_std)
 
-    def reset_noise(self, batch_size=1):
+    def reset_noise(self, batch_size: int = 1) -> None:
         """
         Sample new weights for the exploration matrix, when using SDE.
 
@@ -106,7 +92,7 @@ class Actor(BaseNetwork):
         assert isinstance(self.action_dist, StateDependentNoiseDistribution), 'reset_noise() is only available when using SDE'
         self.action_dist.sample_weights(self.log_std, batch_size=batch_size)
 
-    def _get_latent(self, obs):
+    def _get_latent(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         latent_pi = self.latent_pi(obs)
 
         if self.sde_feature_extractor is not None:
@@ -115,7 +101,7 @@ class Actor(BaseNetwork):
             latent_sde = latent_pi
         return latent_pi, latent_sde
 
-    def get_action_dist_params(self, obs):
+    def get_action_dist_params(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         latent_pi, latent_sde = self._get_latent(obs)
 
         if self.use_sde:
@@ -126,7 +112,7 @@ class Actor(BaseNetwork):
             log_std = th.clamp(log_std, LOG_STD_MIN, LOG_STD_MAX)
         return mean_actions, log_std, latent_sde
 
-    def forward(self, obs, deterministic=False):
+    def forward(self, obs: th.Tensor, deterministic: bool = False) -> th.Tensor:
         mean_actions, log_std, latent_sde = self.get_action_dist_params(obs)
         if self.use_sde:
             # Note: the action is squashed
@@ -138,7 +124,7 @@ class Actor(BaseNetwork):
                                                             deterministic=deterministic)
         return action
 
-    def action_log_prob(self, obs):
+    def action_log_prob(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         mean_actions, log_std, latent_sde = self.get_action_dist_params(obs)
 
         if self.use_sde:
@@ -195,11 +181,13 @@ class SACPolicy(BasePolicy):
     :param use_expln: (bool) Use `expln()` function instead of `exp()` when using SDE to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
+    :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
     """
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',
                  activation_fn=nn.ReLU, use_sde=False,
-                 log_std_init=-3, sde_net_arch=None, use_expln=False):
+                 log_std_init=-3, sde_net_arch=None,
+                 use_expln=False, clip_mean=2.0):
         super(SACPolicy, self).__init__(observation_space, action_space, device, squash_output=True)
 
         if net_arch is None:
@@ -220,7 +208,8 @@ class SACPolicy(BasePolicy):
             'use_sde': use_sde,
             'log_std_init': log_std_init,
             'sde_net_arch': sde_net_arch,
-            'use_expln': use_expln
+            'use_expln': use_expln,
+            'clip_mean': clip_mean
         }
         self.actor_kwargs.update(sde_kwargs)
         self.actor, self.actor_target = None, None

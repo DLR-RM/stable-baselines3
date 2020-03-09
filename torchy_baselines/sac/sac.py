@@ -165,13 +165,8 @@ class SAC(OffPolicyRLModel):
 
             obs, action_batch, next_obs, done, reward = replay_data
 
-            # Two options: retain_graph=True in the actor_loss.backward()
-            # or sample again the noise matrix
-            # otherwise the intermediate step `std = th.exp(log_std)`
-            # is lost and we cannot backpropagate through again
-            # anyway, we need to sample because `log_std` may have changed between two gradient steps
+            # We need to sample because `log_std` may have changed between two gradient steps
             if self.use_sde:
-                # self.actor.reset_noise(batch_size=batch_size)
                 self.actor.reset_noise()
 
             # Action by the current actor for the sampled state
@@ -196,8 +191,6 @@ class SAC(OffPolicyRLModel):
                 self.ent_coef_optimizer.step()
 
             with th.no_grad():
-                # if self.use_sde:
-                #     self.actor.reset_noise(batch_size=batch_size)
                 # Select action according to policy
                 next_action, next_log_prob = self.actor.action_log_prob(next_obs)
                 # Compute the target Q value

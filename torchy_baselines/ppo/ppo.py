@@ -140,7 +140,6 @@ class PPO(BaseRLModel):
         continue_training = True
         rollout_buffer.reset()
         # Sample new weights for the state dependent exploration
-        # TODO: ensure episodic setting?
         if self.use_sde:
             self.policy.reset_noise(env.num_envs)
 

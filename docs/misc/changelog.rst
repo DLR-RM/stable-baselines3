@@ -22,6 +22,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - SAC with SDE now sample only one matrix
+- Added ``clip_mean`` parameter to SAC policy
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -35,25 +36,25 @@ Pre-Release 0.2.0 (2020-02-14)
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Python 2 support was dropped, Torchy Baselines now requires Python 3.6 or above
-- Return type of `evaluation.evaluate_policy()` has been changed
+- Return type of ``evaluation.evaluate_policy()`` has been changed
 - Refactored the replay buffer to avoid transformation between PyTorch and NumPy
 - Created `OffPolicyRLModel` base class
 - Remove deprecated JSON format for `Monitor`
 
 New Features:
 ^^^^^^^^^^^^^
-- Add `seed()` method to `VecEnv` class
+- Add ``seed()`` method to ``VecEnv`` class
 - Add support for Callback (cf https://github.com/hill-a/stable-baselines/pull/644)
 - Add methods for saving and loading replay buffer
-- Add `extend()` method to the buffers
-- Add `get_vec_normalize_env()` to `BaseRLModel` to retrieve `VecNormalize` wrapper when it exists
-- Add `results_plotter` from Stable Baselines
-- Improve `predict()` method to handle different type of observations (single, vectorized, ...)
+- Add ``extend()`` method to the buffers
+- Add ``get_vec_normalize_env()`` to ``BaseRLModel`` to retrieve ``VecNormalize`` wrapper when it exists
+- Add ``results_plotter`` from Stable Baselines
+- Improve ``predict()`` method to handle different type of observations (single, vectorized, ...)
 
 Bug Fixes:
 ^^^^^^^^^^
 - Fix loading model on CPU that were trained on GPU
-- Fix `reset_num_timesteps` that was not used
+- Fix ``reset_num_timesteps`` that was not used
 - Fix entropy computation for squashed Gaussian (approximate it now)
 - Fix seeding when using multiple environments (different seed per env)
 
@@ -64,8 +65,8 @@ Others:
 ^^^^^^^
 - Add type check
 - Converted all format string to f-strings
-- Add test for `OrnsteinUhlenbeckActionNoise`
-- Add type aliases in `common.type_aliases`
+- Add test for ``OrnsteinUhlenbeckActionNoise``
+- Add type aliases in ``common.type_aliases``
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -81,7 +82,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-- Initial release of A2C, CEM-RL, PPO, SAC and TD3, working only with `Box` input space
+- Initial release of A2C, CEM-RL, PPO, SAC and TD3, working only with ``Box`` input space
 - State-Dependent Exploration (SDE) for A2C, PPO, SAC and TD3
 
 Bug Fixes:
@@ -111,4 +112,12 @@ Contributors:
 -------------
 In random order...
 
-Thanks to @hill-a @enerijunior @AdamGleave @Miffyli
+Thanks to the maintainers of V2: @hill-a @enerijunior @AdamGleave @Miffyli
+
+And all the contributors:
+@bjmuld @iambenzo @iandanforth @r7vme @brendenpetersen @huvar @abhiskk @JohannesAck
+@EliasHasle @mrakgr @Bleyddyn @antoine-galataud @junhyeokahn @AdamGleave @keshaviyengar @tperol
+@XMaster96 @kantneel @Pastafarianist @GerardMaggiolino @PatrickWalter214 @yutingsz @sc420 @Aaahh @billtubbs
+@Miffyli @dwiel @miguelrass @qxcv @jaberkow @eavelardev @ruifeng96150 @pedrohbtp @srivatsankrishnan @evilsocket
+@MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
+@flodorner @KuKuXia @NeoExtended @solliet @mmcenta @richardwu

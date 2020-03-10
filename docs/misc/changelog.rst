@@ -23,6 +23,7 @@ Others:
 ^^^^^^^
 - SAC with SDE now sample only one matrix
 - Added ``clip_mean`` parameter to SAC policy
+- Buffers now return ``NamedTuple``
 
 Documentation:
 ^^^^^^^^^^^^^^

@@ -259,13 +259,12 @@ class TD3(OffPolicyRLModel):
                                             replay_buffer=self.replay_buffer,
                                             obs=obs, episode_num=episode_num,
                                             log_interval=log_interval)
-            # Unpack
-            episode_reward, episode_timesteps, n_episodes, obs, continue_training = rollout
 
-            if continue_training is False:
+            if rollout.continue_training is False:
                 break
 
-            episode_num += n_episodes
+            obs = rollout.obs
+            episode_num += rollout.n_episodes
             self._update_current_progress(self.num_timesteps, total_timesteps)
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
@@ -279,7 +278,7 @@ class TD3(OffPolicyRLModel):
                         # On-policy gradient
                         self.train_sde()
 
-                gradient_steps = self.gradient_steps if self.gradient_steps > 0 else episode_timesteps
+                gradient_steps = self.gradient_steps if self.gradient_steps > 0 else rollout.episode_timesteps
                 self.train(gradient_steps, batch_size=self.batch_size, policy_delay=self.policy_delay)
 
         callback.on_training_end()

@@ -4,6 +4,7 @@ Common aliases for type hing
 from typing import Union, Type, Optional, Dict, Any, List, NamedTuple
 from collections import namedtuple
 
+import numpy as np
 import torch as th
 import gym
 
@@ -13,7 +14,8 @@ from torchy_baselines.common.vec_env import VecEnv
 GymEnv = Union[gym.Env, VecEnv]
 TensorDict = Dict[str, th.Tensor]
 OptimizerStateDict = Dict[str, Any]
-# obs, action, old_values, old_log_prob, advantage, return_batch
+
+
 class RolloutBufferSamples(NamedTuple):
     observations: th.Tensor
     actions: th.Tensor
@@ -23,10 +25,17 @@ class RolloutBufferSamples(NamedTuple):
     returns: th.Tensor
 
 
-# obs, action, next_obs, done, reward
 class ReplayBufferSamples(NamedTuple):
     observations: th.Tensor
     actions: th.Tensor
     next_observations: th.Tensor
     dones: th.Tensor
     rewards: th.Tensor
+
+
+class RolloutReturn(NamedTuple):
+    episode_reward: float
+    episode_timesteps: int
+    n_episodes: int
+    obs: Optional[np.ndarray]
+    continue_training: bool

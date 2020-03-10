@@ -195,13 +195,12 @@ class PPO(BaseRLModel):
         for gradient_step in range(gradient_steps):
             approx_kl_divs = []
             # Sample replay buffer
-            for replay_data in self.rollout_buffer.get(batch_size):
-                # Unpack
-                obs, action, old_values, old_log_prob, advantage, return_batch = replay_data
+            for rollout_data in self.rollout_buffer.get(batch_size):
 
+                actions = rollout_data.actions
                 if isinstance(self.action_space, spaces.Discrete):
-                    # Convert discrete action for float to long
-                    action = action.long().flatten()
+                    # Convert discrete action from float to long
+                    actions = rollout_data.actions.long().flatten()
 
                 # Re-sample the noise matrix because the log_std has changed
                 # TODO: investigate why there is no issue with the gradient
@@ -209,16 +208,16 @@ class PPO(BaseRLModel):
                 if self.use_sde:
                     self.policy.reset_noise(batch_size)
 
-                values, log_prob, entropy = self.policy.evaluate_actions(obs, action)
+                values, log_prob, entropy = self.policy.evaluate_actions(rollout_data.observations, actions)
                 values = values.flatten()
                 # Normalize advantage
-                advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
+                advantages = (rollout_data.advantages - rollout_data.advantages.mean()) / (rollout_data.advantages.std() + 1e-8)
 
                 # ratio between old and new policy, should be one at the first iteration
-                ratio = th.exp(log_prob - old_log_prob)
+                ratio = th.exp(log_prob - rollout_data.old_log_prob)
                 # clipped surrogate loss
-                policy_loss_1 = advantage * ratio
-                policy_loss_2 = advantage * th.clamp(ratio, 1 - clip_range, 1 + clip_range)
+                policy_loss_1 = advantages * ratio
+                policy_loss_2 = advantages * th.clamp(ratio, 1 - clip_range, 1 + clip_range)
                 policy_loss = -th.min(policy_loss_1, policy_loss_2).mean()
 
                 if self.clip_range_vf is None:
@@ -227,9 +226,9 @@ class PPO(BaseRLModel):
                 else:
                     # Clip the different between old and new value
                     # NOTE: this depends on the reward scaling
-                    values_pred = old_values + th.clamp(values - old_values, -clip_range_vf, clip_range_vf)
+                    values_pred = rollout_data.old_values + th.clamp(values - rollout_data.old_values, -clip_range_vf, clip_range_vf)
                 # Value loss using the TD(gae_lambda) target
-                value_loss = F.mse_loss(return_batch, values_pred)
+                value_loss = F.mse_loss(rollout_data.returns, values_pred)
 
                 # Entropy loss favor exploration
                 if entropy is None:
@@ -246,7 +245,7 @@ class PPO(BaseRLModel):
                 # Clip grad norm
                 th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                 self.policy.optimizer.step()
-                approx_kl_divs.append(th.mean(old_log_prob - log_prob).detach().cpu().numpy())
+                approx_kl_divs.append(th.mean(rollout_data.old_log_prob - log_prob).detach().cpu().numpy())
 
             if self.target_kl is not None and np.mean(approx_kl_divs) > 1.5 * self.target_kl:
                 print("Early stopping at step {} due to reaching max kl: {:.2f}".format(gradient_step,

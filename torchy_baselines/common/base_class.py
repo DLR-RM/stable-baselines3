@@ -956,7 +956,6 @@ class OffPolicyRLModel(BaseRLModel):
                 total_episodes += 1
                 episode_rewards.append(episode_reward)
                 total_timesteps.append(episode_timesteps)
-                # TODO: reset SDE matrix at the end of the episode?
                 if action_noise is not None:
                     action_noise.reset()
 

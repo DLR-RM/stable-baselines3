@@ -81,30 +81,30 @@ class A2C(PPO):
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
         # A2C with gradient_steps > 1 does not make sense
-        assert gradient_steps == 1
+        assert gradient_steps == 1, "A2C does not support multiple gradient steps"
         # We do not use minibatches for A2C
-        assert batch_size is None
+        assert batch_size is None, "A2C does not support minibatch"
 
         for rollout_data in self.rollout_buffer.get(batch_size=None):
-            # Unpack
-            obs, action, _, _, advantage, return_batch = rollout_data
 
+            actions = rollout_data.actions
             if isinstance(self.action_space, spaces.Discrete):
-                # Convert discrete action for float to long
-                action = action.long().flatten()
+                # Convert discrete action from float to long
+                actions = actions.long().flatten()
 
             # TODO: avoid second computation of everything because of the gradient
-            values, log_prob, entropy = self.policy.evaluate_actions(obs, action)
+            values, log_prob, entropy = self.policy.evaluate_actions(rollout_data.observations, actions)
             values = values.flatten()
 
             # Normalize advantage (not present in the original implementation)
             if self.normalize_advantage:
-                advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
+                advantages = (rollout_data.advantages - rollout_data.advantages.mean()) / (rollout_data.advantages.std() + 1e-8)
 
-            policy_loss = -(advantage * log_prob).mean()
+            # Policy gradient loss
+            policy_loss = -(advantages * log_prob).mean()
 
             # Value loss using the TD(gae_lambda) target
-            value_loss = F.mse_loss(return_batch, values)
+            value_loss = F.mse_loss(rollout_data.returns, values)
 
             # Entropy loss favor exploration
             if entropy is None:

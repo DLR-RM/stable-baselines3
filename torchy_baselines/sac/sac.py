@@ -163,14 +163,12 @@ class SAC(OffPolicyRLModel):
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
-            obs, action_batch, next_obs, done, reward = replay_data
-
             # We need to sample because `log_std` may have changed between two gradient steps
             if self.use_sde:
                 self.actor.reset_noise()
 
             # Action by the current actor for the sampled state
-            action_pi, log_prob = self.actor.action_log_prob(obs)
+            actions_pi, log_prob = self.actor.action_log_prob(replay_data.observations)
             log_prob = log_prob.reshape(-1, 1)
 
             ent_coef_loss = None
@@ -192,17 +190,17 @@ class SAC(OffPolicyRLModel):
 
             with th.no_grad():
                 # Select action according to policy
-                next_action, next_log_prob = self.actor.action_log_prob(next_obs)
+                next_actions, next_log_prob = self.actor.action_log_prob(replay_data.next_observations)
                 # Compute the target Q value
-                target_q1, target_q2 = self.critic_target(next_obs, next_action)
+                target_q1, target_q2 = self.critic_target(replay_data.next_observations, next_actions)
                 target_q = th.min(target_q1, target_q2)
-                target_q = reward + (1 - done) * self.gamma * target_q
+                target_q = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
                 # td error + entropy term
                 q_backup = target_q - ent_coef * next_log_prob.reshape(-1, 1)
 
             # Get current Q estimates
             # using action from the replay buffer
-            current_q1, current_q2 = self.critic(obs, action_batch)
+            current_q1, current_q2 = self.critic(replay_data.observations, replay_data.actions)
 
             # Compute critic loss
             critic_loss = 0.5 * (F.mse_loss(current_q1, q_backup) + F.mse_loss(current_q2, q_backup))
@@ -214,7 +212,7 @@ class SAC(OffPolicyRLModel):
 
             # Compute actor loss
             # Alternative: actor_loss = th.mean(log_prob - qf1_pi)
-            qf1_pi, qf2_pi = self.critic.forward(obs, action_pi)
+            qf1_pi, qf2_pi = self.critic.forward(replay_data.observations, actions_pi)
             min_qf_pi = th.min(qf1_pi, qf2_pi)
             actor_loss = (ent_coef * log_prob - min_qf_pi).mean()
 

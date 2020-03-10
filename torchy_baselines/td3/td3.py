@@ -124,22 +124,20 @@ class TD3(OffPolicyRLModel):
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
             if replay_data is None:
-                obs, action, next_obs, done, reward = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
-            else:
-                obs, action, next_obs, done, reward = replay_data
+                replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
             # Select action according to policy and add clipped noise
-            noise = action.clone().data.normal_(0, self.target_policy_noise)
+            noise = replay_data.actions.clone().data.normal_(0, self.target_policy_noise)
             noise = noise.clamp(-self.target_noise_clip, self.target_noise_clip)
-            next_action = (self.actor_target(next_obs) + noise).clamp(-1, 1)
+            next_actions = (self.actor_target(replay_data.next_observations) + noise).clamp(-1, 1)
 
             # Compute the target Q value
-            target_q1, target_q2 = self.critic_target(next_obs, next_action)
+            target_q1, target_q2 = self.critic_target(replay_data.next_observations, next_actions)
             target_q = th.min(target_q1, target_q2)
-            target_q = reward + ((1 - done) * self.gamma * target_q).detach()
+            target_q = replay_data.rewards + ((1 - replay_data.dones) * self.gamma * target_q).detach()
 
             # Get current Q estimates
-            current_q1, current_q2 = self.critic(obs, action)
+            current_q1, current_q2 = self.critic(replay_data.observations, replay_data.actions)
 
             # Compute critic loss
             critic_loss = F.mse_loss(current_q1, target_q) + F.mse_loss(current_q2, target_q)
@@ -167,12 +165,10 @@ class TD3(OffPolicyRLModel):
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
             if replay_data is None:
-                obs, _, next_obs, done, reward = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
-            else:
-                obs, _, next_obs, done, reward = replay_data
+                replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
             # Compute actor loss
-            actor_loss = -self.critic.q1_forward(obs, self.actor(obs)).mean()
+            actor_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
 
             # Optimize the actor
             self.actor.optimizer.zero_grad()

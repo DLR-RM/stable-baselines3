@@ -97,8 +97,9 @@ class A2C(PPO):
             values = values.flatten()
 
             # Normalize advantage (not present in the original implementation)
+            advantages = rollout_data.advantages
             if self.normalize_advantage:
-                advantages = (rollout_data.advantages - rollout_data.advantages.mean()) / (rollout_data.advantages.std() + 1e-8)
+                advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
             # Policy gradient loss
             policy_loss = -(advantages * log_prob).mean()

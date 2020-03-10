@@ -1,10 +1,15 @@
+from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
+
 from gym import spaces
 import torch as th
 import torch.nn.functional as F
 
 from torchy_baselines.common.utils import explained_variance
-from torchy_baselines.ppo.ppo import PPO
 from torchy_baselines.common import logger
+from torchy_baselines.common.type_aliases import GymEnv
+from torchy_baselines.ppo.ppo import PPO
+from torchy_baselines.ppo.policies import PPOPolicy
+
 
 
 class A2C(PPO):
@@ -46,13 +51,27 @@ class A2C(PPO):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
-    def __init__(self, policy, env, learning_rate=7e-4,
-                 n_steps=5, gamma=0.99, gae_lambda=1.0,
-                 ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5,
-                 rms_prop_eps=1e-5, use_rms_prop=True, use_sde=False, sde_sample_freq=-1,
-                 normalize_advantage=False, tensorboard_log=None, create_eval_env=False,
-                 policy_kwargs=None, verbose=0, seed=None, device='auto',
-                 _init_setup_model=True):
+    def __init__(self, policy: Union[str, Type[PPOPolicy]],
+                 env: Union[GymEnv, str],
+                 learning_rate: Union[float, Callable] = 7e-4,
+                 n_steps: int = 5,
+                 gamma: float = 0.99,
+                 gae_lambda: float = 1.0,
+                 ent_coef: float = 0.0,
+                 vf_coef: float = 0.5,
+                 max_grad_norm: float = 0.5,
+                 rms_prop_eps: float = 1e-5,
+                 use_rms_prop: bool = True,
+                 use_sde: bool = False,
+                 sde_sample_freq: int = -1,
+                 normalize_advantage: bool = False,
+                 tensorboard_log: Optional[str] = None,
+                 create_eval_env: bool = False,
+                 policy_kwargs: Optional[Dict[str, Any]] = None,
+                 verbose: int = 0,
+                 seed: Optional[int] = None,
+                 device: Union[th.device, str] = 'auto',
+                 _init_setup_model: bool = True):
 
         super(A2C, self).__init__(policy, env, learning_rate=learning_rate,
                                   n_steps=n_steps, batch_size=None, n_epochs=1,

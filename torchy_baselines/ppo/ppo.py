@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Optional, Tuple, List
+from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
 import gym
 from gym import spaces
@@ -14,12 +14,13 @@ except ImportError:
     SummaryWriter = None
 import numpy as np
 
+from torchy_baselines.common import logger
 from torchy_baselines.common.base_class import BaseRLModel
+from torchy_baselines.common.type_aliases import GymEnv
 from torchy_baselines.common.buffers import RolloutBuffer
 from torchy_baselines.common.utils import explained_variance, get_schedule_fn
 from torchy_baselines.common.vec_env import VecEnv
 from torchy_baselines.common.callbacks import BaseCallback
-from torchy_baselines.common import logger
 from torchy_baselines.ppo.policies import PPOPolicy
 
 
@@ -73,14 +74,29 @@ class PPO(BaseRLModel):
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
 
-    def __init__(self, policy, env, learning_rate=3e-4,
-                 n_steps=2048, batch_size=64, n_epochs=10,
-                 gamma=0.99, gae_lambda=0.95, clip_range=0.2, clip_range_vf=None,
-                 ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5,
-                 use_sde=False, sde_sample_freq=-1,
-                 target_kl=None, tensorboard_log=None, create_eval_env=False,
-                 policy_kwargs=None, verbose=0, seed=None, device='auto',
-                 _init_setup_model=True):
+    def __init__(self, policy: Union[str, Type[PPOPolicy]],
+                 env: Union[GymEnv, str],
+                 learning_rate: Union[float, Callable] = 3e-4,
+                 n_steps: int = 2048,
+                 batch_size: Optional[int] = 64,
+                 n_epochs: int = 10,
+                 gamma: float = 0.99,
+                 gae_lambda: float = 0.95,
+                 clip_range: float = 0.2,
+                 clip_range_vf: Optional[float] = None,
+                 ent_coef: float = 0.0,
+                 vf_coef: float = 0.5,
+                 max_grad_norm: float = 0.5,
+                 use_sde: bool = False,
+                 sde_sample_freq: int = -1,
+                 target_kl: Optional[float] = None,
+                 tensorboard_log: Optional[str] = None,
+                 create_eval_env: bool = False,
+                 policy_kwargs: Optional[Dict[str, Any]] = None,
+                 verbose: int = 0,
+                 seed: Optional[int] = None,
+                 device: Union[th.device, str] = 'auto',
+                 _init_setup_model: bool = True):
 
         super(PPO, self).__init__(policy, env, PPOPolicy, policy_kwargs=policy_kwargs,
                                   verbose=verbose, device=device, use_sde=use_sde, sde_sample_freq=sde_sample_freq,

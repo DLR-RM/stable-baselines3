@@ -79,7 +79,7 @@ class PPO(BaseRLModel):
                  ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5,
                  use_sde=False, sde_sample_freq=-1,
                  target_kl=None, tensorboard_log=None, create_eval_env=False,
-                 policy_kwargs=None, verbose=0, seed=0, device='auto',
+                 policy_kwargs=None, verbose=0, seed=None, device='auto',
                  _init_setup_model=True):
 
         super(PPO, self).__init__(policy, env, PPOPolicy, policy_kwargs=policy_kwargs,

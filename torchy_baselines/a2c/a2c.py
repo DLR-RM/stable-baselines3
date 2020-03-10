@@ -51,7 +51,7 @@ class A2C(PPO):
                  ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5,
                  rms_prop_eps=1e-5, use_rms_prop=True, use_sde=False, sde_sample_freq=-1,
                  normalize_advantage=False, tensorboard_log=None, create_eval_env=False,
-                 policy_kwargs=None, verbose=0, seed=0, device='auto',
+                 policy_kwargs=None, verbose=0, seed=None, device='auto',
                  _init_setup_model=True):
 
         super(A2C, self).__init__(policy, env, learning_rate=learning_rate,

@@ -9,6 +9,8 @@ Pre-Release 0.3.0a0 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Removed default seed
+- Bump dependencies (PyTorch and Gym)
 
 New Features:
 ^^^^^^^^^^^^^
@@ -24,6 +26,7 @@ Others:
 - SAC with SDE now sample only one matrix
 - Added ``clip_mean`` parameter to SAC policy
 - Buffers now return ``NamedTuple``
+- More typing
 
 Documentation:
 ^^^^^^^^^^^^^^

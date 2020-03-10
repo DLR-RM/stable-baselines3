@@ -62,7 +62,7 @@ class CEMRL(TD3):
                  action_noise=None, target_policy_noise=0.2, target_noise_clip=0.5,
                  n_episodes_rollout=1, update_style='original',
                  tensorboard_log=None, create_eval_env=False,
-                 policy_kwargs=None, verbose=0, seed=0, device='auto',
+                 policy_kwargs=None, verbose=0, seed=None, device='auto',
                  _init_setup_model=True):
 
         super(CEMRL, self).__init__(policy, env,

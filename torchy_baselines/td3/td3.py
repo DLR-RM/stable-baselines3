@@ -65,7 +65,7 @@ class TD3(OffPolicyRLModel):
                  use_sde=False, sde_sample_freq=-1, sde_max_grad_norm=1,
                  sde_ent_coef=0.0, sde_log_std_scheduler=None, use_sde_at_warmup=False,
                  tensorboard_log=None, create_eval_env=False, policy_kwargs=None, verbose=0,
-                 seed=0, device='auto', _init_setup_model=True):
+                 seed=None, device='auto', _init_setup_model=True):
 
         super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device,
                                   create_eval_env=create_eval_env, seed=seed,

@@ -1,5 +1,6 @@
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Callable, Union
 
+import gym
 import torch as th
 import torch.nn as nn
 
@@ -143,8 +144,10 @@ class Critic(BaseNetwork):
     :param net_arch: ([int]) Network architecture
     :param activation_fn: (nn.Module) Activation function
     """
-    def __init__(self, obs_dim, action_dim,
-                 net_arch, activation_fn=nn.ReLU):
+    def __init__(self, obs_dim: int,
+                 action_dim: int,
+                 net_arch: List[int],
+                 activation_fn: nn.Module = nn.ReLU):
         super(Critic, self).__init__()
 
         q1_net = create_mlp(obs_dim + action_dim, 1, net_arch, activation_fn)
@@ -155,12 +158,9 @@ class Critic(BaseNetwork):
 
         self.q_networks = [self.q1_net, self.q2_net]
 
-    def forward(self, obs, action):
+    def forward(self, obs: th.Tensor, action: th.Tensor) -> List[th.Tensor]:
         qvalue_input = th.cat([obs, action], dim=1)
         return [q_net(qvalue_input) for q_net in self.q_networks]
-
-    def q1_forward(self, obs, action):
-        return self.q_networks[0](th.cat([obs, action], dim=1))
 
 
 class SACPolicy(BasePolicy):
@@ -183,11 +183,17 @@ class SACPolicy(BasePolicy):
         above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
     :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
     """
-    def __init__(self, observation_space, action_space,
-                 learning_rate, net_arch=None, device='cpu',
-                 activation_fn=nn.ReLU, use_sde=False,
-                 log_std_init=-3, sde_net_arch=None,
-                 use_expln=False, clip_mean=2.0):
+    def __init__(self, observation_space: gym.spaces.Space,
+                 action_space: gym.spaces.Space,
+                 learning_rate: Callable,
+                 net_arch: Optional[List[int]] = None,
+                 device: Union[th.device, str] = 'cpu',
+                 activation_fn: nn.Module = nn.ReLU,
+                 use_sde: bool = False,
+                 log_std_init: float = -3,
+                 sde_net_arch: Optional[List[int]] = None,
+                 use_expln: bool = False,
+                 clip_mean: float = 2.0):
         super(SACPolicy, self).__init__(observation_space, action_space, device, squash_output=True)
 
         if net_arch is None:
@@ -217,7 +223,7 @@ class SACPolicy(BasePolicy):
 
         self._build(learning_rate)
 
-    def _build(self, learning_rate):
+    def _build(self, learning_rate: Callable) -> None:
         self.actor = self.make_actor()
         self.actor.optimizer = th.optim.Adam(self.actor.parameters(), lr=learning_rate(1))
 
@@ -226,13 +232,13 @@ class SACPolicy(BasePolicy):
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=learning_rate(1))
 
-    def make_actor(self):
+    def make_actor(self) -> Actor:
         return Actor(**self.actor_kwargs).to(self.device)
 
-    def make_critic(self):
+    def make_critic(self) -> Critic:
         return Critic(**self.net_args).to(self.device)
 
-    def forward(self, obs):
+    def forward(self, obs: th.Tensor) -> th.Tensor:
         return self.actor(obs)
 
     def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:

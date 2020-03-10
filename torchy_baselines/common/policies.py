@@ -237,7 +237,10 @@ class MlpExtractor(nn.Module):
     :param activation_fn: (nn.Module) The activation function to use for the networks.
     :param device: (th.device)
     """
-    def __init__(self, feature_dim, net_arch, activation_fn, device='cpu'):
+    def __init__(self, feature_dim: int,
+                 net_arch: List[Union[int, Dict[str, List[int]]]],
+                 activation_fn: nn.Module,
+                 device: Union[th.device, str] = 'cpu'):
         super(MlpExtractor, self).__init__()
 
         shared_net, policy_net, value_net = [], [], []
@@ -291,7 +294,7 @@ class MlpExtractor(nn.Module):
         self.policy_net = nn.Sequential(*policy_net).to(device)
         self.value_net = nn.Sequential(*value_net).to(device)
 
-    def forward(self, features):
+    def forward(self, features: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         """
         :return: (th.Tensor, th.Tensor) latent_policy, latent_value of the specified network.
             If all layers are shared, then ``latent_policy == latent_value``

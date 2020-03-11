@@ -121,7 +121,7 @@ class PPO(BaseRLModel):
         if _init_setup_model:
             self._setup_model()
 
-    def _setup_model(self):
+    def _setup_model(self) -> None:
         self._setup_learning_rate()
         # TODO: preprocessing: one hot vector for obs discrete
         state_dim = self.observation_space.shape[0]
@@ -284,9 +284,16 @@ class PPO(BaseRLModel):
         if hasattr(self.policy, 'log_std'):
             logger.logkv("std", th.exp(self.policy.log_std).mean().item())
 
-    def learn(self, total_timesteps, callback=None, log_interval=1,
-              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="PPO",
-              eval_log_path=None, reset_num_timesteps=True):
+    def learn(self,
+              total_timesteps: int,
+              callback: Optional[BaseCallback] = None,
+              log_interval: int = 1,
+              eval_env: Optional[GymEnv] = None,
+              eval_freq: int = -1,
+              n_eval_episodes: int = 5,
+              tb_log_name: str = "PPO",
+              eval_log_path: Optional[str] = None,
+              reset_num_timesteps: bool = True) -> 'PPO':
 
         episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq,
                                                        n_eval_episodes, eval_log_path, reset_num_timesteps)

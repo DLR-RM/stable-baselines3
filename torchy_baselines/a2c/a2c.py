@@ -7,9 +7,9 @@ import torch.nn.functional as F
 from torchy_baselines.common.utils import explained_variance
 from torchy_baselines.common import logger
 from torchy_baselines.common.type_aliases import GymEnv
+from torchy_baselines.common.callbacks import BaseCallback
 from torchy_baselines.ppo.ppo import PPO
 from torchy_baselines.ppo.policies import PPOPolicy
-
 
 
 class A2C(PPO):
@@ -89,14 +89,14 @@ class A2C(PPO):
         if _init_setup_model:
             self._setup_model()
 
-    def _setup_model(self):
+    def _setup_model(self) -> None:
         super(A2C, self)._setup_model()
         if self.use_rms_prop:
             self.policy.optimizer = th.optim.RMSprop(self.policy.parameters(),
                                                      lr=self.learning_rate(1), alpha=0.99,
                                                      eps=self.rms_prop_eps, weight_decay=0)
 
-    def train(self, gradient_steps: int, batch_size=None):
+    def train(self, gradient_steps: int, batch_size: Optional[int] = None) -> None:
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
         # A2C with gradient_steps > 1 does not make sense
@@ -153,9 +153,16 @@ class A2C(PPO):
         if hasattr(self.policy, 'log_std'):
             logger.logkv("std", th.exp(self.policy.log_std).mean().item())
 
-    def learn(self, total_timesteps, callback=None, log_interval=100,
-              eval_env=None, eval_freq=-1, n_eval_episodes=5,
-              tb_log_name="A2C", eval_log_path=None, reset_num_timesteps=True):
+    def learn(self,
+              total_timesteps: int,
+              callback: Optional[BaseCallback] = None,
+              log_interval: int = 100,
+              eval_env: Optional[GymEnv] = None,
+              eval_freq: int = -1,
+              n_eval_episodes: int = 5,
+              tb_log_name: str = "A2C",
+              eval_log_path: Optional[str] = None,
+              reset_num_timesteps: bool = True) -> 'A2C':
 
         return super(A2C, self).learn(total_timesteps=total_timesteps, callback=callback, log_interval=log_interval,
                                       eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,

@@ -1,3 +1,5 @@
+from typing import Type, Tuple, Optional, List
+
 import numpy as np
 
 
@@ -21,9 +23,16 @@ class CEM(object):
     :param antithetic: (bool) Use a finite difference like method for sampling
         (mu + epsilon, mu - epsilon)
     """
-    def __init__(self, num_params, mu_init=None, sigma_init=1e-3,
-                 pop_size=256, damping_init=1e-3, damping_final=1e-5,
-                 parents=None, elitism=False, antithetic=False):
+    def __init__(self,
+                 num_params: int,
+                 mu_init: Optional[np.ndarray] = None,
+                 sigma_init: float = 1e-3,
+                 pop_size: int = 256,
+                 damping_init: float = 1e-3,
+                 damping_final: float = 1e-5,
+                 parents: Optional[int] = None,
+                 elitism: bool = False,
+                 antithetic: bool = False):
         super(CEM, self).__init__()
 
         self.num_params = num_params
@@ -66,7 +75,7 @@ class CEM(object):
                                  for i in range(1, self.parents + 1)])
         self.weights /= self.weights.sum()
 
-    def ask(self, pop_size):
+    def ask(self, pop_size: int) -> List[np.ndarray]:
         """
         Returns a list of candidates parameters
 
@@ -87,7 +96,7 @@ class CEM(object):
 
         return individuals
 
-    def tell(self, solutions, scores):
+    def tell(self, solutions: List[np.ndarray], scores: List[float]) -> None:
         """
         Updates the distribution
 
@@ -114,7 +123,7 @@ class CEM(object):
         self.elite = solutions[idx_sorted[0]]
         self.elite_score = scores[idx_sorted[0]]
 
-    def get_distrib_params(self):
+    def get_distrib_params(self) -> Tuple[np.ndarray, np.ndarray]:
         """
         Returns the parameters of the distribution:
         the mean and standard deviation.

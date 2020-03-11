@@ -27,6 +27,7 @@ Others:
 - Added ``clip_mean`` parameter to SAC policy
 - Buffers now return ``NamedTuple``
 - More typing
+- Add test for ``expln``
 
 Documentation:
 ^^^^^^^^^^^^^^

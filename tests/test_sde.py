@@ -2,7 +2,7 @@ import pytest
 import torch as th
 from torch.distributions import Normal
 
-from torchy_baselines import A2C, TD3, SAC
+from torchy_baselines import A2C, TD3, SAC, PPO
 
 
 def test_state_dependent_exploration_grad():
@@ -55,12 +55,13 @@ def test_state_dependent_exploration_grad():
     assert sigma_hat.grad.allclose(grad)
 
 
-@pytest.mark.parametrize("model_class", [TD3, SAC, A2C])
+@pytest.mark.parametrize("model_class", [TD3, SAC, A2C, PPO])
 @pytest.mark.parametrize("sde_net_arch", [None, [32, 16], []])
-def test_state_dependent_offpolicy_noise(model_class, sde_net_arch):
+@pytest.mark.parametrize("use_expln", [False, True])
+def test_state_dependent_offpolicy_noise(model_class, sde_net_arch, use_expln):
     model = model_class('MlpPolicy', 'Pendulum-v0', use_sde=True, seed=None, create_eval_env=True,
-                        verbose=1, policy_kwargs=dict(log_std_init=-2, sde_net_arch=sde_net_arch))
-    model.learn(total_timesteps=int(1000), eval_freq=500)
+                        verbose=1, policy_kwargs=dict(log_std_init=-2, sde_net_arch=sde_net_arch, use_expln=use_expln))
+    model.learn(total_timesteps=int(500), eval_freq=250)
 
 
 def test_scheduler():

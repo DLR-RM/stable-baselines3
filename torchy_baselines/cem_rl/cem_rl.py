@@ -1,11 +1,13 @@
-import time
+from typing import Type, Union, Callable, Optional, Dict, Any
 
 import torch as th
 
+from torchy_baselines.common.base_class import OffPolicyRLModel
+from torchy_baselines.common.callbacks import BaseCallback
+from torchy_baselines.common.type_aliases import GymEnv
+from torchy_baselines.common.noise import ActionNoise
+from torchy_baselines.td3.td3 import TD3, TD3Policy
 from torchy_baselines.cem_rl.cem import CEM
-from torchy_baselines.common.evaluation import evaluate_policy
-from torchy_baselines.td3.td3 import TD3
-from torchy_baselines.common.vec_env import sync_envs_normalization
 
 
 class CEMRL(TD3):
@@ -16,7 +18,23 @@ class CEMRL(TD3):
     Code: https://github.com/apourchot/CEM-RL
 
     :param policy: (TD3Policy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
-    :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
+    :param env: (GymEnv or str) The environment to learn from (if registered in Gym, can be str)
+    :param learning_rate: (float or callable) learning rate for adam optimizer,
+        the same learning rate will be used for all networks (Q-Values, Actor and Value function)
+        it can be a function of the current progress (from 1 to 0)
+    :param buffer_size: (int) size of the replay buffer
+    :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
+    :param batch_size: (int) Minibatch size for each gradient update
+    :param tau: (float) the soft update coefficient ("polyak update", between 0 and 1)
+    :param gamma: (float) the discount factor
+    :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
+    :param action_noise: (ActionNoise) the action noise type (None by default), this can help
+        for hard exploration problem. Cf common.noise for the different action noise type.
+    :param policy_delay: (int) Policy and target networks will only be updated once every policy_delay steps
+        per training steps. The Q values will be updated policy_delay more often (update every training step).
+    :param target_policy_noise: (float) Standard deviation of Gaussian noise added to target policy
+        (smoothing noise)
+    :param target_noise_clip: (float) Limit for absolute value of target policy smoothing noise.
     :param sigma_init: (float) Initial standard deviation of the population distribution
     :param pop_size: (int) Number of individuals in the population
     :param damping_init: (float)  Initial value of damping for preventing from early convergence.
@@ -24,22 +42,6 @@ class CEMRL(TD3):
     :param elitism: (bool) Keep the best known individual in the population
     :param n_grad: (int) Number of individuals that will receive a gradient update.
         Half of the population size in the paper.
-    :param buffer_size: (int) size of the replay buffer
-    :param learning_rate: (float or callable) learning rate for adam optimizer,
-        the same learning rate will be used for all networks (Q-Values and Actor networks)
-        it can be a function of the current progress (from 1 to 0)
-    :param policy_delay: (int) Policy and target networks will only be updated once every policy_delay steps
-        per training steps. The Q values will be updated policy_delay more often (update every training step).
-    :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
-    :param gamma: (float) the discount factor
-    :param batch_size: (int) Minibatch size for each gradient update
-    :param tau: (float) the soft update coefficient ("Polyak update" of the target networks, between 0 and 1)
-    :param action_noise: (ActionNoise) the action noise type. Cf common.noise for the different action noise type.
-    :param target_policy_noise: (float) Standard deviation of Gaussian noise added to target policy
-        (smoothing noise)
-    :param target_noise_clip: (float) Limit for absolute value of target policy smoothing noise.
-    :param n_episodes_rollout: (int) Update the model every `n_episodes_rollout` episodes.
-        Note that this cannot be used at the same time as `train_freq`
     :param update_style: (str) Update style for the individual that will use the gradient:
         - original: original implementation (actor_steps // n_grad steps for the critic
         and actor_steps gradient steps per individual)
@@ -55,15 +57,33 @@ class CEMRL(TD3):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
-    def __init__(self, policy, env, sigma_init=1e-3, pop_size=10,
-                 damping_init=1e-3, damping_final=1e-5, elitism=False, n_grad=5,
-                 buffer_size=int(1e6), learning_rate=1e-3, policy_delay=2,
-                 learning_starts=100, gamma=0.99, batch_size=100, tau=0.005,
-                 action_noise=None, target_policy_noise=0.2, target_noise_clip=0.5,
-                 n_episodes_rollout=1, update_style='original',
-                 tensorboard_log=None, create_eval_env=False,
-                 policy_kwargs=None, verbose=0, seed=None, device='auto',
-                 _init_setup_model=True):
+    def __init__(self, policy: Union[str, Type[TD3Policy]],
+                 env: Union[GymEnv, str],
+                 learning_rate: Union[float, Callable] = 1e-3,
+                 buffer_size: int = int(1e6),
+                 learning_starts: int = 100,
+                 batch_size: int = 100,
+                 tau: float = 0.005,
+                 gamma: float = 0.99,
+                 n_episodes_rollout: int = 1,
+                 action_noise: Optional[ActionNoise] = None,
+                 policy_delay: int = 2,
+                 target_policy_noise: float = 0.2,
+                 target_noise_clip: float = 0.5,
+                 sigma_init: float = 1e-3,
+                 pop_size: int = 10,
+                 damping_init: float = 1e-3,
+                 damping_final: float = 1e-5,
+                 elitism: bool = False,
+                 n_grad: int = 5,
+                 update_style: str = 'original',
+                 tensorboard_log: Optional[str] = None,
+                 create_eval_env: bool = False,
+                 policy_kwargs: Dict[str, Any] = None,
+                 verbose: int = 0,
+                 seed: Optional[int] = None,
+                 device: Union[th.device, str] = 'auto',
+                 _init_setup_model: bool = True):
 
         super(CEMRL, self).__init__(policy, env,
                                     buffer_size=buffer_size, learning_rate=learning_rate, seed=seed, device=device,
@@ -77,7 +97,7 @@ class CEMRL(TD3):
 
         # Evolution strategy method that follows cma-es interface (ask-tell)
         # for now, only CEM is implemented
-        self.es = None
+        self.es = None  # type: Optional[CEM]
         self.sigma_init = sigma_init
         self.pop_size = pop_size
         self.damping_init = damping_init
@@ -91,7 +111,7 @@ class CEMRL(TD3):
         if _init_setup_model:
             self._setup_model()
 
-    def _setup_model(self, seed=None):
+    def _setup_model(self) -> None:
         super(CEMRL, self)._setup_model()
         params_vector = self.actor.parameters_to_vector()
         self.es = CEM(len(params_vector), mu_init=params_vector,
@@ -99,9 +119,16 @@ class CEMRL(TD3):
                       pop_size=self.pop_size, antithetic=not self.pop_size % 2, parents=self.pop_size // 2,
                       elitism=self.elitism)
 
-    def learn(self, total_timesteps, callback=None, log_interval=4,
-              eval_env=None, eval_freq=-1, n_eval_episodes=5,
-              tb_log_name="CEMRL", eval_log_path=None, reset_num_timesteps=True):
+    def learn(self,
+              total_timesteps: int,
+              callback: Optional[BaseCallback] = None,
+              log_interval: int = 4,
+              eval_env: Optional[GymEnv] = None,
+              eval_freq: int = -1,
+              n_eval_episodes: int = 5,
+              tb_log_name: str = "CEMRL",
+              eval_log_path: Optional[str] = None,
+              reset_num_timesteps: bool = True) -> OffPolicyRLModel:
 
         episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq,
                                                        n_eval_episodes, eval_log_path, reset_num_timesteps)

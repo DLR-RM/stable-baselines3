@@ -33,21 +33,21 @@ class SAC(OffPolicyRLModel):
         the same learning rate will be used for all networks (Q-Values, Actor and Value function)
         it can be a function of the current progress (from 1 to 0)
     :param buffer_size: (int) size of the replay buffer
+    :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
     :param batch_size: (int) Minibatch size for each gradient update
     :param tau: (float) the soft update coefficient ("polyak update", between 0 and 1)
+    :param gamma: (float) the discount factor
+    :param train_freq: (int) Update the model every ``train_freq`` steps.
+    :param gradient_steps: (int) How many gradient update after each step
+    :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
+        Note that this cannot be used at the same time as ``train_freq``
+    :param action_noise: (ActionNoise) the action noise type (None by default), this can help
+        for hard exploration problem. Cf common.noise for the different action noise type.
     :param ent_coef: (str or float) Entropy regularization coefficient. (Equivalent to
         inverse of reward scale in the original SAC paper.)  Controlling exploration/exploitation trade-off.
         Set it to 'auto' to learn it automatically (and 'auto_0.1' for using 0.1 as initial value)
-    :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
-    :param target_update_interval: (int) update the target network every `target_network_update_freq` steps.
-    :param train_freq: (int) Update the model every `train_freq` steps.
-    :param gradient_steps: (int) How many gradient update after each step
-    :param n_episodes_rollout: (int) Update the model every `n_episodes_rollout` episodes.
-        Note that this cannot be used at the same time as `train_freq`
-    :param target_entropy: (str or float) target entropy when learning `ent_coef` (`ent_coef = 'auto'`)
-    :param action_noise: (ActionNoise) the action noise type (None by default), this can help
-        for hard exploration problem. Cf common.noise for the different action noise type.
-    :param gamma: (float) the discount factor
+    :param target_update_interval: (int) update the target network every ``target_network_update_freq`` steps.
+    :param target_entropy: (str or float) target entropy when learning ``ent_coef`` (``ent_coef = 'auto'``)
     :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
         instead of action noise exploration (default: False)
     :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
@@ -71,14 +71,14 @@ class SAC(OffPolicyRLModel):
                  learning_starts: int = 100,
                  batch_size: int = 256,
                  tau: float = 0.005,
-                 ent_coef: Union[str, float] = 'auto',
-                 target_update_interval: int = 1,
+                 gamma: float = 0.99,
                  train_freq: int = 1,
                  gradient_steps: int = 1,
                  n_episodes_rollout: int = -1,
-                 target_entropy: Union[str, float] = 'auto',
                  action_noise: Optional[ActionNoise] = None,
-                 gamma: float = 0.99,
+                 ent_coef: Union[str, float] = 'auto',
+                 target_update_interval: int = 1,
+                 target_entropy: Union[str, float] = 'auto',
                  use_sde: bool = False,
                  sde_sample_freq: int = -1,
                  use_sde_at_warmup: bool = False,

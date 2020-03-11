@@ -288,7 +288,7 @@ class BaseRLModel(ABC):
               eval_freq: int = -1,
               n_eval_episodes: int = 5,
               eval_log_path: Optional[str] = None,
-              reset_num_timesteps: bool = True):
+              reset_num_timesteps: bool = True) -> 'BaseRLModel':
         """
         Return a trained model.
 

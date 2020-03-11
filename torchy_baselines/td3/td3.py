@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
 import torch as th
 import torch.nn.functional as F
@@ -6,7 +6,9 @@ import numpy as np
 
 from torchy_baselines.common.base_class import OffPolicyRLModel
 from torchy_baselines.common.buffers import ReplayBuffer
-from torchy_baselines.common.type_aliases import ReplayBufferSamples
+from torchy_baselines.common.type_aliases import ReplayBufferSamples, GymEnv
+from torchy_baselines.common.noise import ActionNoise
+from torchy_baselines.common.callbacks import BaseCallback
 from torchy_baselines.td3.policies import TD3Policy
 
 
@@ -20,22 +22,23 @@ class TD3(OffPolicyRLModel):
     Introduction to TD3: https://spinningup.openai.com/en/latest/algorithms/td3.html
 
     :param policy: (TD3Policy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
-    :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
-    :param buffer_size: (int) size of the replay buffer
+    :param env: (GymEnv or str) The environment to learn from (if registered in Gym, can be str)
     :param learning_rate: (float or callable) learning rate for adam optimizer,
-        the same learning rate will be used for all networks (Q-Values and Actor networks)
+        the same learning rate will be used for all networks (Q-Values, Actor and Value function)
         it can be a function of the current progress (from 1 to 0)
+    :param buffer_size: (int) size of the replay buffer
+    :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
+    :param batch_size: (int) Minibatch size for each gradient update
+    :param tau: (float) the soft update coefficient ("polyak update", between 0 and 1)
+    :param gamma: (float) the discount factor
+    :param train_freq: (int) Update the model every ``train_freq`` steps.
+    :param gradient_steps: (int) How many gradient update after each step
+    :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
+        Note that this cannot be used at the same time as ``train_freq``
+    :param action_noise: (ActionNoise) the action noise type (None by default), this can help
+        for hard exploration problem. Cf common.noise for the different action noise type.
     :param policy_delay: (int) Policy and target networks will only be updated once every policy_delay steps
         per training steps. The Q values will be updated policy_delay more often (update every training step).
-    :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
-    :param gamma: (float) the discount factor
-    :param batch_size: (int) Minibatch size for each gradient update
-    :param train_freq: (int) Update the model every `train_freq` steps.
-    :param gradient_steps: (int) How many gradient update after each step
-    :param n_episodes_rollout: (int) Update the model every `n_episodes_rollout` episodes.
-        Note that this cannot be used at the same time as `train_freq`
-    :param tau: (float) the soft update coefficient ("Polyak update" of the target networks, between 0 and 1)
-    :param action_noise: (ActionNoise) the action noise type. Cf common.noise for the different action noise type.
     :param target_policy_noise: (float) Standard deviation of Gaussian noise added to target policy
         (smoothing noise)
     :param target_noise_clip: (float) Limit for absolute value of target policy smoothing noise.
@@ -58,14 +61,34 @@ class TD3(OffPolicyRLModel):
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
 
-    def __init__(self, policy, env, buffer_size=int(1e6), learning_rate=1e-3,
-                 policy_delay=2, learning_starts=100, gamma=0.99, batch_size=100,
-                 train_freq=-1, gradient_steps=-1, n_episodes_rollout=1,
-                 tau=0.005, action_noise=None, target_policy_noise=0.2, target_noise_clip=0.5,
-                 use_sde=False, sde_sample_freq=-1, sde_max_grad_norm=1,
-                 sde_ent_coef=0.0, sde_log_std_scheduler=None, use_sde_at_warmup=False,
-                 tensorboard_log=None, create_eval_env=False, policy_kwargs=None, verbose=0,
-                 seed=None, device='auto', _init_setup_model=True):
+    def __init__(self, policy: Union[str, Type[TD3Policy]],
+                 env: Union[GymEnv, str],
+                 learning_rate: Union[float, Callable] = 1e-3,
+                 buffer_size: int = int(1e6),
+                 learning_starts: int = 100,
+                 batch_size: int = 100,
+                 tau: float = 0.005,
+                 gamma: float = 0.99,
+                 train_freq: int = -1,
+                 gradient_steps: int = -1,
+                 n_episodes_rollout: int = 1,
+                 action_noise: Optional[ActionNoise] = None,
+                 policy_delay: int = 2,
+                 target_policy_noise: float = 0.2,
+                 target_noise_clip: float = 0.5,
+                 use_sde: bool = False,
+                 sde_sample_freq: int = -1,
+                 sde_max_grad_norm: float = 1,
+                 sde_ent_coef: float = 0.0,
+                 sde_log_std_scheduler: Optional[Callable] = None,
+                 use_sde_at_warmup: bool = False,
+                 tensorboard_log: Optional[str] = None,
+                 create_eval_env: bool = False,
+                 policy_kwargs: Dict[str, Any] = None,
+                 verbose: int = 0,
+                 seed: Optional[int] = None,
+                 device: Union[th.device, str] = 'auto',
+                 _init_setup_model: bool = True):
 
         super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device,
                                   create_eval_env=create_eval_env, seed=seed,
@@ -96,7 +119,7 @@ class TD3(OffPolicyRLModel):
         if _init_setup_model:
             self._setup_model()
 
-    def _setup_model(self):
+    def _setup_model(self) -> None:
         self._setup_learning_rate()
         obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
         self.set_random_seed(self.seed)
@@ -107,7 +130,7 @@ class TD3(OffPolicyRLModel):
         self.policy = self.policy.to(self.device)
         self._create_aliases()
 
-    def _create_aliases(self):
+    def _create_aliases(self) -> None:
         self.actor = self.policy.actor
         self.actor_target = self.policy.actor_target
         self.critic = self.policy.critic
@@ -117,7 +140,7 @@ class TD3(OffPolicyRLModel):
     def train_critic(self, gradient_steps: int = 1,
                     batch_size: int = 100,
                     replay_data: Optional[ReplayBufferSamples] = None,
-                    tau: float = 0.0):
+                    tau: float = 0.0) -> None:
         # Update optimizer learning rate
         self._update_learning_rate(self.critic.optimizer)
 
@@ -158,7 +181,7 @@ class TD3(OffPolicyRLModel):
                     batch_size: int = 100,
                     tau_actor: float = 0.005,
                     tau_critic: float = 0.005,
-                    replay_data: Optional[ReplayBufferSamples] = None):
+                    replay_data: Optional[ReplayBufferSamples] = None) -> None:
         # Update optimizer learning rate
         self._update_learning_rate(self.actor.optimizer)
 
@@ -183,7 +206,7 @@ class TD3(OffPolicyRLModel):
             for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
                 target_param.data.copy_(tau_actor * param.data + (1 - tau_actor) * target_param.data)
 
-    def train(self, gradient_steps: int, batch_size: int = 100, policy_delay: int = 2):
+    def train(self, gradient_steps: int, batch_size: int = 100, policy_delay: int = 2) -> None:
 
         for gradient_step in range(gradient_steps):
 
@@ -195,7 +218,7 @@ class TD3(OffPolicyRLModel):
             if gradient_step % policy_delay == 0:
                 self.train_actor(replay_data=replay_data, tau_actor=self.tau, tau_critic=self.tau)
 
-    def train_sde(self):
+    def train_sde(self) -> None:
         # Update optimizer learning rate
         # self._update_learning_rate(self.policy.optimizer)
 
@@ -241,9 +264,16 @@ class TD3(OffPolicyRLModel):
 
         del self.rollout_data
 
-    def learn(self, total_timesteps, callback=None, log_interval=4,
-              eval_env=None, eval_freq=-1, n_eval_episodes=5,
-              tb_log_name="TD3", eval_log_path=None, reset_num_timesteps=True):
+    def learn(self,
+              total_timesteps: int,
+              callback: Optional[BaseCallback] = None,
+              log_interval: int = 4,
+              eval_env: Optional[GymEnv] = None,
+              eval_freq: int = -1,
+              n_eval_episodes: int = 5,
+              tb_log_name: str = "TD3",
+              eval_log_path: Optional[str] = None,
+              reset_num_timesteps: bool = True) -> OffPolicyRLModel:
 
         episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq,
                                                        n_eval_episodes, eval_log_path, reset_num_timesteps)

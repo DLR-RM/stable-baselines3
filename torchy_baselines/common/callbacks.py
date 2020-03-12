@@ -1,12 +1,13 @@
 import os
 from abc import ABC, abstractmethod
+import warnings
 import typing
 from typing import Union, List, Dict, Any, Optional
 
 import gym
 import numpy as np
 
-from torchy_baselines.common.vec_env import VecEnv, sync_envs_normalization
+from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, sync_envs_normalization
 from torchy_baselines.common.evaluation import evaluate_policy
 from torchy_baselines.common.logger import Logger
 
@@ -22,9 +23,13 @@ class BaseCallback(ABC):
     """
     def __init__(self, verbose: int = 0):
         super(BaseCallback, self).__init__()
+        # The RL model
         self.model = None  # type: Optional[BaseRLModel]
+        # An alias for self.model.get_env(), the environment used for training
         self.training_env = None  # type: Union[gym.Env, VecEnv, None]
+        # Number of time the callback was called
         self.n_calls = 0  # type: int
+        # n_envs * n times env.step() was called
         self.num_timesteps = 0  # type: int
         self.verbose = verbose
         self.locals = None  # type: Optional[Dict[str, Any]]
@@ -70,9 +75,13 @@ class BaseCallback(ABC):
         """
         return True
 
-    def __call__(self) -> bool:
+    def on_step(self) -> bool:
         """
-        This method will be called by the model. This is the equivalent to the callback function.
+        This method will be called by the model after each call to ``env.step()``.
+
+        For child callback (of an ``EventCallback``), this will be called
+        when the event is triggered.
+
         :return: (bool) If the callback returns False, training is aborted early.
         """
         self.n_calls += 1
@@ -128,6 +137,12 @@ class EventCallback(BaseCallback):
 
 
 class CallbackList(BaseCallback):
+    """
+    Class for chaining callbacks.
+
+    :param callbacks: (List[BaseCallback]) A list of callbacks that will be called
+        sequentially.
+    """
     def __init__(self, callbacks: List[BaseCallback]):
         super(CallbackList, self).__init__()
         assert isinstance(callbacks, list)
@@ -141,15 +156,20 @@ class CallbackList(BaseCallback):
         for callback in self.callbacks:
             callback.on_training_start(self.locals, self.globals)
 
+    def _on_rollout_start(self) -> None:
+        for callback in self.callbacks:
+            callback.on_rollout_start()
+
     def _on_step(self) -> bool:
         continue_training = True
         for callback in self.callbacks:
-            # # Update variables
-            # callback.num_timesteps = self.num_timesteps
-            # callback.n_calls = self.n_calls
             # Return False (stop training) if at least one callback returns False
-            continue_training = callback() and continue_training
+            continue_training = callback.on_step() and continue_training
         return continue_training
+
+    def _on_rollout_end(self) -> None:
+        for callback in self.callbacks:
+            callback.on_rollout_end()
 
     def _on_training_end(self) -> None:
         for callback in self.callbacks:
@@ -158,7 +178,7 @@ class CallbackList(BaseCallback):
 
 class CheckpointCallback(BaseCallback):
     """
-    Callback for saving a model every `save_freq` steps
+    Callback for saving a model every ``save_freq`` steps
 
     :param save_freq: (int)
     :param save_path: (str) Path to the folder where the model will be saved.
@@ -207,16 +227,17 @@ class EvalCallback(EventCallback):
 
     :param eval_env: (Union[gym.Env, VecEnv]) The environment used for initialization
     :param callback_on_new_best: (Optional[BaseCallback]) Callback to trigger
-        when there is a new best model according to the `mean_reward`
+        when there is a new best model according to the ``mean_reward``
     :param n_eval_episodes: (int) The number of episodes to test the agent
     :param eval_freq: (int) Evaluate the agent every eval_freq call of the callback.
-    :param log_path: (str) Path to a folder where the evaluations (`evaluations.npz`)
+    :param log_path: (str) Path to a folder where the evaluations (``evaluations.npz``)
         will be saved. It will be updated at each evaluation.
     :param best_model_save_path: (str) Path to a folder where the best model
         according to performance on the eval env will be saved.
     :param deterministic: (bool) Whether the evaluation should
         use a stochastic or deterministic actions.
     :param deterministic: (bool) Whether to render or not the environment during evaluation
+    :param render: (bool) Whether to render or not the environment during evaluation
     :param verbose: (int)
     """
     def __init__(self, eval_env: Union[gym.Env, VecEnv],
@@ -236,12 +257,16 @@ class EvalCallback(EventCallback):
         self.deterministic = deterministic
         self.render = render
 
+        # Convert to VecEnv for consistency
+        if not isinstance(eval_env, VecEnv):
+            eval_env = DummyVecEnv([lambda: eval_env])
+
         if isinstance(eval_env, VecEnv):
             assert eval_env.num_envs == 1, "You must pass only one environment for evaluation"
 
         self.eval_env = eval_env
         self.best_model_save_path = best_model_save_path
-        # Logs will be written in `evaluations.npz`
+        # Logs will be written in ``evaluations.npz``
         if log_path is not None:
             log_path = os.path.join(log_path, 'evaluations')
         self.log_path = log_path
@@ -250,9 +275,10 @@ class EvalCallback(EventCallback):
         self.evaluations_length = []
 
     def _init_callback(self):
-        # Does not work when eval_env is a gym.Env and training_env is a VecEnv
-        # assert type(self.training_env) is type(self.eval_env), ("training and eval env are not of the same type",
-        #                                                         "{} != {}".format(self.training_env, self.eval_env))
+        # Does not work in some corner cases, where the wrapper is not the same
+        if not type(self.training_env) is type(self.eval_env):
+            warnings.warn("Training and eval env are not of the same type"
+                          f"{self.training_env} != {self.eval_env}")
 
         # Create folders if needed
         if self.best_model_save_path is not None:
@@ -306,7 +332,7 @@ class StopTrainingOnRewardThreshold(BaseCallback):
     Stop the training once a threshold in episodic reward
     has been reached (i.e. when the model is good enough).
 
-    It must be used with the `EvalCallback`.
+    It must be used with the ``EvalCallback``.
 
     :param reward_threshold: (float)  Minimum expected reward per episode
         to stop training.
@@ -317,8 +343,8 @@ class StopTrainingOnRewardThreshold(BaseCallback):
         self.reward_threshold = reward_threshold
 
     def _on_step(self) -> bool:
-        assert self.parent is not None, ("`StopTrainingOnMinimumReward` callback must be used "
-                                         "with an `EvalCallback`")
+        assert self.parent is not None, ("``StopTrainingOnMinimumReward`` callback must be used "
+                                         "with an ``EvalCallback``")
         # Convert np.bool to bool, otherwise callback() is False won't work
         continue_training = bool(self.parent.best_mean_reward < self.reward_threshold)
         if self.verbose > 0 and not continue_training:
@@ -329,7 +355,7 @@ class StopTrainingOnRewardThreshold(BaseCallback):
 
 class EveryNTimesteps(EventCallback):
     """
-    Trigger a callback every `n_steps` timesteps
+    Trigger a callback every ``n_steps`` timesteps
 
     :param n_steps: (int) Number of timesteps between two trigger.
     :param callback: (BaseCallback) Callback that will be called

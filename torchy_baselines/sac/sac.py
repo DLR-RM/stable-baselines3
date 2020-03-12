@@ -7,9 +7,8 @@ import numpy as np
 from torchy_baselines.common import logger
 from torchy_baselines.common.base_class import OffPolicyRLModel
 from torchy_baselines.common.buffers import ReplayBuffer
-from torchy_baselines.common.type_aliases import GymEnv
+from torchy_baselines.common.type_aliases import GymEnv, MaybeCallback
 from torchy_baselines.common.noise import ActionNoise
-from torchy_baselines.common.callbacks import BaseCallback
 from torchy_baselines.sac.policies import SACPolicy
 
 
@@ -253,7 +252,7 @@ class SAC(OffPolicyRLModel):
 
     def learn(self,
               total_timesteps: int,
-              callback: Optional[BaseCallback] = None,
+              callback: MaybeCallback = None,
               log_interval: int = 4,
               eval_env: Optional[GymEnv] = None,
               eval_freq: int = -1,

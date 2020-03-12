@@ -4,9 +4,8 @@ from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
 from torchy_baselines.common.base_class import OffPolicyRLModel
 from torchy_baselines.common.buffers import ReplayBuffer
-from torchy_baselines.common.callbacks import BaseCallback
 from torchy_baselines.common.noise import ActionNoise
-from torchy_baselines.common.type_aliases import ReplayBufferSamples, GymEnv
+from torchy_baselines.common.type_aliases import ReplayBufferSamples, GymEnv, MaybeCallback
 from torchy_baselines.td3.policies import TD3Policy
 
 
@@ -264,7 +263,7 @@ class TD3(OffPolicyRLModel):
 
     def learn(self,
               total_timesteps: int,
-              callback: Optional[BaseCallback] = None,
+              callback: MaybeCallback = None,
               log_interval: int = 4,
               eval_env: Optional[GymEnv] = None,
               eval_freq: int = -1,

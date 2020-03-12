@@ -1,18 +1,21 @@
 """
 Common aliases for type hint
 """
-from typing import Union, Dict, Any, NamedTuple, Optional
+import typing
+from typing import Union, Dict, Any, NamedTuple, Optional, List, Callable
 
 import numpy as np
 import torch as th
 import gym
 
 from torchy_baselines.common.vec_env import VecEnv
+from torchy_baselines.common.callbacks import BaseCallback
 
 
 GymEnv = Union[gym.Env, VecEnv]
 TensorDict = Dict[str, th.Tensor]
 OptimizerStateDict = Dict[str, Any]
+MaybeCallback = Union[None, Callable, List[BaseCallback], BaseCallback]
 
 
 class RolloutBufferSamples(NamedTuple):

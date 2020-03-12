@@ -16,7 +16,7 @@ import numpy as np
 
 from torchy_baselines.common import logger
 from torchy_baselines.common.base_class import BaseRLModel
-from torchy_baselines.common.type_aliases import GymEnv
+from torchy_baselines.common.type_aliases import GymEnv, MaybeCallback
 from torchy_baselines.common.buffers import RolloutBuffer
 from torchy_baselines.common.utils import explained_variance, get_schedule_fn
 from torchy_baselines.common.vec_env import VecEnv
@@ -163,10 +163,6 @@ class PPO(BaseRLModel):
 
         while n_steps < n_rollout_steps:
 
-            if callback() is False:
-                continue_training = False
-                return None, continue_training
-
             if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
                 # Sample a new noise matrix
                 self.policy.reset_noise(env.num_envs)
@@ -181,6 +177,10 @@ class PPO(BaseRLModel):
             if isinstance(self.action_space, gym.spaces.Box):
                 clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
             new_obs, rewards, dones, infos = env.step(clipped_actions)
+
+            if callback.on_step() is False:
+                continue_training = False
+                return None, continue_training
 
             self._update_info_buffer(infos)
             n_steps += 1
@@ -286,7 +286,7 @@ class PPO(BaseRLModel):
 
     def learn(self,
               total_timesteps: int,
-              callback: Optional[BaseCallback] = None,
+              callback: MaybeCallback = None,
               log_interval: int = 1,
               eval_env: Optional[GymEnv] = None,
               eval_freq: int = -1,

@@ -17,6 +17,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Synced callbacks with Stable-Baselines
 
 Deprecations:
 ^^^^^^^^^^^^^

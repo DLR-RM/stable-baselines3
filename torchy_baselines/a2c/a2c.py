@@ -4,8 +4,7 @@ from gym import spaces
 from typing import Type, Union, Callable, Optional, Dict, Any
 
 from torchy_baselines.common import logger
-from torchy_baselines.common.callbacks import BaseCallback
-from torchy_baselines.common.type_aliases import GymEnv
+from torchy_baselines.common.type_aliases import GymEnv, MaybeCallback
 from torchy_baselines.common.utils import explained_variance
 from torchy_baselines.ppo.policies import PPOPolicy
 from torchy_baselines.ppo.ppo import PPO
@@ -154,7 +153,7 @@ class A2C(PPO):
 
     def learn(self,
               total_timesteps: int,
-              callback: Optional[BaseCallback] = None,
+              callback: MaybeCallback = None,
               log_interval: int = 100,
               eval_env: Optional[GymEnv] = None,
               eval_freq: int = -1,

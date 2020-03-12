@@ -16,7 +16,7 @@ from torchy_baselines.common.policies import BasePolicy, get_policy_from_name
 from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate
 from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize
 from torchy_baselines.common.save_util import data_to_json, json_to_data, recursive_getattr, recursive_setattr
-from torchy_baselines.common.type_aliases import GymEnv, TensorDict, RolloutReturn
+from torchy_baselines.common.type_aliases import GymEnv, TensorDict, RolloutReturn, MaybeCallback
 from torchy_baselines.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
 from torchy_baselines.common.monitor import Monitor
 from torchy_baselines.common.noise import ActionNoise
@@ -281,7 +281,7 @@ class BaseRLModel(ABC):
 
     @abstractmethod
     def learn(self, total_timesteps: int,
-              callback: Union[None, Callable, List[BaseCallback], BaseCallback] = None,
+              callback: MaybeCallback = None,
               log_interval: int = 100,
               tb_log_name: str = "run",
               eval_env: Optional[GymEnv] = None,
@@ -877,10 +877,6 @@ class OffPolicyRLModel(BaseRLModel):
 
             while not done:
 
-                # Only stop training if return value is False, not when it is None.
-                if callback() is False:
-                    return RolloutReturn(0.0, total_steps, total_episodes, None, continue_training=False)
-
                 if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
                     # Sample a new noise matrix
                     self.actor.reset_noise()
@@ -912,6 +908,10 @@ class OffPolicyRLModel(BaseRLModel):
 
                 # Rescale and perform action
                 new_obs, reward, done, infos = env.step(self.unscale_action(clipped_action))
+
+                # Only stop training if return value is False, not when it is None.
+                if callback.on_step() is False:
+                    return RolloutReturn(0.0, total_steps, total_episodes, None, continue_training=False)
 
                 episode_reward += reward
 

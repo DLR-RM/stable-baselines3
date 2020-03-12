@@ -32,9 +32,9 @@ class PPOPolicy(BasePolicy):
     :param sde_net_arch: ([int]) Network architecture for extracting features
         when using SDE. If None, the latent features from the policy will be used.
         Pass an empty list to use the states as features.
-    :param use_expln: (bool) Use `expln()` function instead of `exp()` to ensure
+    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` to ensure
         a positive standard deviation (cf paper). It allows to keep variance
-        above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
+        above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param squash_output: (bool) Whether to squash the output using a tanh function,
         this allows to ensure boundaries when using SDE.
     """

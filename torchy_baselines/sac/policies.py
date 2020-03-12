@@ -28,9 +28,9 @@ class Actor(BaseNetwork):
     :param sde_net_arch: ([int]) Network architecture for extracting features
         when using SDE. If None, the latent features from the policy will be used.
         Pass an empty list to use the states as features.
-    :param use_expln: (bool) Use `expln()` function instead of `exp()` when using SDE to ensure
+    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` when using SDE to ensure
         a positive standard deviation (cf paper). It allows to keep variance
-        above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
+        above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
     """
     def __init__(self, obs_dim: int,
@@ -75,8 +75,8 @@ class Actor(BaseNetwork):
         """
         Retrieve the standard deviation of the action distribution.
         Only useful when using SDE.
-        It corresponds to `th.exp(log_std)` in the normal case,
-        but is slightly different when using `expln` function
+        It corresponds to ``th.exp(log_std)`` in the normal case,
+        but is slightly different when using ``expln`` function
         (cf StateDependentNoiseDistribution doc).
 
         :return: (th.Tensor)
@@ -96,43 +96,35 @@ class Actor(BaseNetwork):
     def _get_latent(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         latent_pi = self.latent_pi(obs)
 
-        if self.sde_feature_extractor is not None:
-            latent_sde = self.sde_feature_extractor(obs)
-        else:
-            latent_sde = latent_pi
+        latent_sde = self.sde_feature_extractor(obs) if self.sde_feature_extractor is not None else latent_pi
+
         return latent_pi, latent_sde
 
     def get_action_dist_params(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         latent_pi, latent_sde = self._get_latent(obs)
+        mean_actions = self.mu(latent_pi)
 
         if self.use_sde:
-            mean_actions, log_std = self.mu(latent_pi), self.log_std
+            log_std = self.log_std
         else:
-            mean_actions, log_std = self.mu(latent_pi), self.log_std(latent_pi)
+            log_std = self.log_std(latent_pi)
             # Original Implementation to cap the standard deviation
             log_std = th.clamp(log_std, LOG_STD_MIN, LOG_STD_MAX)
         return mean_actions, log_std, latent_sde
 
     def forward(self, obs: th.Tensor, deterministic: bool = False) -> th.Tensor:
         mean_actions, log_std, latent_sde = self.get_action_dist_params(obs)
-        if self.use_sde:
-            # Note: the action is squashed
-            action, _ = self.action_dist.proba_distribution(mean_actions, log_std, latent_sde,
-                                                            deterministic=deterministic)
-        else:
-            # Note: the action is squashed
-            action, _ = self.action_dist.proba_distribution(mean_actions, log_std,
-                                                            deterministic=deterministic)
+        kwargs = dict(latent_sde=latent_sde) if self.use_sde else {}
+        # Note: the action is squashed
+        action, _ = self.action_dist.proba_distribution(mean_actions, log_std,
+                                                        deterministic=deterministic, **kwargs)
         return action
 
     def action_log_prob(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         mean_actions, log_std, latent_sde = self.get_action_dist_params(obs)
-
-        if self.use_sde:
-            action, log_prob = self.action_dist.log_prob_from_params(mean_actions, self.log_std, latent_sde)
-        else:
-            action, log_prob = self.action_dist.log_prob_from_params(mean_actions, log_std)
-        return action, log_prob
+        kwargs = dict(latent_sde=latent_sde) if self.use_sde else {}
+        # return action and associated log prob
+        return self.action_dist.log_prob_from_params(mean_actions, log_std, **kwargs)
 
 
 class Critic(BaseNetwork):
@@ -178,9 +170,9 @@ class SACPolicy(BasePolicy):
     :param sde_net_arch: ([int]) Network architecture for extracting features
         when using SDE. If None, the latent features from the policy will be used.
         Pass an empty list to use the states as features.
-    :param use_expln: (bool) Use `expln()` function instead of `exp()` when using SDE to ensure
+    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` when using SDE to ensure
         a positive standard deviation (cf paper). It allows to keep variance
-        above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
+        above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
     """
     def __init__(self, observation_space: gym.spaces.Space,
@@ -239,7 +231,7 @@ class SACPolicy(BasePolicy):
         return Critic(**self.net_args).to(self.device)
 
     def forward(self, obs: th.Tensor) -> th.Tensor:
-        return self.actor(obs)
+        return self.predict(obs, deterministic=False)
 
     def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         return self.actor.forward(observation, deterministic)

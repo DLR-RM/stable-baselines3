@@ -25,9 +25,9 @@ class Actor(BaseNetwork):
     :param sde_net_arch: ([int]) Network architecture for extracting features
         when using SDE. If None, the latent features from the policy will be used.
         Pass an empty list to use the states as features.
-    :param use_expln: (bool) Use `expln()` function instead of `exp()` when using SDE to ensure
+    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` when using SDE to ensure
         a positive standard deviation (cf paper). It allows to keep variance
-        above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
+        above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     """
     def __init__(self,
                  obs_dim: int,
@@ -80,8 +80,8 @@ class Actor(BaseNetwork):
         """
         Retrieve the standard deviation of the action distribution.
         Only useful when using SDE.
-        It corresponds to `th.exp(log_std)` in the normal case,
-        but is slightly different when using `expln` function
+        It corresponds to ``th.exp(log_std)`` in the normal case,
+        but is slightly different when using ``expln`` function
         (cf StateDependentNoiseDistribution doc).
 
         :return: (th.Tensor)
@@ -206,9 +206,9 @@ class TD3Policy(BasePolicy):
     :param sde_net_arch: ([int]) Network architecture for extracting features
         when using SDE. If None, the latent features from the policy will be used.
         Pass an empty list to use the states as features.
-    :param use_expln: (bool) Use `expln()` function instead of `exp()` when using SDE to ensure
+    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` when using SDE to ensure
         a positive standard deviation (cf paper). It allows to keep variance
-        above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
+        above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     """
     def __init__(self, observation_space, action_space,
                  learning_rate, net_arch=None, device='cpu',

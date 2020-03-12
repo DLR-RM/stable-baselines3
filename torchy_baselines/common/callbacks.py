@@ -129,7 +129,7 @@ class EventCallback(BaseCallback):
 
     def _on_event(self) -> bool:
         if self.callback is not None:
-            return self.callback()
+            return self.callback.on_step()
         return True
 
     def _on_step(self) -> bool:

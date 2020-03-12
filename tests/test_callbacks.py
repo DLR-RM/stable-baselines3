@@ -6,7 +6,7 @@ import gym
 
 from torchy_baselines import A2C, CEMRL, PPO, SAC, TD3
 from torchy_baselines.common.callbacks import (CallbackList, CheckpointCallback, EvalCallback,
-    EveryNTimesteps, StopTrainingOnRewardThreshold)
+                                               EveryNTimesteps, StopTrainingOnRewardThreshold)
 
 
 @pytest.mark.parametrize("model_class", [A2C, CEMRL, PPO, SAC, TD3])
@@ -44,6 +44,6 @@ def test_callbacks(model_class):
     # Transform callback into a callback list automatically
     model.learn(500, callback=[checkpoint_callback, eval_callback])
     # Automatic wrapping, old way of doing callbacks
-    model.learn(500, callback=lambda _locals, _globals : True)
+    model.learn(500, callback=lambda _locals, _globals: True)
     if os.path.exists(log_folder):
         shutil.rmtree(log_folder)

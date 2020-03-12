@@ -122,14 +122,12 @@ def data_to_json(data: Dict[str, Any]) -> str:
 
 
 def json_to_data(json_string: str,
-                 device: Union[th.device, str] = 'cpu',
                  custom_objects: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Turn JSON serialization of class-parameters back into dictionary.
 
     :param json_string: (str) JSON serialization of the class-parameters
         that should be loaded.
-    :param device: torch.device device to which the data should be mapped if errors occur
     :param custom_objects: (dict) Dictionary of objects to replace
         upon loading. If a variable is present in this dictionary as a
         key, it will not be deserialized and the corresponding item

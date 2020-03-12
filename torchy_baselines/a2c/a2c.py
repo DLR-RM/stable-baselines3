@@ -1,10 +1,13 @@
-from gym import spaces
 import torch as th
 import torch.nn.functional as F
+from gym import spaces
+from typing import Type, Union, Callable, Optional, Dict, Any
 
-from torchy_baselines.common.utils import explained_variance
-from torchy_baselines.ppo.ppo import PPO
 from torchy_baselines.common import logger
+from torchy_baselines.common.type_aliases import GymEnv, MaybeCallback
+from torchy_baselines.common.utils import explained_variance
+from torchy_baselines.ppo.policies import PPOPolicy
+from torchy_baselines.ppo.ppo import PPO
 
 
 class A2C(PPO):
@@ -40,19 +43,33 @@ class A2C(PPO):
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
-    :param verbose: (int) the verbosity level: 0 none, 1 training information, 2 tensorflow debug
+    :param verbose: (int) the verbosity level: 0 no output, 1 info, 2 debug
     :param seed: (int) Seed for the pseudo random generators
     :param device: (str or th.device) Device (cpu, cuda, ...) on which the code should be run.
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
-    def __init__(self, policy, env, learning_rate=7e-4,
-                 n_steps=5, gamma=0.99, gae_lambda=1.0,
-                 ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5,
-                 rms_prop_eps=1e-5, use_rms_prop=True, use_sde=False, sde_sample_freq=-1,
-                 normalize_advantage=False, tensorboard_log=None, create_eval_env=False,
-                 policy_kwargs=None, verbose=0, seed=0, device='auto',
-                 _init_setup_model=True):
+    def __init__(self, policy: Union[str, Type[PPOPolicy]],
+                 env: Union[GymEnv, str],
+                 learning_rate: Union[float, Callable] = 7e-4,
+                 n_steps: int = 5,
+                 gamma: float = 0.99,
+                 gae_lambda: float = 1.0,
+                 ent_coef: float = 0.0,
+                 vf_coef: float = 0.5,
+                 max_grad_norm: float = 0.5,
+                 rms_prop_eps: float = 1e-5,
+                 use_rms_prop: bool = True,
+                 use_sde: bool = False,
+                 sde_sample_freq: int = -1,
+                 normalize_advantage: bool = False,
+                 tensorboard_log: Optional[str] = None,
+                 create_eval_env: bool = False,
+                 policy_kwargs: Optional[Dict[str, Any]] = None,
+                 verbose: int = 0,
+                 seed: Optional[int] = None,
+                 device: Union[th.device, str] = 'auto',
+                 _init_setup_model: bool = True):
 
         super(A2C, self).__init__(policy, env, learning_rate=learning_rate,
                                   n_steps=n_steps, batch_size=None, n_epochs=1,
@@ -70,41 +87,42 @@ class A2C(PPO):
         if _init_setup_model:
             self._setup_model()
 
-    def _setup_model(self):
+    def _setup_model(self) -> None:
         super(A2C, self)._setup_model()
         if self.use_rms_prop:
             self.policy.optimizer = th.optim.RMSprop(self.policy.parameters(),
                                                      lr=self.learning_rate(1), alpha=0.99,
                                                      eps=self.rms_prop_eps, weight_decay=0)
 
-    def train(self, gradient_steps: int, batch_size=None):
+    def train(self, gradient_steps: int, batch_size: Optional[int] = None) -> None:
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
         # A2C with gradient_steps > 1 does not make sense
-        assert gradient_steps == 1
+        assert gradient_steps == 1, "A2C does not support multiple gradient steps"
         # We do not use minibatches for A2C
-        assert batch_size is None
+        assert batch_size is None, "A2C does not support minibatch"
 
         for rollout_data in self.rollout_buffer.get(batch_size=None):
-            # Unpack
-            obs, action, _, _, advantage, return_batch = rollout_data
 
+            actions = rollout_data.actions
             if isinstance(self.action_space, spaces.Discrete):
-                # Convert discrete action for float to long
-                action = action.long().flatten()
+                # Convert discrete action from float to long
+                actions = actions.long().flatten()
 
             # TODO: avoid second computation of everything because of the gradient
-            values, log_prob, entropy = self.policy.evaluate_actions(obs, action)
+            values, log_prob, entropy = self.policy.evaluate_actions(rollout_data.observations, actions)
             values = values.flatten()
 
             # Normalize advantage (not present in the original implementation)
+            advantages = rollout_data.advantages
             if self.normalize_advantage:
-                advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
+                advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-            policy_loss = -(advantage * log_prob).mean()
+            # Policy gradient loss
+            policy_loss = -(advantages * log_prob).mean()
 
             # Value loss using the TD(gae_lambda) target
-            value_loss = F.mse_loss(return_batch, values)
+            value_loss = F.mse_loss(rollout_data.returns, values)
 
             # Entropy loss favor exploration
             if entropy is None:
@@ -133,9 +151,16 @@ class A2C(PPO):
         if hasattr(self.policy, 'log_std'):
             logger.logkv("std", th.exp(self.policy.log_std).mean().item())
 
-    def learn(self, total_timesteps, callback=None, log_interval=100,
-              eval_env=None, eval_freq=-1, n_eval_episodes=5,
-              tb_log_name="A2C", eval_log_path=None, reset_num_timesteps=True):
+    def learn(self,
+              total_timesteps: int,
+              callback: MaybeCallback = None,
+              log_interval: int = 100,
+              eval_env: Optional[GymEnv] = None,
+              eval_freq: int = -1,
+              n_eval_episodes: int = 5,
+              tb_log_name: str = "A2C",
+              eval_log_path: Optional[str] = None,
+              reset_num_timesteps: bool = True) -> 'A2C':
 
         return super(A2C, self).learn(total_timesteps=total_timesteps, callback=callback, log_interval=log_interval,
                                       eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,

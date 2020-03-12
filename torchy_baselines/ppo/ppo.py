@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Optional, Tuple, List
+from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
 import gym
 from gym import spaces
@@ -14,12 +14,13 @@ except ImportError:
     SummaryWriter = None
 import numpy as np
 
+from torchy_baselines.common import logger
 from torchy_baselines.common.base_class import BaseRLModel
+from torchy_baselines.common.type_aliases import GymEnv, MaybeCallback
 from torchy_baselines.common.buffers import RolloutBuffer
 from torchy_baselines.common.utils import explained_variance, get_schedule_fn
 from torchy_baselines.common.vec_env import VecEnv
 from torchy_baselines.common.callbacks import BaseCallback
-from torchy_baselines.common import logger
 from torchy_baselines.ppo.policies import PPOPolicy
 
 
@@ -66,21 +67,36 @@ class PPO(BaseRLModel):
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
-    :param verbose: (int) the verbosity level: 0 none, 1 training information, 2 tensorflow debug
+    :param verbose: (int) the verbosity level: 0 no output, 1 info, 2 debug
     :param seed: (int) Seed for the pseudo random generators
     :param device: (str or th.device) Device (cpu, cuda, ...) on which the code should be run.
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
 
-    def __init__(self, policy, env, learning_rate=3e-4,
-                 n_steps=2048, batch_size=64, n_epochs=10,
-                 gamma=0.99, gae_lambda=0.95, clip_range=0.2, clip_range_vf=None,
-                 ent_coef=0.0, vf_coef=0.5, max_grad_norm=0.5,
-                 use_sde=False, sde_sample_freq=-1,
-                 target_kl=None, tensorboard_log=None, create_eval_env=False,
-                 policy_kwargs=None, verbose=0, seed=0, device='auto',
-                 _init_setup_model=True):
+    def __init__(self, policy: Union[str, Type[PPOPolicy]],
+                 env: Union[GymEnv, str],
+                 learning_rate: Union[float, Callable] = 3e-4,
+                 n_steps: int = 2048,
+                 batch_size: Optional[int] = 64,
+                 n_epochs: int = 10,
+                 gamma: float = 0.99,
+                 gae_lambda: float = 0.95,
+                 clip_range: float = 0.2,
+                 clip_range_vf: Optional[float] = None,
+                 ent_coef: float = 0.0,
+                 vf_coef: float = 0.5,
+                 max_grad_norm: float = 0.5,
+                 use_sde: bool = False,
+                 sde_sample_freq: int = -1,
+                 target_kl: Optional[float] = None,
+                 tensorboard_log: Optional[str] = None,
+                 create_eval_env: bool = False,
+                 policy_kwargs: Optional[Dict[str, Any]] = None,
+                 verbose: int = 0,
+                 seed: Optional[int] = None,
+                 device: Union[th.device, str] = 'auto',
+                 _init_setup_model: bool = True):
 
         super(PPO, self).__init__(policy, env, PPOPolicy, policy_kwargs=policy_kwargs,
                                   verbose=verbose, device=device, use_sde=use_sde, sde_sample_freq=sde_sample_freq,
@@ -105,7 +121,7 @@ class PPO(BaseRLModel):
         if _init_setup_model:
             self._setup_model()
 
-    def _setup_model(self):
+    def _setup_model(self) -> None:
         self._setup_learning_rate()
         # TODO: preprocessing: one hot vector for obs discrete
         state_dim = self.observation_space.shape[0]
@@ -130,28 +146,22 @@ class PPO(BaseRLModel):
             self.clip_range_vf = get_schedule_fn(self.clip_range_vf)
 
     def collect_rollouts(self,
-                        env: VecEnv,
-                        callback: BaseCallback,
-                        rollout_buffer: RolloutBuffer,
-                        n_rollout_steps: int = 256,
-                        obs: Optional[np.ndarray] = None) -> Tuple[Optional[np.ndarray], bool]:
+                         env: VecEnv,
+                         callback: BaseCallback,
+                         rollout_buffer: RolloutBuffer,
+                         n_rollout_steps: int = 256,
+                         obs: Optional[np.ndarray] = None) -> Tuple[Optional[np.ndarray], bool]:
 
         n_steps = 0
         continue_training = True
         rollout_buffer.reset()
         # Sample new weights for the state dependent exploration
-        # TODO: ensure episodic setting?
         if self.use_sde:
             self.policy.reset_noise(env.num_envs)
 
         callback.on_rollout_start()
 
         while n_steps < n_rollout_steps:
-
-            if callback() is False:
-                continue_training = False
-                return None, continue_training
-
 
             if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
                 # Sample a new noise matrix
@@ -167,6 +177,10 @@ class PPO(BaseRLModel):
             if isinstance(self.action_space, gym.spaces.Box):
                 clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
             new_obs, rewards, dones, infos = env.step(clipped_actions)
+
+            if callback.on_step() is False:
+                continue_training = False
+                return None, continue_training
 
             self._update_info_buffer(infos)
             n_steps += 1
@@ -196,13 +210,12 @@ class PPO(BaseRLModel):
         for gradient_step in range(gradient_steps):
             approx_kl_divs = []
             # Sample replay buffer
-            for replay_data in self.rollout_buffer.get(batch_size):
-                # Unpack
-                obs, action, old_values, old_log_prob, advantage, return_batch = replay_data
+            for rollout_data in self.rollout_buffer.get(batch_size):
 
+                actions = rollout_data.actions
                 if isinstance(self.action_space, spaces.Discrete):
-                    # Convert discrete action for float to long
-                    action = action.long().flatten()
+                    # Convert discrete action from float to long
+                    actions = rollout_data.actions.long().flatten()
 
                 # Re-sample the noise matrix because the log_std has changed
                 # TODO: investigate why there is no issue with the gradient
@@ -210,16 +223,17 @@ class PPO(BaseRLModel):
                 if self.use_sde:
                     self.policy.reset_noise(batch_size)
 
-                values, log_prob, entropy = self.policy.evaluate_actions(obs, action)
+                values, log_prob, entropy = self.policy.evaluate_actions(rollout_data.observations, actions)
                 values = values.flatten()
                 # Normalize advantage
-                advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
+                advantages = rollout_data.advantages
+                advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
                 # ratio between old and new policy, should be one at the first iteration
-                ratio = th.exp(log_prob - old_log_prob)
+                ratio = th.exp(log_prob - rollout_data.old_log_prob)
                 # clipped surrogate loss
-                policy_loss_1 = advantage * ratio
-                policy_loss_2 = advantage * th.clamp(ratio, 1 - clip_range, 1 + clip_range)
+                policy_loss_1 = advantages * ratio
+                policy_loss_2 = advantages * th.clamp(ratio, 1 - clip_range, 1 + clip_range)
                 policy_loss = -th.min(policy_loss_1, policy_loss_2).mean()
 
                 if self.clip_range_vf is None:
@@ -228,9 +242,10 @@ class PPO(BaseRLModel):
                 else:
                     # Clip the different between old and new value
                     # NOTE: this depends on the reward scaling
-                    values_pred = old_values + th.clamp(values - old_values, -clip_range_vf, clip_range_vf)
+                    values_pred = rollout_data.old_values + th.clamp(values - rollout_data.old_values, -clip_range_vf,
+                                                                     clip_range_vf)
                 # Value loss using the TD(gae_lambda) target
-                value_loss = F.mse_loss(return_batch, values_pred)
+                value_loss = F.mse_loss(rollout_data.returns, values_pred)
 
                 # Entropy loss favor exploration
                 if entropy is None:
@@ -247,7 +262,7 @@ class PPO(BaseRLModel):
                 # Clip grad norm
                 th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                 self.policy.optimizer.step()
-                approx_kl_divs.append(th.mean(old_log_prob - log_prob).detach().cpu().numpy())
+                approx_kl_divs.append(th.mean(rollout_data.old_log_prob - log_prob).detach().cpu().numpy())
 
             if self.target_kl is not None and np.mean(approx_kl_divs) > 1.5 * self.target_kl:
                 print("Early stopping at step {} due to reaching max kl: {:.2f}".format(gradient_step,
@@ -261,7 +276,6 @@ class PPO(BaseRLModel):
         if self.clip_range_vf is not None:
             logger.logkv("clip_range_vf", clip_range_vf)
 
-
         logger.logkv("explained_variance", explained_var)
         # TODO: gather stats for the entropy and other losses?
         logger.logkv("entropy_loss", entropy_loss.item())
@@ -270,9 +284,16 @@ class PPO(BaseRLModel):
         if hasattr(self.policy, 'log_std'):
             logger.logkv("std", th.exp(self.policy.log_std).mean().item())
 
-    def learn(self, total_timesteps, callback=None, log_interval=1,
-              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="PPO",
-              eval_log_path=None, reset_num_timesteps=True):
+    def learn(self,
+              total_timesteps: int,
+              callback: MaybeCallback = None,
+              log_interval: int = 1,
+              eval_env: Optional[GymEnv] = None,
+              eval_freq: int = -1,
+              n_eval_episodes: int = 5,
+              tb_log_name: str = "PPO",
+              eval_log_path: Optional[str] = None,
+              reset_num_timesteps: bool = True) -> 'PPO':
 
         episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq,
                                                        n_eval_episodes, eval_log_path, reset_num_timesteps)

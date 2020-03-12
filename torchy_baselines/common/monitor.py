@@ -27,8 +27,9 @@ class Monitor(gym.Wrapper):
         :param env: (gym.Env) The environment
         :param filename: (Optional[str]) the location to save a log file, can be None for no log
         :param allow_early_resets: (bool) allows the reset of the environment before it is done
-        :param reset_keywords: (Tuple[str, ...]) extra keywords for the reset call, if extra parameters are needed at reset
-        :param info_keywords: (Tuple[str, ...]) extra information to log, from the information return of environment.step
+        :param reset_keywords: (Tuple[str, ...]) extra keywords for the reset call,
+            if extra parameters are needed at reset
+        :param info_keywords: (Tuple[str, ...]) extra information to log, from the information return of env.step()
         """
         super(Monitor, self).__init__(env=env)
         self.t_start = time.time()

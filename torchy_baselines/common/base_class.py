@@ -16,7 +16,7 @@ from torchy_baselines.common.policies import BasePolicy, get_policy_from_name
 from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate
 from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize
 from torchy_baselines.common.save_util import data_to_json, json_to_data, recursive_getattr, recursive_setattr
-from torchy_baselines.common.type_aliases import GymEnv, TensorDict, OptimizerStateDict
+from torchy_baselines.common.type_aliases import GymEnv, TensorDict, RolloutReturn, MaybeCallback
 from torchy_baselines.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
 from torchy_baselines.common.monitor import Monitor
 from torchy_baselines.common.noise import ActionNoise
@@ -281,14 +281,14 @@ class BaseRLModel(ABC):
 
     @abstractmethod
     def learn(self, total_timesteps: int,
-              callback: Union[None, Callable, List[BaseCallback], BaseCallback] = None,
+              callback: MaybeCallback = None,
               log_interval: int = 100,
               tb_log_name: str = "run",
               eval_env: Optional[GymEnv] = None,
               eval_freq: int = -1,
               n_eval_episodes: int = 5,
               eval_log_path: Optional[str] = None,
-              reset_num_timesteps: bool = True):
+              reset_num_timesteps: bool = True) -> 'BaseRLModel':
         """
         Return a trained model.
 
@@ -494,7 +494,7 @@ class BaseRLModel(ABC):
                 if "data" in namelist and load_data:
                     # Load class parameters and convert to string
                     json_data = archive.read("data").decode()
-                    data = json_to_data(json_data, device)
+                    data = json_to_data(json_data)
 
                 if "tensors.pth" in namelist and load_data:
                     # Load extra tensors
@@ -830,7 +830,7 @@ class OffPolicyRLModel(BaseRLModel):
                          replay_buffer: Optional[ReplayBuffer] = None,
                          obs: Optional[np.ndarray] = None,
                          episode_num: int = 0,
-                         log_interval: Optional[int] = None) -> Tuple[float, int, int, Optional[np.ndarray], bool]:
+                         log_interval: Optional[int] = None) -> RolloutReturn:
         """
         Collect rollout using the current policy (and possibly fill the replay buffer)
 
@@ -849,6 +849,7 @@ class OffPolicyRLModel(BaseRLModel):
         :param obs: (np.ndarray) Last observation from the environment
         :param episode_num: (int) Episode index
         :param log_interval: (int) Log data every `log_interval` episodes
+        :return: (RolloutReturn)
         """
         episode_rewards, total_timesteps = [], []
         total_steps, total_episodes = 0, 0
@@ -875,11 +876,6 @@ class OffPolicyRLModel(BaseRLModel):
             episode_reward, episode_timesteps = 0.0, 0
 
             while not done:
-
-                # Only stop training if return value is False, not when it is None.
-                if callback() is False:
-                    continue_training = False
-                    return 0.0, total_steps, total_episodes, None, continue_training
 
                 if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
                     # Sample a new noise matrix
@@ -912,6 +908,10 @@ class OffPolicyRLModel(BaseRLModel):
 
                 # Rescale and perform action
                 new_obs, reward, done, infos = env.step(self.unscale_action(clipped_action))
+
+                # Only stop training if return value is False, not when it is None.
+                if callback.on_step() is False:
+                    return RolloutReturn(0.0, total_steps, total_episodes, None, continue_training=False)
 
                 episode_reward += reward
 
@@ -956,7 +956,6 @@ class OffPolicyRLModel(BaseRLModel):
                 total_episodes += 1
                 episode_rewards.append(episode_reward)
                 total_timesteps.append(episode_timesteps)
-                # TODO: reset SDE matrix at the end of the episode?
                 if action_noise is not None:
                     action_noise.reset()
 
@@ -1004,4 +1003,4 @@ class OffPolicyRLModel(BaseRLModel):
 
         callback.on_rollout_end()
 
-        return mean_reward, total_steps, total_episodes, obs, continue_training
+        return RolloutReturn(mean_reward, total_steps, total_episodes, obs, continue_training)

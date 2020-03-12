@@ -22,6 +22,7 @@ def test_bijector():
     # Check the inverse method
     assert th.isclose(TanhBijector.inverse(squashed_actions), actions).all()
 
+
 @pytest.mark.parametrize("model_class", [A2C, PPO])
 def test_squashed_gaussian(model_class):
     """

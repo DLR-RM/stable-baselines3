@@ -1,4 +1,4 @@
-from typing import Union, Optional, Tuple, Generator
+from typing import Union, Optional, Generator
 
 import numpy as np
 import torch as th
@@ -18,6 +18,7 @@ class BaseBuffer(object):
         to which the values will be converted
     :param n_envs: (int) Number of parallel environments
     """
+
     def __init__(self,
                  buffer_size: int,
                  obs_dim: int,
@@ -80,11 +81,12 @@ class BaseBuffer(object):
     def sample(self,
                batch_size: int,
                env: Optional[VecNormalize] = None
-               ) -> Tuple[th.Tensor, ...]:
+               ):
         """
         :param batch_size: (int) Number of element to sample
         :param env: (Optional[VecNormalize]) associated gym VecEnv
             to normalize the observations/rewards when sampling
+        :return: (Union[RolloutBufferSamples, ReplayBufferSamples])
         """
         upper_bound = self.buffer_size if self.full else self.pos
         batch_inds = np.random.randint(0, upper_bound, size=batch_size)
@@ -93,11 +95,11 @@ class BaseBuffer(object):
     def _get_samples(self,
                      batch_inds: np.ndarray,
                      env: Optional[VecNormalize] = None
-                     ) -> Tuple[th.Tensor, ...]:
+                     ):
         """
         :param batch_inds: (th.Tensor)
         :param env: (Optional[VecNormalize])
-        :return: ([th.Tensor])
+        :return: (Union[RolloutBufferSamples, ReplayBufferSamples])
         """
         raise NotImplementedError()
 
@@ -117,13 +119,13 @@ class BaseBuffer(object):
 
     @staticmethod
     def _normalize_obs(obs: np.ndarray,
-                      env: Optional[VecNormalize] = None) -> np.ndarray:
+                       env: Optional[VecNormalize] = None) -> np.ndarray:
         if env is not None:
             return env.normalize_obs(obs).astype(np.float32)
         return obs
 
-    def _normalize_reward(self,
-                          reward: np.ndarray,
+    @staticmethod
+    def _normalize_reward(reward: np.ndarray,
                           env: Optional[VecNormalize] = None) -> np.ndarray:
         if env is not None:
             return env.normalize_reward(reward).astype(np.float32)
@@ -140,13 +142,13 @@ class ReplayBuffer(BaseBuffer):
     :param device: (th.device)
     :param n_envs: (int) Number of parallel environments
     """
+
     def __init__(self,
                  buffer_size: int,
                  obs_dim: int,
                  action_dim: int,
                  device: Union[th.device, str] = 'cpu',
                  n_envs: int = 1):
-
         super(ReplayBuffer, self).__init__(buffer_size, obs_dim, action_dim, device, n_envs=n_envs)
 
         assert n_envs == 1, "Replay buffer only support single environment for now"
@@ -184,7 +186,7 @@ class ReplayBuffer(BaseBuffer):
                 self._normalize_obs(self.next_observations[batch_inds, 0, :], env),
                 self.dones[batch_inds],
                 self._normalize_reward(self.rewards[batch_inds], env))
-        return tuple(map(self.to_torch, data))
+        return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
 
 
 class RolloutBuffer(BaseBuffer):
@@ -200,6 +202,7 @@ class RolloutBuffer(BaseBuffer):
     :param gamma: (float) Discount factor
     :param n_envs: (int) Number of parallel environments
     """
+
     def __init__(self,
                  buffer_size: int,
                  obs_dim: int,
@@ -333,4 +336,4 @@ class RolloutBuffer(BaseBuffer):
                 self.log_probs[batch_inds].flatten(),
                 self.advantages[batch_inds].flatten(),
                 self.returns[batch_inds].flatten())
-        return tuple(map(self.to_torch, data))
+        return RolloutBufferSamples(*tuple(map(self.to_torch, data)))

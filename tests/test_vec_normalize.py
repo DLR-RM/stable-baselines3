@@ -3,13 +3,15 @@ import pytest
 import numpy as np
 
 from torchy_baselines.common.running_mean_std import RunningMeanStd
-from torchy_baselines.common.vec_env import DummyVecEnv, VecNormalize, VecFrameStack, sync_envs_normalization
+from torchy_baselines.common.vec_env import DummyVecEnv, VecNormalize, VecFrameStack, sync_envs_normalization, unwrap_vec_normalize
 from torchy_baselines import CEMRL, SAC, TD3
 
 ENV_ID = 'Pendulum-v0'
 
+
 def make_env():
     return gym.make(ENV_ID)
+
 
 def check_rms_equal(rmsa, rmsb):
     assert np.all(rmsa.mean == rmsb.mean)
@@ -34,6 +36,7 @@ def check_vec_norm_equal(norma, normb):
     assert norma.epsilon == normb.epsilon
     assert norma.training == normb.training
 
+
 def _make_warmstart_cartpole():
     """Warm-start VecNormalize by stepping through CartPole"""
     venv = DummyVecEnv([lambda: gym.make("CartPole-v1")])
@@ -50,8 +53,8 @@ def _make_warmstart_cartpole():
 def test_runningmeanstd():
     """Test RunningMeanStd object"""
     for (x_1, x_2, x_3) in [
-         (np.random.randn(3), np.random.randn(4), np.random.randn(5)),
-         (np.random.randn(3, 2), np.random.randn(4, 2), np.random.randn(5, 2))]:
+        (np.random.randn(3), np.random.randn(4), np.random.randn(5)),
+        (np.random.randn(3, 2), np.random.randn(4, 2), np.random.randn(5, 2))]:
         rms = RunningMeanStd(epsilon=0.0, shape=x_1.shape[1:])
 
         x_cat = np.concatenate([x_1, x_2, x_3], axis=0)
@@ -129,8 +132,16 @@ def test_offpolicy_normalization(model_class):
 
 def test_sync_vec_normalize():
     env = DummyVecEnv([make_env])
+
+    assert unwrap_vec_normalize(env) is None
+
     env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10., clip_reward=10.)
+
+    assert isinstance(unwrap_vec_normalize(env), VecNormalize)
+
     env = VecFrameStack(env, 1)
+
+    assert isinstance(unwrap_vec_normalize(env), VecNormalize)
 
     eval_env = DummyVecEnv([make_env])
     eval_env = VecNormalize(eval_env, training=False, norm_obs=True, norm_reward=True, clip_obs=10., clip_reward=10.)
@@ -143,6 +154,7 @@ def test_sync_vec_normalize():
 
     obs = env.reset()
     original_obs = env.get_original_obs()
+    dummy_rewards = np.random.rand(10)
     # Normalization must be different
     assert not np.allclose(obs, eval_env.normalize_obs(original_obs))
 
@@ -150,3 +162,4 @@ def test_sync_vec_normalize():
 
     # Now they must be synced
     assert np.allclose(obs, eval_env.normalize_obs(original_obs))
+    assert np.allclose(env.normalize_reward(dummy_rewards), eval_env.normalize_reward(dummy_rewards))

@@ -16,6 +16,7 @@ MODEL_LIST = [
     SAC,
 ]
 
+
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 def test_save_load(model_class):
     """

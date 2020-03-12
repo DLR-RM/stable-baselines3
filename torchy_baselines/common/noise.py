@@ -9,6 +9,7 @@ class ActionNoise(ABC):
     """
     The action noise base class
     """
+
     def __init__(self):
         super(ActionNoise, self).__init__()
 
@@ -22,6 +23,7 @@ class ActionNoise(ABC):
     def __call__(self):
         pass
 
+
 class NormalActionNoise(ActionNoise):
     """
     A Gaussian action noise
@@ -29,6 +31,7 @@ class NormalActionNoise(ActionNoise):
     :param mean: (float) the mean value of the noise
     :param sigma: (float) the scale of the noise (std here)
     """
+
     def __init__(self, mean, sigma):
         self._mu = mean
         self._sigma = sigma

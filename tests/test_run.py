@@ -1,7 +1,5 @@
-import os
-
-import pytest
 import numpy as np
+import pytest
 
 from torchy_baselines import A2C, CEMRL, PPO, SAC, TD3
 from torchy_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
@@ -25,7 +23,7 @@ def test_cemrl():
 @pytest.mark.parametrize("model_class", [A2C, PPO])
 @pytest.mark.parametrize("env_id", ['CartPole-v1', 'Pendulum-v0'])
 def test_onpolicy(model_class, env_id):
-    model = model_class('MlpPolicy', env_id, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
+    model = model_class('MlpPolicy', env_id, seed=0, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
     model.learn(total_timesteps=1000, eval_freq=500)
 
 

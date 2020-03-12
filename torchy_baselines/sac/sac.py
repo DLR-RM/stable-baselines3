@@ -1,13 +1,15 @@
-from typing import List, Tuple
+from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
 import torch as th
 import torch.nn.functional as F
 import numpy as np
 
+from torchy_baselines.common import logger
 from torchy_baselines.common.base_class import OffPolicyRLModel
 from torchy_baselines.common.buffers import ReplayBuffer
+from torchy_baselines.common.type_aliases import GymEnv, MaybeCallback
+from torchy_baselines.common.noise import ActionNoise
 from torchy_baselines.sac.policies import SACPolicy
-from torchy_baselines.common import logger
 
 
 class SAC(OffPolicyRLModel):
@@ -25,26 +27,26 @@ class SAC(OffPolicyRLModel):
     in https://github.com/hill-a/stable-baselines/issues/270
 
     :param policy: (SACPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
-    :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
+    :param env: (GymEnv or str) The environment to learn from (if registered in Gym, can be str)
     :param learning_rate: (float or callable) learning rate for adam optimizer,
         the same learning rate will be used for all networks (Q-Values, Actor and Value function)
         it can be a function of the current progress (from 1 to 0)
     :param buffer_size: (int) size of the replay buffer
+    :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
     :param batch_size: (int) Minibatch size for each gradient update
     :param tau: (float) the soft update coefficient ("polyak update", between 0 and 1)
+    :param gamma: (float) the discount factor
+    :param train_freq: (int) Update the model every ``train_freq`` steps.
+    :param gradient_steps: (int) How many gradient update after each step
+    :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
+        Note that this cannot be used at the same time as ``train_freq``
+    :param action_noise: (ActionNoise) the action noise type (None by default), this can help
+        for hard exploration problem. Cf common.noise for the different action noise type.
     :param ent_coef: (str or float) Entropy regularization coefficient. (Equivalent to
         inverse of reward scale in the original SAC paper.)  Controlling exploration/exploitation trade-off.
         Set it to 'auto' to learn it automatically (and 'auto_0.1' for using 0.1 as initial value)
-    :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
-    :param target_update_interval: (int) update the target network every `target_network_update_freq` steps.
-    :param train_freq: (int) Update the model every `train_freq` steps.
-    :param gradient_steps: (int) How many gradient update after each step
-    :param n_episodes_rollout: (int) Update the model every `n_episodes_rollout` episodes.
-        Note that this cannot be used at the same time as `train_freq`
-    :param target_entropy: (str or float) target entropy when learning `ent_coef` (`ent_coef = 'auto'`)
-    :param action_noise: (ActionNoise) the action noise type (None by default), this can help
-        for hard exploration problem. Cf common.noise for the different action noise type.
-    :param gamma: (float) the discount factor
+    :param target_update_interval: (int) update the target network every ``target_network_update_freq`` steps.
+    :param target_entropy: (str or float) target entropy when learning ``ent_coef`` (``ent_coef = 'auto'``)
     :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
         instead of action noise exploration (default: False)
     :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
@@ -54,23 +56,38 @@ class SAC(OffPolicyRLModel):
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
-    :param verbose: (int) the verbosity level: 0 none, 1 training information, 2 tensorflow debug
+    :param verbose: (int) the verbosity level: 0 no output, 1 info, 2 debug
     :param seed: (int) Seed for the pseudo random generators
     :param device: (str or th.device) Device (cpu, cuda, ...) on which the code should be run.
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
 
-    def __init__(self, policy, env, learning_rate=3e-4, buffer_size=int(1e6),
-                 learning_starts=100, batch_size=256,
-                 tau=0.005, ent_coef='auto', target_update_interval=1,
-                 train_freq=1, gradient_steps=1, n_episodes_rollout=-1,
-                 target_entropy='auto', action_noise=None,
-                 gamma=0.99, use_sde=False, sde_sample_freq=-1,
-                 use_sde_at_warmup=False,
-                 tensorboard_log=None, create_eval_env=False,
-                 policy_kwargs=None, verbose=0, seed=0, device='auto',
-                 _init_setup_model=True):
+    def __init__(self, policy: Union[str, Type[SACPolicy]],
+                 env: Union[GymEnv, str],
+                 learning_rate: Union[float, Callable] = 3e-4,
+                 buffer_size: int = int(1e6),
+                 learning_starts: int = 100,
+                 batch_size: int = 256,
+                 tau: float = 0.005,
+                 gamma: float = 0.99,
+                 train_freq: int = 1,
+                 gradient_steps: int = 1,
+                 n_episodes_rollout: int = -1,
+                 action_noise: Optional[ActionNoise] = None,
+                 ent_coef: Union[str, float] = 'auto',
+                 target_update_interval: int = 1,
+                 target_entropy: Union[str, float] = 'auto',
+                 use_sde: bool = False,
+                 sde_sample_freq: int = -1,
+                 use_sde_at_warmup: bool = False,
+                 tensorboard_log: Optional[str] = None,
+                 create_eval_env: bool = False,
+                 policy_kwargs: Dict[str, Any] = None,
+                 verbose: int = 0,
+                 seed: Optional[int] = None,
+                 device: Union[th.device, str] = 'auto',
+                 _init_setup_model: bool = True):
 
         super(SAC, self).__init__(policy, env, SACPolicy, policy_kwargs, verbose, device,
                                   create_eval_env=create_eval_env, seed=seed,
@@ -79,7 +96,7 @@ class SAC(OffPolicyRLModel):
 
         self.learning_rate = learning_rate
         self.target_entropy = target_entropy
-        self.log_ent_coef = None
+        self.log_ent_coef = None  # type: Optional[th.Tensor]
         self.target_update_interval = target_update_interval
         self.buffer_size = buffer_size
         # In the original paper, same learning rate is used for all networks
@@ -101,7 +118,7 @@ class SAC(OffPolicyRLModel):
         if _init_setup_model:
             self._setup_model()
 
-    def _setup_model(self):
+    def _setup_model(self) -> None:
         self._setup_learning_rate()
         obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
         if self.seed is not None:
@@ -143,12 +160,12 @@ class SAC(OffPolicyRLModel):
         self.policy = self.policy.to(self.device)
         self._create_aliases()
 
-    def _create_aliases(self):
+    def _create_aliases(self) -> None:
         self.actor = self.policy.actor
         self.critic = self.policy.critic
         self.critic_target = self.policy.critic_target
 
-    def train(self, gradient_steps: int, batch_size: int = 64):
+    def train(self, gradient_steps: int, batch_size: int = 64) -> None:
         # Update optimizers learning rate
         optimizers = [self.actor.optimizer, self.critic.optimizer]
         if self.ent_coef_optimizer is not None:
@@ -163,19 +180,12 @@ class SAC(OffPolicyRLModel):
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
-            obs, action_batch, next_obs, done, reward = replay_data
-
-            # Two options: retain_graph=True in the actor_loss.backward()
-            # or sample again the noise matrix
-            # otherwise the intermediate step `std = th.exp(log_std)`
-            # is lost and we cannot backpropagate through again
-            # anyway, we need to sample because `log_std` may have changed between two gradient steps
+            # We need to sample because `log_std` may have changed between two gradient steps
             if self.use_sde:
-                self.actor.reset_noise(batch_size=batch_size)
-                # self.actor.reset_noise()
+                self.actor.reset_noise()
 
             # Action by the current actor for the sampled state
-            action_pi, log_prob = self.actor.action_log_prob(obs)
+            actions_pi, log_prob = self.actor.action_log_prob(replay_data.observations)
             log_prob = log_prob.reshape(-1, 1)
 
             ent_coef_loss = None
@@ -196,20 +206,18 @@ class SAC(OffPolicyRLModel):
                 self.ent_coef_optimizer.step()
 
             with th.no_grad():
-                # if self.use_sde:
-                #     self.actor.reset_noise(batch_size=batch_size)
                 # Select action according to policy
-                next_action, next_log_prob = self.actor.action_log_prob(next_obs)
+                next_actions, next_log_prob = self.actor.action_log_prob(replay_data.next_observations)
                 # Compute the target Q value
-                target_q1, target_q2 = self.critic_target(next_obs, next_action)
+                target_q1, target_q2 = self.critic_target(replay_data.next_observations, next_actions)
                 target_q = th.min(target_q1, target_q2)
-                target_q = reward + (1 - done) * self.gamma * target_q
+                target_q = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
                 # td error + entropy term
                 q_backup = target_q - ent_coef * next_log_prob.reshape(-1, 1)
 
             # Get current Q estimates
             # using action from the replay buffer
-            current_q1, current_q2 = self.critic(obs, action_batch)
+            current_q1, current_q2 = self.critic(replay_data.observations, replay_data.actions)
 
             # Compute critic loss
             critic_loss = 0.5 * (F.mse_loss(current_q1, q_backup) + F.mse_loss(current_q2, q_backup))
@@ -221,7 +229,7 @@ class SAC(OffPolicyRLModel):
 
             # Compute actor loss
             # Alternative: actor_loss = th.mean(log_prob - qf1_pi)
-            qf1_pi, qf2_pi = self.critic.forward(obs, action_pi)
+            qf1_pi, qf2_pi = self.critic.forward(replay_data.observations, actions_pi)
             min_qf_pi = th.min(qf1_pi, qf2_pi)
             actor_loss = (ent_coef * log_prob - min_qf_pi).mean()
 
@@ -242,9 +250,16 @@ class SAC(OffPolicyRLModel):
         if ent_coef_loss is not None:
             logger.logkv("ent_coef_loss", ent_coef_loss.item())
 
-    def learn(self, total_timesteps, callback=None, log_interval=4,
-              eval_env=None, eval_freq=-1, n_eval_episodes=5, tb_log_name="SAC",
-              eval_log_path=None, reset_num_timesteps=True):
+    def learn(self,
+              total_timesteps: int,
+              callback: MaybeCallback = None,
+              log_interval: int = 4,
+              eval_env: Optional[GymEnv] = None,
+              eval_freq: int = -1,
+              n_eval_episodes: int = 5,
+              tb_log_name: str = "SAC",
+              eval_log_path: Optional[str] = None,
+              reset_num_timesteps: bool = True) -> OffPolicyRLModel:
 
         episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq,
                                                        n_eval_episodes, eval_log_path, reset_num_timesteps)
@@ -258,18 +273,16 @@ class SAC(OffPolicyRLModel):
                                             replay_buffer=self.replay_buffer,
                                             obs=obs, episode_num=episode_num,
                                             log_interval=log_interval)
-            # Unpack
-            episode_reward, episode_timesteps, n_episodes, obs, continue_training = rollout
 
-            if continue_training is False:
+            if rollout.continue_training is False:
                 break
 
-            episode_num += n_episodes
+            obs = rollout.obs
+            episode_num += rollout.n_episodes
             self._update_current_progress(self.num_timesteps, total_timesteps)
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
-                gradient_steps = self.gradient_steps if self.gradient_steps > 0 else episode_timesteps
-
+                gradient_steps = self.gradient_steps if self.gradient_steps > 0 else rollout.episode_timesteps
                 self.train(gradient_steps, batch_size=self.batch_size)
 
         callback.on_training_end()

@@ -7,9 +7,9 @@ setup(name='torchy_baselines',
       packages=[package for package in find_packages()
                 if package.startswith('torchy_baselines')],
       install_requires=[
-          'gym[classic_control]>=0.10.9',
+          'gym[classic_control]>=0.11',
           'numpy',
-          'torch>=1.2.0',
+          'torch>=1.4.0',
           'cloudpickle',
           # For reading logs
           'pandas',
@@ -47,7 +47,7 @@ setup(name='torchy_baselines',
       license="MIT",
       long_description="",
       long_description_content_type='text/markdown',
-      version="0.2.0",
+      version="0.2.3",
       )
 
 # python setup.py sdist

@@ -317,7 +317,7 @@ class StateDependentNoiseDistribution(Distribution):
         self.exploration_matrices = self.weights_dist.rsample((batch_size,))
 
     def proba_distribution_net(self, latent_dim: int, log_std_init: float = -2.0,
-                               latent_sde_dim: Optional[th.Tensor] = None) -> Tuple[nn.Module, nn.Parameter]:
+                               latent_sde_dim: Optional[int] = None) -> Tuple[nn.Module, nn.Parameter]:
         """
         Create the layers and parameter that represent the distribution:
         one output will be the deterministic action, the other parameter will be the
@@ -325,7 +325,7 @@ class StateDependentNoiseDistribution(Distribution):
 
         :param latent_dim: (int) Dimension of the last layer of the policy (before the action layer)
         :param log_std_init: (float) Initial value for the log standard deviation
-        :param latent_sde_dim: (int) Dimension of the last layer of the feature extractor
+        :param latent_sde_dim: (Optional[int]) Dimension of the last layer of the feature extractor
             for SDE. By default, it is shared with the policy network.
         :return: (nn.Linear, nn.Parameter)
         """

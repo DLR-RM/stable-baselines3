@@ -1,8 +1,7 @@
 """
-Common aliases for type hing
+Common aliases for type hint
 """
-from typing import Union, Type, Optional, Dict, Any, List, NamedTuple
-from collections import namedtuple
+from typing import Union, Dict, Any, NamedTuple, Optional
 
 import numpy as np
 import torch as th

@@ -1,6 +1,5 @@
-from typing import Type, Tuple, Optional, List
-
 import numpy as np
+from typing import Tuple, Optional, List
 
 
 # TODO: add more from https://github.com/hardmaru/estool/blob/master/es.py

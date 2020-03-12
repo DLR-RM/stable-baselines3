@@ -16,7 +16,7 @@ from torchy_baselines.common.policies import BasePolicy, get_policy_from_name
 from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate
 from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize
 from torchy_baselines.common.save_util import data_to_json, json_to_data, recursive_getattr, recursive_setattr
-from torchy_baselines.common.type_aliases import GymEnv, TensorDict, OptimizerStateDict, RolloutReturn
+from torchy_baselines.common.type_aliases import GymEnv, TensorDict, RolloutReturn
 from torchy_baselines.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
 from torchy_baselines.common.monitor import Monitor
 from torchy_baselines.common.noise import ActionNoise
@@ -494,7 +494,7 @@ class BaseRLModel(ABC):
                 if "data" in namelist and load_data:
                     # Load class parameters and convert to string
                     json_data = archive.read("data").decode()
-                    data = json_to_data(json_data, device)
+                    data = json_to_data(json_data)
 
                 if "tensors.pth" in namelist and load_data:
                     # Load extra tensors

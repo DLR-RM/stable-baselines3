@@ -1,7 +1,5 @@
-import os
-
-import pytest
 import numpy as np
+import pytest
 
 from torchy_baselines import A2C, CEMRL, PPO, SAC, TD3
 from torchy_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise

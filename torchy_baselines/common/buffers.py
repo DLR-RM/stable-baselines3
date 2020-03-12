@@ -18,6 +18,7 @@ class BaseBuffer(object):
         to which the values will be converted
     :param n_envs: (int) Number of parallel environments
     """
+
     def __init__(self,
                  buffer_size: int,
                  obs_dim: int,
@@ -118,13 +119,13 @@ class BaseBuffer(object):
 
     @staticmethod
     def _normalize_obs(obs: np.ndarray,
-                      env: Optional[VecNormalize] = None) -> np.ndarray:
+                       env: Optional[VecNormalize] = None) -> np.ndarray:
         if env is not None:
             return env.normalize_obs(obs).astype(np.float32)
         return obs
 
-    def _normalize_reward(self,
-                          reward: np.ndarray,
+    @staticmethod
+    def _normalize_reward(reward: np.ndarray,
                           env: Optional[VecNormalize] = None) -> np.ndarray:
         if env is not None:
             return env.normalize_reward(reward).astype(np.float32)
@@ -141,13 +142,13 @@ class ReplayBuffer(BaseBuffer):
     :param device: (th.device)
     :param n_envs: (int) Number of parallel environments
     """
+
     def __init__(self,
                  buffer_size: int,
                  obs_dim: int,
                  action_dim: int,
                  device: Union[th.device, str] = 'cpu',
                  n_envs: int = 1):
-
         super(ReplayBuffer, self).__init__(buffer_size, obs_dim, action_dim, device, n_envs=n_envs)
 
         assert n_envs == 1, "Replay buffer only support single environment for now"
@@ -201,6 +202,7 @@ class RolloutBuffer(BaseBuffer):
     :param gamma: (float) Discount factor
     :param n_envs: (int) Number of parallel environments
     """
+
     def __init__(self,
                  buffer_size: int,
                  obs_dim: int,

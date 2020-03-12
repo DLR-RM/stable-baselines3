@@ -9,8 +9,8 @@ import numpy as np
 from torchy_baselines.common.policies import (BasePolicy, register_policy, MlpExtractor,
                                               create_sde_feature_extractor)
 from torchy_baselines.common.distributions import (make_proba_distribution, Distribution,
-    DiagGaussianDistribution, CategoricalDistribution, StateDependentNoiseDistribution)
-
+                                                   DiagGaussianDistribution, CategoricalDistribution,
+                                                   StateDependentNoiseDistribution)
 
 
 class PPOPolicy(BasePolicy):
@@ -183,13 +183,15 @@ class PPOPolicy(BasePolicy):
         action, _ = self._get_action_dist_from_latent(latent_pi, latent_sde, deterministic=deterministic)
         return action
 
-    def evaluate_actions(self, obs: th.Tensor, actions: th.Tensor, deterministic: bool = False) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
+    def evaluate_actions(self, obs: th.Tensor,
+                         actions: th.Tensor,
+                         deterministic: bool = False) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
         Evaluate actions according to the current policy,
         given the observations.
 
         :param obs: (th.Tensor)
-        :param action: (th.Tensor)
+        :param actions: (th.Tensor)
         :param deterministic: (bool)
         :return: (th.Tensor, th.Tensor, th.Tensor) estimated value, log likelihood of taking those actions
             and entropy of the action distribution.

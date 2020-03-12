@@ -146,11 +146,11 @@ class PPO(BaseRLModel):
             self.clip_range_vf = get_schedule_fn(self.clip_range_vf)
 
     def collect_rollouts(self,
-                        env: VecEnv,
-                        callback: BaseCallback,
-                        rollout_buffer: RolloutBuffer,
-                        n_rollout_steps: int = 256,
-                        obs: Optional[np.ndarray] = None) -> Tuple[Optional[np.ndarray], bool]:
+                         env: VecEnv,
+                         callback: BaseCallback,
+                         rollout_buffer: RolloutBuffer,
+                         n_rollout_steps: int = 256,
+                         obs: Optional[np.ndarray] = None) -> Tuple[Optional[np.ndarray], bool]:
 
         n_steps = 0
         continue_training = True
@@ -166,7 +166,6 @@ class PPO(BaseRLModel):
             if callback() is False:
                 continue_training = False
                 return None, continue_training
-
 
             if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
                 # Sample a new noise matrix
@@ -227,7 +226,8 @@ class PPO(BaseRLModel):
                 values, log_prob, entropy = self.policy.evaluate_actions(rollout_data.observations, actions)
                 values = values.flatten()
                 # Normalize advantage
-                advantages = (rollout_data.advantages - rollout_data.advantages.mean()) / (rollout_data.advantages.std() + 1e-8)
+                advantages = (rollout_data.advantages - rollout_data.advantages.mean()) / (
+                            rollout_data.advantages.std() + 1e-8)
 
                 # ratio between old and new policy, should be one at the first iteration
                 ratio = th.exp(log_prob - rollout_data.old_log_prob)
@@ -242,7 +242,8 @@ class PPO(BaseRLModel):
                 else:
                     # Clip the different between old and new value
                     # NOTE: this depends on the reward scaling
-                    values_pred = rollout_data.old_values + th.clamp(values - rollout_data.old_values, -clip_range_vf, clip_range_vf)
+                    values_pred = rollout_data.old_values + th.clamp(values - rollout_data.old_values, -clip_range_vf,
+                                                                     clip_range_vf)
                 # Value loss using the TD(gae_lambda) target
                 value_loss = F.mse_loss(rollout_data.returns, values_pred)
 
@@ -274,7 +275,6 @@ class PPO(BaseRLModel):
         logger.logkv("clip_range", clip_range)
         if self.clip_range_vf is not None:
             logger.logkv("clip_range_vf", clip_range_vf)
-
 
         logger.logkv("explained_variance", explained_var)
         # TODO: gather stats for the entropy and other losses?

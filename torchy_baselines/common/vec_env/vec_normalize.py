@@ -86,7 +86,7 @@ class VecNormalize(VecEnvWrapper):
         """
         obs, rews, news, infos = self.venv.step_wait()
         self.old_obs = obs
-        self.old_rews = rews
+        self.old_reward = rews
 
         if self.training:
             self.obs_rms.update(obs)
@@ -122,7 +122,7 @@ class VecNormalize(VecEnvWrapper):
         """
         if self.norm_reward:
             reward = np.clip(reward / np.sqrt(self.ret_rms.var + self.epsilon),
-                           -self.clip_reward, self.clip_reward)
+                             -self.clip_reward, self.clip_reward)
         return reward
 
     def unnormalize_obs(self, obs):
@@ -146,7 +146,7 @@ class VecNormalize(VecEnvWrapper):
         """
         Returns an unnormalized version of the rewards from the most recent step.
         """
-        return self.old_rews.copy()
+        return self.old_reward.copy()
 
     def reset(self):
         """

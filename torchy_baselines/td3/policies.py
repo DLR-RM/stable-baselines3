@@ -1,12 +1,11 @@
-from typing import List, Tuple, Callable, Optional
-
 import torch
 import torch as th
 import torch.nn as nn
+from typing import List, Tuple, Optional
 
+from torchy_baselines.common.distributions import StateDependentNoiseDistribution
 from torchy_baselines.common.policies import BasePolicy, register_policy, create_mlp, BaseNetwork, \
     create_sde_feature_extractor
-from torchy_baselines.common.distributions import StateDependentNoiseDistribution
 
 
 class Actor(BaseNetwork):

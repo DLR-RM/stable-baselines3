@@ -12,6 +12,7 @@ MODEL_LIST = [
     SAC,
 ]
 
+
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 def test_auto_wrap(model_class):
     # test auto wrapping of env into a VecEnv

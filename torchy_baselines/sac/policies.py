@@ -244,6 +244,7 @@ class SACPolicy(BasePolicy):
     def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         return self.actor.forward(observation, deterministic)
 
+
 MlpPolicy = SACPolicy
 
 register_policy("MlpPolicy", MlpPolicy)

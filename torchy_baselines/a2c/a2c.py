@@ -144,6 +144,8 @@ class A2C(PPO):
         explained_var = explained_variance(self.rollout_buffer.returns.flatten(),
                                            self.rollout_buffer.values.flatten())
 
+        self._n_updates += 1
+        logger.logkv("n_updates", self._n_updates)
         logger.logkv("explained_variance", explained_var)
         logger.logkv("entropy_loss", entropy_loss.item())
         logger.logkv("policy_loss", policy_loss.item())

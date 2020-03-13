@@ -18,6 +18,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Synced callbacks with Stable-Baselines
+- Fixed colors in `results_plotter`
 
 Deprecations:
 ^^^^^^^^^^^^^

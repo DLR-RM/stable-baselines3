@@ -8,16 +8,12 @@ import matplotlib.pyplot as plt
 
 from torchy_baselines.common.monitor import load_results
 
-plt.rcParams['svg.fonttype'] = 'none'
 
 X_TIMESTEPS = 'timesteps'
 X_EPISODES = 'episodes'
 X_WALLTIME = 'walltime_hrs'
 POSSIBLE_X_AXES = [X_TIMESTEPS, X_EPISODES, X_WALLTIME]
 EPISODES_WINDOW = 100
-COLORS = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'pink',
-          'brown', 'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
-          'darkgreen', 'tan', 'salmon', 'gold', 'lightpurple', 'darkred', 'darkblue']
 
 
 def rolling_window(array: np.ndarray, window: int) -> np.ndarray:
@@ -89,13 +85,12 @@ def plot_curves(xy_list: List[Tuple[np.ndarray, np.ndarray]],
     max_x = max(xy[0][-1] for xy in xy_list)
     min_x = 0
     for (i, (x, y)) in enumerate(xy_list):
-        color = COLORS[i]
         plt.scatter(x, y, s=2)
         # Do not plot the smoothed curve at all if the timeseries is shorter than window size.
         if x.shape[0] >= EPISODES_WINDOW:
             # Compute and plot rolling mean with window of size EPISODE_WINDOW
             x, y_mean = window_func(x, y, EPISODES_WINDOW, np.mean)
-            plt.plot(x, y_mean, color=color)
+            plt.plot(x, y_mean)
     plt.xlim(min_x, max_x)
     plt.title(title)
     plt.xlabel(x_axis)

@@ -173,8 +173,8 @@ class SAC(OffPolicyRLModel):
 
         self._update_learning_rate(optimizers)
 
-        ent_coef_loss, ent_coef = th.zeros(1), th.zeros(1)
-        actor_loss, critic_loss = th.zeros(1), th.zeros(1)
+        ent_coef_losses, ent_coefs = [], []
+        actor_losses, critic_losses = [], []
 
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
@@ -195,8 +195,11 @@ class SAC(OffPolicyRLModel):
                 # see https://github.com/rail-berkeley/softlearning/issues/60
                 ent_coef = th.exp(self.log_ent_coef.detach())
                 ent_coef_loss = -(self.log_ent_coef * (log_prob + self.target_entropy).detach()).mean()
+                ent_coef_losses.append(ent_coef_loss.item())
             else:
                 ent_coef = self.ent_coef_tensor
+
+            ent_coefs.append(ent_coef.item())
 
             # Optimize entropy coefficient, also called
             # entropy temperature or alpha in the paper
@@ -221,6 +224,7 @@ class SAC(OffPolicyRLModel):
 
             # Compute critic loss
             critic_loss = 0.5 * (F.mse_loss(current_q1, q_backup) + F.mse_loss(current_q2, q_backup))
+            critic_losses.append(critic_loss.item())
 
             # Optimize the critic
             self.critic.optimizer.zero_grad()
@@ -232,6 +236,7 @@ class SAC(OffPolicyRLModel):
             qf1_pi, qf2_pi = self.critic.forward(replay_data.observations, actions_pi)
             min_qf_pi = th.min(qf1_pi, qf2_pi)
             actor_loss = (ent_coef * log_prob - min_qf_pi).mean()
+            actor_losses.append(actor_loss.item())
 
             # Optimize the actor
             self.actor.optimizer.zero_grad()
@@ -243,12 +248,14 @@ class SAC(OffPolicyRLModel):
                 for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
                     target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
-        # TODO: average
-        logger.logkv("ent_coef", ent_coef.item())
-        logger.logkv("actor_loss", actor_loss.item())
-        logger.logkv("critic_loss", critic_loss.item())
-        if ent_coef_loss is not None:
-            logger.logkv("ent_coef_loss", ent_coef_loss.item())
+        self._n_updates += gradient_steps
+
+        logger.logkv("n_updates", self._n_updates)
+        logger.logkv("ent_coef", np.mean(ent_coefs))
+        logger.logkv("actor_loss", np.mean(actor_losses))
+        logger.logkv("critic_loss", np.mean(critic_losses))
+        if len(ent_coef_losses) > 0:
+            logger.logkv("ent_coef_loss", np.mean(ent_coef_losses))
 
     def learn(self,
               total_timesteps: int,

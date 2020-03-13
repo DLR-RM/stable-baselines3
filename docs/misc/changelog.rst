@@ -14,6 +14,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Better logging for ``SAC`` and ``PPO``
 
 Bug Fixes:
 ^^^^^^^^^^

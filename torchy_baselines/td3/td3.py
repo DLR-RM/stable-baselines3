@@ -2,6 +2,7 @@ import torch as th
 import torch.nn.functional as F
 from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
+from torchy_baselines.common import logger
 from torchy_baselines.common.base_class import OffPolicyRLModel
 from torchy_baselines.common.buffers import ReplayBuffer
 from torchy_baselines.common.noise import ActionNoise
@@ -214,6 +215,10 @@ class TD3(OffPolicyRLModel):
             # Delayed policy updates
             if gradient_step % policy_delay == 0:
                 self.train_actor(replay_data=replay_data, tau_actor=self.tau, tau_critic=self.tau)
+
+        self._n_updates += gradient_steps
+        logger.logkv("n_updates", self._n_updates)
+
 
     def train_sde(self) -> None:
         # Update optimizer learning rate

@@ -198,7 +198,7 @@ class PPO(BaseRLModel):
 
         return obs, continue_training
 
-    def train(self, gradient_steps: int, batch_size: int = 64) -> None:
+    def train(self, n_epochs: int, batch_size: int = 64) -> None:
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
         # Compute current clip range
@@ -207,9 +207,14 @@ class PPO(BaseRLModel):
         if self.clip_range_vf is not None:
             clip_range_vf = self.clip_range_vf(self._current_progress)
 
-        for gradient_step in range(gradient_steps):
+        entropy_losses, all_kl_divs = [], []
+        pg_losses, value_losses = [], []
+        clip_fractions = []
+
+        # train for gradient_steps epochs
+        for epoch in range(n_epochs):
             approx_kl_divs = []
-            # Sample replay buffer
+            # Do a complete pass on the rollout buffer
             for rollout_data in self.rollout_buffer.get(batch_size):
 
                 actions = rollout_data.actions
@@ -236,6 +241,11 @@ class PPO(BaseRLModel):
                 policy_loss_2 = advantages * th.clamp(ratio, 1 - clip_range, 1 + clip_range)
                 policy_loss = -th.min(policy_loss_1, policy_loss_2).mean()
 
+                # Logging
+                pg_losses.append(policy_loss.item())
+                clip_fraction = th.mean((th.abs(ratio - 1) > clip_range).float()).item()
+                clip_fractions.append(clip_fraction)
+
                 if self.clip_range_vf is None:
                     # No clipping
                     values_pred = values
@@ -246,6 +256,7 @@ class PPO(BaseRLModel):
                                                                      clip_range_vf)
                 # Value loss using the TD(gae_lambda) target
                 value_loss = F.mse_loss(rollout_data.returns, values_pred)
+                value_losses.append(value_loss.item())
 
                 # Entropy loss favor exploration
                 if entropy is None:
@@ -253,6 +264,8 @@ class PPO(BaseRLModel):
                     entropy_loss = -log_prob.mean()
                 else:
                     entropy_loss = -th.mean(entropy)
+
+                entropy_losses.append(entropy_loss.item())
 
                 loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
 
@@ -264,23 +277,27 @@ class PPO(BaseRLModel):
                 self.policy.optimizer.step()
                 approx_kl_divs.append(th.mean(rollout_data.old_log_prob - log_prob).detach().cpu().numpy())
 
+            all_kl_divs.append(np.mean(approx_kl_divs))
+
             if self.target_kl is not None and np.mean(approx_kl_divs) > 1.5 * self.target_kl:
-                print("Early stopping at step {} due to reaching max kl: {:.2f}".format(gradient_step,
-                                                                                        np.mean(approx_kl_divs)))
+                print(f"Early stopping at step {epoch} due to reaching max kl: {np.mean(approx_kl_divs):.2f}")
                 break
 
+        self._n_updates += n_epochs
         explained_var = explained_variance(self.rollout_buffer.returns.flatten(),
                                            self.rollout_buffer.values.flatten())
 
+        logger.logkv("n_updates", self._n_updates)
+        logger.logkv("clip_fraction", np.mean(clip_fraction))
         logger.logkv("clip_range", clip_range)
         if self.clip_range_vf is not None:
             logger.logkv("clip_range_vf", clip_range_vf)
 
+        logger.logkv("approx_kl", np.mean(approx_kl_divs))
         logger.logkv("explained_variance", explained_var)
-        # TODO: gather stats for the entropy and other losses?
-        logger.logkv("entropy_loss", entropy_loss.item())
-        logger.logkv("policy_loss", policy_loss.item())
-        logger.logkv("value_loss", value_loss.item())
+        logger.logkv("entropy_loss", np.mean(entropy_losses))
+        logger.logkv("policy_gradient_loss", np.mean(pg_losses))
+        logger.logkv("value_loss", np.mean(value_losses))
         if hasattr(self.policy, 'log_std'):
             logger.logkv("std", th.exp(self.policy.log_std).mean().item())
 

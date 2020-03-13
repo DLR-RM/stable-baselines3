@@ -99,6 +99,8 @@ class BaseRLModel(ABC):
         # Buffers for logging
         self.ep_info_buffer = None  # type: Optional[deque]
         self.ep_success_buffer = None  # type: Optional[deque]
+        # For logging
+        self._n_updates = 0  # type: int
 
         # Create and wrap the env if needed
         if env is not None:

@@ -10,6 +10,7 @@ setup(name='torchy_baselines',
           'gym[classic_control]>=0.11',
           'numpy',
           'torch>=1.4.0',
+          # For saving models
           'cloudpickle',
           # For reading logs
           'pandas',
@@ -31,7 +32,7 @@ setup(name='torchy_baselines',
             # For spelling
             'sphinxcontrib.spelling',
             # Type hints support
-            'sphinx-autodoc-typehints'
+            # 'sphinx-autodoc-typehints'
         ],
         'extra': [
             # For render
@@ -47,7 +48,7 @@ setup(name='torchy_baselines',
       license="MIT",
       long_description="",
       long_description_content_type='text/markdown',
-      version="0.2.3",
+      version="0.2.4",
       )
 
 # python setup.py sdist

@@ -122,7 +122,7 @@ class PPO(BaseRLModel):
             self._setup_model()
 
     def _setup_model(self) -> None:
-        self._setup_learning_rate()
+        self._setup_lr_schedule()
         # TODO: preprocessing: one hot vector for obs discrete
         state_dim = self.observation_space.shape[0]
         if isinstance(self.action_space, spaces.Box):
@@ -137,7 +137,7 @@ class PPO(BaseRLModel):
         self.rollout_buffer = RolloutBuffer(self.n_steps, state_dim, action_dim, self.device,
                                             gamma=self.gamma, gae_lambda=self.gae_lambda, n_envs=self.n_envs)
         self.policy = self.policy_class(self.observation_space, self.action_space,
-                                        self.learning_rate, use_sde=self.use_sde, device=self.device,
+                                        self.lr_schedule, use_sde=self.use_sde, device=self.device,
                                         **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
 

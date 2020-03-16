@@ -19,7 +19,7 @@ class PPOPolicy(BasePolicy):
 
     :param observation_space: (gym.spaces.Space) Observation space
     :param action_space: (gym.spaces.Space) Action space
-    :param lr_schedule: (callable) Learning rate schedule (could be constant)
+    :param lr_schedule: (Callable) Learning rate schedule (could be constant)
     :param net_arch: ([int or dict]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (nn.Module) Activation function

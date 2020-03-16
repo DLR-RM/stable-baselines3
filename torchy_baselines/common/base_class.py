@@ -176,7 +176,7 @@ class BaseRLModel(ABC):
         low, high = self.action_space.low, self.action_space.high
         return low + (0.5 * (scaled_action + 1.0) * (high - low))
 
-    def _setup_learning_rate(self) -> None:
+    def _setup_lr_schedule(self) -> None:
         """Transform to callable if needed."""
         self.lr_schedule = get_schedule_fn(self.learning_rate)
 

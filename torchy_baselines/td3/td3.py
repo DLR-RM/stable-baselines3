@@ -118,7 +118,7 @@ class TD3(OffPolicyRLModel):
             self._setup_model()
 
     def _setup_model(self) -> None:
-        self._setup_learning_rate()
+        self._setup_lr_schedule()
         obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
         self.set_random_seed(self.seed)
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)

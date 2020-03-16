@@ -2,6 +2,7 @@ import torch as th
 import torch.nn.functional as F
 from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
+from torchy_baselines.common import logger
 from torchy_baselines.common.base_class import OffPolicyRLModel
 from torchy_baselines.common.buffers import ReplayBuffer
 from torchy_baselines.common.noise import ActionNoise
@@ -117,12 +118,12 @@ class TD3(OffPolicyRLModel):
             self._setup_model()
 
     def _setup_model(self) -> None:
-        self._setup_learning_rate()
+        self._setup_lr_schedule()
         obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
         self.set_random_seed(self.seed)
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
         self.policy = self.policy_class(self.observation_space, self.action_space,
-                                        self.learning_rate, use_sde=self.use_sde,
+                                        self.lr_schedule, use_sde=self.use_sde,
                                         device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
         self._create_aliases()
@@ -214,6 +215,10 @@ class TD3(OffPolicyRLModel):
             # Delayed policy updates
             if gradient_step % policy_delay == 0:
                 self.train_actor(replay_data=replay_data, tau_actor=self.tau, tau_critic=self.tau)
+
+        self._n_updates += gradient_steps
+        logger.logkv("n_updates", self._n_updates)
+
 
     def train_sde(self) -> None:
         # Update optimizer learning rate

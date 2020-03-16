@@ -4,8 +4,8 @@ import gym
 import torch as th
 import torch.nn as nn
 
-from torchy_baselines.common.policies import BasePolicy, register_policy, create_mlp, BaseNetwork, \
-    create_sde_feature_extractor
+from torchy_baselines.common.policies import (BasePolicy, register_policy, create_mlp, BaseNetwork,
+                                              create_sde_feature_extractor)
 from torchy_baselines.common.distributions import SquashedDiagGaussianDistribution, StateDependentNoiseDistribution
 
 # CAP the standard deviation of the actor
@@ -161,8 +161,8 @@ class SACPolicy(BasePolicy):
 
     :param observation_space: (gym.spaces.Space) Observation space
     :param action_space: (gym.spaces.Space) Action space
-    :param learning_rate: (callable) Learning rate schedule (could be constant)
-    :param net_arch: ([int or dict]) The specification of the policy and value networks.
+    :param lr_schedule: (callable) Learning rate schedule (could be constant)
+    :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (nn.Module) Activation function
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
@@ -177,7 +177,7 @@ class SACPolicy(BasePolicy):
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
-                 learning_rate: Callable,
+                 lr_schedule: Callable,
                  net_arch: Optional[List[int]] = None,
                  device: Union[th.device, str] = 'cpu',
                  activation_fn: nn.Module = nn.ReLU,
@@ -213,16 +213,16 @@ class SACPolicy(BasePolicy):
         self.actor, self.actor_target = None, None
         self.critic, self.critic_target = None, None
 
-        self._build(learning_rate)
+        self._build(lr_schedule)
 
-    def _build(self, learning_rate: Callable) -> None:
+    def _build(self, lr_schedule: Callable) -> None:
         self.actor = self.make_actor()
-        self.actor.optimizer = th.optim.Adam(self.actor.parameters(), lr=learning_rate(1))
+        self.actor.optimizer = th.optim.Adam(self.actor.parameters(), lr=lr_schedule(1))
 
         self.critic = self.make_critic()
         self.critic_target = self.make_critic()
         self.critic_target.load_state_dict(self.critic.state_dict())
-        self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=learning_rate(1))
+        self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=lr_schedule(1))
 
     def make_actor(self) -> Actor:
         return Actor(**self.actor_kwargs).to(self.device)
@@ -234,7 +234,7 @@ class SACPolicy(BasePolicy):
         return self.predict(obs, deterministic=False)
 
     def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
-        return self.actor.forward(observation, deterministic)
+        return self.actor(observation, deterministic)
 
 
 MlpPolicy = SACPolicy

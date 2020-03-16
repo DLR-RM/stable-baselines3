@@ -94,7 +94,6 @@ class SAC(OffPolicyRLModel):
                                   use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                   use_sde_at_warmup=use_sde_at_warmup)
 
-        self.learning_rate = learning_rate
         self.target_entropy = target_entropy
         self.log_ent_coef = None  # type: Optional[th.Tensor]
         self.target_update_interval = target_update_interval
@@ -119,7 +118,7 @@ class SAC(OffPolicyRLModel):
             self._setup_model()
 
     def _setup_model(self) -> None:
-        self._setup_learning_rate()
+        self._setup_lr_schedule()
         obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
         if self.seed is not None:
             self.set_random_seed(self.seed)
@@ -146,7 +145,7 @@ class SAC(OffPolicyRLModel):
             # Note: we optimize the log of the entropy coeff which is slightly different from the paper
             # as discussed in https://github.com/rail-berkeley/softlearning/issues/37
             self.log_ent_coef = th.log(th.ones(1, device=self.device) * init_value).requires_grad_(True)
-            self.ent_coef_optimizer = th.optim.Adam([self.log_ent_coef], lr=self.learning_rate(1))
+            self.ent_coef_optimizer = th.optim.Adam([self.log_ent_coef], lr=self.lr_schedule(1))
         else:
             # Force conversion to float
             # this will throw an error if a malformed string (different from 'auto')
@@ -155,7 +154,7 @@ class SAC(OffPolicyRLModel):
 
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
         self.policy = self.policy_class(self.observation_space, self.action_space,
-                                        self.learning_rate, use_sde=self.use_sde,
+                                        self.lr_schedule, use_sde=self.use_sde,
                                         device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
         self._create_aliases()
@@ -173,8 +172,8 @@ class SAC(OffPolicyRLModel):
 
         self._update_learning_rate(optimizers)
 
-        ent_coef_loss, ent_coef = th.zeros(1), th.zeros(1)
-        actor_loss, critic_loss = th.zeros(1), th.zeros(1)
+        ent_coef_losses, ent_coefs = [], []
+        actor_losses, critic_losses = [], []
 
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
@@ -195,8 +194,11 @@ class SAC(OffPolicyRLModel):
                 # see https://github.com/rail-berkeley/softlearning/issues/60
                 ent_coef = th.exp(self.log_ent_coef.detach())
                 ent_coef_loss = -(self.log_ent_coef * (log_prob + self.target_entropy).detach()).mean()
+                ent_coef_losses.append(ent_coef_loss.item())
             else:
                 ent_coef = self.ent_coef_tensor
+
+            ent_coefs.append(ent_coef.item())
 
             # Optimize entropy coefficient, also called
             # entropy temperature or alpha in the paper
@@ -221,6 +223,7 @@ class SAC(OffPolicyRLModel):
 
             # Compute critic loss
             critic_loss = 0.5 * (F.mse_loss(current_q1, q_backup) + F.mse_loss(current_q2, q_backup))
+            critic_losses.append(critic_loss.item())
 
             # Optimize the critic
             self.critic.optimizer.zero_grad()
@@ -232,6 +235,7 @@ class SAC(OffPolicyRLModel):
             qf1_pi, qf2_pi = self.critic.forward(replay_data.observations, actions_pi)
             min_qf_pi = th.min(qf1_pi, qf2_pi)
             actor_loss = (ent_coef * log_prob - min_qf_pi).mean()
+            actor_losses.append(actor_loss.item())
 
             # Optimize the actor
             self.actor.optimizer.zero_grad()
@@ -243,12 +247,14 @@ class SAC(OffPolicyRLModel):
                 for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
                     target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
-        # TODO: average
-        logger.logkv("ent_coef", ent_coef.item())
-        logger.logkv("actor_loss", actor_loss.item())
-        logger.logkv("critic_loss", critic_loss.item())
-        if ent_coef_loss is not None:
-            logger.logkv("ent_coef_loss", ent_coef_loss.item())
+        self._n_updates += gradient_steps
+
+        logger.logkv("n_updates", self._n_updates)
+        logger.logkv("ent_coef", np.mean(ent_coefs))
+        logger.logkv("actor_loss", np.mean(actor_losses))
+        logger.logkv("critic_loss", np.mean(critic_losses))
+        if len(ent_coef_losses) > 0:
+            logger.logkv("ent_coef_loss", np.mean(ent_coef_losses))
 
     def learn(self,
               total_timesteps: int,

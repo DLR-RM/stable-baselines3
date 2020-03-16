@@ -91,7 +91,7 @@ class A2C(PPO):
         super(A2C, self)._setup_model()
         if self.use_rms_prop:
             self.policy.optimizer = th.optim.RMSprop(self.policy.parameters(),
-                                                     lr=self.learning_rate(1), alpha=0.99,
+                                                     lr=self.lr_schedule(1), alpha=0.99,
                                                      eps=self.rms_prop_eps, weight_decay=0)
 
     def train(self, gradient_steps: int, batch_size: Optional[int] = None) -> None:
@@ -144,6 +144,8 @@ class A2C(PPO):
         explained_var = explained_variance(self.rollout_buffer.returns.flatten(),
                                            self.rollout_buffer.values.flatten())
 
+        self._n_updates += 1
+        logger.logkv("n_updates", self._n_updates)
         logger.logkv("explained_variance", explained_var)
         logger.logkv("entropy_loss", entropy_loss.item())
         logger.logkv("policy_loss", policy_loss.item())

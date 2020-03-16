@@ -4,8 +4,8 @@ import gym
 import torch as th
 import torch.nn as nn
 
-from torchy_baselines.common.policies import BasePolicy, register_policy, create_mlp, BaseNetwork, \
-    create_sde_feature_extractor
+from torchy_baselines.common.policies import (BasePolicy, register_policy, create_mlp, BaseNetwork,
+                                              create_sde_feature_extractor)
 from torchy_baselines.common.distributions import SquashedDiagGaussianDistribution, StateDependentNoiseDistribution
 
 # CAP the standard deviation of the actor
@@ -234,7 +234,7 @@ class SACPolicy(BasePolicy):
         return self.predict(obs, deterministic=False)
 
     def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
-        return self.actor.forward(observation, deterministic)
+        return self.actor(observation, deterministic)
 
 
 MlpPolicy = SACPolicy

@@ -31,9 +31,11 @@ Others:
 - Buffers now return ``NamedTuple``
 - More typing
 - Add test for ``expln``
+- Renamed ``learning_rate`` to ``lr_schedule``
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Deactivated ``sphinx_autodoc_typehints`` extension
 
 
 Pre-Release 0.2.0 (2020-02-14)

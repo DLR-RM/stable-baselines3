@@ -94,7 +94,6 @@ class SAC(OffPolicyRLModel):
                                   use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                   use_sde_at_warmup=use_sde_at_warmup)
 
-        self.learning_rate = learning_rate
         self.target_entropy = target_entropy
         self.log_ent_coef = None  # type: Optional[th.Tensor]
         self.target_update_interval = target_update_interval
@@ -146,7 +145,7 @@ class SAC(OffPolicyRLModel):
             # Note: we optimize the log of the entropy coeff which is slightly different from the paper
             # as discussed in https://github.com/rail-berkeley/softlearning/issues/37
             self.log_ent_coef = th.log(th.ones(1, device=self.device) * init_value).requires_grad_(True)
-            self.ent_coef_optimizer = th.optim.Adam([self.log_ent_coef], lr=self.learning_rate(1))
+            self.ent_coef_optimizer = th.optim.Adam([self.log_ent_coef], lr=self.lr_schedule(1))
         else:
             # Force conversion to float
             # this will throw an error if a malformed string (different from 'auto')
@@ -155,7 +154,7 @@ class SAC(OffPolicyRLModel):
 
         self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
         self.policy = self.policy_class(self.observation_space, self.action_space,
-                                        self.learning_rate, use_sde=self.use_sde,
+                                        self.lr_schedule, use_sde=self.use_sde,
                                         device=self.device, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
         self._create_aliases()

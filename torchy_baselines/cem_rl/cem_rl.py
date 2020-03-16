@@ -149,7 +149,7 @@ class CEMRL(TD3):
                     self.actor.load_from_vector(self.es_params[i])
                     self.actor_target.load_from_vector(self.es_params[i])
                     self.actor.optimizer = th.optim.Adam(self.actor.parameters(),
-                                                         lr=self.learning_rate(self._current_progress))
+                                                         lr=self.lr_schedule(self._current_progress))
 
                     # In the paper: 2 * actor_steps // self.n_grad
                     # In the original implementation: actor_steps // self.n_grad

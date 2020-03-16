@@ -1,10 +1,11 @@
+from typing import Callable, Union
 import random
 
 import numpy as np
 import torch as th
 
 
-def set_random_seed(seed, using_cuda=False):
+def set_random_seed(seed: int, using_cuda: bool = False) -> None:
     """
     Seed the different random generators
     :param seed: (int)
@@ -21,7 +22,7 @@ def set_random_seed(seed, using_cuda=False):
 
 
 # From stable baselines
-def explained_variance(y_pred, y_true):
+def explained_variance(y_pred: np.ndarray, y_true: np.ndarray) -> np.ndarray:
     """
     Computes fraction of variance that ypred explains about y.
     Returns 1 - Var[y-ypred] / Var[y]
@@ -40,7 +41,7 @@ def explained_variance(y_pred, y_true):
     return np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
 
 
-def update_learning_rate(optimizer, learning_rate):
+def update_learning_rate(optimizer: th.optim.Optimizer, learning_rate: float) -> None:
     """
     Update the learning rate for a given optimizer.
     Useful when doing linear schedule.
@@ -52,7 +53,7 @@ def update_learning_rate(optimizer, learning_rate):
         param_group['lr'] = learning_rate
 
 
-def get_schedule_fn(value_schedule):
+def get_schedule_fn(value_schedule: Union[Callable, float]) -> Callable:
     """
     Transform (if needed) learning rate and clip range (for PPO)
     to callable.
@@ -70,13 +71,13 @@ def get_schedule_fn(value_schedule):
     return value_schedule
 
 
-def constant_fn(val):
+def constant_fn(val: float) -> Callable:
     """
     Create a function that returns a constant
     It is useful for learning rate schedule (to avoid code duplication)
 
     :param val: (float)
-    :return: (function)
+    :return: (Callable)
     """
 
     def func(_):

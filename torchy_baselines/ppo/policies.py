@@ -19,7 +19,7 @@ class PPOPolicy(BasePolicy):
 
     :param observation_space: (gym.spaces.Space) Observation space
     :param action_space: (gym.spaces.Space) Action space
-    :param learning_rate: (callable) Learning rate schedule (could be constant)
+    :param lr_schedule: (callable) Learning rate schedule (could be constant)
     :param net_arch: ([int or dict]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (nn.Module) Activation function
@@ -41,7 +41,7 @@ class PPOPolicy(BasePolicy):
     def __init__(self,
                  observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
-                 learning_rate: Callable,
+                 lr_schedule: Callable,
                  net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
                  device: Union[th.device, str] = 'cpu',
                  activation_fn: nn.Module = nn.Tanh,
@@ -93,7 +93,7 @@ class PPOPolicy(BasePolicy):
         # Action distribution
         self.action_dist = make_proba_distribution(action_space, use_sde=use_sde, dist_kwargs=dist_kwargs)
 
-        self._build(learning_rate)
+        self._build(lr_schedule)
 
     def reset_noise(self, n_envs: int = 1) -> None:
         """
@@ -104,7 +104,7 @@ class PPOPolicy(BasePolicy):
         assert isinstance(self.action_dist, StateDependentNoiseDistribution), 'reset_noise() is only available when using SDE'
         self.action_dist.sample_weights(self.log_std, batch_size=n_envs)
 
-    def _build(self, learning_rate: Callable) -> None:
+    def _build(self, lr_schedule: Callable) -> None:
         self.mlp_extractor = MlpExtractor(self.features_dim, net_arch=self.net_arch,
                                           activation_fn=self.activation_fn, device=self.device)
 
@@ -139,7 +139,7 @@ class PPOPolicy(BasePolicy):
                     self.value_net: 1
                 }[module]
                 module.apply(partial(self.init_weights, gain=gain))
-        self.optimizer = th.optim.Adam(self.parameters(), lr=learning_rate(1), eps=self.adam_epsilon)
+        self.optimizer = th.optim.Adam(self.parameters(), lr=lr_schedule(1), eps=self.adam_epsilon)
 
     def forward(self, obs: th.Tensor, deterministic: bool = False) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         if not isinstance(obs, th.Tensor):

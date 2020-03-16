@@ -199,8 +199,8 @@ class TD3Policy(BasePolicy):
 
     :param observation_space: (gym.spaces.Space) Observation space
     :param action_space: (gym.spaces.Space) Action space
-    :param learning_rate: (callable) Learning rate schedule (could be constant)
-    :param net_arch: ([int or dict]) The specification of the policy and value networks.
+    :param lr_schedule: (Callable) Learning rate schedule (could be constant)
+    :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (nn.Module) Activation function
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
@@ -214,7 +214,7 @@ class TD3Policy(BasePolicy):
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
-                 learning_rate: Callable,
+                 lr_schedule: Callable,
                  net_arch: Optional[List[int]] = None,
                  device: Union[th.device, str] = 'cpu',
                  activation_fn: nn.Module = nn.ReLU,
@@ -257,18 +257,18 @@ class TD3Policy(BasePolicy):
         self.use_sde = use_sde
         self.vf_net = None
         self.log_std_init = log_std_init
-        self._build(learning_rate)
+        self._build(lr_schedule)
 
-    def _build(self, learning_rate: Callable) -> None:
+    def _build(self, lr_schedule: Callable) -> None:
         self.actor = self.make_actor()
         self.actor_target = self.make_actor()
         self.actor_target.load_state_dict(self.actor.state_dict())
-        self.actor.optimizer = th.optim.Adam(self.actor.parameters(), lr=learning_rate(1))
+        self.actor.optimizer = th.optim.Adam(self.actor.parameters(), lr=lr_schedule(1))
 
         self.critic = self.make_critic()
         self.critic_target = self.make_critic()
         self.critic_target.load_state_dict(self.critic.state_dict())
-        self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=learning_rate(1))
+        self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=lr_schedule(1))
 
         if self.use_sde:
             self.vf_net = ValueFunction(self.obs_dim)

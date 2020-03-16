@@ -50,7 +50,7 @@ import torchy_baselines
 # -- Project information -----------------------------------------------------
 
 project = 'Torchy Baselines'
-copyright = '2019, Torchy Baselines'
+copyright = '2020, Torchy Baselines'
 author = 'Torchy Baselines Contributors'
 
 # The short X.Y version
@@ -70,7 +70,7 @@ release = torchy_baselines.__version__
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx_autodoc_typehints',
+    # 'sphinx_autodoc_typehints',
     'sphinx.ext.autosummary',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',

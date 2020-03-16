@@ -27,25 +27,25 @@ class BaseRLModel(ABC):
     """
     The base RL model
 
-    :param policy: Policy object
-    :param env: The environment to learn from
+    :param policy: (Type[BasePolicy]) Policy object
+    :param env: (Union[GymEnv, str]) The environment to learn from
                 (if registered in Gym, can be str. Can be None for loading trained models)
-    :param policy_base: The base policy used by this method
-    :param policy_kwargs: Additional arguments to be passed to the policy on creation
-    :param verbose: The verbosity level: 0 none, 1 training information, 2 debug
-    :param device: Device on which the code should run.
+    :param policy_base: (Type[BasePolicy]) The base policy used by this method
+    :param policy_kwargs: (Dict[str, Any]) Additional arguments to be passed to the policy on creation
+    :param verbose: (int) The verbosity level: 0 none, 1 training information, 2 debug
+    :param device: (Union[th.device, str]) Device on which the code should run.
         By default, it will try to use a Cuda compatible device and fallback to cpu
         if it is not possible.
-    :param support_multi_env: Whether the algorithm supports training
+    :param support_multi_env: (bool) Whether the algorithm supports training
         with multiple environments (as in A2C)
-    :param create_eval_env: Whether to create a second environment that will be
+    :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
-    :param monitor_wrapper: When creating an environment, whether to wrap it
+    :param monitor_wrapper: (bool) When creating an environment, whether to wrap it
         or not in a Monitor wrapper.
-    :param seed: Seed for the pseudo random generators
-    :param use_sde: Whether to use State Dependent Exploration (SDE)
+    :param seed: (Optional[int]) Seed for the pseudo random generators
+    :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
         instead of action noise exploration (default: False)
-    :param sde_sample_freq: Sample a new noise matrix every n steps when using SDE
+    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
         Default: -1 (only sample at the beginning of the rollout)
     """
 
@@ -80,8 +80,8 @@ class BaseRLModel(ABC):
         self._vec_normalize_env = unwrap_vec_normalize(env)
         self.verbose = verbose
         self.policy_kwargs = {} if policy_kwargs is None else policy_kwargs
-        self.observation_space = None
-        self.action_space = None
+        self.observation_space = None  # type: Optional[gym.spaces.Space]
+        self.action_space = None  # type: Optional[gym.spaces.Space]
         self.n_envs = None
         self.num_timesteps = 0
         self.eval_env = None
@@ -89,7 +89,8 @@ class BaseRLModel(ABC):
         self.action_noise = None  # type: Optional[ActionNoise]
         self.start_time = None
         self.policy = None
-        self.learning_rate = None
+        self.learning_rate = None  # type: Optional[float]
+        self.lr_schedule = None   # type: Optional[Callable]
         # Used for SDE only
         self.use_sde = use_sde
         self.sde_sample_freq = sde_sample_freq
@@ -134,13 +135,16 @@ class BaseRLModel(ABC):
     @abstractmethod
     def _setup_model(self) -> None:
         """
-        Setup model so state_dict can be loaded
+        Create networks and optimizers
         """
         raise NotImplementedError()
 
     def _get_eval_env(self, eval_env: Optional[GymEnv]) -> Optional[GymEnv]:
         """
         Return the environment that will be used for evaluation.
+
+        :param eval_env: (Optional[GymEnv]))
+        :return: (Optional[GymEnv])
         """
         if eval_env is None:
             eval_env = self.eval_env
@@ -156,7 +160,8 @@ class BaseRLModel(ABC):
         Rescale the action from [low, high] to [-1, 1]
         (no need for symmetric action space)
 
-        :param action: Action to scale
+        :param action: (np.ndarray) Action to scale
+        :return: (np.ndarray) Scaled action
         """
         low, high = self.action_space.low, self.action_space.high
         return 2.0 * ((action - low) / (high - low)) - 1.0
@@ -173,7 +178,7 @@ class BaseRLModel(ABC):
 
     def _setup_learning_rate(self) -> None:
         """Transform to callable if needed."""
-        self.learning_rate = get_schedule_fn(self.learning_rate)
+        self.lr_schedule = get_schedule_fn(self.learning_rate)
 
     def _update_current_progress(self, num_timesteps: int, total_timesteps: int) -> None:
         """
@@ -189,15 +194,16 @@ class BaseRLModel(ABC):
         Update the optimizers learning rate using the current learning rate schedule
         and the current progress (from 1 to 0).
 
-        :param optimizers: An optimizer or a list of optimizer.
+        :param optimizers: (Union[List[th.optim.Optimizer], th.optim.Optimizer])
+            An optimizer or a list of optimizers.
         """
         # Log the current learning rate
-        logger.logkv("learning_rate", self.learning_rate(self._current_progress))
+        logger.logkv("learning_rate", self.lr_schedule(self._current_progress))
 
         if not isinstance(optimizers, list):
             optimizers = [optimizers]
         for optimizer in optimizers:
-            update_learning_rate(optimizer, self.learning_rate(self._current_progress))
+            update_learning_rate(optimizer, self.lr_schedule(self._current_progress))
 
     @staticmethod
     def safe_mean(arr: Union[np.ndarray, list, deque]) -> np.ndarray:

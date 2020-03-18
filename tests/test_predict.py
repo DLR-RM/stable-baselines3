@@ -34,10 +34,10 @@ def test_predict(model_class, env_id):
     vec_env = DummyVecEnv([lambda: gym.make(env_id), lambda: gym.make(env_id)])
 
     obs = env.reset()
-    action = model.predict(obs)
+    action, _ = model.predict(obs)
     assert action.shape == env.action_space.shape
     assert env.action_space.contains(action)
 
     vec_env_obs = vec_env.reset()
-    action = model.predict(vec_env_obs)
+    action, _ = model.predict(vec_env_obs)
     assert action.shape[0] == vec_env_obs.shape[0]

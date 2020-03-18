@@ -11,6 +11,7 @@ Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed default seed
 - Bump dependencies (PyTorch and Gym)
+- ``predict()`` now returns a tuple to match Stable-Baselines behavior
 
 New Features:
 ^^^^^^^^^^^^^
@@ -32,6 +33,7 @@ Others:
 - More typing
 - Add test for ``expln``
 - Renamed ``learning_rate`` to ``lr_schedule``
+- Add ``version.txt``
 
 Documentation:
 ^^^^^^^^^^^^^^

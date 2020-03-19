@@ -4,8 +4,10 @@ Changelog
 ==========
 
 
-Pre-Release 0.3.0a0 (WIP)
+Pre-Release 0.3.0 (2020-02-14)
 ------------------------------
+
+**Bug fixes, sync with Stable-Baselines, code cleanup**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -20,7 +22,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Synced callbacks with Stable-Baselines
-- Fixed colors in `results_plotter`
+- Fixed colors in ``results_plotter``
 - Fix entropy computation (now summed over action dim)
 
 Deprecations:

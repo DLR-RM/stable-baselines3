@@ -21,6 +21,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Synced callbacks with Stable-Baselines
 - Fixed colors in `results_plotter`
+- Fix entropy computation (now summed over action dim)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -34,6 +35,7 @@ Others:
 - Add test for ``expln``
 - Renamed ``learning_rate`` to ``lr_schedule``
 - Add ``version.txt``
+- Add more tests for distribution
 
 Documentation:
 ^^^^^^^^^^^^^^

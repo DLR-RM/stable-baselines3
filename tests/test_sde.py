@@ -22,7 +22,6 @@ def test_state_dependent_exploration_grad():
 
     state = th.rand(n_states, state_dim)
     mu = th.ones(action_dim)
-    # print(weights.shape, state.shape)
     noise = th.mm(state, weights)
 
     action = mu + noise

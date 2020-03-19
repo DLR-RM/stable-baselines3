@@ -38,6 +38,22 @@ class Distribution(object):
         raise NotImplementedError
 
 
+def sum_independent_dims(tensor: th.Tensor) -> th.Tensor:
+    """
+    Continuous actions are usually considered to be independent,
+    so we can sum the components for the ``log_prob``
+    or the entropy.
+
+    :param tensor: (th.Tensor) shape: (n_batch, n_actions) or (n_batch,)
+    :return: (th.Tensor) shape: (n_batch,)
+    """
+    if len(tensor.shape) > 1:
+        tensor = tensor.sum(axis=1)
+    else:
+        tensor = tensor.sum()
+    return tensor
+
+
 class DiagGaussianDistribution(Distribution):
     """
     Gaussian distribution with diagonal covariance matrix,
@@ -95,7 +111,7 @@ class DiagGaussianDistribution(Distribution):
         return self.distribution.rsample()
 
     def entropy(self) -> th.Tensor:
-        return self.distribution.entropy()
+        return sum_independent_dims(self.distribution.entropy())
 
     def log_prob_from_params(self, mean_actions: th.Tensor, log_std: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         """
@@ -113,18 +129,14 @@ class DiagGaussianDistribution(Distribution):
     def log_prob(self, action: th.Tensor) -> th.Tensor:
         """
         Get the log probabilty of an action given a distribution.
-        Note that you must call `proba_distribution()` method
+        Note that you must call ``proba_distribution()`` method
         before.
 
         :param action: (th.Tensor)
         :return: (th.Tensor)
         """
         log_prob = self.distribution.log_prob(action)
-        if len(log_prob.shape) > 1:
-            log_prob = log_prob.sum(axis=1)
-        else:
-            log_prob = log_prob.sum()
-        return log_prob
+        return sum_independent_dims(log_prob)
 
 
 class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
@@ -243,14 +255,14 @@ class StateDependentNoiseDistribution(Distribution):
     :param action_dim: (int) Number of continuous actions
     :param full_std: (bool) Whether to use (n_features x n_actions) parameters
         for the std instead of only (n_features,)
-    :param use_expln: (bool) Use `expln()` function instead of `exp()` to ensure
+    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` to ensure
         a positive standard deviation (cf paper). It allows to keep variance
-        above zero and prevent it from growing too fast. In practice, `exp()` is usually enough.
+        above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param squash_output: (bool) Whether to squash the output using a tanh function,
         this allows to ensure boundaries.
     :param learn_features: (bool) Whether to learn features for SDE or not.
         This will enable gradients to be backpropagated through the features
-        `latent_sde` in the code.
+        ``latent_sde`` in the code.
     :param epsilon: (float) small value to avoid NaN due to numerical imprecision.
     """
 
@@ -396,7 +408,7 @@ class StateDependentNoiseDistribution(Distribution):
         # entropy needs to be estimated using -log_prob.mean()
         if self.bijector is not None:
             return None
-        return self.distribution.entropy()
+        return sum_independent_dims(self.distribution.entropy())
 
     def log_prob_from_params(self, mean_actions: th.Tensor,
                              log_std: th.Tensor,
@@ -412,11 +424,8 @@ class StateDependentNoiseDistribution(Distribution):
             gaussian_action = action
         # log likelihood for a gaussian
         log_prob = self.distribution.log_prob(gaussian_action)
-
-        if len(log_prob.shape) > 1:
-            log_prob = log_prob.sum(axis=1)
-        else:
-            log_prob = log_prob.sum()
+        # Sum along action dim
+        log_prob = sum_independent_dims(log_prob)
 
         if self.bijector is not None:
             # Squash correction (from original SAC implementation)

@@ -1,6 +1,10 @@
+import os
 import sys
 import subprocess
 from setuptools import setup, find_packages
+
+with open(os.path.join('torchy_baselines', 'version.txt'), 'r') as file_handler:
+    __version__ = file_handler.read()
 
 
 setup(name='torchy_baselines',
@@ -48,7 +52,7 @@ setup(name='torchy_baselines',
       license="MIT",
       long_description="",
       long_description_content_type='text/markdown',
-      version="0.2.4",
+      version=__version__,
       )
 
 # python setup.py sdist

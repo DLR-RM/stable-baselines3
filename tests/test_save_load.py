@@ -54,7 +54,7 @@ def test_save_load(model_class):
     params = new_params
 
     # get selected actions
-    selected_actions = model.predict(observations, deterministic=True)
+    selected_actions, _ = model.predict(observations, deterministic=True)
 
     # Check
     model.save("test_save.zip")
@@ -69,7 +69,7 @@ def test_save_load(model_class):
         assert th.allclose(params[key], new_params[key]), "Model parameters not the same after save and load."
 
     # check if model still selects the same actions
-    new_selected_actions = model.predict(observations, deterministic=True)
+    new_selected_actions, _ = model.predict(observations, deterministic=True)
     assert np.allclose(selected_actions, new_selected_actions, 1e-4)
 
     # check if learn still works

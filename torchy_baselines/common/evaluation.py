@@ -8,11 +8,11 @@ def evaluate_policy(model, env, n_eval_episodes=10, deterministic=True,
                     render=False, callback=None, reward_threshold=None,
                     return_episode_rewards=False):
     """
-    Runs policy for `n_eval_episodes` episodes and returns average reward.
+    Runs policy for ``n_eval_episodes`` episodes and returns average reward.
     This is made to work only with one env.
 
     :param model: (BaseRLModel) The RL agent you want to evaluate.
-    :param env: (gym.Env or VecEnv) The gym environment. In the case of a `VecEnv`
+    :param env: (gym.Env or VecEnv) The gym environment. In the case of a ``VecEnv``
         this must contain only one environment.
     :param n_eval_episodes: (int) Number of episode to evaluate the agent
     :param deterministic: (bool) Whether to use deterministic or stochastic actions
@@ -24,7 +24,7 @@ def evaluate_policy(model, env, n_eval_episodes=10, deterministic=True,
     :param return_episode_rewards: (bool) If True, a list of reward per episode
         will be returned instead of the mean.
     :return: (float, float) Mean reward per episode, std of reward per episode
-        returns ([float], [int]) when `return_episode_rewards` is True
+        returns ([float], [int]) when ``return_episode_rewards`` is True
     """
     if isinstance(env, VecEnv):
         assert env.num_envs == 1, "You must pass only one environment when using this function"
@@ -32,11 +32,11 @@ def evaluate_policy(model, env, n_eval_episodes=10, deterministic=True,
     episode_rewards, episode_lengths = [], []
     for _ in range(n_eval_episodes):
         obs = env.reset()
-        done = False
+        done, state = False, None
         episode_reward = 0.0
         episode_length = 0
         while not done:
-            action = model.predict(obs, deterministic=deterministic)
+            action, state = model.predict(obs, state=state, deterministic=deterministic)
             obs, reward, done, _info = env.step(action)
             episode_reward += reward
             if callback is not None:

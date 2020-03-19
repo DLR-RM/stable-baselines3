@@ -369,7 +369,7 @@ class BaseRLModel(ABC):
     def predict(self, observation: np.ndarray,
                 state: Optional[np.ndarray] = None,
                 mask: Optional[np.ndarray] = None,
-                deterministic: bool = False) -> np.ndarray:
+                deterministic: bool = False) -> Tuple[np.ndarray, Optional[np.ndarray]]:
         """
         Get the model's action(s) from an observation
 
@@ -377,7 +377,7 @@ class BaseRLModel(ABC):
         :param state: (Optional[np.ndarray]) The last states (can be None, used in recurrent policies)
         :param mask: (Optional[np.ndarray]) The last masks (can be None, used in recurrent policies)
         :param deterministic: (bool) Whether or not to return deterministic actions.
-        :return: (np.ndarray) the model's action and the next state (used in recurrent policies)
+        :return: (Tuple[np.ndarray, Optional[np.ndarray]]) the model's action and the next state (used in recurrent policies)
         """
         # if state is None:
         #     state = self.initial_state
@@ -409,9 +409,7 @@ class BaseRLModel(ABC):
                 raise ValueError("Error: The environment must be vectorized when using recurrent policies.")
             clipped_actions = clipped_actions[0]
 
-        # TODO: switch to stable baselines API
-        # return clipped_actions, state
-        return clipped_actions
+        return clipped_actions, state
 
     @classmethod
     def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs):
@@ -896,7 +894,7 @@ class OffPolicyRLModel(BaseRLModel):
                 else:
                     # Note: we assume that the policy uses tanh to scale the action
                     # We use non-deterministic action in the case of SAC, for TD3, it does not matter
-                    unscaled_action = self.predict(obs, deterministic=False)
+                    unscaled_action, _ = self.predict(obs, deterministic=False)
 
                 # Rescale the action from [low, high] to [-1, 1]
                 scaled_action = self.scale_action(unscaled_action)

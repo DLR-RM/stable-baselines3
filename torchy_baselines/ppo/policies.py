@@ -65,14 +65,6 @@ class PPOPolicy(BasePolicy):
         self.activation_fn = activation_fn
         self.adam_epsilon = adam_epsilon
         self.ortho_init = ortho_init
-        self.net_args = {
-            'input_dim': self.obs_dim,
-            'output_dim': -1,
-            'net_arch': self.net_arch,
-            'activation_fn': self.activation_fn
-        }
-        self.shared_net = None
-        self.pi_net, self.vf_net = None, None
         # In the future, feature_extractor will be replaced with a CNN
         self.features_extractor = nn.Flatten()
         self.features_dim = self.obs_dim

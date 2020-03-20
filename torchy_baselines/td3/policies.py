@@ -7,7 +7,7 @@ import torch.nn as nn
 from torchy_baselines.common.preprocessing import get_action_dim, get_obs_dim
 from torchy_baselines.common.policies import (BasePolicy, register_policy, create_mlp, BaseNetwork,
                                               create_sde_feature_extractor)
-from torchy_baselines.common.distributions import StateDependentNoiseDistribution
+from torchy_baselines.common.distributions import StateDependentNoiseDistribution, Distribution
 
 
 class Actor(BaseNetwork):
@@ -90,7 +90,8 @@ class Actor(BaseNetwork):
         """
         return self.action_dist.get_std(self.log_std)
 
-    def _get_action_dist_from_latent(self, latent_pi, latent_sde):
+    def _get_action_dist_from_latent(self, latent_pi: th.Tensor,
+                                     latent_sde: th.Tensor) -> Tuple[th.Tensor, Distribution]:
         mean_actions = self.mu(latent_pi)
         return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)
 

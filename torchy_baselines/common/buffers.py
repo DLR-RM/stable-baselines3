@@ -6,7 +6,7 @@ from gym import spaces
 
 from torchy_baselines.common.vec_env import VecNormalize
 from torchy_baselines.common.type_aliases import RolloutBufferSamples, ReplayBufferSamples
-from torchy_baselines.common.preprocessing import get_obs_dim, get_action_dim
+from torchy_baselines.common.preprocessing import get_action_dim, get_obs_shape
 
 
 class BaseBuffer(object):
@@ -30,7 +30,7 @@ class BaseBuffer(object):
         self.buffer_size = buffer_size
         self.observation_space = observation_space
         self.action_space = action_space
-        self.obs_dim = get_obs_dim(observation_space)
+        self.obs_shape = get_obs_shape(observation_space)
         self.action_dim = get_action_dim(action_space)
         self.pos = 0
         self.full = False
@@ -157,9 +157,9 @@ class ReplayBuffer(BaseBuffer):
 
         assert n_envs == 1, "Replay buffer only support single environment for now"
 
-        self.observations = np.zeros((self.buffer_size, self.n_envs, self.obs_dim), dtype=np.float32)
+        self.observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32)
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
-        self.next_observations = np.zeros((self.buffer_size, self.n_envs, self.obs_dim), dtype=np.float32)
+        self.next_observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
 
@@ -226,7 +226,7 @@ class RolloutBuffer(BaseBuffer):
         self.reset()
 
     def reset(self) -> None:
-        self.observations = np.zeros((self.buffer_size, self.n_envs, self.obs_dim), dtype=np.float32)
+        self.observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32)
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)

@@ -98,11 +98,10 @@ class PPO(BaseRLModel):
                  device: Union[th.device, str] = 'auto',
                  _init_setup_model: bool = True):
 
-        super(PPO, self).__init__(policy, env, PPOPolicy, policy_kwargs=policy_kwargs,
+        super(PPO, self).__init__(policy, env, PPOPolicy, learning_rate, policy_kwargs=policy_kwargs,
                                   verbose=verbose, device=device, use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                   create_eval_env=create_eval_env, support_multi_env=True, seed=seed)
 
-        self.learning_rate = learning_rate
         self.batch_size = batch_size
         self.n_epochs = n_epochs
         self.n_steps = n_steps
@@ -123,19 +122,12 @@ class PPO(BaseRLModel):
 
     def _setup_model(self) -> None:
         self._setup_lr_schedule()
-        # TODO: preprocessing: one hot vector for obs discrete
-        state_dim = self.observation_space.shape[0]
-        if isinstance(self.action_space, spaces.Box):
-            # Action is a 1D vector
-            action_dim = self.action_space.shape[0]
-        elif isinstance(self.action_space, spaces.Discrete):
-            # Action is a scalar
-            action_dim = 1
-
         self.set_random_seed(self.seed)
 
-        self.rollout_buffer = RolloutBuffer(self.n_steps, state_dim, action_dim, self.device,
-                                            gamma=self.gamma, gae_lambda=self.gae_lambda, n_envs=self.n_envs)
+        self.rollout_buffer = RolloutBuffer(self.n_steps, self.observation_space,
+                                            self.action_space, self.device,
+                                            gamma=self.gamma, gae_lambda=self.gae_lambda,
+                                            n_envs=self.n_envs)
         self.policy = self.policy_class(self.observation_space, self.action_space,
                                         self.lr_schedule, use_sde=self.use_sde, device=self.device,
                                         **self.policy_kwargs)

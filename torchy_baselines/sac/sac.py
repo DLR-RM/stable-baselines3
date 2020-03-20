@@ -89,7 +89,9 @@ class SAC(OffPolicyRLModel):
                  device: Union[th.device, str] = 'auto',
                  _init_setup_model: bool = True):
 
-        super(SAC, self).__init__(policy, env, SACPolicy, policy_kwargs, verbose, device,
+        super(SAC, self).__init__(policy, env, SACPolicy, learning_rate,
+                                  buffer_size, learning_starts, batch_size,
+                                  policy_kwargs, verbose, device,
                                   create_eval_env=create_eval_env, seed=seed,
                                   use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                   use_sde_at_warmup=use_sde_at_warmup)
@@ -97,11 +99,6 @@ class SAC(OffPolicyRLModel):
         self.target_entropy = target_entropy
         self.log_ent_coef = None  # type: Optional[th.Tensor]
         self.target_update_interval = target_update_interval
-        self.buffer_size = buffer_size
-        # In the original paper, same learning rate is used for all networks
-        self.learning_rate = learning_rate
-        self.learning_starts = learning_starts
-        self.batch_size = batch_size
         self.tau = tau
         # Entropy coefficient / Entropy temperature
         # Inverse of the reward scale
@@ -118,10 +115,8 @@ class SAC(OffPolicyRLModel):
             self._setup_model()
 
     def _setup_model(self) -> None:
-        self._setup_lr_schedule()
-        obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
-        if self.seed is not None:
-            self.set_random_seed(self.seed)
+        super(SAC, self)._setup_model()
+        self._create_aliases()
 
         # Target entropy is used when learning the entropy coefficient
         if self.target_entropy == 'auto':
@@ -151,13 +146,6 @@ class SAC(OffPolicyRLModel):
             # this will throw an error if a malformed string (different from 'auto')
             # is passed
             self.ent_coef_tensor = th.tensor(float(self.ent_coef)).to(self.device)
-
-        self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
-        self.policy = self.policy_class(self.observation_space, self.action_space,
-                                        self.lr_schedule, use_sde=self.use_sde,
-                                        device=self.device, **self.policy_kwargs)
-        self.policy = self.policy.to(self.device)
-        self._create_aliases()
 
     def _create_aliases(self) -> None:
         self.actor = self.policy.actor

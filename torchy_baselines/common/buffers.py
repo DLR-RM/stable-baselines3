@@ -2,9 +2,11 @@ from typing import Union, Optional, Generator
 
 import numpy as np
 import torch as th
+from gym import spaces
 
 from torchy_baselines.common.vec_env import VecNormalize
 from torchy_baselines.common.type_aliases import RolloutBufferSamples, ReplayBufferSamples
+from torchy_baselines.common.preprocessing import get_obs_dim, get_action_dim
 
 
 class BaseBuffer(object):
@@ -12,23 +14,24 @@ class BaseBuffer(object):
     Base class that represent a buffer (rollout or replay)
 
     :param buffer_size: (int) Max number of element in the buffer
-    :param obs_dim: (int) Dimension of the observation
-    :param action_dim: (int) Dimension of the action space
+    :param observation_space: (spaces.Space) Observation space
+    :param action_space: (spaces.Space) Action space
     :param device: (Union[th.device, str]) PyTorch device
         to which the values will be converted
     :param n_envs: (int) Number of parallel environments
     """
-
     def __init__(self,
                  buffer_size: int,
-                 obs_dim: int,
-                 action_dim: int,
+                 observation_space: spaces.Space,
+                 action_space: spaces.Space,
                  device: Union[th.device, str] = 'cpu',
                  n_envs: int = 1):
         super(BaseBuffer, self).__init__()
         self.buffer_size = buffer_size
-        self.obs_dim = obs_dim
-        self.action_dim = action_dim
+        self.observation_space = observation_space
+        self.action_space = action_space
+        self.obs_dim = get_obs_dim(observation_space)
+        self.action_dim = get_action_dim(action_space)
         self.pos = 0
         self.full = False
         self.device = device
@@ -137,19 +140,20 @@ class ReplayBuffer(BaseBuffer):
     Replay buffer used in off-policy algorithms like SAC/TD3.
 
     :param buffer_size: (int) Max number of element in the buffer
-    :param obs_dim: (int) Dimension of the observation
-    :param action_dim: (int) Dimension of the action space
+    :param observation_space: (spaces.Space) Observation space
+    :param action_space: (spaces.Space) Action space
     :param device: (th.device)
     :param n_envs: (int) Number of parallel environments
     """
 
     def __init__(self,
                  buffer_size: int,
-                 obs_dim: int,
-                 action_dim: int,
+                 observation_space: spaces.Space,
+                 action_space: spaces.Space,
                  device: Union[th.device, str] = 'cpu',
                  n_envs: int = 1):
-        super(ReplayBuffer, self).__init__(buffer_size, obs_dim, action_dim, device, n_envs=n_envs)
+        super(ReplayBuffer, self).__init__(buffer_size, observation_space,
+                                           action_space, device, n_envs=n_envs)
 
         assert n_envs == 1, "Replay buffer only support single environment for now"
 
@@ -194,8 +198,8 @@ class RolloutBuffer(BaseBuffer):
     Rollout buffer used in on-policy algorithms like A2C/PPO.
 
     :param buffer_size: (int) Max number of element in the buffer
-    :param obs_dim: (int) Dimension of the observation
-    :param action_dim: (int) Dimension of the action space
+    :param observation_space: (spaces.Space) Observation space
+    :param action_space: (spaces.Space) Action space
     :param device: (th.device)
     :param gae_lambda: (float) Factor for trade-off of bias vs variance for Generalized Advantage Estimator
         Equivalent to classic advantage when set to 1.
@@ -205,14 +209,15 @@ class RolloutBuffer(BaseBuffer):
 
     def __init__(self,
                  buffer_size: int,
-                 obs_dim: int,
-                 action_dim: int,
+                 observation_space: spaces.Space,
+                 action_space: spaces.Space,
                  device: Union[th.device, str] = 'cpu',
                  gae_lambda: float = 1,
                  gamma: float = 0.99,
                  n_envs: int = 1):
 
-        super(RolloutBuffer, self).__init__(buffer_size, obs_dim, action_dim, device, n_envs=n_envs)
+        super(RolloutBuffer, self).__init__(buffer_size, observation_space,
+                                            action_space, device, n_envs=n_envs)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
         self.observations, self.actions, self.rewards, self.advantages = None, None, None, None

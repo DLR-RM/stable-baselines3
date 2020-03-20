@@ -4,6 +4,7 @@ import gym
 import torch as th
 import torch.nn as nn
 
+from torchy_baselines.common.preprocessing import get_action_dim, get_obs_dim
 from torchy_baselines.common.policies import (BasePolicy, register_policy, create_mlp, BaseNetwork,
                                               create_sde_feature_extractor)
 from torchy_baselines.common.distributions import SquashedDiagGaussianDistribution, StateDependentNoiseDistribution
@@ -191,8 +192,8 @@ class SACPolicy(BasePolicy):
         if net_arch is None:
             net_arch = [256, 256]
 
-        self.obs_dim = self.observation_space.shape[0]
-        self.action_dim = self.action_space.shape[0]
+        self.obs_dim = get_obs_dim(self.observation_space)
+        self.action_dim = get_action_dim(self.action_space)
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.net_args = {

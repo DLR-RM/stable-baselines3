@@ -3,6 +3,29 @@
 Changelog
 ==========
 
+Pre-Release 0.4.0a0 (WIP)
+------------------------------
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Refactor handling of observation and action spaces
+
+Documentation:
+^^^^^^^^^^^^^^
+
 
 Pre-Release 0.3.0 (2020-02-14)
 ------------------------------

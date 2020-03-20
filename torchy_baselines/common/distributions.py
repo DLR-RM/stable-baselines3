@@ -6,6 +6,8 @@ import torch.nn as nn
 from torch.distributions import Normal, Categorical
 from gym import spaces
 
+from torchy_baselines.common.preprocessing import get_action_dim
+
 
 class Distribution(object):
     def __init__(self):
@@ -59,7 +61,7 @@ class DiagGaussianDistribution(Distribution):
     Gaussian distribution with diagonal covariance matrix,
     for continuous actions.
 
-    :param action_dim: (int)  Number of continuous actions
+    :param action_dim: (int)  Dimension of the action space.
     """
 
     def __init__(self, action_dim: int):
@@ -144,7 +146,7 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
     Gaussian distribution with diagonal covariance matrix,
     followed by a squashing function (tanh) to ensure bounds.
 
-    :param action_dim: (int) Number of continuous actions
+    :param action_dim: (int) Dimension of the action space.
     :param epsilon: (float) small value to avoid NaN due to numerical imprecision.
     """
 
@@ -252,7 +254,7 @@ class StateDependentNoiseDistribution(Distribution):
     It is used to create the noise exploration matrix and
     compute the log probabilty of an action with that noise.
 
-    :param action_dim: (int) Number of continuous actions
+    :param action_dim: (int) Dimension of the action space.
     :param full_std: (bool) Whether to use (n_features x n_actions) parameters
         for the std instead of only (n_features,)
     :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` to ensure
@@ -495,8 +497,8 @@ def make_proba_distribution(action_space: gym.spaces.Space,
     if isinstance(action_space, spaces.Box):
         assert len(action_space.shape) == 1, "Error: the action space must be a vector"
         if use_sde:
-            return StateDependentNoiseDistribution(action_space.shape[0], **dist_kwargs)
-        return DiagGaussianDistribution(action_space.shape[0], **dist_kwargs)
+            return StateDependentNoiseDistribution(get_action_dim(action_space), **dist_kwargs)
+        return DiagGaussianDistribution(get_action_dim(action_space), **dist_kwargs)
     elif isinstance(action_space, spaces.Discrete):
         return CategoricalDistribution(action_space.n, **dist_kwargs)
     # elif isinstance(action_space, spaces.MultiDiscrete):

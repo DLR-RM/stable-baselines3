@@ -6,6 +6,7 @@ import torch as th
 import torch.nn as nn
 import numpy as np
 
+from torchy_baselines.common.preprocessing import get_obs_dim
 from torchy_baselines.common.policies import (BasePolicy, register_policy, MlpExtractor,
                                               create_sde_feature_extractor)
 from torchy_baselines.common.distributions import (make_proba_distribution, Distribution,
@@ -54,7 +55,7 @@ class PPOPolicy(BasePolicy):
                  use_expln: bool = False,
                  squash_output: bool = False):
         super(PPOPolicy, self).__init__(observation_space, action_space, device, squash_output=squash_output)
-        self.obs_dim = self.observation_space.shape[0]
+        self.obs_dim = get_obs_dim(self.observation_space)
 
         # Default network architecture, from stable-baselines
         if net_arch is None:

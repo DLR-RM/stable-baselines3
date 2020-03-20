@@ -88,18 +88,16 @@ class TD3(OffPolicyRLModel):
                  device: Union[th.device, str] = 'auto',
                  _init_setup_model: bool = True):
 
-        super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device,
+        super(TD3, self).__init__(policy, env, TD3Policy, learning_rate,
+                                  buffer_size, learning_starts, batch_size,
+                                  policy_kwargs, verbose, device,
                                   create_eval_env=create_eval_env, seed=seed,
                                   use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                   use_sde_at_warmup=use_sde_at_warmup)
 
-        self.buffer_size = buffer_size
-        self.learning_rate = learning_rate
-        self.learning_starts = learning_starts
         self.train_freq = train_freq
         self.gradient_steps = gradient_steps
         self.n_episodes_rollout = n_episodes_rollout
-        self.batch_size = batch_size
         self.tau = tau
         self.gamma = gamma
         self.action_noise = action_noise
@@ -118,14 +116,7 @@ class TD3(OffPolicyRLModel):
             self._setup_model()
 
     def _setup_model(self) -> None:
-        self._setup_lr_schedule()
-        obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
-        self.set_random_seed(self.seed)
-        self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
-        self.policy = self.policy_class(self.observation_space, self.action_space,
-                                        self.lr_schedule, use_sde=self.use_sde,
-                                        device=self.device, **self.policy_kwargs)
-        self.policy = self.policy.to(self.device)
+        super(TD3, self)._setup_model()
         self._create_aliases()
 
     def _create_aliases(self) -> None:

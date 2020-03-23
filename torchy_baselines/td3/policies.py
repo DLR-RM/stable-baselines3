@@ -5,17 +5,17 @@ import torch as th
 import torch.nn as nn
 
 from torchy_baselines.common.preprocessing import get_action_dim, get_obs_dim
-from torchy_baselines.common.policies import (BasePolicy, register_policy, create_mlp, BaseNetwork,
+from torchy_baselines.common.policies import (BasePolicy, register_policy, create_mlp,
                                               create_sde_feature_extractor)
 from torchy_baselines.common.distributions import StateDependentNoiseDistribution, Distribution
 
 
-class Actor(BaseNetwork):
+class Actor(BasePolicy):
     """
     Actor network (policy) for TD3.
 
-    :param obs_dim: (int) Dimension of the observation
-    :param action_dim: (int) Dimension of the action space
+    :param observation_space: (gym.spaces.Space) Obervation space
+    :param action_space: (gym.spaces.Space) Action space
     :param net_arch: ([int]) Network architecture
     :param activation_fn: (nn.Module) Activation function
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
@@ -32,8 +32,8 @@ class Actor(BaseNetwork):
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     """
     def __init__(self,
-                 obs_dim: int,
-                 action_dim: int,
+                 observation_space: gym.spaces.Space,
+                 action_space: gym.spaces.Space,
                  net_arch: List[int],
                  activation_fn: nn.Module = nn.ReLU,
                  use_sde: bool = False,
@@ -43,14 +43,16 @@ class Actor(BaseNetwork):
                  full_std: bool = False,
                  sde_net_arch: Optional[List[int]] = None,
                  use_expln: bool = False):
-        super(Actor, self).__init__()
+        super(Actor, self).__init__(observation_space, action_space)
 
         self.latent_pi, self.log_std = None, None
         self.weights_dist, self.exploration_mat = None, None
         self.use_sde, self.sde_optimizer = use_sde, None
-        self.action_dim = action_dim
         self.full_std = full_std
         self.sde_feature_extractor = None
+
+        obs_dim = get_obs_dim(self.observation_space)
+        action_dim = get_action_dim(self.action_space)
 
         if use_sde:
             latent_pi_net = create_mlp(obs_dim, -1, net_arch, activation_fn, squash_output=False)
@@ -95,7 +97,7 @@ class Actor(BaseNetwork):
         mean_actions = self.mu(latent_pi)
         return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)
 
-    def _get_latent(self, obs) -> Tuple[th.Tensor, th.Tensor]:
+    def _get_latent(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         latent_pi = self.latent_pi(obs)
 
         if self.sde_feature_extractor is not None:
@@ -145,19 +147,24 @@ class Actor(BaseNetwork):
             return self.mu(obs)
 
 
-class Critic(BaseNetwork):
+class Critic(BasePolicy):
     """
     Critic network for TD3,
     in fact it represents the action-state value function (Q-value function)
 
-    :param obs_dim: (int) Dimension of the observation
-    :param action_dim: (int) Dimension of the action space
+    :param observation_space: (gym.spaces.Space) Obervation space
+    :param action_space: (gym.spaces.Space) Action space
     :param net_arch: ([int]) Network architecture
     :param activation_fn: (nn.Module) Activation function
     """
-    def __init__(self, obs_dim: int, action_dim: int,
-                 net_arch: List[int], activation_fn: nn.Module = nn.ReLU):
-        super(Critic, self).__init__()
+    def __init__(self, observation_space: gym.spaces.Space,
+                 action_space: gym.spaces.Space,
+                 net_arch: List[int],
+                 activation_fn: nn.Module = nn.ReLU):
+        super(Critic, self).__init__(observation_space, action_space)
+
+        obs_dim = get_obs_dim(self.observation_space)
+        action_dim = get_action_dim(self.action_space)
 
         q1_net = create_mlp(obs_dim + action_dim, 1, net_arch, activation_fn)
         self.q1_net = nn.Sequential(*q1_net)
@@ -173,18 +180,22 @@ class Critic(BaseNetwork):
         return self.q1_net(th.cat([obs, action], dim=1))
 
 
-class ValueFunction(BaseNetwork):
+class ValueFunction(BasePolicy):
     """
     Value function for TD3 when doing on-policy exploration with SDE.
 
-    :param obs_dim: (int) Dimension of the observation
+    :param observation_space: (gym.spaces.Space) Obervation space
+    :param action_space: (gym.spaces.Space) Action space
     :param net_arch: (Optional[List[int]]) Network architecture
     :param activation_fn: (nn.Module) Activation function
     """
-    def __init__(self, obs_dim: int, net_arch: Optional[List[int]] = None,
+    def __init__(self, observation_space: gym.spaces.Space,
+                 action_space: gym.spaces.Space,
+                 net_arch: Optional[List[int]] = None,
                  activation_fn: nn.Module = nn.Tanh):
-        super(ValueFunction, self).__init__()
+        super(ValueFunction, self).__init__(observation_space, action_space)
 
+        obs_dim = get_obs_dim(self.observation_space)
         if net_arch is None:
             net_arch = [64, 64]
 
@@ -232,13 +243,11 @@ class TD3Policy(BasePolicy):
         if net_arch is None:
             net_arch = [400, 300]
 
-        self.obs_dim = get_obs_dim(self.observation_space)
-        self.action_dim = get_action_dim(self.action_space)
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.net_args = {
-            'obs_dim': self.obs_dim,
-            'action_dim': self.action_dim,
+            'observation_space': self.observation_space,
+            'action_space': self.action_space,
             'net_arch': self.net_arch,
             'activation_fn': self.activation_fn
         }
@@ -273,7 +282,7 @@ class TD3Policy(BasePolicy):
         self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=lr_schedule(1))
 
         if self.use_sde:
-            self.vf_net = ValueFunction(self.obs_dim)
+            self.vf_net = ValueFunction(self.observation_space, self.action_space)
             self.actor.sde_optimizer.add_param_group({'params': self.vf_net.parameters()})  # pytype: disable=attribute-error
 
     def reset_noise(self) -> None:

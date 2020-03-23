@@ -139,32 +139,6 @@ def create_sde_feature_extractor(features_dim: int,
     return sde_feature_extractor, latent_sde_dim
 
 
-class BaseNetwork(nn.Module):
-    """
-    Abstract class for the different networks (actor/critic)
-    that implements two helpers for using CEM with their weights.
-    """
-    def __init__(self):
-        super(BaseNetwork, self).__init__()
-
-    def load_from_vector(self, vector: np.ndarray):
-        """
-        Load parameters from a 1D vector.
-
-        :param vector: (np.ndarray)
-        """
-        device = next(self.parameters()).device
-        th.nn.utils.vector_to_parameters(th.FloatTensor(vector).to(device), self.parameters())
-
-    def parameters_to_vector(self) -> np.ndarray:
-        """
-        Convert the parameters to a 1D vector.
-
-        :return: (np.ndarray)
-        """
-        return th.nn.utils.parameters_to_vector(self.parameters()).detach().cpu().numpy()
-
-
 _policy_registry = dict()  # type: Dict[Type[BasePolicy], Dict[str, Type[BasePolicy]]]
 
 

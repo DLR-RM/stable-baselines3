@@ -5,7 +5,7 @@ import torch as th
 import torch.nn as nn
 
 from torchy_baselines.common.preprocessing import get_action_dim, get_obs_dim
-from torchy_baselines.common.policies import (BasePolicy, register_policy, create_mlp, BaseNetwork,
+from torchy_baselines.common.policies import (BasePolicy, register_policy, create_mlp,
                                               create_sde_feature_extractor)
 from torchy_baselines.common.distributions import SquashedDiagGaussianDistribution, StateDependentNoiseDistribution
 
@@ -14,12 +14,12 @@ LOG_STD_MAX = 2
 LOG_STD_MIN = -20
 
 
-class Actor(BaseNetwork):
+class Actor(BasePolicy):
     """
     Actor network (policy) for SAC.
 
-    :param obs_dim: (int) Dimension of the observation
-    :param action_dim: (int) Dimension of the action space
+    :param observation_space: (gym.spaces.Space) Obervation space
+    :param action_space: (gym.spaces.Space) Action space
     :param net_arch: ([int]) Network architecture
     :param activation_fn: (nn.Module) Activation function
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
@@ -34,8 +34,8 @@ class Actor(BaseNetwork):
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
     """
-    def __init__(self, obs_dim: int,
-                 action_dim: int,
+    def __init__(self, observation_space: gym.spaces.Space,
+                 action_space: gym.spaces.Space,
                  net_arch: List[int],
                  activation_fn: nn.Module = nn.ReLU,
                  use_sde: bool = False,
@@ -44,7 +44,10 @@ class Actor(BaseNetwork):
                  sde_net_arch: Optional[List[int]] = None,
                  use_expln: bool = False,
                  clip_mean: float = 2.0):
-        super(Actor, self).__init__()
+        super(Actor, self).__init__(observation_space, action_space)
+
+        obs_dim = get_obs_dim(self.observation_space)
+        action_dim = get_action_dim(self.action_space)
 
         latent_pi_net = create_mlp(obs_dim, -1, net_arch, activation_fn)
         self.latent_pi = nn.Sequential(*latent_pi_net)
@@ -128,20 +131,23 @@ class Actor(BaseNetwork):
         return self.action_dist.log_prob_from_params(mean_actions, log_std, **kwargs)
 
 
-class Critic(BaseNetwork):
+class Critic(BasePolicy):
     """
     Critic network (q-value function) for SAC.
 
-    :param obs_dim: (int) Dimension of the observation
-    :param action_dim: (int) Dimension of the action space
+    :param observation_space: (gym.spaces.Space) Obervation space
+    :param action_space: (gym.spaces.Space) Action space
     :param net_arch: ([int]) Network architecture
     :param activation_fn: (nn.Module) Activation function
     """
-    def __init__(self, obs_dim: int,
-                 action_dim: int,
+    def __init__(self, observation_space: gym.spaces.Space,
+                 action_space: gym.spaces.Space,
                  net_arch: List[int],
                  activation_fn: nn.Module = nn.ReLU):
-        super(Critic, self).__init__()
+        super(Critic, self).__init__(observation_space, action_space)
+
+        obs_dim = get_obs_dim(self.observation_space)
+        action_dim = get_action_dim(self.action_space)
 
         q1_net = create_mlp(obs_dim + action_dim, 1, net_arch, activation_fn)
         self.q1_net = nn.Sequential(*q1_net)
@@ -192,13 +198,11 @@ class SACPolicy(BasePolicy):
         if net_arch is None:
             net_arch = [256, 256]
 
-        self.obs_dim = get_obs_dim(self.observation_space)
-        self.action_dim = get_action_dim(self.action_space)
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.net_args = {
-            'obs_dim': self.obs_dim,
-            'action_dim': self.action_dim,
+            'observation_space': self.observation_space,
+            'action_space': self.action_space,
             'net_arch': self.net_arch,
             'activation_fn': self.activation_fn
         }

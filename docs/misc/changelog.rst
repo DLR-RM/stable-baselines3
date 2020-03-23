@@ -9,6 +9,7 @@ Pre-Release 0.4.0a0 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Removed CEMRL
 
 New Features:
 ^^^^^^^^^^^^^

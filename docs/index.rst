@@ -29,7 +29,6 @@ RL Baselines zoo also offers a simple interface to train, evaluate agents and do
 
   modules/base
   modules/a2c
-  modules/cem_rl
   modules/ppo
   modules/sac
   modules/td3

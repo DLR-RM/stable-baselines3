@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from torchy_baselines import A2C, CEMRL, PPO, SAC, TD3
+from torchy_baselines import A2C, PPO, SAC, TD3
 from torchy_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 
 action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
@@ -11,12 +11,6 @@ action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
 def test_td3(action_noise):
     model = TD3('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[64, 64]),
                 learning_starts=100, verbose=1, create_eval_env=True, action_noise=action_noise)
-    model.learn(total_timesteps=1000, eval_freq=500)
-
-
-def test_cemrl():
-    model = CEMRL('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[16]), pop_size=2, n_grad=1,
-                  learning_starts=100, verbose=1, create_eval_env=True, action_noise=action_noise)
     model.learn(total_timesteps=1000, eval_freq=500)
 
 

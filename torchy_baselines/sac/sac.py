@@ -158,6 +158,7 @@ class SAC(OffPolicyRLModel):
         if self.ent_coef_optimizer is not None:
             optimizers += [self.ent_coef_optimizer]
 
+        # Update learning rate according to lr schedule
         self._update_learning_rate(optimizers)
 
         ent_coef_losses, ent_coefs = [], []

@@ -126,27 +126,26 @@ class TD3(OffPolicyRLModel):
         self.critic_target = self.policy.critic_target
         self.vf_net = self.policy.vf_net
 
-    def train_critic(self, gradient_steps: int = 1,
-                     batch_size: int = 100,
-                     replay_data: Optional[ReplayBufferSamples] = None,
-                     tau: float = 0.0) -> None:
-        # Update optimizer learning rate
-        self._update_learning_rate(self.critic.optimizer)
+    def train(self, gradient_steps: int, batch_size: int = 100, policy_delay: int = 2) -> None:
+
+        # Update learning rate according to lr schedule
+        self._update_learning_rate([self.actor.optimizer, self.critic.optimizer])
 
         for gradient_step in range(gradient_steps):
+
             # Sample replay buffer
-            if replay_data is None:
-                replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
+            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
-            # Select action according to policy and add clipped noise
-            noise = replay_data.actions.clone().data.normal_(0, self.target_policy_noise)
-            noise = noise.clamp(-self.target_noise_clip, self.target_noise_clip)
-            next_actions = (self.actor_target(replay_data.next_observations) + noise).clamp(-1, 1)
+            with th.no_grad():
+                # Select action according to policy and add clipped noise
+                noise = replay_data.actions.clone().data.normal_(0, self.target_policy_noise)
+                noise = noise.clamp(-self.target_noise_clip, self.target_noise_clip)
+                next_actions = (self.actor_target(replay_data.next_observations) + noise).clamp(-1, 1)
 
-            # Compute the target Q value
-            target_q1, target_q2 = self.critic_target(replay_data.next_observations, next_actions)
-            target_q = th.min(target_q1, target_q2)
-            target_q = replay_data.rewards + ((1 - replay_data.dones) * self.gamma * target_q).detach()
+                # Compute the target Q value
+                target_q1, target_q2 = self.critic_target(replay_data.next_observations, next_actions)
+                target_q = th.min(target_q1, target_q2)
+                target_q = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
 
             # Get current Q estimates
             current_q1, current_q2 = self.critic(replay_data.observations, replay_data.actions)
@@ -159,53 +158,22 @@ class TD3(OffPolicyRLModel):
             critic_loss.backward()
             self.critic.optimizer.step()
 
-            # Update the frozen target models
-            # Note: by default, for TD3, this update is done in train_actor
-            # however, for CEMRL it is done here
-            if tau > 0:
-                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                    target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
-
-    def train_actor(self, gradient_steps: int = 1,
-                    batch_size: int = 100,
-                    tau_actor: float = 0.005,
-                    tau_critic: float = 0.005,
-                    replay_data: Optional[ReplayBufferSamples] = None) -> None:
-        # Update optimizer learning rate
-        self._update_learning_rate(self.actor.optimizer)
-
-        for gradient_step in range(gradient_steps):
-            # Sample replay buffer
-            if replay_data is None:
-                replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
-
-            # Compute actor loss
-            actor_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
-
-            # Optimize the actor
-            self.actor.optimizer.zero_grad()
-            actor_loss.backward()
-            self.actor.optimizer.step()
-
-            # Update the frozen target models
-            if tau_critic > 0:
-                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                    target_param.data.copy_(tau_critic * param.data + (1 - tau_critic) * target_param.data)
-
-            for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
-                target_param.data.copy_(tau_actor * param.data + (1 - tau_actor) * target_param.data)
-
-    def train(self, gradient_steps: int, batch_size: int = 100, policy_delay: int = 2) -> None:
-
-        for gradient_step in range(gradient_steps):
-
-            # Sample replay buffer
-            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
-            self.train_critic(replay_data=replay_data)
-
             # Delayed policy updates
             if gradient_step % policy_delay == 0:
-                self.train_actor(replay_data=replay_data, tau_actor=self.tau, tau_critic=self.tau)
+                # Compute actor loss
+                actor_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
+
+                # Optimize the actor
+                self.actor.optimizer.zero_grad()
+                actor_loss.backward()
+                self.actor.optimizer.step()
+
+                # Update the frozen target networks
+                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
+                    target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+
+                for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
+                    target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
         self._n_updates += gradient_steps
         logger.logkv("n_updates", self._n_updates)

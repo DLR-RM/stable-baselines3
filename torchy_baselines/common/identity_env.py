@@ -46,7 +46,6 @@ class IdentityEnvBox(IdentityEnv):
         """
         Identity environment for testing purposes
 
-        :param dim: (int) the size of the dimensions you want to learn
         :param low: (float) the lower bound of the box dim
         :param high: (float) the upper bound of the box dim
         :param eps: (float) the epsilon bound for correct value

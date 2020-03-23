@@ -6,7 +6,7 @@ import torch.nn as nn
 
 from torchy_baselines.common.preprocessing import get_action_dim, get_obs_dim
 from torchy_baselines.common.policies import (BasePolicy, register_policy, create_mlp,
-                                              create_sde_feature_extractor)
+                                              create_sde_features_extractor)
 from torchy_baselines.common.distributions import SquashedDiagGaussianDistribution, StateDependentNoiseDistribution
 
 # CAP the standard deviation of the actor
@@ -21,6 +21,9 @@ class Actor(BasePolicy):
     :param observation_space: (gym.spaces.Space) Obervation space
     :param action_space: (gym.spaces.Space) Action space
     :param net_arch: ([int]) Network architecture
+    :param features_extractor: (nn.Module) Network to extract features
+        (a CNN when using images, a nn.Flatten() layer otherwise)
+    :param features_dim: (int) Number of features
     :param activation_fn: (nn.Module) Activation function
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
@@ -33,33 +36,39 @@ class Actor(BasePolicy):
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
+    :param normalize_images: (bool) Whether to normalize images or not,
+         dividing by 255.0 (True by default)
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  net_arch: List[int],
+                 features_extractor: nn.Module,
+                 features_dim: int,
                  activation_fn: nn.Module = nn.ReLU,
                  use_sde: bool = False,
                  log_std_init: float = -3,
                  full_std: bool = True,
                  sde_net_arch: Optional[List[int]] = None,
                  use_expln: bool = False,
-                 clip_mean: float = 2.0):
-        super(Actor, self).__init__(observation_space, action_space)
+                 clip_mean: float = 2.0,
+                 normalize_images: bool = True):
+        super(Actor, self).__init__(observation_space, action_space,
+                                    features_extractor=features_extractor,
+                                    normalize_images=normalize_images)
 
-        obs_dim = get_obs_dim(self.observation_space)
         action_dim = get_action_dim(self.action_space)
 
-        latent_pi_net = create_mlp(obs_dim, -1, net_arch, activation_fn)
+        latent_pi_net = create_mlp(features_dim, -1, net_arch, activation_fn)
         self.latent_pi = nn.Sequential(*latent_pi_net)
         self.use_sde = use_sde
-        self.sde_feature_extractor = None
+        self.sde_features_extractor = None
 
         if self.use_sde:
             latent_sde_dim = net_arch[-1]
             # Separate feature extractor for SDE
             if sde_net_arch is not None:
-                self.sde_feature_extractor, latent_sde_dim = create_sde_feature_extractor(obs_dim, sde_net_arch,
-                                                                                          activation_fn)
+                self.sde_features_extractor, latent_sde_dim = create_sde_features_extractor(features_dim, sde_net_arch,
+                                                                                            activation_fn)
 
             self.action_dist = StateDependentNoiseDistribution(action_dim, full_std=full_std, use_expln=use_expln,
                                                                learn_features=True, squash_output=True)
@@ -85,7 +94,8 @@ class Actor(BasePolicy):
 
         :return: (th.Tensor)
         """
-        assert isinstance(self.action_dist, StateDependentNoiseDistribution), 'get_std() is only available when using SDE'
+        assert isinstance(self.action_dist, StateDependentNoiseDistribution), \
+            'get_std() is only available when using SDE'
         return self.action_dist.get_std(self.log_std)
 
     def reset_noise(self, batch_size: int = 1) -> None:
@@ -94,14 +104,14 @@ class Actor(BasePolicy):
 
         :param batch_size: (int)
         """
-        assert isinstance(self.action_dist, StateDependentNoiseDistribution), 'reset_noise() is only available when using SDE'
+        assert isinstance(self.action_dist, StateDependentNoiseDistribution), \
+            'reset_noise() is only available when using SDE'
         self.action_dist.sample_weights(self.log_std, batch_size=batch_size)
 
     def _get_latent(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
-        latent_pi = self.latent_pi(obs)
-
-        latent_sde = self.sde_feature_extractor(obs) if self.sde_feature_extractor is not None else latent_pi
-
+        features = self.extract_features(obs)
+        latent_pi = self.latent_pi(features)
+        latent_sde = self.sde_features_extractor(features) if self.sde_features_extractor is not None else latent_pi
         return latent_pi, latent_sde
 
     def get_action_dist_params(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
@@ -138,27 +148,37 @@ class Critic(BasePolicy):
     :param observation_space: (gym.spaces.Space) Obervation space
     :param action_space: (gym.spaces.Space) Action space
     :param net_arch: ([int]) Network architecture
+    :param features_extractor: (nn.Module) Network to extract features
+        (a CNN when using images, a nn.Flatten() layer otherwise)
+    :param features_dim: (int) Number of features
     :param activation_fn: (nn.Module) Activation function
+    :param normalize_images: (bool) Whether to normalize images or not,
+         dividing by 255.0 (True by default)
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  net_arch: List[int],
-                 activation_fn: nn.Module = nn.ReLU):
-        super(Critic, self).__init__(observation_space, action_space)
+                 features_extractor: nn.Module,
+                 features_dim: int,
+                 activation_fn: nn.Module = nn.ReLU,
+                 normalize_images: bool = True):
+        super(Critic, self).__init__(observation_space, action_space,
+                                     features_extractor=features_extractor,
+                                     normalize_images=normalize_images)
 
-        obs_dim = get_obs_dim(self.observation_space)
         action_dim = get_action_dim(self.action_space)
 
-        q1_net = create_mlp(obs_dim + action_dim, 1, net_arch, activation_fn)
+        q1_net = create_mlp(features_dim + action_dim, 1, net_arch, activation_fn)
         self.q1_net = nn.Sequential(*q1_net)
 
-        q2_net = create_mlp(obs_dim + action_dim, 1, net_arch, activation_fn)
+        q2_net = create_mlp(features_dim + action_dim, 1, net_arch, activation_fn)
         self.q2_net = nn.Sequential(*q2_net)
 
         self.q_networks = [self.q1_net, self.q2_net]
 
     def forward(self, obs: th.Tensor, action: th.Tensor) -> List[th.Tensor]:
-        qvalue_input = th.cat([obs, action], dim=1)
+        features = self.extract_features(obs)
+        qvalue_input = th.cat([features, action], dim=1)
         return [q_net(qvalue_input) for q_net in self.q_networks]
 
 
@@ -181,6 +201,8 @@ class SACPolicy(BasePolicy):
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
+    :param normalize_images: (bool) Whether to normalize images or not,
+         dividing by 255.0 (True by default)
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
@@ -192,19 +214,27 @@ class SACPolicy(BasePolicy):
                  log_std_init: float = -3,
                  sde_net_arch: Optional[List[int]] = None,
                  use_expln: bool = False,
-                 clip_mean: float = 2.0):
+                 clip_mean: float = 2.0,
+                 normalize_images: bool = True):
         super(SACPolicy, self).__init__(observation_space, action_space, device, squash_output=True)
 
         if net_arch is None:
             net_arch = [256, 256]
+
+        # In the future, features_extractor will be replaced with a CNN
+        self.features_extractor = nn.Flatten()
+        self.features_dim = get_obs_dim(self.observation_space)
 
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.net_args = {
             'observation_space': self.observation_space,
             'action_space': self.action_space,
+            'features_extractor': self.features_extractor,
+            'features_dim': self.features_dim,
             'net_arch': self.net_arch,
-            'activation_fn': self.activation_fn
+            'activation_fn': self.activation_fn,
+            'normalize_images': normalize_images
         }
         self.actor_kwargs = self.net_args.copy()
         sde_kwargs = {

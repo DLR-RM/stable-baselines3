@@ -1,4 +1,4 @@
-from typing import Union, Type, Dict, List, Tuple
+from typing import Union, Type, Dict, List, Tuple, Optional
 
 from itertools import zip_longest
 
@@ -6,6 +6,8 @@ import gym
 import torch as th
 import torch.nn as nn
 import numpy as np
+
+from torchy_baselines.common.preprocessing import preprocess_obs
 
 
 class BasePolicy(nn.Module):
@@ -17,16 +19,35 @@ class BasePolicy(nn.Module):
     :param device: (Union[th.device, str]) Device on which the code should run.
     :param squash_output: (bool) For continuous actions, whether the output is squashed
         or not using a `tanh()` function.
+    :param features_extractor: (nn.Module) Network to extract features
+        (a CNN when using images, a nn.Flatten() layer otherwise)
+    :param normalize_images: (bool) Whether to normalize images or not,
+         dividing by 255.0 (True by default)
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  device: Union[th.device, str] = 'cpu',
-                 squash_output: bool = False):
+                 squash_output: bool = False,
+                 features_extractor: Optional[nn.Module] = None,
+                 normalize_images: bool = True):
         super(BasePolicy, self).__init__()
         self.observation_space = observation_space
         self.action_space = action_space
         self.device = device
+        self.features_extractor = features_extractor
+        self.normalize_images = normalize_images
         self._squash_output = squash_output
+
+    def extract_features(self, obs: th.Tensor) -> th.Tensor:
+        """
+        Preprocess the observation if needed and extract features.
+
+        :param obs: (th.Tensor)
+        :return: (th.Tensor)
+        """
+        assert self.features_extractor is not None, 'No feature extractor was set'
+        preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
+        return self.features_extractor(preprocessed_obs)
 
     @property
     def squash_output(self) -> bool:
@@ -45,6 +66,10 @@ class BasePolicy(nn.Module):
     def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         """
         Get the action according to the policy for a given observation.
+
+        :param observation: (th.Tensor)
+        :param deterministic: (bool) Whether to use stochastic or deterministic actions
+        :return: (th.Tensor) Taken action according to the policy
         """
         raise NotImplementedError()
 
@@ -118,12 +143,12 @@ def create_mlp(input_dim: int,
     return modules
 
 
-def create_sde_feature_extractor(features_dim: int,
-                                 sde_net_arch: List[int],
-                                 activation_fn: nn.Module) -> Tuple[nn.Sequential, int]:
+def create_sde_features_extractor(features_dim: int,
+                                  sde_net_arch: List[int],
+                                  activation_fn: nn.Module) -> Tuple[nn.Sequential, int]:
     """
     Create the neural network that will be used to extract features
-    for the SDE.
+    for the SDE exploration function.
 
     :param features_dim: (int)
     :param sde_net_arch: ([int])
@@ -135,8 +160,8 @@ def create_sde_feature_extractor(features_dim: int,
     sde_activation = activation_fn if len(sde_net_arch) > 0 else None
     latent_sde_net = create_mlp(features_dim, -1, sde_net_arch, activation_fn=sde_activation, squash_output=False)
     latent_sde_dim = sde_net_arch[-1] if len(sde_net_arch) > 0 else features_dim
-    sde_feature_extractor = nn.Sequential(*latent_sde_net)
-    return sde_feature_extractor, latent_sde_dim
+    sde_features_extractor = nn.Sequential(*latent_sde_net)
+    return sde_features_extractor, latent_sde_dim
 
 
 _policy_registry = dict()  # type: Dict[Type[BasePolicy], Dict[str, Type[BasePolicy]]]

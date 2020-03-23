@@ -6,7 +6,7 @@ import torch.nn as nn
 
 from torchy_baselines.common.preprocessing import get_action_dim, get_obs_dim
 from torchy_baselines.common.policies import (BasePolicy, register_policy, create_mlp,
-                                              create_sde_feature_extractor)
+                                              create_sde_features_extractor)
 from torchy_baselines.common.distributions import StateDependentNoiseDistribution, Distribution
 
 
@@ -17,6 +17,9 @@ class Actor(BasePolicy):
     :param observation_space: (gym.spaces.Space) Obervation space
     :param action_space: (gym.spaces.Space) Action space
     :param net_arch: ([int]) Network architecture
+    :param features_extractor: (nn.Module) Network to extract features
+        (a CNN when using images, a nn.Flatten() layer otherwise)
+    :param features_dim: (int) Number of features
     :param activation_fn: (nn.Module) Activation function
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
@@ -30,11 +33,15 @@ class Actor(BasePolicy):
     :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` when using SDE to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
+    :param normalize_images: (bool) Whether to normalize images or not,
+         dividing by 255.0 (True by default)
     """
     def __init__(self,
                  observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  net_arch: List[int],
+                 features_extractor: nn.Module,
+                 features_dim: int,
                  activation_fn: nn.Module = nn.ReLU,
                  use_sde: bool = False,
                  log_std_init: float = -3,
@@ -42,32 +49,37 @@ class Actor(BasePolicy):
                  lr_sde: float = 3e-4,
                  full_std: bool = False,
                  sde_net_arch: Optional[List[int]] = None,
-                 use_expln: bool = False):
-        super(Actor, self).__init__(observation_space, action_space)
+                 use_expln: bool = False,
+                 normalize_images: bool = True):
+        super(Actor, self).__init__(observation_space, action_space,
+                                    features_extractor=features_extractor,
+                                    normalize_images=normalize_images)
 
         self.latent_pi, self.log_std = None, None
         self.weights_dist, self.exploration_mat = None, None
         self.use_sde, self.sde_optimizer = use_sde, None
         self.full_std = full_std
-        self.sde_feature_extractor = None
+        self.sde_features_extractor = None
+        self.features_extractor = features_extractor
+        self.normalize_images = normalize_images
 
-        obs_dim = get_obs_dim(self.observation_space)
         action_dim = get_action_dim(self.action_space)
 
         if use_sde:
-            latent_pi_net = create_mlp(obs_dim, -1, net_arch, activation_fn, squash_output=False)
+            latent_pi_net = create_mlp(features_dim, -1, net_arch, activation_fn, squash_output=False)
             self.latent_pi = nn.Sequential(*latent_pi_net)
             latent_sde_dim = net_arch[-1]
             learn_features = sde_net_arch is not None
 
             # Separate feature extractor for SDE
             if sde_net_arch is not None:
-                self.sde_feature_extractor, latent_sde_dim = create_sde_feature_extractor(obs_dim, sde_net_arch,
-                                                                                          activation_fn)
+                self.sde_features_extractor, latent_sde_dim = create_sde_features_extractor(features_dim, sde_net_arch,
+                                                                                            activation_fn)
 
             # Create state dependent noise matrix (SDE)
             self.action_dist = StateDependentNoiseDistribution(action_dim, full_std=full_std, use_expln=use_expln,
                                                                squash_output=False, learn_features=learn_features)
+
             action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=net_arch[-1],
                                                                                latent_sde_dim=latent_sde_dim,
                                                                                log_std_init=log_std_init)
@@ -77,7 +89,7 @@ class Actor(BasePolicy):
             self.sde_optimizer = th.optim.Adam([self.log_std], lr=lr_sde)
             self.reset_noise()
         else:
-            actor_net = create_mlp(obs_dim, action_dim, net_arch, activation_fn, squash_output=True)
+            actor_net = create_mlp(features_dim, action_dim, net_arch, activation_fn, squash_output=True)
             self.mu = nn.Sequential(*actor_net)
 
     def get_std(self) -> th.Tensor:
@@ -98,12 +110,9 @@ class Actor(BasePolicy):
         return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)
 
     def _get_latent(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
-        latent_pi = self.latent_pi(obs)
-
-        if self.sde_feature_extractor is not None:
-            latent_sde = self.sde_feature_extractor(obs)
-        else:
-            latent_sde = latent_pi
+        features = self.extract_features(obs)
+        latent_pi = self.latent_pi(features)
+        latent_sde = self.sde_features_extractor(features) if self.sde_features_extractor is not None else latent_pi
         return latent_pi, latent_sde
 
     def evaluate_actions(self, obs: th.Tensor, action: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
@@ -144,7 +153,8 @@ class Actor(BasePolicy):
             # action, _ = self._get_action_dist_from_latent(latent_pi)
             # return action
         else:
-            return self.mu(obs)
+            features = self.extract_features(obs)
+            return self.mu(features)
 
 
 class Critic(BasePolicy):
@@ -155,29 +165,40 @@ class Critic(BasePolicy):
     :param observation_space: (gym.spaces.Space) Obervation space
     :param action_space: (gym.spaces.Space) Action space
     :param net_arch: ([int]) Network architecture
+    :param features_extractor: (nn.Module) Network to extract features
+        (a CNN when using images, a nn.Flatten() layer otherwise)
+    :param features_dim: (int) Number of features
     :param activation_fn: (nn.Module) Activation function
+    :param normalize_images: (bool) Whether to normalize images or not,
+         dividing by 255.0 (True by default)
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  net_arch: List[int],
-                 activation_fn: nn.Module = nn.ReLU):
-        super(Critic, self).__init__(observation_space, action_space)
+                 features_extractor: nn.Module,
+                 features_dim: int,
+                 activation_fn: nn.Module = nn.ReLU,
+                 normalize_images: bool = True):
+        super(Critic, self).__init__(observation_space, action_space,
+                                     features_extractor=features_extractor,
+                                     normalize_images=normalize_images)
 
-        obs_dim = get_obs_dim(self.observation_space)
         action_dim = get_action_dim(self.action_space)
 
-        q1_net = create_mlp(obs_dim + action_dim, 1, net_arch, activation_fn)
+        q1_net = create_mlp(features_dim + action_dim, 1, net_arch, activation_fn)
         self.q1_net = nn.Sequential(*q1_net)
 
-        q2_net = create_mlp(obs_dim + action_dim, 1, net_arch, activation_fn)
+        q2_net = create_mlp(features_dim + action_dim, 1, net_arch, activation_fn)
         self.q2_net = nn.Sequential(*q2_net)
 
     def forward(self, obs: th.Tensor, action: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
-        qvalue_input = th.cat([obs, action], dim=1)
+        features = self.extract_features(obs)
+        qvalue_input = th.cat([features, action], dim=1)
         return self.q1_net(qvalue_input), self.q2_net(qvalue_input)
 
     def q1_forward(self, obs: th.Tensor, action: th.Tensor) -> th.Tensor:
-        return self.q1_net(th.cat([obs, action], dim=1))
+        features = self.extract_features(obs)
+        return self.q1_net(th.cat([features, action], dim=1))
 
 
 class ValueFunction(BasePolicy):
@@ -186,24 +207,34 @@ class ValueFunction(BasePolicy):
 
     :param observation_space: (gym.spaces.Space) Obervation space
     :param action_space: (gym.spaces.Space) Action space
+    :param features_extractor: (nn.Module) Network to extract features
+        (a CNN when using images, a nn.Flatten() layer otherwise)
+    :param features_dim: (int) Number of features
     :param net_arch: (Optional[List[int]]) Network architecture
     :param activation_fn: (nn.Module) Activation function
+    :param normalize_images: (bool) Whether to normalize images or not,
+         dividing by 255.0 (True by default)
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
+                 features_extractor: nn.Module,
+                 features_dim: int,
                  net_arch: Optional[List[int]] = None,
-                 activation_fn: nn.Module = nn.Tanh):
-        super(ValueFunction, self).__init__(observation_space, action_space)
+                 activation_fn: nn.Module = nn.Tanh,
+                 normalize_images: bool = True):
+        super(ValueFunction, self).__init__(observation_space, action_space,
+                                            features_extractor=features_extractor,
+                                            normalize_images=normalize_images)
 
-        obs_dim = get_obs_dim(self.observation_space)
         if net_arch is None:
             net_arch = [64, 64]
 
-        vf_net = create_mlp(obs_dim, 1, net_arch, activation_fn)
+        vf_net = create_mlp(features_dim, 1, net_arch, activation_fn)
         self.vf_net = nn.Sequential(*vf_net)
 
     def forward(self, obs: th.Tensor) -> th.Tensor:
-        return self.vf_net(obs)
+        features = self.extract_features(obs)
+        return self.vf_net(features)
 
 
 class TD3Policy(BasePolicy):
@@ -224,6 +255,8 @@ class TD3Policy(BasePolicy):
     :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` when using SDE to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
+    :param normalize_images: (bool) Whether to normalize images or not,
+         dividing by 255.0 (True by default)
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
@@ -236,20 +269,28 @@ class TD3Policy(BasePolicy):
                  clip_noise: Optional[float] = None,
                  lr_sde: float = 3e-4,
                  sde_net_arch: Optional[List[int]] = None,
-                 use_expln: bool = False):
+                 use_expln: bool = False,
+                 normalize_images: bool = True):
         super(TD3Policy, self).__init__(observation_space, action_space, device, squash_output=True)
 
         # Default network architecture, from the original paper
         if net_arch is None:
             net_arch = [400, 300]
 
+        # In the future, features_extractor will be replaced with a CNN
+        self.features_extractor = nn.Flatten()
+        self.features_dim = get_obs_dim(self.observation_space)
+
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.net_args = {
             'observation_space': self.observation_space,
             'action_space': self.action_space,
+            'features_extractor': self.features_extractor,
+            'features_dim': self.features_dim,
             'net_arch': self.net_arch,
-            'activation_fn': self.activation_fn
+            'activation_fn': self.activation_fn,
+            'normalize_images': normalize_images
         }
         self.actor_kwargs = self.net_args.copy()
         sde_kwargs = {
@@ -282,7 +323,9 @@ class TD3Policy(BasePolicy):
         self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=lr_schedule(1))
 
         if self.use_sde:
-            self.vf_net = ValueFunction(self.observation_space, self.action_space)
+            self.vf_net = ValueFunction(self.observation_space, self.action_space,
+                                        features_extractor=self.features_extractor,
+                                        features_dim=self.features_dim)
             self.actor.sde_optimizer.add_param_group({'params': self.vf_net.parameters()})  # pytype: disable=attribute-error
 
     def reset_noise(self) -> None:

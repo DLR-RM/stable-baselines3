@@ -78,7 +78,7 @@ class BaseRLModel(ABC):
         if verbose > 0:
             print(f"Using {self.device} device")
 
-        self.env = None  # type: GymEnv
+        self.env = None  # type: Optional[GymEnv]
         # get VecNormalize object if needed
         self._vec_normalize_env = unwrap_vec_normalize(env)
         self.verbose = verbose
@@ -380,8 +380,10 @@ class BaseRLModel(ABC):
         :param state: (Optional[np.ndarray]) The last states (can be None, used in recurrent policies)
         :param mask: (Optional[np.ndarray]) The last masks (can be None, used in recurrent policies)
         :param deterministic: (bool) Whether or not to return deterministic actions.
-        :return: (Tuple[np.ndarray, Optional[np.ndarray]]) the model's action and the next state (used in recurrent policies)
+        :return: (Tuple[np.ndarray, Optional[np.ndarray]]) the model's action and the next state
+            (used in recurrent policies)
         """
+        # TODO: move this block to BasePolicy
         # if state is None:
         #     state = self.initial_state
         # if mask is None:
@@ -390,9 +392,7 @@ class BaseRLModel(ABC):
         vectorized_env = self._is_vectorized_observation(observation, self.observation_space)
 
         observation = observation.reshape((-1,) + self.observation_space.shape)
-        # Convert to float pytorch
-        # TODO: replace with preprocessing
-        observation = th.as_tensor(observation).float().to(self.device)
+        observation = th.as_tensor(observation).to(self.device)
         with th.no_grad():
             actions = self.policy.predict(observation, deterministic=deterministic)
         # Convert to numpy
@@ -812,7 +812,7 @@ class OffPolicyRLModel(BaseRLModel):
                                                policy_kwargs, verbose,
                                                device, support_multi_env, create_eval_env, monitor_wrapper,
                                                seed, use_sde, sde_sample_freq)
-        self.buffer_size = buffer_size                                       
+        self.buffer_size = buffer_size
         self.batch_size = batch_size
         self.learning_starts = learning_starts
         self.actor = None

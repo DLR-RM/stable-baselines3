@@ -1,4 +1,3 @@
-import os
 import time
 from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
@@ -8,10 +7,11 @@ import torch as th
 import torch.nn.functional as F
 
 # Check if tensorboard is available for pytorch
-try:
-    from torch.utils.tensorboard import SummaryWriter
-except ImportError:
-    SummaryWriter = None
+# TODO: finish tensorboard integration
+# try:
+#     from torch.utils.tensorboard import SummaryWriter
+# except ImportError:
+#     SummaryWriter = None
 import numpy as np
 
 from torchy_baselines.common import logger
@@ -144,6 +144,7 @@ class PPO(BaseRLModel):
                          n_rollout_steps: int = 256,
                          obs: Optional[np.ndarray] = None) -> Tuple[Optional[np.ndarray], bool]:
 
+        assert obs is not None, "No previous observation was provided"
         n_steps = 0
         continue_training = True
         rollout_buffer.reset()
@@ -160,7 +161,10 @@ class PPO(BaseRLModel):
                 self.policy.reset_noise(env.num_envs)
 
             with th.no_grad():
-                actions, values, log_probs = self.policy.forward(obs)
+                # Convert to pytorch tensor
+                obs_tensor = obs.reshape((-1,) + self.observation_space.shape)
+                obs_tensor = th.as_tensor(obs_tensor).to(self.device)
+                actions, values, log_probs = self.policy.forward(obs_tensor)
             actions = actions.cpu().numpy()
 
             # Rescale and perform action
@@ -308,8 +312,8 @@ class PPO(BaseRLModel):
                                                        n_eval_episodes, eval_log_path, reset_num_timesteps)
         iteration = 0
 
-        if self.tensorboard_log is not None and SummaryWriter is not None:
-            self.tb_writer = SummaryWriter(log_dir=os.path.join(self.tensorboard_log, tb_log_name))
+        # if self.tensorboard_log is not None and SummaryWriter is not None:
+        #     self.tb_writer = SummaryWriter(log_dir=os.path.join(self.tensorboard_log, tb_log_name))
 
         callback.on_training_start(locals(), globals())
 

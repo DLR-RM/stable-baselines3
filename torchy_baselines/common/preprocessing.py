@@ -34,7 +34,7 @@ def is_image_space(observation_space: spaces.Space) -> bool:
 
 
 def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space,
-                   normalize_image: bool = True) -> th.Tensor:
+                   normalize_images: bool = True) -> th.Tensor:
     """
     Preprocess observation to be to a neural network.
     For images, it normalizes the values by dividing them by 255 (to have values in [0, 1])
@@ -42,14 +42,14 @@ def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space,
 
     :param obs: (th.Tensor) Observation
     :param observation_space: (spaces.Space)
-    :param normalize_image: (bool) Whether to normalize images or not
+    :param normalize_images: (bool) Whether to normalize images or not
         (True by default)
     :return: (th.Tensor)
     """
     if isinstance(observation_space, spaces.Box):
-        if is_image_space(observation_space) and normalize_image:
-            return obs / 255.0
-        return obs
+        if is_image_space(observation_space) and normalize_images:
+            return obs.float() / 255.0
+        return obs.float()
     elif isinstance(observation_space, spaces.Discrete):
         # One hot encoding and convert to float to avoid errors
         return F.one_hot(obs, num_classes=observation_space.n).float()
@@ -69,7 +69,7 @@ def get_obs_shape(observation_space: spaces.Space) -> Tuple[int, ...]:
         return observation_space.shape
     elif isinstance(observation_space, spaces.Discrete):
         # Observation is an int
-        return (1,)
+        return 1,
     else:
         # TODO: Multidiscrete, Binary, MultiBinary, Tuple, Dict
         raise NotImplementedError()

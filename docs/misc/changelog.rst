@@ -23,6 +23,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Refactor handling of observation and action spaces
+- Refactored features extraction to have proper preprocessing
 
 Documentation:
 ^^^^^^^^^^^^^^

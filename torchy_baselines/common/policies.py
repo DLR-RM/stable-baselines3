@@ -56,7 +56,7 @@ class BasePolicy(nn.Module):
 
     @staticmethod
     def init_weights(module: nn.Module, gain: float = 1):
-        if type(module) == nn.Linear:
+        if isinstance(module, nn.Linear):
             nn.init.orthogonal_(module.weight, gain=gain)
             module.bias.data.fill_(0.0)
 
@@ -109,7 +109,7 @@ class BasePolicy(nn.Module):
 def create_mlp(input_dim: int,
                output_dim: int,
                net_arch: List[int],
-               activation_fn: nn.Module = nn.ReLU,
+               activation_fn: Type[nn.Module] = nn.ReLU,
                squash_output: bool = False) -> List[nn.Module]:
     """
     Create a multi layer perceptron (MLP), which is
@@ -120,7 +120,7 @@ def create_mlp(input_dim: int,
     :param net_arch: (List[int]) Architecture of the neural net
         It represents the number of units per layer.
         The length of this list is the number of layers.
-    :param activation_fn: (nn.Module) The activation function
+    :param activation_fn: (Type[nn.Module]) The activation function
         to use after each layer.
     :param squash_output: (bool) Whether to squash the output using a Tanh
         activation function
@@ -145,14 +145,14 @@ def create_mlp(input_dim: int,
 
 def create_sde_features_extractor(features_dim: int,
                                   sde_net_arch: List[int],
-                                  activation_fn: nn.Module) -> Tuple[nn.Sequential, int]:
+                                  activation_fn: Type[nn.Module]) -> Tuple[nn.Sequential, int]:
     """
     Create the neural network that will be used to extract features
     for the SDE exploration function.
 
     :param features_dim: (int)
     :param sde_net_arch: ([int])
-    :param activation_fn: (nn.Module)
+    :param activation_fn: (Type[nn.Module])
     :return: (nn.Sequential, int)
     """
     # Special case: when using states as features (i.e. sde_net_arch is an empty list)
@@ -233,12 +233,12 @@ class MlpExtractor(nn.Module):
     :param feature_dim: (int) Dimension of the feature vector (can be the output of a CNN)
     :param net_arch: ([int or dict]) The specification of the policy and value networks.
         See above for details on its formatting.
-    :param activation_fn: (nn.Module) The activation function to use for the networks.
+    :param activation_fn: (Type[nn.Module]) The activation function to use for the networks.
     :param device: (th.device)
     """
     def __init__(self, feature_dim: int,
                  net_arch: List[Union[int, Dict[str, List[int]]]],
-                 activation_fn: nn.Module,
+                 activation_fn: Type[nn.Module],
                  device: Union[th.device, str] = 'cpu'):
         super(MlpExtractor, self).__init__()
 

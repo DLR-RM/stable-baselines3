@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple, Callable, Union
+from typing import Optional, List, Tuple, Callable, Union, Type
 
 import gym
 import torch as th
@@ -20,7 +20,7 @@ class Actor(BasePolicy):
     :param features_extractor: (nn.Module) Network to extract features
         (a CNN when using images, a nn.Flatten() layer otherwise)
     :param features_dim: (int) Number of features
-    :param activation_fn: (nn.Module) Activation function
+    :param activation_fn: (Type[nn.Module]) Activation function
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
     :param clip_noise: (float) Clip the magnitude of the noise
@@ -42,7 +42,7 @@ class Actor(BasePolicy):
                  net_arch: List[int],
                  features_extractor: nn.Module,
                  features_dim: int,
-                 activation_fn: nn.Module = nn.ReLU,
+                 activation_fn: Type[nn.Module] = nn.ReLU,
                  use_sde: bool = False,
                  log_std_init: float = -3,
                  clip_noise: Optional[float] = None,
@@ -168,7 +168,7 @@ class Critic(BasePolicy):
     :param features_extractor: (nn.Module) Network to extract features
         (a CNN when using images, a nn.Flatten() layer otherwise)
     :param features_dim: (int) Number of features
-    :param activation_fn: (nn.Module) Activation function
+    :param activation_fn: (Type[nn.Module]) Activation function
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
     """
@@ -177,7 +177,7 @@ class Critic(BasePolicy):
                  net_arch: List[int],
                  features_extractor: nn.Module,
                  features_dim: int,
-                 activation_fn: nn.Module = nn.ReLU,
+                 activation_fn: Type[nn.Module] = nn.ReLU,
                  normalize_images: bool = True):
         super(Critic, self).__init__(observation_space, action_space,
                                      features_extractor=features_extractor,
@@ -211,7 +211,7 @@ class ValueFunction(BasePolicy):
         (a CNN when using images, a nn.Flatten() layer otherwise)
     :param features_dim: (int) Number of features
     :param net_arch: (Optional[List[int]]) Network architecture
-    :param activation_fn: (nn.Module) Activation function
+    :param activation_fn: (Type[nn.Module]) Activation function
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
     """
@@ -220,7 +220,7 @@ class ValueFunction(BasePolicy):
                  features_extractor: nn.Module,
                  features_dim: int,
                  net_arch: Optional[List[int]] = None,
-                 activation_fn: nn.Module = nn.Tanh,
+                 activation_fn: Type[nn.Module] = nn.Tanh,
                  normalize_images: bool = True):
         super(ValueFunction, self).__init__(observation_space, action_space,
                                             features_extractor=features_extractor,
@@ -246,7 +246,7 @@ class TD3Policy(BasePolicy):
     :param lr_schedule: (Callable) Learning rate schedule (could be constant)
     :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.
-    :param activation_fn: (nn.Module) Activation function
+    :param activation_fn: (Type[nn.Module]) Activation function
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
     :param sde_net_arch: ([int]) Network architecture for extracting features
@@ -263,7 +263,7 @@ class TD3Policy(BasePolicy):
                  lr_schedule: Callable,
                  net_arch: Optional[List[int]] = None,
                  device: Union[th.device, str] = 'cpu',
-                 activation_fn: nn.Module = nn.ReLU,
+                 activation_fn: Type[nn.Module] = nn.ReLU,
                  use_sde: bool = False,
                  log_std_init: float = -3,
                  clip_noise: Optional[float] = None,

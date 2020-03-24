@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple, Callable, Union, Dict
+from typing import Optional, List, Tuple, Callable, Union, Dict, Type
 from functools import partial
 
 import gym
@@ -23,7 +23,7 @@ class PPOPolicy(BasePolicy):
     :param lr_schedule: (Callable) Learning rate schedule (could be constant)
     :param net_arch: ([int or dict]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.
-    :param activation_fn: (nn.Module) Activation function
+    :param activation_fn: (Type[nn.Module]) Activation function
     :param adam_epsilon: (float) Small values to avoid NaN in ADAM optimizer
     :param ortho_init: (bool) Whether to use or not orthogonal initialization
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
@@ -47,7 +47,7 @@ class PPOPolicy(BasePolicy):
                  lr_schedule: Callable,
                  net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
                  device: Union[th.device, str] = 'cpu',
-                 activation_fn: nn.Module = nn.Tanh,
+                 activation_fn: Type[nn.Module] = nn.Tanh,
                  adam_epsilon: float = 1e-5,
                  ortho_init: bool = True,
                  use_sde: bool = False,

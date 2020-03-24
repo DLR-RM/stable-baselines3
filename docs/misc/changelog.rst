@@ -16,6 +16,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fix type hint for activation functions
 
 Deprecations:
 ^^^^^^^^^^^^^

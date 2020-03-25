@@ -13,6 +13,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Add support for Discrete observation spaces
 
 Bug Fixes:
 ^^^^^^^^^^

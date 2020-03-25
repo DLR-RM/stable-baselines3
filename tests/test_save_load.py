@@ -1,8 +1,9 @@
-import numpy as np
 import os
-import pytest
-import torch as th
 from copy import deepcopy
+
+import pytest
+import numpy as np
+import torch as th
 
 from torchy_baselines import A2C, PPO, SAC, TD3
 from torchy_baselines.common.identity_env import IdentityEnvBox

@@ -52,7 +52,7 @@ def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space,
         return obs.float()
     elif isinstance(observation_space, spaces.Discrete):
         # One hot encoding and convert to float to avoid errors
-        return F.one_hot(obs, num_classes=observation_space.n).float()
+        return F.one_hot(obs.long(), num_classes=observation_space.n).float()
     else:
         # TODO: Multidiscrete, Binary, MultiBinary, Tuple, Dict
         raise NotImplementedError()
@@ -88,8 +88,8 @@ def get_obs_dim(observation_space: spaces.Space) -> Union[int, Tuple[int, ...]]:
         #     raise NotImplementedError()
         return np.prod(observation_space.shape)
     elif isinstance(observation_space, spaces.Discrete):
-        # Observation is an int
-        return 1
+        # Observation is a one hot vector
+        return observation_space.n
     else:
         # TODO: Multidiscrete, Binary, MultiBinary, Tuple, Dict
         raise NotImplementedError()

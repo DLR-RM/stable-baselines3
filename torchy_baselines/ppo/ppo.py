@@ -162,8 +162,7 @@ class PPO(BaseRLModel):
 
             with th.no_grad():
                 # Convert to pytorch tensor
-                obs_tensor = obs.reshape((-1,) + self.observation_space.shape)
-                obs_tensor = th.as_tensor(obs_tensor).to(self.device)
+                obs_tensor = th.as_tensor(obs).to(self.device)
                 actions, values, log_probs = self.policy.forward(obs_tensor)
             actions = actions.cpu().numpy()
 

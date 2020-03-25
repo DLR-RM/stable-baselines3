@@ -1,15 +1,15 @@
-import numpy as np
 import os
-import pytest
-import torch as th
 from copy import deepcopy
 
-from torchy_baselines import A2C, CEMRL, PPO, SAC, TD3
+import pytest
+import numpy as np
+import torch as th
+
+from torchy_baselines import A2C, PPO, SAC, TD3
 from torchy_baselines.common.identity_env import IdentityEnvBox
 from torchy_baselines.common.vec_env import DummyVecEnv
 
 MODEL_LIST = [
-    CEMRL,
     PPO,
     A2C,
     TD3,

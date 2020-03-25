@@ -11,7 +11,6 @@ NOTE: Python 3.6 is required!
 ## Implemented Algorithms
 
 - A2C
-- CEM-RL (with TD3)
 - PPO
 - SAC
 - TD3

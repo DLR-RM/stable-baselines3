@@ -4,7 +4,7 @@ import torch as th
 from torchy_baselines import A2C, PPO
 from torchy_baselines.common.distributions import (DiagGaussianDistribution, TanhBijector,
                                                    StateDependentNoiseDistribution,
-                                                   CategoricalDistribution)
+                                                   CategoricalDistribution, SquashedDiagGaussianDistribution)
 from torchy_baselines.common.utils import set_random_seed
 
 
@@ -35,6 +35,11 @@ def test_squashed_gaussian(model_class):
     model = model_class('MlpPolicy', 'Pendulum-v0', use_sde=True, n_steps=100, policy_kwargs=dict(squash_output=True))
     model.learn(500)
 
+    gaussian_mean = th.rand(N_SAMPLES, N_ACTIONS)
+    dist = SquashedDiagGaussianDistribution(N_ACTIONS)
+    _, log_std = dist.proba_distribution_net(N_FEATURES)
+    actions, _ = dist.proba_distribution(gaussian_mean, log_std)
+    assert th.max(th.abs(actions)) <= 1.0
 
 def test_sde_distribution():
     n_actions = 1

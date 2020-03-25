@@ -4,9 +4,8 @@ from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
 from torchy_baselines.common import logger
 from torchy_baselines.common.base_class import OffPolicyRLModel
-from torchy_baselines.common.buffers import ReplayBuffer
 from torchy_baselines.common.noise import ActionNoise
-from torchy_baselines.common.type_aliases import ReplayBufferSamples, GymEnv, MaybeCallback
+from torchy_baselines.common.type_aliases import GymEnv, MaybeCallback
 from torchy_baselines.td3.policies import TD3Policy
 
 
@@ -88,18 +87,16 @@ class TD3(OffPolicyRLModel):
                  device: Union[th.device, str] = 'auto',
                  _init_setup_model: bool = True):
 
-        super(TD3, self).__init__(policy, env, TD3Policy, policy_kwargs, verbose, device,
+        super(TD3, self).__init__(policy, env, TD3Policy, learning_rate,
+                                  buffer_size, learning_starts, batch_size,
+                                  policy_kwargs, verbose, device,
                                   create_eval_env=create_eval_env, seed=seed,
                                   use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                   use_sde_at_warmup=use_sde_at_warmup)
 
-        self.buffer_size = buffer_size
-        self.learning_rate = learning_rate
-        self.learning_starts = learning_starts
         self.train_freq = train_freq
         self.gradient_steps = gradient_steps
         self.n_episodes_rollout = n_episodes_rollout
-        self.batch_size = batch_size
         self.tau = tau
         self.gamma = gamma
         self.action_noise = action_noise
@@ -118,14 +115,7 @@ class TD3(OffPolicyRLModel):
             self._setup_model()
 
     def _setup_model(self) -> None:
-        self._setup_lr_schedule()
-        obs_dim, action_dim = self.observation_space.shape[0], self.action_space.shape[0]
-        self.set_random_seed(self.seed)
-        self.replay_buffer = ReplayBuffer(self.buffer_size, obs_dim, action_dim, self.device)
-        self.policy = self.policy_class(self.observation_space, self.action_space,
-                                        self.lr_schedule, use_sde=self.use_sde,
-                                        device=self.device, **self.policy_kwargs)
-        self.policy = self.policy.to(self.device)
+        super(TD3, self)._setup_model()
         self._create_aliases()
 
     def _create_aliases(self) -> None:
@@ -135,27 +125,26 @@ class TD3(OffPolicyRLModel):
         self.critic_target = self.policy.critic_target
         self.vf_net = self.policy.vf_net
 
-    def train_critic(self, gradient_steps: int = 1,
-                     batch_size: int = 100,
-                     replay_data: Optional[ReplayBufferSamples] = None,
-                     tau: float = 0.0) -> None:
-        # Update optimizer learning rate
-        self._update_learning_rate(self.critic.optimizer)
+    def train(self, gradient_steps: int, batch_size: int = 100, policy_delay: int = 2) -> None:
+
+        # Update learning rate according to lr schedule
+        self._update_learning_rate([self.actor.optimizer, self.critic.optimizer])
 
         for gradient_step in range(gradient_steps):
+
             # Sample replay buffer
-            if replay_data is None:
-                replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
+            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
-            # Select action according to policy and add clipped noise
-            noise = replay_data.actions.clone().data.normal_(0, self.target_policy_noise)
-            noise = noise.clamp(-self.target_noise_clip, self.target_noise_clip)
-            next_actions = (self.actor_target(replay_data.next_observations) + noise).clamp(-1, 1)
+            with th.no_grad():
+                # Select action according to policy and add clipped noise
+                noise = replay_data.actions.clone().data.normal_(0, self.target_policy_noise)
+                noise = noise.clamp(-self.target_noise_clip, self.target_noise_clip)
+                next_actions = (self.actor_target(replay_data.next_observations) + noise).clamp(-1, 1)
 
-            # Compute the target Q value
-            target_q1, target_q2 = self.critic_target(replay_data.next_observations, next_actions)
-            target_q = th.min(target_q1, target_q2)
-            target_q = replay_data.rewards + ((1 - replay_data.dones) * self.gamma * target_q).detach()
+                # Compute the target Q value
+                target_q1, target_q2 = self.critic_target(replay_data.next_observations, next_actions)
+                target_q = th.min(target_q1, target_q2)
+                target_q = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
 
             # Get current Q estimates
             current_q1, current_q2 = self.critic(replay_data.observations, replay_data.actions)
@@ -168,57 +157,26 @@ class TD3(OffPolicyRLModel):
             critic_loss.backward()
             self.critic.optimizer.step()
 
-            # Update the frozen target models
-            # Note: by default, for TD3, this update is done in train_actor
-            # however, for CEMRL it is done here
-            if tau > 0:
-                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                    target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
-
-    def train_actor(self, gradient_steps: int = 1,
-                    batch_size: int = 100,
-                    tau_actor: float = 0.005,
-                    tau_critic: float = 0.005,
-                    replay_data: Optional[ReplayBufferSamples] = None) -> None:
-        # Update optimizer learning rate
-        self._update_learning_rate(self.actor.optimizer)
-
-        for gradient_step in range(gradient_steps):
-            # Sample replay buffer
-            if replay_data is None:
-                replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
-
-            # Compute actor loss
-            actor_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
-
-            # Optimize the actor
-            self.actor.optimizer.zero_grad()
-            actor_loss.backward()
-            self.actor.optimizer.step()
-
-            # Update the frozen target models
-            if tau_critic > 0:
-                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                    target_param.data.copy_(tau_critic * param.data + (1 - tau_critic) * target_param.data)
-
-            for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
-                target_param.data.copy_(tau_actor * param.data + (1 - tau_actor) * target_param.data)
-
-    def train(self, gradient_steps: int, batch_size: int = 100, policy_delay: int = 2) -> None:
-
-        for gradient_step in range(gradient_steps):
-
-            # Sample replay buffer
-            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
-            self.train_critic(replay_data=replay_data)
-
             # Delayed policy updates
             if gradient_step % policy_delay == 0:
-                self.train_actor(replay_data=replay_data, tau_actor=self.tau, tau_critic=self.tau)
+                # Compute actor loss
+                actor_loss = -self.critic.q1_forward(replay_data.observations,
+                                                     self.actor(replay_data.observations)).mean()
+
+                # Optimize the actor
+                self.actor.optimizer.zero_grad()
+                actor_loss.backward()
+                self.actor.optimizer.step()
+
+                # Update the frozen target networks
+                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
+                    target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+
+                for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
+                    target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
         self._n_updates += gradient_steps
         logger.logkv("n_updates", self._n_updates)
-
 
     def train_sde(self) -> None:
         # Update optimizer learning rate

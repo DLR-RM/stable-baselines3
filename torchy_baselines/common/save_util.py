@@ -5,9 +5,8 @@ used to serialize data (class parameters) of model classes
 import json
 import base64
 import functools
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional
 
-import torch as th
 import cloudpickle
 import warnings
 

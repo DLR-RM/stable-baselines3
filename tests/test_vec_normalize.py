@@ -4,7 +4,7 @@ import numpy as np
 
 from torchy_baselines.common.running_mean_std import RunningMeanStd
 from torchy_baselines.common.vec_env import DummyVecEnv, VecNormalize, VecFrameStack, sync_envs_normalization, unwrap_vec_normalize
-from torchy_baselines import CEMRL, SAC, TD3
+from torchy_baselines import SAC, TD3
 
 ENV_ID = 'Pendulum-v0'
 
@@ -116,7 +116,7 @@ def test_normalize_external():
     assert np.all(norm_rewards < 1)
 
 
-@pytest.mark.parametrize("model_class", [SAC, TD3, CEMRL])
+@pytest.mark.parametrize("model_class", [SAC, TD3])
 def test_offpolicy_normalization(model_class):
     env = DummyVecEnv([make_env])
     env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10., clip_reward=10.)

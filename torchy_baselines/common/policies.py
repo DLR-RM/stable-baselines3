@@ -1,4 +1,4 @@
-from typing import Union, Type, Dict, List, Tuple
+from typing import Union, Type, Dict, List, Tuple, Optional
 
 from itertools import zip_longest
 
@@ -6,6 +6,8 @@ import gym
 import torch as th
 import torch.nn as nn
 import numpy as np
+
+from torchy_baselines.common.preprocessing import preprocess_obs
 
 
 class BasePolicy(nn.Module):
@@ -17,16 +19,35 @@ class BasePolicy(nn.Module):
     :param device: (Union[th.device, str]) Device on which the code should run.
     :param squash_output: (bool) For continuous actions, whether the output is squashed
         or not using a `tanh()` function.
+    :param features_extractor: (nn.Module) Network to extract features
+        (a CNN when using images, a nn.Flatten() layer otherwise)
+    :param normalize_images: (bool) Whether to normalize images or not,
+         dividing by 255.0 (True by default)
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  device: Union[th.device, str] = 'cpu',
-                 squash_output: bool = False):
+                 squash_output: bool = False,
+                 features_extractor: Optional[nn.Module] = None,
+                 normalize_images: bool = True):
         super(BasePolicy, self).__init__()
         self.observation_space = observation_space
         self.action_space = action_space
         self.device = device
+        self.features_extractor = features_extractor
+        self.normalize_images = normalize_images
         self._squash_output = squash_output
+
+    def extract_features(self, obs: th.Tensor) -> th.Tensor:
+        """
+        Preprocess the observation if needed and extract features.
+
+        :param obs: (th.Tensor)
+        :return: (th.Tensor)
+        """
+        assert self.features_extractor is not None, 'No feature extractor was set'
+        preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
+        return self.features_extractor(preprocessed_obs)
 
     @property
     def squash_output(self) -> bool:
@@ -35,7 +56,7 @@ class BasePolicy(nn.Module):
 
     @staticmethod
     def init_weights(module: nn.Module, gain: float = 1):
-        if type(module) == nn.Linear:
+        if isinstance(module, nn.Linear):
             nn.init.orthogonal_(module.weight, gain=gain)
             module.bias.data.fill_(0.0)
 
@@ -45,6 +66,10 @@ class BasePolicy(nn.Module):
     def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         """
         Get the action according to the policy for a given observation.
+
+        :param observation: (th.Tensor)
+        :param deterministic: (bool) Whether to use stochastic or deterministic actions
+        :return: (th.Tensor) Taken action according to the policy
         """
         raise NotImplementedError()
 
@@ -84,7 +109,7 @@ class BasePolicy(nn.Module):
 def create_mlp(input_dim: int,
                output_dim: int,
                net_arch: List[int],
-               activation_fn: nn.Module = nn.ReLU,
+               activation_fn: Type[nn.Module] = nn.ReLU,
                squash_output: bool = False) -> List[nn.Module]:
     """
     Create a multi layer perceptron (MLP), which is
@@ -95,7 +120,7 @@ def create_mlp(input_dim: int,
     :param net_arch: (List[int]) Architecture of the neural net
         It represents the number of units per layer.
         The length of this list is the number of layers.
-    :param activation_fn: (nn.Module) The activation function
+    :param activation_fn: (Type[nn.Module]) The activation function
         to use after each layer.
     :param squash_output: (bool) Whether to squash the output using a Tanh
         activation function
@@ -118,16 +143,16 @@ def create_mlp(input_dim: int,
     return modules
 
 
-def create_sde_feature_extractor(features_dim: int,
-                                 sde_net_arch: List[int],
-                                 activation_fn: nn.Module) -> Tuple[nn.Sequential, int]:
+def create_sde_features_extractor(features_dim: int,
+                                  sde_net_arch: List[int],
+                                  activation_fn: Type[nn.Module]) -> Tuple[nn.Sequential, int]:
     """
     Create the neural network that will be used to extract features
-    for the SDE.
+    for the SDE exploration function.
 
     :param features_dim: (int)
     :param sde_net_arch: ([int])
-    :param activation_fn: (nn.Module)
+    :param activation_fn: (Type[nn.Module])
     :return: (nn.Sequential, int)
     """
     # Special case: when using states as features (i.e. sde_net_arch is an empty list)
@@ -135,34 +160,8 @@ def create_sde_feature_extractor(features_dim: int,
     sde_activation = activation_fn if len(sde_net_arch) > 0 else None
     latent_sde_net = create_mlp(features_dim, -1, sde_net_arch, activation_fn=sde_activation, squash_output=False)
     latent_sde_dim = sde_net_arch[-1] if len(sde_net_arch) > 0 else features_dim
-    sde_feature_extractor = nn.Sequential(*latent_sde_net)
-    return sde_feature_extractor, latent_sde_dim
-
-
-class BaseNetwork(nn.Module):
-    """
-    Abstract class for the different networks (actor/critic)
-    that implements two helpers for using CEM with their weights.
-    """
-    def __init__(self):
-        super(BaseNetwork, self).__init__()
-
-    def load_from_vector(self, vector: np.ndarray):
-        """
-        Load parameters from a 1D vector.
-
-        :param vector: (np.ndarray)
-        """
-        device = next(self.parameters()).device
-        th.nn.utils.vector_to_parameters(th.FloatTensor(vector).to(device), self.parameters())
-
-    def parameters_to_vector(self) -> np.ndarray:
-        """
-        Convert the parameters to a 1D vector.
-
-        :return: (np.ndarray)
-        """
-        return th.nn.utils.parameters_to_vector(self.parameters()).detach().cpu().numpy()
+    sde_features_extractor = nn.Sequential(*latent_sde_net)
+    return sde_features_extractor, latent_sde_dim
 
 
 _policy_registry = dict()  # type: Dict[Type[BasePolicy], Dict[str, Type[BasePolicy]]]
@@ -234,12 +233,12 @@ class MlpExtractor(nn.Module):
     :param feature_dim: (int) Dimension of the feature vector (can be the output of a CNN)
     :param net_arch: ([int or dict]) The specification of the policy and value networks.
         See above for details on its formatting.
-    :param activation_fn: (nn.Module) The activation function to use for the networks.
+    :param activation_fn: (Type[nn.Module]) The activation function to use for the networks.
     :param device: (th.device)
     """
     def __init__(self, feature_dim: int,
                  net_arch: List[Union[int, Dict[str, List[int]]]],
-                 activation_fn: nn.Module,
+                 activation_fn: Type[nn.Module],
                  device: Union[th.device, str] = 'cpu'):
         super(MlpExtractor, self).__init__()
 

@@ -31,6 +31,8 @@ class BaseRLModel(ABC):
     :param env: (Union[GymEnv, str]) The environment to learn from
                 (if registered in Gym, can be str. Can be None for loading trained models)
     :param policy_base: (Type[BasePolicy]) The base policy used by this method
+    :param learning_rate: (float or callable) learning rate for the optimizer,
+        it can be a function of the current progress (from 1 to 0)
     :param policy_kwargs: (Dict[str, Any]) Additional arguments to be passed to the policy on creation
     :param verbose: (int) The verbosity level: 0 none, 1 training information, 2 debug
     :param device: (Union[th.device, str]) Device on which the code should run.
@@ -53,6 +55,7 @@ class BaseRLModel(ABC):
                  policy: Type[BasePolicy],
                  env: Union[GymEnv, str],
                  policy_base: Type[BasePolicy],
+                 learning_rate: Union[float, Callable],
                  policy_kwargs: Dict[str, Any] = None,
                  verbose: int = 0,
                  device: Union[th.device, str] = 'auto',
@@ -75,7 +78,7 @@ class BaseRLModel(ABC):
         if verbose > 0:
             print(f"Using {self.device} device")
 
-        self.env = None  # type: GymEnv
+        self.env = None  # type: Optional[GymEnv]
         # get VecNormalize object if needed
         self._vec_normalize_env = unwrap_vec_normalize(env)
         self.verbose = verbose
@@ -89,7 +92,7 @@ class BaseRLModel(ABC):
         self.action_noise = None  # type: Optional[ActionNoise]
         self.start_time = None
         self.policy = None
-        self.learning_rate = None  # type: Optional[float]
+        self.learning_rate = learning_rate
         self.lr_schedule = None   # type: Optional[Callable]
         # Used for SDE only
         self.use_sde = use_sde
@@ -135,7 +138,7 @@ class BaseRLModel(ABC):
     @abstractmethod
     def _setup_model(self) -> None:
         """
-        Create networks and optimizers
+        Create networks, buffer and optimizers
         """
         raise NotImplementedError()
 
@@ -335,15 +338,15 @@ class BaseRLModel(ABC):
                                  "Box environment, please use {} ".format(observation_space.shape) +
                                  "or (n_env, {}) for the observation shape."
                                  .format(", ".join(map(str, observation_space.shape))))
-        # TODO: add support for Discrete, MultiDiscrete and MultiBinary observation spaces
-        # elif isinstance(observation_space, gym.spaces.Discrete):
-        #     if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
-        #         return False
-        #     elif len(observation.shape) == 1:
-        #         return True
-        #     else:
-        #         raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape) +
-        #                          "Discrete environment, please use (1,) or (n_env, 1) for the observation shape.")
+        elif isinstance(observation_space, gym.spaces.Discrete):
+            if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
+                return False
+            elif len(observation.shape) == 1:
+                return True
+            else:
+                raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape) +
+                                 "Discrete environment, please use (1,) or (n_env, 1) for the observation shape.")
+        # TODO: add support for MultiDiscrete and MultiBinary observation spaces
         # elif isinstance(observation_space, gym.spaces.MultiDiscrete):
         #     if observation.shape == (len(observation_space.nvec),):
         #         return False
@@ -377,8 +380,10 @@ class BaseRLModel(ABC):
         :param state: (Optional[np.ndarray]) The last states (can be None, used in recurrent policies)
         :param mask: (Optional[np.ndarray]) The last masks (can be None, used in recurrent policies)
         :param deterministic: (bool) Whether or not to return deterministic actions.
-        :return: (Tuple[np.ndarray, Optional[np.ndarray]]) the model's action and the next state (used in recurrent policies)
+        :return: (Tuple[np.ndarray, Optional[np.ndarray]]) the model's action and the next state
+            (used in recurrent policies)
         """
+        # TODO: move this block to BasePolicy
         # if state is None:
         #     state = self.initial_state
         # if mask is None:
@@ -387,9 +392,7 @@ class BaseRLModel(ABC):
         vectorized_env = self._is_vectorized_observation(observation, self.observation_space)
 
         observation = observation.reshape((-1,) + self.observation_space.shape)
-        # Convert to float pytorch
-        # TODO: replace with preprocessing
-        observation = th.as_tensor(observation).float().to(self.device)
+        observation = th.as_tensor(observation).to(self.device)
         with th.no_grad():
             actions = self.policy.predict(observation, deterministic=deterministic)
         # Convert to numpy
@@ -761,6 +764,11 @@ class OffPolicyRLModel(BaseRLModel):
     :param env: The environment to learn from
                 (if registered in Gym, can be str. Can be None for loading trained models)
     :param policy_base: The base policy used by this method
+    :param learning_rate: (float or callable) learning rate for the optimizer,
+        it can be a function of the current progress (from 1 to 0)
+    :param buffer_size: (int) size of the replay buffer
+    :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
+    :param batch_size: (int) Minibatch size for each gradient update
     :param policy_kwargs: Additional arguments to be passed to the policy on creation
     :param verbose: The verbosity level: 0 none, 1 training information, 2 debug
     :param device: Device on which the code should run.
@@ -785,6 +793,10 @@ class OffPolicyRLModel(BaseRLModel):
                  policy: Type[BasePolicy],
                  env: Union[GymEnv, str],
                  policy_base: Type[BasePolicy],
+                 learning_rate: Union[float, Callable],
+                 buffer_size: int = int(1e6),
+                 learning_starts: int = 100,
+                 batch_size: int = 256,
                  policy_kwargs: Dict[str, Any] = None,
                  verbose: int = 0,
                  device: Union[th.device, str] = 'auto',
@@ -796,15 +808,31 @@ class OffPolicyRLModel(BaseRLModel):
                  sde_sample_freq: int = -1,
                  use_sde_at_warmup: bool = False):
 
-        super(OffPolicyRLModel, self).__init__(policy, env, policy_base, policy_kwargs, verbose,
+        super(OffPolicyRLModel, self).__init__(policy, env, policy_base, learning_rate,
+                                               policy_kwargs, verbose,
                                                device, support_multi_env, create_eval_env, monitor_wrapper,
                                                seed, use_sde, sde_sample_freq)
+        self.buffer_size = buffer_size
+        self.batch_size = batch_size
+        self.learning_starts = learning_starts
+        self.actor = None
+        self.replay_buffer = None  # type: Optional[ReplayBuffer]
+        # Update policy keyword arguments
+        self.policy_kwargs['use_sde'] = self.use_sde
+        self.policy_kwargs['device'] = self.device
         # For SDE only
         self.rollout_data = None
         self.on_policy_exploration = False
-        self.actor = None
-        self.replay_buffer = None  # type: Optional[ReplayBuffer]
         self.use_sde_at_warmup = use_sde_at_warmup
+
+    def _setup_model(self):
+        self._setup_lr_schedule()
+        self.set_random_seed(self.seed)
+        self.replay_buffer = ReplayBuffer(self.buffer_size, self.observation_space,
+                                          self.action_space, self.device)
+        self.policy = self.policy_class(self.observation_space, self.action_space,
+                                        self.lr_schedule, **self.policy_kwargs)
+        self.policy = self.policy.to(self.device)
 
     def save_replay_buffer(self, path: str):
         """

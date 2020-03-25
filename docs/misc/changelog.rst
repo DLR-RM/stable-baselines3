@@ -3,6 +3,33 @@
 Changelog
 ==========
 
+Pre-Release 0.4.0a0 (WIP)
+------------------------------
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+- Removed CEMRL
+
+New Features:
+^^^^^^^^^^^^^
+- Add support for Discrete observation spaces
+
+Bug Fixes:
+^^^^^^^^^^
+- Fix type hint for activation functions
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Refactor handling of observation and action spaces
+- Refactored features extraction to have proper preprocessing
+
+Documentation:
+^^^^^^^^^^^^^^
+
 
 Pre-Release 0.3.0 (2020-02-14)
 ------------------------------

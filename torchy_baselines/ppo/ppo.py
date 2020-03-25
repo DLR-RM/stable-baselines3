@@ -1,4 +1,3 @@
-import os
 import time
 from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
@@ -8,10 +7,11 @@ import torch as th
 import torch.nn.functional as F
 
 # Check if tensorboard is available for pytorch
-try:
-    from torch.utils.tensorboard import SummaryWriter
-except ImportError:
-    SummaryWriter = None
+# TODO: finish tensorboard integration
+# try:
+#     from torch.utils.tensorboard import SummaryWriter
+# except ImportError:
+#     SummaryWriter = None
 import numpy as np
 
 from torchy_baselines.common import logger
@@ -98,11 +98,10 @@ class PPO(BaseRLModel):
                  device: Union[th.device, str] = 'auto',
                  _init_setup_model: bool = True):
 
-        super(PPO, self).__init__(policy, env, PPOPolicy, policy_kwargs=policy_kwargs,
+        super(PPO, self).__init__(policy, env, PPOPolicy, learning_rate, policy_kwargs=policy_kwargs,
                                   verbose=verbose, device=device, use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                   create_eval_env=create_eval_env, support_multi_env=True, seed=seed)
 
-        self.learning_rate = learning_rate
         self.batch_size = batch_size
         self.n_epochs = n_epochs
         self.n_steps = n_steps
@@ -123,19 +122,12 @@ class PPO(BaseRLModel):
 
     def _setup_model(self) -> None:
         self._setup_lr_schedule()
-        # TODO: preprocessing: one hot vector for obs discrete
-        state_dim = self.observation_space.shape[0]
-        if isinstance(self.action_space, spaces.Box):
-            # Action is a 1D vector
-            action_dim = self.action_space.shape[0]
-        elif isinstance(self.action_space, spaces.Discrete):
-            # Action is a scalar
-            action_dim = 1
-
         self.set_random_seed(self.seed)
 
-        self.rollout_buffer = RolloutBuffer(self.n_steps, state_dim, action_dim, self.device,
-                                            gamma=self.gamma, gae_lambda=self.gae_lambda, n_envs=self.n_envs)
+        self.rollout_buffer = RolloutBuffer(self.n_steps, self.observation_space,
+                                            self.action_space, self.device,
+                                            gamma=self.gamma, gae_lambda=self.gae_lambda,
+                                            n_envs=self.n_envs)
         self.policy = self.policy_class(self.observation_space, self.action_space,
                                         self.lr_schedule, use_sde=self.use_sde, device=self.device,
                                         **self.policy_kwargs)
@@ -152,6 +144,7 @@ class PPO(BaseRLModel):
                          n_rollout_steps: int = 256,
                          obs: Optional[np.ndarray] = None) -> Tuple[Optional[np.ndarray], bool]:
 
+        assert obs is not None, "No previous observation was provided"
         n_steps = 0
         continue_training = True
         rollout_buffer.reset()
@@ -168,7 +161,9 @@ class PPO(BaseRLModel):
                 self.policy.reset_noise(env.num_envs)
 
             with th.no_grad():
-                actions, values, log_probs = self.policy.forward(obs)
+                # Convert to pytorch tensor
+                obs_tensor = th.as_tensor(obs).to(self.device)
+                actions, values, log_probs = self.policy.forward(obs_tensor)
             actions = actions.cpu().numpy()
 
             # Rescale and perform action
@@ -316,8 +311,8 @@ class PPO(BaseRLModel):
                                                        n_eval_episodes, eval_log_path, reset_num_timesteps)
         iteration = 0
 
-        if self.tensorboard_log is not None and SummaryWriter is not None:
-            self.tb_writer = SummaryWriter(log_dir=os.path.join(self.tensorboard_log, tb_log_name))
+        # if self.tensorboard_log is not None and SummaryWriter is not None:
+        #     self.tb_writer = SummaryWriter(log_dir=os.path.join(self.tensorboard_log, tb_log_name))
 
         callback.on_training_start(locals(), globals())
 

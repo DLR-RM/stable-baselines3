@@ -1,6 +1,6 @@
 # flake8: noqa F401
 import typing
-from typing import Optional
+from typing import Optional, Union
 from copy import deepcopy
 
 from torchy_baselines.common.vec_env.base_vec_env import (AlreadySteppingError, NotSteppingError,
@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
     from torchy_baselines.common.type_aliases import GymEnv
 
 
-def unwrap_vec_normalize(env: 'GymEnv') -> Optional[VecNormalize]:
+def unwrap_vec_normalize(env: Union['GymEnv', VecEnv]) -> Optional[VecNormalize]:
     """
     :param env: (gym.Env)
     :return: (VecNormalize)

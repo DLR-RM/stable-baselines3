@@ -1,7 +1,6 @@
 """
 Common aliases for type hint
 """
-import typing
 from typing import Union, Dict, Any, NamedTuple, Optional, List, Callable
 
 import numpy as np

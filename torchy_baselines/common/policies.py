@@ -63,7 +63,7 @@ class BasePolicy(nn.Module):
     def forward(self, *_args, **kwargs):
         raise NotImplementedError()
 
-    def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         """
         Get the action according to the policy for a given observation.
 
@@ -73,21 +73,145 @@ class BasePolicy(nn.Module):
         """
         raise NotImplementedError()
 
+    def predict(self, observation: np.ndarray,
+                state: Optional[np.ndarray] = None,
+                mask: Optional[np.ndarray] = None,
+                deterministic: bool = False) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+        """
+        Get the policy action and state from an observation (and optional state).
+
+        :param observation: (np.ndarray) the input observation
+        :param state: (Optional[np.ndarray]) The last states (can be None, used in recurrent policies)
+        :param mask: (Optional[np.ndarray]) The last masks (can be None, used in recurrent policies)
+        :param deterministic: (bool) Whether or not to return deterministic actions.
+        :return: (Tuple[np.ndarray, Optional[np.ndarray]]) the model's action and the next state
+            (used in recurrent policies)
+        """
+        # if state is None:
+        #     state = self.initial_state
+        # if mask is None:
+        #     mask = [False for _ in range(self.n_envs)]
+        observation = np.array(observation)
+        vectorized_env = self._is_vectorized_observation(observation, self.observation_space)
+
+        observation = observation.reshape((-1,) + self.observation_space.shape)
+        observation = th.as_tensor(observation).to(self.device)
+        with th.no_grad():
+            actions = self._predict(observation, deterministic=deterministic)
+        # Convert to numpy
+        actions = actions.cpu().numpy()
+
+        # Rescale to proper domain when using squashing
+        if isinstance(self.action_space, gym.spaces.Box) and self.squash_output:
+            actions = self.unscale_action(actions)
+
+        clipped_actions = actions
+        # Clip the actions to avoid out of bound error when using gaussian distribution
+        if isinstance(self.action_space, gym.spaces.Box) and not self.squash_output:
+            clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
+
+        if not vectorized_env:
+            if state is not None:
+                raise ValueError("Error: The environment must be vectorized when using recurrent policies.")
+            clipped_actions = clipped_actions[0]
+
+        return clipped_actions, state
+
+    def scale_action(self, action: np.ndarray) -> np.ndarray:
+        """
+        Rescale the action from [low, high] to [-1, 1]
+        (no need for symmetric action space)
+
+        :param action: (np.ndarray) Action to scale
+        :return: (np.ndarray) Scaled action
+        """
+        low, high = self.action_space.low, self.action_space.high
+        return 2.0 * ((action - low) / (high - low)) - 1.0
+
+    def unscale_action(self, scaled_action: np.ndarray) -> np.ndarray:
+        """
+        Rescale the action from [-1, 1] to [low, high]
+        (no need for symmetric action space)
+
+        :param scaled_action: Action to un-scale
+        """
+        low, high = self.action_space.low, self.action_space.high
+        return low + (0.5 * (scaled_action + 1.0) * (high - low))
+
+    @staticmethod
+    def _is_vectorized_observation(observation: np.ndarray, observation_space: gym.spaces.Space) -> bool:
+        """
+        For every observation type, detects and validates the shape,
+        then returns whether or not the observation is vectorized.
+
+        :param observation: (np.ndarray) the input observation to validate
+        :param observation_space: (gym.spaces) the observation space
+        :return: (bool) whether the given observation is vectorized or not
+        """
+        if isinstance(observation_space, gym.spaces.Box):
+            if observation.shape == observation_space.shape:
+                return False
+            elif observation.shape[1:] == observation_space.shape:
+                return True
+            else:
+                raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape) +
+                                 "Box environment, please use {} ".format(observation_space.shape) +
+                                 "or (n_env, {}) for the observation shape."
+                                 .format(", ".join(map(str, observation_space.shape))))
+        elif isinstance(observation_space, gym.spaces.Discrete):
+            if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
+                return False
+            elif len(observation.shape) == 1:
+                return True
+            else:
+                raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape) +
+                                 "Discrete environment, please use (1,) or (n_env, 1) for the observation shape.")
+        # TODO: add support for MultiDiscrete and MultiBinary observation spaces
+        # elif isinstance(observation_space, gym.spaces.MultiDiscrete):
+        #     if observation.shape == (len(observation_space.nvec),):
+        #         return False
+        #     elif len(observation.shape) == 2 and observation.shape[1] == len(observation_space.nvec):
+        #         return True
+        #     else:
+        #         raise ValueError("Error: Unexpected observation shape {} for MultiDiscrete ".format(observation.shape) +
+        #                          "environment, please use ({},) or ".format(len(observation_space.nvec)) +
+        #                          "(n_env, {}) for the observation shape.".format(len(observation_space.nvec)))
+        # elif isinstance(observation_space, gym.spaces.MultiBinary):
+        #     if observation.shape == (observation_space.n,):
+        #         return False
+        #     elif len(observation.shape) == 2 and observation.shape[1] == observation_space.n:
+        #         return True
+        #     else:
+        #         raise ValueError("Error: Unexpected observation shape {} for MultiBinary ".format(observation.shape) +
+        #                          "environment, please use ({},) or ".format(observation_space.n) +
+        #                          "(n_env, {}) for the observation shape.".format(observation_space.n))
+        else:
+            raise ValueError("Error: Cannot determine if the observation is vectorized with the space type {}."
+                             .format(observation_space))
+
+
     def save(self, path: str) -> None:
         """
-        Save model to a given location.
+        Save policy weights to a given location.
+        NOTE: we don't save policy parameters
 
         :param path: (str)
         """
+        previous_device = self.device
+        # Convert to cpu before saving
+        self = self.to('cpu')
         th.save(self.state_dict(), path)
+        self = self.to(previous_device)
 
     def load(self, path: str) -> None:
         """
-        Load saved model from path.
+        Load policy weights from path.
+        NOTE: we don't load policy parameters
 
         :param path: (str)
         """
         self.load_state_dict(th.load(path))
+        self = self.to(self.device)
 
     def load_from_vector(self, vector: np.ndarray):
         """

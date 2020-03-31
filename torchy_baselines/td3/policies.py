@@ -104,11 +104,6 @@ class Actor(BasePolicy):
         """
         return self.action_dist.get_std(self.log_std)
 
-    def _get_action_dist_from_latent(self, latent_pi: th.Tensor,
-                                     latent_sde: th.Tensor) -> Tuple[th.Tensor, Distribution]:
-        mean_actions = self.mu(latent_pi)
-        return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)
-
     def _get_latent(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         features = self.extract_features(obs)
         latent_pi = self.latent_pi(features)
@@ -126,9 +121,9 @@ class Actor(BasePolicy):
             and entropy of the action distribution.
         """
         latent_pi, latent_sde = self._get_latent(obs)
-        _, distribution = self._get_action_dist_from_latent(latent_pi, latent_sde)
+        mean_actions = self.mu(latent_pi)
+        distribution = self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)
         log_prob = distribution.log_prob(action)
-        # value = self.value_net(latent_vf)
         return log_prob, distribution.entropy()
 
     def reset_noise(self) -> None:
@@ -150,8 +145,6 @@ class Actor(BasePolicy):
             # -> set squash_output=True in the action_dist?
             # NOTE: the clipping is done in the rollout for now
             return self.mu(latent_pi) + noise
-            # action, _ = self._get_action_dist_from_latent(latent_pi)
-            # return action
         else:
             features = self.extract_features(obs)
             return self.mu(features)
@@ -338,9 +331,9 @@ class TD3Policy(BasePolicy):
         return Critic(**self.net_args).to(self.device)
 
     def forward(self, observation: th.Tensor, deterministic: bool = False):
-        return self.predict(observation, deterministic=deterministic)
+        return self._predict(observation, deterministic=deterministic)
 
-    def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         return self.actor(observation, deterministic=deterministic)
 
 

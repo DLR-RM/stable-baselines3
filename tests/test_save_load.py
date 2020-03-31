@@ -16,7 +16,7 @@ MODEL_LIST = [
     SAC,
 ]
 
-
+#
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 def test_save_load(model_class):
     """
@@ -160,3 +160,61 @@ def test_save_load_replay_buffer(model_class):
 
     # clear file from os
     os.remove(replay_path)
+
+
+@pytest.mark.parametrize("model_class", MODEL_LIST)
+def test_save_load_policy(model_class):
+    """
+    Test saving and loading policy only.
+
+    :param model_class: (BaseRLModel) A RL model
+    """
+    env = DummyVecEnv([lambda: IdentityEnvBox(10)])
+
+    # create model
+    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
+    model.learn(total_timesteps=500, eval_freq=250)
+
+    env.reset()
+    observations = np.array([env.step(env.action_space.sample())[0] for _ in range(10)])
+    observations = observations.reshape(10, -1)
+
+    policy = model.policy
+
+    # Get dictionary of current parameters
+    params = deepcopy(policy.state_dict())
+
+    # Modify all parameters to be random values
+    random_params = dict((param_name, th.rand_like(param)) for param_name, param in params.items())
+
+    # Update model parameters with the new random values
+    policy.load_state_dict(random_params)
+
+    new_params = policy.state_dict()
+    # Check that all params are different now
+    for k in params:
+        assert not th.allclose(params[k], new_params[k]), "Parameters did not change as expected."
+
+    params = new_params
+
+    # get selected actions
+    selected_actions, _ = policy.predict(observations, deterministic=True)
+
+    # Save and load policy
+    policy.save("./logs/policy_weights.pkl")
+    # del policy
+    policy.load("./logs/policy_weights.pkl")
+
+    # check if params are still the same after load
+    new_params = policy.state_dict()
+
+    # Check that all params are the same as before save load procedure now
+    for key in params:
+        assert th.allclose(params[key], new_params[key]), "Policy parameters not the same after save and load."
+
+    # check if model still selects the same actions
+    new_selected_actions, _ = policy.predict(observations, deterministic=True)
+    assert np.allclose(selected_actions, new_selected_actions, 1e-4)
+
+    # clear file from os
+    os.remove("./logs/policy_weights.pkl")

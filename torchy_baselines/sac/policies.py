@@ -108,14 +108,11 @@ class Actor(BasePolicy):
             'reset_noise() is only available when using SDE'
         self.action_dist.sample_weights(self.log_std, batch_size=batch_size)
 
-    def _get_latent(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+    def get_action_dist_params(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         features = self.extract_features(obs)
         latent_pi = self.latent_pi(features)
         latent_sde = self.sde_features_extractor(features) if self.sde_features_extractor is not None else latent_pi
-        return latent_pi, latent_sde
 
-    def get_action_dist_params(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
-        latent_pi, latent_sde = self._get_latent(obs)
         mean_actions = self.mu(latent_pi)
 
         if self.use_sde:
@@ -130,9 +127,8 @@ class Actor(BasePolicy):
         mean_actions, log_std, latent_sde = self.get_action_dist_params(obs)
         kwargs = dict(latent_sde=latent_sde) if self.use_sde else {}
         # Note: the action is squashed
-        action, _ = self.action_dist.proba_distribution(mean_actions, log_std,
-                                                        deterministic=deterministic, **kwargs)
-        return action
+        return self.action_dist.action_from_params(mean_actions, log_std,
+                                                   deterministic=deterministic, **kwargs)
 
     def action_log_prob(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         mean_actions, log_std, latent_sde = self.get_action_dist_params(obs)
@@ -268,7 +264,7 @@ class SACPolicy(BasePolicy):
     def forward(self, obs: th.Tensor) -> th.Tensor:
         return self.predict(obs, deterministic=False)
 
-    def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         return self.actor(observation, deterministic)
 
 

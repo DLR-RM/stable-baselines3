@@ -112,6 +112,59 @@ class DQN(OffPolicyRLModel):
             else:
                 obs = new_obs.copy()  # copy the observation here to avoid conflicts
 
+    def train(self, gradient_steps: int, batch_size: int = 100, policy_delay: int = 2) -> None:
+
+        # Update learning rate according to lr schedule
+        self._update_learning_rate([self.actor.optimizer, self.critic.optimizer])
+
+        for gradient_step in range(gradient_steps):
+
+            # Sample replay buffer
+            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
+
+            with th.no_grad():
+                # Select action according to policy and add clipped noise
+                noise = replay_data.actions.clone().data.normal_(0, self.target_policy_noise)
+                noise = noise.clamp(-self.target_noise_clip, self.target_noise_clip)
+                next_actions = (self.actor_target(replay_data.next_observations) + noise).clamp(-1, 1)
+
+                # Compute the target Q value
+                target_q1, target_q2 = self.critic_target(replay_data.next_observations, next_actions)
+                target_q = th.min(target_q1, target_q2)
+                target_q = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
+
+            # Get current Q estimates
+            current_q1, current_q2 = self.critic(replay_data.observations, replay_data.actions)
+
+            # Compute critic loss
+            critic_loss = F.mse_loss(current_q1, target_q) + F.mse_loss(current_q2, target_q)
+
+            # Optimize the critic
+            self.critic.optimizer.zero_grad()
+            critic_loss.backward()
+            self.critic.optimizer.step()
+
+            # Delayed policy updates
+            if gradient_step % policy_delay == 0:
+                # Compute actor loss
+                actor_loss = -self.critic.q1_forward(replay_data.observations,
+                                                     self.actor(replay_data.observations)).mean()
+
+                # Optimize the actor
+                self.actor.optimizer.zero_grad()
+                actor_loss.backward()
+                self.actor.optimizer.step()
+
+                # Update the frozen target networks
+                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
+                    target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+
+                for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
+                    target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+
+        self._n_updates += gradient_steps
+        logger.logkv("n_updates", self._n_updates)
+
     def train(self, n_epochs: int, batch_size: int = 64) -> None:
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
@@ -119,8 +172,9 @@ class DQN(OffPolicyRLModel):
         # train for gradient_steps epochs
         for epoch in range(n_epochs):
 
-            # sample random minibatch from replay buffer
-            obs, actions, next_obs, dones, rewards = self.replay_buffer.sample(batch_size)
+            # Sample replay buffer
+            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
+
             # forward observations to get q values
             with th.no_grad():
                 # Convert to pytorch tensor
@@ -136,82 +190,44 @@ class DQN(OffPolicyRLModel):
             loss.backward()
             self.policy.optimizer.step()
 
-        self._n_updates += n_epochs
-        explained_var = explained_variance(self.rollout_buffer.returns.flatten(),
-                                           self.rollout_buffer.values.flatten())
-
+        self._n_updates += 1
         logger.logkv("n_updates", self._n_updates)
-        logger.logkv("clip_fraction", np.mean(clip_fraction))
-        logger.logkv("clip_range", clip_range)
-        if self.clip_range_vf is not None:
-            logger.logkv("clip_range_vf", clip_range_vf)
-
-        logger.logkv("approx_kl", np.mean(approx_kl_divs))
-        logger.logkv("explained_variance", explained_var)
-        logger.logkv("entropy_loss", np.mean(entropy_losses))
-        logger.logkv("policy_gradient_loss", np.mean(pg_losses))
-        logger.logkv("value_loss", np.mean(value_losses))
-        if hasattr(self.policy, 'log_std'):
-            logger.logkv("std", th.exp(self.policy.log_std).mean().item())
 
     def learn(self,
               total_timesteps: int,
               callback: MaybeCallback = None,
-              log_interval: int = 1,
+              log_interval: int = 4,
               eval_env: Optional[GymEnv] = None,
               eval_freq: int = -1,
               n_eval_episodes: int = 5,
               tb_log_name: str = "DQN",
               eval_log_path: Optional[str] = None,
-              reset_num_timesteps: bool = True) -> 'DQN':
+              reset_num_timesteps: bool = True) -> OffPolicyRLModel:
 
         episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq,
                                                        n_eval_episodes, eval_log_path, reset_num_timesteps)
-        iteration = 0
-
-        # if self.tensorboard_log is not None and SummaryWriter is not None:
-        #     self.tb_writer = SummaryWriter(log_dir=os.path.join(self.tensorboard_log, tb_log_name))
 
         callback.on_training_start(locals(), globals())
 
-        # prepare replay_buffer
-        self.co
-        self.init_replay_buffer(self.env, self.replay_buffer)
-
-        logger.info("Replay buffer filled")
-
-        obs = self.env.reset()
-
         while self.num_timesteps < total_timesteps:
 
-            # step environment epsilon greedy and update replay buffer
-            if np.random.random_sample() < self.epsilon:
-                action = self.action_space.sample()
-            else:
-                with th.no_grad():
-                    # Convert to pytorch tensor
-                    obs_tensor = th.as_tensor(obs).to(self.device)
-                    action = self.policy.forward(obs_tensor)
-                action = action.cpu().numpy()
-            new_obs, reward, done, info = self.env.step(action)
-            self.replay_buffer.add(obs, new_obs, action, reward, done)
+            rollout = self.collect_rollouts(self.env,
+                                            n_steps=self.train_freq, action_noise=self.action_noise,
+                                            callback=callback,
+                                            learning_starts=self.learning_starts,
+                                            replay_buffer=self.replay_buffer,
+                                            obs=obs, episode_num=episode_num,
+                                            log_interval=log_interval)
 
-            # perform gradient step on new batch
-            self.train(self.n_epochs, batch_size=self.batch_size)
+            if rollout.continue_training is False:
+                break
 
-            iteration += 1
+            obs = rollout.obs
+            episode_num += rollout.n_episodes
             self._update_current_progress(self.num_timesteps, total_timesteps)
-            # Display training infos
-            if self.verbose >= 1 and log_interval is not None and iteration % log_interval == 0:
-                fps = int(self.num_timesteps / (time.time() - self.start_time))
-                logger.logkv("iterations", iteration)
-                logger.logkv("fps", fps)
-                logger.logkv('time_elapsed', int(time.time() - self.start_time))
-                logger.logkv("total timesteps", self.num_timesteps)
-                logger.dumpkvs()
-            # For tensorboard integration
-            # if self.tb_writer is not None:
-            #     self.tb_writer.add_scalar('Eval/reward', mean_reward, self.num_timesteps)
+
+            if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
+                self.train(batch_size=self.batch_size)
 
         callback.on_training_end()
 

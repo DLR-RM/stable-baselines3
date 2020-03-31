@@ -406,7 +406,7 @@ class StateDependentNoiseDistribution(Distribution):
                            log_std: th.Tensor,
                            latent_sde: th.Tensor) -> 'StateDependentNoiseDistribution':
         """
-        Create and sample for the distribution given its parameters (mean, std)
+        Create the distribution given its parameters (mean, std)
 
         :param mean_actions: (th.Tensor)
         :param log_std: (th.Tensor)

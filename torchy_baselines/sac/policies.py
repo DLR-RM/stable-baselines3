@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple, Callable, Union, Type
+from typing import Optional, List, Tuple, Callable, Union, Type, Dict
 
 import gym
 import torch as th
@@ -108,33 +108,42 @@ class Actor(BasePolicy):
             'reset_noise() is only available when using SDE'
         self.action_dist.sample_weights(self.log_std, batch_size=batch_size)
 
-    def get_action_dist_params(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
+    def get_action_dist_params(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor, Dict[str, th.Tensor]]:
+        """
+        Get the parameters for the action distribution.
+
+        :param obs: (th.Tensor)
+        :return: (Tuple[th.Tensor, th.Tensor, Dict[str, th.Tensor]])
+            Mean, standard deviation and optional keyword arguments.
+        """
         features = self.extract_features(obs)
         latent_pi = self.latent_pi(features)
-        latent_sde = self.sde_features_extractor(features) if self.sde_features_extractor is not None else latent_pi
-
         mean_actions = self.mu(latent_pi)
 
         if self.use_sde:
-            log_std = self.log_std
-        else:
-            log_std = self.log_std(latent_pi)
-            # Original Implementation to cap the standard deviation
-            log_std = th.clamp(log_std, LOG_STD_MIN, LOG_STD_MAX)
-        return mean_actions, log_std, latent_sde
+            latent_sde = latent_pi
+            if self.sde_features_extractor is not None:
+                latent_sde = self.sde_features_extractor(features)
+            return mean_actions, self.log_std, dict(latent_sde=latent_sde)
+        # Unstructured exploration (Original implementation)
+        log_std = self.log_std(latent_pi)
+        # Original Implementation to cap the standard deviation
+        log_std = th.clamp(log_std, LOG_STD_MIN, LOG_STD_MAX)
+        return mean_actions, log_std, {}
 
     def forward(self, obs: th.Tensor, deterministic: bool = False) -> th.Tensor:
-        mean_actions, log_std, latent_sde = self.get_action_dist_params(obs)
-        kwargs = dict(latent_sde=latent_sde) if self.use_sde else {}
+        mean_actions, log_std, kwargs = self.get_action_dist_params(obs)
         # Note: the action is squashed
-        return self.action_dist.action_from_params(mean_actions, log_std,
-                                                   deterministic=deterministic, **kwargs)
+        return self.action_dist.actions_from_params(mean_actions, log_std,
+                                                    deterministic=deterministic, **kwargs)
 
     def action_log_prob(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
-        mean_actions, log_std, latent_sde = self.get_action_dist_params(obs)
-        kwargs = dict(latent_sde=latent_sde) if self.use_sde else {}
+        mean_actions, log_std, kwargs = self.get_action_dist_params(obs)
         # return action and associated log prob
         return self.action_dist.log_prob_from_params(mean_actions, log_std, **kwargs)
+
+    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+        return self.forward(observation, deterministic)
 
 
 class Critic(BasePolicy):

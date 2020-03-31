@@ -110,7 +110,7 @@ class Actor(BasePolicy):
         latent_sde = self.sde_features_extractor(features) if self.sde_features_extractor is not None else latent_pi
         return latent_pi, latent_sde
 
-    def evaluate_actions(self, obs: th.Tensor, action: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+    def evaluate_actions(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         """
         Evaluate actions according to the current policy,
         given the observations. Only useful when using SDE.
@@ -123,7 +123,7 @@ class Actor(BasePolicy):
         latent_pi, latent_sde = self._get_latent(obs)
         mean_actions = self.mu(latent_pi)
         distribution = self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)
-        log_prob = distribution.log_prob(action)
+        log_prob = distribution.log_prob(actions)
         return log_prob, distribution.entropy()
 
     def reset_noise(self) -> None:
@@ -148,6 +148,9 @@ class Actor(BasePolicy):
         else:
             features = self.extract_features(obs)
             return self.mu(features)
+
+    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+        return self.forward(observation, deterministic=deterministic)
 
 
 class Critic(BasePolicy):
@@ -184,14 +187,14 @@ class Critic(BasePolicy):
         q2_net = create_mlp(features_dim + action_dim, 1, net_arch, activation_fn)
         self.q2_net = nn.Sequential(*q2_net)
 
-    def forward(self, obs: th.Tensor, action: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+    def forward(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         features = self.extract_features(obs)
-        qvalue_input = th.cat([features, action], dim=1)
+        qvalue_input = th.cat([features, actions], dim=1)
         return self.q1_net(qvalue_input), self.q2_net(qvalue_input)
 
-    def q1_forward(self, obs: th.Tensor, action: th.Tensor) -> th.Tensor:
+    def q1_forward(self, obs: th.Tensor, actions: th.Tensor) -> th.Tensor:
         features = self.extract_features(obs)
-        return self.q1_net(th.cat([features, action], dim=1))
+        return self.q1_net(th.cat([features, actions], dim=1))
 
 
 class ValueFunction(BasePolicy):

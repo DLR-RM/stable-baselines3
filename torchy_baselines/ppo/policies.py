@@ -155,11 +155,11 @@ class PPOPolicy(BasePolicy):
         """
         latent_pi, latent_vf, latent_sde = self._get_latent(obs)
         # Evaluate the values for the given observations
-        value = self.value_net(latent_vf)
+        values = self.value_net(latent_vf)
         distribution = self._get_action_dist_from_latent(latent_pi, latent_sde=latent_sde)
-        action = distribution.get_action(deterministic=deterministic)
-        log_prob = distribution.log_prob(action)
-        return action, value, log_prob
+        actions = distribution.get_actions(deterministic=deterministic)
+        log_prob = distribution.log_prob(actions)
+        return actions, values, log_prob
 
     def _get_latent(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
@@ -212,7 +212,7 @@ class PPOPolicy(BasePolicy):
         """
         latent_pi, _, latent_sde = self._get_latent(observation)
         distribution = self._get_action_dist_from_latent(latent_pi, latent_sde)
-        return distribution.get_action(deterministic=deterministic)
+        return distribution.get_actions(deterministic=deterministic)
 
     def evaluate_actions(self, obs: th.Tensor,
                          actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:

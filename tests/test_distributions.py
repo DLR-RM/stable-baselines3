@@ -39,7 +39,7 @@ def test_squashed_gaussian(model_class):
     dist = SquashedDiagGaussianDistribution(N_ACTIONS)
     _, log_std = dist.proba_distribution_net(N_FEATURES)
     dist = dist.proba_distribution(gaussian_mean, log_std)
-    actions = dist.get_action()
+    actions = dist.get_actions()
     assert th.max(th.abs(actions)) <= 1.0
 
 def test_sde_distribution():
@@ -53,7 +53,7 @@ def test_sde_distribution():
     dist.sample_weights(log_std, batch_size=N_SAMPLES)
 
     dist = dist.proba_distribution(deterministic_actions, log_std, state)
-    actions = dist.get_action()
+    actions = dist.get_actions()
 
     assert th.allclose(actions.mean(), dist.distribution.mean.mean(), rtol=1e-3)
     assert th.allclose(actions.std(), dist.distribution.scale.mean(), rtol=1e-3)
@@ -78,7 +78,7 @@ def test_entropy(dist):
         dist.sample_weights(log_std, batch_size=N_SAMPLES)
         dist = dist.proba_distribution(deterministic_actions, log_std, state)
 
-    actions = dist.get_action()
+    actions = dist.get_actions()
     entropy = dist.entropy()
     log_prob = dist.log_prob(actions)
     assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=5e-3)
@@ -93,7 +93,7 @@ def test_categorical():
     action_logits = th.rand(N_SAMPLES, N_ACTIONS)
     dist = dist.proba_distribution(action_logits)
 
-    actions = dist.get_action()
+    actions = dist.get_actions()
     entropy = dist.entropy()
     log_prob = dist.log_prob(actions)
     assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=1e-4)

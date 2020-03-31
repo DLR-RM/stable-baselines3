@@ -15,7 +15,7 @@ import torch.nn.functional as F
 import numpy as np
 
 from torchy_baselines.common import logger
-from torchy_baselines.common.base_class import BaseRLModel
+from torchy_baselines.common.base_class import OffPolicyRLModel
 from torchy_baselines.common.type_aliases import GymEnv, MaybeCallback
 from torchy_baselines.common.buffers import ReplayBuffer, ReplayBufferSamples
 from torchy_baselines.common.utils import explained_variance, get_schedule_fn
@@ -24,7 +24,7 @@ from torchy_baselines.common.callbacks import BaseCallback
 from torchy_baselines.ppo.policies import PPOPolicy
 
 
-class DQN(BaseRLModel):
+class DQN(OffPolicyRLModel):
     """
     Deep Q-Network (DQN)
 
@@ -36,10 +36,8 @@ class DQN(BaseRLModel):
     :param learning_rate: (float or callable) The learning rate, it can be a function
         of the current progress (from 1 to 0)
     :param buffer_size: (int) size of the replay buffer
-    :param n_steps: (int) The number of steps to run for each environment per update
-        (i.e. batch size is n_steps * n_env where n_env is number of environment copies running in parallel)
-    :param batch_size: (int) Minibatch size
-    :param n_epochs: (int) Number of epoch when optimizing the surrogate loss
+    :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
+    :param batch_size: (int) Minibatch size for each gradient update
     :param gamma: (float) Discount factor
     :param epsilon: (float) Exploration factor for epsilon-greedy policy
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
@@ -57,9 +55,8 @@ class DQN(BaseRLModel):
                  env: Union[GymEnv, str],
                  learning_rate: Union[float, Callable] = 3e-4,
                  buffer_size: int = 1000000,
-                 n_steps: int = 2048,
+                 learning_starts: int = 1000000,
                  batch_size: Optional[int] = 64,
-                 n_epochs: int = 10,
                  gamma: float = 0.99,
                  epsilon: float = 0.05,
                  tensorboard_log: Optional[str] = None,
@@ -70,16 +67,13 @@ class DQN(BaseRLModel):
                  device: Union[th.device, str] = 'auto',
                  _init_setup_model: bool = True):
 
-        super(DQN, self).__init__(policy, env, PPOPolicy, learning_rate, policy_kwargs=policy_kwargs,
-                                  verbose=verbose, device=device, create_eval_env=create_eval_env,
-                                  support_multi_env=True, seed=seed)
+        super(DQN, self).__init__(policy, env, policy, learning_rate,
+                                  buffer_size, learning_starts, batch_size,
+                                  policy_kwargs, verbose, device, create_eval_env=create_eval_env, seed=seed)
 
         self.batch_size = batch_size
-        self.n_epochs = n_epochs
-        self.n_steps = n_steps
         self.gamma = gamma
         self.epsilon = epsilon
-        self.buffer_size = buffer_size
         self.replay_buffer = ReplayBuffer()
         self.tensorboard_log = tensorboard_log
         self.tb_writer = None
@@ -88,14 +82,7 @@ class DQN(BaseRLModel):
             self._setup_model()
 
     def _setup_model(self) -> None:
-        self._setup_lr_schedule()
-        self.set_random_seed(self.seed)
-        self.replay_buffer = ReplayBuffer(self.buffer_size, self.observation_space, self.action_space, self.device,
-                                          n_envs=self.n_envs)
-        self.policy = self.policy_class(self.observation_space, self.action_space,
-                                        self.lr_schedule, device=self.device,
-                                        **self.policy_kwargs)
-        self.policy = self.policy.to(self.device)
+        super(DQN, self)._setup_model()
 
     def init_replay_buffer(self,
                            env: gym.Env,
@@ -188,6 +175,7 @@ class DQN(BaseRLModel):
         callback.on_training_start(locals(), globals())
 
         # prepare replay_buffer
+        self.co
         self.init_replay_buffer(self.env, self.replay_buffer)
 
         logger.info("Replay buffer filled")

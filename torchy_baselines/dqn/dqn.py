@@ -21,7 +21,7 @@ from torchy_baselines.common.buffers import ReplayBuffer, ReplayBufferSamples
 from torchy_baselines.common.utils import explained_variance, get_schedule_fn
 from torchy_baselines.common.vec_env import VecEnv
 from torchy_baselines.common.callbacks import BaseCallback
-from torchy_baselines.ppo.policies import PPOPolicy
+from torchy_baselines.dqn.policies import DQNPolicy
 
 
 class DQN(OffPolicyRLModel):
@@ -39,6 +39,8 @@ class DQN(OffPolicyRLModel):
     :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
     :param batch_size: (int) Minibatch size for each gradient update
     :param gamma: (float) Discount factor
+    :param train_freq: (int) Update the model every ``train_freq`` steps.
+    :param gradient_steps: (int) How many gradient update after each step
     :param epsilon: (float) Exploration factor for epsilon-greedy policy
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param create_eval_env: (bool) Whether to create a second environment that will be
@@ -51,13 +53,15 @@ class DQN(OffPolicyRLModel):
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
 
-    def __init__(self, policy: Union[str, Type[PPOPolicy]],
+    def __init__(self, policy: Union[str, Type[DQNPolicy]],
                  env: Union[GymEnv, str],
                  learning_rate: Union[float, Callable] = 3e-4,
                  buffer_size: int = 1000000,
                  learning_starts: int = 1000000,
                  batch_size: Optional[int] = 64,
                  gamma: float = 0.99,
+                 train_freq: int = -1,
+                 gradient_steps: int = -1,
                  epsilon: float = 0.05,
                  tensorboard_log: Optional[str] = None,
                  create_eval_env: bool = False,
@@ -67,14 +71,15 @@ class DQN(OffPolicyRLModel):
                  device: Union[th.device, str] = 'auto',
                  _init_setup_model: bool = True):
 
-        super(DQN, self).__init__(policy, env, policy, learning_rate,
+        super(DQN, self).__init__(policy, env, DQNPolicy, learning_rate,
                                   buffer_size, learning_starts, batch_size,
                                   policy_kwargs, verbose, device, create_eval_env=create_eval_env, seed=seed)
 
+        self.train_freq = train_freq
+        self.gradient_steps = gradient_steps
         self.batch_size = batch_size
         self.gamma = gamma
         self.epsilon = epsilon
-        self.replay_buffer = ReplayBuffer()
         self.tensorboard_log = tensorboard_log
         self.tb_writer = None
 
@@ -90,7 +95,6 @@ class DQN(OffPolicyRLModel):
         self._update_learning_rate(self.policy.optimizer)
 
         for gradient_step in range(gradient_steps):
-
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
@@ -101,12 +105,16 @@ class DQN(OffPolicyRLModel):
                 target_q = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
 
             # Get current Q estimates
-            current_q = self.critic(replay_data.observations, replay_data.actions)
+            current_q = self.policy(replay_data.observations)
 
-            # Compute critic loss
+            # Gather q_values of our actions
+            indices = replay_data.actions
+            current_q = th.gather(current_q, 1, indices)
+
+            # Compute q loss
             loss = F.mse_loss(current_q, target_q)
 
-            # Optimize the critic
+            # Optimize the policy
             self.policy.optimizer.zero_grad()
             loss.backward()
             self.policy.optimizer.step()

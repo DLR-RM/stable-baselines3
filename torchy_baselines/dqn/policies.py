@@ -17,6 +17,7 @@ class DQNPolicy(BasePolicy):
     :param lr_schedule: (callable) Learning rate schedule (could be constant)
     :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.
+    :param use_sde: (str or th.device) sde param that has to be here because of base_class implementation
     :param activation_fn: (Type[nn.Module]) Activation function
     :param log_std_init: (float) Initial value for the log standard deviation
     :param normalize_images: (bool) Whether to normalize images or not,
@@ -28,6 +29,7 @@ class DQNPolicy(BasePolicy):
                  lr_schedule: Callable,
                  net_arch: Optional[List[int]] = None,
                  device: Union[th.device, str] = 'cpu',
+                 use_sde: bool = False,
                  activation_fn: Type[nn.Module] = nn.ReLU,
                  log_std_init: float = 0.0,
                  normalize_images: bool = True):

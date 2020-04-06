@@ -155,11 +155,11 @@ class PPOPolicy(BasePolicy):
         """
         latent_pi, latent_vf, latent_sde = self._get_latent(obs)
         # Evaluate the values for the given observations
-        value = self.value_net(latent_vf)
-        action, action_distribution = self._get_action_dist_from_latent(latent_pi, latent_sde=latent_sde,
-                                                                        deterministic=deterministic)
-        log_prob = action_distribution.log_prob(action)
-        return action, value, log_prob
+        values = self.value_net(latent_vf)
+        distribution = self._get_action_dist_from_latent(latent_pi, latent_sde=latent_sde)
+        actions = distribution.get_actions(deterministic=deterministic)
+        log_prob = distribution.log_prob(actions)
+        return actions, values, log_prob
 
     def _get_latent(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
@@ -180,33 +180,29 @@ class PPOPolicy(BasePolicy):
         return latent_pi, latent_vf, latent_sde
 
     def _get_action_dist_from_latent(self, latent_pi: th.Tensor,
-                                     latent_sde: Optional[th.Tensor] = None,
-                                     deterministic: bool = False) -> Tuple[th.Tensor, Distribution]:
+                                     latent_sde: Optional[th.Tensor] = None) -> Distribution:
         """
-        Retrieve action and associated action distribution
-        given the latent codes.
+        Retrieve action distribution given the latent codes.
 
         :param latent_pi: (th.Tensor) Latent code for the actor
         :param latent_sde: (Optional[th.Tensor]) Latent code for the SDE exploration function
-        :param deterministic: (bool) Whether to sample or use deterministic actions
-        :return: (Tuple[th.Tensor, Distribution]) Action and action distribution
+        :return: (Distribution) Action distribution
         """
         mean_actions = self.action_net(latent_pi)
 
         if isinstance(self.action_dist, DiagGaussianDistribution):
-            return self.action_dist.proba_distribution(mean_actions, self.log_std, deterministic=deterministic)
+            return self.action_dist.proba_distribution(mean_actions, self.log_std)
 
         elif isinstance(self.action_dist, CategoricalDistribution):
             # Here mean_actions are the logits before the softmax
-            return self.action_dist.proba_distribution(mean_actions, deterministic=deterministic)
+            return self.action_dist.proba_distribution(action_logits=mean_actions)
 
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
-            return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde,
-                                                       deterministic=deterministic)
+            return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)
         else:
             raise ValueError('Invalid action distribution')
 
-    def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         """
         Get the action according to the policy for a given observation.
 
@@ -215,27 +211,25 @@ class PPOPolicy(BasePolicy):
         :return: (th.Tensor) Taken action according to the policy
         """
         latent_pi, _, latent_sde = self._get_latent(observation)
-        action, _ = self._get_action_dist_from_latent(latent_pi, latent_sde, deterministic=deterministic)
-        return action
+        distribution = self._get_action_dist_from_latent(latent_pi, latent_sde)
+        return distribution.get_actions(deterministic=deterministic)
 
     def evaluate_actions(self, obs: th.Tensor,
-                         actions: th.Tensor,
-                         deterministic: bool = False) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
+                         actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
         Evaluate actions according to the current policy,
         given the observations.
 
         :param obs: (th.Tensor)
         :param actions: (th.Tensor)
-        :param deterministic: (bool)
         :return: (th.Tensor, th.Tensor, th.Tensor) estimated value, log likelihood of taking those actions
             and entropy of the action distribution.
         """
         latent_pi, latent_vf, latent_sde = self._get_latent(obs)
-        _, action_distribution = self._get_action_dist_from_latent(latent_pi, latent_sde, deterministic=deterministic)
-        log_prob = action_distribution.log_prob(actions)
+        distribution = self._get_action_dist_from_latent(latent_pi, latent_sde)
+        log_prob = distribution.log_prob(actions)
         values = self.value_net(latent_vf)
-        return values, log_prob, action_distribution.entropy()
+        return values, log_prob, distribution.entropy()
 
 
 MlpPolicy = PPOPolicy

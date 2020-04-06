@@ -20,9 +20,9 @@ def test_continuous(model_class):
     env = IdentityEnvBox(eps=0.5)
 
     n_steps = {
-        A2C: 3000,
+        A2C: 3500,
         PPO: 3000,
-        SAC: 500,
+        SAC: 700,
         TD3: 500
     }[model_class]
 

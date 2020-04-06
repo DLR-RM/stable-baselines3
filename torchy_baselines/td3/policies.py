@@ -35,6 +35,7 @@ class Actor(BasePolicy):
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
+    :param device: (Union[th.device, str]) Device on which the code should run.
     """
     def __init__(self,
                  observation_space: gym.spaces.Space,
@@ -50,10 +51,12 @@ class Actor(BasePolicy):
                  full_std: bool = False,
                  sde_net_arch: Optional[List[int]] = None,
                  use_expln: bool = False,
-                 normalize_images: bool = True):
+                 normalize_images: bool = True,
+                 device: Union[th.device, str] = 'cpu'):
         super(Actor, self).__init__(observation_space, action_space,
                                     features_extractor=features_extractor,
-                                    normalize_images=normalize_images)
+                                    normalize_images=normalize_images,
+                                    device=device)
 
         self.latent_pi, self.log_std = None, None
         self.weights_dist, self.exploration_mat = None, None
@@ -167,6 +170,7 @@ class Critic(BasePolicy):
     :param activation_fn: (Type[nn.Module]) Activation function
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
+    :param device: (Union[th.device, str]) Device on which the code should run.
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
@@ -174,10 +178,12 @@ class Critic(BasePolicy):
                  features_extractor: nn.Module,
                  features_dim: int,
                  activation_fn: Type[nn.Module] = nn.ReLU,
-                 normalize_images: bool = True):
+                 normalize_images: bool = True,
+                 device: Union[th.device, str] = 'cpu'):
         super(Critic, self).__init__(observation_space, action_space,
                                      features_extractor=features_extractor,
-                                     normalize_images=normalize_images)
+                                     normalize_images=normalize_images,
+                                     device=device)
 
         action_dim = get_action_dim(self.action_space)
 
@@ -241,7 +247,7 @@ class TD3Policy(BasePolicy):
     :param action_space: (gym.spaces.Space) Action space
     :param lr_schedule: (Callable) Learning rate schedule (could be constant)
     :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
-    :param device: (str or th.device) Device on which the code should run.
+    :param device: (Union[th.device, str]) Device on which the code should run.
     :param activation_fn: (Type[nn.Module]) Activation function
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
@@ -286,7 +292,8 @@ class TD3Policy(BasePolicy):
             'features_dim': self.features_dim,
             'net_arch': self.net_arch,
             'activation_fn': self.activation_fn,
-            'normalize_images': normalize_images
+            'normalize_images': normalize_images,
+            'device': device
         }
         self.actor_kwargs = self.net_args.copy()
         sde_kwargs = {

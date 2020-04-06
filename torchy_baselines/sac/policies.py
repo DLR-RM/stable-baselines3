@@ -38,6 +38,7 @@ class Actor(BasePolicy):
     :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
+    :param device: (Union[th.device, str]) Device on which the code should run.
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
@@ -51,10 +52,12 @@ class Actor(BasePolicy):
                  sde_net_arch: Optional[List[int]] = None,
                  use_expln: bool = False,
                  clip_mean: float = 2.0,
-                 normalize_images: bool = True):
+                 normalize_images: bool = True,
+                 device: Union[th.device, str] = 'cpu'):
         super(Actor, self).__init__(observation_space, action_space,
                                     features_extractor=features_extractor,
-                                    normalize_images=normalize_images)
+                                    normalize_images=normalize_images,
+                                    device=device)
 
         action_dim = get_action_dim(self.action_space)
 
@@ -159,6 +162,7 @@ class Critic(BasePolicy):
     :param activation_fn: (Type[nn.Module]) Activation function
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
+    :param device: (Union[th.device, str]) Device on which the code should run.
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
@@ -166,10 +170,12 @@ class Critic(BasePolicy):
                  features_extractor: nn.Module,
                  features_dim: int,
                  activation_fn: Type[nn.Module] = nn.ReLU,
-                 normalize_images: bool = True):
+                 normalize_images: bool = True,
+                 device: Union[th.device, str] = 'cpu'):
         super(Critic, self).__init__(observation_space, action_space,
                                      features_extractor=features_extractor,
-                                     normalize_images=normalize_images)
+                                     normalize_images=normalize_images,
+                                     device=device)
 
         action_dim = get_action_dim(self.action_space)
 

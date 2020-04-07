@@ -858,7 +858,6 @@ class OffPolicyRLModel(BaseRLModel):
                          n_steps: int = -1,
                          action_noise: Optional[ActionNoise] = None,
                          learning_starts: int = 0,
-                         epsilon: float = 1e-3,
                          replay_buffer: Optional[ReplayBuffer] = None,
                          obs: Optional[np.ndarray] = None,
                          episode_num: int = 0,
@@ -877,7 +876,6 @@ class OffPolicyRLModel(BaseRLModel):
         :param callback: (BaseCallback) Callback that will be called at each step
             (and at the beginning and end of the rollout)
         :param learning_starts: (int) Number of steps before learning for the warm-up phase.
-        :paran epsilon: (float) Epsilon to be used for epsilon greedy policy in case of discrete action space
         :param replay_buffer: (ReplayBuffer)
         :param obs: (np.ndarray) Last observation from the environment
         :param episode_num: (int) Episode index
@@ -924,31 +922,23 @@ class OffPolicyRLModel(BaseRLModel):
                     unscaled_action, _ = self.predict(obs, deterministic=False)
 
                 # Rescale the action from [low, high] to [-1, 1]
-                if isinstance(env.action_space, gym.spaces.discrete):
-                    # epsilon greedy exporation here
-                    if np.random.rand() < epsilon:
-                        policy_action = env.action_space.sample()
-                    else:
-                        policy_action = np.argmax(unscaled_action)
+                scaled_action = self.scale_action(unscaled_action)
+
+                if self.use_sde:
+                    # When using SDE, the action can be out of bounds
+                    # TODO: fix with squashing and account for that in the proba distribution
+                    clipped_action = np.clip(scaled_action, -1, 1)
                 else:
-                    scaled_action = self.scale_action(unscaled_action)
+                    clipped_action = scaled_action
 
-                    if self.use_sde:
-                        # When using SDE, the action can be out of bounds
-                        # TODO: fix with squashing and account for that in the proba distribution
-                        clipped_action = np.clip(scaled_action, -1, 1)
-                    else:
-                        clipped_action = scaled_action
-
-                    # Add noise to the action (improve exploration)
-                    if action_noise is not None:
-                        # NOTE: in the original implementation of TD3, the noise was applied to the unscaled action
-                        # Update(October 2019): Not anymore
-                        clipped_action = np.clip(clipped_action + action_noise(), -1, 1)
-                    policy_action = self.unscale_action(clipped_action)
+                # Add noise to the action (improve exploration)
+                if action_noise is not None:
+                    # NOTE: in the original implementation of TD3, the noise was applied to the unscaled action
+                    # Update(October 2019): Not anymore
+                    clipped_action = np.clip(clipped_action + action_noise(), -1, 1)
 
                 # Rescale and perform action
-                new_obs, reward, done, infos = env.step(policy_action)
+                new_obs, reward, done, infos = env.step(self.unscale_action(clipped_action))
 
                 # Only stop training if return value is False, not when it is None.
                 if callback.on_step() is False:

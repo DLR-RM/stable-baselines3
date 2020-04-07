@@ -162,6 +162,203 @@ class DQN(OffPolicyRLModel):
 
         return self
 
+    def collect_rollouts(self,
+                         env: VecEnv,
+                         # Type hint as string to avoid circular import
+                         callback: 'BaseCallback',
+                         n_episodes: int = 1,
+                         n_steps: int = -1,
+                         action_noise: Optional[ActionNoise] = None,
+                         learning_starts: int = 0,
+                         epsilon: float = 1e-3,
+                         replay_buffer: Optional[ReplayBuffer] = None,
+                         obs: Optional[np.ndarray] = None,
+                         episode_num: int = 0,
+                         log_interval: Optional[int] = None) -> RolloutReturn:
+        """
+        Collect rollout using the current policy (and possibly fill the replay buffer)
+
+        :param env: (VecEnv) The training environment
+        :param n_episodes: (int) Number of episodes to use to collect rollout data
+            You can also specify a `n_steps` instead
+        :param n_steps: (int) Number of steps to use to collect rollout data
+            You can also specify a `n_episodes` instead.
+        :param action_noise: (Optional[ActionNoise]) Action noise that will be used for exploration
+            Required for deterministic policy (e.g. TD3). This can also be used
+            in addition to the stochastic policy for SAC.
+        :param callback: (BaseCallback) Callback that will be called at each step
+            (and at the beginning and end of the rollout)
+        :param learning_starts: (int) Number of steps before learning for the warm-up phase.
+        :paran epsilon: (float) Epsilon to be used for epsilon greedy policy in case of discrete action space
+        :param replay_buffer: (ReplayBuffer)
+        :param obs: (np.ndarray) Last observation from the environment
+        :param episode_num: (int) Episode index
+        :param log_interval: (int) Log data every `log_interval` episodes
+        :return: (RolloutReturn)
+        """
+        episode_rewards, total_timesteps = [], []
+        total_steps, total_episodes = 0, 0
+
+        assert isinstance(env, VecEnv), "You must pass a VecEnv"
+        assert env.num_envs == 1, "OffPolicyRLModel only support single environment"
+
+        # Retrieve unnormalized observation for saving into the buffer
+        if self._vec_normalize_env is not None:
+            obs_ = self._vec_normalize_env.get_original_obs()
+
+        self.rollout_data = None
+        if self.use_sde:
+            self.actor.reset_noise()
+            # Reset rollout data
+            if self.on_policy_exploration:
+                self.rollout_data = {key: [] for key in ['observations', 'actions', 'rewards', 'dones', 'values']}
+
+        callback.on_rollout_start()
+        continue_training = True
+
+        while total_steps < n_steps or total_episodes < n_episodes:
+            done = False
+            episode_reward, episode_timesteps = 0.0, 0
+
+            while not done:
+
+                if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
+                    # Sample a new noise matrix
+                    self.actor.reset_noise()
+
+                # Select action randomly or according to policy
+                if self.num_timesteps < learning_starts and not (self.use_sde and self.use_sde_at_warmup):
+                    # Warmup phase
+                    unscaled_action = np.array([self.action_space.sample()])
+                else:
+                    # Note: we assume that the policy uses tanh to scale the action
+                    # We use non-deterministic action in the case of SAC, for TD3, it does not matter
+                    unscaled_action, _ = self.predict(obs, deterministic=False)
+
+                # Rescale the action from [low, high] to [-1, 1]
+                if isinstance(env.action_space, gym.spaces.discrete):
+                    # epsilon greedy exporation here
+                    if np.random.rand() < epsilon:
+                        policy_action = env.action_space.sample()
+                    else:
+                        policy_action = np.argmax(unscaled_action)
+                else:
+                    scaled_action = self.scale_action(unscaled_action)
+
+                    if self.use_sde:
+                        # When using SDE, the action can be out of bounds
+                        # TODO: fix with squashing and account for that in the proba distribution
+                        clipped_action = np.clip(scaled_action, -1, 1)
+                    else:
+                        clipped_action = scaled_action
+
+                    # Add noise to the action (improve exploration)
+                    if action_noise is not None:
+                        # NOTE: in the original implementation of TD3, the noise was applied to the unscaled action
+                        # Update(October 2019): Not anymore
+                        clipped_action = np.clip(clipped_action + action_noise(), -1, 1)
+                    policy_action = self.unscale_action(clipped_action)
+
+                # Rescale and perform action
+                new_obs, reward, done, infos = env.step(policy_action)
+
+                # Only stop training if return value is False, not when it is None.
+                if callback.on_step() is False:
+                    return RolloutReturn(0.0, total_steps, total_episodes, None, continue_training=False)
+
+                episode_reward += reward
+
+                # Retrieve reward and episode length if using Monitor wrapper
+                self._update_info_buffer(infos, done)
+
+                # Store data in replay buffer
+                if replay_buffer is not None:
+                    # Store only the unnormalized version
+                    if self._vec_normalize_env is not None:
+                        new_obs_ = self._vec_normalize_env.get_original_obs()
+                        reward_ = self._vec_normalize_env.get_original_reward()
+                    else:
+                        # Avoid changing the original ones
+                        obs_, new_obs_, reward_ = obs, new_obs, reward
+
+                    replay_buffer.add(obs_, new_obs_, clipped_action, reward_, done)
+
+                if self.rollout_data is not None:
+                    # Assume only one env
+                    self.rollout_data['observations'].append(obs[0].copy())
+                    self.rollout_data['actions'].append(scaled_action[0].copy())
+                    self.rollout_data['rewards'].append(reward[0].copy())
+                    self.rollout_data['dones'].append(done[0].copy())
+                    obs_tensor = th.FloatTensor(obs).to(self.device)
+                    self.rollout_data['values'].append(self.vf_net(obs_tensor)[0].cpu().detach().numpy())
+
+                obs = new_obs
+                # Save the true unnormalized observation
+                # otherwise obs_ = self._vec_normalize_env.unnormalize_obs(obs)
+                # is a good approximation
+                if self._vec_normalize_env is not None:
+                    obs_ = new_obs_
+
+                self.num_timesteps += 1
+                episode_timesteps += 1
+                total_steps += 1
+                if 0 < n_steps <= total_steps:
+                    break
+
+            if done:
+                total_episodes += 1
+                episode_rewards.append(episode_reward)
+                total_timesteps.append(episode_timesteps)
+                if action_noise is not None:
+                    action_noise.reset()
+
+                # Display training infos
+                if self.verbose >= 1 and log_interval is not None and (
+                        episode_num + total_episodes) % log_interval == 0:
+                    fps = int(self.num_timesteps / (time.time() - self.start_time))
+                    logger.logkv("episodes", episode_num + total_episodes)
+                    if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
+                        logger.logkv('ep_rew_mean', self.safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
+                        logger.logkv('ep_len_mean', self.safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
+                    # logger.logkv("n_updates", n_updates)
+                    logger.logkv("fps", fps)
+                    logger.logkv('time_elapsed', int(time.time() - self.start_time))
+                    logger.logkv("total timesteps", self.num_timesteps)
+                    if self.use_sde:
+                        logger.logkv("std", (self.actor.get_std()).mean().item())
+
+                    if len(self.ep_success_buffer) > 0:
+                        logger.logkv('success rate', self.safe_mean(self.ep_success_buffer))
+                    logger.dumpkvs()
+
+        mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
+
+        # Post processing
+        if self.rollout_data is not None:
+            for key in ['observations', 'actions', 'rewards', 'dones', 'values']:
+                self.rollout_data[key] = th.FloatTensor(np.array(self.rollout_data[key])).to(self.device)
+
+            self.rollout_data['returns'] = self.rollout_data['rewards'].clone()
+            self.rollout_data['advantage'] = self.rollout_data['rewards'].clone()
+
+            # Compute return and advantage
+            last_return = 0.0
+            for step in reversed(range(len(self.rollout_data['rewards']))):
+                if step == len(self.rollout_data['rewards']) - 1:
+                    next_non_terminal = 1.0 - done[0]
+                    next_value = self.vf_net(th.FloatTensor(obs).to(self.device))[0].detach()
+                    last_return = self.rollout_data['rewards'][step] + next_non_terminal * next_value
+                else:
+                    next_non_terminal = 1.0 - self.rollout_data['dones'][step + 1]
+                    last_return = self.rollout_data['rewards'][step] + self.gamma * last_return * next_non_terminal
+                self.rollout_data['returns'][step] = last_return
+            self.rollout_data['advantage'] = self.rollout_data['returns'] - self.rollout_data['values']
+
+        callback.on_rollout_end()
+
+        return RolloutReturn(mean_reward, total_steps, total_episodes, obs, continue_training)
+
+
     def get_torch_variables(self) -> Tuple[List[str], List[str]]:
         """
         cf base class

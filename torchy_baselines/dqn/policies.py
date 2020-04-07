@@ -3,6 +3,7 @@ from typing import Optional, List, Tuple, Callable, Union, Type
 import gym
 import torch as th
 import torch.nn as nn
+import numpy as np
 
 from torchy_baselines.common.preprocessing import get_action_dim, get_obs_dim
 from torchy_baselines.common.policies import (BasePolicy, register_policy, create_mlp)
@@ -45,7 +46,7 @@ class DQNPolicy(BasePolicy):
         # In the future, feature_extractor will be replaced with a CNN
         self.features_extractor = nn.Flatten()
         self.features_dim = get_obs_dim(self.observation_space)
-        self.action_dim = get_action_dim(self.action_space)
+        self.action_dim = self.action_space.n #number of actions
         self.normalize_images = normalize_images
         self.log_std_init = log_std_init # Not used by now, only discrete env supported
 
@@ -65,13 +66,28 @@ class DQNPolicy(BasePolicy):
         # Setup optimizer with initial learning rate
         self.optimizer = th.optim.Adam(self.parameters(), lr=lr_schedule(1))
 
-    def forward(self, obs: th.Tensor, action: th.Tensor) -> th.Tensor:
+    def forward(self, obs: th.Tensor) -> th.Tensor:
         """
         Forward pass
         :param obs: (th.Tensor) Observation
         """
         features = self.extract_features(obs)
         return self.q_net(features)
+
+    def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+        """
+        Get the action according to the policy for a given observation.
+
+        :param observation: (th.Tensor)
+        :param deterministic: (bool) Whether to use stochastic or deterministic actions
+        :return: (th.Tensor) Taken action according to the policy
+        """
+        features = self.extract_features(observation)
+        q_val = self.q_net(features)
+
+        action = th.argmax(q_val).reshape(1)
+
+        return action
 
 
 MlpPolicy = DQNPolicy

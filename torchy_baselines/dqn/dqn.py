@@ -16,11 +16,12 @@ import numpy as np
 
 from torchy_baselines.common import logger
 from torchy_baselines.common.base_class import OffPolicyRLModel
-from torchy_baselines.common.type_aliases import GymEnv, MaybeCallback
+from torchy_baselines.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
 from torchy_baselines.common.buffers import ReplayBuffer, ReplayBufferSamples
 from torchy_baselines.common.utils import explained_variance, get_schedule_fn
 from torchy_baselines.common.vec_env import VecEnv
 from torchy_baselines.common.callbacks import BaseCallback
+from torchy_baselines.common.noise import ActionNoise
 from torchy_baselines.dqn.policies import DQNPolicy
 
 
@@ -101,7 +102,8 @@ class DQN(OffPolicyRLModel):
             with th.no_grad():
                 # Compute the target Q values
                 target_q = self.policy(replay_data.next_observations)
-                target_q = th.max(target_q, 0)
+                target_q, _ = target_q.max(1)
+                target_q = target_q.reshape(-1, 1)
                 target_q = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
 
             # Get current Q estimates
@@ -109,7 +111,7 @@ class DQN(OffPolicyRLModel):
 
             # Gather q_values of our actions
             indices = replay_data.actions
-            current_q = th.gather(current_q, 1, indices)
+            current_q = th.gather(current_q, 1, indices.type(th.LongTensor))
 
             # Compute q loss
             loss = F.mse_loss(current_q, target_q)
@@ -141,7 +143,7 @@ class DQN(OffPolicyRLModel):
         while self.num_timesteps < total_timesteps:
 
             rollout = self.collect_rollouts(self.env,
-                                            n_steps=self.train_freq, action_noise=self.action_noise,
+                                            n_steps=self.train_freq, n_episodes=-1, action_noise=self.action_noise,
                                             callback=callback,
                                             learning_starts=self.learning_starts,
                                             replay_buffer=self.replay_buffer,
@@ -156,7 +158,7 @@ class DQN(OffPolicyRLModel):
             self._update_current_progress(self.num_timesteps, total_timesteps)
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
-                self.train(batch_size=self.batch_size)
+                self.train(batch_size=self.batch_size,gradient_steps=self.gradient_steps)
 
         callback.on_training_end()
 
@@ -226,23 +228,25 @@ class DQN(OffPolicyRLModel):
                     # Sample a new noise matrix
                     self.actor.reset_noise()
 
-                # Select action randomly or according to policy
-                if self.num_timesteps < learning_starts and not (self.use_sde and self.use_sde_at_warmup):
-                    # Warmup phase
-                    unscaled_action = np.array([self.action_space.sample()])
-                else:
-                    # Note: we assume that the policy uses tanh to scale the action
-                    # We use non-deterministic action in the case of SAC, for TD3, it does not matter
-                    unscaled_action, _ = self.predict(obs, deterministic=False)
+
 
                 # Rescale the action from [low, high] to [-1, 1]
-                if isinstance(env.action_space, gym.spaces.discrete):
+                if isinstance(env.action_space, gym.spaces.Discrete):
                     # epsilon greedy exporation here
-                    if np.random.rand() < epsilon:
-                        policy_action = env.action_space.sample()
+                    if self.num_timesteps < learning_starts or np.random.rand() < epsilon:
+                        policy_action = np.array([self.action_space.sample()])
                     else:
-                        policy_action = np.argmax(unscaled_action)
+                        policy_action, _ = self.predict(obs, deterministic=False)
                 else:
+                    # Select action randomly or according to policy
+                    if self.num_timesteps < learning_starts and not (self.use_sde and self.use_sde_at_warmup):
+                        # Warmup phase
+                        unscaled_action = np.array([self.action_space.sample()])
+                    else:
+                        # Note: we assume that the policy uses tanh to scale the action
+                        # We use non-deterministic action in the case of SAC, for TD3, it does not matter
+                        unscaled_action, _ = self.predict(obs, deterministic=False)
+
                     scaled_action = self.scale_action(unscaled_action)
 
                     if self.use_sde:
@@ -281,7 +285,7 @@ class DQN(OffPolicyRLModel):
                         # Avoid changing the original ones
                         obs_, new_obs_, reward_ = obs, new_obs, reward
 
-                    replay_buffer.add(obs_, new_obs_, clipped_action, reward_, done)
+                    replay_buffer.add(obs_, new_obs_, policy_action , reward_, done)
 
                 if self.rollout_data is not None:
                     # Assume only one env

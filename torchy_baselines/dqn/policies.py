@@ -21,6 +21,7 @@ class DQNPolicy(BasePolicy):
     :param use_sde: (str or th.device) sde param that has to be here because of base_class implementation
     :param activation_fn: (Type[nn.Module]) Activation function
     :param log_std_init: (float) Initial value for the log standard deviation
+    :param epsilon: (float) Epsilon for greedy policy
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
     """
@@ -33,6 +34,7 @@ class DQNPolicy(BasePolicy):
                  use_sde: bool = False,
                  activation_fn: Type[nn.Module] = nn.ReLU,
                  log_std_init: float = 0.0,
+                 epsilon: float = 0.05,
                  normalize_images: bool = True):
         super(DQNPolicy, self).__init__(observation_space, action_space, device)
 
@@ -46,9 +48,11 @@ class DQNPolicy(BasePolicy):
         # In the future, feature_extractor will be replaced with a CNN
         self.features_extractor = nn.Flatten()
         self.features_dim = get_obs_dim(self.observation_space)
-        self.action_dim = self.action_space.n #number of actions
+        self.action_dim = self.action_space.n  # number of actions
         self.normalize_images = normalize_images
-        self.log_std_init = log_std_init # Not used by now, only discrete env supported
+        self.log_std_init = log_std_init  # Not used by now, only discrete env supported
+        # Setup initial learning rate of the policy
+        self.epsilon = epsilon
 
         self._build(lr_schedule)
 
@@ -82,10 +86,13 @@ class DQNPolicy(BasePolicy):
         :param deterministic: (bool) Whether to use stochastic or deterministic actions
         :return: (th.Tensor) Taken action according to the policy
         """
-        features = self.extract_features(observation)
-        q_val = self.q_net(features)
-
-        action = th.argmax(q_val).reshape(1)
+        # epsilon greedy exploration
+        if not deterministic and np.random.rand() < self.epsilon:
+            action = th.tensor(self.action_space.sample()).reshape(1)
+        else:
+            features = self.extract_features(observation)
+            q_val = self.q_net(features)
+            action = th.argmax(q_val).reshape(1)
 
         return action
 

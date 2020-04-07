@@ -40,9 +40,11 @@ class DQN(OffPolicyRLModel):
     :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
     :param batch_size: (int) Minibatch size for each gradient update
     :param gamma: (float) Discount factor
+    :param epsilon_decay: (float) Decay factor for epsilon
     :param train_freq: (int) Update the model every ``train_freq`` steps.
     :param gradient_steps: (int) How many gradient update after each step
     :param epsilon: (float) Exploration factor for epsilon-greedy policy
+    :param max_grad_norm: (float) The maximum value for the gradient clipping
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
@@ -61,9 +63,11 @@ class DQN(OffPolicyRLModel):
                  learning_starts: int = 1000000,
                  batch_size: Optional[int] = 64,
                  gamma: float = 0.99,
+                 epsilon_decay: float = 0.99,
                  train_freq: int = -1,
-                 gradient_steps: int = -1,
+                 gradient_steps: int = 1,
                  epsilon: float = 0.05,
+                 max_grad_norm: float = 10,
                  tensorboard_log: Optional[str] = None,
                  create_eval_env: bool = False,
                  policy_kwargs: Optional[Dict[str, Any]] = None,
@@ -81,6 +85,8 @@ class DQN(OffPolicyRLModel):
         self.batch_size = batch_size
         self.gamma = gamma
         self.epsilon = epsilon
+        self.epsilon_decay = epsilon_decay
+        self.max_grad_norm = max_grad_norm
         self.tensorboard_log = tensorboard_log
         self.tb_writer = None
 
@@ -90,10 +96,13 @@ class DQN(OffPolicyRLModel):
     def _setup_model(self) -> None:
         super(DQN, self)._setup_model()
 
-    def train(self, gradient_steps: int, batch_size: int = 100, policy_delay: int = 2) -> None:
+    def train(self, gradient_steps: int, batch_size: int = 100) -> None:
 
         # Update learning rate according to lr schedule
         self._update_learning_rate(self.policy.optimizer)
+
+        # Decay learning rate
+        self.policy.epsilon *= self.epsilon_decay
 
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
@@ -119,6 +128,8 @@ class DQN(OffPolicyRLModel):
             # Optimize the policy
             self.policy.optimizer.zero_grad()
             loss.backward()
+            # Clip grad norm
+            th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.policy.optimizer.step()
 
         self._n_updates += gradient_steps
@@ -219,7 +230,7 @@ class DQN(OffPolicyRLModel):
 
             while not done:
                 # epsilon greedy exporation here
-                if self.num_timesteps < learning_starts or np.random.rand() < epsilon:
+                if self.num_timesteps < learning_starts:
                     policy_action = np.array([self.action_space.sample()])
                 else:
                     policy_action, _ = self.predict(obs, deterministic=False)
@@ -276,6 +287,7 @@ class DQN(OffPolicyRLModel):
                         logger.logkv('ep_len_mean', self.safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
                     # logger.logkv("n_updates", n_updates)
                     logger.logkv("fps", fps)
+                    logger.logkv("epsilon", self.policy.epsilon)
                     logger.logkv('time_elapsed', int(time.time() - self.start_time))
                     logger.logkv("total timesteps", self.num_timesteps)
                     logger.dumpkvs()

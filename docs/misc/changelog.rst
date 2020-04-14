@@ -3,9 +3,10 @@
 Changelog
 ==========
 
-Pre-Release 0.4.0a0 (WIP)
+Pre-Release 0.4.0 (2020-02-14)
 ------------------------------
 
+**Proper pre-processing, independent save/load for policies**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -14,7 +15,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-- Add support for Discrete observation spaces
+- Add support for ``Discrete`` observation spaces
 - Add saving/loading for policy weights, so the policy can be used without the model
 
 Bug Fixes:

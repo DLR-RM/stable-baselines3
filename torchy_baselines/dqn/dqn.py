@@ -66,6 +66,8 @@ class DQN(OffPolicyRLModel):
                  epsilon_decay: float = 0.99,
                  train_freq: int = -1,
                  gradient_steps: int = 1,
+                 tau: float = 1.0,
+                 target_update_interval: int = 1,
                  epsilon: float = 0.05,
                  max_grad_norm: float = 10,
                  tensorboard_log: Optional[str] = None,
@@ -86,6 +88,8 @@ class DQN(OffPolicyRLModel):
         self.gamma = gamma
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
+        self.target_update_interval = target_update_interval
+        self.tau = tau
         self.max_grad_norm = max_grad_norm
         self.tensorboard_log = tensorboard_log
         self.tb_writer = None
@@ -95,6 +99,11 @@ class DQN(OffPolicyRLModel):
 
     def _setup_model(self) -> None:
         super(DQN, self)._setup_model()
+        self._create_aliases()
+
+    def _create_aliases(self) -> None:
+        self.q_net = self.policy.q_net
+        self.q_net_target = self.policy.q_net_target
 
     def train(self, gradient_steps: int, batch_size: int = 100) -> None:
 
@@ -110,13 +119,13 @@ class DQN(OffPolicyRLModel):
 
             with th.no_grad():
                 # Compute the target Q values
-                target_q = self.policy(replay_data.next_observations)
+                target_q = self.q_net_target(replay_data.next_observations)
                 target_q, _ = target_q.max(1)
                 target_q = target_q.reshape(-1, 1)
                 target_q = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
 
             # Get current Q estimates
-            current_q = self.policy(replay_data.observations)
+            current_q = self.q_net(replay_data.observations)
 
             # Gather q_values of our actions
             indices = replay_data.actions.long()
@@ -131,6 +140,11 @@ class DQN(OffPolicyRLModel):
             # Clip grad norm
             th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.policy.optimizer.step()
+
+            # Update target networks
+            if gradient_step % self.target_update_interval == 0:
+                for param, target_param in zip(self.q_net.parameters(), self.q_net_target.parameters()):
+                    target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
         self._n_updates += gradient_steps
         logger.logkv("n_updates", self._n_updates)
@@ -169,7 +183,7 @@ class DQN(OffPolicyRLModel):
             self._update_current_progress(self.num_timesteps, total_timesteps)
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
-                self.train(batch_size=self.batch_size,gradient_steps=self.gradient_steps)
+                self.train(batch_size=self.batch_size, gradient_steps=self.gradient_steps)
 
         callback.on_training_end()
 
@@ -257,7 +271,7 @@ class DQN(OffPolicyRLModel):
                         # Avoid changing the original ones
                         obs_, new_obs_, reward_ = obs, new_obs, reward
 
-                    replay_buffer.add(obs_, new_obs_, policy_action , reward_, done)
+                    replay_buffer.add(obs_, new_obs_, policy_action, reward_, done)
 
                 obs = new_obs
                 # Save the true unnormalized observation
@@ -295,7 +309,6 @@ class DQN(OffPolicyRLModel):
         callback.on_rollout_end()
 
         return RolloutReturn(0.0, total_steps, total_episodes, obs, continue_training)
-
 
     def get_torch_variables(self) -> Tuple[List[str], List[str]]:
         """

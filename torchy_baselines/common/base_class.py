@@ -158,27 +158,6 @@ class BaseRLModel(ABC):
             assert eval_env.num_envs == 1
         return eval_env
 
-    def scale_action(self, action: np.ndarray) -> np.ndarray:
-        """
-        Rescale the action from [low, high] to [-1, 1]
-        (no need for symmetric action space)
-
-        :param action: (np.ndarray) Action to scale
-        :return: (np.ndarray) Scaled action
-        """
-        low, high = self.action_space.low, self.action_space.high
-        return 2.0 * ((action - low) / (high - low)) - 1.0
-
-    def unscale_action(self, scaled_action: np.ndarray) -> np.ndarray:
-        """
-        Rescale the action from [-1, 1] to [low, high]
-        (no need for symmetric action space)
-
-        :param scaled_action: Action to un-scale
-        """
-        low, high = self.action_space.low, self.action_space.high
-        return low + (0.5 * (scaled_action + 1.0) * (high - low))
-
     def _setup_lr_schedule(self) -> None:
         """Transform to callable if needed."""
         self.lr_schedule = get_schedule_fn(self.learning_rate)
@@ -318,57 +297,6 @@ class BaseRLModel(ABC):
         """
         raise NotImplementedError()
 
-    @staticmethod
-    def _is_vectorized_observation(observation: np.ndarray, observation_space: gym.spaces.Space) -> bool:
-        """
-        For every observation type, detects and validates the shape,
-        then returns whether or not the observation is vectorized.
-
-        :param observation: (np.ndarray) the input observation to validate
-        :param observation_space: (gym.spaces) the observation space
-        :return: (bool) whether the given observation is vectorized or not
-        """
-        if isinstance(observation_space, gym.spaces.Box):
-            if observation.shape == observation_space.shape:
-                return False
-            elif observation.shape[1:] == observation_space.shape:
-                return True
-            else:
-                raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape) +
-                                 "Box environment, please use {} ".format(observation_space.shape) +
-                                 "or (n_env, {}) for the observation shape."
-                                 .format(", ".join(map(str, observation_space.shape))))
-        elif isinstance(observation_space, gym.spaces.Discrete):
-            if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
-                return False
-            elif len(observation.shape) == 1:
-                return True
-            else:
-                raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape) +
-                                 "Discrete environment, please use (1,) or (n_env, 1) for the observation shape.")
-        # TODO: add support for MultiDiscrete and MultiBinary observation spaces
-        # elif isinstance(observation_space, gym.spaces.MultiDiscrete):
-        #     if observation.shape == (len(observation_space.nvec),):
-        #         return False
-        #     elif len(observation.shape) == 2 and observation.shape[1] == len(observation_space.nvec):
-        #         return True
-        #     else:
-        #         raise ValueError("Error: Unexpected observation shape {} for MultiDiscrete ".format(observation.shape) +
-        #                          "environment, please use ({},) or ".format(len(observation_space.nvec)) +
-        #                          "(n_env, {}) for the observation shape.".format(len(observation_space.nvec)))
-        # elif isinstance(observation_space, gym.spaces.MultiBinary):
-        #     if observation.shape == (observation_space.n,):
-        #         return False
-        #     elif len(observation.shape) == 2 and observation.shape[1] == observation_space.n:
-        #         return True
-        #     else:
-        #         raise ValueError("Error: Unexpected observation shape {} for MultiBinary ".format(observation.shape) +
-        #                          "environment, please use ({},) or ".format(observation_space.n) +
-        #                          "(n_env, {}) for the observation shape.".format(observation_space.n))
-        else:
-            raise ValueError("Error: Cannot determine if the observation is vectorized with the space type {}."
-                             .format(observation_space))
-
     def predict(self, observation: np.ndarray,
                 state: Optional[np.ndarray] = None,
                 mask: Optional[np.ndarray] = None,
@@ -383,36 +311,7 @@ class BaseRLModel(ABC):
         :return: (Tuple[np.ndarray, Optional[np.ndarray]]) the model's action and the next state
             (used in recurrent policies)
         """
-        # TODO: move this block to BasePolicy
-        # if state is None:
-        #     state = self.initial_state
-        # if mask is None:
-        #     mask = [False for _ in range(self.n_envs)]
-        observation = np.array(observation)
-        vectorized_env = self._is_vectorized_observation(observation, self.observation_space)
-
-        observation = observation.reshape((-1,) + self.observation_space.shape)
-        observation = th.as_tensor(observation).to(self.device)
-        with th.no_grad():
-            actions = self.policy.predict(observation, deterministic=deterministic)
-        # Convert to numpy
-        actions = actions.cpu().numpy()
-
-        # Rescale to proper domain when using squashing
-        if isinstance(self.action_space, gym.spaces.Box) and self.policy.squash_output:
-            actions = self.unscale_action(actions)
-
-        clipped_actions = actions
-        # Clip the actions to avoid out of bound error when using gaussian distribution
-        if isinstance(self.action_space, gym.spaces.Box) and not self.policy.squash_output:
-            clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
-
-        if not vectorized_env:
-            if state is not None:
-                raise ValueError("Error: The environment must be vectorized when using recurrent policies.")
-            clipped_actions = clipped_actions[0]
-
-        return clipped_actions, state
+        return self.policy.predict(observation, state, mask, deterministic)
 
     @classmethod
     def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs):
@@ -484,10 +383,7 @@ class BaseRLModel(ABC):
                     raise ValueError(f"Error: the file {load_path} could not be found")
 
         # set device to cpu if cuda is not available
-        if th.cuda.is_available():
-            device = th.device('cuda')
-        else:
-            device = th.device('cpu')
+        device = th.device('cuda') if th.cuda.is_available() else th.device('cpu')
 
         # Open the zip archive and load data
         try:
@@ -534,20 +430,6 @@ class BaseRLModel(ABC):
                             # load the parameters with the right `map_location`
                             params[os.path.splitext(file_path)[0]] = th.load(file_content, map_location=device)
 
-                # for backward compatibility
-                if params.get('params') is not None:
-                    params_copy = {}
-                    for name in params:
-                        if name == 'params':
-                            params_copy['policy'] = params[name]
-                        elif name == 'opt':
-                            params_copy['policy.optimizer'] = params[name]
-                        # Special case for SAC
-                        elif name == 'ent_coef_optimizer':
-                            params_copy[name] = params[name]
-                        else:
-                            params_copy[name + '.optimizer'] = params[name]
-                    params = params_copy
         except zipfile.BadZipFile:
             # load_path wasn't a zip file
             raise ValueError(f"Error: the file {load_path} wasn't a zip-file")
@@ -922,7 +804,7 @@ class OffPolicyRLModel(BaseRLModel):
                     unscaled_action, _ = self.predict(obs, deterministic=False)
 
                 # Rescale the action from [low, high] to [-1, 1]
-                scaled_action = self.scale_action(unscaled_action)
+                scaled_action = self.policy.scale_action(unscaled_action)
 
                 if self.use_sde:
                     # When using SDE, the action can be out of bounds
@@ -938,7 +820,7 @@ class OffPolicyRLModel(BaseRLModel):
                     clipped_action = np.clip(clipped_action + action_noise(), -1, 1)
 
                 # Rescale and perform action
-                new_obs, reward, done, infos = env.step(self.unscale_action(clipped_action))
+                new_obs, reward, done, infos = env.step(self.policy.unscale_action(clipped_action))
 
                 # Only stop training if return value is False, not when it is None.
                 if callback.on_step() is False:

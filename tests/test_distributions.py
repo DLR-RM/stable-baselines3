@@ -38,7 +38,8 @@ def test_squashed_gaussian(model_class):
     gaussian_mean = th.rand(N_SAMPLES, N_ACTIONS)
     dist = SquashedDiagGaussianDistribution(N_ACTIONS)
     _, log_std = dist.proba_distribution_net(N_FEATURES)
-    actions, _ = dist.proba_distribution(gaussian_mean, log_std)
+    dist = dist.proba_distribution(gaussian_mean, log_std)
+    actions = dist.get_actions()
     assert th.max(th.abs(actions)) <= 1.0
 
 def test_sde_distribution():
@@ -51,7 +52,8 @@ def test_sde_distribution():
     _, log_std = dist.proba_distribution_net(N_FEATURES)
     dist.sample_weights(log_std, batch_size=N_SAMPLES)
 
-    actions, _ = dist.proba_distribution(deterministic_actions, log_std, state)
+    dist = dist.proba_distribution(deterministic_actions, log_std, state)
+    actions = dist.get_actions()
 
     assert th.allclose(actions.mean(), dist.distribution.mean.mean(), rtol=1e-3)
     assert th.allclose(actions.std(), dist.distribution.scale.mean(), rtol=1e-3)
@@ -71,11 +73,12 @@ def test_entropy(dist):
     _, log_std = dist.proba_distribution_net(N_FEATURES, log_std_init=th.log(th.tensor(0.2)))
 
     if isinstance(dist, DiagGaussianDistribution):
-        actions, dist = dist.proba_distribution(deterministic_actions, log_std)
+        dist = dist.proba_distribution(deterministic_actions, log_std)
     else:
         dist.sample_weights(log_std, batch_size=N_SAMPLES)
-        actions, dist = dist.proba_distribution(deterministic_actions, log_std, state)
+        dist = dist.proba_distribution(deterministic_actions, log_std, state)
 
+    actions = dist.get_actions()
     entropy = dist.entropy()
     log_prob = dist.log_prob(actions)
     assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=5e-3)
@@ -88,8 +91,9 @@ def test_categorical():
     set_random_seed(1)
     state = th.rand(N_SAMPLES, N_FEATURES)
     action_logits = th.rand(N_SAMPLES, N_ACTIONS)
-    actions, dist = dist.proba_distribution(action_logits)
+    dist = dist.proba_distribution(action_logits)
 
+    actions = dist.get_actions()
     entropy = dist.entropy()
     log_prob = dist.log_prob(actions)
     assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=1e-4)

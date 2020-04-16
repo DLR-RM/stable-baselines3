@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple, Callable, Union, Type
+from typing import Optional, List, Tuple, Callable, Union, Type, Dict
 
 import gym
 import torch as th
@@ -38,6 +38,7 @@ class Actor(BasePolicy):
     :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
+    :param device: (Union[th.device, str]) Device on which the code should run.
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
@@ -51,10 +52,12 @@ class Actor(BasePolicy):
                  sde_net_arch: Optional[List[int]] = None,
                  use_expln: bool = False,
                  clip_mean: float = 2.0,
-                 normalize_images: bool = True):
+                 normalize_images: bool = True,
+                 device: Union[th.device, str] = 'cpu'):
         super(Actor, self).__init__(observation_space, action_space,
                                     features_extractor=features_extractor,
-                                    normalize_images=normalize_images)
+                                    normalize_images=normalize_images,
+                                    device=device)
 
         action_dim = get_action_dim(self.action_space)
 
@@ -108,37 +111,42 @@ class Actor(BasePolicy):
             'reset_noise() is only available when using SDE'
         self.action_dist.sample_weights(self.log_std, batch_size=batch_size)
 
-    def _get_latent(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+    def get_action_dist_params(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor, Dict[str, th.Tensor]]:
+        """
+        Get the parameters for the action distribution.
+
+        :param obs: (th.Tensor)
+        :return: (Tuple[th.Tensor, th.Tensor, Dict[str, th.Tensor]])
+            Mean, standard deviation and optional keyword arguments.
+        """
         features = self.extract_features(obs)
         latent_pi = self.latent_pi(features)
-        latent_sde = self.sde_features_extractor(features) if self.sde_features_extractor is not None else latent_pi
-        return latent_pi, latent_sde
-
-    def get_action_dist_params(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
-        latent_pi, latent_sde = self._get_latent(obs)
         mean_actions = self.mu(latent_pi)
 
         if self.use_sde:
-            log_std = self.log_std
-        else:
-            log_std = self.log_std(latent_pi)
-            # Original Implementation to cap the standard deviation
-            log_std = th.clamp(log_std, LOG_STD_MIN, LOG_STD_MAX)
-        return mean_actions, log_std, latent_sde
+            latent_sde = latent_pi
+            if self.sde_features_extractor is not None:
+                latent_sde = self.sde_features_extractor(features)
+            return mean_actions, self.log_std, dict(latent_sde=latent_sde)
+        # Unstructured exploration (Original implementation)
+        log_std = self.log_std(latent_pi)
+        # Original Implementation to cap the standard deviation
+        log_std = th.clamp(log_std, LOG_STD_MIN, LOG_STD_MAX)
+        return mean_actions, log_std, {}
 
     def forward(self, obs: th.Tensor, deterministic: bool = False) -> th.Tensor:
-        mean_actions, log_std, latent_sde = self.get_action_dist_params(obs)
-        kwargs = dict(latent_sde=latent_sde) if self.use_sde else {}
+        mean_actions, log_std, kwargs = self.get_action_dist_params(obs)
         # Note: the action is squashed
-        action, _ = self.action_dist.proba_distribution(mean_actions, log_std,
-                                                        deterministic=deterministic, **kwargs)
-        return action
+        return self.action_dist.actions_from_params(mean_actions, log_std,
+                                                    deterministic=deterministic, **kwargs)
 
     def action_log_prob(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
-        mean_actions, log_std, latent_sde = self.get_action_dist_params(obs)
-        kwargs = dict(latent_sde=latent_sde) if self.use_sde else {}
+        mean_actions, log_std, kwargs = self.get_action_dist_params(obs)
         # return action and associated log prob
         return self.action_dist.log_prob_from_params(mean_actions, log_std, **kwargs)
+
+    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+        return self.forward(observation, deterministic)
 
 
 class Critic(BasePolicy):
@@ -154,6 +162,7 @@ class Critic(BasePolicy):
     :param activation_fn: (Type[nn.Module]) Activation function
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
+    :param device: (Union[th.device, str]) Device on which the code should run.
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
@@ -161,10 +170,12 @@ class Critic(BasePolicy):
                  features_extractor: nn.Module,
                  features_dim: int,
                  activation_fn: Type[nn.Module] = nn.ReLU,
-                 normalize_images: bool = True):
+                 normalize_images: bool = True,
+                 device: Union[th.device, str] = 'cpu'):
         super(Critic, self).__init__(observation_space, action_space,
                                      features_extractor=features_extractor,
-                                     normalize_images=normalize_images)
+                                     normalize_images=normalize_images,
+                                     device=device)
 
         action_dim = get_action_dim(self.action_space)
 
@@ -234,7 +245,8 @@ class SACPolicy(BasePolicy):
             'features_dim': self.features_dim,
             'net_arch': self.net_arch,
             'activation_fn': self.activation_fn,
-            'normalize_images': normalize_images
+            'normalize_images': normalize_images,
+            'device': device
         }
         self.actor_kwargs = self.net_args.copy()
         sde_kwargs = {
@@ -268,7 +280,7 @@ class SACPolicy(BasePolicy):
     def forward(self, obs: th.Tensor) -> th.Tensor:
         return self.predict(obs, deterministic=False)
 
-    def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         return self.actor(observation, deterministic)
 
 

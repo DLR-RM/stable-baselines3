@@ -35,6 +35,7 @@ class Actor(BasePolicy):
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
+    :param device: (Union[th.device, str]) Device on which the code should run.
     """
     def __init__(self,
                  observation_space: gym.spaces.Space,
@@ -50,10 +51,12 @@ class Actor(BasePolicy):
                  full_std: bool = False,
                  sde_net_arch: Optional[List[int]] = None,
                  use_expln: bool = False,
-                 normalize_images: bool = True):
+                 normalize_images: bool = True,
+                 device: Union[th.device, str] = 'cpu'):
         super(Actor, self).__init__(observation_space, action_space,
                                     features_extractor=features_extractor,
-                                    normalize_images=normalize_images)
+                                    normalize_images=normalize_images,
+                                    device=device)
 
         self.latent_pi, self.log_std = None, None
         self.weights_dist, self.exploration_mat = None, None
@@ -104,18 +107,13 @@ class Actor(BasePolicy):
         """
         return self.action_dist.get_std(self.log_std)
 
-    def _get_action_dist_from_latent(self, latent_pi: th.Tensor,
-                                     latent_sde: th.Tensor) -> Tuple[th.Tensor, Distribution]:
-        mean_actions = self.mu(latent_pi)
-        return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)
-
     def _get_latent(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         features = self.extract_features(obs)
         latent_pi = self.latent_pi(features)
         latent_sde = self.sde_features_extractor(features) if self.sde_features_extractor is not None else latent_pi
         return latent_pi, latent_sde
 
-    def evaluate_actions(self, obs: th.Tensor, action: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+    def evaluate_actions(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         """
         Evaluate actions according to the current policy,
         given the observations. Only useful when using SDE.
@@ -126,9 +124,9 @@ class Actor(BasePolicy):
             and entropy of the action distribution.
         """
         latent_pi, latent_sde = self._get_latent(obs)
-        _, distribution = self._get_action_dist_from_latent(latent_pi, latent_sde)
-        log_prob = distribution.log_prob(action)
-        # value = self.value_net(latent_vf)
+        mean_actions = self.mu(latent_pi)
+        distribution = self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)
+        log_prob = distribution.log_prob(actions)
         return log_prob, distribution.entropy()
 
     def reset_noise(self) -> None:
@@ -150,11 +148,12 @@ class Actor(BasePolicy):
             # -> set squash_output=True in the action_dist?
             # NOTE: the clipping is done in the rollout for now
             return self.mu(latent_pi) + noise
-            # action, _ = self._get_action_dist_from_latent(latent_pi)
-            # return action
         else:
             features = self.extract_features(obs)
             return self.mu(features)
+
+    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+        return self.forward(observation, deterministic=deterministic)
 
 
 class Critic(BasePolicy):
@@ -171,6 +170,7 @@ class Critic(BasePolicy):
     :param activation_fn: (Type[nn.Module]) Activation function
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
+    :param device: (Union[th.device, str]) Device on which the code should run.
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
@@ -178,10 +178,12 @@ class Critic(BasePolicy):
                  features_extractor: nn.Module,
                  features_dim: int,
                  activation_fn: Type[nn.Module] = nn.ReLU,
-                 normalize_images: bool = True):
+                 normalize_images: bool = True,
+                 device: Union[th.device, str] = 'cpu'):
         super(Critic, self).__init__(observation_space, action_space,
                                      features_extractor=features_extractor,
-                                     normalize_images=normalize_images)
+                                     normalize_images=normalize_images,
+                                     device=device)
 
         action_dim = get_action_dim(self.action_space)
 
@@ -191,14 +193,14 @@ class Critic(BasePolicy):
         q2_net = create_mlp(features_dim + action_dim, 1, net_arch, activation_fn)
         self.q2_net = nn.Sequential(*q2_net)
 
-    def forward(self, obs: th.Tensor, action: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+    def forward(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         features = self.extract_features(obs)
-        qvalue_input = th.cat([features, action], dim=1)
+        qvalue_input = th.cat([features, actions], dim=1)
         return self.q1_net(qvalue_input), self.q2_net(qvalue_input)
 
-    def q1_forward(self, obs: th.Tensor, action: th.Tensor) -> th.Tensor:
+    def q1_forward(self, obs: th.Tensor, actions: th.Tensor) -> th.Tensor:
         features = self.extract_features(obs)
-        return self.q1_net(th.cat([features, action], dim=1))
+        return self.q1_net(th.cat([features, actions], dim=1))
 
 
 class ValueFunction(BasePolicy):
@@ -245,7 +247,7 @@ class TD3Policy(BasePolicy):
     :param action_space: (gym.spaces.Space) Action space
     :param lr_schedule: (Callable) Learning rate schedule (could be constant)
     :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
-    :param device: (str or th.device) Device on which the code should run.
+    :param device: (Union[th.device, str]) Device on which the code should run.
     :param activation_fn: (Type[nn.Module]) Activation function
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
@@ -290,7 +292,8 @@ class TD3Policy(BasePolicy):
             'features_dim': self.features_dim,
             'net_arch': self.net_arch,
             'activation_fn': self.activation_fn,
-            'normalize_images': normalize_images
+            'normalize_images': normalize_images,
+            'device': device
         }
         self.actor_kwargs = self.net_args.copy()
         sde_kwargs = {
@@ -338,9 +341,9 @@ class TD3Policy(BasePolicy):
         return Critic(**self.net_args).to(self.device)
 
     def forward(self, observation: th.Tensor, deterministic: bool = False):
-        return self.predict(observation, deterministic=deterministic)
+        return self._predict(observation, deterministic=deterministic)
 
-    def predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         return self.actor(observation, deterministic=deterministic)
 
 

@@ -11,7 +11,7 @@ from torchy_baselines.common.policies import (BasePolicy, register_policy, creat
 
 class Q_Net(BasePolicy):
     """
-    Policy class with Q-Value Net for DQN
+    Class with a Q-Value Net for DQN
 
     :param observation_space: (gym.spaces.Space) Observation space
     :param action_space: (gym.spaces.Space) Action space
@@ -28,27 +28,25 @@ class Q_Net(BasePolicy):
 
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
+                 features_extractor: nn.Module,
+                 features_dim: int,
+                 action_dim: int,
                  net_arch: Optional[List[int]] = None,
                  device: Union[th.device, str] = 'cpu',
                  activation_fn: Type[nn.Module] = nn.ReLU,
-                 log_std_init: float = 0.0,
                  epsilon: float = 0.05,
                  normalize_images: bool = True):
-        super(DQNPolicy, self).__init__(observation_space, action_space, device)
+        super(Q_Net, self).__init__(observation_space, action_space, device)
 
         if net_arch is None:
             net_arch = [256, 256]
 
         self.net_arch = net_arch
         self.activation_fn = activation_fn
-        # In the future, features_extractor will be replaced with a CNN
-        self.features_extractor = nn.Flatten()
-        # In the future, feature_extractor will be replaced with a CNN
-        self.features_extractor = nn.Flatten()
-        self.features_dim = get_obs_dim(self.observation_space)
-        self.action_dim = self.action_space.n  # number of actions
+        self.features_extractor = features_extractor
+        self.features_dim = features_dim
+        self.action_dim = action_dim
         self.normalize_images = normalize_images
-        self.log_std_init = log_std_init  # Not used by now, only discrete env supported
         # Setup initial learning rate of the policy
         self.epsilon = epsilon
 
@@ -84,7 +82,7 @@ class Q_Net(BasePolicy):
 
 class DQNPolicy(BasePolicy):
     """
-    Policy class with Q-Value Net for DQN
+    Policy class with Q-Value Net and target net for DQN
 
     :param observation_space: (gym.spaces.Space) Observation space
     :param action_space: (gym.spaces.Space) Action space
@@ -118,14 +116,26 @@ class DQNPolicy(BasePolicy):
         self.activation_fn = activation_fn
         # In the future, features_extractor will be replaced with a CNN
         self.features_extractor = nn.Flatten()
-        # In the future, feature_extractor will be replaced with a CNN
-        self.features_extractor = nn.Flatten()
         self.features_dim = get_obs_dim(self.observation_space)
         self.action_dim = self.action_space.n  # number of actions
         self.normalize_images = normalize_images
-        self.log_std_init = log_std_init  # Not used by now, only discrete env supported
-        # Setup initial learning rate of the policy
         self.epsilon = epsilon
+
+        self.net_args = {
+            'observation_space': self.observation_space,
+            'action_space': self.action_space,
+            'features_extractor': self.features_extractor,
+            'features_dim': self.features_dim,
+            'action_dim': self.action_dim,
+            'net_arch': self.net_arch,
+            'epsilon': self.epsilon,
+            'activation_fn': self.activation_fn,
+            'normalize_images': normalize_images,
+            'device': device
+        }
+
+        self.log_std_init = log_std_init  # Not used by now, only discrete env supported
+
         self.q_net, self.q_net_target = None, None
 
         self._build(lr_schedule)
@@ -145,8 +155,19 @@ class DQNPolicy(BasePolicy):
         # Setup optimizer with initial learning rate
         self.optimizer = th.optim.Adam(self.parameters(), lr=lr_schedule(1))
 
+    def update_epsilon(self, epsilon: float):
+        self.q_net_target.epsilon = epsilon
+        self.q_net.epsilon = epsilon
+        self.epsilon = epsilon
+
     def make_q_net(self) -> Q_Net:
-        return Q_Net(**self.actor_kwargs).to(self.device)
+        return Q_Net(**self.net_args).to(self.device)
+
+    def forward(self, obs: th.Tensor) -> th.Tensor:
+        return self.predict(obs, deterministic=False)
+
+    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+        return self.q_net_target.predict(observation, deterministic)
 
 
 MlpPolicy = DQNPolicy

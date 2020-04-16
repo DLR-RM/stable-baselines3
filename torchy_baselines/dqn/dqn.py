@@ -43,6 +43,8 @@ class DQN(OffPolicyRLModel):
     :param epsilon_decay: (float) Decay factor for epsilon
     :param train_freq: (int) Update the model every ``train_freq`` steps.
     :param gradient_steps: (int) How many gradient update after each step
+    :param tau: (float) the soft update coefficient ("polyak update", between 0 and 1)
+    :param target_update_interval: (int) update the target network every ``target_update_interval`` steps.
     :param epsilon: (float) Exploration factor for epsilon-greedy policy
     :param max_grad_norm: (float) The maximum value for the gradient clipping
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
@@ -111,7 +113,7 @@ class DQN(OffPolicyRLModel):
         self._update_learning_rate(self.policy.optimizer)
 
         # Decay learning rate
-        self.policy.epsilon *= self.epsilon_decay
+        self.policy.update_epsilon(self.policy.epsilon * self.epsilon_decay)
 
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
@@ -142,7 +144,7 @@ class DQN(OffPolicyRLModel):
             self.policy.optimizer.step()
 
             # Update target networks
-            if gradient_step % self.target_update_interval == 0:
+            if self._n_updates % self.target_update_interval == 0:
                 for param, target_param in zip(self.q_net.parameters(), self.q_net_target.parameters()):
                     target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 

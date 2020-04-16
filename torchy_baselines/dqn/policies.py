@@ -167,7 +167,7 @@ class DQNPolicy(BasePolicy):
         return self.predict(obs, deterministic=False)
 
     def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
-        return self.q_net_target.predict(observation, deterministic)
+        return self.q_net.predict(observation, deterministic)
 
 
 MlpPolicy = DQNPolicy

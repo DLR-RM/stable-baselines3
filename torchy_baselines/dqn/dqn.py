@@ -61,15 +61,15 @@ class DQN(OffPolicyRLModel):
     def __init__(self, policy: Union[str, Type[DQNPolicy]],
                  env: Union[GymEnv, str],
                  learning_rate: Union[float, Callable] = 3e-4,
-                 buffer_size: int = 1000000,
-                 learning_starts: int = 1000000,
-                 batch_size: Optional[int] = 64,
+                 buffer_size: int = 1000,
+                 learning_starts: int = 1000,
+                 batch_size: Optional[int] = 256,
                  gamma: float = 0.99,
                  epsilon_decay: float = 0.99,
-                 train_freq: int = -1,
-                 gradient_steps: int = 1,
+                 train_freq: int = 2,
+                 gradient_steps: int = 4,
                  tau: float = 1.0,
-                 target_update_interval: int = 1,
+                 target_update_interval: int = 8,
                  epsilon: float = 0.05,
                  max_grad_norm: float = 10,
                  tensorboard_log: Optional[str] = None,
@@ -84,6 +84,7 @@ class DQN(OffPolicyRLModel):
                                   buffer_size, learning_starts, batch_size,
                                   policy_kwargs, verbose, device, create_eval_env=create_eval_env, seed=seed)
 
+        assert train_freq > 0, "will soft lock if train_freq is smaller than 1"
         self.train_freq = train_freq
         self.gradient_steps = gradient_steps
         self.batch_size = batch_size
@@ -311,6 +312,16 @@ class DQN(OffPolicyRLModel):
         callback.on_rollout_end()
 
         return RolloutReturn(0.0, total_steps, total_episodes, obs, continue_training)
+
+    def excluded_save_params(self) -> List[str]:
+        """
+        Returns the names of the parameters that should be excluded by default
+        when saving the model.
+
+        :return: (List[str]) List of parameters that should be excluded from save
+        """
+        # Exclude aliases
+        return super(DQN, self).excluded_save_params() + ["q_net", "q_net_target"]
 
     def get_torch_variables(self) -> Tuple[List[str], List[str]]:
         """

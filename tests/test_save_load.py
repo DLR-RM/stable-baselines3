@@ -2,11 +2,12 @@ import os
 from copy import deepcopy
 
 import pytest
+import gym
 import numpy as np
 import torch as th
 
-from torchy_baselines import A2C, PPO, SAC, TD3
-from torchy_baselines.common.identity_env import IdentityEnvBox
+from torchy_baselines import A2C, PPO, SAC, TD3, DQN
+from torchy_baselines.common.identity_env import IdentityEnvBox, IdentityEnv
 from torchy_baselines.common.vec_env import DummyVecEnv
 
 MODEL_LIST = [
@@ -14,6 +15,7 @@ MODEL_LIST = [
     A2C,
     TD3,
     SAC,
+    DQN,
 ]
 
 
@@ -27,15 +29,23 @@ def test_save_load(model_class):
 
     :param model_class: (BaseRLModel) A RL model
     """
-    env = DummyVecEnv([lambda: IdentityEnvBox(10)])
+    # use discrete for DQN
+    if model_class is DQN:
+        env = DummyVecEnv([lambda: IdentityEnv(10)])
+    else:
+        env = DummyVecEnv([lambda: IdentityEnvBox(10)])
 
     # create model
     model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
     model.learn(total_timesteps=500, eval_freq=250)
 
     env.reset()
-    observations = np.array([env.step(env.action_space.sample())[0] for _ in range(10)])
-    observations = observations.reshape(10, -1)
+    actions = [[env.action_space.sample()] for _ in range(10)]
+    observations = np.array([env.step(action)[0] for action in actions])
+    if isinstance(env.observation_space, gym.spaces.Discrete):
+        observations = observations.reshape(10)
+    else:
+        observations = observations.reshape(10, -1)
 
     # Get dictionary of current parameters
     params = deepcopy(model.policy.state_dict())
@@ -85,9 +95,16 @@ def test_set_env(model_class):
     Test if set_env function does work correct
     :param model_class: (BaseRLModel) A RL model
     """
-    env = DummyVecEnv([lambda: IdentityEnvBox(10)])
-    env2 = DummyVecEnv([lambda: IdentityEnvBox(10)])
-    env3 = IdentityEnvBox(10)
+
+    # use discrete for DQN
+    if model_class is DQN:
+        env = DummyVecEnv([lambda: IdentityEnv(10)])
+        env2 = DummyVecEnv([lambda: IdentityEnv(10)])
+        env3 = IdentityEnv(10)
+    else:
+        env = DummyVecEnv([lambda: IdentityEnvBox(10)])
+        env2 = DummyVecEnv([lambda: IdentityEnvBox(10)])
+        env3 = IdentityEnvBox(10)
 
     # create model
     model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), create_eval_env=True)
@@ -112,7 +129,11 @@ def test_exclude_include_saved_params(model_class):
 
     :param model_class: (BaseRLModel) A RL model
     """
-    env = DummyVecEnv([lambda: IdentityEnvBox(10)])
+    # use discrete for DQN
+    if model_class is DQN:
+        env = DummyVecEnv([lambda: IdentityEnv(10)])
+    else:
+        env = DummyVecEnv([lambda: IdentityEnvBox(10)])
 
     # create model, set verbose as 2, which is not standard
     model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=2, create_eval_env=True)
@@ -136,12 +157,15 @@ def test_exclude_include_saved_params(model_class):
     os.remove("test_save.zip")
 
 
-@pytest.mark.parametrize("model_class", [SAC, TD3])
+@pytest.mark.parametrize("model_class", [SAC, TD3,DQN])
 def test_save_load_replay_buffer(model_class):
     log_folder = 'logs'
     replay_path = os.path.join(log_folder, 'replay_buffer.pkl')
     os.makedirs(log_folder, exist_ok=True)
-    model = model_class('MlpPolicy', 'Pendulum-v0', buffer_size=1000)
+    if model_class is DQN:
+        model = model_class('MlpPolicy', 'CartPole-v0', buffer_size=1000)
+    else:
+        model = model_class('MlpPolicy', 'Pendulum-v0', buffer_size=1000)
     model.learn(500)
     old_replay_buffer = deepcopy(model.replay_buffer)
     model.save_replay_buffer(log_folder)
@@ -169,15 +193,23 @@ def test_save_load_policy(model_class):
 
     :param model_class: (BaseRLModel) A RL model
     """
-    env = DummyVecEnv([lambda: IdentityEnvBox(10)])
+    # use discrete for DQN
+    if model_class is DQN:
+        env = DummyVecEnv([lambda: IdentityEnv(10)])
+    else:
+        env = DummyVecEnv([lambda: IdentityEnvBox(10)])
 
     # create model
     model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
     model.learn(total_timesteps=500, eval_freq=250)
 
     env.reset()
-    observations = np.array([env.step(env.action_space.sample())[0] for _ in range(10)])
-    observations = observations.reshape(10, -1)
+    actions = [[env.action_space.sample()] for _ in range(10)]
+    observations = np.array([env.step(action)[0] for action in actions])
+    if isinstance(env.observation_space, gym.spaces.Discrete):
+        observations = observations.reshape(10)
+    else:
+        observations = observations.reshape(10, -1)
 
     policy = model.policy
     actor = None

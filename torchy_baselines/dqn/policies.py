@@ -71,11 +71,15 @@ class Q_Net(BasePolicy):
         """
         # epsilon greedy exploration
         if not deterministic and np.random.rand() < self.epsilon:
-            action = th.tensor(self.action_space.sample()).reshape(1)
+            if observation.ndim > 1:
+                action = th.tensor([self.action_space.sample() for i in range(observation.shape[0])]).reshape(1)
+            else:
+                action = th.tensor(self.action_space.sample()).reshape(1)
+
         else:
             features = self.extract_features(observation)
             q_val = self.q_net(features)
-            action = th.argmax(q_val).reshape(1)
+            action = th.argmax(q_val, 1).reshape(-1)
 
         return action
 
@@ -163,8 +167,11 @@ class DQNPolicy(BasePolicy):
     def make_q_net(self) -> Q_Net:
         return Q_Net(**self.net_args).to(self.device)
 
-    def forward(self, obs: th.Tensor) -> th.Tensor:
+    def q_forward(self, obs: th.Tensor) -> th.Tensor:
         return self.predict(obs, deterministic=False)
+
+    def q_predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+        return self.q_net.predict(observation, deterministic)
 
     def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         return self.q_net.predict(observation, deterministic)

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from torchy_baselines import A2C, PPO, SAC, TD3
+from torchy_baselines import A2C, PPO, SAC, TD3, DQN
 from torchy_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 
 action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
@@ -26,4 +26,10 @@ def test_sac(ent_coef):
     model = SAC('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[64, 64]),
                 learning_starts=100, verbose=1, create_eval_env=True, ent_coef=ent_coef,
                 action_noise=NormalActionNoise(np.zeros(1), np.zeros(1)))
+    model.learn(total_timesteps=1000, eval_freq=500)
+
+
+def test_dqn():
+    model = DQN('MlpPolicy', 'CartPole-v0', policy_kwargs=dict(net_arch=[64, 64]),
+                learning_starts=500, buffer_size=500, learning_rate=3e-4, verbose=1, create_eval_env=True)
     model.learn(total_timesteps=1000, eval_freq=500)

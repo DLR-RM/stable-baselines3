@@ -37,6 +37,7 @@ class BasePolicy(nn.Module):
         self.features_extractor = features_extractor
         self.normalize_images = normalize_images
         self._squash_output = squash_output
+        self.optimizer = None  # type: Optional[th.optim.Optimizer]
 
     def extract_features(self, obs: th.Tensor) -> th.Tensor:
         """

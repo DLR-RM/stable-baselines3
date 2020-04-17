@@ -81,18 +81,14 @@ class A2C(PPO):
                                   seed=seed, _init_setup_model=False)
 
         self.normalize_advantage = normalize_advantage
-        self.rms_prop_eps = rms_prop_eps
-        self.use_rms_prop = use_rms_prop
+        # Override PPO optimizer to match original implementation
+        if use_rms_prop and 'optimizer' not in self.policy_kwargs:
+            self.policy_kwargs['optimizer'] = th.optim.RMSprop
+            self.policy_kwargs['optimizer_kwargs'] = dict(alpha=0.99, eps=rms_prop_eps,
+                                                          weight_decay=0)
 
         if _init_setup_model:
             self._setup_model()
-
-    def _setup_model(self) -> None:
-        super(A2C, self)._setup_model()
-        if self.use_rms_prop:
-            self.policy.optimizer = th.optim.RMSprop(self.policy.parameters(),
-                                                     lr=self.lr_schedule(1), alpha=0.99,
-                                                     eps=self.rms_prop_eps, weight_decay=0)
 
     def train(self, gradient_steps: int, batch_size: Optional[int] = None) -> None:
         # Update optimizer learning rate

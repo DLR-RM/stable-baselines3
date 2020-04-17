@@ -3,6 +3,32 @@
 Changelog
 ==========
 
+Pre-Release 0.5.0a0 (WIP)
+------------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+- Added ``optimizer`` and ``optimizer_kwargs`` to ``policy_kwargs`` in order to easily
+  customizer optimizers
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed ``reset_num_timesteps`` behavior, so ``env.reset()`` is not called if ``reset_num_timesteps=True``
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Cleanup rollout return
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
 Pre-Release 0.4.0 (2020-02-14)
 ------------------------------
 
@@ -30,28 +56,6 @@ Others:
 - Refactor handling of observation and action spaces
 - Refactored features extraction to have proper preprocessing
 - Refactored action distributions
-
-
-Documentation:
-^^^^^^^^^^^^^^
-
-Pre-Release 0.5.0a0 (WIP)
-------------------------------
-
-Breaking Changes:
-^^^^^^^^^^^^^^^^^
-
-New Features:
-^^^^^^^^^^^^^
-
-Bug Fixes:
-^^^^^^^^^^
-- Fixed ``reset_num_timesteps`` behavior, so ``env.reset()`` is not called if ``reset_num_timesteps=True``
-
-Others:
-^^^^^^^
-- Cleanup rollout return
-
 
 
 Pre-Release 0.3.0 (2020-02-14)

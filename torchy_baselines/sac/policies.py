@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple, Callable, Union, Type, Dict
+from typing import Optional, List, Tuple, Callable, Union, Type, Dict, Any
 
 import gym
 import torch as th
@@ -214,6 +214,10 @@ class SACPolicy(BasePolicy):
     :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
+    :param optimizer: (Type[th.optim.Optimizer]) The optimizer to use,
+        ``th.optim.Adam`` by default
+    :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
+        excluding the learning rate, to pass to the optimizer
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
@@ -226,11 +230,19 @@ class SACPolicy(BasePolicy):
                  sde_net_arch: Optional[List[int]] = None,
                  use_expln: bool = False,
                  clip_mean: float = 2.0,
-                 normalize_images: bool = True):
+                 normalize_images: bool = True,
+                 optimizer: Type[th.optim.Optimizer] = th.optim.Adam,
+                 optimizer_kwargs: Optional[Dict[str, Any]] = None):
         super(SACPolicy, self).__init__(observation_space, action_space, device, squash_output=True)
 
         if net_arch is None:
             net_arch = [256, 256]
+
+        if optimizer_kwargs is None:
+            optimizer_kwargs = {}
+
+        self.optimizer_class = optimizer
+        self.optimizer_kwargs = optimizer_kwargs
 
         # In the future, features_extractor will be replaced with a CNN
         self.features_extractor = nn.Flatten()
@@ -264,12 +276,14 @@ class SACPolicy(BasePolicy):
 
     def _build(self, lr_schedule: Callable) -> None:
         self.actor = self.make_actor()
-        self.actor.optimizer = th.optim.Adam(self.actor.parameters(), lr=lr_schedule(1))
+        self.actor.optimizer = self.optimizer_class(self.actor.parameters(), lr=lr_schedule(1),
+                                                    **self.optimizer_kwargs)
 
         self.critic = self.make_critic()
         self.critic_target = self.make_critic()
         self.critic_target.load_state_dict(self.critic.state_dict())
-        self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=lr_schedule(1))
+        self.critic.optimizer = self.optimizer_class(self.critic.parameters(), lr=lr_schedule(1),
+                                                     **self.optimizer_kwargs)
 
     def make_actor(self) -> Actor:
         return Actor(**self.actor_kwargs).to(self.device)

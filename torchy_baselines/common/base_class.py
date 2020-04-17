@@ -93,7 +93,11 @@ class BaseRLModel(ABC):
         self.start_time = None
         self.policy = None
         self.learning_rate = learning_rate
-        self.lr_schedule = None   # type: Optional[Callable]
+        self.lr_schedule = None  # type: Optional[Callable]
+        self._last_obs = None  # type: Optional[np.ndarray]
+        # When using VecNormalize:
+        self._last_original_obs = None  # type: Optional[np.ndarray]
+        self._episode_num = 0
         # Used for SDE only
         self.use_sde = use_sde
         self.sde_sample_freq = sde_sample_freq
@@ -486,7 +490,7 @@ class BaseRLModel(ABC):
                      n_eval_episodes: int = 5,
                      log_path: Optional[str] = None,
                      reset_num_timesteps: bool = True,
-                     ) -> Tuple[int, np.ndarray, BaseCallback]:
+                     ) -> 'BaseCallback':
         """
         Initialize different variables needed for training.
 
@@ -496,7 +500,7 @@ class BaseRLModel(ABC):
         :param n_eval_episodes: (int)
         :param log_path (Optional[str]): Path to a log folder
         :param reset_num_timesteps: (bool) Whether to reset or not the `num_timesteps` attribute
-        :return: (Tuple[int, np.ndarray, BaseCallback])
+        :return: (BaseCallback)
         """
         self.start_time = time.time()
         self.ep_info_buffer = deque(maxlen=100)
@@ -505,21 +509,26 @@ class BaseRLModel(ABC):
         if self.action_noise is not None:
             self.action_noise.reset()
 
-        timesteps_since_eval, episode_num = 0, 0
-
         if reset_num_timesteps:
             self.num_timesteps = 0
+            self._episode_num = 0
+
+        # Avoid resetting the environment when calling `.learn()` consecutive times
+        if reset_num_timesteps or self._last_obs is None:
+            self._last_obs = self.env.reset()
+            # Retrieve unnormalized observation for saving into the buffer
+            if self._vec_normalize_env is not None:
+                self._last_original_obs = self._vec_normalize_env.get_original_obs()
 
         if eval_env is not None and self.seed is not None:
             eval_env.seed(self.seed)
 
         eval_env = self._get_eval_env(eval_env)
-        obs = self.env.reset()
 
         # Create eval callback if needed
         callback = self._init_callback(callback, eval_env, eval_freq, n_eval_episodes, log_path)
 
-        return episode_num, obs, callback
+        return callback
 
     def _update_info_buffer(self, infos: List[Dict[str, Any]], dones: Optional[np.ndarray] = None) -> None:
         """
@@ -744,8 +753,6 @@ class OffPolicyRLModel(BaseRLModel):
                          action_noise: Optional[ActionNoise] = None,
                          learning_starts: int = 0,
                          replay_buffer: Optional[ReplayBuffer] = None,
-                         obs: Optional[np.ndarray] = None,
-                         episode_num: int = 0,
                          log_interval: Optional[int] = None) -> RolloutReturn:
         """
         Collect rollout using the current policy (and possibly fill the replay buffer)
@@ -762,8 +769,6 @@ class OffPolicyRLModel(BaseRLModel):
             (and at the beginning and end of the rollout)
         :param learning_starts: (int) Number of steps before learning for the warm-up phase.
         :param replay_buffer: (ReplayBuffer)
-        :param obs: (np.ndarray) Last observation from the environment
-        :param episode_num: (int) Episode index
         :param log_interval: (int) Log data every `log_interval` episodes
         :return: (RolloutReturn)
         """
@@ -772,10 +777,6 @@ class OffPolicyRLModel(BaseRLModel):
 
         assert isinstance(env, VecEnv), "You must pass a VecEnv"
         assert env.num_envs == 1, "OffPolicyRLModel only support single environment"
-
-        # Retrieve unnormalized observation for saving into the buffer
-        if self._vec_normalize_env is not None:
-            obs_ = self._vec_normalize_env.get_original_obs()
 
         self.rollout_data = None
         if self.use_sde:
@@ -804,7 +805,7 @@ class OffPolicyRLModel(BaseRLModel):
                 else:
                     # Note: we assume that the policy uses tanh to scale the action
                     # We use non-deterministic action in the case of SAC, for TD3, it does not matter
-                    unscaled_action, _ = self.predict(obs, deterministic=False)
+                    unscaled_action, _ = self.predict(self._last_obs, deterministic=False)
 
                 # Rescale the action from [low, high] to [-1, 1]
                 scaled_action = self.policy.scale_action(unscaled_action)
@@ -827,7 +828,7 @@ class OffPolicyRLModel(BaseRLModel):
 
                 # Only stop training if return value is False, not when it is None.
                 if callback.on_step() is False:
-                    return RolloutReturn(0.0, total_steps, total_episodes, None, continue_training=False)
+                    return RolloutReturn(0.0, total_steps, total_episodes, continue_training=False)
 
                 episode_reward += reward
 
@@ -842,25 +843,23 @@ class OffPolicyRLModel(BaseRLModel):
                         reward_ = self._vec_normalize_env.get_original_reward()
                     else:
                         # Avoid changing the original ones
-                        obs_, new_obs_, reward_ = obs, new_obs, reward
+                        self._last_original_obs, new_obs_, reward_ = self._last_obs, new_obs, reward
 
-                    replay_buffer.add(obs_, new_obs_, clipped_action, reward_, done)
+                    replay_buffer.add(self._last_original_obs, new_obs_, clipped_action, reward_, done)
 
                 if self.rollout_data is not None:
                     # Assume only one env
-                    self.rollout_data['observations'].append(obs[0].copy())
+                    self.rollout_data['observations'].append(self._last_obs[0].copy())
                     self.rollout_data['actions'].append(scaled_action[0].copy())
                     self.rollout_data['rewards'].append(reward[0].copy())
                     self.rollout_data['dones'].append(done[0].copy())
-                    obs_tensor = th.FloatTensor(obs).to(self.device)
+                    obs_tensor = th.FloatTensor(self._last_obs).to(self.device)
                     self.rollout_data['values'].append(self.vf_net(obs_tensor)[0].cpu().detach().numpy())
 
-                obs = new_obs
-                # Save the true unnormalized observation
-                # otherwise obs_ = self._vec_normalize_env.unnormalize_obs(obs)
-                # is a good approximation
+                self._last_obs = new_obs
+                # Save the unnormalized observation
                 if self._vec_normalize_env is not None:
-                    obs_ = new_obs_
+                    self._last_original_obs = new_obs_
 
                 self.num_timesteps += 1
                 episode_timesteps += 1
@@ -870,16 +869,16 @@ class OffPolicyRLModel(BaseRLModel):
 
             if done:
                 total_episodes += 1
+                self._episode_num += 1
                 episode_rewards.append(episode_reward)
                 total_timesteps.append(episode_timesteps)
                 if action_noise is not None:
                     action_noise.reset()
 
                 # Display training infos
-                if self.verbose >= 1 and log_interval is not None and (
-                        episode_num + total_episodes) % log_interval == 0:
+                if self.verbose >= 1 and log_interval is not None and (self._episode_num) % log_interval == 0:
                     fps = int(self.num_timesteps / (time.time() - self.start_time))
-                    logger.logkv("episodes", episode_num + total_episodes)
+                    logger.logkv("episodes", self._episode_num)
                     if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
                         logger.logkv('ep_rew_mean', self.safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
                         logger.logkv('ep_len_mean', self.safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
@@ -909,7 +908,7 @@ class OffPolicyRLModel(BaseRLModel):
             for step in reversed(range(len(self.rollout_data['rewards']))):
                 if step == len(self.rollout_data['rewards']) - 1:
                     next_non_terminal = 1.0 - done[0]
-                    next_value = self.vf_net(th.FloatTensor(obs).to(self.device))[0].detach()
+                    next_value = self.vf_net(th.FloatTensor(self._last_obs).to(self.device))[0].detach()
                     last_return = self.rollout_data['rewards'][step] + next_non_terminal * next_value
                 else:
                     next_non_terminal = 1.0 - self.rollout_data['dones'][step + 1]
@@ -919,4 +918,4 @@ class OffPolicyRLModel(BaseRLModel):
 
         callback.on_rollout_end()
 
-        return RolloutReturn(mean_reward, total_steps, total_episodes, obs, continue_training)
+        return RolloutReturn(mean_reward, total_steps, total_episodes, continue_training)

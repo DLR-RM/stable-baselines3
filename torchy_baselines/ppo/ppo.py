@@ -141,12 +141,10 @@ class PPO(BaseRLModel):
                          env: VecEnv,
                          callback: BaseCallback,
                          rollout_buffer: RolloutBuffer,
-                         n_rollout_steps: int = 256,
-                         obs: Optional[np.ndarray] = None) -> Tuple[Optional[np.ndarray], bool]:
+                         n_rollout_steps: int = 256) -> bool:
 
-        assert obs is not None, "No previous observation was provided"
+        assert self._last_obs is not None, "No previous observation was provided"
         n_steps = 0
-        continue_training = True
         rollout_buffer.reset()
         # Sample new weights for the state dependent exploration
         if self.use_sde:
@@ -162,7 +160,7 @@ class PPO(BaseRLModel):
 
             with th.no_grad():
                 # Convert to pytorch tensor
-                obs_tensor = th.as_tensor(obs).to(self.device)
+                obs_tensor = th.as_tensor(self._last_obs).to(self.device)
                 actions, values, log_probs = self.policy.forward(obs_tensor)
             actions = actions.cpu().numpy()
 
@@ -171,11 +169,11 @@ class PPO(BaseRLModel):
             # Clip the actions to avoid out of bound error
             if isinstance(self.action_space, gym.spaces.Box):
                 clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
+
             new_obs, rewards, dones, infos = env.step(clipped_actions)
 
             if callback.on_step() is False:
-                continue_training = False
-                return None, continue_training
+                return False
 
             self._update_info_buffer(infos)
             n_steps += 1
@@ -184,14 +182,14 @@ class PPO(BaseRLModel):
             if isinstance(self.action_space, gym.spaces.Discrete):
                 # Reshape in case of discrete action
                 actions = actions.reshape(-1, 1)
-            rollout_buffer.add(obs, actions, rewards, dones, values, log_probs)
-            obs = new_obs
+            rollout_buffer.add(self._last_obs, actions, rewards, dones, values, log_probs)
+            self._last_obs = new_obs
 
         rollout_buffer.compute_returns_and_advantage(values, dones=dones)
 
         callback.on_rollout_end()
 
-        return obs, continue_training
+        return True
 
     def train(self, n_epochs: int, batch_size: int = 64) -> None:
         # Update optimizer learning rate
@@ -307,9 +305,9 @@ class PPO(BaseRLModel):
               eval_log_path: Optional[str] = None,
               reset_num_timesteps: bool = True) -> 'PPO':
 
-        episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq,
-                                                       n_eval_episodes, eval_log_path, reset_num_timesteps)
         iteration = 0
+        callback = self._setup_learn(eval_env, callback, eval_freq,
+                                     n_eval_episodes, eval_log_path, reset_num_timesteps)
 
         # if self.tensorboard_log is not None and SummaryWriter is not None:
         #     self.tb_writer = SummaryWriter(log_dir=os.path.join(self.tensorboard_log, tb_log_name))
@@ -318,10 +316,9 @@ class PPO(BaseRLModel):
 
         while self.num_timesteps < total_timesteps:
 
-            obs, continue_training = self.collect_rollouts(self.env, callback,
-                                                           self.rollout_buffer,
-                                                           n_rollout_steps=self.n_steps,
-                                                           obs=obs)
+            continue_training = self.collect_rollouts(self.env, callback,
+                                                      self.rollout_buffer,
+                                                      n_rollout_steps=self.n_steps)
 
             if continue_training is False:
                 break

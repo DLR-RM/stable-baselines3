@@ -35,6 +35,24 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 
+Pre-Release 0.5.0a0 (WIP)
+------------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed ``reset_num_timesteps`` behavior, so ``env.reset()`` is not called if ``reset_num_timesteps=True``
+
+Others:
+^^^^^^^
+- Cleanup rollout return
+
+
 
 Pre-Release 0.3.0 (2020-02-14)
 ------------------------------
@@ -56,9 +74,6 @@ Bug Fixes:
 - Synced callbacks with Stable-Baselines
 - Fixed colors in ``results_plotter``
 - Fix entropy computation (now summed over action dim)
-
-Deprecations:
-^^^^^^^^^^^^^
 
 Others:
 ^^^^^^^
@@ -106,9 +121,6 @@ Bug Fixes:
 - Fix entropy computation for squashed Gaussian (approximate it now)
 - Fix seeding when using multiple environments (different seed per env)
 
-Deprecations:
-^^^^^^^^^^^^^
-
 Others:
 ^^^^^^^
 - Add type check
@@ -125,25 +137,11 @@ Pre-Release 0.1.0 (2020-01-20)
 ------------------------------
 **First Release: base algorithms and state-dependent exploration**
 
-Breaking Changes:
-^^^^^^^^^^^^^^^^^
-
 New Features:
 ^^^^^^^^^^^^^
 - Initial release of A2C, CEM-RL, PPO, SAC and TD3, working only with ``Box`` input space
 - State-Dependent Exploration (SDE) for A2C, PPO, SAC and TD3
 
-Bug Fixes:
-^^^^^^^^^^
-
-Deprecations:
-^^^^^^^^^^^^^
-
-Others:
-^^^^^^^
-
-Documentation:
-^^^^^^^^^^^^^^
 
 
 Maintainers

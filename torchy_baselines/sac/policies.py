@@ -53,11 +53,12 @@ class Actor(BasePolicy):
                  use_expln: bool = False,
                  clip_mean: float = 2.0,
                  normalize_images: bool = True,
-                 device: Union[th.device, str] = 'cpu'):
+                 device: Union[th.device, str] = 'auto'):
         super(Actor, self).__init__(observation_space, action_space,
                                     features_extractor=features_extractor,
                                     normalize_images=normalize_images,
-                                    device=device)
+                                    device=device,
+                                    squash_output=True)
 
         action_dim = get_action_dim(self.action_space)
 
@@ -171,7 +172,7 @@ class Critic(BasePolicy):
                  features_dim: int,
                  activation_fn: Type[nn.Module] = nn.ReLU,
                  normalize_images: bool = True,
-                 device: Union[th.device, str] = 'cpu'):
+                 device: Union[th.device, str] = 'auto'):
         super(Critic, self).__init__(observation_space, action_space,
                                      features_extractor=features_extractor,
                                      normalize_images=normalize_images,
@@ -223,7 +224,7 @@ class SACPolicy(BasePolicy):
                  action_space: gym.spaces.Space,
                  lr_schedule: Callable,
                  net_arch: Optional[List[int]] = None,
-                 device: Union[th.device, str] = 'cpu',
+                 device: Union[th.device, str] = 'auto',
                  activation_fn: Type[nn.Module] = nn.ReLU,
                  use_sde: bool = False,
                  log_std_init: float = -3,

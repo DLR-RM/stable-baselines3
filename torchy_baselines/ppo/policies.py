@@ -49,7 +49,7 @@ class PPOPolicy(BasePolicy):
                  action_space: gym.spaces.Space,
                  lr_schedule: Callable,
                  net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
-                 device: Union[th.device, str] = 'cpu',
+                 device: Union[th.device, str] = 'auto',
                  activation_fn: Type[nn.Module] = nn.Tanh,
                  ortho_init: bool = True,
                  use_sde: bool = False,

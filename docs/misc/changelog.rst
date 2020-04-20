@@ -17,6 +17,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed ``reset_num_timesteps`` behavior, so ``env.reset()`` is not called if ``reset_num_timesteps=True``
+- Fixed ``squashed_output`` that was not pass to policy constructor for ``SAC`` and ``TD3`` (would result in scaled actions for unscaled action spaces)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -24,6 +25,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Cleanup rollout return
+- Added ``get_device`` util to manage PyTorch devices
 
 Documentation:
 ^^^^^^^^^^^^^^

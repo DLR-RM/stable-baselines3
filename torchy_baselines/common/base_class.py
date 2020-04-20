@@ -13,7 +13,7 @@ import numpy as np
 
 from torchy_baselines.common import logger
 from torchy_baselines.common.policies import BasePolicy, get_policy_from_name
-from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate
+from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate, get_device
 from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize
 from torchy_baselines.common.save_util import data_to_json, json_to_data, recursive_getattr, recursive_setattr
 from torchy_baselines.common.type_aliases import GymEnv, TensorDict, RolloutReturn, MaybeCallback
@@ -71,10 +71,7 @@ class BaseRLModel(ABC):
         else:
             self.policy_class = policy
 
-        if device == 'auto':
-            device = 'cuda' if th.cuda.is_available() else 'cpu'
-
-        self.device = th.device(device)
+        self.device = get_device(device)
         if verbose > 0:
             print(f"Using {self.device} device")
 
@@ -387,7 +384,7 @@ class BaseRLModel(ABC):
                     raise ValueError(f"Error: the file {load_path} could not be found")
 
         # set device to cpu if cuda is not available
-        device = th.device('cuda') if th.cuda.is_available() else th.device('cpu')
+        device = get_device()
 
         # Open the zip archive and load data
         try:

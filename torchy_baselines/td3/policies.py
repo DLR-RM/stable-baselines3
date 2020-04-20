@@ -52,11 +52,12 @@ class Actor(BasePolicy):
                  sde_net_arch: Optional[List[int]] = None,
                  use_expln: bool = False,
                  normalize_images: bool = True,
-                 device: Union[th.device, str] = 'cpu'):
+                 device: Union[th.device, str] = 'auto'):
         super(Actor, self).__init__(observation_space, action_space,
                                     features_extractor=features_extractor,
                                     normalize_images=normalize_images,
-                                    device=device)
+                                    device=device,
+                                    squash_output=not use_sde)
 
         self.latent_pi, self.log_std = None, None
         self.weights_dist, self.exploration_mat = None, None
@@ -179,7 +180,7 @@ class Critic(BasePolicy):
                  features_dim: int,
                  activation_fn: Type[nn.Module] = nn.ReLU,
                  normalize_images: bool = True,
-                 device: Union[th.device, str] = 'cpu'):
+                 device: Union[th.device, str] = 'auto'):
         super(Critic, self).__init__(observation_space, action_space,
                                      features_extractor=features_extractor,
                                      normalize_images=normalize_images,
@@ -268,7 +269,7 @@ class TD3Policy(BasePolicy):
                  action_space: gym.spaces.Space,
                  lr_schedule: Callable,
                  net_arch: Optional[List[int]] = None,
-                 device: Union[th.device, str] = 'cpu',
+                 device: Union[th.device, str] = 'auto',
                  activation_fn: Type[nn.Module] = nn.ReLU,
                  use_sde: bool = False,
                  log_std_init: float = -3,

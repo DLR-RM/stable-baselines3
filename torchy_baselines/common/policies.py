@@ -8,6 +8,7 @@ import torch.nn as nn
 import numpy as np
 
 from torchy_baselines.common.preprocessing import preprocess_obs
+from torchy_baselines.common.utils import get_device, get_schedule_fn
 
 
 class BasePolicy(nn.Module):
@@ -18,7 +19,7 @@ class BasePolicy(nn.Module):
     :param action_space: (gym.spaces.Space) The action space of the environment
     :param device: (Union[th.device, str]) Device on which the code should run.
     :param squash_output: (bool) For continuous actions, whether the output is squashed
-        or not using a `tanh()` function.
+        or not using a ``tanh()`` function.
     :param features_extractor: (nn.Module) Network to extract features
         (a CNN when using images, a nn.Flatten() layer otherwise)
     :param normalize_images: (bool) Whether to normalize images or not,
@@ -26,14 +27,14 @@ class BasePolicy(nn.Module):
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
-                 device: Union[th.device, str] = 'cpu',
+                 device: Union[th.device, str] = 'auto',
                  squash_output: bool = False,
                  features_extractor: Optional[nn.Module] = None,
                  normalize_images: bool = True):
         super(BasePolicy, self).__init__()
         self.observation_space = observation_space
         self.action_space = action_space
-        self.device = device
+        self.device = get_device(device)
         self.features_extractor = features_extractor
         self.normalize_images = normalize_images
         self._squash_output = squash_output
@@ -359,8 +360,9 @@ class MlpExtractor(nn.Module):
     def __init__(self, feature_dim: int,
                  net_arch: List[Union[int, Dict[str, List[int]]]],
                  activation_fn: Type[nn.Module],
-                 device: Union[th.device, str] = 'cpu'):
+                 device: Union[th.device, str] = 'auto'):
         super(MlpExtractor, self).__init__()
+        device = get_device(device)
 
         shared_net, policy_net, value_net = [], [], []
         policy_only_layers = []  # Layer sizes of the network that only belongs to the policy network

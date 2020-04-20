@@ -97,11 +97,31 @@ class PPOPolicy(BasePolicy):
         self.sde_features_extractor = None
         self.sde_net_arch = sde_net_arch
         self.use_sde = use_sde
+        self.dist_kwargs = dist_kwargs
 
         # Action distribution
         self.action_dist = make_proba_distribution(action_space, use_sde=use_sde, dist_kwargs=dist_kwargs)
 
         self._build(lr_schedule)
+
+    def _get_data(self) -> Dict[str, Any]:
+        data = super()._get_data()
+
+        data.update(dict(
+             net_arch=self.net_arch,
+             activation_fn=self.activation_fn,
+             use_sde=self.use_sde,
+             log_std_init=self.log_std_init,
+             squash_output=self.dist_kwargs['squash_output'] if self.dist_kwargs else None,
+             full_std=self.dist_kwargs['full_std'] if self.dist_kwargs else None,
+             sde_net_arch=self.dist_kwargs['sde_net_arch'] if self.dist_kwargs else None,
+             use_expln=self.dist_kwargs['use_expln'] if self.dist_kwargs else None,
+             lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
+             optimizer=self.optimizer_class,
+             optimizer_kwargs=self.optimizer_kwargs,
+             ortho_init=self.ortho_init
+        ))
+        return data
 
     def reset_noise(self, n_envs: int = 1) -> None:
         """

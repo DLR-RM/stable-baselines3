@@ -1,4 +1,4 @@
-from typing import Union, Type, Dict, List, Tuple, Optional
+from typing import Union, Type, Dict, List, Tuple, Optional, Any
 
 from itertools import zip_longest
 
@@ -57,10 +57,18 @@ class BasePolicy(nn.Module):
         return self._squash_output
 
     @staticmethod
-    def init_weights(module: nn.Module, gain: float = 1):
+    def init_weights(module: nn.Module, gain: float = 1) -> None:
+        """
+        Orthogonal initialization (used in PPO and A2C)
+        """
         if isinstance(module, nn.Linear):
             nn.init.orthogonal_(module.weight, gain=gain)
             module.bias.data.fill_(0.0)
+
+    @staticmethod
+    def _dummy_schedule(progress: float) -> float:
+        """ (float) Useful for pickling policy."""
+        return 0.0
 
     def forward(self, *_args, **kwargs):
         raise NotImplementedError()
@@ -191,24 +199,37 @@ class BasePolicy(nn.Module):
             raise ValueError("Error: Cannot determine if the observation is vectorized with the space type {}."
                              .format(observation_space))
 
+    def _get_data(self) -> Dict[str, Any]:
+        return dict(
+            observation_space=self.observation_space,
+            action_space=self.action_space,
+            # Passed to the constructor by child classes
+            # squash_output=self.squash_output,
+            # features_extractor=self.features_extractor
+            normalize_images=self.normalize_images,
+        )
 
     def save(self, path: str) -> None:
         """
-        Save policy weights to a given location.
-        NOTE: we don't save policy parameters
+        Save policy to a given location.
 
         :param path: (str)
         """
-        th.save(self.state_dict(), path)
+        th.save({'state_dict': self.state_dict(), 'data': self._get_data()}, path)
 
-    def load(self, path: str) -> None:
+    @classmethod
+    def load(cls, path: str) -> 'BasePolicy':
         """
-        Load policy weights from path.
-        NOTE: we don't load policy parameters
+        Load policy from path.
 
         :param path: (str)
         """
-        self.load_state_dict(th.load(path))
+        device = get_device()
+        saved_variables = th.load(path, map_location=device)
+        model = cls(**saved_variables['data'])
+        model.load_state_dict(saved_variables['state_dict'])
+        model.to(device)
+        return model
 
     def load_from_vector(self, vector: np.ndarray):
         """

@@ -66,6 +66,15 @@ class Actor(BasePolicy):
         self.sde_features_extractor = None
         self.features_extractor = features_extractor
         self.normalize_images = normalize_images
+        self.net_arch = net_arch
+        self.features_dim = features_dim
+        self.activation_fn = activation_fn
+        self.clip_noise = clip_noise
+        self.lr_sde = lr_sde
+        self.log_std_init = log_std_init
+        self.sde_net_arch = sde_net_arch
+        self.use_expln = use_expln
+        self.full_std = full_std
 
         action_dim = get_action_dim(self.action_space)
 
@@ -89,12 +98,29 @@ class Actor(BasePolicy):
                                                                                log_std_init=log_std_init)
             # Squash output
             self.mu = nn.Sequential(action_net, nn.Tanh())
-            self.clip_noise = clip_noise
             self.sde_optimizer = th.optim.Adam([self.log_std], lr=lr_sde)
             self.reset_noise()
         else:
             actor_net = create_mlp(features_dim, action_dim, net_arch, activation_fn, squash_output=True)
             self.mu = nn.Sequential(*actor_net)
+
+    def _get_data(self) -> Dict[str, Any]:
+        data = super()._get_data()
+
+        data.update(dict(
+             net_arch=self.net_arch,
+             features_dim=self.features_dim,
+             activation_fn=self.activation_fn,
+             use_sde=self.use_sde,
+             log_std_init=self.log_std_init,
+             clip_noise=self.clip_noise,
+             lr_sde=self.lr_sde,
+             full_std=self.full_std,
+             sde_net_arch=self.sde_net_arch,
+             use_expln=self.use_expln,
+             features_extractor=self.features_extractor
+        ))
+        return data
 
     def get_std(self) -> th.Tensor:
         """
@@ -343,6 +369,24 @@ class TD3Policy(BasePolicy):
                                         features_extractor=self.features_extractor,
                                         features_dim=self.features_dim)
             self.actor.sde_optimizer.add_param_group({'params': self.vf_net.parameters()})  # pytype: disable=attribute-error
+
+    def _get_data(self) -> Dict[str, Any]:
+        data = super()._get_data()
+
+        data.update(dict(
+             net_arch=self.net_args['net_arch'],
+             activation_fn=self.net_args['activation_fn'],
+             use_sde=self.actor_kwargs['use_sde'],
+             log_std_init=self.actor_kwargs['log_std_init'],
+             clip_noise=self.actor_kwargs['clip_noise'],
+             lr_sde=self.actor_kwargs['lr_sde'],
+             sde_net_arch=self.actor_kwargs['sde_net_arch'],
+             use_expln=self.actor_kwargs['use_expln'],
+             lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
+             optimizer=self.optimizer_class,
+             optimizer_kwargs=self.optimizer_kwargs
+        ))
+        return data
 
     def reset_noise(self) -> None:
         return self.actor.reset_noise()

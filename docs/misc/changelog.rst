@@ -3,16 +3,19 @@
 Changelog
 ==========
 
-Pre-Release 0.5.0a0 (WIP)
+Pre-Release 0.5.0a1 (WIP)
 ------------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Previous loading of policy weights is broken and replace by the new saving/loading for policy
 
 New Features:
 ^^^^^^^^^^^^^
 - Added ``optimizer`` and ``optimizer_kwargs`` to ``policy_kwargs`` in order to easily
   customizer optimizers
+- Complete independent save/load for policies
+
 
 Bug Fixes:
 ^^^^^^^^^^

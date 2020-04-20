@@ -180,9 +180,11 @@ def test_save_load_policy(model_class):
     observations = observations.reshape(10, -1)
 
     policy = model.policy
-    actor = None
+    policy_class = policy.__class__
+    actor, actor_class = None, None
     if model_class in [SAC, TD3]:
         actor = policy.actor
+        actor_class = actor.__class__
 
     # Get dictionary of current parameters
     params = deepcopy(policy.state_dict())
@@ -207,14 +209,17 @@ def test_save_load_policy(model_class):
         selected_actions_actor, _ = actor.predict(observations, deterministic=True)
 
     # Save and load policy
-    policy.save("./logs/policy_weights.pkl")
+    policy.save("./logs/policy.pkl")
     # Save and load actor
     if actor is not None:
-        actor.save("./logs/actor_weights.pkl")
+        actor.save("./logs/actor.pkl")
 
-    policy.load("./logs/policy_weights.pkl")
-    if actor is not None:
-        actor.load("./logs/actor_weights.pkl")
+    del policy, actor
+
+
+    policy = policy_class.load("./logs/policy.pkl")
+    if actor_class is not None:
+        actor = actor_class.load("./logs/actor.pkl")
 
     # check if params are still the same after load
     new_params = policy.state_dict()
@@ -227,12 +232,12 @@ def test_save_load_policy(model_class):
     new_selected_actions, _ = policy.predict(observations, deterministic=True)
     assert np.allclose(selected_actions, new_selected_actions, 1e-4)
 
-    if actor is not None:
+    if actor_class is not None:
         new_selected_actions_actor, _ = actor.predict(observations, deterministic=True)
         assert np.allclose(selected_actions_actor, new_selected_actions_actor, 1e-4)
         assert np.allclose(selected_actions_actor, new_selected_actions, 1e-4)
 
     # clear file from os
-    os.remove("./logs/policy_weights.pkl")
-    if actor is not None:
-        os.remove("./logs/actor_weights.pkl")
+    os.remove("./logs/policy.pkl")
+    if actor_class is not None:
+        os.remove("./logs/actor.pkl")

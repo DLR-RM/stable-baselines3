@@ -66,6 +66,15 @@ class Actor(BasePolicy):
         self.latent_pi = nn.Sequential(*latent_pi_net)
         self.use_sde = use_sde
         self.sde_features_extractor = None
+        self.sde_net_arch = sde_net_arch
+        self.net_arch = net_arch
+        self.features_dim = features_dim
+        self.activation_fn = activation_fn
+        self.log_std_init = log_std_init
+        self.sde_net_arch = sde_net_arch
+        self.use_expln = use_expln
+        self.full_std = full_std
+        self.clip_mean = clip_mean
 
         if self.use_sde:
             latent_sde_dim = net_arch[-1]
@@ -87,6 +96,23 @@ class Actor(BasePolicy):
             self.action_dist = SquashedDiagGaussianDistribution(action_dim)
             self.mu = nn.Linear(net_arch[-1], action_dim)
             self.log_std = nn.Linear(net_arch[-1], action_dim)
+
+    def _get_data(self) -> Dict[str, Any]:
+        data = super()._get_data()
+
+        data.update(dict(
+             net_arch=self.net_arch,
+             features_dim=self.features_dim,
+             activation_fn=self.activation_fn,
+             use_sde=self.use_sde,
+             log_std_init=self.log_std_init,
+             full_std=self.full_std,
+             sde_net_arch=self.sde_net_arch,
+             use_expln=self.use_expln,
+             features_extractor=self.features_extractor,
+             clip_mean=self.clip_mean
+        ))
+        return data
 
     def get_std(self) -> th.Tensor:
         """
@@ -285,6 +311,23 @@ class SACPolicy(BasePolicy):
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic.optimizer = self.optimizer_class(self.critic.parameters(), lr=lr_schedule(1),
                                                      **self.optimizer_kwargs)
+
+    def _get_data(self) -> Dict[str, Any]:
+        data = super()._get_data()
+
+        data.update(dict(
+             net_arch=self.net_args['net_arch'],
+             activation_fn=self.net_args['activation_fn'],
+             use_sde=self.actor_kwargs['use_sde'],
+             log_std_init=self.actor_kwargs['log_std_init'],
+             sde_net_arch=self.actor_kwargs['sde_net_arch'],
+             use_expln=self.actor_kwargs['use_expln'],
+             clip_mean=self.actor_kwargs['clip_mean'],
+             lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
+             optimizer=self.optimizer_class,
+             optimizer_kwargs=self.optimizer_kwargs
+        ))
+        return data
 
     def make_actor(self) -> Actor:
         return Actor(**self.actor_kwargs).to(self.device)

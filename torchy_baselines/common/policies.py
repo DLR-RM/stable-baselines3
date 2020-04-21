@@ -7,7 +7,7 @@ import torch as th
 import torch.nn as nn
 import numpy as np
 
-from torchy_baselines.common.preprocessing import preprocess_obs
+from torchy_baselines.common.preprocessing import preprocess_obs, get_obs_dim
 from torchy_baselines.common.utils import get_device, get_schedule_fn
 
 
@@ -289,7 +289,8 @@ def create_mlp(input_dim: int,
         modules.append(activation_fn())
 
     if output_dim > 0:
-        modules.append(nn.Linear(net_arch[-1], output_dim))
+        last_layer_dim = net_arch[-1] if len(net_arch) > 0 else input_dim
+        modules.append(nn.Linear(last_layer_dim, output_dim))
     if squash_output:
         modules.append(nn.Tanh())
     return modules
@@ -453,3 +454,44 @@ class MlpExtractor(nn.Module):
         """
         shared_latent = self.shared_net(features)
         return self.policy_net(shared_latent), self.value_net(shared_latent)
+
+
+class BaseFeaturesExtractor(nn.Module):
+    def __init__(self, observation_space: gym.Space, features_dim: int = 0):
+        super(BaseFeaturesExtractor, self).__init__()
+        assert features_dim > 0
+        self._observation_space = observation_space
+        self._features_dim = features_dim
+
+    @property
+    def features_dim(self) -> int:
+        return self._features_dim
+
+    def forward(self, observations: th.Tensor) -> th.Tensor:
+        raise NotImplementedError()
+
+
+class FlattenExtractor(BaseFeaturesExtractor):
+    def __init__(self, observation_space: gym.Space):
+        super(FlattenExtractor, self).__init__(observation_space, get_obs_dim(observation_space))
+        self.flatten = nn.Flatten()
+
+    def forward(self, observations: th.Tensor) -> th.Tensor:
+        return self.flatten(observations)
+
+
+class NatureCNN(BaseFeaturesExtractor):
+    def __init__(self, observation_space: gym.Space,
+                 features_dim: int = 512):
+        super(NatureCNN, self).__init__(observation_space, features_dim)
+        # TODO: custom init?
+        # we assume WxHxC images
+        # TODO: compute shape before flatten
+        n_input_channels = observation_space.shape[-1]
+        self.cnn = nn.Sequential(nn.Conv2d(n_input_channels, 32, 8, stride=4), nn.ReLU(),
+                                 nn.Conv2d(32, 64, 4, stride=2), nn.ReLU(),
+                                 nn.Conv2d(64, 32, 3, stride=1), nn.ReLU(), nn.Flatten(),
+                                 nn.Linear(32 * 7 * 7, features_dim), nn.ReLU())
+
+    def forward(self, observations: th.Tensor) -> th.Tensor:
+        return self.cnn(observations)

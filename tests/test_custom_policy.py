@@ -7,6 +7,7 @@ from torchy_baselines import A2C, PPO, SAC, TD3
 @pytest.mark.parametrize('net_arch', [
     [12, dict(vf=[16], pi=[8])],
     [4],
+    [],
     [4, 4],
     [12, dict(vf=[8, 4], pi=[8])],
     [12, dict(vf=[8], pi=[8, 4])],

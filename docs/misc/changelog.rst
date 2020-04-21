@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.5.0a1 (WIP)
+Pre-Release 0.5.0a2 (WIP)
 ------------------------------
 
 Breaking Changes:
@@ -15,6 +15,7 @@ New Features:
 - Added ``optimizer`` and ``optimizer_kwargs`` to ``policy_kwargs`` in order to easily
   customizer optimizers
 - Complete independent save/load for policies
+- Add ``CnnPolicies`` to support images as input (caveat: only support Atari resolution for now)
 
 
 Bug Fixes:

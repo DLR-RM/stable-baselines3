@@ -1,5 +1,6 @@
-import numpy as np
+from typing import List
 
+import numpy as np
 from gym import Env
 from gym.spaces import Discrete, MultiDiscrete, MultiBinary, Box
 
@@ -102,3 +103,37 @@ class IdentityEnvMultiBinary(IdentityEnv):
         self.action_space = MultiBinary(dim)
         self.observation_space = self.action_space
         self.reset()
+
+
+
+class FakeImageEnv(Env):
+    def __init__(self, action_dim: int = 6,
+                 screen_height: int = 210,
+                 screen_width: int = 160,
+                 n_channels: int = 3,
+                 discrete: bool = True):
+        """
+        Fake atari environment for testing purposes.
+        """
+        self.observation_space = Box(low=0, high=255, shape=(screen_height, screen_width, n_channels), dtype=np.uint8)
+        if discrete:
+            self.action_space = Discrete(action_dim)
+        else:
+            self.action_space = Box(low=-1, high=1, shape=(5,), dtype=np.float32)
+        self.ep_length = 10
+
+    def reset(self):
+        self.current_step = 0
+        return self.observation_space.sample()
+
+    def step(self, action: int):
+        reward = 0.0
+        self.current_step += 1
+        done = self.current_step >= self.ep_length
+        return self.observation_space.sample(), reward, done, {}
+
+    def render(self, mode='human'):
+        pass
+
+    def get_action_meanings(self) -> List[str]:
+        return ['NOOP']

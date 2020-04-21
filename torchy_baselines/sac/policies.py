@@ -4,9 +4,10 @@ import gym
 import torch as th
 import torch.nn as nn
 
-from torchy_baselines.common.preprocessing import get_action_dim, get_obs_dim
+from torchy_baselines.common.preprocessing import get_action_dim
 from torchy_baselines.common.policies import (BasePolicy, register_policy, create_mlp,
-                                              create_sde_features_extractor)
+                                              create_sde_features_extractor, NatureCNN,
+                                              BaseFeaturesExtractor, FlattenExtractor)
 from torchy_baselines.common.distributions import SquashedDiagGaussianDistribution, StateDependentNoiseDistribution
 
 # CAP the standard deviation of the actor
@@ -75,9 +76,11 @@ class Actor(BasePolicy):
         self.use_expln = use_expln
         self.full_std = full_std
         self.clip_mean = clip_mean
+        last_layer_dim = net_arch[-1] if len(net_arch) > 0 else features_dim
+
 
         if self.use_sde:
-            latent_sde_dim = net_arch[-1]
+            latent_sde_dim = last_layer_dim
             # Separate feature extractor for SDE
             if sde_net_arch is not None:
                 self.sde_features_extractor, latent_sde_dim = create_sde_features_extractor(features_dim, sde_net_arch,
@@ -94,8 +97,8 @@ class Actor(BasePolicy):
                 self.mu = nn.Sequential(self.mu, nn.Hardtanh(min_val=-clip_mean, max_val=clip_mean))
         else:
             self.action_dist = SquashedDiagGaussianDistribution(action_dim)
-            self.mu = nn.Linear(net_arch[-1], action_dim)
-            self.log_std = nn.Linear(net_arch[-1], action_dim)
+            self.mu = nn.Linear(last_layer_dim, action_dim)
+            self.log_std = nn.Linear(last_layer_dim, action_dim)
 
     def _get_data(self) -> Dict[str, Any]:
         data = super()._get_data()
@@ -239,6 +242,7 @@ class SACPolicy(BasePolicy):
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
+    :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer: (Type[th.optim.Optimizer]) The optimizer to use,
@@ -257,13 +261,17 @@ class SACPolicy(BasePolicy):
                  sde_net_arch: Optional[List[int]] = None,
                  use_expln: bool = False,
                  clip_mean: float = 2.0,
+                 features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
                  normalize_images: bool = True,
                  optimizer: Type[th.optim.Optimizer] = th.optim.Adam,
                  optimizer_kwargs: Optional[Dict[str, Any]] = None):
         super(SACPolicy, self).__init__(observation_space, action_space, device, squash_output=True)
 
         if net_arch is None:
-            net_arch = [256, 256]
+            if features_extractor_class == FlattenExtractor:
+                net_arch = [256, 256]
+            else:
+                net_arch = []
 
         if optimizer_kwargs is None:
             optimizer_kwargs = {}
@@ -271,9 +279,9 @@ class SACPolicy(BasePolicy):
         self.optimizer_class = optimizer
         self.optimizer_kwargs = optimizer_kwargs
 
-        # In the future, features_extractor will be replaced with a CNN
-        self.features_extractor = nn.Flatten()
-        self.features_dim = get_obs_dim(self.observation_space)
+        self.features_extractor_class = features_extractor_class
+        self.features_extractor = features_extractor_class(self.observation_space)
+        self.features_dim = self.features_extractor.features_dim
 
         self.net_arch = net_arch
         self.activation_fn = activation_fn
@@ -325,7 +333,8 @@ class SACPolicy(BasePolicy):
              clip_mean=self.actor_kwargs['clip_mean'],
              lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
              optimizer=self.optimizer_class,
-             optimizer_kwargs=self.optimizer_kwargs
+             optimizer_kwargs=self.optimizer_kwargs,
+             features_extractor_class=self.features_extractor_class
         ))
         return data
 
@@ -344,4 +353,66 @@ class SACPolicy(BasePolicy):
 
 MlpPolicy = SACPolicy
 
+
+class CnnPolicy(SACPolicy):
+    """
+    Policy class (with both actor and critic) for SAC.
+
+    :param observation_space: (gym.spaces.Space) Observation space
+    :param action_space: (gym.spaces.Space) Action space
+    :param lr_schedule: (callable) Learning rate schedule (could be constant)
+    :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
+    :param device: (str or th.device) Device on which the code should run.
+    :param activation_fn: (Type[nn.Module]) Activation function
+    :param use_sde: (bool) Whether to use State Dependent Exploration or not
+    :param log_std_init: (float) Initial value for the log standard deviation
+    :param sde_net_arch: ([int]) Network architecture for extracting features
+        when using SDE. If None, the latent features from the policy will be used.
+        Pass an empty list to use the states as features.
+    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` when using SDE to ensure
+        a positive standard deviation (cf paper). It allows to keep variance
+        above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
+    :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
+    :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
+    :param normalize_images: (bool) Whether to normalize images or not,
+         dividing by 255.0 (True by default)
+    :param optimizer: (Type[th.optim.Optimizer]) The optimizer to use,
+        ``th.optim.Adam`` by default
+    :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
+        excluding the learning rate, to pass to the optimizer
+    """
+    def __init__(self, observation_space: gym.spaces.Space,
+                 action_space: gym.spaces.Space,
+                 lr_schedule: Callable,
+                 net_arch: Optional[List[int]] = None,
+                 device: Union[th.device, str] = 'auto',
+                 activation_fn: Type[nn.Module] = nn.ReLU,
+                 use_sde: bool = False,
+                 log_std_init: float = -3,
+                 sde_net_arch: Optional[List[int]] = None,
+                 use_expln: bool = False,
+                 clip_mean: float = 2.0,
+                 features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
+                 normalize_images: bool = True,
+                 optimizer: Type[th.optim.Optimizer] = th.optim.Adam,
+                 optimizer_kwargs: Optional[Dict[str, Any]] = None):
+        super(CnnPolicy, self).__init__(observation_space,
+                                        action_space,
+                                        lr_schedule,
+                                        net_arch,
+                                        device,
+                                        activation_fn,
+                                        use_sde,
+                                        log_std_init,
+                                        sde_net_arch,
+                                        use_expln,
+                                        clip_mean,
+                                        features_extractor_class,
+                                        normalize_images,
+                                        optimizer,
+                                        optimizer_kwargs)
+
+
+
 register_policy("MlpPolicy", MlpPolicy)
+register_policy("CnnPolicy", CnnPolicy)

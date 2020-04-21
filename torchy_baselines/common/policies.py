@@ -9,6 +9,7 @@ import numpy as np
 
 from torchy_baselines.common.preprocessing import preprocess_obs, get_obs_dim, is_image_space
 from torchy_baselines.common.utils import get_device, get_schedule_fn
+from torchy_baselines.common.vec_env import VecTransposeImage
 
 
 class BasePolicy(nn.Module):
@@ -102,9 +103,17 @@ class BasePolicy(nn.Module):
         # if mask is None:
         #     mask = [False for _ in range(self.n_envs)]
         observation = np.array(observation)
+
+        if is_image_space(self.observation_space, channels_last=False):
+            # TODO: handle the different cases
+            if (observation.shape != self.observation_space.shape
+                and observation.shape[1:] != self.observation_space.shape):
+                observation = VecTransposeImage.transpose_image(observation)
+
         vectorized_env = self._is_vectorized_observation(observation, self.observation_space)
 
         observation = observation.reshape((-1,) + self.observation_space.shape)
+
         observation = th.as_tensor(observation).to(self.device)
         with th.no_grad():
             actions = self._predict(observation, deterministic=deterministic)

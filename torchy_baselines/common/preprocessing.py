@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from gym import spaces
 
 
-def is_image_space(observation_space: spaces.Space) -> bool:
+def is_image_space(observation_space: spaces.Space, channels_last: bool = True) -> bool:
     """
     Check if a observation space has the shape, limits and dtype
     of a valid image.
@@ -16,6 +16,7 @@ def is_image_space(observation_space: spaces.Space) -> bool:
     Valid images: RGB, RGBD, GrayScale with values in [0, 255]
 
     :param observation_space: (spaces.Space)
+    :param channels_last: (bool)
     :return: (bool)
     """
     if isinstance(observation_space, spaces.Box) and len(observation_space.shape) == 3:
@@ -28,7 +29,10 @@ def is_image_space(observation_space: spaces.Space) -> bool:
             return False
 
         # Check the number of channels
-        n_channels = observation_space.shape[-1]
+        if channels_last:
+            n_channels = observation_space.shape[-1]
+        else:
+            n_channels = observation_space.shape[0]
         return n_channels in [1, 3, 4]
     return False
 

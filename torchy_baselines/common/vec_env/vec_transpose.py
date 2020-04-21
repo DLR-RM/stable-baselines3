@@ -27,6 +27,8 @@ class VecTransposeImage(VecEnvWrapper):
 
     @staticmethod
     def transpose_image(image: np.ndarray) -> np.ndarray:
+        if len(image.shape) == 3:
+            return np.transpose(image, (2, 0, 1))
         return np.transpose(image, (0, 3, 1, 2))
 
     def step_wait(self):

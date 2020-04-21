@@ -240,8 +240,8 @@ class BaseRLModel(ABC):
         """
         if (observation_space != env.observation_space
             # Special cases for images that need to be transposed
-            or (is_image_space(observation_space)
-                and VecTransposeImage.transpose_space(observation_space) != env.observation_space)
+            and not (is_image_space(env.observation_space)
+                and observation_space == VecTransposeImage.transpose_space(env.observation_space))
             ):
             return False
         if action_space != env.action_space:
@@ -352,15 +352,14 @@ class BaseRLModel(ABC):
         if env is None and "env" in data:
             env = data["env"]
 
-        # first create model, but only setup if a env was given
         # noinspection PyArgumentList
-        model = cls(policy=data["policy_class"], env=env, device='auto', _init_setup_model=env is not None)
+        model = cls(policy=data["policy_class"], env=env, device='auto', _init_setup_model=False)
 
         # load parameters
         model.__dict__.update(data)
         model.__dict__.update(kwargs)
         if not hasattr(model, "_setup_model") and len(params) > 0:
-            raise NotImplementedError("loading was executed on a model that has no means to create the policies")
+            raise NotImplementedError(f"{cls} has no `_setup_model()` method")
         model._setup_model()
 
         # put state_dicts back in place

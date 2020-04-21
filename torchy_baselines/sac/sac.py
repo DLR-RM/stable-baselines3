@@ -256,8 +256,8 @@ class SAC(OffPolicyRLModel):
               eval_log_path: Optional[str] = None,
               reset_num_timesteps: bool = True) -> OffPolicyRLModel:
 
-        episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq,
-                                                       n_eval_episodes, eval_log_path, reset_num_timesteps)
+        callback = self._setup_learn(eval_env, callback, eval_freq,
+                                     n_eval_episodes, eval_log_path, reset_num_timesteps)
         callback.on_training_start(locals(), globals())
 
         while self.num_timesteps < total_timesteps:
@@ -266,14 +266,11 @@ class SAC(OffPolicyRLModel):
                                             callback=callback,
                                             learning_starts=self.learning_starts,
                                             replay_buffer=self.replay_buffer,
-                                            obs=obs, episode_num=episode_num,
                                             log_interval=log_interval)
 
             if rollout.continue_training is False:
                 break
 
-            obs = rollout.obs
-            episode_num += rollout.n_episodes
             self._update_current_progress(self.num_timesteps, total_timesteps)
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:

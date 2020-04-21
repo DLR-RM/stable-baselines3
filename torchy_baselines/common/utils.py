@@ -84,3 +84,26 @@ def constant_fn(val: float) -> Callable:
         return val
 
     return func
+
+
+def get_device(device: Union[th.device, str] = 'auto') -> th.device:
+    """
+    Retrieve PyTorch device.
+    It checks that the requested device is available first.
+    For now, it supports only cpu and cuda.
+    By default, it tries to use the gpu.
+
+    :param device: (Union[str, th.device]) One for 'auto', 'cuda', 'cpu'
+    :return: (th.device)
+    """
+    # Cuda by default
+    if device == 'auto':
+        device = 'cuda'
+    # Force conversion to th.device
+    device = th.device(device)
+
+    # Cuda not available
+    if device == th.device('cuda') and not th.cuda.is_available():
+        return th.device('cpu')
+
+    return device

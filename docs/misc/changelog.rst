@@ -3,6 +3,37 @@
 Changelog
 ==========
 
+Pre-Release 0.5.0a1 (WIP)
+------------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+- Previous loading of policy weights is broken and replace by the new saving/loading for policy
+
+New Features:
+^^^^^^^^^^^^^
+- Added ``optimizer`` and ``optimizer_kwargs`` to ``policy_kwargs`` in order to easily
+  customizer optimizers
+- Complete independent save/load for policies
+
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed ``reset_num_timesteps`` behavior, so ``env.reset()`` is not called if ``reset_num_timesteps=True``
+- Fixed ``squashed_output`` that was not pass to policy constructor for ``SAC`` and ``TD3`` (would result in scaled actions for unscaled action spaces)
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Cleanup rollout return
+- Added ``get_device`` util to manage PyTorch devices
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
 Pre-Release 0.4.0 (2020-02-14)
 ------------------------------
 
@@ -32,10 +63,6 @@ Others:
 - Refactored action distributions
 
 
-Documentation:
-^^^^^^^^^^^^^^
-
-
 Pre-Release 0.3.0 (2020-02-14)
 ------------------------------
 
@@ -56,9 +83,6 @@ Bug Fixes:
 - Synced callbacks with Stable-Baselines
 - Fixed colors in ``results_plotter``
 - Fix entropy computation (now summed over action dim)
-
-Deprecations:
-^^^^^^^^^^^^^
 
 Others:
 ^^^^^^^
@@ -106,9 +130,6 @@ Bug Fixes:
 - Fix entropy computation for squashed Gaussian (approximate it now)
 - Fix seeding when using multiple environments (different seed per env)
 
-Deprecations:
-^^^^^^^^^^^^^
-
 Others:
 ^^^^^^^
 - Add type check
@@ -125,25 +146,11 @@ Pre-Release 0.1.0 (2020-01-20)
 ------------------------------
 **First Release: base algorithms and state-dependent exploration**
 
-Breaking Changes:
-^^^^^^^^^^^^^^^^^
-
 New Features:
 ^^^^^^^^^^^^^
 - Initial release of A2C, CEM-RL, PPO, SAC and TD3, working only with ``Box`` input space
 - State-Dependent Exploration (SDE) for A2C, PPO, SAC and TD3
 
-Bug Fixes:
-^^^^^^^^^^
-
-Deprecations:
-^^^^^^^^^^^^^
-
-Others:
-^^^^^^^
-
-Documentation:
-^^^^^^^^^^^^^^
 
 
 Maintainers

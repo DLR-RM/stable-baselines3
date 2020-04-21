@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple, Callable, Union, Type, Dict
+from typing import Optional, List, Tuple, Callable, Union, Type, Dict, Any
 
 import gym
 import torch as th
@@ -53,11 +53,12 @@ class Actor(BasePolicy):
                  use_expln: bool = False,
                  clip_mean: float = 2.0,
                  normalize_images: bool = True,
-                 device: Union[th.device, str] = 'cpu'):
+                 device: Union[th.device, str] = 'auto'):
         super(Actor, self).__init__(observation_space, action_space,
                                     features_extractor=features_extractor,
                                     normalize_images=normalize_images,
-                                    device=device)
+                                    device=device,
+                                    squash_output=True)
 
         action_dim = get_action_dim(self.action_space)
 
@@ -65,6 +66,15 @@ class Actor(BasePolicy):
         self.latent_pi = nn.Sequential(*latent_pi_net)
         self.use_sde = use_sde
         self.sde_features_extractor = None
+        self.sde_net_arch = sde_net_arch
+        self.net_arch = net_arch
+        self.features_dim = features_dim
+        self.activation_fn = activation_fn
+        self.log_std_init = log_std_init
+        self.sde_net_arch = sde_net_arch
+        self.use_expln = use_expln
+        self.full_std = full_std
+        self.clip_mean = clip_mean
 
         if self.use_sde:
             latent_sde_dim = net_arch[-1]
@@ -86,6 +96,23 @@ class Actor(BasePolicy):
             self.action_dist = SquashedDiagGaussianDistribution(action_dim)
             self.mu = nn.Linear(net_arch[-1], action_dim)
             self.log_std = nn.Linear(net_arch[-1], action_dim)
+
+    def _get_data(self) -> Dict[str, Any]:
+        data = super()._get_data()
+
+        data.update(dict(
+             net_arch=self.net_arch,
+             features_dim=self.features_dim,
+             activation_fn=self.activation_fn,
+             use_sde=self.use_sde,
+             log_std_init=self.log_std_init,
+             full_std=self.full_std,
+             sde_net_arch=self.sde_net_arch,
+             use_expln=self.use_expln,
+             features_extractor=self.features_extractor,
+             clip_mean=self.clip_mean
+        ))
+        return data
 
     def get_std(self) -> th.Tensor:
         """
@@ -171,7 +198,7 @@ class Critic(BasePolicy):
                  features_dim: int,
                  activation_fn: Type[nn.Module] = nn.ReLU,
                  normalize_images: bool = True,
-                 device: Union[th.device, str] = 'cpu'):
+                 device: Union[th.device, str] = 'auto'):
         super(Critic, self).__init__(observation_space, action_space,
                                      features_extractor=features_extractor,
                                      normalize_images=normalize_images,
@@ -214,23 +241,35 @@ class SACPolicy(BasePolicy):
     :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
+    :param optimizer: (Type[th.optim.Optimizer]) The optimizer to use,
+        ``th.optim.Adam`` by default
+    :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
+        excluding the learning rate, to pass to the optimizer
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  lr_schedule: Callable,
                  net_arch: Optional[List[int]] = None,
-                 device: Union[th.device, str] = 'cpu',
+                 device: Union[th.device, str] = 'auto',
                  activation_fn: Type[nn.Module] = nn.ReLU,
                  use_sde: bool = False,
                  log_std_init: float = -3,
                  sde_net_arch: Optional[List[int]] = None,
                  use_expln: bool = False,
                  clip_mean: float = 2.0,
-                 normalize_images: bool = True):
+                 normalize_images: bool = True,
+                 optimizer: Type[th.optim.Optimizer] = th.optim.Adam,
+                 optimizer_kwargs: Optional[Dict[str, Any]] = None):
         super(SACPolicy, self).__init__(observation_space, action_space, device, squash_output=True)
 
         if net_arch is None:
             net_arch = [256, 256]
+
+        if optimizer_kwargs is None:
+            optimizer_kwargs = {}
+
+        self.optimizer_class = optimizer
+        self.optimizer_kwargs = optimizer_kwargs
 
         # In the future, features_extractor will be replaced with a CNN
         self.features_extractor = nn.Flatten()
@@ -264,12 +303,31 @@ class SACPolicy(BasePolicy):
 
     def _build(self, lr_schedule: Callable) -> None:
         self.actor = self.make_actor()
-        self.actor.optimizer = th.optim.Adam(self.actor.parameters(), lr=lr_schedule(1))
+        self.actor.optimizer = self.optimizer_class(self.actor.parameters(), lr=lr_schedule(1),
+                                                    **self.optimizer_kwargs)
 
         self.critic = self.make_critic()
         self.critic_target = self.make_critic()
         self.critic_target.load_state_dict(self.critic.state_dict())
-        self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=lr_schedule(1))
+        self.critic.optimizer = self.optimizer_class(self.critic.parameters(), lr=lr_schedule(1),
+                                                     **self.optimizer_kwargs)
+
+    def _get_data(self) -> Dict[str, Any]:
+        data = super()._get_data()
+
+        data.update(dict(
+             net_arch=self.net_args['net_arch'],
+             activation_fn=self.net_args['activation_fn'],
+             use_sde=self.actor_kwargs['use_sde'],
+             log_std_init=self.actor_kwargs['log_std_init'],
+             sde_net_arch=self.actor_kwargs['sde_net_arch'],
+             use_expln=self.actor_kwargs['use_expln'],
+             clip_mean=self.actor_kwargs['clip_mean'],
+             lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
+             optimizer=self.optimizer_class,
+             optimizer_kwargs=self.optimizer_kwargs
+        ))
+        return data
 
     def make_actor(self) -> Actor:
         return Actor(**self.actor_kwargs).to(self.device)

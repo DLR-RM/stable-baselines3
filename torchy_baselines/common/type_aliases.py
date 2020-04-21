@@ -38,5 +38,4 @@ class RolloutReturn(NamedTuple):
     episode_reward: float
     episode_timesteps: int
     n_episodes: int
-    obs: Optional[np.ndarray]
     continue_training: bool

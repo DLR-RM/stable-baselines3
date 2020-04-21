@@ -1,4 +1,4 @@
-from typing import Union, Type, Dict, List, Tuple, Optional
+from typing import Union, Type, Dict, List, Tuple, Optional, Any
 
 from itertools import zip_longest
 
@@ -8,6 +8,7 @@ import torch.nn as nn
 import numpy as np
 
 from torchy_baselines.common.preprocessing import preprocess_obs
+from torchy_baselines.common.utils import get_device, get_schedule_fn
 
 
 class BasePolicy(nn.Module):
@@ -18,7 +19,7 @@ class BasePolicy(nn.Module):
     :param action_space: (gym.spaces.Space) The action space of the environment
     :param device: (Union[th.device, str]) Device on which the code should run.
     :param squash_output: (bool) For continuous actions, whether the output is squashed
-        or not using a `tanh()` function.
+        or not using a ``tanh()`` function.
     :param features_extractor: (nn.Module) Network to extract features
         (a CNN when using images, a nn.Flatten() layer otherwise)
     :param normalize_images: (bool) Whether to normalize images or not,
@@ -26,17 +27,18 @@ class BasePolicy(nn.Module):
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
-                 device: Union[th.device, str] = 'cpu',
+                 device: Union[th.device, str] = 'auto',
                  squash_output: bool = False,
                  features_extractor: Optional[nn.Module] = None,
                  normalize_images: bool = True):
         super(BasePolicy, self).__init__()
         self.observation_space = observation_space
         self.action_space = action_space
-        self.device = device
+        self.device = get_device(device)
         self.features_extractor = features_extractor
         self.normalize_images = normalize_images
         self._squash_output = squash_output
+        self.optimizer = None  # type: Optional[th.optim.Optimizer]
 
     def extract_features(self, obs: th.Tensor) -> th.Tensor:
         """
@@ -55,10 +57,18 @@ class BasePolicy(nn.Module):
         return self._squash_output
 
     @staticmethod
-    def init_weights(module: nn.Module, gain: float = 1):
+    def init_weights(module: nn.Module, gain: float = 1) -> None:
+        """
+        Orthogonal initialization (used in PPO and A2C)
+        """
         if isinstance(module, nn.Linear):
             nn.init.orthogonal_(module.weight, gain=gain)
             module.bias.data.fill_(0.0)
+
+    @staticmethod
+    def _dummy_schedule(progress: float) -> float:
+        """ (float) Useful for pickling policy."""
+        return 0.0
 
     def forward(self, *_args, **kwargs):
         raise NotImplementedError()
@@ -189,24 +199,47 @@ class BasePolicy(nn.Module):
             raise ValueError("Error: Cannot determine if the observation is vectorized with the space type {}."
                              .format(observation_space))
 
+    def _get_data(self) -> Dict[str, Any]:
+        """
+        Get data that need to be saved in order to re-create the policy.
+        This corresponds to the arguments of the constructor.
+
+        :return: (Dict[str, Any])
+        """
+        return dict(
+            observation_space=self.observation_space,
+            action_space=self.action_space,
+            # Passed to the constructor by child class
+            # squash_output=self.squash_output,
+            # features_extractor=self.features_extractor
+            normalize_images=self.normalize_images,
+        )
 
     def save(self, path: str) -> None:
         """
-        Save policy weights to a given location.
-        NOTE: we don't save policy parameters
+        Save policy to a given location.
 
         :param path: (str)
         """
-        th.save(self.state_dict(), path)
+        th.save({'state_dict': self.state_dict(), 'data': self._get_data()}, path)
 
-    def load(self, path: str) -> None:
+    @classmethod
+    def load(cls, path: str, device: Union[th.device, str] = 'auto') -> 'BasePolicy':
         """
-        Load policy weights from path.
-        NOTE: we don't load policy parameters
+        Load policy from path.
 
         :param path: (str)
+        :param device: ( Union[th.device, str]) Device on which the policy should be loaded.
+        :return: (BasePolicy)
         """
-        self.load_state_dict(th.load(path))
+        device = get_device(device)
+        saved_variables = th.load(path, map_location=device)
+        # Create policy object
+        model = cls(**saved_variables['data'])
+        # Load weights
+        model.load_state_dict(saved_variables['state_dict'])
+        model.to(device)
+        return model
 
     def load_from_vector(self, vector: np.ndarray):
         """
@@ -358,8 +391,9 @@ class MlpExtractor(nn.Module):
     def __init__(self, feature_dim: int,
                  net_arch: List[Union[int, Dict[str, List[int]]]],
                  activation_fn: Type[nn.Module],
-                 device: Union[th.device, str] = 'cpu'):
+                 device: Union[th.device, str] = 'auto'):
         super(MlpExtractor, self).__init__()
+        device = get_device(device)
 
         shared_net, policy_net, value_net = [], [], []
         policy_only_layers = []  # Layer sizes of the network that only belongs to the policy network

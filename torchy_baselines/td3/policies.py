@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple, Callable, Union, Type
+from typing import Optional, List, Tuple, Callable, Union, Type, Any, Dict
 
 import gym
 import torch as th
@@ -52,11 +52,12 @@ class Actor(BasePolicy):
                  sde_net_arch: Optional[List[int]] = None,
                  use_expln: bool = False,
                  normalize_images: bool = True,
-                 device: Union[th.device, str] = 'cpu'):
+                 device: Union[th.device, str] = 'auto'):
         super(Actor, self).__init__(observation_space, action_space,
                                     features_extractor=features_extractor,
                                     normalize_images=normalize_images,
-                                    device=device)
+                                    device=device,
+                                    squash_output=not use_sde)
 
         self.latent_pi, self.log_std = None, None
         self.weights_dist, self.exploration_mat = None, None
@@ -65,6 +66,15 @@ class Actor(BasePolicy):
         self.sde_features_extractor = None
         self.features_extractor = features_extractor
         self.normalize_images = normalize_images
+        self.net_arch = net_arch
+        self.features_dim = features_dim
+        self.activation_fn = activation_fn
+        self.clip_noise = clip_noise
+        self.lr_sde = lr_sde
+        self.log_std_init = log_std_init
+        self.sde_net_arch = sde_net_arch
+        self.use_expln = use_expln
+        self.full_std = full_std
 
         action_dim = get_action_dim(self.action_space)
 
@@ -88,12 +98,29 @@ class Actor(BasePolicy):
                                                                                log_std_init=log_std_init)
             # Squash output
             self.mu = nn.Sequential(action_net, nn.Tanh())
-            self.clip_noise = clip_noise
             self.sde_optimizer = th.optim.Adam([self.log_std], lr=lr_sde)
             self.reset_noise()
         else:
             actor_net = create_mlp(features_dim, action_dim, net_arch, activation_fn, squash_output=True)
             self.mu = nn.Sequential(*actor_net)
+
+    def _get_data(self) -> Dict[str, Any]:
+        data = super()._get_data()
+
+        data.update(dict(
+             net_arch=self.net_arch,
+             features_dim=self.features_dim,
+             activation_fn=self.activation_fn,
+             use_sde=self.use_sde,
+             log_std_init=self.log_std_init,
+             clip_noise=self.clip_noise,
+             lr_sde=self.lr_sde,
+             full_std=self.full_std,
+             sde_net_arch=self.sde_net_arch,
+             use_expln=self.use_expln,
+             features_extractor=self.features_extractor
+        ))
+        return data
 
     def get_std(self) -> th.Tensor:
         """
@@ -179,7 +206,7 @@ class Critic(BasePolicy):
                  features_dim: int,
                  activation_fn: Type[nn.Module] = nn.ReLU,
                  normalize_images: bool = True,
-                 device: Union[th.device, str] = 'cpu'):
+                 device: Union[th.device, str] = 'auto'):
         super(Critic, self).__init__(observation_space, action_space,
                                      features_extractor=features_extractor,
                                      normalize_images=normalize_images,
@@ -259,12 +286,16 @@ class TD3Policy(BasePolicy):
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
+    :param optimizer: (Type[th.optim.Optimizer]) The optimizer to use,
+        ``th.optim.Adam`` by default
+    :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
+        excluding the learning rate, to pass to the optimizer
     """
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  lr_schedule: Callable,
                  net_arch: Optional[List[int]] = None,
-                 device: Union[th.device, str] = 'cpu',
+                 device: Union[th.device, str] = 'auto',
                  activation_fn: Type[nn.Module] = nn.ReLU,
                  use_sde: bool = False,
                  log_std_init: float = -3,
@@ -272,12 +303,20 @@ class TD3Policy(BasePolicy):
                  lr_sde: float = 3e-4,
                  sde_net_arch: Optional[List[int]] = None,
                  use_expln: bool = False,
-                 normalize_images: bool = True):
+                 normalize_images: bool = True,
+                 optimizer: Type[th.optim.Optimizer] = th.optim.Adam,
+                 optimizer_kwargs: Optional[Dict[str, Any]] = None):
         super(TD3Policy, self).__init__(observation_space, action_space, device, squash_output=True)
 
         # Default network architecture, from the original paper
         if net_arch is None:
             net_arch = [400, 300]
+
+        if optimizer_kwargs is None:
+            optimizer_kwargs = {}
+
+        self.optimizer_class = optimizer
+        self.optimizer_kwargs = optimizer_kwargs
 
         # In the future, features_extractor will be replaced with a CNN
         self.features_extractor = nn.Flatten()
@@ -318,18 +357,36 @@ class TD3Policy(BasePolicy):
         self.actor = self.make_actor()
         self.actor_target = self.make_actor()
         self.actor_target.load_state_dict(self.actor.state_dict())
-        self.actor.optimizer = th.optim.Adam(self.actor.parameters(), lr=lr_schedule(1))
-
+        self.actor.optimizer = self.optimizer_class(self.actor.parameters(), lr=lr_schedule(1),
+                                                    **self.optimizer_kwargs)
         self.critic = self.make_critic()
         self.critic_target = self.make_critic()
         self.critic_target.load_state_dict(self.critic.state_dict())
-        self.critic.optimizer = th.optim.Adam(self.critic.parameters(), lr=lr_schedule(1))
-
+        self.critic.optimizer = self.optimizer_class(self.critic.parameters(), lr=lr_schedule(1),
+                                                     **self.optimizer_kwargs)
         if self.use_sde:
             self.vf_net = ValueFunction(self.observation_space, self.action_space,
                                         features_extractor=self.features_extractor,
                                         features_dim=self.features_dim)
             self.actor.sde_optimizer.add_param_group({'params': self.vf_net.parameters()})  # pytype: disable=attribute-error
+
+    def _get_data(self) -> Dict[str, Any]:
+        data = super()._get_data()
+
+        data.update(dict(
+             net_arch=self.net_args['net_arch'],
+             activation_fn=self.net_args['activation_fn'],
+             use_sde=self.actor_kwargs['use_sde'],
+             log_std_init=self.actor_kwargs['log_std_init'],
+             clip_noise=self.actor_kwargs['clip_noise'],
+             lr_sde=self.actor_kwargs['lr_sde'],
+             sde_net_arch=self.actor_kwargs['sde_net_arch'],
+             use_expln=self.actor_kwargs['use_expln'],
+             lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
+             optimizer=self.optimizer_class,
+             optimizer_kwargs=self.optimizer_kwargs
+        ))
+        return data
 
     def reset_noise(self) -> None:
         return self.actor.reset_noise()

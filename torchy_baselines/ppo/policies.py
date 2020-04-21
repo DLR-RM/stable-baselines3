@@ -1,4 +1,4 @@
-from typing import Optional, List, Tuple, Callable, Union, Dict, Type
+from typing import Optional, List, Tuple, Callable, Union, Dict, Type, Any
 from functools import partial
 
 import gym
@@ -24,7 +24,6 @@ class PPOPolicy(BasePolicy):
     :param net_arch: ([int or dict]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (Type[nn.Module]) Activation function
-    :param adam_epsilon: (float) Small values to avoid NaN in ADAM optimizer
     :param ortho_init: (bool) Whether to use or not orthogonal initialization
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
@@ -40,15 +39,18 @@ class PPOPolicy(BasePolicy):
         this allows to ensure boundaries when using SDE.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
+    :param optimizer: (Type[th.optim.Optimizer]) The optimizer to use,
+        ``th.optim.Adam`` by default
+    :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
+        excluding the learning rate, to pass to the optimizer
     """
     def __init__(self,
                  observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  lr_schedule: Callable,
                  net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
-                 device: Union[th.device, str] = 'cpu',
+                 device: Union[th.device, str] = 'auto',
                  activation_fn: Type[nn.Module] = nn.Tanh,
-                 adam_epsilon: float = 1e-5,
                  ortho_init: bool = True,
                  use_sde: bool = False,
                  log_std_init: float = 0.0,
@@ -56,7 +58,9 @@ class PPOPolicy(BasePolicy):
                  sde_net_arch: Optional[List[int]] = None,
                  use_expln: bool = False,
                  squash_output: bool = False,
-                 normalize_images: bool = True):
+                 normalize_images: bool = True,
+                 optimizer: Type[th.optim.Optimizer] = th.optim.Adam,
+                 optimizer_kwargs: Optional[Dict[str, Any]] = None):
         super(PPOPolicy, self).__init__(observation_space, action_space, device, squash_output=squash_output)
 
         # Default network architecture, from stable-baselines
@@ -65,7 +69,15 @@ class PPOPolicy(BasePolicy):
 
         self.net_arch = net_arch
         self.activation_fn = activation_fn
-        self.adam_epsilon = adam_epsilon
+
+        if optimizer_kwargs is None:
+            optimizer_kwargs = {}
+            # Small values to avoid NaN in ADAM optimizer
+            if optimizer == th.optim.Adam:
+                optimizer_kwargs['eps'] = 1e-5
+
+        self.optimizer_class = optimizer
+        self.optimizer_kwargs = optimizer_kwargs
         self.ortho_init = ortho_init
         # In the future, feature_extractor will be replaced with a CNN
         self.features_extractor = nn.Flatten()
@@ -85,11 +97,31 @@ class PPOPolicy(BasePolicy):
         self.sde_features_extractor = None
         self.sde_net_arch = sde_net_arch
         self.use_sde = use_sde
+        self.dist_kwargs = dist_kwargs
 
         # Action distribution
         self.action_dist = make_proba_distribution(action_space, use_sde=use_sde, dist_kwargs=dist_kwargs)
 
         self._build(lr_schedule)
+
+    def _get_data(self) -> Dict[str, Any]:
+        data = super()._get_data()
+
+        data.update(dict(
+             net_arch=self.net_arch,
+             activation_fn=self.activation_fn,
+             use_sde=self.use_sde,
+             log_std_init=self.log_std_init,
+             squash_output=self.dist_kwargs['squash_output'] if self.dist_kwargs else None,
+             full_std=self.dist_kwargs['full_std'] if self.dist_kwargs else None,
+             sde_net_arch=self.dist_kwargs['sde_net_arch'] if self.dist_kwargs else None,
+             use_expln=self.dist_kwargs['use_expln'] if self.dist_kwargs else None,
+             lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
+             optimizer=self.optimizer_class,
+             optimizer_kwargs=self.optimizer_kwargs,
+             ortho_init=self.ortho_init
+        ))
+        return data
 
     def reset_noise(self, n_envs: int = 1) -> None:
         """
@@ -142,7 +174,7 @@ class PPOPolicy(BasePolicy):
                 }[module]
                 module.apply(partial(self.init_weights, gain=gain))
         # Setup optimizer with initial learning rate
-        self.optimizer = th.optim.Adam(self.parameters(), lr=lr_schedule(1), eps=self.adam_epsilon)
+        self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
 
     def forward(self, obs: th.Tensor,
                 deterministic: bool = False) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:

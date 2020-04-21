@@ -88,7 +88,7 @@ class Actor(BasePolicy):
 
             self.action_dist = StateDependentNoiseDistribution(action_dim, full_std=full_std, use_expln=use_expln,
                                                                learn_features=True, squash_output=True)
-            self.mu, self.log_std = self.action_dist.proba_distribution_net(latent_dim=net_arch[-1],
+            self.mu, self.log_std = self.action_dist.proba_distribution_net(latent_dim=last_layer_dim,
                                                                             latent_sde_dim=latent_sde_dim,
                                                                             log_std_init=log_std_init)
             # Avoid numerical issues by limiting the mean of the Gaussian
@@ -243,6 +243,8 @@ class SACPolicy(BasePolicy):
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
+    :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
+        to pass to the feature extractor.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer: (Type[th.optim.Optimizer]) The optimizer to use,
@@ -262,6 +264,7 @@ class SACPolicy(BasePolicy):
                  use_expln: bool = False,
                  clip_mean: float = 2.0,
                  features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
+                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
                  normalize_images: bool = True,
                  optimizer: Type[th.optim.Optimizer] = th.optim.Adam,
                  optimizer_kwargs: Optional[Dict[str, Any]] = None):
@@ -280,7 +283,10 @@ class SACPolicy(BasePolicy):
         self.optimizer_kwargs = optimizer_kwargs
 
         self.features_extractor_class = features_extractor_class
-        self.features_extractor = features_extractor_class(self.observation_space)
+        self.features_extractor_kwargs = features_extractor_kwargs
+        if features_extractor_kwargs is None:
+            features_extractor_kwargs = {}
+        self.features_extractor = features_extractor_class(self.observation_space, **features_extractor_kwargs)
         self.features_dim = self.features_extractor.features_dim
 
         self.net_arch = net_arch
@@ -317,7 +323,12 @@ class SACPolicy(BasePolicy):
         self.critic = self.make_critic()
         self.critic_target = self.make_critic()
         self.critic_target.load_state_dict(self.critic.state_dict())
-        self.critic.optimizer = self.optimizer_class(self.critic.parameters(), lr=lr_schedule(1),
+        # Do not optimize the shared feature extractor with the critic loss
+        # otherwise, there are gradient computation issues
+        # another solution: having duplicated features extractor but requires more memory and computation
+        # Note: check gradients, they are maybe computed but not zeroed by the critic
+        critic_parameters = [param for name, param in self.critic.named_parameters() if 'features_extractor' not in name]
+        self.critic.optimizer = self.optimizer_class(critic_parameters, lr=lr_schedule(1),
                                                      **self.optimizer_kwargs)
 
     def _get_data(self) -> Dict[str, Any]:
@@ -334,7 +345,8 @@ class SACPolicy(BasePolicy):
              lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
              optimizer=self.optimizer_class,
              optimizer_kwargs=self.optimizer_kwargs,
-             features_extractor_class=self.features_extractor_class
+             features_extractor_class=self.features_extractor_class,
+             features_extractor_kwargs=self.features_extractor_kwargs
         ))
         return data
 
@@ -393,6 +405,7 @@ class CnnPolicy(SACPolicy):
                  use_expln: bool = False,
                  clip_mean: float = 2.0,
                  features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
+                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
                  normalize_images: bool = True,
                  optimizer: Type[th.optim.Optimizer] = th.optim.Adam,
                  optimizer_kwargs: Optional[Dict[str, Any]] = None):
@@ -408,6 +421,7 @@ class CnnPolicy(SACPolicy):
                                         use_expln,
                                         clip_mean,
                                         features_extractor_class,
+                                        features_extractor_kwargs,
                                         normalize_images,
                                         optimizer,
                                         optimizer_kwargs)

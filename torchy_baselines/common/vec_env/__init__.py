@@ -9,6 +9,7 @@ from torchy_baselines.common.vec_env.dummy_vec_env import DummyVecEnv
 from torchy_baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 from torchy_baselines.common.vec_env.vec_frame_stack import VecFrameStack
 from torchy_baselines.common.vec_env.vec_normalize import VecNormalize
+from torchy_baselines.common.vec_env.vec_transpose import VecTransposeImage
 
 # Avoid circular import
 if typing.TYPE_CHECKING:

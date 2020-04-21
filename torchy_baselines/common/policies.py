@@ -7,7 +7,7 @@ import torch as th
 import torch.nn as nn
 import numpy as np
 
-from torchy_baselines.common.preprocessing import preprocess_obs, get_obs_dim
+from torchy_baselines.common.preprocessing import preprocess_obs, get_obs_dim, is_image_space
 from torchy_baselines.common.utils import get_device, get_schedule_fn
 
 
@@ -485,13 +485,23 @@ class NatureCNN(BaseFeaturesExtractor):
                  features_dim: int = 512):
         super(NatureCNN, self).__init__(observation_space, features_dim)
         # TODO: custom init?
-        # we assume WxHxC images
-        # TODO: compute shape before flatten
-        n_input_channels = observation_space.shape[-1]
-        self.cnn = nn.Sequential(nn.Conv2d(n_input_channels, 32, 8, stride=4), nn.ReLU(),
-                                 nn.Conv2d(32, 64, 4, stride=2), nn.ReLU(),
-                                 nn.Conv2d(64, 32, 3, stride=1), nn.ReLU(), nn.Flatten(),
-                                 nn.Linear(32 * 7 * 7, features_dim), nn.ReLU())
+        # TODO: check that the observation space is an image
+        # we assume CxWxH images
+        # assert is_image_space(observation_space), observation_space
+        n_input_channels = observation_space.shape[0]
+        self.cnn = nn.Sequential(nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
+                                 nn.ReLU(),
+                                 nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
+                                 nn.ReLU(),
+                                 nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=0),
+                                 nn.ReLU(),
+                                 nn.Flatten())
+
+        # Compute shape by doing one forward pass
+        with th.no_grad():
+            n_flatten = self.cnn(th.as_tensor(observation_space.sample()[None]).float()).shape[1]
+
+        self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
-        return self.cnn(observations)
+        return self.linear(self.cnn(observations))

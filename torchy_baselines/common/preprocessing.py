@@ -47,12 +47,8 @@ def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space,
     :return: (th.Tensor)
     """
     if isinstance(observation_space, spaces.Box):
-        if is_image_space(observation_space):
-            # Re-order from BxWxHxC to BxCxWxH
-            obs = obs.permute(0, 3, 1, 2)  # .contiguous()?
-            if normalize_images:
-                return obs.float() / 255.0
-            return obs.float()
+        if is_image_space(observation_space) and normalize_images:
+            return obs.float() / 255.0
         return obs.float()
     elif isinstance(observation_space, spaces.Discrete):
         # One hot encoding and convert to float to avoid errors

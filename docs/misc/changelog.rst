@@ -15,7 +15,7 @@ New Features:
 - Added ``optimizer`` and ``optimizer_kwargs`` to ``policy_kwargs`` in order to easily
   customizer optimizers
 - Complete independent save/load for policies
-- Add ``CnnPolicies`` to support images as input (caveat: only support Atari resolution for now)
+- Add ``CnnPolicies`` to support images as input
 
 
 Bug Fixes:

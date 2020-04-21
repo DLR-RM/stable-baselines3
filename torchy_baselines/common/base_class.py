@@ -14,7 +14,8 @@ import numpy as np
 from torchy_baselines.common import logger
 from torchy_baselines.common.policies import BasePolicy, get_policy_from_name
 from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate, get_device
-from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize
+from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize, VecTransposeImage
+from torchy_baselines.common.preprocessing import is_image_space
 from torchy_baselines.common.save_util import data_to_json, json_to_data, recursive_getattr, recursive_setattr
 from torchy_baselines.common.type_aliases import GymEnv, TensorDict, RolloutReturn, MaybeCallback
 from torchy_baselines.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
@@ -123,18 +124,28 @@ class BaseRLModel(ABC):
                     env = Monitor(env, filename=None)
                 env = DummyVecEnv([lambda: env])
 
+            env = self._wrap_env(env)
+
             self.observation_space = env.observation_space
             self.action_space = env.action_space
-            if not isinstance(env, VecEnv):
-                if self.verbose >= 1:
-                    print("Wrapping the env in a DummyVecEnv.")
-                env = DummyVecEnv([lambda: env])
             self.n_envs = env.num_envs
             self.env = env
 
             if not support_multi_env and self.n_envs > 1:
                 raise ValueError("Error: the model does not support multiple envs requires a single vectorized"
                                  " environment.")
+
+    def _wrap_env(self, env: GymEnv) -> VecEnv:
+        if not isinstance(env, VecEnv):
+            if self.verbose >= 1:
+                print("Wrapping the env in a DummyVecEnv.")
+            env = DummyVecEnv([lambda: env])
+
+        if is_image_space(env.observation_space):
+            if self.verbose >= 1:
+                print("Wrapping the env in a VecTransposeImage.")
+            env = VecTransposeImage(env)
+        return env
 
     @abstractmethod
     def _setup_model(self) -> None:
@@ -154,8 +165,7 @@ class BaseRLModel(ABC):
             eval_env = self.eval_env
 
         if eval_env is not None:
-            if not isinstance(eval_env, VecEnv):
-                eval_env = DummyVecEnv([lambda: eval_env])
+            eval_env = self._wrap_env(eval_env)
             assert eval_env.num_envs == 1
         return eval_env
 
@@ -228,7 +238,11 @@ class BaseRLModel(ABC):
         :param action_space: (gym.spaces.Space)
         :return: (bool) True if environment seems to be coherent
         """
-        if observation_space != env.observation_space:
+        if (observation_space != env.observation_space
+            # Special cases for images that need to be transposed
+            or (is_image_space(observation_space)
+                and VecTransposeImage.transpose_space(observation_space) != env.observation_space)
+            ):
             return False
         if action_space != env.action_space:
             return False
@@ -250,10 +264,8 @@ class BaseRLModel(ABC):
                              "observation and action spaces do not match")
         # it must be coherent now
         # if it is not a VecEnv, make it a VecEnv
-        if not isinstance(env, VecEnv):
-            if self.verbose >= 1:
-                print("Wrapping the env in a DummyVecEnv.")
-            env = DummyVecEnv([lambda: env])
+        env = self._wrap_env(env)
+
         self.n_envs = env.num_envs
         self.env = env
 

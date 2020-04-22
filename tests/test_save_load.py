@@ -8,6 +8,8 @@ import torch as th
 from torchy_baselines import A2C, PPO, SAC, TD3
 from torchy_baselines.common.identity_env import IdentityEnvBox
 from torchy_baselines.common.vec_env import DummyVecEnv
+from torchy_baselines.common.identity_env import FakeImageEnv
+
 
 MODEL_LIST = [
     PPO,
@@ -30,12 +32,11 @@ def test_save_load(model_class):
     env = DummyVecEnv([lambda: IdentityEnvBox(10)])
 
     # create model
-    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
+    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=1)
     model.learn(total_timesteps=500, eval_freq=250)
 
     env.reset()
-    observations = np.array([env.step(env.action_space.sample())[0] for _ in range(10)])
-    observations = observations.reshape(10, -1)
+    observations = np.concatenate([env.step(env.action_space.sample())[0] for _ in range(10)], axis=0)
 
     # Get dictionary of current parameters
     params = deepcopy(model.policy.state_dict())
@@ -90,7 +91,7 @@ def test_set_env(model_class):
     env3 = IdentityEnvBox(10)
 
     # create model
-    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), create_eval_env=True)
+    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]))
     # learn
     model.learn(total_timesteps=1000, eval_freq=500)
 
@@ -115,7 +116,7 @@ def test_exclude_include_saved_params(model_class):
     env = DummyVecEnv([lambda: IdentityEnvBox(10)])
 
     # create model, set verbose as 2, which is not standard
-    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=2, create_eval_env=True)
+    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=2)
 
     # Check if exclude works
     model.save("test_save.zip", exclude=["verbose"])
@@ -163,21 +164,34 @@ def test_save_load_replay_buffer(model_class):
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
-def test_save_load_policy(model_class):
+@pytest.mark.parametrize("policy_str", ['MlpPolicy', 'CnnPolicy'])
+def test_save_load_policy(model_class, policy_str):
     """
     Test saving and loading policy only.
 
     :param model_class: (BaseRLModel) A RL model
+    :param policy_str: (str) Name of the policy.
     """
-    env = DummyVecEnv([lambda: IdentityEnvBox(10)])
+    kwargs = {}
+    if policy_str == 'MlpPolicy':
+        env = IdentityEnvBox(10)
+    else:
+        if model_class in [SAC, TD3]:
+            # Avoid memory error when using replay buffer
+            # Reduce the size of the features
+            kwargs = dict(buffer_size=250)
+        env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=3,
+                           discrete=False)
+
+    env = DummyVecEnv([lambda: env])
 
     # create model
-    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
+    model = model_class(policy_str, env, policy_kwargs=dict(net_arch=[16]),
+                         verbose=1, **kwargs)
     model.learn(total_timesteps=500, eval_freq=250)
 
     env.reset()
-    observations = np.array([env.step(env.action_space.sample())[0] for _ in range(10)])
-    observations = observations.reshape(10, -1)
+    observations = np.concatenate([env.step(env.action_space.sample())[0] for _ in range(10)], axis=0)
 
     policy = model.policy
     policy_class = policy.__class__

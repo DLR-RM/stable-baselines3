@@ -38,9 +38,11 @@ class PPOPolicy(BasePolicy):
     :param squash_output: (bool) Whether to squash the output using a tanh function,
         this allows to ensure boundaries when using SDE.
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
+    :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
+        to pass to the feature extractor.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
-    :param optimizer: (Type[th.optim.Optimizer]) The optimizer to use,
+    :param optimizer_class: (Type[th.optim.Optimizer]) The optimizer to use,
         ``th.optim.Adam`` by default
     :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
@@ -60,10 +62,24 @@ class PPOPolicy(BasePolicy):
                  use_expln: bool = False,
                  squash_output: bool = False,
                  features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
+                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
                  normalize_images: bool = True,
-                 optimizer: Type[th.optim.Optimizer] = th.optim.Adam,
+                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
                  optimizer_kwargs: Optional[Dict[str, Any]] = None):
-        super(PPOPolicy, self).__init__(observation_space, action_space, device, squash_output=squash_output)
+
+        if optimizer_kwargs is None:
+            optimizer_kwargs = {}
+            # Small values to avoid NaN in ADAM optimizer
+            if optimizer_class == th.optim.Adam:
+                optimizer_kwargs['eps'] = 1e-5
+
+        super(PPOPolicy, self).__init__(observation_space, action_space,
+                                        device,
+                                        features_extractor_class,
+                                        features_extractor_kwargs,
+                                        optimizer_class=optimizer_class,
+                                        optimizer_kwargs=optimizer_kwargs,
+                                        squash_output=squash_output)
 
         # Default network architecture, from stable-baselines
         if net_arch is None:
@@ -74,19 +90,10 @@ class PPOPolicy(BasePolicy):
 
         self.net_arch = net_arch
         self.activation_fn = activation_fn
-
-        if optimizer_kwargs is None:
-            optimizer_kwargs = {}
-            # Small values to avoid NaN in ADAM optimizer
-            if optimizer == th.optim.Adam:
-                optimizer_kwargs['eps'] = 1e-5
-
-        self.optimizer_class = optimizer
-        self.optimizer_kwargs = optimizer_kwargs
         self.ortho_init = ortho_init
 
-        self.features_extractor_class = features_extractor_class
-        self.features_extractor = features_extractor_class(self.observation_space)
+        self.features_extractor = features_extractor_class(self.observation_space,
+                                                           **self.features_extractor_kwargs)
         self.features_dim = self.features_extractor.features_dim
 
         self.normalize_images = normalize_images
@@ -124,10 +131,11 @@ class PPOPolicy(BasePolicy):
              sde_net_arch=self.dist_kwargs['sde_net_arch'] if self.dist_kwargs else None,
              use_expln=self.dist_kwargs['use_expln'] if self.dist_kwargs else None,
              lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
-             optimizer=self.optimizer_class,
-             optimizer_kwargs=self.optimizer_kwargs,
              ortho_init=self.ortho_init,
-             features_extractor_class=self.features_extractor_class
+             optimizer_class=self.optimizer_class,
+             optimizer_kwargs=self.optimizer_kwargs,
+             features_extractor_class=self.features_extractor_class,
+             features_extractor_kwargs=self.features_extractor_kwargs
         ))
         return data
 
@@ -173,9 +181,12 @@ class PPOPolicy(BasePolicy):
         # Init weights: use orthogonal initialization
         # with small initial weight for the output
         if self.ortho_init:
-            for module in [self.mlp_extractor, self.action_net, self.value_net]:
+            # TODO: check for features_extractor
+            for module in [self.features_extractor, self.mlp_extractor,
+                           self.action_net, self.value_net]:
                 # Values from stable-baselines, TODO: check why
                 gain = {
+                    self.features_extractor: np.sqrt(2),
                     self.mlp_extractor: np.sqrt(2),
                     self.action_net: 0.01,
                     self.value_net: 1
@@ -300,9 +311,11 @@ class CnnPolicy(PPOPolicy):
     :param squash_output: (bool) Whether to squash the output using a tanh function,
         this allows to ensure boundaries when using SDE.
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
+    :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
+        to pass to the feature extractor.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
-    :param optimizer: (Type[th.optim.Optimizer]) The optimizer to use,
+    :param optimizer_class: (Type[th.optim.Optimizer]) The optimizer to use,
         ``th.optim.Adam`` by default
     :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
@@ -322,8 +335,9 @@ class CnnPolicy(PPOPolicy):
                  use_expln: bool = False,
                  squash_output: bool = False,
                  features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
+                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
                  normalize_images: bool = True,
-                 optimizer: Type[th.optim.Optimizer] = th.optim.Adam,
+                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
                  optimizer_kwargs: Optional[Dict[str, Any]] = None):
         super(CnnPolicy, self).__init__(observation_space,
                                         action_space,
@@ -339,8 +353,9 @@ class CnnPolicy(PPOPolicy):
                                         use_expln,
                                         squash_output,
                                         features_extractor_class,
+                                        features_extractor_kwargs,
                                         normalize_images,
-                                        optimizer,
+                                        optimizer_class,
                                         optimizer_kwargs)
 
 

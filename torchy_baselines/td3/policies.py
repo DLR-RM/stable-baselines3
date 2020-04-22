@@ -294,7 +294,7 @@ class TD3Policy(BasePolicy):
         to pass to the feature extractor.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
-    :param optimizer: (Type[th.optim.Optimizer]) The optimizer to use,
+    :param optimizer_class: (Type[th.optim.Optimizer]) The optimizer to use,
         ``th.optim.Adam`` by default
     :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
@@ -314,9 +314,15 @@ class TD3Policy(BasePolicy):
                  features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
                  features_extractor_kwargs: Optional[Dict[str, Any]] = None,
                  normalize_images: bool = True,
-                 optimizer: Type[th.optim.Optimizer] = th.optim.Adam,
+                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
                  optimizer_kwargs: Optional[Dict[str, Any]] = None):
-        super(TD3Policy, self).__init__(observation_space, action_space, device, squash_output=True)
+        super(TD3Policy, self).__init__(observation_space, action_space,
+                                        device,
+                                        features_extractor_class,
+                                        features_extractor_kwargs,
+                                        optimizer_class=optimizer_class,
+                                        optimizer_kwargs=optimizer_kwargs,
+                                        squash_output=True)
 
         # Default network architecture, from the original paper
         if net_arch is None:
@@ -325,18 +331,8 @@ class TD3Policy(BasePolicy):
             else:
                 net_arch = []
 
-        if optimizer_kwargs is None:
-            optimizer_kwargs = {}
-
-        if features_extractor_kwargs is None:
-            features_extractor_kwargs = {}
-
-        self.optimizer_class = optimizer
-        self.optimizer_kwargs = optimizer_kwargs
-
-        self.features_extractor_class = features_extractor_class
-        self.features_extractor_kwargs = features_extractor_kwargs
-        self.features_extractor = features_extractor_class(self.observation_space, **features_extractor_kwargs)
+        self.features_extractor = features_extractor_class(self.observation_space,
+                                                           **self.features_extractor_kwargs)
         self.features_dim = self.features_extractor.features_dim
 
         self.net_arch = net_arch
@@ -400,7 +396,7 @@ class TD3Policy(BasePolicy):
              sde_net_arch=self.actor_kwargs['sde_net_arch'],
              use_expln=self.actor_kwargs['use_expln'],
              lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
-             optimizer=self.optimizer_class,
+             optimizer_class=self.optimizer_class,
              optimizer_kwargs=self.optimizer_kwargs,
              features_extractor_class=self.features_extractor_class,
              features_extractor_kwargs=self.features_extractor_kwargs
@@ -449,7 +445,7 @@ class CnnPolicy(TD3Policy):
         to pass to the feature extractor.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
-    :param optimizer: (Type[th.optim.Optimizer]) The optimizer to use,
+    :param optimizer_class: (Type[th.optim.Optimizer]) The optimizer to use,
         ``th.optim.Adam`` by default
     :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
@@ -469,7 +465,7 @@ class CnnPolicy(TD3Policy):
                  features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
                  features_extractor_kwargs: Optional[Dict[str, Any]] = None,
                  normalize_images: bool = True,
-                 optimizer: Type[th.optim.Optimizer] = th.optim.Adam,
+                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
                  optimizer_kwargs: Optional[Dict[str, Any]] = None):
         super(CnnPolicy, self).__init__(observation_space,
                                         action_space,
@@ -486,7 +482,7 @@ class CnnPolicy(TD3Policy):
                                         features_extractor_class,
                                         features_extractor_kwargs,
                                         normalize_images,
-                                        optimizer,
+                                        optimizer_class,
                                         optimizer_kwargs)
 
 register_policy("MlpPolicy", MlpPolicy)

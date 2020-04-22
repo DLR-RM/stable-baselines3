@@ -12,10 +12,10 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-- Added ``optimizer`` and ``optimizer_kwargs`` to ``policy_kwargs`` in order to easily
+- Added ``optimizer_class`` and ``optimizer_kwargs`` to ``policy_kwargs`` in order to easily
   customizer optimizers
 - Complete independent save/load for policies
-- Add ``CnnPolicies`` to support images as input
+- Add ``CnnPolicy`` and ``VecTransposeImage`` to support images as input
 
 
 Bug Fixes:

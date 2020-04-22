@@ -22,7 +22,8 @@ def test_cnn(model_class):
     else:
         # Avoid memory error when using replay buffer
         # Reduce the size of the features
-        kwargs = dict(buffer_size=250, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=512)))
+        kwargs = dict(buffer_size=250,
+                      policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)))
     model = model_class('CnnPolicy', env, **kwargs).learn(250)
 
     obs = env.reset()

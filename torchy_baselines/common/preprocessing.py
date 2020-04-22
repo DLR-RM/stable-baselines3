@@ -20,7 +20,7 @@ def is_image_space(observation_space: spaces.Space,
     :param observation_space: (spaces.Space)
     :param channels_last: (bool)
     :param check_channels: (bool) Whether to do or not the check for the number of channels.
-        Because of frame-skip, the observation space may have more channels than expected.
+        e.g., with frame-stacking, the observation space may have more channels than expected.
     :return: (bool)
     """
     if isinstance(observation_space, spaces.Box) and len(observation_space.shape) == 3:

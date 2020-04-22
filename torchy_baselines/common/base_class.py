@@ -141,7 +141,7 @@ class BaseRLModel(ABC):
                 print("Wrapping the env in a DummyVecEnv.")
             env = DummyVecEnv([lambda: env])
 
-        if is_image_space(env.observation_space):
+        if is_image_space(env.observation_space) and not isinstance(env, VecTransposeImage):
             if self.verbose >= 1:
                 print("Wrapping the env in a VecTransposeImage.")
             env = VecTransposeImage(env)

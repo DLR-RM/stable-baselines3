@@ -62,8 +62,7 @@ class NatureCNN(BaseFeaturesExtractor):
         # TODO: custom init?
         # We assume CxWxH images (channels first)
         # Re-ordering will be done by pre-preprocessing or wrapper
-        is_image_input = is_image_space(observation_space) or is_image_space(observation_space, channels_last=False)
-        assert is_image_input, ('You should use NatureCNN '
+        assert is_image_space(observation_space), ('You should use NatureCNN '
                 f'only with images not with {observation_space} '
                 '(you are probably using `CnnPolicy` instead of `MlpPolicy`)')
         n_input_channels = observation_space.shape[0]
@@ -203,7 +202,7 @@ class BasePolicy(nn.Module):
 
         # Handle the different cases for images
         # as PyTorch use channel first format
-        if is_image_space(self.observation_space, channels_last=False):
+        if is_image_space(self.observation_space):
             if (observation.shape == self.observation_space.shape or
                 observation.shape[1:] == self.observation_space.shape):
                 pass

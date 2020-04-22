@@ -180,7 +180,7 @@ def test_save_load_policy(model_class, policy_str):
             # Avoid memory error when using replay buffer
             # Reduce the size of the features
             kwargs = dict(buffer_size=250)
-        env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=3,
+        env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=2,
                            discrete=False)
 
     env = DummyVecEnv([lambda: env])

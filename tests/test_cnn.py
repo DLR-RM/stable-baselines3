@@ -1,10 +1,16 @@
+import os
+
+import numpy as np
 import pytest
 
 from torchy_baselines import A2C, PPO, SAC, TD3
 from torchy_baselines.common.identity_env import FakeImageEnv
 
 
-@pytest.mark.parametrize('model_class', [A2C, PPO, SAC])
+SAVE_PATH = './cnn_model.zip'
+
+
+@pytest.mark.parametrize('model_class', [A2C, PPO, SAC, TD3])
 def test_cnn(model_class):
     # Fake grayscale with frameskip
     # Atari after preprocessing: 84x84x1, here we are using lower resolution
@@ -16,5 +22,19 @@ def test_cnn(model_class):
     else:
         # Avoid memory error when using replay buffer
         # Reduce the size of the features
-        kwargs = dict(buffer_size=500, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=40)))
-    _ = model_class('CnnPolicy', env, **kwargs).learn(500)
+        kwargs = dict(buffer_size=250, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=512)))
+    model = model_class('CnnPolicy', env, **kwargs).learn(250)
+
+    obs = env.reset()
+
+    action, _ = model.predict(obs, deterministic=True)
+
+    model.save(SAVE_PATH)
+    del model
+
+    model = model_class.load(SAVE_PATH)
+
+    # Check that the prediction is the same
+    assert np.allclose(action, model.predict(obs, deterministic=True)[0])
+
+    os.remove(SAVE_PATH)

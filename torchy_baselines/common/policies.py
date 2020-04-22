@@ -7,7 +7,7 @@ import torch as th
 import torch.nn as nn
 import numpy as np
 
-from torchy_baselines.common.preprocessing import preprocess_obs, get_obs_dim, is_image_space
+from torchy_baselines.common.preprocessing import preprocess_obs, get_flattened_obs_dim, is_image_space
 from torchy_baselines.common.utils import get_device, get_schedule_fn
 from torchy_baselines.common.vec_env import VecTransposeImage
 
@@ -482,7 +482,7 @@ class BaseFeaturesExtractor(nn.Module):
 
 class FlattenExtractor(BaseFeaturesExtractor):
     def __init__(self, observation_space: gym.Space):
-        super(FlattenExtractor, self).__init__(observation_space, get_obs_dim(observation_space))
+        super(FlattenExtractor, self).__init__(observation_space, get_flattened_obs_dim(observation_space))
         self.flatten = nn.Flatten()
 
     def forward(self, observations: th.Tensor) -> th.Tensor:

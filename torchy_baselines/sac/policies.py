@@ -61,10 +61,7 @@ class Actor(BasePolicy):
                                     device=device,
                                     squash_output=True)
 
-        action_dim = get_action_dim(self.action_space)
-
-        latent_pi_net = create_mlp(features_dim, -1, net_arch, activation_fn)
-        self.latent_pi = nn.Sequential(*latent_pi_net)
+        # Save arguments to re-create object at loading
         self.use_sde = use_sde
         self.sde_features_extractor = None
         self.sde_net_arch = sde_net_arch
@@ -76,6 +73,10 @@ class Actor(BasePolicy):
         self.use_expln = use_expln
         self.full_std = full_std
         self.clip_mean = clip_mean
+
+        action_dim = get_action_dim(self.action_space)
+        latent_pi_net = create_mlp(features_dim, -1, net_arch, activation_fn)
+        self.latent_pi = nn.Sequential(*latent_pi_net)
         last_layer_dim = net_arch[-1] if len(net_arch) > 0 else features_dim
 
 
@@ -218,7 +219,10 @@ class Critic(BasePolicy):
         self.q_networks = [self.q1_net, self.q2_net]
 
     def forward(self, obs: th.Tensor, action: th.Tensor) -> List[th.Tensor]:
-        features = self.extract_features(obs)
+        # Learn the features extractor using the policy loss only
+        # this is much faster
+        with th.no_grad():
+            features = self.extract_features(obs)
         qvalue_input = th.cat([features, action], dim=1)
         return [q_net(qvalue_input) for q_net in self.q_networks]
 
@@ -279,13 +283,14 @@ class SACPolicy(BasePolicy):
         if optimizer_kwargs is None:
             optimizer_kwargs = {}
 
+        if features_extractor_kwargs is None:
+            features_extractor_kwargs = {}
+
         self.optimizer_class = optimizer
         self.optimizer_kwargs = optimizer_kwargs
 
         self.features_extractor_class = features_extractor_class
         self.features_extractor_kwargs = features_extractor_kwargs
-        if features_extractor_kwargs is None:
-            features_extractor_kwargs = {}
         self.features_extractor = features_extractor_class(self.observation_space, **features_extractor_kwargs)
         self.features_dim = self.features_extractor.features_dim
 
@@ -325,8 +330,7 @@ class SACPolicy(BasePolicy):
         self.critic_target.load_state_dict(self.critic.state_dict())
         # Do not optimize the shared feature extractor with the critic loss
         # otherwise, there are gradient computation issues
-        # another solution: having duplicated features extractor but requires more memory and computation
-        # Note: check gradients, they are maybe computed but not zeroed by the critic
+        # Another solution: having duplicated features extractor but requires more memory and computation
         critic_parameters = [param for name, param in self.critic.named_parameters() if 'features_extractor' not in name]
         self.critic.optimizer = self.optimizer_class(critic_parameters, lr=lr_schedule(1),
                                                      **self.optimizer_kwargs)

@@ -79,10 +79,10 @@ def get_obs_shape(observation_space: spaces.Space) -> Tuple[int, ...]:
         raise NotImplementedError()
 
 
-def get_obs_dim(observation_space: spaces.Space) -> Union[int, Tuple[int, ...]]:
+def get_flattened_obs_dim(observation_space: spaces.Space) -> Union[int, Tuple[int, ...]]:
     """
-    Get the dimension of the observation space.
-    It should not be used when using images.
+    Get the dimension of the observation space when flattened.
+    It does not apply to image observation space.
 
     :param observation_space: (spaces.Space)
     :return: (Union[int, Tuple[int, ...]])

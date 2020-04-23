@@ -1,8 +1,11 @@
-from typing import List
+from typing import List, Union
 
 import numpy as np
 from gym import Env
 from gym.spaces import Discrete, MultiDiscrete, MultiBinary, Box
+
+
+from torchy_baselines.common.type_aliases import GymStepReturn, GymObs
 
 
 class IdentityEnv(Env):
@@ -20,30 +23,32 @@ class IdentityEnv(Env):
         self.dim = dim
         self.reset()
 
-    def reset(self):
+    def reset(self) -> GymObs:
         self.current_step = 0
         self._choose_next_state()
         return self.state
 
-    def step(self, action):
+    def step(self, action: Union[int, np.ndarray]) -> GymStepReturn:
         reward = self._get_reward(action)
         self._choose_next_state()
         self.current_step += 1
         done = self.current_step >= self.ep_length
         return self.state, reward, done, {}
 
-    def _choose_next_state(self):
+    def _choose_next_state(self) -> None:
         self.state = self.action_space.sample()
 
-    def _get_reward(self, action):
-        return 1 if np.all(self.state == action) else 0
+    def _get_reward(self, action: Union[int, np.ndarray]) -> float:
+        return 1.0 if np.all(self.state == action) else 0.0
 
-    def render(self, mode='human'):
+    def render(self, mode: str = 'human') -> None:
         pass
 
 
 class IdentityEnvBox(IdentityEnv):
-    def __init__(self, low=-1, high=1, eps=0.05, ep_length=100):
+    def __init__(self, low: float = -1.0,
+                 high: float = 1.0, eps: float = 0.05,
+                 ep_length: int = 100):
         """
         Identity environment for testing purposes
 
@@ -58,27 +63,27 @@ class IdentityEnvBox(IdentityEnv):
         self.eps = eps
         self.reset()
 
-    def reset(self):
+    def reset(self) -> np.ndarray:
         self.current_step = 0
         self._choose_next_state()
         return self.state
 
-    def step(self, action):
+    def step(self, action: np.ndarray) -> GymStepReturn:
         reward = self._get_reward(action)
         self._choose_next_state()
         self.current_step += 1
         done = self.current_step >= self.ep_length
         return self.state, reward, done, {}
 
-    def _choose_next_state(self):
+    def _choose_next_state(self) -> None:
         self.state = self.observation_space.sample()
 
-    def _get_reward(self, action):
-        return 1 if (self.state - self.eps) <= action <= (self.state + self.eps) else 0
+    def _get_reward(self, action: np.ndarray) -> float:
+        return 1.0 if (self.state - self.eps) <= action <= (self.state + self.eps) else 0.0
 
 
 class IdentityEnvMultiDiscrete(IdentityEnv):
-    def __init__(self, dim, ep_length=100):
+    def __init__(self, dim: int, ep_length: int = 100):
         """
         Identity environment for testing purposes
 
@@ -92,7 +97,7 @@ class IdentityEnvMultiDiscrete(IdentityEnv):
 
 
 class IdentityEnvMultiBinary(IdentityEnv):
-    def __init__(self, dim, ep_length=100):
+    def __init__(self, dim: int, ep_length: int = 100):
         """
         Identity environment for testing purposes
 
@@ -105,35 +110,39 @@ class IdentityEnvMultiBinary(IdentityEnv):
         self.reset()
 
 
-
 class FakeImageEnv(Env):
+    """
+    Fake image environment for testing purposes, it mimics Atari games.
+
+    :param action_dim: (int) Number of discrete actions
+    :param screen_height: (int) Height of the image
+    :param screen_width: (int) Width of the image
+    :param n_channels: (int) Number of color channels
+    :param discrete: (bool)
+    """
     def __init__(self, action_dim: int = 6,
                  screen_height: int = 210,
                  screen_width: int = 160,
                  n_channels: int = 3,
                  discrete: bool = True):
-        """
-        Fake atari environment for testing purposes.
-        """
-        self.observation_space = Box(low=0, high=255, shape=(screen_height, screen_width, n_channels), dtype=np.uint8)
+
+        self.observation_space = Box(low=0, high=255, shape=(screen_height, screen_width,
+                                                             n_channels), dtype=np.uint8)
         if discrete:
             self.action_space = Discrete(action_dim)
         else:
             self.action_space = Box(low=-1, high=1, shape=(5,), dtype=np.float32)
         self.ep_length = 10
 
-    def reset(self):
+    def reset(self) -> np.ndarray:
         self.current_step = 0
         return self.observation_space.sample()
 
-    def step(self, action: int):
+    def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:
         reward = 0.0
         self.current_step += 1
         done = self.current_step >= self.ep_length
         return self.observation_space.sample(), reward, done, {}
 
-    def render(self, mode='human'):
+    def render(self, mode: str = 'human') -> None:
         pass
-
-    def get_action_meanings(self) -> List[str]:
-        return ['NOOP']

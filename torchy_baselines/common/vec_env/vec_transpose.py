@@ -1,15 +1,22 @@
 import warnings
 
+import typing
 import numpy as np
 from gym import spaces
 
 from torchy_baselines.common.vec_env.base_vec_env import VecEnv, VecEnvWrapper
 from torchy_baselines.common.preprocessing import is_image_space
 
+if typing.TYPE_CHECKING:
+    from torchy_baselines.common.type_aliases import GymStepReturn
+
+
 
 class VecTransposeImage(VecEnvWrapper):
     """
     Re-order channels, from WxHxC to CxWxH.
+    It is required for PyTorch convolution layers.
+
     :param venv: (VecEnv)
     """
     def __init__(self, venv: VecEnv):
@@ -20,6 +27,12 @@ class VecTransposeImage(VecEnvWrapper):
 
     @staticmethod
     def transpose_space(observation_space: spaces.Box) -> spaces.Box:
+        """
+        Transpose an observation space (re-order channels).
+
+        :param observation_space: (spaces.Box)
+        :return: (spaces.Box)
+        """
         assert is_image_space(observation_space), 'The observation space must be an image'
         width, height, channels = observation_space.shape
         new_shape = (channels, width, height)
@@ -27,11 +40,17 @@ class VecTransposeImage(VecEnvWrapper):
 
     @staticmethod
     def transpose_image(image: np.ndarray) -> np.ndarray:
+        """
+        Transpose an image or batch of images (re-order channels).
+
+        :param image: (np.ndarray)
+        :return: (np.ndarray)
+        """
         if len(image.shape) == 3:
             return np.transpose(image, (2, 0, 1))
         return np.transpose(image, (0, 3, 1, 2))
 
-    def step_wait(self):
+    def step_wait(self) -> 'GymStepReturn':
         observations, rewards, dones, infos = self.venv.step_wait()
         return self.transpose_image(observations), rewards, dones, infos
 

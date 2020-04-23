@@ -1,7 +1,7 @@
 """
 Common aliases for type hint
 """
-from typing import Union, Dict, Any, NamedTuple, Optional, List, Callable
+from typing import Union, Dict, Any, NamedTuple, Optional, List, Callable, Tuple
 
 import numpy as np
 import torch as th
@@ -12,6 +12,8 @@ from torchy_baselines.common.callbacks import BaseCallback
 
 
 GymEnv = Union[gym.Env, VecEnv]
+GymObs = Union[Tuple, Dict[str, Any], np.ndarray, int]
+GymStepReturn = Tuple[GymObs, float, bool, Dict]
 TensorDict = Dict[str, th.Tensor]
 OptimizerStateDict = Dict[str, Any]
 MaybeCallback = Union[None, Callable, List[BaseCallback], BaseCallback]

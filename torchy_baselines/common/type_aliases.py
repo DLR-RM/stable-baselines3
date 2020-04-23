@@ -1,7 +1,7 @@
 """
 Common aliases for type hint
 """
-from typing import Union, Dict, Any, NamedTuple, Optional, List, Callable, Tuple
+from typing import Union, Dict, Any, NamedTuple, List, Callable, Tuple
 
 import numpy as np
 import torch as th

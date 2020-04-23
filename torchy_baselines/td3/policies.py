@@ -8,7 +8,7 @@ from torchy_baselines.common.preprocessing import get_action_dim
 from torchy_baselines.common.policies import (BasePolicy, register_policy, create_mlp,
                                               create_sde_features_extractor, NatureCNN,
                                               BaseFeaturesExtractor, FlattenExtractor)
-from torchy_baselines.common.distributions import StateDependentNoiseDistribution, Distribution
+from torchy_baselines.common.distributions import StateDependentNoiseDistribution
 
 
 class Actor(BasePolicy):
@@ -147,7 +147,7 @@ class Actor(BasePolicy):
         given the observations. Only useful when using SDE.
 
         :param obs: (th.Tensor)
-        :param action: (th.Tensor)
+        :param actions: (th.Tensor)
         :return: (th.Tensor, th.Tensor) log likelihood of taking those actions
             and entropy of the action distribution.
         """
@@ -484,6 +484,7 @@ class CnnPolicy(TD3Policy):
                                         normalize_images,
                                         optimizer_class,
                                         optimizer_kwargs)
+
 
 register_policy("MlpPolicy", MlpPolicy)
 register_policy("CnnPolicy", CnnPolicy)

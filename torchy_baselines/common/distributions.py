@@ -149,8 +149,8 @@ class DiagGaussianDistribution(Distribution):
         return sum_independent_dims(self.distribution.entropy())
 
     def actions_from_params(self, mean_actions: th.Tensor,
-                           log_std: th.Tensor,
-                           deterministic: bool = False) -> th.Tensor:
+                            log_std: th.Tensor,
+                            deterministic: bool = False) -> th.Tensor:
         # Update the proba distribution
         self.proba_distribution(mean_actions, log_std)
         return self.get_actions(deterministic=deterministic)
@@ -278,7 +278,7 @@ class CategoricalDistribution(Distribution):
         return self.distribution.entropy()
 
     def actions_from_params(self, action_logits: th.Tensor,
-                           deterministic: bool = False) -> th.Tensor:
+                            deterministic: bool = False) -> th.Tensor:
         # Update the proba distribution
         self.proba_distribution(action_logits)
         return self.get_actions(deterministic=deterministic)
@@ -453,9 +453,9 @@ class StateDependentNoiseDistribution(Distribution):
         return sum_independent_dims(self.distribution.entropy())
 
     def actions_from_params(self, mean_actions: th.Tensor,
-                           log_std: th.Tensor,
-                           latent_sde: th.Tensor,
-                           deterministic: bool = False) -> th.Tensor:
+                            log_std: th.Tensor,
+                            latent_sde: th.Tensor,
+                            deterministic: bool = False) -> th.Tensor:
         # Update the proba distribution
         self.proba_distribution(mean_actions, log_std, latent_sde)
         return self.get_actions(deterministic=deterministic)

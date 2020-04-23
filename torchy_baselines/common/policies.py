@@ -8,7 +8,7 @@ import torch.nn as nn
 import numpy as np
 
 from torchy_baselines.common.preprocessing import preprocess_obs, get_flattened_obs_dim, is_image_space
-from torchy_baselines.common.utils import get_device, get_schedule_fn
+from torchy_baselines.common.utils import get_device
 from torchy_baselines.common.vec_env import VecTransposeImage
 
 
@@ -17,8 +17,9 @@ class BaseFeaturesExtractor(nn.Module):
     Base class that represents a features extractor.
 
     :param observation_space: (gym.Space)
-    :param feature_dim: (int) Number of features extracted.
+    :param features_dim: (int) Number of features extracted.
     """
+
     def __init__(self, observation_space: gym.Space, features_dim: int = 0):
         super(BaseFeaturesExtractor, self).__init__()
         assert features_dim > 0
@@ -40,6 +41,7 @@ class FlattenExtractor(BaseFeaturesExtractor):
 
     :param observation_space: (gym.Space)
     """
+
     def __init__(self, observation_space: gym.Space):
         super(FlattenExtractor, self).__init__(observation_space, get_flattened_obs_dim(observation_space))
         self.flatten = nn.Flatten()
@@ -53,17 +55,18 @@ class NatureCNN(BaseFeaturesExtractor):
     CNN from DQN nature paper: https://arxiv.org/abs/1312.5602
 
     :param observation_space: (gym.Space)
-    :param feature_dim: (int) Number of features extracted.
+    :param features_dim: (int) Number of features extracted.
         This corresponds to the number of unit for the last layer.
     """
+
     def __init__(self, observation_space: gym.spaces.Box,
                  features_dim: int = 512):
         super(NatureCNN, self).__init__(observation_space, features_dim)
         # We assume CxWxH images (channels first)
         # Re-ordering will be done by pre-preprocessing or wrapper
         assert is_image_space(observation_space), ('You should use NatureCNN '
-                f'only with images not with {observation_space} '
-                '(you are probably using `CnnPolicy` instead of `MlpPolicy`)')
+                                                   f'only with images not with {observation_space} '
+                                                   '(you are probably using `CnnPolicy` instead of `MlpPolicy`)')
         n_input_channels = observation_space.shape[0]
         self.cnn = nn.Sequential(nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
                                  nn.ReLU(),
@@ -104,6 +107,7 @@ class BasePolicy(nn.Module):
     :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
     """
+
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  device: Union[th.device, str] = 'auto',
@@ -203,13 +207,13 @@ class BasePolicy(nn.Module):
         # as PyTorch use channel first format
         if is_image_space(self.observation_space):
             if (observation.shape == self.observation_space.shape or
-                observation.shape[1:] == self.observation_space.shape):
+                    observation.shape[1:] == self.observation_space.shape):
                 pass
             else:
                 # Try to re-order the channels
                 transpose_obs = VecTransposeImage.transpose_image(observation)
                 if (transpose_obs.shape == self.observation_space.shape
-                    or transpose_obs.shape[1:] == self.observation_space.shape):
+                        or transpose_obs.shape[1:] == self.observation_space.shape):
                     observation = transpose_obs
 
         vectorized_env = self._is_vectorized_observation(observation, self.observation_space)
@@ -500,6 +504,7 @@ class MlpExtractor(nn.Module):
     :param activation_fn: (Type[nn.Module]) The activation function to use for the networks.
     :param device: (th.device)
     """
+
     def __init__(self, feature_dim: int,
                  net_arch: List[Union[int, Dict[str, List[int]]]],
                  activation_fn: Type[nn.Module],

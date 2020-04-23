@@ -10,7 +10,7 @@ from torchy_baselines.common.monitor import Monitor, get_monitor_files, load_res
 
 def test_monitor(tmp_path):
     """
-    test the monitor wrapper
+    Test the monitor wrapper
     """
     env = gym.make("CartPole-v1")
     env.seed(0)
@@ -22,7 +22,7 @@ def test_monitor(tmp_path):
     ep_lengths = []
     ep_len, ep_reward = 0, 0
     for _ in range(total_steps):
-        _, reward, done, _ = monitor_env.step(0)
+        _, reward, done, _ = monitor_env.step(monitor_env.action_space.sample())
         ep_len += 1
         ep_reward += reward
         if done:

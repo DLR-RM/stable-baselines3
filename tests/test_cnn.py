@@ -6,7 +6,6 @@ import pytest
 from torchy_baselines import A2C, PPO, SAC, TD3
 from torchy_baselines.common.identity_env import FakeImageEnv
 
-
 SAVE_PATH = './cnn_model.zip'
 
 
@@ -16,7 +15,7 @@ def test_cnn(model_class):
     # Atari after preprocessing: 84x84x1, here we are using lower resolution
     # to check that the network handle it automatically
     env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=1,
-                       discrete = model_class not in {SAC, TD3})
+                       discrete=model_class not in {SAC, TD3})
     if model_class in {A2C, PPO}:
         kwargs = dict(n_steps=100)
     else:

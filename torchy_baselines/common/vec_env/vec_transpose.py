@@ -1,5 +1,3 @@
-import warnings
-
 import typing
 import numpy as np
 from gym import spaces
@@ -11,7 +9,6 @@ if typing.TYPE_CHECKING:
     from torchy_baselines.common.type_aliases import GymStepReturn
 
 
-
 class VecTransposeImage(VecEnvWrapper):
     """
     Re-order channels, from WxHxC to CxWxH.
@@ -19,6 +16,7 @@ class VecTransposeImage(VecEnvWrapper):
 
     :param venv: (VecEnv)
     """
+
     def __init__(self, venv: VecEnv):
         assert is_image_space(venv.observation_space), 'The observation space must be an image'
 

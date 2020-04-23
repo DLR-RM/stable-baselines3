@@ -286,7 +286,6 @@ class PPOPolicy(BasePolicy):
 MlpPolicy = PPOPolicy
 
 
-
 class CnnPolicy(PPOPolicy):
     """
     CnnPolicy class (with both actor and critic) for A2C and derivates (PPO).

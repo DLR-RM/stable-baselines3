@@ -133,6 +133,7 @@ class FakeImageEnv(Env):
         else:
             self.action_space = Box(low=-1, high=1, shape=(5,), dtype=np.float32)
         self.ep_length = 10
+        self.current_step = 0
 
     def reset(self) -> np.ndarray:
         self.current_step = 0

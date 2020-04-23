@@ -89,7 +89,6 @@ def test_categorical():
     # mean negative log likelihood == entropy
     dist = CategoricalDistribution(N_ACTIONS)
     set_random_seed(1)
-    state = th.rand(N_SAMPLES, N_FEATURES)
     action_logits = th.rand(N_SAMPLES, N_ACTIONS)
     dist = dist.proba_distribution(action_logits)
 

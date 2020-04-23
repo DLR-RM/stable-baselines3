@@ -241,8 +241,8 @@ class BaseRLModel(ABC):
         if (observation_space != env.observation_space
             # Special cases for images that need to be transposed
             and not (is_image_space(env.observation_space)
-                and observation_space == VecTransposeImage.transpose_space(env.observation_space))
-            ):
+                     and observation_space == VecTransposeImage.transpose_space(env.observation_space)
+            )):
             return False
         if action_space != env.action_space:
             return False
@@ -884,7 +884,7 @@ class OffPolicyRLModel(BaseRLModel):
                     action_noise.reset()
 
                 # Display training infos
-                if self.verbose >= 1 and log_interval is not None and (self._episode_num) % log_interval == 0:
+                if self.verbose >= 1 and log_interval is not None and self._episode_num % log_interval == 0:
                     fps = int(self.num_timesteps / (time.time() - self.start_time))
                     logger.logkv("episodes", self._episode_num)
                     if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:

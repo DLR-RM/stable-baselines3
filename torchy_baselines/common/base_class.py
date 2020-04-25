@@ -340,7 +340,7 @@ class BaseRLModel(ABC):
 
         if 'policy_kwargs' in kwargs and kwargs['policy_kwargs'] != data['policy_kwargs']:
             raise ValueError(f"The specified policy kwargs do not equal the stored policy kwargs."
-                             "Stored kwargs: {data['policy_kwargs']}, specified kwargs: {kwargs['policy_kwargs']}")
+                             f"Stored kwargs: {data['policy_kwargs']}, specified kwargs: {kwargs['policy_kwargs']}")
 
         # check if observation space and action space are part of the saved parameters
         if ("observation_space" not in data or "action_space" not in data) and "env" not in data:

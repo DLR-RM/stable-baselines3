@@ -226,9 +226,9 @@ class BaseRLModel(ABC):
         return self._vec_normalize_env
 
     @staticmethod
-    def check_env(env: GymEnv, observation_space: gym.spaces.Space, action_space: gym.spaces.Space) -> bool:
+    def check_env(env: GymEnv, observation_space: gym.spaces.Space, action_space: gym.spaces.Space):
         """
-        Checks the validity of the environment and returns if it is consistent.
+        Checks the validity of the environment to load vs the one used for training.
         Checked parameters:
         - observation_space
         - action_space
@@ -236,18 +236,15 @@ class BaseRLModel(ABC):
         :param env: (GymEnv)
         :param observation_space: (gym.spaces.Space)
         :param action_space: (gym.spaces.Space)
-        :return: (bool) True if environment seems to be coherent
         """
         if (observation_space != env.observation_space
             # Special cases for images that need to be transposed
             and not (is_image_space(env.observation_space)
                      and observation_space == VecTransposeImage.transpose_space(env.observation_space)
             )):
-            return False
+            raise ValueError(f'Observation spaces do not match: {observation_space} != {env.observation_space}')
         if action_space != env.action_space:
-            return False
-        # return true if no check failed
-        return True
+            raise ValueError(f'Action spaces do not match: {action_space} != {env.action_space}')
 
     def set_env(self, env: GymEnv) -> None:
         """
@@ -259,9 +256,7 @@ class BaseRLModel(ABC):
 
         :param env: The environment for learning a policy
         """
-        if self.check_env(env, self.observation_space, self.action_space) is False:
-            raise ValueError("The given environment is not compatible with model: "
-                             "observation and action spaces do not match")
+        self.check_env(env, self.observation_space, self.action_space)
         # it must be coherent now
         # if it is not a VecEnv, make it a VecEnv
         env = self._wrap_env(env)
@@ -346,8 +341,8 @@ class BaseRLModel(ABC):
         if ("observation_space" not in data or "action_space" not in data) and "env" not in data:
             raise ValueError("The observation_space and action_space was not given, can't verify new environments")
         # check if given env is valid
-        if env is not None and cls.check_env(env, data["observation_space"], data["action_space"]) is False:
-            raise ValueError("The given environment does not comply to the model")
+        if env is not None:
+            cls.check_env(env, data["observation_space"], data["action_space"])
         # if no new env was given use stored env if possible
         if env is None and "env" in data:
             env = data["env"]

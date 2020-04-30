@@ -14,3 +14,5 @@ spelling:
 
 clean:
 	cd docs && make clean
+
+.PHONY: clean spelling doc

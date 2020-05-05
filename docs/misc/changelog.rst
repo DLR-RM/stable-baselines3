@@ -18,6 +18,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed a bug that prevented model trained on cpu to be loaded on gpu
 
 Deprecations:
 ^^^^^^^^^^^^^

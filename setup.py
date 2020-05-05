@@ -3,13 +3,13 @@ import sys
 import subprocess
 from setuptools import setup, find_packages
 
-with open(os.path.join('torchy_baselines', 'version.txt'), 'r') as file_handler:
+with open(os.path.join('stable_baselines3', 'version.txt'), 'r') as file_handler:
     __version__ = file_handler.read()
 
 
-setup(name='torchy_baselines',
+setup(name='stable_baselines3',
       packages=[package for package in find_packages()
-                if package.startswith('torchy_baselines')],
+                if package.startswith('stable_baselines3')],
       install_requires=[
           'gym[classic_control]>=0.11',
           'numpy',
@@ -45,7 +45,7 @@ setup(name='torchy_baselines',
       },
       description='Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.',
       author='Antonin Raffin',
-      url='',
+      url='https://github.com/DLR-RM/stable-baselines3',
       author_email='antonin.raffin@dlr.de',
       keywords="reinforcement-learning-algorithms reinforcement-learning machine-learning "
                "gym openai stable baselines toolbox python data-science",

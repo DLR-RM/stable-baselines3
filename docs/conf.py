@@ -44,19 +44,19 @@ MOCK_MODULES = []
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
-import torchy_baselines
+import stable_baselines3
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'Torchy Baselines'
-copyright = '2020, Torchy Baselines'
-author = 'Torchy Baselines Contributors'
+project = 'Stable Baselines3'
+copyright = '2020, Stable Baselines3'
+author = 'Stable Baselines3 Contributors'
 
 # The short X.Y version
-version = 'master (' + torchy_baselines.__version__ + ' )'
+version = 'master (' + stable_baselines3.__version__ + ' )'
 # The full version, including alpha/beta/rc tags
-release = torchy_baselines.__version__
+release = stable_baselines3.__version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -152,7 +152,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'TorchyBaselinesdoc'
+htmlhelp_basename = 'StableBaselines3doc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -179,8 +179,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'TorchyBaselines.tex', 'Torchy Baselines Documentation',
-     'Torchy Baselines Contributors', 'manual'),
+    (master_doc, 'StableBaselines3.tex', 'Stable Baselines3 Documentation',
+     'Stable Baselines3 Contributors', 'manual'),
 ]
 
 
@@ -189,7 +189,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'torchybaselines', 'Torchy Baselines Documentation',
+    (master_doc, 'stablebaselines3', 'Stable Baselines3 Documentation',
      [author], 1)
 ]
 
@@ -200,8 +200,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'TorchyBaselines', 'Torchy Baselines Documentation',
-     author, 'TorchyBaselines', 'One line description of project.',
+    (master_doc, 'StableBaselines3', 'Stable Baselines3 Documentation',
+     author, 'StableBaselines3', 'One line description of project.',
      'Miscellaneous'),
 ]
 
@@ -214,3 +214,7 @@ texinfo_documents = [
 #     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
 #     'torch': ('http://pytorch.org/docs/master/', None),
 # }
+
+# kornia's hack to get rtd builder to install latest pytorch
+# if 'READTHEDOCS' in os.environ:
+#     os.system('pip install torch==1.5.0+cpu torchvision==0.6.0+cpu -f https://download.pytorch.org/whl/torch_stable.html')

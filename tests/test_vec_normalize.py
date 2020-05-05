@@ -2,9 +2,9 @@ import gym
 import pytest
 import numpy as np
 
-from torchy_baselines.common.running_mean_std import RunningMeanStd
-from torchy_baselines.common.vec_env import DummyVecEnv, VecNormalize, VecFrameStack, sync_envs_normalization, unwrap_vec_normalize
-from torchy_baselines import SAC, TD3
+from stable_baselines3.common.running_mean_std import RunningMeanStd
+from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize, VecFrameStack, sync_envs_normalization, unwrap_vec_normalize
+from stable_baselines3 import SAC, TD3
 
 ENV_ID = 'Pendulum-v0'
 

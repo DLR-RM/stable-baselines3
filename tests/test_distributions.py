@@ -1,11 +1,11 @@
 import pytest
 import torch as th
 
-from torchy_baselines import A2C, PPO
-from torchy_baselines.common.distributions import (DiagGaussianDistribution, TanhBijector,
+from stable_baselines3 import A2C, PPO
+from stable_baselines3.common.distributions import (DiagGaussianDistribution, TanhBijector,
                                                    StateDependentNoiseDistribution,
                                                    CategoricalDistribution, SquashedDiagGaussianDistribution)
-from torchy_baselines.common.utils import set_random_seed
+from stable_baselines3.common.utils import set_random_seed
 
 
 N_ACTIONS = 2

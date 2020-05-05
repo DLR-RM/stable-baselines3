@@ -3,6 +3,34 @@
 Changelog
 ==========
 
+Pre-Release 0.6.0a (WIP)
+------------------------------
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+- Added env checker (Sync with Stable Baselines)
+- Added ``VecCheckNan`` and ``VecVideoRecorder`` (Sync with Stable Baselines)
+- Added determinism tests
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed a bug that prevented model trained on cpu to be loaded on gpu
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Renamed to Stable-Baseline3
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
 Pre-Release 0.5.0 (2020-05-05)
 ------------------------------
 
@@ -111,7 +139,7 @@ Pre-Release 0.2.0 (2020-02-14)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-- Python 2 support was dropped, Torchy Baselines now requires Python 3.6 or above
+- Python 2 support was dropped, Stable Baselines3 now requires Python 3.6 or above
 - Return type of ``evaluation.evaluate_policy()`` has been changed
 - Refactored the replay buffer to avoid transformation between PyTorch and NumPy
 - Created `OffPolicyRLModel` base class
@@ -160,10 +188,17 @@ New Features:
 Maintainers
 -----------
 
-Torchy-Baselines is currently maintained by `Antonin Raffin`_ (aka `@araffin`_).
+Stable-Baselines3 is currently maintained by `Antonin Raffin`_ (aka `@araffin`_), `Ashley Hill`_ (aka @hill-a),
+`Maximilian Ernestus`_ (aka @erniejunior), `Adam Gleave`_ (`@AdamGleave`_) and `Anssi Kanervisto`_ (aka `@Miffyli`_).
 
+.. _Ashley Hill: https://github.com/hill-a
 .. _Antonin Raffin: https://araffin.github.io/
+.. _Maximilian Ernestus: https://github.com/erniejunior
+.. _Adam Gleave: https://gleave.me/
 .. _@araffin: https://github.com/araffin
+.. _@AdamGleave: https://github.com/adamgleave
+.. _Anssi Kanervisto: https://github.com/Miffyli
+.. _@Miffyli: https://github.com/Miffyli
 
 
 

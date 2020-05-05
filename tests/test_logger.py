@@ -4,7 +4,7 @@ import shutil
 import pytest
 import numpy as np
 
-from torchy_baselines.common.logger import (make_output_format, read_csv, read_json, DEBUG, ScopedConfigure,
+from stable_baselines3.common.logger import (make_output_format, read_csv, read_json, DEBUG, ScopedConfigure,
                                             info, debug, set_level, configure, logkv, logkvs,
                                             dumpkvs, logkv_mean, warn, error, reset)
 
@@ -18,7 +18,7 @@ KEY_VALUES = {
     "g": np.array([[[1]]]),
 }
 
-LOG_DIR = '/tmp/torchy_baselines/'
+LOG_DIR = '/tmp/stable_baselines3/'
 
 
 def test_main():

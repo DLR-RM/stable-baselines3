@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
 
-from torchy_baselines import A2C, PPO, SAC, TD3
-from torchy_baselines.common.identity_env import IdentityEnvBox, IdentityEnv
-from torchy_baselines.common.evaluation import evaluate_policy
-from torchy_baselines.common.noise import NormalActionNoise
+from stable_baselines3 import A2C, PPO, SAC, TD3
+from stable_baselines3.common.identity_env import IdentityEnvBox, IdentityEnv
+from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.noise import NormalActionNoise
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO])

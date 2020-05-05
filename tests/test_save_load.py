@@ -5,10 +5,10 @@ import pytest
 import numpy as np
 import torch as th
 
-from torchy_baselines import A2C, PPO, SAC, TD3
-from torchy_baselines.common.identity_env import IdentityEnvBox
-from torchy_baselines.common.vec_env import DummyVecEnv
-from torchy_baselines.common.identity_env import FakeImageEnv
+from stable_baselines3 import A2C, PPO, SAC, TD3
+from stable_baselines3.common.identity_env import IdentityEnvBox
+from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.identity_env import FakeImageEnv
 
 
 MODEL_LIST = [

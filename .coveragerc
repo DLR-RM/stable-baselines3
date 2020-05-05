@@ -4,7 +4,9 @@ omit =
     tests/*
     setup.py
     # Require graphical interface
-    torchy_baselines/common/results_plotter.py
+    stable_baselines3/common/results_plotter.py
+    # Require ffmpeg
+    stable_baselines3/common/vec_env/vec_video_recorder.py
 
 [report]
 exclude_lines =

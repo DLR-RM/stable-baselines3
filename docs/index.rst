@@ -3,15 +3,15 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Torchy Baselines docs! - Pytorch RL Baselines
-========================================================
+Welcome to Stable Baselines3 docs!
+==================================
 
-`Torchy Baselines <https://github.com/hill-a/stable-baselines>`_ is the PyTorch version of `Stable Baselines <https://github.com/hill-a/stable-baselines>`_,
+`Stable Baselines3 <https://github.com/DLR-RM/stable-baselines3>`_ is the next major version (PyTorch edition) of `Stable Baselines <https://github.com/hill-a/stable-baselines>`_,
 a set of improved implementations of reinforcement learning algorithms.
 
-RL Baselines Zoo (collection of pre-trained agents): https://github.com/araffin/rl-baselines-zoo
+RL Baselines3 Zoo (collection of pre-trained agents): https://github.com/DLR-RM/rl-baselines3-zoo
 
-RL Baselines zoo also offers a simple interface to train, evaluate agents and do hyperparameter tuning.
+RL Baselines3 Zoo also offers a simple interface to train, evaluate agents and do hyperparameter tuning.
 
 
 
@@ -41,19 +41,19 @@ RL Baselines zoo also offers a simple interface to train, evaluate agents and do
   misc/changelog
 
 
-Citing Torchy Baselines
------------------------
+Citing Stable Baselines3
+------------------------
 To cite this project in publications:
 
 .. code-block:: bibtex
 
-    @misc{torchy-baselines,
+    @misc{stable-baselines3,
       author = {Raffin, Antonin and Hill, Ashley and Ernestus, Maximilian and Gleave, Adam and Kanervisto, Anssi and Dormann, Noah},
-      title = {Torchy Baselines},
+      title = {Stable Baselines3},
       year = {2019},
       publisher = {GitHub},
       journal = {GitHub repository},
-      howpublished = {\url{https://github.com/araffin/torchy-baselines}},
+      howpublished = {\url{https://github.com/DLR-RM/stable-baselines3}},
     }
 
 Indices and tables

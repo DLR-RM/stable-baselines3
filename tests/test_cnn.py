@@ -3,8 +3,8 @@ import os
 import numpy as np
 import pytest
 
-from torchy_baselines import A2C, PPO, SAC, TD3
-from torchy_baselines.common.identity_env import FakeImageEnv
+from stable_baselines3 import A2C, PPO, SAC, TD3
+from stable_baselines3.common.identity_env import FakeImageEnv
 
 SAVE_PATH = './cnn_model.zip'
 

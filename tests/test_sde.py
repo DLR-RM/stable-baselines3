@@ -2,7 +2,7 @@ import pytest
 import torch as th
 from torch.distributions import Normal
 
-from torchy_baselines import A2C, TD3, SAC, PPO
+from stable_baselines3 import A2C, TD3, SAC, PPO
 
 
 def test_state_dependent_exploration_grad():

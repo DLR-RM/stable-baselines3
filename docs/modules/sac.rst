@@ -1,6 +1,6 @@
 .. _sac:
 
-.. automodule:: torchy_baselines.sac
+.. automodule:: stable_baselines3.sac
 
 
 SAC
@@ -14,7 +14,7 @@ A key feature of SAC, and a major difference with common RL algorithms, is that 
 
 .. warning::
 
-  The SAC model does not support ``torchy_baselines.common.policies`` because it uses double q-values
+  The SAC model does not support ``stable_baselines3.common.policies`` because it uses double q-values
   and value estimation, as a result it must use its own policy models (see :ref:`sac_policies`).
 
 
@@ -72,9 +72,9 @@ Example
   import gym
   import numpy as np
 
-  from torchy_baselines.sac.policies import MlpPolicy
-  from torchy_baselines.common.vec_env import DummyVecEnv
-  from torchy_baselines import SAC
+  from stable_baselines3.sac.policies import MlpPolicy
+  from stable_baselines3.common.vec_env import DummyVecEnv
+  from stable_baselines3 import SAC
 
   env = gym.make('Pendulum-v0')
   env = DummyVecEnv([lambda: env])

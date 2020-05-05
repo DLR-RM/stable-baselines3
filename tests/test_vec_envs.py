@@ -7,7 +7,7 @@ import pytest
 import gym
 import numpy as np
 
-from torchy_baselines.common.vec_env import DummyVecEnv, SubprocVecEnv, VecNormalize, VecFrameStack
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecNormalize, VecFrameStack
 
 N_ENVS = 3
 VEC_ENV_CLASSES = [DummyVecEnv, SubprocVecEnv]

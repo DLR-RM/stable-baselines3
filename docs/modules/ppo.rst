@@ -1,6 +1,6 @@
 .. _ppo2:
 
-.. automodule:: torchy_baselines.ppo
+.. automodule:: stable_baselines3.ppo
 
 PPO
 ===
@@ -53,9 +53,9 @@ Train a PPO agent on `Pendulum-v0` using 4 processes.
 
    import gym
 
-   from torchy_baselines.ppo.policies import MlpPolicy
-   from torchy_baselines.common.vec_env import SubprocVecEnv
-   from torchy_baselines import PPO
+   from stable_baselines3.ppo.policies import MlpPolicy
+   from stable_baselines3.common.vec_env import SubprocVecEnv
+   from stable_baselines3 import PPO
 
    # multiprocess environment
    n_cpu = 4

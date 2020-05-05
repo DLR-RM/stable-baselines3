@@ -111,7 +111,7 @@ Pre-Release 0.2.0 (2020-02-14)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-- Python 2 support was dropped, Torchy Baselines now requires Python 3.6 or above
+- Python 2 support was dropped, Stable Baselines3 now requires Python 3.6 or above
 - Return type of ``evaluation.evaluate_policy()`` has been changed
 - Refactored the replay buffer to avoid transformation between PyTorch and NumPy
 - Created `OffPolicyRLModel` base class
@@ -160,7 +160,7 @@ New Features:
 Maintainers
 -----------
 
-Torchy-Baselines is currently maintained by `Antonin Raffin`_ (aka `@araffin`_).
+Stable-Baselines3 is currently maintained by `Antonin Raffin`_ (aka `@araffin`_).
 
 .. _Antonin Raffin: https://araffin.github.io/
 .. _@araffin: https://github.com/araffin

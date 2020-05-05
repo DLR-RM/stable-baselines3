@@ -1,4 +1,4 @@
-Large portion of the code of Torchy-Baselines (in `common/`) were ported from Stable-Baselines, a fork of OpenAI Baselines,
+Large portion of the code of Stable-Baselines3 (in `common/`) were ported from Stable-Baselines, a fork of OpenAI Baselines,
 both licensed under the MIT License:
 
 before the fork (June 2018):

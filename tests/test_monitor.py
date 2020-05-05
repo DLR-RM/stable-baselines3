@@ -5,7 +5,7 @@ import os
 import pandas
 import gym
 
-from torchy_baselines.common.monitor import Monitor, get_monitor_files, load_results
+from stable_baselines3.common.monitor import Monitor, get_monitor_files, load_results
 
 
 def test_monitor(tmp_path):

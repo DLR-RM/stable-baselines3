@@ -1,7 +1,7 @@
 import pytest
 import torch as th
 
-from torchy_baselines import A2C, PPO, SAC, TD3
+from stable_baselines3 import A2C, PPO, SAC, TD3
 
 
 @pytest.mark.parametrize('net_arch', [

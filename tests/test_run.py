@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from torchy_baselines import A2C, PPO, SAC, TD3
-from torchy_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
+from stable_baselines3 import A2C, PPO, SAC, TD3
+from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 
 normal_action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
 

@@ -152,7 +152,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'TorchyBaselinesdoc'
+htmlhelp_basename = 'StableBaselines3doc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -179,7 +179,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'TorchyBaselines.tex', 'Stable Baselines3 Documentation',
+    (master_doc, 'StableBaselines3.tex', 'Stable Baselines3 Documentation',
      'Stable Baselines3 Contributors', 'manual'),
 ]
 
@@ -189,7 +189,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'torchybaselines', 'Stable Baselines3 Documentation',
+    (master_doc, 'stablebaselines3', 'Stable Baselines3 Documentation',
      [author], 1)
 ]
 
@@ -200,8 +200,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'TorchyBaselines', 'Stable Baselines3 Documentation',
-     author, 'TorchyBaselines', 'One line description of project.',
+    (master_doc, 'StableBaselines3', 'Stable Baselines3 Documentation',
+     author, 'StableBaselines3', 'One line description of project.',
      'Miscellaneous'),
 ]
 
@@ -214,3 +214,7 @@ texinfo_documents = [
 #     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
 #     'torch': ('http://pytorch.org/docs/master/', None),
 # }
+
+# kornia's hack to get rtd builder to install latest pytorch
+# if 'READTHEDOCS' in os.environ:
+#     os.system('pip install torch==1.5.0+cpu torchvision==0.6.0+cpu -f https://download.pytorch.org/whl/torch_stable.html')

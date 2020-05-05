@@ -6,12 +6,12 @@
 Welcome to Stable Baselines3 docs!
 ==================================
 
-`Stable Baselines3 <https://github.com/hill-a/stable-baselines>`_ is the PyTorch version of `Stable Baselines <https://github.com/hill-a/stable-baselines>`_,
+`Stable Baselines3 <https://github.com/DLR-RM/stable-baselines3>`_ is the next major version (PyTorch edition) of `Stable Baselines <https://github.com/hill-a/stable-baselines>`_,
 a set of improved implementations of reinforcement learning algorithms.
 
-RL Baselines Zoo (collection of pre-trained agents): https://github.com/araffin/rl-baselines-zoo
+RL Baselines3 Zoo (collection of pre-trained agents): https://github.com/DLR-RM/rl-baselines3-zoo
 
-RL Baselines zoo also offers a simple interface to train, evaluate agents and do hyperparameter tuning.
+RL Baselines3 Zoo also offers a simple interface to train, evaluate agents and do hyperparameter tuning.
 
 
 

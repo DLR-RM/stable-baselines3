@@ -3,8 +3,10 @@
 Changelog
 ==========
 
-Pre-Release 0.5.0a2 (WIP)
+Pre-Release 0.5.0 (2020-05-05)
 ------------------------------
+
+**CnnPolicy support for image observations, complete saving/loading for policies**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -30,6 +32,7 @@ Others:
 ^^^^^^^
 - Cleanup rollout return
 - Added ``get_device`` util to manage PyTorch devices
+- Added type hints to logger + use f-strings
 
 Documentation:
 ^^^^^^^^^^^^^^

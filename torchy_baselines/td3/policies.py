@@ -4,10 +4,11 @@ import gym
 import torch as th
 import torch.nn as nn
 
-from torchy_baselines.common.preprocessing import get_action_dim, get_obs_dim
+from torchy_baselines.common.preprocessing import get_action_dim
 from torchy_baselines.common.policies import (BasePolicy, register_policy, create_mlp,
-                                              create_sde_features_extractor)
-from torchy_baselines.common.distributions import StateDependentNoiseDistribution, Distribution
+                                              create_sde_features_extractor, NatureCNN,
+                                              BaseFeaturesExtractor, FlattenExtractor)
+from torchy_baselines.common.distributions import StateDependentNoiseDistribution
 
 
 class Actor(BasePolicy):
@@ -146,7 +147,7 @@ class Actor(BasePolicy):
         given the observations. Only useful when using SDE.
 
         :param obs: (th.Tensor)
-        :param action: (th.Tensor)
+        :param actions: (th.Tensor)
         :return: (th.Tensor, th.Tensor) log likelihood of taking those actions
             and entropy of the action distribution.
         """
@@ -221,12 +222,15 @@ class Critic(BasePolicy):
         self.q2_net = nn.Sequential(*q2_net)
 
     def forward(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
-        features = self.extract_features(obs)
+        # Learn the features extractor using the policy loss only
+        with th.no_grad():
+            features = self.extract_features(obs)
         qvalue_input = th.cat([features, actions], dim=1)
         return self.q1_net(qvalue_input), self.q2_net(qvalue_input)
 
     def q1_forward(self, obs: th.Tensor, actions: th.Tensor) -> th.Tensor:
-        features = self.extract_features(obs)
+        with th.no_grad():
+            features = self.extract_features(obs)
         return self.q1_net(th.cat([features, actions], dim=1))
 
 
@@ -262,7 +266,8 @@ class ValueFunction(BasePolicy):
         self.vf_net = nn.Sequential(*vf_net)
 
     def forward(self, obs: th.Tensor) -> th.Tensor:
-        features = self.extract_features(obs)
+        with th.no_grad():
+            features = self.extract_features(obs)
         return self.vf_net(features)
 
 
@@ -284,9 +289,12 @@ class TD3Policy(BasePolicy):
     :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` when using SDE to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
+    :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
+    :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
+        to pass to the feature extractor.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
-    :param optimizer: (Type[th.optim.Optimizer]) The optimizer to use,
+    :param optimizer_class: (Type[th.optim.Optimizer]) The optimizer to use,
         ``th.optim.Adam`` by default
     :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
@@ -303,24 +311,29 @@ class TD3Policy(BasePolicy):
                  lr_sde: float = 3e-4,
                  sde_net_arch: Optional[List[int]] = None,
                  use_expln: bool = False,
+                 features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
+                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
                  normalize_images: bool = True,
-                 optimizer: Type[th.optim.Optimizer] = th.optim.Adam,
+                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
                  optimizer_kwargs: Optional[Dict[str, Any]] = None):
-        super(TD3Policy, self).__init__(observation_space, action_space, device, squash_output=True)
+        super(TD3Policy, self).__init__(observation_space, action_space,
+                                        device,
+                                        features_extractor_class,
+                                        features_extractor_kwargs,
+                                        optimizer_class=optimizer_class,
+                                        optimizer_kwargs=optimizer_kwargs,
+                                        squash_output=True)
 
         # Default network architecture, from the original paper
         if net_arch is None:
-            net_arch = [400, 300]
+            if features_extractor_class == FlattenExtractor:
+                net_arch = [400, 300]
+            else:
+                net_arch = []
 
-        if optimizer_kwargs is None:
-            optimizer_kwargs = {}
-
-        self.optimizer_class = optimizer
-        self.optimizer_kwargs = optimizer_kwargs
-
-        # In the future, features_extractor will be replaced with a CNN
-        self.features_extractor = nn.Flatten()
-        self.features_dim = get_obs_dim(self.observation_space)
+        self.features_extractor = features_extractor_class(self.observation_space,
+                                                           **self.features_extractor_kwargs)
+        self.features_dim = self.features_extractor.features_dim
 
         self.net_arch = net_arch
         self.activation_fn = activation_fn
@@ -383,8 +396,10 @@ class TD3Policy(BasePolicy):
              sde_net_arch=self.actor_kwargs['sde_net_arch'],
              use_expln=self.actor_kwargs['use_expln'],
              lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
-             optimizer=self.optimizer_class,
-             optimizer_kwargs=self.optimizer_kwargs
+             optimizer_class=self.optimizer_class,
+             optimizer_kwargs=self.optimizer_kwargs,
+             features_extractor_class=self.features_extractor_class,
+             features_extractor_kwargs=self.features_extractor_kwargs
         ))
         return data
 
@@ -406,4 +421,70 @@ class TD3Policy(BasePolicy):
 
 MlpPolicy = TD3Policy
 
+
+class CnnPolicy(TD3Policy):
+    """
+    Policy class (with both actor and critic) for TD3.
+
+    :param observation_space: (gym.spaces.Space) Observation space
+    :param action_space: (gym.spaces.Space) Action space
+    :param lr_schedule: (Callable) Learning rate schedule (could be constant)
+    :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
+    :param device: (Union[th.device, str]) Device on which the code should run.
+    :param activation_fn: (Type[nn.Module]) Activation function
+    :param use_sde: (bool) Whether to use State Dependent Exploration or not
+    :param log_std_init: (float) Initial value for the log standard deviation
+    :param sde_net_arch: ([int]) Network architecture for extracting features
+        when using SDE. If None, the latent features from the policy will be used.
+        Pass an empty list to use the states as features.
+    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` when using SDE to ensure
+        a positive standard deviation (cf paper). It allows to keep variance
+        above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
+    :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
+    :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
+        to pass to the feature extractor.
+    :param normalize_images: (bool) Whether to normalize images or not,
+         dividing by 255.0 (True by default)
+    :param optimizer_class: (Type[th.optim.Optimizer]) The optimizer to use,
+        ``th.optim.Adam`` by default
+    :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
+        excluding the learning rate, to pass to the optimizer
+    """
+    def __init__(self, observation_space: gym.spaces.Space,
+                 action_space: gym.spaces.Space,
+                 lr_schedule: Callable,
+                 net_arch: Optional[List[int]] = None,
+                 device: Union[th.device, str] = 'auto',
+                 activation_fn: Type[nn.Module] = nn.ReLU,
+                 use_sde: bool = False,
+                 log_std_init: float = -3,
+                 clip_noise: Optional[float] = None,
+                 lr_sde: float = 3e-4,
+                 sde_net_arch: Optional[List[int]] = None,
+                 use_expln: bool = False,
+                 features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
+                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+                 normalize_images: bool = True,
+                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
+                 optimizer_kwargs: Optional[Dict[str, Any]] = None):
+        super(CnnPolicy, self).__init__(observation_space,
+                                        action_space,
+                                        lr_schedule,
+                                        net_arch,
+                                        device,
+                                        activation_fn,
+                                        use_sde,
+                                        log_std_init,
+                                        clip_noise,
+                                        lr_sde,
+                                        sde_net_arch,
+                                        use_expln,
+                                        features_extractor_class,
+                                        features_extractor_kwargs,
+                                        normalize_images,
+                                        optimizer_class,
+                                        optimizer_kwargs)
+
+
 register_policy("MlpPolicy", MlpPolicy)
+register_policy("CnnPolicy", CnnPolicy)

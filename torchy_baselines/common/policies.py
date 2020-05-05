@@ -7,8 +7,83 @@ import torch as th
 import torch.nn as nn
 import numpy as np
 
-from torchy_baselines.common.preprocessing import preprocess_obs
-from torchy_baselines.common.utils import get_device, get_schedule_fn
+from torchy_baselines.common.preprocessing import preprocess_obs, get_flattened_obs_dim, is_image_space
+from torchy_baselines.common.utils import get_device
+from torchy_baselines.common.vec_env import VecTransposeImage
+
+
+class BaseFeaturesExtractor(nn.Module):
+    """
+    Base class that represents a features extractor.
+
+    :param observation_space: (gym.Space)
+    :param features_dim: (int) Number of features extracted.
+    """
+
+    def __init__(self, observation_space: gym.Space, features_dim: int = 0):
+        super(BaseFeaturesExtractor, self).__init__()
+        assert features_dim > 0
+        self._observation_space = observation_space
+        self._features_dim = features_dim
+
+    @property
+    def features_dim(self) -> int:
+        return self._features_dim
+
+    def forward(self, observations: th.Tensor) -> th.Tensor:
+        raise NotImplementedError()
+
+
+class FlattenExtractor(BaseFeaturesExtractor):
+    """
+    Feature extract that flatten the input.
+    Used as a placeholder when feature extraction is not needed.
+
+    :param observation_space: (gym.Space)
+    """
+
+    def __init__(self, observation_space: gym.Space):
+        super(FlattenExtractor, self).__init__(observation_space, get_flattened_obs_dim(observation_space))
+        self.flatten = nn.Flatten()
+
+    def forward(self, observations: th.Tensor) -> th.Tensor:
+        return self.flatten(observations)
+
+
+class NatureCNN(BaseFeaturesExtractor):
+    """
+    CNN from DQN nature paper: https://arxiv.org/abs/1312.5602
+
+    :param observation_space: (gym.Space)
+    :param features_dim: (int) Number of features extracted.
+        This corresponds to the number of unit for the last layer.
+    """
+
+    def __init__(self, observation_space: gym.spaces.Box,
+                 features_dim: int = 512):
+        super(NatureCNN, self).__init__(observation_space, features_dim)
+        # We assume CxWxH images (channels first)
+        # Re-ordering will be done by pre-preprocessing or wrapper
+        assert is_image_space(observation_space), ('You should use NatureCNN '
+                                                   f'only with images not with {observation_space} '
+                                                   '(you are probably using `CnnPolicy` instead of `MlpPolicy`)')
+        n_input_channels = observation_space.shape[0]
+        self.cnn = nn.Sequential(nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
+                                 nn.ReLU(),
+                                 nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
+                                 nn.ReLU(),
+                                 nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=0),
+                                 nn.ReLU(),
+                                 nn.Flatten())
+
+        # Compute shape by doing one forward pass
+        with th.no_grad():
+            n_flatten = self.cnn(th.as_tensor(observation_space.sample()[None]).float()).shape[1]
+
+        self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
+
+    def forward(self, observations: th.Tensor) -> th.Tensor:
+        return self.linear(self.cnn(observations))
 
 
 class BasePolicy(nn.Module):
@@ -20,25 +95,50 @@ class BasePolicy(nn.Module):
     :param device: (Union[th.device, str]) Device on which the code should run.
     :param squash_output: (bool) For continuous actions, whether the output is squashed
         or not using a ``tanh()`` function.
+    :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
+    :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
+        to pass to the feature extractor.
     :param features_extractor: (nn.Module) Network to extract features
         (a CNN when using images, a nn.Flatten() layer otherwise)
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
+    :param optimizer_class: (Type[th.optim.Optimizer]) The optimizer to use,
+        ``th.optim.Adam`` by default
+    :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
+        excluding the learning rate, to pass to the optimizer
     """
+
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  device: Union[th.device, str] = 'auto',
-                 squash_output: bool = False,
+                 features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
+                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
                  features_extractor: Optional[nn.Module] = None,
-                 normalize_images: bool = True):
+                 normalize_images: bool = True,
+                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
+                 optimizer_kwargs: Optional[Dict[str, Any]] = None,
+                 squash_output: bool = False):
         super(BasePolicy, self).__init__()
+
+        if optimizer_kwargs is None:
+            optimizer_kwargs = {}
+
+        if features_extractor_kwargs is None:
+            features_extractor_kwargs = {}
+
         self.observation_space = observation_space
         self.action_space = action_space
         self.device = get_device(device)
         self.features_extractor = features_extractor
         self.normalize_images = normalize_images
         self._squash_output = squash_output
+
+        self.optimizer_class = optimizer_class
+        self.optimizer_kwargs = optimizer_kwargs
         self.optimizer = None  # type: Optional[th.optim.Optimizer]
+
+        self.features_extractor_class = features_extractor_class
+        self.features_extractor_kwargs = features_extractor_kwargs
 
     def extract_features(self, obs: th.Tensor) -> th.Tensor:
         """
@@ -61,7 +161,7 @@ class BasePolicy(nn.Module):
         """
         Orthogonal initialization (used in PPO and A2C)
         """
-        if isinstance(module, nn.Linear):
+        if isinstance(module, (nn.Linear, nn.Conv2d)):
             nn.init.orthogonal_(module.weight, gain=gain)
             module.bias.data.fill_(0.0)
 
@@ -102,9 +202,24 @@ class BasePolicy(nn.Module):
         # if mask is None:
         #     mask = [False for _ in range(self.n_envs)]
         observation = np.array(observation)
+
+        # Handle the different cases for images
+        # as PyTorch use channel first format
+        if is_image_space(self.observation_space):
+            if (observation.shape == self.observation_space.shape or
+                    observation.shape[1:] == self.observation_space.shape):
+                pass
+            else:
+                # Try to re-order the channels
+                transpose_obs = VecTransposeImage.transpose_image(observation)
+                if (transpose_obs.shape == self.observation_space.shape
+                        or transpose_obs.shape[1:] == self.observation_space.shape):
+                    observation = transpose_obs
+
         vectorized_env = self._is_vectorized_observation(observation, self.observation_space)
 
         observation = observation.reshape((-1,) + self.observation_space.shape)
+
         observation = th.as_tensor(observation).to(self.device)
         with th.no_grad():
             actions = self._predict(observation, deterministic=deterministic)
@@ -289,7 +404,8 @@ def create_mlp(input_dim: int,
         modules.append(activation_fn())
 
     if output_dim > 0:
-        modules.append(nn.Linear(net_arch[-1], output_dim))
+        last_layer_dim = net_arch[-1] if len(net_arch) > 0 else input_dim
+        modules.append(nn.Linear(last_layer_dim, output_dim))
     if squash_output:
         modules.append(nn.Tanh())
     return modules
@@ -388,6 +504,7 @@ class MlpExtractor(nn.Module):
     :param activation_fn: (Type[nn.Module]) The activation function to use for the networks.
     :param device: (th.device)
     """
+
     def __init__(self, feature_dim: int,
                  net_arch: List[Union[int, Dict[str, List[int]]]],
                  activation_fn: Type[nn.Module],

@@ -6,7 +6,6 @@ import numpy as np
 
 from torchy_baselines.common import logger
 from torchy_baselines.common.base_class import OffPolicyRLModel
-from torchy_baselines.common.buffers import ReplayBuffer
 from torchy_baselines.common.type_aliases import GymEnv, MaybeCallback
 from torchy_baselines.common.noise import ActionNoise
 from torchy_baselines.sac.policies import SACPolicy

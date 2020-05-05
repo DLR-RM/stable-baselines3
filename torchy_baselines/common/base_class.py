@@ -14,7 +14,8 @@ import numpy as np
 from torchy_baselines.common import logger
 from torchy_baselines.common.policies import BasePolicy, get_policy_from_name
 from torchy_baselines.common.utils import set_random_seed, get_schedule_fn, update_learning_rate, get_device
-from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize
+from torchy_baselines.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize, VecTransposeImage
+from torchy_baselines.common.preprocessing import is_image_space
 from torchy_baselines.common.save_util import data_to_json, json_to_data, recursive_getattr, recursive_setattr
 from torchy_baselines.common.type_aliases import GymEnv, TensorDict, RolloutReturn, MaybeCallback
 from torchy_baselines.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
@@ -123,18 +124,28 @@ class BaseRLModel(ABC):
                     env = Monitor(env, filename=None)
                 env = DummyVecEnv([lambda: env])
 
+            env = self._wrap_env(env)
+
             self.observation_space = env.observation_space
             self.action_space = env.action_space
-            if not isinstance(env, VecEnv):
-                if self.verbose >= 1:
-                    print("Wrapping the env in a DummyVecEnv.")
-                env = DummyVecEnv([lambda: env])
             self.n_envs = env.num_envs
             self.env = env
 
             if not support_multi_env and self.n_envs > 1:
                 raise ValueError("Error: the model does not support multiple envs requires a single vectorized"
                                  " environment.")
+
+    def _wrap_env(self, env: GymEnv) -> VecEnv:
+        if not isinstance(env, VecEnv):
+            if self.verbose >= 1:
+                print("Wrapping the env in a DummyVecEnv.")
+            env = DummyVecEnv([lambda: env])
+
+        if is_image_space(env.observation_space) and not isinstance(env, VecTransposeImage):
+            if self.verbose >= 1:
+                print("Wrapping the env in a VecTransposeImage.")
+            env = VecTransposeImage(env)
+        return env
 
     @abstractmethod
     def _setup_model(self) -> None:
@@ -154,8 +165,7 @@ class BaseRLModel(ABC):
             eval_env = self.eval_env
 
         if eval_env is not None:
-            if not isinstance(eval_env, VecEnv):
-                eval_env = DummyVecEnv([lambda: eval_env])
+            eval_env = self._wrap_env(eval_env)
             assert eval_env.num_envs == 1
         return eval_env
 
@@ -216,9 +226,9 @@ class BaseRLModel(ABC):
         return self._vec_normalize_env
 
     @staticmethod
-    def check_env(env: GymEnv, observation_space: gym.spaces.Space, action_space: gym.spaces.Space) -> bool:
+    def check_env(env: GymEnv, observation_space: gym.spaces.Space, action_space: gym.spaces.Space):
         """
-        Checks the validity of the environment and returns if it is consistent.
+        Checks the validity of the environment to load vs the one used for training.
         Checked parameters:
         - observation_space
         - action_space
@@ -226,14 +236,15 @@ class BaseRLModel(ABC):
         :param env: (GymEnv)
         :param observation_space: (gym.spaces.Space)
         :param action_space: (gym.spaces.Space)
-        :return: (bool) True if environment seems to be coherent
         """
-        if observation_space != env.observation_space:
-            return False
+        if (observation_space != env.observation_space
+            # Special cases for images that need to be transposed
+            and not (is_image_space(env.observation_space)
+                     and observation_space == VecTransposeImage.transpose_space(env.observation_space)
+            )):
+            raise ValueError(f'Observation spaces do not match: {observation_space} != {env.observation_space}')
         if action_space != env.action_space:
-            return False
-        # return true if no check failed
-        return True
+            raise ValueError(f'Action spaces do not match: {action_space} != {env.action_space}')
 
     def set_env(self, env: GymEnv) -> None:
         """
@@ -245,15 +256,11 @@ class BaseRLModel(ABC):
 
         :param env: The environment for learning a policy
         """
-        if self.check_env(env, self.observation_space, self.action_space) is False:
-            raise ValueError("The given environment is not compatible with model: "
-                             "observation and action spaces do not match")
+        self.check_env(env, self.observation_space, self.action_space)
         # it must be coherent now
         # if it is not a VecEnv, make it a VecEnv
-        if not isinstance(env, VecEnv):
-            if self.verbose >= 1:
-                print("Wrapping the env in a DummyVecEnv.")
-            env = DummyVecEnv([lambda: env])
+        env = self._wrap_env(env)
+
         self.n_envs = env.num_envs
         self.env = env
 
@@ -328,27 +335,26 @@ class BaseRLModel(ABC):
 
         if 'policy_kwargs' in kwargs and kwargs['policy_kwargs'] != data['policy_kwargs']:
             raise ValueError(f"The specified policy kwargs do not equal the stored policy kwargs."
-                             "Stored kwargs: {data['policy_kwargs']}, specified kwargs: {kwargs['policy_kwargs']}")
+                             f"Stored kwargs: {data['policy_kwargs']}, specified kwargs: {kwargs['policy_kwargs']}")
 
         # check if observation space and action space are part of the saved parameters
         if ("observation_space" not in data or "action_space" not in data) and "env" not in data:
             raise ValueError("The observation_space and action_space was not given, can't verify new environments")
         # check if given env is valid
-        if env is not None and cls.check_env(env, data["observation_space"], data["action_space"]) is False:
-            raise ValueError("The given environment does not comply to the model")
+        if env is not None:
+            cls.check_env(env, data["observation_space"], data["action_space"])
         # if no new env was given use stored env if possible
         if env is None and "env" in data:
             env = data["env"]
 
-        # first create model, but only setup if a env was given
         # noinspection PyArgumentList
-        model = cls(policy=data["policy_class"], env=env, device='auto', _init_setup_model=env is not None)
+        model = cls(policy=data["policy_class"], env=env, device='auto', _init_setup_model=False)
 
         # load parameters
         model.__dict__.update(data)
         model.__dict__.update(kwargs)
         if not hasattr(model, "_setup_model") and len(params) > 0:
-            raise NotImplementedError("loading was executed on a model that has no means to create the policies")
+            raise NotImplementedError(f"{cls} has no `_setup_model()` method")
         model._setup_model()
 
         # put state_dicts back in place
@@ -873,7 +879,7 @@ class OffPolicyRLModel(BaseRLModel):
                     action_noise.reset()
 
                 # Display training infos
-                if self.verbose >= 1 and log_interval is not None and (self._episode_num) % log_interval == 0:
+                if self.verbose >= 1 and log_interval is not None and self._episode_num % log_interval == 0:
                     fps = int(self.num_timesteps / (time.time() - self.start_time))
                     logger.logkv("episodes", self._episode_num)
                     if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:

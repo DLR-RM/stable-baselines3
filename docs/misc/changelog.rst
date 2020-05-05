@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.5.0a1 (WIP)
+Pre-Release 0.5.0a2 (WIP)
 ------------------------------
 
 Breaking Changes:
@@ -12,9 +12,10 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-- Added ``optimizer`` and ``optimizer_kwargs`` to ``policy_kwargs`` in order to easily
+- Added ``optimizer_class`` and ``optimizer_kwargs`` to ``policy_kwargs`` in order to easily
   customizer optimizers
 - Complete independent save/load for policies
+- Add ``CnnPolicy`` and ``VecTransposeImage`` to support images as input
 
 
 Bug Fixes:

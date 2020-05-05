@@ -56,12 +56,12 @@ make spelling
 To cite this repository in publications:
 
 ```
-@misc{torchy-baselines,
+@misc{stable-baselines3,
   author = {Raffin, Antonin and Hill, Ashley and Ernestus, Maximilian and Gleave, Adam and Kanervisto, Anssi and Dormann, Noah},
   title = {Stable Baselines3},
   year = {2019},
   publisher = {GitHub},
   journal = {GitHub repository},
-  howpublished = {\url{https://github.com/araffin/torchy-baselines}},
+  howpublished = {\url{https://github.com/DLR-RM/stable-baselines3}},
 }
 ```

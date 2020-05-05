@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Stable Baselines3 docs! - Pytorch RL Baselines
-========================================================
+Welcome to Stable Baselines3 docs!
+==================================
 
 `Stable Baselines3 <https://github.com/hill-a/stable-baselines>`_ is the PyTorch version of `Stable Baselines <https://github.com/hill-a/stable-baselines>`_,
 a set of improved implementations of reinforcement learning algorithms.
@@ -42,18 +42,18 @@ RL Baselines zoo also offers a simple interface to train, evaluate agents and do
 
 
 Citing Stable Baselines3
------------------------
+------------------------
 To cite this project in publications:
 
 .. code-block:: bibtex
 
-    @misc{torchy-baselines,
+    @misc{stable-baselines3,
       author = {Raffin, Antonin and Hill, Ashley and Ernestus, Maximilian and Gleave, Adam and Kanervisto, Anssi and Dormann, Noah},
       title = {Stable Baselines3},
       year = {2019},
       publisher = {GitHub},
       journal = {GitHub repository},
-      howpublished = {\url{https://github.com/araffin/torchy-baselines}},
+      howpublished = {\url{https://github.com/DLR-RM/stable-baselines3}},
     }
 
 Indices and tables

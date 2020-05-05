@@ -5,6 +5,8 @@ omit =
     setup.py
     # Require graphical interface
     stable_baselines3/common/results_plotter.py
+    # Require ffmpeg
+    stable_baselines3/common/vec_env/vec_video_recorder.py
 
 [report]
 exclude_lines =

@@ -10,6 +10,8 @@ from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
 from stable_baselines3.common.vec_env.vec_frame_stack import VecFrameStack
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines3.common.vec_env.vec_transpose import VecTransposeImage
+from stable_baselines3.common.vec_env.vec_video_recorder import VecVideoRecorder
+from stable_baselines3.common.vec_env.vec_check_nan import VecCheckNan
 
 # Avoid circular import
 if typing.TYPE_CHECKING:

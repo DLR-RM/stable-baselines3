@@ -45,7 +45,7 @@ setup(name='stable_baselines3',
       },
       description='Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.',
       author='Antonin Raffin',
-      url='',
+      url='https://github.com/DLR-RM/stable-baselines3',
       author_email='antonin.raffin@dlr.de',
       keywords="reinforcement-learning-algorithms reinforcement-learning machine-learning "
                "gym openai stable baselines toolbox python data-science",

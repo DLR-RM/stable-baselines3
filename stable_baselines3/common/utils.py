@@ -11,14 +11,17 @@ def set_random_seed(seed: int, using_cuda: bool = False) -> None:
     :param seed: (int)
     :param using_cuda: (bool)
     """
+    # Seed python RNG
     random.seed(seed)
+    # Seed numpy RNG
     np.random.seed(seed)
+    # seed the RNG for all devices (both CPU and CUDA)
     th.manual_seed(seed)
 
     if using_cuda:
-        # Make CuDNN Determinist
+        # Deterministic operations for CuDNN, it may impact performances
         th.backends.cudnn.deterministic = True
-        th.cuda.manual_seed(seed)
+        th.backends.cudnn.benchmark = False
 
 
 # From stable baselines

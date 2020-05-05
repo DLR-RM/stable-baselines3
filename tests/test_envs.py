@@ -5,11 +5,11 @@ import numpy as np
 
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
-from stable_baselines3.common.identity_env import (IdentityEnv, IdentityEnvBox,
+from stable_baselines3.common.identity_env import (IdentityEnv, IdentityEnvBox, FakeImageEnv,
                                                   IdentityEnvMultiBinary, IdentityEnvMultiDiscrete,)
 
 ENV_CLASSES = [BitFlippingEnv, IdentityEnv, IdentityEnvBox, IdentityEnvMultiBinary,
-               IdentityEnvMultiDiscrete]
+               IdentityEnvMultiDiscrete, FakeImageEnv]
 
 
 @pytest.mark.parametrize("env_id", ['CartPole-v0', 'Pendulum-v0'])
@@ -43,7 +43,7 @@ def test_high_dimension_action_space():
     Test for continuous action space
     with more than one action.
     """
-    env = gym.make('Pendulum-v0')
+    env = FakeImageEnv()
     # Patch the action space
     env.action_space = spaces.Box(low=-1, high=1, shape=(20,), dtype=np.float32)
     # Patch to avoid error
@@ -68,7 +68,7 @@ def test_high_dimension_action_space():
     spaces.Dict({"position": spaces.Discrete(5)}),
 ])
 def test_non_default_spaces(new_obs_space):
-    env = gym.make('BreakoutNoFrameskip-v4')
+    env = FakeImageEnv()
     env.observation_space = new_obs_space
     # Patch methods to avoid errors
     env.reset = new_obs_space.sample

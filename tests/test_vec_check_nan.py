@@ -2,7 +2,7 @@ import gym
 from gym import spaces
 import numpy as np
 
-from stable_baselines.common.vec_env import DummyVecEnv, VecCheckNan
+from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
 
 
 class NanAndInfEnv(gym.Env):

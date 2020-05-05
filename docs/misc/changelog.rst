@@ -14,6 +14,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Added env checker (Sync with Stable Baselines)
 - Added ``VecCheckNan`` and ``VecVideoRecorder`` (Sync with Stable Baselines)
+- Added determinism tests
 
 Bug Fixes:
 ^^^^^^^^^^

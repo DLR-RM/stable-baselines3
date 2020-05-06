@@ -13,6 +13,7 @@ _build/
 *.npz
 *.pth
 .pytype/
+git_rewrite_commit_history.sh
 
 # Setuptools distribution and build folders.
 /dist/

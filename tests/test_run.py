@@ -30,6 +30,6 @@ def test_sac(ent_coef):
 
 
 def test_dqn():
-    model = DQN('MlpPolicy', 'CartPole-v0', policy_kwargs=dict(net_arch=[64, 64]),
+    model = DQN('MlpPolicy', 'CartPole-v1', policy_kwargs=dict(net_arch=[64, 64]),
                 learning_starts=500, buffer_size=500, learning_rate=3e-4, verbose=1, create_eval_env=True)
     model.learn(total_timesteps=1000, eval_freq=500)

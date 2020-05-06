@@ -18,7 +18,7 @@ class QNetwork(BasePolicy):
     :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (Type[nn.Module]) Activation function
-    :param epsilon: (float) Epsilon for greedy policy
+    :param epsilon: (float) Exploration fraction (for the epsilon-greedy exploration)
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
     """
@@ -105,7 +105,7 @@ class DQNPolicy(BasePolicy):
     :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (Type[nn.Module]) Activation function
-    :param epsilon: (float) Epsilon for greedy policy
+    :param epsilon: (float) Exploration fraction (for the epsilon-greedy exploration)
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
     :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
         to pass to the feature extractor.
@@ -217,4 +217,52 @@ class DQNPolicy(BasePolicy):
 
 MlpPolicy = DQNPolicy
 
+
+class CnnPolicy(DQNPolicy):
+    """
+    Policy class for DQN.
+
+    :param observation_space: (gym.spaces.Space) Observation space
+    :param action_space: (gym.spaces.Space) Action space
+    :param lr_schedule: (callable) Learning rate schedule (could be constant)
+    :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
+    :param device: (str or th.device) Device on which the code should run.
+    :param activation_fn: (Type[nn.Module]) Activation function
+    :param epsilon: (float) Exploration fraction (for the epsilon-greedy exploration)
+    :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
+    :param normalize_images: (bool) Whether to normalize images or not,
+         dividing by 255.0 (True by default)
+    :param optimizer_class: (Type[th.optim.Optimizer]) The optimizer to use,
+        ``th.optim.Adam`` by default
+    :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
+        excluding the learning rate, to pass to the optimizer
+    """
+
+    def __init__(self, observation_space: gym.spaces.Space,
+                 action_space: gym.spaces.Space,
+                 lr_schedule: Callable,
+                 net_arch: Optional[List[int]] = None,
+                 device: Union[th.device, str] = 'auto',
+                 activation_fn: Type[nn.Module] = nn.ReLU,
+                 epsilon: float = 0.05,
+                 features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
+                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+                 normalize_images: bool = True,
+                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
+                 optimizer_kwargs: Optional[Dict[str, Any]] = None):
+        super(CnnPolicy, self).__init__(observation_space,
+                                        action_space,
+                                        lr_schedule,
+                                        net_arch,
+                                        device,
+                                        activation_fn,
+                                        epsilon,
+                                        features_extractor_class,
+                                        features_extractor_kwargs,
+                                        normalize_images,
+                                        optimizer_class,
+                                        optimizer_kwargs)
+
+
 register_policy("MlpPolicy", MlpPolicy)
+register_policy("CnnPolicy", CnnPolicy)

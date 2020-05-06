@@ -31,8 +31,8 @@ def test_save_load(model_class):
 
     :param model_class: (BaseRLModel) A RL model
     """
-    # use discrete for DQN
-    if model_class is DQN:
+    # Use discrete actions for DQN
+    if model_class == DQN:
         env = DummyVecEnv([lambda: IdentityEnv(10)])
     else:
         env = DummyVecEnv([lambda: IdentityEnvBox(10)])
@@ -42,7 +42,7 @@ def test_save_load(model_class):
     model.learn(total_timesteps=500, eval_freq=250)
 
     env.reset()
-    observations = np.concatenate([env.step(env.action_space.sample())[0] for _ in range(10)], axis=0)
+    observations = np.concatenate([env.step([env.action_space.sample()])[0] for _ in range(10)], axis=0)
 
     # Get dictionary of current parameters
     params = deepcopy(model.policy.state_dict())
@@ -154,7 +154,7 @@ def test_exclude_include_saved_params(model_class):
     os.remove("test_save.zip")
 
 
-@pytest.mark.parametrize("model_class", [SAC, TD3,DQN])
+@pytest.mark.parametrize("model_class", [SAC, TD3, DQN])
 def test_save_load_replay_buffer(model_class):
     log_folder = 'logs'
     replay_path = os.path.join(log_folder, 'replay_buffer.pkl')
@@ -211,7 +211,7 @@ def test_save_load_policy(model_class, policy_str):
     model.learn(total_timesteps=500, eval_freq=250)
 
     env.reset()
-    observations = np.concatenate([env.step(env.action_space.sample())[0] for _ in range(10)], axis=0)
+    observations = np.concatenate([env.step([env.action_space.sample()])[0] for _ in range(10)], axis=0)
 
     policy = model.policy
     policy_class = policy.__class__

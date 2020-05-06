@@ -683,6 +683,7 @@ class OffPolicyRLModel(BaseRLModel):
         Default: -1 (only sample at the beginning of the rollout)
     :param use_sde_at_warmup: (bool) Whether to use SDE instead of uniform sampling
         during the warm up phase (before learning starts)
+    :param sde_support: (bool) Whether the model support SDE or not
     """
 
     def __init__(self,
@@ -702,7 +703,8 @@ class OffPolicyRLModel(BaseRLModel):
                  seed: Optional[int] = None,
                  use_sde: bool = False,
                  sde_sample_freq: int = -1,
-                 use_sde_at_warmup: bool = False):
+                 use_sde_at_warmup: bool = False,
+                 sde_support: bool = True):
 
         super(OffPolicyRLModel, self).__init__(policy, env, policy_base, learning_rate,
                                                policy_kwargs, verbose,
@@ -714,7 +716,8 @@ class OffPolicyRLModel(BaseRLModel):
         self.actor = None
         self.replay_buffer = None  # type: Optional[ReplayBuffer]
         # Update policy keyword arguments
-        self.policy_kwargs['use_sde'] = self.use_sde
+        if sde_support:
+            self.policy_kwargs['use_sde'] = self.use_sde
         self.policy_kwargs['device'] = self.device
         # For SDE only
         self.rollout_data = None

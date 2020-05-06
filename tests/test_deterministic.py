@@ -1,13 +1,13 @@
 import pytest
 
-from stable_baselines3 import A2C, PPO, SAC, TD3
+from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
 from stable_baselines3.common.noise import NormalActionNoise
 
 N_STEPS_TRAINING = 3000
 SEED = 0
 
 
-@pytest.mark.parametrize("algo", [A2C, PPO, SAC, TD3])
+@pytest.mark.parametrize("algo", [A2C, DQN, PPO, SAC, TD3])
 def test_deterministic_training_common(algo):
     results = [[], []]
     rewards = [[], []]
@@ -19,8 +19,8 @@ def test_deterministic_training_common(algo):
                        'learning_starts': 100})
     else:
         env_id = 'CartPole-v1'
-        # if algo == DQN:
-        #     kwargs.update({'learning_starts': 100})
+        if algo == DQN:
+            kwargs.update({'learning_starts': 100})
 
     for i in range(2):
         model = algo('MlpPolicy', env_id, seed=SEED, **kwargs)

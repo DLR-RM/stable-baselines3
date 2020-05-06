@@ -76,7 +76,9 @@ class DQN(OffPolicyRLModel):
 
         super(DQN, self).__init__(policy, env, DQNPolicy, learning_rate,
                                   buffer_size, learning_starts, batch_size,
-                                  policy_kwargs, verbose, device, create_eval_env=create_eval_env, seed=seed)
+                                  policy_kwargs, verbose, device,
+                                  create_eval_env=create_eval_env,
+                                  seed=seed, sde_support=False)
 
         assert train_freq > 0, "DQN will soft lock if train_freq is smaller than 1"
         self.train_freq = train_freq

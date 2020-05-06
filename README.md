@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/hill-a/stable-baselines.svg?branch=master)](https://travis-ci.com/hill-a/stable-baselines) [![Documentation Status](https://readthedocs.org/projects/stable-baselines/badge/?version=master)](https://stable-baselines.readthedocs.io/en/master/?badge=master)
 
-# Torchy Baselines
+# Stable Baselines3
 
 PyTorch version of [Stable Baselines](https://github.com/hill-a/stable-baselines), a set of improved implementations of reinforcement learning algorithms.
 
@@ -56,12 +56,12 @@ make spelling
 To cite this repository in publications:
 
 ```
-@misc{torchy-baselines,
+@misc{stable-baselines3,
   author = {Raffin, Antonin and Hill, Ashley and Ernestus, Maximilian and Gleave, Adam and Kanervisto, Anssi and Dormann, Noah},
-  title = {Torchy Baselines},
+  title = {Stable Baselines3},
   year = {2019},
   publisher = {GitHub},
   journal = {GitHub repository},
-  howpublished = {\url{https://github.com/araffin/torchy-baselines}},
+  howpublished = {\url{https://github.com/DLR-RM/stable-baselines3}},
 }
 ```

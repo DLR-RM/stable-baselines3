@@ -1,13 +1,13 @@
 import numpy as np
 import pytest
 
-from torchy_baselines import A2C, PPO, SAC, TD3, DQN
-from torchy_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
+from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
+from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 
-action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
+normal_action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
 
 
-@pytest.mark.parametrize('action_noise', [action_noise, OrnsteinUhlenbeckActionNoise(np.zeros(1), 0.1 * np.ones(1))])
+@pytest.mark.parametrize('action_noise', [normal_action_noise, OrnsteinUhlenbeckActionNoise(np.zeros(1), 0.1 * np.ones(1))])
 def test_td3(action_noise):
     model = TD3('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[64, 64]),
                 learning_starts=100, verbose=1, create_eval_env=True, action_noise=action_noise)

@@ -4,8 +4,8 @@ import shutil
 import pytest
 import gym
 
-from torchy_baselines import A2C, PPO, SAC, TD3, DQN
-from torchy_baselines.common.callbacks import (CallbackList, CheckpointCallback, EvalCallback,
+from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
+from stable_baselines3.common.callbacks import (CallbackList, CheckpointCallback, EvalCallback,
                                                EveryNTimesteps, StopTrainingOnRewardThreshold)
 
 

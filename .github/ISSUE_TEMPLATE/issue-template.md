@@ -13,7 +13,7 @@ If you are submitting a bug report, please fill in the following details.
 If your issue is related to a custom gym environment, please check it first using:
 
 ```python
-from torchy_baselines.common.env_checker import check_env
+from stable_baselines3.common.env_checker import check_env
 
 env = CustomEnv(arg1, ...)
 # It will check your custom environment and output additional warnings if needed
@@ -30,7 +30,7 @@ Please use the [markdown code blocks](https://help.github.com/en/articles/creati
 for both code and stack traces.
 
 ```python
-from torchy_baselines import ...
+from stable_baselines3 import ...
 
 ```
 

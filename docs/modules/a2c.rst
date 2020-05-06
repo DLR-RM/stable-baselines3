@@ -1,6 +1,6 @@
 .. _a2c:
 
-.. automodule:: torchy_baselines.a2c
+.. automodule:: stable_baselines3.a2c
 
 
 A2C
@@ -44,9 +44,9 @@ Train a A2C agent on `CartPole-v1` using 4 processes.
 
   import gym
 
-  from torchy_baselines.common.policies import MlpPolicy
-  from torchy_baselines.common import make_vec_env
-  from torchy_baselines import A2C
+  from stable_baselines3.common.policies import MlpPolicy
+  from stable_baselines3.common import make_vec_env
+  from stable_baselines3 import A2C
 
   # Parallel environments
   env = make_vec_env('CartPole-v1', n_envs=4)

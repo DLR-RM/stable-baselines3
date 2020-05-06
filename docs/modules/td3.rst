@@ -1,6 +1,6 @@
 .. _td3:
 
-.. automodule:: torchy_baselines.td3
+.. automodule:: stable_baselines3.td3
 
 
 TD3
@@ -14,7 +14,7 @@ We recommend reading `OpenAI Spinning guide on TD3 <https://spinningup.openai.co
 
 .. warning::
 
-  The TD3 model does not support ``torchy_baselines.common.policies`` because it uses double q-values
+  The TD3 model does not support ``stable_baselines3.common.policies`` because it uses double q-values
   estimation, as a result it must use its own policy models (see :ref:`td3_policies`).
 
 
@@ -64,9 +64,9 @@ Example
 
   import numpy as np
 
-  from torchy_baselines import TD3
-  from torchy_baselines.td3.policies import MlpPolicy
-  from torchy_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
+  from stable_baselines3 import TD3
+  from stable_baselines3.td3.policies import MlpPolicy
+  from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 
   # The noise objects for TD3
   n_actions = env.action_space.shape[-1]

@@ -1,8 +1,8 @@
 import gym
 import pytest
 
-from torchy_baselines import A2C, PPO, SAC, TD3, DQN
-from torchy_baselines.common.vec_env import DummyVecEnv
+from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
+from stable_baselines3.common.vec_env import DummyVecEnv
 
 MODEL_LIST = [
     PPO,

@@ -12,9 +12,9 @@ Here is a quick example of how to train and run SAC on a Pendulum environment:
 
   import gym
 
-  from torchy_baselines.sac.policies import MlpPolicy
-  from torchy_baselines.common.vec_env import DummyVecEnv
-  from torchy_baselines import SAC
+  from stable_baselines3.sac.policies import MlpPolicy
+  from stable_baselines3.common.vec_env import DummyVecEnv
+  from stable_baselines3 import SAC
 
   env = gym.make('Pendulum-v0')
 
@@ -34,6 +34,6 @@ the policy is registered:
 
 .. code-block:: python
 
-    from torchy_baselines import SAC
+    from stable_baselines3 import SAC
 
     model = SAC('MlpPolicy', 'Pendulum-v0').learn(10000)

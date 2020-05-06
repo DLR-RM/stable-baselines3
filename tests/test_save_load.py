@@ -6,9 +6,11 @@ import gym
 import numpy as np
 import torch as th
 
-from torchy_baselines import A2C, PPO, SAC, TD3, DQN
-from torchy_baselines.common.identity_env import IdentityEnvBox, IdentityEnv
-from torchy_baselines.common.vec_env import DummyVecEnv
+from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
+from stable_baselines3.common.identity_env import IdentityEnvBox, IdentityEnv
+from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.identity_env import FakeImageEnv
+
 
 MODEL_LIST = [
     PPO,
@@ -36,16 +38,11 @@ def test_save_load(model_class):
         env = DummyVecEnv([lambda: IdentityEnvBox(10)])
 
     # create model
-    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
+    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=1)
     model.learn(total_timesteps=500, eval_freq=250)
 
     env.reset()
-    actions = [[env.action_space.sample()] for _ in range(10)]
-    observations = np.array([env.step(action)[0] for action in actions])
-    if isinstance(env.observation_space, gym.spaces.Discrete):
-        observations = observations.reshape(10)
-    else:
-        observations = observations.reshape(10, -1)
+    observations = np.concatenate([env.step(env.action_space.sample())[0] for _ in range(10)], axis=0)
 
     # Get dictionary of current parameters
     params = deepcopy(model.policy.state_dict())
@@ -107,7 +104,7 @@ def test_set_env(model_class):
         env3 = IdentityEnvBox(10)
 
     # create model
-    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), create_eval_env=True)
+    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]))
     # learn
     model.learn(total_timesteps=1000, eval_freq=500)
 
@@ -136,7 +133,7 @@ def test_exclude_include_saved_params(model_class):
         env = DummyVecEnv([lambda: IdentityEnvBox(10)])
 
     # create model, set verbose as 2, which is not standard
-    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=2, create_eval_env=True)
+    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=2)
 
     # Check if exclude works
     model.save("test_save.zip", exclude=["verbose"])
@@ -187,34 +184,41 @@ def test_save_load_replay_buffer(model_class):
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
-def test_save_load_policy(model_class):
+@pytest.mark.parametrize("policy_str", ['MlpPolicy', 'CnnPolicy'])
+def test_save_load_policy(model_class, policy_str):
     """
     Test saving and loading policy only.
 
     :param model_class: (BaseRLModel) A RL model
+    :param policy_str: (str) Name of the policy.
     """
-    # use discrete for DQN
-    if model_class is DQN:
-        env = DummyVecEnv([lambda: IdentityEnv(10)])
+    kwargs = {}
+    if policy_str == 'MlpPolicy':
+        env = IdentityEnvBox(10) if model_class !=  DQN else IdentityEnv(10)
     else:
-        env = DummyVecEnv([lambda: IdentityEnvBox(10)])
+        if model_class in [SAC, TD3, DQN]:
+            # Avoid memory error when using replay buffer
+            # Reduce the size of the features
+            kwargs = dict(buffer_size=250)
+        env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=2,
+                           discrete=model_class == DQN)
+
+    env = DummyVecEnv([lambda: env])
 
     # create model
-    model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
+    model = model_class(policy_str, env, policy_kwargs=dict(net_arch=[16]),
+                         verbose=1, **kwargs)
     model.learn(total_timesteps=500, eval_freq=250)
 
     env.reset()
-    actions = [[env.action_space.sample()] for _ in range(10)]
-    observations = np.array([env.step(action)[0] for action in actions])
-    if isinstance(env.observation_space, gym.spaces.Discrete):
-        observations = observations.reshape(10)
-    else:
-        observations = observations.reshape(10, -1)
+    observations = np.concatenate([env.step(env.action_space.sample())[0] for _ in range(10)], axis=0)
 
     policy = model.policy
-    actor = None
+    policy_class = policy.__class__
+    actor, actor_class = None, None
     if model_class in [SAC, TD3]:
         actor = policy.actor
+        actor_class = actor.__class__
 
     # Get dictionary of current parameters
     params = deepcopy(policy.state_dict())
@@ -239,14 +243,17 @@ def test_save_load_policy(model_class):
         selected_actions_actor, _ = actor.predict(observations, deterministic=True)
 
     # Save and load policy
-    policy.save("./logs/policy_weights.pkl")
+    policy.save("./logs/policy.pkl")
     # Save and load actor
     if actor is not None:
-        actor.save("./logs/actor_weights.pkl")
+        actor.save("./logs/actor.pkl")
 
-    policy.load("./logs/policy_weights.pkl")
-    if actor is not None:
-        actor.load("./logs/actor_weights.pkl")
+    del policy, actor
+
+
+    policy = policy_class.load("./logs/policy.pkl")
+    if actor_class is not None:
+        actor = actor_class.load("./logs/actor.pkl")
 
     # check if params are still the same after load
     new_params = policy.state_dict()
@@ -259,12 +266,12 @@ def test_save_load_policy(model_class):
     new_selected_actions, _ = policy.predict(observations, deterministic=True)
     assert np.allclose(selected_actions, new_selected_actions, 1e-4)
 
-    if actor is not None:
+    if actor_class is not None:
         new_selected_actions_actor, _ = actor.predict(observations, deterministic=True)
         assert np.allclose(selected_actions_actor, new_selected_actions_actor, 1e-4)
         assert np.allclose(selected_actions_actor, new_selected_actions, 1e-4)
 
     # clear file from os
-    os.remove("./logs/policy_weights.pkl")
-    if actor is not None:
-        os.remove("./logs/actor_weights.pkl")
+    os.remove("./logs/policy.pkl")
+    if actor_class is not None:
+        os.remove("./logs/actor.pkl")

@@ -1,6 +1,6 @@
 .. _base_algo:
 
-.. automodule:: torchy_baselines.common.base_class
+.. automodule:: stable_baselines3.common.base_class
 
 
 Base RL Class

@@ -1,6 +1,6 @@
 .. _vec_env:
 
-.. automodule:: torchy_baselines.common.vec_env
+.. automodule:: stable_baselines3.common.vec_env
 
 Vectorized Environments
 =======================

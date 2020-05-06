@@ -158,7 +158,7 @@ class SubprocVecEnv(VecEnv):
         # Create a big image by tiling images from subprocesses
         bigimg = tile_images(imgs)
         if mode == 'human':
-            import cv2
+            import cv2  # pytype: disable=import-error
             cv2.imshow('vecenv', bigimg[:, :, ::-1])
             cv2.waitKey(1)
         elif mode == 'rgb_array':

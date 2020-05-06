@@ -6,12 +6,6 @@ from gym import spaces
 import torch as th
 import torch.nn.functional as F
 
-# Check if tensorboard is available for pytorch
-# TODO: finish tensorboard integration
-# try:
-#     from torch.utils.tensorboard import SummaryWriter
-# except ImportError:
-#     SummaryWriter = None
 import numpy as np
 
 from stable_baselines3.common import logger
@@ -95,7 +89,6 @@ class DQN(OffPolicyRLModel):
         self.tau = tau
         self.max_grad_norm = max_grad_norm
         self.tensorboard_log = tensorboard_log
-        self.tb_writer = None
 
         if _init_setup_model:
             self._setup_model()
@@ -182,26 +175,24 @@ class DQN(OffPolicyRLModel):
               eval_log_path: Optional[str] = None,
               reset_num_timesteps: bool = True) -> OffPolicyRLModel:
 
-        episode_num, obs, callback = self._setup_learn(eval_env, callback, eval_freq,
-                                                       n_eval_episodes, eval_log_path, reset_num_timesteps)
+
+        callback = self._setup_learn(eval_env, callback, eval_freq,
+                                     n_eval_episodes, eval_log_path, reset_num_timesteps)
 
         callback.on_training_start(locals(), globals())
 
         while self.num_timesteps < total_timesteps:
 
             rollout = self.collect_rollouts(self.env,
-                                            n_steps=self.train_freq, n_episodes=-1, action_noise=self.action_noise,
+                                            n_steps=self.train_freq, n_episodes=-1, action_noise=None,
                                             callback=callback,
                                             learning_starts=self.learning_starts,
                                             replay_buffer=self.replay_buffer,
-                                            obs=obs, episode_num=episode_num,
                                             log_interval=log_interval)
 
             if rollout.continue_training is False:
                 break
 
-            obs = rollout.obs
-            episode_num += rollout.n_episodes
             self._update_current_progress(self.num_timesteps, total_timesteps)
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
@@ -213,16 +204,12 @@ class DQN(OffPolicyRLModel):
 
     def collect_rollouts(self,
                          env: VecEnv,
-                         # Type hint as string to avoid circular import
-                         callback: 'BaseCallback',
+                         callback: BaseCallback,
                          n_episodes: int = 1,
                          n_steps: int = -1,
                          action_noise: Optional[ActionNoise] = None,
                          learning_starts: int = 0,
-                         epsilon: float = 1e-3,
                          replay_buffer: Optional[ReplayBuffer] = None,
-                         obs: Optional[np.ndarray] = None,
-                         episode_num: int = 0,
                          log_interval: Optional[int] = None) -> RolloutReturn:
         """
         Collect rollout using the current policy (and possibly fill the replay buffer)
@@ -238,11 +225,8 @@ class DQN(OffPolicyRLModel):
         :param callback: (BaseCallback) Callback that will be called at each step
             (and at the beginning and end of the rollout)
         :param learning_starts: (int) Number of steps before learning for the warm-up phase.
-        :param epsilon: (float) Epsilon to be used for epsilon greedy policy in case of discrete action space
         :param replay_buffer: (ReplayBuffer)
-        :param obs: (np.ndarray) Last observation from the environment
-        :param episode_num: (int) Episode index
-        :param log_interval: (int) Log data every `log_interval` episodes
+        :param log_interval: (int) Log data every ``log_interval`` episodes
         :return: (RolloutReturn)
         """
         episode_rewards, total_timesteps = [], []
@@ -250,10 +234,6 @@ class DQN(OffPolicyRLModel):
 
         assert isinstance(env, VecEnv), "You must pass a VecEnv"
         assert env.num_envs == 1, "OffPolicyRLModel only support single environment"
-
-        # Retrieve unnormalized observation for saving into the buffer
-        if self._vec_normalize_env is not None:
-            obs_ = self._vec_normalize_env.get_original_obs()
 
         self.rollout_data = None
 
@@ -265,18 +245,20 @@ class DQN(OffPolicyRLModel):
             episode_reward, episode_timesteps = 0.0, 0
 
             while not done:
-                # epsilon greedy exporation here
+                # Select action randomly or according to policy
                 if self.num_timesteps < learning_starts:
-                    policy_action = np.array([self.action_space.sample()])
+                    # Warmup phase
+                    action = np.array([self.action_space.sample()])
                 else:
-                    policy_action, _ = self.predict(obs, deterministic=False)
+                    # Epsilon-greedy
+                    action, _ = self.predict(self._last_obs, deterministic=False)
 
                 # Rescale and perform action
-                new_obs, reward, done, infos = env.step(policy_action)
+                new_obs, reward, done, infos = env.step(action)
 
                 # Only stop training if return value is False, not when it is None.
                 if callback.on_step() is False:
-                    return RolloutReturn(0.0, total_steps, total_episodes, None, continue_training=False)
+                    return RolloutReturn(0.0, total_steps, total_episodes, continue_training=False)
 
                 episode_reward += reward
 
@@ -291,16 +273,14 @@ class DQN(OffPolicyRLModel):
                         reward_ = self._vec_normalize_env.get_original_reward()
                     else:
                         # Avoid changing the original ones
-                        obs_, new_obs_, reward_ = obs, new_obs, reward
+                        self._last_original_obs, new_obs_, reward_ = self._last_obs, new_obs, reward
 
-                    replay_buffer.add(obs_, new_obs_, policy_action, reward_, done)
+                    replay_buffer.add(self._last_original_obs, new_obs_, action, reward_, done)
 
-                obs = new_obs
-                # Save the true unnormalized observation
-                # otherwise obs_ = self._vec_normalize_env.unnormalize_obs(obs)
-                # is a good approximation
+                self._last_obs = new_obs
+                # Save the unnormalized observation
                 if self._vec_normalize_env is not None:
-                    obs_ = new_obs_
+                    self._last_original_obs = new_obs_
 
                 self.num_timesteps += 1
                 episode_timesteps += 1
@@ -310,14 +290,14 @@ class DQN(OffPolicyRLModel):
 
             if done:
                 total_episodes += 1
+                self._episode_num += 1
                 episode_rewards.append(episode_reward)
                 total_timesteps.append(episode_timesteps)
 
                 # Display training infos
-                if self.verbose >= 1 and log_interval is not None and (
-                        episode_num + total_episodes) % log_interval == 0:
+                if self.verbose >= 1 and log_interval is not None and self._episode_num % log_interval == 0:
                     fps = int(self.num_timesteps / (time.time() - self.start_time))
-                    logger.logkv("episodes", episode_num + total_episodes)
+                    logger.logkv("episodes", self._episode_num)
                     if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
                         logger.logkv('ep_rew_mean', self.safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
                         logger.logkv('ep_len_mean', self.safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
@@ -330,7 +310,7 @@ class DQN(OffPolicyRLModel):
 
         callback.on_rollout_end()
 
-        return RolloutReturn(0.0, total_steps, total_episodes, obs, continue_training)
+        return RolloutReturn(0.0, total_steps, total_episodes, continue_training)
 
     def excluded_save_params(self) -> List[str]:
         """

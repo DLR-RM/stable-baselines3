@@ -5,8 +5,8 @@ import torch as th
 import torch.nn as nn
 import numpy as np
 
-from torchy_baselines.common.preprocessing import get_action_dim, get_obs_dim
-from torchy_baselines.common.policies import (BasePolicy, register_policy, create_mlp)
+from stable_baselines3.common.preprocessing import get_action_dim, get_obs_dim
+from stable_baselines3.common.policies import BasePolicy, register_policy, create_mlp
 
 
 class Q_Net(BasePolicy):
@@ -39,7 +39,7 @@ class Q_Net(BasePolicy):
         super(Q_Net, self).__init__(observation_space, action_space, device)
 
         if net_arch is None:
-            net_arch = [256, 256]
+            net_arch = [64, 64]
 
         self.net_arch = net_arch
         self.activation_fn = activation_fn

@@ -14,15 +14,15 @@ import torch.nn.functional as F
 #     SummaryWriter = None
 import numpy as np
 
-from torchy_baselines.common import logger
-from torchy_baselines.common.base_class import OffPolicyRLModel
-from torchy_baselines.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
-from torchy_baselines.common.buffers import ReplayBuffer, ReplayBufferSamples
-from torchy_baselines.common.utils import explained_variance, get_schedule_fn
-from torchy_baselines.common.vec_env import VecEnv
-from torchy_baselines.common.callbacks import BaseCallback
-from torchy_baselines.common.noise import ActionNoise
-from torchy_baselines.dqn.policies import DQNPolicy
+from stable_baselines3.common import logger
+from stable_baselines3.common.base_class import OffPolicyRLModel
+from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
+from stable_baselines3.common.buffers import ReplayBuffer, ReplayBufferSamples
+from stable_baselines3.common.utils import explained_variance, get_schedule_fn
+from stable_baselines3.common.vec_env import VecEnv
+from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.noise import ActionNoise
+from stable_baselines3.dqn.policies import DQNPolicy
 
 
 class DQN(OffPolicyRLModel):
@@ -40,12 +40,12 @@ class DQN(OffPolicyRLModel):
     :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
     :param batch_size: (int) Minibatch size for each gradient update
     :param gamma: (float) Discount factor
-    :param epsilon_decay: (float) Decay factor for epsilon
     :param train_freq: (int) Update the model every ``train_freq`` steps.
     :param gradient_steps: (int) How many gradient update after each step
     :param tau: (float) the soft update coefficient ("polyak update", between 0 and 1)
     :param target_update_interval: (int) update the target network every ``target_update_interval`` steps.
-    :param epsilon: (float) Exploration factor for epsilon-greedy policy
+    :param exploration_initial_eps: (float) initial value of random action probability
+    :param exploration_final_eps: (float) final value of random action probability
     :param max_grad_norm: (float) The maximum value for the gradient clipping
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param create_eval_env: (bool) Whether to create a second environment that will be
@@ -61,16 +61,16 @@ class DQN(OffPolicyRLModel):
     def __init__(self, policy: Union[str, Type[DQNPolicy]],
                  env: Union[GymEnv, str],
                  learning_rate: Union[float, Callable] = 3e-4,
-                 buffer_size: int = 1000,
+                 buffer_size: int = 50000,
                  learning_starts: int = 1000,
-                 batch_size: Optional[int] = 256,
+                 batch_size: Optional[int] = 32,
                  gamma: float = 0.99,
-                 epsilon_decay: float = 0.99,
-                 train_freq: int = 2,
-                 gradient_steps: int = 4,
+                 train_freq: int = 1,
+                 gradient_steps: int = 1,
                  tau: float = 1.0,
                  target_update_interval: int = 8,
-                 epsilon: float = 0.05,
+                 exploration_initial_eps: float = 1.0,
+                 exploration_final_eps: float = 0.02,
                  max_grad_norm: float = 10,
                  tensorboard_log: Optional[str] = None,
                  create_eval_env: bool = False,
@@ -84,13 +84,13 @@ class DQN(OffPolicyRLModel):
                                   buffer_size, learning_starts, batch_size,
                                   policy_kwargs, verbose, device, create_eval_env=create_eval_env, seed=seed)
 
-        assert train_freq > 0, "will soft lock if train_freq is smaller than 1"
+        assert train_freq > 0, "DQN will soft lock if train_freq is smaller than 1"
         self.train_freq = train_freq
         self.gradient_steps = gradient_steps
         self.batch_size = batch_size
         self.gamma = gamma
-        self.epsilon = epsilon
-        self.epsilon_decay = epsilon_decay
+        self.exploration_final_eps = exploration_final_eps
+        self.exploration_initial_eps = exploration_initial_eps
         self.target_update_interval = target_update_interval
         self.tau = tau
         self.max_grad_norm = max_grad_norm
@@ -103,6 +103,27 @@ class DQN(OffPolicyRLModel):
     def _setup_model(self) -> None:
         super(DQN, self)._setup_model()
         self._create_aliases()
+        self._setup_exploration_schedule()
+
+    def _setup_exploration_schedule(self) -> None:
+        def func(progress):
+            """
+            :params progress: current progress(from 1 to 0)
+            """
+            return self.exploration_initial_eps + (1.0 - progress) * (
+                        self.exploration_final_eps - self.exploration_initial_eps)
+
+        self.exploration_schedule = func
+
+    def _update_exploration(self) -> None:
+        """
+        Update the policy exploration rate using the current exploration rate schedule
+        and the current progress (from 1 to 0).
+        """
+        # Log the current learning rate
+        logger.logkv("epsilon", self.exploration_schedule(self._current_progress))
+
+        self.policy.update_epsilon(self.exploration_schedule(self._current_progress))
 
     def _create_aliases(self) -> None:
         self.q_net = self.policy.q_net
@@ -110,11 +131,9 @@ class DQN(OffPolicyRLModel):
 
     def train(self, gradient_steps: int, batch_size: int = 100) -> None:
 
-        # Update learning rate according to lr schedule
+        # Update learning rate and exploration according to schedule
         self._update_learning_rate(self.policy.optimizer)
-
-        # Decay learning rate
-        self.policy.update_epsilon(self.policy.epsilon * self.epsilon_decay)
+        self._update_exploration()
 
         for gradient_step in range(gradient_steps):
             # Sample replay buffer

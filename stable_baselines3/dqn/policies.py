@@ -180,7 +180,8 @@ class DQNPolicy(BasePolicy):
         self.q_net_target.load_state_dict(self.q_net.state_dict())
 
         # Setup optimizer with initial learning rate
-        self.optimizer = th.optim.Adam(self.parameters(), lr=lr_schedule(1))
+        self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1),
+                                              **self.optimizer_kwargs)
 
     def update_epsilon(self, epsilon: float):
         self.q_net_target.epsilon = epsilon

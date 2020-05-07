@@ -4,7 +4,7 @@ import subprocess
 from setuptools import setup, find_packages
 
 with open(os.path.join('stable_baselines3', 'version.txt'), 'r') as file_handler:
-    __version__ = file_handler.read()
+    __version__ = file_handler.read().strip()
 
 
 long_description = """
@@ -70,6 +70,9 @@ model = PPO('MlpPolicy', 'CartPole-v1').learn(10000)
 setup(name='stable_baselines3',
       packages=[package for package in find_packages()
                 if package.startswith('stable_baselines3')],
+      package_data={
+        'stable_baselines3': ['py.typed', 'version.txt']
+      },
       install_requires=[
           'gym[classic_control]>=0.11',
           'numpy',

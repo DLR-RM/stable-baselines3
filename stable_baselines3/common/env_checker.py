@@ -37,7 +37,7 @@ def _check_image_input(observation_space: spaces.Box) -> None:
     if observation_space.shape[0] < 36 or observation_space.shape[1] < 36:
         warnings.warn("The minimal resolution for an image is 36x36 for the default CnnPolicy. "
                       "You might need to use a custom `cnn_extractor` "
-                      "cf https://stable-baselines.readthedocs.io/en/master/guide/custom_policy.html")
+                      "cf https://stable-baselines3.readthedocs.io/en/master/guide/custom_policy.html")
 
 
 def _check_unsupported_obs_spaces(env: gym.Env, observation_space: spaces.Space) -> None:
@@ -208,7 +208,7 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
                 (np.any(np.abs(action_space.low) != np.abs(action_space.high))
                  or np.any(np.abs(action_space.low) > 1) or np.any(np.abs(action_space.high) > 1))):
             warnings.warn("We recommend you to use a symmetric and normalized Box action space (range=[-1, 1]) "
-                          "cf https://stable-baselines.readthedocs.io/en/master/guide/rl_tips.html")
+                          "cf https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html")
 
     # ============ Check the returned values ===============
     _check_returned_values(env, observation_space, action_space)

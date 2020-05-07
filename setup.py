@@ -25,7 +25,7 @@ Medium article:
 https://medium.com/@araffin/df87c4b2fc82
 
 Documentation:
-https://stable-baselines.readthedocs.io/en/master/
+https://stable-baselines3.readthedocs.io/en/master/
 
 RL Baselines3 Zoo:
 https://github.com/DLR-RM/rl-baselines3-zoo
@@ -56,7 +56,7 @@ for i in range(1000):
         obs = env.reset()
 ```
 
-Or just train a model with a one liner if [the environment is registered in Gym](https://github.com/openai/gym/wiki/Environments) and if [the policy is registered](https://stable-baselines.readthedocs.io/en/master/guide/custom_policy.html):
+Or just train a model with a one liner if [the environment is registered in Gym](https://github.com/openai/gym/wiki/Environments) and if [the policy is registered](https://stable-baselines3.readthedocs.io/en/master/guide/custom_policy.html):
 
 ```python
 from stable_baselines3 import PPO

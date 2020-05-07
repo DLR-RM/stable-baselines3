@@ -1,6 +1,10 @@
 <img src="docs/\_static/img/logo.png" align="right" width="40%"/>
 
-<!-- [![Build Status](https://travis-ci.com/hill-a/stable-baselines.svg?branch=master)](https://travis-ci.com/hill-a/stable-baselines) [![Documentation Status](https://readthedocs.org/projects/stable-baselines/badge/?version=master)](https://stable-baselines.readthedocs.io/en/master/?badge=master) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/3bcb4cd6d76a4270acb16b5fe6dd9efa)](https://www.codacy.com/app/baselines_janitors/stable-baselines?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=hill-a/stable-baselines&amp;utm_campaign=Badge_Grade) [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/3bcb4cd6d76a4270acb16b5fe6dd9efa)](https://www.codacy.com/app/baselines_janitors/stable-baselines?utm_source=github.com&utm_medium=referral&utm_content=hill-a/stable-baselines&utm_campaign=Badge_Coverage) -->
+<!-- [![Build Status](https://travis-ci.com/hill-a/stable-baselines.svg?branch=master)](https://travis-ci.com/hill-a/stable-baselines)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/3bcb4cd6d76a4270acb16b5fe6dd9efa)](https://www.codacy.com/app/baselines_janitors/stable-baselines?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=hill-a/stable-baselines&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://api.codacy.com/project/badge/Coverage/3bcb4cd6d76a4270acb16b5fe6dd9efa)](https://www.codacy.com/app/baselines_janitors/stable-baselines?utm_source=github.com&utm_medium=referral&utm_content=hill-a/stable-baselines&utm_campaign=Badge_Coverage) -->
+
+[![Documentation Status](https://readthedocs.org/projects/stable-baselines/badge/?version=master)](https://stable-baselines3.readthedocs.io/en/master/?badge=master)
 
 **WARNING: Stable Baselines3 is currently in a beta version, breaking changes may occur before 1.0 is released**
 
@@ -15,7 +19,7 @@ You can read a detailed presentation of Stable Baselines in the [Medium article]
 
 These algorithms will make it easier for the research community and industry to replicate, refine, and identify new ideas, and will create good baselines to build projects on top of. We expect these tools will be used as a base around which new ideas can be added, and as a tool for comparing a new approach against existing ones. We also hope that the simplicity of these tools will allow beginners to experiment with a more advanced toolset, without being buried in implementation details.
 
-**Note: despite its simplicity of use, Stable Baselines3 (SB3) assumes you have some knowledge about Reinforcement Learning (RL).** You should not utilize this library without some practice. To that extent, we provide good resources in the [documentation](https://stable-baselines.readthedocs.io/en/master/guide/rl.html) to get started with RL.
+**Note: despite its simplicity of use, Stable Baselines3 (SB3) assumes you have some knowledge about Reinforcement Learning (RL).** You should not utilize this library without some practice. To that extent, we provide good resources in the [documentation](https://stable-baselines3.readthedocs.io/en/master/guide/rl.html) to get started with RL.
 
 ## Main Features
 
@@ -60,7 +64,7 @@ Planned features:
 
 ## Documentation
 
-Documentation is available online: [https://stable-baselines.readthedocs.io/](https://stable-baselines.readthedocs.io/)
+Documentation is available online: [https://stable-baselines3.readthedocs.io/](https://stable-baselines3.readthedocs.io/)
 
 
 ## RL Baselines3 Zoo: A Collection of Trained RL Agents
@@ -78,7 +82,7 @@ Goals of this repository:
 
 Github repo: https://github.com/DLR-RM/rl-baselines3-zoo
 
-<!-- Documentation: https://stable-baselines.readthedocs.io/en/master/guide/rl_zoo.html -->
+<!-- Documentation: https://stable-baselines3.readthedocs.io/en/master/guide/rl_zoo.html -->
 
 ## Installation
 
@@ -89,7 +93,7 @@ Stable Baselines3 requires python 3.6+.
 
 <!-- #### Windows 10
 
-To install stable-baselines on Windows, please look at the [documentation](https://stable-baselines.readthedocs.io/en/master/guide/install.html#prerequisites). -->
+To install stable-baselines on Windows, please look at the [documentation](https://stable-baselines3.readthedocs.io/en/master/guide/install.html#prerequisites). -->
 
 
 ### Install using pip
@@ -103,7 +107,7 @@ This includes an optional dependencies like OpenCV or `atari-py` to train on ata
 pip install stable-baselines3
 ```
 
-Please read the [documentation](https://stable-baselines.readthedocs.io/) for more details and alternatives (from source, using docker).
+Please read the [documentation](https://stable-baselines3.readthedocs.io/) for more details and alternatives (from source, using docker).
 
 
 ## Example
@@ -133,7 +137,7 @@ for i in range(1000):
 env.close()
 ```
 
-Or just train a model with a one liner if [the environment is registered in Gym](https://github.com/openai/gym/wiki/Environments) and if [the policy is registered](https://stable-baselines.readthedocs.io/en/master/guide/custom_policy.html):
+Or just train a model with a one liner if [the environment is registered in Gym](https://github.com/openai/gym/wiki/Environments) and if [the policy is registered](https://stable-baselines3.readthedocs.io/en/master/guide/custom_policy.html):
 
 ```python
 from stable_baselines3 import PPO
@@ -141,7 +145,7 @@ from stable_baselines3 import PPO
 model = PPO('MlpPolicy', 'CartPole-v1').learn(10000)
 ```
 
-Please read the [documentation](https://stable-baselines.readthedocs.io/) for more examples.
+Please read the [documentation](https://stable-baselines3.readthedocs.io/) for more examples.
 
 
 ## Try it online with Colab Notebooks !
@@ -191,7 +195,7 @@ make type
 
 <!-- ## Projects Using Stable-Baselines3
 
-We try to maintain a list of project using stable-baselines3 in the [documentation](https://stable-baselines.readthedocs.io/en/master/misc/projects.html),
+We try to maintain a list of project using stable-baselines3 in the [documentation](https://stable-baselines3.readthedocs.io/en/master/misc/projects.html),
 please tell us when if you want your project to appear on this page ;) -->
 
 ## Citing the Project

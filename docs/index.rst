@@ -36,8 +36,11 @@ Main Features
    guide/quickstart
    guide/rl_tips
    guide/rl
+   guide/algos
+   guide/examples
    guide/vec_envs
    guide/custom_env
+   guide/custom_policy
    guide/callbacks
    guide/migration
    guide/checking_nan

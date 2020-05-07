@@ -1,8 +1,38 @@
 import inspect
 import pickle
 from abc import ABC, abstractmethod
+from typing import Sequence, Optional, List, Union
 
+import numpy as np
 import cloudpickle
+
+from stable_baselines3.common import logger
+
+
+def tile_images(img_nhwc: Sequence[np.ndarray]) -> np.ndarray:
+    """
+    Tile N images into one big PxQ image
+    (P,Q) are chosen to be as close as possible, and if N
+    is square, then P=Q.
+
+    :param img_nhwc: (Sequence[np.ndarray]) list or array of images, ndim=4 once turned into array. img nhwc
+        n = batch index, h = height, w = width, c = channel
+    :return: (np.ndarray) img_HWc, ndim=3
+    """
+    img_nhwc = np.asarray(img_nhwc)
+    n_images, height, width, n_channels = img_nhwc.shape
+    # new_height was named H before
+    new_height = int(np.ceil(np.sqrt(n_images)))
+    # new_width was named W before
+    new_width = int(np.ceil(float(n_images) / new_height))
+    img_nhwc = np.array(list(img_nhwc) + [img_nhwc[0] * 0 for _ in range(n_images, new_height * new_width)])
+    # img_HWhwc
+    out_image = img_nhwc.reshape((new_height, new_width, height, width, n_channels))
+    # img_HhWwc
+    out_image = out_image.transpose(0, 2, 1, 3, 4)
+    # img_Hh_Ww_c
+    out_image = out_image.reshape((new_height * height, new_width * width, n_channels))
+    return out_image
 
 
 class AlreadySteppingError(Exception):
@@ -132,31 +162,46 @@ class VecEnv(ABC):
         self.step_async(actions)
         return self.step_wait()
 
-    def get_images(self):
+    def get_images(self, *args, **kwargs) -> Sequence[np.ndarray]:
         """
         Return RGB images from each environment
         """
         raise NotImplementedError
 
-    def render(self, *args, **kwargs):
+    def render(self, *args, mode: str = 'human', **kwargs):
         """
         Gym environment rendering
 
-        :param mode: (str) the rendering type
+        :param mode: the rendering type
         """
-        raise NotImplementedError()
+        try:
+            imgs = self.get_images(*args, **kwargs)
+        except NotImplementedError:
+            logger.warn('Render not defined for {}'.format(self))
+            return
 
-    def seed(self, seed, indices=None):
+        # Create a big image by tiling images from subprocesses
+        bigimg = tile_images(imgs)
+        if mode == 'human':
+            import cv2  # pytype:disable=import-error
+            cv2.imshow('vecenv', bigimg[:, :, ::-1])
+            cv2.waitKey(1)
+        elif mode == 'rgb_array':
+            return bigimg
+        else:
+            raise NotImplementedError
+
+    @abstractmethod
+    def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
         """
-        :param seed: (int or [int])
-        :param indices: ([int])
+        Sets the random seeds for all environments, based on a given seed.
+        Each individual environment will still get its own seed, by incrementing the given seed.
+
+        :param seed: (Optional[int]) The random seed. May be None for completely random seeding.
+        :return: (List[Union[None, int]]) Returns a list containing the seeds for each individual env.
+            Note that all list elements may be None, if the env does not return anything when being seeded.
         """
-        indices = self._get_indices(indices)
-        # Different seed per environment
-        if not hasattr(seed, 'len'):
-            seed = [seed + i for i in range(len(indices))]
-        assert len(seed) == len(indices)
-        return [self.env_method('seed', seed[i], indices=i) for i in indices]
+        pass
 
     @property
     def unwrapped(self):
@@ -216,6 +261,9 @@ class VecEnvWrapper(VecEnv):
     @abstractmethod
     def step_wait(self):
         pass
+
+    def seed(self, seed=None):
+        return self.venv.seed(seed)
 
     def close(self):
         return self.venv.close()

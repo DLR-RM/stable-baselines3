@@ -104,6 +104,8 @@ setup(name='stable_baselines3',
         'extra': [
             # For render
             'opencv-python',
+            # For atari games,
+            'gym[classic_control,atari]>=0.11'
         ]
       },
       description='Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.',

@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.6.0a1 (WIP)
+Pre-Release 0.6.0a3 (WIP)
 ------------------------------
 
 
@@ -15,10 +15,12 @@ New Features:
 - Added env checker (Sync with Stable Baselines)
 - Added ``VecCheckNan`` and ``VecVideoRecorder`` (Sync with Stable Baselines)
 - Added determinism tests
+- Added ``cmd_utils`` and ``atari_wrappers``
 
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed a bug that prevented model trained on cpu to be loaded on gpu
+- Fixed version number that had a new line included
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -26,6 +28,8 @@ Deprecations:
 Others:
 ^^^^^^^
 - Renamed to Stable-Baseline3
+- Added Dockerfile
+- Sync ``VecEnvs`` with Stable-Baselines
 
 Documentation:
 ^^^^^^^^^^^^^^

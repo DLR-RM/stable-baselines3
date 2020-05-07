@@ -29,8 +29,7 @@ To install Stable Baselines3 with pip, execute:
 
     pip install stable-baselines3[extra]
 
-This includes an optional dependency OpenCV to display the environments when using ``SubprocVecEnv``. If you do not need it, you can install without OpenCV:
-
+This includes an optional dependencies like OpenCV or ```atari-py``` to train on atari games. If you do not need those, you can use:
 
 .. code-block:: bash
 

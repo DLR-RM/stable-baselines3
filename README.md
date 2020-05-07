@@ -98,7 +98,7 @@ Install the Stable Baselines3 package:
 pip install stable-baselines3[extra]
 ```
 
-This includes an optional dependency OpenCV to display the environments when using `SubprocVecEnv`. If you do not need it, you can install without OpenCV:
+This includes an optional dependencies like OpenCV or `atari-py` to train on atari games. If you do not need those, you can use:
 ```
 pip install stable-baselines3
 ```
@@ -144,14 +144,14 @@ model = PPO('MlpPolicy', 'CartPole-v1').learn(10000)
 Please read the [documentation](https://stable-baselines.readthedocs.io/) for more examples.
 
 
-<!-- ## Try it online with Colab Notebooks !
+## Try it online with Colab Notebooks !
 
 All the following examples can be executed online using Google colab notebooks:
 
-- [Full Tutorial](https://github.com/araffin/rl-tutorial-jnrr19)
-- [All Notebooks](https://github.com/Stable-Baselines-Team/rl-colab-notebooks)
-- [Getting Started](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/stable_baselines_getting_started.ipynb)
-- [Training, Saving, Loading](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/saving_loading_dqn.ipynb)
+<!-- - [Full Tutorial](https://github.com/araffin/rl-tutorial-jnrr19) -->
+- [All Notebooks](https://github.com/Stable-Baselines-Team/rl-colab-notebooks/tree/sb3)
+- [Getting Started](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/stable_baselines_getting_started.ipynb)
+<!-- - [Training, Saving, Loading](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/saving_loading_dqn.ipynb)
 - [Multiprocessing](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/multiprocessing_rl.ipynb)
 - [Monitor Training and Plotting](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/monitor_training.ipynb)
 - [Atari Games](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/atari_games.ipynb)

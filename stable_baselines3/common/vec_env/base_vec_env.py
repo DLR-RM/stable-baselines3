@@ -9,7 +9,8 @@ import cloudpickle
 from stable_baselines3.common import logger
 
 
-def tile_images(img_nhwc: Sequence[np.ndarray]) -> np.ndarray:
+
+def tile_images(img_nhwc: Sequence[np.ndarray]) -> np.ndarray:  # pragma: no cover
     """
     Tile N images into one big PxQ image
     (P,Q) are chosen to be as close as possible, and if N

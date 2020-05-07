@@ -37,7 +37,7 @@ Basic Usage: Training, Saving, Loading
 --------------------------------------
 
 In the following example, we will train, save and load a DQN model on the Lunar Lander environment.
-..
+
 .. .. image:: ../_static/img/try_it.png
 ..    :scale: 30 %
 ..    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/saving_loading_dqn.ipynb
@@ -324,7 +324,7 @@ will compute a running average and standard deviation of input features (it can 
   env = VecNormalize(env, norm_obs=True, norm_reward=True,
                      clip_obs=10.)
 
-  model = PPO2('MlpPolicy', env)
+  model = PPO('MlpPolicy', env)
   model.learn(total_timesteps=2000)
 
   # Don't forget to save the VecNormalize statistics when saving the agent

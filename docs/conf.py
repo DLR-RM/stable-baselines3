@@ -43,9 +43,10 @@ class Mock(MagicMock):
 MOCK_MODULES = []
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
-
-import stable_baselines3
-
+# Read version from file
+version_file = os.path.join(os.path.dirname(__file__), '../stable_baselines3', 'version.txt')
+with open(version_file, 'r') as file_handler:
+    __version__ = file_handler.read().strip()
 
 # -- Project information -----------------------------------------------------
 
@@ -54,9 +55,9 @@ copyright = '2020, Stable Baselines3'
 author = 'Stable Baselines3 Contributors'
 
 # The short X.Y version
-version = 'master (' + stable_baselines3.__version__ + ' )'
+version = 'master (' + __version__ + ' )'
 # The full version, including alpha/beta/rc tags
-release = stable_baselines3.__version__
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------

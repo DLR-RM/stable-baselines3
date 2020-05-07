@@ -5,6 +5,7 @@ about: How to create an issue for this repository
 ---
 
 **Important Note: We do not do technical support, nor consulting** and don't answer personal questions per email.
+Please post your question on [reddit](https://www.reddit.com/r/reinforcementlearning/) or [stack overflow](https://stackoverflow.com/) in that case.
 
 If you have any questions, feel free to create an issue with the tag [question].  
 If you wish to suggest an enhancement or feature request, add the tag [feature request].  

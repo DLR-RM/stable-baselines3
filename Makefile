@@ -17,16 +17,15 @@ clean:
 
 .PHONY: clean spelling doc
 
-# TODO: create Dockerfile
-# # Build docker images
-# # If you do export RELEASE=True, it will also push them
-# docker: docker-cpu docker-gpu
-#
-# docker-cpu:
-# 	./scripts/build_docker.sh
-#
-# docker-gpu:
-# 	USE_GPU=True ./scripts/build_docker.sh
+# Build docker images
+# If you do export RELEASE=True, it will also push them
+docker: docker-cpu docker-gpu
+
+docker-cpu:
+	./scripts/build_docker.sh
+
+docker-gpu:
+	USE_GPU=True ./scripts/build_docker.sh
 
 # PyPi package release
 release:

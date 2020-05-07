@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.6.0a3 (WIP)
+Pre-Release 0.6.0a4 (WIP)
 ------------------------------
 
 

@@ -105,7 +105,7 @@ setup(name='stable_baselines3',
             # For render
             'opencv-python',
             # For atari games,
-            'gym[classic_control,atari]>=0.11'
+            'atari_py~=0.2.0', 'Pillow'
         ]
       },
       description='Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.',

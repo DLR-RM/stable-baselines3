@@ -1,4 +1,4 @@
-.. Stable Baselines documentation master file, created by
+.. Stable Baselines3 documentation master file, created by
    sphinx-quickstart on Thu Sep 26 11:06:54 2019.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
@@ -6,12 +6,25 @@
 Welcome to Stable Baselines3 docs!
 ==================================
 
-`Stable Baselines3 <https://github.com/DLR-RM/stable-baselines3>`_ is the next major version (PyTorch edition) of `Stable Baselines <https://github.com/hill-a/stable-baselines>`_,
-a set of improved implementations of reinforcement learning algorithms.
+`Stable Baselines3 <https://github.com/DLR-RM/stable-baselines3>`_ is a set of improved implementations of reinforcement learning algorithms in PyTorch.
+It is the next major version (PyTorch edition) of `Stable Baselines <https://github.com/hill-a/stable-baselines>`_.
+
+
+Github repository: https://github.com/DLR-RM/stable-baselines3
 
 RL Baselines3 Zoo (collection of pre-trained agents): https://github.com/DLR-RM/rl-baselines3-zoo
 
 RL Baselines3 Zoo also offers a simple interface to train, evaluate agents and do hyperparameter tuning.
+
+
+Main Features
+--------------
+
+- Unified structure for all algorithms
+- PEP8 compliant (unified code style)
+- Documented functions and classes
+- Tests, high code coverage and type hints
+- Clean code
 
 
 
@@ -19,8 +32,15 @@ RL Baselines3 Zoo also offers a simple interface to train, evaluate agents and d
    :maxdepth: 2
    :caption: User Guide
 
+   guide/install
    guide/quickstart
+   guide/rl_tips
+   guide/rl
    guide/vec_envs
+   guide/custom_env
+   guide/callbacks
+   guide/migration
+   guide/checking_nan
 
 
 .. toctree::
@@ -33,12 +53,20 @@ RL Baselines3 Zoo also offers a simple interface to train, evaluate agents and d
   modules/sac
   modules/td3
 
+.. toctree::
+  :maxdepth: 1
+  :caption: Common
+
+  common/distributions
+  common/evaluation
+  common/env_checker
 
 .. toctree::
   :maxdepth: 1
   :caption: Misc
 
   misc/changelog
+  misc/projects
 
 
 Citing Stable Baselines3

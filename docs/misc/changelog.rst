@@ -29,6 +29,7 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Added most documentation (adapted from Stable-Baselines)
 
 
 Pre-Release 0.5.0 (2020-05-05)

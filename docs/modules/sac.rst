@@ -14,7 +14,7 @@ A key feature of SAC, and a major difference with common RL algorithms, is that 
 
 .. warning::
 
-  The SAC model does not support ``stable_baselines3.common.policies`` because it uses double q-values
+  The SAC model does not support ``stable_baselines3.ppo.policies`` because it uses double q-values
   and value estimation, as a result it must use its own policy models (see :ref:`sac_policies`).
 
 
@@ -24,6 +24,7 @@ A key feature of SAC, and a major difference with common RL algorithms, is that 
     :nosignatures:
 
     MlpPolicy
+    CnnPolicy
 
 
 Notes
@@ -72,15 +73,13 @@ Example
   import gym
   import numpy as np
 
-  from stable_baselines3.sac.policies import MlpPolicy
-  from stable_baselines3.common.vec_env import DummyVecEnv
   from stable_baselines3 import SAC
+  from stable_baselines3.sac import MlpPolicy
 
   env = gym.make('Pendulum-v0')
-  env = DummyVecEnv([lambda: env])
 
   model = SAC(MlpPolicy, env, verbose=1)
-  model.learn(total_timesteps=50000, log_interval=10)
+  model.learn(total_timesteps=10000, log_interval=4)
   model.save("sac_pendulum")
 
   del model # remove to demonstrate saving and loading
@@ -90,8 +89,10 @@ Example
   obs = env.reset()
   while True:
       action, _states = model.predict(obs)
-      obs, rewards, dones, info = env.step(action)
+      obs, reward, done, info = env.step(action)
       env.render()
+      if done:
+        obs = env.reset()
 
 Parameters
 ----------
@@ -108,3 +109,7 @@ SAC Policies
 .. autoclass:: MlpPolicy
   :members:
   :inherited-members:
+
+.. .. autoclass:: CnnPolicy
+..   :members:
+..   :inherited-members:

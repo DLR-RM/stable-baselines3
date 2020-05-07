@@ -216,5 +216,5 @@ texinfo_documents = [
 # }
 
 # kornia's hack to get rtd builder to install latest pytorch
-# if 'READTHEDOCS' in os.environ:
-#     os.system('pip install torch==1.5.0+cpu torchvision==0.6.0+cpu -f https://download.pytorch.org/whl/torch_stable.html')
+if on_rtd:
+    os.system('pip install torch==1.5.0+cpu torchvision==0.6.0+cpu -f https://download.pytorch.org/whl/torch_stable.html')

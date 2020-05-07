@@ -6,26 +6,27 @@ Getting Started
 
 Most of the library tries to follow a sklearn-like syntax for the Reinforcement Learning algorithms.
 
-Here is a quick example of how to train and run SAC on a Pendulum environment:
+Here is a quick example of how to train and run A2C on a CartPole environment:
 
 .. code-block:: python
 
   import gym
 
-  from stable_baselines3.sac.policies import MlpPolicy
-  from stable_baselines3.common.vec_env import DummyVecEnv
-  from stable_baselines3 import SAC
+  from stable_baselines3 import A2C
+  from stable_baselines3.a2c import MlpPolicy
 
-  env = gym.make('Pendulum-v0')
+  env = gym.make('CartPole-v1')
 
-  model = SAC(MlpPolicy, env, verbose=1)
+  model = A2C(MlpPolicy, env, verbose=1)
   model.learn(total_timesteps=10000)
 
   obs = env.reset()
   for i in range(1000):
-      action = model.predict(obs)
-      obs, rewards, dones, info = env.step(action)
+      action, _state = model.predict(obs, deterministic=True)
+      obs, reward, done, info = env.step(action)
       env.render()
+      if done:
+        obs = env.reset()
 
 
 Or just train a model with a one liner if
@@ -34,6 +35,6 @@ the policy is registered:
 
 .. code-block:: python
 
-    from stable_baselines3 import SAC
+    from stable_baselines3 import A2C
 
-    model = SAC('MlpPolicy', 'Pendulum-v0').learn(10000)
+    model = A2C('MlpPolicy', 'CartPole-v1').learn(10000)

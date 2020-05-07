@@ -1,4 +1,4 @@
-## Stable Baselines Documentation
+## Stable Baselines3 Documentation
 
 This folder contains documentation for the RL baselines.
 

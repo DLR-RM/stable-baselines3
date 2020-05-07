@@ -50,8 +50,10 @@ model.learn(total_timesteps=10000)
 obs = env.reset()
 for i in range(1000):
     action, _states = model.predict(obs, deterministic=True)
-    obs, rewards, dones, info = env.step(action)
+    obs, reward, done, info = env.step(action)
     env.render()
+    if done:
+        obs = env.reset()
 ```
 
 Or just train a model with a one liner if [the environment is registered in Gym](https://github.com/openai/gym/wiki/Environments) and if [the policy is registered](https://stable-baselines.readthedocs.io/en/master/guide/custom_policy.html):

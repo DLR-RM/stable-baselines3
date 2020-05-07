@@ -35,6 +35,29 @@ These algorithms will make it easier for the research community and industry to 
 
 <!-- | Tensorboard support         | :heavy_check_mark: | -->
 
+### Roadmap to V1.0
+
+Please look at the issue for more details.
+Planned features:
+
+- [ ] DQN (almost ready, currently in testing phase)
+- [ ] DDPG (you can use its successor TD3 for now)
+- [ ] HER
+- [ ] Support for MultiDiscrete and MultiBinary action spaces
+
+### Planned features (v1.1+)
+
+- [ ] Full Tensorboard support
+- [ ] DQN extensions (prioritized replay, double q-learning, ...)
+- [ ] Support for `Tuple` and `Dict` observation spaces
+- [ ] Recurrent Policies
+- [ ] TRPO
+
+
+## Migration guide
+
+**TODO: migration guide from Stable-Baselines in the documentation**
+
 ## Documentation
 
 Documentation is available online: [https://stable-baselines.readthedocs.io/](https://stable-baselines.readthedocs.io/)
@@ -102,8 +125,10 @@ model.learn(total_timesteps=10000)
 obs = env.reset()
 for i in range(1000):
     action, _states = model.predict(obs, deterministic=True)
-    obs, rewards, dones, info = env.step(action)
+    obs, reward, done, info = env.step(action)
     env.render()
+    if done:
+      obs = env.reset()
 
 env.close()
 ```

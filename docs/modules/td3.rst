@@ -14,7 +14,7 @@ We recommend reading `OpenAI Spinning guide on TD3 <https://spinningup.openai.co
 
 .. warning::
 
-  The TD3 model does not support ``stable_baselines3.common.policies`` because it uses double q-values
+  The TD3 model does not support ``stable_baselines3.ppo.policies`` because it uses double q-values
   estimation, as a result it must use its own policy models (see :ref:`td3_policies`).
 
 
@@ -73,7 +73,7 @@ Example
   action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
 
   model = TD3(MlpPolicy, 'Pendulum-v0', action_noise=action_noise, verbose=1)
-  model.learn(total_timesteps=50000, log_interval=10)
+  model.learn(total_timesteps=10000, log_interval=10)
   model.save("td3_pendulum")
   env = model.get_env()
 
@@ -86,6 +86,7 @@ Example
       action, _states = model.predict(obs)
       obs, rewards, dones, info = env.step(action)
       env.render()
+
 
 Parameters
 ----------
@@ -102,3 +103,8 @@ TD3 Policies
 .. autoclass:: MlpPolicy
   :members:
   :inherited-members:
+
+
+.. .. autoclass:: CnnPolicy
+..   :members:
+..   :inherited-members:

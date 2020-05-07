@@ -12,8 +12,8 @@ Common interface for all the RL algorithms
   :members:
 
 
-Base RL Class
-=============
+Base Off-Policy Class
+^^^^^^^^^^^^^^^^^^^^^
 
 The base RL model for Off-Policy algorithm (ex: SAC/TD3)
 

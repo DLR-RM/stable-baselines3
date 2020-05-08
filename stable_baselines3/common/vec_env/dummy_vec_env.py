@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from copy import deepcopy
+from typing import Sequence
 
 import numpy as np
 
@@ -10,7 +11,7 @@ from stable_baselines3.common.vec_env.util import copy_obs_dict, dict_to_obs, ob
 class DummyVecEnv(VecEnv):
     """
     Creates a simple vectorized wrapper for multiple environments, calling each environment in sequence on the current
-    Python process. This is useful for computationally simple environment such as ``cartpole-v1``, as the overhead of
+    Python process. This is useful for computationally simple environment such as ````cartpole-v1````, as the overhead of
     multiprocess or multithread outweighs the environment computation time. This can also be used for RL methods that
     require a vectorized environment, but that you want a single environments to train with.
 
@@ -48,6 +49,12 @@ class DummyVecEnv(VecEnv):
         return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones),
                 deepcopy(self.buf_infos))
 
+    def seed(self, seed=None):
+        seeds = list()
+        for idx, env in enumerate(self.envs):
+            seeds.append(env.seed(seed + idx))
+        return seeds
+
     def reset(self):
         for env_idx in range(self.num_envs):
             obs = self.envs[env_idx].reset()
@@ -58,10 +65,21 @@ class DummyVecEnv(VecEnv):
         for env in self.envs:
             env.close()
 
-    def get_images(self):
-        return [env.render(mode='rgb_array') for env in self.envs]
+    def get_images(self, *args, **kwargs) -> Sequence[np.ndarray]:
+        return [env.render(*args, mode='rgb_array', **kwargs) for env in self.envs]
 
     def render(self, *args, **kwargs):
+        """
+        Gym environment rendering. If there are multiple environments then
+        they are tiled together in one image via ``BaseVecEnv.render()``.
+        Otherwise (if ``self.num_envs == 1``), we pass the render call directly to the
+        underlying environment.
+
+        Therefore, some arguments such as ``mode`` will have values that are valid
+        only when ``num_envs == 1``.
+
+        :param mode: The rendering type.
+        """
         if self.num_envs == 1:
             return self.envs[0].render(*args, **kwargs)
         else:

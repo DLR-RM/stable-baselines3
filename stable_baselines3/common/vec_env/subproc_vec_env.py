@@ -1,5 +1,6 @@
 import multiprocessing
 from collections import OrderedDict
+from typing import Sequence
 
 import gym
 import numpy as np
@@ -41,32 +42,6 @@ def _worker(remote, parent_remote, env_fn_wrapper):
                 raise NotImplementedError
         except EOFError:
             break
-
-
-def tile_images(img_nhwc):
-    """
-    Tile N images into one big PxQ image
-    (P,Q) are chosen to be as close as possible, and if N
-    is square, then P=Q.
-
-    :param img_nhwc: (list) list or array of images, ndim=4 once turned into array. img nhwc
-        n = batch index, h = height, w = width, c = channel
-    :return: (numpy float) img_HWc, ndim=3
-    """
-    img_nhwc = np.asarray(img_nhwc)
-    n_images, height, width, n_channels = img_nhwc.shape
-    # new_height was named H before
-    new_height = int(np.ceil(np.sqrt(n_images)))
-    # new_width was named W before
-    new_width = int(np.ceil(float(n_images) / new_height))
-    img_nhwc = np.array(list(img_nhwc) + [img_nhwc[0] * 0 for _ in range(n_images, new_height * new_width)])
-    # img_HWhwc
-    out_image = img_nhwc.reshape((new_height, new_width, height, width, n_channels))
-    # img_HhWwc
-    out_image = out_image.transpose(0, 2, 1, 3, 4)
-    # img_Hh_Ww_c
-    out_image = out_image.reshape((new_height * height, new_width * width, n_channels))
-    return out_image
 
 
 class SubprocVecEnv(VecEnv):
@@ -131,6 +106,11 @@ class SubprocVecEnv(VecEnv):
         obs, rews, dones, infos = zip(*results)
         return _flatten_obs(obs, self.observation_space), np.stack(rews), np.stack(dones), infos
 
+    def seed(self, seed=None):
+        for idx, remote in enumerate(self.remotes):
+            remote.send(('seed', seed + idx))
+        return [remote.recv() for remote in self.remotes]
+
     def reset(self):
         for remote in self.remotes:
             remote.send(('reset', None))
@@ -149,26 +129,11 @@ class SubprocVecEnv(VecEnv):
             process.join()
         self.closed = True
 
-    def render(self, mode='human', *args, **kwargs):
+    def get_images(self, *args, **kwargs) -> Sequence[np.ndarray]:
         for pipe in self.remotes:
             # gather images from subprocesses
             # `mode` will be taken into account later
             pipe.send(('render', (args, {'mode': 'rgb_array', **kwargs})))
-        imgs = [pipe.recv() for pipe in self.remotes]
-        # Create a big image by tiling images from subprocesses
-        bigimg = tile_images(imgs)
-        if mode == 'human':
-            import cv2  # pytype: disable=import-error
-            cv2.imshow('vecenv', bigimg[:, :, ::-1])
-            cv2.waitKey(1)
-        elif mode == 'rgb_array':
-            return bigimg
-        else:
-            raise NotImplementedError
-
-    def get_images(self):
-        for pipe in self.remotes:
-            pipe.send(('render', {"mode": 'rgb_array'}))
         imgs = [pipe.recv() for pipe in self.remotes]
         return imgs
 

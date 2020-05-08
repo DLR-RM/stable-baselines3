@@ -24,7 +24,6 @@ class DQN(OffPolicyRLModel):
     Deep Q-Network (DQN)
 
     Paper: https://arxiv.org/abs/1312.5602
-    Code: This implementation borrows code from Stable Baselines (PPO2 from https://github.com/hill-a/stable-baselines)
 
     :param policy: (PPOPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
@@ -130,7 +129,7 @@ class DQN(OffPolicyRLModel):
             with th.no_grad():
                 # Compute the target Q values
                 target_q = self.q_net_target(replay_data.next_observations)
-                target_q, _ = target_q.max(1)
+                target_q, _ = target_q.max(dim=1)
                 target_q = target_q.reshape(-1, 1)
                 target_q = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
 
@@ -138,8 +137,7 @@ class DQN(OffPolicyRLModel):
             current_q = self.q_net(replay_data.observations)
 
             # Gather q_values of our actions
-            indices = replay_data.actions.long()
-            current_q = th.gather(current_q, 1, indices)
+            current_q = th.gather(current_q, dim=1, index=replay_data.actions.long())
 
             # Compute q loss
             loss = F.mse_loss(current_q, target_q)

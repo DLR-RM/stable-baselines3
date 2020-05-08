@@ -34,14 +34,8 @@ def test_predict(model_class, env_id):
     if env_id == 'CartPole-v1':
         if model_class in [SAC, TD3]:
             return
-    else:
-        if model_class in [DQN]:
-            return
-
-    if model_class is DQN:
-        env_name = 'CartPole-v0'
-    else:
-        env_name = 'Pendulum-v0'
+    elif model_class in [DQN]:
+        return
 
     # test detection of different shapes by the predict method
     model = model_class('MlpPolicy', env_id)

@@ -6,18 +6,15 @@ import gym
 
 from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
 from stable_baselines3.common.callbacks import (CallbackList, CheckpointCallback, EvalCallback,
-                                               EveryNTimesteps, StopTrainingOnRewardThreshold)
+                                                EveryNTimesteps, StopTrainingOnRewardThreshold)
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN])
 def test_callbacks(model_class):
     log_folder = './logs/callbacks/'
 
-    # Use different environment for DQN
-    if model_class is DQN:
-        env_name = 'CartPole-v0'
-    else:
-        env_name = 'Pendulum-v0'
+    # Dyn only support discrete actions
+    env_name = select_env(model_class)
     # Create RL model
     # Small network for fast test
     model = model_class('MlpPolicy', env_name, policy_kwargs=dict(net_arch=[32]))
@@ -48,3 +45,10 @@ def test_callbacks(model_class):
     model.learn(500, callback=lambda _locals, _globals: True)
     if os.path.exists(log_folder):
         shutil.rmtree(log_folder)
+
+
+def select_env(model_class) -> str:
+    if model_class is DQN:
+        return 'CartPole-v0'
+    else:
+        return 'Pendulum-v0'

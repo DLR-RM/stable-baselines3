@@ -23,7 +23,7 @@ Notes
 - Original paper: https://arxiv.org/abs/1312.5602
 
 .. note::
-    This implementation provides only basic q learning and has no extensions such as Double-DQN, Dueling-DQN and Prioritized Experience Replay.
+    This implementation provides only vanilla Deep Q-Learning and has no extensions such as Double-DQN, Dueling-DQN and Prioritized Experience Replay.
 
 
 Can I use?

@@ -11,7 +11,7 @@ from stable_baselines3.common.policies import (BasePolicy, register_policy, crea
 
 class QNetwork(BasePolicy):
     """
-    Class with a Q-Value Net for DQN
+    Action-Value (Q-Value) network for DQN
 
     :param observation_space: (gym.spaces.Space) Observation space
     :param action_space: (gym.spaces.Space) Action space
@@ -78,7 +78,7 @@ class QNetwork(BasePolicy):
         else:
             features = self.extract_features(observation)
             q_val = self.q_net(features)
-            action = th.argmax(q_val, 1).reshape(-1)
+            action = q_val.argmax(dim=1).reshape(-1)
 
         return action
 

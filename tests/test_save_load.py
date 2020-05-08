@@ -7,10 +7,10 @@ import numpy as np
 import torch as th
 
 from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
+from stable_baselines3.common.base_class import BaseRLModel
 from stable_baselines3.common.identity_env import IdentityEnvBox, IdentityEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.identity_env import FakeImageEnv
-
 
 MODEL_LIST = [
     PPO,
@@ -19,6 +19,16 @@ MODEL_LIST = [
     SAC,
     DQN,
 ]
+
+
+def select_env(model_class: BaseRLModel) -> gym.Env:
+    """
+    Selects an environment with the correct action space as DQN only supports discrete action space
+    """
+    if model_class == DQN:
+        return IdentityEnv(10)
+    else:
+        return IdentityEnvBox(10)
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
@@ -31,11 +41,8 @@ def test_save_load(model_class):
 
     :param model_class: (BaseRLModel) A RL model
     """
-    # Use discrete actions for DQN
-    if model_class == DQN:
-        env = DummyVecEnv([lambda: IdentityEnv(10)])
-    else:
-        env = DummyVecEnv([lambda: IdentityEnvBox(10)])
+
+    env = DummyVecEnv([lambda: select_env(model_class)])
 
     # create model
     model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=1)
@@ -94,14 +101,9 @@ def test_set_env(model_class):
     """
 
     # use discrete for DQN
-    if model_class is DQN:
-        env = DummyVecEnv([lambda: IdentityEnv(10)])
-        env2 = DummyVecEnv([lambda: IdentityEnv(10)])
-        env3 = IdentityEnv(10)
-    else:
-        env = DummyVecEnv([lambda: IdentityEnvBox(10)])
-        env2 = DummyVecEnv([lambda: IdentityEnvBox(10)])
-        env3 = IdentityEnvBox(10)
+    env = DummyVecEnv([lambda: select_env(model_class)])
+    env2 = DummyVecEnv([lambda: select_env(model_class)])
+    env3 = select_env(model_class)
 
     # create model
     model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]))
@@ -126,11 +128,7 @@ def test_exclude_include_saved_params(model_class):
 
     :param model_class: (BaseRLModel) A RL model
     """
-    # use discrete for DQN
-    if model_class is DQN:
-        env = DummyVecEnv([lambda: IdentityEnv(10)])
-    else:
-        env = DummyVecEnv([lambda: IdentityEnvBox(10)])
+    env = DummyVecEnv([lambda: select_env(model_class)])
 
     # create model, set verbose as 2, which is not standard
     model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=2)
@@ -194,7 +192,7 @@ def test_save_load_policy(model_class, policy_str):
     """
     kwargs = {}
     if policy_str == 'MlpPolicy':
-        env = IdentityEnvBox(10) if model_class !=  DQN else IdentityEnv(10)
+        env = select_env(model_class)
     else:
         if model_class in [SAC, TD3, DQN]:
             # Avoid memory error when using replay buffer
@@ -207,7 +205,7 @@ def test_save_load_policy(model_class, policy_str):
 
     # create model
     model = model_class(policy_str, env, policy_kwargs=dict(net_arch=[16]),
-                         verbose=1, **kwargs)
+                        verbose=1, **kwargs)
     model.learn(total_timesteps=500, eval_freq=250)
 
     env.reset()
@@ -249,7 +247,6 @@ def test_save_load_policy(model_class, policy_str):
         actor.save("./logs/actor.pkl")
 
     del policy, actor
-
 
     policy = policy_class.load("./logs/policy.pkl")
     if actor_class is not None:

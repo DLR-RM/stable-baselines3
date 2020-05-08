@@ -70,11 +70,7 @@ class QNetwork(BasePolicy):
         """
         # epsilon greedy exploration
         if not deterministic and np.random.rand() < self.epsilon:
-            if observation.ndim > 1:
-                action = th.tensor([self.action_space.sample() for i in range(observation.shape[0])]).reshape(1)
-            else:
-                action = th.tensor(self.action_space.sample()).reshape(1)
-
+            action = th.tensor([self.action_space.sample() for i in range(observation.shape[0])]).reshape(1)
         else:
             features = self.extract_features(observation)
             q_val = self.q_net(features)

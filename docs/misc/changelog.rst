@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.6.0a5 (WIP)
+Pre-Release 0.6.0a6 (WIP)
 ------------------------------
 
 
@@ -30,6 +30,7 @@ Others:
 - Renamed to Stable-Baseline3
 - Added Dockerfile
 - Sync ``VecEnvs`` with Stable-Baselines
+- Update requirement: ``gym>=0.17``
 
 Documentation:
 ^^^^^^^^^^^^^^

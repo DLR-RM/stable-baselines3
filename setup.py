@@ -74,7 +74,7 @@ setup(name='stable_baselines3',
         'stable_baselines3': ['py.typed', 'version.txt']
       },
       install_requires=[
-          'gym>=0.11',
+          'gym>=0.17',
           'numpy',
           'torch>=1.4.0',
           # For saving models

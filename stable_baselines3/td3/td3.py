@@ -39,15 +39,6 @@ class TD3(OffPolicyRLModel):
     :param target_policy_noise: (float) Standard deviation of Gaussian noise added to target policy
         (smoothing noise)
     :param target_noise_clip: (float) Limit for absolute value of target policy smoothing noise.
-    :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
-        instead of action noise exploration (default: False)
-    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
-        Default: -1 (only sample at the beginning of the rollout)
-    :param sde_max_grad_norm: (float)
-    :param sde_ent_coef: (float)
-    :param sde_log_std_scheduler: (callable)
-    :param use_sde_at_warmup: (bool) Whether to use SDE instead of uniform sampling
-        during the warm up phase (before learning starts)
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
@@ -73,12 +64,6 @@ class TD3(OffPolicyRLModel):
                  policy_delay: int = 2,
                  target_policy_noise: float = 0.2,
                  target_noise_clip: float = 0.5,
-                 use_sde: bool = False,
-                 sde_sample_freq: int = -1,
-                 sde_max_grad_norm: float = 1,
-                 sde_ent_coef: float = 0.0,
-                 sde_log_std_scheduler: Optional[Callable] = None,
-                 use_sde_at_warmup: bool = False,
                  tensorboard_log: Optional[str] = None,
                  create_eval_env: bool = False,
                  policy_kwargs: Dict[str, Any] = None,
@@ -91,8 +76,7 @@ class TD3(OffPolicyRLModel):
                                   buffer_size, learning_starts, batch_size,
                                   policy_kwargs, verbose, device,
                                   create_eval_env=create_eval_env, seed=seed,
-                                  use_sde=use_sde, sde_sample_freq=sde_sample_freq,
-                                  use_sde_at_warmup=use_sde_at_warmup)
+                                  sde_support=False)
 
         self.train_freq = train_freq
         self.gradient_steps = gradient_steps
@@ -103,13 +87,6 @@ class TD3(OffPolicyRLModel):
         self.policy_delay = policy_delay
         self.target_noise_clip = target_noise_clip
         self.target_policy_noise = target_policy_noise
-
-        # State Dependent Exploration
-        self.sde_max_grad_norm = sde_max_grad_norm
-        self.sde_ent_coef = sde_ent_coef
-        self.sde_log_std_scheduler = sde_log_std_scheduler
-        self.on_policy_exploration = True
-        self.sde_vf = None
 
         if _init_setup_model:
             self._setup_model()
@@ -123,7 +100,6 @@ class TD3(OffPolicyRLModel):
         self.actor_target = self.policy.actor_target
         self.critic = self.policy.critic
         self.critic_target = self.policy.critic_target
-        self.vf_net = self.policy.vf_net
 
     def train(self, gradient_steps: int, batch_size: int = 100, policy_delay: int = 2) -> None:
 
@@ -178,52 +154,6 @@ class TD3(OffPolicyRLModel):
         self._n_updates += gradient_steps
         logger.logkv("n_updates", self._n_updates)
 
-    def train_sde(self) -> None:
-        # Update optimizer learning rate
-        # self._update_learning_rate(self.policy.optimizer)
-
-        # Unpack
-        obs, action, advantage, returns = [self.rollout_data[key] for key in
-                                           ['observations', 'actions', 'advantage', 'returns']]
-
-        log_prob, entropy = self.actor.evaluate_actions(obs, action)
-        values = self.vf_net(obs).flatten()
-
-        # Normalize advantage
-        # if self.normalize_advantage:
-        #     advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
-
-        # Value loss using the TD(gae_lambda) target
-        value_loss = F.mse_loss(returns, values)
-
-        # A2C loss
-        policy_loss = -(advantage * log_prob).mean()
-
-        # Entropy loss favor exploration
-        if entropy is None:
-            # Approximate entropy when no analytical form
-            entropy_loss = -log_prob.mean()
-        else:
-            entropy_loss = -th.mean(entropy)
-
-        vf_coef = 0.5
-        loss = policy_loss + self.sde_ent_coef * entropy_loss + vf_coef * value_loss
-
-        # Optimization step
-        self.actor.sde_optimizer.zero_grad()
-        loss.backward()
-
-        assert not th.isnan(log_prob).any(), log_prob
-        assert not th.isnan(entropy).any()
-        assert not th.isnan(self.actor.log_std.grad).any()
-        assert not th.isnan(self.actor.log_std).any()
-
-        # Clip grad norm
-        th.nn.utils.clip_grad_norm_([self.actor.log_std], self.sde_max_grad_norm)
-        self.actor.sde_optimizer.step()
-
-        del self.rollout_data
-
     def learn(self,
               total_timesteps: int,
               callback: MaybeCallback = None,
@@ -255,16 +185,6 @@ class TD3(OffPolicyRLModel):
             self._update_current_progress(self.num_timesteps, total_timesteps)
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
-
-                if self.use_sde:
-                    if self.sde_log_std_scheduler is not None:
-                        # Call the scheduler
-                        value = self.sde_log_std_scheduler(self._current_progress)
-                        self.actor.log_std.data = th.ones_like(self.actor.log_std) * value
-                    else:
-                        # On-policy gradient
-                        self.train_sde()
-
                 gradient_steps = self.gradient_steps if self.gradient_steps > 0 else rollout.episode_timesteps
                 self.train(gradient_steps, batch_size=self.batch_size, policy_delay=self.policy_delay)
 
@@ -280,7 +200,7 @@ class TD3(OffPolicyRLModel):
         :return: (List[str]) List of parameters that should be excluded from save
         """
         # Exclude aliases
-        return super(TD3, self).excluded_save_params() + ["actor", "critic", "vf_net", "actor_target", "critic_target"]
+        return super(TD3, self).excluded_save_params() + ["actor", "critic", "actor_target", "critic_target"]
 
     def get_torch_variables(self) -> Tuple[List[str], List[str]]:
         """

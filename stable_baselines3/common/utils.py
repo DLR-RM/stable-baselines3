@@ -84,7 +84,7 @@ def get_linear_fn(start: float, end: float):
     """
     def func(progress):
         """
-        :params progress: Progress beween 0 and 1
+        :params progress: Progress between 0 and 1
         """
         return start + (1.0 - progress) * (end - start)
     return func

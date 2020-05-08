@@ -240,8 +240,7 @@ class BaseRLModel(ABC):
         if (observation_space != env.observation_space
             # Special cases for images that need to be transposed
             and not (is_image_space(env.observation_space)
-                     and observation_space == VecTransposeImage.transpose_space(env.observation_space)
-            )):
+                     and observation_space == VecTransposeImage.transpose_space(env.observation_space))):
             raise ValueError(f'Observation spaces do not match: {observation_space} != {env.observation_space}')
         if action_space != env.action_space:
             raise ValueError(f'Action spaces do not match: {action_space} != {env.action_space}')
@@ -820,11 +819,11 @@ class OffPolicyRLModel(BaseRLModel):
                     if action_noise is not None:
                         # NOTE: in the original implementation of TD3, the noise was applied to the unscaled action
                         # Update(October 2019): Not anymore
-                        clipped_action = np.clip(scaled_action + action_noise(), -1, 1)
+                        scaled_action = np.clip(scaled_action + action_noise(), -1, 1)
 
                     # We store the scaled action in the buffer
-                    buffer_action = clipped_action
-                    action = self.policy.unscale_action(clipped_action)
+                    buffer_action = scaled_action
+                    action = self.policy.unscale_action(scaled_action)
                 else:
                     # Discrete case, no need to normalize or clip
                     buffer_action = unscaled_action

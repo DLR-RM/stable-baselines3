@@ -20,6 +20,7 @@ class KVWriter(object):
     """
     Key Value writer
     """
+
     def writekvs(self, kvs: Dict) -> None:
         """
         write a dictionary to file
@@ -39,6 +40,7 @@ class SeqWriter(object):
     """
     sequence writer
     """
+
     def writeseq(self, seq: List):
         """
         write an array to file
@@ -49,7 +51,7 @@ class SeqWriter(object):
 
 
 class HumanOutputFormat(KVWriter, SeqWriter):
-    def __init__(self, filename_or_file: Union [str, TextIO]):
+    def __init__(self, filename_or_file: Union[str, TextIO]):
         """
         log to a file, in a human readable format
 

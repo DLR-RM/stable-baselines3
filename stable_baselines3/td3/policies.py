@@ -6,7 +6,7 @@ import torch.nn as nn
 
 from stable_baselines3.common.preprocessing import get_action_dim
 from stable_baselines3.common.policies import (BasePolicy, register_policy, create_mlp,
-                                              NatureCNN, BaseFeaturesExtractor, FlattenExtractor)
+                                               NatureCNN, BaseFeaturesExtractor, FlattenExtractor)
 
 
 class Actor(BasePolicy):
@@ -24,6 +24,7 @@ class Actor(BasePolicy):
          dividing by 255.0 (True by default)
     :param device: (Union[th.device, str]) Device on which the code should run.
     """
+
     def __init__(self,
                  observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
@@ -38,7 +39,6 @@ class Actor(BasePolicy):
                                     normalize_images=normalize_images,
                                     device=device,
                                     squash_output=True)
-
 
         self.features_extractor = features_extractor
         self.normalize_images = normalize_images
@@ -55,10 +55,10 @@ class Actor(BasePolicy):
         data = super()._get_data()
 
         data.update(dict(
-             net_arch=self.net_arch,
-             features_dim=self.features_dim,
-             activation_fn=self.activation_fn,
-             features_extractor=self.features_extractor
+            net_arch=self.net_arch,
+            features_dim=self.features_dim,
+            activation_fn=self.activation_fn,
+            features_extractor=self.features_extractor
         ))
         return data
 
@@ -87,6 +87,7 @@ class Critic(BasePolicy):
          dividing by 255.0 (True by default)
     :param device: (Union[th.device, str]) Device on which the code should run.
     """
+
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  net_arch: List[int],
@@ -141,6 +142,7 @@ class TD3Policy(BasePolicy):
     :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
     """
+
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  lr_schedule: Callable,
@@ -204,13 +206,13 @@ class TD3Policy(BasePolicy):
         data = super()._get_data()
 
         data.update(dict(
-             net_arch=self.net_args['net_arch'],
-             activation_fn=self.net_args['activation_fn'],
-             lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
-             optimizer_class=self.optimizer_class,
-             optimizer_kwargs=self.optimizer_kwargs,
-             features_extractor_class=self.features_extractor_class,
-             features_extractor_kwargs=self.features_extractor_kwargs
+            net_arch=self.net_args['net_arch'],
+            activation_fn=self.net_args['activation_fn'],
+            lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
+            optimizer_class=self.optimizer_class,
+            optimizer_kwargs=self.optimizer_kwargs,
+            features_extractor_class=self.features_extractor_class,
+            features_extractor_kwargs=self.features_extractor_kwargs
         ))
         return data
 
@@ -250,6 +252,7 @@ class CnnPolicy(TD3Policy):
     :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
     """
+
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  lr_schedule: Callable,

@@ -6,7 +6,7 @@ import torch.nn as nn
 import numpy as np
 
 from stable_baselines3.common.policies import (BasePolicy, register_policy, create_mlp,
-                                              NatureCNN, BaseFeaturesExtractor, FlattenExtractor)
+                                               NatureCNN, BaseFeaturesExtractor, FlattenExtractor)
 
 
 class QNetwork(BasePolicy):
@@ -33,9 +33,9 @@ class QNetwork(BasePolicy):
                  epsilon: float = 0.05,
                  normalize_images: bool = True):
         super(QNetwork, self).__init__(observation_space, action_space,
-                                    features_extractor=features_extractor,
-                                    normalize_images=normalize_images,
-                                    device=device)
+                                       features_extractor=features_extractor,
+                                       normalize_images=normalize_images,
+                                       device=device)
 
         if net_arch is None:
             net_arch = [64, 64]
@@ -183,10 +183,16 @@ class DQNPolicy(BasePolicy):
         self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1),
                                               **self.optimizer_kwargs)
 
-    def update_epsilon(self, epsilon: float):
-        self.q_net_target.epsilon = epsilon
-        self.q_net.epsilon = epsilon
-        self.epsilon = epsilon
+    def update_exploration_rate(self, exploration_rate: float) -> None:
+        """
+        Update the exploration probability using the current learning rate schedule
+        and the current progress (from 1 to 0).
+
+        :param exploration_rate: (float) the new exploration rate
+        """
+        self.q_net_target.epsilon = exploration_rate
+        self.q_net.epsilon = exploration_rate
+        self.epsilon = exploration_rate
 
     def make_q_net(self) -> QNetwork:
         return QNetwork(**self.net_args).to(self.device)
@@ -221,7 +227,7 @@ MlpPolicy = DQNPolicy
 
 class CnnPolicy(DQNPolicy):
     """
-    Policy class for DQN.
+    Policy class for DQN when using images as input.
 
     :param observation_space: (gym.spaces.Space) Observation space
     :param action_space: (gym.spaces.Space) Action space
@@ -238,7 +244,6 @@ class CnnPolicy(DQNPolicy):
     :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
     """
-
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  lr_schedule: Callable,

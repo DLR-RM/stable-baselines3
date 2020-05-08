@@ -24,7 +24,7 @@ class DQN(OffPolicyRLModel):
     Deep Q-Network (DQN)
 
     Paper: https://arxiv.org/abs/1312.5602
-    Code: This implementation borrows code from probably Stable Baselines (PPO2 from https://github.com/hill-a/stable-baselines)
+    Code: This implementation borrows code from Stable Baselines (PPO2 from https://github.com/hill-a/stable-baselines)
 
     :param policy: (PPOPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
@@ -80,7 +80,7 @@ class DQN(OffPolicyRLModel):
                                   create_eval_env=create_eval_env,
                                   seed=seed, sde_support=False)
 
-        assert train_freq > 0, "DQN will soft lock if train_freq is smaller than 1"
+        assert train_freq > 0, "``train_freq`` must be positive"
         self.train_freq = train_freq
         self.gradient_steps = gradient_steps
         self.batch_size = batch_size
@@ -101,8 +101,7 @@ class DQN(OffPolicyRLModel):
         self._setup_exploration_schedule()
 
     def _setup_exploration_schedule(self) -> None:
-        self.exploration_schedule = get_schedule_fn(
-            get_linear_fn(self.exploration_initial_eps, self.exploration_final_eps))
+        self.exploration_schedule = get_linear_fn(self.exploration_initial_eps, self.exploration_final_eps)
 
     def _update_exploration(self) -> None:
         """
@@ -110,9 +109,9 @@ class DQN(OffPolicyRLModel):
         and the current progress (from 1 to 0).
         """
         # Log the current exploration probability
-        logger.logkv("epsilon", self.exploration_schedule(self._current_progress))
+        logger.logkv("exploration rate", self.exploration_schedule(self._current_progress))
 
-        self.policy.update_epsilon(self.exploration_schedule(self._current_progress))
+        self.policy.update_exploration_rate(self.exploration_schedule(self._current_progress))
 
     def _create_aliases(self) -> None:
         self.q_net = self.policy.q_net

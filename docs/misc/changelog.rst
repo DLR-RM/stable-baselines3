@@ -16,6 +16,7 @@ New Features:
 - Added ``VecCheckNan`` and ``VecVideoRecorder`` (Sync with Stable Baselines)
 - Added determinism tests
 - Added ``cmd_utils`` and ``atari_wrappers``
+- Added ``DQN``
 
 Bug Fixes:
 ^^^^^^^^^^

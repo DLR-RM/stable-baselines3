@@ -42,6 +42,7 @@ Main Features
    guide/custom_env
    guide/custom_policy
    guide/callbacks
+   guide/rl_zoo
    guide/migration
    guide/checking_nan
 

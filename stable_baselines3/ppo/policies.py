@@ -7,11 +7,11 @@ import torch.nn as nn
 import numpy as np
 
 from stable_baselines3.common.policies import (BasePolicy, register_policy, MlpExtractor,
-                                              create_sde_features_extractor, NatureCNN,
-                                              BaseFeaturesExtractor, FlattenExtractor)
+                                               create_sde_features_extractor, NatureCNN,
+                                               BaseFeaturesExtractor, FlattenExtractor)
 from stable_baselines3.common.distributions import (make_proba_distribution, Distribution,
-                                                   DiagGaussianDistribution, CategoricalDistribution,
-                                                   StateDependentNoiseDistribution)
+                                                    DiagGaussianDistribution, CategoricalDistribution,
+                                                    StateDependentNoiseDistribution)
 
 
 class PPOPolicy(BasePolicy):
@@ -47,6 +47,7 @@ class PPOPolicy(BasePolicy):
     :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
     """
+
     def __init__(self,
                  observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
@@ -122,20 +123,20 @@ class PPOPolicy(BasePolicy):
         data = super()._get_data()
 
         data.update(dict(
-             net_arch=self.net_arch,
-             activation_fn=self.activation_fn,
-             use_sde=self.use_sde,
-             log_std_init=self.log_std_init,
-             squash_output=self.dist_kwargs['squash_output'] if self.dist_kwargs else None,
-             full_std=self.dist_kwargs['full_std'] if self.dist_kwargs else None,
-             sde_net_arch=self.dist_kwargs['sde_net_arch'] if self.dist_kwargs else None,
-             use_expln=self.dist_kwargs['use_expln'] if self.dist_kwargs else None,
-             lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
-             ortho_init=self.ortho_init,
-             optimizer_class=self.optimizer_class,
-             optimizer_kwargs=self.optimizer_kwargs,
-             features_extractor_class=self.features_extractor_class,
-             features_extractor_kwargs=self.features_extractor_kwargs
+            net_arch=self.net_arch,
+            activation_fn=self.activation_fn,
+            use_sde=self.use_sde,
+            log_std_init=self.log_std_init,
+            squash_output=self.dist_kwargs['squash_output'] if self.dist_kwargs else None,
+            full_std=self.dist_kwargs['full_std'] if self.dist_kwargs else None,
+            sde_net_arch=self.dist_kwargs['sde_net_arch'] if self.dist_kwargs else None,
+            use_expln=self.dist_kwargs['use_expln'] if self.dist_kwargs else None,
+            lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
+            ortho_init=self.ortho_init,
+            optimizer_class=self.optimizer_class,
+            optimizer_kwargs=self.optimizer_kwargs,
+            features_extractor_class=self.features_extractor_class,
+            features_extractor_kwargs=self.features_extractor_kwargs
         ))
         return data
 
@@ -145,7 +146,8 @@ class PPOPolicy(BasePolicy):
 
         :param n_envs: (int)
         """
-        assert isinstance(self.action_dist, StateDependentNoiseDistribution), 'reset_noise() is only available when using SDE'
+        assert isinstance(self.action_dist,
+                          StateDependentNoiseDistribution), 'reset_noise() is only available when using SDE'
         self.action_dist.sample_weights(self.log_std, batch_size=n_envs)
 
     def _build(self, lr_schedule: Callable) -> None:
@@ -319,6 +321,7 @@ class CnnPolicy(PPOPolicy):
     :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
     """
+
     def __init__(self,
                  observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,

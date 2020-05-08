@@ -13,6 +13,16 @@ import numpy as np
 
 
 class Monitor(gym.Wrapper):
+    """
+    A monitor wrapper for Gym environments, it is used to know the episode reward, length, time and other data.
+
+    :param env: (gym.Env) The environment
+    :param filename: (Optional[str]) the location to save a log file, can be None for no log
+    :param allow_early_resets: (bool) allows the reset of the environment before it is done
+    :param reset_keywords: (Tuple[str, ...]) extra keywords for the reset call,
+        if extra parameters are needed at reset
+    :param info_keywords: (Tuple[str, ...]) extra information to log, from the information return of env.step()
+    """
     EXT = "monitor.csv"
 
     def __init__(self,
@@ -21,16 +31,6 @@ class Monitor(gym.Wrapper):
                  allow_early_resets: bool = True,
                  reset_keywords: Tuple[str, ...] = (),
                  info_keywords: Tuple[str, ...] = ()):
-        """
-        A monitor wrapper for Gym environments, it is used to know the episode reward, length, time and other data.
-
-        :param env: (gym.Env) The environment
-        :param filename: (Optional[str]) the location to save a log file, can be None for no log
-        :param allow_early_resets: (bool) allows the reset of the environment before it is done
-        :param reset_keywords: (Tuple[str, ...]) extra keywords for the reset call,
-            if extra parameters are needed at reset
-        :param info_keywords: (Tuple[str, ...]) extra information to log, from the information return of env.step()
-        """
         super(Monitor, self).__init__(env=env)
         self.t_start = time.time()
         if filename is None:

@@ -4,7 +4,7 @@ from typing import Optional, Union
 from copy import deepcopy
 
 from stable_baselines3.common.vec_env.base_vec_env import (AlreadySteppingError, NotSteppingError,
-                                                          VecEnv, VecEnvWrapper, CloudpickleWrapper)
+                                                           VecEnv, VecEnvWrapper, CloudpickleWrapper)
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
 from stable_baselines3.common.vec_env.vec_frame_stack import VecFrameStack

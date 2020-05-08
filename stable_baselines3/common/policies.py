@@ -166,7 +166,7 @@ class BasePolicy(nn.Module):
             module.bias.data.fill_(0.0)
 
     @staticmethod
-    def _dummy_schedule(progress: float) -> float:
+    def _dummy_schedule(_progress: float) -> float:
         """ (float) Useful for pickling policy."""
         return 0.0
 

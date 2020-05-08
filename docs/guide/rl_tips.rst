@@ -39,7 +39,7 @@ however, *don't expect the default ones to work* on any environment.
 Therefore, we *highly recommend you* to take a look at the `RL zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_ (or the original papers) for tuned hyperparameters.
 A best practice when you apply RL to a new problem is to do automatic hyperparameter optimization. Again, this is included in the `RL zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
 
-When applying RL to a custom problem, you should always normalize the input to the agent (e.g. using VecNormalize for PPO2/A2C)
+When applying RL to a custom problem, you should always normalize the input to the agent (e.g. using VecNormalize for PPO/A2C)
 and look at common preprocessing done on other environments (e.g. for `Atari <https://danieltakeshi.github.io/2016/11/25/frame-skipping-and-preprocessing-for-deep-q-networks-on-atari-2600-games/>`_, frame-stack, ...).
 Please refer to *Tips and Tricks when creating a custom environment* paragraph below for more advice related to custom environments.
 
@@ -137,7 +137,7 @@ Please use the hyperparameters in the `RL zoo <https://github.com/DLR-RM/rl-base
 Continuous Actions - Multiprocessed
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Take a look at PPO2, TRPO or A2C. Again, don't forget to take the hyperparameters from the `RL zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_
+Take a look at PPO, TRPO or A2C. Again, don't forget to take the hyperparameters from the `RL zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_
 for continuous actions problems (cf *Bullet* envs).
 
 .. note::

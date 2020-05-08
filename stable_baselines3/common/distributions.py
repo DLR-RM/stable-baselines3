@@ -24,7 +24,7 @@ class Distribution(object):
 
     def entropy(self) -> Optional[th.Tensor]:
         """
-        Returns shannon's entropy of the probability
+        Returns Shannon's entropy of the probability
 
         :return: (Optional[th.Tensor]) the entropy,
             return None if no analytical form is known
@@ -33,7 +33,7 @@ class Distribution(object):
 
     def sample(self) -> th.Tensor:
         """
-        Returns a sample from the probabilty distribution
+        Returns a sample from the probability distribution
 
         :return: (th.Tensor) the stochastic action
         """
@@ -42,7 +42,7 @@ class Distribution(object):
     def mode(self) -> th.Tensor:
         """
         Returns the most likely action (deterministic output)
-        from the probabilty distribution
+        from the probability distribution
 
         :return: (th.Tensor) the stochastic action
         """
@@ -50,7 +50,7 @@ class Distribution(object):
 
     def get_actions(self, deterministic: bool = False) -> th.Tensor:
         """
-        Return actions according to the probabilty distribution.
+        Return actions according to the probability distribution.
 
         :param deterministic: (bool)
         :return: (th.Tensor)
@@ -61,7 +61,7 @@ class Distribution(object):
 
     def actions_from_params(self, *args, **kwargs) -> th.Tensor:
         """
-        Returns samples from the probabilty distribution
+        Returns samples from the probability distribution
         given its parameters.
 
         :return: (th.Tensor) actions
@@ -70,8 +70,8 @@ class Distribution(object):
 
     def log_prob_from_params(self, *args, **kwargs) -> Tuple[th.Tensor, th.Tensor]:
         """
-        Returns samples and the associated log probabilties
-        from the probabilty distribution given its parameters.
+        Returns samples and the associated log probabilities
+        from the probability distribution given its parameters.
 
         :return: (th.Tuple[th.Tensor, th.Tensor]) actions and log prob
         """
@@ -113,7 +113,7 @@ class DiagGaussianDistribution(Distribution):
                                log_std_init: float = 0.0) -> Tuple[nn.Module, nn.Parameter]:
         """
         Create the layers and parameter that represent the distribution:
-        one output will be the mean of the gaussian, the other parameter will be the
+        one output will be the mean of the Gaussian, the other parameter will be the
         standard deviation (log std in fact to allow negative values)
 
         :param latent_dim: (int) Dimension og the last layer of the policy (before the action layer)
@@ -158,7 +158,7 @@ class DiagGaussianDistribution(Distribution):
     def log_prob_from_params(self, mean_actions: th.Tensor,
                              log_std: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         """
-        Compute the log probabilty of taking an action
+        Compute the log probability of taking an action
         given the distribution parameters.
 
         :param mean_actions: (th.Tensor)
@@ -171,7 +171,7 @@ class DiagGaussianDistribution(Distribution):
 
     def log_prob(self, actions: th.Tensor) -> th.Tensor:
         """
-        Get the log probabilties of actions according to the distribution.
+        Get the log probabilities of actions according to the distribution.
         Note that you must call ``proba_distribution()`` method before.
 
         :param actions: (th.Tensor)
@@ -255,7 +255,7 @@ class CategoricalDistribution(Distribution):
         """
         Create the layer that represents the distribution:
         it will be the logits of the Categorical distribution.
-        You can then get probabilties using a softmax.
+        You can then get probabilities using a softmax.
 
         :param latent_dim: (int) Dimension of the last layer
             of the policy network (before the action layer)
@@ -296,7 +296,7 @@ class StateDependentNoiseDistribution(Distribution):
     """
     Distribution class for using State Dependent Exploration (SDE).
     It is used to create the noise exploration matrix and
-    compute the log probabilty of an action with that noise.
+    compute the log probability of an action with that noise.
 
     :param action_dim: (int) Dimension of the action space.
     :param full_std: (bool) Whether to use (n_features x n_actions) parameters
@@ -485,7 +485,7 @@ class StateDependentNoiseDistribution(Distribution):
 
 class TanhBijector(object):
     """
-    Bijective transformation of a probabilty distribution
+    Bijective transformation of a probability distribution
     using a squashing function (tanh)
     TODO: use Pyro instead (https://pyro.ai/)
 
@@ -536,8 +536,8 @@ def make_proba_distribution(action_space: gym.spaces.Space,
     :param action_space: (gym.spaces.Space) the input action space
     :param use_sde: (bool) Force the use of StateDependentNoiseDistribution
         instead of DiagGaussianDistribution
-    :param dist_kwargs: (Optional[Dict[str, Any]]) Keyword arguments to pass to the probabilty distribution
-    :return: (Distribution) the approriate Distribution object
+    :param dist_kwargs: (Optional[Dict[str, Any]]) Keyword arguments to pass to the probability distribution
+    :return: (Distribution) the appropriate Distribution object
     """
     if dist_kwargs is None:
         dist_kwargs = {}

@@ -3,11 +3,11 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Stable Baselines3 docs!
-==================================
+Welcome to Stable Baselines3 docs! - RL Baselines Made Easy
+===========================================================
 
 `Stable Baselines3 <https://github.com/DLR-RM/stable-baselines3>`_ is a set of improved implementations of reinforcement learning algorithms in PyTorch.
-It is the next major version (PyTorch edition) of `Stable Baselines <https://github.com/hill-a/stable-baselines>`_.
+It is the next major version of `Stable Baselines <https://github.com/hill-a/stable-baselines>`_.
 
 
 Github repository: https://github.com/DLR-RM/stable-baselines3
@@ -42,6 +42,7 @@ Main Features
    guide/custom_env
    guide/custom_policy
    guide/callbacks
+   guide/rl_zoo
    guide/migration
    guide/checking_nan
 
@@ -61,9 +62,15 @@ Main Features
   :maxdepth: 1
   :caption: Common
 
+  common/atari_wrappers
+  common/cmd_utils
   common/distributions
   common/evaluation
   common/env_checker
+  common/monitor
+  common/logger
+  common/noise
+  common/utils
 
 .. toctree::
   :maxdepth: 1

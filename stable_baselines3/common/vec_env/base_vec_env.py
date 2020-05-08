@@ -9,7 +9,6 @@ import cloudpickle
 from stable_baselines3.common import logger
 
 
-
 def tile_images(img_nhwc: Sequence[np.ndarray]) -> np.ndarray:  # pragma: no cover
     """
     Tile N images into one big PxQ image

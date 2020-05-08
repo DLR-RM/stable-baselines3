@@ -82,7 +82,7 @@ Goals of this repository:
 
 Github repo: https://github.com/DLR-RM/rl-baselines3-zoo
 
-<!-- Documentation: https://stable-baselines3.readthedocs.io/en/master/guide/rl_zoo.html -->
+Documentation: https://stable-baselines3.readthedocs.io/en/master/guide/rl_zoo.html
 
 ## Installation
 
@@ -91,9 +91,9 @@ Github repo: https://github.com/DLR-RM/rl-baselines3-zoo
 ### Prerequisites
 Stable Baselines3 requires python 3.6+.
 
-<!-- #### Windows 10
+#### Windows 10
 
-To install stable-baselines on Windows, please look at the [documentation](https://stable-baselines3.readthedocs.io/en/master/guide/install.html#prerequisites). -->
+To install stable-baselines on Windows, please look at the [documentation](https://stable-baselines3.readthedocs.io/en/master/guide/install.html#prerequisites).
 
 
 ### Install using pip
@@ -152,14 +152,14 @@ Please read the [documentation](https://stable-baselines3.readthedocs.io/) for m
 
 All the following examples can be executed online using Google colab notebooks:
 
-<!-- - [Full Tutorial](https://github.com/araffin/rl-tutorial-jnrr19) -->
+- [Full Tutorial](https://github.com/araffin/rl-tutorial-jnrr19)
 - [All Notebooks](https://github.com/Stable-Baselines-Team/rl-colab-notebooks/tree/sb3)
 - [Getting Started](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/stable_baselines_getting_started.ipynb)
-<!-- - [Training, Saving, Loading](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/saving_loading_dqn.ipynb)
-- [Multiprocessing](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/multiprocessing_rl.ipynb)
-- [Monitor Training and Plotting](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/monitor_training.ipynb)
-- [Atari Games](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/atari_games.ipynb)
-- [RL Baselines Zoo](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/rl-baselines-zoo.ipynb) -->
+- [Training, Saving, Loading](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/saving_loading_dqn.ipynb)
+<!-- - [Multiprocessing](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/multiprocessing_rl.ipynb)
+- [Monitor Training and Plotting](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/monitor_training.ipynb)
+- [Atari Games](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/atari_games.ipynb) -->
+- [RL Baselines Zoo](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/rl-baselines-zoo.ipynb)
 
 
 ## Implemented Algorithms
@@ -193,10 +193,10 @@ pip install pytype
 make type
 ```
 
-<!-- ## Projects Using Stable-Baselines3
+## Projects Using Stable-Baselines3
 
 We try to maintain a list of project using stable-baselines3 in the [documentation](https://stable-baselines3.readthedocs.io/en/master/misc/projects.html),
-please tell us when if you want your project to appear on this page ;) -->
+please tell us when if you want your project to appear on this page ;)
 
 ## Citing the Project
 

@@ -28,16 +28,16 @@ class AtariWrapper(gym.Wrapper):
     * Scale observation: optional
 
     :param env: (gym.Env) gym environment
-        env (Env): environment
     :param noop_max: (int): max number of no-ops
     :param frame_skip: (int): the frequency at which the agent experiences the game.
     :param screen_size: (int): resize Atari frame
     :param terminal_on_life_loss: (bool): if True, then step() returns done=True whenever a
             life is lost.
-    :param grayscale_obs: (bool): if True, then gray scale observation is returned, otherwise, RGB observation
+    :param grayscale_obs: (bool): if True (default), then gray scale observation is returned, otherwise, RGB observation
             is returned.
     :param scale_obs: (bool): if True, then observation normalized in range [0,1] is returned. It also limits memory
             optimization benefits of FrameStack Wrapper.
+    :param scale_obs: (bool) If True (default), the reward is clip to {-1, 0, 1} depending on its sign.
     """
     def __init__(self, env: gym.Env,
                  noop_max: int = 30,

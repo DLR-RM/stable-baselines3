@@ -12,35 +12,34 @@ notebooks:
 -  `Full Tutorial <https://github.com/araffin/rl-tutorial-jnrr19>`_
 -  `All Notebooks <https://github.com/Stable-Baselines-Team/rl-colab-notebooks/tree/sb3>`_
 -  `Getting Started`_
+-  `Training, Saving, Loading`_
+-  `RL Baselines zoo`_
 
 
-.. -  `Training, Saving, Loading`_
 .. -  `Multiprocessing`_
 .. -  `Monitor Training and Plotting`_
 .. -  `Atari Games`_
 .. -  `Breakout`_ (trained agent included)
 .. -  `Hindsight Experience Replay`_
-.. -  `RL Baselines zoo`_
 
 .. _Getting Started: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/stable_baselines_getting_started.ipynb
-.. _Training, Saving, Loading: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/saving_loading_dqn.ipynb
-.. _Multiprocessing: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/multiprocessing_rl.ipynb
-.. _Monitor Training and Plotting: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/monitor_training.ipynb
-.. _Atari Games: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/atari_games.ipynb
-.. _Breakout: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/breakout.ipynb
-.. _Hindsight Experience Replay: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/stable_baselines_her.ipynb
-.. _RL Baselines zoo: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/rl-baselines-zoo.ipynb
+.. _Training, Saving, Loading: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/saving_loading_dqn.ipynb
+.. _Multiprocessing: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/multiprocessing_rl.ipynb
+.. _Monitor Training and Plotting: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/monitor_training.ipynb
+.. _Atari Games: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/atari_games.ipynb
+.. _Breakout: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/breakout.ipynb
+.. _Hindsight Experience Replay: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/stable_baselines_her.ipynb
+.. _RL Baselines zoo: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/rl-baselines-zoo.ipynb
 
 .. |colab| image:: ../_static/img/colab.svg
 
 Basic Usage: Training, Saving, Loading
 --------------------------------------
 
-In the following example, we will train, save and load a DQN model on the Lunar Lander environment.
+In the following example, we will train, save and load a A2C model on the Lunar Lander environment.
 
-.. .. image:: ../_static/img/try_it.png
-..    :scale: 30 %
-..    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/saving_loading_dqn.ipynb
+.. image:: ../_static/img/colab-badge.svg
+   :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/saving_loading_dqn.ipynb
 
 
 .. figure:: https://cdn-images-1.medium.com/max/960/1*f4VZPKOI0PYNWiwt0la0Rg.gif
@@ -93,9 +92,8 @@ In the following example, we will train, save and load a DQN model on the Lunar 
 Multiprocessing: Unleashing the Power of Vectorized Environments
 ----------------------------------------------------------------
 ..
-.. .. image:: ../_static/img/try_it.png
-..    :scale: 30 %
-..    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/multiprocessing_rl.ipynb
+.. .. image:: ../_static/img/colab-badge.svg
+..    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/multiprocessing_rl.ipynb
 
 .. figure:: https://cdn-images-1.medium.com/max/960/1*h4WTQNVIsvMXJTCpXm_TAw.gif
 
@@ -162,9 +160,8 @@ This could be useful when you want to monitor training, for instance display liv
 learning curves in Tensorboard (or in Visdom) or save the best agent.
 If your callback returns False, training is aborted early.
 
-.. .. image:: ../_static/img/try_it.png
-..    :scale: 30 %
-..    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/monitor_training.ipynb
+.. .. image:: ../_static/img/colab-badge.svg
+..    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/monitor_training.ipynb
 ..
 .. .. figure:: ../_static/img/learning_curve.png
 ..
@@ -270,9 +267,8 @@ Training a RL agent on Atari games is straightforward thanks to ``make_atari_env
 It will do `all the preprocessing <https://danieltakeshi.github.io/2016/11/25/frame-skipping-and-preprocessing-for-deep-q-networks-on-atari-2600-games/>`_
 and multiprocessing for you.
 
-.. .. image:: ../_static/img/try_it.png
-..    :scale: 30 %
-..    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/master/atari_games.ipynb
+.. .. image:: ../_static/img/colab-badge.svg
+..    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/atari_games.ipynb
 ..
 
 .. code-block:: python

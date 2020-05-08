@@ -45,6 +45,7 @@ Main Features
    guide/rl_zoo
    guide/migration
    guide/checking_nan
+   guide/developer
 
 
 .. toctree::

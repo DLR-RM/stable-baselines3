@@ -76,9 +76,11 @@ def get_schedule_fn(value_schedule: Union[Callable, float]) -> Callable:
 
 def get_linear_fn(start: float, end: float):
     """
-    Linear interpolate between start and end for progress in [0,1]
-    :params start: value to start with if progress = 0
-    :params end: value to end with if progress = 1
+    Create a function that interpolates linearly between start and end for progress between [0,1]
+    It is useful for exploration schedule
+    :params start: (float) value to start with if progress = 0
+    :params end: (float) value to end with if progress = 1
+    :return: (Callable)
     """
     def func(progress):
         """

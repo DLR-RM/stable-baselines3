@@ -33,7 +33,7 @@ class SAC(OffPolicyRLModel):
     :param buffer_size: (int) size of the replay buffer
     :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
     :param batch_size: (int) Minibatch size for each gradient update
-    :param tau: (float) the soft update coefficient ("polyak update", between 0 and 1)
+    :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1)
     :param gamma: (float) the discount factor
     :param train_freq: (int) Update the model every ``train_freq`` steps.
     :param gradient_steps: (int) How many gradient update after each step

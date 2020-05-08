@@ -44,8 +44,8 @@ Bleeding-edge version
 	pip install git+https://github.com/DLR-RM/stable-baselines3
 
 
-Development verion
-------------------
+Development version
+-------------------
 
 To contribute to Stable-Baselines3, with support for running tests and building the documentation.
 

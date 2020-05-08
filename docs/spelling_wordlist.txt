@@ -10,7 +10,10 @@ VecEnv
 pretrain
 petrained
 tf
+th
+nn
 np
+str
 mujoco
 cpu
 ndarray

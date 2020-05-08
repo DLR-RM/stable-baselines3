@@ -12,7 +12,7 @@ from stable_baselines3.common import logger
 from stable_baselines3.common.base_class import OffPolicyRLModel
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
 from stable_baselines3.common.buffers import ReplayBuffer, ReplayBufferSamples
-from stable_baselines3.common.utils import explained_variance, get_schedule_fn
+from stable_baselines3.common.utils import explained_variance, get_schedule_fn, get_linear_fn
 from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
@@ -101,14 +101,7 @@ class DQN(OffPolicyRLModel):
         self._setup_exploration_schedule()
 
     def _setup_exploration_schedule(self) -> None:
-        def func(progress):
-            """
-            :params progress: current progress(from 1 to 0)
-            """
-            return self.exploration_initial_eps + (1.0 - progress) * (
-                        self.exploration_final_eps - self.exploration_initial_eps)
-
-        self.exploration_schedule = func
+        self.exploration_schedule = get_schedule_fn(get_linear_fn(self.exploration_initial_eps,self.exploration_final_eps))
 
     def _update_exploration(self) -> None:
         """

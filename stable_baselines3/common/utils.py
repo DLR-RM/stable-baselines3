@@ -74,6 +74,20 @@ def get_schedule_fn(value_schedule: Union[Callable, float]) -> Callable:
     return value_schedule
 
 
+def get_linear_fn(start: float, end: float):
+    """
+    Linear interpolate between start and end for progress in [0,1]
+    :params start: value to start with if progress = 0
+    :params end: value to end with if progress = 1
+    """
+    def func(progress):
+        """
+        :params progress: Progress beween 0 and 1
+        """
+        return start + (1.0 - progress) * (end - start)
+    return func
+
+
 def constant_fn(val: float) -> Callable:
     """
     Create a function that returns a constant

@@ -11,8 +11,8 @@ import numpy as np
 from stable_baselines3.common import logger
 from stable_baselines3.common.base_class import OffPolicyRLModel
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
-from stable_baselines3.common.buffers import ReplayBuffer, ReplayBufferSamples
-from stable_baselines3.common.utils import explained_variance, get_schedule_fn, get_linear_fn
+from stable_baselines3.common.buffers import ReplayBuffer
+from stable_baselines3.common.utils import get_schedule_fn, get_linear_fn
 from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
@@ -24,7 +24,7 @@ class DQN(OffPolicyRLModel):
     Deep Q-Network (DQN)
 
     Paper: https://arxiv.org/abs/1312.5602
-    Code: This implementation borrows code from probably Stable Baselines (PPO2 from https://github.com/hill-a/stable-baselines)?
+    Code: This implementation borrows code from probably Stable Baselines (PPO2 from https://github.com/hill-a/stable-baselines)
 
     :param policy: (PPOPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
@@ -101,14 +101,15 @@ class DQN(OffPolicyRLModel):
         self._setup_exploration_schedule()
 
     def _setup_exploration_schedule(self) -> None:
-        self.exploration_schedule = get_schedule_fn(get_linear_fn(self.exploration_initial_eps,self.exploration_final_eps))
+        self.exploration_schedule = get_schedule_fn(
+            get_linear_fn(self.exploration_initial_eps, self.exploration_final_eps))
 
     def _update_exploration(self) -> None:
         """
-        Update the policy exploration rate using the current exploration rate schedule
+        Update the policy exploration probability using the current exploration rate schedule
         and the current progress (from 1 to 0).
         """
-        # Log the current learning rate
+        # Log the current exploration probability
         logger.logkv("epsilon", self.exploration_schedule(self._current_progress))
 
         self.policy.update_epsilon(self.exploration_schedule(self._current_progress))
@@ -119,7 +120,7 @@ class DQN(OffPolicyRLModel):
 
     def train(self, gradient_steps: int, batch_size: int = 100) -> None:
 
-        # Update learning rate and exploration according to schedule
+        # Update learning rate and exploration probability according to schedule
         self._update_learning_rate(self.policy.optimizer)
         self._update_exploration()
 
@@ -169,7 +170,6 @@ class DQN(OffPolicyRLModel):
               tb_log_name: str = "DQN",
               eval_log_path: Optional[str] = None,
               reset_num_timesteps: bool = True) -> OffPolicyRLModel:
-
 
         callback = self._setup_learn(eval_env, callback, eval_freq,
                                      n_eval_episodes, eval_log_path, reset_num_timesteps)

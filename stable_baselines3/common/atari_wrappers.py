@@ -33,10 +33,11 @@ class AtariWrapper(gym.Wrapper):
     :param screen_size: (int): resize Atari frame
     :param terminal_on_life_loss: (bool): if True, then step() returns done=True whenever a
             life is lost.
-    :param grayscale_obs: (bool): if True, then gray scale observation is returned, otherwise, RGB observation
+    :param grayscale_obs: (bool): if True (default), then gray scale observation is returned, otherwise, RGB observation
             is returned.
     :param scale_obs: (bool): if True, then observation normalized in range [0,1] is returned. It also limits memory
             optimization benefits of FrameStack Wrapper.
+    :param scale_obs: (bool) If True (default), the reward is clip to {-1, 0, 1} depending on its sign.
     """
     def __init__(self, env: gym.Env,
                  noop_max: int = 30,

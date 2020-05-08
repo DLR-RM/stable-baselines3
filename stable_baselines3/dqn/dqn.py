@@ -37,6 +37,7 @@ class DQN(OffPolicyRLModel):
     :param gradient_steps: (int) How many gradient update after each step
     :param tau: (float) the soft update coefficient ("polyak update", between 0 and 1)
     :param target_update_interval: (int) update the target network every ``target_update_interval`` steps.
+    :param exploration_fraction: (float) fraction of entire training period over which the exploration rate is reduced
     :param exploration_initial_eps: (float) initial value of random action probability
     :param exploration_final_eps: (float) final value of random action probability
     :param max_grad_norm: (float) The maximum value for the gradient clipping
@@ -62,6 +63,7 @@ class DQN(OffPolicyRLModel):
                  gradient_steps: int = 1,
                  tau: float = 1.0,
                  target_update_interval: int = 8,
+                 exploration_fraction: float = 0.1,
                  exploration_initial_eps: float = 1.0,
                  exploration_final_eps: float = 0.02,
                  max_grad_norm: float = 10,
@@ -86,6 +88,7 @@ class DQN(OffPolicyRLModel):
         self.gamma = gamma
         self.exploration_final_eps = exploration_final_eps
         self.exploration_initial_eps = exploration_initial_eps
+        self.exploration_fraction = exploration_fraction
         self.target_update_interval = target_update_interval
         self.tau = tau
         self.max_grad_norm = max_grad_norm
@@ -100,7 +103,8 @@ class DQN(OffPolicyRLModel):
         self._setup_exploration_schedule()
 
     def _setup_exploration_schedule(self) -> None:
-        self.exploration_schedule = get_linear_fn(self.exploration_initial_eps, self.exploration_final_eps)
+        self.exploration_schedule = get_linear_fn(self.exploration_initial_eps, self.exploration_final_eps,
+                                                  self.exploration_fraction)
 
     def _update_exploration(self) -> None:
         """
@@ -108,9 +112,9 @@ class DQN(OffPolicyRLModel):
         and the current progress (from 1 to 0).
         """
         # Log the current exploration probability
-        logger.logkv("exploration rate", self.exploration_schedule(self._current_progress))
+        logger.logkv("exploration rate", self.exploration_schedule(self.num_timesteps))
 
-        self.policy.update_exploration_rate(self.exploration_schedule(self._current_progress))
+        self.policy.update_exploration_rate(self.exploration_schedule(self.num_timesteps))
 
     def _create_aliases(self) -> None:
         self.q_net = self.policy.q_net

@@ -12,10 +12,10 @@ notebooks:
 -  `Full Tutorial <https://github.com/araffin/rl-tutorial-jnrr19>`_
 -  `All Notebooks <https://github.com/Stable-Baselines-Team/rl-colab-notebooks/tree/sb3>`_
 -  `Getting Started`_
+-  `Training, Saving, Loading`_
 -  `RL Baselines zoo`_
 
 
-.. -  `Training, Saving, Loading`_
 .. -  `Multiprocessing`_
 .. -  `Monitor Training and Plotting`_
 .. -  `Atari Games`_
@@ -36,10 +36,10 @@ notebooks:
 Basic Usage: Training, Saving, Loading
 --------------------------------------
 
-In the following example, we will train, save and load a DQN model on the Lunar Lander environment.
+In the following example, we will train, save and load a A2C model on the Lunar Lander environment.
 
-.. .. image:: ../_static/img/colab-badge.svg
-..    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/saving_loading_dqn.ipynb
+.. image:: ../_static/img/colab-badge.svg
+   :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/saving_loading_dqn.ipynb
 
 
 .. figure:: https://cdn-images-1.medium.com/max/960/1*f4VZPKOI0PYNWiwt0la0Rg.gif

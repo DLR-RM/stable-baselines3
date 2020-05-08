@@ -28,7 +28,6 @@ class AtariWrapper(gym.Wrapper):
     * Scale observation: optional
 
     :param env: (gym.Env) gym environment
-        env (Env): environment
     :param noop_max: (int): max number of no-ops
     :param frame_skip: (int): the frequency at which the agent experiences the game.
     :param screen_size: (int): resize Atari frame

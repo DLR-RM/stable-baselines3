@@ -8,7 +8,7 @@ pytest:
   script:
     # TODO: remove when atari-py will be in the docker image
   - pip install -e .[extra,docs,tests]
-  - make test
+  - make pytest
 
 doc-build:
   script:

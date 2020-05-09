@@ -1,4 +1,4 @@
-image: stablebaselines/stable-baselines3-cpu:latest
+image: stablebaselines/stable-baselines3-cpu:0.6.0a5
 
 type-check:
   script:
@@ -6,8 +6,6 @@ type-check:
 
 pytest:
   script:
-    # TODO: remove when atari-py will be in the docker image
-  - pip install -e .[extra,docs,tests]
   - make pytest
 
 doc-build:

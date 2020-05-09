@@ -121,9 +121,9 @@ class FakeImageEnv(Env):
     :param discrete: (bool)
     """
     def __init__(self, action_dim: int = 6,
-                 screen_height: int = 210,
-                 screen_width: int = 160,
-                 n_channels: int = 3,
+                 screen_height: int = 84,
+                 screen_width: int = 84,
+                 n_channels: int = 1,
                  discrete: bool = True):
 
         self.observation_space = Box(low=0, high=255, shape=(screen_height, screen_width,

@@ -6,9 +6,9 @@ type-check:
 
 pytest:
   script:
-  # TODO: remove when opencv and atari installed in the docker image
-  # fix: https://github.com/NVIDIA/nvidia-docker/issues/864
-  - pip install gym[atari]
+  # TODO: remove when opencv properly installed in the docker image
+  # see https://github.com/NVIDIA/nvidia-docker/issues/864
+  - pip install opencv-python-headless
   # MKL_THREADING_LAYER=GNU to avoid MKL_THREADING_LAYER=INTEL incompatibility error
   - MKL_THREADING_LAYER=GNU make pytest
 

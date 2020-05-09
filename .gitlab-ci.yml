@@ -4,9 +4,18 @@ type-check:
   script:
   - make type
 
-pytest:
+# Cut pytest into 3 to avoid memory issues
+pytest-1:
   script:
-  - make pytest
+  - ./scripts/run_tests_travis.sh "[a-d]*"
+
+pytest-2:
+  script:
+  - ./scripts/run_tests_travis.sh "[e-r]*"
+
+pytest-3:
+  script:
+  - ./scripts/run_tests_travis.sh "[s-z]*"
 
 doc-build:
   script:

@@ -55,8 +55,8 @@ def test_sde_distribution():
     dist = dist.proba_distribution(deterministic_actions, log_std, state)
     actions = dist.get_actions()
 
-    assert th.allclose(actions.mean(), dist.distribution.mean.mean(), rtol=1e-3)
-    assert th.allclose(actions.std(), dist.distribution.scale.mean(), rtol=1e-3)
+    assert th.allclose(actions.mean(), dist.distribution.mean.mean(), rtol=2e-3)
+    assert th.allclose(actions.std(), dist.distribution.scale.mean(), rtol=2e-3)
 
 
 # TODO: analytical form for squashed Gaussian?

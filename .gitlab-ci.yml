@@ -6,7 +6,7 @@ type-check:
 
 pytest:
   script:
-  - make test
+  - make pytest
 
 doc-build:
   script:

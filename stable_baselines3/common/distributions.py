@@ -292,6 +292,59 @@ class CategoricalDistribution(Distribution):
         return self.distribution.log_prob(actions)
 
 
+class MultiCategoricalDistribution(Distribution):
+    """
+    MultiCategorical distribution for multi discrete actions.
+
+    :param action_dims: ([int]) List of sizes of discrete action spaces.
+    """
+    def __init__(self, action_dims: [int]):
+        super(MultiCategoricalDistribution, self).__init__()
+        self.action_dims = action_dims
+        self.distributions = None
+
+    def proba_distribution_net(self, latent_dim: int) -> nn.Module:
+        """
+        Create the layer that represents the distribution:
+        it will be the logits of the Categorical distribution.
+        You can then get probabilities using a softmax.
+
+        :param latent_dim: (int) Dimension of the last layer
+            of the policy network (before the action layer)
+        :return: (nn.Linear)
+        """
+        action_logits = nn.Linear(latent_dim, sum(self.action_dims))
+        return action_logits 
+
+    def proba_distribution(self, action_logits: th.Tensor) -> 'MultiCategoricalDistribution':
+        reshaped_logits = th.split(action_logits, self.action_dims, dim=1)
+        self.distributions = [Categorical(logits=l) for l in reshaped_logits]
+        return self
+
+    def mode(self) -> th.Tensor:
+        return th.stack([th.argmax(d.probs, dim=1) for d in self.distributions])
+
+    def sample(self) -> th.Tensor:
+        return th.stack([d.sample() for d in self.distributions])
+
+    def entropy(self) -> th.Tensor:
+        return sum([d.entropy() for d in self.distributions])
+
+    def actions_from_params(self, action_logits: th.Tensor,
+                            deterministic: bool = False) -> th.Tensor:
+        # Update the proba distribution
+        self.proba_distribution(action_logits)
+        return self.get_actions(deterministic=deterministic)
+
+    def log_prob_from_params(self, action_logits: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+        actions = self.actions_from_params(action_logits)
+        log_prob = self.log_prob(actions)
+        return actions, log_prob
+
+    def log_prob(self, actions: th.Tensor) -> th.Tensor:
+        return sum(d.log_prob(x) for d, x in zip(self.distributions, th.unbind(actions)))
+    
+
 class StateDependentNoiseDistribution(Distribution):
     """
     Distribution class for using State Dependent Exploration (SDE).

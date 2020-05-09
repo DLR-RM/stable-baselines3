@@ -4,13 +4,17 @@ import torch as th
 from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.distributions import (DiagGaussianDistribution, TanhBijector,
                                                    StateDependentNoiseDistribution,
-                                                   CategoricalDistribution, SquashedDiagGaussianDistribution)
+                                                   CategoricalDistribution,
+                                                   MultiCategoricalDistribution,
+                                                   SquashedDiagGaussianDistribution)
 from stable_baselines3.common.utils import set_random_seed
 
 
 N_ACTIONS = 2
 N_FEATURES = 3
 N_SAMPLES = int(5e6)
+
+N_ACTIONS_MULTI = [4,3,2]
 
 
 def test_bijector():
@@ -90,6 +94,17 @@ def test_categorical():
     dist = CategoricalDistribution(N_ACTIONS)
     set_random_seed(1)
     action_logits = th.rand(N_SAMPLES, N_ACTIONS)
+    dist = dist.proba_distribution(action_logits)
+
+    actions = dist.get_actions()
+    entropy = dist.entropy()
+    log_prob = dist.log_prob(actions)
+    assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=1e-4)
+
+def test_multicategorical():
+    dist = MultiCategoricalDistribution(N_ACTIONS_MULTI)
+    set_random_seed(1)
+    action_logits = th.rand(N_SAMPLES, sum(N_ACTIONS_MULTI))
     dist = dist.proba_distribution(action_logits)
 
     actions = dist.get_actions()

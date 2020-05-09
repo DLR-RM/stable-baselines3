@@ -22,6 +22,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fixed a bug that prevented model trained on cpu to be loaded on gpu
 - Fixed version number that had a new line included
+- Fixed weird seg fault in docker image due to FakeImageEnv by reducing screen size
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -1,4 +1,4 @@
-image: stablebaselines/stable-baselines3-cpu:0.6.0a5
+image: stablebaselines/stable-baselines3-cpu:0.6.0a7
 
 type-check:
   script:
@@ -6,9 +6,6 @@ type-check:
 
 pytest:
   script:
-  # TODO: remove when opencv properly installed in the docker image
-  # see https://github.com/NVIDIA/nvidia-docker/issues/864
-  - pip install opencv-python-headless
   # MKL_THREADING_LAYER=GNU to avoid MKL_THREADING_LAYER=INTEL incompatibility error
   - MKL_THREADING_LAYER=GNU make pytest
 

@@ -7,7 +7,8 @@ type-check:
 pytest:
   script:
   # TODO: remove when opencv and atari installed in the docker image
-  - pip install -e.[extra,tests,docs]
+  # fix: https://github.com/NVIDIA/nvidia-docker/issues/864
+  - pip install gym[atari]
   # MKL_THREADING_LAYER=GNU to avoid MKL_THREADING_LAYER=INTEL incompatibility error
   - MKL_THREADING_LAYER=GNU make pytest
 

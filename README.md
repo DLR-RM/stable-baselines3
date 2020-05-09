@@ -223,7 +223,7 @@ Stable-Baselines3 is currently maintained by [Ashley Hill](https://github.com/hi
 ## How To Contribute
 
 To any interested in making the baselines better, there is still some documentation that needs to be done.
-If you want to contribute, please read **CONTRIBUTING.md** guide first.
+If you want to contribute, please read [**CONTRIBUTING.md**](./CONTRIBUTING.md) guide first.
 
 
 Logo credits: [L.M. Tenkes](https://www.instagram.com/lucillehue/)

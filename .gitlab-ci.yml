@@ -1,9 +1,11 @@
+image: stablebaselines/stable-baselines3-cpu:latest
+
 stages:
   - test
 
 test:
   stage: test
   script:
-  - apt-get install -y python-dev python-pip cmake
-  - pip install -e .[extra,docs,tests]
+  # - apt-get install -y python-dev python-pip cmake
+  # - pip install -e .[extra,docs,tests]
   - make type

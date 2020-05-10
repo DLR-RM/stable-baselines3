@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Tuple, Dict, Any, List
 
 import gym
 import torch as th
@@ -298,7 +298,7 @@ class MultiCategoricalDistribution(Distribution):
 
     :param action_dims: ([int]) List of sizes of discrete action spaces.
     """
-    def __init__(self, action_dims: [int]):
+    def __init__(self, action_dims: List[int]):
         super(MultiCategoricalDistribution, self).__init__()
         self.action_dims = action_dims
         self.distributions = None

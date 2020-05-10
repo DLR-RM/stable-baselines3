@@ -44,7 +44,7 @@ def is_image_space(observation_space: spaces.Space,
         return n_channels in [1, 3, 4]
     return False
 
-
+#TODO: test
 def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space,
                    normalize_images: bool = True) -> th.Tensor:
     """
@@ -65,11 +65,17 @@ def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space,
     elif isinstance(observation_space, spaces.Discrete):
         # One hot encoding and convert to float to avoid errors
         return F.one_hot(obs.long(), num_classes=observation_space.n).float()
+    elif isinstance(observation_space, spaces.MultiDiscrete):
+        return th.cat([
+            F.one_hot(split.long(), num_classes=len(split)).float() 
+            for split in enumerate(
+                th.split(obs, observation_space.nvec, dim=1))], dim=1)
+    elif isinstance(observation_space, spaces.MultiBinary):
+        return obs.float()
     else:
-        # TODO: Multidiscrete, Binary, MultiBinary, Tuple, Dict
         raise NotImplementedError()
 
-
+#TODO: test
 def get_obs_shape(observation_space: spaces.Space) -> Tuple[int, ...]:
     """
     Get the shape of the observation (useful for the buffers).
@@ -81,9 +87,12 @@ def get_obs_shape(observation_space: spaces.Space) -> Tuple[int, ...]:
         return observation_space.shape
     elif isinstance(observation_space, spaces.Discrete):
         # Observation is an int
-        return 1,
+        return 1
+    elif isinstance(observation_space, spaces.MultiDiscrete):
+        return observation_space.shape
+    elif isinstance(observation_space, spaces.MultiBinary):
+        return observation_space.shape
     else:
-        # TODO: Multidiscrete, Binary, MultiBinary, Tuple, Dict
         raise NotImplementedError()
 
 
@@ -98,7 +107,7 @@ def get_flattened_obs_dim(observation_space: spaces.Space) -> int:
     # Use Gym internal method
     return spaces.utils.flatdim(observation_space)
 
-
+#TODO: test
 def get_action_dim(action_space: spaces.Space) -> int:
     """
     Get the dimension of the action space.
@@ -111,5 +120,9 @@ def get_action_dim(action_space: spaces.Space) -> int:
     elif isinstance(action_space, spaces.Discrete):
         # Action is an int
         return 1
+    elif isinstance(action_space, spaces.MultiDiscrete):
+        return int(len(action_space.shape))
+    elif isinstance(action_space, spaces.MultiBinary):
+        return int(len(action_space.shape))
     else:
         raise NotImplementedError()

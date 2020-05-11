@@ -4,7 +4,7 @@
 Developer Guide
 ================
 
-This guide is meant for those who wants to understand the internals and the design choices of Stable-Baselines3.
+This guide is meant for those who want to understand the internals and the design choices of Stable-Baselines3.
 
 
 At first, you should read the two issues where the design choices were discussed:
@@ -19,14 +19,14 @@ The library is not meant to be modular, although inheritance is used to reduce c
 Algorithms Structure
 ====================
 
-Each algorithm (on-policy and off-policy ones) follow a common structure.
+Each algorithm (on-policy and off-policy ones) follows a common structure.
 There is one folder per algorithm, and in that folder there is the algorithm and the policy definition (``policies.py``).
 
-Each algorithm had two main methods:
+Each algorithm has two main methods:
 
 - ``.collect_rollouts()`` which defines how new samples are collected, usually inherited from the base class. Those samples are then stored in a ``RolloutBuffer`` (discarded after the gradient update) or ``ReplayBuffer``
 
-- ``.train()`` which update the parameters using samples from the buffer
+- ``.train()`` which updates the parameters using samples from the buffer
 
 
 Where to start?
@@ -34,16 +34,16 @@ Where to start?
 
 The first thing you need to read and understand are the base classes in the ``common/`` folder:
 
-- ``BaseRLModel`` in ``base_class.py`` which defines how an RL class should look like
-  it contains also all the "glue code" for saving/loading and the common operations (wrapping environments)
+- ``BaseRLModel`` in ``base_class.py`` which defines how an RL class should look like.
+  It contains also all the "glue code" for saving/loading and the common operations (wrapping environments)
 
-- ``BasePolicy`` in ``policies.py`` which defines how a policy class should look like
-  it contains also all the magic for the ``.predict()`` method, to handle as many cases as possible
+- ``BasePolicy`` in ``policies.py`` which defines how a policy class should look like.
+  It contains also all the magic for the ``.predict()`` method, to handle as many cases as possible
 
 - ``OffPolicyRLModel`` in ``base_class.py`` that contains the implementation of ``collect_rollouts()`` for the off-policy algorithms
 
 
-All the environments handled internally are assume to be ``VecEnv`` (``gym.Env`` are automatically wrapped).
+All the environments handled internally are assumed to be ``VecEnv`` (``gym.Env`` are automatically wrapped).
 
 
 Pre-Processing
@@ -59,7 +59,7 @@ Policy Structure
 ================
 
 When we refer to "policy" in Stable-Baselines3, this is usually an abuse of language compared to RL terminology.
-In SB3, "Policy" refers to the class that handle all the networks useful for training,
+In SB3, "policy" refers to the class that handles all the networks useful for training,
 so not only the network used to predict actions (the "learned controller").
 
 For instance, the ``TD3`` policy contains the actor, the critic and the target networks.
@@ -69,7 +69,7 @@ Probability distributions
 
 When needed, the policies handle the different probability distributions.
 All distributions are located in ``common/distributions.py`` and follow the same interface.
-Each distribution correspond to a type of action space (e.g. ``Categorical`` is the one used for discrete actions.
+Each distribution corresponds to a type of action space (e.g. ``Categorical`` is the one used for discrete actions.
 For continuous actions, we can use multiple distributions ("DiagGaussian", "SquashedGaussian" or "StateDependentDistribution")
 
 State-Dependent Exploration

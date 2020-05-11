@@ -77,6 +77,7 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     # 'sphinx.ext.intersphinx',
+    # 'sphinx.ext.doctest'
 ]
 
 if enable_spell_check:
@@ -218,5 +219,4 @@ texinfo_documents = [
 
 # kornia's hack to get rtd builder to install latest pytorch
 if on_rtd:
-    os.system('pip install gym')
     os.system('pip install torch==1.5.0+cpu torchvision==0.6.0+cpu -f https://download.pytorch.org/whl/torch_stable.html')

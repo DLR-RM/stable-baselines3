@@ -216,7 +216,3 @@ texinfo_documents = [
 #     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
 #     'torch': ('http://pytorch.org/docs/master/', None),
 # }
-
-# kornia's hack to get rtd builder to install latest pytorch
-if on_rtd:
-    os.system('pip install torch==1.5.0+cpu torchvision==0.6.0+cpu -f https://download.pytorch.org/whl/torch_stable.html')

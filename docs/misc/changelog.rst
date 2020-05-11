@@ -33,6 +33,7 @@ Others:
 - Added Dockerfile
 - Sync ``VecEnvs`` with Stable-Baselines
 - Update requirement: ``gym>=0.17``
+- Added ``.readthedoc.yml`` file
 
 Documentation:
 ^^^^^^^^^^^^^^

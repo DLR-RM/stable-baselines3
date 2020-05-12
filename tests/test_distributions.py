@@ -47,6 +47,7 @@ def test_squashed_gaussian(model_class):
     actions = dist.get_actions()
     assert th.max(th.abs(actions)) <= 1.0
 
+
 def test_sde_distribution():
     n_actions = 1
     deterministic_actions = th.ones(N_SAMPLES, n_actions) * 0.1
@@ -100,7 +101,8 @@ def test_categorical():
     actions = dist.get_actions()
     entropy = dist.entropy()
     log_prob = dist.log_prob(actions)
-    assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=1e-4)
+    assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=2e-4)
+
 
 def test_multicategorical():
     dist = MultiCategoricalDistribution(N_ACTIONS_MULTI)
@@ -111,7 +113,8 @@ def test_multicategorical():
     actions = dist.get_actions()
     entropy = dist.entropy()
     log_prob = dist.log_prob(actions)
-    assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=1e-4)
+    assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=2e-4)
+
 
 def test_bernoulli():
     dist = BernoulliDistribution(N_ACTIONS)
@@ -122,4 +125,5 @@ def test_bernoulli():
     actions = dist.get_actions()
     entropy = dist.entropy()
     log_prob = dist.log_prob(actions)
-    assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=1e-4)
+    assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=2e-4)
+

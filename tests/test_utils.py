@@ -37,7 +37,7 @@ def test_make_vec_env(env_id, n_envs, vec_env_cls, wrapper_class):
 @pytest.mark.parametrize("env_id", ['BreakoutNoFrameskip-v4'])
 @pytest.mark.parametrize("n_envs", [1, 2])
 @pytest.mark.parametrize("wrapper_kwargs", [None, dict(clip_reward=False, screen_size=60)])
-def test_make_vec_env(env_id, n_envs, wrapper_kwargs):
+def test_make_atari_env(env_id, n_envs, wrapper_kwargs):
     env_id = 'BreakoutNoFrameskip-v4'
     env = make_atari_env(env_id, n_envs,
                          wrapper_kwargs=wrapper_kwargs, monitor_dir=None, seed=0)
@@ -55,13 +55,12 @@ def test_make_vec_env(env_id, n_envs, wrapper_kwargs):
     if wrapper_kwargs is not None:
         assert obs.shape == (n_envs, 60, 60, 1)
         assert wrapped_atari_env.observation_space.shape == (60, 60, 1)
-        assert wrapped_atari_env.clip_reward == False
+        assert wrapped_atari_env.clip_reward is False
     else:
         assert obs.shape == (n_envs, 84, 84, 1)
         assert wrapped_atari_env.observation_space.shape == (84, 84, 1)
-        assert wrapped_atari_env.clip_reward == True
+        assert wrapped_atari_env.clip_reward is True
         assert np.max(np.abs(reward)) < 1.0
-
 
 
 def test_custom_vec_env(tmp_path):
@@ -72,7 +71,6 @@ def test_custom_vec_env(tmp_path):
     env = make_vec_env('CartPole-v1', n_envs=1,
                        monitor_dir=monitor_dir, seed=0,
                        vec_env_cls=SubprocVecEnv, vec_env_kwargs={'start_method': None})
-
 
     assert env.num_envs == 1
     assert isinstance(env, SubprocVecEnv)

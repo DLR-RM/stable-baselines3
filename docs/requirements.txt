@@ -1,3 +1,0 @@
-gym>=0.17
-pandas
-matplotlib

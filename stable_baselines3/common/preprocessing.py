@@ -44,7 +44,7 @@ def is_image_space(observation_space: spaces.Space,
         return n_channels in [1, 3, 4]
     return False
 
-#TODO: test
+
 def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space,
                    normalize_images: bool = True) -> th.Tensor:
     """
@@ -66,16 +66,16 @@ def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space,
         # One hot encoding and convert to float to avoid errors
         return F.one_hot(obs.long(), num_classes=observation_space.n).float()
     elif isinstance(observation_space, spaces.MultiDiscrete):
-        return th.cat([
-            F.one_hot(split.long(), num_classes=len(split)).float() 
-            for split in enumerate(
-                th.split(obs, observation_space.nvec, dim=1))], dim=1)
+        # Tensor concatination of one hot encodings of each Categorical sub-space
+        x = th.cat([F.one_hot(o.long(), num_classes=n).float()
+                    for o, n in zip(obs, observation_space.nvec)], dim=1)
+        return x.t()
     elif isinstance(observation_space, spaces.MultiBinary):
         return obs.float()
     else:
         raise NotImplementedError()
 
-#TODO: test
+
 def get_obs_shape(observation_space: spaces.Space) -> Tuple[int, ...]:
     """
     Get the shape of the observation (useful for the buffers).
@@ -86,12 +86,14 @@ def get_obs_shape(observation_space: spaces.Space) -> Tuple[int, ...]:
     if isinstance(observation_space, spaces.Box):
         return observation_space.shape
     elif isinstance(observation_space, spaces.Discrete):
-        # Observation is an int
-        return 1
+        # One observation
+        return 1,
     elif isinstance(observation_space, spaces.MultiDiscrete):
-        return observation_space.shape
+        # Observation is the number of discrete spaces
+        return int(len(observation_space.nvec)),
     elif isinstance(observation_space, spaces.MultiBinary):
-        return observation_space.shape
+        # Observation is the number of binary spaces
+        return int(observation_space.n),
     else:
         raise NotImplementedError()
 
@@ -107,7 +109,7 @@ def get_flattened_obs_dim(observation_space: spaces.Space) -> int:
     # Use Gym internal method
     return spaces.utils.flatdim(observation_space)
 
-#TODO: test
+
 def get_action_dim(action_space: spaces.Space) -> int:
     """
     Get the dimension of the action space.
@@ -118,11 +120,13 @@ def get_action_dim(action_space: spaces.Space) -> int:
     if isinstance(action_space, spaces.Box):
         return int(np.prod(action_space.shape))
     elif isinstance(action_space, spaces.Discrete):
-        # Action is an int
+        # One action
         return 1
     elif isinstance(action_space, spaces.MultiDiscrete):
-        return int(len(action_space.shape))
+        # Action is the number of discrete spaces
+        return int(len(action_space.nvec))
     elif isinstance(action_space, spaces.MultiBinary):
-        return int(len(action_space.shape))
+        # Action is the number of binary spaces
+        return int(action_space.n)
     else:
         raise NotImplementedError()

@@ -11,7 +11,8 @@ from stable_baselines3.common.policies import (BasePolicy, register_policy, MlpE
                                                BaseFeaturesExtractor, FlattenExtractor)
 from stable_baselines3.common.distributions import (make_proba_distribution, Distribution,
                                                     DiagGaussianDistribution, CategoricalDistribution,
-                                                    StateDependentNoiseDistribution)
+                                                    StateDependentNoiseDistribution, MultiCategoricalDistribution,
+                                                    BernoulliDistribution)
 
 
 class PPOPolicy(BasePolicy):
@@ -178,6 +179,10 @@ class PPOPolicy(BasePolicy):
                                                                                     log_std_init=self.log_std_init)
         elif isinstance(self.action_dist, CategoricalDistribution):
             self.action_net = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi)
+        elif isinstance(self.action_dist, MultiCategoricalDistribution):
+            self.action_net = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi)
+        elif isinstance(self.action_dist, BernoulliDistribution):
+            self.action_net = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi)
 
         self.value_net = nn.Linear(self.mlp_extractor.latent_dim_vf, 1)
         # Init weights: use orthogonal initialization
@@ -247,6 +252,12 @@ class PPOPolicy(BasePolicy):
             return self.action_dist.proba_distribution(mean_actions, self.log_std)
 
         elif isinstance(self.action_dist, CategoricalDistribution):
+            # Here mean_actions are the logits before the softmax
+            return self.action_dist.proba_distribution(action_logits=mean_actions)
+        elif isinstance(self.action_dist, MultiCategoricalDistribution):
+            # Here mean_actions are the logits before the softmax
+            return self.action_dist.proba_distribution(action_logits=mean_actions)
+        elif isinstance(self.action_dist, BernoulliDistribution):
             # Here mean_actions are the logits before the softmax
             return self.action_dist.proba_distribution(action_logits=mean_actions)
 

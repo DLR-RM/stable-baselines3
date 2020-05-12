@@ -107,7 +107,7 @@ def test_categorical(dist, N_ACTIONS):
     actions = dist.get_actions()
     entropy = dist.entropy()
     log_prob = dist.log_prob(actions)
-    assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=1e-4)
+    assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=2e-4)
 
 
 def test_bernoulli():
@@ -121,4 +121,4 @@ def test_bernoulli():
     actions = dist.get_actions()
     entropy = dist.entropy()
     log_prob = dist.log_prob(actions)
-    assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=1e-4)
+    assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=2e-4)

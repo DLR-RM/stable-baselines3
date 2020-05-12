@@ -99,6 +99,12 @@ Type checking with `pytype`:
 make type
 ```
 
+Codestyle check with `flake8`:
+
+```
+make lint
+```
+
 Build the documentation:
 
 ```

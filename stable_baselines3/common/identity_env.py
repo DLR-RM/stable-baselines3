@@ -1,4 +1,4 @@
-from typing import List, Union, Optional
+from typing import Union, Optional
 
 import numpy as np
 from gym import Env, Space

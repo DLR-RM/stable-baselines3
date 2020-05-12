@@ -71,8 +71,8 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         super(OrnsteinUhlenbeckActionNoise, self).__init__()
 
     def __call__(self) -> np.ndarray:
-        noise = self.noise_prev + self._theta * (self._mu - self.noise_prev) * self._dt + \
-                self._sigma * np.sqrt(self._dt) * np.random.normal(size=self._mu.shape)
+        noise = (self.noise_prev + self._theta * (self._mu - self.noise_prev) * self._dt
+                 + self._sigma * np.sqrt(self._dt) * np.random.normal(size=self._mu.shape))
         self.noise_prev = noise
         return noise
 

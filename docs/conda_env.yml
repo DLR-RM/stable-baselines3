@@ -1,0 +1,16 @@
+name: root
+channels:
+  - pytorch
+  - defaults
+dependencies:
+  - cpuonly=1.0=0
+  - pip=20.0
+  - python=3.6
+  - pytorch=1.5.0=py3.6_cpu_0
+  - pip:
+    - gym==0.17.2
+    - cloudpickle
+    - opencv-python-headless
+    - pandas
+    - numpy
+    - matplotlib

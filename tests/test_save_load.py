@@ -230,7 +230,6 @@ def test_save_load_policy(model_class, policy_str):
 
     del policy, actor
 
-
     policy = policy_class.load("./logs/policy.pkl")
     if actor_class is not None:
         actor = actor_class.load("./logs/actor.pkl")

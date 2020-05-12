@@ -42,6 +42,7 @@ def test_squashed_gaussian(model_class):
     actions = dist.get_actions()
     assert th.max(th.abs(actions)) <= 1.0
 
+
 def test_sde_distribution():
     n_actions = 1
     deterministic_actions = th.ones(N_SAMPLES, n_actions) * 0.1

@@ -24,6 +24,7 @@
 - [ ] My change requires a change to the documentation.
 - [ ] I have updated the tests accordingly (*required for a bug fix or a new feature*).
 - [ ] I have updated the documentation accordingly.
-- [ ] I have ensured `pytest` and `pytype` both pass.
+- [ ] I have checked the codestyle using `make lint`
+- [ ] I have ensured `make pytest` and `make type` both pass.
 
 <!--- This Template is an edited version of the one from https://github.com/evilsocket/pwnagotchi/ -->

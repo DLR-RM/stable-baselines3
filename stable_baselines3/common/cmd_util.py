@@ -4,9 +4,7 @@ from typing import Dict, Any, Optional, Callable, Type, Union
 
 import gym
 
-from stable_baselines3.common import logger
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.atari_wrappers import AtariWrapper
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 

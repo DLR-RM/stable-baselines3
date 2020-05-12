@@ -67,9 +67,8 @@ def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space,
         return F.one_hot(obs.long(), num_classes=observation_space.n).float()
     elif isinstance(observation_space, spaces.MultiDiscrete):
         # Tensor concatination of one hot encodings of each Categorical sub-space
-        x = th.cat([F.one_hot(o.long(), num_classes=n).float()
-                    for o, n in zip(obs, observation_space.nvec)], dim=1)
-        return x.t()
+        return th.cat([F.one_hot(o.long(), num_classes=n).float()
+                       for o, n in zip(obs, observation_space.nvec)], dim=1).t()
     elif isinstance(observation_space, spaces.MultiBinary):
         return obs.float()
     else:

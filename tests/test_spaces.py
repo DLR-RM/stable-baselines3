@@ -11,7 +11,6 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 MODEL_LIST = [A2C, PPO]
 
 
-@pytest.mark.slow
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 def test_identity_multidiscrete(model_class):
     """
@@ -33,7 +32,6 @@ def test_identity_multidiscrete(model_class):
         "Error: predict not returning correct shape"
 
 
-@pytest.mark.slow
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 def test_identity_multibinary(model_class):
     """

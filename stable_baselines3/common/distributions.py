@@ -1,5 +1,4 @@
 from typing import Optional, Tuple, Dict, Any, List
-import time
 from functools import partial
 import gym
 import torch as th
@@ -90,7 +89,7 @@ def sum_independent_dims(tensor: th.Tensor) -> th.Tensor:
     :return: (th.Tensor) shape: (n_batch,)
     """
     if len(tensor.shape) > 1:
-        tensor = tensor.sum(axis=1)
+        tensor = tensor.sum(dim=1)
     else:
         tensor = tensor.sum()
     return tensor

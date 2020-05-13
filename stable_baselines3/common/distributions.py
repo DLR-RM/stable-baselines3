@@ -1,5 +1,6 @@
 from typing import Optional, Tuple, Dict, Any, List
-
+import time
+from functools import partial
 import gym
 import torch as th
 import torch.nn as nn
@@ -89,7 +90,7 @@ def sum_independent_dims(tensor: th.Tensor) -> th.Tensor:
     :return: (th.Tensor) shape: (n_batch,)
     """
     if len(tensor.shape) > 1:
-        tensor = tensor.sum(dim=1)
+        tensor = tensor.sum(axis=1)
     else:
         tensor = tensor.sum()
     return tensor
@@ -123,8 +124,7 @@ class DiagGaussianDistribution(Distribution):
         """
         mean_actions = nn.Linear(latent_dim, self.action_dim)
         # TODO: allow action dependent std
-        log_std = nn.Parameter(th.ones(self.action_dim)
-                               * log_std_init, requires_grad=True)
+        log_std = nn.Parameter(th.ones(self.action_dim) * log_std_init, requires_grad=True)
         return mean_actions, log_std
 
     def proba_distribution(self, mean_actions: th.Tensor,
@@ -200,8 +200,7 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
 
     def proba_distribution(self, mean_actions: th.Tensor,
                            log_std: th.Tensor) -> 'SquashedDiagGaussianDistribution':
-        super(SquashedDiagGaussianDistribution,
-              self).proba_distribution(mean_actions, log_std)
+        super(SquashedDiagGaussianDistribution, self).proba_distribution(mean_actions, log_std)
         return self
 
     def mode(self) -> th.Tensor:
@@ -235,8 +234,7 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
             gaussian_actions = TanhBijector.inverse(actions)
 
         # Log likelihood for a Gaussian distribution
-        log_prob = super(SquashedDiagGaussianDistribution,
-                         self).log_prob(gaussian_actions)
+        log_prob = super(SquashedDiagGaussianDistribution, self).log_prob(gaussian_actions)
         # Squash correction (from original SAC implementation)
         # this comes from the fact that tanh is bijective and differentiable
         log_prob -= th.sum(th.log(1 - actions ** 2 + self.epsilon), dim=1)
@@ -318,19 +316,18 @@ class MultiCategoricalDistribution(Distribution):
             of the policy network (before the action layer)
         :return: (nn.Linear)
         """
-        action_logits = nn.Linear(latent_dim, np.sum(self.action_dims))
+        action_logits = nn.Linear(latent_dim, sum(self.action_dims))
         return action_logits
 
     def proba_distribution(self, action_logits: th.Tensor) -> 'MultiCategoricalDistribution':
-        reshaped_logits = th.split(action_logits, tuple(self.action_dims), dim=1)    
-        self.distributions = [Categorical(logits=l) for l in reshaped_logits]
+        self.distributions = [Categorical(logits=split) for split in th.split(action_logits, tuple(self.action_dims), dim=1)]
         return self
 
     def mode(self) -> th.Tensor:
-        return th.stack([th.argmax(d.probs, dim=1) for d in self.distributions])
+        return th.stack([th.argmax(d.probs, dim=1) for d in self.distributions], dim=1)
 
     def sample(self) -> th.Tensor:
-        return th.stack([d.sample() for d in self.distributions])
+        return th.stack([d.sample() for d in self.distributions], dim=1)
 
     def entropy(self) -> th.Tensor:
         return th.stack([d.entropy() for d in self.distributions], dim=1).sum(dim=1)
@@ -349,7 +346,7 @@ class MultiCategoricalDistribution(Distribution):
 
     def log_prob(self, actions: th.Tensor) -> th.Tensor:
         return th.stack([d.log_prob(x) for d, x in zip(self.distributions,
-                                                       th.unbind(actions))], dim=1).sum(dim=1)
+                                                       th.unbind(actions, dim=1))], dim=1).sum(dim=1)
 
 
 class BernoulliDistribution(Distribution):
@@ -387,7 +384,7 @@ class BernoulliDistribution(Distribution):
         return self.distribution.sample()
 
     def entropy(self) -> th.Tensor:
-        return self.distribution.entropy()
+        return self.distribution.entropy().sum(dim=1)
 
     def actions_from_params(self, action_logits: th.Tensor,
                             deterministic: bool = False) -> th.Tensor:
@@ -401,7 +398,7 @@ class BernoulliDistribution(Distribution):
         return actions, log_prob
 
     def log_prob(self, actions: th.Tensor) -> th.Tensor:
-        return self.distribution.log_prob(actions)
+        return self.distribution.log_prob(actions).sum(dim=1)
 
 
 class StateDependentNoiseDistribution(Distribution):
@@ -508,8 +505,7 @@ class StateDependentNoiseDistribution(Distribution):
         # can be different between the policy and the noise network
         self.latent_sde_dim = latent_dim if latent_sde_dim is None else latent_sde_dim
         # Reduce the number of parameters if needed
-        log_std = th.ones(self.latent_sde_dim, self.action_dim) if self.full_std else th.ones(
-            self.latent_sde_dim, 1)
+        log_std = th.ones(self.latent_sde_dim, self.action_dim) if self.full_std else th.ones(self.latent_sde_dim, 1)
         # Transform it to a parameter so it can be optimized
         log_std = nn.Parameter(log_std * log_std_init, requires_grad=True)
         # Sample an exploration matrix
@@ -530,8 +526,7 @@ class StateDependentNoiseDistribution(Distribution):
         # Stop gradient if we don't want to influence the features
         self._latent_sde = latent_sde if self.learn_features else latent_sde.detach()
         variance = th.mm(latent_sde ** 2, self.get_std(log_std) ** 2)
-        self.distribution = Normal(
-            mean_actions, th.sqrt(variance + self.epsilon))
+        self.distribution = Normal(mean_actions, th.sqrt(variance + self.epsilon))
         return self
 
     def mode(self) -> th.Tensor:
@@ -657,8 +652,7 @@ def make_proba_distribution(action_space: gym.spaces.Space,
         dist_kwargs = {}
 
     if isinstance(action_space, spaces.Box):
-        assert len(
-            action_space.shape) == 1, "Error: the action space must be a vector"
+        assert len(action_space.shape) == 1, "Error: the action space must be a vector"
         if use_sde:
             return StateDependentNoiseDistribution(get_action_dim(action_space), **dist_kwargs)
         return DiagGaussianDistribution(get_action_dim(action_space), **dist_kwargs)

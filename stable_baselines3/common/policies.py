@@ -43,8 +43,7 @@ class FlattenExtractor(BaseFeaturesExtractor):
     """
 
     def __init__(self, observation_space: gym.Space):
-        super(FlattenExtractor, self).__init__(
-            observation_space, get_flattened_obs_dim(observation_space))
+        super(FlattenExtractor, self).__init__(observation_space, get_flattened_obs_dim(observation_space))
         self.flatten = nn.Flatten()
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
@@ -71,21 +70,17 @@ class NatureCNN(BaseFeaturesExtractor):
         n_input_channels = observation_space.shape[0]
         self.cnn = nn.Sequential(nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
                                  nn.ReLU(),
-                                 nn.Conv2d(32, 64, kernel_size=4,
-                                           stride=2, padding=0),
+                                 nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
                                  nn.ReLU(),
-                                 nn.Conv2d(64, 32, kernel_size=3,
-                                           stride=1, padding=0),
+                                 nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=0),
                                  nn.ReLU(),
                                  nn.Flatten())
 
         # Compute shape by doing one forward pass
         with th.no_grad():
-            n_flatten = self.cnn(th.as_tensor(
-                observation_space.sample()[None]).float()).shape[1]
+            n_flatten = self.cnn(th.as_tensor(observation_space.sample()[None]).float()).shape[1]
 
-        self.linear = nn.Sequential(
-            nn.Linear(n_flatten, features_dim), nn.ReLU())
+        self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
         return self.linear(self.cnn(observations))
@@ -153,8 +148,7 @@ class BasePolicy(nn.Module):
         :return: (th.Tensor)
         """
         assert self.features_extractor is not None, 'No feature extractor was set'
-        preprocessed_obs = preprocess_obs(
-            obs, self.observation_space, normalize_images=self.normalize_images)
+        preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
         return self.features_extractor(preprocessed_obs)
 
     @property
@@ -212,8 +206,8 @@ class BasePolicy(nn.Module):
         # Handle the different cases for images
         # as PyTorch use channel first format
         if is_image_space(self.observation_space):
-            if (observation.shape == self.observation_space.shape or
-                    observation.shape[1:] == self.observation_space.shape):
+            if (observation.shape == self.observation_space.shape
+                    or observation.shape[1:] == self.observation_space.shape):
                 pass
             else:
                 # Try to re-order the channels
@@ -222,8 +216,7 @@ class BasePolicy(nn.Module):
                         or transpose_obs.shape[1:] == self.observation_space.shape):
                     observation = transpose_obs
 
-        vectorized_env = self._is_vectorized_observation(
-            observation, self.observation_space)
+        vectorized_env = self._is_vectorized_observation(observation, self.observation_space)
 
         observation = observation.reshape((-1,) + self.observation_space.shape)
 
@@ -240,13 +233,11 @@ class BasePolicy(nn.Module):
         clipped_actions = actions
         # Clip the actions to avoid out of bound error when using gaussian distribution
         if isinstance(self.action_space, gym.spaces.Box) and not self.squash_output:
-            clipped_actions = np.clip(
-                actions, self.action_space.low, self.action_space.high)
+            clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
 
         if not vectorized_env:
             if state is not None:
-                raise ValueError(
-                    "Error: The environment must be vectorized when using recurrent policies.")
+                raise ValueError("Error: The environment must be vectorized when using recurrent policies.")
             clipped_actions = clipped_actions[0]
 
         return clipped_actions, state
@@ -288,9 +279,9 @@ class BasePolicy(nn.Module):
             elif observation.shape[1:] == observation_space.shape:
                 return True
             else:
-                raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape) +
-                                 "Box environment, please use {} ".format(observation_space.shape) +
-                                 "or (n_env, {}) for the observation shape."
+                raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape)
+                                 + "Box environment, please use {} ".format(observation_space.shape)
+                                 + "or (n_env, {}) for the observation shape."
                                  .format(", ".join(map(str, observation_space.shape))))
         elif isinstance(observation_space, gym.spaces.Discrete):
             if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
@@ -298,8 +289,8 @@ class BasePolicy(nn.Module):
             elif len(observation.shape) == 1:
                 return True
             else:
-                raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape) +
-                                 "Discrete environment, please use (1,) or (n_env, 1) for the observation shape.")
+                raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape)
+                                 + "Discrete environment, please use (1,) or (n_env, 1) for the observation shape.")
 
         elif isinstance(observation_space, gym.spaces.MultiDiscrete):
             if observation.shape == (len(observation_space.nvec),):
@@ -307,18 +298,18 @@ class BasePolicy(nn.Module):
             elif len(observation.shape) == 2 and observation.shape[1] == len(observation_space.nvec):
                 return True
             else:
-                raise ValueError("Error: Unexpected observation shape {} for MultiDiscrete ".format(observation.shape) +
-                                 "environment, please use ({},) or ".format(len(observation_space.nvec)) +
-                                 "(n_env, {}) for the observation shape.".format(len(observation_space.nvec)))
+                raise ValueError("Error: Unexpected observation shape {} for MultiDiscrete ".format(observation.shape)
+                                 + "environment, please use ({},) or ".format(len(observation_space.nvec))
+                                 + "(n_env, {}) for the observation shape.".format(len(observation_space.nvec)))
         elif isinstance(observation_space, gym.spaces.MultiBinary):
             if observation.shape == (observation_space.n,):
                 return False
             elif len(observation.shape) == 2 and observation.shape[1] == observation_space.n:
                 return True
             else:
-                raise ValueError("Error: Unexpected observation shape {} for MultiBinary ".format(observation.shape) +
-                                 "environment, please use ({},) or ".format(observation_space.n) +
-                                 "(n_env, {}) for the observation shape.".format(observation_space.n))
+                raise ValueError("Error: Unexpected observation shape {} for MultiBinary ".format(observation.shape)
+                                 + "environment, please use ({},) or ".format(observation_space.n)
+                                 + "(n_env, {}) for the observation shape.".format(observation_space.n))
         else:
             raise ValueError("Error: Cannot determine if the observation is vectorized with the space type {}."
                              .format(observation_space))
@@ -345,8 +336,7 @@ class BasePolicy(nn.Module):
 
         :param path: (str)
         """
-        th.save({'state_dict': self.state_dict(),
-                 'data': self._get_data()}, path)
+        th.save({'state_dict': self.state_dict(), 'data': self._get_data()}, path)
 
     @classmethod
     def load(cls, path: str, device: Union[th.device, str] = 'auto') -> 'BasePolicy':
@@ -372,8 +362,7 @@ class BasePolicy(nn.Module):
 
         :param vector: (np.ndarray)
         """
-        th.nn.utils.vector_to_parameters(th.FloatTensor(
-            vector).to(self.device), self.parameters())
+        th.nn.utils.vector_to_parameters(th.FloatTensor(vector).to(self.device), self.parameters())
 
     def parameters_to_vector(self) -> np.ndarray:
         """
@@ -437,16 +426,13 @@ def create_sde_features_extractor(features_dim: int,
     # Special case: when using states as features (i.e. sde_net_arch is an empty list)
     # don't use any activation function
     sde_activation = activation_fn if len(sde_net_arch) > 0 else None
-    latent_sde_net = create_mlp(
-        features_dim, -1, sde_net_arch, activation_fn=sde_activation, squash_output=False)
-    latent_sde_dim = sde_net_arch[-1] if len(
-        sde_net_arch) > 0 else features_dim
+    latent_sde_net = create_mlp(features_dim, -1, sde_net_arch, activation_fn=sde_activation, squash_output=False)
+    latent_sde_dim = sde_net_arch[-1] if len(sde_net_arch) > 0 else features_dim
     sde_features_extractor = nn.Sequential(*latent_sde_net)
     return sde_features_extractor, latent_sde_dim
 
 
-# type: Dict[Type[BasePolicy], Dict[str, Type[BasePolicy]]]
-_policy_registry = dict()
+_policy_registry = dict()  # type: Dict[Type[BasePolicy], Dict[str, Type[BasePolicy]]]
 
 
 def get_policy_from_name(base_policy_type: Type[BasePolicy], name: str) -> Type[BasePolicy]:
@@ -458,8 +444,7 @@ def get_policy_from_name(base_policy_type: Type[BasePolicy], name: str) -> Type[
     :return: (Type[BasePolicy]) the policy
     """
     if base_policy_type not in _policy_registry:
-        raise ValueError(
-            f"Error: the policy type {base_policy_type} is not registered!")
+        raise ValueError(f"Error: the policy type {base_policy_type} is not registered!")
     if name not in _policy_registry[base_policy_type]:
         raise ValueError(f"Error: unknown policy type {name},"
                          "the only registed policy type are: {list(_policy_registry[base_policy_type].keys())}!")
@@ -484,14 +469,12 @@ def register_policy(name: str, policy: Type[BasePolicy]) -> None:
     except AttributeError:
         sub_class = str(th.random.randint(100))
     if sub_class is None:
-        raise ValueError(
-            f"Error: the policy {policy} is not of any known subclasses of BasePolicy!")
+        raise ValueError(f"Error: the policy {policy} is not of any known subclasses of BasePolicy!")
 
     if sub_class not in _policy_registry:
         _policy_registry[sub_class] = {}
     if name in _policy_registry[sub_class]:
-        raise ValueError(
-            f"Error: the name {name} is alreay registered for a different policy, will not override.")
+        raise ValueError(f"Error: the name {name} is alreay registered for a different policy, will not override.")
     _policy_registry[sub_class][name] = policy
 
 
@@ -528,12 +511,9 @@ class MlpExtractor(nn.Module):
                  device: Union[th.device, str] = 'auto'):
         super(MlpExtractor, self).__init__()
         device = get_device(device)
-
         shared_net, policy_net, value_net = [], [], []
-        # Layer sizes of the network that only belongs to the policy network
-        policy_only_layers = []
-        # Layer sizes of the network that only belongs to the value network
-        value_only_layers = []
+        policy_only_layers = []  # Layer sizes of the network that only belongs to the policy network
+        value_only_layers = []  # Layer sizes of the network that only belongs to the value network
         last_layer_dim_shared = feature_dim
 
         # Iterate through the shared layers and build the shared parts of the network
@@ -545,16 +525,13 @@ class MlpExtractor(nn.Module):
                 shared_net.append(activation_fn())
                 last_layer_dim_shared = layer_size
             else:
-                assert isinstance(
-                    layer, dict), "Error: the net_arch list can only contain ints and dicts"
+                assert isinstance(layer, dict), "Error: the net_arch list can only contain ints and dicts"
                 if 'pi' in layer:
-                    assert isinstance(
-                        layer['pi'], list), "Error: net_arch[-1]['pi'] must contain a list of integers."
+                    assert isinstance(layer['pi'], list), "Error: net_arch[-1]['pi'] must contain a list of integers."
                     policy_only_layers = layer['pi']
 
                 if 'vf' in layer:
-                    assert isinstance(
-                        layer['vf'], list), "Error: net_arch[-1]['vf'] must contain a list of integers."
+                    assert isinstance(layer['vf'], list), "Error: net_arch[-1]['vf'] must contain a list of integers."
                     value_only_layers = layer['vf']
                 break  # From here on the network splits up in policy and value network
 
@@ -564,15 +541,13 @@ class MlpExtractor(nn.Module):
         # Build the non-shared part of the network
         for idx, (pi_layer_size, vf_layer_size) in enumerate(zip_longest(policy_only_layers, value_only_layers)):
             if pi_layer_size is not None:
-                assert isinstance(
-                    pi_layer_size, int), "Error: net_arch[-1]['pi'] must only contain integers."
+                assert isinstance(pi_layer_size, int), "Error: net_arch[-1]['pi'] must only contain integers."
                 policy_net.append(nn.Linear(last_layer_dim_pi, pi_layer_size))
                 policy_net.append(activation_fn())
                 last_layer_dim_pi = pi_layer_size
 
             if vf_layer_size is not None:
-                assert isinstance(
-                    vf_layer_size, int), "Error: net_arch[-1]['vf'] must only contain integers."
+                assert isinstance(vf_layer_size, int), "Error: net_arch[-1]['vf'] must only contain integers."
                 value_net.append(nn.Linear(last_layer_dim_vf, vf_layer_size))
                 value_net.append(activation_fn())
                 last_layer_dim_vf = vf_layer_size

@@ -11,8 +11,8 @@ from stable_baselines3.common.policies import (BasePolicy, register_policy, MlpE
                                                BaseFeaturesExtractor, FlattenExtractor)
 from stable_baselines3.common.distributions import (make_proba_distribution, Distribution,
                                                     DiagGaussianDistribution, CategoricalDistribution,
-                                                    StateDependentNoiseDistribution, MultiCategoricalDistribution,
-                                                    BernoulliDistribution)
+                                                    MultiCategoricalDistribution, BernoulliDistribution,
+                                                    StateDependentNoiseDistribution)
 
 
 class PPOPolicy(BasePolicy):
@@ -231,6 +231,7 @@ class PPOPolicy(BasePolicy):
         # Preprocess the observation if needed
         features = self.extract_features(obs)
         latent_pi, latent_vf = self.mlp_extractor(features)
+
         # Features for sde
         latent_sde = latent_pi
         if self.sde_features_extractor is not None:
@@ -250,7 +251,6 @@ class PPOPolicy(BasePolicy):
 
         if isinstance(self.action_dist, DiagGaussianDistribution):
             return self.action_dist.proba_distribution(mean_actions, self.log_std)
-
         elif isinstance(self.action_dist, CategoricalDistribution):
             # Here mean_actions are the logits before the softmax
             return self.action_dist.proba_distribution(action_logits=mean_actions)
@@ -260,7 +260,6 @@ class PPOPolicy(BasePolicy):
         elif isinstance(self.action_dist, BernoulliDistribution):
             # Here mean_actions are the logits before the softmax
             return self.action_dist.proba_distribution(action_logits=mean_actions)
-
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
             return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)
         else:

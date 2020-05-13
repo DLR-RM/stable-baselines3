@@ -67,8 +67,9 @@ def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space,
         return F.one_hot(obs.long(), num_classes=observation_space.n).float()
     elif isinstance(observation_space, spaces.MultiDiscrete):
         # Tensor concatination of one hot encodings of each Categorical sub-space
-        return th.cat([F.one_hot(o.long(), num_classes=n).float()
-                       for o, n in zip(obs, observation_space.nvec)], dim=1).t()
+        x = th.cat([F.one_hot(o.long(), num_classes=n).float()
+                    for o, n in zip(obs[0], observation_space.nvec)])
+        return x.view(1, -1)
     elif isinstance(observation_space, spaces.MultiBinary):
         return obs.float()
     else:
@@ -85,7 +86,7 @@ def get_obs_shape(observation_space: spaces.Space) -> Tuple[int, ...]:
     if isinstance(observation_space, spaces.Box):
         return observation_space.shape
     elif isinstance(observation_space, spaces.Discrete):
-        # One observation
+        # Observation is an int
         return 1,
     elif isinstance(observation_space, spaces.MultiDiscrete):
         # Observation is the number of discrete spaces
@@ -94,6 +95,7 @@ def get_obs_shape(observation_space: spaces.Space) -> Tuple[int, ...]:
         # Observation is the number of binary spaces
         return int(observation_space.n),
     else:
+        # TODO: Multidiscrete, Binary, MultiBinary, Tuple, Dict
         raise NotImplementedError()
 
 
@@ -105,8 +107,11 @@ def get_flattened_obs_dim(observation_space: spaces.Space) -> int:
     :param observation_space: (spaces.Space)
     :return: (int)
     """
-    # Use Gym internal method
-    return spaces.utils.flatdim(observation_space)
+    if isinstance(observation_space, spaces.MultiDiscrete):
+        return (sum(observation_space.nvec))
+    else:
+        # Use Gym internal method
+        return spaces.utils.flatdim(observation_space)
 
 
 def get_action_dim(action_space: spaces.Space) -> int:
@@ -119,7 +124,7 @@ def get_action_dim(action_space: spaces.Space) -> int:
     if isinstance(action_space, spaces.Box):
         return int(np.prod(action_space.shape))
     elif isinstance(action_space, spaces.Discrete):
-        # One action
+        # Action is an int
         return 1
     elif isinstance(action_space, spaces.MultiDiscrete):
         # Action is the number of discrete spaces

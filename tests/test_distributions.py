@@ -3,11 +3,9 @@ import torch as th
 
 from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.distributions import (DiagGaussianDistribution, TanhBijector,
-                                                    SquashedDiagGaussianDistribution,
-                                                    CategoricalDistribution,
-                                                    MultiCategoricalDistribution,
-                                                    BernoulliDistribution,
-                                                    StateDependentNoiseDistribution)
+                                                   StateDependentNoiseDistribution,
+                                                   CategoricalDistribution, SquashedDiagGaussianDistribution,
+                                                   MultiCategoricalDistribution, BernoulliDistribution)
 from stable_baselines3.common.utils import set_random_seed
 
 
@@ -35,8 +33,7 @@ def test_squashed_gaussian(model_class):
     """
     Test run with squashed Gaussian (notably entropy computation)
     """
-    model = model_class('MlpPolicy', 'Pendulum-v0', use_sde=True,
-                        n_steps=100, policy_kwargs=dict(squash_output=True))
+    model = model_class('MlpPolicy', 'Pendulum-v0', use_sde=True, n_steps=100, policy_kwargs=dict(squash_output=True))
     model.learn(500)
 
     gaussian_mean = th.rand(N_SAMPLES, N_ACTIONS)
@@ -51,8 +48,7 @@ def test_sde_distribution():
     n_actions = 1
     deterministic_actions = th.ones(N_SAMPLES, n_actions) * 0.1
     state = th.ones(N_SAMPLES, N_FEATURES) * 0.3
-    dist = StateDependentNoiseDistribution(
-        n_actions, full_std=True, squash_output=False)
+    dist = StateDependentNoiseDistribution(n_actions, full_std=True, squash_output=False)
 
     set_random_seed(1)
     _, log_std = dist.proba_distribution_net(N_FEATURES)
@@ -61,10 +57,8 @@ def test_sde_distribution():
     dist = dist.proba_distribution(deterministic_actions, log_std, state)
     actions = dist.get_actions()
 
-    assert th.allclose(
-        actions.mean(), dist.distribution.mean.mean(), rtol=2e-3)
-    assert th.allclose(
-        actions.std(), dist.distribution.scale.mean(), rtol=2e-3)
+    assert th.allclose(actions.mean(), dist.distribution.mean.mean(), rtol=2e-3)
+    assert th.allclose(actions.std(), dist.distribution.scale.mean(), rtol=2e-3)
 
 
 # TODO: analytical form for squashed Gaussian?
@@ -78,8 +72,7 @@ def test_entropy(dist):
     set_random_seed(1)
     state = th.rand(N_SAMPLES, N_FEATURES)
     deterministic_actions = th.rand(N_SAMPLES, N_ACTIONS)
-    _, log_std = dist.proba_distribution_net(
-        N_FEATURES, log_std_init=th.log(th.tensor(0.2)))
+    _, log_std = dist.proba_distribution_net(N_FEATURES, log_std_init=th.log(th.tensor(0.2)))
 
     if isinstance(dist, DiagGaussianDistribution):
         dist = dist.proba_distribution(deterministic_actions, log_std)
@@ -94,15 +87,15 @@ def test_entropy(dist):
 
 
 categorical_param = [
-    (CategoricalDistribution(2), 2),
-    (MultiCategoricalDistribution([4, 3, 2]), sum([4, 3, 2]))
+    (CategoricalDistribution(N_ACTIONS), N_ACTIONS),
+    (MultiCategoricalDistribution([2, 3]), sum([2, 3]))
 ]
-@pytest.mark.parametrize("dist, N_ACTIONS", categorical_param)
-def test_categorical(dist, N_ACTIONS):
+@pytest.mark.parametrize("dist, CAT_ACTIONS", categorical_param)
+def test_categorical(dist, CAT_ACTIONS):
     # The entropy can be approximated by averaging the negative log likelihood
     # mean negative log likelihood == entropy
     set_random_seed(1)
-    action_logits = th.rand(N_SAMPLES, N_ACTIONS)
+    action_logits = th.rand(N_SAMPLES, CAT_ACTIONS)
     dist = dist.proba_distribution(action_logits)
     actions = dist.get_actions()
     entropy = dist.entropy()
@@ -121,4 +114,4 @@ def test_bernoulli():
     actions = dist.get_actions()
     entropy = dist.entropy()
     log_prob = dist.log_prob(actions)
-    assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=2e-4)
+    assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=5e-3)

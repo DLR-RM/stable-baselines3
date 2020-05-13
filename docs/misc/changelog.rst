@@ -17,7 +17,7 @@ New Features:
 - Added ``VecCheckNan`` and ``VecVideoRecorder`` (Sync with Stable Baselines)
 - Added determinism tests
 - Added ``cmd_utils`` and ``atari_wrappers`` 
-- Added support for ``MultiDiscrete`` and ``MultiBinary`` observation / action spaces
+- Added support for ``MultiDiscrete`` and ``MultiBinary`` observation / action spaces for PPO and A2C
 - Added ``MultiCategorical`` and ``Bernoulli`` distributions
 - Added ``test_bernoulli``, modified ``test_categorical`` and created ``test_spaces.py``
 

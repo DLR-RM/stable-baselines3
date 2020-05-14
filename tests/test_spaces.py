@@ -4,11 +4,11 @@ import pytest
 from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.identity_env import IdentityEnvMultiBinary, IdentityEnvMultiDiscrete
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 
 MODEL_LIST = [A2C, PPO]
+DIM = 3
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
@@ -19,7 +19,7 @@ def test_identity_multidiscrete(model_class):
     with a multidiscrete action space
     :param model_class: (BaseRLModel) A RL Model
     """
-    env = DummyVecEnv([lambda: IdentityEnvMultiDiscrete(3)])
+    env = DummyVecEnv([lambda: IdentityEnvMultiDiscrete(DIM)])
 
     model = model_class("MlpPolicy", env, gamma=0.5, seed=0)
     model.learn(total_timesteps=1000)
@@ -29,7 +29,6 @@ def test_identity_multidiscrete(model_class):
     evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=80)
 
     assert np.shape(model.predict(obs)[0]) == np.shape(obs)
-    "Error: predict not returning the same shape as observations"
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
@@ -40,14 +39,13 @@ def test_identity_multibinary(model_class):
     with a multibinary action space
     :param model_class: (BaseRLModel) A RL Model
     """
-    env = DummyVecEnv([lambda: IdentityEnvMultiBinary(2)])
+    env = DummyVecEnv([lambda: IdentityEnvMultiBinary(DIM)])
 
-    model = model_class("MlpPolicy", env, gamma=0.7, seed=0)
+    model = model_class("MlpPolicy", env, gamma=0.5, seed=0)
     model.learn(total_timesteps=1000)
     evaluate_policy(model, env, n_eval_episodes=5)
     obs = env.reset()
 
-    evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=49)
+    evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=80)
 
     assert np.shape(model.predict(obs)[0]) == np.shape(obs)
-    "Error: predict not returning the same shape as observations"

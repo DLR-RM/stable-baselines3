@@ -376,7 +376,7 @@ class BernoulliDistribution(Distribution):
         return self
 
     def mode(self) -> th.Tensor:
-        return th.argmax(self.distribution.probs, dim=1)
+        return th.round(self.distribution.probs)
 
     def sample(self) -> th.Tensor:
         return self.distribution.sample()

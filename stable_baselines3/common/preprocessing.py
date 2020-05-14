@@ -69,7 +69,7 @@ def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space,
 
     elif isinstance(observation_space, spaces.MultiDiscrete):
         # Tensor concatination of one hot encodings of each Categorical sub-space
-        return th.cat([F.one_hot(o.long(), num_classes=observation_space.nvec[i]).float()
+        return th.cat([F.one_hot(o.long(), num_classes=int(observation_space.nvec[i])).float()
                        for i, o in enumerate(th.split(obs.to(th.int64), 1, dim=1))],
                       dim=-1).view(obs.shape[0], sum(observation_space.nvec))
 

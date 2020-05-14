@@ -1,11 +1,9 @@
 from typing import Optional, Tuple, Dict, Any, List
-from functools import partial
 import gym
 import torch as th
 import torch.nn as nn
 from torch.distributions import Normal, Categorical, Bernoulli
 from gym import spaces
-import numpy as np
 
 from stable_baselines3.common.preprocessing import get_action_dim
 
@@ -315,6 +313,7 @@ class MultiCategoricalDistribution(Distribution):
             of the policy network (before the action layer)
         :return: (nn.Linear)
         """
+
         action_logits = nn.Linear(latent_dim, sum(self.action_dims))
         return action_logits
 
@@ -332,7 +331,7 @@ class MultiCategoricalDistribution(Distribution):
         return th.stack([d.entropy() for d in self.distributions], dim=1).sum(dim=1)
 
     def actions_from_params(self, action_logits: th.Tensor,
-                            deterministic: bool = True) -> th.Tensor:
+                            deterministic: bool = False) -> th.Tensor:
         # Update the proba distribution
         self.proba_distribution(action_logits)
         return self.get_actions(deterministic=deterministic)

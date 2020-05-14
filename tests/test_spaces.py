@@ -19,17 +19,17 @@ def test_identity_multidiscrete(model_class):
     with a multidiscrete action space
     :param model_class: (BaseRLModel) A RL Model
     """
-    env = DummyVecEnv([lambda: IdentityEnvMultiDiscrete(2)])
+    env = DummyVecEnv([lambda: IdentityEnvMultiDiscrete(3)])
 
     model = model_class("MlpPolicy", env, gamma=0.5, seed=0)
     model.learn(total_timesteps=1000)
     evaluate_policy(model, env, n_eval_episodes=5)
     obs = env.reset()
 
-    evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=70)
+    evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=80)
 
-    assert np.array(model.predict(obs)).shape == (2,), \
-        "Error: predict not returning correct shape"
+    assert np.shape(model.predict(obs)[0]) == np.shape(obs)
+    "Error: predict not returning the same shape as observations"
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
@@ -49,5 +49,5 @@ def test_identity_multibinary(model_class):
 
     evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=49)
 
-    assert np.array(model.predict(obs)).shape == (2,), \
-        "Error: predict not returning correct shape"
+    assert np.shape(model.predict(obs)[0]) == np.shape(obs)
+    "Error: predict not returning the same shape as observations"

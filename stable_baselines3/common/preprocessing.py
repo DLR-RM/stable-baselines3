@@ -1,9 +1,9 @@
 from typing import Tuple
 
-import numpy as np
 import torch as th
 import torch.nn.functional as F
 from gym import spaces
+import numpy as np
 
 
 def is_image_space(observation_space: spaces.Space,
@@ -62,16 +62,20 @@ def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space,
         if is_image_space(observation_space) and normalize_images:
             return obs.float() / 255.0
         return obs.float()
+
     elif isinstance(observation_space, spaces.Discrete):
         # One hot encoding and convert to float to avoid errors
         return F.one_hot(obs.long(), num_classes=observation_space.n).float()
+
     elif isinstance(observation_space, spaces.MultiDiscrete):
         # Tensor concatination of one hot encodings of each Categorical sub-space
-        x = th.cat([F.one_hot(o.long(), num_classes=int(n)).float()
-                    for o, n in zip(obs[0], observation_space.nvec)])
-        return x.view(1, -1)
+        return th.cat([F.one_hot(o.long(), num_classes=observation_space.nvec[i]).float()
+                       for i, o in enumerate(th.split(obs.to(th.int64), 1, dim=1))],
+                      dim=-1).view(obs.shape[0], sum(observation_space.nvec))
+
     elif isinstance(observation_space, spaces.MultiBinary):
         return obs.float()
+
     else:
         raise NotImplementedError()
 
@@ -108,7 +112,7 @@ def get_flattened_obs_dim(observation_space: spaces.Space) -> int:
     :return: (int)
     """
     if isinstance(observation_space, spaces.MultiDiscrete):
-        return (sum(observation_space.nvec))
+        return sum(observation_space.nvec)
     else:
         # Use Gym internal method
         return spaces.utils.flatdim(observation_space)

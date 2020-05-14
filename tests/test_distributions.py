@@ -3,9 +3,9 @@ import torch as th
 
 from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.distributions import (DiagGaussianDistribution, TanhBijector,
-                                                   StateDependentNoiseDistribution,
-                                                   CategoricalDistribution, SquashedDiagGaussianDistribution,
-                                                   MultiCategoricalDistribution, BernoulliDistribution)
+                                                    StateDependentNoiseDistribution,
+                                                    CategoricalDistribution, SquashedDiagGaussianDistribution,
+                                                    MultiCategoricalDistribution, BernoulliDistribution)
 from stable_baselines3.common.utils import set_random_seed
 
 
@@ -90,6 +90,8 @@ categorical_param = [
     (CategoricalDistribution(N_ACTIONS), N_ACTIONS),
     (MultiCategoricalDistribution([2, 3]), sum([2, 3]))
 ]
+
+
 @pytest.mark.parametrize("dist, CAT_ACTIONS", categorical_param)
 def test_categorical(dist, CAT_ACTIONS):
     # The entropy can be approximated by averaging the negative log likelihood

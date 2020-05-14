@@ -250,10 +250,6 @@ class PPO(BaseRLModel):
                     values_pred = rollout_data.old_values + th.clamp(values - rollout_data.old_values, -clip_range_vf,
                                                                      clip_range_vf)
                 # Value loss using the TD(gae_lambda) target
-                # print('old', rollout_data.old_values)
-                # print('roll', rollout_data.returns)
-                # print('values', values)
-
                 value_loss = F.mse_loss(rollout_data.returns, values_pred)
                 value_losses.append(value_loss.item())
 

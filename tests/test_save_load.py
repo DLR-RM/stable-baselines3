@@ -187,7 +187,7 @@ def test_save_load_policy(model_class, policy_str):
 
     # create model
     model = model_class(policy_str, env, policy_kwargs=dict(net_arch=[16]),
-                         verbose=1, **kwargs)
+                        verbose=1, **kwargs)
     model.learn(total_timesteps=500, eval_freq=250)
 
     env.reset()

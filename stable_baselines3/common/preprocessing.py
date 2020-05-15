@@ -68,9 +68,9 @@ def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space,
         return F.one_hot(obs.long(), num_classes=observation_space.n).float()
 
     elif isinstance(observation_space, spaces.MultiDiscrete):
-        # Tensor concatination of one hot encodings of each Categorical sub-space
-        return th.cat([F.one_hot(o.long(), num_classes=int(observation_space.nvec[i])).float()
-                       for i, o in enumerate(th.split(obs.to(th.int64), 1, dim=1))],
+        # Tensor concatenation of one hot encodings of each Categorical sub-space
+        return th.cat([F.one_hot(obs_.long(), num_classes=int(observation_space.nvec[idx])).float()
+                       for idx, obs_ in enumerate(th.split(obs.long(), 1, dim=1))],
                       dim=-1).view(obs.shape[0], sum(observation_space.nvec))
 
     elif isinstance(observation_space, spaces.MultiBinary):
@@ -93,13 +93,12 @@ def get_obs_shape(observation_space: spaces.Space) -> Tuple[int, ...]:
         # Observation is an int
         return 1,
     elif isinstance(observation_space, spaces.MultiDiscrete):
-        # Observation is the number of discrete spaces
+        # Number of discrete features
         return int(len(observation_space.nvec)),
     elif isinstance(observation_space, spaces.MultiBinary):
-        # Observation is the number of binary spaces
+        # Number of binary features
         return int(observation_space.n),
     else:
-        # TODO: Multidiscrete, Binary, MultiBinary, Tuple, Dict
         raise NotImplementedError()
 
 
@@ -131,10 +130,10 @@ def get_action_dim(action_space: spaces.Space) -> int:
         # Action is an int
         return 1
     elif isinstance(action_space, spaces.MultiDiscrete):
-        # Action is the number of discrete spaces
+        # Number of discrete actions
         return int(len(action_space.nvec))
     elif isinstance(action_space, spaces.MultiBinary):
-        # Action is the number of binary spaces
+        # Number of binary actions
         return int(action_space.n)
     else:
         raise NotImplementedError()

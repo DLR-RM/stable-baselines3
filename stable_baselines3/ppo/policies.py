@@ -255,10 +255,10 @@ class PPOPolicy(BasePolicy):
             # Here mean_actions are the logits before the softmax
             return self.action_dist.proba_distribution(action_logits=mean_actions)
         elif isinstance(self.action_dist, MultiCategoricalDistribution):
-            # Here mean_actions are the logits before the softmax
+            # Here mean_actions are the flattened logits
             return self.action_dist.proba_distribution(action_logits=mean_actions)
         elif isinstance(self.action_dist, BernoulliDistribution):
-            # Here mean_actions are the logits before the softmax
+            # Here mean_actions are the logits (before rounding to get the binary actions)
             return self.action_dist.proba_distribution(action_logits=mean_actions)
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
             return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)

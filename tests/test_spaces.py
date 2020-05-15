@@ -21,12 +21,11 @@ def test_identity_multidiscrete(model_class):
     """
     env = DummyVecEnv([lambda: IdentityEnvMultiDiscrete(DIM)])
 
-    model = model_class("MlpPolicy", env, gamma=0.5, seed=0)
-    model.learn(total_timesteps=1000)
-    evaluate_policy(model, env, n_eval_episodes=5)
+    model = model_class("MlpPolicy", env, gamma=0.5, seed=1)
+    model.learn(total_timesteps=3000)
     obs = env.reset()
 
-    evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=80)
+    evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=90)
 
     assert np.shape(model.predict(obs)[0]) == np.shape(obs)
 
@@ -41,11 +40,10 @@ def test_identity_multibinary(model_class):
     """
     env = DummyVecEnv([lambda: IdentityEnvMultiBinary(DIM)])
 
-    model = model_class("MlpPolicy", env, gamma=0.5, seed=0)
-    model.learn(total_timesteps=1000)
-    evaluate_policy(model, env, n_eval_episodes=5)
+    model = model_class("MlpPolicy", env, gamma=0.5, seed=1)
+    model.learn(total_timesteps=3000)
     obs = env.reset()
 
-    evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=80)
+    evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=90)
 
     assert np.shape(model.predict(obs)[0]) == np.shape(obs)

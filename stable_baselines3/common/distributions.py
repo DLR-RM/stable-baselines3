@@ -295,7 +295,7 @@ class MultiCategoricalDistribution(Distribution):
     """
     MultiCategorical distribution for multi discrete actions.
 
-    :param action_dims: ([int]) List of sizes of discrete action spaces
+    :param action_dims: (List[int]) List of sizes of discrete action spaces
     """
 
     def __init__(self, action_dims: List[int]):
@@ -306,7 +306,7 @@ class MultiCategoricalDistribution(Distribution):
     def proba_distribution_net(self, latent_dim: int) -> nn.Module:
         """
         Create the layer that represents the distribution:
-        it will be the logits (flattend) of the MultiCategorical distribution.
+        it will be the logits (flattened) of the MultiCategorical distribution.
         You can then get probabilities using a softmax on each sub-space.
 
         :param latent_dim: (int) Dimension of the last layer
@@ -322,13 +322,13 @@ class MultiCategoricalDistribution(Distribution):
         return self
 
     def mode(self) -> th.Tensor:
-        return th.stack([th.argmax(d.probs, dim=1) for d in self.distributions], dim=1)
+        return th.stack([th.argmax(dist.probs, dim=1) for dist in self.distributions], dim=1)
 
     def sample(self) -> th.Tensor:
-        return th.stack([d.sample() for d in self.distributions], dim=1)
+        return th.stack([dist.sample() for dist in self.distributions], dim=1)
 
     def entropy(self) -> th.Tensor:
-        return th.stack([d.entropy() for d in self.distributions], dim=1).sum(dim=1)
+        return th.stack([dist.entropy() for dist in self.distributions], dim=1).sum(dim=1)
 
     def actions_from_params(self, action_logits: th.Tensor,
                             deterministic: bool = False) -> th.Tensor:
@@ -338,12 +338,12 @@ class MultiCategoricalDistribution(Distribution):
 
     def log_prob_from_params(self, action_logits: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         actions = self.actions_from_params(action_logits)
-
         log_prob = self.log_prob(actions)
         return actions, log_prob
 
     def log_prob(self, actions: th.Tensor) -> th.Tensor:
-        return th.stack([d.log_prob(x) for d, x in zip(self.distributions,
+        # Extract each discrete action and compute log prob for their respective distributions
+        return th.stack([dist.log_prob(action) for dist, action in zip(self.distributions,
                                                        th.unbind(actions, dim=1))], dim=1).sum(dim=1)
 
 

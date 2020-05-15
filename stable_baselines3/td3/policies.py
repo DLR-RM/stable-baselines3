@@ -6,8 +6,8 @@ import torch.nn as nn
 
 from stable_baselines3.common.preprocessing import get_action_dim
 from stable_baselines3.common.policies import (BasePolicy, register_policy, create_mlp,
-                                              create_sde_features_extractor, NatureCNN,
-                                              BaseFeaturesExtractor, FlattenExtractor)
+                                               create_sde_features_extractor, NatureCNN,
+                                               BaseFeaturesExtractor, FlattenExtractor)
 from stable_baselines3.common.distributions import StateDependentNoiseDistribution
 
 
@@ -109,19 +109,19 @@ class Actor(BasePolicy):
     def _get_data(self) -> Dict[str, Any]:
         data = super()._get_data()
 
-        data.update(dict(
-             net_arch=self.net_arch,
-             features_dim=self.features_dim,
-             activation_fn=self.activation_fn,
-             use_sde=self.use_sde,
-             log_std_init=self.log_std_init,
-             clip_noise=self.clip_noise,
-             lr_sde=self.lr_sde,
-             full_std=self.full_std,
-             sde_net_arch=self.sde_net_arch,
-             use_expln=self.use_expln,
-             features_extractor=self.features_extractor
-        ))
+        data.update(dict(net_arch=self.net_arch,
+                         features_dim=self.features_dim,
+                         activation_fn=self.activation_fn,
+                         use_sde=self.use_sde,
+                         log_std_init=self.log_std_init,
+                         clip_noise=self.clip_noise,
+                         lr_sde=self.lr_sde,
+                         full_std=self.full_std,
+                         sde_net_arch=self.sde_net_arch,
+                         use_expln=self.use_expln,
+                         features_extractor=self.features_extractor
+                         )
+                    )
         return data
 
     def get_std(self) -> th.Tensor:
@@ -389,21 +389,21 @@ class TD3Policy(BasePolicy):
     def _get_data(self) -> Dict[str, Any]:
         data = super()._get_data()
 
-        data.update(dict(
-             net_arch=self.net_args['net_arch'],
-             activation_fn=self.net_args['activation_fn'],
-             use_sde=self.actor_kwargs['use_sde'],
-             log_std_init=self.actor_kwargs['log_std_init'],
-             clip_noise=self.actor_kwargs['clip_noise'],
-             lr_sde=self.actor_kwargs['lr_sde'],
-             sde_net_arch=self.actor_kwargs['sde_net_arch'],
-             use_expln=self.actor_kwargs['use_expln'],
-             lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
-             optimizer_class=self.optimizer_class,
-             optimizer_kwargs=self.optimizer_kwargs,
-             features_extractor_class=self.features_extractor_class,
-             features_extractor_kwargs=self.features_extractor_kwargs
-        ))
+        data.update(dict(net_arch=self.net_args['net_arch'],
+                         activation_fn=self.net_args['activation_fn'],
+                         use_sde=self.actor_kwargs['use_sde'],
+                         log_std_init=self.actor_kwargs['log_std_init'],
+                         clip_noise=self.actor_kwargs['clip_noise'],
+                         lr_sde=self.actor_kwargs['lr_sde'],
+                         sde_net_arch=self.actor_kwargs['sde_net_arch'],
+                         use_expln=self.actor_kwargs['use_expln'],
+                         lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
+                         optimizer_class=self.optimizer_class,
+                         optimizer_kwargs=self.optimizer_kwargs,
+                         features_extractor_class=self.features_extractor_class,
+                         features_extractor_kwargs=self.features_extractor_kwargs
+                         )
+                    )
         return data
 
     def reset_noise(self) -> None:

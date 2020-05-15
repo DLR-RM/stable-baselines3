@@ -1,13 +1,18 @@
 <img src="docs/\_static/img/logo.png" align="right" width="40%"/>
 
-[![pipeline status](https://gitlab.com/araffin/stable-baselines3/badges/master/pipeline.svg)](https://gitlab.com/araffin/stable-baselines3/-/commits/master) [![Documentation Status](https://readthedocs.org/projects/stable-baselines/badge/?version=master)](https://stable-baselines3.readthedocs.io/en/master/?badge=master) [![coverage report](https://gitlab.com/araffin/stable-baselines3/badges/master/coverage.svg)](https://gitlab.com/araffin/stable-baselines3/-/commits/master)
+[![pipeline status](https://gitlab.com/araffin/stable-baselines3/badges/sde/pipeline.svg)](https://gitlab.com/araffin/stable-baselines3/-/commits/sde) [![Documentation Status](https://readthedocs.org/projects/stable-baselines/badge/?version=master)](https://stable-baselines3.readthedocs.io/en/master/?badge=master) [![coverage report](https://gitlab.com/araffin/stable-baselines3/badges/sde/coverage.svg)](https://gitlab.com/araffin/stable-baselines3/-/commits/sde)
 
 
-**WARNING: Stable Baselines3 is currently in a beta version, breaking changes may occur before 1.0 is released**
+# Generalized State-Dependent Exploration (gSDE) for Deep Reinforcement Learning in Robotics
 
-Note: most of the documentation of [Stable Baselines](https://github.com/hill-a/stable-baselines) should be still valid though.
+This branch contains the code for reproducing the results in the paper "Generalized State-Dependent Exploration for Deep Reinforcement Learning in Robotics" by Antonin Raffin and Freek Stulp.
 
-# Stable Baselines3
+Arxiv: https://arxiv.org/abs/2005.05719
+
+The main difference with the master branch is that TD3 has support in that branch for gSDE.
+
+
+## Stable Baselines3
 
 Stable Baselines3 is a set of improved implementations of reinforcement learning algorithms in PyTorch. It is the next major version of [Stable Baselines](https://github.com/hill-a/stable-baselines).
 

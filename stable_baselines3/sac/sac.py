@@ -46,11 +46,11 @@ class SAC(OffPolicyRLModel):
         Set it to 'auto' to learn it automatically (and 'auto_0.1' for using 0.1 as initial value)
     :param target_update_interval: (int) update the target network every ``target_network_update_freq`` steps.
     :param target_entropy: (str or float) target entropy when learning ``ent_coef`` (``ent_coef = 'auto'``)
-    :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
+    :param use_sde: (bool) Whether to use generalized State Dependent Exploration (gSDE)
         instead of action noise exploration (default: False)
-    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
+    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using gSDE
         Default: -1 (only sample at the beginning of the rollout)
-    :param use_sde_at_warmup: (bool) Whether to use SDE instead of uniform sampling
+    :param use_sde_at_warmup: (bool) Whether to use gSDE instead of uniform sampling
         during the warm up phase (before learning starts)
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)

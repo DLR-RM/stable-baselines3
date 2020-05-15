@@ -276,7 +276,7 @@ class EvalCallback(EventCallback):
 
     def _init_callback(self):
         # Does not work in some corner cases, where the wrapper is not the same
-        if not type(self.training_env) is type(self.eval_env):
+        if not isinstance(self.training_env, type(self.eval_env)):
             warnings.warn("Training and eval env are not of the same type"
                           f"{self.training_env} != {self.eval_env}")
 

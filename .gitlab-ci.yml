@@ -12,3 +12,8 @@ pytest:
 doc-build:
   script:
   - make doc
+
+lint-check:
+  script:
+  - pip install flake8  # TODO: remove when new version on Pypi
+  - make lint

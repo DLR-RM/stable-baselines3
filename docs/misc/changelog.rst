@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.6.0a7 (WIP)
+Pre-Release 0.6.0a8 (WIP)
 ------------------------------
 
 
@@ -41,6 +41,7 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Added most documentation (adapted from Stable-Baselines)
 - Added link to CONTRIBUTING.md in the README (@kinalmehta)
+- Added gSDE project and update docstrings accordingly
 
 
 Pre-Release 0.5.0 (2020-05-05)

@@ -416,7 +416,7 @@ def create_sde_features_extractor(features_dim: int,
                                   activation_fn: Type[nn.Module]) -> Tuple[nn.Sequential, int]:
     """
     Create the neural network that will be used to extract features
-    for the SDE exploration function.
+    for the gSDE exploration function.
 
     :param features_dim: (int)
     :param sde_net_arch: ([int])

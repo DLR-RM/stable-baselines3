@@ -34,9 +34,9 @@ class A2C(PPO):
     :param rms_prop_eps: (float) RMSProp epsilon. It stabilizes square root computation in denominator
         of RMSProp update
     :param use_rms_prop: (bool) Whether to use RMSprop (default) or Adam as optimizer
-    :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
+    :param use_sde: (bool) Whether to use generalized State Dependent Exploration (gSDE)
         instead of action noise exploration (default: False)
-    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
+    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using gSDE
         Default: -1 (only sample at the beginning of the rollout)
     :param normalize_advantage: (bool) Whether to normalize or not the advantage
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)

@@ -55,9 +55,9 @@ class PPO(BaseRLModel):
     :param ent_coef: (float) Entropy coefficient for the loss calculation
     :param vf_coef: (float) Value function coefficient for the loss calculation
     :param max_grad_norm: (float) The maximum value for the gradient clipping
-    :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
+    :param use_sde: (bool) Whether to use generalized State Dependent Exploration (gSDE)
         instead of action noise exploration (default: False)
-    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
+    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using gSDE
         Default: -1 (only sample at the beginning of the rollout)
     :param target_kl: (float) Limit the KL divergence between updates,
         because the clipping is not enough to prevent large update

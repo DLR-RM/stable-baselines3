@@ -294,7 +294,9 @@ class CategoricalDistribution(Distribution):
 
 class StateDependentNoiseDistribution(Distribution):
     """
-    Distribution class for using State Dependent Exploration (SDE).
+    Distribution class for using generalized State Dependent Exploration (gSDE).
+    Paper: https://arxiv.org/abs/2005.05719
+
     It is used to create the noise exploration matrix and
     compute the log probability of an action with that noise.
 
@@ -306,7 +308,7 @@ class StateDependentNoiseDistribution(Distribution):
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param squash_output: (bool) Whether to squash the output using a tanh function,
         this allows to ensure boundaries.
-    :param learn_features: (bool) Whether to learn features for SDE or not.
+    :param learn_features: (bool) Whether to learn features for gSDE or not.
         This will enable gradients to be backpropagated through the features
         ``latent_sde`` in the code.
     :param epsilon: (float) small value to avoid NaN due to numerical imprecision.
@@ -346,7 +348,7 @@ class StateDependentNoiseDistribution(Distribution):
         :return: (th.Tensor)
         """
         if self.use_expln:
-            # From SDE paper, it allows to keep variance
+            # From gSDE paper, it allows to keep variance
             # above zero and prevent it from growing too fast
             below_threshold = th.exp(log_std) * (log_std <= 0)
             # Avoid NaN: zeros values that are below zero
@@ -387,7 +389,7 @@ class StateDependentNoiseDistribution(Distribution):
         :param latent_dim: (int) Dimension of the last layer of the policy (before the action layer)
         :param log_std_init: (float) Initial value for the log standard deviation
         :param latent_sde_dim: (Optional[int]) Dimension of the last layer of the feature extractor
-            for SDE. By default, it is shared with the policy network.
+            for gSDE. By default, it is shared with the policy network.
         :return: (nn.Linear, nn.Parameter)
         """
         # Network for the deterministic action, it represents the mean of the distribution

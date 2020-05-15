@@ -29,14 +29,14 @@ class Actor(BasePolicy):
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
     :param full_std: (bool) Whether to use (n_features x n_actions) parameters
-        for the std instead of only (n_features,) when using SDE.
+        for the std instead of only (n_features,) when using gSDE.
     :param sde_net_arch: ([int]) Network architecture for extracting features
-        when using SDE. If None, the latent features from the policy will be used.
+        when using gSDE. If None, the latent features from the policy will be used.
         Pass an empty list to use the states as features.
-    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` when using SDE to ensure
+    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` when using gSDE to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
-    :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
+    :param clip_mean: (float) Clip the mean output when using gSDE to avoid numerical instability.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param device: (Union[th.device, str]) Device on which the code should run.
@@ -82,7 +82,7 @@ class Actor(BasePolicy):
 
         if self.use_sde:
             latent_sde_dim = last_layer_dim
-            # Separate feature extractor for SDE
+            # Separate feature extractor for gSDE
             if sde_net_arch is not None:
                 self.sde_features_extractor, latent_sde_dim = create_sde_features_extractor(features_dim, sde_net_arch,
                                                                                             activation_fn)
@@ -121,7 +121,7 @@ class Actor(BasePolicy):
     def get_std(self) -> th.Tensor:
         """
         Retrieve the standard deviation of the action distribution.
-        Only useful when using SDE.
+        Only useful when using gSDE.
         It corresponds to ``th.exp(log_std)`` in the normal case,
         but is slightly different when using ``expln`` function
         (cf StateDependentNoiseDistribution doc).
@@ -129,17 +129,17 @@ class Actor(BasePolicy):
         :return: (th.Tensor)
         """
         assert isinstance(self.action_dist, StateDependentNoiseDistribution), \
-            'get_std() is only available when using SDE'
+            'get_std() is only available when using gSDE'
         return self.action_dist.get_std(self.log_std)
 
     def reset_noise(self, batch_size: int = 1) -> None:
         """
-        Sample new weights for the exploration matrix, when using SDE.
+        Sample new weights for the exploration matrix, when using gSDE.
 
         :param batch_size: (int)
         """
         assert isinstance(self.action_dist, StateDependentNoiseDistribution), \
-            'reset_noise() is only available when using SDE'
+            'reset_noise() is only available when using gSDE'
         self.action_dist.sample_weights(self.log_std, batch_size=batch_size)
 
     def get_action_dist_params(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor, Dict[str, th.Tensor]]:
@@ -241,12 +241,12 @@ class SACPolicy(BasePolicy):
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
     :param sde_net_arch: ([int]) Network architecture for extracting features
-        when using SDE. If None, the latent features from the policy will be used.
+        when using gSDE. If None, the latent features from the policy will be used.
         Pass an empty list to use the states as features.
-    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` when using SDE to ensure
+    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` when using gSDE to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
-    :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
+    :param clip_mean: (float) Clip the mean output when using gSDE to avoid numerical instability.
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
     :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
         to pass to the feature extractor.
@@ -383,12 +383,12 @@ class CnnPolicy(SACPolicy):
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
     :param sde_net_arch: ([int]) Network architecture for extracting features
-        when using SDE. If None, the latent features from the policy will be used.
+        when using gSDE. If None, the latent features from the policy will be used.
         Pass an empty list to use the states as features.
-    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` when using SDE to ensure
+    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` when using gSDE to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
-    :param clip_mean: (float) Clip the mean output when using SDE to avoid numerical instability.
+    :param clip_mean: (float) Clip the mean output when using gSDE to avoid numerical instability.
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)

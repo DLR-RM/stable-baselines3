@@ -28,15 +28,15 @@ class PPOPolicy(BasePolicy):
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
     :param full_std: (bool) Whether to use (n_features x n_actions) parameters
-        for the std instead of only (n_features,) when using SDE
+        for the std instead of only (n_features,) when using gSDE
     :param sde_net_arch: ([int]) Network architecture for extracting features
-        when using SDE. If None, the latent features from the policy will be used.
+        when using gSDE. If None, the latent features from the policy will be used.
         Pass an empty list to use the states as features.
     :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param squash_output: (bool) Whether to squash the output using a tanh function,
-        this allows to ensure boundaries when using SDE.
+        this allows to ensure boundaries when using gSDE.
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
     :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
         to pass to the feature extractor.
@@ -100,7 +100,7 @@ class PPOPolicy(BasePolicy):
         self.normalize_images = normalize_images
         self.log_std_init = log_std_init
         dist_kwargs = None
-        # Keyword arguments for SDE distribution
+        # Keyword arguments for gSDE distribution
         if use_sde:
             dist_kwargs = {
                 'full_std': full_std,
@@ -147,7 +147,7 @@ class PPOPolicy(BasePolicy):
         :param n_envs: (int)
         """
         assert isinstance(self.action_dist,
-                          StateDependentNoiseDistribution), 'reset_noise() is only available when using SDE'
+                          StateDependentNoiseDistribution), 'reset_noise() is only available when using gSDE'
         self.action_dist.sample_weights(self.log_std, batch_size=n_envs)
 
     def _build(self, lr_schedule: Callable) -> None:
@@ -162,7 +162,7 @@ class PPOPolicy(BasePolicy):
 
         latent_dim_pi = self.mlp_extractor.latent_dim_pi
 
-        # Separate feature extractor for SDE
+        # Separate feature extractor for gSDE
         if self.sde_net_arch is not None:
             self.sde_features_extractor, latent_sde_dim = create_sde_features_extractor(self.features_dim,
                                                                                         self.sde_net_arch,
@@ -221,7 +221,7 @@ class PPOPolicy(BasePolicy):
 
         :param obs: (th.Tensor) Observation
         :return: (Tuple[th.Tensor, th.Tensor, th.Tensor]) Latent codes
-            for the actor, the value function and for SDE function
+            for the actor, the value function and for gSDE function
         """
         # Preprocess the observation if needed
         features = self.extract_features(obs)
@@ -238,7 +238,7 @@ class PPOPolicy(BasePolicy):
         Retrieve action distribution given the latent codes.
 
         :param latent_pi: (th.Tensor) Latent code for the actor
-        :param latent_sde: (Optional[th.Tensor]) Latent code for the SDE exploration function
+        :param latent_sde: (Optional[th.Tensor]) Latent code for the gSDE exploration function
         :return: (Distribution) Action distribution
         """
         mean_actions = self.action_net(latent_pi)
@@ -302,15 +302,15 @@ class CnnPolicy(PPOPolicy):
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
     :param full_std: (bool) Whether to use (n_features x n_actions) parameters
-        for the std instead of only (n_features,) when using SDE
+        for the std instead of only (n_features,) when using gSDE
     :param sde_net_arch: ([int]) Network architecture for extracting features
-        when using SDE. If None, the latent features from the policy will be used.
+        when using gSDE. If None, the latent features from the policy will be used.
         Pass an empty list to use the states as features.
     :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param squash_output: (bool) Whether to squash the output using a tanh function,
-        this allows to ensure boundaries when using SDE.
+        this allows to ensure boundaries when using gSDE.
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
     :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
         to pass to the feature extractor.

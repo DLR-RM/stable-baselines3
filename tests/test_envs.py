@@ -6,7 +6,7 @@ import numpy as np
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
 from stable_baselines3.common.identity_env import (IdentityEnv, IdentityEnvBox, FakeImageEnv,
-                                                  IdentityEnvMultiBinary, IdentityEnvMultiDiscrete,)
+                                                   IdentityEnvMultiBinary, IdentityEnvMultiDiscrete)
 
 ENV_CLASSES = [BitFlippingEnv, IdentityEnv, IdentityEnvBox, IdentityEnvMultiBinary,
                IdentityEnvMultiDiscrete, FakeImageEnv]

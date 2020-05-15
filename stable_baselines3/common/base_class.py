@@ -46,9 +46,9 @@ class BaseRLModel(ABC):
     :param monitor_wrapper: (bool) When creating an environment, whether to wrap it
         or not in a Monitor wrapper.
     :param seed: (Optional[int]) Seed for the pseudo random generators
-    :param use_sde: (bool) Whether to use State Dependent Exploration (SDE)
+    :param use_sde: (bool) Whether to use generalized State Dependent Exploration (gSDE)
         instead of action noise exploration (default: False)
-    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using SDE
+    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using gSDE
         Default: -1 (only sample at the beginning of the rollout)
     """
 
@@ -96,7 +96,7 @@ class BaseRLModel(ABC):
         # When using VecNormalize:
         self._last_original_obs = None  # type: Optional[np.ndarray]
         self._episode_num = 0
-        # Used for SDE only
+        # Used for gSDE only
         self.use_sde = use_sde
         self.sde_sample_freq = sde_sample_freq
         # Track the training progress (from 1 to 0)
@@ -681,11 +681,11 @@ class OffPolicyRLModel(BaseRLModel):
     :param seed: Seed for the pseudo random generators
     :param use_sde: Whether to use State Dependent Exploration (SDE)
         instead of action noise exploration (default: False)
-    :param sde_sample_freq: Sample a new noise matrix every n steps when using SDE
+    :param sde_sample_freq: Sample a new noise matrix every n steps when using gSDE
         Default: -1 (only sample at the beginning of the rollout)
-    :param use_sde_at_warmup: (bool) Whether to use SDE instead of uniform sampling
+    :param use_sde_at_warmup: (bool) Whether to use gSDE instead of uniform sampling
         during the warm up phase (before learning starts)
-    :param sde_support: (bool) Whether the model support SDE or not
+    :param sde_support: (bool) Whether the model support gSDE or not
     """
 
     def __init__(self,
@@ -721,7 +721,7 @@ class OffPolicyRLModel(BaseRLModel):
         if sde_support:
             self.policy_kwargs['use_sde'] = self.use_sde
         self.policy_kwargs['device'] = self.device
-        # For SDE only
+        # For gSDE only
         self.use_sde_at_warmup = use_sde_at_warmup
 
     def _setup_model(self):

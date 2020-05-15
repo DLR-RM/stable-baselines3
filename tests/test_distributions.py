@@ -3,8 +3,8 @@ import torch as th
 
 from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.distributions import (DiagGaussianDistribution, TanhBijector,
-                                                   StateDependentNoiseDistribution,
-                                                   CategoricalDistribution, SquashedDiagGaussianDistribution)
+                                                    StateDependentNoiseDistribution,
+                                                    CategoricalDistribution, SquashedDiagGaussianDistribution)
 from stable_baselines3.common.utils import set_random_seed
 
 

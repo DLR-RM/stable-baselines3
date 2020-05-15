@@ -9,7 +9,6 @@ Pre-Release 0.6.0a8 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-- Remove State-Dependent Exploration (SDE) support for ``TD3``
 
 New Features:
 ^^^^^^^^^^^^^

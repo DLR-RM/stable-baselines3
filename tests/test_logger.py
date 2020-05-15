@@ -5,8 +5,8 @@ import pytest
 import numpy as np
 
 from stable_baselines3.common.logger import (make_output_format, read_csv, read_json, DEBUG, ScopedConfigure,
-                                            info, debug, set_level, configure, logkv, logkvs,
-                                            dumpkvs, logkv_mean, warn, error, reset)
+                                             info, debug, set_level, configure, logkv, logkvs,
+                                             dumpkvs, logkv_mean, warn, error, reset)
 
 KEY_VALUES = {
     "test": 1,

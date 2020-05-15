@@ -177,16 +177,22 @@ Actions `gym.spaces`:
 
 
 ## Testing the installation
-All unit tests in stable baselines3 can be run using pytest runner:
+All unit tests in stable baselines3 can be run using `pytest` runner:
 ```
 pip install pytest pytest-cov
 make pytest
 ```
 
-You can also do a static type check using pytype:
+You can also do a static type check using `pytype`:
 ```
 pip install pytype
 make type
+```
+
+Codestyle check with `flake8`:
+```
+pip install flake8
+make lint
 ```
 
 ## Projects Using Stable-Baselines3

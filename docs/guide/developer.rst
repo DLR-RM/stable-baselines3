@@ -77,7 +77,7 @@ State-Dependent Exploration
 
 State-Dependent Exploration (SDE) is a type of exploration that allows to use RL directly on real robots,
 that was the starting point for the Stable-Baselines3 library.
-I (@araffin) will publish a paper about a generalized version of SDE (the one implemented in SB3) soon.
+I (@araffin) published a paper about a generalized version of SDE (the one implemented in SB3): https://arxiv.org/abs/2005.05719
 
 Misc
 ====

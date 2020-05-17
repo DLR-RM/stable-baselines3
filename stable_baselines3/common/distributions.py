@@ -344,7 +344,7 @@ class MultiCategoricalDistribution(Distribution):
     def log_prob(self, actions: th.Tensor) -> th.Tensor:
         # Extract each discrete action and compute log prob for their respective distributions
         return th.stack([dist.log_prob(action) for dist, action in zip(self.distributions,
-                                                       th.unbind(actions, dim=1))], dim=1).sum(dim=1)
+                                                                       th.unbind(actions, dim=1))], dim=1).sum(dim=1)
 
 
 class BernoulliDistribution(Distribution):

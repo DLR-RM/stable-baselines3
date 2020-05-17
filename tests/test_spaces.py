@@ -8,7 +8,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 
 
 MODEL_LIST = [A2C, PPO]
-DIM = 3
+DIM = 4
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)

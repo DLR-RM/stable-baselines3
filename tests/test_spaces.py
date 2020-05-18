@@ -1,49 +1,47 @@
 import numpy as np
 import pytest
+import gym
 
-from stable_baselines3 import A2C, PPO
-from stable_baselines3.common.identity_env import IdentityEnvMultiBinary, IdentityEnvMultiDiscrete
+from stable_baselines3 import SAC, TD3
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.common.vec_env import DummyVecEnv
 
 
-MODEL_LIST = [A2C, PPO]
-DIM = 4
+class DummyMultiDiscreteSpace(gym.Env):
+    def __init__(self, nvec):
+        super(DummyMultiDiscreteSpace, self).__init__()
+        self.observation_space = gym.spaces.MultiDiscrete(nvec)
+        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+
+    def reset(self):
+        return self.observation_space.sample()
+
+    def step(self, action):
+        return self.observation_space.sample(), 0.0, False, {}
 
 
-@pytest.mark.parametrize("model_class", MODEL_LIST)
-def test_identity_multidiscrete(model_class):
+class DummyMultiBinary(gym.Env):
+    def __init__(self, n):
+        super(DummyMultiBinary, self).__init__()
+        self.observation_space = gym.spaces.MultiBinary(n)
+        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+
+    def reset(self):
+        return self.observation_space.sample()
+
+    def step(self, action):
+        return self.observation_space.sample(), 0.0, False, {}
+
+
+@pytest.mark.parametrize("model_class", [SAC, TD3])
+@pytest.mark.parametrize("env", [DummyMultiDiscreteSpace([4, 3]), DummyMultiBinary(8)])
+def test_identity_spaces(model_class, env):
     """
-    Test if the algorithm (with a given policy)
-    can learn an identity transformation (i.e. return observation as an action)
-    with a multidiscrete action space
-    :param model_class: (BaseRLModel) A RL Model
+    Additional tests for SAC/TD3 to check observation space support
+    for MultiDiscrete and MultiBinary.
     """
-    env = DummyVecEnv([lambda: IdentityEnvMultiDiscrete(DIM)])
+    env = gym.wrappers.TimeLimit(env, max_episode_steps=100)
 
-    model = model_class("MlpPolicy", env, gamma=0.5, seed=1)
-    model.learn(total_timesteps=3000)
-    obs = env.reset()
+    model = model_class("MlpPolicy", env, gamma=0.5, seed=1, policy_kwargs=dict(net_arch=[64]))
+    model.learn(total_timesteps=500)
 
-    evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=90)
-
-    assert np.shape(model.predict(obs)[0]) == np.shape(obs)
-
-
-@pytest.mark.parametrize("model_class", MODEL_LIST)
-def test_identity_multibinary(model_class):
-    """
-    Test if the algorithm (with a given policy)
-    can learn an identity transformation (i.e. return observation as an action)
-    with a multibinary action space
-    :param model_class: (BaseRLModel) A RL Model
-    """
-    env = DummyVecEnv([lambda: IdentityEnvMultiBinary(DIM)])
-
-    model = model_class("MlpPolicy", env, gamma=0.5, seed=1)
-    model.learn(total_timesteps=3000)
-    obs = env.reset()
-
-    evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=90)
-
-    assert np.shape(model.predict(obs)[0]) == np.shape(obs)
+    evaluate_policy(model, env, n_eval_episodes=5)

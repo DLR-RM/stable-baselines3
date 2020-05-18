@@ -38,10 +38,10 @@ Can I use?
 ============= ====== ===========
 Space         Action Observation
 ============= ====== ===========
-Discrete      ❌      ❌
+Discrete      ✔️      ✔️
 Box           ✔️      ✔️
-MultiDiscrete ❌     ❌
-MultiBinary   ❌      ❌
+MultiDiscrete ✔️      ✔️
+MultiBinary   ✔️      ✔️
 ============= ====== ===========
 
 Example

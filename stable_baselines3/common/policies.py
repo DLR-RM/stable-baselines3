@@ -279,8 +279,8 @@ class BasePolicy(nn.Module):
             elif observation.shape[1:] == observation_space.shape:
                 return True
             else:
-                raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape)
-                                 + "Box environment, please use {} ".format(observation_space.shape)
+                raise ValueError(f"Error: Unexpected observation shape {observation.shape} for "
+                                 + f"Box environment, please use {observation_space.shape} "
                                  + "or (n_env, {}) for the observation shape."
                                  .format(", ".join(map(str, observation_space.shape))))
         elif isinstance(observation_space, gym.spaces.Discrete):
@@ -289,7 +289,7 @@ class BasePolicy(nn.Module):
             elif len(observation.shape) == 1:
                 return True
             else:
-                raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape)
+                raise ValueError(f"Error: Unexpected observation shape {observation.shape} for "
                                  + "Discrete environment, please use (1,) or (n_env, 1) for the observation shape.")
 
         elif isinstance(observation_space, gym.spaces.MultiDiscrete):
@@ -298,21 +298,21 @@ class BasePolicy(nn.Module):
             elif len(observation.shape) == 2 and observation.shape[1] == len(observation_space.nvec):
                 return True
             else:
-                raise ValueError("Error: Unexpected observation shape {} for MultiDiscrete ".format(observation.shape)
-                                 + "environment, please use ({},) or ".format(len(observation_space.nvec))
-                                 + "(n_env, {}) for the observation shape.".format(len(observation_space.nvec)))
+                raise ValueError(f"Error: Unexpected observation shape {observation.shape} for MultiDiscrete "
+                                 + f"environment, please use ({len(observation_space.nvec)},) or "
+                                 + f"(n_env, {len(observation_space.nvec)}) for the observation shape.")
         elif isinstance(observation_space, gym.spaces.MultiBinary):
             if observation.shape == (observation_space.n,):
                 return False
             elif len(observation.shape) == 2 and observation.shape[1] == observation_space.n:
                 return True
             else:
-                raise ValueError("Error: Unexpected observation shape {} for MultiBinary ".format(observation.shape)
-                                 + "environment, please use ({},) or ".format(observation_space.n)
-                                 + "(n_env, {}) for the observation shape.".format(observation_space.n))
+                raise ValueError(f"Error: Unexpected observation shape {observation.shape} for MultiBinary "
+                                 + f"environment, please use ({observation_space.n},) or "
+                                 + f"(n_env, {observation_space.n}) for the observation shape.")
         else:
-            raise ValueError("Error: Cannot determine if the observation is vectorized with the space type {}."
-                             .format(observation_space))
+            raise ValueError("Error: Cannot determine if the observation is vectorized "
+                             + f" with the space type {observation_space}.")
 
     def _get_data(self) -> Dict[str, Any]:
         """
@@ -447,7 +447,7 @@ def get_policy_from_name(base_policy_type: Type[BasePolicy], name: str) -> Type[
         raise ValueError(f"Error: the policy type {base_policy_type} is not registered!")
     if name not in _policy_registry[base_policy_type]:
         raise ValueError(f"Error: unknown policy type {name},"
-                         "the only registed policy type are: {list(_policy_registry[base_policy_type].keys())}!")
+                         f"the only registed policy type are: {list(_policy_registry[base_policy_type].keys())}!")
     return _policy_registry[base_policy_type][name]
 
 
@@ -460,14 +460,10 @@ def register_policy(name: str, policy: Type[BasePolicy]) -> None:
     :param policy: (Type[BasePolicy]) the policy class
     """
     sub_class = None
-    # For building the doc
-    try:
-        for cls in BasePolicy.__subclasses__():
-            if issubclass(policy, cls):
-                sub_class = cls
-                break
-    except AttributeError:
-        sub_class = str(th.random.randint(100))
+    for cls in BasePolicy.__subclasses__():
+        if issubclass(policy, cls):
+            sub_class = cls
+            break
     if sub_class is None:
         raise ValueError(f"Error: the policy {policy} is not of any known subclasses of BasePolicy!")
 

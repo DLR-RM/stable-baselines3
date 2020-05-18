@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.6.0a8 (WIP)
+Pre-Release 0.6.0a9 (WIP)
 ------------------------------
 
 Breaking Changes:
@@ -15,10 +15,9 @@ New Features:
 - Added env checker (Sync with Stable Baselines)
 - Added ``VecCheckNan`` and ``VecVideoRecorder`` (Sync with Stable Baselines)
 - Added determinism tests
-- Added ``cmd_utils`` and ``atari_wrappers`` 
-- Added support for ``MultiDiscrete`` and ``MultiBinary`` observation / action spaces for PPO and A2C (@rolandgvc)
-- Added ``MultiCategorical`` and ``Bernoulli`` distributions (@rolandgvc)
-- Added ``test_bernoulli``, modified ``test_categorical`` and created ``test_spaces.py`` (@rolandgvc)
+- Added ``cmd_utils`` and ``atari_wrappers``
+- Added support for ``MultiDiscrete`` and ``MultiBinary`` observation spaces (@rolandgvc)
+- Added ``MultiCategorical`` and ``Bernoulli`` distributions for PPO/A2C (@rolandgvc)
 
 Bug Fixes:
 ^^^^^^^^^^

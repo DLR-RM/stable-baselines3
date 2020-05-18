@@ -1,9 +1,8 @@
-from typing import Optional, Tuple, Dict, Any
-
+from typing import Optional, Tuple, Dict, Any, List
 import gym
 import torch as th
 import torch.nn as nn
-from torch.distributions import Normal, Categorical
+from torch.distributions import Normal, Categorical, Bernoulli
 from gym import spaces
 
 from stable_baselines3.common.preprocessing import get_action_dim
@@ -88,7 +87,7 @@ def sum_independent_dims(tensor: th.Tensor) -> th.Tensor:
     :return: (th.Tensor) shape: (n_batch,)
     """
     if len(tensor.shape) > 1:
-        tensor = tensor.sum(axis=1)
+        tensor = tensor.sum(dim=1)
     else:
         tensor = tensor.sum()
     return tensor
@@ -290,6 +289,114 @@ class CategoricalDistribution(Distribution):
 
     def log_prob(self, actions: th.Tensor) -> th.Tensor:
         return self.distribution.log_prob(actions)
+
+
+class MultiCategoricalDistribution(Distribution):
+    """
+    MultiCategorical distribution for multi discrete actions.
+
+    :param action_dims: (List[int]) List of sizes of discrete action spaces
+    """
+
+    def __init__(self, action_dims: List[int]):
+        super(MultiCategoricalDistribution, self).__init__()
+        self.action_dims = action_dims
+        self.distributions = None
+
+    def proba_distribution_net(self, latent_dim: int) -> nn.Module:
+        """
+        Create the layer that represents the distribution:
+        it will be the logits (flattened) of the MultiCategorical distribution.
+        You can then get probabilities using a softmax on each sub-space.
+
+        :param latent_dim: (int) Dimension of the last layer
+            of the policy network (before the action layer)
+        :return: (nn.Linear)
+        """
+
+        action_logits = nn.Linear(latent_dim, sum(self.action_dims))
+        return action_logits
+
+    def proba_distribution(self, action_logits: th.Tensor) -> 'MultiCategoricalDistribution':
+        self.distributions = [Categorical(logits=split) for split in th.split(action_logits, tuple(self.action_dims), dim=1)]
+        return self
+
+    def mode(self) -> th.Tensor:
+        return th.stack([th.argmax(dist.probs, dim=1) for dist in self.distributions], dim=1)
+
+    def sample(self) -> th.Tensor:
+        return th.stack([dist.sample() for dist in self.distributions], dim=1)
+
+    def entropy(self) -> th.Tensor:
+        return th.stack([dist.entropy() for dist in self.distributions], dim=1).sum(dim=1)
+
+    def actions_from_params(self, action_logits: th.Tensor,
+                            deterministic: bool = False) -> th.Tensor:
+        # Update the proba distribution
+        self.proba_distribution(action_logits)
+        return self.get_actions(deterministic=deterministic)
+
+    def log_prob_from_params(self, action_logits: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+        actions = self.actions_from_params(action_logits)
+        log_prob = self.log_prob(actions)
+        return actions, log_prob
+
+    def log_prob(self, actions: th.Tensor) -> th.Tensor:
+        # Extract each discrete action and compute log prob for their respective distributions
+        return th.stack([dist.log_prob(action) for dist, action in zip(self.distributions,
+                                                                       th.unbind(actions, dim=1))], dim=1).sum(dim=1)
+
+
+class BernoulliDistribution(Distribution):
+    """
+    Bernoulli distribution for MultiBinary action spaces.
+
+    :param action_dim: (int) Number of binary actions
+    """
+
+    def __init__(self, action_dims: int):
+        super(BernoulliDistribution, self).__init__()
+        self.distribution = None
+        self.action_dims = action_dims
+
+    def proba_distribution_net(self, latent_dim: int) -> nn.Module:
+        """
+        Create the layer that represents the distribution:
+        it will be the logits of the Bernoulli distribution.
+
+        :param latent_dim: (int) Dimension of the last layer
+            of the policy network (before the action layer)
+        :return: (nn.Linear)
+        """
+        action_logits = nn.Linear(latent_dim, self.action_dims)
+        return action_logits
+
+    def proba_distribution(self, action_logits: th.Tensor) -> 'BernoulliDistribution':
+        self.distribution = Bernoulli(logits=action_logits)
+        return self
+
+    def mode(self) -> th.Tensor:
+        return th.round(self.distribution.probs)
+
+    def sample(self) -> th.Tensor:
+        return self.distribution.sample()
+
+    def entropy(self) -> th.Tensor:
+        return self.distribution.entropy().sum(dim=1)
+
+    def actions_from_params(self, action_logits: th.Tensor,
+                            deterministic: bool = False) -> th.Tensor:
+        # Update the proba distribution
+        self.proba_distribution(action_logits)
+        return self.get_actions(deterministic=deterministic)
+
+    def log_prob_from_params(self, action_logits: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+        actions = self.actions_from_params(action_logits)
+        log_prob = self.log_prob(actions)
+        return actions, log_prob
+
+    def log_prob(self, actions: th.Tensor) -> th.Tensor:
+        return self.distribution.log_prob(actions).sum(dim=1)
 
 
 class StateDependentNoiseDistribution(Distribution):
@@ -551,10 +658,10 @@ def make_proba_distribution(action_space: gym.spaces.Space,
         return DiagGaussianDistribution(get_action_dim(action_space), **dist_kwargs)
     elif isinstance(action_space, spaces.Discrete):
         return CategoricalDistribution(action_space.n, **dist_kwargs)
-    # elif isinstance(action_space, spaces.MultiDiscrete):
-    #     return MultiCategoricalDistribution(action_space.nvec, **dist_kwargs)
-    # elif isinstance(action_space, spaces.MultiBinary):
-    #     return BernoulliDistribution(action_space.n, **dist_kwargs)
+    elif isinstance(action_space, spaces.MultiDiscrete):
+        return MultiCategoricalDistribution(action_space.nvec, **dist_kwargs)
+    elif isinstance(action_space, spaces.MultiBinary):
+        return BernoulliDistribution(action_space.n, **dist_kwargs)
     else:
         raise NotImplementedError("Error: probability distribution, not implemented for action space"
                                   f"of type {type(action_space)}."

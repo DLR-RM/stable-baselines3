@@ -9,7 +9,7 @@ Try it online with Colab Notebooks!
 All the following examples can be executed online using Google colab |colab|
 notebooks:
 
--  `Full Tutorial <https://github.com/araffin/rl-tutorial-jnrr19>`_
+-  `Full Tutorial <https://github.com/araffin/rl-tutorial-jnrr19/tree/sb3>`_
 -  `All Notebooks <https://github.com/Stable-Baselines-Team/rl-colab-notebooks/tree/sb3>`_
 -  `Getting Started`_
 -  `Training, Saving, Loading`_

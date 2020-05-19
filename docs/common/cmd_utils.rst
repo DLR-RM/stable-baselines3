@@ -1,4 +1,4 @@
-.. _cmd_utils:
+.. _cmd_util:
 
 Command Utils
 =========================

@@ -15,7 +15,7 @@ New Features:
 - Added env checker (Sync with Stable Baselines)
 - Added ``VecCheckNan`` and ``VecVideoRecorder`` (Sync with Stable Baselines)
 - Added determinism tests
-- Added ``cmd_utils`` and ``atari_wrappers``
+- Added ``cmd_util`` and ``atari_wrappers``
 - Added support for ``MultiDiscrete`` and ``MultiBinary`` observation spaces (@rolandgvc)
 - Added ``MultiCategorical`` and ``Bernoulli`` distributions for PPO/A2C (@rolandgvc)
 

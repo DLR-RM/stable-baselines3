@@ -46,7 +46,7 @@ Train a A2C agent on ``CartPole-v1`` using 4 environments.
 
   from stable_baselines3 import A2C
   from stable_baselines3.a2c import MlpPolicy
-  from stable_baselines3.common.cmd_utils import make_vec_env
+  from stable_baselines3.common.cmd_util import make_vec_env
 
   # Parallel environments
   env = make_vec_env('CartPole-v1', n_envs=4)

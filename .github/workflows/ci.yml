@@ -32,6 +32,9 @@ jobs:
         pip install .[extra,tests,docs]
         # Use headless version
         pip install opencv-python-headless
+    - name: Build the doc
+      run: |
+        make doc
     - name: Type check
       run: |
         make type

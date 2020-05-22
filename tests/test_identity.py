@@ -11,7 +11,6 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.noise import NormalActionNoise
 
-
 DIM = 4
 
 
@@ -20,6 +19,8 @@ DIM = 4
 def test_discrete(model_class, env):
     env = DummyVecEnv([lambda: env])
     model = model_class('MlpPolicy', env, gamma=0.5, seed=1).learn(3000)
+
+
 @pytest.mark.parametrize("model_class", [A2C, PPO, DQN])
 def test_discrete(model_class):
     env = IdentityEnv(10)

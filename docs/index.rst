@@ -45,6 +45,7 @@ Main Features
    guide/rl_zoo
    guide/migration
    guide/checking_nan
+   guide/developer
 
 
 .. toctree::
@@ -63,7 +64,7 @@ Main Features
   :caption: Common
 
   common/atari_wrappers
-  common/cmd_utils
+  common/cmd_util
   common/distributions
   common/evaluation
   common/env_checker

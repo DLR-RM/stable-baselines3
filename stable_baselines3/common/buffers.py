@@ -20,6 +20,7 @@ class BaseBuffer(object):
         to which the values will be converted
     :param n_envs: (int) Number of parallel environments
     """
+
     def __init__(self,
                  buffer_size: int,
                  observation_space: spaces.Space,

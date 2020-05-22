@@ -6,7 +6,7 @@ import numpy as np
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
 from stable_baselines3.common.identity_env import (IdentityEnv, IdentityEnvBox, FakeImageEnv,
-                                                  IdentityEnvMultiBinary, IdentityEnvMultiDiscrete,)
+                                                   IdentityEnvMultiBinary, IdentityEnvMultiDiscrete)
 
 ENV_CLASSES = [BitFlippingEnv, IdentityEnv, IdentityEnvBox, IdentityEnvMultiBinary,
                IdentityEnvMultiDiscrete, FakeImageEnv]
@@ -46,6 +46,7 @@ def test_high_dimension_action_space():
     env = FakeImageEnv()
     # Patch the action space
     env.action_space = spaces.Box(low=-1, high=1, shape=(20,), dtype=np.float32)
+
     # Patch to avoid error
     def patched_step(_action):
         return env.observation_space.sample(), 0.0, False, {}

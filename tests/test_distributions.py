@@ -3,8 +3,9 @@ import torch as th
 
 from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.distributions import (DiagGaussianDistribution, TanhBijector,
-                                                   StateDependentNoiseDistribution,
-                                                   CategoricalDistribution, SquashedDiagGaussianDistribution)
+                                                    StateDependentNoiseDistribution,
+                                                    CategoricalDistribution, SquashedDiagGaussianDistribution,
+                                                    MultiCategoricalDistribution, BernoulliDistribution)
 from stable_baselines3.common.utils import set_random_seed
 
 
@@ -42,6 +43,7 @@ def test_squashed_gaussian(model_class):
     actions = dist.get_actions()
     assert th.max(th.abs(actions)) <= 1.0
 
+
 def test_sde_distribution():
     n_actions = 1
     deterministic_actions = th.ones(N_SAMPLES, n_actions) * 0.1
@@ -55,8 +57,8 @@ def test_sde_distribution():
     dist = dist.proba_distribution(deterministic_actions, log_std, state)
     actions = dist.get_actions()
 
-    assert th.allclose(actions.mean(), dist.distribution.mean.mean(), rtol=1e-3)
-    assert th.allclose(actions.std(), dist.distribution.scale.mean(), rtol=1e-3)
+    assert th.allclose(actions.mean(), dist.distribution.mean.mean(), rtol=2e-3)
+    assert th.allclose(actions.std(), dist.distribution.scale.mean(), rtol=2e-3)
 
 
 # TODO: analytical form for squashed Gaussian?
@@ -84,15 +86,21 @@ def test_entropy(dist):
     assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=5e-3)
 
 
-def test_categorical():
+categorical_params = [
+    (CategoricalDistribution(N_ACTIONS), N_ACTIONS),
+    (MultiCategoricalDistribution([2, 3]), sum([2, 3])),
+    (BernoulliDistribution(N_ACTIONS), N_ACTIONS)
+]
+
+
+@pytest.mark.parametrize("dist, CAT_ACTIONS", categorical_params)
+def test_categorical(dist, CAT_ACTIONS):
     # The entropy can be approximated by averaging the negative log likelihood
     # mean negative log likelihood == entropy
-    dist = CategoricalDistribution(N_ACTIONS)
     set_random_seed(1)
-    action_logits = th.rand(N_SAMPLES, N_ACTIONS)
+    action_logits = th.rand(N_SAMPLES, CAT_ACTIONS)
     dist = dist.proba_distribution(action_logits)
-
     actions = dist.get_actions()
     entropy = dist.entropy()
     log_prob = dist.log_prob(actions)
-    assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=1e-4)
+    assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=5e-3)

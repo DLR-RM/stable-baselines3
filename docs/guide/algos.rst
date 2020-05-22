@@ -5,14 +5,14 @@ This table displays the rl algorithms that are implemented in the Stable Baselin
 along with some useful characteristics: support for discrete/continuous actions, multiprocessing.
 
 
-============ =========== ============ ================
-Name         ``Box``     ``Discrete`` Multi Processing
-============ =========== ============ ================
-A2C          ✔️           ✔️            ✔️
-PPO          ✔️           ✔️            ✔️
-SAC          ✔️          ❌            ❌
-TD3          ✔️          ❌            ❌
-============ =========== ============ ================
+============ =========== ============ ================= =============== ================
+Name         ``Box``     ``Discrete`` ``MultiDiscrete`` ``MultiBinary`` Multi Processing
+============ =========== ============ ================= =============== ================
+A2C          ✔️           ✔️            ✔️                 ✔️               ✔️
+PPO          ✔️           ✔️            ✔️                 ✔️               ✔️
+SAC          ✔️          ❌            ❌                ❌              ❌
+TD3          ✔️          ❌            ❌                ❌              ❌
+============ =========== ============ ================= =============== ================
 
 
 .. note::

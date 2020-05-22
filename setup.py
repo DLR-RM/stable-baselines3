@@ -1,6 +1,4 @@
 import os
-import sys
-import subprocess
 from setuptools import setup, find_packages
 
 with open(os.path.join('stable_baselines3', 'version.txt'), 'r') as file_handler:
@@ -40,11 +38,10 @@ Here is a quick example of how to train and run PPO on a cartpole environment:
 import gym
 
 from stable_baselines3 import PPO
-from stable_baselines3.ppo import MlpPolicy
 
 env = gym.make('CartPole-v1')
 
-model = PPO(MlpPolicy, env, verbose=1)
+model = PPO('MlpPolicy', env, verbose=1)
 model.learn(total_timesteps=10000)
 
 obs = env.reset()
@@ -64,14 +61,14 @@ from stable_baselines3 import PPO
 model = PPO('MlpPolicy', 'CartPole-v1').learn(10000)
 ```
 
-"""
+"""  # noqa:E501
 
 
 setup(name='stable_baselines3',
       packages=[package for package in find_packages()
                 if package.startswith('stable_baselines3')],
       package_data={
-        'stable_baselines3': ['py.typed', 'version.txt']
+          'stable_baselines3': ['py.typed', 'version.txt']
       },
       install_requires=[
           'gym>=0.17',
@@ -85,28 +82,32 @@ setup(name='stable_baselines3',
           'matplotlib'
       ],
       extras_require={
-        'tests': [
-            'pytest',
-            'pytest-cov',
-            'pytest-env',
-            'pytest-xdist',
-            'pytype',
-        ],
-        'docs': [
-            'sphinx',
-            'sphinx-autobuild',
-            'sphinx-rtd-theme',
-            # For spelling
-            'sphinxcontrib.spelling',
-            # Type hints support
-            # 'sphinx-autodoc-typehints'
-        ],
-        'extra': [
-            # For render
-            'opencv-python',
-            # For atari games,
-            'atari_py~=0.2.0', 'Pillow'
-        ]
+          'tests': [
+              # Run tests and coverage
+              'pytest',
+              'pytest-cov',
+              'pytest-env',
+              'pytest-xdist',
+              # Type check
+              'pytype',
+              # Lint code
+              'flake8>=3.8'
+          ],
+          'docs': [
+              'sphinx',
+              'sphinx-autobuild',
+              'sphinx-rtd-theme',
+              # For spelling
+              'sphinxcontrib.spelling',
+              # Type hints support
+              # 'sphinx-autodoc-typehints'
+          ],
+          'extra': [
+              # For render
+              'opencv-python',
+              # For atari games,
+              'atari_py~=0.2.0', 'pillow'
+          ]
       },
       description='Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.',
       author='Antonin Raffin',

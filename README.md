@@ -1,10 +1,7 @@
 <img src="docs/\_static/img/logo.png" align="right" width="40%"/>
 
-<!-- [![Build Status](https://travis-ci.com/hill-a/stable-baselines.svg?branch=master)](https://travis-ci.com/hill-a/stable-baselines)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/3bcb4cd6d76a4270acb16b5fe6dd9efa)](https://www.codacy.com/app/baselines_janitors/stable-baselines?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=hill-a/stable-baselines&amp;utm_campaign=Badge_Grade)
-[![Codacy Badge](https://api.codacy.com/project/badge/Coverage/3bcb4cd6d76a4270acb16b5fe6dd9efa)](https://www.codacy.com/app/baselines_janitors/stable-baselines?utm_source=github.com&utm_medium=referral&utm_content=hill-a/stable-baselines&utm_campaign=Badge_Coverage) -->
+[![pipeline status](https://gitlab.com/araffin/stable-baselines3/badges/master/pipeline.svg)](https://gitlab.com/araffin/stable-baselines3/-/commits/master) [![Documentation Status](https://readthedocs.org/projects/stable-baselines/badge/?version=master)](https://stable-baselines3.readthedocs.io/en/master/?badge=master) [![coverage report](https://gitlab.com/araffin/stable-baselines3/badges/master/coverage.svg)](https://gitlab.com/araffin/stable-baselines3/-/commits/master)
 
-[![Documentation Status](https://readthedocs.org/projects/stable-baselines/badge/?version=master)](https://stable-baselines3.readthedocs.io/en/master/?badge=master)
 
 **WARNING: Stable Baselines3 is currently in a beta version, breaking changes may occur before 1.0 is released**
 
@@ -119,7 +116,6 @@ Here is a quick example of how to train and run PPO on a cartpole environment:
 import gym
 
 from stable_baselines3 import PPO
-from stable_baselines3.ppo import MlpPolicy
 
 env = gym.make('CartPole-v1')
 
@@ -166,8 +162,8 @@ All the following examples can be executed online using Google colab notebooks:
 
 | **Name**         | **Recurrent**      | `Box`          | `Discrete`     | `MultiDiscrete` | `MultiBinary`  | **Multi Processing**              |
 | ------------------- | ------------------ | ------------------ | ------------------ | ------------------- | ------------------ | --------------------------------- |
-| A2C   | :x: | :heavy_check_mark: | :heavy_check_mark: | :x: | :x: | :heavy_check_mark:                |
-| PPO   | :x: | :heavy_check_mark: | :heavy_check_mark: | :x:  | :x: | :heavy_check_mark:                |
+| A2C   | :x: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:                |
+| PPO   | :x: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:                |
 | SAC   | :x: | :heavy_check_mark: | :x:                | :x:                 | :x:                | :x:                               |
 | TD3   | :x: | :heavy_check_mark: | :x:                | :x:                 | :x:                | :x:                               |
 
@@ -181,16 +177,22 @@ Actions `gym.spaces`:
 
 
 ## Testing the installation
-All unit tests in stable baselines3 can be run using pytest runner:
+All unit tests in stable baselines3 can be run using `pytest` runner:
 ```
 pip install pytest pytest-cov
 make pytest
 ```
 
-You can also do a static type check using pytype:
+You can also do a static type check using `pytype`:
 ```
 pip install pytype
 make type
+```
+
+Codestyle check with `flake8`:
+```
+pip install flake8
+make lint
 ```
 
 ## Projects Using Stable-Baselines3
@@ -223,7 +225,7 @@ Stable-Baselines3 is currently maintained by [Ashley Hill](https://github.com/hi
 ## How To Contribute
 
 To any interested in making the baselines better, there is still some documentation that needs to be done.
-If you want to contribute, please read **CONTRIBUTING.md** guide first.
+If you want to contribute, please read [**CONTRIBUTING.md**](./CONTRIBUTING.md) guide first.
 
 
 Logo credits: [L.M. Tenkes](https://www.instagram.com/lucillehue/)

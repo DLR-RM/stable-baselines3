@@ -11,6 +11,7 @@ from stable_baselines3.common.policies import (BasePolicy, register_policy, MlpE
                                                BaseFeaturesExtractor, FlattenExtractor)
 from stable_baselines3.common.distributions import (make_proba_distribution, Distribution,
                                                     DiagGaussianDistribution, CategoricalDistribution,
+                                                    MultiCategoricalDistribution, BernoulliDistribution,
                                                     StateDependentNoiseDistribution)
 
 
@@ -28,15 +29,15 @@ class PPOPolicy(BasePolicy):
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
     :param full_std: (bool) Whether to use (n_features x n_actions) parameters
-        for the std instead of only (n_features,) when using SDE
+        for the std instead of only (n_features,) when using gSDE
     :param sde_net_arch: ([int]) Network architecture for extracting features
-        when using SDE. If None, the latent features from the policy will be used.
+        when using gSDE. If None, the latent features from the policy will be used.
         Pass an empty list to use the states as features.
     :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param squash_output: (bool) Whether to squash the output using a tanh function,
-        this allows to ensure boundaries when using SDE.
+        this allows to ensure boundaries when using gSDE.
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
     :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
         to pass to the feature extractor.
@@ -100,7 +101,7 @@ class PPOPolicy(BasePolicy):
         self.normalize_images = normalize_images
         self.log_std_init = log_std_init
         dist_kwargs = None
-        # Keyword arguments for SDE distribution
+        # Keyword arguments for gSDE distribution
         if use_sde:
             dist_kwargs = {
                 'full_std': full_std,
@@ -147,7 +148,7 @@ class PPOPolicy(BasePolicy):
         :param n_envs: (int)
         """
         assert isinstance(self.action_dist,
-                          StateDependentNoiseDistribution), 'reset_noise() is only available when using SDE'
+                          StateDependentNoiseDistribution), 'reset_noise() is only available when using gSDE'
         self.action_dist.sample_weights(self.log_std, batch_size=n_envs)
 
     def _build(self, lr_schedule: Callable) -> None:
@@ -162,7 +163,7 @@ class PPOPolicy(BasePolicy):
 
         latent_dim_pi = self.mlp_extractor.latent_dim_pi
 
-        # Separate feature extractor for SDE
+        # Separate feature extractor for gSDE
         if self.sde_net_arch is not None:
             self.sde_features_extractor, latent_sde_dim = create_sde_features_extractor(self.features_dim,
                                                                                         self.sde_net_arch,
@@ -177,6 +178,10 @@ class PPOPolicy(BasePolicy):
                                                                                     latent_sde_dim=latent_sde_dim,
                                                                                     log_std_init=self.log_std_init)
         elif isinstance(self.action_dist, CategoricalDistribution):
+            self.action_net = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi)
+        elif isinstance(self.action_dist, MultiCategoricalDistribution):
+            self.action_net = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi)
+        elif isinstance(self.action_dist, BernoulliDistribution):
             self.action_net = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi)
 
         self.value_net = nn.Linear(self.mlp_extractor.latent_dim_vf, 1)
@@ -221,11 +226,12 @@ class PPOPolicy(BasePolicy):
 
         :param obs: (th.Tensor) Observation
         :return: (Tuple[th.Tensor, th.Tensor, th.Tensor]) Latent codes
-            for the actor, the value function and for SDE function
+            for the actor, the value function and for gSDE function
         """
         # Preprocess the observation if needed
         features = self.extract_features(obs)
         latent_pi, latent_vf = self.mlp_extractor(features)
+
         # Features for sde
         latent_sde = latent_pi
         if self.sde_features_extractor is not None:
@@ -238,18 +244,22 @@ class PPOPolicy(BasePolicy):
         Retrieve action distribution given the latent codes.
 
         :param latent_pi: (th.Tensor) Latent code for the actor
-        :param latent_sde: (Optional[th.Tensor]) Latent code for the SDE exploration function
+        :param latent_sde: (Optional[th.Tensor]) Latent code for the gSDE exploration function
         :return: (Distribution) Action distribution
         """
         mean_actions = self.action_net(latent_pi)
 
         if isinstance(self.action_dist, DiagGaussianDistribution):
             return self.action_dist.proba_distribution(mean_actions, self.log_std)
-
         elif isinstance(self.action_dist, CategoricalDistribution):
             # Here mean_actions are the logits before the softmax
             return self.action_dist.proba_distribution(action_logits=mean_actions)
-
+        elif isinstance(self.action_dist, MultiCategoricalDistribution):
+            # Here mean_actions are the flattened logits
+            return self.action_dist.proba_distribution(action_logits=mean_actions)
+        elif isinstance(self.action_dist, BernoulliDistribution):
+            # Here mean_actions are the logits (before rounding to get the binary actions)
+            return self.action_dist.proba_distribution(action_logits=mean_actions)
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
             return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)
         else:
@@ -302,15 +312,15 @@ class CnnPolicy(PPOPolicy):
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
     :param full_std: (bool) Whether to use (n_features x n_actions) parameters
-        for the std instead of only (n_features,) when using SDE
+        for the std instead of only (n_features,) when using gSDE
     :param sde_net_arch: ([int]) Network architecture for extracting features
-        when using SDE. If None, the latent features from the policy will be used.
+        when using gSDE. If None, the latent features from the policy will be used.
         Pass an empty list to use the states as features.
     :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param squash_output: (bool) Whether to squash the output using a tanh function,
-        this allows to ensure boundaries when using SDE.
+        this allows to ensure boundaries when using gSDE.
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
     :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
         to pass to the feature extractor.

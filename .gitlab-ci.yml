@@ -1,0 +1,19 @@
+image: stablebaselines/stable-baselines3-cpu:0.6.0a7
+
+type-check:
+  script:
+  - make type
+
+pytest:
+  script:
+  # MKL_THREADING_LAYER=GNU to avoid MKL_THREADING_LAYER=INTEL incompatibility error
+  - MKL_THREADING_LAYER=GNU make pytest
+
+doc-build:
+  script:
+  - make doc
+
+lint-check:
+  script:
+  - pip install flake8  # TODO: remove when new version on Pypi
+  - make lint

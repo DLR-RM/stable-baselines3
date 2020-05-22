@@ -6,7 +6,7 @@ from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvWrapper
 from stable_baselines3.common.preprocessing import is_image_space
 
 if typing.TYPE_CHECKING:
-    from stable_baselines3.common.type_aliases import GymStepReturn
+    from stable_baselines3.common.type_aliases import GymStepReturn  # noqa: F401
 
 
 class VecTransposeImage(VecEnvWrapper):

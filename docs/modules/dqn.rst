@@ -21,6 +21,7 @@ Notes
 -----
 
 - Original paper: https://arxiv.org/abs/1312.5602
+- Further reference: https://www.nature.com/articles/nature14236
 
 .. note::
     This implementation provides only vanilla Deep Q-Learning and has no extensions such as Double-DQN, Dueling-DQN and Prioritized Experience Replay.

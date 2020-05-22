@@ -53,7 +53,7 @@ class FlattenExtractor(BaseFeaturesExtractor):
 class NatureCNN(BaseFeaturesExtractor):
     """
     CNN from DQN nature paper: https://arxiv.org/abs/1312.5602
-
+    Please see https://www.nature.com/articles/nature14236 for further reference
     :param observation_space: (gym.Space)
     :param features_dim: (int) Number of features extracted.
         This corresponds to the number of unit for the last layer.

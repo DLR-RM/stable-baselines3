@@ -88,7 +88,7 @@ def get_linear_fn(start: float, end: float, end_fraction: float):
         if (1 - progress) > end_fraction:
             return end
         else:
-            return end + progress * (start - end)
+            return start + (1 - progress) * (end - start) / end_fraction
 
     return func
 

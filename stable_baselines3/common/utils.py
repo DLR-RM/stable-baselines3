@@ -74,20 +74,22 @@ def get_schedule_fn(value_schedule: Union[Callable, float]) -> Callable:
     return value_schedule
 
 
-def get_linear_fn(start: float, end: float, final_step: int):
+def get_linear_fn(start: float, end: float, end_fraction: float):
     """
     Create a function that interpolates linearly between start and end for step between  0 and final_step
     It is useful for exploration schedule
-    :params start: (float) value to start with if progress = 0
-    :params end: (float) value to end with if progress = 1
-    :params final_step: (float) final step where end is reached
+    :params start: (float) value to start with if progress = 1
+    :params end: (float) value to end with if progress = 0
+    :params end_fraction: (float) fraction of progress where end is reached e.g 0.1 then end is reached after 10%
     :return: (Callable)
     """
-    def func(step: int):
-        if step > final_step:
+
+    def func(progress: float):
+        if (1 - progress) > end_fraction:
             return end
         else:
-            return start + (step/final_step) * (end - start)
+            return end + progress * (start - end)
+
     return func
 
 

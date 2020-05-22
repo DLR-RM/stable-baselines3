@@ -112,9 +112,9 @@ class DQN(OffPolicyRLModel):
         and the current progress (from 1 to 0).
         """
         # Log the current exploration probability
-        logger.logkv("exploration rate", self.exploration_schedule(self.num_timesteps))
+        logger.logkv("exploration rate", self.exploration_schedule(self._current_progress))
 
-        self.policy.update_exploration_rate(self.exploration_schedule(self.num_timesteps))
+        self.policy.update_exploration_rate(self.exploration_schedule(self._current_progress))
 
     def _create_aliases(self) -> None:
         self.q_net = self.policy.q_net

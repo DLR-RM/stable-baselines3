@@ -3,13 +3,13 @@ import os
 import numpy as np
 import pytest
 
-from stable_baselines3 import A2C, PPO, SAC, TD3
+from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
 from stable_baselines3.common.identity_env import FakeImageEnv
 
 SAVE_PATH = './cnn_model.zip'
 
 
-@pytest.mark.parametrize('model_class', [A2C, PPO, SAC, TD3])
+@pytest.mark.parametrize('model_class', [A2C, PPO, SAC, TD3, DQN])
 def test_cnn(model_class):
     # Fake grayscale with frameskip
     # Atari after preprocessing: 84x84x1, here we are using lower resolution

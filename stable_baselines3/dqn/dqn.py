@@ -1,21 +1,12 @@
-import time
 from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
-import gym
-from gym import spaces
 import torch as th
 import torch.nn.functional as F
 
-import numpy as np
-
 from stable_baselines3.common import logger
 from stable_baselines3.common.base_class import OffPolicyRLModel
-from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
-from stable_baselines3.common.buffers import ReplayBuffer
-from stable_baselines3.common.utils import get_schedule_fn, get_linear_fn
-from stable_baselines3.common.vec_env import VecEnv
-from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.noise import ActionNoise
+from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
+from stable_baselines3.common.utils import get_linear_fn
 from stable_baselines3.dqn.policies import DQNPolicy
 
 
@@ -103,6 +94,9 @@ class DQN(OffPolicyRLModel):
         self._setup_exploration_schedule()
 
     def _setup_exploration_schedule(self) -> None:
+        """
+        Generate a exploration schedule used for updating the exploration probability
+        """
         self.exploration_schedule = get_linear_fn(self.exploration_initial_eps, self.exploration_final_eps,
                                                   self.exploration_fraction)
 
@@ -121,7 +115,6 @@ class DQN(OffPolicyRLModel):
         self.q_net_target = self.policy.q_net_target
 
     def train(self, gradient_steps: int, batch_size: int = 100) -> None:
-
         # Update learning rate and exploration probability according to schedule
         self._update_learning_rate(self.policy.optimizer)
         self._update_exploration()

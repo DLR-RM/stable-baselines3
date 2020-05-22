@@ -141,7 +141,6 @@ class DQNPolicy(BasePolicy):
         self.features_extractor = features_extractor_class(self.observation_space,
                                                            **self.features_extractor_kwargs)
         self.features_dim = self.features_extractor.features_dim
-
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.normalize_images = normalize_images
@@ -160,7 +159,6 @@ class DQNPolicy(BasePolicy):
         }
 
         self.q_net, self.q_net_target = None, None
-
         self._build(lr_schedule)
 
     def _build(self, lr_schedule: Callable) -> None:
@@ -181,8 +179,7 @@ class DQNPolicy(BasePolicy):
 
     def update_exploration_rate(self, exploration_rate: float) -> None:
         """
-        Update the exploration probability using the current learning rate schedule
-        and the current progress (from 1 to 0).
+        Update the exploration probability
 
         :param exploration_rate: (float) the new exploration rate
         """
@@ -240,6 +237,7 @@ class CnnPolicy(DQNPolicy):
     :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
     """
+
     def __init__(self, observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  lr_schedule: Callable,

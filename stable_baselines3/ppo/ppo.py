@@ -1,4 +1,5 @@
 import time
+import os
 from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
 import gym
@@ -7,11 +8,11 @@ import torch as th
 import torch.nn.functional as F
 
 # Check if tensorboard is available for pytorch
-# TODO: finish tensorboard integration
-# try:
-#     from torch.utils.tensorboard import SummaryWriter
-# except ImportError:
-#     SummaryWriter = None
+try:
+    from torch.utils.tensorboard import SummaryWriter
+except ImportError:
+    SummaryWriter = None
+
 import numpy as np
 
 from stable_baselines3.common import logger
@@ -94,6 +95,7 @@ class PPO(BaseRLModel):
                  create_eval_env: bool = False,
                  policy_kwargs: Optional[Dict[str, Any]] = None,
                  verbose: int = 0,
+                 full_tensorboard_log=False,
                  seed: Optional[int] = None,
                  device: Union[th.device, str] = 'auto',
                  _init_setup_model: bool = True):
@@ -115,6 +117,7 @@ class PPO(BaseRLModel):
         self.rollout_buffer = None
         self.target_kl = target_kl
         self.tensorboard_log = tensorboard_log
+        self.full_tensorboard_log = full_tensorboard_log
         self.tb_writer = None
 
         if _init_setup_model:
@@ -206,6 +209,7 @@ class PPO(BaseRLModel):
         entropy_losses, all_kl_divs = [], []
         pg_losses, value_losses = [], []
         clip_fractions = []
+        old_values, old_log_probs = [], []
 
         # train for gradient_steps epochs
         for epoch in range(n_epochs):
@@ -231,6 +235,7 @@ class PPO(BaseRLModel):
 
                 # ratio between old and new policy, should be one at the first iteration
                 ratio = th.exp(log_prob - rollout_data.old_log_prob)
+
                 # clipped surrogate loss
                 policy_loss_1 = advantages * ratio
                 policy_loss_2 = advantages * th.clamp(ratio, 1 - clip_range, 1 + clip_range)
@@ -252,6 +257,10 @@ class PPO(BaseRLModel):
                 # Value loss using the TD(gae_lambda) target
                 value_loss = F.mse_loss(rollout_data.returns, values_pred)
                 value_losses.append(value_loss.item())
+
+                # Logging old values
+                old_values.append(th.mean(rollout_data.old_values.float()).item())
+                old_log_probs.append(th.mean(rollout_data.old_log_prob.float()).item())
 
                 # Entropy loss favor exploration
                 if entropy is None:
@@ -296,6 +305,38 @@ class PPO(BaseRLModel):
         if hasattr(self.policy, 'log_std'):
             logger.logkv("std", th.exp(self.policy.log_std).mean().item())
 
+        # TODO extract learning rate from optimizer?
+        if self.tb_writer is not None:
+            self.tb_writer.add_scalar("loss/entropy_loss", np.mean(entropy_losses), self.num_timesteps)
+            self.tb_writer.add_scalar("loss/policy_gradient_loss", np.mean(pg_losses), self.num_timesteps)
+            self.tb_writer.add_scalar("loss/value_loss", np.mean(value_losses), self.num_timesteps)
+            self.tb_writer.add_scalar("loss/approx_kl", np.mean(approx_kl_divs), self.num_timesteps)
+            self.tb_writer.add_scalar("loss/clip_fraction", np.mean(clip_fraction), self.num_timesteps)
+            self.tb_writer.add_scalar("loss/loss", loss.item(), self.num_timesteps)
+            if hasattr(self.policy, 'log_std'):
+                self.tb_writer.add_scalar("loss/std", th.exp(self.policy.log_std).mean().item())
+
+            self.tb_writer.add_scalar("input_info/discounted_rewards",
+                                      np.mean(self.rollout_buffer.rewards), self.num_timesteps)
+            self.tb_writer.add_scalar("input_info/advantage", np.mean(self.rollout_buffer.advantages), self.num_timesteps)
+            self.tb_writer.add_scalar("input_info/clip_range", clip_range, self.num_timesteps)
+            if self.clip_range_vf is not None:
+                self.tb_writer.add_scalar("input_info/clip_range_vf", clip_range_vf, self.num_timesteps)
+            self.tb_writer.add_scalar("input_info/old_log_probs", np.mean(old_log_probs), self.num_timesteps)
+            self.tb_writer.add_scalar("input_info/old_values", np.mean(old_values), self.num_timesteps)
+
+            if self.full_tensorboard_log:
+                # BUG having the same name as the scalar crashes tb
+                self.tb_writer.add_histogram("input_info_h/discounted_rewards",
+                                             self.rollout_buffer.rewards, self.num_timesteps)
+                self.tb_writer.add_histogram("input_info_h/advantage", self.rollout_buffer.advantages, self.num_timesteps)
+                self.tb_writer.add_histogram("input_info_h/clip_range", clip_range, self.num_timesteps)
+                self.tb_writer.add_histogram("input_info_h/old_log_probs", th.Tensor(old_log_probs), self.num_timesteps)
+                self.tb_writer.add_histogram("input_info_h/old_values", th.Tensor(old_values), self.num_timesteps)
+
+                # TODO check if obs are images
+                self.tb_writer.add_histogram("input_info_h/observation", self.rollout_buffer.observations, self.num_timesteps)
+
     def learn(self,
               total_timesteps: int,
               callback: MaybeCallback = None,
@@ -311,8 +352,8 @@ class PPO(BaseRLModel):
         callback = self._setup_learn(eval_env, callback, eval_freq,
                                      n_eval_episodes, eval_log_path, reset_num_timesteps)
 
-        # if self.tensorboard_log is not None and SummaryWriter is not None:
-        #     self.tb_writer = SummaryWriter(log_dir=os.path.join(self.tensorboard_log, tb_log_name))
+        if self.tensorboard_log is not None and SummaryWriter is not None:
+            self.tb_writer = SummaryWriter(log_dir=os.path.join(self.tensorboard_log, tb_log_name))
 
         callback.on_training_start(locals(), globals())
 
@@ -341,10 +382,6 @@ class PPO(BaseRLModel):
                 logger.dumpkvs()
 
             self.train(self.n_epochs, batch_size=self.batch_size)
-
-            # For tensorboard integration
-            # if self.tb_writer is not None:
-            #     self.tb_writer.add_scalar('Eval/reward', mean_reward, self.num_timesteps)
 
         callback.on_training_end()
 

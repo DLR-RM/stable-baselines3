@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.6.0a9 (WIP)
+Pre-Release 0.6.0a10 (WIP)
 ------------------------------
 
 Breaking Changes:
@@ -24,6 +24,7 @@ Bug Fixes:
 - Fixed a bug that prevented model trained on cpu to be loaded on gpu
 - Fixed version number that had a new line included
 - Fixed weird seg fault in docker image due to FakeImageEnv by reducing screen size
+- Fixed ``sde_sample_freq`` that was not taken into account for SAC
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -5,9 +5,15 @@ import os
 import tempfile
 import warnings
 from collections import defaultdict
-from typing import Dict, List, TextIO, Union, Any, Optional
+from typing import Dict, List, TextIO, Union, Any, Optional, Tuple
 
 import pandas
+import numpy as np
+import torch as th
+try:
+    from torch.utils.tensorboard import SummaryWriter
+except ImportError:
+    SummaryWriter = None
 
 DEBUG = 10
 INFO = 20
@@ -21,7 +27,7 @@ class KVWriter(object):
     Key Value writer
     """
 
-    def writekvs(self, kvs: Dict) -> None:
+    def writekvs(self, kvs: Dict, step: int) -> None:
         """
         write a dictionary to file
 
@@ -65,10 +71,15 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             self.file = filename_or_file
             self.own_file = False
 
-    def writekvs(self, kvs: Dict) -> None:
+    def writekvs(self, kvs: Dict, step: int) -> None:
         # Create strings for printing
         key2str = {}
         for (key, val) in sorted(kvs.items()):
+            if val[1] is not None:
+                if 'stdout' in val[1]:
+                    continue
+            val = round(val[0], 5)
+
             if isinstance(val, float):
                 # Align left
                 val_str = f'{val:<8.3g}'
@@ -99,6 +110,9 @@ class HumanOutputFormat(KVWriter, SeqWriter):
 
     @classmethod
     def _truncate(cls, string: str) -> str:
+        # Remove tensorboard tag from std outputs
+        if string.find('/') > 0:
+            string = string[string.find('/') + 1:]
         return string[:20] + '...' if len(string) > 23 else string
 
     def writeseq(self, seq: List) -> None:
@@ -127,15 +141,20 @@ class JSONOutputFormat(KVWriter):
         """
         self.file = open(filename, 'wt')
 
-    def writekvs(self, kvs: Dict) -> None:
-        for key, value in sorted(kvs.items()):
-            if hasattr(value, 'dtype'):
-                if value.shape == () or len(value) == 1:
+    def writekvs(self, kvs: Dict, step: int) -> None:
+        for key, val in sorted(kvs.items()):
+            if val[1] is not None:
+                if 'json' in val[1]:
+                    continue
+            val = val[0]
+
+            if hasattr(val, 'dtype'):
+                if val.shape == () or len(val) == 1:
                     # if value is a dimensionless numpy array or of length 1, serialize as a float
-                    kvs[key] = float(value)
+                    kvs[key] = float(val)
                 else:
                     # otherwise, a value is a numpy array, serialize as a list or nested lists
-                    kvs[key] = value.tolist()
+                    kvs[key] = val.tolist()
         self.file.write(json.dumps(kvs) + '\n')
         self.file.flush()
 
@@ -157,7 +176,7 @@ class CSVOutputFormat(KVWriter):
         self.keys = []
         self.sep = ','
 
-    def writekvs(self, kvs: Dict) -> None:
+    def writekvs(self, kvs: Dict, step: int) -> None:
         # Add our current row to the history
         extra_keys = kvs.keys() - self.keys
         if extra_keys:
@@ -177,7 +196,7 @@ class CSVOutputFormat(KVWriter):
         for i, key in enumerate(self.keys):
             if i > 0:
                 self.file.write(',')
-            value = kvs.get(key)
+            value = kvs.get(key)[0]
             if value is not None:
                 self.file.write(str(value))
         self.file.write('\n')
@@ -190,25 +209,43 @@ class CSVOutputFormat(KVWriter):
         self.file.close()
 
 
-def valid_float_value(value: Any) -> bool:
-    """
-    Returns True if the value can be successfully cast into a float
+class TensorBoardOutputFormat(KVWriter):
+    def __init__(self, folder):
+        """
+        Dumps key/value pairs into TensorBoard's numeric format.
+        :param folder: (str) the folder to write the log to
+        """
+        os.makedirs(folder, exist_ok=True)
+        self.writer = SummaryWriter(log_dir=folder)
 
-    :param value: (Any) the value to check
-    :return: (bool)
-    """
-    try:
-        float(value)
-        return True
-    except TypeError:
-        return False
+    def writekvs(self, kvs: Dict, step: int):
+        for key, val in kvs.items():
+            if val[1] is not None:
+                if 'tensorboard' in val[1]:
+                    continue
+            val = val[0]
+
+            if isinstance(val, np.ScalarType):
+                self.writer.add_scalar(key, val, step)
+            if isinstance(val, th.Tensor):
+                self.writer.add_histogram(key, val, step)
+
+        self.writer.flush()
+
+    def close(self):
+        """
+        closes the file
+        """
+        if self.writer:
+            self.writer.Close()
+            self.writer = None
 
 
 def make_output_format(_format: str, log_dir: str, log_suffix: str = '') -> KVWriter:
     """
     return a logger for the requested format
 
-    :param _format: (str) the requested format to log to ('stdout', 'log', 'json' or 'csv')
+    :param _format: (str) the requested format to log to ('stdout', 'log', 'json' or 'csv' or 'tensorboard')
     :param log_dir: (str) the logging directory
     :param log_suffix: (str) the suffix for the log file
     :return: (KVWriter) the logger
@@ -222,6 +259,8 @@ def make_output_format(_format: str, log_dir: str, log_suffix: str = '') -> KVWr
         return JSONOutputFormat(os.path.join(log_dir, f'progress{log_suffix}.json'))
     elif _format == 'csv':
         return CSVOutputFormat(os.path.join(log_dir, f'progress{log_suffix}.csv'))
+    elif _format == 'tensorboard':
+        return TensorBoardOutputFormat(os.path.join(log_dir, f'tb{log_suffix}'))
     else:
         raise ValueError(f'Unknown format specified: {_format}')
 
@@ -230,7 +269,7 @@ def make_output_format(_format: str, log_dir: str, log_suffix: str = '') -> KVWr
 # API
 # ================================================================
 
-def logkv(key: Any, val: Any) -> None:
+def logkv(key: Any, val: Any, exclude: Union[str, Tuple[str]] = None) -> None:
     """
     Log a value of some diagnostic
     Call this once for each diagnostic quantity, each iteration
@@ -238,35 +277,41 @@ def logkv(key: Any, val: Any) -> None:
 
     :param key: (Any) save to log this key
     :param val: (Any) save to log this value
+    :param exclude: (str or tuple) outputs to be excluded
     """
-    Logger.CURRENT.logkv(key, val)
+    if isinstance(exclude, str):
+        exclude = exclude,
+    Logger.CURRENT.logkv(key, (val, exclude))
 
 
-def logkv_mean(key: Any, val: Union[int, float]) -> None:
+def logkv_mean(key: Any, val: Union[int, float], exclude: Union[str, Tuple[str]] = None) -> None:
     """
     The same as logkv(), but if called many times, values averaged.
 
     :param key: (Any) save to log this key
     :param val: (Number) save to log this value
+    :param exclude: (str or tuple) outputs to be excluded
     """
-    Logger.CURRENT.logkv_mean(key, val)
+    if isinstance(exclude, str):
+        exclude = exclude,
+    Logger.CURRENT.logkv_mean(key, (val, exclude))
 
 
 def logkvs(key_values: Dict) -> None:
     """
-    Log a dictionary of key-value pairs
+    Log a dictionary of key-value pairs. 
 
     :param key_values: (dict) the list of keys and values to save to log
     """
     for key, value in key_values.items():
-        logkv(key, value)
+        logkv(key, (value, None))
 
 
-def dumpkvs() -> None:
+def dumpkvs(step: int) -> None:
     """
     Write all of the diagnostics from the current iteration
     """
-    Logger.CURRENT.dumpkvs()
+    Logger.CURRENT.dumpkvs(step)
 
 
 def getkvs() -> Dict:
@@ -417,7 +462,7 @@ class Logger(object):
         self.name2val[key] = oldval * cnt / (cnt + 1) + val / (cnt + 1)
         self.name2cnt[key] = cnt + 1
 
-    def dumpkvs(self) -> None:
+    def dumpkvs(self, step: int) -> None:
         """
         Write all of the diagnostics from the current iteration
         """
@@ -425,7 +470,7 @@ class Logger(object):
             return
         for fmt in self.output_formats:
             if isinstance(fmt, KVWriter):
-                fmt.writekvs(self.name2val)
+                fmt.writekvs(self.name2val, step)
         self.name2val.clear()
         self.name2cnt.clear()
 

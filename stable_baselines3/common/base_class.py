@@ -191,7 +191,7 @@ class BaseRLModel(ABC):
             An optimizer or a list of optimizers.
         """
         # Log the current learning rate
-        logger.logkv("learning_rate", self.lr_schedule(self._current_progress))
+        logger.logkv("input_info/learning_rate", self.lr_schedule(self._current_progress))
 
         if not isinstance(optimizers, list):
             optimizers = [optimizers]

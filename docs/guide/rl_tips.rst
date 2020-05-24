@@ -15,14 +15,14 @@ General advice when using Reinforcement Learning
 TL;DR
 -----
 
-1. Read about RL and Stable Baselines
+1. Read about RL and Stable Baselines3
 2. Do quantitative experiments and hyperparameter tuning if needed
 3. Evaluate the performance using a separate test environment
 4. For better performance, increase the training budget
 
 
 Like any other subject, if you want to work with RL, you should first read about it (we have a dedicated `resource page <rl.html>`_ to get you started)
-to understand what you are using. We also recommend you read Stable Baselines (SB) documentation and do the `tutorial <https://github.com/araffin/rl-tutorial-jnrr19>`_.
+to understand what you are using. We also recommend you read Stable Baselines3 (SB3) documentation and do the `tutorial <https://github.com/araffin/rl-tutorial-jnrr19/tree/sb3>`_.
 It covers basic usage and guide you towards more advanced concepts of the library (e.g. callbacks and wrappers).
 
 Reinforcement Learning differs from other machine learning methods in several ways. The data used to train the agent is collected

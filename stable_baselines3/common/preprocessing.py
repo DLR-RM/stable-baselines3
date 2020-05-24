@@ -1,9 +1,9 @@
 from typing import Tuple
 
-import numpy as np
 import torch as th
 import torch.nn.functional as F
 from gym import spaces
+import numpy as np
 
 
 def is_image_space(observation_space: spaces.Space,
@@ -62,11 +62,21 @@ def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space,
         if is_image_space(observation_space) and normalize_images:
             return obs.float() / 255.0
         return obs.float()
+
     elif isinstance(observation_space, spaces.Discrete):
         # One hot encoding and convert to float to avoid errors
         return F.one_hot(obs.long(), num_classes=observation_space.n).float()
+
+    elif isinstance(observation_space, spaces.MultiDiscrete):
+        # Tensor concatenation of one hot encodings of each Categorical sub-space
+        return th.cat([F.one_hot(obs_.long(), num_classes=int(observation_space.nvec[idx])).float()
+                       for idx, obs_ in enumerate(th.split(obs.long(), 1, dim=1))],
+                      dim=-1).view(obs.shape[0], sum(observation_space.nvec))
+
+    elif isinstance(observation_space, spaces.MultiBinary):
+        return obs.float()
+
     else:
-        # TODO: Multidiscrete, Binary, MultiBinary, Tuple, Dict
         raise NotImplementedError()
 
 
@@ -82,8 +92,13 @@ def get_obs_shape(observation_space: spaces.Space) -> Tuple[int, ...]:
     elif isinstance(observation_space, spaces.Discrete):
         # Observation is an int
         return 1,
+    elif isinstance(observation_space, spaces.MultiDiscrete):
+        # Number of discrete features
+        return int(len(observation_space.nvec)),
+    elif isinstance(observation_space, spaces.MultiBinary):
+        # Number of binary features
+        return int(observation_space.n),
     else:
-        # TODO: Multidiscrete, Binary, MultiBinary, Tuple, Dict
         raise NotImplementedError()
 
 
@@ -95,8 +110,13 @@ def get_flattened_obs_dim(observation_space: spaces.Space) -> int:
     :param observation_space: (spaces.Space)
     :return: (int)
     """
-    # Use Gym internal method
-    return spaces.utils.flatdim(observation_space)
+    # See issue https://github.com/openai/gym/issues/1915
+    # it may be a problem for Dict/Tuple spaces too...
+    if isinstance(observation_space, spaces.MultiDiscrete):
+        return sum(observation_space.nvec)
+    else:
+        # Use Gym internal method
+        return spaces.utils.flatdim(observation_space)
 
 
 def get_action_dim(action_space: spaces.Space) -> int:
@@ -111,5 +131,11 @@ def get_action_dim(action_space: spaces.Space) -> int:
     elif isinstance(action_space, spaces.Discrete):
         # Action is an int
         return 1
+    elif isinstance(action_space, spaces.MultiDiscrete):
+        # Number of discrete actions
+        return int(len(action_space.nvec))
+    elif isinstance(action_space, spaces.MultiBinary):
+        # Number of binary actions
+        return int(action_space.n)
     else:
         raise NotImplementedError()

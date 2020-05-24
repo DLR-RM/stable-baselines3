@@ -157,7 +157,6 @@ class PPO(BaseRLModel):
         callback.on_rollout_start()
 
         while n_steps < n_rollout_steps:
-
             if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
                 # Sample a new noise matrix
                 self.policy.reset_noise(env.num_envs)
@@ -213,7 +212,6 @@ class PPO(BaseRLModel):
             approx_kl_divs = []
             # Do a complete pass on the rollout buffer
             for rollout_data in self.rollout_buffer.get(batch_size):
-
                 actions = rollout_data.actions
                 if isinstance(self.action_space, spaces.Discrete):
                     # Convert discrete action from float to long

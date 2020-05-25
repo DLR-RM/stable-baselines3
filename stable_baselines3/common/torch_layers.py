@@ -50,7 +50,10 @@ class FlattenExtractor(BaseFeaturesExtractor):
 
 class NatureCNN(BaseFeaturesExtractor):
     """
-    CNN from DQN nature paper: https://arxiv.org/abs/1312.5602
+    CNN from DQN nature paper:
+        Mnih, Volodymyr, et al. 
+        "Human-level control through deep reinforcement learning."
+        Nature 518.7540 (2015): 529-533.
 
     :param observation_space: (gym.Space)
     :param features_dim: (int) Number of features extracted.

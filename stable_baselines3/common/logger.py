@@ -74,18 +74,26 @@ class HumanOutputFormat(KVWriter, SeqWriter):
     def writekvs(self, kvs: Dict, step: int) -> None:
         # Create strings for printing
         key2str = {}
+        tag = None
         for (key, val) in sorted(kvs.items()):
             if val[1] is not None:
                 if 'stdout' in val[1]:
                     continue
             val = val[0]
-
             if isinstance(val, float):
                 # Align left
                 val_str = f'{val:<8.3g}'
             else:
                 val_str = str(val)
-            key2str[self._truncate(key)] = self._truncate(val_str)
+
+            if key.find('/') > 0: # Find tag and add it to the dict
+                tag = key[:key.find('/')+1]
+                key2str[self._truncate(tag)] = ''
+            if tag and tag in key:
+                key = str('   ' + key[key.find('/')+1:])
+                key2str[self._truncate(key)] = self._truncate(val_str)
+            else:
+                key2str[self._truncate(key)] = self._truncate(val_str)
 
         # Find max widths
         if len(key2str) == 0:
@@ -98,7 +106,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         # Write out the data
         dashes = '-' * (key_width + val_width + 7)
         lines = [dashes]
-        for (key, val) in sorted(key2str.items()):
+        for (key, val) in key2str.items():
             key_space = ' ' * (key_width - len(key))
             val_space = ' ' * (val_width - len(val))
             lines.append(f"| {key}{key_space} | {val}{val_space} |")
@@ -109,8 +117,8 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         self.file.flush()
 
     @classmethod
-    def _truncate(cls, string: str) -> str:
-        return string[:20] + '...' if len(string) > 30 else string
+    def _truncate(cls, string: str, length_limit: int = 30) -> str:
+        return string[:20] + '...' if len(string) > length_limit else string
 
     def writeseq(self, seq: List) -> None:
         seq = list(seq)

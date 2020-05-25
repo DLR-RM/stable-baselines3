@@ -27,11 +27,13 @@ class KVWriter(object):
     Key Value writer
     """
 
-    def writekvs(self, kvs: Dict, exclusions: List, step: int) -> None:
+    def writekvs(self, kvs: Dict, excs: Dict, step: int) -> None:
         """
         write a dictionary to file
 
         :param kvs: (dict)
+        :param excs: (dict)
+        :param step: (int)
         """
         raise NotImplementedError
 
@@ -71,13 +73,13 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             self.file = filename_or_file
             self.own_file = False
 
-    def writekvs(self, kvs: Dict, exclusions: List, step: int) -> None:
+    def writekvs(self, kvs: Dict, excs: Dict, step: int) -> None:
         # Create strings for printing
         key2str = {}
         tag = None
-        for (key, val), excl in zip(sorted(kvs.items()), exclusions):
-            if excl is not None:
-                if 'stdout' is excl or 'stdout' in excl:
+        for (key, val), (_, exc) in zip(sorted(kvs.items()), sorted(excs.items())):
+            if exc is not None:
+                if 'stdout' is exc or 'stdout' in exc:
                     continue
             if isinstance(val, float):
                 # Align left
@@ -145,10 +147,10 @@ class JSONOutputFormat(KVWriter):
         """
         self.file = open(filename, 'wt')
 
-    def writekvs(self, kvs: Dict, exclusions: List, step: int) -> None:
-        for (key, val), excl in zip(sorted(kvs.items()), exclusions):
-            if excl is not None:
-                if 'json' is excl or 'json' in excl:
+    def writekvs(self, kvs: Dict, excs: Dict, step: int) -> None:
+        for (key, val), (_, exc) in zip(sorted(kvs.items()), sorted(excs.items())):
+            if exc is not None:
+                if 'json' is exc or 'json' in exc:
                     continue
             if hasattr(val, 'dtype'):
                 if val.shape == () or len(val) == 1:
@@ -217,13 +219,12 @@ class TensorBoardOutputFormat(KVWriter):
         Dumps key/value pairs into TensorBoard's numeric format.
         :param folder: (str) the folder to write the log to
         """
-        os.makedirs(folder, exist_ok=True)
         self.writer = SummaryWriter(log_dir=folder)
 
-    def writekvs(self, kvs: Dict, exclusions: List, step: int) -> None:
-        for (key, val), excl in zip(sorted(kvs.items()), exclusions):
-            if excl is not None:
-                if 'tensorboard' is excl or 'tensorboard' in excl:
+    def writekvs(self, kvs: Dict, excs: Dict, step: int) -> None:
+        for (key, val), (_, exc) in zip(sorted(kvs.items()), sorted(excs.items())):
+            if exc is not None:
+                if 'tensorboard' is exc or 'tensorboard' in exc:
                     continue
             if isinstance(val, np.ScalarType):
                 self.writer.add_scalar(key, val, step)
@@ -427,7 +428,7 @@ class Logger(object):
         """
         self.name2val = defaultdict(float)  # values this iteration
         self.name2cnt = defaultdict(int)
-        self.exclusions = []
+        self.name2excl = defaultdict(str)
         self.level = INFO
         self.dir = folder
         self.output_formats = output_formats
@@ -442,9 +443,10 @@ class Logger(object):
 
         :param key: (Any) save to log this key
         :param val: (Any) save to log this value
+        :param exclude: (str or tuple) outputs to be excluded
         """
         self.name2val[key] = val
-        self.exclusions.append(exclude)
+        self.name2excl[key] = exclude
 
     def logkv_mean(self, key: Any, val: Any, exclude: Union[str, Tuple[str]]) -> None:
         """
@@ -452,6 +454,7 @@ class Logger(object):
 
         :param key: (Any) save to log this key
         :param val: (Number) save to log this value
+        :param exclude: (str or tuple) outputs to be excluded
         """
         if val is None:
             self.name2val[key] = None
@@ -459,7 +462,7 @@ class Logger(object):
         oldval, cnt = self.name2val[key], self.name2cnt[key]
         self.name2val[key] = oldval * cnt / (cnt + 1) + val / (cnt + 1)
         self.name2cnt[key] = cnt + 1
-        self.exclusions.append(exclude)
+        self.name2excl[key] = exclude
 
     def dumpkvs(self, step: int) -> None:
         """
@@ -467,20 +470,13 @@ class Logger(object):
         """
         if self.level == DISABLED:
             return
-
-        # Sort exclusions so they match with future sorted dict items
-        # Or do you want this to happen inside of each logger?
-        sorted_exclusions = [excl for _, excl in sorted(zip(self.name2val.keys(),
-                                                            self.exclusions))]
-
         for fmt in self.output_formats:
             if isinstance(fmt, KVWriter):
-                fmt.writekvs(self.name2val, sorted_exclusions, step)
+                fmt.writekvs(self.name2val, self.name2excl, step)
 
         self.name2val.clear()
         self.name2cnt.clear()
-        self.exclusions.clear()
-        del sorted_exclusions
+        self.name2excl.clear()
 
     def log(self, *args, level: int = INFO) -> None:
         """

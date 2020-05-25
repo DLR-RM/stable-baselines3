@@ -6,9 +6,10 @@ import torch as th
 import torch.nn as nn
 import numpy as np
 
-from stable_baselines3.common.policies import (BasePolicy, register_policy, MlpExtractor,
-                                               create_sde_features_extractor, NatureCNN,
-                                               BaseFeaturesExtractor, FlattenExtractor)
+from stable_baselines3.common.policies import (BasePolicy, register_policy,
+                                               create_sde_features_extractor)
+from stable_baselines3.common.torch_layers import (MlpExtractor, NatureCNN, BaseFeaturesExtractor,
+                                                   FlattenExtractor)
 from stable_baselines3.common.distributions import (make_proba_distribution, Distribution,
                                                     DiagGaussianDistribution, CategoricalDistribution,
                                                     MultiCategoricalDistribution, BernoulliDistribution,

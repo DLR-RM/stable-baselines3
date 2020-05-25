@@ -5,8 +5,8 @@ import torch as th
 import torch.nn as nn
 
 from stable_baselines3.common.preprocessing import get_action_dim
-from stable_baselines3.common.policies import (BasePolicy, register_policy, create_mlp,
-                                               NatureCNN, BaseFeaturesExtractor, FlattenExtractor)
+from stable_baselines3.common.policies import BasePolicy, register_policy
+from stable_baselines3.common.torch_layers import create_mlp, NatureCNN, BaseFeaturesExtractor, FlattenExtractor
 
 
 class Actor(BasePolicy):

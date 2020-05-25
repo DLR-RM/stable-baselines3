@@ -3,6 +3,8 @@ import random
 
 import numpy as np
 import torch as th
+import glob
+import os
 
 
 def set_random_seed(seed: int, using_cuda: bool = False) -> None:
@@ -110,3 +112,19 @@ def get_device(device: Union[th.device, str] = 'auto') -> th.device:
         return th.device('cpu')
 
     return device
+
+
+def get_latest_run_id(log_path, log_name):
+    """
+    Returns the latest run number for the given log name and log path,
+    by finding the greatest number in the directories.
+
+    :return: (int) latest run number
+    """
+    max_run_id = 0
+    for path in glob.glob("{}/{}_[0-9]*".format(log_path, log_name)):
+        file_name = path.split(os.sep)[-1]
+        ext = file_name.split("_")[-1]
+        if log_name == "_".join(file_name.split("_")[:-1]) and ext.isdigit() and int(ext) > max_run_id:
+            max_run_id = int(ext)
+    return max_run_id

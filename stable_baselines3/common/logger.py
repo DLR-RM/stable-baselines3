@@ -27,12 +27,12 @@ class KVWriter(object):
     Key Value writer
     """
 
-    def writekvs(self, kvs: Dict, excs: Dict, step: int) -> None:
+    def write_key_values(self, key_values: Dict, key_excluded: Dict, step: int) -> None:
         """
         write a dictionary to file
 
-        :param kvs: (dict)
-        :param excs: (dict)
+        :param key_values: (dict)
+        :param key_excluded: (dict)
         :param step: (int)
         """
         raise NotImplementedError
@@ -41,6 +41,7 @@ class KVWriter(object):
         """
         Close owned resources
         """
+
         raise NotImplementedError
 
 
@@ -49,12 +50,13 @@ class SeqWriter(object):
     sequence writer
     """
 
-    def writeseq(self, seq: List):
+    def write_sequence(self, sequence: List):
         """
         write an array to file
 
-        :param seq: (list)
+        :param sequence: (list)
         """
+
         raise NotImplementedError
 
 
@@ -73,28 +75,28 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             self.file = filename_or_file
             self.own_file = False
 
-    def writekvs(self, kvs: Dict, excs: Dict, step: int) -> None:
+    def write_key_values(self, key_values: Dict, key_excluded: Dict, step: int) -> None:
         # Create strings for printing
         key2str = {}
         tag = None
-        for (key, val), (_, exc) in zip(sorted(kvs.items()), sorted(excs.items())):
-            if exc is not None:
-                if 'stdout' is exc or 'stdout' in exc:
+        for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
+            if excluded is not None:
+                if 'stdout' == excluded or 'stdout' in excluded:
                     continue
-            if isinstance(val, float):
+            if isinstance(value, float):
                 # Align left
-                val_str = f'{val:<8.3g}'
+                value_str = f'{value:<8.3g}'
             else:
-                val_str = str(val)
+                value_str = str(value)
 
             if key.find('/') > 0:  # Find tag and add it to the dict
                 tag = key[:key.find('/') + 1]
                 key2str[self._truncate(tag)] = ''
             if tag and tag in key:
                 key = str('   ' + key[key.find('/') + 1:])
-                key2str[self._truncate(key)] = self._truncate(val_str)
+                key2str[self._truncate(key)] = self._truncate(value_str)
             else:
-                key2str[self._truncate(key)] = self._truncate(val_str)
+                key2str[self._truncate(key)] = self._truncate(value_str)
 
         # Find max widths
         if len(key2str) == 0:
@@ -107,10 +109,10 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         # Write out the data
         dashes = '-' * (key_width + val_width + 7)
         lines = [dashes]
-        for (key, val) in key2str.items():
+        for (key, value) in key2str.items():
             key_space = ' ' * (key_width - len(key))
-            val_space = ' ' * (val_width - len(val))
-            lines.append(f"| {key}{key_space} | {val}{val_space} |")
+            val_space = ' ' * (val_width - len(value))
+            lines.append(f"| {key}{key_space} | {value}{val_space} |")
         lines.append(dashes)
         self.file.write('\n'.join(lines) + '\n')
 
@@ -121,11 +123,11 @@ class HumanOutputFormat(KVWriter, SeqWriter):
     def _truncate(cls, string: str, length_limit: int = 30) -> str:
         return string[:20] + '...' if len(string) > length_limit else string
 
-    def writeseq(self, seq: List) -> None:
-        seq = list(seq)
-        for (i, elem) in enumerate(seq):
+    def write_sequence(self, sequence: List) -> None:
+        sequence = list(sequence)
+        for (i, elem) in enumerate(sequence):
             self.file.write(elem)
-            if i < len(seq) - 1:  # add space unless this is the last one
+            if i < len(sequence) - 1:  # add space unless this is the last one
                 self.file.write(' ')
         self.file.write('\n')
         self.file.flush()
@@ -147,25 +149,26 @@ class JSONOutputFormat(KVWriter):
         """
         self.file = open(filename, 'wt')
 
-    def writekvs(self, kvs: Dict, excs: Dict, step: int) -> None:
-        for (key, val), (_, exc) in zip(sorted(kvs.items()), sorted(excs.items())):
-            if exc is not None:
-                if 'json' is exc or 'json' in exc:
+    def write_key_values(self, key_values: Dict, key_excluded: Dict, step: int) -> None:
+        for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
+            if excluded is not None:
+                if 'json' == excluded or 'json' in excluded:
                     continue
-            if hasattr(val, 'dtype'):
-                if val.shape == () or len(val) == 1:
+            if hasattr(value, 'dtype'):
+                if value.shape == () or len(value) == 1:
                     # if value is a dimensionless numpy array or of length 1, serialize as a float
-                    kvs[key] = float(val)
+                    key_values[key] = float(value)
                 else:
                     # otherwise, a value is a numpy array, serialize as a list or nested lists
-                    kvs[key] = val.tolist()
-        self.file.write(json.dumps(kvs) + '\n')
+                    key_values[key] = value.tolist()
+        self.file.write(json.dumps(key_values) + '\n')
         self.file.flush()
 
     def close(self) -> None:
         """
         closes the file
         """
+
         self.file.close()
 
 
@@ -176,13 +179,14 @@ class CSVOutputFormat(KVWriter):
 
         :param filename: (str) the file to write the log to
         """
+
         self.file = open(filename, 'w+t')
         self.keys = []
-        self.sep = ','
+        self.separator = ','
 
-    def writekvs(self, kvs: Dict, step: int) -> None:
+    def write_key_values(self, key_values: Dict, step: int) -> None:
         # Add our current row to the history
-        extra_keys = kvs.keys() - self.keys
+        extra_keys = key_values.keys() - self.keys
         if extra_keys:
             self.keys.extend(extra_keys)
             self.file.seek(0)
@@ -195,12 +199,12 @@ class CSVOutputFormat(KVWriter):
             self.file.write('\n')
             for line in lines[1:]:
                 self.file.write(line[:-1])
-                self.file.write(self.sep * len(extra_keys))
+                self.file.write(self.separator * len(extra_keys))
                 self.file.write('\n')
         for i, key in enumerate(self.keys):
             if i > 0:
                 self.file.write(',')
-            value = kvs.get(key)[0]
+            value = key_values.get(key)[0]
             if value is not None:
                 self.file.write(str(value))
         self.file.write('\n')
@@ -217,20 +221,22 @@ class TensorBoardOutputFormat(KVWriter):
     def __init__(self, folder):
         """
         Dumps key/value pairs into TensorBoard's numeric format.
+
         :param folder: (str) the folder to write the log to
         """
         self.writer = SummaryWriter(log_dir=folder)
 
-    def writekvs(self, kvs: Dict, excs: Dict, step: int) -> None:
-        for (key, val), (_, exc) in zip(sorted(kvs.items()), sorted(excs.items())):
-            if exc is not None:
-                if 'tensorboard' is exc or 'tensorboard' in exc:
+    def write_key_values(self, key_values: Dict, key_excluded: Dict, step: int) -> None:
+        for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
+            if excluded is not None:
+                if 'tensorboard' == excluded or 'tensorboard' in excluded:
                     continue
-            if isinstance(val, np.ScalarType):
-                self.writer.add_scalar(key, val, step)
-            if isinstance(val, th.Tensor):
-                self.writer.add_histogram(key, val, step)
+            if isinstance(value, np.ScalarType):
+                self.writer.add_scalar(key, value, step)
+            if isinstance(value, th.Tensor):
+                self.writer.add_histogram(key, value, step)
 
+        # Flush the output to the file
         self.writer.flush()
 
     def close(self):
@@ -270,54 +276,54 @@ def make_output_format(_format: str, log_dir: str, log_suffix: str = '') -> KVWr
 # API
 # ================================================================
 
-def logkv(key: Any, val: Any, exclude: Union[str, Tuple[str]] = None) -> None:
+def log_key_value(key: Any, value: Any, exclude: Union[str, Tuple[str]] = None) -> None:
     """
     Log a value of some diagnostic
     Call this once for each diagnostic quantity, each iteration
     If called many times, last value will be used.
 
     :param key: (Any) save to log this key
-    :param val: (Any) save to log this value
+    :param value: (Any) save to log this value
     :param exclude: (str or tuple) outputs to be excluded
     """
-    Logger.CURRENT.logkv(key, val, exclude)
+    Logger.CURRENT.log_key_value(key, value, exclude)
 
 
-def logkv_mean(key: Any, val: Union[int, float], exclude: Union[str, Tuple[str]] = None) -> None:
+def log_key_value_mean(key: Any, value: Union[int, float], exclude: Union[str, Tuple[str]] = None) -> None:
     """
-    The same as logkv(), but if called many times, values averaged.
+    The same as log_key_value(), but if called many times, values averaged.
 
     :param key: (Any) save to log this key
-    :param val: (Number) save to log this value
+    :param value: (Number) save to log this value
     :param exclude: (str or tuple) outputs to be excluded
     """
-    Logger.CURRENT.logkv_mean(key, val, exclude)
+    Logger.CURRENT.log_key_value_mean(key, value, exclude)
 
 
-def logkvs(key_values: Dict) -> None:
+def log_key_values(key_values: Dict) -> None:
     """
-    Log a dictionary of key-value pairs. 
+    Log a dictionary of key-value pairs.
 
     :param key_values: (dict) the list of keys and values to save to log
     """
-    for key, val in key_values.items():
-        logkv(key, val)
+    for key, value in key_values.items():
+        log_key_value(key, value)
 
 
-def dumpkvs(step: int = 0) -> None:
+def dump_key_values(step: int = 0) -> None:
     """
     Write all of the diagnostics from the current iteration
     """
-    Logger.CURRENT.dumpkvs(step)
+    Logger.CURRENT.dump_key_values(step)
 
 
-def getkvs() -> Dict:
+def get_key_values() -> Dict:
     """
     get the key values logs
 
     :return: (dict) the logged values
     """
-    return Logger.CURRENT.name2val
+    return Logger.CURRENT.name_to_value
 
 
 def log(*args, level: int = INFO) -> None:
@@ -405,8 +411,8 @@ def get_dir() -> str:
     return Logger.CURRENT.get_dir()
 
 
-record_tabular = logkv
-dump_tabular = dumpkvs
+record_tabular = log_key_value
+dump_tabular = dump_key_values
 
 
 # ================================================================
@@ -426,57 +432,57 @@ class Logger(object):
         :param folder: (str) the logging location
         :param output_formats: ([str]) the list of output format
         """
-        self.name2val = defaultdict(float)  # values this iteration
-        self.name2cnt = defaultdict(int)
-        self.name2excl = defaultdict(str)
+        self.name_to_value = defaultdict(float)  # values this iteration
+        self.name_to_count = defaultdict(int)
+        self.name_to_excluded = defaultdict(str)
         self.level = INFO
         self.dir = folder
         self.output_formats = output_formats
 
     # Logging API, forwarded
     # ----------------------------------------
-    def logkv(self, key: Any, val: Any, exclude: Union[str, Tuple[str]]) -> None:
+    def log_key_value(self, key: Any, value: Any, exclude: Union[str, Tuple[str]]) -> None:
         """
         Log a value of some diagnostic
         Call this once for each diagnostic quantity, each iteration
         If called many times, last value will be used.
 
         :param key: (Any) save to log this key
-        :param val: (Any) save to log this value
+        :param value: (Any) save to log this value
         :param exclude: (str or tuple) outputs to be excluded
         """
-        self.name2val[key] = val
-        self.name2excl[key] = exclude
+        self.name_to_value[key] = value
+        self.name_to_excluded[key] = exclude
 
-    def logkv_mean(self, key: Any, val: Any, exclude: Union[str, Tuple[str]]) -> None:
+    def log_key_value_mean(self, key: Any, value: Any, exclude: Union[str, Tuple[str]]) -> None:
         """
-        The same as logkv(), but if called many times, values averaged.
+        The same as log_key_value(), but if called many times, values averaged.
 
         :param key: (Any) save to log this key
-        :param val: (Number) save to log this value
+        :param value: (Number) save to log this value
         :param exclude: (str or tuple) outputs to be excluded
         """
-        if val is None:
-            self.name2val[key] = None
+        if value is None:
+            self.name_to_value[key] = None
             return
-        oldval, cnt = self.name2val[key], self.name2cnt[key]
-        self.name2val[key] = oldval * cnt / (cnt + 1) + val / (cnt + 1)
-        self.name2cnt[key] = cnt + 1
-        self.name2excl[key] = exclude
+        oldval, cnt = self.name_to_value[key], self.name_to_count[key]
+        self.name_to_value[key] = oldval * cnt / (cnt + 1) + value / (cnt + 1)
+        self.name_to_count[key] = cnt + 1
+        self.name_to_excluded[key] = exclude
 
-    def dumpkvs(self, step: int) -> None:
+    def dump_key_values(self, step: int) -> None:
         """
         Write all of the diagnostics from the current iteration
         """
         if self.level == DISABLED:
             return
-        for fmt in self.output_formats:
-            if isinstance(fmt, KVWriter):
-                fmt.writekvs(self.name2val, self.name2excl, step)
+        for formats in self.output_formats:
+            if isinstance(formats, KVWriter):
+                formats.write_key_values(self.name_to_value, self.name_to_excluded, step)
 
-        self.name2val.clear()
-        self.name2cnt.clear()
-        self.name2excl.clear()
+        self.name_to_value.clear()
+        self.name_to_count.clear()
+        self.name_to_excluded.clear()
 
     def log(self, *args, level: int = INFO) -> None:
         """
@@ -515,8 +521,8 @@ class Logger(object):
         """
         closes the file
         """
-        for fmt in self.output_formats:
-            fmt.close()
+        for formats in self.output_formats:
+            formats.close()
 
     # Misc
     # ----------------------------------------
@@ -526,22 +532,22 @@ class Logger(object):
 
         :param args: (list) the arguments to log
         """
-        for fmt in self.output_formats:
-            if isinstance(fmt, SeqWriter):
-                fmt.writeseq(map(str, args))
+        for formats in self.output_formats:
+            if isinstance(formats, SeqWriter):
+                formats.write_sequence(map(str, args))
 
 
 # Initialize logger
 Logger.DEFAULT = Logger.CURRENT = Logger(folder=None, output_formats=[HumanOutputFormat(sys.stdout)])
 
 
-def configure(folder: Optional[str] = None, format_strs: Optional[List[str]] = None) -> None:
+def configure(folder: Optional[str] = None, format_strings: Optional[List[str]] = None) -> None:
     """
     configure the current logger
 
     :param folder: (Optional[str]) the save location
         (if None, $BASELINES_LOGDIR, if still None, tempdir/baselines-[date & time])
-    :param format_strs: (Optional[List[str]]) the output logging format
+    :param format_strings: (Optional[List[str]]) the output logging format
         (if None, $BASELINES_LOG_FORMAT, if still None, ['stdout', 'log', 'csv'])
     """
     if folder is None:
@@ -552,11 +558,11 @@ def configure(folder: Optional[str] = None, format_strs: Optional[List[str]] = N
     os.makedirs(folder, exist_ok=True)
 
     log_suffix = ''
-    if format_strs is None:
-        format_strs = os.getenv('BASELINES_LOG_FORMAT', 'stdout,log,csv').split(',')
+    if format_strings is None:
+        format_strings = os.getenv('BASELINES_LOG_FORMAT', 'stdout,log,csv').split(',')
 
-    format_strs = filter(None, format_strs)
-    output_formats = [make_output_format(f, folder, log_suffix) for f in format_strs]
+    format_strings = filter(None, format_strings)
+    output_formats = [make_output_format(f, folder, log_suffix) for f in format_strings]
 
     Logger.CURRENT = Logger(folder=folder, output_formats=output_formats)
     log(f'Logging to {folder}')
@@ -573,28 +579,28 @@ def reset() -> None:
 
 
 class ScopedConfigure(object):
-    def __init__(self, folder: Optional[str] = None, format_strs: Optional[List[str]] = None):
+    def __init__(self, folder: Optional[str] = None, format_strings: Optional[List[str]] = None):
         """
         Class for using context manager while logging
 
         usage:
-        with ScopedConfigure(folder=None, format_strs=None):
+        with ScopedConfigure(folder=None, format_strings=None):
             {code}
 
         :param folder: (str) the logging folder
-        :param format_strs: ([str]) the list of output logging format
+        :param format_strings: ([str]) the list of output logging format
         """
         self.dir = folder
-        self.format_strs = format_strs
-        self.prevlogger = None
+        self.format_strings = format_strings
+        self.prev_logger = None
 
     def __enter__(self) -> None:
-        self.prevlogger = Logger.CURRENT
-        configure(folder=self.dir, format_strs=self.format_strs)
+        self.prev_logger = Logger.CURRENT
+        configure(folder=self.dir, format_strings=self.format_strings)
 
     def __exit__(self, *args) -> None:
         Logger.CURRENT.close()
-        Logger.CURRENT = self.prevlogger
+        Logger.CURRENT = self.prev_logger
 
 
 # ================================================================

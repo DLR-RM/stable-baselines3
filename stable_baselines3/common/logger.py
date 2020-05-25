@@ -78,7 +78,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             if val[1] is not None:
                 if 'stdout' in val[1]:
                     continue
-            val = round(val[0], 5)
+            val = val[0]
 
             if isinstance(val, float):
                 # Align left
@@ -110,10 +110,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
 
     @classmethod
     def _truncate(cls, string: str) -> str:
-        # Remove tensorboard tag from std outputs
-        if string.find('/') > 0:
-            string = string[string.find('/') + 1:]
-        return string[:20] + '...' if len(string) > 23 else string
+        return string[:20] + '...' if len(string) > 30 else string
 
     def writeseq(self, seq: List) -> None:
         seq = list(seq)
@@ -307,7 +304,7 @@ def logkvs(key_values: Dict) -> None:
         logkv(key, (value, None))
 
 
-def dumpkvs(step: int) -> None:
+def dumpkvs(step: int = 0) -> None:
     """
     Write all of the diagnostics from the current iteration
     """

@@ -290,7 +290,6 @@ class PPO(BaseRLModel):
                                            self.rollout_buffer.values.flatten())
 
         # Logs
-        logger.logkv("n_updates", self._n_updates, exclude='tensorboard')
         logger.logkv("loss/entropy_loss", np.mean(entropy_losses))
         logger.logkv("loss/policy_gradient_loss", np.mean(pg_losses))
         logger.logkv("loss/value_loss", np.mean(value_losses))
@@ -300,9 +299,10 @@ class PPO(BaseRLModel):
         logger.logkv("loss/explained_variance", explained_var)
         if hasattr(self.policy, 'log_std'):
             logger.logkv("loss/std", th.exp(self.policy.log_std).mean().item())
-
-        logger.logkv("episode_reward", np.sum(self.rollout_buffer.rewards))
-        logger.logkv("input_info/discounted_rewards", np.mean(self.rollout_buffer.rewards))
+        
+        logger.logkv("session/n_updates", self._n_updates, exclude='tensorboard')
+        logger.logkv("session/episode_reward", np.sum(self.rollout_buffer.rewards))
+        logger.logkv("input_info/discounted_rewards", np.sum(self.rollout_buffer.returns))
         logger.logkv("input_info/advantage", np.mean(self.rollout_buffer.advantages))
         logger.logkv("input_info/infoclip_range", clip_range)
         if self.clip_range_vf is not None:
@@ -312,7 +312,7 @@ class PPO(BaseRLModel):
 
         # Histograms
         if self.tensorboard_log is not None and SummaryWriter is not None:
-            logger.logkv("input_info/rewards_1", th.Tensor(self.rollout_buffer.rewards), exclude='stdout')
+            logger.logkv("input_info/discounted_rewards_1", th.Tensor(self.rollout_buffer.returns), exclude='stdout')
             logger.logkv("input_info/advantages_1", th.Tensor(self.rollout_buffer.advantages), exclude='stdout')
             logger.logkv("input_info/old_log_probs_1", th.Tensor(old_log_probs), exclude='stdout')
             logger.logkv("input_info/old_values_1", th.Tensor(old_values), exclude='stdout')
@@ -354,15 +354,15 @@ class PPO(BaseRLModel):
             # Display training infos
             if self.verbose >= 1 and log_interval is not None and iteration % log_interval == 0:
                 fps = int(self.num_timesteps / (time.time() - self.start_time))
-                logger.logkv("iterations", iteration, exclude='tensorboard')
+                logger.logkv("session/iterations", iteration, exclude='tensorboard')
                 if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
-                    logger.logkv('ep_rew_mean', self.safe_mean([ep_info['r']
-                                                                for ep_info in self.ep_info_buffer]), exclude='tensorboard')
-                    logger.logkv('ep_len_mean', self.safe_mean([ep_info['l']
-                                                                for ep_info in self.ep_info_buffer]), exclude='tensorboard')
-                logger.logkv("fps", fps, exclude='tensorboard')
-                logger.logkv('time_elapsed', int(time.time() - self.start_time), exclude='tensorboard')
-                logger.logkv("total timesteps", self.num_timesteps, exclude='tensorboard')
+                    logger.logkv('session/ep_rew_mean', self.safe_mean([ep_info['r']
+                                                                for ep_info in self.ep_info_buffer]))
+                    logger.logkv('session/ep_len_mean', self.safe_mean([ep_info['l']
+                                                                for ep_info in self.ep_info_buffer]))
+                logger.logkv("session/fps", fps, exclude='tensorboard')
+                logger.logkv('session/time_elapsed', int(time.time() - self.start_time), exclude='tensorboard')
+                logger.logkv("session/total timesteps", self.num_timesteps, exclude='tensorboard')
                 logger.dumpkvs(step=self.num_timesteps)
 
             self.train(self.n_epochs, batch_size=self.batch_size)

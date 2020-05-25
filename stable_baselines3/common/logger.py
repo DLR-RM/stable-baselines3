@@ -27,7 +27,7 @@ class KVWriter(object):
     Key Value writer
     """
 
-    def writekvs(self, kvs: Dict, step: int) -> None:
+    def writekvs(self, kvs: Dict, exclusions: List, step: int) -> None:
         """
         write a dictionary to file
 
@@ -71,26 +71,25 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             self.file = filename_or_file
             self.own_file = False
 
-    def writekvs(self, kvs: Dict, step: int) -> None:
+    def writekvs(self, kvs: Dict, exclusions: List, step: int) -> None:
         # Create strings for printing
         key2str = {}
         tag = None
-        for (key, val) in sorted(kvs.items()):
-            if val[1] is not None:
-                if 'stdout' in val[1]:
+        for (key, val), excl in zip(sorted(kvs.items()), exclusions):
+            if excl is not None:
+                if 'stdout' is excl or 'stdout' in excl:
                     continue
-            val = val[0]
             if isinstance(val, float):
                 # Align left
                 val_str = f'{val:<8.3g}'
             else:
                 val_str = str(val)
 
-            if key.find('/') > 0: # Find tag and add it to the dict
-                tag = key[:key.find('/')+1]
+            if key.find('/') > 0:  # Find tag and add it to the dict
+                tag = key[:key.find('/') + 1]
                 key2str[self._truncate(tag)] = ''
             if tag and tag in key:
-                key = str('   ' + key[key.find('/')+1:])
+                key = str('   ' + key[key.find('/') + 1:])
                 key2str[self._truncate(key)] = self._truncate(val_str)
             else:
                 key2str[self._truncate(key)] = self._truncate(val_str)
@@ -146,13 +145,11 @@ class JSONOutputFormat(KVWriter):
         """
         self.file = open(filename, 'wt')
 
-    def writekvs(self, kvs: Dict, step: int) -> None:
-        for key, val in sorted(kvs.items()):
-            if val[1] is not None:
-                if 'json' in val[1]:
+    def writekvs(self, kvs: Dict, exclusions: List, step: int) -> None:
+        for (key, val), excl in zip(sorted(kvs.items()), exclusions):
+            if excl is not None:
+                if 'json' is excl or 'json' in excl:
                     continue
-            val = val[0]
-
             if hasattr(val, 'dtype'):
                 if val.shape == () or len(val) == 1:
                     # if value is a dimensionless numpy array or of length 1, serialize as a float
@@ -223,13 +220,11 @@ class TensorBoardOutputFormat(KVWriter):
         os.makedirs(folder, exist_ok=True)
         self.writer = SummaryWriter(log_dir=folder)
 
-    def writekvs(self, kvs: Dict, step: int):
-        for key, val in kvs.items():
-            if val[1] is not None:
-                if 'tensorboard' in val[1]:
+    def writekvs(self, kvs: Dict, exclusions: List, step: int) -> None:
+        for (key, val), excl in zip(sorted(kvs.items()), exclusions):
+            if excl is not None:
+                if 'tensorboard' is excl or 'tensorboard' in excl:
                     continue
-            val = val[0]
-
             if isinstance(val, np.ScalarType):
                 self.writer.add_scalar(key, val, step)
             if isinstance(val, th.Tensor):
@@ -284,9 +279,7 @@ def logkv(key: Any, val: Any, exclude: Union[str, Tuple[str]] = None) -> None:
     :param val: (Any) save to log this value
     :param exclude: (str or tuple) outputs to be excluded
     """
-    if isinstance(exclude, str):
-        exclude = exclude,
-    Logger.CURRENT.logkv(key, (val, exclude))
+    Logger.CURRENT.logkv(key, val, exclude)
 
 
 def logkv_mean(key: Any, val: Union[int, float], exclude: Union[str, Tuple[str]] = None) -> None:
@@ -297,9 +290,7 @@ def logkv_mean(key: Any, val: Union[int, float], exclude: Union[str, Tuple[str]]
     :param val: (Number) save to log this value
     :param exclude: (str or tuple) outputs to be excluded
     """
-    if isinstance(exclude, str):
-        exclude = exclude,
-    Logger.CURRENT.logkv_mean(key, (val, exclude))
+    Logger.CURRENT.logkv_mean(key, val, exclude)
 
 
 def logkvs(key_values: Dict) -> None:
@@ -308,8 +299,8 @@ def logkvs(key_values: Dict) -> None:
 
     :param key_values: (dict) the list of keys and values to save to log
     """
-    for key, value in key_values.items():
-        logkv(key, (value, None))
+    for key, val in key_values.items():
+        logkv(key, val)
 
 
 def dumpkvs(step: int = 0) -> None:
@@ -436,13 +427,14 @@ class Logger(object):
         """
         self.name2val = defaultdict(float)  # values this iteration
         self.name2cnt = defaultdict(int)
+        self.exclusions = []
         self.level = INFO
         self.dir = folder
         self.output_formats = output_formats
 
     # Logging API, forwarded
     # ----------------------------------------
-    def logkv(self, key: Any, val: Any) -> None:
+    def logkv(self, key: Any, val: Any, exclude: Union[str, Tuple[str]]) -> None:
         """
         Log a value of some diagnostic
         Call this once for each diagnostic quantity, each iteration
@@ -452,8 +444,9 @@ class Logger(object):
         :param val: (Any) save to log this value
         """
         self.name2val[key] = val
+        self.exclusions.append(exclude)
 
-    def logkv_mean(self, key: Any, val: Any) -> None:
+    def logkv_mean(self, key: Any, val: Any, exclude: Union[str, Tuple[str]]) -> None:
         """
         The same as logkv(), but if called many times, values averaged.
 
@@ -466,6 +459,7 @@ class Logger(object):
         oldval, cnt = self.name2val[key], self.name2cnt[key]
         self.name2val[key] = oldval * cnt / (cnt + 1) + val / (cnt + 1)
         self.name2cnt[key] = cnt + 1
+        self.exclusions.append(exclude)
 
     def dumpkvs(self, step: int) -> None:
         """
@@ -473,11 +467,20 @@ class Logger(object):
         """
         if self.level == DISABLED:
             return
+
+        # Sort exclusions so they match with future sorted dict items
+        # Or do you want this to happen inside of each logger?
+        sorted_exclusions = [excl for _, excl in sorted(zip(self.name2val.keys(),
+                                                            self.exclusions))]
+
         for fmt in self.output_formats:
             if isinstance(fmt, KVWriter):
-                fmt.writekvs(self.name2val, step)
+                fmt.writekvs(self.name2val, sorted_exclusions, step)
+
         self.name2val.clear()
         self.name2cnt.clear()
+        self.exclusions.clear()
+        del sorted_exclusions
 
     def log(self, *args, level: int = INFO) -> None:
         """

@@ -365,8 +365,6 @@ class PPO(BaseRLModel):
                 logger.dump(step=self.num_timesteps)
 
             self.train(self.n_epochs, batch_size=self.batch_size)
-            
-            
 
         callback.on_training_end()
 

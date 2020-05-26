@@ -112,7 +112,7 @@ def test_evaluate_policy():
     assert len(episode_rewards) == n_eval_episodes
 
 
-def test_VecNoise():
+def test_vec_noise():
     mu = np.zeros(4)
     sigma = np.ones(4) * 0.4
     base: ActionNoise = OrnsteinUhlenbeckActionNoise(mu, sigma)

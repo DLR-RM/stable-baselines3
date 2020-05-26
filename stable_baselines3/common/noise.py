@@ -91,7 +91,7 @@ class VectorizedActionNoise(ActionNoise):
     """
     A Vectorized action noise for parallel environments.
 
-    :param base_noise: ActionNoise The noise generator to use 
+    :param base_noise: ActionNoise The noise generator to use
     :param n_envs: (int) The number of parallel environments
     """
 
@@ -125,7 +125,7 @@ class VectorizedActionNoise(ActionNoise):
         if len(self.noises):
             noise = np.stack([noise() for noise in self.noises])
         else:
-            noise = np.zeros((0,0))
+            noise = np.zeros((0, 0))
         return noise
 
     @property

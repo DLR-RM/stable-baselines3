@@ -12,8 +12,8 @@ from stable_baselines3.common.cmd_util import make_vec_env, make_atari_env
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.noise import (
     VectorizedActionNoise, OrnsteinUhlenbeckActionNoise,
-    NormalActionNoise, ActionNoise
-    )
+    NormalActionNoise, ActionNoise)
+
 
 @pytest.mark.parametrize("env_id", ['CartPole-v1', lambda: gym.make('CartPole-v1')])
 @pytest.mark.parametrize("n_envs", [1, 2])
@@ -114,15 +114,15 @@ def test_evaluate_policy():
 
 def test_VecNoise():
     mu = np.zeros(4)
-    sigma = np.ones(4)*0.4
-    base:ActionNoise = OrnsteinUhlenbeckActionNoise(mu, sigma)
+    sigma = np.ones(4) * 0.4
+    base: ActionNoise = OrnsteinUhlenbeckActionNoise(mu, sigma)
     vec = VectorizedActionNoise(base, 4)
-    assert vec().shape==(4,4)
-    assert not (vec()==base()).all()
-    vec = VectorizedActionNoise(base,0)
-    assert vec().shape==(0,0)
-    mu  = np.ones(4)
-    sigma  = np.zeros(4)
+    assert vec().shape == (4, 4)
+    assert not (vec() == base()).all()
+    vec = VectorizedActionNoise(base, 0)
+    assert vec().shape == (0, 0)
+    mu = np.ones(4)
+    sigma = np.zeros(4)
     base = NormalActionNoise(mu, sigma)
     vec = VectorizedActionNoise(base, 4)
-    assert (base()==vec()).all()
+    assert (base() == vec()).all()

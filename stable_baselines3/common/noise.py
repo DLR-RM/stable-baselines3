@@ -147,8 +147,7 @@ class VectorizedActionNoise(ActionNoise):
     @noises.setter
     def noises(self, noises: List[ActionNoise]) -> None:
         noises = list(noises)  # raises TypeError if not iterable
-        if len(noises) != self.n_envs:
-            raise ValueError(f"Found {len(noises)}, expected {self.n_envs}")
+        assert len(noises) == self.n_envs, f"Expected a list of {self.n_envs} ActionNoises, found {len(noises)}."
 
         different_types = [
             i for i, noise in enumerate(noises)

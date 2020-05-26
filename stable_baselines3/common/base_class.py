@@ -11,7 +11,13 @@ import gym
 import torch as th
 import numpy as np
 
-from stable_baselines3.common import logger
+# Check if tensorboard is available for pytorch
+try:
+    from torch.utils.tensorboard import SummaryWriter
+except ImportError:
+    SummaryWriter = None
+
+from stable_baselines3.common import logger, utils
 from stable_baselines3.common.policies import BasePolicy, get_policy_from_name
 from stable_baselines3.common.utils import set_random_seed, get_schedule_fn, update_learning_rate, get_device
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize, VecTransposeImage
@@ -732,6 +738,12 @@ class OffPolicyRLModel(BaseRLModel):
         self.policy = self.policy_class(self.observation_space, self.action_space,
                                         self.lr_schedule, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
+
+    def _init_tensorboard_logger(self, tensorboard_log, tb_log_name):
+        if tensorboard_log is not None and SummaryWriter is not None:
+            latest_run_id = utils.get_latest_run_id(tensorboard_log, tb_log_name)
+            save_path = os.path.join(self.tensorboard_log, f"{tb_log_name}_{latest_run_id + 1}")
+            logger.configure(save_path, ["stdout", "tensorboard"])
 
     def save_replay_buffer(self, path: str):
         """

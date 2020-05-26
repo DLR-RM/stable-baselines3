@@ -96,9 +96,14 @@ class VectorizedActionNoise(ActionNoise):
     """
 
     def __init__(self, base_noise: ActionNoise, n_envs: int):
-        super().__init__()
-        self.n_envs: int = n_envs
-        self.noises = [copy.deepcopy(base_noise) for _ in range(n_envs)]
+        try:
+            self.n_envs = int(n_envs)
+            assert self.n_envs > 0
+        except (TypeError, AssertionError):
+            raise ValueError("Expected n_envs to be positive integer greater than 0")
+
+        self.base_noise = base_noise
+        self.noises = [copy.deepcopy(self.base_noise) for _ in range(n_envs)]
 
     def reset(self, indices: Optional[Iterable[int]] = None) -> None:
         """
@@ -114,19 +119,26 @@ class VectorizedActionNoise(ActionNoise):
             self.noises[index].reset()
 
     def __repr__(self) -> str:
-        base_repr = repr(self.noises[0]) if len(self.noises) else ""
-        return f"VecNoise(BaseNoise={base_repr}), n_envs={len(self.noises)})"
+        return f"VecNoise(BaseNoise={repr(self.base_noise)}), n_envs={len(self.noises)})"
 
     def __call__(self) -> np.ndarray:
         """
         Generate and stack the action noise from each noise object
-        if n_envs == 0, returns a 0x0 matrix.
         """
-        if len(self.noises):
-            noise = np.stack([noise() for noise in self.noises])
-        else:
-            noise = np.zeros((0, 0))
+        noise = np.stack([noise() for noise in self.noises])
         return noise
+
+    @property
+    def base_noise(self) -> ActionNoise:
+        return self._base_noise
+
+    @base_noise.setter
+    def base_noise(self, base_noise: ActionNoise):
+        if base_noise is None:
+            raise ValueError("Expected base_noise to be an instance of ActionNoise, not None", ActionNoise)
+        if not isinstance(base_noise, ActionNoise):
+            raise TypeError("Expected base_noise to be an instance of type ActionNoise", ActionNoise)
+        self._base_noise = base_noise
 
     @property
     def noises(self) -> List[ActionNoise]:
@@ -134,6 +146,21 @@ class VectorizedActionNoise(ActionNoise):
 
     @noises.setter
     def noises(self, noises: List[ActionNoise]) -> None:
+        noises = list(noises)  # raises TypeError if not iterable
+        if len(noises) != self.n_envs:
+            raise ValueError(f"Found {len(noises)}, expected {self.n_envs}")
+
+        different_types = [
+            i for i, noise in enumerate(noises)
+            if not isinstance(noise, type(self.base_noise))
+        ]
+
+        if len(different_types):
+            raise ValueError(
+                f"Noise instances at indices {different_types} don't match the type of base_noise",
+                type(self.base_noise)
+            )
+
         self._noises = noises
         for noise in noises:
             noise.reset()

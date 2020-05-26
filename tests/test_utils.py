@@ -11,8 +11,7 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.cmd_util import make_vec_env, make_atari_env
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.noise import (
-    VectorizedActionNoise, OrnsteinUhlenbeckActionNoise,
-    NormalActionNoise, ActionNoise)
+    VectorizedActionNoise, OrnsteinUhlenbeckActionNoise, ActionNoise)
 
 
 @pytest.mark.parametrize("env_id", ['CartPole-v1', lambda: gym.make('CartPole-v1')])
@@ -113,16 +112,33 @@ def test_evaluate_policy():
 
 
 def test_vec_noise():
-    mu = np.zeros(4)
-    sigma = np.ones(4) * 0.4
+    num_envs = 4
+    num_actions = 10
+    mu = np.zeros(num_actions)
+    sigma = np.ones(num_actions) * 0.4
     base: ActionNoise = OrnsteinUhlenbeckActionNoise(mu, sigma)
-    vec = VectorizedActionNoise(base, 4)
-    assert vec().shape == (4, 4)
+    with pytest.raises(ValueError):
+        vec = VectorizedActionNoise(base, -1)
+    with pytest.raises(ValueError):
+        vec = VectorizedActionNoise(base, None)
+    with pytest.raises(ValueError):
+        vec = VectorizedActionNoise(base, "whatever")
+
+    vec = VectorizedActionNoise(base, num_envs)
+    assert vec.n_envs == num_envs
+    assert vec().shape == (num_envs, num_actions)
     assert not (vec() == base()).all()
-    vec = VectorizedActionNoise(base, 0)
-    assert vec().shape == (0, 0)
-    mu = np.ones(4)
-    sigma = np.zeros(4)
-    base = NormalActionNoise(mu, sigma)
-    vec = VectorizedActionNoise(base, 4)
-    assert (base() == vec()).all()
+    with pytest.raises(ValueError):
+        vec = VectorizedActionNoise(None, num_envs)
+    with pytest.raises(TypeError):
+        vec = VectorizedActionNoise(12, num_envs)
+    with pytest.raises(ValueError):
+        vec.noises = []
+    with pytest.raises(TypeError):
+        vec.noises = None
+    with pytest.raises(ValueError):
+        vec.noises = [None] * vec.n_envs
+    with pytest.raises(ValueError):
+        vec.noises = [base] * (num_envs - 1)
+    assert all(isinstance(noise, type(base)) for noise in vec.noises)
+    assert len(vec.noises) == num_envs

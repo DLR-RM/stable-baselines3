@@ -1,10 +1,17 @@
+import os
 from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
-
 import torch as th
 import torch.nn.functional as F
+
+# Check if tensorboard is available for pytorch
+try:
+    from torch.utils.tensorboard import SummaryWriter
+except ImportError:
+    SummaryWriter = None
+
 import numpy as np
 
-from stable_baselines3.common import logger
+from stable_baselines3.common import logger, utils
 from stable_baselines3.common.base_class import OffPolicyRLModel
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.noise import ActionNoise
@@ -99,6 +106,7 @@ class SAC(OffPolicyRLModel):
         self.log_ent_coef = None  # type: Optional[th.Tensor]
         self.target_update_interval = target_update_interval
         self.tau = tau
+        self.tensorboard_log = tensorboard_log
         # Entropy coefficient / Entropy temperature
         # Inverse of the reward scale
         self.ent_coef = ent_coef
@@ -258,6 +266,11 @@ class SAC(OffPolicyRLModel):
         callback = self._setup_learn(eval_env, callback, eval_freq,
                                      n_eval_episodes, eval_log_path, reset_num_timesteps)
         callback.on_training_start(locals(), globals())
+
+        if self.tensorboard_log is not None and SummaryWriter is not None:
+            latest_run_id = utils.get_latest_run_id(self.tensorboard_log, tb_log_name)
+            save_path = os.path.join(self.tensorboard_log, f"{tb_log_name}_{latest_run_id + 1}")
+            logger.configure(save_path, ["stdout", "tensorboard"])
 
         while self.num_timesteps < total_timesteps:
             rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,

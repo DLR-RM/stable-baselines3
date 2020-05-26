@@ -333,7 +333,7 @@ class PPO(BaseRLModel):
 
         if self.tensorboard_log is not None and SummaryWriter is not None:
             latest_run_id = utils.get_latest_run_id(self.tensorboard_log, tb_log_name)
-            save_path = os.path.join(self.tensorboard_log, "{}_{}".format(tb_log_name, latest_run_id + 1))
+            save_path = os.path.join(self.tensorboard_log, f"{tb_log_name}_{latest_run_id + 1}")
             logger.configure(save_path, ["stdout", "tensorboard"])
 
         callback.on_training_start(locals(), globals())
@@ -365,6 +365,8 @@ class PPO(BaseRLModel):
                 logger.dump(step=self.num_timesteps)
 
             self.train(self.n_epochs, batch_size=self.batch_size)
+            
+            
 
         callback.on_training_end()
 

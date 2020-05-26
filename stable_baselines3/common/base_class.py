@@ -888,7 +888,7 @@ class OffPolicyRLModel(BaseRLModel):
 
                     if len(self.ep_success_buffer) > 0:
                         logger.record('success rate', self.safe_mean(self.ep_success_buffer))
-                    logger.dump()
+                    logger.dump(step=self.num_timesteps)
 
         mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
 

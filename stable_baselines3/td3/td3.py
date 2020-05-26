@@ -153,7 +153,7 @@ class TD3(OffPolicyRLModel):
                     target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
         self._n_updates += gradient_steps
-        logger.record("n_updates", self._n_updates)
+        logger.record("session/n_updates", self._n_updates)
 
     def learn(self,
               total_timesteps: int,

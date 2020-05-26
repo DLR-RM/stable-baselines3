@@ -207,7 +207,6 @@ class PPO(BaseRLModel):
         entropy_losses, all_kl_divs = [], []
         pg_losses, value_losses = [], []
         clip_fractions = []
-        old_values, old_log_probs = [], []
 
         # train for gradient_steps epochs
         for epoch in range(n_epochs):
@@ -255,10 +254,6 @@ class PPO(BaseRLModel):
                 # Value loss using the TD(gae_lambda) target
                 value_loss = F.mse_loss(rollout_data.returns, values_pred)
                 value_losses.append(value_loss.item())
-
-                # Logging old values
-                old_values.append(th.mean(rollout_data.old_values.float()).item())
-                old_log_probs.append(th.mean(rollout_data.old_log_prob.float()).item())
 
                 # Entropy loss favor exploration
                 if entropy is None:
@@ -308,14 +303,6 @@ class PPO(BaseRLModel):
         if self.clip_range_vf is not None:
             logger.record("input_info/clip_range_vf", clip_range_vf)
 
-        # Histograms
-        if self.tensorboard_log is not None and SummaryWriter is not None:
-            logger.record("input_info/discounted_rewards_1", th.Tensor(self.rollout_buffer.returns), exclude="stdout")
-            logger.record("input_info/advantages_1", th.Tensor(self.rollout_buffer.advantages), exclude="stdout")
-            logger.record("input_info/old_log_probs_1", th.Tensor(old_log_probs), exclude="stdout")
-            logger.record("input_info/old_values_1", th.Tensor(old_values), exclude="stdout")
-            logger.record("input_info/observation_1", th.Tensor(self.rollout_buffer.observations), exclude="stdout")
-
     def learn(self,
               total_timesteps: int,
               callback: MaybeCallback = None,
@@ -351,17 +338,20 @@ class PPO(BaseRLModel):
             self._update_current_progress(self.num_timesteps, total_timesteps)
 
             # Display training infos
-            if self.verbose >= 1 and log_interval is not None and iteration % log_interval == 0:
+            if log_interval is not None and iteration % log_interval == 0:
+                stdout = "" if self.verbose >= 1 else "stdout"
                 fps = int(self.num_timesteps / (time.time() - self.start_time))
-                logger.record("session/iterations", iteration, exclude="tensorboard")
+                logger.record("session/iterations", iteration, exclude=("tensorboard", stdout))
                 if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
-                    logger.record("session/ep_rew_mean", self.safe_mean([ep_info["r"]
-                                                                         for ep_info in self.ep_info_buffer]))
-                    logger.record("session/ep_len_mean", self.safe_mean([ep_info["l"]
-                                                                         for ep_info in self.ep_info_buffer]))
-                logger.record("session/fps", fps, exclude="tensorboard")
-                logger.record("session/time_elapsed", int(time.time() - self.start_time), exclude="tensorboard")
-                logger.record("session/total timesteps", self.num_timesteps, exclude="tensorboard")
+                    logger.record("session/ep_rew_mean",
+                                  self.safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]),
+                                  exclude=stdout)
+                    logger.record("session/ep_len_mean",
+                                  self.safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]),
+                                  exclude=stdout)
+                logger.record("session/fps", fps, exclude=("tensorboard", stdout))
+                logger.record("session/time_elapsed", int(time.time() - self.start_time), exclude=("tensorboard", stdout))
+                logger.record("session/total timesteps", self.num_timesteps, exclude=("tensorboard", stdout))
                 logger.dump(step=self.num_timesteps)
 
             self.train(self.n_epochs, batch_size=self.batch_size)

@@ -886,23 +886,24 @@ class OffPolicyRLModel(BaseRLModel):
                     action_noise.reset()
 
                 # Display training infos
-                if self.verbose >= 1 and log_interval is not None and self._episode_num % log_interval == 0:
+                if log_interval is not None and self._episode_num % log_interval == 0:
+                    stdout = "" if self.verbose >= 1 else "stdout"
                     fps = int(self.num_timesteps / (time.time() - self.start_time))
-                    logger.record("episodes", self._episode_num)
+                    logger.record("session/episodes", self._episode_num, exclude=("tensorboard", stdout))
                     if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
-                        logger.record('ep_rew_mean', self.safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
-                        logger.record('ep_len_mean', self.safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
-                    logger.record("fps", fps)
-                    logger.record('time_elapsed', int(time.time() - self.start_time))
-                    logger.record("total timesteps", self.num_timesteps)
+                        logger.record('session/ep_rew_mean', self.safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
+                        logger.record('session/ep_len_mean', self.safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
+                    logger.record("session/fps", fps, exclude=("tensorboard", stdout))
+                    logger.record('session/time_elapsed', int(time.time() - self.start_time), exclude=("tensorboard", stdout))
+                    logger.record("session/total timesteps", self.num_timesteps, exclude=("tensorboard", stdout))
                     if self.use_sde:
-                        logger.record("std", (self.actor.get_std()).mean().item())
+                        logger.record("loss/std", (self.actor.get_std()).mean().item(), exclude=(stdout))
 
                     if len(self.ep_success_buffer) > 0:
-                        logger.record('success rate', self.safe_mean(self.ep_success_buffer))
+                        logger.record('session/success rate', self.safe_mean(self.ep_success_buffer), exclude=(stdout))
                     logger.dump(step=self.num_timesteps)
 
-        mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
+        mean_reward=np.mean(episode_rewards) if total_episodes > 0 else 0.0
 
         callback.on_rollout_end()
 

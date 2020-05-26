@@ -132,13 +132,13 @@ def test_vec_noise():
         vec = VectorizedActionNoise(None, num_envs)
     with pytest.raises(TypeError):
         vec = VectorizedActionNoise(12, num_envs)
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         vec.noises = []
     with pytest.raises(TypeError):
         vec.noises = None
     with pytest.raises(ValueError):
         vec.noises = [None] * vec.n_envs
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         vec.noises = [base] * (num_envs - 1)
     assert all(isinstance(noise, type(base)) for noise in vec.noises)
     assert len(vec.noises) == num_envs

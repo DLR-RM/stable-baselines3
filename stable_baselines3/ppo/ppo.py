@@ -21,7 +21,7 @@ from stable_baselines3.common.buffers import RolloutBuffer
 from stable_baselines3.common.utils import explained_variance, get_schedule_fn
 from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.ppo.policies import PPOPolicy
+from stable_baselines3.common.policies import OnlineActorCriticPolicy
 
 
 class PPO(BaseRLModel):
@@ -35,7 +35,7 @@ class PPO(BaseRLModel):
 
     Introduction to PPO: https://spinningup.openai.com/en/latest/algorithms/ppo.html
 
-    :param policy: (PPOPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
+    :param policy: (OnlineActorCriticPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
     :param learning_rate: (float or callable) The learning rate, it can be a function
         of the current progress (from 1 to 0)
@@ -74,7 +74,7 @@ class PPO(BaseRLModel):
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
 
-    def __init__(self, policy: Union[str, Type[PPOPolicy]],
+    def __init__(self, policy: Union[str, Type[OnlineActorCriticPolicy]],
                  env: Union[GymEnv, str],
                  learning_rate: Union[float, Callable] = 3e-4,
                  n_steps: int = 2048,
@@ -98,7 +98,7 @@ class PPO(BaseRLModel):
                  device: Union[th.device, str] = 'auto',
                  _init_setup_model: bool = True):
 
-        super(PPO, self).__init__(policy, env, PPOPolicy, learning_rate, policy_kwargs=policy_kwargs,
+        super(PPO, self).__init__(policy, env, OnlineActorCriticPolicy, learning_rate, policy_kwargs=policy_kwargs,
                                   verbose=verbose, device=device, use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                   create_eval_env=create_eval_env, support_multi_env=True, seed=seed)
 

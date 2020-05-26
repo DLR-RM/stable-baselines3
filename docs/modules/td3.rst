@@ -14,7 +14,7 @@ We recommend reading `OpenAI Spinning guide on TD3 <https://spinningup.openai.co
 
 .. warning::
 
-  The TD3 model does not support ``stable_baselines3.ppo.policies`` because it uses double q-values
+  The TD3 model does not support ``stable_baselines3.common.policies`` because it uses double q-values
   estimation, as a result it must use its own policy models (see :ref:`td3_policies`).
 
 

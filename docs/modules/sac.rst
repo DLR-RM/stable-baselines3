@@ -14,7 +14,7 @@ A key feature of SAC, and a major difference with common RL algorithms, is that 
 
 .. warning::
 
-  The SAC model does not support ``stable_baselines3.ppo.policies`` because it uses double q-values
+  The SAC model does not support ``stable_baselines3.common.policies`` because it uses double q-values
   and value estimation, as a result it must use its own policy models (see :ref:`sac_policies`).
 
 

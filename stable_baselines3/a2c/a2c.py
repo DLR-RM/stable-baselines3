@@ -6,7 +6,7 @@ from typing import Type, Union, Callable, Optional, Dict, Any
 from stable_baselines3.common import logger
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.utils import explained_variance
-from stable_baselines3.ppo.policies import PPOPolicy
+from stable_baselines3.common.policies import OnlineActorCriticPolicy
 from stable_baselines3.ppo.ppo import PPO
 
 
@@ -20,7 +20,7 @@ class A2C(PPO):
 
     Introduction to A2C: https://hackernoon.com/intuitive-rl-intro-to-advantage-actor-critic-a2c-4ff545978752
 
-    :param policy: (PPOPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
+    :param policy: (OnlineActorCriticPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
     :param learning_rate: (float or callable) The learning rate, it can be a function
     :param n_steps: (int) The number of steps to run for each environment per update
@@ -49,7 +49,7 @@ class A2C(PPO):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
-    def __init__(self, policy: Union[str, Type[PPOPolicy]],
+    def __init__(self, policy: Union[str, Type[OnlineActorCriticPolicy]],
                  env: Union[GymEnv, str],
                  learning_rate: Union[float, Callable] = 7e-4,
                  n_steps: int = 5,

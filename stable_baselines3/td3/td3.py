@@ -87,6 +87,7 @@ class TD3(OffPolicyRLModel):
         self.policy_delay = policy_delay
         self.target_noise_clip = target_noise_clip
         self.target_policy_noise = target_policy_noise
+        self.tensorboard_log = tensorboard_log
 
         if _init_setup_model:
             self._setup_model()
@@ -167,8 +168,9 @@ class TD3(OffPolicyRLModel):
 
         callback = self._setup_learn(eval_env, callback, eval_freq,
                                      n_eval_episodes, eval_log_path, reset_num_timesteps)
-
         callback.on_training_start(locals(), globals())
+
+        self._init_tensorboard_logger(self.tensorboard_log, tb_log_name)
 
         while self.num_timesteps < total_timesteps:
 

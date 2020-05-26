@@ -8,7 +8,7 @@ import torch.nn as nn
 import numpy as np
 
 from stable_baselines3.common.preprocessing import preprocess_obs, get_flattened_obs_dim, is_image_space
-from stable_baselines3.common.torch_layers import FlattenExtractor, BaseFeaturesExtractor
+from stable_baselines3.common.torch_layers import FlattenExtractor, BaseFeaturesExtractor, create_mlp
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import VecTransposeImage
 

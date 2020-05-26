@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.6.0a9 (WIP)
+Pre-Release 0.6.0a11 (WIP)
 ------------------------------
 
 Breaking Changes:
@@ -18,6 +18,7 @@ New Features:
 - Added ``cmd_util`` and ``atari_wrappers``
 - Added support for ``MultiDiscrete`` and ``MultiBinary`` observation spaces (@rolandgvc)
 - Added ``MultiCategorical`` and ``Bernoulli`` distributions for PPO/A2C (@rolandgvc)
+- Added support for logging to tensorboard (@rolandgvc)
 
 Bug Fixes:
 ^^^^^^^^^^

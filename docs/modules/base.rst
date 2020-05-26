@@ -19,3 +19,12 @@ The base RL model for Off-Policy algorithm (ex: SAC/TD3)
 
 .. autoclass:: OffPolicyRLModel
   :members:
+
+
+Base On-Policy Class
+^^^^^^^^^^^^^^^^^^^^^
+
+The base RL model for On-Policy algorithm (ex: A2C/PPO)
+
+.. autoclass:: OnPolicyRLModel
+  :members:

@@ -4,13 +4,13 @@ from gym import spaces
 from typing import Type, Union, Callable, Optional, Dict, Any
 
 from stable_baselines3.common import logger
+from stable_baselines3.common.base_class import OnPolicyRLModel
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.utils import explained_variance
 from stable_baselines3.common.policies import OnlineActorCriticPolicy
-from stable_baselines3.ppo.ppo import PPO
 
 
-class A2C(PPO):
+class A2C(OnPolicyRLModel):
     """
     Advantage Actor Critic (A2C)
 
@@ -49,6 +49,7 @@ class A2C(PPO):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
+
     def __init__(self, policy: Union[str, Type[OnlineActorCriticPolicy]],
                  env: Union[GymEnv, str],
                  learning_rate: Union[float, Callable] = 7e-4,
@@ -72,16 +73,17 @@ class A2C(PPO):
                  _init_setup_model: bool = True):
 
         super(A2C, self).__init__(policy, env, learning_rate=learning_rate,
-                                  n_steps=n_steps, batch_size=None, n_epochs=1,
-                                  gamma=gamma, gae_lambda=gae_lambda, ent_coef=ent_coef,
-                                  vf_coef=vf_coef, max_grad_norm=max_grad_norm,
+                                  n_steps=n_steps, gamma=gamma, gae_lambda=gae_lambda,
+                                  ent_coef=ent_coef, vf_coef=vf_coef, max_grad_norm=max_grad_norm,
                                   use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                   tensorboard_log=tensorboard_log, policy_kwargs=policy_kwargs,
                                   verbose=verbose, device=device, create_eval_env=create_eval_env,
                                   seed=seed, _init_setup_model=False)
 
         self.normalize_advantage = normalize_advantage
-        # Override PPO optimizer to match original implementation
+
+        # Update optimizer inside the policy if we want to use RMSProp rather
+        # than Adam
         if use_rms_prop and 'optimizer_class' not in self.policy_kwargs:
             self.policy_kwargs['optimizer_class'] = th.optim.RMSprop
             self.policy_kwargs['optimizer_kwargs'] = dict(alpha=0.99, eps=rms_prop_eps,
@@ -90,13 +92,13 @@ class A2C(PPO):
         if _init_setup_model:
             self._setup_model()
 
-    def train(self, gradient_steps: int, batch_size: Optional[int] = None) -> None:
+    def train(self) -> None:
+        """
+        Update policy using the currently gathered
+        rollout buffer (one gradient step over whole data).
+        """
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
-        # A2C with gradient_steps > 1 does not make sense
-        assert gradient_steps == 1, "A2C does not support multiple gradient steps"
-        # We do not use minibatches for A2C
-        assert batch_size is None, "A2C does not support minibatch"
 
         for rollout_data in self.rollout_buffer.get(batch_size=None):
 
@@ -152,7 +154,7 @@ class A2C(PPO):
     def learn(self,
               total_timesteps: int,
               callback: MaybeCallback = None,
-              log_interval: int = 100,
+              log_interval: int = 1,
               eval_env: Optional[GymEnv] = None,
               eval_freq: int = -1,
               n_eval_episodes: int = 5,
@@ -160,7 +162,7 @@ class A2C(PPO):
               eval_log_path: Optional[str] = None,
               reset_num_timesteps: bool = True) -> 'A2C':
 
-        return super(A2C, self).learn(total_timesteps=total_timesteps, callback=callback, log_interval=log_interval,
-                                      eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,
-                                      tb_log_name=tb_log_name, eval_log_path=eval_log_path,
-                                      reset_num_timesteps=reset_num_timesteps)
+        return super(A2C, self).learn(total_timesteps=total_timesteps, callback=callback,
+                                      log_interval=log_interval, eval_env=eval_env, eval_freq=eval_freq,
+                                      n_eval_episodes=n_eval_episodes, tb_log_name=tb_log_name,
+                                      eval_log_path=eval_log_path, reset_num_timesteps=reset_num_timesteps)

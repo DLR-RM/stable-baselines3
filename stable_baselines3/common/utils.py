@@ -1,4 +1,4 @@
-from typing import Callable, Union
+from typing import Callable, Union, Optional
 import random
 
 import numpy as np
@@ -114,7 +114,7 @@ def get_device(device: Union[th.device, str] = 'auto') -> th.device:
     return device
 
 
-def get_latest_run_id(log_path, log_name):
+def get_latest_run_id(log_path: Optional[str] = None, log_name: str = ''):
     """
     Returns the latest run number for the given log name and log path,
     by finding the greatest number in the directories.
@@ -122,7 +122,7 @@ def get_latest_run_id(log_path, log_name):
     :return: (int) latest run number
     """
     max_run_id = 0
-    for path in glob.glob("{}/{}_[0-9]*".format(log_path, log_name)):
+    for path in glob.glob(f"{log_path}/{log_name}_[0-9]*"):
         file_name = path.split(os.sep)[-1]
         ext = file_name.split("_")[-1]
         if log_name == "_".join(file_name.split("_")[:-1]) and ext.isdigit() and int(ext) > max_run_id:

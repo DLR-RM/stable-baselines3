@@ -191,7 +191,7 @@ class BaseRLModel(ABC):
             An optimizer or a list of optimizers.
         """
         # Log the current learning rate
-        logger.log_key_value("input_info/learning_rate", self.lr_schedule(self._current_progress))
+        logger.record("input_info/learning_rate", self.lr_schedule(self._current_progress))
 
         if not isinstance(optimizers, list):
             optimizers = [optimizers]
@@ -876,19 +876,19 @@ class OffPolicyRLModel(BaseRLModel):
                 # Display training infos
                 if self.verbose >= 1 and log_interval is not None and self._episode_num % log_interval == 0:
                     fps = int(self.num_timesteps / (time.time() - self.start_time))
-                    logger.log_key_values("episodes", self._episode_num)
+                    logger.record("episodes", self._episode_num)
                     if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
-                        logger.log_key_values('ep_rew_mean', self.safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
-                        logger.log_key_values('ep_len_mean', self.safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
-                    logger.log_key_values("fps", fps)
-                    logger.log_key_values('time_elapsed', int(time.time() - self.start_time))
-                    logger.log_key_values("total timesteps", self.num_timesteps)
+                        logger.record('ep_rew_mean', self.safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
+                        logger.record('ep_len_mean', self.safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
+                    logger.record("fps", fps)
+                    logger.record('time_elapsed', int(time.time() - self.start_time))
+                    logger.record("total timesteps", self.num_timesteps)
                     if self.use_sde:
-                        logger.log_key_values("std", (self.actor.get_std()).mean().item())
+                        logger.record("std", (self.actor.get_std()).mean().item())
 
                     if len(self.ep_success_buffer) > 0:
-                        logger.log_key_values('success rate', self.safe_mean(self.ep_success_buffer))
-                    logger.dumpkvs()
+                        logger.record('success rate', self.safe_mean(self.ep_success_buffer))
+                    logger.dump()
 
         mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
 

@@ -27,7 +27,7 @@ class KVWriter(object):
     Key Value writer
     """
 
-    def write_key_values(self, key_values: Dict, key_excluded: Dict, step: int) -> None:
+    def write(self, key_values: Dict, key_excluded: Dict, step: int = 0) -> None:
         """
         write a dictionary to file
 
@@ -41,7 +41,6 @@ class KVWriter(object):
         """
         Close owned resources
         """
-
         raise NotImplementedError
 
 
@@ -52,11 +51,10 @@ class SeqWriter(object):
 
     def write_sequence(self, sequence: List):
         """
-        write an array to file
+        write_sequence an array to file
 
         :param sequence: (list)
         """
-
         raise NotImplementedError
 
 
@@ -75,7 +73,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             self.file = filename_or_file
             self.own_file = False
 
-    def write_key_values(self, key_values: Dict, key_excluded: Dict, step: int) -> None:
+    def write(self, key_values: Dict, key_excluded: Dict, step: int = 0) -> None:
         # Create strings for printing
         key2str = {}
         tag = None
@@ -149,7 +147,7 @@ class JSONOutputFormat(KVWriter):
         """
         self.file = open(filename, 'wt')
 
-    def write_key_values(self, key_values: Dict, key_excluded: Dict, step: int) -> None:
+    def write(self, key_values: Dict, key_excluded: Dict, step: int = 0) -> None:
         for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
             if excluded is not None:
                 if 'json' == excluded or 'json' in excluded:
@@ -184,7 +182,7 @@ class CSVOutputFormat(KVWriter):
         self.keys = []
         self.separator = ','
 
-    def write_key_values(self, key_values: Dict, step: int) -> None:
+    def write(self, key_values: Dict, key_excluded: Dict, step: int = 0) -> None:
         # Add our current row to the history
         extra_keys = key_values.keys() - self.keys
         if extra_keys:
@@ -204,7 +202,7 @@ class CSVOutputFormat(KVWriter):
         for i, key in enumerate(self.keys):
             if i > 0:
                 self.file.write(',')
-            value = key_values.get(key)[0]
+            value = key_values.get(key)
             if value is not None:
                 self.file.write(str(value))
         self.file.write('\n')
@@ -226,7 +224,7 @@ class TensorBoardOutputFormat(KVWriter):
         """
         self.writer = SummaryWriter(log_dir=folder)
 
-    def write_key_values(self, key_values: Dict, key_excluded: Dict, step: int) -> None:
+    def write(self, key_values: Dict, key_excluded: Dict, step: int = 0) -> None:
         for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
             if excluded is not None:
                 if 'tensorboard' == excluded or 'tensorboard' in excluded:
@@ -276,7 +274,7 @@ def make_output_format(_format: str, log_dir: str, log_suffix: str = '') -> KVWr
 # API
 # ================================================================
 
-def log_key_value(key: Any, value: Any, exclude: Union[str, Tuple[str]] = None) -> None:
+def record(key: Any, value: Any, exclude: Union[str, Tuple[str]] = None) -> None:
     """
     Log a value of some diagnostic
     Call this once for each diagnostic quantity, each iteration
@@ -286,38 +284,38 @@ def log_key_value(key: Any, value: Any, exclude: Union[str, Tuple[str]] = None) 
     :param value: (Any) save to log this value
     :param exclude: (str or tuple) outputs to be excluded
     """
-    Logger.CURRENT.log_key_value(key, value, exclude)
+    Logger.CURRENT.record(key, value, exclude)
 
 
-def log_key_value_mean(key: Any, value: Union[int, float], exclude: Union[str, Tuple[str]] = None) -> None:
+def record_mean(key: Any, value: Union[int, float], exclude: Union[str, Tuple[str]] = None) -> None:
     """
-    The same as log_key_value(), but if called many times, values averaged.
+    The same as record(), but if called many times, values averaged.
 
     :param key: (Any) save to log this key
     :param value: (Number) save to log this value
     :param exclude: (str or tuple) outputs to be excluded
     """
-    Logger.CURRENT.log_key_value_mean(key, value, exclude)
+    Logger.CURRENT.record_mean(key, value, exclude)
 
 
-def log_key_values(key_values: Dict) -> None:
+def record_dict(key_values: Dict) -> None:
     """
     Log a dictionary of key-value pairs.
 
     :param key_values: (dict) the list of keys and values to save to log
     """
     for key, value in key_values.items():
-        log_key_value(key, value)
+        record(key, value)
 
 
-def dump_key_values(step: int = 0) -> None:
+def dump(step: int = 0) -> None:
     """
     Write all of the diagnostics from the current iteration
     """
-    Logger.CURRENT.dump_key_values(step)
+    Logger.CURRENT.dump(step)
 
 
-def get_key_values() -> Dict:
+def get_log_dict() -> Dict:
     """
     get the key values logs
 
@@ -411,8 +409,8 @@ def get_dir() -> str:
     return Logger.CURRENT.get_dir()
 
 
-record_tabular = log_key_value
-dump_tabular = dump_key_values
+record_tabular = record
+dump_tabular = dump
 
 
 # ================================================================
@@ -441,7 +439,7 @@ class Logger(object):
 
     # Logging API, forwarded
     # ----------------------------------------
-    def log_key_value(self, key: Any, value: Any, exclude: Union[str, Tuple[str]]) -> None:
+    def record(self, key: Any, value: Any, exclude: Union[str, Tuple[str]]) -> None:
         """
         Log a value of some diagnostic
         Call this once for each diagnostic quantity, each iteration
@@ -454,9 +452,9 @@ class Logger(object):
         self.name_to_value[key] = value
         self.name_to_excluded[key] = exclude
 
-    def log_key_value_mean(self, key: Any, value: Any, exclude: Union[str, Tuple[str]]) -> None:
+    def record_mean(self, key: Any, value: Any, exclude: Union[str, Tuple[str]]) -> None:
         """
-        The same as log_key_value(), but if called many times, values averaged.
+        The same as record(), but if called many times, values averaged.
 
         :param key: (Any) save to log this key
         :param value: (Number) save to log this value
@@ -470,15 +468,15 @@ class Logger(object):
         self.name_to_count[key] = cnt + 1
         self.name_to_excluded[key] = exclude
 
-    def dump_key_values(self, step: int) -> None:
+    def dump(self, step: int = 0) -> None:
         """
         Write all of the diagnostics from the current iteration
         """
         if self.level == DISABLED:
             return
-        for formats in self.output_formats:
-            if isinstance(formats, KVWriter):
-                formats.write_key_values(self.name_to_value, self.name_to_excluded, step)
+        for _format in self.output_formats:
+            if isinstance(_format, KVWriter):
+                _format.write(self.name_to_value, self.name_to_excluded, step)
 
         self.name_to_value.clear()
         self.name_to_count.clear()
@@ -521,8 +519,8 @@ class Logger(object):
         """
         closes the file
         """
-        for formats in self.output_formats:
-            formats.close()
+        for _format in self.output_formats:
+            _format.close()
 
     # Misc
     # ----------------------------------------
@@ -532,9 +530,9 @@ class Logger(object):
 
         :param args: (list) the arguments to log
         """
-        for formats in self.output_formats:
-            if isinstance(formats, SeqWriter):
-                formats.write_sequence(map(str, args))
+        for _format in self.output_formats:
+            if isinstance(_format, SeqWriter):
+                _format.write_sequence(map(str, args))
 
 
 # Initialize logger

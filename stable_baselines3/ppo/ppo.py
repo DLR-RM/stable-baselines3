@@ -96,7 +96,7 @@ class PPO(BaseRLModel):
                  policy_kwargs: Optional[Dict[str, Any]] = None,
                  verbose: int = 0,
                  seed: Optional[int] = None,
-                 device: Union[th.device, str] = 'auto',
+                 device: Union[th.device, str] = "auto",
                  _init_setup_model: bool = True):
 
         super(PPO, self).__init__(policy, env, PPOPolicy, learning_rate, policy_kwargs=policy_kwargs,
@@ -137,8 +137,8 @@ class PPO(BaseRLModel):
         self.clip_range = get_schedule_fn(self.clip_range)
         if self.clip_range_vf is not None:
             if isinstance(self.clip_range_vf, (float, int)):
-                assert self.clip_range_vf > 0, ('`clip_range_vf` must be positive, '
-                                                'pass `None` to deactivate vf clipping')
+                assert self.clip_range_vf > 0, ("`clip_range_vf` must be positive, "
+                                                "pass `None` to deactivate vf clipping")
 
             self.clip_range_vf = get_schedule_fn(self.clip_range_vf)
 
@@ -290,31 +290,31 @@ class PPO(BaseRLModel):
                                            self.rollout_buffer.values.flatten())
 
         # Logs
-        logger.log_key_value("loss/entropy_loss", np.mean(entropy_losses))
-        logger.log_key_value("loss/policy_gradient_loss", np.mean(pg_losses))
-        logger.log_key_value("loss/value_loss", np.mean(value_losses))
-        logger.log_key_value("loss/approx_kl", np.mean(approx_kl_divs))
-        logger.log_key_value("loss/clip_fraction", np.mean(clip_fraction))
-        logger.log_key_value("loss/loss", loss.item())
-        logger.log_key_value("loss/explained_variance", explained_var)
-        if hasattr(self.policy, 'log_std'):
-            logger.log_key_value("loss/std", th.exp(self.policy.log_std).mean().item())
+        logger.record("loss/entropy_loss", np.mean(entropy_losses))
+        logger.record("loss/policy_gradient_loss", np.mean(pg_losses))
+        logger.record("loss/value_loss", np.mean(value_losses))
+        logger.record("loss/approx_kl", np.mean(approx_kl_divs))
+        logger.record("loss/clip_fraction", np.mean(clip_fraction))
+        logger.record("loss/loss", loss.item())
+        logger.record("loss/explained_variance", explained_var)
+        if hasattr(self.policy, "log_std"):
+            logger.record("loss/std", th.exp(self.policy.log_std).mean().item())
 
-        logger.log_key_value("session/n_updates", self._n_updates, exclude='tensorboard')
-        logger.log_key_value("session/episode_reward", np.sum(self.rollout_buffer.rewards))
-        logger.log_key_value("input_info/discounted_rewards", np.sum(self.rollout_buffer.returns))
-        logger.log_key_value("input_info/advantage", np.mean(self.rollout_buffer.advantages))
-        logger.log_key_value("input_info/infoclip_range", clip_range)
+        logger.record("session/n_updates", self._n_updates, exclude="tensorboard")
+        logger.record("session/episode_reward", np.sum(self.rollout_buffer.rewards))
+        logger.record("input_info/discounted_rewards", np.sum(self.rollout_buffer.returns))
+        logger.record("input_info/advantage", np.mean(self.rollout_buffer.advantages))
+        logger.record("input_info/infoclip_range", clip_range)
         if self.clip_range_vf is not None:
-            logger.log_key_value("input_info/clip_range_vf", clip_range_vf)
+            logger.record("input_info/clip_range_vf", clip_range_vf)
 
         # Histograms
         if self.tensorboard_log is not None and SummaryWriter is not None:
-            logger.log_key_value("input_info/discounted_rewards_1", th.Tensor(self.rollout_buffer.returns), exclude='stdout')
-            logger.log_key_value("input_info/advantages_1", th.Tensor(self.rollout_buffer.advantages), exclude='stdout')
-            logger.log_key_value("input_info/old_log_probs_1", th.Tensor(old_log_probs), exclude='stdout')
-            logger.log_key_value("input_info/old_values_1", th.Tensor(old_values), exclude='stdout')
-            logger.log_key_value("input_info/observation_1", th.Tensor(self.rollout_buffer.observations), exclude='stdout')
+            logger.record("input_info/discounted_rewards_1", th.Tensor(self.rollout_buffer.returns), exclude="stdout")
+            logger.record("input_info/advantages_1", th.Tensor(self.rollout_buffer.advantages), exclude="stdout")
+            logger.record("input_info/old_log_probs_1", th.Tensor(old_log_probs), exclude="stdout")
+            logger.record("input_info/old_values_1", th.Tensor(old_values), exclude="stdout")
+            logger.record("input_info/observation_1", th.Tensor(self.rollout_buffer.observations), exclude="stdout")
 
     def learn(self,
               total_timesteps: int,
@@ -325,7 +325,7 @@ class PPO(BaseRLModel):
               n_eval_episodes: int = 5,
               tb_log_name: str = "PPO",
               eval_log_path: Optional[str] = None,
-              reset_num_timesteps: bool = True) -> 'PPO':
+              reset_num_timesteps: bool = True) -> "PPO":
 
         iteration = 0
         callback = self._setup_learn(eval_env, callback, eval_freq,
@@ -334,7 +334,7 @@ class PPO(BaseRLModel):
         if self.tensorboard_log is not None and SummaryWriter is not None:
             latest_run_id = utils.get_latest_run_id(self.tensorboard_log, tb_log_name)
             save_path = os.path.join(self.tensorboard_log, "{}_{}".format(tb_log_name, latest_run_id + 1))
-            logger.configure(save_path, ['stdout', 'tensorboard'])
+            logger.configure(save_path, ["stdout", "tensorboard"])
 
         callback.on_training_start(locals(), globals())
 
@@ -353,16 +353,16 @@ class PPO(BaseRLModel):
             # Display training infos
             if self.verbose >= 1 and log_interval is not None and iteration % log_interval == 0:
                 fps = int(self.num_timesteps / (time.time() - self.start_time))
-                logger.log_key_value("session/iterations", iteration, exclude='tensorboard')
+                logger.record("session/iterations", iteration, exclude="tensorboard")
                 if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
-                    logger.log_key_value('session/ep_rew_mean', self.safe_mean([ep_info['r']
-                                                                                for ep_info in self.ep_info_buffer]))
-                    logger.log_key_value('session/ep_len_mean', self.safe_mean([ep_info['l']
-                                                                                for ep_info in self.ep_info_buffer]))
-                logger.log_key_value("session/fps", fps, exclude='tensorboard')
-                logger.log_key_value('session/time_elapsed', int(time.time() - self.start_time), exclude='tensorboard')
-                logger.log_key_value("session/total timesteps", self.num_timesteps, exclude='tensorboard')
-                logger.dump_key_values(step=self.num_timesteps)
+                    logger.record("session/ep_rew_mean", self.safe_mean([ep_info["r"]
+                                                                         for ep_info in self.ep_info_buffer]))
+                    logger.record("session/ep_len_mean", self.safe_mean([ep_info["l"]
+                                                                         for ep_info in self.ep_info_buffer]))
+                logger.record("session/fps", fps, exclude="tensorboard")
+                logger.record("session/time_elapsed", int(time.time() - self.start_time), exclude="tensorboard")
+                logger.record("session/total timesteps", self.num_timesteps, exclude="tensorboard")
+                logger.dump(step=self.num_timesteps)
 
             self.train(self.n_epochs, batch_size=self.batch_size)
 

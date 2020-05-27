@@ -10,6 +10,8 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.cmd_util import make_vec_env, make_atari_env
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.noise import (
+    VectorizedActionNoise, OrnsteinUhlenbeckActionNoise, ActionNoise)
 
 
 @pytest.mark.parametrize("env_id", ['CartPole-v1', lambda: gym.make('CartPole-v1')])
@@ -107,3 +109,36 @@ def test_evaluate_policy():
 
     episode_rewards, _ = evaluate_policy(model, model.get_env(), n_eval_episodes, return_episode_rewards=True)
     assert len(episode_rewards) == n_eval_episodes
+
+
+def test_vec_noise():
+    num_envs = 4
+    num_actions = 10
+    mu = np.zeros(num_actions)
+    sigma = np.ones(num_actions) * 0.4
+    base: ActionNoise = OrnsteinUhlenbeckActionNoise(mu, sigma)
+    with pytest.raises(ValueError):
+        vec = VectorizedActionNoise(base, -1)
+    with pytest.raises(ValueError):
+        vec = VectorizedActionNoise(base, None)
+    with pytest.raises(ValueError):
+        vec = VectorizedActionNoise(base, "whatever")
+
+    vec = VectorizedActionNoise(base, num_envs)
+    assert vec.n_envs == num_envs
+    assert vec().shape == (num_envs, num_actions)
+    assert not (vec() == base()).all()
+    with pytest.raises(ValueError):
+        vec = VectorizedActionNoise(None, num_envs)
+    with pytest.raises(TypeError):
+        vec = VectorizedActionNoise(12, num_envs)
+    with pytest.raises(AssertionError):
+        vec.noises = []
+    with pytest.raises(TypeError):
+        vec.noises = None
+    with pytest.raises(ValueError):
+        vec.noises = [None] * vec.n_envs
+    with pytest.raises(AssertionError):
+        vec.noises = [base] * (num_envs - 1)
+    assert all(isinstance(noise, type(base)) for noise in vec.noises)
+    assert len(vec.noises) == num_envs

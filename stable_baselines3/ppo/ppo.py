@@ -288,7 +288,6 @@ class PPO(BaseRLModel):
             logger.record("loss/std", th.exp(self.policy.log_std).mean().item())
 
         logger.record("session/n_updates", self._n_updates, exclude="tensorboard")
-        logger.record("session/episode_reward", np.sum(self.rollout_buffer.rewards))
         logger.record("input_info/discounted_rewards", np.sum(self.rollout_buffer.returns))
         logger.record("input_info/advantage", np.mean(self.rollout_buffer.advantages))
         logger.record("input_info/infoclip_range", clip_range)

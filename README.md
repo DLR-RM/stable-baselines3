@@ -227,5 +227,11 @@ Stable-Baselines3 is currently maintained by [Ashley Hill](https://github.com/hi
 To any interested in making the baselines better, there is still some documentation that needs to be done.
 If you want to contribute, please read [**CONTRIBUTING.md**](./CONTRIBUTING.md) guide first.
 
+## Acknowledgments
+
+The initial work to develop Stable Baselines3 was partially funded by the project *Reduced Complexity Models* from the *Helmholtz-Gemeinschaft Deutscher Forschungszentren*.
+
+The original version, Stable Baselines, was created in the [robotics lab U2IS](http://u2is.ensta-paristech.fr/index.php?lang=en) ([INRIA Flowers](https://flowers.inria.fr/) team) at [ENSTA ParisTech](http://www.ensta-paristech.fr/en).
+
 
 Logo credits: [L.M. Tenkes](https://www.instagram.com/lucillehue/)

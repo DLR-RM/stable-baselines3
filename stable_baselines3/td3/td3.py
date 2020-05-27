@@ -2,7 +2,7 @@ import torch as th
 import torch.nn.functional as F
 from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
-from stable_baselines3.common import logger
+from stable_baselines3.common import logger, utils
 from stable_baselines3.common.base_class import OffPolicyRLModel
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
@@ -170,7 +170,7 @@ class TD3(OffPolicyRLModel):
                                      n_eval_episodes, eval_log_path, reset_num_timesteps)
         callback.on_training_start(locals(), globals())
 
-        self._init_tensorboard_logger(self.tensorboard_log, tb_log_name)
+        utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name)
 
         while self.num_timesteps < total_timesteps:
 

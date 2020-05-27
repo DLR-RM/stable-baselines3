@@ -1,10 +1,17 @@
 from typing import Callable, Union, Optional
 import random
 
+import os
+import glob
 import numpy as np
 import torch as th
-import glob
-import os
+# Check if tensorboard is available for pytorch
+try:
+    from torch.utils.tensorboard import SummaryWriter
+except ImportError:
+    SummaryWriter = None
+
+from stable_baselines3.common import logger
 
 
 def set_random_seed(seed: int, using_cuda: bool = False) -> None:
@@ -128,3 +135,22 @@ def get_latest_run_id(log_path: Optional[str] = None, log_name: str = ''):
         if log_name == "_".join(file_name.split("_")[:-1]) and ext.isdigit() and int(ext) > max_run_id:
             max_run_id = int(ext)
     return max_run_id
+
+
+def configure_logger(verbose, tensorboard_log, tb_log_name):
+    """
+    Configure the logger's outputs.
+
+    :param verbose: (int) the verbosity level: 0 no output, 1 info, 2 debug
+    :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
+    :param tb_log_name: (str) tensorboard log
+    """
+    if tensorboard_log is not None and SummaryWriter is not None:
+        latest_run_id = get_latest_run_id(tensorboard_log, tb_log_name)
+        save_path = os.path.join(tensorboard_log, f"{tb_log_name}_{latest_run_id + 1}")
+        if verbose >= 1:
+            logger.configure(save_path, ["stdout", "tensorboard"])
+        else:
+            logger.configure(save_path, ["tensorboard"])
+    elif verbose == 0:
+        logger.configure(format_strings=[""])

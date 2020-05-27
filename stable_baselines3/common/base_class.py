@@ -11,13 +11,7 @@ import gym
 import torch as th
 import numpy as np
 
-# Check if tensorboard is available for pytorch
-try:
-    from torch.utils.tensorboard import SummaryWriter
-except ImportError:
-    SummaryWriter = None
-
-from stable_baselines3.common import logger, utils
+from stable_baselines3.common import logger
 from stable_baselines3.common.policies import BasePolicy, get_policy_from_name
 from stable_baselines3.common.utils import set_random_seed, get_schedule_fn, update_learning_rate, get_device
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize, VecTransposeImage
@@ -739,12 +733,6 @@ class OffPolicyRLModel(BaseRLModel):
                                         self.lr_schedule, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
 
-    def _init_tensorboard_logger(self, tensorboard_log, tb_log_name):
-        if tensorboard_log is not None and SummaryWriter is not None:
-            latest_run_id = utils.get_latest_run_id(tensorboard_log, tb_log_name)
-            save_path = os.path.join(self.tensorboard_log, f"{tb_log_name}_{latest_run_id + 1}")
-            logger.configure(save_path, ["stdout", "tensorboard"])
-
     def save_replay_buffer(self, path: str):
         """
         Save the replay buffer as a pickle file.
@@ -885,22 +873,21 @@ class OffPolicyRLModel(BaseRLModel):
                 if action_noise is not None:
                     action_noise.reset()
 
-                # Display training infos
+                # Log training infos
                 if log_interval is not None and self._episode_num % log_interval == 0:
-                    stdout = "" if self.verbose >= 1 else "stdout"
                     fps = int(self.num_timesteps / (time.time() - self.start_time))
-                    logger.record("session/episodes", self._episode_num, exclude=("tensorboard", stdout))
+                    logger.record("session/episodes", self._episode_num, exclude="tensorboard")
                     if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
                         logger.record('session/ep_rew_mean', self.safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
                         logger.record('session/ep_len_mean', self.safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
-                    logger.record("session/fps", fps, exclude=("tensorboard", stdout))
-                    logger.record('session/time_elapsed', int(time.time() - self.start_time), exclude=("tensorboard", stdout))
-                    logger.record("session/total timesteps", self.num_timesteps, exclude=("tensorboard", stdout))
+                    logger.record("session/fps", fps, exclude="tensorboard")
+                    logger.record('session/time_elapsed', int(time.time() - self.start_time), exclude="tensorboard")
+                    logger.record("session/total timesteps", self.num_timesteps, exclude="tensorboard")
                     if self.use_sde:
-                        logger.record("loss/std", (self.actor.get_std()).mean().item(), exclude=(stdout))
+                        logger.record("loss/std", (self.actor.get_std()).mean().item())
 
                     if len(self.ep_success_buffer) > 0:
-                        logger.record('session/success rate', self.safe_mean(self.ep_success_buffer), exclude=(stdout))
+                        logger.record('session/success rate', self.safe_mean(self.ep_success_buffer))
                     logger.dump(step=self.num_timesteps)
 
         mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0

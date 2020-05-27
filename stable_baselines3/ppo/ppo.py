@@ -1,18 +1,10 @@
 import time
-import os
 from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
 import gym
 from gym import spaces
 import torch as th
 import torch.nn.functional as F
-
-# Check if tensorboard is available for pytorch
-try:
-    from torch.utils.tensorboard import SummaryWriter
-except ImportError:
-    SummaryWriter = None
-
 import numpy as np
 
 from stable_baselines3.common import logger, utils
@@ -318,10 +310,7 @@ class PPO(BaseRLModel):
         callback = self._setup_learn(eval_env, callback, eval_freq,
                                      n_eval_episodes, eval_log_path, reset_num_timesteps)
 
-        if self.tensorboard_log is not None and SummaryWriter is not None:
-            latest_run_id = utils.get_latest_run_id(self.tensorboard_log, tb_log_name)
-            save_path = os.path.join(self.tensorboard_log, f"{tb_log_name}_{latest_run_id + 1}")
-            logger.configure(save_path, ["stdout", "tensorboard"])
+        utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name)
 
         callback.on_training_start(locals(), globals())
 
@@ -337,21 +326,18 @@ class PPO(BaseRLModel):
             iteration += 1
             self._update_current_progress(self.num_timesteps, total_timesteps)
 
-            # Display training infos
+            # Log training infos
             if log_interval is not None and iteration % log_interval == 0:
-                stdout = "" if self.verbose >= 1 else "stdout"
                 fps = int(self.num_timesteps / (time.time() - self.start_time))
-                logger.record("session/iterations", iteration, exclude=("tensorboard", stdout))
+                logger.record("session/iterations", iteration, exclude="tensorboard")
                 if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
                     logger.record("session/ep_rew_mean",
-                                  self.safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]),
-                                  exclude=stdout)
+                                  self.safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
                     logger.record("session/ep_len_mean",
-                                  self.safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]),
-                                  exclude=stdout)
-                logger.record("session/fps", fps, exclude=("tensorboard", stdout))
-                logger.record("session/time_elapsed", int(time.time() - self.start_time), exclude=("tensorboard", stdout))
-                logger.record("session/total timesteps", self.num_timesteps, exclude=("tensorboard", stdout))
+                                  self.safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
+                logger.record("session/fps", fps, exclude="tensorboard")
+                logger.record("session/time_elapsed", int(time.time() - self.start_time), exclude="tensorboard")
+                logger.record("session/total timesteps", self.num_timesteps, exclude="tensorboard")
                 logger.dump(step=self.num_timesteps)
 
             self.train(self.n_epochs, batch_size=self.batch_size)

@@ -40,8 +40,8 @@ Space         Action Observation
 ============= ====== ===========
 Discrete      ✔      ✔
 Box           ❌      ✔
-MultiDiscrete ❌      ❌
-MultiBinary   ❌      ❌
+MultiDiscrete ❌      ✔
+MultiBinary   ❌      ✔
 ============= ====== ===========
 
 
@@ -92,5 +92,4 @@ DQN Policies
 
 .. autoclass:: CnnPolicy
   :members:
-
 

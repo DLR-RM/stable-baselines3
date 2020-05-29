@@ -68,7 +68,7 @@ Example
 
   obs = env.reset()
   while True:
-      action, _states = model.predict(obs)
+      action, _states = model.predict(obs, deterministic=True)
       obs, reward, done, info = env.step(action)
       env.render()
       if done:

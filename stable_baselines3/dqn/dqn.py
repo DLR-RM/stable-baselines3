@@ -121,6 +121,9 @@ class DQN(OffPolicyRLModel):
         self._update_exploration()
 
         for gradient_step in range(gradient_steps):
+            # Increase update counter
+            self._n_updates += 1
+
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
@@ -152,7 +155,6 @@ class DQN(OffPolicyRLModel):
                 for param, target_param in zip(self.q_net.parameters(), self.q_net_target.parameters()):
                     target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
-        self._n_updates += gradient_steps
         logger.logkv("n_updates", self._n_updates)
 
     def learn(self,

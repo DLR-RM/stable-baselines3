@@ -55,7 +55,7 @@ class DQN(OffPolicyRLModel):
                  gradient_steps: int = 1,
                  tau: float = 1.0,
                  target_update_interval: int = 10000,
-                 exploration_fraction: float = 1,
+                 exploration_fraction: float = 0.02,
                  exploration_initial_eps: float = 1.0,
                  exploration_final_eps: float = 0.1,
                  max_grad_norm: float = 10,

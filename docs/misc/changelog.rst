@@ -17,6 +17,7 @@ New Features:
 - Added determinism tests
 - Added ``cmd_utils`` and ``atari_wrappers``
 - Added ``DQN``
+- Buffer dtype is now set according to action and observation spaces for ``ReplayBuffer`` and ``RolloutBuffer``
 - Added support for ``MultiDiscrete`` and ``MultiBinary`` observation spaces (@rolandgvc)
 - Added ``MultiCategorical`` and ``Bernoulli`` distributions for PPO/A2C (@rolandgvc)
 - Added ``VectorizedActionNoise`` for continuous vectorized environments (@PartiallyTyped)

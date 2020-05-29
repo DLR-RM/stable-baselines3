@@ -162,8 +162,8 @@ class DQN(OffPolicyRLModel):
             th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.policy.optimizer.step()
 
-            # Update target networks
-            if self._n_updates % self.target_update_interval == 0:
+            # Update target networks - account for train_freq
+            if self._n_updates % self.target_update_interval//self.train_freq == 0:
                 for param, target_param in zip(self.q_net.parameters(), self.q_net_target.parameters()):
                     target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 

@@ -74,7 +74,7 @@ def get_schedule_fn(value_schedule: Union[Callable, float]) -> Callable:
     return value_schedule
 
 
-def get_linear_fn(start: float, end: float, end_fraction: float):
+def get_linear_fn(start: float, end: float, end_fraction: float) -> Callable:
     """
     Create a function that interpolates linearly between start and end for step between  0 and final_step
     It is useful for exploration schedule

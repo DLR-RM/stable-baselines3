@@ -46,7 +46,7 @@ class DQN(OffPolicyRLModel):
 
     def __init__(self, policy: Union[str, Type[DQNPolicy]],
                  env: Union[GymEnv, str],
-                 learning_rate: Union[float, Callable] = 25e-5,
+                 learning_rate: Union[float, Callable] = 2.5e-4,
                  buffer_size: int = 1000000,
                  learning_starts: int = 50000,
                  batch_size: Optional[int] = 32,
@@ -61,7 +61,8 @@ class DQN(OffPolicyRLModel):
                  max_grad_norm: float = 10,
                  tensorboard_log: Optional[str] = None,
                  create_eval_env: bool = False,
-                 policy_kwargs: Optional[Dict[str, Any]] = None,
+                 policy_kwargs: Optional[Dict[str, Any]] = {'optimizer_class': th.optim.RMSprop,
+                                                            'optimizer_kwargs': {'eps': 0.01, 'momentum': 0.95}},
                  verbose: int = 0,
                  seed: Optional[int] = None,
                  device: Union[th.device, str] = 'auto',

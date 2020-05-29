@@ -238,9 +238,9 @@ class BaseRLModel(ABC):
         :param action_space: (gym.spaces.Space)
         """
         if (observation_space != env.observation_space
-            # Special cases for images that need to be transposed
-            and not (is_image_space(env.observation_space)
-                     and observation_space == VecTransposeImage.transpose_space(env.observation_space))):
+                # Special cases for images that need to be transposed
+                and not (is_image_space(env.observation_space)
+                         and observation_space == VecTransposeImage.transpose_space(env.observation_space))):
             raise ValueError(f'Observation spaces do not match: {observation_space} != {env.observation_space}')
         if action_space != env.action_space:
             raise ValueError(f'Action spaces do not match: {action_space} != {env.action_space}')
@@ -615,6 +615,9 @@ class BaseRLModel(ABC):
         # use standard list of excluded parameters if none given
         if exclude is None:
             exclude = self.excluded_save_params()
+        else:
+            # append standard exclude params to the given params
+            exclude.extend([param for param in self.excluded_save_params() if param not in exclude])
 
         # do not exclude params if they are specifically included
         if include is not None:

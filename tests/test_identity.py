@@ -24,7 +24,10 @@ def test_discrete(model_class, env):
 @pytest.mark.parametrize("model_class", [A2C, PPO, DQN])
 def test_discrete(model_class):
     env = IdentityEnv(10)
-    model = model_class('MlpPolicy', env, gamma=0.5, seed=0).learn(3000)
+    if model_class == DQN:
+        model = model_class('MlpPolicy', env, gamma=0.5, seed=0, learning_starts=1000).learn(3000)
+    else:
+        model = model_class('MlpPolicy', env, gamma=0.5, seed=0).learn(3000)
 
     evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=90)
     obs = env.reset()

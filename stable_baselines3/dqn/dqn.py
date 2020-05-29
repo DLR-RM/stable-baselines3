@@ -49,7 +49,7 @@ class DQN(OffPolicyRLModel):
 
     def __init__(self, policy: Union[str, Type[DQNPolicy]],
                  env: Union[GymEnv, str],
-                 learning_rate: Union[float, Callable] = 2.5e-4,
+                 learning_rate: Union[float, Callable] = 1e-4,
                  buffer_size: int = 1000000,
                  learning_starts: int = 50000,
                  batch_size: Optional[int] = 32,
@@ -63,7 +63,7 @@ class DQN(OffPolicyRLModel):
                  exploration_final_eps: float = 0.1,
                  max_grad_norm: float = 10,
                  rms_prop_eps: float = 1e-2,
-                 use_rms_prop: bool = True,
+                 use_rms_prop: bool = False,
                  tensorboard_log: Optional[str] = None,
                  create_eval_env: bool = False,
                  policy_kwargs: Optional[Dict[str, Any]] = None,
@@ -153,7 +153,7 @@ class DQN(OffPolicyRLModel):
             current_q = th.gather(current_q, dim=1, index=replay_data.actions.long())
 
             # Compute q loss
-            loss = F.mse_loss(current_q, target_q)
+            loss = F.smooth_l1_loss(current_q, target_q)
 
             # Optimize the policy
             self.policy.optimizer.zero_grad()

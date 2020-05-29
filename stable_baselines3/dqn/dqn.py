@@ -51,7 +51,7 @@ class DQN(OffPolicyRLModel):
                  learning_starts: int = 50000,
                  batch_size: Optional[int] = 32,
                  gamma: float = 0.99,
-                 train_freq: int = 1,
+                 train_freq: int = 4,
                  gradient_steps: int = 1,
                  tau: float = 1.0,
                  target_update_interval: int = 10000,

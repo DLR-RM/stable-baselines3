@@ -2,8 +2,6 @@ import numpy as np
 import pytest
 
 from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
-from stable_baselines3.common.identity_env import IdentityEnvBox, IdentityEnv
-from stable_baselines3 import A2C, PPO, SAC, TD3
 from stable_baselines3.common.identity_env import (IdentityEnvBox, IdentityEnv,
                                                    IdentityEnvMultiBinary, IdentityEnvMultiDiscrete)
 
@@ -14,21 +12,15 @@ from stable_baselines3.common.noise import NormalActionNoise
 DIM = 4
 
 
-@pytest.mark.parametrize("model_class", [A2C, PPO])
+@pytest.mark.parametrize("model_class", [A2C, PPO, DQN])
 @pytest.mark.parametrize("env", [IdentityEnv(DIM), IdentityEnvMultiDiscrete(DIM), IdentityEnvMultiBinary(DIM)])
 def test_discrete(model_class, env):
     env = DummyVecEnv([lambda: env])
-    model = model_class('MlpPolicy', env, gamma=0.5, seed=1).learn(3000)
-
-
-@pytest.mark.parametrize("model_class", [A2C, PPO, DQN])
-def test_discrete(model_class):
-    env = IdentityEnv(10)
     kwargs = {}
     if model_class == DQN:
         kwargs = dict(learning_starts=0)
 
-    model = model_class('MlpPolicy', env, gamma=0.5, seed=0, **kwargs).learn(3100)
+    model = model_class('MlpPolicy', env, gamma=0.5, seed=1, **kwargs).learn(3100)
 
     evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=90)
     obs = env.reset()

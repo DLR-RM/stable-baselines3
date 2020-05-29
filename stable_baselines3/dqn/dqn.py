@@ -97,7 +97,6 @@ class DQN(OffPolicyRLModel):
         self.max_grad_norm = max_grad_norm
         self.tensorboard_log = tensorboard_log
 
-
         if _init_setup_model:
             self._setup_model()
 
@@ -163,7 +162,7 @@ class DQN(OffPolicyRLModel):
             self.policy.optimizer.step()
 
             # Update target networks - account for train_freq
-            if self._n_updates % self.target_update_interval//self.train_freq == 0:
+            if self._n_updates % self.target_update_interval // self.train_freq == 0:
                 for param, target_param in zip(self.q_net.parameters(), self.q_net_target.parameters()):
                     target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 

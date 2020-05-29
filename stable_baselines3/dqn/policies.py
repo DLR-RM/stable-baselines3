@@ -1,10 +1,9 @@
-from typing import Optional, List, Tuple, Callable, Union, Type, Any, Dict
+from typing import Optional, List, Callable, Union, Type, Any, Dict
 
 import gym
+import numpy as np
 import torch as th
 import torch.nn as nn
-import numpy as np
-
 from stable_baselines3.common.policies import (BasePolicy, register_policy, create_mlp,
                                                NatureCNN, BaseFeaturesExtractor, FlattenExtractor)
 
@@ -70,7 +69,7 @@ class QNetwork(BasePolicy):
         """
         # epsilon greedy exploration
         if not deterministic and np.random.rand() < self.epsilon:
-            action = th.tensor([self.action_space.sample() for i in range(observation.shape[0])]).reshape(1)
+            action = th.tensor([self.action_space.sample() for _ in range(observation.shape[0])]).reshape(1)
         else:
             features = self.extract_features(observation)
             q_val = self.q_net(features)

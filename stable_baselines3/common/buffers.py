@@ -170,7 +170,8 @@ class ReplayBuffer(BaseBuffer):
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
 
         total_memory_usage = self.observations.nbytes + self.actions.nbytes + self.next_observations.nbytes + self.rewards.nbytes + self.dones.nbytes
-        assert total_memory_usage < mem_available, "This system provides not enough memory to store the complete replay buffer"
+        assert total_memory_usage < mem_available, "This system provides not enough memory to store the complete " \
+                                                   "replay buffer "
 
     def add(self,
             obs: np.ndarray,
@@ -248,7 +249,8 @@ class RolloutBuffer(BaseBuffer):
         self.values = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
 
         total_memory_usage = self.observations.nbytes + self.actions.nbytes + self.values.nbytes + self.rewards.nbytes + self.dones.nbytes + self.returns.nbytes
-        assert total_memory_usage < mem_available, "This system provides not enough memory to store the complete replay buffer"
+        assert total_memory_usage < mem_available, "This system provides not enough memory to store the complete " \
+                                                   "replay buffer "
 
         self.log_probs = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.advantages = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)

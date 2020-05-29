@@ -81,7 +81,7 @@ class DQN(OffPolicyRLModel):
         # Override optimizer to match original implementation
         if use_rms_prop and 'optimizer_class' not in self.policy_kwargs:
             self.policy_kwargs['optimizer_class'] = th.optim.RMSprop
-            self.policy_kwargs['optimizer_kwargs'] = dict(momentum=0.95, eps=rms_prop_eps,
+            self.policy_kwargs['optimizer_kwargs'] = dict(alpha=0.95, momentum=0.95, eps=rms_prop_eps,
                                                           weight_decay=0)
 
         assert train_freq > 0, "``train_freq`` must be positive"

@@ -14,7 +14,8 @@ class DQN(OffPolicyRLModel):
     """
     Deep Q-Network (DQN)
 
-    Paper: https://arxiv.org/abs/1312.5602
+    Paper: https://arxiv.org/abs/1312.5602, https://www.nature.com/articles/nature14236
+    Default parameters are taken from the nature paper
 
     :param policy: (PPOPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
@@ -45,18 +46,18 @@ class DQN(OffPolicyRLModel):
 
     def __init__(self, policy: Union[str, Type[DQNPolicy]],
                  env: Union[GymEnv, str],
-                 learning_rate: Union[float, Callable] = 3e-4,
-                 buffer_size: int = 50000,
-                 learning_starts: int = 1000,
+                 learning_rate: Union[float, Callable] = 25e-5,
+                 buffer_size: int = 1000000,
+                 learning_starts: int = 50000,
                  batch_size: Optional[int] = 32,
                  gamma: float = 0.99,
                  train_freq: int = 1,
                  gradient_steps: int = 1,
                  tau: float = 1.0,
-                 target_update_interval: int = 8,
-                 exploration_fraction: float = 0.1,
+                 target_update_interval: int = 10000,
+                 exploration_fraction: float = 1,
                  exploration_initial_eps: float = 1.0,
-                 exploration_final_eps: float = 0.02,
+                 exploration_final_eps: float = 0.1,
                  max_grad_norm: float = 10,
                  tensorboard_log: Optional[str] = None,
                  create_eval_env: bool = False,

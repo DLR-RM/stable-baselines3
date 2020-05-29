@@ -54,7 +54,7 @@ Example
   import numpy as np
 
   from stable_baselines3 import DQN
-  from stable_baselines3.sac import MlpPolicy
+  from stable_baselines3.dqn import MlpPolicy
 
   env = gym.make('Pendulum-v0')
 
@@ -92,4 +92,3 @@ DQN Policies
 
 .. autoclass:: CnnPolicy
   :members:
-

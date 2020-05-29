@@ -1,4 +1,5 @@
 from typing import Union, Optional, Generator
+import psutil
 
 import numpy as np
 import torch as th
@@ -158,11 +159,18 @@ class ReplayBuffer(BaseBuffer):
 
         assert n_envs == 1, "Replay buffer only support single environment for now"
 
+        mem = psutil.virtual_memory()
+        mem_available = mem.available
+
         self.observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=observation_space.dtype)
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
-        self.next_observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=observation_space.dtype)
+        self.next_observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape,
+                                          dtype=observation_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
+
+        total_memory_usage = self.observations.nbytes + self.actions.nbytes + self.next_observations.nbytes + self.rewards.nbytes + self.dones.nbytes
+        assert total_memory_usage < mem_available, "This system provides not enough memory to store the complete replay buffer"
 
     def add(self,
             obs: np.ndarray,
@@ -227,12 +235,21 @@ class RolloutBuffer(BaseBuffer):
         self.reset()
 
     def reset(self) -> None:
-        self.observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=self.observation_space.dtype)
+
+        mem = psutil.virtual_memory()
+        mem_available = mem.available
+
+        self.observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape,
+                                     dtype=self.observation_space.dtype)
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=self.action_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.values = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
+
+        total_memory_usage = self.observations.nbytes + self.actions.nbytes + self.values.nbytes + self.rewards.nbytes + self.dones.nbytes + self.returns.nbytes
+        assert total_memory_usage < mem_available, "This system provides not enough memory to store the complete replay buffer"
+
         self.log_probs = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.advantages = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.generator_ready = False

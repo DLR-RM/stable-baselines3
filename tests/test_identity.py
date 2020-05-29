@@ -28,7 +28,7 @@ def test_discrete(model_class):
     if model_class == DQN:
         kwargs = dict(learning_starts=0)
 
-    model = model_class('MlpPolicy', env, gamma=0.5, seed=0, **kwargs).learn(3000)
+    model = model_class('MlpPolicy', env, gamma=0.5, seed=0, **kwargs).learn(3100)
 
     evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=90)
     obs = env.reset()

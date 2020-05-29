@@ -33,6 +33,9 @@ class DQN(OffPolicyRLModel):
     :param exploration_initial_eps: (float) initial value of random action probability
     :param exploration_final_eps: (float) final value of random action probability
     :param max_grad_norm: (float) The maximum value for the gradient clipping
+    :param rms_prop_eps: (float) RMSProp epsilon. It stabilizes square root computation in denominator
+        of RMSProp update
+    :param use_rms_prop: (bool) Whether to use RMSprop (default) or Adam as optimizer
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
@@ -59,10 +62,11 @@ class DQN(OffPolicyRLModel):
                  exploration_initial_eps: float = 1.0,
                  exploration_final_eps: float = 0.1,
                  max_grad_norm: float = 10,
+                 rms_prop_eps: float = 1e-2,
+                 use_rms_prop: bool = True,
                  tensorboard_log: Optional[str] = None,
                  create_eval_env: bool = False,
-                 policy_kwargs: Optional[Dict[str, Any]] = {'optimizer_class': th.optim.RMSprop,
-                                                            'optimizer_kwargs': {'eps': 0.01, 'momentum': 0.95}},
+                 policy_kwargs: Optional[Dict[str, Any]] = None,
                  verbose: int = 0,
                  seed: Optional[int] = None,
                  device: Union[th.device, str] = 'auto',
@@ -73,6 +77,12 @@ class DQN(OffPolicyRLModel):
                                   policy_kwargs, verbose, device,
                                   create_eval_env=create_eval_env,
                                   seed=seed, sde_support=False)
+
+        # Override optimizer to match original implementation
+        if use_rms_prop and 'optimizer_class' not in self.policy_kwargs:
+            self.policy_kwargs['optimizer_class'] = th.optim.RMSprop
+            self.policy_kwargs['optimizer_kwargs'] = dict(momentum=0.95, eps=rms_prop_eps,
+                                                          weight_decay=0)
 
         assert train_freq > 0, "``train_freq`` must be positive"
         self.train_freq = train_freq
@@ -86,6 +96,7 @@ class DQN(OffPolicyRLModel):
         self.tau = tau
         self.max_grad_norm = max_grad_norm
         self.tensorboard_log = tensorboard_log
+
 
         if _init_setup_model:
             self._setup_model()

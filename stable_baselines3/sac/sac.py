@@ -237,12 +237,12 @@ class SAC(OffPolicyRLModel):
 
         self._n_updates += gradient_steps
 
-        logger.record("session/n_updates", self._n_updates)
-        logger.record("loss/ent_coef", np.mean(ent_coefs))
-        logger.record("loss/actor_loss", np.mean(actor_losses))
-        logger.record("loss/critic_loss", np.mean(critic_losses))
+        logger.record("train/n_updates", self._n_updates, exclude='tensorboard')
+        logger.record("train/ent_coef", np.mean(ent_coefs))
+        logger.record("train/actor_loss", np.mean(actor_losses))
+        logger.record("train/critic_loss", np.mean(critic_losses))
         if len(ent_coef_losses) > 0:
-            logger.record("loss/ent_coef_loss", np.mean(ent_coef_losses))
+            logger.record("train/ent_coef_loss", np.mean(ent_coef_losses))
 
     def learn(self,
               total_timesteps: int,

@@ -141,13 +141,13 @@ class A2C(PPO):
                                            self.rollout_buffer.values.flatten())
 
         self._n_updates += 1
-        logger.record("n_updates", self._n_updates)
-        logger.record("explained_variance", explained_var)
-        logger.record("entropy_loss", entropy_loss.item())
-        logger.record("policy_loss", policy_loss.item())
-        logger.record("value_loss", value_loss.item())
+        logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
+        logger.record("train/explained_variance", explained_var)
+        logger.record("train/entropy_loss", entropy_loss.item())
+        logger.record("train/policy_loss", policy_loss.item())
+        logger.record("train/value_loss", value_loss.item())
         if hasattr(self.policy, 'log_std'):
-            logger.record("std", th.exp(self.policy.log_std).mean().item())
+            logger.record("train/std", th.exp(self.policy.log_std).mean().item())
 
     def learn(self,
               total_timesteps: int,

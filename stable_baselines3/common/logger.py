@@ -463,9 +463,9 @@ class Logger(object):
         if value is None:
             self.name_to_value[key] = None
             return
-        oldval, cnt = self.name_to_value[key], self.name_to_count[key]
-        self.name_to_value[key] = oldval * cnt / (cnt + 1) + value / (cnt + 1)
-        self.name_to_count[key] = cnt + 1
+        old_val, count = self.name_to_value[key], self.name_to_count[key]
+        self.name_to_value[key] = old_val * count / (count + 1) + value / (count + 1)
+        self.name_to_count[key] = count + 1
         self.name_to_excluded[key] = exclude
 
     def dump(self, step: int = 0) -> None:
@@ -544,20 +544,20 @@ def configure(folder: Optional[str] = None, format_strings: Optional[List[str]] 
     configure the current logger
 
     :param folder: (Optional[str]) the save location
-        (if None, $BASELINES_LOGDIR, if still None, tempdir/baselines-[date & time])
+        (if None, $SB3_LOGDIR, if still None, tempdir/baselines-[date & time])
     :param format_strings: (Optional[List[str]]) the output logging format
-        (if None, $BASELINES_LOG_FORMAT, if still None, ['stdout', 'log', 'csv'])
+        (if None, $SB3_LOG_FORMAT, if still None, ['stdout', 'log', 'csv'])
     """
     if folder is None:
-        folder = os.getenv('BASELINES_LOGDIR')
+        folder = os.getenv('SB3_LOGDIR')
     if folder is None:
-        folder = os.path.join(tempfile.gettempdir(), datetime.datetime.now().strftime("baselines-%Y-%m-%d-%H-%M-%S-%f"))
+        folder = os.path.join(tempfile.gettempdir(), datetime.datetime.now().strftime("SB3-%Y-%m-%d-%H-%M-%S-%f"))
     assert isinstance(folder, str)
     os.makedirs(folder, exist_ok=True)
 
     log_suffix = ''
     if format_strings is None:
-        format_strings = os.getenv('BASELINES_LOG_FORMAT', 'stdout,log,csv').split(',')
+        format_strings = os.getenv('SB3_LOG_FORMAT', 'stdout,log,csv').split(',')
 
     format_strings = filter(None, format_strings)
     output_formats = [make_output_format(f, folder, log_suffix) for f in format_strings]

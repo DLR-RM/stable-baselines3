@@ -9,6 +9,11 @@ Pre-Release 0.6.0a11 (WIP)
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Remove State-Dependent Exploration (SDE) support for ``TD3``
+- Methods were renamed in the logger:
+  - ``logkv`` -> ``record``, ``writekvs`` -> ``write``, ``writeseq`` ->  ``write_sequence``,
+  - ``logkvs`` -> ``record_dict``, ``dumpkvs`` -> ``dump``,
+  - ``getkvs`` -> ``get_log_dict``, ``logkv_mean`` -> ``record_mean``,
+
 
 New Features:
 ^^^^^^^^^^^^^

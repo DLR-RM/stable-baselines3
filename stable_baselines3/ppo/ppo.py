@@ -277,22 +277,20 @@ class PPO(BaseRLModel):
                                            self.rollout_buffer.values.flatten())
 
         # Logs
-        logger.record("loss/entropy_loss", np.mean(entropy_losses))
-        logger.record("loss/policy_gradient_loss", np.mean(pg_losses))
-        logger.record("loss/value_loss", np.mean(value_losses))
-        logger.record("loss/approx_kl", np.mean(approx_kl_divs))
-        logger.record("loss/clip_fraction", np.mean(clip_fraction))
-        logger.record("loss/loss", loss.item())
-        logger.record("loss/explained_variance", explained_var)
+        logger.record("train/entropy_loss", np.mean(entropy_losses))
+        logger.record("train/policy_gradient_loss", np.mean(pg_losses))
+        logger.record("train/value_loss", np.mean(value_losses))
+        logger.record("train/approx_kl", np.mean(approx_kl_divs))
+        logger.record("train/clip_fraction", np.mean(clip_fraction))
+        logger.record("train/loss", loss.item())
+        logger.record("train/explained_variance", explained_var)
         if hasattr(self.policy, "log_std"):
-            logger.record("loss/std", th.exp(self.policy.log_std).mean().item())
+            logger.record("train/std", th.exp(self.policy.log_std).mean().item())
 
-        logger.record("session/n_updates", self._n_updates, exclude="tensorboard")
-        logger.record("input_info/discounted_rewards", np.sum(self.rollout_buffer.returns))
-        logger.record("input_info/advantage", np.mean(self.rollout_buffer.advantages))
-        logger.record("input_info/infoclip_range", clip_range)
+        logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
+        logger.record("train/clip_range", clip_range)
         if self.clip_range_vf is not None:
-            logger.record("input_info/clip_range_vf", clip_range_vf)
+            logger.record("train/clip_range_vf", clip_range_vf)
 
     def learn(self,
               total_timesteps: int,

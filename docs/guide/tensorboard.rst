@@ -1,7 +1,7 @@
 .. _tensorboard:
 
 Tensorboard Integration
-==========================
+=======================
 
 Basic Usage
 ------------

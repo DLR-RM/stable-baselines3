@@ -261,6 +261,10 @@ class SAC(OffPolicyRLModel):
 
         utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name)
 
+        if not reset_num_timesteps:
+            # Make sure training timesteps are ahead of the internal counter
+            total_timesteps += self.num_timesteps
+
         while self.num_timesteps < total_timesteps:
             rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,
                                             n_steps=self.train_freq, action_noise=self.action_noise,

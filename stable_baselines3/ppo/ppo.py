@@ -311,6 +311,10 @@ class PPO(BaseRLModel):
 
         callback.on_training_start(locals(), globals())
 
+        if not reset_num_timesteps:
+            # Make sure training timesteps are ahead of the internal counter
+            total_timesteps += self.num_timesteps
+
         while self.num_timesteps < total_timesteps:
 
             continue_training = self.collect_rollouts(self.env, callback,

@@ -78,9 +78,10 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         key2str = {}
         tag = None
         for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
-            if excluded is not None:
-                if 'stdout' == excluded or 'stdout' in excluded:
-                    continue
+
+            if excluded is not None and 'stdout' in excluded:
+                continue
+
             if isinstance(value, float):
                 # Align left
                 value_str = f'{value:<8.3g}'
@@ -149,9 +150,10 @@ class JSONOutputFormat(KVWriter):
 
     def write(self, key_values: Dict, key_excluded: Dict, step: int = 0) -> None:
         for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
-            if excluded is not None:
-                if 'json' == excluded or 'json' in excluded:
-                    continue
+
+            if excluded is not None and 'json' in excluded:
+                continue
+
             if hasattr(value, 'dtype'):
                 if value.shape == () or len(value) == 1:
                     # if value is a dimensionless numpy array or of length 1, serialize as a float
@@ -222,15 +224,21 @@ class TensorBoardOutputFormat(KVWriter):
 
         :param folder: (str) the folder to write the log to
         """
+        assert SummaryWriter is not None, ("tensorboard is not installed, you can use "
+                                           "pip install tensorboard to do so")
         self.writer = SummaryWriter(log_dir=folder)
 
     def write(self, key_values: Dict, key_excluded: Dict, step: int = 0) -> None:
-        for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
-            if excluded is not None:
-                if 'tensorboard' == excluded or 'tensorboard' in excluded:
-                    continue
+
+        for (key, value), (_, excluded) in zip(sorted(key_values.items()),
+                                               sorted(key_excluded.items())):
+
+            if excluded is not None and 'tensorboard' in excluded:
+                continue
+
             if isinstance(value, np.ScalarType):
                 self.writer.add_scalar(key, value, step)
+
             if isinstance(value, th.Tensor):
                 self.writer.add_histogram(key, value, step)
 
@@ -265,7 +273,7 @@ def make_output_format(_format: str, log_dir: str, log_suffix: str = '') -> KVWr
     elif _format == 'csv':
         return CSVOutputFormat(os.path.join(log_dir, f'progress{log_suffix}.csv'))
     elif _format == 'tensorboard':
-        return TensorBoardOutputFormat(os.path.join(log_dir, f'tb{log_suffix}'))
+        return TensorBoardOutputFormat(log_dir)
     else:
         raise ValueError(f'Unknown format specified: {_format}')
 

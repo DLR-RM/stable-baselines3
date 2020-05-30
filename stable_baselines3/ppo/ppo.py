@@ -326,13 +326,13 @@ class PPO(BaseRLModel):
             # Log training infos
             if log_interval is not None and iteration % log_interval == 0:
                 fps = int(self.num_timesteps / (time.time() - self.start_time))
-                logger.record("session/iterations", iteration, exclude="tensorboard")
+                logger.record("rollout/iterations", iteration, exclude="tensorboard")
                 if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
-                    logger.record("session/ep_rew_mean",
+                    logger.record("rollout/ep_rew_mean",
                                   self.safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
-                    logger.record("session/ep_len_mean",
+                    logger.record("rollout/ep_len_mean",
                                   self.safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
-                logger.record("session/fps", fps, exclude="tensorboard")
+                logger.record("session/fps", fps)
                 logger.record("session/time_elapsed", int(time.time() - self.start_time), exclude="tensorboard")
                 logger.record("session/total timesteps", self.num_timesteps, exclude="tensorboard")
                 logger.dump(step=self.num_timesteps)

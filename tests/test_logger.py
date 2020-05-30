@@ -22,10 +22,8 @@ KEY_EXCLUDED = {}
 for key in KEY_VALUES.keys():
     KEY_EXCLUDED[key] = None
 
-LOG_DIR = '/tmp/stable_baselines3/'
 
-
-def test_main():
+def test_main(tmp_path):
     """
     tests for the logger module
     """
@@ -33,10 +31,7 @@ def test_main():
     debug("shouldn't appear")
     set_level(DEBUG)
     debug("should appear")
-    folder = "/tmp/testlogging"
-    if os.path.exists(folder):
-        shutil.rmtree(folder)
-    configure(folder=folder)
+    configure(folder=str(tmp_path))
     record("a", 3)
     record("b", 2.5)
     dump()
@@ -51,7 +46,7 @@ def test_main():
     with ScopedConfigure(None, None):
         info("^^^ should see b = 33.3")
 
-    with ScopedConfigure("/tmp/test-logger/", ["json"]):
+    with ScopedConfigure(str(tmp_path / "test-logger"), ["json"]):
         record("b", -2.5)
         dump()
 
@@ -63,25 +58,29 @@ def test_main():
     record_dict({"test": 1})
 
 
-@pytest.mark.parametrize('_format', ['stdout', 'log', 'json', 'csv'])
-def test_make_output(_format):
+@pytest.mark.parametrize('_format', ['stdout', 'log', 'json', 'csv', 'tensorboard'])
+def test_make_output(tmp_path, _format):
     """
     test make output
 
     :param _format: (str) output format
     """
-    writer = make_output_format(_format, LOG_DIR)
+    if _format == 'tensorboard':
+        # Skip if no tensorboard installed
+        pytest.importorskip("tensorboard")
+
+    writer = make_output_format(_format, tmp_path)
     writer.write(KEY_VALUES, KEY_EXCLUDED)
     if _format == "csv":
-        read_csv(LOG_DIR + 'progress.csv')
+        read_csv(tmp_path / 'progress.csv')
     elif _format == 'json':
-        read_json(LOG_DIR + 'progress.json')
+        read_json(tmp_path / 'progress.json')
     writer.close()
 
 
-def test_make_output_fail():
+def test_make_output_fail(tmp_path):
     """
     test value error on logger
     """
     with pytest.raises(ValueError):
-        make_output_format('dummy_format', LOG_DIR)
+        make_output_format('dummy_format', tmp_path)

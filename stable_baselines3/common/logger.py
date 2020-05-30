@@ -242,7 +242,7 @@ class TensorBoardOutputFormat(KVWriter):
         closes the file
         """
         if self.writer:
-            self.writer.Close()
+            self.writer.close()
             self.writer = None
 
 

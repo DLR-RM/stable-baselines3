@@ -107,6 +107,10 @@ setup(name='stable_baselines3',
               'opencv-python',
               # For atari games,
               'atari_py~=0.2.0', 'pillow'
+          ],
+          'tensorboard': [
+              # TODO: check min version for PyTorch
+              'tensorboard'
           ]
       },
       description='Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.',

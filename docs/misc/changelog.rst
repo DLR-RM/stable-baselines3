@@ -25,6 +25,7 @@ New Features:
 - Added ``MultiCategorical`` and ``Bernoulli`` distributions for PPO/A2C (@rolandgvc)
 - Added support for logging to tensorboard (@rolandgvc)
 - Added ``VectorizedActionNoise`` for continuous vectorized environments (@PartiallyTyped)
+- Log evaluation in the ``EvalCallback`` using the logger
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -32,6 +33,7 @@ Bug Fixes:
 - Fixed version number that had a new line included
 - Fixed weird seg fault in docker image due to FakeImageEnv by reducing screen size
 - Fixed ``sde_sample_freq`` that was not taken into account for SAC
+- Pass logger module to ``BaseCallback`` otherwise they cannot write in the one used by the algorithms
 
 Deprecations:
 ^^^^^^^^^^^^^

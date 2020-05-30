@@ -447,7 +447,8 @@ class Logger(object):
 
     # Logging API, forwarded
     # ----------------------------------------
-    def record(self, key: Any, value: Any, exclude: Union[str, Tuple[str, ...]]) -> None:
+    def record(self, key: Any, value: Any,
+               exclude: Optional[Union[str, Tuple[str, ...]]] = None) -> None:
         """
         Log a value of some diagnostic
         Call this once for each diagnostic quantity, each iteration
@@ -460,7 +461,8 @@ class Logger(object):
         self.name_to_value[key] = value
         self.name_to_excluded[key] = exclude
 
-    def record_mean(self, key: Any, value: Any, exclude: Union[str, Tuple[str, ...]]) -> None:
+    def record_mean(self, key: Any, value: Any,
+                    exclude: Optional[Union[str, Tuple[str, ...]]] = None) -> None:
         """
         The same as record(), but if called many times, values averaged.
 

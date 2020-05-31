@@ -257,7 +257,7 @@ class SAC(OffPolicyRLModel):
 
         callback = self._setup_learn(eval_env, callback, eval_freq,
                                      n_eval_episodes, eval_log_path, reset_num_timesteps,
-                                     self.verbose, self.tensorboard_log, tb_log_name)
+                                     self.tensorboard_log, tb_log_name)
         callback.on_training_start(locals(), globals())
 
         if not reset_num_timesteps:

@@ -314,7 +314,7 @@ class EvalCallback(EventCallback):
                       f"episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
                 print(f"Episode length: {mean_ep_length:.2f} +/- {std_ep_length:.2f}")
             # Add to current Logger
-            self.logger.record('eval/mean_reward', mean_reward)
+            self.logger.record('eval/mean_reward', float(mean_reward))
             self.logger.record('eval/mean_ep_length', mean_ep_length)
 
             if mean_reward > self.best_mean_reward:

@@ -27,9 +27,10 @@ class KVWriter(object):
     Key Value writer
     """
 
-    def write(self, key_values: Dict, key_excluded: Dict, step: int = 0) -> None:
+    def write(self, key_values: Dict[str, Any],
+              key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
         """
-        write a dictionary to file
+        Write a dictionary to file
 
         :param key_values: (dict)
         :param key_excluded: (dict)
@@ -91,11 +92,11 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             if key.find('/') > 0:  # Find tag and add it to the dict
                 tag = key[:key.find('/') + 1]
                 key2str[self._truncate(tag)] = ''
-            if tag and tag in key:
-                key = str('   ' + key[key.find('/') + 1:])
-                key2str[self._truncate(key)] = self._truncate(value_str)
-            else:
-                key2str[self._truncate(key)] = self._truncate(value_str)
+            # Remove tag from key
+            if tag is not None and tag in key:
+                key = str('   ' + key[len(tag):])
+
+            key2str[self._truncate(key)] = self._truncate(value_str)
 
         # Find max widths
         if len(key2str) == 0:
@@ -108,7 +109,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         # Write out the data
         dashes = '-' * (key_width + val_width + 7)
         lines = [dashes]
-        for (key, value) in key2str.items():
+        for key, value in key2str.items():
             key_space = ' ' * (key_width - len(key))
             val_space = ' ' * (val_width - len(value))
             lines.append(f"| {key}{key_space} | {value}{val_space} |")
@@ -124,7 +125,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
 
     def write_sequence(self, sequence: List) -> None:
         sequence = list(sequence)
-        for (i, elem) in enumerate(sequence):
+        for i, elem in enumerate(sequence):
             self.file.write(elem)
             if i < len(sequence) - 1:  # add space unless this is the last one
                 self.file.write(' ')
@@ -148,7 +149,8 @@ class JSONOutputFormat(KVWriter):
         """
         self.file = open(filename, 'wt')
 
-    def write(self, key_values: Dict, key_excluded: Dict, step: int = 0) -> None:
+    def write(self, key_values: Dict[str, Any],
+              key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
         for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
 
             if excluded is not None and 'json' in excluded:
@@ -184,7 +186,8 @@ class CSVOutputFormat(KVWriter):
         self.keys = []
         self.separator = ','
 
-    def write(self, key_values: Dict, key_excluded: Dict, step: int = 0) -> None:
+    def write(self, key_values: Dict[str, Any],
+              key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
         # Add our current row to the history
         extra_keys = key_values.keys() - self.keys
         if extra_keys:
@@ -218,7 +221,7 @@ class CSVOutputFormat(KVWriter):
 
 
 class TensorBoardOutputFormat(KVWriter):
-    def __init__(self, folder):
+    def __init__(self, folder: str):
         """
         Dumps key/value pairs into TensorBoard's numeric format.
 
@@ -228,7 +231,8 @@ class TensorBoardOutputFormat(KVWriter):
                                            "pip install tensorboard to do so")
         self.writer = SummaryWriter(log_dir=folder)
 
-    def write(self, key_values: Dict, key_excluded: Dict, step: int = 0) -> None:
+    def write(self, key_values: Dict[str, Any],
+              key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
 
         for (key, value), (_, excluded) in zip(sorted(key_values.items()),
                                                sorted(key_excluded.items())):
@@ -245,7 +249,7 @@ class TensorBoardOutputFormat(KVWriter):
         # Flush the output to the file
         self.writer.flush()
 
-    def close(self):
+    def close(self) -> None:
         """
         closes the file
         """
@@ -282,7 +286,8 @@ def make_output_format(_format: str, log_dir: str, log_suffix: str = '') -> KVWr
 # API
 # ================================================================
 
-def record(key: Any, value: Any, exclude: Union[str, Tuple[str, ...]] = None) -> None:
+def record(key: str, value: Any,
+           exclude: Optional[Union[str, Tuple[str, ...]]] = None) -> None:
     """
     Log a value of some diagnostic
     Call this once for each diagnostic quantity, each iteration
@@ -295,7 +300,8 @@ def record(key: Any, value: Any, exclude: Union[str, Tuple[str, ...]] = None) ->
     Logger.CURRENT.record(key, value, exclude)
 
 
-def record_mean(key: Any, value: Union[int, float], exclude: Union[str, Tuple[str, ...]] = None) -> None:
+def record_mean(key: str, value: Union[int, float],
+                exclude: Optional[Union[str, Tuple[str, ...]]] = None) -> None:
     """
     The same as record(), but if called many times, values averaged.
 
@@ -306,7 +312,7 @@ def record_mean(key: Any, value: Union[int, float], exclude: Union[str, Tuple[st
     Logger.CURRENT.record_mean(key, value, exclude)
 
 
-def record_dict(key_values: Dict) -> None:
+def record_dict(key_values: Dict[str, Any]) -> None:
     """
     Log a dictionary of key-value pairs.
 
@@ -447,7 +453,7 @@ class Logger(object):
 
     # Logging API, forwarded
     # ----------------------------------------
-    def record(self, key: Any, value: Any,
+    def record(self, key: str, value: Any,
                exclude: Optional[Union[str, Tuple[str, ...]]] = None) -> None:
         """
         Log a value of some diagnostic
@@ -461,7 +467,7 @@ class Logger(object):
         self.name_to_value[key] = value
         self.name_to_excluded[key] = exclude
 
-    def record_mean(self, key: Any, value: Any,
+    def record_mean(self, key: str, value: Any,
                     exclude: Optional[Union[str, Tuple[str, ...]]] = None) -> None:
         """
         The same as record(), but if called many times, values averaged.

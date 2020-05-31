@@ -15,6 +15,9 @@ N_STEPS = 100
 
 @pytest.mark.parametrize("model_name", MODEL_DICT.keys())
 def test_tensorboard(tmp_path, model_name):
+    # Skip if no tensorboard installed
+    pytest.importorskip("tensorboard")
+
     logname = model_name.upper()
     algo, env_id = MODEL_DICT[model_name]
     model = algo('MlpPolicy', env_id, verbose=1, tensorboard_log=tmp_path)

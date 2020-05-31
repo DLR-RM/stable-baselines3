@@ -29,6 +29,7 @@ These algorithms will make it easier for the research community and industry to 
 | Custom policies             | :heavy_check_mark: |
 | Common interface            | :heavy_check_mark: |
 | Ipython / Notebook friendly | :heavy_check_mark: |
+| Tensorboard support         | :heavy_check_mark: |
 | PEP8 code style             | :heavy_check_mark: |
 | Custom callback             | :heavy_check_mark: |
 | High code coverage          | :heavy_check_mark: |
@@ -48,7 +49,6 @@ Planned features:
 
 ### Planned features (v1.1+)
 
-- [ ] Full Tensorboard support
 - [ ] DQN extensions (prioritized replay, double q-learning, ...)
 - [ ] Support for `Tuple` and `Dict` observation spaces
 - [ ] Recurrent Policies
@@ -99,7 +99,7 @@ Install the Stable Baselines3 package:
 pip install stable-baselines3[extra]
 ```
 
-This includes an optional dependencies like OpenCV or `atari-py` to train on atari games. If you do not need those, you can use:
+This includes an optional dependencies like Tensorboard, OpenCV or `atari-py` to train on atari games. If you do not need those, you can use:
 ```
 pip install stable-baselines3
 ```

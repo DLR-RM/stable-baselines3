@@ -25,7 +25,7 @@ Main Features
 - Documented functions and classes
 - Tests, high code coverage and type hints
 - Clean code
-
+- Tensorboard support
 
 
 .. toctree::

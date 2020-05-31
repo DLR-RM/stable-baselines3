@@ -106,10 +106,8 @@ setup(name='stable_baselines3',
               # For render
               'opencv-python',
               # For atari games,
-              'atari_py~=0.2.0', 'pillow'
-          ],
-          'tensorboard': [
-              # TODO: check min version for PyTorch
+              'atari_py~=0.2.0', 'pillow',
+              # Tensorboard support
               'tensorboard'
           ]
       },

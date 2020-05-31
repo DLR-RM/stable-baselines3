@@ -121,7 +121,7 @@ def get_device(device: Union[th.device, str] = 'auto') -> th.device:
     return device
 
 
-def get_latest_run_id(log_path: Optional[str] = None, log_name: str = ''):
+def get_latest_run_id(log_path: Optional[str] = None, log_name: str = '') -> int:
     """
     Returns the latest run number for the given log name and log path,
     by finding the greatest number in the directories.
@@ -138,7 +138,7 @@ def get_latest_run_id(log_path: Optional[str] = None, log_name: str = ''):
 
 
 def configure_logger(verbose: int = 0, tensorboard_log: Optional[str] = None,
-                     tb_log_name: str = '', reset_num_timesteps: bool = True):
+                     tb_log_name: str = '', reset_num_timesteps: bool = True) -> None:
     """
     Configure the logger's outputs.
 

@@ -80,7 +80,6 @@ Here is a simple example on how to log both additional tensor or arbitrary scala
 
     from stable_baselines3 import SAC
     from stable_baselines3.common.callbacks import BaseCallback
-    from stable_baselines3.common import logger
 
     model = SAC("MlpPolicy", "Pendulum-v0", tensorboard_log="/tmp/sac/", verbose=1)
 
@@ -96,7 +95,7 @@ Here is a simple example on how to log both additional tensor or arbitrary scala
         def _on_step(self) -> bool:
             # Log scalar value (here a random variable)
             value = np.random.random()
-            logger.record('random_value', value)
+            self.logger.record('random_value', value)
             return True
 
 

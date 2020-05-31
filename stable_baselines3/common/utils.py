@@ -137,7 +137,8 @@ def get_latest_run_id(log_path: Optional[str] = None, log_name: str = ''):
     return max_run_id
 
 
-def configure_logger(verbose, tensorboard_log, tb_log_name, reset_num_timesteps=True):
+def configure_logger(verbose: int = 0, tensorboard_log: Optional[str] = None,
+                     tb_log_name: str = '', reset_num_timesteps: bool = True):
     """
     Configure the logger's outputs.
 

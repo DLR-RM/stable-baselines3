@@ -11,7 +11,7 @@ import gym
 import torch as th
 import numpy as np
 
-from stable_baselines3.common import logger
+from stable_baselines3.common import logger, utils
 from stable_baselines3.common.policies import BasePolicy, get_policy_from_name
 from stable_baselines3.common.utils import set_random_seed, get_schedule_fn, update_learning_rate, get_device
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize, VecTransposeImage
@@ -497,6 +497,9 @@ class BaseRLModel(ABC):
                      n_eval_episodes: int = 5,
                      log_path: Optional[str] = None,
                      reset_num_timesteps: bool = True,
+                     verbose: int = 0,
+                     tensorboard_log: Optional[str] = None,
+                     tb_log_name: str = 'run',
                      ) -> 'BaseCallback':
         """
         Initialize different variables needed for training.
@@ -507,6 +510,9 @@ class BaseRLModel(ABC):
         :param n_eval_episodes: (int)
         :param log_path (Optional[str]): Path to a log folder
         :param reset_num_timesteps: (bool) Whether to reset or not the ``num_timesteps`` attribute
+        :param verbose: The verbosity level: 0 none, 1 training information, 2 debug
+        :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
+        :param tb_log_name: (str) the name of the run for tensorboard log
         :return: (BaseCallback)
         """
         self.start_time = time.time()
@@ -531,6 +537,9 @@ class BaseRLModel(ABC):
             eval_env.seed(self.seed)
 
         eval_env = self._get_eval_env(eval_env)
+
+        # Configure logger's outputs
+        utils.configure_logger(verbose, tensorboard_log, tb_log_name, reset_num_timesteps)
 
         # Create eval callback if needed
         callback = self._init_callback(callback, eval_env, eval_freq, n_eval_episodes, log_path)

@@ -7,7 +7,7 @@ import torch as th
 import torch.nn.functional as F
 import numpy as np
 
-from stable_baselines3.common import logger, utils
+from stable_baselines3.common import logger
 from stable_baselines3.common.base_class import BaseRLModel
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.buffers import RolloutBuffer
@@ -305,10 +305,8 @@ class PPO(BaseRLModel):
 
         iteration = 0
         callback = self._setup_learn(eval_env, callback, eval_freq,
-                                     n_eval_episodes, eval_log_path, reset_num_timesteps)
-
-        utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
-
+                                     n_eval_episodes, eval_log_path, reset_num_timesteps,
+                                     self.verbose, self.tensorboard_log, tb_log_name)
         callback.on_training_start(locals(), globals())
 
         if not reset_num_timesteps:

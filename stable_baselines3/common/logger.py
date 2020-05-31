@@ -119,8 +119,8 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         self.file.flush()
 
     @classmethod
-    def _truncate(cls, string: str, length_limit: int = 30) -> str:
-        return string[:20] + '...' if len(string) > length_limit else string
+    def _truncate(cls, string: str, max_length: int = 23) -> str:
+        return string[:max_length - 3] + '...' if len(string) > max_length else string
 
     def write_sequence(self, sequence: List) -> None:
         sequence = list(sequence)

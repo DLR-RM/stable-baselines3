@@ -82,7 +82,7 @@ Here is a simple example on how to log both additional tensor or arbitrary scala
     from stable_baselines3.common.callbacks import BaseCallback
     from stable_baselines3.common import logger
 
-    model = SAC("MlpPolicy", "Pendulum-v0", tensorboard_log="./tmp/sac/", verbose=1)
+    model = SAC("MlpPolicy", "Pendulum-v0", tensorboard_log="/tmp/sac/", verbose=1)
 
 
     class TensorboardCallback(BaseCallback):

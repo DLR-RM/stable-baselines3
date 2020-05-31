@@ -259,7 +259,7 @@ class SAC(OffPolicyRLModel):
                                      n_eval_episodes, eval_log_path, reset_num_timesteps)
         callback.on_training_start(locals(), globals())
 
-        utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name)
+        utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
 
         if not reset_num_timesteps:
             # Make sure training timesteps are ahead of the internal counter

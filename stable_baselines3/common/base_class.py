@@ -681,6 +681,12 @@ class OffPolicyRLModel(BaseRLModel):
     :param buffer_size: (int) size of the replay buffer
     :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
     :param batch_size: (int) Minibatch size for each gradient update
+    :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1)
+    :param gamma: (float) the discount factor
+    :param train_freq: (int) Update the model every ``train_freq`` steps.
+    :param gradient_steps: (int) How many gradient update after each step
+    :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
+        Note that this cannot be used at the same time as ``train_freq``
     :param policy_kwargs: Additional arguments to be passed to the policy on creation
     :param verbose: The verbosity level: 0 none, 1 training information, 2 debug
     :param device: Device on which the code should run.
@@ -710,6 +716,12 @@ class OffPolicyRLModel(BaseRLModel):
                  buffer_size: int = int(1e6),
                  learning_starts: int = 100,
                  batch_size: int = 256,
+                 tau: float = 0.005,
+                 gamma: float = 0.99,
+                 train_freq: int = 1,
+                 gradient_steps: int = 1,
+                 n_episodes_rollout: int = -1,
+                 action_noise: Optional[ActionNoise] = None,
                  policy_kwargs: Dict[str, Any] = None,
                  tensorboard_log: Optional[str] = None,
                  verbose: int = 0,
@@ -730,6 +742,21 @@ class OffPolicyRLModel(BaseRLModel):
         self.buffer_size = buffer_size
         self.batch_size = batch_size
         self.learning_starts = learning_starts
+        self.tau = tau
+        self.gamma = gamma
+        self.train_freq = train_freq
+        self.gradient_steps = gradient_steps
+        self.n_episodes_rollout = n_episodes_rollout
+        self.action_noise = action_noise
+
+        if train_freq > 0 and n_episodes_rollout > 0:
+            warnings.warn("You passed a positive value for `train_freq` and `n_episodes_rollout`."
+                          "Please make sure this is intended. "
+                          "The agent will collect data by stepping in the environment "
+                          "until both conditions are true: "
+                          "`number of steps in the env` >= `train_freq` and "
+                          "`number of episodes` > `n_episodes_rollout`")
+
         self.actor = None  # type: Optional[th.nn.Module]
         self.replay_buffer = None  # type: Optional[ReplayBuffer]
         # Update policy keyword arguments
@@ -767,6 +794,54 @@ class OffPolicyRLModel(BaseRLModel):
             self.replay_buffer = pickle.load(file_handler)
         assert isinstance(self.replay_buffer, ReplayBuffer), 'The replay buffer must inherit from ReplayBuffer class'
 
+    def learn(self,
+              total_timesteps: int,
+              callback: MaybeCallback = None,
+              log_interval: int = 4,
+              eval_env: Optional[GymEnv] = None,
+              eval_freq: int = -1,
+              n_eval_episodes: int = 5,
+              tb_log_name: str = "run",
+              eval_log_path: Optional[str] = None,
+              reset_num_timesteps: bool = True) -> 'OffPolicyRLModel':
+
+        total_timesteps, callback = self._setup_learn(total_timesteps, eval_env, callback, eval_freq,
+                                                      n_eval_episodes, eval_log_path, reset_num_timesteps,
+                                                      tb_log_name)
+
+        callback.on_training_start(locals(), globals())
+
+        while self.num_timesteps < total_timesteps:
+
+            rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,
+                                            n_steps=self.train_freq, action_noise=self.action_noise,
+                                            callback=callback,
+                                            learning_starts=self.learning_starts,
+                                            replay_buffer=self.replay_buffer,
+                                            log_interval=log_interval)
+
+            if rollout.continue_training is False:
+                break
+
+            self._update_current_progress(self.num_timesteps, total_timesteps)
+
+            if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
+                # If no `gradient_steps` is specified,
+                # do as many gradients steps as steps performed during the rollout
+                gradient_steps = self.gradient_steps if self.gradient_steps > 0 else rollout.episode_timesteps
+                self.train(batch_size=self.batch_size, gradient_steps=gradient_steps)
+
+        callback.on_training_end()
+
+        return self
+
+    def train(self, gradient_steps: int, batch_size: int) -> None:
+        """
+        Sample the replay buffer and do the updates
+        (gradient descent and update target networks)
+        """
+        raise NotImplementedError()
+
     def collect_rollouts(self,  # noqa: C901
                          env: VecEnv,
                          # Type hint as string to avoid circular import
@@ -800,17 +875,6 @@ class OffPolicyRLModel(BaseRLModel):
 
         assert isinstance(env, VecEnv), "You must pass a VecEnv"
         assert env.num_envs == 1, "OffPolicyRLModel only support single environment"
-
-        if n_episodes > 0 and n_steps > 0:
-            # Note we are refering to the constructor arguments
-            # that are named `train_freq` and `n_episodes_rollout`
-            # but correspond to `n_steps` and `n_episodes` here
-            warnings.warn("You passed a positive value for `train_freq` and `n_episodes_rollout`."
-                          "Please make sure this is intended. "
-                          "The agent will collect data by stepping in the environment "
-                          "until both conditions are true: "
-                          "`number of steps in the env` >= `train_freq` and "
-                          "`number of episodes` > `n_episodes_rollout`")
 
         if self.use_sde:
             self.actor.reset_noise()

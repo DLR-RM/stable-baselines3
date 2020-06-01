@@ -2,10 +2,12 @@ image: stablebaselines/stable-baselines3-cpu:0.6.0
 
 type-check:
   script:
+  - pip install psutil  # TODO: remove when docker image is updated
   - make type
 
 pytest:
   script:
+  - pip install psutil
   # MKL_THREADING_LAYER=GNU to avoid MKL_THREADING_LAYER=INTEL incompatibility error
   - MKL_THREADING_LAYER=GNU make pytest
 

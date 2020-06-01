@@ -17,13 +17,15 @@ DIM = 4
 def test_discrete(model_class, env):
     env_ = DummyVecEnv([lambda: env])
     kwargs = {}
+    n_steps = 3000
     if model_class == DQN:
         kwargs = dict(learning_starts=0)
+        n_steps = 4000
         # DQN only support discrete actions
         if isinstance(env, (IdentityEnvMultiDiscrete, IdentityEnvMultiBinary)):
             return
 
-    model = model_class('MlpPolicy', env_, gamma=0.5, seed=1, **kwargs).learn(3100)
+    model = model_class('MlpPolicy', env_, gamma=0.5, seed=1, **kwargs).learn(n_steps)
 
     evaluate_policy(model, env_, n_eval_episodes=20, reward_threshold=90)
     obs = env.reset()

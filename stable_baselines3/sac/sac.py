@@ -89,6 +89,8 @@ class SAC(OffPolicyRLModel):
 
         super(SAC, self).__init__(policy, env, SACPolicy, learning_rate,
                                   buffer_size, learning_starts, batch_size,
+                                  tau, gamma, train_freq, gradient_steps,
+                                  n_episodes_rollout, action_noise,
                                   policy_kwargs, tensorboard_log, verbose, device,
                                   create_eval_env=create_eval_env, seed=seed,
                                   use_sde=use_sde, sde_sample_freq=sde_sample_freq,
@@ -96,17 +98,10 @@ class SAC(OffPolicyRLModel):
 
         self.target_entropy = target_entropy
         self.log_ent_coef = None  # type: Optional[th.Tensor]
-        self.target_update_interval = target_update_interval
-        self.tau = tau
         # Entropy coefficient / Entropy temperature
         # Inverse of the reward scale
         self.ent_coef = ent_coef
         self.target_update_interval = target_update_interval
-        self.train_freq = train_freq
-        self.gradient_steps = gradient_steps
-        self.n_episodes_rollout = n_episodes_rollout
-        self.action_noise = action_noise
-        self.gamma = gamma
         self.ent_coef_optimizer = None
 
         if _init_setup_model:
@@ -254,30 +249,10 @@ class SAC(OffPolicyRLModel):
               eval_log_path: Optional[str] = None,
               reset_num_timesteps: bool = True) -> OffPolicyRLModel:
 
-        total_timesteps, callback = self._setup_learn(total_timesteps, eval_env, callback, eval_freq,
-                                                      n_eval_episodes, eval_log_path, reset_num_timesteps,
-                                                      tb_log_name)
-        callback.on_training_start(locals(), globals())
-
-        while self.num_timesteps < total_timesteps:
-            rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,
-                                            n_steps=self.train_freq, action_noise=self.action_noise,
-                                            callback=callback,
-                                            learning_starts=self.learning_starts,
-                                            replay_buffer=self.replay_buffer,
-                                            log_interval=log_interval)
-
-            if rollout.continue_training is False:
-                break
-
-            self._update_current_progress(self.num_timesteps, total_timesteps)
-
-            if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
-                gradient_steps = self.gradient_steps if self.gradient_steps > 0 else rollout.episode_timesteps
-                self.train(gradient_steps, batch_size=self.batch_size)
-
-        callback.on_training_end()
-        return self
+        return super(SAC, self).learn(total_timesteps=total_timesteps, callback=callback, log_interval=log_interval,
+                                      eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,
+                                      tb_log_name=tb_log_name, eval_log_path=eval_log_path,
+                                      reset_num_timesteps=reset_num_timesteps)
 
     def excluded_save_params(self) -> List[str]:
         """

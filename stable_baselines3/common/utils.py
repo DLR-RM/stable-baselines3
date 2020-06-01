@@ -93,7 +93,7 @@ def get_linear_fn(start: float, end: float, end_fraction: float) -> Callable:
     :return: (Callable)
     """
 
-    def func(progress: float):
+    def func(progress: float) -> float:
         if (1 - progress) > end_fraction:
             return end
         else:

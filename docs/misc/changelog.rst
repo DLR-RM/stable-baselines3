@@ -26,6 +26,7 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Refactored Off-Policy algorithm to share the same ``.learn()`` method
 
 Documentation:
 ^^^^^^^^^^^^^^

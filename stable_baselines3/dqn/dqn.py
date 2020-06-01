@@ -15,19 +15,22 @@ class DQN(OffPolicyRLModel):
     Deep Q-Network (DQN)
 
     Paper: https://arxiv.org/abs/1312.5602, https://www.nature.com/articles/nature14236
-    Default parameters are taken from the nature paper
+    Default hyperparameters are taken from the nature paper,
+    except for the optimizer and learning rate that were taken from Stable Baselines defaults.
 
-    :param policy: (PPOPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
+    :param policy: (DQNPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
     :param learning_rate: (float or callable) The learning rate, it can be a function
         of the current progress (from 1 to 0)
     :param buffer_size: (int) size of the replay buffer
     :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
     :param batch_size: (int) Minibatch size for each gradient update
-    :param gamma: (float) Discount factor
+    :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1)
+    :param gamma: (float) the discount factor
     :param train_freq: (int) Update the model every ``train_freq`` steps.
     :param gradient_steps: (int) How many gradient update after each step
-    :param tau: (float) the soft update coefficient ("polyak update", between 0 and 1)
+    :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
+        Note that this cannot be used at the same time as ``train_freq``
     :param target_update_interval: (int) update the target network every ``target_update_interval`` steps.
     :param exploration_fraction: (float) fraction of entire training period over which the exploration rate is reduced
     :param exploration_initial_eps: (float) initial value of random action probability
@@ -50,10 +53,11 @@ class DQN(OffPolicyRLModel):
                  buffer_size: int = 1000000,
                  learning_starts: int = 50000,
                  batch_size: Optional[int] = 32,
+                 tau: float = 1.0,
                  gamma: float = 0.99,
                  train_freq: int = 4,
                  gradient_steps: int = 1,
-                 tau: float = 1.0,
+                 n_episodes_rollout: int = -1,
                  target_update_interval: int = 10000,
                  exploration_fraction: float = 0.02,
                  exploration_initial_eps: float = 1.0,
@@ -69,6 +73,8 @@ class DQN(OffPolicyRLModel):
 
         super(DQN, self).__init__(policy, env, DQNPolicy, learning_rate,
                                   buffer_size, learning_starts, batch_size,
+                                  tau, gamma, train_freq, gradient_steps,
+                                  n_episodes_rollout, None,  # No action noise
                                   policy_kwargs, tensorboard_log, verbose, device,
                                   create_eval_env=create_eval_env,
                                   seed=seed, sde_support=False)
@@ -78,17 +84,10 @@ class DQN(OffPolicyRLModel):
         #     self.policy_kwargs['optimizer_class'] = th.optim.RMSprop
         #     self.policy_kwargs['optimizer_kwargs'] = dict(alpha=0.95, momentum=0.95, eps=0.01,
         #                                                   weight_decay=0)
-
-        assert train_freq > 0, "``train_freq`` must be positive"
-        self.train_freq = train_freq
-        self.gradient_steps = gradient_steps
-        self.batch_size = batch_size
-        self.gamma = gamma
         self.exploration_final_eps = exploration_final_eps
         self.exploration_initial_eps = exploration_initial_eps
         self.exploration_fraction = exploration_fraction
         self.target_update_interval = target_update_interval
-        self.tau = tau
         self.max_grad_norm = max_grad_norm
 
         if _init_setup_model:
@@ -174,32 +173,10 @@ class DQN(OffPolicyRLModel):
               eval_log_path: Optional[str] = None,
               reset_num_timesteps: bool = True) -> OffPolicyRLModel:
 
-        total_timesteps, callback = self._setup_learn(total_timesteps, eval_env, callback, eval_freq,
-                                                      n_eval_episodes, eval_log_path, reset_num_timesteps,
-                                                      tb_log_name)
-
-        callback.on_training_start(locals(), globals())
-
-        while self.num_timesteps < total_timesteps:
-
-            rollout = self.collect_rollouts(self.env,
-                                            n_steps=self.train_freq, n_episodes=-1, action_noise=None,
-                                            callback=callback,
-                                            learning_starts=self.learning_starts,
-                                            replay_buffer=self.replay_buffer,
-                                            log_interval=log_interval)
-
-            if rollout.continue_training is False:
-                break
-
-            self._update_current_progress(self.num_timesteps, total_timesteps)
-
-            if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
-                self.train(batch_size=self.batch_size, gradient_steps=self.gradient_steps)
-
-        callback.on_training_end()
-
-        return self
+        return super(DQN, self).learn(total_timesteps=total_timesteps, callback=callback, log_interval=log_interval,
+                                      eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,
+                                      tb_log_name=tb_log_name, eval_log_path=eval_log_path,
+                                      reset_num_timesteps=reset_num_timesteps)
 
     def excluded_save_params(self) -> List[str]:
         """

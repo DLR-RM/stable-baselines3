@@ -3,6 +3,34 @@
 Changelog
 ==========
 
+Pre-Release 0.7.0a0 (WIP)
+------------------------------
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+- Added ``DQN`` Algorithm (@Artemis-Skade)
+- Buffer dtype is now set according to action and observation spaces for ``ReplayBuffer``
+- Allocation of a buffer that exceeds the available memory of the system will always raise an Error
+  when ``psutil`` is available
+
+Bug Fixes:
+^^^^^^^^^^
+
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
 Pre-Release 0.6.0 (2020-06-01)
 ------------------------------
 

@@ -1,9 +1,12 @@
 from typing import Union, Optional, Generator
-import psutil
 
 import numpy as np
 import torch as th
 from gym import spaces
+try:
+    import psutil
+except ImportError:
+    psutil = None
 
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.type_aliases import RolloutBufferSamples, ReplayBufferSamples
@@ -159,8 +162,9 @@ class ReplayBuffer(BaseBuffer):
 
         assert n_envs == 1, "Replay buffer only support single environment for now"
 
-        mem = psutil.virtual_memory()
-        mem_available = mem.available
+        # Check that the replay buffer can fit into the memory
+        if psutil is not None:
+            mem_available = psutil.virtual_memory().available
 
         self.observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=observation_space.dtype)
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
@@ -169,9 +173,11 @@ class ReplayBuffer(BaseBuffer):
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
 
-        total_memory_usage = self.observations.nbytes + self.actions.nbytes + self.next_observations.nbytes + self.rewards.nbytes + self.dones.nbytes
-        assert total_memory_usage < mem_available, "This system provides not enough memory to store the complete " \
-                                                   "replay buffer "
+        if psutil is not None:
+            total_memory_usage = (self.observations.nbytes + self.actions.nbytes + self.next_observations.nbytes
+                                  + self.rewards.nbytes + self.dones.nbytes)
+            assert total_memory_usage < mem_available, ("This system does not have enough memory to store the complete "
+                                                        f"replay buffer {total_memory_usage} < {mem_available}")
 
     def add(self,
             obs: np.ndarray,
@@ -237,20 +243,13 @@ class RolloutBuffer(BaseBuffer):
 
     def reset(self) -> None:
 
-        mem = psutil.virtual_memory()
-        mem_available = mem.available
-
         self.observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape,
-                                     dtype=self.observation_space.dtype)
-        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=self.action_space.dtype)
+                                     dtype=np.float32)
+        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.values = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
-
-        total_memory_usage = self.observations.nbytes + self.actions.nbytes + self.values.nbytes + self.rewards.nbytes + self.dones.nbytes + self.returns.nbytes
-        assert total_memory_usage < mem_available, "This system provides not enough memory to store the complete " \
-                                                   "replay buffer "
 
         self.log_probs = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.advantages = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)

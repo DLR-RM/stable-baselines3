@@ -33,9 +33,6 @@ class DQN(OffPolicyRLModel):
     :param exploration_initial_eps: (float) initial value of random action probability
     :param exploration_final_eps: (float) final value of random action probability
     :param max_grad_norm: (float) The maximum value for the gradient clipping
-    :param rms_prop_eps: (float) RMSProp epsilon. It stabilizes square root computation in denominator
-        of RMSProp update
-    :param use_rms_prop: (bool) Whether to use RMSprop (default) or Adam as optimizer
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
@@ -62,8 +59,6 @@ class DQN(OffPolicyRLModel):
                  exploration_initial_eps: float = 1.0,
                  exploration_final_eps: float = 0.1,
                  max_grad_norm: float = 10,
-                 rms_prop_eps: float = 1e-2,
-                 use_rms_prop: bool = False,
                  tensorboard_log: Optional[str] = None,
                  create_eval_env: bool = False,
                  policy_kwargs: Optional[Dict[str, Any]] = None,
@@ -74,14 +69,14 @@ class DQN(OffPolicyRLModel):
 
         super(DQN, self).__init__(policy, env, DQNPolicy, learning_rate,
                                   buffer_size, learning_starts, batch_size,
-                                  policy_kwargs, verbose, device,
+                                  policy_kwargs, tensorboard_log, verbose, device,
                                   create_eval_env=create_eval_env,
                                   seed=seed, sde_support=False)
 
         # Override optimizer to match original implementation
-        if use_rms_prop and 'optimizer_class' not in self.policy_kwargs:
+        if 'optimizer_class' not in self.policy_kwargs:
             self.policy_kwargs['optimizer_class'] = th.optim.RMSprop
-            self.policy_kwargs['optimizer_kwargs'] = dict(alpha=0.95, momentum=0.95, eps=rms_prop_eps,
+            self.policy_kwargs['optimizer_kwargs'] = dict(alpha=0.95, momentum=0.95, eps=0.01,
                                                           weight_decay=0)
 
         assert train_freq > 0, "``train_freq`` must be positive"
@@ -95,7 +90,6 @@ class DQN(OffPolicyRLModel):
         self.target_update_interval = target_update_interval
         self.tau = tau
         self.max_grad_norm = max_grad_norm
-        self.tensorboard_log = tensorboard_log
 
         if _init_setup_model:
             self._setup_model()
@@ -118,7 +112,7 @@ class DQN(OffPolicyRLModel):
         and the current progress (from 1 to 0).
         """
         # Log the current exploration probability
-        logger.logkv("exploration rate", self.exploration_schedule(self._current_progress))
+        logger.record("rollout/exploration rate", self.exploration_schedule(self._current_progress))
 
         self.policy.update_exploration_rate(self.exploration_schedule(self._current_progress))
 
@@ -132,9 +126,6 @@ class DQN(OffPolicyRLModel):
         self._update_exploration()
 
         for gradient_step in range(gradient_steps):
-            # Increase update counter
-            self._n_updates += 1
-
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
@@ -161,12 +152,16 @@ class DQN(OffPolicyRLModel):
             th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.policy.optimizer.step()
 
+            # Increase update counter
+            self._n_updates += 1
+
             # Update target networks - account for train_freq
-            if self._n_updates % self.target_update_interval // self.train_freq == 0:
+            target_update_interval = min(self.target_update_interval // self.train_freq, 1)
+            if self._n_updates % target_update_interval == 0:
                 for param, target_param in zip(self.q_net.parameters(), self.q_net_target.parameters()):
                     target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
-        logger.logkv("n_updates", self._n_updates)
+        logger.record("train/n_updates", self._n_updates, exclude='tensorboard')
 
     def learn(self,
               total_timesteps: int,
@@ -179,8 +174,8 @@ class DQN(OffPolicyRLModel):
               eval_log_path: Optional[str] = None,
               reset_num_timesteps: bool = True) -> OffPolicyRLModel:
 
-        callback = self._setup_learn(eval_env, callback, eval_freq,
-                                     n_eval_episodes, eval_log_path, reset_num_timesteps)
+        total_timesteps, callback = self._setup_learn(total_timesteps, eval_env, callback, eval_freq,
+                                                      n_eval_episodes, eval_log_path, reset_num_timesteps)
 
         callback.on_training_start(locals(), globals())
 

@@ -154,7 +154,7 @@ class A2C(OnPolicyRLModel):
     def learn(self,
               total_timesteps: int,
               callback: MaybeCallback = None,
-              log_interval: int = 1,
+              log_interval: int = 100,
               eval_env: Optional[GymEnv] = None,
               eval_freq: int = -1,
               n_eval_episodes: int = 5,

@@ -15,14 +15,17 @@ DIM = 4
 @pytest.mark.parametrize("model_class", [A2C, PPO, DQN])
 @pytest.mark.parametrize("env", [IdentityEnv(DIM), IdentityEnvMultiDiscrete(DIM), IdentityEnvMultiBinary(DIM)])
 def test_discrete(model_class, env):
-    env = DummyVecEnv([lambda: env])
+    env_ = DummyVecEnv([lambda: env])
     kwargs = {}
     if model_class == DQN:
         kwargs = dict(learning_starts=0)
+        # DQN only support discrete actions
+        if isinstance(env, (IdentityEnvMultiDiscrete, IdentityEnvMultiBinary)):
+            return
 
-    model = model_class('MlpPolicy', env, gamma=0.5, seed=1, **kwargs).learn(3100)
+    model = model_class('MlpPolicy', env_, gamma=0.5, seed=1, **kwargs).learn(3100)
 
-    evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=90)
+    evaluate_policy(model, env_, n_eval_episodes=20, reward_threshold=90)
     obs = env.reset()
 
     assert np.shape(model.predict(obs)[0]) == np.shape(obs)

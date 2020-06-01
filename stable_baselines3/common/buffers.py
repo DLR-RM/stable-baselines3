@@ -1,9 +1,11 @@
 from typing import Union, Optional, Generator
+import warnings
 
 import numpy as np
 import torch as th
 from gym import spaces
 try:
+    # Check memory used by replay buffer when possible
     import psutil
 except ImportError:
     psutil = None
@@ -176,8 +178,12 @@ class ReplayBuffer(BaseBuffer):
         if psutil is not None:
             total_memory_usage = (self.observations.nbytes + self.actions.nbytes + self.next_observations.nbytes
                                   + self.rewards.nbytes + self.dones.nbytes)
-            assert total_memory_usage < mem_available, ("This system does not have enough memory to store the complete "
-                                                        f"replay buffer {total_memory_usage} < {mem_available}")
+            if total_memory_usage > mem_available:
+                # Convert to GB
+                total_memory_usage /= 1e9
+                mem_available /= 1e9
+                warnings.warn("This system does not have apparently enough memory to store the complete "
+                              f"replay buffer {total_memory_usage:.2f}GB > {mem_available:.2f}GB")
 
     def add(self,
             obs: np.ndarray,

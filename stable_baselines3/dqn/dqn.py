@@ -73,11 +73,11 @@ class DQN(OffPolicyRLModel):
                                   create_eval_env=create_eval_env,
                                   seed=seed, sde_support=False)
 
-        # Override optimizer to match original implementation
-        if 'optimizer_class' not in self.policy_kwargs:
-            self.policy_kwargs['optimizer_class'] = th.optim.RMSprop
-            self.policy_kwargs['optimizer_kwargs'] = dict(alpha=0.95, momentum=0.95, eps=0.01,
-                                                          weight_decay=0)
+        # Hyperparameters from original paper (Adam did not exist)
+        # if 'optimizer_class' not in self.policy_kwargs:
+        #     self.policy_kwargs['optimizer_class'] = th.optim.RMSprop
+        #     self.policy_kwargs['optimizer_kwargs'] = dict(alpha=0.95, momentum=0.95, eps=0.01,
+        #                                                   weight_decay=0)
 
         assert train_freq > 0, "``train_freq`` must be positive"
         self.train_freq = train_freq

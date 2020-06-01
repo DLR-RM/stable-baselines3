@@ -14,7 +14,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Added ``DQN`` Algorithm (@Artemis-Skade)
 - Buffer dtype is now set according to action and observation spaces for ``ReplayBuffer``
-- Allocation of a buffer that exceeds the available memory of the system will always raise an Error
+- Added warning when allocation of a buffer may exceed the available memory of the system
   when ``psutil`` is available
 
 Bug Fixes:

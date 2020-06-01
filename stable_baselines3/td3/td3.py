@@ -74,7 +74,7 @@ class TD3(OffPolicyRLModel):
 
         super(TD3, self).__init__(policy, env, TD3Policy, learning_rate,
                                   buffer_size, learning_starts, batch_size,
-                                  policy_kwargs, verbose, device,
+                                  policy_kwargs, tensorboard_log, verbose, device,
                                   create_eval_env=create_eval_env, seed=seed,
                                   sde_support=False)
 
@@ -87,7 +87,6 @@ class TD3(OffPolicyRLModel):
         self.policy_delay = policy_delay
         self.target_noise_clip = target_noise_clip
         self.target_policy_noise = target_policy_noise
-        self.tensorboard_log = tensorboard_log
 
         if _init_setup_model:
             self._setup_model()
@@ -166,14 +165,10 @@ class TD3(OffPolicyRLModel):
               eval_log_path: Optional[str] = None,
               reset_num_timesteps: bool = True) -> OffPolicyRLModel:
 
-        callback = self._setup_learn(eval_env, callback, eval_freq,
-                                     n_eval_episodes, eval_log_path, reset_num_timesteps,
-                                     self.tensorboard_log, tb_log_name)
+        total_timesteps, callback = self._setup_learn(total_timesteps, eval_env, callback, eval_freq,
+                                                      n_eval_episodes, eval_log_path, reset_num_timesteps,
+                                                      tb_log_name)
         callback.on_training_start(locals(), globals())
-
-        if not reset_num_timesteps:
-            # Make sure training timesteps are ahead of the internal counter
-            total_timesteps += self.num_timesteps
 
         while self.num_timesteps < total_timesteps:
 

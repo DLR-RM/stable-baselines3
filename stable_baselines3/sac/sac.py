@@ -89,7 +89,7 @@ class SAC(OffPolicyRLModel):
 
         super(SAC, self).__init__(policy, env, SACPolicy, learning_rate,
                                   buffer_size, learning_starts, batch_size,
-                                  policy_kwargs, verbose, device,
+                                  policy_kwargs, tensorboard_log, verbose, device,
                                   create_eval_env=create_eval_env, seed=seed,
                                   use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                   use_sde_at_warmup=use_sde_at_warmup)
@@ -98,7 +98,6 @@ class SAC(OffPolicyRLModel):
         self.log_ent_coef = None  # type: Optional[th.Tensor]
         self.target_update_interval = target_update_interval
         self.tau = tau
-        self.tensorboard_log = tensorboard_log
         # Entropy coefficient / Entropy temperature
         # Inverse of the reward scale
         self.ent_coef = ent_coef
@@ -255,14 +254,10 @@ class SAC(OffPolicyRLModel):
               eval_log_path: Optional[str] = None,
               reset_num_timesteps: bool = True) -> OffPolicyRLModel:
 
-        callback = self._setup_learn(eval_env, callback, eval_freq,
-                                     n_eval_episodes, eval_log_path, reset_num_timesteps,
-                                     self.tensorboard_log, tb_log_name)
+        total_timesteps, callback = self._setup_learn(total_timesteps, eval_env, callback, eval_freq,
+                                                      n_eval_episodes, eval_log_path, reset_num_timesteps,
+                                                      tb_log_name)
         callback.on_training_start(locals(), globals())
-
-        if not reset_num_timesteps:
-            # Make sure training timesteps are ahead of the internal counter
-            total_timesteps += self.num_timesteps
 
         while self.num_timesteps < total_timesteps:
             rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,

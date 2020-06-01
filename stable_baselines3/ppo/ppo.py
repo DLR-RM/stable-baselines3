@@ -91,7 +91,8 @@ class PPO(BaseRLModel):
                  device: Union[th.device, str] = "auto",
                  _init_setup_model: bool = True):
 
-        super(PPO, self).__init__(policy, env, PPOPolicy, learning_rate, policy_kwargs=policy_kwargs,
+        super(PPO, self).__init__(policy, env, PPOPolicy, learning_rate,
+                                  policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_log,
                                   verbose=verbose, device=device, use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                   create_eval_env=create_eval_env, support_multi_env=True, seed=seed)
 
@@ -107,7 +108,6 @@ class PPO(BaseRLModel):
         self.max_grad_norm = max_grad_norm
         self.rollout_buffer = None
         self.target_kl = target_kl
-        self.tensorboard_log = tensorboard_log
         self.tb_writer = None
 
         if _init_setup_model:
@@ -304,14 +304,10 @@ class PPO(BaseRLModel):
               reset_num_timesteps: bool = True) -> "PPO":
 
         iteration = 0
-        callback = self._setup_learn(eval_env, callback, eval_freq,
-                                     n_eval_episodes, eval_log_path, reset_num_timesteps,
-                                     self.tensorboard_log, tb_log_name)
+        total_timesteps, callback = self._setup_learn(total_timesteps, eval_env, callback, eval_freq,
+                                                      n_eval_episodes, eval_log_path, reset_num_timesteps,
+                                                      tb_log_name)
         callback.on_training_start(locals(), globals())
-
-        if not reset_num_timesteps:
-            # Make sure training timesteps are ahead of the internal counter
-            total_timesteps += self.num_timesteps
 
         while self.num_timesteps < total_timesteps:
 

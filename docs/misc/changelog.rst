@@ -3,12 +3,19 @@
 Changelog
 ==========
 
-Pre-Release 0.6.0a10 (WIP)
+Pre-Release 0.6.0 (2020-06-01)
 ------------------------------
+
+**Tensorboard support, refactored logger**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Remove State-Dependent Exploration (SDE) support for ``TD3``
+- Methods were renamed in the logger:
+  - ``logkv`` -> ``record``, ``writekvs`` -> ``write``, ``writeseq`` ->  ``write_sequence``,
+  - ``logkvs`` -> ``record_dict``, ``dumpkvs`` -> ``dump``,
+  - ``getkvs`` -> ``get_log_dict``, ``logkv_mean`` -> ``record_mean``,
+
 
 New Features:
 ^^^^^^^^^^^^^
@@ -21,7 +28,9 @@ New Features:
 - Allocation of a buffer that exceeds the available memory of the system will always raise an Error
 - Added support for ``MultiDiscrete`` and ``MultiBinary`` observation spaces (@rolandgvc)
 - Added ``MultiCategorical`` and ``Bernoulli`` distributions for PPO/A2C (@rolandgvc)
+- Added support for logging to tensorboard (@rolandgvc)
 - Added ``VectorizedActionNoise`` for continuous vectorized environments (@PartiallyTyped)
+- Log evaluation in the ``EvalCallback`` using the logger
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -29,6 +38,7 @@ Bug Fixes:
 - Fixed version number that had a new line included
 - Fixed weird seg fault in docker image due to FakeImageEnv by reducing screen size
 - Fixed ``sde_sample_freq`` that was not taken into account for SAC
+- Pass logger module to ``BaseCallback`` otherwise they cannot write in the one used by the algorithms
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -42,12 +52,14 @@ Others:
 - Added ``.readthedoc.yml`` file
 - Added ``flake8`` and ``make lint`` command
 - Added Github workflow
+- Added warning when passing both ``train_freq`` and ``n_episodes_rollout`` to Off-Policy Algorithms
 
 Documentation:
 ^^^^^^^^^^^^^^
 - Added most documentation (adapted from Stable-Baselines)
 - Added link to CONTRIBUTING.md in the README (@kinalmehta)
 - Added gSDE project and update docstrings accordingly
+- Fix ``TD3`` example code block
 
 
 Pre-Release 0.5.0 (2020-05-05)
@@ -233,4 +245,4 @@ And all the contributors:
 @XMaster96 @kantneel @Pastafarianist @GerardMaggiolino @PatrickWalter214 @yutingsz @sc420 @Aaahh @billtubbs
 @Miffyli @dwiel @miguelrass @qxcv @jaberkow @eavelardev @ruifeng96150 @pedrohbtp @srivatsankrishnan @evilsocket
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
-@flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur
+@flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3

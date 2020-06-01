@@ -1,4 +1,4 @@
-image: stablebaselines/stable-baselines3-cpu:0.6.0a7
+image: stablebaselines/stable-baselines3-cpu:0.6.0
 
 type-check:
   script:
@@ -15,5 +15,4 @@ doc-build:
 
 lint-check:
   script:
-  - pip install flake8  # TODO: remove when new version on Pypi
   - make lint

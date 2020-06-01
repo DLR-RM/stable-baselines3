@@ -25,7 +25,7 @@ Main Features
 - Documented functions and classes
 - Tests, high code coverage and type hints
 - Clean code
-
+- Tensorboard support
 
 
 .. toctree::
@@ -42,6 +42,7 @@ Main Features
    guide/custom_env
    guide/custom_policy
    guide/callbacks
+   guide/tensorboard
    guide/rl_zoo
    guide/migration
    guide/checking_nan

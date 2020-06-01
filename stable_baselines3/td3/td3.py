@@ -89,7 +89,7 @@ class TD3(OffPolicyRLModel):
 
         super(TD3, self).__init__(policy, env, TD3Policy, learning_rate,
                                   buffer_size, learning_starts, batch_size,
-                                  policy_kwargs, verbose, device,
+                                  policy_kwargs, tensorboard_log, verbose, device,
                                   create_eval_env=create_eval_env, seed=seed,
                                   use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                   use_sde_at_warmup=use_sde_at_warmup)
@@ -176,7 +176,7 @@ class TD3(OffPolicyRLModel):
                     target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
         self._n_updates += gradient_steps
-        logger.logkv("n_updates", self._n_updates)
+        logger.record("train/n_updates", self._n_updates, exclude='tensorboard')
 
     def train_sde(self) -> None:
         # Update optimizer learning rate
@@ -235,9 +235,9 @@ class TD3(OffPolicyRLModel):
               eval_log_path: Optional[str] = None,
               reset_num_timesteps: bool = True) -> OffPolicyRLModel:
 
-        callback = self._setup_learn(eval_env, callback, eval_freq,
-                                     n_eval_episodes, eval_log_path, reset_num_timesteps)
-
+        total_timesteps, callback = self._setup_learn(total_timesteps, eval_env, callback, eval_freq,
+                                                      n_eval_episodes, eval_log_path, reset_num_timesteps,
+                                                      tb_log_name)
         callback.on_training_start(locals(), globals())
 
         while self.num_timesteps < total_timesteps:

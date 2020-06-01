@@ -5,7 +5,6 @@
 
 **WARNING: Stable Baselines3 is currently in a beta version, breaking changes may occur before 1.0 is released**
 
-Note: most of the documentation of [Stable Baselines](https://github.com/hill-a/stable-baselines) should be still valid though.
 
 # Stable Baselines3
 
@@ -35,7 +34,6 @@ These algorithms will make it easier for the research community and industry to 
 | High code coverage          | :heavy_check_mark: |
 | Type hints                  | :heavy_check_mark: |
 
-<!-- | Tensorboard support         | :heavy_check_mark: | -->
 
 ### Roadmap to V1.0
 
@@ -45,7 +43,6 @@ Planned features:
 - [ ] DQN (almost ready, currently in testing phase)
 - [ ] DDPG (you can use its successor TD3 for now)
 - [ ] HER
-- [ ] Support for MultiDiscrete and MultiBinary action spaces
 
 ### Planned features (v1.1+)
 

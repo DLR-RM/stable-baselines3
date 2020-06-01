@@ -3,8 +3,10 @@
 Changelog
 ==========
 
-Pre-Release 0.6.0a11 (WIP)
+Pre-Release 0.6.0 (2020-06-01)
 ------------------------------
+
+**Tensorboard support, refactored logger**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -47,6 +49,7 @@ Others:
 - Added ``.readthedoc.yml`` file
 - Added ``flake8`` and ``make lint`` command
 - Added Github workflow
+- Added warning when passing both ``train_freq`` and ``n_episodes_rollout`` to Off-Policy Algorithms
 
 Documentation:
 ^^^^^^^^^^^^^^

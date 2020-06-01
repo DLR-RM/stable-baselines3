@@ -479,16 +479,18 @@ class OnlineActorCriticPolicy(BasePolicy):
         # with small initial weight for the output
         if self.ortho_init:
             # TODO: check for features_extractor
-            for module in [self.features_extractor, self.mlp_extractor,
-                           self.action_net, self.value_net]:
-                # Values from stable-baselines, TODO: check why
-                gain = {
-                    self.features_extractor: np.sqrt(2),
-                    self.mlp_extractor: np.sqrt(2),
-                    self.action_net: 0.01,
-                    self.value_net: 1
-                }[module]
+            # Values from stable-baselines.
+            # feature_extractor/mlp values are
+            # originally from openai/baselines (default gains/init_scales).
+            module_gains = {
+                self.features_extractor: np.sqrt(2),
+                self.mlp_extractor: np.sqrt(2),
+                self.action_net: 0.01,
+                self.value_net: 1
+            }
+            for module, gain in module_gains.items():
                 module.apply(partial(self.init_weights, gain=gain))
+
         # Setup optimizer with initial learning rate
         self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
 

@@ -3,6 +3,7 @@ import os
 import io
 import zipfile
 import pickle
+import warnings
 from typing import Union, Type, Optional, Dict, Any, List, Tuple, Callable
 from abc import ABC, abstractmethod
 from collections import deque
@@ -799,6 +800,17 @@ class OffPolicyRLModel(BaseRLModel):
 
         assert isinstance(env, VecEnv), "You must pass a VecEnv"
         assert env.num_envs == 1, "OffPolicyRLModel only support single environment"
+
+        if n_episodes > 0 and n_steps > 0:
+            # Note we are refering to the constructor arguments
+            # that are named `train_freq` and `n_episodes_rollout`
+            # but correspond to `n_steps` and `n_episodes` here
+            warnings.warn("You passed a positive value for `train_freq` and `n_episodes_rollout`."
+                          "Please make sure this is intended. "
+                          "The agent will collect data by stepping in the environment "
+                          "until both conditions are true: "
+                          "`number of steps in the env` >= `train_freq` and "
+                          "`number of episodes` > `n_episodes_rollout`")
 
         if self.use_sde:
             self.actor.reset_noise()

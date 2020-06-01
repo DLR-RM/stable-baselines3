@@ -82,8 +82,8 @@ class A2C(OnPolicyRLModel):
 
         self.normalize_advantage = normalize_advantage
 
-        # Update optimizer inside the policy if we want to use RMSProp rather
-        # than Adam
+        # Update optimizer inside the policy if we want to use RMSProp
+        # (original implementation) rather than Adam
         if use_rms_prop and 'optimizer_class' not in self.policy_kwargs:
             self.policy_kwargs['optimizer_class'] = th.optim.RMSprop
             self.policy_kwargs['optimizer_kwargs'] = dict(alpha=0.99, eps=rms_prop_eps,

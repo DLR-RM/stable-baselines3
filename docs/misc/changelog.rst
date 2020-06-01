@@ -45,6 +45,7 @@ Documentation:
 - Added most documentation (adapted from Stable-Baselines)
 - Added link to CONTRIBUTING.md in the README (@kinalmehta)
 - Added gSDE project and update docstrings accordingly
+- Fix ``TD3`` example code block
 
 
 Pre-Release 0.5.0 (2020-05-05)
@@ -230,4 +231,4 @@ And all the contributors:
 @XMaster96 @kantneel @Pastafarianist @GerardMaggiolino @PatrickWalter214 @yutingsz @sc420 @Aaahh @billtubbs
 @Miffyli @dwiel @miguelrass @qxcv @jaberkow @eavelardev @ruifeng96150 @pedrohbtp @srivatsankrishnan @evilsocket
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
-@flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur
+@flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3

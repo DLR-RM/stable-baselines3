@@ -1,5 +1,6 @@
-from typing import Optional
+from typing import Optional, List, Iterable
 from abc import ABC, abstractmethod
+import copy
 
 import numpy as np
 
@@ -45,7 +46,7 @@ class NormalActionNoise(ActionNoise):
 
 class OrnsteinUhlenbeckActionNoise(ActionNoise):
     """
-    A Ornstein Uhlenbeck action noise, this is designed to aproximate brownian motion with friction.
+    An Ornstein Uhlenbeck action noise, this is designed to aproximate brownian motion with friction.
 
     Based on http://math.stackexchange.com/questions/1287634/implementing-ornstein-uhlenbeck-in-matlab
 
@@ -84,3 +85,81 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
 
     def __repr__(self) -> str:
         return f'OrnsteinUhlenbeckActionNoise(mu={self._mu}, sigma={self._sigma})'
+
+
+class VectorizedActionNoise(ActionNoise):
+    """
+    A Vectorized action noise for parallel environments.
+
+    :param base_noise: ActionNoise The noise generator to use
+    :param n_envs: (int) The number of parallel environments
+    """
+
+    def __init__(self, base_noise: ActionNoise, n_envs: int):
+        try:
+            self.n_envs = int(n_envs)
+            assert self.n_envs > 0
+        except (TypeError, AssertionError):
+            raise ValueError(f"Expected n_envs={n_envs} to be positive integer greater than 0")
+
+        self.base_noise = base_noise
+        self.noises = [copy.deepcopy(self.base_noise) for _ in range(n_envs)]
+
+    def reset(self, indices: Optional[Iterable[int]] = None) -> None:
+        """
+        Reset all the noise processes, or those listed in indices
+
+        :param indices: Optional[Iterable[int]] The indices to reset. Default: None.
+            If the parameter is None, then all processes are reset to their initial position.
+        """
+        if indices is None:
+            indices = range(len(self.noises))
+
+        for index in indices:
+            self.noises[index].reset()
+
+    def __repr__(self) -> str:
+        return f"VecNoise(BaseNoise={repr(self.base_noise)}), n_envs={len(self.noises)})"
+
+    def __call__(self) -> np.ndarray:
+        """
+        Generate and stack the action noise from each noise object
+        """
+        noise = np.stack([noise() for noise in self.noises])
+        return noise
+
+    @property
+    def base_noise(self) -> ActionNoise:
+        return self._base_noise
+
+    @base_noise.setter
+    def base_noise(self, base_noise: ActionNoise):
+        if base_noise is None:
+            raise ValueError("Expected base_noise to be an instance of ActionNoise, not None", ActionNoise)
+        if not isinstance(base_noise, ActionNoise):
+            raise TypeError("Expected base_noise to be an instance of type ActionNoise", ActionNoise)
+        self._base_noise = base_noise
+
+    @property
+    def noises(self) -> List[ActionNoise]:
+        return self._noises
+
+    @noises.setter
+    def noises(self, noises: List[ActionNoise]) -> None:
+        noises = list(noises)  # raises TypeError if not iterable
+        assert len(noises) == self.n_envs, f"Expected a list of {self.n_envs} ActionNoises, found {len(noises)}."
+
+        different_types = [
+            i for i, noise in enumerate(noises)
+            if not isinstance(noise, type(self.base_noise))
+        ]
+
+        if len(different_types):
+            raise ValueError(
+                f"Noise instances at indices {different_types} don't match the type of base_noise",
+                type(self.base_noise)
+            )
+
+        self._noises = noises
+        for noise in noises:
+            noise.reset()

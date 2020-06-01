@@ -33,6 +33,7 @@ RUN \
     cd ${CODE_DIR}/stable-baselines3 3&& \
     pip install -e .[extra,tests,docs] && \
     # Use headless version for docker
+    pip uninstall -y opencv-python && \
     pip install opencv-python-headless && \
     rm -rf $HOME/.cache/pip
 

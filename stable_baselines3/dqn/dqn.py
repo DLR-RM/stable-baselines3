@@ -59,9 +59,9 @@ class DQN(OffPolicyRLModel):
                  gradient_steps: int = 1,
                  n_episodes_rollout: int = -1,
                  target_update_interval: int = 10000,
-                 exploration_fraction: float = 0.02,
+                 exploration_fraction: float = 0.1,
                  exploration_initial_eps: float = 1.0,
-                 exploration_final_eps: float = 0.1,
+                 exploration_final_eps: float = 0.05,
                  max_grad_norm: float = 10,
                  tensorboard_log: Optional[str] = None,
                  create_eval_env: bool = False,
@@ -155,7 +155,7 @@ class DQN(OffPolicyRLModel):
             self._n_updates += 1
 
             # Update target networks - account for train_freq
-            target_update_interval = min(self.target_update_interval // self.train_freq, 1)
+            target_update_interval = max(self.target_update_interval // self.train_freq, 1)
             if self._n_updates % target_update_interval == 0:
                 for param, target_param in zip(self.q_net.parameters(), self.q_net_target.parameters()):
                     target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)

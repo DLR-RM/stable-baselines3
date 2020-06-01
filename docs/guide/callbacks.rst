@@ -44,7 +44,7 @@ This will give you access to events (``_on_training_start``, ``_on_step``) and u
             # self.locals = None  # type: Dict[str, Any]
             # self.globals = None  # type: Dict[str, Any]
             # The logger object, used to report things in the terminal
-            # self.logger = None  # type: logger.Logger
+            # self.logger = None  # stable_baselines3.common.logger
             # # Sometimes, for event callback, it is useful
             # # to have access to the parent object
             # self.parent = None  # type: Optional[BaseCallback]

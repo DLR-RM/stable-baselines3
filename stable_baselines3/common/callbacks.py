@@ -9,7 +9,7 @@ import numpy as np
 
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, sync_envs_normalization
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.common.logger import Logger
+from stable_baselines3.common import logger
 
 if typing.TYPE_CHECKING:
     from stable_baselines3.common.base_class import BaseRLModel  # pytype: disable=pyi-error
@@ -34,7 +34,7 @@ class BaseCallback(ABC):
         self.verbose = verbose
         self.locals = None  # type: Optional[Dict[str, Any]]
         self.globals = None  # type: Optional[Dict[str, Any]]
-        self.logger = None  # type: Optional[Logger]
+        self.logger = None
         # Sometimes, for event callback, it is useful
         # to have access to the parent object
         self.parent = None  # type: Optional[BaseCallback]
@@ -47,7 +47,7 @@ class BaseCallback(ABC):
         """
         self.model = model
         self.training_env = model.get_env()
-        self.logger = Logger.CURRENT
+        self.logger = logger
         self._init_callback()
 
     def _init_callback(self) -> None:
@@ -313,6 +313,9 @@ class EvalCallback(EventCallback):
                 print(f"Eval num_timesteps={self.num_timesteps}, "
                       f"episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
                 print(f"Episode length: {mean_ep_length:.2f} +/- {std_ep_length:.2f}")
+            # Add to current Logger
+            self.logger.record('eval/mean_reward', float(mean_reward))
+            self.logger.record('eval/mean_ep_length', mean_ep_length)
 
             if mean_reward > self.best_mean_reward:
                 if self.verbose > 0:

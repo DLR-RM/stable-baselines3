@@ -11,7 +11,7 @@ import gym
 import torch as th
 import numpy as np
 
-from stable_baselines3.common import logger
+from stable_baselines3.common import logger, utils
 from stable_baselines3.common.policies import BasePolicy, get_policy_from_name
 from stable_baselines3.common.utils import set_random_seed, get_schedule_fn, update_learning_rate, get_device
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize, VecTransposeImage
@@ -35,6 +35,7 @@ class BaseRLModel(ABC):
     :param learning_rate: (float or callable) learning rate for the optimizer,
         it can be a function of the current progress (from 1 to 0)
     :param policy_kwargs: (Dict[str, Any]) Additional arguments to be passed to the policy on creation
+    :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param verbose: (int) The verbosity level: 0 none, 1 training information, 2 debug
     :param device: (Union[th.device, str]) Device on which the code should run.
         By default, it will try to use a Cuda compatible device and fallback to cpu
@@ -58,6 +59,7 @@ class BaseRLModel(ABC):
                  policy_base: Type[BasePolicy],
                  learning_rate: Union[float, Callable],
                  policy_kwargs: Dict[str, Any] = None,
+                 tensorboard_log: Optional[str] = None,
                  verbose: int = 0,
                  device: Union[th.device, str] = 'auto',
                  support_multi_env: bool = False,
@@ -91,6 +93,7 @@ class BaseRLModel(ABC):
         self.start_time = None
         self.policy = None
         self.learning_rate = learning_rate
+        self.tensorboard_log = tensorboard_log
         self.lr_schedule = None  # type: Optional[Callable]
         self._last_obs = None  # type: Optional[np.ndarray]
         # When using VecNormalize:
@@ -191,7 +194,7 @@ class BaseRLModel(ABC):
             An optimizer or a list of optimizers.
         """
         # Log the current learning rate
-        logger.logkv("learning_rate", self.lr_schedule(self._current_progress))
+        logger.record("train/learning_rate", self.lr_schedule(self._current_progress))
 
         if not isinstance(optimizers, list):
             optimizers = [optimizers]
@@ -289,7 +292,7 @@ class BaseRLModel(ABC):
         """
         Return a trained model.
 
-        :param total_timesteps: (int) The total number of samples to train on
+        :param total_timesteps: (int) The total number of samples (env steps) to train on
         :param callback: (function (dict, dict)) -> boolean function called at every steps with state of the algorithm.
             It takes the local and global variables. If it returns False, training is aborted.
         :param log_interval: (int) The number of timesteps before logging.
@@ -491,23 +494,27 @@ class BaseRLModel(ABC):
         return callback
 
     def _setup_learn(self,
+                     total_timesteps: int,
                      eval_env: Optional[GymEnv],
                      callback: Union[None, Callable, List[BaseCallback], BaseCallback] = None,
                      eval_freq: int = 10000,
                      n_eval_episodes: int = 5,
                      log_path: Optional[str] = None,
                      reset_num_timesteps: bool = True,
-                     ) -> 'BaseCallback':
+                     tb_log_name: str = 'run',
+                     ) -> Tuple[int, 'BaseCallback']:
         """
         Initialize different variables needed for training.
 
+        :param total_timesteps: (int) The total number of samples (env steps) to train on
         :param eval_env: (Optional[GymEnv])
         :param callback: (Union[None, BaseCallback, List[BaseCallback, Callable]])
         :param eval_freq: (int)
         :param n_eval_episodes: (int)
         :param log_path (Optional[str]): Path to a log folder
         :param reset_num_timesteps: (bool) Whether to reset or not the ``num_timesteps`` attribute
-        :return: (BaseCallback)
+        :param tb_log_name: (str) the name of the run for tensorboard log
+        :return: (int, Tuple[BaseCallback])
         """
         self.start_time = time.time()
         self.ep_info_buffer = deque(maxlen=100)
@@ -519,6 +526,9 @@ class BaseRLModel(ABC):
         if reset_num_timesteps:
             self.num_timesteps = 0
             self._episode_num = 0
+        else:
+            # Make sure training timesteps are ahead of the internal counter
+            total_timesteps += self.num_timesteps
 
         # Avoid resetting the environment when calling ``.learn()`` consecutive times
         if reset_num_timesteps or self._last_obs is None:
@@ -532,10 +542,13 @@ class BaseRLModel(ABC):
 
         eval_env = self._get_eval_env(eval_env)
 
+        # Configure logger's outputs
+        utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
+
         # Create eval callback if needed
         callback = self._init_callback(callback, eval_env, eval_freq, n_eval_episodes, log_path)
 
-        return callback
+        return total_timesteps, callback
 
     def _update_info_buffer(self, infos: List[Dict[str, Any]], dones: Optional[np.ndarray] = None) -> None:
         """
@@ -697,6 +710,7 @@ class OffPolicyRLModel(BaseRLModel):
                  learning_starts: int = 100,
                  batch_size: int = 256,
                  policy_kwargs: Dict[str, Any] = None,
+                 tensorboard_log: Optional[str] = None,
                  verbose: int = 0,
                  device: Union[th.device, str] = 'auto',
                  support_multi_env: bool = False,
@@ -709,13 +723,13 @@ class OffPolicyRLModel(BaseRLModel):
                  sde_support: bool = True):
 
         super(OffPolicyRLModel, self).__init__(policy, env, policy_base, learning_rate,
-                                               policy_kwargs, verbose,
+                                               policy_kwargs, tensorboard_log, verbose,
                                                device, support_multi_env, create_eval_env, monitor_wrapper,
                                                seed, use_sde, sde_sample_freq)
         self.buffer_size = buffer_size
         self.batch_size = batch_size
         self.learning_starts = learning_starts
-        self.actor = None
+        self.actor = None  # type: Optional[th.nn.Module]
         self.replay_buffer = None  # type: Optional[ReplayBuffer]
         # Update policy keyword arguments
         if sde_support:
@@ -752,7 +766,7 @@ class OffPolicyRLModel(BaseRLModel):
             self.replay_buffer = pickle.load(file_handler)
         assert isinstance(self.replay_buffer, ReplayBuffer), 'The replay buffer must inherit from ReplayBuffer class'
 
-    def collect_rollouts(self,
+    def collect_rollouts(self,  # noqa: C901
                          env: VecEnv,
                          # Type hint as string to avoid circular import
                          callback: 'BaseCallback',
@@ -873,22 +887,23 @@ class OffPolicyRLModel(BaseRLModel):
                 if action_noise is not None:
                     action_noise.reset()
 
-                # Display training infos
-                if self.verbose >= 1 and log_interval is not None and self._episode_num % log_interval == 0:
+                # Log training infos
+                if log_interval is not None and self._episode_num % log_interval == 0:
                     fps = int(self.num_timesteps / (time.time() - self.start_time))
-                    logger.logkv("episodes", self._episode_num)
+                    logger.record("time/episodes", self._episode_num, exclude="tensorboard")
                     if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
-                        logger.logkv('ep_rew_mean', self.safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
-                        logger.logkv('ep_len_mean', self.safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
-                    logger.logkv("fps", fps)
-                    logger.logkv('time_elapsed', int(time.time() - self.start_time))
-                    logger.logkv("total timesteps", self.num_timesteps)
+                        logger.record('rollout/ep_rew_mean', self.safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
+                        logger.record('rollout/ep_len_mean', self.safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
+                    logger.record("time/fps", fps)
+                    logger.record('time/time_elapsed', int(time.time() - self.start_time), exclude="tensorboard")
+                    logger.record("time/total timesteps", self.num_timesteps, exclude="tensorboard")
                     if self.use_sde:
-                        logger.logkv("std", (self.actor.get_std()).mean().item())
+                        logger.record("train/std", (self.actor.get_std()).mean().item())
 
                     if len(self.ep_success_buffer) > 0:
-                        logger.logkv('success rate', self.safe_mean(self.ep_success_buffer))
-                    logger.dumpkvs()
+                        logger.record('rollout/success rate', self.safe_mean(self.ep_success_buffer))
+                    # Pass the number of timesteps for tensorboard
+                    logger.dump(step=self.num_timesteps)
 
         mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
 

@@ -3,12 +3,17 @@
 Changelog
 ==========
 
-Pre-Release 0.6.0a10 (WIP)
+Pre-Release 0.6.0a11 (WIP)
 ------------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Remove State-Dependent Exploration (SDE) support for ``TD3``
+- Methods were renamed in the logger:
+  - ``logkv`` -> ``record``, ``writekvs`` -> ``write``, ``writeseq`` ->  ``write_sequence``,
+  - ``logkvs`` -> ``record_dict``, ``dumpkvs`` -> ``dump``,
+  - ``getkvs`` -> ``get_log_dict``, ``logkv_mean`` -> ``record_mean``,
+
 
 New Features:
 ^^^^^^^^^^^^^
@@ -18,7 +23,9 @@ New Features:
 - Added ``cmd_util`` and ``atari_wrappers``
 - Added support for ``MultiDiscrete`` and ``MultiBinary`` observation spaces (@rolandgvc)
 - Added ``MultiCategorical`` and ``Bernoulli`` distributions for PPO/A2C (@rolandgvc)
+- Added support for logging to tensorboard (@rolandgvc)
 - Added ``VectorizedActionNoise`` for continuous vectorized environments (@PartiallyTyped)
+- Log evaluation in the ``EvalCallback`` using the logger
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -26,6 +33,7 @@ Bug Fixes:
 - Fixed version number that had a new line included
 - Fixed weird seg fault in docker image due to FakeImageEnv by reducing screen size
 - Fixed ``sde_sample_freq`` that was not taken into account for SAC
+- Pass logger module to ``BaseCallback`` otherwise they cannot write in the one used by the algorithms
 
 Deprecations:
 ^^^^^^^^^^^^^

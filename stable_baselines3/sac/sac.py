@@ -1,5 +1,4 @@
 from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
-
 import torch as th
 import torch.nn.functional as F
 import numpy as np
@@ -90,7 +89,7 @@ class SAC(OffPolicyRLModel):
 
         super(SAC, self).__init__(policy, env, SACPolicy, learning_rate,
                                   buffer_size, learning_starts, batch_size,
-                                  policy_kwargs, verbose, device,
+                                  policy_kwargs, tensorboard_log, verbose, device,
                                   create_eval_env=create_eval_env, seed=seed,
                                   use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                   use_sde_at_warmup=use_sde_at_warmup)
@@ -237,12 +236,12 @@ class SAC(OffPolicyRLModel):
 
         self._n_updates += gradient_steps
 
-        logger.logkv("n_updates", self._n_updates)
-        logger.logkv("ent_coef", np.mean(ent_coefs))
-        logger.logkv("actor_loss", np.mean(actor_losses))
-        logger.logkv("critic_loss", np.mean(critic_losses))
+        logger.record("train/n_updates", self._n_updates, exclude='tensorboard')
+        logger.record("train/ent_coef", np.mean(ent_coefs))
+        logger.record("train/actor_loss", np.mean(actor_losses))
+        logger.record("train/critic_loss", np.mean(critic_losses))
         if len(ent_coef_losses) > 0:
-            logger.logkv("ent_coef_loss", np.mean(ent_coef_losses))
+            logger.record("train/ent_coef_loss", np.mean(ent_coef_losses))
 
     def learn(self,
               total_timesteps: int,
@@ -255,8 +254,9 @@ class SAC(OffPolicyRLModel):
               eval_log_path: Optional[str] = None,
               reset_num_timesteps: bool = True) -> OffPolicyRLModel:
 
-        callback = self._setup_learn(eval_env, callback, eval_freq,
-                                     n_eval_episodes, eval_log_path, reset_num_timesteps)
+        total_timesteps, callback = self._setup_learn(total_timesteps, eval_env, callback, eval_freq,
+                                                      n_eval_episodes, eval_log_path, reset_num_timesteps,
+                                                      tb_log_name)
         callback.on_training_start(locals(), globals())
 
         while self.num_timesteps < total_timesteps:

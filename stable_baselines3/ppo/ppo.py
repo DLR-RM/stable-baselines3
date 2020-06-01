@@ -26,7 +26,7 @@ class PPO(OnPolicyRLModel):
     :param policy: (OnlineActorCriticPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
     :param learning_rate: (float or callable) The learning rate, it can be a function
-        of the current progress (from 1 to 0)
+        of the current progress remaining (from 1 to 0)
     :param n_steps: (int) The number of steps to run for each environment per update
         (i.e. batch size is n_steps * n_env where n_env is number of environment copies running in parallel)
     :param batch_size: (int) Minibatch size
@@ -34,9 +34,9 @@ class PPO(OnPolicyRLModel):
     :param gamma: (float) Discount factor
     :param gae_lambda: (float) Factor for trade-off of bias vs variance for Generalized Advantage Estimator
     :param clip_range: (float or callable) Clipping parameter, it can be a function of the current progress
-        (from 1 to 0).
+        remaining (from 1 to 0).
     :param clip_range_vf: (float or callable) Clipping parameter for the value function,
-        it can be a function of the current progress (from 1 to 0).
+        it can be a function of the current progress remaining (from 1 to 0).
         This is a parameter specific to the OpenAI implementation. If None is passed (default),
         no clipping will be done on the value function.
         IMPORTANT: this clipping depends on the reward scaling.
@@ -125,10 +125,10 @@ class PPO(OnPolicyRLModel):
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
         # Compute current clip range
-        clip_range = self.clip_range(self._current_progress)
+        clip_range = self.clip_range(self._current_progress_remaining)
         # Optional: clip range for the value function
         if self.clip_range_vf is not None:
-            clip_range_vf = self.clip_range_vf(self._current_progress)
+            clip_range_vf = self.clip_range_vf(self._current_progress_remaining)
 
         entropy_losses, all_kl_divs = [], []
         pg_losses, value_losses = [], []

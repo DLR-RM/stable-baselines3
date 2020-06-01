@@ -34,7 +34,7 @@ class BaseRLModel(ABC):
                 (if registered in Gym, can be str. Can be None for loading trained models)
     :param policy_base: (Type[BasePolicy]) The base policy used by this method
     :param learning_rate: (float or callable) learning rate for the optimizer,
-        it can be a function of the current progress (from 1 to 0)
+        it can be a function of the current progress remaining (from 1 to 0)
     :param policy_kwargs: (Dict[str, Any]) Additional arguments to be passed to the policy on creation
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param verbose: (int) The verbosity level: 0 none, 1 training information, 2 debug
@@ -103,9 +103,9 @@ class BaseRLModel(ABC):
         # Used for gSDE only
         self.use_sde = use_sde
         self.sde_sample_freq = sde_sample_freq
-        # Track the training progress (from 1 to 0)
+        # Track the training progress remaining (from 1 to 0)
         # this is used to update the learning rate
-        self._current_progress = 1
+        self._current_progress_remaining = 1
         # Buffers for logging
         self.ep_info_buffer = None  # type: Optional[deque]
         self.ep_success_buffer = None  # type: Optional[deque]
@@ -177,30 +177,30 @@ class BaseRLModel(ABC):
         """Transform to callable if needed."""
         self.lr_schedule = get_schedule_fn(self.learning_rate)
 
-    def _update_current_progress(self, num_timesteps: int, total_timesteps: int) -> None:
+    def _update_current_progress_remaining(self, num_timesteps: int, total_timesteps: int) -> None:
         """
-        Compute current progress (from 1 to 0)
+        Compute current progress remaining (starts from 1 and ends to 0)
 
         :param num_timesteps: current number of timesteps
         :param total_timesteps:
         """
-        self._current_progress = 1.0 - float(num_timesteps) / float(total_timesteps)
+        self._current_progress_remaining = 1.0 - float(num_timesteps) / float(total_timesteps)
 
     def _update_learning_rate(self, optimizers: Union[List[th.optim.Optimizer], th.optim.Optimizer]) -> None:
         """
         Update the optimizers learning rate using the current learning rate schedule
-        and the current progress (from 1 to 0).
+        and the current progress remaining (from 1 to 0).
 
         :param optimizers: (Union[List[th.optim.Optimizer], th.optim.Optimizer])
             An optimizer or a list of optimizers.
         """
         # Log the current learning rate
-        logger.record("train/learning_rate", self.lr_schedule(self._current_progress))
+        logger.record("train/learning_rate", self.lr_schedule(self._current_progress_remaining))
 
         if not isinstance(optimizers, list):
             optimizers = [optimizers]
         for optimizer in optimizers:
-            update_learning_rate(optimizer, self.lr_schedule(self._current_progress))
+            update_learning_rate(optimizer, self.lr_schedule(self._current_progress_remaining))
 
     @staticmethod
     def safe_mean(arr: Union[np.ndarray, list, deque]) -> np.ndarray:
@@ -677,7 +677,7 @@ class OffPolicyRLModel(BaseRLModel):
                 (if registered in Gym, can be str. Can be None for loading trained models)
     :param policy_base: The base policy used by this method
     :param learning_rate: (float or callable) learning rate for the optimizer,
-        it can be a function of the current progress (from 1 to 0)
+        it can be a function of the current progress remaining (from 1 to 0)
     :param buffer_size: (int) size of the replay buffer
     :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
     :param batch_size: (int) Minibatch size for each gradient update
@@ -931,7 +931,7 @@ class OnPolicyRLModel(BaseRLModel):
     :param policy: (OnlineActorCriticPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
     :param learning_rate: (float or callable) The learning rate, it can be a function
-        of the current progress (from 1 to 0)
+        of the current progress remaining (from 1 to 0)
     :param n_steps: (int) The number of steps to run for each environment per update
         (i.e. batch size is n_steps * n_env where n_env is number of environment copies running in parallel)
     :param gamma: (float) Discount factor
@@ -1085,7 +1085,7 @@ class OnPolicyRLModel(BaseRLModel):
                 break
 
             iteration += 1
-            self._update_current_progress(self.num_timesteps, total_timesteps)
+            self._update_current_progress_remaining(self.num_timesteps, total_timesteps)
 
             # Display training infos
             if log_interval is not None and iteration % log_interval == 0:

@@ -12,6 +12,9 @@ Common interface for all the RL algorithms
   :members:
 
 
+.. automodule:: stable_baselines3.common.off_policy_algorithm
+
+
 Base Off-Policy Class
 ^^^^^^^^^^^^^^^^^^^^^
 
@@ -19,6 +22,9 @@ The base RL algorithm for Off-Policy algorithm (ex: SAC/TD3)
 
 .. autoclass:: OffPolicyAlgorithm
   :members:
+
+
+.. automodule:: stable_baselines3.common.on_policy_algorithm
 
 
 Base On-Policy Class

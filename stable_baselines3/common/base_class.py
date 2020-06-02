@@ -1,7 +1,5 @@
 import time
 import os
-import io
-import zipfile
 import pickle
 import warnings
 from typing import Union, Type, Optional, Dict, Any, List, Tuple, Callable
@@ -14,11 +12,13 @@ import numpy as np
 
 from stable_baselines3.common import logger, utils
 from stable_baselines3.common.policies import BasePolicy, ActorCriticPolicy, get_policy_from_name
-from stable_baselines3.common.utils import set_random_seed, get_schedule_fn, update_learning_rate, get_device
+from stable_baselines3.common.utils import (set_random_seed, get_schedule_fn, update_learning_rate, get_device,
+                                            check_for_correct_spaces, safe_mean)
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize, VecTransposeImage
 from stable_baselines3.common.preprocessing import is_image_space
-from stable_baselines3.common.save_util import data_to_json, json_to_data, recursive_getattr, recursive_setattr
-from stable_baselines3.common.type_aliases import GymEnv, TensorDict, RolloutReturn, MaybeCallback
+from stable_baselines3.common.save_util import (recursive_getattr, recursive_setattr, save_to_zip_file,
+                                                load_from_zip_file)
+from stable_baselines3.common.type_aliases import GymEnv, RolloutReturn, MaybeCallback
 from stable_baselines3.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise
@@ -202,17 +202,6 @@ class BaseAlgorithm(ABC):
         for optimizer in optimizers:
             update_learning_rate(optimizer, self.lr_schedule(self._current_progress_remaining))
 
-    @staticmethod
-    def safe_mean(arr: Union[np.ndarray, list, deque]) -> np.ndarray:
-        """
-        Compute the mean of an array if there is at least one element.
-        For empty array, return NaN. It is used for logging only.
-
-        :param arr:
-        :return:
-        """
-        return np.nan if len(arr) == 0 else np.mean(arr)
-
     def get_env(self) -> Optional[VecEnv]:
         """
         Returns the current environment (can be None if not defined).
@@ -229,26 +218,6 @@ class BaseAlgorithm(ABC):
         """
         return self._vec_normalize_env
 
-    @staticmethod
-    def check_env(env: GymEnv, observation_space: gym.spaces.Space, action_space: gym.spaces.Space):
-        """
-        Checks the validity of the environment to load vs the one used for training.
-        Checked parameters:
-        - observation_space
-        - action_space
-
-        :param env: (GymEnv)
-        :param observation_space: (gym.spaces.Space)
-        :param action_space: (gym.spaces.Space)
-        """
-        if (observation_space != env.observation_space
-            # Special cases for images that need to be transposed
-            and not (is_image_space(env.observation_space)
-                     and observation_space == VecTransposeImage.transpose_space(env.observation_space))):
-            raise ValueError(f'Observation spaces do not match: {observation_space} != {env.observation_space}')
-        if action_space != env.action_space:
-            raise ValueError(f'Action spaces do not match: {action_space} != {env.action_space}')
-
     def set_env(self, env: GymEnv) -> None:
         """
         Checks the validity of the environment, and if it is coherent, set it as the current environment.
@@ -259,7 +228,7 @@ class BaseAlgorithm(ABC):
 
         :param env: The environment for learning a policy
         """
-        self.check_env(env, self.observation_space, self.action_space)
+        check_for_correct_spaces(env, self.observation_space, self.action_space)
         # it must be coherent now
         # if it is not a VecEnv, make it a VecEnv
         env = self._wrap_env(env)
@@ -334,7 +303,7 @@ class BaseAlgorithm(ABC):
             (can be None if you only need prediction from a trained model) has priority over any saved environment
         :param kwargs: extra arguments to change the model when loading
         """
-        data, params, tensors = cls._load_from_file(load_path)
+        data, params, tensors = load_from_zip_file(load_path)
 
         if 'policy_kwargs' in data:
             for arg_to_remove in ['device']:
@@ -350,7 +319,7 @@ class BaseAlgorithm(ABC):
             raise ValueError("The observation_space and action_space was not given, can't verify new environments")
         # check if given env is valid
         if env is not None:
-            cls.check_env(env, data["observation_space"], data["action_space"])
+            check_for_correct_spaces(env, data["observation_space"], data["action_space"])
         # if no new env was given use stored env if possible
         if env is None and "env" in data:
             env = data["env"]
@@ -376,79 +345,6 @@ class BaseAlgorithm(ABC):
                 recursive_setattr(model, name, tensors[name])
 
         return model
-
-    @staticmethod
-    def _load_from_file(load_path: str, load_data: bool = True) -> (Tuple[Optional[Dict[str, Any]],
-                                                                          Optional[TensorDict],
-                                                                          Optional[TensorDict]]):
-        """ Load model data from a .zip archive
-
-        :param load_path: Where to load the model from
-        :param load_data: Whether we should load and return data
-            (class parameters). Mainly used by 'load_parameters' to only load model parameters (weights)
-        :return: (dict),(dict),(dict) Class parameters, model state_dicts (dict of state_dict)
-            and dict of extra tensors
-        """
-        # Check if file exists if load_path is a string
-        if isinstance(load_path, str):
-            if not os.path.exists(load_path):
-                if os.path.exists(load_path + ".zip"):
-                    load_path += ".zip"
-                else:
-                    raise ValueError(f"Error: the file {load_path} could not be found")
-
-        # set device to cpu if cuda is not available
-        device = get_device()
-
-        # Open the zip archive and load data
-        try:
-            with zipfile.ZipFile(load_path, "r") as archive:
-                namelist = archive.namelist()
-                # If data or parameters is not in the
-                # zip archive, assume they were stored
-                # as None (_save_to_file_zip allows this).
-                data = None
-                tensors = None
-                params = {}
-
-                if "data" in namelist and load_data:
-                    # Load class parameters and convert to string
-                    json_data = archive.read("data").decode()
-                    data = json_to_data(json_data)
-
-                if "tensors.pth" in namelist and load_data:
-                    # Load extra tensors
-                    with archive.open('tensors.pth', mode="r") as tensor_file:
-                        # File has to be seekable, but opt_param_file is not, so load in BytesIO first
-                        # fixed in python >= 3.7
-                        file_content = io.BytesIO()
-                        file_content.write(tensor_file.read())
-                        # go to start of file
-                        file_content.seek(0)
-                        # load the parameters with the right ``map_location``
-                        tensors = th.load(file_content, map_location=device)
-
-                # check for all other .pth files
-                other_files = [file_name for file_name in namelist if
-                               os.path.splitext(file_name)[1] == ".pth" and file_name != "tensors.pth"]
-                # if there are any other files which end with .pth and aren't "params.pth"
-                # assume that they each are optimizer parameters
-                if len(other_files) > 0:
-                    for file_path in other_files:
-                        with archive.open(file_path, mode="r") as opt_param_file:
-                            # File has to be seekable, but opt_param_file is not, so load in BytesIO first
-                            # fixed in python >= 3.7
-                            file_content = io.BytesIO()
-                            file_content.write(opt_param_file.read())
-                            # go to start of file
-                            file_content.seek(0)
-                            # load the parameters with the right ``map_location``
-                            params[os.path.splitext(file_path)[0]] = th.load(file_content, map_location=device)
-
-        except zipfile.BadZipFile:
-            # load_path wasn't a zip file
-            raise ValueError(f"Error: the file {load_path} wasn't a zip-file")
-        return data, params, tensors
 
     def set_random_seed(self, seed: Optional[int] = None) -> None:
         """
@@ -568,45 +464,6 @@ class BaseAlgorithm(ABC):
             if maybe_is_success is not None and dones[idx]:
                 self.ep_success_buffer.append(maybe_is_success)
 
-    @staticmethod
-    def _save_to_file_zip(save_path: str, data: Dict[str, Any] = None,
-                          params: Dict[str, Any] = None, tensors: Dict[str, Any] = None) -> None:
-        """
-        Save model to a zip archive.
-
-        :param save_path: Where to store the model
-        :param data: Class parameters being stored
-        :param params: Model parameters being stored expected to contain an entry for every
-                       state_dict with its name and the state_dict
-        :param tensors: Extra tensor variables expected to contain name and value of tensors
-        """
-
-        # data/params can be None, so do not
-        # try to serialize them blindly
-        if data is not None:
-            serialized_data = data_to_json(data)
-
-        # Check postfix if save_path is a string
-        if isinstance(save_path, str):
-            _, ext = os.path.splitext(save_path)
-            if ext == "":
-                save_path += ".zip"
-
-        # Create a zip-archive and write our objects
-        # there. This works when save_path is either
-        # str or a file-like
-        with zipfile.ZipFile(save_path, "w") as archive:
-            # Do not try to save "None" elements
-            if data is not None:
-                archive.writestr("data", serialized_data)
-            if tensors is not None:
-                with archive.open('tensors.pth', mode="w") as tensors_file:
-                    th.save(tensors, tensors_file)
-            if params is not None:
-                for file_name, dict_ in params.items():
-                    with archive.open(file_name + '.pth', mode="w") as param_file:
-                        th.save(dict_, param_file)
-
     def excluded_save_params(self) -> List[str]:
         """
         Returns the names of the parameters that should be excluded by default
@@ -665,7 +522,7 @@ class BaseAlgorithm(ABC):
             # Retrieve state dict
             params_to_save[name] = attr.state_dict()
 
-        self._save_to_file_zip(path, data=data, params=params_to_save, tensors=tensors)
+        save_to_zip_file(path, data=data, params=params_to_save, tensors=tensors)
 
 
 class OffPolicyAlgorithm(BaseAlgorithm):
@@ -904,8 +761,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                     fps = int(self.num_timesteps / (time.time() - self.start_time))
                     logger.record("time/episodes", self._episode_num, exclude="tensorboard")
                     if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
-                        logger.record('rollout/ep_rew_mean', self.safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
-                        logger.record('rollout/ep_len_mean', self.safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
+                        logger.record('rollout/ep_rew_mean', safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
+                        logger.record('rollout/ep_len_mean', safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
                     logger.record("time/fps", fps)
                     logger.record('time/time_elapsed', int(time.time() - self.start_time), exclude="tensorboard")
                     logger.record("time/total timesteps", self.num_timesteps, exclude="tensorboard")
@@ -913,7 +770,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                         logger.record("train/std", (self.actor.get_std()).mean().item())
 
                     if len(self.ep_success_buffer) > 0:
-                        logger.record('rollout/success rate', self.safe_mean(self.ep_success_buffer))
+                        logger.record('rollout/success rate', safe_mean(self.ep_success_buffer))
                     # Pass the number of timesteps for tensorboard
                     logger.dump(step=self.num_timesteps)
 
@@ -1093,9 +950,9 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 logger.record("time/iterations", iteration, exclude="tensorboard")
                 if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
                     logger.record("rollout/ep_rew_mean",
-                                  self.safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
+                                  safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
                     logger.record("rollout/ep_len_mean",
-                                  self.safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
+                                  safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
                 logger.record("time/fps", fps)
                 logger.record("time/time_elapsed", int(time.time() - self.start_time), exclude="tensorboard")
                 logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")

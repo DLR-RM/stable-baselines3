@@ -1,8 +1,11 @@
+from collections import deque
 from typing import Callable, Union, Optional
 import random
-
 import os
 import glob
+
+
+import gym
 import numpy as np
 import torch as th
 # Check if tensorboard is available for pytorch
@@ -12,6 +15,9 @@ except ImportError:
     SummaryWriter = None
 
 from stable_baselines3.common import logger
+from stable_baselines3.common.type_aliases import GymEnv
+from stable_baselines3.common.preprocessing import is_image_space
+from stable_baselines3.common.vec_env import VecTransposeImage
 
 
 def set_random_seed(seed: int, using_cuda: bool = False) -> None:
@@ -158,3 +164,35 @@ def configure_logger(verbose: int = 0, tensorboard_log: Optional[str] = None,
             logger.configure(save_path, ["tensorboard"])
     elif verbose == 0:
         logger.configure(format_strings=[""])
+
+
+def check_for_correct_spaces(env: GymEnv, observation_space: gym.spaces.Space, action_space: gym.spaces.Space):
+    """
+    Checks that the environment has same spaces as provided ones. Used by BaseAlgorithm to check if
+    spaces match after loading the model with given env.
+    Checked parameters:
+    - observation_space
+    - action_space
+
+    :param env: (GymEnv) Environment to check for valid spaces
+    :param observation_space: (gym.spaces.Space) Observation space to check against
+    :param action_space: (gym.spaces.Space) Action space to check against
+    """
+    if (observation_space != env.observation_space
+        # Special cases for images that need to be transposed
+        and not (is_image_space(env.observation_space)
+                 and observation_space == VecTransposeImage.transpose_space(env.observation_space))):
+        raise ValueError(f'Observation spaces do not match: {observation_space} != {env.observation_space}')
+    if action_space != env.action_space:
+        raise ValueError(f'Action spaces do not match: {action_space} != {env.action_space}')
+
+
+def safe_mean(arr: Union[np.ndarray, list, deque]) -> np.ndarray:
+    """
+    Compute the mean of an array if there is at least one element.
+    For empty array, return NaN. It is used for logging only.
+
+    :param arr:
+    :return:
+    """
+    return np.nan if len(arr) == 0 else np.mean(arr)

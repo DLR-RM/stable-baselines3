@@ -13,7 +13,7 @@ import torch as th
 import numpy as np
 
 from stable_baselines3.common import logger, utils
-from stable_baselines3.common.policies import BasePolicy, OnlineActorCriticPolicy, get_policy_from_name
+from stable_baselines3.common.policies import BasePolicy, ActorCriticPolicy, get_policy_from_name
 from stable_baselines3.common.utils import set_random_seed, get_schedule_fn, update_learning_rate, get_device
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize, VecTransposeImage
 from stable_baselines3.common.preprocessing import is_image_space
@@ -928,7 +928,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     """
     The base for On-Policy algorithms (ex: A2C/PPO).
 
-    :param policy: (OnlineActorCriticPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
+    :param policy: (ActorCriticPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
     :param learning_rate: (float or callable) The learning rate, it can be a function
         of the current progress remaining (from 1 to 0)
@@ -955,7 +955,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
 
-    def __init__(self, policy: Union[str, Type[OnlineActorCriticPolicy]],
+    def __init__(self, policy: Union[str, Type[ActorCriticPolicy]],
                  env: Union[GymEnv, str],
                  learning_rate: Union[float, Callable],
                  n_steps: int,
@@ -974,7 +974,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                  device: Union[th.device, str] = 'auto',
                  _init_setup_model: bool = True):
 
-        super(OnPolicyAlgorithm, self).__init__(policy, env, OnlineActorCriticPolicy, learning_rate, policy_kwargs=policy_kwargs,
+        super(OnPolicyAlgorithm, self).__init__(policy, env, ActorCriticPolicy, learning_rate, policy_kwargs=policy_kwargs,
                                               verbose=verbose, device=device, use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                               create_eval_env=create_eval_env, support_multi_env=True, seed=seed)
 

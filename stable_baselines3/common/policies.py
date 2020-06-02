@@ -16,6 +16,7 @@ from stable_baselines3.common.distributions import (make_proba_distribution, Dis
                                                     MultiCategoricalDistribution, BernoulliDistribution,
                                                     StateDependentNoiseDistribution)
 
+
 class BasePolicy(nn.Module):
     """
     The base policy object
@@ -303,7 +304,7 @@ class BasePolicy(nn.Module):
         return th.nn.utils.parameters_to_vector(self.parameters()).detach().cpu().numpy()
 
 
-class OnlineActorCriticPolicy(BasePolicy):
+class ActorCriticPolicy(BasePolicy):
     """
     Policy class for actor-critic algorithms (has both policy and value prediction).
     Used by A2C, PPO and the likes.
@@ -364,7 +365,7 @@ class OnlineActorCriticPolicy(BasePolicy):
             if optimizer_class == th.optim.Adam:
                 optimizer_kwargs['eps'] = 1e-5
 
-        super(OnlineActorCriticPolicy, self).__init__(observation_space, 
+        super(ActorCriticPolicy, self).__init__(observation_space, 
                                                       action_space,
                                                       device,
                                                       features_extractor_class,
@@ -587,7 +588,7 @@ class OnlineActorCriticPolicy(BasePolicy):
         return values, log_prob, distribution.entropy()
 
 
-class OnlineActorCriticCnnPolicy(OnlineActorCriticPolicy):
+class ActorCriticCnnPolicy(ActorCriticPolicy):
     """
     CNN policy class for actor-critic algorithms (has both policy and value prediction).
     Used by A2C, PPO and the likes.
@@ -641,7 +642,7 @@ class OnlineActorCriticCnnPolicy(OnlineActorCriticPolicy):
                  normalize_images: bool = True,
                  optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
                  optimizer_kwargs: Optional[Dict[str, Any]] = None):
-        super(OnlineActorCriticCnnPolicy, self).__init__(observation_space,
+        super(ActorCriticCnnPolicy, self).__init__(observation_space,
                                                          action_space,
                                                          lr_schedule,
                                                          net_arch,
@@ -741,5 +742,5 @@ def register_policy(name: str, policy: Type[BasePolicy]) -> None:
     _policy_registry[sub_class][name] = policy
 
 
-register_policy("MlpPolicy", OnlineActorCriticPolicy)
-register_policy("CnnPolicy", OnlineActorCriticCnnPolicy)
+register_policy("MlpPolicy", ActorCriticPolicy)
+register_policy("CnnPolicy", ActorCriticCnnPolicy)

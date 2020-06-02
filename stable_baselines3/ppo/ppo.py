@@ -9,7 +9,7 @@ from stable_baselines3.common import logger
 from stable_baselines3.common.base_class import OnPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.utils import explained_variance, get_schedule_fn
-from stable_baselines3.common.policies import OnlineActorCriticPolicy
+from stable_baselines3.common.policies import ActorCriticPolicy
 
 
 class PPO(OnPolicyAlgorithm):
@@ -23,7 +23,7 @@ class PPO(OnPolicyAlgorithm):
 
     Introduction to PPO: https://spinningup.openai.com/en/latest/algorithms/ppo.html
 
-    :param policy: (OnlineActorCriticPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
+    :param policy: (ActorCriticPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
     :param learning_rate: (float or callable) The learning rate, it can be a function
         of the current progress remaining (from 1 to 0)
@@ -62,7 +62,7 @@ class PPO(OnPolicyAlgorithm):
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
 
-    def __init__(self, policy: Union[str, Type[OnlineActorCriticPolicy]],
+    def __init__(self, policy: Union[str, Type[ActorCriticPolicy]],
                  env: Union[GymEnv, str],
                  learning_rate: Union[float, Callable] = 3e-4,
                  n_steps: int = 2048,

@@ -32,7 +32,7 @@ def select_env(model_class: BaseRLModel) -> gym.Env:
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
-def test_save_load(model_class):
+def test_save_load(tmp_path, model_class):
     """
     Test if 'save' and 'load' saves and loads model correctly
     and if 'load_parameters' and 'get_policy_parameters' work correctly
@@ -71,9 +71,9 @@ def test_save_load(model_class):
     selected_actions, _ = model.predict(observations, deterministic=True)
 
     # Check
-    model.save("test_save.zip")
+    model.save(tmp_path / "test_save.zip")
     del model
-    model = model_class.load("test_save", env=env)
+    model = model_class.load(str(tmp_path / "test_save"), env=env)
 
     # check if params are still the same after load
     new_params = model.policy.state_dict()
@@ -90,7 +90,7 @@ def test_save_load(model_class):
     model.learn(total_timesteps=1000, eval_freq=500)
 
     # clear file from os
-    os.remove("test_save.zip")
+    os.remove(tmp_path / "test_save.zip")
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
@@ -122,7 +122,7 @@ def test_set_env(model_class):
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
-def test_exclude_include_saved_params(model_class):
+def test_exclude_include_saved_params(tmp_path, model_class):
     """
     Test if exclude and include parameters of save() work
 
@@ -134,47 +134,41 @@ def test_exclude_include_saved_params(model_class):
     model = model_class('MlpPolicy', env, policy_kwargs=dict(net_arch=[16]), verbose=2)
 
     # Check if exclude works
-    model.save("test_save.zip", exclude=["verbose"])
+    model.save(tmp_path / "test_save.zip", exclude=["verbose"])
     del model
-    model = model_class.load("test_save")
+    model = model_class.load(str(tmp_path / "test_save"))
     # check if verbose was not saved
     assert model.verbose != 2
 
     # set verbose as something different then standard settings
     model.verbose = 2
     # Check if include works
-    model.save("test_save.zip", exclude=["verbose"], include=["verbose"])
+    model.save(tmp_path / "test_save.zip", exclude=["verbose"], include=["verbose"])
     del model
-    model = model_class.load("test_save")
+    model = model_class.load(str(tmp_path / "test_save"))
     assert model.verbose == 2
 
     # clear file from os
-    os.remove("test_save.zip")
+    os.remove(tmp_path / "test_save.zip")
 
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DQN])
-def test_save_load_replay_buffer(model_class):
-    log_folder = 'logs'
-    replay_path = os.path.join(log_folder, 'replay_buffer.pkl')
-    os.makedirs(log_folder, exist_ok=True)
-    if model_class is DQN:
-        model = model_class('MlpPolicy', 'CartPole-v0', buffer_size=1000)
-    else:
-        model = model_class('MlpPolicy', 'Pendulum-v0', buffer_size=1000)
+def test_save_load_replay_buffer(tmp_path, model_class):
+    replay_path = tmp_path / 'replay_buffer.pkl'
+    model = model_class('MlpPolicy', select_env(model_class), buffer_size=1000)
     model.learn(500)
     old_replay_buffer = deepcopy(model.replay_buffer)
-    model.save_replay_buffer(log_folder)
+    model.save_replay_buffer(tmp_path)
     model.replay_buffer = None
     model.load_replay_buffer(replay_path)
 
     assert np.allclose(old_replay_buffer.observations, model.replay_buffer.observations)
     assert np.allclose(old_replay_buffer.actions, model.replay_buffer.actions)
-    assert np.allclose(old_replay_buffer.next_observations, model.replay_buffer.next_observations)
     assert np.allclose(old_replay_buffer.rewards, model.replay_buffer.rewards)
     assert np.allclose(old_replay_buffer.dones, model.replay_buffer.dones)
 
     # test extending replay buffer
-    model.replay_buffer.extend(old_replay_buffer.observations, old_replay_buffer.next_observations,
+    model.replay_buffer.extend(old_replay_buffer.observations, old_replay_buffer.observations,
                                old_replay_buffer.actions, old_replay_buffer.rewards, old_replay_buffer.dones)
 
     # clear file from os
@@ -183,7 +177,7 @@ def test_save_load_replay_buffer(model_class):
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 @pytest.mark.parametrize("policy_str", ['MlpPolicy', 'CnnPolicy'])
-def test_save_load_policy(model_class, policy_str):
+def test_save_load_policy(tmp_path, model_class, policy_str):
     """
     Test saving and loading policy only.
 
@@ -241,16 +235,16 @@ def test_save_load_policy(model_class, policy_str):
         selected_actions_actor, _ = actor.predict(observations, deterministic=True)
 
     # Save and load policy
-    policy.save("./logs/policy.pkl")
+    policy.save(tmp_path / "policy.pkl")
     # Save and load actor
     if actor is not None:
-        actor.save("./logs/actor.pkl")
+        actor.save(tmp_path / "actor.pkl")
 
     del policy, actor
 
-    policy = policy_class.load("./logs/policy.pkl")
+    policy = policy_class.load(tmp_path / "policy.pkl")
     if actor_class is not None:
-        actor = actor_class.load("./logs/actor.pkl")
+        actor = actor_class.load(tmp_path / "actor.pkl")
 
     # check if params are still the same after load
     new_params = policy.state_dict()
@@ -269,6 +263,6 @@ def test_save_load_policy(model_class, policy_str):
         assert np.allclose(selected_actions_actor, new_selected_actions, 1e-4)
 
     # clear file from os
-    os.remove("./logs/policy.pkl")
+    os.remove(tmp_path / "policy.pkl")
     if actor_class is not None:
-        os.remove("./logs/actor.pkl")
+        os.remove(tmp_path / "actor.pkl")

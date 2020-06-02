@@ -27,6 +27,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Refactored Off-Policy algorithm to share the same ``.learn()`` method
+- Optimized replay buffer size by removing the need of ``next_observations`` numpy array
 
 Documentation:
 ^^^^^^^^^^^^^^

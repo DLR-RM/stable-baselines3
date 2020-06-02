@@ -168,8 +168,8 @@ class ReplayBuffer(BaseBuffer):
         if psutil is not None:
             mem_available = psutil.virtual_memory().available
 
-        # observations contains also the next observation, hence the +1
-        self.observations = np.zeros((self.buffer_size + 1, self.n_envs,) + self.obs_shape, dtype=observation_space.dtype)
+        # `observations` contains also the next observation
+        self.observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=observation_space.dtype)
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)

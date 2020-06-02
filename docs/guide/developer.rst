@@ -34,13 +34,13 @@ Where to start?
 
 The first thing you need to read and understand are the base classes in the ``common/`` folder:
 
-- ``BaseRLModel`` in ``base_class.py`` which defines how an RL class should look like.
+- ``BaseAlgorithm`` in ``base_class.py`` which defines how an RL class should look like.
   It contains also all the "glue code" for saving/loading and the common operations (wrapping environments)
 
 - ``BasePolicy`` in ``policies.py`` which defines how a policy class should look like.
   It contains also all the magic for the ``.predict()`` method, to handle as many cases as possible
 
-- ``OffPolicyRLModel`` in ``base_class.py`` that contains the implementation of ``collect_rollouts()`` for the off-policy algorithms
+- ``OffPolicyAlgorithm`` in ``base_class.py`` that contains the implementation of ``collect_rollouts()`` for the off-policy algorithms
 
 
 All the environments handled internally are assumed to be ``VecEnv`` (``gym.Env`` are automatically wrapped).

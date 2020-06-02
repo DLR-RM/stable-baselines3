@@ -25,9 +25,9 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.buffers import ReplayBuffer, RolloutBuffer
 
 
-class BaseRLModel(ABC):
+class BaseAlgorithm(ABC):
     """
-    The base RL model
+    The base of RL algorithms
 
     :param policy: (Type[BasePolicy]) Policy object
     :param env: (Union[GymEnv, str]) The environment to learn from
@@ -289,7 +289,7 @@ class BaseRLModel(ABC):
               eval_freq: int = -1,
               n_eval_episodes: int = 5,
               eval_log_path: Optional[str] = None,
-              reset_num_timesteps: bool = True) -> 'BaseRLModel':
+              reset_num_timesteps: bool = True) -> 'BaseAlgorithm':
         """
         Return a trained model.
 
@@ -304,7 +304,7 @@ class BaseRLModel(ABC):
         :param n_eval_episodes: (int) Number of episode to evaluate the agent
         :param eval_log_path: (Optional[str]) Path to a folder where the evaluations will be saved
         :param reset_num_timesteps: (bool)
-        :return: (BaseRLModel) the trained model
+        :return: (BaseAlgorithm) the trained model
         """
         raise NotImplementedError()
 
@@ -668,9 +668,9 @@ class BaseRLModel(ABC):
         self._save_to_file_zip(path, data=data, params=params_to_save, tensors=tensors)
 
 
-class OffPolicyRLModel(BaseRLModel):
+class OffPolicyAlgorithm(BaseAlgorithm):
     """
-    The base RL model for Off-Policy algorithm (ex: SAC/TD3)
+    The base for Off-Policy algorithms (ex: SAC/TD3)
 
     :param policy: Policy object
     :param env: The environment to learn from
@@ -723,7 +723,7 @@ class OffPolicyRLModel(BaseRLModel):
                  use_sde_at_warmup: bool = False,
                  sde_support: bool = True):
 
-        super(OffPolicyRLModel, self).__init__(policy, env, policy_base, learning_rate,
+        super(OffPolicyAlgorithm, self).__init__(policy, env, policy_base, learning_rate,
                                                policy_kwargs, tensorboard_log, verbose,
                                                device, support_multi_env, create_eval_env, monitor_wrapper,
                                                seed, use_sde, sde_sample_freq)
@@ -799,7 +799,7 @@ class OffPolicyRLModel(BaseRLModel):
         total_steps, total_episodes = 0, 0
 
         assert isinstance(env, VecEnv), "You must pass a VecEnv"
-        assert env.num_envs == 1, "OffPolicyRLModel only support single environment"
+        assert env.num_envs == 1, "OffPolicyAlgorithm only support single environment"
 
         if n_episodes > 0 and n_steps > 0:
             # Note we are refering to the constructor arguments
@@ -924,9 +924,9 @@ class OffPolicyRLModel(BaseRLModel):
         return RolloutReturn(mean_reward, total_steps, total_episodes, continue_training)
 
 
-class OnPolicyRLModel(BaseRLModel):
+class OnPolicyAlgorithm(BaseAlgorithm):
     """
-    The base RL model for On-Policy algorithm (ex: A2C/PPO).
+    The base for On-Policy algorithms (ex: A2C/PPO).
 
     :param policy: (OnlineActorCriticPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
@@ -974,7 +974,7 @@ class OnPolicyRLModel(BaseRLModel):
                  device: Union[th.device, str] = 'auto',
                  _init_setup_model: bool = True):
 
-        super(OnPolicyRLModel, self).__init__(policy, env, OnlineActorCriticPolicy, learning_rate, policy_kwargs=policy_kwargs,
+        super(OnPolicyAlgorithm, self).__init__(policy, env, OnlineActorCriticPolicy, learning_rate, policy_kwargs=policy_kwargs,
                                               verbose=verbose, device=device, use_sde=use_sde, sde_sample_freq=sde_sample_freq,
                                               create_eval_env=create_eval_env, support_multi_env=True, seed=seed)
 
@@ -1064,9 +1064,9 @@ class OnPolicyRLModel(BaseRLModel):
               eval_env: Optional[GymEnv] = None,
               eval_freq: int = -1,
               n_eval_episodes: int = 5,
-              tb_log_name: str = "OnPolicyRLModel",
+              tb_log_name: str = "OnPolicyAlgorithm",
               eval_log_path: Optional[str] = None,
-              reset_num_timesteps: bool = True) -> 'OnPolicyRLModel':
+              reset_num_timesteps: bool = True) -> 'OnPolicyAlgorithm':
         iteration = 0
 
         total_timesteps, callback = self._setup_learn(total_timesteps, eval_env, callback, eval_freq,

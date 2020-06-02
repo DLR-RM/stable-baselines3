@@ -3,13 +3,13 @@ import torch.nn.functional as F
 from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.base_class import OffPolicyRLModel
+from stable_baselines3.common.base_class import OffPolicyAlgorithm
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.td3.policies import TD3Policy
 
 
-class TD3(OffPolicyRLModel):
+class TD3(OffPolicyAlgorithm):
     """
     Twin Delayed DDPG (TD3)
     Addressing Function Approximation Error in Actor-Critic Methods.
@@ -163,7 +163,7 @@ class TD3(OffPolicyRLModel):
               n_eval_episodes: int = 5,
               tb_log_name: str = "TD3",
               eval_log_path: Optional[str] = None,
-              reset_num_timesteps: bool = True) -> OffPolicyRLModel:
+              reset_num_timesteps: bool = True) -> OffPolicyAlgorithm:
 
         total_timesteps, callback = self._setup_learn(total_timesteps, eval_env, callback, eval_freq,
                                                       n_eval_episodes, eval_log_path, reset_num_timesteps,

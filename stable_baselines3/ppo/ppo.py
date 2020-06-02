@@ -6,13 +6,13 @@ import torch.nn.functional as F
 import numpy as np
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.base_class import OnPolicyRLModel
+from stable_baselines3.common.base_class import OnPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.utils import explained_variance, get_schedule_fn
 from stable_baselines3.common.policies import OnlineActorCriticPolicy
 
 
-class PPO(OnPolicyRLModel):
+class PPO(OnPolicyAlgorithm):
     """
     Proximal Policy Optimization algorithm (PPO) (clip version)
 

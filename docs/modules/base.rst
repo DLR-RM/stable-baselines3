@@ -8,23 +8,23 @@ Base RL Class
 
 Common interface for all the RL algorithms
 
-.. autoclass:: BaseRLModel
+.. autoclass:: BaseAlgorithm
   :members:
 
 
 Base Off-Policy Class
 ^^^^^^^^^^^^^^^^^^^^^
 
-The base RL model for Off-Policy algorithm (ex: SAC/TD3)
+The base RL algorithm for Off-Policy algorithm (ex: SAC/TD3)
 
-.. autoclass:: OffPolicyRLModel
+.. autoclass:: OffPolicyAlgorithm
   :members:
 
 
 Base On-Policy Class
 ^^^^^^^^^^^^^^^^^^^^^
 
-The base RL model for On-Policy algorithm (ex: A2C/PPO)
+The base RL algorithm for On-Policy algorithm (ex: A2C/PPO)
 
-.. autoclass:: OnPolicyRLModel
+.. autoclass:: OnPolicyAlgorithm
   :members:

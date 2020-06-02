@@ -4,13 +4,13 @@ from gym import spaces
 from typing import Type, Union, Callable, Optional, Dict, Any
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.base_class import OnPolicyRLModel
+from stable_baselines3.common.base_class import OnPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.utils import explained_variance
 from stable_baselines3.common.policies import OnlineActorCriticPolicy
 
 
-class A2C(OnPolicyRLModel):
+class A2C(OnPolicyAlgorithm):
     """
     Advantage Actor Critic (A2C)
 

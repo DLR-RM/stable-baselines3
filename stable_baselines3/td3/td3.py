@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.base_class import OffPolicyAlgorithm
+from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.td3.policies import TD3Policy

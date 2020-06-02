@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.base_class import OffPolicyAlgorithm
+from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.sac.policies import SACPolicy

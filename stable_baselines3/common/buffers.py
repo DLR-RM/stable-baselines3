@@ -168,15 +168,14 @@ class ReplayBuffer(BaseBuffer):
         if psutil is not None:
             mem_available = psutil.virtual_memory().available
 
-        self.observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=observation_space.dtype)
+        # observations contains also the next observation, hence the +1
+        self.observations = np.zeros((self.buffer_size + 1, self.n_envs,) + self.obs_shape, dtype=observation_space.dtype)
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
-        self.next_observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape,
-                                          dtype=observation_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
 
         if psutil is not None:
-            total_memory_usage = (self.observations.nbytes + self.actions.nbytes + self.next_observations.nbytes
+            total_memory_usage = (self.observations.nbytes + self.actions.nbytes
                                   + self.rewards.nbytes + self.dones.nbytes)
             if total_memory_usage > mem_available:
                 # Convert to GB
@@ -193,7 +192,7 @@ class ReplayBuffer(BaseBuffer):
             done: np.ndarray) -> None:
         # Copy to avoid modification by reference
         self.observations[self.pos] = np.array(obs).copy()
-        self.next_observations[self.pos] = np.array(next_obs).copy()
+        self.observations[(self.pos + 1) % self.buffer_size] = np.array(next_obs).copy()
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
         self.dones[self.pos] = np.array(done).copy()
@@ -209,7 +208,8 @@ class ReplayBuffer(BaseBuffer):
                      ) -> ReplayBufferSamples:
         data = (self._normalize_obs(self.observations[batch_inds, 0, :], env),
                 self.actions[batch_inds, 0, :],
-                self._normalize_obs(self.next_observations[batch_inds, 0, :], env),
+                # Next observation
+                self._normalize_obs(self.observations[(batch_inds + 1) % self.buffer_size, 0, :], env),
                 self.dones[batch_inds],
                 self._normalize_reward(self.rewards[batch_inds], env))
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))

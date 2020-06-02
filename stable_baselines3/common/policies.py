@@ -738,9 +738,9 @@ def register_policy(name: str, policy: Type[BasePolicy]) -> None:
     if sub_class not in _policy_registry:
         _policy_registry[sub_class] = {}
     if name in _policy_registry[sub_class]:
-        raise ValueError(f"Error: the name {name} is alreay registered for a different policy, will not override.")
+        # Check if the registered policy is same
+        # we try to register. If not so,
+        # do not override and complain.
+        if _policy_registry[sub_class][name] != policy:
+            raise ValueError(f"Error: the name {name} is already registered for a different policy, will not override.")
     _policy_registry[sub_class][name] = policy
-
-
-register_policy("MlpPolicy", ActorCriticPolicy)
-register_policy("CnnPolicy", ActorCriticCnnPolicy)

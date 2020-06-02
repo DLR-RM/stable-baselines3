@@ -168,8 +168,8 @@ class ReplayBuffer(BaseBuffer):
         if psutil is not None:
             mem_available = psutil.virtual_memory().available
 
-        # `observations` contains also the next observation
-        self.observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=observation_space.dtype)
+        # `observations` contains also the next observation, hence the +1
+        self.observations = np.zeros((self.buffer_size + 1, self.n_envs,) + self.obs_shape, dtype=observation_space.dtype)
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -192,7 +192,7 @@ class ReplayBuffer(BaseBuffer):
             done: np.ndarray) -> None:
         # Copy to avoid modification by reference
         self.observations[self.pos] = np.array(obs).copy()
-        self.observations[(self.pos + 1) % self.buffer_size] = np.array(next_obs).copy()
+        self.observations[(self.pos + 1) % (self.buffer_size + 1)] = np.array(next_obs).copy()
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
         self.dones[self.pos] = np.array(done).copy()
@@ -209,7 +209,7 @@ class ReplayBuffer(BaseBuffer):
         data = (self._normalize_obs(self.observations[batch_inds, 0, :], env),
                 self.actions[batch_inds, 0, :],
                 # Next observation
-                self._normalize_obs(self.observations[(batch_inds + 1) % self.buffer_size, 0, :], env),
+                self._normalize_obs(self.observations[(batch_inds + 1) % (self.buffer_size + 1), 0, :], env),
                 self.dones[batch_inds],
                 self._normalize_reward(self.rewards[batch_inds], env))
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))

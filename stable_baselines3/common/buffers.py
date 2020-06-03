@@ -192,9 +192,7 @@ class ReplayBuffer(BaseBuffer):
             done: np.ndarray) -> None:
         # Copy to avoid modification by reference
         self.observations[self.pos] = np.array(obs).copy()
-        # Write next observation only if the episode continues
-        if not done:
-            self.observations[(self.pos + 1) % self.buffer_size] = np.array(next_obs).copy()
+        self.observations[(self.pos + 1) % self.buffer_size] = np.array(next_obs).copy()
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
         self.dones[self.pos] = np.array(done).copy()
@@ -203,6 +201,30 @@ class ReplayBuffer(BaseBuffer):
         if self.pos == self.buffer_size:
             self.full = True
             self.pos = 0
+
+    def sample(self,
+               batch_size: int,
+               env: Optional[VecNormalize] = None
+               ) -> ReplayBufferSamples:
+        """
+        Sample elements from the replay buffer.
+        Custom sampling as we should not sample the element
+        with index `self.pos`
+        See https://github.com/DLR-RM/stable-baselines3/pull/28#issuecomment-637559274
+
+        :param batch_size: (int) Number of element to sample
+        :param env: (Optional[VecNormalize]) associated gym VecEnv
+            to normalize the observations/rewards when sampling
+        :return: (Union[RolloutBufferSamples, ReplayBufferSamples])
+        """
+        upper_bound = self.buffer_size if self.full else self.pos
+        # Do not sample the element with index `self.pos` as the transitions is invalid
+        # (we use only one array to store `obs` and `next_obs`)
+        if self.full:
+             batch_inds = (np.random.randint(1, self.buffer_size, size=batch_size) + self.pos) % self.buffer_size
+        else:
+             batch_inds = np.random.randint(0, self.pos, size=batch_size)
+        return self._get_samples(batch_inds, env=env)
 
     def _get_samples(self,
                      batch_inds: np.ndarray,

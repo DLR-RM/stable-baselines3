@@ -141,7 +141,7 @@ class DQN(OffPolicyRLModel):
             # Gather q_values of our actions
             current_q = th.gather(current_q, dim=1, index=replay_data.actions.long())
 
-            # Compute q loss
+            # Compute Huber loss (less sensitive to outliers)
             loss = F.smooth_l1_loss(current_q, target_q)
 
             # Optimize the policy

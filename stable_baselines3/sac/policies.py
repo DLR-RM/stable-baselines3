@@ -354,8 +354,15 @@ class SACPolicy(BasePolicy):
         ))
         return data
 
-    def make_actor(self) -> Actor:
-        return Actor(**self.actor_kwargs).to(self.device)
+    def reset_noise(self, batch_size: int = 1) -> None:
+        """
+        Sample new weights for the exploration matrix, when using gSDE.
+
+        :param batch_size: (int)
+        """
+        assert isinstance(self.actor.action_dist, StateDependentNoiseDistribution), \
+            'reset_noise() is only available when using gSDE'
+        self.actor.reset_noise(batch_size=batch_size)
 
     def make_critic(self) -> Critic:
         return Critic(**self.net_args).to(self.device)

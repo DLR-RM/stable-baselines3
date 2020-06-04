@@ -21,11 +21,13 @@ def _worker(remote, parent_remote, env_fn_wrapper):
                     info['terminal_observation'] = observation
                     observation = env.reset()
                 remote.send((observation, reward, done, info))
+            elif cmd == 'seed':
+                remote.send(env.seed(data))
             elif cmd == 'reset':
                 observation = env.reset()
                 remote.send(observation)
             elif cmd == 'render':
-                remote.send(env.render(*data[0], **data[1]))
+                remote.send(env.render(data))
             elif cmd == 'close':
                 remote.close()
                 break
@@ -39,7 +41,7 @@ def _worker(remote, parent_remote, env_fn_wrapper):
             elif cmd == 'set_attr':
                 remote.send(setattr(env, data[0], data[1]))
             else:
-                raise NotImplementedError
+                raise NotImplementedError(f"`{cmd}` is not implemented in the worker")
         except EOFError:
             break
 
@@ -129,11 +131,11 @@ class SubprocVecEnv(VecEnv):
             process.join()
         self.closed = True
 
-    def get_images(self, *args, **kwargs) -> Sequence[np.ndarray]:
+    def get_images(self) -> Sequence[np.ndarray]:
         for pipe in self.remotes:
             # gather images from subprocesses
             # `mode` will be taken into account later
-            pipe.send(('render', (args, {'mode': 'rgb_array', **kwargs})))
+            pipe.send(('render', 'rgb_array'))
         imgs = [pipe.recv() for pipe in self.remotes]
         return imgs
 

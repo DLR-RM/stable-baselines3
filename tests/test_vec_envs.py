@@ -40,6 +40,10 @@ class CustomGymEnv(gym.Env):
         self.state = self.observation_space.sample()
 
     def render(self, mode='human'):
+        if mode == 'rgb_array':
+            return np.zeros((4, 4, 3))
+
+    def seed(self, seed=None):
         pass
 
     @staticmethod
@@ -71,6 +75,11 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
         else:
             vec_env = vec_env_wrapper(vec_env)
 
+    # Test seed method
+    vec_env.seed(0)
+    # Test render method call
+    # vec_env.render()  # we need a X server  to test the "human" mode
+    vec_env.render(mode='rgb_array')
     env_method_results = vec_env.env_method('custom_method', 1, indices=None, dim_1=2)
     setattr_results = []
     # Set current_step to an arbitrary value
@@ -271,9 +280,10 @@ def test_vecenv_tuple_spaces(vec_env_class):
 def test_subproc_start_method():
     start_methods = [None]
     # Only test thread-safe methods. Others may deadlock tests! (gh/428)
-    safe_methods = {'forkserver', 'spawn'}
+    # Note: adding unsafe `fork` method as we are now using PyTorch
+    all_methods = {'forkserver', 'spawn', 'fork'}
     available_methods = multiprocessing.get_all_start_methods()
-    start_methods += list(safe_methods.intersection(available_methods))
+    start_methods += list(all_methods.intersection(available_methods))
     space = gym.spaces.Discrete(2)
 
     def obs_assert(obs):

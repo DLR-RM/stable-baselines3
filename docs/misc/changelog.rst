@@ -47,6 +47,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Added HER (working for SAC, TD3)
 - Added env checker (Sync with Stable Baselines)
 - Added ``VecCheckNan`` and ``VecVideoRecorder`` (Sync with Stable Baselines)
 - Added determinism tests

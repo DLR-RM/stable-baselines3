@@ -721,7 +721,7 @@ class OffPolicyRLModel(BaseRLModel):
                  use_sde: bool = False,
                  sde_sample_freq: int = -1,
                  use_sde_at_warmup: bool = False,
-                 sde_support: bool = True):
+                 sde_support: bool = False):
 
         super(OffPolicyRLModel, self).__init__(policy, env, policy_base, learning_rate,
                                                policy_kwargs, tensorboard_log, verbose,

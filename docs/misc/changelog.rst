@@ -3,12 +3,13 @@
 Changelog
 ==========
 
+
 Pre-Release 0.7.0a0 (WIP)
 ------------------------------
 
-
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- ``render()`` method of ``VecEnvs`` now only accept one argument: ``mode``
 
 New Features:
 ^^^^^^^^^^^^^
@@ -19,7 +20,8 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
-
+- Fixed ``render()`` method for ``VecEnvs``
+- Fixed ``seed()``` method for ``SubprocVecEnv``
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -28,6 +30,8 @@ Others:
 ^^^^^^^
 - Refactored Off-Policy algorithm to share the same ``.learn()`` method
 - Optimized replay buffer size by removing the need of ``next_observations`` numpy array
+- Re-enable unsafe ``fork`` start method in the tests (was causing a deadlock with tensorflow)
+- Added a test for seeding ``SubprocVecEnv``` and rendering
 
 Documentation:
 ^^^^^^^^^^^^^^

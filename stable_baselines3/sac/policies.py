@@ -364,6 +364,9 @@ class SACPolicy(BasePolicy):
             'reset_noise() is only available when using gSDE'
         self.actor.reset_noise(batch_size=batch_size)
 
+    def make_actor(self) -> Actor:
+        return Actor(**self.actor_kwargs).to(self.device)
+
     def make_critic(self) -> Critic:
         return Critic(**self.net_args).to(self.device)
 

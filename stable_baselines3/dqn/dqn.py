@@ -1,5 +1,6 @@
 from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
+import numpy as np
 import torch as th
 import torch.nn.functional as F
 
@@ -25,7 +26,7 @@ class DQN(OffPolicyRLModel):
     :param buffer_size: (int) size of the replay buffer
     :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
     :param batch_size: (int) Minibatch size for each gradient update
-    :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1)
+    :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1) default 1 for hard update
     :param gamma: (float) the discount factor
     :param train_freq: (int) Update the model every ``train_freq`` steps.
     :param gradient_steps: (int) How many gradient update after each step
@@ -89,6 +90,7 @@ class DQN(OffPolicyRLModel):
         self.exploration_fraction = exploration_fraction
         self.target_update_interval = target_update_interval
         self.max_grad_norm = max_grad_norm
+        self.epsilon = 0
 
         if _init_setup_model:
             self._setup_model()
@@ -98,6 +100,14 @@ class DQN(OffPolicyRLModel):
         self._create_aliases()
         self._setup_exploration_schedule()
 
+    def _update_exploration_rate(self):
+        """
+        Updates the epsilon used in predict according to schedule
+        """
+        # Log the current exploration probability
+        logger.record("rollout/exploration rate", self.exploration_schedule(self._current_progress))
+        self.epsilon = self.exploration_schedule(self._current_progress)
+
     def _setup_exploration_schedule(self) -> None:
         """
         Generate a exploration schedule used for updating the exploration probability
@@ -105,24 +115,14 @@ class DQN(OffPolicyRLModel):
         self.exploration_schedule = get_linear_fn(self.exploration_initial_eps, self.exploration_final_eps,
                                                   self.exploration_fraction)
 
-    def _update_exploration(self) -> None:
-        """
-        Update the policy exploration probability using the current exploration rate schedule
-        and the current progress (from 1 to 0).
-        """
-        # Log the current exploration probability
-        logger.record("rollout/exploration rate", self.exploration_schedule(self._current_progress))
-
-        self.policy.update_exploration_rate(self.exploration_schedule(self._current_progress))
-
     def _create_aliases(self) -> None:
         self.q_net = self.policy.q_net
         self.q_net_target = self.policy.q_net_target
 
     def train(self, gradient_steps: int, batch_size: int = 100) -> None:
-        # Update learning rate and exploration probability according to schedule
+        # Update learning rate and log exploration probability according to schedule
         self._update_learning_rate(self.policy.optimizer)
-        self._update_exploration()
+        self._update_exploration_rate()
 
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
@@ -161,6 +161,30 @@ class DQN(OffPolicyRLModel):
                     target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
         logger.record("train/n_updates", self._n_updates, exclude='tensorboard')
+
+    def predict(self, observation: np.ndarray,
+                state: Optional[np.ndarray] = None,
+                mask: Optional[np.ndarray] = None,
+                deterministic: bool = False) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+        """
+        Overrides the base_class predict function to get the model's action(s) from an observation
+        includes epsilon-greedy exploration
+
+        :param observation: (np.ndarray) the input observation
+        :param state: (Optional[np.ndarray]) The last states (can be None, used in recurrent policies)
+        :param mask: (Optional[np.ndarray]) The last masks (can be None, used in recurrent policies)
+        :param deterministic: (bool) Whether or not to return deterministic actions.
+        :return: (Tuple[np.ndarray, Optional[np.ndarray]]) the model's action and the next state
+            (used in recurrent policies)
+        """
+
+        if not deterministic and np.random.rand() < self.epsilon:
+            action = th.tensor([self.action_space.sample() for _ in range(observation.shape[0])]).reshape(
+                1).numpy(), state
+        else:
+            action = self.policy.predict(observation, state, mask, deterministic)
+
+        return action
 
     def learn(self,
               total_timesteps: int,

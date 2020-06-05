@@ -1,7 +1,6 @@
 from typing import Optional, List, Callable, Union, Type, Any, Dict
 
 import gym
-import numpy as np
 import torch as th
 import torch.nn as nn
 from stable_baselines3.common.policies import (BasePolicy, register_policy, create_mlp,
@@ -17,7 +16,6 @@ class QNetwork(BasePolicy):
     :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (Type[nn.Module]) Activation function
-    :param epsilon: (float) Exploration fraction (for the epsilon-greedy exploration)
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
     """
@@ -29,7 +27,6 @@ class QNetwork(BasePolicy):
                  net_arch: Optional[List[int]] = None,
                  device: Union[th.device, str] = 'auto',
                  activation_fn: Type[nn.Module] = nn.ReLU,
-                 epsilon: float = 0.05,
                  normalize_images: bool = True):
         super(QNetwork, self).__init__(observation_space, action_space,
                                        features_extractor=features_extractor,
@@ -44,8 +41,6 @@ class QNetwork(BasePolicy):
         self.features_extractor = features_extractor
         self.features_dim = features_dim
         self.normalize_images = normalize_images
-        # Setup initial learning rate of the policy
-        self.epsilon = epsilon
         action_dim = self.action_space.n  # number of actions
         q_net = create_mlp(self.features_dim, action_dim, self.net_arch, self.activation_fn)
         self.q_net = nn.Sequential(*q_net)
@@ -67,13 +62,9 @@ class QNetwork(BasePolicy):
         :param deterministic: (bool) Whether to use stochastic or deterministic actions
         :return: (th.Tensor) Taken action according to the policy
         """
-        # epsilon greedy exploration
-        if not deterministic and np.random.rand() < self.epsilon:
-            action = th.tensor([self.action_space.sample() for _ in range(observation.shape[0])]).reshape(1)
-        else:
-            features = self.extract_features(observation)
-            q_val = self.q_net(features)
-            action = q_val.argmax(dim=1).reshape(-1)
+        features = self.extract_features(observation)
+        q_val = self.q_net(features)
+        action = q_val.argmax(dim=1).reshape(-1)
 
         return action
 
@@ -100,7 +91,6 @@ class DQNPolicy(BasePolicy):
     :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (Type[nn.Module]) Activation function
-    :param epsilon: (float) Exploration fraction (for the epsilon-greedy exploration)
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
     :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
         to pass to the feature extractor.
@@ -118,7 +108,6 @@ class DQNPolicy(BasePolicy):
                  net_arch: Optional[List[int]] = None,
                  device: Union[th.device, str] = 'auto',
                  activation_fn: Type[nn.Module] = nn.ReLU,
-                 epsilon: float = 0.05,
                  features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
                  features_extractor_kwargs: Optional[Dict[str, Any]] = None,
                  normalize_images: bool = True,
@@ -143,7 +132,6 @@ class DQNPolicy(BasePolicy):
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.normalize_images = normalize_images
-        self.epsilon = epsilon
 
         self.net_args = {
             'observation_space': self.observation_space,
@@ -151,7 +139,6 @@ class DQNPolicy(BasePolicy):
             'features_extractor': self.features_extractor,
             'features_dim': self.features_dim,
             'net_arch': self.net_arch,
-            'epsilon': self.epsilon,
             'activation_fn': self.activation_fn,
             'normalize_images': normalize_images,
             'device': device
@@ -176,16 +163,6 @@ class DQNPolicy(BasePolicy):
         self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1),
                                               **self.optimizer_kwargs)
 
-    def update_exploration_rate(self, exploration_rate: float) -> None:
-        """
-        Update the exploration probability
-
-        :param exploration_rate: (float) the new exploration rate
-        """
-        self.q_net_target.epsilon = exploration_rate
-        self.q_net.epsilon = exploration_rate
-        self.epsilon = exploration_rate
-
     def make_q_net(self) -> QNetwork:
         return QNetwork(**self.net_args).to(self.device)
 
@@ -205,7 +182,6 @@ class DQNPolicy(BasePolicy):
             net_arch=self.net_args['net_arch'],
             activation_fn=self.net_args['activation_fn'],
             lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
-            epsilon=self.epsilon,
             optimizer_class=self.optimizer_class,
             optimizer_kwargs=self.optimizer_kwargs,
             features_extractor_class=self.features_extractor_class,
@@ -227,7 +203,6 @@ class CnnPolicy(DQNPolicy):
     :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
     :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (Type[nn.Module]) Activation function
-    :param epsilon: (float) Exploration fraction (for the epsilon-greedy exploration)
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
@@ -243,7 +218,6 @@ class CnnPolicy(DQNPolicy):
                  net_arch: Optional[List[int]] = None,
                  device: Union[th.device, str] = 'auto',
                  activation_fn: Type[nn.Module] = nn.ReLU,
-                 epsilon: float = 0.05,
                  features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
                  features_extractor_kwargs: Optional[Dict[str, Any]] = None,
                  normalize_images: bool = True,
@@ -255,7 +229,6 @@ class CnnPolicy(DQNPolicy):
                                         net_arch,
                                         device,
                                         activation_fn,
-                                        epsilon,
                                         features_extractor_class,
                                         features_extractor_kwargs,
                                         normalize_images,

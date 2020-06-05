@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import torch as th
 from gym import spaces
+
 try:
     # Check memory used by replay buffer when possible
     import psutil
@@ -221,9 +222,9 @@ class ReplayBuffer(BaseBuffer):
         # Do not sample the element with index `self.pos` as the transitions is invalid
         # (we use only one array to store `obs` and `next_obs`)
         if self.full:
-             batch_inds = (np.random.randint(1, self.buffer_size, size=batch_size) + self.pos) % self.buffer_size
+            batch_inds = (np.random.randint(1, self.buffer_size, size=batch_size) + self.pos) % self.buffer_size
         else:
-             batch_inds = np.random.randint(0, self.pos, size=batch_size)
+            batch_inds = np.random.randint(0, self.pos, size=batch_size)
         return self._get_samples(batch_inds, env=env)
 
     def _get_samples(self,

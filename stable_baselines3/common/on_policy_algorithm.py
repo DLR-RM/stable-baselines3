@@ -147,7 +147,14 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         callback.on_rollout_end()
 
         return True
-
+    
+    def train(self) -> None:
+        """
+        Consume current rollout data and update policy parameters.
+        Implemented by individual algorithms.
+        """
+        raise NotImplementedError
+    
     def learn(self,
               total_timesteps: int,
               callback: MaybeCallback = None,

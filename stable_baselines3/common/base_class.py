@@ -18,6 +18,7 @@ from stable_baselines3.common.save_util import (recursive_getattr, recursive_set
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.noise import ActionNoise
 
 
 class BaseAlgorithm(ABC):

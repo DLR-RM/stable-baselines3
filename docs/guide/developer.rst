@@ -19,7 +19,9 @@ The library is not meant to be modular, although inheritance is used to reduce c
 Algorithms Structure
 ====================
 
+
 Each algorithm (on-policy and off-policy ones) follows a common structure.
+Policy contains code for acting in the environment, and algorithm updates this policy.
 There is one folder per algorithm, and in that folder there is the algorithm and the policy definition (``policies.py``).
 
 Each algorithm has two main methods:
@@ -38,9 +40,10 @@ The first thing you need to read and understand are the base classes in the ``co
   It contains also all the "glue code" for saving/loading and the common operations (wrapping environments)
 
 - ``BasePolicy`` in ``policies.py`` which defines how a policy class should look like.
-  It contains also all the magic for the ``.predict()`` method, to handle as many cases as possible
+  It contains also all the magic for the ``.predict()`` method, to handle as many spaces/cases as possible
 
-- ``OffPolicyAlgorithm`` in ``off_policy_algorithm.py`` that contains the implementation of ``collect_rollouts()`` for the off-policy algorithms
+- ``OffPolicyAlgorithm`` in ``off_policy_algorithm.py`` that contains the implementation of ``collect_rollouts()`` for the off-policy algorithms,
+  and similarly ``OnPolicyAlgorithm`` in ``on_policy_algorithm.py``.
 
 
 All the environments handled internally are assumed to be ``VecEnv`` (``gym.Env`` are automatically wrapped).
@@ -50,7 +53,7 @@ Pre-Processing
 ==============
 
 To handle different observation spaces, some pre-processing needs to be done (e.g. one-hot encoding for discrete observation).
-Most of the code for pre-processing is in ``common/preprocessing.py``.
+Most of the code for pre-processing is in ``common/preprocessing.py`` and ``common/policies.py``.
 
 For images, we make use of an additional wrapper ``VecTransposeImage`` because PyTorch uses the "channel-first" convention.
 

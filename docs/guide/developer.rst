@@ -64,8 +64,11 @@ Policy Structure
 When we refer to "policy" in Stable-Baselines3, this is usually an abuse of language compared to RL terminology.
 In SB3, "policy" refers to the class that handles all the networks useful for training,
 so not only the network used to predict actions (the "learned controller").
-
 For instance, the ``TD3`` policy contains the actor, the critic and the target networks.
+
+To avoid the hassle of importing specific policy classes for specific algorithm (e.g. both A2C and PPO use ``ActorCriticPolicy``),
+SB3 uses names like "MlpPolicy" and "CnnPolicy" to refer policies using small feed-forward networks or convolutional networks,
+respectively. Importing ``[algorithm]/policies.py`` registers an appropriate policy for that algorithm under those names.
 
 Probability distributions
 =========================

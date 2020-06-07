@@ -100,7 +100,17 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                          callback: BaseCallback,
                          rollout_buffer: RolloutBuffer,
                          n_rollout_steps: int) -> bool:
+        """
+        Collect rollouts using the current policy and fill a `RolloutBuffer`.
 
+        :param env: (VecEnv) The training environment
+        :param callback: (BaseCallback) Callback that will be called at each step
+            (and at the beginning and end of the rollout)
+        :param rollout_buffer: (RolloutBuffer) Buffer to fill with rollouts
+        :param n_steps: (int) Number of experiences to collect per environment
+        :return: (bool) True if function returned with at least `n_rollout_steps`
+            collected, False if callback terminated rollout prematurely.
+        """
         assert self._last_obs is not None, "No previous observation was provided"
         n_steps = 0
         rollout_buffer.reset()
@@ -147,14 +157,14 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         callback.on_rollout_end()
 
         return True
-    
+
     def train(self) -> None:
         """
         Consume current rollout data and update policy parameters.
         Implemented by individual algorithms.
         """
         raise NotImplementedError
-    
+
     def learn(self,
               total_timesteps: int,
               callback: MaybeCallback = None,

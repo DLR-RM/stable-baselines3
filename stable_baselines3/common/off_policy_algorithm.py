@@ -111,6 +111,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
     def load_replay_buffer(self, path: str):
         """
+        Load a replay buffer from a pickle file.
 
         :param path: (str) Path to the pickled replay buffer.
         """
@@ -129,7 +130,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                          replay_buffer: Optional[ReplayBuffer] = None,
                          log_interval: Optional[int] = None) -> RolloutReturn:
         """
-        Collect rollout using the current policy (and possibly fill the replay buffer)
+        Collect experiences and store them into a ReplayBuffer.
 
         :param env: (VecEnv) The training environment
         :param n_episodes: (int) Number of episodes to use to collect rollout data

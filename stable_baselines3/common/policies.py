@@ -9,7 +9,7 @@ import numpy as np
 from stable_baselines3.common.preprocessing import preprocess_obs, is_image_space
 from stable_baselines3.common.torch_layers import (FlattenExtractor, BaseFeaturesExtractor, create_mlp,
                                                    NatureCNN, MlpExtractor)
-from stable_baselines3.common.utils import get_device
+from stable_baselines3.common.utils import get_device, is_vectorized_observation
 from stable_baselines3.common.vec_env import VecTransposeImage
 from stable_baselines3.common.distributions import (make_proba_distribution, Distribution,
                                                     DiagGaussianDistribution, CategoricalDistribution,
@@ -24,8 +24,6 @@ class BasePolicy(nn.Module):
     :param observation_space: (gym.spaces.Space) The observation space of the environment
     :param action_space: (gym.spaces.Space) The action space of the environment
     :param device: (Union[th.device, str]) Device on which the code should run.
-    :param squash_output: (bool) For continuous actions, whether the output is squashed
-        or not using a ``tanh()`` function.
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
     :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
         to pass to the feature extractor.
@@ -37,9 +35,12 @@ class BasePolicy(nn.Module):
         ``th.optim.Adam`` by default
     :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
+    :param squash_output: (bool) For continuous actions, whether the output is squashed
+        or not using a ``tanh()`` function.
     """
 
-    def __init__(self, observation_space: gym.spaces.Space,
+    def __init__(self,
+                 observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  device: Union[th.device, str] = 'auto',
                  features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
@@ -114,12 +115,14 @@ class BasePolicy(nn.Module):
         """
         raise NotImplementedError()
 
-    def predict(self, observation: np.ndarray,
+    def predict(self,
+                observation: np.ndarray,
                 state: Optional[np.ndarray] = None,
                 mask: Optional[np.ndarray] = None,
                 deterministic: bool = False) -> Tuple[np.ndarray, Optional[np.ndarray]]:
         """
         Get the policy action and state from an observation (and optional state).
+        Includes sugar-coating to handle different observations (e.g. normalizing images).
 
         :param observation: (np.ndarray) the input observation
         :param state: (Optional[np.ndarray]) The last states (can be None, used in recurrent policies)
@@ -147,7 +150,7 @@ class BasePolicy(nn.Module):
                         or transpose_obs.shape[1:] == self.observation_space.shape):
                     observation = transpose_obs
 
-        vectorized_env = self._is_vectorized_observation(observation, self.observation_space)
+        vectorized_env = is_vectorized_observation(observation, self.observation_space)
 
         observation = observation.reshape((-1,) + self.observation_space.shape)
 
@@ -193,57 +196,6 @@ class BasePolicy(nn.Module):
         """
         low, high = self.action_space.low, self.action_space.high
         return low + (0.5 * (scaled_action + 1.0) * (high - low))
-
-    @staticmethod
-    def _is_vectorized_observation(observation: np.ndarray, observation_space: gym.spaces.Space) -> bool:
-        """
-        For every observation type, detects and validates the shape,
-        then returns whether or not the observation is vectorized.
-
-        :param observation: (np.ndarray) the input observation to validate
-        :param observation_space: (gym.spaces) the observation space
-        :return: (bool) whether the given observation is vectorized or not
-        """
-        if isinstance(observation_space, gym.spaces.Box):
-            if observation.shape == observation_space.shape:
-                return False
-            elif observation.shape[1:] == observation_space.shape:
-                return True
-            else:
-                raise ValueError(f"Error: Unexpected observation shape {observation.shape} for "
-                                 + f"Box environment, please use {observation_space.shape} "
-                                 + "or (n_env, {}) for the observation shape."
-                                 .format(", ".join(map(str, observation_space.shape))))
-        elif isinstance(observation_space, gym.spaces.Discrete):
-            if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
-                return False
-            elif len(observation.shape) == 1:
-                return True
-            else:
-                raise ValueError(f"Error: Unexpected observation shape {observation.shape} for "
-                                 + "Discrete environment, please use (1,) or (n_env, 1) for the observation shape.")
-
-        elif isinstance(observation_space, gym.spaces.MultiDiscrete):
-            if observation.shape == (len(observation_space.nvec),):
-                return False
-            elif len(observation.shape) == 2 and observation.shape[1] == len(observation_space.nvec):
-                return True
-            else:
-                raise ValueError(f"Error: Unexpected observation shape {observation.shape} for MultiDiscrete "
-                                 + f"environment, please use ({len(observation_space.nvec)},) or "
-                                 + f"(n_env, {len(observation_space.nvec)}) for the observation shape.")
-        elif isinstance(observation_space, gym.spaces.MultiBinary):
-            if observation.shape == (observation_space.n,):
-                return False
-            elif len(observation.shape) == 2 and observation.shape[1] == observation_space.n:
-                return True
-            else:
-                raise ValueError(f"Error: Unexpected observation shape {observation.shape} for MultiBinary "
-                                 + f"environment, please use ({observation_space.n},) or "
-                                 + f"(n_env, {observation_space.n}) for the observation shape.")
-        else:
-            raise ValueError("Error: Cannot determine if the observation is vectorized "
-                             + f" with the space type {observation_space}.")
 
     def _get_data(self) -> Dict[str, Any]:
         """

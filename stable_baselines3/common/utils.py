@@ -187,6 +187,57 @@ def check_for_correct_spaces(env: GymEnv, observation_space: gym.spaces.Space, a
         raise ValueError(f'Action spaces do not match: {action_space} != {env.action_space}')
 
 
+def is_vectorized_observation(observation: np.ndarray, observation_space: gym.spaces.Space) -> bool:
+    """
+    For every observation type, detects and validates the shape,
+    then returns whether or not the observation is vectorized.
+
+    :param observation: (np.ndarray) the input observation to validate
+    :param observation_space: (gym.spaces) the observation space
+    :return: (bool) whether the given observation is vectorized or not
+    """
+    if isinstance(observation_space, gym.spaces.Box):
+        if observation.shape == observation_space.shape:
+            return False
+        elif observation.shape[1:] == observation_space.shape:
+            return True
+        else:
+            raise ValueError(f"Error: Unexpected observation shape {observation.shape} for "
+                             + f"Box environment, please use {observation_space.shape} "
+                             + "or (n_env, {}) for the observation shape."
+                             .format(", ".join(map(str, observation_space.shape))))
+    elif isinstance(observation_space, gym.spaces.Discrete):
+        if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
+            return False
+        elif len(observation.shape) == 1:
+            return True
+        else:
+            raise ValueError(f"Error: Unexpected observation shape {observation.shape} for "
+                             + "Discrete environment, please use (1,) or (n_env, 1) for the observation shape.")
+
+    elif isinstance(observation_space, gym.spaces.MultiDiscrete):
+        if observation.shape == (len(observation_space.nvec),):
+            return False
+        elif len(observation.shape) == 2 and observation.shape[1] == len(observation_space.nvec):
+            return True
+        else:
+            raise ValueError(f"Error: Unexpected observation shape {observation.shape} for MultiDiscrete "
+                             + f"environment, please use ({len(observation_space.nvec)},) or "
+                             + f"(n_env, {len(observation_space.nvec)}) for the observation shape.")
+    elif isinstance(observation_space, gym.spaces.MultiBinary):
+        if observation.shape == (observation_space.n,):
+            return False
+        elif len(observation.shape) == 2 and observation.shape[1] == observation_space.n:
+            return True
+        else:
+            raise ValueError(f"Error: Unexpected observation shape {observation.shape} for MultiBinary "
+                             + f"environment, please use ({observation_space.n},) or "
+                             + f"(n_env, {observation_space.n}) for the observation shape.")
+    else:
+        raise ValueError("Error: Cannot determine if the observation is vectorized "
+                         + f" with the space type {observation_space}.")
+
+
 def safe_mean(arr: Union[np.ndarray, list, deque]) -> np.ndarray:
     """
     Compute the mean of an array if there is at least one element.

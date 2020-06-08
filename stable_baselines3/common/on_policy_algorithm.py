@@ -46,7 +46,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
 
-    def __init__(self, policy: Union[str, Type[ActorCriticPolicy]],
+    def __init__(self,
+                 policy: Union[str, Type[ActorCriticPolicy]],
                  env: Union[GymEnv, str],
                  learning_rate: Union[float, Callable],
                  n_steps: int,

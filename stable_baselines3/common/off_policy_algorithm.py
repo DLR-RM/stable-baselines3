@@ -33,6 +33,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
     :param batch_size: (int) Minibatch size for each gradient update
     :param policy_kwargs: Additional arguments to be passed to the policy on creation
+    :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param verbose: The verbosity level: 0 none, 1 training information, 2 debug
     :param device: Device on which the code should run.
         By default, it will try to use a Cuda compatible device and fallback to cpu
@@ -133,6 +134,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         Collect experiences and store them into a ReplayBuffer.
 
         :param env: (VecEnv) The training environment
+        :param callback: (BaseCallback) Callback that will be called at each step
+            (and at the beginning and end of the rollout)
         :param n_episodes: (int) Number of episodes to use to collect rollout data
             You can also specify a ``n_steps`` instead
         :param n_steps: (int) Number of steps to use to collect rollout data
@@ -140,8 +143,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         :param action_noise: (Optional[ActionNoise]) Action noise that will be used for exploration
             Required for deterministic policy (e.g. TD3). This can also be used
             in addition to the stochastic policy for SAC.
-        :param callback: (BaseCallback) Callback that will be called at each step
-            (and at the beginning and end of the rollout)
         :param learning_starts: (int) Number of steps before learning for the warm-up phase.
         :param replay_buffer: (ReplayBuffer)
         :param log_interval: (int) Log data every ``log_interval`` episodes

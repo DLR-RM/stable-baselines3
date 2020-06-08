@@ -317,14 +317,14 @@ class ActorCriticPolicy(BasePolicy):
             if optimizer_class == th.optim.Adam:
                 optimizer_kwargs['eps'] = 1e-5
 
-        super(ActorCriticPolicy, self).__init__(observation_space, 
-                                                      action_space,
-                                                      device,
-                                                      features_extractor_class,
-                                                      features_extractor_kwargs,
-                                                      optimizer_class=optimizer_class,
-                                                      optimizer_kwargs=optimizer_kwargs,
-                                                      squash_output=squash_output)
+        super(ActorCriticPolicy, self).__init__(observation_space,
+                                                action_space,
+                                                device,
+                                                features_extractor_class,
+                                                features_extractor_kwargs,
+                                                optimizer_class=optimizer_class,
+                                                optimizer_kwargs=optimizer_kwargs,
+                                                squash_output=squash_output)
 
         # Default network architecture, from stable-baselines
         if net_arch is None:
@@ -401,6 +401,9 @@ class ActorCriticPolicy(BasePolicy):
         :param lr_schedule: (Callable) Learning rate schedule
             lr_schedule(1) is the initial learning rate
         """
+        # Note: If net_arch is None and some features extractor is used,
+        #       net_arch here is an empty list and mlp_extractor does not
+        #       really contain any layers (acts like an identity module).
         self.mlp_extractor = MlpExtractor(self.features_dim, net_arch=self.net_arch,
                                           activation_fn=self.activation_fn, device=self.device)
 
@@ -595,23 +598,23 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
                  optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
                  optimizer_kwargs: Optional[Dict[str, Any]] = None):
         super(ActorCriticCnnPolicy, self).__init__(observation_space,
-                                                         action_space,
-                                                         lr_schedule,
-                                                         net_arch,
-                                                         device,
-                                                         activation_fn,
-                                                         ortho_init,
-                                                         use_sde,
-                                                         log_std_init,
-                                                         full_std,
-                                                         sde_net_arch,
-                                                         use_expln,
-                                                         squash_output,
-                                                         features_extractor_class,
-                                                         features_extractor_kwargs,
-                                                         normalize_images,
-                                                         optimizer_class,
-                                                         optimizer_kwargs)
+                                                   action_space,
+                                                   lr_schedule,
+                                                   net_arch,
+                                                   device,
+                                                   activation_fn,
+                                                   ortho_init,
+                                                   use_sde,
+                                                   log_std_init,
+                                                   full_std,
+                                                   sde_net_arch,
+                                                   use_expln,
+                                                   squash_output,
+                                                   features_extractor_class,
+                                                   features_extractor_kwargs,
+                                                   normalize_images,
+                                                   optimizer_class,
+                                                   optimizer_kwargs)
 
 
 def create_sde_features_extractor(features_dim: int,

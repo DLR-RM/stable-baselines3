@@ -263,12 +263,11 @@ class BaseAlgorithm(ABC):
             It takes the local and global variables. If it returns False, training is aborted.
         :param log_interval: (int) The number of timesteps before logging.
         :param tb_log_name: (str) the name of the run for tensorboard log
-        :param reset_num_timesteps: (bool) whether or not to reset the current timestep number (used in logging)
         :param eval_env: (gym.Env) Environment that will be used to evaluate the agent
         :param eval_freq: (int) Evaluate the agent every ``eval_freq`` timesteps (this may vary a little)
         :param n_eval_episodes: (int) Number of episode to evaluate the agent
         :param eval_log_path: (Optional[str]) Path to a folder where the evaluations will be saved
-        :param reset_num_timesteps: (bool)
+        :param reset_num_timesteps: (bool) whether or not to reset the current timestep number (used in logging)
         :return: (BaseAlgorithm) the trained model
         """
         raise NotImplementedError()
@@ -406,8 +405,8 @@ class BaseAlgorithm(ABC):
         :param total_timesteps: (int) The total number of samples (env steps) to train on
         :param eval_env: (Optional[GymEnv])
         :param callback: (Union[None, BaseCallback, List[BaseCallback, Callable]])
-        :param eval_freq: (int)
-        :param n_eval_episodes: (int)
+        :param eval_freq: (int) How many steps between evaluations
+        :param n_eval_episodes: (int) How many episodes to play per evaluation
         :param log_path (Optional[str]): Path to a log folder
         :param reset_num_timesteps: (bool) Whether to reset or not the ``num_timesteps`` attribute
         :param tb_log_name: (str) the name of the run for tensorboard log

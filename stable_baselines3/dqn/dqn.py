@@ -177,14 +177,12 @@ class DQN(OffPolicyRLModel):
         :return: (Tuple[np.ndarray, Optional[np.ndarray]]) the model's action and the next state
             (used in recurrent policies)
         """
-
         if not deterministic and np.random.rand() < self.epsilon:
-            action = th.tensor([self.action_space.sample() for _ in range(observation.shape[0])]).reshape(
-                1).numpy(), state
+            n_batch = observation.shape[0]
+            action = np.array([self.action_space.sample() for _ in range(n_batch)])
         else:
-            action = self.policy.predict(observation, state, mask, deterministic)
-
-        return action
+            action, state = self.policy.predict(observation, state, mask, deterministic)
+        return action, state
 
     def learn(self,
               total_timesteps: int,

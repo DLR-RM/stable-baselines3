@@ -3,6 +3,35 @@
 Changelog
 ==========
 
+
+Pre-Release 0.7.0a1 (WIP)
+------------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+- ``render()`` method of ``VecEnvs`` now only accept one argument: ``mode``
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed ``render()`` method for ``VecEnvs``
+- Fixed ``seed()``` method for ``SubprocVecEnv``
+- Fixed loading on GPU for testing when using gSDE and ``deterministic=False``
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Re-enable unsafe ``fork`` start method in the tests (was causing a deadlock with tensorflow)
+- Added a test for seeding ``SubprocVecEnv``` and rendering
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
 Pre-Release 0.6.0 (2020-06-01)
 ------------------------------
 

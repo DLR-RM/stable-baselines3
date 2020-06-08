@@ -128,8 +128,8 @@ class Actor(BasePolicy):
 
         :return: (th.Tensor)
         """
-        assert isinstance(self.action_dist, StateDependentNoiseDistribution), \
-            'get_std() is only available when using gSDE'
+        msg = 'get_std() is only available when using gSDE'
+        assert isinstance(self.action_dist, StateDependentNoiseDistribution), msg
         return self.action_dist.get_std(self.log_std)
 
     def reset_noise(self, batch_size: int = 1) -> None:
@@ -138,8 +138,8 @@ class Actor(BasePolicy):
 
         :param batch_size: (int)
         """
-        assert isinstance(self.action_dist, StateDependentNoiseDistribution), \
-            'reset_noise() is only available when using gSDE'
+        msg = 'reset_noise() is only available when using gSDE'
+        assert isinstance(self.action_dist, StateDependentNoiseDistribution), msg
         self.action_dist.sample_weights(self.log_std, batch_size=batch_size)
 
     def get_action_dist_params(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor, Dict[str, th.Tensor]]:
@@ -353,6 +353,14 @@ class SACPolicy(BasePolicy):
             features_extractor_kwargs=self.features_extractor_kwargs
         ))
         return data
+
+    def reset_noise(self, batch_size: int = 1) -> None:
+        """
+        Sample new weights for the exploration matrix, when using gSDE.
+
+        :param batch_size: (int)
+        """
+        self.actor.reset_noise(batch_size=batch_size)
 
     def make_actor(self) -> Actor:
         return Actor(**self.actor_kwargs).to(self.device)

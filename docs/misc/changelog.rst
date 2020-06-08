@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Pre-Release 0.7.0a0 (WIP)
+Pre-Release 0.7.0a1 (WIP)
 ------------------------------
 
 Breaking Changes:
@@ -18,6 +18,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fixed ``render()`` method for ``VecEnvs``
 - Fixed ``seed()``` method for ``SubprocVecEnv``
+- Fixed loading on GPU for testing when using gSDE and ``deterministic=False``
 
 Deprecations:
 ^^^^^^^^^^^^^

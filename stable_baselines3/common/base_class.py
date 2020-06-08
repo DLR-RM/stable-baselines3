@@ -375,6 +375,10 @@ class BaseRLModel(ABC):
             for name in tensors:
                 recursive_setattr(model, name, tensors[name])
 
+        # Sample gSDE exploration matrix, so it uses the right device
+        # see issue #44
+        if model.use_sde:
+            model.policy.reset_noise()
         return model
 
     @staticmethod

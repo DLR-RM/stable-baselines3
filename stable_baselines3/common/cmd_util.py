@@ -94,8 +94,8 @@ def make_atari_env(env_id: Union[str, Type[gym.Env]],
         in a Monitor wrapper to provide additional information about training.
     :param wrapper_kwargs: (Dict[str, Any]) Optional keyword argument to pass to the ``AtariWrapper``
     :param env_kwargs: (Dict[str, Any]) Optional keyword argument to pass to the env constructor
-    :param vec_env_cls: (Type[VecEnv]) A custom `VecEnv` class constructor. Default: None.
-    :param vec_env_kwargs: (Dict[str, Any]) Keyword arguments to pass to the `VecEnv` class constructor.
+    :param vec_env_cls: (Type[VecEnv]) A custom ``VecEnv`` class constructor. Default: None.
+    :param vec_env_kwargs: (Dict[str, Any]) Keyword arguments to pass to the ``VecEnv`` class constructor.
     :return: (VecEnv) The wrapped environment
     """
     if wrapper_kwargs is None:

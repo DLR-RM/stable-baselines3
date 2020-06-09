@@ -11,7 +11,7 @@ if typing.TYPE_CHECKING:
 
 class VecTransposeImage(VecEnvWrapper):
     """
-    Re-order channels, from WxHxC to CxWxH.
+    Re-order channels, from HxWxC to CxHxW.
     It is required for PyTorch convolution layers.
 
     :param venv: (VecEnv)

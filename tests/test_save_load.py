@@ -39,7 +39,7 @@ def test_save_load(tmp_path, model_class):
 
     ''warning does not test function of optimizer parameter load
 
-    :param model_class: (BaseRLModel) A RL model
+    :param model_class: (BaseAlgorithm) A RL model
     """
 
     env = DummyVecEnv([lambda: select_env(model_class)])
@@ -97,7 +97,7 @@ def test_save_load(tmp_path, model_class):
 def test_set_env(model_class):
     """
     Test if set_env function does work correct
-    :param model_class: (BaseRLModel) A RL model
+    :param model_class: (BaseAlgorithm) A RL model
     """
 
     # use discrete for DQN
@@ -126,7 +126,7 @@ def test_exclude_include_saved_params(tmp_path, model_class):
     """
     Test if exclude and include parameters of save() work
 
-    :param model_class: (BaseRLModel) A RL model
+    :param model_class: (BaseAlgorithm) A RL model
     """
     env = DummyVecEnv([lambda: select_env(model_class)])
 
@@ -181,7 +181,7 @@ def test_save_load_policy(tmp_path, model_class, policy_str):
     """
     Test saving and loading policy only.
 
-    :param model_class: (BaseRLModel) A RL model
+    :param model_class: (BaseAlgorithm) A RL model
     :param policy_str: (str) Name of the policy.
     """
     kwargs = {}

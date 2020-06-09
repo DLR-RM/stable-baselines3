@@ -100,8 +100,6 @@ class PPO(OnPolicyAlgorithm):
         self.clip_range_vf = clip_range_vf
         self.target_kl = target_kl
 
-        self.tb_writer = None
-
         if _init_setup_model:
             self._setup_model()
 

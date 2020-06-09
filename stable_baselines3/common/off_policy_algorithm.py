@@ -75,10 +75,12 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                  use_sde_at_warmup: bool = False,
                  sde_support: bool = True):
 
-        super(OffPolicyAlgorithm, self).__init__(policy, env, policy_base, learning_rate,
-                                               policy_kwargs, tensorboard_log, verbose,
-                                               device, support_multi_env, create_eval_env, monitor_wrapper,
-                                               seed, use_sde, sde_sample_freq)
+        super(OffPolicyAlgorithm, self).__init__(policy=policy, env=env, policy_base=policy_base,
+                                                 learning_rate=learning_rate, policy_kwargs=policy_kwargs,
+                                                 tensorboard_log=tensorboard_log, verbose=verbose,
+                                                 device=device, support_multi_env=support_multi_env,
+                                                 create_eval_env=create_eval_env, monitor_wrapper=monitor_wrapper,
+                                                 seed=seed, use_sde=use_sde, sde_sample_freq=sde_sample_freq)
         self.buffer_size = buffer_size
         self.batch_size = batch_size
         self.learning_starts = learning_starts

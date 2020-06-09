@@ -38,6 +38,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param create_eval_env: (bool) Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
+    :param monitor_wrapper: When creating an environment, whether to wrap it
+        or not in a Monitor wrapper.
     :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
     :param verbose: (int) the verbosity level: 0 no output, 1 info, 2 debug
     :param seed: (int) Seed for the pseudo random generators
@@ -60,15 +62,18 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                  sde_sample_freq: int,
                  tensorboard_log: Optional[str] = None,
                  create_eval_env: bool = False,
+                 monitor_wrapper: bool = True,
                  policy_kwargs: Optional[Dict[str, Any]] = None,
                  verbose: int = 0,
                  seed: Optional[int] = None,
                  device: Union[th.device, str] = 'auto',
                  _init_setup_model: bool = True):
 
-        super(OnPolicyAlgorithm, self).__init__(policy, env, ActorCriticPolicy, learning_rate, policy_kwargs=policy_kwargs,
-                                              verbose=verbose, device=device, use_sde=use_sde, sde_sample_freq=sde_sample_freq,
-                                              create_eval_env=create_eval_env, support_multi_env=True, seed=seed)
+        super(OnPolicyAlgorithm, self).__init__(policy=policy, env=env, policy_base=ActorCriticPolicy,
+                                                learning_rate=learning_rate, policy_kwargs=policy_kwargs,
+                                                verbose=verbose, device=device, use_sde=use_sde,
+                                                sde_sample_freq=sde_sample_freq, create_eval_env=create_eval_env,
+                                                support_multi_env=True, seed=seed, tensorboard_log=tensorboard_log)
 
         self.n_steps = n_steps
         self.gamma = gamma
@@ -77,8 +82,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         self.vf_coef = vf_coef
         self.max_grad_norm = max_grad_norm
         self.rollout_buffer = None
-        self.tensorboard_log = tensorboard_log
-        self.tb_writer = None
 
         if _init_setup_model:
             self._setup_model()

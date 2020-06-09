@@ -11,7 +11,7 @@ def evaluate_policy(model, env, n_eval_episodes=10, deterministic=True,
     Runs policy for ``n_eval_episodes`` episodes and returns average reward.
     This is made to work only with one env.
 
-    :param model: (BaseRLModel) The RL agent you want to evaluate.
+    :param model: (BaseAlgorithm) The RL agent you want to evaluate.
     :param env: (gym.Env or VecEnv) The gym environment. In the case of a ``VecEnv``
         this must contain only one environment.
     :param n_eval_episodes: (int) Number of episode to evaluate the agent

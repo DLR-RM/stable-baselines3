@@ -3,13 +3,13 @@ import torch.nn.functional as F
 from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.base_class import OffPolicyRLModel
+from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.td3.policies import TD3Policy
 
 
-class TD3(OffPolicyRLModel):
+class TD3(OffPolicyAlgorithm):
     """
     Twin Delayed DDPG (TD3)
     Addressing Function Approximation Error in Actor-Critic Methods.
@@ -22,7 +22,7 @@ class TD3(OffPolicyRLModel):
     :param env: (GymEnv or str) The environment to learn from (if registered in Gym, can be str)
     :param learning_rate: (float or callable) learning rate for adam optimizer,
         the same learning rate will be used for all networks (Q-Values, Actor and Value function)
-        it can be a function of the current progress (from 1 to 0)
+        it can be a function of the current progress remaining (from 1 to 0)
     :param buffer_size: (int) size of the replay buffer
     :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
     :param batch_size: (int) Minibatch size for each gradient update
@@ -163,7 +163,7 @@ class TD3(OffPolicyRLModel):
               n_eval_episodes: int = 5,
               tb_log_name: str = "TD3",
               eval_log_path: Optional[str] = None,
-              reset_num_timesteps: bool = True) -> OffPolicyRLModel:
+              reset_num_timesteps: bool = True) -> OffPolicyAlgorithm:
 
         total_timesteps, callback = self._setup_learn(total_timesteps, eval_env, callback, eval_freq,
                                                       n_eval_episodes, eval_log_path, reset_num_timesteps,
@@ -182,7 +182,7 @@ class TD3(OffPolicyRLModel):
             if rollout.continue_training is False:
                 break
 
-            self._update_current_progress(self.num_timesteps, total_timesteps)
+            self._update_current_progress_remaining(self.num_timesteps, total_timesteps)
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
                 gradient_steps = self.gradient_steps if self.gradient_steps > 0 else rollout.episode_timesteps

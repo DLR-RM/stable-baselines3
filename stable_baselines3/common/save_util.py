@@ -2,13 +2,20 @@
 Save util taken from stable_baselines
 used to serialize data (class parameters) of model classes
 """
+import os
+import io
 import json
 import base64
 import functools
-from typing import Dict, Any, Optional
-
-import cloudpickle
+from typing import Dict, Any, Tuple, Optional
 import warnings
+import zipfile
+
+import torch as th
+import cloudpickle
+
+from stable_baselines3.common.type_aliases import TensorDict
+from stable_baselines3.common.utils import get_device
 
 
 def recursive_getattr(obj: Any, attr: str, *args) -> Any:
@@ -165,3 +172,115 @@ def json_to_data(json_string: str,
             # Read as it is
             return_data[data_key] = data_item
     return return_data
+
+
+def save_to_zip_file(save_path: str, data: Dict[str, Any] = None,
+                     params: Dict[str, Any] = None, tensors: Dict[str, Any] = None) -> None:
+    """
+    Save a model to a zip archive.
+
+    :param save_path: Where to store the model.
+    :param data: Class parameters being stored.
+    :param params: Model parameters being stored expected to contain an entry for every
+                   state_dict with its name and the state_dict.
+    :param tensors: Extra tensor variables expected to contain name and value of tensors
+    """
+
+    # data/params can be None, so do not
+    # try to serialize them blindly
+    if data is not None:
+        serialized_data = data_to_json(data)
+
+    # Check postfix if save_path is a string
+    if isinstance(save_path, str):
+        _, ext = os.path.splitext(save_path)
+        if ext == "":
+            save_path += ".zip"
+
+    # Create a zip-archive and write our objects
+    # there. This works when save_path is either
+    # str or a file-like
+    with zipfile.ZipFile(save_path, "w") as archive:
+        # Do not try to save "None" elements
+        if data is not None:
+            archive.writestr("data", serialized_data)
+        if tensors is not None:
+            with archive.open('tensors.pth', mode="w") as tensors_file:
+                th.save(tensors, tensors_file)
+        if params is not None:
+            for file_name, dict_ in params.items():
+                with archive.open(file_name + '.pth', mode="w") as param_file:
+                    th.save(dict_, param_file)
+
+
+def load_from_zip_file(load_path: str, load_data: bool = True) -> (Tuple[Optional[Dict[str, Any]],
+                                                                   Optional[TensorDict],
+                                                                   Optional[TensorDict]]):
+    """
+    Load model data from a .zip archive
+
+    :param load_path: Where to load the model from
+    :param load_data: Whether we should load and return data
+        (class parameters). Mainly used by 'load_parameters' to only load model parameters (weights)
+    :return: (dict),(dict),(dict) Class parameters, model state_dicts (dict of state_dict)
+        and dict of extra tensors
+    """
+    # Check if file exists if load_path is a string
+    if isinstance(load_path, str):
+        if not os.path.exists(load_path):
+            if os.path.exists(load_path + ".zip"):
+                load_path += ".zip"
+            else:
+                raise ValueError(f"Error: the file {load_path} could not be found")
+
+    # set device to cpu if cuda is not available
+    device = get_device()
+
+    # Open the zip archive and load data
+    try:
+        with zipfile.ZipFile(load_path, "r") as archive:
+            namelist = archive.namelist()
+            # If data or parameters is not in the
+            # zip archive, assume they were stored
+            # as None (_save_to_file_zip allows this).
+            data = None
+            tensors = None
+            params = {}
+
+            if "data" in namelist and load_data:
+                # Load class parameters and convert to string
+                json_data = archive.read("data").decode()
+                data = json_to_data(json_data)
+
+            if "tensors.pth" in namelist and load_data:
+                # Load extra tensors
+                with archive.open('tensors.pth', mode="r") as tensor_file:
+                    # File has to be seekable, but opt_param_file is not, so load in BytesIO first
+                    # fixed in python >= 3.7
+                    file_content = io.BytesIO()
+                    file_content.write(tensor_file.read())
+                    # go to start of file
+                    file_content.seek(0)
+                    # load the parameters with the right ``map_location``
+                    tensors = th.load(file_content, map_location=device)
+
+            # check for all other .pth files
+            other_files = [file_name for file_name in namelist if
+                           os.path.splitext(file_name)[1] == ".pth" and file_name != "tensors.pth"]
+            # if there are any other files which end with .pth and aren't "params.pth"
+            # assume that they each are optimizer parameters
+            if len(other_files) > 0:
+                for file_path in other_files:
+                    with archive.open(file_path, mode="r") as opt_param_file:
+                        # File has to be seekable, but opt_param_file is not, so load in BytesIO first
+                        # fixed in python >= 3.7
+                        file_content = io.BytesIO()
+                        file_content.write(opt_param_file.read())
+                        # go to start of file
+                        file_content.seek(0)
+                        # load the parameters with the right ``map_location``
+                        params[os.path.splitext(file_path)[0]] = th.load(file_content, map_location=device)
+    except zipfile.BadZipFile:
+        # load_path wasn't a zip file
+        raise ValueError(f"Error: the file {load_path} wasn't a zip-file")
+    return data, params, tensors

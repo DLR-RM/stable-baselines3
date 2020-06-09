@@ -34,7 +34,7 @@ This will give you access to events (``_on_training_start``, ``_on_step``) and u
             # Those variables will be accessible in the callback
             # (they are defined in the base class)
             # The RL model
-            # self.model = None  # type: BaseRLModel
+            # self.model = None  # type: BaseAlgorithm
             # An alias for self.model.get_env(), the environment used for training
             # self.training_env = None  # type: Union[gym.Env, VecEnv, None]
             # Number of time the callback was called

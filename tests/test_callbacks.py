@@ -10,8 +10,8 @@ from stable_baselines3.common.callbacks import (CallbackList, CheckpointCallback
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN])
-def test_callbacks(model_class):
-    log_folder = './logs/callbacks/'
+def test_callbacks(tmp_path, model_class):
+    log_folder = tmp_path / 'logs/callbacks/'
 
     # Dyn only support discrete actions
     env_name = select_env(model_class)

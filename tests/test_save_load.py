@@ -7,7 +7,7 @@ import numpy as np
 import torch as th
 
 from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
-from stable_baselines3.common.base_class import BaseRLModel
+from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.identity_env import IdentityEnvBox, IdentityEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.identity_env import FakeImageEnv
@@ -21,7 +21,7 @@ MODEL_LIST = [
 ]
 
 
-def select_env(model_class: BaseRLModel) -> gym.Env:
+def select_env(model_class: BaseAlgorithm) -> gym.Env:
     """
     Selects an environment with the correct action space as DQN only supports discrete action space
     """

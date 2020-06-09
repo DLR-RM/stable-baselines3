@@ -27,7 +27,7 @@ Breaking Changes:
 
 - Moved static function ``_is_vectorized_observation`` from common/policies.py to common/utils.py under name ``is_vectorized_observation``.
 - ``VecNormalize`` functions for saving and loading statistics (``save/load_running_average``) now store data in a single pickle file.
-- Removed ``use_gae`` parameter from ``RolloutBuffer.compute_returns_and_average``.
+- Removed ``use_gae`` parameter from ``RolloutBuffer.compute_returns_and_advantage``.
  
 New Features:
 ^^^^^^^^^^^^^

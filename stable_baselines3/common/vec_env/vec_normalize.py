@@ -179,16 +179,20 @@ class VecNormalize(VecEnvWrapper):
 
     def save_running_average(self, path):
         """
-        :param path: (str) path to log dir
+        :param path: (str) path to pickle file where to store statistics
         """
-        for rms, name in zip([self.obs_rms, self.ret_rms], ['obs_rms', 'ret_rms']):
-            with open(f"{path}/{name}.pkl", 'wb') as file_handler:
-                pickle.dump(rms, file_handler)
+        data_dict = {
+            'obs_rms': self.obs_rms,
+            'ret_rms': self.ret_rms
+        }
+        with open(path, 'wb') as file_handler:
+            pickle.dump(data_dict, file_handler)
 
     def load_running_average(self, path):
         """
-        :param path: (str) path to log dir
+        :param path: (str) path to pickle file where to load statistics from
         """
-        for name in ['obs_rms', 'ret_rms']:
-            with open(f"{path}/{name}.pkl", 'rb') as file_handler:
-                setattr(self, name, pickle.load(file_handler))
+        with open(path, 'rb') as file_handler:
+            data_dict = pickle.load(file_handler)
+            self.obs_rms = data_dict['obs_rms']
+            self.ret_rms = data_dict['ret_rms']

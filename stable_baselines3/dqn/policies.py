@@ -3,8 +3,8 @@ from typing import Optional, List, Callable, Union, Type, Any, Dict
 import gym
 import torch as th
 import torch.nn as nn
-from stable_baselines3.common.policies import (BasePolicy, register_policy, create_mlp,
-                                               NatureCNN, BaseFeaturesExtractor, FlattenExtractor)
+from stable_baselines3.common.policies import BasePolicy, register_policy
+from stable_baselines3.common.torch_layers import create_mlp, NatureCNN, BaseFeaturesExtractor, FlattenExtractor
 
 
 class QNetwork(BasePolicy):

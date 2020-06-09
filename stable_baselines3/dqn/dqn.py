@@ -5,13 +5,13 @@ import torch as th
 import torch.nn.functional as F
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.base_class import OffPolicyRLModel
+from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.utils import get_linear_fn
 from stable_baselines3.dqn.policies import DQNPolicy
 
 
-class DQN(OffPolicyRLModel):
+class DQN(OffPolicyAlgorithm):
     """
     Deep Q-Network (DQN)
 
@@ -193,7 +193,7 @@ class DQN(OffPolicyRLModel):
               n_eval_episodes: int = 5,
               tb_log_name: str = "DQN",
               eval_log_path: Optional[str] = None,
-              reset_num_timesteps: bool = True) -> OffPolicyRLModel:
+              reset_num_timesteps: bool = True) -> OffPolicyAlgorithm:
 
         return super(DQN, self).learn(total_timesteps=total_timesteps, callback=callback, log_interval=log_interval,
                                       eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,

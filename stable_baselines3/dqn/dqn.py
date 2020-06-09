@@ -105,8 +105,8 @@ class DQN(OffPolicyAlgorithm):
         Updates the epsilon used in predict according to schedule
         """
         # Log the current exploration probability
-        logger.record("rollout/exploration rate", self.exploration_schedule(self._current_progress))
-        self.epsilon = self.exploration_schedule(self._current_progress)
+        logger.record("rollout/exploration rate", self.exploration_schedule(self._current_progress_remaining))
+        self.epsilon = self.exploration_schedule(self._current_progress_remaining)
 
     def _setup_exploration_schedule(self) -> None:
         """

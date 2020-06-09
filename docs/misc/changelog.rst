@@ -9,6 +9,7 @@ Pre-Release 0.7.0a1 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- ``AtariWrapper`` and other Atari wrappers were updated to match SB2 ones
 - ``render()`` method of ``VecEnvs`` now only accept one argument: ``mode``
 
 New Features:

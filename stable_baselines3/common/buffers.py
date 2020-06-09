@@ -169,7 +169,7 @@ class ReplayBuffer(BaseBuffer):
         if psutil is not None:
             mem_available = psutil.virtual_memory().available
 
-        # `observations` contains also the next observation, hence the +1
+        # `observations` contains also the next observation
         self.observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=observation_space.dtype)
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -218,7 +218,6 @@ class ReplayBuffer(BaseBuffer):
             to normalize the observations/rewards when sampling
         :return: (Union[RolloutBufferSamples, ReplayBufferSamples])
         """
-        upper_bound = self.buffer_size if self.full else self.pos
         # Do not sample the element with index `self.pos` as the transitions is invalid
         # (we use only one array to store `obs` and `next_obs`)
         if self.full:

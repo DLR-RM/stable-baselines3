@@ -26,7 +26,7 @@ Breaking Changes:
   - ``check_env`` to ``check_for_correct_spaces`` (utils.py. Renamed to avoid confusion with environment checker tools)
 
 - Moved static function ``_is_vectorized_observation`` from common/policies.py to common/utils.py under name ``is_vectorized_observation``.
-- ``VecNormalize`` functions for saving and loading statistics (``save/load_running_average``) now store data in a single pickle file.
+- Removed ``{save,load}_running_average`` functions of ``VecNormalize`` in favor of ``load/save``.
 - Removed ``use_gae`` parameter from ``RolloutBuffer.compute_returns_and_advantage``.
  
 New Features:

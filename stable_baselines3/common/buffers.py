@@ -243,8 +243,12 @@ class RolloutBuffer(BaseBuffer):
                                       dones: np.ndarray) -> None:
         """
         Post-processing step: compute the returns (sum of discounted rewards)
-        and advantage (A(s) = R - V(S)).
+        and GAE advantage.
         Adapted from Stable-Baselines PPO2.
+
+        Uses Generalized Advantage Estimation (https://arxiv.org/abs/1506.02438)
+        to compute the advantage. To obtain vanilla advantage (A(s) = R - V(S)),
+        set `gae_lambda=1.0` during initialization.
 
         :param last_value: (th.Tensor)
         :param dones: (np.ndarray)

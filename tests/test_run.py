@@ -25,13 +25,9 @@ def test_a2c(env_id):
 def test_ppo(env_id, clip_range_vf):
     if clip_range_vf is not None and clip_range_vf < 0:
         # Should throw an error
-        try:
+        with pytest.raises(AssertionError):
             model = PPO('MlpPolicy', env_id, seed=0, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True,
                         clip_range_vf=clip_range_vf)
-        except Exception:
-            pass
-        else:
-            assert False
     else:
         model = PPO('MlpPolicy', env_id, seed=0, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True,
                     clip_range_vf=clip_range_vf)

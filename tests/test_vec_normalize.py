@@ -1,5 +1,3 @@
-import os
-
 import gym
 import pytest
 import numpy as np

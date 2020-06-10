@@ -1,4 +1,5 @@
 import os
+import warnings
 from copy import deepcopy
 
 import pytest
@@ -173,6 +174,40 @@ def test_save_load_replay_buffer(tmp_path, model_class):
 
     # clear file from os
     os.remove(replay_path)
+
+
+@pytest.mark.parametrize("model_class", [DQN, SAC, TD3])
+@pytest.mark.parametrize("optimize_memory_usage", [False, True])
+def test_warn_buffer(recwarn, model_class, optimize_memory_usage):
+    """
+    When using memory efficient replay buffer,
+    a warning must be emitted when calling `.learn()`
+    multiple times.
+    See https://github.com/DLR-RM/stable-baselines3/issues/46
+    """
+    # remove gym warnings
+    warnings.filterwarnings(action='ignore', category=DeprecationWarning)
+    warnings.filterwarnings(action='ignore', category=UserWarning, module='gym')
+
+    model = model_class('MlpPolicy', select_env(model_class), buffer_size=100,
+                        optimize_memory_usage=optimize_memory_usage, policy_kwargs=dict(net_arch=[64]),
+                        learning_starts=10)
+
+    model.learn(150)
+
+    model.learn(150, reset_num_timesteps=False)
+
+    # Check that there is no warning
+    assert len(recwarn) == 0
+
+    model.learn(150)
+
+    if optimize_memory_usage:
+        assert len(recwarn) == 1
+        warning = recwarn.pop(UserWarning)
+        assert "The last trajectory in the replay buffer will be truncated" in str(warning.message)
+    else:
+        assert len(recwarn) == 0
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)

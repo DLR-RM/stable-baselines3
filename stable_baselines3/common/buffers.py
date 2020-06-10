@@ -152,14 +152,19 @@ class ReplayBuffer(BaseBuffer):
     :param action_space: (spaces.Space) Action space
     :param device: (th.device)
     :param n_envs: (int) Number of parallel environments
+    :param optimize_memory_usage: (bool) Enable a memory efficient variant
+        of the replay buffer which reduces by almost a factor two the memory used,
+        at a cost of more complexity.
+        See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
+        and https://github.com/DLR-RM/stable-baselines3/pull/28#issuecomment-637559274
     """
-
     def __init__(self,
                  buffer_size: int,
                  observation_space: spaces.Space,
                  action_space: spaces.Space,
                  device: Union[th.device, str] = 'cpu',
-                 n_envs: int = 1):
+                 n_envs: int = 1,
+                 optimize_memory_usage: bool = False):
         super(ReplayBuffer, self).__init__(buffer_size, observation_space,
                                            action_space, device, n_envs=n_envs)
 
@@ -169,8 +174,13 @@ class ReplayBuffer(BaseBuffer):
         if psutil is not None:
             mem_available = psutil.virtual_memory().available
 
-        # `observations` contains also the next observation
+        self.optimize_memory_usage = optimize_memory_usage
         self.observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=observation_space.dtype)
+        if optimize_memory_usage:
+            # `observations` contains also the next observation
+            self.next_observations = None
+        else:
+            self.next_observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=observation_space.dtype)
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -178,6 +188,9 @@ class ReplayBuffer(BaseBuffer):
         if psutil is not None:
             total_memory_usage = (self.observations.nbytes + self.actions.nbytes
                                   + self.rewards.nbytes + self.dones.nbytes)
+            if self.next_observations is not None:
+                total_memory_usage += self.next_observations.nbytes
+
             if total_memory_usage > mem_available:
                 # Convert to GB
                 total_memory_usage /= 1e9
@@ -193,7 +206,11 @@ class ReplayBuffer(BaseBuffer):
             done: np.ndarray) -> None:
         # Copy to avoid modification by reference
         self.observations[self.pos] = np.array(obs).copy()
-        self.observations[(self.pos + 1) % self.buffer_size] = np.array(next_obs).copy()
+        if self.optimize_memory_usage:
+            self.observations[(self.pos + 1) % self.buffer_size] = np.array(next_obs).copy()
+        else:
+            self.next_observations[self.pos] = np.array(next_obs).copy()
+
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
         self.dones[self.pos] = np.array(done).copy()
@@ -209,8 +226,8 @@ class ReplayBuffer(BaseBuffer):
                ) -> ReplayBufferSamples:
         """
         Sample elements from the replay buffer.
-        Custom sampling as we should not sample the element
-        with index `self.pos`
+        Custom sampling when using memory efficient variant,
+        as we should not sample the element with index `self.pos`
         See https://github.com/DLR-RM/stable-baselines3/pull/28#issuecomment-637559274
 
         :param batch_size: (int) Number of element to sample
@@ -218,6 +235,8 @@ class ReplayBuffer(BaseBuffer):
             to normalize the observations/rewards when sampling
         :return: (Union[RolloutBufferSamples, ReplayBufferSamples])
         """
+        if not self.optimize_memory_usage:
+            return super().sample(batch_size=batch_size, env=env)
         # Do not sample the element with index `self.pos` as the transitions is invalid
         # (we use only one array to store `obs` and `next_obs`)
         if self.full:
@@ -230,10 +249,14 @@ class ReplayBuffer(BaseBuffer):
                      batch_inds: np.ndarray,
                      env: Optional[VecNormalize] = None
                      ) -> ReplayBufferSamples:
+        if self.optimize_memory_usage:
+            next_obs = self._normalize_obs(self.observations[(batch_inds + 1) % self.buffer_size, 0, :], env)
+        else:
+            next_obs = self._normalize_obs(self.next_observations[batch_inds, 0, :], env)
+
         data = (self._normalize_obs(self.observations[batch_inds, 0, :], env),
                 self.actions[batch_inds, 0, :],
-                # Next observation
-                self._normalize_obs(self.observations[(batch_inds + 1) % self.buffer_size, 0, :], env),
+                next_obs,
                 self.dones[batch_inds],
                 self._normalize_reward(self.rewards[batch_inds], env))
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))

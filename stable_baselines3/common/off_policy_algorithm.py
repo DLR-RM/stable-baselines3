@@ -2,7 +2,7 @@ import time
 import os
 import pickle
 import warnings
-from typing import Union, Type, Optional, Dict, Any, Callable
+from typing import Union, Type, Optional, Dict, Any, Callable, List, Tuple
 
 import gym
 import torch as th
@@ -32,6 +32,17 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param buffer_size: (int) size of the replay buffer
     :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
     :param batch_size: (int) Minibatch size for each gradient update
+    :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1)
+    :param gamma: (float) the discount factor
+    :param train_freq: (int) Update the model every ``train_freq`` steps.
+    :param gradient_steps: (int) How many gradient update after each step
+    :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
+        Note that this cannot be used at the same time as ``train_freq``
+    :param action_noise: (ActionNoise) the action noise type (None by default), this can help
+        for hard exploration problem. Cf common.noise for the different action noise type.
+    :param optimize_memory_usage: (bool) Enable a memory efficient variant of the replay buffer
+        at a cost of more complexity.
+        See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param policy_kwargs: Additional arguments to be passed to the policy on creation
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param verbose: The verbosity level: 0 none, 1 training information, 2 debug
@@ -68,6 +79,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                  gradient_steps: int = 1,
                  n_episodes_rollout: int = -1,
                  action_noise: Optional[ActionNoise] = None,
+                 optimize_memory_usage: bool = False,
                  policy_kwargs: Dict[str, Any] = None,
                  tensorboard_log: Optional[str] = None,
                  verbose: int = 0,
@@ -96,6 +108,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.gradient_steps = gradient_steps
         self.n_episodes_rollout = n_episodes_rollout
         self.action_noise = action_noise
+        self.optimize_memory_usage = optimize_memory_usage
 
         if train_freq > 0 and n_episodes_rollout > 0:
             warnings.warn("You passed a positive value for `train_freq` and `n_episodes_rollout`."
@@ -118,7 +131,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
         self.replay_buffer = ReplayBuffer(self.buffer_size, self.observation_space,
-                                          self.action_space, self.device)
+                                          self.action_space, self.device,
+                                          optimize_memory_usage=self.optimize_memory_usage)
         self.policy = self.policy_class(self.observation_space, self.action_space,
                                         self.lr_schedule, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
@@ -142,6 +156,48 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         with open(path, 'rb') as file_handler:
             self.replay_buffer = pickle.load(file_handler)
         assert isinstance(self.replay_buffer, ReplayBuffer), 'The replay buffer must inherit from ReplayBuffer class'
+
+    def _setup_learn(self,
+                     total_timesteps: int,
+                     eval_env: Optional[GymEnv],
+                     callback: Union[None, Callable, List[BaseCallback], BaseCallback] = None,
+                     eval_freq: int = 10000,
+                     n_eval_episodes: int = 5,
+                     log_path: Optional[str] = None,
+                     reset_num_timesteps: bool = True,
+                     tb_log_name: str = 'run',
+                     ) -> Tuple[int, BaseCallback]:
+        """
+        Initialize different variables needed for training.
+
+        :param total_timesteps: (int) The total number of samples (env steps) to train on
+        :param eval_env: (Optional[GymEnv])
+        :param callback: (Union[None, BaseCallback, List[BaseCallback, Callable]])
+        :param eval_freq: (int) How many steps between evaluations
+        :param n_eval_episodes: (int) How many episodes to play per evaluation
+        :param log_path (Optional[str]): Path to a log folder
+        :param reset_num_timesteps: (bool) Whether to reset or not the ``num_timesteps`` attribute
+        :param tb_log_name: (str) the name of the run for tensorboard log
+        :return: (int, Tuple[BaseCallback])
+        """
+        # Prevent continuity issue by truncating trajectory
+        # when using memory efficient replay buffer
+        # see https://github.com/DLR-RM/stable-baselines3/issues/46
+        truncate_last_traj = (self.optimize_memory_usage and reset_num_timesteps
+                              and self.replay_buffer is not None
+                              and (self.replay_buffer.full or self.replay_buffer.pos > 0))
+
+        if truncate_last_traj:
+            warnings.warn("The last trajectory in the replay buffer will be truncated, "
+                          "see https://github.com/DLR-RM/stable-baselines3/issues/46."
+                          "You should use `reset_num_timesteps=False` or `optimize_memory_usage=False`"
+                          "to avoid that issue.")
+            # Go to the previous index
+            pos = (self.replay_buffer.pos - 1) % self.replay_buffer.buffer_size
+            self.replay_buffer.dones[pos] = True
+
+        return super()._setup_learn(total_timesteps, eval_env, callback, eval_freq,
+                                    n_eval_episodes, log_path, reset_num_timesteps, tb_log_name)
 
     def learn(self,
               total_timesteps: int,

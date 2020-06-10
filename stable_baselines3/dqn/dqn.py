@@ -32,6 +32,9 @@ class DQN(OffPolicyAlgorithm):
     :param gradient_steps: (int) How many gradient update after each step
     :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
         Note that this cannot be used at the same time as ``train_freq``
+    :param optimize_memory_usage: (bool) Enable a memory efficient variant of the replay buffer
+        at a cost of more complexity.
+        See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param target_update_interval: (int) update the target network every ``target_update_interval`` steps.
     :param exploration_fraction: (float) fraction of entire training period over which the exploration rate is reduced
     :param exploration_initial_eps: (float) initial value of random action probability
@@ -59,6 +62,7 @@ class DQN(OffPolicyAlgorithm):
                  train_freq: int = 4,
                  gradient_steps: int = 1,
                  n_episodes_rollout: int = -1,
+                 optimize_memory_usage: bool = False,
                  target_update_interval: int = 10000,
                  exploration_fraction: float = 0.1,
                  exploration_initial_eps: float = 1.0,
@@ -75,22 +79,21 @@ class DQN(OffPolicyAlgorithm):
         super(DQN, self).__init__(policy, env, DQNPolicy, learning_rate,
                                   buffer_size, learning_starts, batch_size,
                                   tau, gamma, train_freq, gradient_steps,
-                                  n_episodes_rollout, None,  # No action noise
-                                  policy_kwargs, tensorboard_log, verbose, device,
+                                  n_episodes_rollout, action_noise=None,  # No action noise
+                                  policy_kwargs=policy_kwargs,
+                                  tensorboard_log=tensorboard_log,
+                                  verbose=verbose, device=device,
                                   create_eval_env=create_eval_env,
-                                  seed=seed, sde_support=False)
+                                  seed=seed, sde_support=False,
+                                  optimize_memory_usage=optimize_memory_usage)
 
-        # Hyperparameters from original paper (Adam did not exist)
-        # if 'optimizer_class' not in self.policy_kwargs:
-        #     self.policy_kwargs['optimizer_class'] = th.optim.RMSprop
-        #     self.policy_kwargs['optimizer_kwargs'] = dict(alpha=0.95, momentum=0.95, eps=0.01,
-        #                                                   weight_decay=0)
         self.exploration_final_eps = exploration_final_eps
         self.exploration_initial_eps = exploration_initial_eps
         self.exploration_fraction = exploration_fraction
         self.target_update_interval = target_update_interval
         self.max_grad_norm = max_grad_norm
-        self.epsilon = 0
+        # "epsilon" for the epsilon-greedy exploration
+        self.exploration_rate = 0
 
         if _init_setup_model:
             self._setup_model()
@@ -106,7 +109,7 @@ class DQN(OffPolicyAlgorithm):
         """
         # Log the current exploration probability
         logger.record("rollout/exploration rate", self.exploration_schedule(self._current_progress_remaining))
-        self.epsilon = self.exploration_schedule(self._current_progress_remaining)
+        self.exploration_rate = self.exploration_schedule(self._current_progress_remaining)
 
     def _setup_exploration_schedule(self) -> None:
         """
@@ -177,7 +180,7 @@ class DQN(OffPolicyAlgorithm):
         :return: (Tuple[np.ndarray, Optional[np.ndarray]]) the model's action and the next state
             (used in recurrent policies)
         """
-        if not deterministic and np.random.rand() < self.epsilon:
+        if not deterministic and np.random.rand() < self.exploration_rate:
             n_batch = observation.shape[0]
             action = np.array([self.action_space.sample() for _ in range(n_batch)])
         else:

@@ -40,6 +40,9 @@ class SAC(OffPolicyAlgorithm):
         Note that this cannot be used at the same time as ``train_freq``
     :param action_noise: (ActionNoise) the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
+    :param optimize_memory_usage: (bool) Enable a memory efficient variant of the replay buffer
+        at a cost of more complexity.
+        See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param ent_coef: (str or float) Entropy regularization coefficient. (Equivalent to
         inverse of reward scale in the original SAC paper.)  Controlling exploration/exploitation trade-off.
         Set it to 'auto' to learn it automatically (and 'auto_0.1' for using 0.1 as initial value)
@@ -73,6 +76,7 @@ class SAC(OffPolicyAlgorithm):
                  gradient_steps: int = 1,
                  n_episodes_rollout: int = -1,
                  action_noise: Optional[ActionNoise] = None,
+                 optimize_memory_usage: bool = False,
                  ent_coef: Union[str, float] = 'auto',
                  target_update_interval: int = 1,
                  target_entropy: Union[str, float] = 'auto',
@@ -91,10 +95,13 @@ class SAC(OffPolicyAlgorithm):
                                   buffer_size, learning_starts, batch_size,
                                   tau, gamma, train_freq, gradient_steps,
                                   n_episodes_rollout, action_noise,
-                                  policy_kwargs, tensorboard_log, verbose, device,
+                                  policy_kwargs=policy_kwargs,
+                                  tensorboard_log=tensorboard_log,
+                                  verbose=verbose, device=device,
                                   create_eval_env=create_eval_env, seed=seed,
                                   use_sde=use_sde, sde_sample_freq=sde_sample_freq,
-                                  use_sde_at_warmup=use_sde_at_warmup)
+                                  use_sde_at_warmup=use_sde_at_warmup,
+                                  optimize_memory_usage=optimize_memory_usage)
 
         self.target_entropy = target_entropy
         self.log_ent_coef = None  # type: Optional[th.Tensor]

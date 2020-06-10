@@ -34,6 +34,9 @@ class TD3(OffPolicyAlgorithm):
         Note that this cannot be used at the same time as ``train_freq``
     :param action_noise: (ActionNoise) the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
+    :param optimize_memory_usage: (bool) Enable a memory efficient variant of the replay buffer
+        at a cost of more complexity.
+        See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param policy_delay: (int) Policy and target networks will only be updated once every policy_delay steps
         per training steps. The Q values will be updated policy_delay more often (update every training step).
     :param target_policy_noise: (float) Standard deviation of Gaussian noise added to target policy
@@ -61,6 +64,7 @@ class TD3(OffPolicyAlgorithm):
                  gradient_steps: int = -1,
                  n_episodes_rollout: int = 1,
                  action_noise: Optional[ActionNoise] = None,
+                 optimize_memory_usage: bool = False,
                  policy_delay: int = 2,
                  target_policy_noise: float = 0.2,
                  target_noise_clip: float = 0.5,
@@ -75,10 +79,12 @@ class TD3(OffPolicyAlgorithm):
         super(TD3, self).__init__(policy, env, TD3Policy, learning_rate,
                                   buffer_size, learning_starts, batch_size,
                                   tau, gamma, train_freq, gradient_steps,
-                                  n_episodes_rollout, action_noise,
-                                  policy_kwargs, tensorboard_log, verbose, device,
+                                  n_episodes_rollout, action_noise=action_noise,
+                                  policy_kwargs=policy_kwargs,
+                                  tensorboard_log=tensorboard_log,
+                                  verbose=verbose, device=device,
                                   create_eval_env=create_eval_env, seed=seed,
-                                  sde_support=False)
+                                  sde_support=False, optimize_memory_usage=optimize_memory_usage)
 
         self.policy_delay = policy_delay
         self.target_noise_clip = target_noise_clip

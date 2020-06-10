@@ -161,8 +161,15 @@ def test_sync_vec_normalize():
     assert np.allclose(original_latest_reward, env.unnormalize_reward(latest_reward))
 
     obs = env.reset()
+    dummy_rewards = np.random.rand(10)
     original_obs = env.get_original_obs()
     # Check that unnormalization works
     assert np.allclose(original_obs, env.unnormalize_obs(obs))
     # Normalization must be different (between different environments)
     assert not np.allclose(obs, eval_env.normalize_obs(original_obs))
+
+    # Test syncing of parameters
+    sync_envs_normalization(env, eval_env)
+    # Now they must be synced
+    assert np.allclose(obs, eval_env.normalize_obs(original_obs))
+    assert np.allclose(env.normalize_reward(dummy_rewards), eval_env.normalize_reward(dummy_rewards))

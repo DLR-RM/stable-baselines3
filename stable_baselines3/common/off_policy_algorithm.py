@@ -168,17 +168,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                      tb_log_name: str = 'run',
                      ) -> Tuple[int, BaseCallback]:
         """
-        Initialize different variables needed for training.
-
-        :param total_timesteps: (int) The total number of samples (env steps) to train on
-        :param eval_env: (Optional[GymEnv])
-        :param callback: (Union[None, BaseCallback, List[BaseCallback, Callable]])
-        :param eval_freq: (int) How many steps between evaluations
-        :param n_eval_episodes: (int) How many episodes to play per evaluation
-        :param log_path (Optional[str]): Path to a log folder
-        :param reset_num_timesteps: (bool) Whether to reset or not the ``num_timesteps`` attribute
-        :param tb_log_name: (str) the name of the run for tensorboard log
-        :return: (int, Tuple[BaseCallback])
+        cf `BaseAlgorithm`.
         """
         # Prevent continuity issue by truncating trajectory
         # when using memory efficient replay buffer

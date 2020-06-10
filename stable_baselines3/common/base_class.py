@@ -398,7 +398,7 @@ class BaseAlgorithm(ABC):
                      log_path: Optional[str] = None,
                      reset_num_timesteps: bool = True,
                      tb_log_name: str = 'run',
-                     ) -> Tuple[int, 'BaseCallback']:
+                     ) -> Tuple[int, BaseCallback]:
         """
         Initialize different variables needed for training.
 
@@ -410,7 +410,7 @@ class BaseAlgorithm(ABC):
         :param log_path (Optional[str]): Path to a log folder
         :param reset_num_timesteps: (bool) Whether to reset or not the ``num_timesteps`` attribute
         :param tb_log_name: (str) the name of the run for tensorboard log
-        :return: (int, Tuple[BaseCallback])
+        :return: (Tuple[int, BaseCallback])
         """
         self.start_time = time.time()
         self.ep_info_buffer = deque(maxlen=100)

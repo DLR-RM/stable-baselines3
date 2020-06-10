@@ -4,6 +4,36 @@ Changelog
 ==========
 
 
+Pre-Release 0.8.0a0 (WIP)
+------------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+- ``AtariWrapper`` and other Atari wrappers were updated to match SB2 ones
+
+New Features:
+^^^^^^^^^^^^^
+- Added ``DQN`` Algorithm (@Artemis-Skade)
+- Buffer dtype is now set according to action and observation spaces for ``ReplayBuffer``
+- Added warning when allocation of a buffer may exceed the available memory of the system
+  when ``psutil`` is available
+
+Bug Fixes:
+^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Refactored Off-Policy algorithm to share the same ``.learn()`` method
+- Optimized replay buffer size by removing the need of ``next_observations`` numpy array
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
+
 Pre-Release 0.7.0 (2020-06-10)
 ------------------------------
 
@@ -34,10 +64,6 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-- Added ``DQN`` Algorithm (@Artemis-Skade)
-- Buffer dtype is now set according to action and observation spaces for ``ReplayBuffer``
-- Added warning when allocation of a buffer may exceed the available memory of the system
-  when ``psutil`` is available
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -52,8 +78,6 @@ Deprecations:
 
 Others:
 ^^^^^^^
-- Refactored Off-Policy algorithm to share the same ``.learn()`` method
-- Optimized replay buffer size by removing the need of ``next_observations`` numpy array
 - Re-enable unsafe ``fork`` start method in the tests (was causing a deadlock with tensorflow)
 - Added a test for seeding ``SubprocVecEnv`` and rendering
 - Fixed reference in NatureCNN (pointed to older version with different network architecture)
@@ -89,9 +113,6 @@ New Features:
 - Added ``VecCheckNan`` and ``VecVideoRecorder`` (Sync with Stable Baselines)
 - Added determinism tests
 - Added ``cmd_utils`` and ``atari_wrappers``
-- Added ``DQN``
-- Buffer dtype is now set according to action and observation spaces for ``ReplayBuffer`` and ``RolloutBuffer``
-- Allocation of a buffer that exceeds the available memory of the system will always raise an Error
 - Added support for ``MultiDiscrete`` and ``MultiBinary`` observation spaces (@rolandgvc)
 - Added ``MultiCategorical`` and ``Bernoulli`` distributions for PPO/A2C (@rolandgvc)
 - Added support for logging to tensorboard (@rolandgvc)

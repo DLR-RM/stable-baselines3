@@ -1,5 +1,3 @@
-import os
-
 import gym
 import pytest
 import numpy as np
@@ -138,7 +136,7 @@ def test_sync_vec_normalize():
 
     assert unwrap_vec_normalize(env) is None
 
-    env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10., clip_reward=10.)
+    env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=100., clip_reward=100.)
 
     assert isinstance(unwrap_vec_normalize(env), VecNormalize)
 
@@ -147,8 +145,12 @@ def test_sync_vec_normalize():
     assert isinstance(unwrap_vec_normalize(env), VecNormalize)
 
     eval_env = DummyVecEnv([make_env])
-    eval_env = VecNormalize(eval_env, training=False, norm_obs=True, norm_reward=True, clip_obs=10., clip_reward=10.)
+    eval_env = VecNormalize(eval_env, training=False, norm_obs=True, norm_reward=True,
+                            clip_obs=100., clip_reward=100.)
     eval_env = VecFrameStack(eval_env, 1)
+
+    env.seed(0)
+    env.action_space.seed(0)
 
     env.reset()
     # Initialize running mean

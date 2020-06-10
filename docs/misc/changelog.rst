@@ -26,7 +26,8 @@ Breaking Changes:
   - ``check_env`` to ``check_for_correct_spaces`` (utils.py. Renamed to avoid confusion with environment checker tools)
 
 - Moved static function ``_is_vectorized_observation`` from common/policies.py to common/utils.py under name ``is_vectorized_observation``.
-
+- Removed ``{save,load}_running_average`` functions of ``VecNormalize`` in favor of ``load/save``.
+- Removed ``use_gae`` parameter from ``RolloutBuffer.compute_returns_and_advantage``.
  
 New Features:
 ^^^^^^^^^^^^^
@@ -50,6 +51,7 @@ Others:
 - Added bit further comments on register/getting policies ("MlpPolicy", "CnnPolicy").
 - Renamed ``progress`` (value from 1 in start of training to 0 in end) to ``progress_remaining``.
 - Added ``policies.py`` files for A2C/PPO, which define MlpPolicy/CnnPolicy (renamed ActorCriticPolicies).
+- Added some missing tests for ``VecNormalize``, ``VecCheckNan`` and ``PPO``.
 
 Documentation:
 ^^^^^^^^^^^^^^

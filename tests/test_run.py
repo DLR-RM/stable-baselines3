@@ -14,14 +14,27 @@ def test_td3(action_noise):
     model.learn(total_timesteps=1000, eval_freq=500)
 
 
-@pytest.mark.parametrize("model_class", [A2C, PPO])
 @pytest.mark.parametrize("env_id", ['CartPole-v1', 'Pendulum-v0'])
-def test_onpolicy(model_class, env_id):
-    model = model_class('MlpPolicy', env_id, seed=0, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
+def test_a2c(env_id):
+    model = A2C('MlpPolicy', env_id, seed=0, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
     model.learn(total_timesteps=1000, eval_freq=500)
 
 
-@pytest.mark.parametrize("ent_coef", ['auto', 0.01])
+@pytest.mark.parametrize("env_id", ['CartPole-v1', 'Pendulum-v0'])
+@pytest.mark.parametrize("clip_range_vf", [None, 0.2, -0.2])
+def test_ppo(env_id, clip_range_vf):
+    if clip_range_vf is not None and clip_range_vf < 0:
+        # Should throw an error
+        with pytest.raises(AssertionError):
+            model = PPO('MlpPolicy', env_id, seed=0, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True,
+                        clip_range_vf=clip_range_vf)
+    else:
+        model = PPO('MlpPolicy', env_id, seed=0, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True,
+                    clip_range_vf=clip_range_vf)
+        model.learn(total_timesteps=1000, eval_freq=500)
+
+
+@pytest.mark.parametrize("ent_coef", ['auto', 0.01, 'auto_0.01'])
 def test_sac(ent_coef):
     model = SAC('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[64, 64]),
                 learning_starts=100, verbose=1, create_eval_env=True, ent_coef=ent_coef,

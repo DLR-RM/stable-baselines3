@@ -4,22 +4,24 @@ Changelog
 ==========
 
 
-Pre-Release 0.7.0a1 (WIP)
+Pre-Release 0.7.0 (2020-06-10)
 ------------------------------
+
+**Hotfix for PPO/A2C + gSDE, internal refactoring and bug fixes**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - ``render()`` method of ``VecEnvs`` now only accept one argument: ``mode``
 - Created new file common/torch_layers.py, similar to SB refactoring
-  
+
   - Contains all PyTorch network layer definitions and feature extractors: ``MlpExtractor``, ``create_mlp``, ``NatureCNN``
 
 - Renamed ``BaseRLModel`` to ``BaseAlgorithm`` (along with offpolicy and onpolicy variants)
 - Moved on-policy and off-policy base algorithms to ``common/on_policy_algorithm.py`` and ``common/off_policy_algorithm.py``, respectively.
-- Moved ``PPOPolicy`` to ``ActorCriticPolicy`` in common/policies.py    
+- Moved ``PPOPolicy`` to ``ActorCriticPolicy`` in common/policies.py
 - Moved ``PPO`` (algorithm class) into ``OnPolicyAlgorithm`` (``common/on_policy_algorithm.py``), to be shared with A2C
-- Moved following functions from ``BaseAlgorithm``: 
-  
+- Moved following functions from ``BaseAlgorithm``:
+
   - ``_load_from_file`` to ``load_from_zip_file`` (save_util.py)
   - ``_save_to_file_zip`` to ``save_to_zip_file`` (save_util.py)
   - ``safe_mean`` to ``safe_mean`` (utils.py)
@@ -28,7 +30,7 @@ Breaking Changes:
 - Moved static function ``_is_vectorized_observation`` from common/policies.py to common/utils.py under name ``is_vectorized_observation``.
 - Removed ``{save,load}_running_average`` functions of ``VecNormalize`` in favor of ``load/save``.
 - Removed ``use_gae`` parameter from ``RolloutBuffer.compute_returns_and_advantage``.
- 
+
 New Features:
 ^^^^^^^^^^^^^
 
@@ -38,6 +40,7 @@ Bug Fixes:
 - Fixed ``seed()`` method for ``SubprocVecEnv``
 - Fixed loading on GPU for testing when using gSDE and ``deterministic=False``
 - Fixed ``register_policy`` to allow re-registering same policy for same sub-class (i.e. assign same value to same key).
+- Fixed a bug where the gradient was passed when using ``gSDE`` with ``PPO``/``A2C``, this does not affect ``SAC``
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -67,7 +70,7 @@ Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Remove State-Dependent Exploration (SDE) support for ``TD3``
 - Methods were renamed in the logger:
-  
+
   - ``logkv`` -> ``record``, ``writekvs`` -> ``write``, ``writeseq`` ->  ``write_sequence``,
   - ``logkvs`` -> ``record_dict``, ``dumpkvs`` -> ``dump``,
   - ``getkvs`` -> ``get_log_dict``, ``logkv_mean`` -> ``record_mean``,

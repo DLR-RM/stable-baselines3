@@ -2,7 +2,7 @@ import pickle
 
 import numpy as np
 
-from stable_baselines3.common.vec_env.base_vec_env import VecEnvWrapper
+from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvWrapper
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 
 
@@ -160,12 +160,12 @@ class VecNormalize(VecEnvWrapper):
         return self.normalize_obs(obs)
 
     @staticmethod
-    def load(load_path, venv):
+    def load(load_path: str, venv: VecEnv) -> "VecNormalize":
         """
         Loads a saved VecNormalize object.
 
-        :param load_path: the path to load from.
-        :param venv: the VecEnv to wrap.
+        :param load_path: (str) the path to load from.
+        :param venv: (VecEnv) the VecEnv to wrap.
         :return: (VecNormalize)
         """
         with open(load_path, "rb") as file_handler:
@@ -173,26 +173,12 @@ class VecNormalize(VecEnvWrapper):
         vec_normalize.set_venv(venv)
         return vec_normalize
 
-    def save(self, save_path):
+    def save(self, save_path: str) -> None:
+        """
+        Save current VecNormalize object with
+        all running statistics and settings (e.g. clip_obs)
+
+        :param save_path: (str) The path to save to
+        """
         with open(save_path, "wb") as file_handler:
             pickle.dump(self, file_handler)
-
-    def save_running_average(self, path):
-        """
-        :param path: (str) path to pickle file where to store statistics
-        """
-        data_dict = {
-            'obs_rms': self.obs_rms,
-            'ret_rms': self.ret_rms
-        }
-        with open(path, 'wb') as file_handler:
-            pickle.dump(data_dict, file_handler)
-
-    def load_running_average(self, path):
-        """
-        :param path: (str) path to pickle file where to load statistics from
-        """
-        with open(path, 'rb') as file_handler:
-            data_dict = pickle.load(file_handler)
-            self.obs_rms = data_dict['obs_rms']
-            self.ret_rms = data_dict['ret_rms']

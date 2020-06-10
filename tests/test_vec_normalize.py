@@ -162,25 +162,7 @@ def test_sync_vec_normalize():
 
     obs = env.reset()
     original_obs = env.get_original_obs()
-    dummy_rewards = np.random.rand(10)
     # Check that unnormalization works
     assert np.allclose(original_obs, env.unnormalize_obs(obs))
     # Normalization must be different (between different environments)
     assert not np.allclose(obs, eval_env.normalize_obs(original_obs))
-
-    # Save normalization parameters for now
-    eval_env.save_running_average("normalization_params.pkl")
-
-    # Test syncing of parameters
-    sync_envs_normalization(env, eval_env)
-    # Now they must be synced
-    assert np.allclose(obs, eval_env.normalize_obs(original_obs))
-    assert np.allclose(env.normalize_reward(dummy_rewards), eval_env.normalize_reward(dummy_rewards))
-
-    # Load original parameters
-    eval_env.load_running_average("normalization_params.pkl")
-    # Now they should be different
-    assert not np.allclose(obs, eval_env.normalize_obs(original_obs))
-    assert not np.allclose(env.normalize_reward(dummy_rewards), eval_env.normalize_reward(dummy_rewards))
-
-    os.remove("normalization_params.pkl")

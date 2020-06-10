@@ -247,8 +247,9 @@ class RolloutBuffer(BaseBuffer):
         Adapted from Stable-Baselines PPO2.
 
         Uses Generalized Advantage Estimation (https://arxiv.org/abs/1506.02438)
-        to compute the advantage. To obtain vanilla advantage (A(s) = R - V(S)),
-        set `gae_lambda=1.0` during initialization.
+        to compute the advantage. To obtain vanilla advantage (A(s) = R - V(S))
+        where R is the discounted reward with value bootstrap,
+        set ``gae_lambda=1.0`` during initialization.
 
         :param last_value: (th.Tensor)
         :param dones: (np.ndarray)

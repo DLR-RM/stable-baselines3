@@ -4,8 +4,10 @@ Changelog
 ==========
 
 
-Pre-Release 0.7.0a1 (WIP)
+Pre-Release 0.7.0 (2020-06-10)
 ------------------------------
+
+**Hotfix for PPO/A2C + gSDE, internal refactoring and bug fixes**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^

@@ -1,89 +1,20 @@
-from typing import Union, Type, Dict, List, Tuple, Optional, Any
-
-from itertools import zip_longest
+from typing import Union, Type, Dict, List, Tuple, Optional, Any, Callable
+from functools import partial
 
 import gym
 import torch as th
 import torch.nn as nn
 import numpy as np
 
-from stable_baselines3.common.preprocessing import preprocess_obs, get_flattened_obs_dim, is_image_space
-from stable_baselines3.common.utils import get_device
+from stable_baselines3.common.preprocessing import preprocess_obs, is_image_space
+from stable_baselines3.common.torch_layers import (FlattenExtractor, BaseFeaturesExtractor, create_mlp,
+                                                   NatureCNN, MlpExtractor)
+from stable_baselines3.common.utils import get_device, is_vectorized_observation
 from stable_baselines3.common.vec_env import VecTransposeImage
-
-
-class BaseFeaturesExtractor(nn.Module):
-    """
-    Base class that represents a features extractor.
-
-    :param observation_space: (gym.Space)
-    :param features_dim: (int) Number of features extracted.
-    """
-
-    def __init__(self, observation_space: gym.Space, features_dim: int = 0):
-        super(BaseFeaturesExtractor, self).__init__()
-        assert features_dim > 0
-        self._observation_space = observation_space
-        self._features_dim = features_dim
-
-    @property
-    def features_dim(self) -> int:
-        return self._features_dim
-
-    def forward(self, observations: th.Tensor) -> th.Tensor:
-        raise NotImplementedError()
-
-
-class FlattenExtractor(BaseFeaturesExtractor):
-    """
-    Feature extract that flatten the input.
-    Used as a placeholder when feature extraction is not needed.
-
-    :param observation_space: (gym.Space)
-    """
-
-    def __init__(self, observation_space: gym.Space):
-        super(FlattenExtractor, self).__init__(observation_space, get_flattened_obs_dim(observation_space))
-        self.flatten = nn.Flatten()
-
-    def forward(self, observations: th.Tensor) -> th.Tensor:
-        return self.flatten(observations)
-
-
-class NatureCNN(BaseFeaturesExtractor):
-    """
-    CNN from DQN nature paper: https://arxiv.org/abs/1312.5602
-
-    :param observation_space: (gym.Space)
-    :param features_dim: (int) Number of features extracted.
-        This corresponds to the number of unit for the last layer.
-    """
-
-    def __init__(self, observation_space: gym.spaces.Box,
-                 features_dim: int = 512):
-        super(NatureCNN, self).__init__(observation_space, features_dim)
-        # We assume CxWxH images (channels first)
-        # Re-ordering will be done by pre-preprocessing or wrapper
-        assert is_image_space(observation_space), ('You should use NatureCNN '
-                                                   f'only with images not with {observation_space} '
-                                                   '(you are probably using `CnnPolicy` instead of `MlpPolicy`)')
-        n_input_channels = observation_space.shape[0]
-        self.cnn = nn.Sequential(nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
-                                 nn.ReLU(),
-                                 nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
-                                 nn.ReLU(),
-                                 nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=0),
-                                 nn.ReLU(),
-                                 nn.Flatten())
-
-        # Compute shape by doing one forward pass
-        with th.no_grad():
-            n_flatten = self.cnn(th.as_tensor(observation_space.sample()[None]).float()).shape[1]
-
-        self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
-
-    def forward(self, observations: th.Tensor) -> th.Tensor:
-        return self.linear(self.cnn(observations))
+from stable_baselines3.common.distributions import (make_proba_distribution, Distribution,
+                                                    DiagGaussianDistribution, CategoricalDistribution,
+                                                    MultiCategoricalDistribution, BernoulliDistribution,
+                                                    StateDependentNoiseDistribution)
 
 
 class BasePolicy(nn.Module):
@@ -93,8 +24,6 @@ class BasePolicy(nn.Module):
     :param observation_space: (gym.spaces.Space) The observation space of the environment
     :param action_space: (gym.spaces.Space) The action space of the environment
     :param device: (Union[th.device, str]) Device on which the code should run.
-    :param squash_output: (bool) For continuous actions, whether the output is squashed
-        or not using a ``tanh()`` function.
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
     :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
         to pass to the feature extractor.
@@ -106,9 +35,12 @@ class BasePolicy(nn.Module):
         ``th.optim.Adam`` by default
     :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
+    :param squash_output: (bool) For continuous actions, whether the output is squashed
+        or not using a ``tanh()`` function.
     """
 
-    def __init__(self, observation_space: gym.spaces.Space,
+    def __init__(self,
+                 observation_space: gym.spaces.Space,
                  action_space: gym.spaces.Space,
                  device: Union[th.device, str] = 'auto',
                  features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
@@ -166,7 +98,7 @@ class BasePolicy(nn.Module):
             module.bias.data.fill_(0.0)
 
     @staticmethod
-    def _dummy_schedule(_progress: float) -> float:
+    def _dummy_schedule(_progress_remaining: float) -> float:
         """ (float) Useful for pickling policy."""
         return 0.0
 
@@ -183,12 +115,14 @@ class BasePolicy(nn.Module):
         """
         raise NotImplementedError()
 
-    def predict(self, observation: np.ndarray,
+    def predict(self,
+                observation: np.ndarray,
                 state: Optional[np.ndarray] = None,
                 mask: Optional[np.ndarray] = None,
                 deterministic: bool = False) -> Tuple[np.ndarray, Optional[np.ndarray]]:
         """
         Get the policy action and state from an observation (and optional state).
+        Includes sugar-coating to handle different observations (e.g. normalizing images).
 
         :param observation: (np.ndarray) the input observation
         :param state: (Optional[np.ndarray]) The last states (can be None, used in recurrent policies)
@@ -216,7 +150,7 @@ class BasePolicy(nn.Module):
                         or transpose_obs.shape[1:] == self.observation_space.shape):
                     observation = transpose_obs
 
-        vectorized_env = self._is_vectorized_observation(observation, self.observation_space)
+        vectorized_env = is_vectorized_observation(observation, self.observation_space)
 
         observation = observation.reshape((-1,) + self.observation_space.shape)
 
@@ -262,57 +196,6 @@ class BasePolicy(nn.Module):
         """
         low, high = self.action_space.low, self.action_space.high
         return low + (0.5 * (scaled_action + 1.0) * (high - low))
-
-    @staticmethod
-    def _is_vectorized_observation(observation: np.ndarray, observation_space: gym.spaces.Space) -> bool:
-        """
-        For every observation type, detects and validates the shape,
-        then returns whether or not the observation is vectorized.
-
-        :param observation: (np.ndarray) the input observation to validate
-        :param observation_space: (gym.spaces) the observation space
-        :return: (bool) whether the given observation is vectorized or not
-        """
-        if isinstance(observation_space, gym.spaces.Box):
-            if observation.shape == observation_space.shape:
-                return False
-            elif observation.shape[1:] == observation_space.shape:
-                return True
-            else:
-                raise ValueError(f"Error: Unexpected observation shape {observation.shape} for "
-                                 + f"Box environment, please use {observation_space.shape} "
-                                 + "or (n_env, {}) for the observation shape."
-                                 .format(", ".join(map(str, observation_space.shape))))
-        elif isinstance(observation_space, gym.spaces.Discrete):
-            if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
-                return False
-            elif len(observation.shape) == 1:
-                return True
-            else:
-                raise ValueError(f"Error: Unexpected observation shape {observation.shape} for "
-                                 + "Discrete environment, please use (1,) or (n_env, 1) for the observation shape.")
-
-        elif isinstance(observation_space, gym.spaces.MultiDiscrete):
-            if observation.shape == (len(observation_space.nvec),):
-                return False
-            elif len(observation.shape) == 2 and observation.shape[1] == len(observation_space.nvec):
-                return True
-            else:
-                raise ValueError(f"Error: Unexpected observation shape {observation.shape} for MultiDiscrete "
-                                 + f"environment, please use ({len(observation_space.nvec)},) or "
-                                 + f"(n_env, {len(observation_space.nvec)}) for the observation shape.")
-        elif isinstance(observation_space, gym.spaces.MultiBinary):
-            if observation.shape == (observation_space.n,):
-                return False
-            elif len(observation.shape) == 2 and observation.shape[1] == observation_space.n:
-                return True
-            else:
-                raise ValueError(f"Error: Unexpected observation shape {observation.shape} for MultiBinary "
-                                 + f"environment, please use ({observation_space.n},) or "
-                                 + f"(n_env, {observation_space.n}) for the observation shape.")
-        else:
-            raise ValueError("Error: Cannot determine if the observation is vectorized "
-                             + f" with the space type {observation_space}.")
 
     def _get_data(self) -> Dict[str, Any]:
         """
@@ -373,42 +256,365 @@ class BasePolicy(nn.Module):
         return th.nn.utils.parameters_to_vector(self.parameters()).detach().cpu().numpy()
 
 
-def create_mlp(input_dim: int,
-               output_dim: int,
-               net_arch: List[int],
-               activation_fn: Type[nn.Module] = nn.ReLU,
-               squash_output: bool = False) -> List[nn.Module]:
+class ActorCriticPolicy(BasePolicy):
     """
-    Create a multi layer perceptron (MLP), which is
-    a collection of fully-connected layers each followed by an activation function.
+    Policy class for actor-critic algorithms (has both policy and value prediction).
+    Used by A2C, PPO and the likes.
 
-    :param input_dim: (int) Dimension of the input vector
-    :param output_dim: (int)
-    :param net_arch: (List[int]) Architecture of the neural net
-        It represents the number of units per layer.
-        The length of this list is the number of layers.
-    :param activation_fn: (Type[nn.Module]) The activation function
-        to use after each layer.
-    :param squash_output: (bool) Whether to squash the output using a Tanh
-        activation function
-    :return: (List[nn.Module])
+    :param observation_space: (gym.spaces.Space) Observation space
+    :param action_space: (gym.spaces.Space) Action space
+    :param lr_schedule: (Callable) Learning rate schedule (could be constant)
+    :param net_arch: ([int or dict]) The specification of the policy and value networks.
+    :param device: (str or th.device) Device on which the code should run.
+    :param activation_fn: (Type[nn.Module]) Activation function
+    :param ortho_init: (bool) Whether to use or not orthogonal initialization
+    :param use_sde: (bool) Whether to use State Dependent Exploration or not
+    :param log_std_init: (float) Initial value for the log standard deviation
+    :param full_std: (bool) Whether to use (n_features x n_actions) parameters
+        for the std instead of only (n_features,) when using gSDE
+    :param sde_net_arch: ([int]) Network architecture for extracting features
+        when using gSDE. If None, the latent features from the policy will be used.
+        Pass an empty list to use the states as features.
+    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` to ensure
+        a positive standard deviation (cf paper). It allows to keep variance
+        above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
+    :param squash_output: (bool) Whether to squash the output using a tanh function,
+        this allows to ensure boundaries when using gSDE.
+    :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
+    :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
+        to pass to the feature extractor.
+    :param normalize_images: (bool) Whether to normalize images or not,
+         dividing by 255.0 (True by default)
+    :param optimizer_class: (Type[th.optim.Optimizer]) The optimizer to use,
+        ``th.optim.Adam`` by default
+    :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
+        excluding the learning rate, to pass to the optimizer
     """
 
-    if len(net_arch) > 0:
-        modules = [nn.Linear(input_dim, net_arch[0]), activation_fn()]
-    else:
-        modules = []
+    def __init__(self,
+                 observation_space: gym.spaces.Space,
+                 action_space: gym.spaces.Space,
+                 lr_schedule: Callable,
+                 net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
+                 device: Union[th.device, str] = 'auto',
+                 activation_fn: Type[nn.Module] = nn.Tanh,
+                 ortho_init: bool = True,
+                 use_sde: bool = False,
+                 log_std_init: float = 0.0,
+                 full_std: bool = True,
+                 sde_net_arch: Optional[List[int]] = None,
+                 use_expln: bool = False,
+                 squash_output: bool = False,
+                 features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
+                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+                 normalize_images: bool = True,
+                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
+                 optimizer_kwargs: Optional[Dict[str, Any]] = None):
 
-    for idx in range(len(net_arch) - 1):
-        modules.append(nn.Linear(net_arch[idx], net_arch[idx + 1]))
-        modules.append(activation_fn())
+        if optimizer_kwargs is None:
+            optimizer_kwargs = {}
+            # Small values to avoid NaN in ADAM optimizer
+            if optimizer_class == th.optim.Adam:
+                optimizer_kwargs['eps'] = 1e-5
 
-    if output_dim > 0:
-        last_layer_dim = net_arch[-1] if len(net_arch) > 0 else input_dim
-        modules.append(nn.Linear(last_layer_dim, output_dim))
-    if squash_output:
-        modules.append(nn.Tanh())
-    return modules
+        super(ActorCriticPolicy, self).__init__(observation_space,
+                                                action_space,
+                                                device,
+                                                features_extractor_class,
+                                                features_extractor_kwargs,
+                                                optimizer_class=optimizer_class,
+                                                optimizer_kwargs=optimizer_kwargs,
+                                                squash_output=squash_output)
+
+        # Default network architecture, from stable-baselines
+        if net_arch is None:
+            if features_extractor_class == FlattenExtractor:
+                net_arch = [dict(pi=[64, 64], vf=[64, 64])]
+            else:
+                net_arch = []
+
+        self.net_arch = net_arch
+        self.activation_fn = activation_fn
+        self.ortho_init = ortho_init
+
+        self.features_extractor = features_extractor_class(self.observation_space,
+                                                           **self.features_extractor_kwargs)
+        self.features_dim = self.features_extractor.features_dim
+
+        self.normalize_images = normalize_images
+        self.log_std_init = log_std_init
+        dist_kwargs = None
+        # Keyword arguments for gSDE distribution
+        if use_sde:
+            dist_kwargs = {
+                'full_std': full_std,
+                'squash_output': squash_output,
+                'use_expln': use_expln,
+                'learn_features': sde_net_arch is not None
+            }
+
+        self.sde_features_extractor = None
+        self.sde_net_arch = sde_net_arch
+        self.use_sde = use_sde
+        self.dist_kwargs = dist_kwargs
+
+        # Action distribution
+        self.action_dist = make_proba_distribution(action_space, use_sde=use_sde, dist_kwargs=dist_kwargs)
+
+        self._build(lr_schedule)
+
+    def _get_data(self) -> Dict[str, Any]:
+        data = super()._get_data()
+
+        data.update(dict(
+            net_arch=self.net_arch,
+            activation_fn=self.activation_fn,
+            use_sde=self.use_sde,
+            log_std_init=self.log_std_init,
+            squash_output=self.dist_kwargs['squash_output'] if self.dist_kwargs else None,
+            full_std=self.dist_kwargs['full_std'] if self.dist_kwargs else None,
+            sde_net_arch=self.dist_kwargs['sde_net_arch'] if self.dist_kwargs else None,
+            use_expln=self.dist_kwargs['use_expln'] if self.dist_kwargs else None,
+            lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
+            ortho_init=self.ortho_init,
+            optimizer_class=self.optimizer_class,
+            optimizer_kwargs=self.optimizer_kwargs,
+            features_extractor_class=self.features_extractor_class,
+            features_extractor_kwargs=self.features_extractor_kwargs
+        ))
+        return data
+
+    def reset_noise(self, n_envs: int = 1) -> None:
+        """
+        Sample new weights for the exploration matrix.
+
+        :param n_envs: (int)
+        """
+        assert isinstance(self.action_dist,
+                          StateDependentNoiseDistribution), 'reset_noise() is only available when using gSDE'
+        self.action_dist.sample_weights(self.log_std, batch_size=n_envs)
+
+    def _build(self, lr_schedule: Callable) -> None:
+        """
+        Create the networks and the optimizer.
+
+        :param lr_schedule: (Callable) Learning rate schedule
+            lr_schedule(1) is the initial learning rate
+        """
+        # Note: If net_arch is None and some features extractor is used,
+        #       net_arch here is an empty list and mlp_extractor does not
+        #       really contain any layers (acts like an identity module).
+        self.mlp_extractor = MlpExtractor(self.features_dim, net_arch=self.net_arch,
+                                          activation_fn=self.activation_fn, device=self.device)
+
+        latent_dim_pi = self.mlp_extractor.latent_dim_pi
+
+        # Separate feature extractor for gSDE
+        if self.sde_net_arch is not None:
+            self.sde_features_extractor, latent_sde_dim = create_sde_features_extractor(self.features_dim,
+                                                                                        self.sde_net_arch,
+                                                                                        self.activation_fn)
+
+        if isinstance(self.action_dist, DiagGaussianDistribution):
+            self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi,
+                                                                                    log_std_init=self.log_std_init)
+        elif isinstance(self.action_dist, StateDependentNoiseDistribution):
+            latent_sde_dim = latent_dim_pi if self.sde_net_arch is None else latent_sde_dim
+            self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi,
+                                                                                    latent_sde_dim=latent_sde_dim,
+                                                                                    log_std_init=self.log_std_init)
+        elif isinstance(self.action_dist, CategoricalDistribution):
+            self.action_net = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi)
+        elif isinstance(self.action_dist, MultiCategoricalDistribution):
+            self.action_net = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi)
+        elif isinstance(self.action_dist, BernoulliDistribution):
+            self.action_net = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi)
+
+        self.value_net = nn.Linear(self.mlp_extractor.latent_dim_vf, 1)
+        # Init weights: use orthogonal initialization
+        # with small initial weight for the output
+        if self.ortho_init:
+            # TODO: check for features_extractor
+            # Values from stable-baselines.
+            # feature_extractor/mlp values are
+            # originally from openai/baselines (default gains/init_scales).
+            module_gains = {
+                self.features_extractor: np.sqrt(2),
+                self.mlp_extractor: np.sqrt(2),
+                self.action_net: 0.01,
+                self.value_net: 1
+            }
+            for module, gain in module_gains.items():
+                module.apply(partial(self.init_weights, gain=gain))
+
+        # Setup optimizer with initial learning rate
+        self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
+
+    def forward(self, obs: th.Tensor,
+                deterministic: bool = False) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
+        """
+        Forward pass in all the networks (actor and critic)
+
+        :param obs: (th.Tensor) Observation
+        :param deterministic: (bool) Whether to sample or use deterministic actions
+        :return: (Tuple[th.Tensor, th.Tensor, th.Tensor]) action, value and log probability of the action
+        """
+        latent_pi, latent_vf, latent_sde = self._get_latent(obs)
+        # Evaluate the values for the given observations
+        values = self.value_net(latent_vf)
+        distribution = self._get_action_dist_from_latent(latent_pi, latent_sde=latent_sde)
+        actions = distribution.get_actions(deterministic=deterministic)
+        log_prob = distribution.log_prob(actions)
+        return actions, values, log_prob
+
+    def _get_latent(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
+        """
+        Get the latent code (i.e., activations of the last layer of each network)
+        for the different networks.
+
+        :param obs: (th.Tensor) Observation
+        :return: (Tuple[th.Tensor, th.Tensor, th.Tensor]) Latent codes
+            for the actor, the value function and for gSDE function
+        """
+        # Preprocess the observation if needed
+        features = self.extract_features(obs)
+        latent_pi, latent_vf = self.mlp_extractor(features)
+
+        # Features for sde
+        latent_sde = latent_pi
+        if self.sde_features_extractor is not None:
+            latent_sde = self.sde_features_extractor(features)
+        return latent_pi, latent_vf, latent_sde
+
+    def _get_action_dist_from_latent(self, latent_pi: th.Tensor,
+                                     latent_sde: Optional[th.Tensor] = None) -> Distribution:
+        """
+        Retrieve action distribution given the latent codes.
+
+        :param latent_pi: (th.Tensor) Latent code for the actor
+        :param latent_sde: (Optional[th.Tensor]) Latent code for the gSDE exploration function
+        :return: (Distribution) Action distribution
+        """
+        mean_actions = self.action_net(latent_pi)
+
+        if isinstance(self.action_dist, DiagGaussianDistribution):
+            return self.action_dist.proba_distribution(mean_actions, self.log_std)
+        elif isinstance(self.action_dist, CategoricalDistribution):
+            # Here mean_actions are the logits before the softmax
+            return self.action_dist.proba_distribution(action_logits=mean_actions)
+        elif isinstance(self.action_dist, MultiCategoricalDistribution):
+            # Here mean_actions are the flattened logits
+            return self.action_dist.proba_distribution(action_logits=mean_actions)
+        elif isinstance(self.action_dist, BernoulliDistribution):
+            # Here mean_actions are the logits (before rounding to get the binary actions)
+            return self.action_dist.proba_distribution(action_logits=mean_actions)
+        elif isinstance(self.action_dist, StateDependentNoiseDistribution):
+            return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)
+        else:
+            raise ValueError('Invalid action distribution')
+
+    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+        """
+        Get the action according to the policy for a given observation.
+
+        :param observation: (th.Tensor)
+        :param deterministic: (bool) Whether to use stochastic or deterministic actions
+        :return: (th.Tensor) Taken action according to the policy
+        """
+        latent_pi, _, latent_sde = self._get_latent(observation)
+        distribution = self._get_action_dist_from_latent(latent_pi, latent_sde)
+        return distribution.get_actions(deterministic=deterministic)
+
+    def evaluate_actions(self, obs: th.Tensor,
+                         actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
+        """
+        Evaluate actions according to the current policy,
+        given the observations.
+
+        :param obs: (th.Tensor)
+        :param actions: (th.Tensor)
+        :return: (th.Tensor, th.Tensor, th.Tensor) estimated value, log likelihood of taking those actions
+            and entropy of the action distribution.
+        """
+        latent_pi, latent_vf, latent_sde = self._get_latent(obs)
+        distribution = self._get_action_dist_from_latent(latent_pi, latent_sde)
+        log_prob = distribution.log_prob(actions)
+        values = self.value_net(latent_vf)
+        return values, log_prob, distribution.entropy()
+
+
+class ActorCriticCnnPolicy(ActorCriticPolicy):
+    """
+    CNN policy class for actor-critic algorithms (has both policy and value prediction).
+    Used by A2C, PPO and the likes.
+
+    :param observation_space: (gym.spaces.Space) Observation space
+    :param action_space: (gym.spaces.Space) Action space
+    :param lr_schedule: (Callable) Learning rate schedule (could be constant)
+    :param net_arch: ([int or dict]) The specification of the policy and value networks.
+    :param device: (str or th.device) Device on which the code should run.
+    :param activation_fn: (Type[nn.Module]) Activation function
+    :param ortho_init: (bool) Whether to use or not orthogonal initialization
+    :param use_sde: (bool) Whether to use State Dependent Exploration or not
+    :param log_std_init: (float) Initial value for the log standard deviation
+    :param full_std: (bool) Whether to use (n_features x n_actions) parameters
+        for the std instead of only (n_features,) when using gSDE
+    :param sde_net_arch: ([int]) Network architecture for extracting features
+        when using gSDE. If None, the latent features from the policy will be used.
+        Pass an empty list to use the states as features.
+    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` to ensure
+        a positive standard deviation (cf paper). It allows to keep variance
+        above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
+    :param squash_output: (bool) Whether to squash the output using a tanh function,
+        this allows to ensure boundaries when using gSDE.
+    :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
+    :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
+        to pass to the feature extractor.
+    :param normalize_images: (bool) Whether to normalize images or not,
+         dividing by 255.0 (True by default)
+    :param optimizer_class: (Type[th.optim.Optimizer]) The optimizer to use,
+        ``th.optim.Adam`` by default
+    :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
+        excluding the learning rate, to pass to the optimizer
+    """
+
+    def __init__(self,
+                 observation_space: gym.spaces.Space,
+                 action_space: gym.spaces.Space,
+                 lr_schedule: Callable,
+                 net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
+                 device: Union[th.device, str] = 'auto',
+                 activation_fn: Type[nn.Module] = nn.Tanh,
+                 ortho_init: bool = True,
+                 use_sde: bool = False,
+                 log_std_init: float = 0.0,
+                 full_std: bool = True,
+                 sde_net_arch: Optional[List[int]] = None,
+                 use_expln: bool = False,
+                 squash_output: bool = False,
+                 features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
+                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+                 normalize_images: bool = True,
+                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
+                 optimizer_kwargs: Optional[Dict[str, Any]] = None):
+        super(ActorCriticCnnPolicy, self).__init__(observation_space,
+                                                   action_space,
+                                                   lr_schedule,
+                                                   net_arch,
+                                                   device,
+                                                   activation_fn,
+                                                   ortho_init,
+                                                   use_sde,
+                                                   log_std_init,
+                                                   full_std,
+                                                   sde_net_arch,
+                                                   use_expln,
+                                                   squash_output,
+                                                   features_extractor_class,
+                                                   features_extractor_kwargs,
+                                                   normalize_images,
+                                                   optimizer_class,
+                                                   optimizer_kwargs)
 
 
 def create_sde_features_extractor(features_dim: int,
@@ -437,7 +643,8 @@ _policy_registry = dict()  # type: Dict[Type[BasePolicy], Dict[str, Type[BasePol
 
 def get_policy_from_name(base_policy_type: Type[BasePolicy], name: str) -> Type[BasePolicy]:
     """
-    Returns the registered policy from the base type and name
+    Returns the registered policy from the base type and name.
+    See `register_policy` for registering policies and explanation.
 
     :param base_policy_type: (Type[BasePolicy]) the base policy class
     :param name: (str) the policy name
@@ -454,7 +661,23 @@ def get_policy_from_name(base_policy_type: Type[BasePolicy], name: str) -> Type[
 def register_policy(name: str, policy: Type[BasePolicy]) -> None:
     """
     Register a policy, so it can be called using its name.
-    e.g. SAC('MlpPolicy', ...) instead of SAC(MlpPolicy, ...)
+    e.g. SAC('MlpPolicy', ...) instead of SAC(MlpPolicy, ...).
+
+    The goal here is to standardize policy naming, e.g.
+    all algorithms can call upon "MlpPolicy" or "CnnPolicy",
+    and they receive respective policies that work for them.
+    Consider following:
+
+    OnlinePolicy
+    -- OnlineMlpPolicy ("MlpPolicy")
+    -- OnlineCnnPolicy ("CnnPolicy")
+    OfflinePolicy
+    -- OfflineMlpPolicy ("MlpPolicy")
+    -- OfflineCnnPolicy ("CnnPolicy")
+
+    Two policies have name "MlpPolicy" and two have "CnnPolicy".
+    In `get_policy_from_name`, the parent class (e.g. OnlinePolicy)
+    is given and used to select and return the correct policy.
 
     :param name: (str) the policy name
     :param policy: (Type[BasePolicy]) the policy class
@@ -470,98 +693,9 @@ def register_policy(name: str, policy: Type[BasePolicy]) -> None:
     if sub_class not in _policy_registry:
         _policy_registry[sub_class] = {}
     if name in _policy_registry[sub_class]:
-        raise ValueError(f"Error: the name {name} is alreay registered for a different policy, will not override.")
+        # Check if the registered policy is same
+        # we try to register. If not so,
+        # do not override and complain.
+        if _policy_registry[sub_class][name] != policy:
+            raise ValueError(f"Error: the name {name} is already registered for a different policy, will not override.")
     _policy_registry[sub_class][name] = policy
-
-
-class MlpExtractor(nn.Module):
-    """
-    Constructs an MLP that receives observations as an input and outputs a latent representation for the policy and
-    a value network. The ``net_arch`` parameter allows to specify the amount and size of the hidden layers and how many
-    of them are shared between the policy network and the value network. It is assumed to be a list with the following
-    structure:
-
-    1. An arbitrary length (zero allowed) number of integers each specifying the number of units in a shared layer.
-       If the number of ints is zero, there will be no shared layers.
-    2. An optional dict, to specify the following non-shared layers for the value network and the policy network.
-       It is formatted like ``dict(vf=[<value layer sizes>], pi=[<policy layer sizes>])``.
-       If it is missing any of the keys (pi or vf), no non-shared layers (empty list) is assumed.
-
-    For example to construct a network with one shared layer of size 55 followed by two non-shared layers for the value
-    network of size 255 and a single non-shared layer of size 128 for the policy network, the following layers_spec
-    would be used: ``[55, dict(vf=[255, 255], pi=[128])]``. A simple shared network topology with two layers of size 128
-    would be specified as [128, 128].
-
-    Adapted from Stable Baselines.
-
-    :param feature_dim: (int) Dimension of the feature vector (can be the output of a CNN)
-    :param net_arch: ([int or dict]) The specification of the policy and value networks.
-        See above for details on its formatting.
-    :param activation_fn: (Type[nn.Module]) The activation function to use for the networks.
-    :param device: (th.device)
-    """
-
-    def __init__(self, feature_dim: int,
-                 net_arch: List[Union[int, Dict[str, List[int]]]],
-                 activation_fn: Type[nn.Module],
-                 device: Union[th.device, str] = 'auto'):
-        super(MlpExtractor, self).__init__()
-        device = get_device(device)
-        shared_net, policy_net, value_net = [], [], []
-        policy_only_layers = []  # Layer sizes of the network that only belongs to the policy network
-        value_only_layers = []  # Layer sizes of the network that only belongs to the value network
-        last_layer_dim_shared = feature_dim
-
-        # Iterate through the shared layers and build the shared parts of the network
-        for idx, layer in enumerate(net_arch):
-            if isinstance(layer, int):  # Check that this is a shared layer
-                layer_size = layer
-                # TODO: give layer a meaningful name
-                shared_net.append(nn.Linear(last_layer_dim_shared, layer_size))
-                shared_net.append(activation_fn())
-                last_layer_dim_shared = layer_size
-            else:
-                assert isinstance(layer, dict), "Error: the net_arch list can only contain ints and dicts"
-                if 'pi' in layer:
-                    assert isinstance(layer['pi'], list), "Error: net_arch[-1]['pi'] must contain a list of integers."
-                    policy_only_layers = layer['pi']
-
-                if 'vf' in layer:
-                    assert isinstance(layer['vf'], list), "Error: net_arch[-1]['vf'] must contain a list of integers."
-                    value_only_layers = layer['vf']
-                break  # From here on the network splits up in policy and value network
-
-        last_layer_dim_pi = last_layer_dim_shared
-        last_layer_dim_vf = last_layer_dim_shared
-
-        # Build the non-shared part of the network
-        for idx, (pi_layer_size, vf_layer_size) in enumerate(zip_longest(policy_only_layers, value_only_layers)):
-            if pi_layer_size is not None:
-                assert isinstance(pi_layer_size, int), "Error: net_arch[-1]['pi'] must only contain integers."
-                policy_net.append(nn.Linear(last_layer_dim_pi, pi_layer_size))
-                policy_net.append(activation_fn())
-                last_layer_dim_pi = pi_layer_size
-
-            if vf_layer_size is not None:
-                assert isinstance(vf_layer_size, int), "Error: net_arch[-1]['vf'] must only contain integers."
-                value_net.append(nn.Linear(last_layer_dim_vf, vf_layer_size))
-                value_net.append(activation_fn())
-                last_layer_dim_vf = vf_layer_size
-
-        # Save dim, used to create the distributions
-        self.latent_dim_pi = last_layer_dim_pi
-        self.latent_dim_vf = last_layer_dim_vf
-
-        # Create networks
-        # If the list of layers is empty, the network will just act as an Identity module
-        self.shared_net = nn.Sequential(*shared_net).to(device)
-        self.policy_net = nn.Sequential(*policy_net).to(device)
-        self.value_net = nn.Sequential(*value_net).to(device)
-
-    def forward(self, features: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
-        """
-        :return: (th.Tensor, th.Tensor) latent_policy, latent_value of the specified network.
-            If all layers are shared, then ``latent_policy == latent_value``
-        """
-        shared_latent = self.shared_net(features)
-        return self.policy_net(shared_latent), self.value_net(shared_latent)

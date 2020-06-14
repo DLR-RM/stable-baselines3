@@ -525,7 +525,7 @@ class StateDependentNoiseDistribution(Distribution):
         """
         # Stop gradient if we don't want to influence the features
         self._latent_sde = latent_sde if self.learn_features else latent_sde.detach()
-        variance = th.mm(latent_sde ** 2, self.get_std(log_std) ** 2)
+        variance = th.mm(self._latent_sde ** 2, self.get_std(log_std) ** 2)
         self.distribution = Normal(mean_actions, th.sqrt(variance + self.epsilon))
         return self
 

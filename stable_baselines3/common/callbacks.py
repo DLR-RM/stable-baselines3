@@ -12,7 +12,7 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common import logger
 
 if typing.TYPE_CHECKING:
-    from stable_baselines3.common.base_class import BaseRLModel  # pytype: disable=pyi-error
+    from stable_baselines3.common.base_class import BaseAlgorithm  # pytype: disable=pyi-error
 
 
 class BaseCallback(ABC):
@@ -24,7 +24,7 @@ class BaseCallback(ABC):
     def __init__(self, verbose: int = 0):
         super(BaseCallback, self).__init__()
         # The RL model
-        self.model = None  # type: Optional[BaseRLModel]
+        self.model = None  # type: Optional[BaseAlgorithm]
         # An alias for self.model.get_env(), the environment used for training
         self.training_env = None  # type: Union[gym.Env, VecEnv, None]
         # Number of time the callback was called
@@ -40,7 +40,7 @@ class BaseCallback(ABC):
         self.parent = None  # type: Optional[BaseCallback]
 
     # Type hint as string to avoid circular import
-    def init_callback(self, model: 'BaseRLModel') -> None:
+    def init_callback(self, model: 'BaseAlgorithm') -> None:
         """
         Initialize the callback by saving references to the
         RL model and the training environment for convenience.
@@ -118,7 +118,7 @@ class EventCallback(BaseCallback):
         if callback is not None:
             self.callback.parent = self
 
-    def init_callback(self, model: 'BaseRLModel') -> None:
+    def init_callback(self, model: 'BaseAlgorithm') -> None:
         super(EventCallback, self).init_callback(model)
         if self.callback is not None:
             self.callback.init_callback(self.model)

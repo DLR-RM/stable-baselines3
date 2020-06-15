@@ -1,15 +1,16 @@
 import gym
 import pytest
-from stable_baselines3 import HER, SAC, TD3
+from stable_baselines3 import create_her, SAC, TD3
 import highway_env
 
 
 @pytest.mark.parametrize('model_class', [SAC, TD3])
 def test_her(model_class):
-    model = HER('MlpPolicy', 'parking-v0', model_class, n_sampled_goal=4,
+    HER = create_her(model_class)
+    model = HER('MlpPolicy', 'parking-v0', n_sampled_goal=4,
                 goal_selection_strategy='future', policy_kwargs=dict(net_arch=[64, 64]),
                 learning_starts=100, verbose=1, create_eval_env=True)
-    model.learn(total_timesteps=1000, eval_freq=500)
+    model.learn(total_timesteps=10, eval_freq=100)
     model.save('her_highway')
 
     env = gym.make('parking-v0')

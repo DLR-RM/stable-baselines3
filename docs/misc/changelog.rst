@@ -11,6 +11,7 @@ Pre-Release 0.7.0 (2020-06-10)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- ``save_replay_buffer`` now receives as argument the file path instead of the folder path (@tirafesi)
 - ``render()`` method of ``VecEnvs`` now only accept one argument: ``mode``
 - Created new file common/torch_layers.py, similar to SB refactoring
 
@@ -302,3 +303,4 @@ And all the contributors:
 @Miffyli @dwiel @miguelrass @qxcv @jaberkow @eavelardev @ruifeng96150 @pedrohbtp @srivatsankrishnan @evilsocket
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
+@tirafesi

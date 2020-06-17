@@ -1,23 +1,18 @@
-import time
-from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
+from typing import Type, Union, Callable, Optional, Dict, Any
 
-import gym
 from gym import spaces
 import torch as th
 import torch.nn.functional as F
 import numpy as np
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.base_class import BaseRLModel
+from stable_baselines3.common.on_policy_algorithm import OnPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
-from stable_baselines3.common.buffers import RolloutBuffer
 from stable_baselines3.common.utils import explained_variance, get_schedule_fn
-from stable_baselines3.common.vec_env import VecEnv
-from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.ppo.policies import PPOPolicy
+from stable_baselines3.common.policies import ActorCriticPolicy
 
 
-class PPO(BaseRLModel):
+class PPO(OnPolicyAlgorithm):
     """
     Proximal Policy Optimization algorithm (PPO) (clip version)
 
@@ -28,10 +23,10 @@ class PPO(BaseRLModel):
 
     Introduction to PPO: https://spinningup.openai.com/en/latest/algorithms/ppo.html
 
-    :param policy: (PPOPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
+    :param policy: (ActorCriticPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
     :param learning_rate: (float or callable) The learning rate, it can be a function
-        of the current progress (from 1 to 0)
+        of the current progress remaining (from 1 to 0)
     :param n_steps: (int) The number of steps to run for each environment per update
         (i.e. batch size is n_steps * n_env where n_env is number of environment copies running in parallel)
     :param batch_size: (int) Minibatch size
@@ -39,9 +34,9 @@ class PPO(BaseRLModel):
     :param gamma: (float) Discount factor
     :param gae_lambda: (float) Factor for trade-off of bias vs variance for Generalized Advantage Estimator
     :param clip_range: (float or callable) Clipping parameter, it can be a function of the current progress
-        (from 1 to 0).
+        remaining (from 1 to 0).
     :param clip_range_vf: (float or callable) Clipping parameter for the value function,
-        it can be a function of the current progress (from 1 to 0).
+        it can be a function of the current progress remaining (from 1 to 0).
         This is a parameter specific to the OpenAI implementation. If None is passed (default),
         no clipping will be done on the value function.
         IMPORTANT: this clipping depends on the reward scaling.
@@ -67,7 +62,7 @@ class PPO(BaseRLModel):
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
 
-    def __init__(self, policy: Union[str, Type[PPOPolicy]],
+    def __init__(self, policy: Union[str, Type[ActorCriticPolicy]],
                  env: Union[GymEnv, str],
                  learning_rate: Union[float, Callable] = 3e-4,
                  n_steps: int = 2048,
@@ -91,41 +86,27 @@ class PPO(BaseRLModel):
                  device: Union[th.device, str] = "auto",
                  _init_setup_model: bool = True):
 
-        super(PPO, self).__init__(policy, env, PPOPolicy, learning_rate,
-                                  policy_kwargs=policy_kwargs, tensorboard_log=tensorboard_log,
-                                  verbose=verbose, device=device, use_sde=use_sde, sde_sample_freq=sde_sample_freq,
-                                  create_eval_env=create_eval_env, support_multi_env=True, seed=seed)
+        super(PPO, self).__init__(policy, env, learning_rate=learning_rate,
+                                  n_steps=n_steps, gamma=gamma, gae_lambda=gae_lambda,
+                                  ent_coef=ent_coef, vf_coef=vf_coef, max_grad_norm=max_grad_norm,
+                                  use_sde=use_sde, sde_sample_freq=sde_sample_freq,
+                                  tensorboard_log=tensorboard_log, policy_kwargs=policy_kwargs,
+                                  verbose=verbose, device=device, create_eval_env=create_eval_env,
+                                  seed=seed, _init_setup_model=False)
 
         self.batch_size = batch_size
         self.n_epochs = n_epochs
-        self.n_steps = n_steps
-        self.gamma = gamma
-        self.gae_lambda = gae_lambda
         self.clip_range = clip_range
         self.clip_range_vf = clip_range_vf
-        self.ent_coef = ent_coef
-        self.vf_coef = vf_coef
-        self.max_grad_norm = max_grad_norm
-        self.rollout_buffer = None
         self.target_kl = target_kl
-        self.tb_writer = None
 
         if _init_setup_model:
             self._setup_model()
 
     def _setup_model(self) -> None:
-        self._setup_lr_schedule()
-        self.set_random_seed(self.seed)
+        super(PPO, self)._setup_model()
 
-        self.rollout_buffer = RolloutBuffer(self.n_steps, self.observation_space,
-                                            self.action_space, self.device,
-                                            gamma=self.gamma, gae_lambda=self.gae_lambda,
-                                            n_envs=self.n_envs)
-        self.policy = self.policy_class(self.observation_space, self.action_space,
-                                        self.lr_schedule, use_sde=self.use_sde, device=self.device,
-                                        **self.policy_kwargs)
-        self.policy = self.policy.to(self.device)
-
+        # Initialize schedules for policy/value clipping
         self.clip_range = get_schedule_fn(self.clip_range)
         if self.clip_range_vf is not None:
             if isinstance(self.clip_range_vf, (float, int)):
@@ -134,77 +115,28 @@ class PPO(BaseRLModel):
 
             self.clip_range_vf = get_schedule_fn(self.clip_range_vf)
 
-    def collect_rollouts(self,
-                         env: VecEnv,
-                         callback: BaseCallback,
-                         rollout_buffer: RolloutBuffer,
-                         n_rollout_steps: int = 256) -> bool:
-
-        assert self._last_obs is not None, "No previous observation was provided"
-        n_steps = 0
-        rollout_buffer.reset()
-        # Sample new weights for the state dependent exploration
-        if self.use_sde:
-            self.policy.reset_noise(env.num_envs)
-
-        callback.on_rollout_start()
-
-        while n_steps < n_rollout_steps:
-            if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
-                # Sample a new noise matrix
-                self.policy.reset_noise(env.num_envs)
-
-            with th.no_grad():
-                # Convert to pytorch tensor
-                obs_tensor = th.as_tensor(self._last_obs).to(self.device)
-                actions, values, log_probs = self.policy.forward(obs_tensor)
-            actions = actions.cpu().numpy()
-
-            # Rescale and perform action
-            clipped_actions = actions
-            # Clip the actions to avoid out of bound error
-            if isinstance(self.action_space, gym.spaces.Box):
-                clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
-
-            new_obs, rewards, dones, infos = env.step(clipped_actions)
-
-            if callback.on_step() is False:
-                return False
-
-            self._update_info_buffer(infos)
-            n_steps += 1
-            self.num_timesteps += env.num_envs
-
-            if isinstance(self.action_space, gym.spaces.Discrete):
-                # Reshape in case of discrete action
-                actions = actions.reshape(-1, 1)
-            rollout_buffer.add(self._last_obs, actions, rewards, dones, values, log_probs)
-            self._last_obs = new_obs
-
-        rollout_buffer.compute_returns_and_advantage(values, dones=dones)
-
-        callback.on_rollout_end()
-
-        return True
-
-    def train(self, n_epochs: int, batch_size: int = 64) -> None:
+    def train(self) -> None:
+        """
+        Update policy using the currently gathered
+        rollout buffer.
+        """
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
         # Compute current clip range
-        clip_range = self.clip_range(self._current_progress)
+        clip_range = self.clip_range(self._current_progress_remaining)
         # Optional: clip range for the value function
         if self.clip_range_vf is not None:
-            clip_range_vf = self.clip_range_vf(self._current_progress)
+            clip_range_vf = self.clip_range_vf(self._current_progress_remaining)
 
         entropy_losses, all_kl_divs = [], []
         pg_losses, value_losses = [], []
         clip_fractions = []
 
         # train for gradient_steps epochs
-        for epoch in range(n_epochs):
+        for epoch in range(self.n_epochs):
             approx_kl_divs = []
             # Do a complete pass on the rollout buffer
-            for rollout_data in self.rollout_buffer.get(batch_size):
+            for rollout_data in self.rollout_buffer.get(self.batch_size):
                 actions = rollout_data.actions
                 if isinstance(self.action_space, spaces.Discrete):
                     # Convert discrete action from float to long
@@ -214,7 +146,7 @@ class PPO(BaseRLModel):
                 # TODO: investigate why there is no issue with the gradient
                 # if that line is commented (as in SAC)
                 if self.use_sde:
-                    self.policy.reset_noise(batch_size)
+                    self.policy.reset_noise(self.batch_size)
 
                 values, log_prob, entropy = self.policy.evaluate_actions(rollout_data.observations, actions)
                 values = values.flatten()
@@ -272,7 +204,7 @@ class PPO(BaseRLModel):
                 print(f"Early stopping at step {epoch} due to reaching max kl: {np.mean(approx_kl_divs):.2f}")
                 break
 
-        self._n_updates += n_epochs
+        self._n_updates += self.n_epochs
         explained_var = explained_variance(self.rollout_buffer.returns.flatten(),
                                            self.rollout_buffer.values.flatten())
 
@@ -303,48 +235,7 @@ class PPO(BaseRLModel):
               eval_log_path: Optional[str] = None,
               reset_num_timesteps: bool = True) -> "PPO":
 
-        iteration = 0
-        total_timesteps, callback = self._setup_learn(total_timesteps, eval_env, callback, eval_freq,
-                                                      n_eval_episodes, eval_log_path, reset_num_timesteps,
-                                                      tb_log_name)
-        callback.on_training_start(locals(), globals())
-
-        while self.num_timesteps < total_timesteps:
-
-            continue_training = self.collect_rollouts(self.env, callback,
-                                                      self.rollout_buffer,
-                                                      n_rollout_steps=self.n_steps)
-
-            if continue_training is False:
-                break
-
-            iteration += 1
-            self._update_current_progress(self.num_timesteps, total_timesteps)
-
-            # Log training infos
-            if log_interval is not None and iteration % log_interval == 0:
-                fps = int(self.num_timesteps / (time.time() - self.start_time))
-                logger.record("time/iterations", iteration, exclude="tensorboard")
-                if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
-                    logger.record("rollout/ep_rew_mean",
-                                  self.safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
-                    logger.record("rollout/ep_len_mean",
-                                  self.safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
-                logger.record("time/fps", fps)
-                logger.record("time/time_elapsed", int(time.time() - self.start_time), exclude="tensorboard")
-                logger.record("time/total timesteps", self.num_timesteps, exclude="tensorboard")
-                logger.dump(step=self.num_timesteps)
-
-            self.train(self.n_epochs, batch_size=self.batch_size)
-
-        callback.on_training_end()
-
-        return self
-
-    def get_torch_variables(self) -> Tuple[List[str], List[str]]:
-        """
-        cf base class
-        """
-        state_dicts = ["policy", "policy.optimizer"]
-
-        return state_dicts, []
+        return super(PPO, self).learn(total_timesteps=total_timesteps, callback=callback,
+                                      log_interval=log_interval, eval_env=eval_env, eval_freq=eval_freq,
+                                      n_eval_episodes=n_eval_episodes, tb_log_name=tb_log_name,
+                                      eval_log_path=eval_log_path, reset_num_timesteps=reset_num_timesteps)

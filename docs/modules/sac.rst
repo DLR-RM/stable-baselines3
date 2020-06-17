@@ -12,12 +12,6 @@ SAC is the successor of `Soft Q-Learning SQL <https://arxiv.org/abs/1702.08165>`
 A key feature of SAC, and a major difference with common RL algorithms, is that it is trained to maximize a trade-off between expected return and entropy, a measure of randomness in the policy.
 
 
-.. warning::
-
-  The SAC model does not support ``stable_baselines3.ppo.policies`` because it uses double q-values
-  and value estimation, as a result it must use its own policy models (see :ref:`sac_policies`).
-
-
 .. rubric:: Available Policies
 
 .. autosummary::

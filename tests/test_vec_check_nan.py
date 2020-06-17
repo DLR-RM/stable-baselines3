@@ -1,6 +1,7 @@
 import gym
 from gym import spaces
 import numpy as np
+import pytest
 
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
 
@@ -40,32 +41,18 @@ def test_check_nan():
 
     env.step([[0]])
 
-    try:
+    with pytest.raises(ValueError):
         env.step([[float('NaN')]])
-    except ValueError:
-        pass
-    else:
-        assert False
 
-    try:
+    with pytest.raises(ValueError):
         env.step([[float('inf')]])
-    except ValueError:
-        pass
-    else:
-        assert False
 
-    try:
+    with pytest.raises(ValueError):
         env.step([[-1]])
-    except ValueError:
-        pass
-    else:
-        assert False
 
-    try:
+    with pytest.raises(ValueError):
         env.step([[1]])
-    except ValueError:
-        pass
-    else:
-        assert False
 
     env.step(np.array([[0, 1], [0, 1]]))
+
+    env.reset()

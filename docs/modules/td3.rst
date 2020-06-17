@@ -12,12 +12,6 @@ TD3 is a direct successor of DDPG and improves it using three major tricks: clip
 We recommend reading `OpenAI Spinning guide on TD3 <https://spinningup.openai.com/en/latest/algorithms/td3.html>`_ to learn more about those.
 
 
-.. warning::
-
-  The TD3 model does not support ``stable_baselines3.ppo.policies`` because it uses double q-values
-  estimation, as a result it must use its own policy models (see :ref:`td3_policies`).
-
-
 .. rubric:: Available Policies
 
 .. autosummary::

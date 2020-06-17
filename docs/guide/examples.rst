@@ -13,13 +13,11 @@ notebooks:
 -  `All Notebooks <https://github.com/Stable-Baselines-Team/rl-colab-notebooks/tree/sb3>`_
 -  `Getting Started`_
 -  `Training, Saving, Loading`_
+-  `Multiprocessing`_
+-  `Monitor Training and Plotting`_
+-  `Atari Games`_
 -  `RL Baselines zoo`_
 
-
-.. -  `Multiprocessing`_
-.. -  `Monitor Training and Plotting`_
-.. -  `Atari Games`_
-.. -  `Breakout`_ (trained agent included)
 .. -  `Hindsight Experience Replay`_
 
 .. _Getting Started: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/stable_baselines_getting_started.ipynb
@@ -27,7 +25,6 @@ notebooks:
 .. _Multiprocessing: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/multiprocessing_rl.ipynb
 .. _Monitor Training and Plotting: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/monitor_training.ipynb
 .. _Atari Games: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/atari_games.ipynb
-.. _Breakout: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/breakout.ipynb
 .. _Hindsight Experience Replay: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/stable_baselines_her.ipynb
 .. _RL Baselines zoo: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/rl-baselines-zoo.ipynb
 
@@ -91,9 +88,9 @@ In the following example, we will train, save and load a A2C model on the Lunar 
 
 Multiprocessing: Unleashing the Power of Vectorized Environments
 ----------------------------------------------------------------
-..
-.. .. image:: ../_static/img/colab-badge.svg
-..    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/multiprocessing_rl.ipynb
+
+.. image:: ../_static/img/colab-badge.svg
+   :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/multiprocessing_rl.ipynb
 
 .. figure:: https://cdn-images-1.medium.com/max/960/1*h4WTQNVIsvMXJTCpXm_TAw.gif
 
@@ -106,7 +103,6 @@ Multiprocessing: Unleashing the Power of Vectorized Environments
   import numpy as np
 
   from stable_baselines3 import PPO
-  from stable_baselines3.ppo import MlpPolicy
   from stable_baselines3.common.vec_env import SubprocVecEnv
   from stable_baselines3.common.cmd_util import make_vec_env
   from stable_baselines3.common.utils import set_random_seed
@@ -160,12 +156,9 @@ This could be useful when you want to monitor training, for instance display liv
 learning curves in Tensorboard (or in Visdom) or save the best agent.
 If your callback returns False, training is aborted early.
 
-.. .. image:: ../_static/img/colab-badge.svg
-..    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/monitor_training.ipynb
-..
-.. .. figure:: ../_static/img/learning_curve.png
-..
-..   Learning curve of TD3 on LunarLanderContinuous environment
+.. image:: ../_static/img/colab-badge.svg
+   :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/monitor_training.ipynb
+
 
 .. code-block:: python
 
@@ -176,7 +169,6 @@ If your callback returns False, training is aborted early.
   import matplotlib.pyplot as plt
 
   from stable_baselines3 import TD3
-  from stable_baselines3.td3 import MlpPolicy
   from stable_baselines3.common import results_plotter
   from stable_baselines3.common.monitor import Monitor
   from stable_baselines3.common.results_plotter import load_results, ts2xy, plot_results
@@ -240,7 +232,7 @@ If your callback returns False, training is aborted early.
   n_actions = env.action_space.shape[-1]
   action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
   # Because we use parameter noise, we should use a MlpPolicy with layer normalization
-  model = TD3(MlpPolicy, env, action_noise=action_noise, verbose=0)
+  model = TD3('MlpPolicy', env, action_noise=action_noise, verbose=0)
   # Create the callback: check every 1000 steps
   callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir)
   # Train the agent
@@ -267,8 +259,8 @@ Training a RL agent on Atari games is straightforward thanks to ``make_atari_env
 It will do `all the preprocessing <https://danieltakeshi.github.io/2016/11/25/frame-skipping-and-preprocessing-for-deep-q-networks-on-atari-2600-games/>`_
 and multiprocessing for you.
 
-.. .. image:: ../_static/img/colab-badge.svg
-..    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/atari_games.ipynb
+.. image:: ../_static/img/colab-badge.svg
+   :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/atari_games.ipynb
 ..
 
 .. code-block:: python

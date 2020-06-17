@@ -3,6 +3,28 @@
 Changelog
 ==========
 
+Pre-Release 0.8.0a0 (WIP)
+------------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+- Updated notebook links
+
 
 Pre-Release 0.7.0 (2020-06-10)
 ------------------------------
@@ -60,6 +82,7 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Added a paragraph on "MlpPolicy"/"CnnPolicy" and policy naming scheme under "Developer Guide"
 - Fixed second-level listing in changelog
+
 
 Pre-Release 0.6.0 (2020-06-01)
 ------------------------------

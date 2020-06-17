@@ -159,7 +159,7 @@ def test_save_load_replay_buffer(tmp_path, model_class):
     model = model_class('MlpPolicy', select_env(model_class), buffer_size=1000)
     model.learn(500)
     old_replay_buffer = deepcopy(model.replay_buffer)
-    model.save_replay_buffer(tmp_path)
+    model.save_replay_buffer(replay_path)
     model.replay_buffer = None
     model.load_replay_buffer(replay_path)
 

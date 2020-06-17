@@ -106,10 +106,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         """
         Save the replay buffer as a pickle file.
 
-        :param path: (str) Path to a log folder
+        :param path: (str) Path to the file where the replay buffer should be saved
         """
         assert self.replay_buffer is not None, "The replay buffer is not defined"
-        with open(os.path.join(path, 'replay_buffer.pkl'), 'wb') as file_handler:
+        with open(path, 'wb') as file_handler:
             pickle.dump(self.replay_buffer, file_handler)
 
     def load_replay_buffer(self, path: str):

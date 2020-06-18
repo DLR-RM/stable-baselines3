@@ -79,7 +79,9 @@ setup(name='stable_baselines3',
           # For reading logs
           'pandas',
           # Plotting learning curves
-          'matplotlib'
+          'matplotlib',
+          # highway-env environment for HER
+          'highway-env@git+https://github.com/eleurent/highway-env@master#egg=highway-env'
       ],
       extras_require={
           'tests': [

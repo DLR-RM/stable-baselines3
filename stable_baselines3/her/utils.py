@@ -68,7 +68,8 @@ class HERGoalEnvWrapper(object):
         if isinstance(self.observation_space, spaces.MultiDiscrete):
             # Special case for multidiscrete
             return np.concatenate([[int(obs_dict[key])] for key in KEY_ORDER])
-        return np.concatenate([obs_dict[key] for key in KEY_ORDER]).reshape(-1)
+        return np.concatenate([obs_dict[key] for key in KEY_ORDER], axis=-1)
+        # TODO: Does axis=-1 work for old mode
 
     def convert_obs_to_dict(self, observations):
         """
@@ -78,10 +79,10 @@ class HERGoalEnvWrapper(object):
         :return: (OrderedDict<np.ndarray>)
         """
         return OrderedDict([
-            ('observation', observations[:self.obs_dim]),
-            ('achieved_goal', observations[self.obs_dim:self.obs_dim + self.goal_dim]),
-            ('desired_goal', observations[self.obs_dim + self.goal_dim:]),
-        ])
+            ('observation', observations[..., :self.obs_dim]),
+            ('achieved_goal', observations[..., self.obs_dim:self.obs_dim + self.goal_dim]),
+            ('desired_goal', observations[..., self.obs_dim + self.goal_dim:]),
+        ])  # TODO: Check if this works when observations has only 1 dim
 
     def step(self, action):
         obs, reward, done, info = self.env.step(action)

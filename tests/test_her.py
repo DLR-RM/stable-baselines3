@@ -8,9 +8,10 @@ import highway_env
 def test_her(model_class):
     HER = create_her(model_class)
     model = HER('MlpPolicy', 'parking-v0', n_sampled_goal=4,
-                goal_selection_strategy='future', policy_kwargs=dict(net_arch=[64, 64]),
-                learning_starts=100, verbose=1, create_eval_env=True)
-    model.learn(total_timesteps=10, eval_freq=100)
+                goal_selection_strategy='future', policy_kwargs=dict(net_arch=[256,256,256]),
+                learning_starts=100, verbose=1, create_eval_env=True, gamma=0.95, learning_rate=1e-3,
+                add_her_while_sampling=False)
+    model.learn(total_timesteps=2e5, eval_freq=100)
     model.save('her_highway')
 
     env = gym.make('parking-v0')

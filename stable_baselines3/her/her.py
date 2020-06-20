@@ -10,12 +10,11 @@ from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.save_util import (load_from_zip_file)
 from stable_baselines3.common.type_aliases import GymEnv
 
-from .replay_buffer import HindsightExperienceReplayWrapper
+from .replay_buffer import HindsightExperienceReplayWrapper, HindsightExperienceReplayBuffer
 from .utils import HERGoalEnvWrapper
 
 
 def create_her(model_class: Union[Type[SAC], Type[TD3], Type[OffPolicyAlgorithm]] = OffPolicyAlgorithm):
-
     class HER(model_class):
         """
         Hindsight Experience Replay (HER) https://arxiv.org/abs/1707.01495
@@ -34,6 +33,7 @@ def create_her(model_class: Union[Type[SAC], Type[TD3], Type[OffPolicyAlgorithm]
                      env: Union[GymEnv, str],
                      n_sampled_goal: int = 4,
                      goal_selection_strategy: str = 'future',
+                     add_her_while_sampling: bool = True,
                      learning_rate: Union[float, Callable] = None,
                      **kwargs):
             if model_class == OffPolicyAlgorithm:
@@ -44,15 +44,27 @@ def create_her(model_class: Union[Type[SAC], Type[TD3], Type[OffPolicyAlgorithm]
             self.goal_selection_strategy = goal_selection_strategy
             self.create_eval_env = kwargs.get('create_eval_env', False)
             self.model_class = model_class
+            self.add_her_while_sampling = add_her_while_sampling
 
             model_signature = inspect.signature(model_class.__init__)
             model_init_dict = {key: kwargs[key] for key in model_signature.parameters.keys() if key in kwargs}
             learning_rate = learning_rate or model_signature.parameters['learning_rate'].default
             # assumes all model classes have a default learning_rate
-            self._create_her_env_wrapper(env)
-            super(HER, self).__init__(policy, self.env, learning_rate, **model_init_dict)
 
-            self.replay_buffer = self.replay_wrapper(self.replay_buffer)
+            self._create_her_env_wrapper(env)
+            # can be removed after OffPolicyAlgorithm supports dict space
+
+            super(HER, self).__init__(policy, self.her_wrapped_env, learning_rate, **model_init_dict) # new
+
+            self.replay_buffer = HindsightExperienceReplayBuffer(self.buffer_size, self.observation_space, # new
+                                                                 self.action_space, self.max_episode_steps,
+                                                                 self.her_wrapped_env, self.device, 1,
+                                                                 self.add_her_while_sampling,
+                                                                 self.goal_selection_strategy, self.n_sampled_goal)
+
+            # super(HER, self).__init__(policy, self.env, learning_rate, **model_init_dict) # old
+            # self.replay_buffer = self.replay_wrapper(self.replay_buffer) # old
+
             self.her_obs_space = self.observation_space
             self.her_action_space = self.action_space
 
@@ -63,15 +75,18 @@ def create_her(model_class: Union[Type[SAC], Type[TD3], Type[OffPolicyAlgorithm]
             """
 
             env = gym.make(env) if isinstance(env, str) else env
+            self.max_episode_steps = env._max_episode_steps
 
             if not isinstance(env, HERGoalEnvWrapper):
                 env = HERGoalEnvWrapper(env)
 
-            self.env = env
-            self.replay_wrapper = functools.partial(HindsightExperienceReplayWrapper,
-                                                    n_sampled_goal=self.n_sampled_goal,
-                                                    goal_selection_strategy=self.goal_selection_strategy,
-                                                    wrapped_env=self.env)
+            self.her_wrapped_env = env # new
+            # self.env = env # old
+            # self.replay_wrapper = functools.partial(HindsightExperienceReplayWrapper, # old
+            #                                         n_sampled_goal=self.n_sampled_goal,
+            #                                         goal_selection_strategy=self.goal_selection_strategy,
+            #                                         wrapped_env=self.env,
+            #                                         add_her_while_sampling=True)
 
         def predict(self, observation: np.ndarray,
                     state: Optional[np.ndarray] = None,
@@ -104,4 +119,5 @@ def create_her(model_class: Union[Type[SAC], Type[TD3], Type[OffPolicyAlgorithm]
             model.__dict__['action_space'] = data['her_action_space']
 
             return model
+
     return HER

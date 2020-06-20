@@ -145,7 +145,7 @@ def test_save_load_replay_buffer(model_class):
     model = model_class('MlpPolicy', 'Pendulum-v0', buffer_size=1000)
     model.learn(500)
     old_replay_buffer = deepcopy(model.replay_buffer)
-    model.save_replay_buffer(log_folder)
+    model.save_replay_buffer(replay_path)
     model.replay_buffer = None
     model.load_replay_buffer(replay_path)
 

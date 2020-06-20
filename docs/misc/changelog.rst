@@ -8,12 +8,14 @@ Pre-Release 0.8.0a0 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- ``save_replay_buffer`` now receives as argument the file path instead of the folder path (@tirafesi)
 
 New Features:
 ^^^^^^^^^^^^^
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed a bug in the ``close()`` method of ``SubprocVecEnv``, causing wrappers further down in the wrapper stack to not be closed. (@NeoExtended)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -323,3 +325,4 @@ And all the contributors:
 @Miffyli @dwiel @miguelrass @qxcv @jaberkow @eavelardev @ruifeng96150 @pedrohbtp @srivatsankrishnan @evilsocket
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
+@tirafesi

@@ -1,4 +1,3 @@
-import functools
 import inspect
 from typing import Union, Type, Optional, Callable, Tuple
 
@@ -10,7 +9,7 @@ from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.save_util import (load_from_zip_file)
 from stable_baselines3.common.type_aliases import GymEnv
 
-from .replay_buffer import HindsightExperienceReplayWrapper, HindsightExperienceReplayBuffer
+from .replay_buffer import HindsightExperienceReplayBuffer
 from .utils import HERGoalEnvWrapper
 
 
@@ -54,16 +53,13 @@ def create_her(model_class: Union[Type[SAC], Type[TD3], Type[OffPolicyAlgorithm]
             self._create_her_env_wrapper(env)
             # can be removed after OffPolicyAlgorithm supports dict space
 
-            super(HER, self).__init__(policy, self.her_wrapped_env, learning_rate, **model_init_dict) # new
+            super(HER, self).__init__(policy, self.her_wrapped_env, learning_rate, **model_init_dict)
 
-            self.replay_buffer = HindsightExperienceReplayBuffer(self.buffer_size, self.observation_space, # new
+            self.replay_buffer = HindsightExperienceReplayBuffer(self.buffer_size, self.observation_space,
                                                                  self.action_space, self.max_episode_steps,
                                                                  self.her_wrapped_env, self.device, 1,
                                                                  self.add_her_while_sampling,
                                                                  self.goal_selection_strategy, self.n_sampled_goal)
-
-            # super(HER, self).__init__(policy, self.env, learning_rate, **model_init_dict) # old
-            # self.replay_buffer = self.replay_wrapper(self.replay_buffer) # old
 
             self.her_obs_space = self.observation_space
             self.her_action_space = self.action_space
@@ -80,13 +76,7 @@ def create_her(model_class: Union[Type[SAC], Type[TD3], Type[OffPolicyAlgorithm]
             if not isinstance(env, HERGoalEnvWrapper):
                 env = HERGoalEnvWrapper(env)
 
-            self.her_wrapped_env = env # new
-            # self.env = env # old
-            # self.replay_wrapper = functools.partial(HindsightExperienceReplayWrapper, # old
-            #                                         n_sampled_goal=self.n_sampled_goal,
-            #                                         goal_selection_strategy=self.goal_selection_strategy,
-            #                                         wrapped_env=self.env,
-            #                                         add_her_while_sampling=self.add_her_while_sampling)
+            self.her_wrapped_env = env
 
         def predict(self, observation: np.ndarray,
                     state: Optional[np.ndarray] = None,

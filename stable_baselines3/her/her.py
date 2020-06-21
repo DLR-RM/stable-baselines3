@@ -86,7 +86,7 @@ def create_her(model_class: Union[Type[SAC], Type[TD3], Type[OffPolicyAlgorithm]
             #                                         n_sampled_goal=self.n_sampled_goal,
             #                                         goal_selection_strategy=self.goal_selection_strategy,
             #                                         wrapped_env=self.env,
-            #                                         add_her_while_sampling=True)
+            #                                         add_her_while_sampling=self.add_her_while_sampling)
 
         def predict(self, observation: np.ndarray,
                     state: Optional[np.ndarray] = None,

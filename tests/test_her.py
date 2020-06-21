@@ -3,9 +3,9 @@ import pytest
 from stable_baselines3 import create_her, SAC, TD3
 import highway_env
 
-
+@pytest.mark.parametrize('add_her_while_sampling', [False, True])
 @pytest.mark.parametrize('model_class', [SAC, TD3])
-def test_her(model_class):
+def test_her(model_class, add_her_while_sampling):
     HER = create_her(model_class)
     model = HER('MlpPolicy', 'parking-v0', n_sampled_goal=4,
                 goal_selection_strategy='future', policy_kwargs=dict(net_arch=[256,256,256]),

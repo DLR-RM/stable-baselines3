@@ -241,6 +241,10 @@ class HindsightExperienceReplayBuffer(BaseBuffer):
                                           self.n_envs,) + self.obs_shape, dtype=np.float32)
             # No need next_observations if transitions are being stored as episodes
 
+            self.n_episode_steps = np.zeros(self.buffer_size//self.max_episode_len)
+            # for variable sized episodes, episode will be stored with zero padding
+            # This variable keeps track of where the episode actually ended
+
         self.actions = np.zeros((*batch_shape, self.n_envs, self.action_dim), dtype=np.float32)
         self.rewards = np.zeros((*batch_shape, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((*batch_shape, self.n_envs), dtype=np.float32)
@@ -298,14 +302,20 @@ class HindsightExperienceReplayBuffer(BaseBuffer):
                                  "please use one of {}".format(list(GoalSelectionStrategy)))
 
             episode_inds = batch_inds  # renaming for better clarity
+            max_timestep_inds = self.n_episode_steps[episode_inds]
             batch_size = len(episode_inds)
-            timestep_inds = np.random.randint(self.max_episode_len, size=batch_size)
+            # timestep_inds = np.random.randint(self.max_episode_len, size=batch_size) # old
+            timestep_inds = np.floor(np.random.uniform(max_timestep_inds)).astype(int)  # new
+            # randint does not support array, using np.uniform with floor instead
 
             # Select future time indexes proportional with probability future_p. These
             # will be used for HER replay by substituting in future goals.
             her_inds = np.where(np.random.uniform(size=batch_size) < future_p)
-            future_offset = np.random.uniform(size=batch_size) * (self.max_episode_len - timestep_inds)
+            # future_offset = np.random.uniform(size=batch_size) * (self.max_episode_len - timestep_inds) # old
+            future_offset = np.random.uniform(size=batch_size) * (max_timestep_inds - timestep_inds) # new
+
             future_offset = future_offset.astype(int)
+
             future_t = (timestep_inds + 1 + future_offset)[her_inds]
 
             # Replace goal with achieved goal but only for the previously-selected
@@ -357,12 +367,8 @@ class HindsightExperienceReplayBuffer(BaseBuffer):
             # create a set of artificial transitions
             for transition_idx, transition in enumerate(self.episode_transitions):
 
-                obs_t, obs_tp1, action, reward, done = transition
+                obs_t, obs_tp1, action, reward, done = transition # BEGIN CHECK
                 self._add_transition(obs_t, obs_tp1, action, reward, done)
-                self.pos += 1
-                if self.pos == self.buffer_size:
-                    self.full = True
-                    self.pos = 0
 
                 # We cannot sample a goal from the future in the last step of an episode
                 if (transition_idx == len(self.episode_transitions) - 1 and
@@ -371,7 +377,7 @@ class HindsightExperienceReplayBuffer(BaseBuffer):
 
                 # Sampled n goals per transition, where n is `n_sampled_goal`
                 # this is called k in the paper
-                sampled_goals = self._sample_achieved_goals(self.episode_transitions, transition_idx)
+                sampled_goals = self._sample_achieved_goals(self.episode_transitions, transition_idx) # CHECK
                 # For each sampled goals, store a new transition
                 for goal in sampled_goals:
                     # Copy transition to avoid modifying the original one
@@ -394,31 +400,40 @@ class HindsightExperienceReplayBuffer(BaseBuffer):
                     obs, next_obs = map(self.env.convert_dict_to_obs, (obs_dict, next_obs_dict))
 
                     # Add artificial transition to the replay buffer
-                    self._add_transition(obs_t, obs_tp1, action, reward, done)
+                    self._add_transition(obs, next_obs, action, reward, done)
         else:
 
             episode_transitions_zipped = [np.array(item) for item in list(zip(*self.episode_transitions))]
             obs_t, obs_tp1, action, reward, done = episode_transitions_zipped
             self._add_transition(obs_t, obs_tp1, action, reward, done)
-            self.pos += 1  # Here self.pos signifies number of episodes stored not transitions
-
-            if self.pos == self.buffer_size//self.max_episode_len:
-                self.full = True
-                self.pos = 0
 
     def _add_transition(self, obs, next_obs, action, reward, done):
-
-        # Add to the replay buffer
-        self.actions[self.pos] = np.array(action).copy()
-        self.rewards[self.pos] = np.array(reward).copy()
-        self.dones[self.pos] = np.array(done).copy()
 
         if not self.add_her_while_sampling:
             self.observations[self.pos] = np.array(obs).copy()
             self.next_observations[self.pos] = np.array(next_obs).copy()
+            self.actions[self.pos] = np.array(action).copy()
+            self.rewards[self.pos] = np.array(reward).copy()
+            self.dones[self.pos] = np.array(done).copy()
+
+            self.pos += 1
+            if self.pos == self.buffer_size:
+                self.full = True
+                self.pos = 0
         else:
-            self.observations[self.pos] = np.append(np.array(obs).copy(),
-                                                    np.array(next_obs[np.newaxis, -1].copy()), axis=0)
+            len_episode = len(done)  # TODO: Does this handle all situations?
+            self.observations[self.pos, :len_episode+1] = np.append(np.array(obs).copy(),
+                                                        np.array(next_obs[np.newaxis, -1].copy()), axis=0)
+            self.actions[self.pos, :len_episode] = np.array(action).copy()
+            self.rewards[self.pos, :len_episode] = np.array(reward).copy()
+            self.dones[self.pos, :len_episode] = np.array(done).copy()
+
+            self.n_episode_steps[self.pos] = len_episode
+
+            self.pos += 1
+            if self.pos == self.buffer_size // self.max_episode_len:
+                self.full = True
+                self.pos = 0
 
     def _sample_achieved_goals(self, episode_transitions, transition_idx):
         """

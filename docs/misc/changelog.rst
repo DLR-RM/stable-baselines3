@@ -3,6 +3,30 @@
 Changelog
 ==========
 
+Pre-Release 0.8.0a0 (WIP)
+------------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+- ``save_replay_buffer`` now receives as argument the file path instead of the folder path (@tirafesi)
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed a bug in the ``close()`` method of ``SubprocVecEnv``, causing wrappers further down in the wrapper stack to not be closed. (@NeoExtended)
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+- Updated notebook links
+
 
 Pre-Release 0.7.0 (2020-06-10)
 ------------------------------
@@ -60,6 +84,7 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Added a paragraph on "MlpPolicy"/"CnnPolicy" and policy naming scheme under "Developer Guide"
 - Fixed second-level listing in changelog
+
 
 Pre-Release 0.6.0 (2020-06-01)
 ------------------------------
@@ -303,3 +328,4 @@ And all the contributors:
 @Miffyli @dwiel @miguelrass @qxcv @jaberkow @eavelardev @ruifeng96150 @pedrohbtp @srivatsankrishnan @evilsocket
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
+@tirafesi

@@ -89,7 +89,7 @@ class HindsightExperienceReplayBuffer(BaseBuffer):
                                           self.n_envs,) + self.obs_shape, dtype=np.float32)
             # No need next_observations variable if transitions are being stored as episodes
 
-            self.n_episode_steps = np.zeros(self.buffer_size // self.max_episode_len)
+            self.n_episode_steps = np.zeros(self.buffer_size // self.max_episode_len, dtype=np.int32)
             # for variable sized episodes, episode will be stored with zero padding
             # This variable keeps track of where the episode actually ended
             # Large part of buffer is being wasted if most episodes don't run to max_episode_len
@@ -138,43 +138,47 @@ class HindsightExperienceReplayBuffer(BaseBuffer):
             '''
             Sampling inspired by https://github.com/openai/baselines/blob/master/baselines/her/her_sampler.py
             '''
+            batch_size = len(batch_inds)
+            her_inds = np.where(np.random.uniform(size=batch_size) < 1 - (1. / (1 + self.n_sampled_goal)))
 
-            # TODO: Implement modes other than future
+            observations_dict = self.env.convert_obs_to_dict(self.observations[batch_inds])
+            hindsight_episode_ags = observations_dict.copy()['achieved_goal'][her_inds]
+            # for all strategies except 'random', hindsight goals will be taken from same episode
+            
+            max_timestep_inds = self.n_episode_steps[batch_inds]
+            timestep_inds = np.floor(np.random.uniform(max_timestep_inds)).astype(int)
+            # randint does not support array, using np.uniform with floor instead
+
             if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
-                future_p = 1 - (1. / (1 + self.n_sampled_goal))
+                future_offset = np.random.uniform(size=batch_size) * (max_timestep_inds - timestep_inds)
+                future_offset = future_offset.astype(int)
+                desired_goal_timestep_inds = (timestep_inds + 1 + future_offset)[her_inds]
+
             elif self.goal_selection_strategy == GoalSelectionStrategy.FINAL:
-                raise NotImplementedError
-            # future_t is always last timestep. Rest of code is same
+                desired_goal_timestep_inds = max_timestep_inds[her_inds]
+                
             elif self.goal_selection_strategy == GoalSelectionStrategy.EPISODE:
-                raise NotImplementedError
-            # future_t is random value from 0 to last timestep
+                desired_goal_timestep_inds = (np.random.uniform(size=batch_size) * max_timestep_inds)[her_inds]
+                desired_goal_timestep_inds = desired_goal_timestep_inds.astype(int)
+
             elif self.goal_selection_strategy == GoalSelectionStrategy.RANDOM:
-                raise NotImplementedError
-            # sample second set of episode + timestep indices, use those ag's as dg's for the first set...
+                full_idx = self.buffer_size // self.max_episode_len
+                upper_bound = full_idx if self.full else self.pos
+                hindsight_episode_inds = np.random.randint(0, upper_bound, size=len(her_inds))
+                random_episode_max_timestep_inds = self.n_episode_steps[hindsight_episode_inds]
+                desired_goal_timestep_inds = np.floor(np.random.uniform(random_episode_max_timestep_inds))
+                desired_goal_timestep_inds = desired_goal_timestep_inds.astype(int)
+
+                hindsight_episode_ags = self.env.convert_obs_to_dict(self.observations[hindsight_episode_inds])
+                hindsight_episode_ags = hindsight_episode_ags['achieved_goal']
             else:
                 raise ValueError("Invalid goal selection strategy,"
                                  "please use one of {}".format(list(GoalSelectionStrategy)))
 
-            episode_inds = batch_inds  # renaming for better clarity
-            max_timestep_inds = self.n_episode_steps[episode_inds]
-            batch_size = len(episode_inds)
-            timestep_inds = np.floor(np.random.uniform(max_timestep_inds)).astype(int)
-            # randint does not support array, using np.uniform with floor instead
+            hindsight_goals = hindsight_episode_ags[np.arange(hindsight_episode_ags.shape[0]),
+                                                    desired_goal_timestep_inds, np.newaxis]
 
-            # Select future time indexes proportional with probability future_p. These
-            # will be used for HER replay by substituting in future goals.
-            her_inds = np.where(np.random.uniform(size=batch_size) < future_p)
-            future_offset = np.random.uniform(size=batch_size) * (max_timestep_inds - timestep_inds)
-            future_offset = future_offset.astype(int)
-            future_t = (timestep_inds + 1 + future_offset)[her_inds]
-
-            # Replace goal with achieved goal but only for the previously-selected
-            # HER transitions (as defined by her_indexes). For the other transitions,
-            # keep the original goal.
-
-            observations_dict = self.env.convert_obs_to_dict(self.observations[episode_inds])
-            future_ag = observations_dict['achieved_goal'][her_inds, future_t, np.newaxis][0]
-            observations_dict['desired_goal'][her_inds, :] = future_ag
+            observations_dict['desired_goal'][her_inds] = hindsight_goals
 
             rewards = self.env.compute_reward(observations_dict['achieved_goal'],
                                               observations_dict['desired_goal'], None)[:, 1:].astype(np.float32)
@@ -182,9 +186,9 @@ class HindsightExperienceReplayBuffer(BaseBuffer):
 
             obs = self.env.convert_dict_to_obs(observations_dict)
             data = (self._normalize_obs(obs[np.arange(obs.shape[0]), timestep_inds][:, 0], env),
-                    self.actions[episode_inds][np.arange(batch_size), timestep_inds][:, 0],
+                    self.actions[batch_inds][np.arange(batch_size), timestep_inds][:, 0],
                     self._normalize_obs(obs[np.arange(obs.shape[0]), timestep_inds + 1][:, 0], env),
-                    self.dones[episode_inds][np.arange(batch_size), timestep_inds],
+                    self.dones[batch_inds][np.arange(batch_size), timestep_inds],
                     self._normalize_reward(rewards[np.arange(batch_size), timestep_inds], env))
 
             return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
@@ -325,7 +329,12 @@ class HindsightExperienceReplayBuffer(BaseBuffer):
             selected_transition = episode_transitions[selected_idx]
         elif self.goal_selection_strategy == GoalSelectionStrategy.RANDOM:
             # Random goal achieved, from the entire replay buffer
-            raise NotImplementedError  
+            selected_idx = np.random.choice(np.arange(len(self.observations)))
+            obs = self.observations[selected_idx]
+            next_obs = self.next_observations[selected_idx]
+            reward = self.rewards[selected_idx]
+            done = self.dones[selected_idx]
+            selected_transition = (obs, next_obs, reward, done)
         else:
             raise ValueError("Invalid goal selection strategy,"
                              "please use one of {}".format(list(GoalSelectionStrategy)))

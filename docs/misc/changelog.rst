@@ -8,32 +8,8 @@ Pre-Release 0.8.0a0 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-- ``save_replay_buffer`` now receives as argument the file path instead of the folder path (@tirafesi)
-
-New Features:
-^^^^^^^^^^^^^
-
-Bug Fixes:
-^^^^^^^^^^
-- Fixed a bug in the ``close()`` method of ``SubprocVecEnv``, causing wrappers further down in the wrapper stack to not be closed. (@NeoExtended)
-
-Deprecations:
-^^^^^^^^^^^^^
-
-Others:
-^^^^^^^
-
-Documentation:
-^^^^^^^^^^^^^^
-- Updated notebook links
-
-
-Pre-Release 0.8.0a0 (WIP)
-------------------------------
-
-Breaking Changes:
-^^^^^^^^^^^^^^^^^
 - ``AtariWrapper`` and other Atari wrappers were updated to match SB2 ones
+- ``save_replay_buffer`` now receives as argument the file path instead of the folder path (@tirafesi)
 
 New Features:
 ^^^^^^^^^^^^^
@@ -44,17 +20,21 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed a bug in the ``close()`` method of ``SubprocVecEnv``, causing wrappers further down in the wrapper stack to not be closed. (@NeoExtended)
 
 Deprecations:
 ^^^^^^^^^^^^^
 
 Others:
 ^^^^^^^
-- Refactored Off-Policy algorithm to share the same ``.learn()`` method
+- Refactored off-policy algorithm to share the same ``.learn()`` method
+- Split the ``collect_rollout()`` method for off-policy algorithms
+- Added ``_on_step()`` for off-policy base class
 - Optimized replay buffer size by removing the need of ``next_observations`` numpy array
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Updated notebook links
 
 
 
@@ -65,7 +45,6 @@ Pre-Release 0.7.0 (2020-06-10)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-- ``AtariWrapper`` and other Atari wrappers were updated to match SB2 ones
 - ``render()`` method of ``VecEnvs`` now only accept one argument: ``mode``
 - Created new file common/torch_layers.py, similar to SB refactoring
 
@@ -137,7 +116,7 @@ New Features:
 - Added env checker (Sync with Stable Baselines)
 - Added ``VecCheckNan`` and ``VecVideoRecorder`` (Sync with Stable Baselines)
 - Added determinism tests
-- Added ``cmd_utils`` and ``atari_wrappers``
+- Added ``cmd_util`` and ``atari_wrappers``
 - Added support for ``MultiDiscrete`` and ``MultiBinary`` observation spaces (@rolandgvc)
 - Added ``MultiCategorical`` and ``Bernoulli`` distributions for PPO/A2C (@rolandgvc)
 - Added support for logging to tensorboard (@rolandgvc)

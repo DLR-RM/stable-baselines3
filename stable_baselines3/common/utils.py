@@ -91,19 +91,24 @@ def get_schedule_fn(value_schedule: Union[Callable, float]) -> Callable:
 
 def get_linear_fn(start: float, end: float, end_fraction: float) -> Callable:
     """
-    Create a function that interpolates linearly between start and end for step between  0 and final_step
-    It is useful for exploration schedule
-    :params start: (float) value to start with if progress = 1
-    :params end: (float) value to end with if progress = 0
-    :params end_fraction: (float) fraction of progress where end is reached e.g 0.1 then end is reached after 10%
+    Create a function that interpolates linearly between start and end
+    between ``progress_remaining`` = 1 and ``progress_remaining`` = ``end_fraction``.
+    This is used in DQN for linearly annealing the exploration fraction
+    (epsilon for the epsilon-greedy strategy).
+
+    :params start: (float) value to start with if ``progress_remaining`` = 1
+    :params end: (float) value to end with if ``progress_remaining`` = 0
+    :params end_fraction: (float) fraction of ``progress_remaining``
+        where end is reached e.g 0.1 then end is reached after 10%
+        of the complete training process.
     :return: (Callable)
     """
 
-    def func(progress: float) -> float:
-        if (1 - progress) > end_fraction:
+    def func(progress_remaining: float) -> float:
+        if (1 - progress_remaining) > end_fraction:
             return end
         else:
-            return start + (1 - progress) * (end - start) / end_fraction
+            return start + (1 - progress_remaining) * (end - start) / end_fraction
 
     return func
 

@@ -1,5 +1,4 @@
 import time
-import os
 import pickle
 import warnings
 from typing import Union, Type, Optional, Dict, Any, Callable, List, Tuple
@@ -237,7 +236,71 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         """
         raise NotImplementedError()
 
-    def collect_rollouts(self,  # noqa: C901
+    def _sample_action(self, learning_starts: int,
+                       action_noise: Optional[ActionNoise] = None) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Sample an action according to the exploration policy.
+        This is either done by sampling the probability distribution of the policy,
+        or sampling a random action (from a uniform distribution over the action space)
+        or by adding noise to the deterministic output.
+
+        :param action_noise: (Optional[ActionNoise]) Action noise that will be used for exploration
+            Required for deterministic policy (e.g. TD3). This can also be used
+            in addition to the stochastic policy for SAC.
+        :param learning_starts: (int) Number of steps before learning for the warm-up phase.
+        :return: (Tuple[np.ndarray, np.ndarray]) action to take in the environment
+            and scaled action that will be stored in the replay buffer.
+            The two differs when the action space is not normalized (bounds are not [-1, 1]).
+        """
+        # Select action randomly or according to policy
+        if self.num_timesteps < learning_starts and not (self.use_sde and self.use_sde_at_warmup):
+            # Warmup phase
+            unscaled_action = np.array([self.action_space.sample()])
+        else:
+            # Note: we assume that the policy uses tanh to scale the action
+            # We use non-deterministic action in the case of SAC, for TD3, it does not matter
+            unscaled_action, _ = self.predict(self._last_obs, deterministic=False)
+
+        # Rescale the action from [low, high] to [-1, 1]
+        if isinstance(self.action_space, gym.spaces.Box):
+            scaled_action = self.policy.scale_action(unscaled_action)
+
+            # Add noise to the action (improve exploration)
+            if action_noise is not None:
+                # NOTE: in the original implementation of TD3, the noise was applied to the unscaled action
+                # Update(October 2019): Not anymore
+                scaled_action = np.clip(scaled_action + action_noise(), -1, 1)
+
+            # We store the scaled action in the buffer
+            buffer_action = scaled_action
+            action = self.policy.unscale_action(scaled_action)
+        else:
+            # Discrete case, no need to normalize or clip
+            buffer_action = unscaled_action
+            action = buffer_action
+        return action, buffer_action
+
+    def _dump_logs(self) -> None:
+        """
+        Write log.
+        """
+        fps = int(self.num_timesteps / (time.time() - self.start_time))
+        logger.record("time/episodes", self._episode_num, exclude="tensorboard")
+        if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
+            logger.record('rollout/ep_rew_mean', safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
+            logger.record('rollout/ep_len_mean', safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
+        logger.record("time/fps", fps)
+        logger.record('time/time_elapsed', int(time.time() - self.start_time), exclude="tensorboard")
+        logger.record("time/total timesteps", self.num_timesteps, exclude="tensorboard")
+        if self.use_sde:
+            logger.record("train/std", (self.actor.get_std()).mean().item())
+
+        if len(self.ep_success_buffer) > 0:
+            logger.record('rollout/success rate', safe_mean(self.ep_success_buffer))
+        # Pass the number of timesteps for tensorboard
+        logger.dump(step=self.num_timesteps)
+
+    def collect_rollouts(self,
                          env: VecEnv,
                          callback: BaseCallback,
                          n_episodes: int = 1,
@@ -287,31 +350,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                     self.actor.reset_noise()
 
                 # Select action randomly or according to policy
-                if self.num_timesteps < learning_starts and not (self.use_sde and self.use_sde_at_warmup):
-                    # Warmup phase
-                    unscaled_action = np.array([self.action_space.sample()])
-                else:
-                    # Note: we assume that the policy uses tanh to scale the action
-                    # We use non-deterministic action in the case of SAC, for TD3, it does not matter
-                    unscaled_action, _ = self.predict(self._last_obs, deterministic=False)
-
-                # Rescale the action from [low, high] to [-1, 1]
-                if isinstance(self.action_space, gym.spaces.Box):
-                    scaled_action = self.policy.scale_action(unscaled_action)
-
-                    # Add noise to the action (improve exploration)
-                    if action_noise is not None:
-                        # NOTE: in the original implementation of TD3, the noise was applied to the unscaled action
-                        # Update(October 2019): Not anymore
-                        scaled_action = np.clip(scaled_action + action_noise(), -1, 1)
-
-                    # We store the scaled action in the buffer
-                    buffer_action = scaled_action
-                    action = self.policy.unscale_action(scaled_action)
-                else:
-                    # Discrete case, no need to normalize or clip
-                    buffer_action = unscaled_action
-                    action = buffer_action
+                action, buffer_action = self._sample_action(learning_starts, action_noise)
 
                 # Rescale and perform action
                 new_obs, reward, done, infos = env.step(action)
@@ -359,21 +398,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
                 # Log training infos
                 if log_interval is not None and self._episode_num % log_interval == 0:
-                    fps = int(self.num_timesteps / (time.time() - self.start_time))
-                    logger.record("time/episodes", self._episode_num, exclude="tensorboard")
-                    if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
-                        logger.record('rollout/ep_rew_mean', safe_mean([ep_info['r'] for ep_info in self.ep_info_buffer]))
-                        logger.record('rollout/ep_len_mean', safe_mean([ep_info['l'] for ep_info in self.ep_info_buffer]))
-                    logger.record("time/fps", fps)
-                    logger.record('time/time_elapsed', int(time.time() - self.start_time), exclude="tensorboard")
-                    logger.record("time/total timesteps", self.num_timesteps, exclude="tensorboard")
-                    if self.use_sde:
-                        logger.record("train/std", (self.actor.get_std()).mean().item())
-
-                    if len(self.ep_success_buffer) > 0:
-                        logger.record('rollout/success rate', safe_mean(self.ep_success_buffer))
-                    # Pass the number of timesteps for tensorboard
-                    logger.dump(step=self.num_timesteps)
+                    self._dump_logs()
 
         mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
 

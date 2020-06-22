@@ -300,6 +300,14 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # Pass the number of timesteps for tensorboard
         logger.dump(step=self.num_timesteps)
 
+    def _on_step(self) -> None:
+        """
+        Method called after each step in the environment.
+        It is meant to trigger DQN target network update
+        but can be used for other purposes
+        """
+        pass
+
     def collect_rollouts(self,
                          env: VecEnv,
                          callback: BaseCallback,
@@ -384,6 +392,12 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 self.num_timesteps += 1
                 episode_timesteps += 1
                 total_steps += 1
+
+                # For DQN, check if the target network should be updated
+                # For SAC/TD3, the update is done as the same time as the gradient update
+                # see https://github.com/hill-a/stable-baselines/issues/900
+                self._on_step()
+
                 if 0 < n_steps <= total_steps:
                     break
 

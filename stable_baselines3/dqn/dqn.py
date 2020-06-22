@@ -122,6 +122,15 @@ class DQN(OffPolicyAlgorithm):
         self.q_net = self.policy.q_net
         self.q_net_target = self.policy.q_net_target
 
+    def _on_step(self):
+        """
+        Update the target network if needed.
+        This method is called in ``collect_rollout()`` after each step in the environment.
+        """
+        if self.num_timesteps % self.target_update_interval == 0:
+            for param, target_param in zip(self.q_net.parameters(), self.q_net_target.parameters()):
+                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+
     def train(self, gradient_steps: int, batch_size: int = 100) -> None:
         # Update learning rate and log exploration probability according to schedule
         self._update_learning_rate(self.policy.optimizer)
@@ -156,12 +165,6 @@ class DQN(OffPolicyAlgorithm):
 
             # Increase update counter
             self._n_updates += 1
-
-            # Update target networks - account for train_freq
-            target_update_interval = max(self.target_update_interval // self.train_freq, 1)
-            if self._n_updates % target_update_interval == 0:
-                for param, target_param in zip(self.q_net.parameters(), self.q_net_target.parameters()):
-                    target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
         logger.record("train/n_updates", self._n_updates, exclude='tensorboard')
 

@@ -26,6 +26,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Updated notebook links
+- Fixed a typo in the section of Enjoy a Trained Agent, in RL Baselines3 Zoo README.
 
 
 Pre-Release 0.7.0 (2020-06-10)

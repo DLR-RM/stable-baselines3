@@ -176,12 +176,44 @@ def json_to_data(json_string: str,
 
 
 @functools.singledispatch
-def save_to_zip_file(save_path: io.IOBase, data: Dict[str, Any] = None,
+def open_path(path, verbose=0) -> io.IOBase:
+    # capture the most generic and ensure it is an io.IOBase
+    assert isinstance(path, io.IOBase)
+    return path
+
+
+@open_path.register
+def open_path_str(path: str, verbose=0) -> io.IOBase:
+    return open_path(pathlib.Path(path), verbose=verbose)
+
+
+@open_path.register
+def open_path_pathlib(path: pathlib.Path, verbose=0) -> io.IOBase:
+    try:
+        if path.exists() and path.is_dir() and verbose == 2:
+            warnings.warn(f"Path {path} exists, will overwrite it.")
+        path = path.open("wb")
+    except IsADirectoryError:
+        warnings.warn(f"Path {path} is a folder. Will save instead to {path}_2")
+        path = pathlib.Path(f"{path}_2")
+    except FileNotFoundError:  # Occurs when the parent folder doesn't exist
+        warnings.warn(f"Path {path.parent} does not exist. Will create it.")
+        path.parent.mkdir(exist_ok=True, parents=True)
+
+    # if opening was successful uses the identity function
+    # if opening failed with IsADirectory|FileNotFound, calls open_path_pathlib
+    #   with corrections
+    return open_path(path)
+
+
+@functools.singledispatch
+def save_to_zip_file(save_path, data: Dict[str, Any] = None,
                      params: Dict[str, Any] = None, tensors: Dict[str, Any] = None) -> None:
     """
     Save a model to a zip archive.
 
     :param save_path: (Union[str, pathlib.Path, io.IOBase]) Where to store the model.
+        if save_path is a str or pathlib.Path ensures that the path actually exists.
     :param data: Class parameters being stored.
     :param params: Model parameters being stored expected to contain an entry for every
                    state_dict with its name and the state_dict.
@@ -209,13 +241,17 @@ def save_to_zip_file(save_path: io.IOBase, data: Dict[str, Any] = None,
 
 
 @save_to_zip_file.register
-def _save_to_zip_str(save_path: str, data: Dict[str, Any] = None,
-                     params: Dict[str, Any] = None, tensors: Dict[str, Any] = None) -> None:
+def save_to_zip_str(
+    save_path: str,
+    data: Dict[str, Any] = None,
+    params: Dict[str, Any] = None,
+    tensors: Dict[str, Any] = None,
+) -> None:
     save_to_zip_file(pathlib.Path(save_path), data, params, tensors)
 
 
 @save_to_zip_file.register
-def _save_to_zip_path(
+def save_to_zip_path(
     save_path: pathlib.Path,
     data: Dict[str, Any] = None,
     params: Dict[str, Any] = None,
@@ -225,18 +261,7 @@ def _save_to_zip_path(
     # Add .zip suffix if needed
     if save_path.suffix == "":
         save_path = pathlib.Path(f"{save_path}.zip")
-
-    try:
-        save_path = save_path.open("wb")
-    except IsADirectoryError:
-        warnings.warn(
-            f"Path {save_path} is a folder. Will save instead to {save_path}_2"
-        )
-        save_path = pathlib.Path(f"{save_path}_2")
-    except FileNotFoundError:  # Occurs when the parent folder doesn't exist
-        warnings.warn(f"Path {save_path.parent} does not exist. Will create it.")
-        save_path.parent.mkdir(exist_ok=True, parents=True)
-
+    save_path = open_path(save_path)
     save_to_zip_file(save_path, data, params, tensors)
 
 

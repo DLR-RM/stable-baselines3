@@ -182,12 +182,12 @@ def open_path(path, verbose=0, suffix=None) -> io.IOBase:
     return path
 
 
-@open_path.register
+@open_path.register(str)
 def open_path_str(path: str, verbose=0, suffix=None) -> io.IOBase:
     return open_path(pathlib.Path(path), verbose=verbose, suffix=suffix)
 
 
-@open_path.register
+@open_path.register(pathlib.Path)
 def open_path_pathlib(path: pathlib.Path, verbose=0, suffix=None) -> io.IOBase:
     try:
         if suffix and path.suffix != f".{suffix}":
@@ -244,7 +244,6 @@ def save_to_zip_file(save_path, data: Dict[str, Any] = None,
                     th.save(dict_, param_file)
 
 
-@functools.singledispatch
 def save_to_pkl(path, obj, verbose=0) -> None:
     with open_path(path, verbose=verbose, suffix="pkl") as file_handler:
         # type linting fails because pickle.dump

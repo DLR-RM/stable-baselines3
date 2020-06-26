@@ -7,10 +7,11 @@ import os
 import json
 import base64
 import functools
-from typing import Dict, Any, Tuple, Optional
+from typing import Dict, Any, Tuple, Optional, cast
 import warnings
 import zipfile
 import pathlib
+import pickle
 
 import torch as th
 import cloudpickle
@@ -176,19 +177,21 @@ def json_to_data(json_string: str,
 
 
 @functools.singledispatch
-def open_path(path, verbose=0) -> io.IOBase:
+def open_path(path, verbose=0, suffix=None) -> io.IOBase:
     # capture the most generic and assume it is correct
     return path
 
 
 @open_path.register
-def open_path_str(path: str, verbose=0) -> io.IOBase:
-    return open_path(pathlib.Path(path), verbose=verbose)
+def open_path_str(path: str, verbose=0, suffix=None) -> io.IOBase:
+    return open_path(pathlib.Path(path), verbose=verbose, suffix=suffix)
 
 
 @open_path.register
-def open_path_pathlib(path: pathlib.Path, verbose=0) -> io.IOBase:
+def open_path_pathlib(path: pathlib.Path, verbose=0, suffix=None) -> io.IOBase:
     try:
+        if suffix and path.suffix != f".{suffix}":
+            path = pathlib.Path(f"{path}.{suffix}")
         if path.exists() and not path.is_dir() and verbose == 2:
             warnings.warn(f"Path {path} exists, will overwrite it.")
         path = path.open("wb")
@@ -205,9 +208,8 @@ def open_path_pathlib(path: pathlib.Path, verbose=0) -> io.IOBase:
     return open_path(path)
 
 
-@functools.singledispatch
 def save_to_zip_file(save_path, data: Dict[str, Any] = None,
-                     params: Dict[str, Any] = None, tensors: Dict[str, Any] = None) -> None:
+                     params: Dict[str, Any] = None, tensors: Dict[str, Any] = None, verbose=0) -> None:
     """
     Save a model to a zip archive.
 
@@ -217,8 +219,10 @@ def save_to_zip_file(save_path, data: Dict[str, Any] = None,
     :param params: Model parameters being stored expected to contain an entry for every
                    state_dict with its name and the state_dict.
     :param tensors: Extra tensor variables expected to contain name and value of tensors
+    :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information
     """
 
+    save_path = open_path(save_path, verbose=0, suffix="zip")
     # data/params can be None, so do not
     # try to serialize them blindly
     if data is not None:
@@ -226,6 +230,7 @@ def save_to_zip_file(save_path, data: Dict[str, Any] = None,
 
     # Create a zip-archive and write our objects there.
     # This is either a file-like object, or something wrong that will raise an error
+    save_path = cast(io.BytesIO, save_path)
     with zipfile.ZipFile(save_path, "w") as archive:
         # Do not try to save "None" elements
         if data is not None:
@@ -239,29 +244,13 @@ def save_to_zip_file(save_path, data: Dict[str, Any] = None,
                     th.save(dict_, param_file)
 
 
-@save_to_zip_file.register
-def save_to_zip_str(
-    save_path: str,
-    data: Dict[str, Any] = None,
-    params: Dict[str, Any] = None,
-    tensors: Dict[str, Any] = None,
-) -> None:
-    save_to_zip_file(pathlib.Path(save_path), data, params, tensors)
-
-
-@save_to_zip_file.register
-def save_to_zip_path(
-    save_path: pathlib.Path,
-    data: Dict[str, Any] = None,
-    params: Dict[str, Any] = None,
-    tensors: Dict[str, Any] = None,
-) -> None:
-
-    # Add .zip suffix if needed
-    if save_path.suffix == "":
-        save_path = pathlib.Path(f"{save_path}.zip")
-    save_path = open_path(save_path)
-    save_to_zip_file(save_path, data, params, tensors)
+@functools.singledispatch
+def save_to_pkl(path, obj, verbose=0) -> None:
+    with open_path(path, verbose=verbose, suffix="pkl") as file_handler:
+        # type linting fails because pickle.dump
+        # isn't comprehensive enough with the types it accepts
+        file_handler = cast(io.BytesIO, file_handler)
+        pickle.dump(obj, file_handler)
 
 
 def load_from_zip_file(load_path: str, load_data: bool = True) -> (Tuple[Optional[Dict[str, Any]],

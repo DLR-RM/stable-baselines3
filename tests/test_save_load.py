@@ -1,6 +1,7 @@
 import os
 import warnings
 from copy import deepcopy
+import pathlib
 
 import pytest
 import gym
@@ -155,13 +156,13 @@ def test_exclude_include_saved_params(tmp_path, model_class):
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DQN])
 def test_save_load_replay_buffer(tmp_path, model_class):
-    replay_path = tmp_path / 'replay_buffer.pkl'
+    path = pathlib.Path("logs/replay_buffer.pkl")
     model = model_class('MlpPolicy', select_env(model_class), buffer_size=1000)
     model.learn(500)
     old_replay_buffer = deepcopy(model.replay_buffer)
-    model.save_replay_buffer(replay_path)
+    model.save_replay_buffer(path)
     model.replay_buffer = None
-    model.load_replay_buffer(replay_path)
+    model.load_replay_buffer(path)
 
     assert np.allclose(old_replay_buffer.observations, model.replay_buffer.observations)
     assert np.allclose(old_replay_buffer.actions, model.replay_buffer.actions)
@@ -173,7 +174,7 @@ def test_save_load_replay_buffer(tmp_path, model_class):
                                old_replay_buffer.actions, old_replay_buffer.rewards, old_replay_buffer.dones)
 
     # clear file from os
-    os.remove(replay_path)
+    os.remove(f"{path}.pkl")
 
 
 @pytest.mark.parametrize("model_class", [DQN, SAC, TD3])

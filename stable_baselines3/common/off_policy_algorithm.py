@@ -18,7 +18,7 @@ from stable_baselines3.common.type_aliases import GymEnv, RolloutReturn, MaybeCa
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.buffers import ReplayBuffer
-from stable_baselines3.common.save_util import open_path
+from stable_baselines3.common.save_util import save_to_pkl
 
 
 class OffPolicyAlgorithm(BaseAlgorithm):
@@ -147,11 +147,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             if path is a str or pathlib.Path, the path is automatically created if necessary.
         """
         assert self.replay_buffer is not None, "The replay buffer is not defined"
-        with open_path(path, verbose=self.verbose) as file_handler:
-            # type linting fails because pickle.dump
-            # isn't comprehensive enough with the types it accepts
-            file_handler = cast(io.BytesIO, file_handler)
-            pickle.dump(self.replay_buffer, file_handler)
+        save_to_pkl(path, self.replay_buffer)
 
     def load_replay_buffer(self, path: Union[str, pathlib.Path]) -> None:
         """
@@ -160,6 +156,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         :param path: (Union[str, pathlib.Path]) Path to the pickled replay buffer.
         """
         path = pathlib.Path(path)
+        if path.suffix == "":
+            path = pathlib.Path(f"{path}.pkl")
         with path.open("rb") as file_handler:
             self.replay_buffer = pickle.load(file_handler)
         assert isinstance(self.replay_buffer, ReplayBuffer), 'The replay buffer must inherit from ReplayBuffer class'

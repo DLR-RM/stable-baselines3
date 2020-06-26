@@ -16,7 +16,7 @@ from stable_baselines3.common.utils import (set_random_seed, get_schedule_fn, up
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize, VecTransposeImage
 from stable_baselines3.common.preprocessing import is_image_space
 from stable_baselines3.common.save_util import (recursive_getattr, recursive_setattr, save_to_zip_file,
-                                                load_from_zip_file, open_path)
+                                                load_from_zip_file)
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
 from stable_baselines3.common.monitor import Monitor
@@ -531,5 +531,4 @@ class BaseAlgorithm(ABC):
             # Retrieve state dict
             params_to_save[name] = attr.state_dict()
 
-        path = open_path(path, verbose=self.verbose)
         save_to_zip_file(path, data=data, params=params_to_save, tensors=tensors)

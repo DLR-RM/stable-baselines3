@@ -255,7 +255,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             # Warmup phase
             unscaled_action = np.array([self.action_space.sample()])
         else:
-            # Note: we assume that the policy uses tanh to scale the action
+            # Note: when using continuous actions,
+            # we assume that the policy uses tanh to scale the action
             # We use non-deterministic action in the case of SAC, for TD3, it does not matter
             unscaled_action, _ = self.predict(self._last_obs, deterministic=False)
 
@@ -265,8 +266,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
             # Add noise to the action (improve exploration)
             if action_noise is not None:
-                # NOTE: in the original implementation of TD3, the noise was applied to the unscaled action
-                # Update(October 2019): Not anymore
                 scaled_action = np.clip(scaled_action + action_noise(), -1, 1)
 
             # We store the scaled action in the buffer

@@ -476,7 +476,12 @@ class BaseAlgorithm(ABC):
         """
         return ["policy", "device", "env", "eval_env", "replay_buffer", "rollout_buffer", "_vec_normalize_env"]
 
-    def save(self, path: Union[str, pathlib.Path], exclude: Optional[List[str]] = None, include: Optional[List[str]] = None) -> None:
+    def save(
+        self,
+        path: Union[str, pathlib.Path],
+        exclude: Optional[List[str]] = None,
+        include: Optional[List[str]] = None,
+    ) -> None:
         """
         Save all the attributes of the object and the model parameters in a zip-file.
 

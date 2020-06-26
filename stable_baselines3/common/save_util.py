@@ -2,12 +2,12 @@
 Save util taken from stable_baselines
 used to serialize data (class parameters) of model classes
 """
-import os
 import io
+import os
 import json
 import base64
 import functools
-from typing import Dict, Any, Tuple, Optional, Union
+from typing import Dict, Any, Tuple, Optional
 import warnings
 import zipfile
 import pathlib
@@ -193,7 +193,7 @@ def save_to_zip_file(save_path: io.IOBase, data: Dict[str, Any] = None,
     if data is not None:
         serialized_data = data_to_json(data)
 
-    # Create a zip-archive and write our objects there. 
+    # Create a zip-archive and write our objects there.
     # This is either a file-like object, or something wrong that will raise an error
     with zipfile.ZipFile(save_path, "w") as archive:
         # Do not try to save "None" elements

@@ -1,6 +1,7 @@
 import time
 import pickle
 import warnings
+import pathlib
 from typing import Union, Type, Optional, Dict, Any, Callable, List, Tuple
 
 import gym
@@ -126,7 +127,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # For gSDE only
         self.use_sde_at_warmup = use_sde_at_warmup
 
-    def _setup_model(self):
+    def _setup_model(self) -> None:
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
         self.replay_buffer = ReplayBuffer(self.buffer_size, self.observation_space,
@@ -136,23 +137,37 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                                         self.lr_schedule, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
 
-    def save_replay_buffer(self, path: str):
+    def save_replay_buffer(self, path: Union[str, pathlib.Path]) -> None:
         """
         Save the replay buffer as a pickle file.
 
-        :param path: (str) Path to the file where the replay buffer should be saved
+        :param path: (Union[str,pathlib.Path]) Path to the file where the replay buffer should be saved
         """
         assert self.replay_buffer is not None, "The replay buffer is not defined"
-        with open(path, 'wb') as file_handler:
-            pickle.dump(self.replay_buffer, file_handler)
+        path = pathlib.Path(path)
 
-    def load_replay_buffer(self, path: str):
+        try:
+            if path.exists() and path.is_file() and self.verbose == 2:
+                warnings.warn(f"File {path} exists. Will overwrite it.")
+            with path.open("wb") as file_handler:
+                pickle.dump(self.replay_buffer, file_handler)
+        except IsADirectoryError:
+            warnings.warn(f"Path {path} is a folder. Will save instead to {path}_2")
+            path = pathlib.Path(f"{path}_2")
+            self.save_replay_buffer(path)
+        except FileNotFoundError:  # Occurs when the parent folder doesn't exist
+            warnings.warn(f"Path {path} does not exist. Will create it.")
+            path.parent.mkdir(exist_ok=True, parents=True)
+            self.save_replay_buffer(path)
+
+    def load_replay_buffer(self, path: Union[str, pathlib.Path]) -> None:
         """
         Load a replay buffer from a pickle file.
 
-        :param path: (str) Path to the pickled replay buffer.
+        :param path: (Union[str, pathlib.Path]) Path to the pickled replay buffer.
         """
-        with open(path, 'rb') as file_handler:
+        path = pathlib.Path(path)
+        with path.open("rb") as file_handler:
             self.replay_buffer = pickle.load(file_handler)
         assert isinstance(self.replay_buffer, ReplayBuffer), 'The replay buffer must inherit from ReplayBuffer class'
 

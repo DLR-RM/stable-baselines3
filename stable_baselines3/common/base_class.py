@@ -2,6 +2,7 @@ import time
 from typing import Union, Type, Optional, Dict, Any, List, Tuple, Callable
 from abc import ABC, abstractmethod
 from collections import deque
+import pathlib
 
 import gym
 import torch as th
@@ -291,7 +292,7 @@ class BaseAlgorithm(ABC):
         return self.policy.predict(observation, state, mask, deterministic)
 
     @classmethod
-    def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs):
+    def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs) -> 'BaseAlgorithm':
         """
         Load the model from a zip-file
 
@@ -475,11 +476,11 @@ class BaseAlgorithm(ABC):
         """
         return ["policy", "device", "env", "eval_env", "replay_buffer", "rollout_buffer", "_vec_normalize_env"]
 
-    def save(self, path: str, exclude: Optional[List[str]] = None, include: Optional[List[str]] = None) -> None:
+    def save(self, path: Union[str, pathlib.Path], exclude: Optional[List[str]] = None, include: Optional[List[str]] = None) -> None:
         """
         Save all the attributes of the object and the model parameters in a zip-file.
 
-        :param path: path to the file where the rl agent should be saved
+        :param (Union[str,pathlib.Path]): path to the file where the rl agent should be saved
         :param exclude: name of parameters that should be excluded in addition to the default one
         :param include: name of parameters that might be excluded but should be included anyway
         """

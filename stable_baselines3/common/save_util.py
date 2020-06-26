@@ -7,9 +7,10 @@ import io
 import json
 import base64
 import functools
-from typing import Dict, Any, Tuple, Optional
+from typing import Dict, Any, Tuple, Optional, Union
 import warnings
 import zipfile
+import pathlib
 
 import torch as th
 import cloudpickle
@@ -174,12 +175,13 @@ def json_to_data(json_string: str,
     return return_data
 
 
-def save_to_zip_file(save_path: str, data: Dict[str, Any] = None,
+@functools.singledispatch
+def save_to_zip_file(save_path: io.IOBase, data: Dict[str, Any] = None,
                      params: Dict[str, Any] = None, tensors: Dict[str, Any] = None) -> None:
     """
     Save a model to a zip archive.
 
-    :param save_path: Where to store the model.
+    :param save_path: (Union[str, pathlib.Path, io.IOBase]) Where to store the model.
     :param data: Class parameters being stored.
     :param params: Model parameters being stored expected to contain an entry for every
                    state_dict with its name and the state_dict.
@@ -191,15 +193,8 @@ def save_to_zip_file(save_path: str, data: Dict[str, Any] = None,
     if data is not None:
         serialized_data = data_to_json(data)
 
-    # Check postfix if save_path is a string
-    if isinstance(save_path, str):
-        _, ext = os.path.splitext(save_path)
-        if ext == "":
-            save_path += ".zip"
-
-    # Create a zip-archive and write our objects
-    # there. This works when save_path is either
-    # str or a file-like
+    # Create a zip-archive and write our objects there. 
+    # This is either a file-like object, or something wrong that will raise an error
     with zipfile.ZipFile(save_path, "w") as archive:
         # Do not try to save "None" elements
         if data is not None:
@@ -211,6 +206,38 @@ def save_to_zip_file(save_path: str, data: Dict[str, Any] = None,
             for file_name, dict_ in params.items():
                 with archive.open(file_name + '.pth', mode="w") as param_file:
                     th.save(dict_, param_file)
+
+
+@save_to_zip_file.register
+def _save_to_zip_str(save_path: str, data: Dict[str, Any] = None,
+                     params: Dict[str, Any] = None, tensors: Dict[str, Any] = None) -> None:
+    save_to_zip_file(pathlib.Path(save_path), data, params, tensors)
+
+
+@save_to_zip_file.register
+def _save_to_zip_path(
+    save_path: pathlib.Path,
+    data: Dict[str, Any] = None,
+    params: Dict[str, Any] = None,
+    tensors: Dict[str, Any] = None,
+) -> None:
+
+    # Add .zip suffix if needed
+    if save_path.suffix == "":
+        save_path = pathlib.Path(f"{save_path}.zip")
+
+    try:
+        save_path = save_path.open("wb")
+    except IsADirectoryError:
+        warnings.warn(
+            f"Path {save_path} is a folder. Will save instead to {save_path}_2"
+        )
+        save_path = pathlib.Path(f"{save_path}_2")
+    except FileNotFoundError:  # Occurs when the parent folder doesn't exist
+        warnings.warn(f"Path {save_path.parent} does not exist. Will create it.")
+        save_path.parent.mkdir(exist_ok=True, parents=True)
+
+    save_to_zip_file(save_path, data, params, tensors)
 
 
 def load_from_zip_file(load_path: str, load_data: bool = True) -> (Tuple[Optional[Dict[str, Any]],

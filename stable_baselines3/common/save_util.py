@@ -177,8 +177,7 @@ def json_to_data(json_string: str,
 
 @functools.singledispatch
 def open_path(path, verbose=0) -> io.IOBase:
-    # capture the most generic and ensure it is an io.IOBase
-    assert isinstance(path, io.IOBase)
+    # capture the most generic and assume it is correct
     return path
 
 
@@ -190,7 +189,7 @@ def open_path_str(path: str, verbose=0) -> io.IOBase:
 @open_path.register
 def open_path_pathlib(path: pathlib.Path, verbose=0) -> io.IOBase:
     try:
-        if path.exists() and path.is_dir() and verbose == 2:
+        if path.exists() and not path.is_dir() and verbose == 2:
             warnings.warn(f"Path {path} exists, will overwrite it.")
         path = path.open("wb")
     except IsADirectoryError:

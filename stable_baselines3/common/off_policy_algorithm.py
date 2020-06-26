@@ -217,8 +217,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             if rollout.continue_training is False:
                 break
 
-            self._update_current_progress_remaining(self.num_timesteps, total_timesteps)
-
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
                 # If no `gradient_steps` is specified,
                 # do as many gradients steps as steps performed during the rollout
@@ -392,8 +390,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 self.num_timesteps += 1
                 episode_timesteps += 1
                 total_steps += 1
+                self._update_current_progress_remaining(self.num_timesteps, self._total_timesteps)
 
                 # For DQN, check if the target network should be updated
+                # and update the exploration schedule
                 # For SAC/TD3, the update is done as the same time as the gradient update
                 # see https://github.com/hill-a/stable-baselines/issues/900
                 self._on_step()

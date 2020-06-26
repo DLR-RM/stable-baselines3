@@ -84,6 +84,8 @@ class BaseAlgorithm(ABC):
         self.action_space = None  # type: Optional[gym.spaces.Space]
         self.n_envs = None
         self.num_timesteps = 0
+        # Used for updating schedules
+        self._total_timesteps = 0
         self.eval_env = None
         self.seed = seed
         self.action_noise = None  # type: Optional[ActionNoise]
@@ -425,6 +427,7 @@ class BaseAlgorithm(ABC):
         else:
             # Make sure training timesteps are ahead of the internal counter
             total_timesteps += self.num_timesteps
+        self._total_timesteps = total_timesteps
 
         # Avoid resetting the environment when calling ``.learn()`` consecutive times
         if reset_num_timesteps or self._last_obs is None:

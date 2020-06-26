@@ -46,7 +46,8 @@ class SAC(OffPolicyAlgorithm):
     :param ent_coef: (str or float) Entropy regularization coefficient. (Equivalent to
         inverse of reward scale in the original SAC paper.)  Controlling exploration/exploitation trade-off.
         Set it to 'auto' to learn it automatically (and 'auto_0.1' for using 0.1 as initial value)
-    :param target_update_interval: (int) update the target network every ``target_network_update_freq`` steps.
+    :param target_update_interval: (int) update the target network every ``target_network_update_freq``
+        gradient steps.
     :param target_entropy: (str or float) target entropy when learning ``ent_coef`` (``ent_coef = 'auto'``)
     :param use_sde: (bool) Whether to use generalized State Dependent Exploration (gSDE)
         instead of action noise exploration (default: False)

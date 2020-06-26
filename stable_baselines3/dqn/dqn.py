@@ -35,7 +35,8 @@ class DQN(OffPolicyAlgorithm):
     :param optimize_memory_usage: (bool) Enable a memory efficient variant of the replay buffer
         at a cost of more complexity.
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
-    :param target_update_interval: (int) update the target network every ``target_update_interval`` steps.
+    :param target_update_interval: (int) update the target network every ``target_update_interval``
+        environment steps.
     :param exploration_fraction: (float) fraction of entire training period over which the exploration rate is reduced
     :param exploration_initial_eps: (float) initial value of random action probability
     :param exploration_final_eps: (float) final value of random action probability
@@ -87,13 +88,16 @@ class DQN(OffPolicyAlgorithm):
                                   seed=seed, sde_support=False,
                                   optimize_memory_usage=optimize_memory_usage)
 
-        self.exploration_final_eps = exploration_final_eps
         self.exploration_initial_eps = exploration_initial_eps
+        self.exploration_final_eps = exploration_final_eps
         self.exploration_fraction = exploration_fraction
         self.target_update_interval = target_update_interval
         self.max_grad_norm = max_grad_norm
         # "epsilon" for the epsilon-greedy exploration
-        self.exploration_rate = 0
+        self.exploration_rate = 0.0
+        # Linear schedule will be defined in `_setup_model()`
+        self.exploration_schedule = None
+        self.q_net, self.q_net_target = None, None
 
         if _init_setup_model:
             self._setup_model()
@@ -101,20 +105,6 @@ class DQN(OffPolicyAlgorithm):
     def _setup_model(self) -> None:
         super(DQN, self)._setup_model()
         self._create_aliases()
-        self._setup_exploration_schedule()
-
-    def _update_exploration_rate(self):
-        """
-        Updates the epsilon used in predict according to schedule
-        """
-        # Log the current exploration probability
-        logger.record("rollout/exploration rate", self.exploration_schedule(self._current_progress_remaining))
-        self.exploration_rate = self.exploration_schedule(self._current_progress_remaining)
-
-    def _setup_exploration_schedule(self) -> None:
-        """
-        Generate a exploration schedule used for updating the exploration probability
-        """
         self.exploration_schedule = get_linear_fn(self.exploration_initial_eps, self.exploration_final_eps,
                                                   self.exploration_fraction)
 
@@ -124,17 +114,19 @@ class DQN(OffPolicyAlgorithm):
 
     def _on_step(self):
         """
-        Update the target network if needed.
+        Update the exploration rate and target network if needed.
         This method is called in ``collect_rollout()`` after each step in the environment.
         """
         if self.num_timesteps % self.target_update_interval == 0:
             for param, target_param in zip(self.q_net.parameters(), self.q_net_target.parameters()):
                 target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
+        self.exploration_rate = self.exploration_schedule(self._current_progress_remaining)
+        logger.record("rollout/exploration rate", self.exploration_rate)
+
     def train(self, gradient_steps: int, batch_size: int = 100) -> None:
-        # Update learning rate and log exploration probability according to schedule
+        # Update learning rate according to schedule
         self._update_learning_rate(self.policy.optimizer)
-        self._update_exploration_rate()
 
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
@@ -143,14 +135,17 @@ class DQN(OffPolicyAlgorithm):
             with th.no_grad():
                 # Compute the target Q values
                 target_q = self.q_net_target(replay_data.next_observations)
+                # Follow greedy policy: use the one with the highest value
                 target_q, _ = target_q.max(dim=1)
+                # Avoid potential broadcast issue
                 target_q = target_q.reshape(-1, 1)
+                # 1-step TD target
                 target_q = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
 
             # Get current Q estimates
             current_q = self.q_net(replay_data.observations)
 
-            # Gather q_values of our actions
+            # Retrieve the q-values for the actions from the replay buffer
             current_q = th.gather(current_q, dim=1, index=replay_data.actions.long())
 
             # Compute Huber loss (less sensitive to outliers)
@@ -159,12 +154,12 @@ class DQN(OffPolicyAlgorithm):
             # Optimize the policy
             self.policy.optimizer.zero_grad()
             loss.backward()
-            # Clip grad norm
+            # Clip gradient norm
             th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.policy.optimizer.step()
 
-            # Increase update counter
-            self._n_updates += 1
+        # Increase update counter
+        self._n_updates += gradient_steps
 
         logger.record("train/n_updates", self._n_updates, exclude='tensorboard')
 
@@ -173,8 +168,7 @@ class DQN(OffPolicyAlgorithm):
                 mask: Optional[np.ndarray] = None,
                 deterministic: bool = False) -> Tuple[np.ndarray, Optional[np.ndarray]]:
         """
-        Overrides the base_class predict function to get the model's action(s) from an observation
-        includes epsilon-greedy exploration
+        Overrides the base_class predict function to include epsilon-greedy exploration.
 
         :param observation: (np.ndarray) the input observation
         :param state: (Optional[np.ndarray]) The last states (can be None, used in recurrent policies)

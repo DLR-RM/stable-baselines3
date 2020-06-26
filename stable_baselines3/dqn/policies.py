@@ -50,22 +50,14 @@ class QNetwork(BasePolicy):
         Predict the q-values.
 
         :param obs: (th.Tensor) Observation
+        :return: (th.Tensor) The estimated Q-Value for each action.
         """
-        features = self.extract_features(obs)
-        return self.q_net(features)
+        return self.q_net(self.extract_features(obs))
 
-    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
-        """
-        Get the action according to the policy for a given observation.
-
-        :param observation: (th.Tensor)
-        :param deterministic: (bool) Whether to use stochastic or deterministic actions
-        :return: (th.Tensor) Taken action according to the policy
-        """
-        features = self.extract_features(observation)
-        q_val = self.q_net(features)
-        action = q_val.argmax(dim=1).reshape(-1)
-
+    def _predict(self, observation: th.Tensor, deterministic: bool = True) -> th.Tensor:
+        q_values = self.forward(observation)
+        # Greedy action
+        action = q_values.argmax(dim=1).reshape(-1)
         return action
 
     def _get_data(self) -> Dict[str, Any]:
@@ -166,14 +158,11 @@ class DQNPolicy(BasePolicy):
     def make_q_net(self) -> QNetwork:
         return QNetwork(**self.net_args).to(self.device)
 
-    def q_forward(self, obs: th.Tensor, deterministic: bool = False) -> th.Tensor:
-        return self.predict(obs, deterministic=deterministic)
+    def forward(self, obs: th.Tensor, deterministic: bool = True) -> th.Tensor:
+        return self._predict(obs, deterministic=deterministic)
 
-    def q_predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
-        return self.q_net.predict(observation, deterministic)
-
-    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
-        return self.q_net._predict(observation, deterministic)
+    def _predict(self, obs: th.Tensor, deterministic: bool = True) -> th.Tensor:
+        return self.q_net._predict(obs, deterministic=deterministic)
 
     def _get_data(self) -> Dict[str, Any]:
         data = super()._get_data()

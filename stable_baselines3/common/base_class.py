@@ -84,6 +84,8 @@ class BaseAlgorithm(ABC):
         self.action_space = None  # type: Optional[gym.spaces.Space]
         self.n_envs = None
         self.num_timesteps = 0
+        # Used for updating schedules
+        self._total_timesteps = 0
         self.eval_env = None
         self.seed = seed
         self.action_noise = None  # type: Optional[ActionNoise]
@@ -398,7 +400,7 @@ class BaseAlgorithm(ABC):
                      log_path: Optional[str] = None,
                      reset_num_timesteps: bool = True,
                      tb_log_name: str = 'run',
-                     ) -> Tuple[int, 'BaseCallback']:
+                     ) -> Tuple[int, BaseCallback]:
         """
         Initialize different variables needed for training.
 
@@ -410,7 +412,7 @@ class BaseAlgorithm(ABC):
         :param log_path (Optional[str]): Path to a log folder
         :param reset_num_timesteps: (bool) Whether to reset or not the ``num_timesteps`` attribute
         :param tb_log_name: (str) the name of the run for tensorboard log
-        :return: (int, Tuple[BaseCallback])
+        :return: (Tuple[int, BaseCallback])
         """
         self.start_time = time.time()
         self.ep_info_buffer = deque(maxlen=100)
@@ -425,6 +427,7 @@ class BaseAlgorithm(ABC):
         else:
             # Make sure training timesteps are ahead of the internal counter
             total_timesteps += self.num_timesteps
+        self._total_timesteps = total_timesteps
 
         # Avoid resetting the environment when calling ``.learn()`` consecutive times
         if reset_num_timesteps or self._last_obs is None:

@@ -3,14 +3,13 @@ import os
 import numpy as np
 import pytest
 
-from stable_baselines3 import A2C, PPO, SAC, TD3
+from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
 from stable_baselines3.common.identity_env import FakeImageEnv
 
-SAVE_PATH = './cnn_model.zip'
 
-
-@pytest.mark.parametrize('model_class', [A2C, PPO, SAC, TD3])
-def test_cnn(model_class):
+@pytest.mark.parametrize('model_class', [A2C, PPO, SAC, TD3, DQN])
+def test_cnn(tmp_path, model_class):
+    SAVE_NAME = 'cnn_model.zip'
     # Fake grayscale with frameskip
     # Atari after preprocessing: 84x84x1, here we are using lower resolution
     # to check that the network handle it automatically
@@ -29,12 +28,12 @@ def test_cnn(model_class):
 
     action, _ = model.predict(obs, deterministic=True)
 
-    model.save(SAVE_PATH)
+    model.save(tmp_path / SAVE_NAME)
     del model
 
-    model = model_class.load(SAVE_PATH)
+    model = model_class.load(tmp_path / SAVE_NAME)
 
     # Check that the prediction is the same
     assert np.allclose(action, model.predict(obs, deterministic=True)[0])
 
-    os.remove(SAVE_PATH)
+    os.remove(str(tmp_path / SAVE_NAME))

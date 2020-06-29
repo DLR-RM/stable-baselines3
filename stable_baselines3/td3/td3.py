@@ -41,6 +41,9 @@ class TD3(OffPolicyAlgorithm):
         Note that this cannot be used at the same time as ``train_freq``
     :param action_noise: (ActionNoise) the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
+    :param optimize_memory_usage: (bool) Enable a memory efficient variant of the replay buffer
+        at a cost of more complexity.
+        See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param policy_delay: (int) Policy and target networks will only be updated once every policy_delay steps
         per training steps. The Q values will be updated policy_delay more often (update every training step).
     :param target_policy_noise: (float) Standard deviation of Gaussian noise added to target policy
@@ -77,6 +80,7 @@ class TD3(OffPolicyAlgorithm):
                  gradient_steps: int = -1,
                  n_episodes_rollout: int = 1,
                  action_noise: Optional[ActionNoise] = None,
+                 optimize_memory_usage: bool = False,
                  policy_delay: int = 2,
                  target_policy_noise: float = 0.2,
                  target_noise_clip: float = 0.5,
@@ -96,17 +100,16 @@ class TD3(OffPolicyAlgorithm):
 
         super(TD3, self).__init__(policy, env, TD3Policy, learning_rate,
                                   buffer_size, learning_starts, batch_size,
-                                  policy_kwargs, tensorboard_log, verbose, device,
+                                  tau, gamma, train_freq, gradient_steps,
+                                  n_episodes_rollout, action_noise=action_noise,
+                                  policy_kwargs=policy_kwargs,
+                                  tensorboard_log=tensorboard_log,
+                                  verbose=verbose, device=device,
                                   create_eval_env=create_eval_env, seed=seed,
                                   use_sde=use_sde, sde_sample_freq=sde_sample_freq,
-                                  use_sde_at_warmup=use_sde_at_warmup)
+                                  use_sde_at_warmup=use_sde_at_warmup,
+                                  optimize_memory_usage=optimize_memory_usage)
 
-        self.train_freq = train_freq
-        self.gradient_steps = gradient_steps
-        self.n_episodes_rollout = n_episodes_rollout
-        self.tau = tau
-        self.gamma = gamma
-        self.action_noise = action_noise
         self.policy_delay = policy_delay
         self.target_noise_clip = target_noise_clip
         self.target_policy_noise = target_policy_noise
@@ -132,7 +135,7 @@ class TD3(OffPolicyAlgorithm):
         self.critic_target = self.policy.critic_target
         self.vf_net = self.policy.vf_net
 
-    def train(self, gradient_steps: int, batch_size: int = 100, policy_delay: int = 2) -> None:
+    def train(self, gradient_steps: int, batch_size: int = 100) -> None:
 
         # Update learning rate according to lr schedule
         self._update_learning_rate([self.actor.optimizer, self.critic.optimizer])
@@ -165,7 +168,7 @@ class TD3(OffPolicyAlgorithm):
             self.critic.optimizer.step()
 
             # Delayed policy updates
-            if gradient_step % policy_delay == 0:
+            if gradient_step % self.policy_delay == 0:
                 # Compute actor loss
                 actor_loss = -self.critic.q1_forward(replay_data.observations,
                                                      self.actor(replay_data.observations)).mean()
@@ -273,7 +276,7 @@ class TD3(OffPolicyAlgorithm):
                         self.train_sde()
 
                 gradient_steps = self.gradient_steps if self.gradient_steps > 0 else rollout.episode_timesteps
-                self.train(gradient_steps, batch_size=self.batch_size, policy_delay=self.policy_delay)
+                self.train(gradient_steps, batch_size=self.batch_size)
 
         callback.on_training_end()
 

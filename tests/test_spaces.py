@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import gym
 
-from stable_baselines3 import SAC, TD3
+from stable_baselines3 import DQN, SAC, TD3
 from stable_baselines3.common.evaluation import evaluate_policy
 
 
@@ -32,13 +32,17 @@ class DummyMultiBinary(gym.Env):
         return self.observation_space.sample(), 0.0, False, {}
 
 
-@pytest.mark.parametrize("model_class", [SAC, TD3])
+@pytest.mark.parametrize("model_class", [SAC, TD3, DQN])
 @pytest.mark.parametrize("env", [DummyMultiDiscreteSpace([4, 3]), DummyMultiBinary(8)])
 def test_identity_spaces(model_class, env):
     """
-    Additional tests for SAC/TD3 to check observation space support
+    Additional tests for DQ/SAC/TD3 to check observation space support
     for MultiDiscrete and MultiBinary.
     """
+    # DQN only support discrete actions
+    if model_class == DQN:
+        env.action_space = gym.spaces.Discrete(4)
+
     env = gym.wrappers.TimeLimit(env, max_episode_steps=100)
 
     model = model_class("MlpPolicy", env, gamma=0.5, seed=1, policy_kwargs=dict(net_arch=[64]))

@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.8.0a1 (WIP)
+Pre-Release 0.8.0a2 (WIP)
 ------------------------------
 
 Breaking Changes:
@@ -21,6 +21,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed a bug in the ``close()`` method of ``SubprocVecEnv``, causing wrappers further down in the wrapper stack to not be closed. (@NeoExtended)
+- Fix target for updating q values in SAC: the entropy term was not conditioned by terminals states
 
 Deprecations:
 ^^^^^^^^^^^^^

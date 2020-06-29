@@ -202,10 +202,9 @@ class SAC(OffPolicyAlgorithm):
                 next_actions, next_log_prob = self.actor.action_log_prob(replay_data.next_observations)
                 # Compute the target Q value
                 target_q1, target_q2 = self.critic_target(replay_data.next_observations, next_actions)
-                target_q = th.min(target_q1, target_q2)
-                target_q = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
+                target_q = th.min(target_q1, target_q2) - ent_coef * next_log_prob.reshape(-1, 1)
                 # td error + entropy term
-                q_backup = target_q - ent_coef * next_log_prob.reshape(-1, 1)
+                q_backup = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
 
             # Get current Q estimates
             # using action from the replay buffer

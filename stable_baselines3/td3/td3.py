@@ -34,6 +34,9 @@ class TD3(OffPolicyAlgorithm):
         Note that this cannot be used at the same time as ``train_freq``
     :param action_noise: (ActionNoise) the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
+    :param optimize_memory_usage: (bool) Enable a memory efficient variant of the replay buffer
+        at a cost of more complexity.
+        See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param policy_delay: (int) Policy and target networks will only be updated once every policy_delay steps
         per training steps. The Q values will be updated policy_delay more often (update every training step).
     :param target_policy_noise: (float) Standard deviation of Gaussian noise added to target policy
@@ -61,6 +64,7 @@ class TD3(OffPolicyAlgorithm):
                  gradient_steps: int = -1,
                  n_episodes_rollout: int = 1,
                  action_noise: Optional[ActionNoise] = None,
+                 optimize_memory_usage: bool = False,
                  policy_delay: int = 2,
                  target_policy_noise: float = 0.2,
                  target_noise_clip: float = 0.5,
@@ -74,16 +78,14 @@ class TD3(OffPolicyAlgorithm):
 
         super(TD3, self).__init__(policy, env, TD3Policy, learning_rate,
                                   buffer_size, learning_starts, batch_size,
-                                  policy_kwargs, tensorboard_log, verbose, device,
+                                  tau, gamma, train_freq, gradient_steps,
+                                  n_episodes_rollout, action_noise=action_noise,
+                                  policy_kwargs=policy_kwargs,
+                                  tensorboard_log=tensorboard_log,
+                                  verbose=verbose, device=device,
                                   create_eval_env=create_eval_env, seed=seed,
-                                  sde_support=False)
+                                  sde_support=False, optimize_memory_usage=optimize_memory_usage)
 
-        self.train_freq = train_freq
-        self.gradient_steps = gradient_steps
-        self.n_episodes_rollout = n_episodes_rollout
-        self.tau = tau
-        self.gamma = gamma
-        self.action_noise = action_noise
         self.policy_delay = policy_delay
         self.target_noise_clip = target_noise_clip
         self.target_policy_noise = target_policy_noise
@@ -101,7 +103,7 @@ class TD3(OffPolicyAlgorithm):
         self.critic = self.policy.critic
         self.critic_target = self.policy.critic_target
 
-    def train(self, gradient_steps: int, batch_size: int = 100, policy_delay: int = 2) -> None:
+    def train(self, gradient_steps: int, batch_size: int = 100) -> None:
 
         # Update learning rate according to lr schedule
         self._update_learning_rate([self.actor.optimizer, self.critic.optimizer])
@@ -134,7 +136,7 @@ class TD3(OffPolicyAlgorithm):
             self.critic.optimizer.step()
 
             # Delayed policy updates
-            if gradient_step % policy_delay == 0:
+            if gradient_step % self.policy_delay == 0:
                 # Compute actor loss
                 actor_loss = -self.critic.q1_forward(replay_data.observations,
                                                      self.actor(replay_data.observations)).mean()
@@ -165,32 +167,10 @@ class TD3(OffPolicyAlgorithm):
               eval_log_path: Optional[str] = None,
               reset_num_timesteps: bool = True) -> OffPolicyAlgorithm:
 
-        total_timesteps, callback = self._setup_learn(total_timesteps, eval_env, callback, eval_freq,
-                                                      n_eval_episodes, eval_log_path, reset_num_timesteps,
-                                                      tb_log_name)
-        callback.on_training_start(locals(), globals())
-
-        while self.num_timesteps < total_timesteps:
-
-            rollout = self.collect_rollouts(self.env, n_episodes=self.n_episodes_rollout,
-                                            n_steps=self.train_freq, action_noise=self.action_noise,
-                                            callback=callback,
-                                            learning_starts=self.learning_starts,
-                                            replay_buffer=self.replay_buffer,
-                                            log_interval=log_interval)
-
-            if rollout.continue_training is False:
-                break
-
-            self._update_current_progress_remaining(self.num_timesteps, total_timesteps)
-
-            if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
-                gradient_steps = self.gradient_steps if self.gradient_steps > 0 else rollout.episode_timesteps
-                self.train(gradient_steps, batch_size=self.batch_size, policy_delay=self.policy_delay)
-
-        callback.on_training_end()
-
-        return self
+        return super(TD3, self).learn(total_timesteps=total_timesteps, callback=callback, log_interval=log_interval,
+                                      eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,
+                                      tb_log_name=tb_log_name, eval_log_path=eval_log_path,
+                                      reset_num_timesteps=reset_num_timesteps)
 
     def excluded_save_params(self) -> List[str]:
         """

@@ -58,6 +58,7 @@ Main Features
   modules/ppo
   modules/sac
   modules/td3
+  modules/dqn
 
 .. toctree::
   :maxdepth: 1

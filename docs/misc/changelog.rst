@@ -3,15 +3,20 @@
 Changelog
 ==========
 
-Pre-Release 0.8.0a0 (WIP)
+Pre-Release 0.8.0a1 (WIP)
 ------------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- ``AtariWrapper`` and other Atari wrappers were updated to match SB2 ones
 - ``save_replay_buffer`` now receives as argument the file path instead of the folder path (@tirafesi)
 
 New Features:
 ^^^^^^^^^^^^^
+- Added ``DQN`` Algorithm (@Artemis-Skade)
+- Buffer dtype is now set according to action and observation spaces for ``ReplayBuffer``
+- Added warning when allocation of a buffer may exceed the available memory of the system
+  when ``psutil`` is available
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -22,11 +27,16 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Refactored off-policy algorithm to share the same ``.learn()`` method
+- Split the ``collect_rollout()`` method for off-policy algorithms
+- Added ``_on_step()`` for off-policy base class
+- Optimized replay buffer size by removing the need of ``next_observations`` numpy array
 
 Documentation:
 ^^^^^^^^^^^^^^
 - Updated notebook links
 - Fixed a typo in the section of Enjoy a Trained Agent, in RL Baselines3 Zoo README. (@blurLake)
+
 
 
 Pre-Release 0.7.0 (2020-06-10)

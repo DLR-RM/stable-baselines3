@@ -68,7 +68,7 @@ def test_runningmeanstd():
         assert np.allclose(moments_1, moments_2)
 
 
-def test_vec_env(tmpdir):
+def test_vec_env(tmp_path):
     """Test VecNormalize Object"""
     clip_obs = 0.5
     clip_reward = 5.0
@@ -82,7 +82,7 @@ def test_vec_env(tmpdir):
         assert np.max(np.abs(obs)) <= clip_obs
         assert np.max(np.abs(rew)) <= clip_reward
 
-    path = str(tmpdir.join("vec_normalize"))
+    path = tmp_path / "vec_normalize"
     norm_venv.save(path)
     deserialized = VecNormalize.load(path, venv=orig_venv)
     check_vec_norm_equal(norm_venv, deserialized)
@@ -125,7 +125,7 @@ def test_offpolicy_normalization(model_class):
     eval_env = DummyVecEnv([make_env])
     eval_env = VecNormalize(eval_env, training=False, norm_obs=True, norm_reward=False, clip_obs=10., clip_reward=10.)
 
-    model = model_class('MlpPolicy', env, verbose=1)
+    model = model_class('MlpPolicy', env, verbose=1, policy_kwargs=dict(net_arch=[64]))
     model.learn(total_timesteps=1000, eval_env=eval_env, eval_freq=500)
     # Check getter
     assert isinstance(model.get_vec_normalize_env(), VecNormalize)

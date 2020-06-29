@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from stable_baselines3 import A2C, PPO, SAC, TD3
+from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
 from stable_baselines3.common.identity_env import (IdentityEnvBox, IdentityEnv,
                                                    IdentityEnvMultiBinary, IdentityEnvMultiDiscrete)
 
@@ -9,17 +9,25 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.noise import NormalActionNoise
 
-
 DIM = 4
 
 
-@pytest.mark.parametrize("model_class", [A2C, PPO])
+@pytest.mark.parametrize("model_class", [A2C, PPO, DQN])
 @pytest.mark.parametrize("env", [IdentityEnv(DIM), IdentityEnvMultiDiscrete(DIM), IdentityEnvMultiBinary(DIM)])
 def test_discrete(model_class, env):
-    env = DummyVecEnv([lambda: env])
-    model = model_class('MlpPolicy', env, gamma=0.5, seed=1).learn(3000)
+    env_ = DummyVecEnv([lambda: env])
+    kwargs = {}
+    n_steps = 3000
+    if model_class == DQN:
+        kwargs = dict(learning_starts=0)
+        n_steps = 4000
+        # DQN only support discrete actions
+        if isinstance(env, (IdentityEnvMultiDiscrete, IdentityEnvMultiBinary)):
+            return
 
-    evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=90)
+    model = model_class('MlpPolicy', env_, gamma=0.5, seed=1, **kwargs).learn(n_steps)
+
+    evaluate_policy(model, env_, n_eval_episodes=20, reward_threshold=90)
     obs = env.reset()
 
     assert np.shape(model.predict(obs)[0]) == np.shape(obs)

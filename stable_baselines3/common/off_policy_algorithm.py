@@ -119,7 +119,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                           "until both conditions are true: "
                           "`number of steps in the env` >= `train_freq` and "
                           "`number of episodes` > `n_episodes_rollout`")
-        
+
         assert self.n_step >= 1, "The number of steps need to be >= 1"
 
         self.actor = None  # type: Optional[th.nn.Module]
@@ -135,13 +135,17 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
         if self.n_step == 1:
-            self.replay_buffer = ReplayBuffer(self.buffer_size, self.observation_space,
-                                          self.action_space, self.device,
-                                          optimize_memory_usage=self.optimize_memory_usage)
+            self.replay_buffer = ReplayBuffer(
+                self.buffer_size, self.observation_space,
+                self.action_space, self.device,
+                optimize_memory_usage=self.optimize_memory_usage
+            )
         else:
-            self.replay_buffer = NstepReplayBuffer(self.buffer_size, self.observation_space,
-                                          self.action_space, self.device,
-                                          optimize_memory_usage=self.optimize_memory_usage)
+            self.replay_buffer = NstepReplayBuffer(
+                self.buffer_size, self.observation_space,
+                self.action_space, self.device,
+                optimize_memory_usage=self.optimize_memory_usage
+            )
 
         self.policy = self.policy_class(self.observation_space, self.action_space,
                                         self.lr_schedule, **self.policy_kwargs)

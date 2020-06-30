@@ -175,37 +175,94 @@ def json_to_data(json_string: str,
             return_data[data_key] = data_item
     return return_data
 
-
 @functools.singledispatch
-def open_path(path, verbose=0, suffix=None) -> io.IOBase:
-    # capture the most generic and assume it is correct
+def open_path(path, mode, verbose=0, suffix=None):
+    """
+    Generic version of open_path. It verifies that the path is an io.BufferedIOBase, that the file is
+        writable if mode is "w", not writable if mode is 
+    :param path: (Union[str, pathlib.Path, io.BufferedIOBase]) the path to open.
+        if save_path is a str or pathlib.Path and mode is "w", single dispatch ensures that the
+        path actually exists. If path is a io.BufferedIOBase the path exists.
+    :param mode: (str) how to open the file. "w" for writing, "r" for reading.
+    :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information.
+    :param suffix: (str) The preferred suffix. If mode is "w" then the opened file has the suffix.
+        If mode is "r" then we attempt to open the path. If an error is raised and the suffix
+        is not None, we attempt to open the path with the suffix.
+    """
+    if not isinstance(path, io.BufferedIOBase):
+        raise TypeError(f"Path parameter has invalid type.", io.BufferedIOBase)
+    if path.closed:
+        raise ValueError(f"File stream is closed.")
+    if mode not in ("w","r"):
+        raise ValueError(f"Expected mode to be either 'w' or 'r'.")
+    if ("w" == mode) is not path.writable() or ("r" == mode) is not path.readable():
+        e1 = {True:"writable", False:"readable"}["w" == mode]
+        raise ValueError(f"Expected a {e1} file.")
     return path
 
-
 @open_path.register(str)
-def open_path_str(path: str, verbose=0, suffix=None) -> io.IOBase:
-    return open_path(pathlib.Path(path), verbose=verbose, suffix=suffix)
+def open_path_str(path, mode, verbose=0, suffix=None) -> io.BufferedIOBase:
+    """
+    Open a path given by a string. If writing to the path, then the
+        function ensures that the path exists.
+    :param path: (str) the path to open. If mode is "w" then it ensures that the path exists
+        by creating the necessary folders and renaming path if it points to a folder.
+    :param mode: (str) how to open the file. "w" for writing, "r" for reading.
+    :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information.
+    :param suffix: (str) The preferred suffix. If mode is "w" then the opened file has the suffix.
+        If mode is "r" then we attempt to open the path. If an error is raised and the suffix
+        is not None, we attempt to open the path with the suffix.
+    """
+    return open_path(pathlib.Path(path), mode, verbose, suffix)
 
 
 @open_path.register(pathlib.Path)
-def open_path_pathlib(path: pathlib.Path, verbose=0, suffix=None) -> io.IOBase:
-    try:
-        if suffix and path.suffix != f".{suffix}":
-            path = pathlib.Path(f"{path}.{suffix}")
-        if path.exists() and not path.is_dir() and verbose == 2:
-            warnings.warn(f"Path {path} exists, will overwrite it.")
-        path = path.open("wb")
-    except IsADirectoryError:
-        warnings.warn(f"Path {path} is a folder. Will save instead to {path}_2")
-        path = pathlib.Path(f"{path}_2")
-    except FileNotFoundError:  # Occurs when the parent folder doesn't exist
-        warnings.warn(f"Path {path.parent} does not exist. Will create it.")
-        path.parent.mkdir(exist_ok=True, parents=True)
+def open_path_pathlib(path, mode, verbose=0, suffix=None) -> io.BufferedIOBase:
+    """
+    Open a path given by a string. If writing to the path, then the
+        function ensures that the path exists.
+    :param path: (pathlib.Path) the path to check. If mode is "w" then it
+        ensures that the path exists by creating the necessary folders and
+        renaming path if it points to a folder.
+    :param mode: (str) how to open the file. "w" for writing, "r" for reading.
+    :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information.
+    :param suffix: (str) The preferred suffix. If mode is "w" then the opened file has the suffix.
+        If mode is "r" then we attempt to open the path. If an error is raised and the suffix
+        is not None, we attempt to open the path with the suffix.
+    """
+    if mode not in ("w","r"):
+        raise ValueError(f"Expected mode to be either 'w' or 'r'.")
+
+    if mode == "r":
+        try:
+            path = path.open("rb")
+        except FileNotFoundError as error:
+            if suffix is not None and suffix is not "":
+                newpath = pathlib.Path(f"{path}.{suffix}")
+                warnings.warn(f"Path '{path}' not found. Attempting {newpath}.")
+                path, suffix = newpath, None
+            else:
+                raise error
+    else:
+        try:
+            if path.exists() and path.is_file() and verbose == 2:
+                warnings.warn(f"Path '{path}' exists, will overwrite it.")
+            if path.suffix == "" and suffix is not None and suffix != "":
+                path = pathlib.Path(f"{path}.{suffix}")
+            path = path.open("wb")
+        except IsADirectoryError:
+            warnings.warn(f"Path '{path}' is a folder. Will save instead to {path}_2")
+            path = pathlib.Path(f"{path}_2")
+        except FileNotFoundError:  # Occurs when the parent folder doesn't exist
+            warnings.warn(f"Path '{path.parent}' does not exist. Will create it.")
+            path.parent.mkdir(exist_ok=True, parents=True)
 
     # if opening was successful uses the identity function
     # if opening failed with IsADirectory|FileNotFound, calls open_path_pathlib
     #   with corrections
-    return open_path(path)
+    # if reading failed with FileNotFoundError, calls open_path_pathlib with suffix
+
+    return open_path(path, mode, verbose, suffix)
 
 
 def save_to_zip_file(save_path, data: Dict[str, Any] = None,
@@ -222,16 +279,14 @@ def save_to_zip_file(save_path, data: Dict[str, Any] = None,
     :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information
     """
 
-    save_path = open_path(save_path, verbose=0, suffix="zip")
+    save_path = open_path(save_path, "w", verbose=0, suffix="zip")
     # data/params can be None, so do not
     # try to serialize them blindly
     if data is not None:
         serialized_data = data_to_json(data)
 
     # Create a zip-archive and write our objects there.
-    # This is either a file-like object, or something wrong that will raise an error
-    save_path = cast(io.BytesIO, save_path)
-    with zipfile.ZipFile(save_path, "w") as archive:
+    with zipfile.ZipFile(save_path, mode="w") as archive:
         # Do not try to save "None" elements
         if data is not None:
             archive.writestr("data", serialized_data)
@@ -243,16 +298,40 @@ def save_to_zip_file(save_path, data: Dict[str, Any] = None,
                 with archive.open(file_name + '.pth', mode="w") as param_file:
                     th.save(dict_, param_file)
 
-
 def save_to_pkl(path, obj, verbose=0) -> None:
-    with open_path(path, verbose=verbose, suffix="pkl") as file_handler:
-        # type linting fails because pickle.dump
-        # isn't comprehensive enough with the types it accepts
-        file_handler = cast(io.BytesIO, file_handler)
+<<<<<<< HEAD
+    with open_path(path, "wb", verbose=verbose, suffix="pkl") as file_handler:
         pickle.dump(obj, file_handler)
 
+def load_from_pkl(path, verbose=0) -> Any:
+    with open_path(path, "rb", verbose=verbose, suffix="pjk") as file_handler:
+=======
+    """
+    Save an object to path creating the necessary folders along the way.
+    If the path exists and is a directory, it will raise a warning and rename the path.
+    If a suffix is provided in the path, it will use that suffix, otherwise, it will use '.pkl'.
+    :param path: (Union[str, pathlib.Path, io.BufferedIOBase]) the path to open.
+        if save_path is a str or pathlib.Path and mode is "w", single dispatch ensures that the
+        path actually exists. If path is a io.BufferedIOBase the path exists.
+    :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information.
+    """
+    with open_path(path, "w", verbose=verbose, suffix="pkl") as file_handler:
+        pickle.dump(obj, file_handler)
 
-def load_from_zip_file(load_path: str, load_data: bool = True) -> (Tuple[Optional[Dict[str, Any]],
+def load_from_pkl(path, verbose=0) -> Any:
+    """
+    Load an object from the path. If a suffix is provided in the path, it will use that suffix.
+    If the path does not exist, it will attempt to load using the .pkl suffix.
+    :param path: (Union[str, pathlib.Path, io.BufferedIOBase]) the path to open.
+        if save_path is a str or pathlib.Path and mode is "w", single dispatch ensures that the
+        path actually exists. If path is a io.BufferedIOBase the path exists.
+    :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information.
+    """
+    with open_path(path, "r", verbose=verbose, suffix="pkl") as file_handler:
+>>>>>>> 9f2508e... added tests
+        return pickle.load(file_handler)
+
+def load_from_zip_file(load_path: str, load_data: bool = True, verbose=0) -> (Tuple[Optional[Dict[str, Any]],
                                                                    Optional[TensorDict],
                                                                    Optional[TensorDict]]):
     """
@@ -264,20 +343,14 @@ def load_from_zip_file(load_path: str, load_data: bool = True) -> (Tuple[Optiona
     :return: (dict),(dict),(dict) Class parameters, model state_dicts (dict of state_dict)
         and dict of extra tensors
     """
-    # Check if file exists if load_path is a string
-    if isinstance(load_path, str):
-        if not os.path.exists(load_path):
-            if os.path.exists(load_path + ".zip"):
-                load_path += ".zip"
-            else:
-                raise ValueError(f"Error: the file {load_path} could not be found")
+    load_path = open_path(load_path, "r", verbose=verbose, suffix="zip")
 
     # set device to cpu if cuda is not available
     device = get_device()
 
     # Open the zip archive and load data
     try:
-        with zipfile.ZipFile(load_path, "r") as archive:
+        with zipfile.ZipFile(load_path) as archive:
             namelist = archive.namelist()
             # If data or parameters is not in the
             # zip archive, assume they were stored

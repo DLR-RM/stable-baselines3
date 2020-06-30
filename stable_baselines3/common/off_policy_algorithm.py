@@ -2,7 +2,7 @@ import time
 import pickle
 import warnings
 import pathlib
-from typing import Union, Type, Optional, Dict, Any, Callable, List, Tuple, cast
+from typing import Union, Type, Optional, Dict, Any, Callable, List, Tuple
 import io
 
 import gym
@@ -18,7 +18,7 @@ from stable_baselines3.common.type_aliases import GymEnv, RolloutReturn, MaybeCa
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.buffers import ReplayBuffer
-from stable_baselines3.common.save_util import save_to_pkl
+from stable_baselines3.common.save_util import save_to_pkl, load_from_pkl
 
 
 class OffPolicyAlgorithm(BaseAlgorithm):
@@ -139,27 +139,23 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                                         self.lr_schedule, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)
 
-    def save_replay_buffer(self, path: Union[str, pathlib.Path, io.IOBase]) -> None:
+    def save_replay_buffer(self, path: Union[str, pathlib.Path, io.BufferedIOBase]) -> None:
         """
         Save the replay buffer as a pickle file.
 
-        :param path: (Union[str,pathlib.Path]) Path to the file where the replay buffer should be saved.
+        :param path: (Union[str,pathlib.Path, io.BufferedIOBase]) Path to the file where the replay buffer should be saved.
             if path is a str or pathlib.Path, the path is automatically created if necessary.
         """
         assert self.replay_buffer is not None, "The replay buffer is not defined"
-        save_to_pkl(path, self.replay_buffer)
+        save_to_pkl(path, self.replay_buffer, self.verbose)
 
-    def load_replay_buffer(self, path: Union[str, pathlib.Path]) -> None:
+    def load_replay_buffer(self, path: Union[str, pathlib.Path, io.BufferedIOBase]) -> None:
         """
         Load a replay buffer from a pickle file.
 
-        :param path: (Union[str, pathlib.Path]) Path to the pickled replay buffer.
+        :param path: (Union[str, pathlib.Path, io.BufferedIOBase]) Path to the pickled replay buffer.
         """
-        path = pathlib.Path(path)
-        if path.suffix == "":
-            path = pathlib.Path(f"{path}.pkl")
-        with path.open("rb") as file_handler:
-            self.replay_buffer = pickle.load(file_handler)
+        self.replay_buffer = load_from_pkl(path, self.verbose)
         assert isinstance(self.replay_buffer, ReplayBuffer), 'The replay buffer must inherit from ReplayBuffer class'
 
     def _setup_learn(self,

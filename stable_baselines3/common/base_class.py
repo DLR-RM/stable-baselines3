@@ -479,14 +479,14 @@ class BaseAlgorithm(ABC):
 
     def save(
         self,
-        path: Union[str, pathlib.Path, io.IOBase],
+        path: Union[str, pathlib.Path, io.BufferedIOBase],
         exclude: Optional[List[str]] = None,
         include: Optional[List[str]] = None,
     ) -> None:
         """
         Save all the attributes of the object and the model parameters in a zip-file.
 
-        :param (Union[str, pathlib.Path, io.IOBase]): path to the file where the rl agent should be saved
+        :param (Union[str, pathlib.Path, io.BufferedIOBase]): path to the file where the rl agent should be saved
         :param exclude: name of parameters that should be excluded in addition to the default one
         :param include: name of parameters that might be excluded but should be included anyway
         """

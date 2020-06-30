@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
+from stable_baselines3 import A2C, PPO, SAC, TD3, TQC, DQN
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 
 normal_action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
@@ -38,6 +38,13 @@ def test_ppo(env_id, clip_range_vf):
 def test_sac(ent_coef):
     model = SAC('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[64, 64]),
                 learning_starts=100, verbose=1, create_eval_env=True, ent_coef=ent_coef,
+                action_noise=NormalActionNoise(np.zeros(1), np.zeros(1)))
+    model.learn(total_timesteps=1000, eval_freq=500)
+
+
+def test_tqc():
+    model = TQC('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[64, 64]),
+                learning_starts=100, verbose=1, create_eval_env=True,
                 action_noise=NormalActionNoise(np.zeros(1), np.zeros(1)))
     model.learn(total_timesteps=1000, eval_freq=500)
 

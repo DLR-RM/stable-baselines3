@@ -15,7 +15,7 @@ from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.type_aliases import GymEnv, RolloutReturn, MaybeCallback
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
-from stable_baselines3.common.buffers import ReplayBuffer
+from stable_baselines3.common.buffers import ReplayBuffer, NstepReplayBuffer
 
 
 class OffPolicyAlgorithm(BaseAlgorithm):
@@ -33,6 +33,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param batch_size: (int) Minibatch size for each gradient update
     :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1)
     :param gamma: (float) the discount factor
+    :param n_steps: (int) Number of steps to consider when computing the target Q-value
     :param train_freq: (int) Update the model every ``train_freq`` steps.
     :param gradient_steps: (int) How many gradient update after each step
     :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
@@ -74,6 +75,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                  batch_size: int = 256,
                  tau: float = 0.005,
                  gamma: float = 0.99,
+                 n_step: int = 1,
                  train_freq: int = 1,
                  gradient_steps: int = 1,
                  n_episodes_rollout: int = -1,
@@ -103,6 +105,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.learning_starts = learning_starts
         self.tau = tau
         self.gamma = gamma
+        self.n_step = int(n_step)
         self.train_freq = train_freq
         self.gradient_steps = gradient_steps
         self.n_episodes_rollout = n_episodes_rollout
@@ -116,6 +119,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                           "until both conditions are true: "
                           "`number of steps in the env` >= `train_freq` and "
                           "`number of episodes` > `n_episodes_rollout`")
+        
+        assert self.n_step >= 1, "The number of steps need to be >= 1"
 
         self.actor = None  # type: Optional[th.nn.Module]
         self.replay_buffer = None  # type: Optional[ReplayBuffer]
@@ -129,9 +134,15 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     def _setup_model(self):
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
-        self.replay_buffer = ReplayBuffer(self.buffer_size, self.observation_space,
+        if self.n_step == 1:
+            self.replay_buffer = ReplayBuffer(self.buffer_size, self.observation_space,
                                           self.action_space, self.device,
                                           optimize_memory_usage=self.optimize_memory_usage)
+        else:
+            self.replay_buffer = NstepReplayBuffer(self.buffer_size, self.observation_space,
+                                          self.action_space, self.device,
+                                          optimize_memory_usage=self.optimize_memory_usage)
+
         self.policy = self.policy_class(self.observation_space, self.action_space,
                                         self.lr_schedule, **self.policy_kwargs)
         self.policy = self.policy.to(self.device)

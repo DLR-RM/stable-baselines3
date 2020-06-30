@@ -399,3 +399,41 @@ class RolloutBuffer(BaseBuffer):
                 self.advantages[batch_inds].flatten(),
                 self.returns[batch_inds].flatten())
         return RolloutBufferSamples(*tuple(map(self.to_torch, data)))
+
+class NstepReplayBuffer(ReplayBuffer):
+    def __init__(self, buffer_size: int,
+                 observation_space: spaces.Space,
+                 action_space: spaces.Space,
+                 device: Union[th.device, str] = 'cpu',
+                 n_envs: int = 1,
+                 optimize_memory_usage: bool = False,
+                 n_step: int = 1,
+                 gamma: float=0.99
+        ):
+        super().__init__(buffer_size, observation_space, device, n_envs, optimize_memory_usage)
+        self.n_step = n_step
+        self.gamma = gamma
+
+    def _get_samples(self,
+                    batch_inds: np.ndarray,
+                    env: Optional[VecNormalize] = None
+                    ) -> ReplayBufferSamples:
+        
+        current_indices = batch_inds
+        actions = self.actions[batch_inds, 0, :]
+        dones = np.zeros(len(batch_inds))
+        rewards = np.zeros_like(dones)
+        obs = self._normalize_obs(self.observations[batch_inds, 0, :], env)
+        for i in range(self.n_step):
+            # if we are already done, ignore
+            rewards += self.gamma**i * (1-dones) * self._normalize_reward(self.rewards[current_indices], env)
+            dones = (1-dones) * self.dones[current_indices]
+            current_indices += (1-dones)
+
+        if self.optimize_memory_usage:
+            next_obs = self._normalize_obs(self.observations[(current_indices + 1) % self.buffer_size, 0, :], env)
+        else:
+            next_obs = self._normalize_obs(self.next_observations[current_indices, 0, :], env)
+
+        data = (obs, actions, next_obs, dones, rewards)
+        return ReplayBufferSamples(*tuple(map(self.to_torch, data)))

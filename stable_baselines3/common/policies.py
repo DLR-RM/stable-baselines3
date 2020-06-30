@@ -6,7 +6,7 @@ import torch as th
 import torch.nn as nn
 import numpy as np
 
-from stable_baselines3.common.preprocessing import preprocess_obs, is_image_space
+from stable_baselines3.common.preprocessing import preprocess_obs, is_image_space, get_action_dim
 from stable_baselines3.common.torch_layers import (FlattenExtractor, BaseFeaturesExtractor, create_mlp,
                                                    NatureCNN, MlpExtractor)
 from stable_baselines3.common.utils import get_device, is_vectorized_observation
@@ -615,6 +615,63 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
                                                    normalize_images,
                                                    optimizer_class,
                                                    optimizer_kwargs)
+
+
+class ContinuousCritic(BasePolicy):
+    """
+    Critic network for DDPG/SAC/TD3.
+    It represents the action-state value function (Q-value function).
+    By default, it creates two critic networks to reduce overestimation
+    using clipped Q-learning (cf TD3 paper).
+
+    :param observation_space: (gym.spaces.Space) Obervation space
+    :param action_space: (gym.spaces.Space) Action space
+    :param net_arch: ([int]) Network architecture
+    :param features_extractor: (nn.Module) Network to extract features
+        (a CNN when using images, a nn.Flatten() layer otherwise)
+    :param features_dim: (int) Number of features
+    :param activation_fn: (Type[nn.Module]) Activation function
+    :param normalize_images: (bool) Whether to normalize images or not,
+         dividing by 255.0 (True by default)
+    :param device: (Union[th.device, str]) Device on which the code should run.
+    :param n_critics: (int) Number of critic networks to create.
+    """
+
+    def __init__(self, observation_space: gym.spaces.Space,
+                 action_space: gym.spaces.Space,
+                 net_arch: List[int],
+                 features_extractor: nn.Module,
+                 features_dim: int,
+                 activation_fn: Type[nn.Module] = nn.ReLU,
+                 normalize_images: bool = True,
+                 device: Union[th.device, str] = 'auto',
+                 n_critics: int = 2):
+        super().__init__(observation_space, action_space,
+                         features_extractor=features_extractor,
+                         normalize_images=normalize_images,
+                         device=device)
+
+        action_dim = get_action_dim(self.action_space)
+
+        self.n_critics = n_critics
+        self.q_networks = []
+        for idx in range(n_critics):
+            q_net = create_mlp(features_dim + action_dim, 1, net_arch, activation_fn)
+            q_net = nn.Sequential(*q_net)
+            self.add_module(f'qf{idx}', q_net)
+            self.q_networks.append(q_net)
+
+    def forward(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, ...]:
+        # Learn the features extractor using the policy loss only
+        with th.no_grad():
+            features = self.extract_features(obs)
+        qvalue_input = th.cat([features, actions], dim=1)
+        return tuple(q_net(qvalue_input) for q_net in self.q_networks)
+
+    def q1_forward(self, obs: th.Tensor, actions: th.Tensor) -> th.Tensor:
+        with th.no_grad():
+            features = self.extract_features(obs)
+        return self.q_networks[0](th.cat([features, actions], dim=1))
 
 
 def create_sde_features_extractor(features_dim: int,

@@ -33,7 +33,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param batch_size: (int) Minibatch size for each gradient update
     :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1)
     :param gamma: (float) the discount factor
-    :param n_steps: (int) Number of steps to consider when computing the target Q-value
     :param train_freq: (int) Update the model every ``train_freq`` steps.
     :param gradient_steps: (int) How many gradient update after each step
     :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
@@ -63,6 +62,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param use_sde_at_warmup: (bool) Whether to use gSDE instead of uniform sampling
         during the warm up phase (before learning starts)
     :param sde_support: (bool) Whether the model support gSDE or not
+    :param n_step: (int) Number of steps to consider when computing the target Q-value
     """
 
     def __init__(self,
@@ -75,7 +75,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                  batch_size: int = 256,
                  tau: float = 0.005,
                  gamma: float = 0.99,
-                 n_step: int = 1,
                  train_freq: int = 1,
                  gradient_steps: int = 1,
                  n_episodes_rollout: int = -1,
@@ -92,7 +91,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                  use_sde: bool = False,
                  sde_sample_freq: int = -1,
                  use_sde_at_warmup: bool = False,
-                 sde_support: bool = True):
+                 sde_support: bool = True,
+                 n_step: int = 1):
 
         super(OffPolicyAlgorithm, self).__init__(policy=policy, env=env, policy_base=policy_base,
                                                  learning_rate=learning_rate, policy_kwargs=policy_kwargs,

@@ -429,6 +429,10 @@ class NstepReplayBuffer(ReplayBuffer):
             rewards += self.gamma**i * (1-dones) * self._normalize_reward(self.rewards[current_indices], env)
             dones = (1-dones) * self.dones[current_indices]
             current_indices += (1-dones)
+            if self.full:
+                current_indices = current_indices % self.buffer_size
+            else:
+                current_indices = current_indices % self.pos
 
         if self.optimize_memory_usage:
             next_obs = self._normalize_obs(self.observations[(current_indices + 1) % self.buffer_size, 0, :], env)

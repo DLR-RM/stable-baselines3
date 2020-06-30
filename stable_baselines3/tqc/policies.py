@@ -379,7 +379,7 @@ class TQCPolicy(BasePolicy):
         return Actor(**self.actor_kwargs).to(self.device)
 
     def make_critic(self) -> Critic:
-        return Critic(**self.net_args).to(self.device)
+        return Critic(**self.critic_kwargs).to(self.device)
 
     def forward(self, obs: th.Tensor, deterministic: bool = False) -> th.Tensor:
         return self._predict(obs, deterministic=deterministic)

@@ -37,6 +37,7 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Updated notebook links
 - Fixed a typo in the section of Enjoy a Trained Agent, in RL Baselines3 Zoo README. (@blurLake)
+- Added reacher to the sample projects
 
 
 

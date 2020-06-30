@@ -322,7 +322,10 @@ class BaseAlgorithm(ABC):
             env = data["env"]
 
         # noinspection PyArgumentList
-        model = cls(policy=data["policy_class"], env=env, device='auto', _init_setup_model=False)
+        model = cls(policy=data["policy_class"], 
+                    env=env, device='auto', 
+                    _init_setup_model=False,
+                    policy_kwargs=data['policy_kwargs'])
 
         # load parameters
         model.__dict__.update(data)

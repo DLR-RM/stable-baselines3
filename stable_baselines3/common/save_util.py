@@ -210,8 +210,9 @@ def open_path(
     if path.closed:
         raise ValueError("File stream is closed.")
     mode = mode.lower()
-    mode = {"write": "w", "read": "r", "w": "w", "r": "r"}[mode]
-    if mode not in ("w", "r"):
+    try:
+        mode = {"write": "w", "read": "r", "w": "w", "r": "r"}[mode]
+    except KeyError:
         raise ValueError("Expected mode to be either 'w' or 'r'.")
     if ("w" == mode) and not path.writable() or ("r" == mode) and not path.readable():
         e1 = "writable" if "w" == mode else "readable"

@@ -22,6 +22,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fixed a bug in the ``close()`` method of ``SubprocVecEnv``, causing wrappers further down in the wrapper stack to not be closed. (@NeoExtended)
 - Fix target for updating q values in SAC: the entropy term was not conditioned by terminals states
+- Fix not passing saved policy_kwargs when loading checkpoint with customized policy
 
 Deprecations:
 ^^^^^^^^^^^^^

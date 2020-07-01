@@ -221,7 +221,7 @@ def open_path(
 
 @open_path.register(str)
 def open_path_str(
-    path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verbose=0, suffix=None
+    path: str, mode: str, verbose=0, suffix=None
 ) -> io.BufferedIOBase:
     """
     Open a path given by a string. If writing to the path, the function ensures
@@ -240,7 +240,7 @@ def open_path_str(
 
 @open_path.register(pathlib.Path)
 def open_path_pathlib(
-    path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verbose=0, suffix=None
+    path: pathlib.Path, mode: str, verbose=0, suffix=None
 ) -> io.BufferedIOBase:
     """
     Open a path given by a string. If writing to the path, the function ensures

@@ -11,7 +11,7 @@ Breaking Changes:
 - ``AtariWrapper`` and other Atari wrappers were updated to match SB2 ones
 - ``save_replay_buffer`` now receives as argument the file path instead of the folder path (@tirafesi)
 - Refactored ``Critic`` class for ``TD3`` and ``SAC``, it is now called ``ContinuousCritic``
-  and has an additional parameter ``ǹ_critics``
+  and has an additional parameter ``n_critics``
 
 New Features:
 ^^^^^^^^^^^^^

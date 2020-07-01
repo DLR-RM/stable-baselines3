@@ -619,10 +619,16 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
 
 class ContinuousCritic(BasePolicy):
     """
-    Critic network for DDPG/SAC/TD3.
+    Critic network(s) for DDPG/SAC/TD3.
     It represents the action-state value function (Q-value function).
-    By default, it creates two critic networks to reduce overestimation
-    using clipped Q-learning (cf TD3 paper).
+    Compared to A2C/PPO critics, this one represents the Q-value
+    and takes the continuous action as input. It is concatenated with the state
+    and then fed to the network which outputs a single value: Q(s, a).
+    For more recent algorithms like SAC/TD3, multiple networks
+    are created to give different estimates.
+
+    By default, it creates two critic networks used to reduce overestimation
+    thanks to clipped Q-learning (cf TD3 paper).
 
     :param observation_space: (gym.spaces.Space) Obervation space
     :param action_space: (gym.spaces.Space) Action space
@@ -669,6 +675,11 @@ class ContinuousCritic(BasePolicy):
         return tuple(q_net(qvalue_input) for q_net in self.q_networks)
 
     def q1_forward(self, obs: th.Tensor, actions: th.Tensor) -> th.Tensor:
+        """
+        Only predict the Q-value using the first network.
+        This allows to reduce computation when all the estimates are not needed
+        (e.g. when updating the policy in TD3).
+        """
         with th.no_grad():
             features = self.extract_features(obs)
         return self.q_networks[0](th.cat([features, actions], dim=1))

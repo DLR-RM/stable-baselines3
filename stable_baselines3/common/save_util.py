@@ -189,7 +189,7 @@ def open_path(
     If the provided path is a derivative of io.BufferedIOBase it ensures that the file
     matches the provided mode, i.e. If the mode is read ("r", "read") it checks that the path is readable.
     If the mode is write ("w", "write") it checks that the file is writable.
-    
+
     If the provided path is a string or a pathlib.Path, it ensures that it exists. If the mode is "read"
     it checks that it exists, if it doesn't exist it attempts to read path.suffix if a suffix is provided.
     If the mode is "write" and the path does not exist, it creates all the parent folders. If the path

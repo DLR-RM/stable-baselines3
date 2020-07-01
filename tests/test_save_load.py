@@ -373,6 +373,13 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
             load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl"))
             == "foo"
         )
+    assert len(record) == 0
+
+    with pytest.warns(None) as record:
+        assert (
+            load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl", verbose=2))
+            == "foo"
+        )
     assert len(record) == 1
 
     fp = pathlib.Path(f"{tmp_path}/t2").open("w")

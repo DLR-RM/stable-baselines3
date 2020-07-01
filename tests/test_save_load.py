@@ -1,4 +1,5 @@
 import os
+import io
 import warnings
 from copy import deepcopy
 import pathlib
@@ -409,3 +410,12 @@ def test_open_file(tmp_path):
     with pytest.raises(ValueError):
         fp.close()
         open_path(fp, "w")
+
+    buff = io.BytesIO()
+    assert buff.writable()
+    assert buff.readable() is ("w" == "w")
+    _ = open_path(buff, "w")
+    assert _ is buff
+    with pytest.raises(ValueError):
+        buff.close()
+        open_path(buff, "w")

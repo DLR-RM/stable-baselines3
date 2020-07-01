@@ -181,14 +181,25 @@ def json_to_data(
 
 
 @functools.singledispatch
-def open_path(path, mode, verbose=0, suffix=None):
+def open_path(
+    path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verbose=0, suffix=None
+):
     """
-    Generic version of open_path. It verifies that the path is an io.BufferedIOBase, that the file is
-        writable if mode is "w", not writable if mode is
+    Opens a path for reading or writing with a preferred suffix and raises debug information.
+    If the provided path is a derivative of io.BufferedIOBase it ensures that the file
+    matches the provided mode, i.e. If the mode is read ("r", "read") it checks that the path is readable.
+    If the mode is write ("w", "write") it checks that the file is writable.
+    
+    If the provided path is a string or a pathlib.Path, it ensures that it exists. If the mode is "read"
+    it checks that it exists, if it doesn't exist it attempts to read path.suffix if a suffix is provided.
+    If the mode is "write" and the path does not exist, it creates all the parent folders. If the path
+    points to a folder, it changes the path to path_2. If the path already exists and verbose == 2,
+    it raises a warning.
+
     :param path: (Union[str, pathlib.Path, io.BufferedIOBase]) the path to open.
         if save_path is a str or pathlib.Path and mode is "w", single dispatch ensures that the
         path actually exists. If path is a io.BufferedIOBase the path exists.
-    :param mode: (str) how to open the file. "w" for writing, "r" for reading.
+    :param mode: (str) how to open the file. "w"|"write" for writing, "r"|"read" for reading.
     :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information.
     :param suffix: (str) The preferred suffix. If mode is "w" then the opened file has the suffix.
         If mode is "r" then we attempt to open the path. If an error is raised and the suffix
@@ -198,19 +209,24 @@ def open_path(path, mode, verbose=0, suffix=None):
         raise TypeError("Path parameter has invalid type.", io.BufferedIOBase)
     if path.closed:
         raise ValueError("File stream is closed.")
+    mode = mode.lower()
+    mode = {"write": "w", "read": "r", "w": "w", "r": "r"}[mode]
     if mode not in ("w", "r"):
         raise ValueError("Expected mode to be either 'w' or 'r'.")
-    if ("w" == mode) is not path.writable() or ("r" == mode) is not path.readable():
-        e1 = {True: "writable", False: "readable"}["w" == mode]
+    if ("w" == mode) and not path.writable() or ("r" == mode) and not path.readable():
+        e1 = "writable" if "w" == mode else "readable"
         raise ValueError(f"Expected a {e1} file.")
     return path
 
 
 @open_path.register(str)
-def open_path_str(path, mode, verbose=0, suffix=None) -> io.BufferedIOBase:
+def open_path_str(
+    path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verbose=0, suffix=None
+) -> io.BufferedIOBase:
     """
-    Open a path given by a string. If writing to the path, then the
-        function ensures that the path exists.
+    Open a path given by a string. If writing to the path, the function ensures
+    that the path exists.
+
     :param path: (str) the path to open. If mode is "w" then it ensures that the path exists
         by creating the necessary folders and renaming path if it points to a folder.
     :param mode: (str) how to open the file. "w" for writing, "r" for reading.
@@ -223,10 +239,13 @@ def open_path_str(path, mode, verbose=0, suffix=None) -> io.BufferedIOBase:
 
 
 @open_path.register(pathlib.Path)
-def open_path_pathlib(path, mode, verbose=0, suffix=None) -> io.BufferedIOBase:
+def open_path_pathlib(
+    path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verbose=0, suffix=None
+) -> io.BufferedIOBase:
     """
-    Open a path given by a string. If writing to the path, then the
-        function ensures that the path exists.
+    Open a path given by a string. If writing to the path, the function ensures
+    that the path exists.
+
     :param path: (pathlib.Path) the path to check. If mode is "w" then it
         ensures that the path exists by creating the necessary folders and
         renaming path if it points to a folder.
@@ -245,16 +264,17 @@ def open_path_pathlib(path, mode, verbose=0, suffix=None) -> io.BufferedIOBase:
         except FileNotFoundError as error:
             if suffix is not None and suffix != "":
                 newpath = pathlib.Path(f"{path}.{suffix}")
-                warnings.warn(f"Path '{path}' not found. Attempting {newpath}.")
+                if verbose == 2:
+                    warnings.warn(f"Path '{path}' not found. Attempting {newpath}.")
                 path, suffix = newpath, None
             else:
                 raise error
     else:
         try:
-            if path.exists() and path.is_file() and verbose == 2:
-                warnings.warn(f"Path '{path}' exists, will overwrite it.")
             if path.suffix == "" and suffix is not None and suffix != "":
                 path = pathlib.Path(f"{path}.{suffix}")
+            if path.exists() and path.is_file() and verbose == 2:
+                warnings.warn(f"Path '{path}' exists, will overwrite it.")
             path = path.open("wb")
         except IsADirectoryError:
             warnings.warn(f"Path '{path}' is a folder. Will save instead to {path}_2")
@@ -272,7 +292,7 @@ def open_path_pathlib(path, mode, verbose=0, suffix=None) -> io.BufferedIOBase:
 
 
 def save_to_zip_file(
-    save_path,
+    save_path: Union[str, pathlib.Path, io.BufferedIOBase],
     data: Dict[str, Any] = None,
     params: Dict[str, Any] = None,
     tensors: Dict[str, Any] = None,
@@ -310,11 +330,14 @@ def save_to_zip_file(
                     th.save(dict_, param_file)
 
 
-def save_to_pkl(path, obj, verbose=0) -> Any:
+def save_to_pkl(
+    path: Union[str, pathlib.Path, io.BufferedIOBase], obj, verbose=0
+) -> None:
     """
     Save an object to path creating the necessary folders along the way.
     If the path exists and is a directory, it will raise a warning and rename the path.
     If a suffix is provided in the path, it will use that suffix, otherwise, it will use '.pkl'.
+
     :param path: (Union[str, pathlib.Path, io.BufferedIOBase]) the path to open.
         if save_path is a str or pathlib.Path and mode is "w", single dispatch ensures that the
         path actually exists. If path is a io.BufferedIOBase the path exists.
@@ -325,10 +348,11 @@ def save_to_pkl(path, obj, verbose=0) -> Any:
         pickle.dump(obj, file_handler)
 
 
-def load_from_pkl(path, verbose=0) -> Any:
+def load_from_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], verbose=0) -> Any:
     """
     Load an object from the path. If a suffix is provided in the path, it will use that suffix.
     If the path does not exist, it will attempt to load using the .pkl suffix.
+
     :param path: (Union[str, pathlib.Path, io.BufferedIOBase]) the path to open.
         if save_path is a str or pathlib.Path and mode is "w", single dispatch ensures that the
         path actually exists. If path is a io.BufferedIOBase the path exists.

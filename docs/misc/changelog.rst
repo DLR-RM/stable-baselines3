@@ -17,6 +17,8 @@ New Features:
 - Buffer dtype is now set according to action and observation spaces for ``ReplayBuffer``
 - Added warning when allocation of a buffer may exceed the available memory of the system
   when ``psutil`` is available
+- Saving models now automatically creates the necessary folders and raises appropriate warnings (@PartiallyTyped)
+- Refactored opening paths for saving and loading to use strings, pathlib or io.BufferedIOBase (@PartiallyTyped)
 
 Bug Fixes:
 ^^^^^^^^^^

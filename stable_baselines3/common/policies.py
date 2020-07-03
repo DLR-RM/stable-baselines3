@@ -111,15 +111,18 @@ class BasePolicy(nn.Module, ABC):
     def forward(self, *args, **kwargs):
         del args, kwargs
 
-    @abstractmethod
     def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         """
         Get the action according to the policy for a given observation.
+
+        By default provides a dummy implementation -- not all BasePolicy classes
+        implement this, e.g. if they are a Critic in an Actor-Critic method.
 
         :param observation: (th.Tensor)
         :param deterministic: (bool) Whether to use stochastic or deterministic actions
         :return: (th.Tensor) Taken action according to the policy
         """
+        raise NotImplementedError()
 
     def predict(self,
                 observation: np.ndarray,
@@ -370,7 +373,7 @@ class ActorCriticPolicy(BasePolicy):
     def _get_data(self) -> Dict[str, Any]:
         data = super()._get_data()
 
-        default_none_kwargs = self.dist_kwargs or collections.defaultdict()
+        default_none_kwargs = self.dist_kwargs or collections.defaultdict(lambda: None)
 
         data.update(dict(
             net_arch=self.net_arch,

@@ -96,7 +96,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                                             n_envs=self.n_envs)
         self.policy = self.policy_class(self.observation_space, self.action_space,
                                         self.lr_schedule, use_sde=self.use_sde, device=self.device,
-                                        **self.policy_kwargs)
+                                        **self.policy_kwargs)  # pytype:disable=not-instantiable
         self.policy = self.policy.to(self.device)
 
     def collect_rollouts(self,

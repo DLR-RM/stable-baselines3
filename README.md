@@ -40,7 +40,6 @@ These algorithms will make it easier for the research community and industry to 
 Please look at the issue for more details.
 Planned features:
 
-- [ ] DQN (almost ready, currently in testing phase)
 - [ ] DDPG (you can use its successor TD3 for now)
 - [ ] HER
 

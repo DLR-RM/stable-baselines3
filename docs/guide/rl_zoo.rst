@@ -79,7 +79,7 @@ For example, enjoy A2C on Breakout during 5000 timesteps:
 
 ::
 
-  python enjoy.py --algo a2c --env BreakoutNoFrameskip-v4 --folder rl-trained_agents/ -n 5000
+  python enjoy.py --algo a2c --env BreakoutNoFrameskip-v4 --folder rl-trained-agents/ -n 5000
 
 
 Hyperparameter Optimization

@@ -2,6 +2,8 @@ import time
 from typing import Union, Type, Optional, Dict, Any, List, Tuple, Callable
 from abc import ABC, abstractmethod
 from collections import deque
+import pathlib
+import io
 
 import gym
 import torch as th
@@ -84,6 +86,8 @@ class BaseAlgorithm(ABC):
         self.action_space = None  # type: Optional[gym.spaces.Space]
         self.n_envs = None
         self.num_timesteps = 0
+        # Used for updating schedules
+        self._total_timesteps = 0
         self.eval_env = None
         self.seed = seed
         self.action_noise = None  # type: Optional[ActionNoise]
@@ -289,7 +293,7 @@ class BaseAlgorithm(ABC):
         return self.policy.predict(observation, state, mask, deterministic)
 
     @classmethod
-    def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs):
+    def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs) -> 'BaseAlgorithm':
         """
         Load the model from a zip-file
 
@@ -398,7 +402,7 @@ class BaseAlgorithm(ABC):
                      log_path: Optional[str] = None,
                      reset_num_timesteps: bool = True,
                      tb_log_name: str = 'run',
-                     ) -> Tuple[int, 'BaseCallback']:
+                     ) -> Tuple[int, BaseCallback]:
         """
         Initialize different variables needed for training.
 
@@ -410,7 +414,7 @@ class BaseAlgorithm(ABC):
         :param log_path (Optional[str]): Path to a log folder
         :param reset_num_timesteps: (bool) Whether to reset or not the ``num_timesteps`` attribute
         :param tb_log_name: (str) the name of the run for tensorboard log
-        :return: (int, Tuple[BaseCallback])
+        :return: (Tuple[int, BaseCallback])
         """
         self.start_time = time.time()
         self.ep_info_buffer = deque(maxlen=100)
@@ -425,6 +429,7 @@ class BaseAlgorithm(ABC):
         else:
             # Make sure training timesteps are ahead of the internal counter
             total_timesteps += self.num_timesteps
+        self._total_timesteps = total_timesteps
 
         # Avoid resetting the environment when calling ``.learn()`` consecutive times
         if reset_num_timesteps or self._last_obs is None:
@@ -472,11 +477,16 @@ class BaseAlgorithm(ABC):
         """
         return ["policy", "device", "env", "eval_env", "replay_buffer", "rollout_buffer", "_vec_normalize_env"]
 
-    def save(self, path: str, exclude: Optional[List[str]] = None, include: Optional[List[str]] = None) -> None:
+    def save(
+        self,
+        path: Union[str, pathlib.Path, io.BufferedIOBase],
+        exclude: Optional[List[str]] = None,
+        include: Optional[List[str]] = None,
+    ) -> None:
         """
         Save all the attributes of the object and the model parameters in a zip-file.
 
-        :param path: path to the file where the rl agent should be saved
+        :param (Union[str, pathlib.Path, io.BufferedIOBase]): path to the file where the rl agent should be saved
         :param exclude: name of parameters that should be excluded in addition to the default one
         :param include: name of parameters that might be excluded but should be included anyway
         """

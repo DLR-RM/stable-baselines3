@@ -1,7 +1,7 @@
 import gym
 import pytest
 
-from stable_baselines3 import A2C, PPO, SAC, TD3
+from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 MODEL_LIST = [
@@ -9,14 +9,21 @@ MODEL_LIST = [
     A2C,
     TD3,
     SAC,
+    DQN,
 ]
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 def test_auto_wrap(model_class):
     # test auto wrapping of env into a VecEnv
-    env = gym.make('Pendulum-v0')
-    eval_env = gym.make('Pendulum-v0')
+
+    # Use different environment for DQN
+    if model_class is DQN:
+        env_name = 'CartPole-v0'
+    else:
+        env_name = 'Pendulum-v0'
+    env = gym.make(env_name)
+    eval_env = gym.make(env_name)
     model = model_class('MlpPolicy', env)
     model.learn(100, eval_env=eval_env)
 
@@ -24,7 +31,10 @@ def test_auto_wrap(model_class):
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 @pytest.mark.parametrize("env_id", ['Pendulum-v0', 'CartPole-v1'])
 def test_predict(model_class, env_id):
-    if env_id == 'CartPole-v1' and model_class not in [PPO, A2C]:
+    if env_id == 'CartPole-v1':
+        if model_class in [SAC, TD3]:
+            return
+    elif model_class in [DQN]:
         return
 
     # test detection of different shapes by the predict method

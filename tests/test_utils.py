@@ -7,11 +7,12 @@ import numpy as np
 
 from stable_baselines3 import A2C
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.atari_wrappers import ClipRewardEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.cmd_util import make_vec_env, make_atari_env
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
-from stable_baselines3.common.noise import (
-    VectorizedActionNoise, OrnsteinUhlenbeckActionNoise, ActionNoise)
+from stable_baselines3.common.noise import (VectorizedActionNoise,
+                                            OrnsteinUhlenbeckActionNoise, ActionNoise)
 
 
 @pytest.mark.parametrize("env_id", ['CartPole-v1', lambda: gym.make('CartPole-v1')])
@@ -57,11 +58,11 @@ def test_make_atari_env(env_id, n_envs, wrapper_kwargs):
     if wrapper_kwargs is not None:
         assert obs.shape == (n_envs, 60, 60, 1)
         assert wrapped_atari_env.observation_space.shape == (60, 60, 1)
-        assert wrapped_atari_env.clip_reward is False
+        assert not isinstance(wrapped_atari_env.env, ClipRewardEnv)
     else:
         assert obs.shape == (n_envs, 84, 84, 1)
         assert wrapped_atari_env.observation_space.shape == (84, 84, 1)
-        assert wrapped_atari_env.clip_reward is True
+        assert isinstance(wrapped_atari_env.env, ClipRewardEnv)
         assert np.max(np.abs(reward)) < 1.0
 
 

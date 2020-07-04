@@ -432,6 +432,7 @@ class NstepReplayBuffer(ReplayBuffer):
 
         # two dim matrix of rewards for the indices
         rewards = self.rewards[indices].reshape(not_dones.shape)
+        rewards = self._normalize_reward(rewards, env)
 
         # filter to ignore loops around the buffer, see:
         # https://github.com/DLR-RM/stable-baselines3/pull/81#issuecomment-653741592
@@ -443,17 +444,17 @@ class NstepReplayBuffer(ReplayBuffer):
 
         # weighted rewards
         rewards = filt * gammas * rewards
-        rewards = np.add.reduce(rewards, 1)
+        rewards = np.add.reduce(rewards, 1).reshape(len(batch_inds), 1).astype(np.float32)
 
-        next_obs_indices = np.add.reduce(filt, 1).astype(np.int).reshape(batch_inds.shape)
-        next_obs_indices = (next_obs_indices + batch_inds - 1) % self.buffer_size
+        increments = np.add.reduce(filt, 1).astype(np.int).reshape(batch_inds.shape)
+        next_obs_indices = (increments + batch_inds - 1) % self.buffer_size
         obs = self._normalize_obs(self.observations[batch_inds, 0, :], env)
         if self.optimize_memory_usage:
             next_obs = self._normalize_obs(self.observations[(next_obs_indices + 1) % self.buffer_size, 0, :], env)
         else:
             next_obs = self._normalize_obs(self.next_observations[next_obs_indices, 0, :], env)
 
-        dones = 1 - (not_dones[np.arange(len(batch_inds)), next_obs_indices]).reshape(len(batch_inds), 1)
+        dones = 1. - (not_dones[np.arange(len(batch_inds)), increments-1]).reshape(len(batch_inds), 1)
 
-        data = (obs, actions, next_obs, dones.reshape(len(batch_inds), 1), rewards.reshape(len(batch_inds), 1))
+        data = (obs, actions, next_obs, dones, rewards)
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))

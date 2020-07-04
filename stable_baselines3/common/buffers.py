@@ -438,7 +438,7 @@ class NstepReplayBuffer(ReplayBuffer):
         # basically we need to ignore indices that are equal to self.pos
         # because the indice at self.pos is older
         # not_dones that are from other transitions are filtered out.
-        filt = np.hstack([np.ones((len(batch_inds),1)), not_dones[:, 1:]]) * (indices != self.pos)
+        filt = np.hstack([np.ones((len(batch_inds), 1)), not_dones[:, 1:]]) * (indices != self.pos)
         filt = np.multiply.accumulate(filt, 1).reshape(filt.shape)
 
         # weighted rewards

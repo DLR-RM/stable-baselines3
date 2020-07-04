@@ -21,6 +21,7 @@ from stable_baselines3.common.save_util import save_to_pkl, load_from_pkl
 
 _BufferType = TypeVar("_BufferType", bound=ReplayBuffer)
 
+
 class OffPolicyAlgorithm(BaseAlgorithm, Generic[_BufferType]):
     """
     The base for Off-Policy algorithms (ex: SAC/TD3)

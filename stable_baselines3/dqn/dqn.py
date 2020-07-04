@@ -11,6 +11,7 @@ from stable_baselines3.common.utils import get_linear_fn
 from stable_baselines3.dqn.policies import DQNPolicy
 from stable_baselines3.common.buffers import ReplayBuffer
 
+
 class DQN(OffPolicyAlgorithm):
     """
     Deep Q-Network (DQN)

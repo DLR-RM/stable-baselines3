@@ -65,7 +65,7 @@ def test_nsteps():
     # shouldn't be able to get batch with indice 5 because the pointer is at 5
     with pytest.raises(AssertionError):
         buffer._get_samples(np.array([5]))
-    
+
     buffer = NstepReplayBuffer(10, spaces.Discrete(5), spaces.Discrete(5), n_step=5, gamma=0.9)
     buffer.add(0, 1, 10, 1, 1)
     buffer.add(1, 2, 11, 1, 1)

@@ -9,7 +9,7 @@ from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.utils import get_linear_fn
 from stable_baselines3.dqn.policies import DQNPolicy
-
+from stable_baselines3.common.buffers import ReplayBuffer
 
 class DQN(OffPolicyAlgorithm):
     """
@@ -78,7 +78,7 @@ class DQN(OffPolicyAlgorithm):
                  _init_setup_model: bool = True):
 
         super(DQN, self).__init__(policy, env, DQNPolicy, learning_rate,
-                                  buffer_size, learning_starts, batch_size,
+                                  ReplayBuffer, None, buffer_size, learning_starts, batch_size,
                                   tau, gamma, train_freq, gradient_steps,
                                   n_episodes_rollout, action_noise=None,  # No action noise
                                   policy_kwargs=policy_kwargs,

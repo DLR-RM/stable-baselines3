@@ -380,7 +380,7 @@ class RolloutBuffer(BaseBuffer):
 
         start_idx = 0
         while start_idx < self.buffer_size * self.n_envs:
-            yield self._get_samples(indices[start_idx : start_idx + batch_size])
+            yield self._get_samples(indices[start_idx: start_idx + batch_size])
             start_idx += batch_size
 
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> RolloutBufferSamples:
@@ -414,34 +414,37 @@ class NstepReplayBuffer(ReplayBuffer):
         assert 0 <= gamma <= 1
 
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
-        assert not np.any(batch_inds==self.pos)
+        assert not np.any(batch_inds == self.pos)
         actions = self.actions[batch_inds, 0, :]
-        
+
         gamma = self.gamma
 
-        # two dimensional matrix contains all indices
+        # Broadcasting turns 1dim arange matrix to 2 dimensional matrix that contains all
+        # the indices, % buffersize keeps us in buffer range
         indices = (np.arange(self.n_step) + batch_inds.reshape(-1, 1)) % self.buffer_size
-        
-        # two dim matrix of not dones. If done then subsequent dones are 0
-        not_dones = np.multiply.accumulate(1-self.dones[indices], 1).reshape(-1, self.n_step)
-        
-        # two dim matrix of gammas to the power, will be used with the rewards
-        gammas = gamma**np.arange(self.n_step)
-        
-        # two dim matrix of rewards
+
+        # two dim matrix of not dones. If done is true, then subsequent dones are turned to 0
+        # using accumulate. This ensures that we don't use invalid transitions
+        not_dones = np.multiply.accumulate(1 - self.dones[indices], 1).reshape(-1, self.n_step)
+
+        # vector of the discount factors
+        gammas = gamma ** np.arange(self.n_step)
+
+        # two dim matrix of rewards for the indices
         rewards = self.rewards[indices].reshape(not_dones.shape)
 
         # filter to ignore loops around the buffer, see:
         # https://github.com/DLR-RM/stable-baselines3/pull/81#issuecomment-653741592
         # basically we need to ignore indices that are equal to self.pos
         # because the indice at self.pos is older
+        # not_dones that are from other transitions are filtered out.
         filt = not_dones * (indices != self.pos)
         filt = np.multiply.accumulate(filt, 1).reshape(filt.shape)
 
         # weighted rewards
-        rewards = filt* gammas * rewards
+        rewards = filt * gammas * rewards
         rewards = np.add.reduce(rewards, 1)
-        
+
         next_obs_indices = np.add.reduce(filt, 1).astype(np.int).reshape(batch_inds.shape)
         next_obs_indices = (next_obs_indices + batch_inds - 1) % self.buffer_size
         obs = self._normalize_obs(self.observations[batch_inds, 0, :], env)
@@ -450,6 +453,7 @@ class NstepReplayBuffer(ReplayBuffer):
         else:
             next_obs = self._normalize_obs(self.next_observations[next_obs_indices, 0, :], env)
 
-        dones = 1- (not_dones[np.arange(len(batch_inds)), next_obs_indices]).reshape(len(batch_inds), 1)
+        dones = 1 - (not_dones[np.arange(len(batch_inds)), next_obs_indices]).reshape(len(batch_inds), 1)
+
         data = (obs, actions, next_obs, dones.reshape(len(batch_inds), 1), rewards.reshape(len(batch_inds), 1))
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))

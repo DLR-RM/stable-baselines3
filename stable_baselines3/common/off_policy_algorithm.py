@@ -2,7 +2,7 @@ import time
 import warnings
 import pathlib
 import io
-from typing import Union, Type, Optional, Dict, Any, Callable, List, Tuple, Mapping
+from typing import Union, Type, Optional, Dict, Any, Callable, List, Tuple, Mapping, Generic, TypeVar
 
 import gym
 import torch as th
@@ -19,8 +19,9 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.save_util import save_to_pkl, load_from_pkl
 
+_BufferType = TypeVar("_BufferType", bound=ReplayBuffer)
 
-class OffPolicyAlgorithm(BaseAlgorithm):
+class OffPolicyAlgorithm(BaseAlgorithm, Generic[_BufferType]):
     """
     The base for Off-Policy algorithms (ex: SAC/TD3)
 
@@ -73,6 +74,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         env: Union[GymEnv, str],
         policy_base: Type[BasePolicy],
         learning_rate: Union[float, Callable],
+        replay_buffer_cls: Type[_BufferType] = None,
+        replay_buffer_kwargs: Optional[Mapping[str, Any]] = None,
         buffer_size: int = int(1e6),
         learning_starts: int = 100,
         batch_size: int = 256,
@@ -95,8 +98,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         sde_sample_freq: int = -1,
         use_sde_at_warmup: bool = False,
         sde_support: bool = True,
-        replay_buffer_cls: Type[ReplayBuffer] = ReplayBuffer,
-        replay_buffer_kwargs: Mapping[str, Any] = None,
     ):
 
         super(OffPolicyAlgorithm, self).__init__(
@@ -137,7 +138,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             )
 
         self.actor = None  # type: Optional[th.nn.Module]
-        self.replay_buffer = None  # type: Optional[ReplayBuffer]
         # Update policy keyword arguments
         if sde_support:
             self.policy_kwargs["use_sde"] = self.use_sde
@@ -145,14 +145,14 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # For gSDE only
         self.use_sde_at_warmup = use_sde_at_warmup
 
-        assert issubclass(replay_buffer_cls, ReplayBuffer)
-        self.replay_buffer_cls = replay_buffer_cls
-        self.replay_buffer_kwargs = replay_buffer_kwargs or {}
+        self.replay_buffer = None
+        self.replay_buffer_cls = replay_buffer_cls if replay_buffer_cls is not None else ReplayBuffer
+        self.replay_buffer_kwargs = dict(replay_buffer_kwargs or {})
 
     def _setup_model(self) -> None:
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
-        self.replay_buffer = ReplayBuffer(
+        self.replay_buffer = self.replay_buffer_cls(
             self.buffer_size,
             self.observation_space,
             self.action_space,
@@ -183,18 +183,19 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         :param path: (Union[str, pathlib.Path, io.BufferedIOBase]) Path to the pickled replay buffer.
         """
         self.replay_buffer = load_from_pkl(path, self.verbose)
-        assert isinstance(self.replay_buffer, ReplayBuffer), 'The replay buffer must inherit from ReplayBuffer class'
+        assert isinstance(self.replay_buffer, ReplayBuffer), "The replay buffer must inherit from ReplayBuffer class"
 
-    def _setup_learn(self,
-                     total_timesteps: int,
-                     eval_env: Optional[GymEnv],
-                     callback: Union[None, Callable, List[BaseCallback], BaseCallback] = None,
-                     eval_freq: int = 10000,
-                     n_eval_episodes: int = 5,
-                     log_path: Optional[str] = None,
-                     reset_num_timesteps: bool = True,
-                     tb_log_name: str = 'run',
-                     ) -> Tuple[int, BaseCallback]:
+    def _setup_learn(
+        self,
+        total_timesteps: int,
+        eval_env: Optional[GymEnv],
+        callback: Union[None, Callable, List[BaseCallback], BaseCallback] = None,
+        eval_freq: int = 10000,
+        n_eval_episodes: int = 5,
+        log_path: Optional[str] = None,
+        reset_num_timesteps: bool = True,
+        tb_log_name: str = "run",
+    ) -> Tuple[int, BaseCallback]:
         """
         cf `BaseAlgorithm`.
         """
@@ -207,7 +208,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             and self.replay_buffer is not None
             and (self.replay_buffer.full or self.replay_buffer.pos > 0)
         )
-
+        assert self.replay_buffer is not None
         if truncate_last_traj:
             warnings.warn(
                 "The last trajectory in the replay buffer will be truncated, "

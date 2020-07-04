@@ -6,6 +6,7 @@ from stable_baselines3.common import logger
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
+from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.td3.policies import TD3Policy
 
 
@@ -77,6 +78,7 @@ class TD3(OffPolicyAlgorithm):
                  _init_setup_model: bool = True):
 
         super(TD3, self).__init__(policy, env, TD3Policy, learning_rate,
+                                  ReplayBuffer, None,
                                   buffer_size, learning_starts, batch_size,
                                   tau, gamma, train_freq, gradient_steps,
                                   n_episodes_rollout, action_noise=action_noise,

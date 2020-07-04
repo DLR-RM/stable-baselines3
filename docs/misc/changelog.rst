@@ -19,6 +19,7 @@ New Features:
   when ``psutil`` is available
 - Saving models now automatically creates the necessary folders and raises appropriate warnings (@PartiallyTyped)
 - Refactored opening paths for saving and loading to use strings, pathlib or io.BufferedIOBase (@PartiallyTyped)
+- Implemented N-Step ReplayBuffer for off-policy methods (@PartiallyTyped)
 
 Bug Fixes:
 ^^^^^^^^^^

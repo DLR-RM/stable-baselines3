@@ -414,7 +414,7 @@ class NstepReplayBuffer(ReplayBuffer):
         gamma: float = 0.99,
     ):
         super().__init__(
-            buffer_size, observation_space, device, n_envs, optimize_memory_usage
+            buffer_size, observation_space,action_space, device, n_envs, optimize_memory_usage
         )
         self.n_step = n_step
         self.gamma = gamma
@@ -425,18 +425,19 @@ class NstepReplayBuffer(ReplayBuffer):
 
         current_indices = batch_inds
         actions = self.actions[batch_inds, 0, :]
-        dones = np.zeros(len(batch_inds))
+        dones = np.zeros_like(batch_inds, dtype=np.float)
+        include_step = np.ones_like(dones)
         rewards = np.zeros_like(dones)
         obs = self._normalize_obs(self.observations[batch_inds, 0, :], env)
         for i in range(self.n_step):
             # if we are already done, ignore
             rewards += (
                 self.gamma ** i
-                * (1 - dones)
-                * self._normalize_reward(self.rewards[current_indices], env)
+                * include_step
+                * self._normalize_reward(self.rewards[current_indices], env).reshape(-1)
             )
-            dones = (1 - dones) * self.dones[current_indices]
-            current_indices += 1 - dones
+            dones = (1 - dones) * self.dones[current_indices].reshape(-1)
+            current_indices =  (current_indices + (1 - dones)).astype(np.long)
             if self.full:
                 current_indices = current_indices % self.buffer_size
             else:
@@ -451,5 +452,5 @@ class NstepReplayBuffer(ReplayBuffer):
                 self.next_observations[current_indices, 0, :], env
             )
 
-        data = (obs, actions, next_obs, dones, rewards)
+        data = (obs, actions, next_obs, dones.reshape(-1, 1), rewards.reshape(-1, 1))
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))

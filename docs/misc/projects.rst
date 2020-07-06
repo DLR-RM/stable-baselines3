@@ -25,3 +25,15 @@ It was the starting point of Stable-Baselines3.
 | Author: Antonin Raffin, Freek Stulp
 | Github: https://github.com/DLR-RM/stable-baselines3/tree/sde
 | Paper: https://arxiv.org/abs/2005.05719
+
+Reacher
+-------
+A solution to the second project of the Udacity deep reinforcement learning course.
+It is an example of:
+
+- wrapping single and multi-agent Unity environments to make them usable in Stable-Baselines3
+- creating experimentation scripts which train and run A2C, PPO, TD3 and SAC models (a better choice for this one is https://github.com/DLR-RM/rl-baselines3-zoo)
+- generating several pre-trained models which solve the reacher environment
+
+| Author: Marios Koulakis
+| Github: https://github.com/koulakis/reacher-deep-reinforcement-learning

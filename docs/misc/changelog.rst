@@ -19,6 +19,8 @@ New Features:
 - Buffer dtype is now set according to action and observation spaces for ``ReplayBuffer``
 - Added warning when allocation of a buffer may exceed the available memory of the system
   when ``psutil`` is available
+- Saving models now automatically creates the necessary folders and raises appropriate warnings (@PartiallyTyped)
+- Refactored opening paths for saving and loading to use strings, pathlib or io.BufferedIOBase (@PartiallyTyped)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -39,6 +41,7 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Updated notebook links
 - Fixed a typo in the section of Enjoy a Trained Agent, in RL Baselines3 Zoo README. (@blurLake)
+- Added Unity reacher to the projects page (@koulakis)
 
 
 
@@ -341,4 +344,4 @@ And all the contributors:
 @Miffyli @dwiel @miguelrass @qxcv @jaberkow @eavelardev @ruifeng96150 @pedrohbtp @srivatsankrishnan @evilsocket
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
-@tirafesi @blurLake
+@tirafesi @blurLake @koulakis 

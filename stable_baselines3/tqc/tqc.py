@@ -146,7 +146,7 @@ class TQC(OffPolicyAlgorithm):
         self.critic_target = self.policy.critic_target
 
     @staticmethod
-    def quantile_huber_loss(quantiles: th.Tensor, samples: th.Tensor) -> th.Tensor:
+    def quantile_huber_loss_f(quantiles: th.Tensor, samples: th.Tensor) -> th.Tensor:
         # batch x nets x quantiles x samples
         pairwise_delta = samples[:, None, None, :] - quantiles[:, :, :, None]
         abs_pairwise_delta = th.abs(pairwise_delta)
@@ -219,7 +219,7 @@ class TQC(OffPolicyAlgorithm):
             # using action from the replay buffer
             current_z = self.critic(replay_data.observations, replay_data.actions)
             # Compute critic loss
-            critic_loss = self.quantile_huber_loss(current_z, q_backup)
+            critic_loss = self.quantile_huber_loss_f(current_z, q_backup)
             critic_losses.append(critic_loss.item())
 
             # Optimize the critic
@@ -250,93 +250,6 @@ class TQC(OffPolicyAlgorithm):
         logger.record("train/critic_loss", np.mean(critic_losses))
         if len(ent_coef_losses) > 0:
             logger.record("train/ent_coef_loss", np.mean(ent_coef_losses))
-
-    def pretrain(self, gradient_steps: int, batch_size: int = 64,
-                 n_action_samples: int = 1, target_update_interval: int = 100) -> None:
-        """
-        Pretrain with Critic Regularized Regression (CRR)
-        Paper: https://arxiv.org/abs/2006.15134
-        """
-        # Update optimizers learning rate
-        optimizers = [self.actor.optimizer, self.critic.optimizer]
-        if self.ent_coef_optimizer is not None:
-            optimizers += [self.ent_coef_optimizer]
-
-        # Update learning rate according to lr schedule
-        self._update_learning_rate(optimizers)
-
-        actor_losses, critic_losses = [], []
-
-        for gradient_step in range(gradient_steps):
-            # Sample replay buffer
-            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
-
-            # We need to sample because `log_std` may have changed between two gradient steps
-            if self.use_sde:
-                self.actor.reset_noise()
-
-            # Critic update without entropy term
-            with th.no_grad():
-                top_quantiles_to_drop = self.top_quantiles_to_drop_per_net * self.critic.n_critics
-                # Select action according to policy
-                next_actions, _ = self.actor.action_log_prob(replay_data.next_observations)
-                # Compute and cut quantiles at the next state
-                # batch x nets x quantiles
-                next_z = self.critic_target(replay_data.next_observations, next_actions)
-                sorted_z, _ = th.sort(next_z.reshape(batch_size, -1))
-                sorted_z_part = sorted_z[:, :self.critic.quantiles_total - top_quantiles_to_drop]
-
-                target_q = sorted_z_part
-                # td error + entropy term
-                q_backup = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
-
-            # Get current Q estimates
-            # using action from the replay buffer
-            current_z = self.critic(replay_data.observations, replay_data.actions)
-            # Compute critic loss
-            critic_loss = self.quantile_huber_loss(current_z, q_backup)
-            critic_losses.append(critic_loss.item())
-
-            # Optimize the critic
-            self.critic.optimizer.zero_grad()
-            critic_loss.backward()
-            self.critic.optimizer.step()
-
-            if self.use_sde:
-                self.actor.reset_noise()
-
-            # Compute actor loss
-            with th.no_grad():
-                qf_buffer = self.critic(replay_data.observations,
-                                        replay_data.actions).mean(2).mean(1, keepdim=True)
-                # TODO: sample m actions instead of one (need to resample the sde matrix)
-                actions_pi, _ = self.actor.action_log_prob(replay_data.observations)
-
-                qf_pi = self.critic(replay_data.observations,
-                                    actions_pi.detach()).mean(2).mean(1, keepdim=True)
-                advantage = qf_buffer - qf_pi
-                # other type of function: binary advantage
-                # binary_advantage = advantage > 0
-                exp_temperature = 1.0
-                exp_clip = 20.0
-                weight = th.clamp(th.exp(advantage / exp_temperature), 0.0, exp_clip)
-
-            # Action by the current actor for the sampled state
-            _, log_prob = self.actor.action_log_prob(replay_data.observations)
-            log_prob = log_prob.reshape(-1, 1)
-
-            # weigthed regression loss (close to policy gradient loss)
-            actor_loss = (-log_prob * weight).mean()
-            actor_losses.append(actor_loss.item())
-
-            # Optimize the actor
-            self.actor.optimizer.zero_grad()
-            actor_loss.backward()
-            self.actor.optimizer.step()
-
-            # Hard copy
-            if gradient_step % target_update_interval == 0:
-                self.critic_target.load_state_dict(self.critic.state_dict())
 
     def learn(self,
               total_timesteps: int,

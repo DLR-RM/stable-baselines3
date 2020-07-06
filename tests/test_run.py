@@ -3,6 +3,7 @@ import pytest
 
 from stable_baselines3 import A2C, PPO, SAC, TD3, TQC, DQN
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
+from stable_baselines3.common.evaluation import evaluate_policy
 
 normal_action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
 
@@ -47,6 +48,23 @@ def test_tqc():
                 learning_starts=100, verbose=1, create_eval_env=True,
                 action_noise=NormalActionNoise(np.zeros(1), np.zeros(1)))
     model.learn(total_timesteps=1000, eval_freq=500)
+
+
+# def test_crr(tmp_path):
+#     model = TQC('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[64, 64]),
+#                 learning_starts=500, verbose=1, create_eval_env=True,
+#                 action_noise=None)
+#
+#     # print(evaluate_policy(model, model.get_env()))
+#     # model.learn(total_timesteps=5000, eval_freq=1000)
+#     # model.save_replay_buffer('/tmp/replay_buffer.pkl')
+#     model.load_replay_buffer('/tmp/replay_buffer.pkl')
+#     print(evaluate_policy(model, model.get_env()))
+#     # model.pretrain(gradient_steps=7000, batch_size=256)
+#     model.train(gradient_steps=7000, batch_size=256)
+#     # model.learn(total_timesteps=1000, eval_freq=500)
+#     print(evaluate_policy(model, model.get_env()))
+
 
 
 def test_dqn():

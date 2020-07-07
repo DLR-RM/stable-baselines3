@@ -50,24 +50,23 @@ def test_tqc():
     model.learn(total_timesteps=1000, eval_freq=500)
 
 
-# def test_crr(tmp_path):
-#     model = TQC('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[64, 64], n_critics=1),
-#                 learning_starts=0, verbose=1, create_eval_env=True,
-#                 action_noise=None, use_sde=False)
-#
-#     # print(evaluate_policy(model, model.get_env()))
-#     # model.learn(total_timesteps=8000, eval_freq=1000)
-#     # model.save_replay_buffer('/tmp/replay_buffer_expert.pkl')
-#     model.load_replay_buffer('/tmp/replay_buffer_random.pkl')
-#     print(evaluate_policy(model, model.get_env()))
-#     for _ in range(15):
-#         # Pretrain with Critic Regularized Regression
-#         model.pretrain(gradient_steps=1000, batch_size=512,
-#                        n_action_samples=1, strategy='binary', reduce='mean')
-#         # Normal off-policy training
-#         # model.train(gradient_steps=1000, batch_size=512)
-#         print(evaluate_policy(model, model.get_env()))
+def test_crr(tmp_path):
+    model = TQC('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[64, 64]),
+                learning_starts=0, verbose=1, create_eval_env=True,
+                action_noise=None, use_sde=False)
 
+    # print(evaluate_policy(model, model.get_env()))
+    # model.learn(total_timesteps=8000, eval_freq=1000)
+    # model.save_replay_buffer('/tmp/replay_buffer_expert.pkl')
+    model.load_replay_buffer('/tmp/replay_buffer_expert.pkl')
+    print(evaluate_policy(model, model.get_env()))
+    for _ in range(15):
+        # Pretrain with Critic Regularized Regression
+        model.pretrain(gradient_steps=1000, batch_size=512,
+                       n_action_samples=1, strategy='exp', reduce='mean')
+        # Normal off-policy training
+        # model.train(gradient_steps=1000, batch_size=512)
+        print(evaluate_policy(model, model.get_env()))
 
 
 def test_dqn():

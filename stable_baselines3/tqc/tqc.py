@@ -147,7 +147,7 @@ class TQC(OffPolicyAlgorithm):
         self.critic_target = self.policy.critic_target
 
     @staticmethod
-    def quantile_huber_loss_f(quantiles: th.Tensor, samples: th.Tensor) -> th.Tensor:
+    def quantile_huber_loss(quantiles: th.Tensor, samples: th.Tensor) -> th.Tensor:
         # batch x nets x quantiles x samples
         pairwise_delta = samples[:, None, None, :] - quantiles[:, :, :, None]
         abs_pairwise_delta = th.abs(pairwise_delta)
@@ -220,7 +220,7 @@ class TQC(OffPolicyAlgorithm):
             # using action from the replay buffer
             current_z = self.critic(replay_data.observations, replay_data.actions)
             # Compute critic loss
-            critic_loss = self.quantile_huber_loss_f(current_z, q_backup)
+            critic_loss = self.quantile_huber_loss(current_z, q_backup)
             critic_losses.append(critic_loss.item())
 
             # Optimize the critic

@@ -17,6 +17,7 @@ notebooks:
 -  `Monitor Training and Plotting`_
 -  `Atari Games`_
 -  `RL Baselines zoo`_
+-  `PyBullet`_
 
 .. -  `Hindsight Experience Replay`_
 
@@ -27,6 +28,7 @@ notebooks:
 .. _Atari Games: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/atari_games.ipynb
 .. _Hindsight Experience Replay: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/stable_baselines_her.ipynb
 .. _RL Baselines zoo: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/rl-baselines-zoo.ipynb
+.. _PyBullet: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/pybullet.ipynb
 
 .. |colab| image:: ../_static/img/colab.svg
 
@@ -291,13 +293,17 @@ PyBullet: Normalizing input features
 
 Normalizing input features may be essential to successful training of an RL agent
 (by default, images are scaled but not other types of input),
-for instance when training on `PyBullet <https://github.com/bulletphysics/bullet3/>`_ environments. For that, a wrapper exists and
+for instance when training on `PyBullet <https://github.com/bulletphysics/bullet3/>`__ environments. For that, a wrapper exists and
 will compute a running average and standard deviation of input features (it can do the same for rewards).
 
 
 .. note::
 
 	you need to install pybullet with ``pip install pybullet``
+
+
+.. image:: ../_static/img/colab-badge.svg
+   :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/pybullet.ipynb
 
 
 .. code-block:: python

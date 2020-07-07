@@ -3,13 +3,15 @@
 Changelog
 ==========
 
-Pre-Release 0.8.0a2 (WIP)
+Pre-Release 0.8.0a3 (WIP)
 ------------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - ``AtariWrapper`` and other Atari wrappers were updated to match SB2 ones
 - ``save_replay_buffer`` now receives as argument the file path instead of the folder path (@tirafesi)
+- Refactored ``Critic`` class for ``TD3`` and ``SAC``, it is now called ``ContinuousCritic``
+  and has an additional parameter ``n_critics``
 
 New Features:
 ^^^^^^^^^^^^^
@@ -40,6 +42,7 @@ Documentation:
 - Updated notebook links
 - Fixed a typo in the section of Enjoy a Trained Agent, in RL Baselines3 Zoo README. (@blurLake)
 - Added Unity reacher to the projects page (@koulakis)
+- Added PyBullet colab notebook
 
 
 
@@ -342,4 +345,4 @@ And all the contributors:
 @Miffyli @dwiel @miguelrass @qxcv @jaberkow @eavelardev @ruifeng96150 @pedrohbtp @srivatsankrishnan @evilsocket
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
-@tirafesi @blurLake @koulakis 
+@tirafesi @blurLake @koulakis

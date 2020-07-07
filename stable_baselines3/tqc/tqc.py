@@ -1,6 +1,7 @@
 from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
 import torch as th
 import numpy as np
+from tqdm import tqdm
 
 from stable_baselines3.common import logger
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
@@ -252,7 +253,10 @@ class TQC(OffPolicyAlgorithm):
             logger.record("train/ent_coef_loss", np.mean(ent_coef_losses))
 
     def pretrain(self, gradient_steps: int, batch_size: int = 64,
-                 n_action_samples: int = 1, target_update_interval: int = 100) -> None:
+                 n_action_samples: int = 4,
+                 target_update_interval: int = 100,
+                 strategy: str = 'binary',
+                 reduce: str = 'mean') -> None:
         """
         Pretrain with Critic Regularized Regression (CRR)
         Paper: https://arxiv.org/abs/2006.15134
@@ -267,7 +271,7 @@ class TQC(OffPolicyAlgorithm):
 
         actor_losses, critic_losses = [], []
 
-        for gradient_step in range(gradient_steps):
+        for gradient_step in tqdm(range(gradient_steps)):
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
@@ -276,6 +280,7 @@ class TQC(OffPolicyAlgorithm):
                 self.actor.reset_noise()
 
             # Critic update without entropy term
+            # TODO: try adding entropy
             with th.no_grad():
                 top_quantiles_to_drop = self.top_quantiles_to_drop_per_net * self.critic.n_critics
                 # Select action according to policy
@@ -302,31 +307,51 @@ class TQC(OffPolicyAlgorithm):
             critic_loss.backward()
             self.critic.optimizer.step()
 
-            if self.use_sde:
-                self.actor.reset_noise()
+            if strategy == 'bc':
+                # Behavior cloning
+                weight = 1
+            else:
+                with th.no_grad():
+                    qf_buffer = self.critic(replay_data.observations,
+                                            replay_data.actions).mean(2).mean(1, keepdim=True)
 
-            # Compute actor loss
-            with th.no_grad():
-                qf_buffer = self.critic(replay_data.observations,
-                                        replay_data.actions).mean(2).mean(1, keepdim=True)
-                # TODO: sample m actions instead of one (need to resample the sde matrix)
-                actions_pi, _ = self.actor.action_log_prob(replay_data.observations)
+                    qf_agg = None
+                    for _ in range(n_action_samples):
+                        if self.use_sde:
+                            self.actor.reset_noise()
+                        actions_pi, _ = self.actor.action_log_prob(replay_data.observations)
 
-                qf_pi = self.critic(replay_data.observations,
-                                    actions_pi.detach()).mean(2).mean(1, keepdim=True)
-                advantage = qf_buffer - qf_pi
-                # other type of function: binary advantage
-                # binary_advantage = advantage > 0
-                exp_temperature = 1.0
-                exp_clip = 20.0
-                weight = th.clamp(th.exp(advantage / exp_temperature), 0.0, exp_clip)
+                        qf_pi = self.critic(replay_data.observations,
+                                            actions_pi.detach()).mean(2).mean(1, keepdim=True)
+                        if qf_agg is None:
+                            if reduce == 'max':
+                                qf_agg = qf_pi
+                            else:
+                                qf_agg = qf_pi / n_action_samples
+                        else:
+                            if reduce == 'max':
+                                qf_agg = th.max(qf_pi, qf_agg)
+                            else:
+                                qf_agg += qf_pi / n_action_samples
 
-            # Action by the current actor for the sampled state
-            _, log_prob = self.actor.action_log_prob(replay_data.observations)
+                    advantage = qf_buffer - qf_agg
+                if strategy == 'binary':
+                    # binary advantage
+                    weight = advantage > 0
+                else:
+                    # exp advantage
+                    exp_temperature = 1.0
+                    exp_clip = 20.0
+                    weight = th.clamp(th.exp(advantage / exp_temperature), 0.0, exp_clip)
+
+            # Log prob by the current actor for the sampled state and action
+            log_prob = self.actor.evaluate_actions(replay_data.observations,
+                                                   replay_data.actions)
             log_prob = log_prob.reshape(-1, 1)
 
             # weigthed regression loss (close to policy gradient loss)
             actor_loss = (-log_prob * weight).mean()
+            # actor_loss = ((actions_pi - replay_data.actions * weight) ** 2).mean()
             actor_losses.append(actor_loss.item())
 
             # Optimize the actor

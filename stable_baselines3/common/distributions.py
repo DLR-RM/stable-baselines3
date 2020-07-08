@@ -18,6 +18,20 @@ class Distribution(ABC):
         super(Distribution, self).__init__()
 
     @abstractmethod
+    def proba_distribution_net(self, *args, **kwargs):
+        """Create the layers and parameters that represent the distribution.
+
+        Subclasses must define this, but the arguments and return type vary between
+        concrete classes."""
+
+    @abstractmethod
+    def proba_distribution(self, *args, **kwargs) -> 'Distribution':
+        """Set parameters of the distribution.
+
+        :return: (Distribution) self
+        """
+
+    @abstractmethod
     def log_prob(self, x: th.Tensor) -> th.Tensor:
         """
         Returns the log likelihood

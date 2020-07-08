@@ -118,7 +118,7 @@ class SAC(OffPolicyAlgorithm):
     def _setup_model(self) -> None:
         super(SAC, self)._setup_model()
         self._create_aliases()
-
+        assert self.critic.n_critics == 2, "SAC only supports `n_critics=2` for now"
         # Target entropy is used when learning the entropy coefficient
         if self.target_entropy == 'auto':
             # automatically set target entropy if needed

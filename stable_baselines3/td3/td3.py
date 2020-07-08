@@ -96,6 +96,7 @@ class TD3(OffPolicyAlgorithm):
     def _setup_model(self) -> None:
         super(TD3, self)._setup_model()
         self._create_aliases()
+        assert self.critic.n_critics == 2, "TD3 only supports `n_critics=2` for now"
 
     def _create_aliases(self) -> None:
         self.actor = self.policy.actor

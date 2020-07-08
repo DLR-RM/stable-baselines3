@@ -5,7 +5,7 @@ import torch as th
 import torch.nn as nn
 
 from stable_baselines3.common.preprocessing import get_action_dim
-from stable_baselines3.common.policies import BaseModel, BasePolicy, register_policy, create_sde_features_extractor
+from stable_baselines3.common.policies import BasePolicy, register_policy, create_sde_features_extractor, ContinuousCritic
 from stable_baselines3.common.torch_layers import create_mlp, NatureCNN, BaseFeaturesExtractor, FlattenExtractor
 from stable_baselines3.common.distributions import SquashedDiagGaussianDistribution, StateDependentNoiseDistribution
 
@@ -179,54 +179,6 @@ class Actor(BasePolicy):
         return self.forward(observation, deterministic)
 
 
-class Critic(BaseModel):
-    """
-    Critic network (q-value function) for SAC.
-
-    :param observation_space: (gym.spaces.Space) Obervation space
-    :param action_space: (gym.spaces.Space) Action space
-    :param net_arch: ([int]) Network architecture
-    :param features_extractor: (nn.Module) Network to extract features
-        (a CNN when using images, a nn.Flatten() layer otherwise)
-    :param features_dim: (int) Number of features
-    :param activation_fn: (Type[nn.Module]) Activation function
-    :param normalize_images: (bool) Whether to normalize images or not,
-         dividing by 255.0 (True by default)
-    :param device: (Union[th.device, str]) Device on which the code should run.
-    """
-
-    def __init__(self, observation_space: gym.spaces.Space,
-                 action_space: gym.spaces.Space,
-                 net_arch: List[int],
-                 features_extractor: nn.Module,
-                 features_dim: int,
-                 activation_fn: Type[nn.Module] = nn.ReLU,
-                 normalize_images: bool = True,
-                 device: Union[th.device, str] = 'auto'):
-        super(Critic, self).__init__(observation_space, action_space,
-                                     features_extractor=features_extractor,
-                                     normalize_images=normalize_images,
-                                     device=device)
-
-        action_dim = get_action_dim(self.action_space)
-
-        q1_net = create_mlp(features_dim + action_dim, 1, net_arch, activation_fn)
-        self.q1_net = nn.Sequential(*q1_net)
-
-        q2_net = create_mlp(features_dim + action_dim, 1, net_arch, activation_fn)
-        self.q2_net = nn.Sequential(*q2_net)
-
-        self.q_networks = [self.q1_net, self.q2_net]
-
-    def forward(self, obs: th.Tensor, action: th.Tensor) -> List[th.Tensor]:
-        # Learn the features extractor using the policy loss only
-        # this is much faster
-        with th.no_grad():
-            features = self.extract_features(obs)
-        qvalue_input = th.cat([features, action], dim=1)
-        return [q_net(qvalue_input) for q_net in self.q_networks]
-
-
 class SACPolicy(BasePolicy):
     """
     Policy class (with both actor and critic) for SAC.
@@ -255,6 +207,7 @@ class SACPolicy(BasePolicy):
         ``th.optim.Adam`` by default
     :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
+    :param n_critics: (int) Number of critic networks to create.
     """
 
     def __init__(self, observation_space: gym.spaces.Space,
@@ -272,7 +225,8 @@ class SACPolicy(BasePolicy):
                  features_extractor_kwargs: Optional[Dict[str, Any]] = None,
                  normalize_images: bool = True,
                  optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
-                 optimizer_kwargs: Optional[Dict[str, Any]] = None):
+                 optimizer_kwargs: Optional[Dict[str, Any]] = None,
+                 n_critics: int = 2):
         super(SACPolicy, self).__init__(observation_space, action_space,
                                         device,
                                         features_extractor_class,
@@ -313,6 +267,9 @@ class SACPolicy(BasePolicy):
             'clip_mean': clip_mean
         }
         self.actor_kwargs.update(sde_kwargs)
+        self.critic_kwargs = self.net_args.copy()
+        self.critic_kwargs.update({'n_critics': n_critics})
+
         self.actor, self.actor_target = None, None
         self.critic, self.critic_target = None, None
 
@@ -345,6 +302,7 @@ class SACPolicy(BasePolicy):
             sde_net_arch=self.actor_kwargs['sde_net_arch'],
             use_expln=self.actor_kwargs['use_expln'],
             clip_mean=self.actor_kwargs['clip_mean'],
+            n_critics=self.critic_kwargs['n_critics'],
             lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
             optimizer_class=self.optimizer_class,
             optimizer_kwargs=self.optimizer_kwargs,
@@ -364,8 +322,8 @@ class SACPolicy(BasePolicy):
     def make_actor(self) -> Actor:
         return Actor(**self.actor_kwargs).to(self.device)
 
-    def make_critic(self) -> Critic:
-        return Critic(**self.net_args).to(self.device)
+    def make_critic(self) -> ContinuousCritic:
+        return ContinuousCritic(**self.critic_kwargs).to(self.device)
 
     def forward(self, obs: th.Tensor, deterministic: bool = False) -> th.Tensor:
         return self._predict(obs, deterministic=deterministic)
@@ -403,6 +361,7 @@ class CnnPolicy(SACPolicy):
         ``th.optim.Adam`` by default
     :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
+    :param n_critics: (int) Number of critic networks to create.
     """
 
     def __init__(self, observation_space: gym.spaces.Space,
@@ -420,7 +379,8 @@ class CnnPolicy(SACPolicy):
                  features_extractor_kwargs: Optional[Dict[str, Any]] = None,
                  normalize_images: bool = True,
                  optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
-                 optimizer_kwargs: Optional[Dict[str, Any]] = None):
+                 optimizer_kwargs: Optional[Dict[str, Any]] = None,
+                 n_critics: int = 2):
         super(CnnPolicy, self).__init__(observation_space,
                                         action_space,
                                         lr_schedule,
@@ -436,7 +396,8 @@ class CnnPolicy(SACPolicy):
                                         features_extractor_kwargs,
                                         normalize_images,
                                         optimizer_class,
-                                        optimizer_kwargs)
+                                        optimizer_kwargs,
+                                        n_critics)
 
 
 register_policy("MlpPolicy", MlpPolicy)

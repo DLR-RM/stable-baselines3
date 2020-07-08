@@ -320,8 +320,8 @@ class BaseAlgorithm(ABC):
                              f"Stored kwargs: {data['policy_kwargs']}, specified kwargs: {kwargs['policy_kwargs']}")
 
         # check if observation space and action space are part of the saved parameters
-        if ("observation_space" not in data or "action_space" not in data) and "env" not in data:
-            raise ValueError("The observation_space and action_space was not given, can't verify new environments")
+        if "observation_space" not in data or "action_space" not in data:
+            raise KeyError("The observation_space and action_space were not given, can't verify new environments")
         # check if given env is valid
         if env is not None:
             check_for_correct_spaces(env, data["observation_space"], data["action_space"])
@@ -425,8 +425,10 @@ class BaseAlgorithm(ABC):
         :return: (Tuple[int, BaseCallback])
         """
         self.start_time = time.time()
-        self.ep_info_buffer = deque(maxlen=100)
-        self.ep_success_buffer = deque(maxlen=100)
+        if self.ep_info_buffer is None or reset_num_timesteps:
+            # Initialize buffers if they don't exist, or reinitialize if resetting counters
+            self.ep_info_buffer = deque(maxlen=100)
+            self.ep_success_buffer = deque(maxlen=100)
 
         if self.action_noise is not None:
             self.action_noise.reset()

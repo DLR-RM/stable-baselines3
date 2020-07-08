@@ -5,7 +5,7 @@ import torch as th
 import torch.nn as nn
 
 from stable_baselines3.common.preprocessing import get_action_dim
-from stable_baselines3.common.policies import BasePolicy, register_policy, create_sde_features_extractor
+from stable_baselines3.common.policies import BaseModel, BasePolicy, register_policy, create_sde_features_extractor
 from stable_baselines3.common.torch_layers import create_mlp, NatureCNN, BaseFeaturesExtractor, FlattenExtractor
 from stable_baselines3.common.distributions import SquashedDiagGaussianDistribution, StateDependentNoiseDistribution
 
@@ -179,7 +179,7 @@ class Actor(BasePolicy):
         return self.forward(observation, deterministic)
 
 
-class Critic(BasePolicy):
+class Critic(BaseModel):
     """
     Critic network (q-value function) for SAC.
 

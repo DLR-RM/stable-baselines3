@@ -163,7 +163,6 @@ class BasePolicy(BaseModel):
         super(BasePolicy, self).__init__(*args, **kwargs)
         self._squash_output = squash_output
 
-
     @staticmethod
     def _dummy_schedule(progress_remaining: float) -> float:
         """ (float) Useful for pickling policy."""

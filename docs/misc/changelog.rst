@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.8.0a3 (WIP)
+Pre-Release 0.8.0a4 (WIP)
 ------------------------------
 
 Breaking Changes:
@@ -21,6 +21,7 @@ New Features:
   when ``psutil`` is available
 - Saving models now automatically creates the necessary folders and raises appropriate warnings (@PartiallyTyped)
 - Refactored opening paths for saving and loading to use strings, pathlib or io.BufferedIOBase (@PartiallyTyped)
+- Added ``DDPG`` algorithm as a special case of ``TD3``.
 
 Bug Fixes:
 ^^^^^^^^^^

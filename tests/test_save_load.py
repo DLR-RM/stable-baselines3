@@ -9,7 +9,7 @@ import gym
 import numpy as np
 import torch as th
 
-from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
+from stable_baselines3 import A2C, PPO, SAC, TD3, DQN, DDPG
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.identity_env import IdentityEnvBox, IdentityEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
@@ -26,6 +26,7 @@ MODEL_LIST = [
     TD3,
     SAC,
     DQN,
+    DDPG
 ]
 
 

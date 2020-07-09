@@ -200,7 +200,8 @@ class SAC(OffPolicyAlgorithm):
                 # Select action according to policy
                 next_actions, next_log_prob = self.actor.action_log_prob(replay_data.next_observations)
                 # Compute the target Q value: min over all critics targets
-                target_q = th.min(*self.critic_target(replay_data.next_observations, next_actions))
+                targets = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
+                target_q, _ = th.min(targets, dim=1, keepdim=True)
                 # add entropy term
                 target_q = target_q - ent_coef * next_log_prob.reshape(-1, 1)
                 # td error + entropy term
@@ -222,7 +223,8 @@ class SAC(OffPolicyAlgorithm):
             # Compute actor loss
             # Alternative: actor_loss = th.mean(log_prob - qf1_pi)
             # Mean over all critic networks
-            min_qf_pi = th.min(*self.critic.forward(replay_data.observations, actions_pi))
+            q_values_pi = th.cat(self.critic.forward(replay_data.observations, actions_pi), dim=1)
+            min_qf_pi, _ = th.min(q_values_pi, dim=1, keepdim=True)
             actor_loss = (ent_coef * log_prob - min_qf_pi).mean()
             actor_losses.append(actor_loss.item())
 

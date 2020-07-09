@@ -120,7 +120,8 @@ class TD3(OffPolicyAlgorithm):
                 next_actions = (self.actor_target(replay_data.next_observations) + noise).clamp(-1, 1)
 
                 # Compute the target Q value: min over all critics targets
-                target_q = th.min(*self.critic_target(replay_data.next_observations, next_actions))
+                targets = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
+                target_q, _ = th.min(targets, dim=1, keepdim=True)
                 target_q = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
 
             # Get current Q estimates for each critic network

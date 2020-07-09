@@ -46,9 +46,10 @@ def test_sac(ent_coef):
     model.learn(total_timesteps=1000, eval_freq=500)
 
 
-def test_sac_one_critic():
-    # Test SAC with only one critic, for TD3, this corresponds to DDPG
-    model = SAC('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[64, 64], n_critics=1),
+@pytest.mark.parametrize("n_critics", [1, 3])
+def test_n_critics(n_critics):
+    # Test SAC with different number of critics, for TD3, n_critics=1 corresponds to DDPG
+    model = SAC('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[64, 64], n_critics=n_critics),
                 learning_starts=100, verbose=1)
     model.learn(total_timesteps=1000)
 

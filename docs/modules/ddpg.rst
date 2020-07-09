@@ -62,7 +62,7 @@ Example
 
   env = gym.make('Pendulum-v0')
 
-  # The noise objects for TD3
+  # The noise objects for DDPG
   n_actions = env.action_space.shape[-1]
   action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
 
@@ -89,7 +89,7 @@ Parameters
   :members:
   :inherited-members:
 
-.. _td3_policies:
+.. _ddpg_policies:
 
 DDPG Policies
 -------------

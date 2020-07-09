@@ -46,6 +46,13 @@ def test_sac(ent_coef):
     model.learn(total_timesteps=1000, eval_freq=500)
 
 
+def test_sac_one_critic():
+    # Test SAC with only one critic, for TD3, this corresponds to DDPG
+    model = SAC('MlpPolicy', 'Pendulum-v0', policy_kwargs=dict(net_arch=[64, 64], n_critics=1),
+                learning_starts=100, verbose=1)
+    model.learn(total_timesteps=1000)
+
+
 def test_dqn():
     model = DQN('MlpPolicy', 'CartPole-v1', policy_kwargs=dict(net_arch=[64, 64]),
                 learning_starts=500, buffer_size=500, learning_rate=3e-4, verbose=1, create_eval_env=True)

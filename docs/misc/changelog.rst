@@ -12,6 +12,8 @@ Breaking Changes:
 - ``save_replay_buffer`` now receives as argument the file path instead of the folder path (@tirafesi)
 - Refactored ``Critic`` class for ``TD3`` and ``SAC``, it is now called ``ContinuousCritic``
   and has an additional parameter ``n_critics``
+- ``SAC`` and ``TD3`` now accept an arbitrary number of critics (e.g. ``policy_kwargs=dict(n_critics=3)``)
+    instead of 2 only previously
 
 New Features:
 ^^^^^^^^^^^^^

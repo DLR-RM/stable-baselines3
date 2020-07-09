@@ -118,7 +118,6 @@ class SAC(OffPolicyAlgorithm):
     def _setup_model(self) -> None:
         super(SAC, self)._setup_model()
         self._create_aliases()
-        assert self.critic.n_critics == 2, "SAC only supports `n_critics=2` for now"
         # Target entropy is used when learning the entropy coefficient
         if self.target_entropy == 'auto':
             # automatically set target entropy if needed
@@ -200,18 +199,19 @@ class SAC(OffPolicyAlgorithm):
             with th.no_grad():
                 # Select action according to policy
                 next_actions, next_log_prob = self.actor.action_log_prob(replay_data.next_observations)
-                # Compute the target Q value
-                target_q1, target_q2 = self.critic_target(replay_data.next_observations, next_actions)
-                target_q = th.min(target_q1, target_q2) - ent_coef * next_log_prob.reshape(-1, 1)
+                # Compute the target Q value: min over all critics targets
+                target_q = th.min(*self.critic_target(replay_data.next_observations, next_actions))
+                # add entropy term
+                target_q = target_q - ent_coef * next_log_prob.reshape(-1, 1)
                 # td error + entropy term
                 q_backup = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
 
-            # Get current Q estimates
+            # Get current Q estimates for each critic network
             # using action from the replay buffer
-            current_q1, current_q2 = self.critic(replay_data.observations, replay_data.actions)
+            current_q_esimates = self.critic(replay_data.observations, replay_data.actions)
 
             # Compute critic loss
-            critic_loss = 0.5 * (F.mse_loss(current_q1, q_backup) + F.mse_loss(current_q2, q_backup))
+            critic_loss = 0.5 * sum([F.mse_loss(current_q, q_backup) for current_q in current_q_esimates])
             critic_losses.append(critic_loss.item())
 
             # Optimize the critic
@@ -221,8 +221,8 @@ class SAC(OffPolicyAlgorithm):
 
             # Compute actor loss
             # Alternative: actor_loss = th.mean(log_prob - qf1_pi)
-            qf1_pi, qf2_pi = self.critic.forward(replay_data.observations, actions_pi)
-            min_qf_pi = th.min(qf1_pi, qf2_pi)
+            # Mean over all critic networks
+            min_qf_pi = th.min(*self.critic.forward(replay_data.observations, actions_pi))
             actor_loss = (ent_coef * log_prob - min_qf_pi).mean()
             actor_losses.append(actor_loss.item())
 

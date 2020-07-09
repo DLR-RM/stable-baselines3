@@ -57,7 +57,7 @@ Example
   import gym
   import numpy as np
 
-  from stable_baselines3 import TD3
+  from stable_baselines3 import DDPG
   from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 
   env = gym.make('Pendulum-v0')

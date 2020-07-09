@@ -60,7 +60,6 @@ class DDPG(TD3):
                  n_episodes_rollout: int = 1,
                  action_noise: Optional[ActionNoise] = None,
                  optimize_memory_usage: bool = False,
-                 policy_delay: int = 2,
                  tensorboard_log: Optional[str] = None,
                  create_eval_env: bool = False,
                  policy_kwargs: Dict[str, Any] = None,

@@ -21,6 +21,7 @@ New Features:
   when ``psutil`` is available
 - Saving models now automatically creates the necessary folders and raises appropriate warnings (@PartiallyTyped)
 - Refactored opening paths for saving and loading to use strings, pathlib or io.BufferedIOBase (@PartiallyTyped)
+- Introduced ``BaseModel`` abstract parent for ``BasePolicy``, which critics inherit from.
 
 Bug Fixes:
 ^^^^^^^^^^

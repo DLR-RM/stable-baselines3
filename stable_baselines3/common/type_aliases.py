@@ -1,6 +1,5 @@
-"""
-Common aliases for type hint
-"""
+"""Common aliases for type hints"""
+
 from typing import Union, Dict, Any, NamedTuple, List, Callable, Tuple
 
 import numpy as np

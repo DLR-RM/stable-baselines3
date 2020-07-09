@@ -19,7 +19,7 @@ from unittest.mock import MagicMock
 # We CANNOT enable 'sphinxcontrib.spelling' because ReadTheDocs.org does not support
 # PyEnchant.
 try:
-    import sphinxcontrib.spelling
+    import sphinxcontrib.spelling  # noqa: F401
     enable_spell_check = True
 except ImportError:
     enable_spell_check = False
@@ -128,6 +128,7 @@ html_logo = '_static/img/logo.png'
 
 def setup(app):
     app.add_stylesheet("css/baselines_theme.css")
+
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

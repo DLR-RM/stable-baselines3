@@ -153,8 +153,11 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             optimize_memory_usage=self.optimize_memory_usage,
         )
         self.policy = self.policy_class(
-            self.observation_space, self.action_space, self.lr_schedule, **self.policy_kwargs
-        )  # pytype:disable=not-instantiable
+            self.observation_space,
+            self.action_space,
+            self.lr_schedule,
+            **self.policy_kwargs  # pytype:disable=not-instantiable
+        )
         self.policy = self.policy.to(self.device)
 
     def save_replay_buffer(self, path: Union[str, pathlib.Path, io.BufferedIOBase]) -> None:

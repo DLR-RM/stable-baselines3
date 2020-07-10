@@ -44,6 +44,7 @@ Documentation:
 - Fixed a typo in the section of Enjoy a Trained Agent, in RL Baselines3 Zoo README. (@blurLake)
 - Added Unity reacher to the projects page (@koulakis)
 - Added PyBullet colab notebook
+- Fixed typo in PPO example code
 
 
 

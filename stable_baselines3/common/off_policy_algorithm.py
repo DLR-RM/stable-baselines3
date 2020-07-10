@@ -151,18 +151,11 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     def _setup_model(self) -> None:
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
-        self.replay_buffer = self.replay_buffer_cls(
-            self.buffer_size,
-            self.observation_space,
-            self.action_space,
-            self.device,
-            optimize_memory_usage=self.optimize_memory_usage,
-            **self.replay_buffer_kwargs
-        )
-
-        self.policy = self.policy_class(
-            self.observation_space, self.action_space, self.lr_schedule, **self.policy_kwargs
-        )
+        self.replay_buffer = self.replay_buffer_cls(self.buffer_size, self.observation_space,
+                                          self.action_space, self.device,
+                                          optimize_memory_usage=self.optimize_memory_usage, **self.replay_buffer_kwargs)
+        self.policy = self.policy_class(self.observation_space, self.action_space,
+                                        self.lr_schedule, **self.policy_kwargs)  # pytype:disable=not-instantiable
         self.policy = self.policy.to(self.device)
 
     def save_replay_buffer(self, path: Union[str, pathlib.Path, io.BufferedIOBase]) -> None:

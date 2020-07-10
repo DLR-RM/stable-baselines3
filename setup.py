@@ -92,7 +92,7 @@ setup(
             # Lint code
             "flake8>=3.8",
             # Sort imports
-            "isort",
+            "isort>=5.0",
             # Reformat
             "black",
         ],

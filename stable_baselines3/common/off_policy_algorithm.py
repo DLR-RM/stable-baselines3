@@ -19,10 +19,8 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.save_util import save_to_pkl, load_from_pkl
 
-_BufferType = TypeVar("_BufferType", bound=ReplayBuffer)
 
-
-class OffPolicyAlgorithm(BaseAlgorithm, Generic[_BufferType]):
+class OffPolicyAlgorithm(BaseAlgorithm):
     """
     The base for Off-Policy algorithms (ex: SAC/TD3)
 
@@ -75,7 +73,7 @@ class OffPolicyAlgorithm(BaseAlgorithm, Generic[_BufferType]):
         env: Union[GymEnv, str],
         policy_base: Type[BasePolicy],
         learning_rate: Union[float, Callable],
-        replay_buffer_cls: Type[_BufferType] = None,
+        replay_buffer_cls: Type[ReplayBuffer] = None,
         replay_buffer_kwargs: Optional[Mapping[str, Any]] = None,
         buffer_size: int = int(1e6),
         learning_starts: int = 100,

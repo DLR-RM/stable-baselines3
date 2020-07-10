@@ -91,7 +91,11 @@ setup(name='stable_baselines3',
               # Type check
               'pytype',
               # Lint code
-              'flake8>=3.8'
+              'flake8>=3.8',
+              # Sort imports
+              'isort',
+              # Reformat
+              'black'
           ],
           'docs': [
               'sphinx',

@@ -15,4 +15,7 @@ doc-build:
 
 lint-check:
   script:
+  # TODO: remove when the docker image is updated
+  - pip install black isort
+  - make check-codestyle
   - make lint

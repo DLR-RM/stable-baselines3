@@ -1,13 +1,13 @@
-from collections import deque
-from typing import Callable, Union, Optional
-import random
-import os
 import glob
-
+import os
+import random
+from collections import deque
+from typing import Callable, Optional, Union
 
 import gym
 import numpy as np
 import torch as th
+
 # Check if tensorboard is available for pytorch
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -15,8 +15,8 @@ except ImportError:
     SummaryWriter = None
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.type_aliases import GymEnv
 from stable_baselines3.common.preprocessing import is_image_space
+from stable_baselines3.common.type_aliases import GymEnv
 from stable_baselines3.common.vec_env import VecTransposeImage
 
 
@@ -68,7 +68,7 @@ def update_learning_rate(optimizer: th.optim.Optimizer, learning_rate: float) ->
     :param learning_rate: (float)
     """
     for param_group in optimizer.param_groups:
-        param_group['lr'] = learning_rate
+        param_group["lr"] = learning_rate
 
 
 def get_schedule_fn(value_schedule: Union[Callable, float]) -> Callable:
@@ -128,7 +128,7 @@ def constant_fn(val: float) -> Callable:
     return func
 
 
-def get_device(device: Union[th.device, str] = 'auto') -> th.device:
+def get_device(device: Union[th.device, str] = "auto") -> th.device:
     """
     Retrieve PyTorch device.
     It checks that the requested device is available first.
@@ -139,19 +139,19 @@ def get_device(device: Union[th.device, str] = 'auto') -> th.device:
     :return: (th.device)
     """
     # Cuda by default
-    if device == 'auto':
-        device = 'cuda'
+    if device == "auto":
+        device = "cuda"
     # Force conversion to th.device
     device = th.device(device)
 
     # Cuda not available
-    if device == th.device('cuda') and not th.cuda.is_available():
-        return th.device('cpu')
+    if device == th.device("cuda") and not th.cuda.is_available():
+        return th.device("cpu")
 
     return device
 
 
-def get_latest_run_id(log_path: Optional[str] = None, log_name: str = '') -> int:
+def get_latest_run_id(log_path: Optional[str] = None, log_name: str = "") -> int:
     """
     Returns the latest run number for the given log name and log path,
     by finding the greatest number in the directories.
@@ -167,8 +167,9 @@ def get_latest_run_id(log_path: Optional[str] = None, log_name: str = '') -> int
     return max_run_id
 
 
-def configure_logger(verbose: int = 0, tensorboard_log: Optional[str] = None,
-                     tb_log_name: str = '', reset_num_timesteps: bool = True) -> None:
+def configure_logger(
+    verbose: int = 0, tensorboard_log: Optional[str] = None, tb_log_name: str = "", reset_num_timesteps: bool = True
+) -> None:
     """
     Configure the logger's outputs.
 
@@ -202,13 +203,17 @@ def check_for_correct_spaces(env: GymEnv, observation_space: gym.spaces.Space, a
     :param observation_space: (gym.spaces.Space) Observation space to check against
     :param action_space: (gym.spaces.Space) Action space to check against
     """
-    if (observation_space != env.observation_space
+    if (
+        observation_space != env.observation_space
         # Special cases for images that need to be transposed
-        and not (is_image_space(env.observation_space)
-                 and observation_space == VecTransposeImage.transpose_space(env.observation_space))):
-        raise ValueError(f'Observation spaces do not match: {observation_space} != {env.observation_space}')
+        and not (
+            is_image_space(env.observation_space)
+            and observation_space == VecTransposeImage.transpose_space(env.observation_space)
+        )
+    ):
+        raise ValueError(f"Observation spaces do not match: {observation_space} != {env.observation_space}")
     if action_space != env.action_space:
-        raise ValueError(f'Action spaces do not match: {action_space} != {env.action_space}')
+        raise ValueError(f"Action spaces do not match: {action_space} != {env.action_space}")
 
 
 def is_vectorized_observation(observation: np.ndarray, observation_space: gym.spaces.Space) -> bool:
@@ -226,18 +231,21 @@ def is_vectorized_observation(observation: np.ndarray, observation_space: gym.sp
         elif observation.shape[1:] == observation_space.shape:
             return True
         else:
-            raise ValueError(f"Error: Unexpected observation shape {observation.shape} for "
-                             + f"Box environment, please use {observation_space.shape} "
-                             + "or (n_env, {}) for the observation shape."
-                             .format(", ".join(map(str, observation_space.shape))))
+            raise ValueError(
+                f"Error: Unexpected observation shape {observation.shape} for "
+                + f"Box environment, please use {observation_space.shape} "
+                + "or (n_env, {}) for the observation shape.".format(", ".join(map(str, observation_space.shape)))
+            )
     elif isinstance(observation_space, gym.spaces.Discrete):
         if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
             return False
         elif len(observation.shape) == 1:
             return True
         else:
-            raise ValueError(f"Error: Unexpected observation shape {observation.shape} for "
-                             + "Discrete environment, please use (1,) or (n_env, 1) for the observation shape.")
+            raise ValueError(
+                f"Error: Unexpected observation shape {observation.shape} for "
+                + "Discrete environment, please use (1,) or (n_env, 1) for the observation shape."
+            )
 
     elif isinstance(observation_space, gym.spaces.MultiDiscrete):
         if observation.shape == (len(observation_space.nvec),):
@@ -245,21 +253,26 @@ def is_vectorized_observation(observation: np.ndarray, observation_space: gym.sp
         elif len(observation.shape) == 2 and observation.shape[1] == len(observation_space.nvec):
             return True
         else:
-            raise ValueError(f"Error: Unexpected observation shape {observation.shape} for MultiDiscrete "
-                             + f"environment, please use ({len(observation_space.nvec)},) or "
-                             + f"(n_env, {len(observation_space.nvec)}) for the observation shape.")
+            raise ValueError(
+                f"Error: Unexpected observation shape {observation.shape} for MultiDiscrete "
+                + f"environment, please use ({len(observation_space.nvec)},) or "
+                + f"(n_env, {len(observation_space.nvec)}) for the observation shape."
+            )
     elif isinstance(observation_space, gym.spaces.MultiBinary):
         if observation.shape == (observation_space.n,):
             return False
         elif len(observation.shape) == 2 and observation.shape[1] == observation_space.n:
             return True
         else:
-            raise ValueError(f"Error: Unexpected observation shape {observation.shape} for MultiBinary "
-                             + f"environment, please use ({observation_space.n},) or "
-                             + f"(n_env, {observation_space.n}) for the observation shape.")
+            raise ValueError(
+                f"Error: Unexpected observation shape {observation.shape} for MultiBinary "
+                + f"environment, please use ({observation_space.n},) or "
+                + f"(n_env, {observation_space.n}) for the observation shape."
+            )
     else:
-        raise ValueError("Error: Cannot determine if the observation is vectorized "
-                         + f" with the space type {observation_space}.")
+        raise ValueError(
+            "Error: Cannot determine if the observation is vectorized " + f" with the space type {observation_space}."
+        )
 
 
 def safe_mean(arr: Union[np.ndarray, list, deque]) -> np.ndarray:

@@ -1,6 +1,6 @@
-from typing import Optional, List, Iterable
-from abc import ABC, abstractmethod
 import copy
+from abc import ABC, abstractmethod
+from typing import Iterable, List, Optional
 
 import numpy as np
 
@@ -41,7 +41,7 @@ class NormalActionNoise(ActionNoise):
         return np.random.normal(self._mu, self._sigma)
 
     def __repr__(self) -> str:
-        return f'NormalActionNoise(mu={self._mu}, sigma={self._sigma})'
+        return f"NormalActionNoise(mu={self._mu}, sigma={self._sigma})"
 
 
 class OrnsteinUhlenbeckActionNoise(ActionNoise):
@@ -57,11 +57,14 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
     :param initial_noise: (Optional[np.ndarray]) the initial value for the noise output, (if None: 0)
     """
 
-    def __init__(self, mean: np.ndarray,
-                 sigma: np.ndarray,
-                 theta: float = .15,
-                 dt: float = 1e-2,
-                 initial_noise: Optional[np.ndarray] = None):
+    def __init__(
+        self,
+        mean: np.ndarray,
+        sigma: np.ndarray,
+        theta: float = 0.15,
+        dt: float = 1e-2,
+        initial_noise: Optional[np.ndarray] = None,
+    ):
         self._theta = theta
         self._mu = mean
         self._sigma = sigma
@@ -72,8 +75,11 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         super(OrnsteinUhlenbeckActionNoise, self).__init__()
 
     def __call__(self) -> np.ndarray:
-        noise = (self.noise_prev + self._theta * (self._mu - self.noise_prev) * self._dt
-                 + self._sigma * np.sqrt(self._dt) * np.random.normal(size=self._mu.shape))
+        noise = (
+            self.noise_prev
+            + self._theta * (self._mu - self.noise_prev) * self._dt
+            + self._sigma * np.sqrt(self._dt) * np.random.normal(size=self._mu.shape)
+        )
         self.noise_prev = noise
         return noise
 
@@ -84,7 +90,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         self.noise_prev = self.initial_noise if self.initial_noise is not None else np.zeros_like(self._mu)
 
     def __repr__(self) -> str:
-        return f'OrnsteinUhlenbeckActionNoise(mu={self._mu}, sigma={self._sigma})'
+        return f"OrnsteinUhlenbeckActionNoise(mu={self._mu}, sigma={self._sigma})"
 
 
 class VectorizedActionNoise(ActionNoise):
@@ -149,15 +155,11 @@ class VectorizedActionNoise(ActionNoise):
         noises = list(noises)  # raises TypeError if not iterable
         assert len(noises) == self.n_envs, f"Expected a list of {self.n_envs} ActionNoises, found {len(noises)}."
 
-        different_types = [
-            i for i, noise in enumerate(noises)
-            if not isinstance(noise, type(self.base_noise))
-        ]
+        different_types = [i for i, noise in enumerate(noises) if not isinstance(noise, type(self.base_noise))]
 
         if len(different_types):
             raise ValueError(
-                f"Noise instances at indices {different_types} don't match the type of base_noise",
-                type(self.base_noise)
+                f"Noise instances at indices {different_types} don't match the type of base_noise", type(self.base_noise)
             )
 
         self._noises = noises

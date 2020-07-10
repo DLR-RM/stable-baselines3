@@ -1,9 +1,24 @@
-import pytest
 import numpy as np
+import pytest
 
-from stable_baselines3.common.logger import (make_output_format, read_csv, read_json, DEBUG, ScopedConfigure,
-                                             info, debug, set_level, configure, record, record_dict,
-                                             dump, record_mean, warn, error, reset)
+from stable_baselines3.common.logger import (
+    DEBUG,
+    ScopedConfigure,
+    configure,
+    debug,
+    dump,
+    error,
+    info,
+    make_output_format,
+    read_csv,
+    read_json,
+    record,
+    record_dict,
+    record_mean,
+    reset,
+    set_level,
+    warn,
+)
 
 KEY_VALUES = {
     "test": 1,
@@ -55,23 +70,23 @@ def test_main(tmp_path):
     record_dict({"test": 1})
 
 
-@pytest.mark.parametrize('_format', ['stdout', 'log', 'json', 'csv', 'tensorboard'])
+@pytest.mark.parametrize("_format", ["stdout", "log", "json", "csv", "tensorboard"])
 def test_make_output(tmp_path, _format):
     """
     test make output
 
     :param _format: (str) output format
     """
-    if _format == 'tensorboard':
+    if _format == "tensorboard":
         # Skip if no tensorboard installed
         pytest.importorskip("tensorboard")
 
     writer = make_output_format(_format, tmp_path)
     writer.write(KEY_VALUES, KEY_EXCLUDED)
     if _format == "csv":
-        read_csv(tmp_path / 'progress.csv')
-    elif _format == 'json':
-        read_json(tmp_path / 'progress.json')
+        read_csv(tmp_path / "progress.csv")
+    elif _format == "json":
+        read_json(tmp_path / "progress.json")
     writer.close()
 
 
@@ -80,4 +95,4 @@ def test_make_output_fail(tmp_path):
     test value error on logger
     """
     with pytest.raises(ValueError):
-        make_output_format('dummy_format', tmp_path)
+        make_output_format("dummy_format", tmp_path)

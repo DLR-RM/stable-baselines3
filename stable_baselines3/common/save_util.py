@@ -2,19 +2,19 @@
 Save util taken from stable_baselines
 used to serialize data (class parameters) of model classes
 """
-import io
-import os
-import json
 import base64
 import functools
-from typing import Dict, Any, Tuple, Optional, Union
-import warnings
-import zipfile
+import io
+import json
+import os
 import pathlib
 import pickle
+import warnings
+import zipfile
+from typing import Any, Dict, Optional, Tuple, Union
 
-import torch as th
 import cloudpickle
+import torch as th
 
 from stable_baselines3.common.type_aliases import TensorDict
 from stable_baselines3.common.utils import get_device
@@ -112,11 +112,7 @@ def data_to_json(data: Dict[str, Any]) -> str:
             # e.g. numpy scalars)
             if hasattr(data_item, "__dict__") or isinstance(data_item, dict):
                 # Take elements from __dict__ for custom classes
-                item_generator = (
-                    data_item.items
-                    if isinstance(data_item, dict)
-                    else data_item.__dict__.items
-                )
+                item_generator = data_item.items if isinstance(data_item, dict) else data_item.__dict__.items
                 for variable_name, variable_item in item_generator():
                     # Check if serializable. If not, just include the
                     # string-representation of the object.
@@ -130,9 +126,7 @@ def data_to_json(data: Dict[str, Any]) -> str:
     return json_string
 
 
-def json_to_data(
-    json_string: str, custom_objects: Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+def json_to_data(json_string: str, custom_objects: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Turn JSON serialization of class-parameters back into dictionary.
 
@@ -181,9 +175,7 @@ def json_to_data(
 
 
 @functools.singledispatch
-def open_path(
-    path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verbose=0, suffix=None
-):
+def open_path(path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verbose=0, suffix=None):
     """
     Opens a path for reading or writing with a preferred suffix and raises debug information.
     If the provided path is a derivative of io.BufferedIOBase it ensures that the file
@@ -221,9 +213,7 @@ def open_path(
 
 
 @open_path.register(str)
-def open_path_str(
-    path: str, mode: str, verbose=0, suffix=None
-) -> io.BufferedIOBase:
+def open_path_str(path: str, mode: str, verbose=0, suffix=None) -> io.BufferedIOBase:
     """
     Open a path given by a string. If writing to the path, the function ensures
     that the path exists.
@@ -240,9 +230,7 @@ def open_path_str(
 
 
 @open_path.register(pathlib.Path)
-def open_path_pathlib(
-    path: pathlib.Path, mode: str, verbose=0, suffix=None
-) -> io.BufferedIOBase:
+def open_path_pathlib(path: pathlib.Path, mode: str, verbose=0, suffix=None) -> io.BufferedIOBase:
     """
     Open a path given by a string. If writing to the path, the function ensures
     that the path exists.
@@ -331,9 +319,7 @@ def save_to_zip_file(
                     th.save(dict_, param_file)
 
 
-def save_to_pkl(
-    path: Union[str, pathlib.Path, io.BufferedIOBase], obj, verbose=0
-) -> None:
+def save_to_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], obj, verbose=0) -> None:
     """
     Save an object to path creating the necessary folders along the way.
     If the path exists and is a directory, it will raise a warning and rename the path.
@@ -364,9 +350,7 @@ def load_from_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], verbose=0) 
 
 
 def load_from_zip_file(
-    load_path: Union[str, pathlib.Path, io.BufferedIOBase],
-    load_data: bool = True,
-    verbose=0,
+    load_path: Union[str, pathlib.Path, io.BufferedIOBase], load_data: bool = True, verbose=0,
 ) -> (Tuple[Optional[Dict[str, Any]], Optional[TensorDict], Optional[TensorDict]]):
     """
     Load model data from a .zip archive
@@ -412,10 +396,7 @@ def load_from_zip_file(
 
             # check for all other .pth files
             other_files = [
-                file_name
-                for file_name in namelist
-                if os.path.splitext(file_name)[1] == ".pth"
-                and file_name != "tensors.pth"
+                file_name for file_name in namelist if os.path.splitext(file_name)[1] == ".pth" and file_name != "tensors.pth"
             ]
             # if there are any other files which end with .pth and aren't "params.pth"
             # assume that they each are optimizer parameters
@@ -429,9 +410,7 @@ def load_from_zip_file(
                         # go to start of file
                         file_content.seek(0)
                         # load the parameters with the right ``map_location``
-                        params[os.path.splitext(file_path)[0]] = th.load(
-                            file_content, map_location=device
-                        )
+                        params[os.path.splitext(file_path)[0]] = th.load(file_content, map_location=device)
     except zipfile.BadZipFile:
         # load_path wasn't a zip file
         raise ValueError(f"Error: the file {load_path} wasn't a zip-file")

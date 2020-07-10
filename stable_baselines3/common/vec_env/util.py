@@ -61,7 +61,7 @@ def obs_space_info(obs_space):
     elif isinstance(obs_space, gym.spaces.Tuple):
         subspaces = {i: space for i, space in enumerate(obs_space.spaces)}
     else:
-        assert not hasattr(obs_space, 'spaces'), f"Unsupported structured space '{type(obs_space)}'"
+        assert not hasattr(obs_space, "spaces"), f"Unsupported structured space '{type(obs_space)}'"
         subspaces = {None: obs_space}
     keys = []
     shapes = {}

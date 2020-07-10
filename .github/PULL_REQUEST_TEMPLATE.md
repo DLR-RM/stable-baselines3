@@ -28,4 +28,7 @@
 - [ ] I have checked the codestyle using `make check-codestyle` and `make lint` (**required**)
 - [ ] I have ensured `make pytest` and `make type` both pass. (**required**)
 
+
+Note: we are using a maximum length of 127 characters per line
+
 <!--- This Template is an edited version of the one from https://github.com/evilsocket/pwnagotchi/ -->

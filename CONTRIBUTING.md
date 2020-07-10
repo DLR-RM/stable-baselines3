@@ -38,8 +38,7 @@ pip install -e .[docs,tests,extra]
 
 ## Codestyle
 
-We are using [black codestyle](https://github.com/psf/black) together with [isort](https://github.com/timothycrosley/isort)
-to sort the imports.
+We are using [black codestyle](https://github.com/psf/black) (max line length of 127 characters) together with [isort](https://github.com/timothycrosley/isort) to sort the imports.
 
 **Please run `make format`** to reformat your code. You can check the codestyle using `make check-codestyle` and `make lint`.
 

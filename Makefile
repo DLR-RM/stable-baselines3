@@ -16,15 +16,15 @@ lint:
 
 format:
 	# Sort imports
-	isort stable_baselines3/ tests/ docs/conf.py
+	isort ${LINT_PATHS}
 	# Reformat using black
-	black -l 127 stable_baselines3/ setup.py tests/ docs/conf.py
+	black -l 127 ${LINT_PATHS}
 
 check-codestyle:
 	# Sort imports
-	isort --check stable_baselines3/ tests/ docs/conf.py
+	isort --check ${LINT_PATHS}
 	# Reformat using black
-	black --check -l 127 stable_baselines3/ setup.py tests/ docs/conf.py
+	black --check -l 127 ${LINT_PATHS}
 
 doc:
 	cd docs && make html

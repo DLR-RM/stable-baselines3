@@ -46,7 +46,7 @@ class NormalActionNoise(ActionNoise):
 
 class OrnsteinUhlenbeckActionNoise(ActionNoise):
     """
-    An Ornstein Uhlenbeck action noise, this is designed to aproximate brownian motion with friction.
+    An Ornstein Uhlenbeck action noise, this is designed to approximate Brownian motion with friction.
 
     Based on http://math.stackexchange.com/questions/1287634/implementing-ornstein-uhlenbeck-in-matlab
 

@@ -40,7 +40,6 @@ These algorithms will make it easier for the research community and industry to 
 Please look at the issue for more details.
 Planned features:
 
-- [ ] DDPG (you can use its successor TD3 for now)
 - [ ] HER
 
 ### Planned features (v1.1+)
@@ -152,6 +151,7 @@ All the following examples can be executed online using Google colab notebooks:
 - [Monitor Training and Plotting](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/monitor_training.ipynb)
 - [Atari Games](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/atari_games.ipynb)
 - [RL Baselines Zoo](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/rl-baselines-zoo.ipynb)
+- [PyBullet](https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/pybullet.ipynb)
 
 
 ## Implemented Algorithms
@@ -159,6 +159,8 @@ All the following examples can be executed online using Google colab notebooks:
 | **Name**         | **Recurrent**      | `Box`          | `Discrete`     | `MultiDiscrete` | `MultiBinary`  | **Multi Processing**              |
 | ------------------- | ------------------ | ------------------ | ------------------ | ------------------- | ------------------ | --------------------------------- |
 | A2C   | :x: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:                |
+| DDPG  | :x: | :heavy_check_mark: | :x:                | :x:                 | :x:                | :x:                               |
+| DQN   | :x: | :x: | :heavy_check_mark: | :x:                 | :x:                | :x:                               |
 | PPO   | :x: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:  | :heavy_check_mark: | :heavy_check_mark:                |
 | SAC   | :x: | :heavy_check_mark: | :x:                | :x:                 | :x:                | :x:                               |
 | TD3   | :x: | :heavy_check_mark: | :x:                | :x:                 | :x:                | :x:                               |

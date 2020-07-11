@@ -85,20 +85,37 @@ def test_nsteps():
     assert np.allclose(act, np.array([11, 12, 13, 14]).reshape(4, 1))
     assert np.allclose(next_obs, np.array([[2], [3], [4], [5]]))
 
+    buffer = NstepReplayBuffer(5, spaces.Discrete(5), spaces.Discrete(5), n_step=2, gamma=0.99)
+    buffer.add(0, 1, 10, 2, 0)
+    buffer.add(1, 2, 11, 1, 0)
+    buffer.add(2, 3, 12, 2, 0)
+    buffer.add(3, 4, 13, 2, 1)
+    buffer.add(4, 5, 14, 2, 0)
+    obs, act, next_obs, dones, rewards = buffer._get_samples(np.array([1, 1, 2, 3, 4]))
+    assert obs.shape == (5, 1)
+    assert act.shape == (5, 1)
+    assert next_obs.shape == (5, 1)
+    assert dones.shape == (5, 1)
+    assert rewards.shape == (5, 1)
+    assert np.allclose(dones, np.array([0, 0, 1, 1, 0]).reshape(5, 1))
+    assert np.allclose(rewards, np.array([2.98, 2.98, 3.98, 2, 2]).reshape(5, 1))
+    assert np.allclose(act, np.array([11, 11, 12, 13, 14]).reshape(5, 1))
+    assert np.allclose(next_obs, np.array([[3], [3], [4], [4], [5]]))
+
 
 @pytest.mark.parametrize("algo", [DQN, TD3])
 def test_with_algo(algo):
-    kwargs = {'policy_kwargs': dict(net_arch=[64]), '_init_setup_model':False}
+    # Integration test
+    kwargs = {"policy_kwargs": dict(net_arch=[64]), "_init_setup_model": False}
     if algo in [TD3, SAC]:
-        env_id = 'Pendulum-v0'
-        kwargs.update({'action_noise': NormalActionNoise(0.0, 0.1),
-                       'learning_starts': 100})
+        env_id = "Pendulum-v0"
+        kwargs.update({"action_noise": NormalActionNoise(0.0, 0.1), "learning_starts": 100})
     else:
-        env_id = 'CartPole-v1'
+        env_id = "CartPole-v1"
         if algo == DQN:
-            kwargs.update({'learning_starts': 100})
-    agent = algo('MlpPolicy', env_id, **kwargs)
+            kwargs.update({"learning_starts": 100})
+    agent = algo("MlpPolicy", env_id, **kwargs)
     agent.replay_buffer_cls = NstepReplayBuffer
-    agent.replay_buffer_kwargs.update({"gamma":agent.gamma, "n_step": 10})
+    agent.replay_buffer_kwargs.update({"gamma": agent.gamma, "n_step": 10})
     agent._setup_model()
     agent.learn(500)

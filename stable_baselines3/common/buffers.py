@@ -434,27 +434,36 @@ class NstepReplayBuffer(ReplayBuffer):
         rewards = self.rewards[indices].reshape(not_dones.shape)
         rewards = self._normalize_reward(rewards, env)
 
-        # filter to ignore loops around the buffer, see:
-        # https://github.com/DLR-RM/stable-baselines3/pull/81#issuecomment-653741592
-        # basically we need to ignore indices that are equal to self.pos
-        # because the indice at self.pos is older
-        # not_dones that are from other transitions are filtered out.
-        filt = np.hstack([np.ones((len(batch_inds), 1)), not_dones[:, 1:]]) * (indices != self.pos)
-        filt = np.multiply.accumulate(filt, 1).reshape(filt.shape)
+        # we filter through the indices.
+        # The immediate indice, i.e. col 0 is 1, so we ensure that it is here  using np.ones
+        # If the transition is terminal, we need to ignore the next but keep the reward
+        # we do this by "shifting" the not_dones one step to the right
+        filt = np.hstack([np.ones((len(batch_inds), 1)), not_dones[:, :-1]])
+        
+        # We ignore self.pos indice since it points to older transitions.
+        # we then accumulate to prevent continuing to the wrong transitions.
+        current_episode = np.multiply.accumulate(indices != self.pos, 1).reshape(filt.shape)
+        
+        # combine the filters
+        filt = filt * current_episode
 
-        # weighted rewards
-        rewards = filt * gammas * rewards
-        rewards = np.add.reduce(rewards, 1).reshape(len(batch_inds), 1).astype(np.float32)
+        # discount the rewards
+        rewards = (rewards * filt) @ gammas.T
+        rewards = rewards.reshape(len(batch_inds), 1).astype(np.float32)
+        
+        # Increments counts how many transitions we need to skip
+        # filt always sums up to 1 + n non terminal transitions due to hstack above
+        # so we subtract 1.
+        increments = np.add.reduce(filt, 1).astype(np.int).reshape(batch_inds.shape) - 1
 
-        increments = np.add.reduce(filt, 1).astype(np.int).reshape(batch_inds.shape)
-        next_obs_indices = (increments + batch_inds - 1) % self.buffer_size
+        next_obs_indices = (increments + batch_inds) % self.buffer_size
         obs = self._normalize_obs(self.observations[batch_inds, 0, :], env)
         if self.optimize_memory_usage:
             next_obs = self._normalize_obs(self.observations[(next_obs_indices + 1) % self.buffer_size, 0, :], env)
         else:
             next_obs = self._normalize_obs(self.next_observations[next_obs_indices, 0, :], env)
 
-        dones = 1. - (not_dones[np.arange(len(batch_inds)), increments-1]).reshape(len(batch_inds), 1)
+        dones = 1. - (not_dones[np.arange(len(batch_inds)), increments]).reshape(len(batch_inds), 1)
 
         data = (obs, actions, next_obs, dones, rewards)
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))

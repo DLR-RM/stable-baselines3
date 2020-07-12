@@ -8,7 +8,7 @@ import highway_env
 def test_her_model(model_class):
     HER = create_her(model_class)
     model = HER('MlpPolicy', 'parking-v0', n_sampled_goal=4,
-                goal_selection_strategy='future', policy_kwargs=dict(net_arch=[256,256,256]),
+                goal_selection_strategy='future', policy_kwargs=dict(net_arch=[256, 256, 256]),
                 learning_starts=100, verbose=1, create_eval_env=True, gamma=0.95, learning_rate=1e-3,
                 add_her_while_sampling=False)
     model.learn(total_timesteps=1000, eval_freq=100)
@@ -33,8 +33,7 @@ def test_her_model(model_class):
 def test_her_sampling(add_her_while_sampling, goal_selection_strategy):
     HER = create_her(SAC)
     model = HER('MlpPolicy', 'parking-v0', n_sampled_goal=4,
-                goal_selection_strategy=goal_selection_strategy, policy_kwargs=dict(net_arch=[256,256,256]),
+                goal_selection_strategy=goal_selection_strategy, policy_kwargs=dict(net_arch=[256, 256, 256]),
                 learning_starts=100, verbose=1, create_eval_env=True, gamma=0.95, learning_rate=1e-3,
                 add_her_while_sampling=add_her_while_sampling)
     model.learn(total_timesteps=1000, eval_freq=100)
-

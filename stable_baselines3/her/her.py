@@ -56,9 +56,8 @@ def create_her(model_class: Union[Type[SAC], Type[TD3], Type[OffPolicyAlgorithm]
             super(HER, self).__init__(policy, self.her_wrapped_env, learning_rate, **model_init_dict)
 
             self.replay_buffer = HindsightExperienceReplayBuffer(self.buffer_size, self.observation_space,
-                                                                 self.action_space, self.max_episode_steps,
-                                                                 self.her_wrapped_env, self.device, 1,
-                                                                 self.add_her_while_sampling,
+                                                                 self.action_space, self.her_wrapped_env,
+                                                                 self.device, 1, self.add_her_while_sampling,
                                                                  self.goal_selection_strategy, self.n_sampled_goal)
 
             self.her_obs_space = self.observation_space
@@ -71,8 +70,6 @@ def create_her(model_class: Union[Type[SAC], Type[TD3], Type[OffPolicyAlgorithm]
             """
 
             env = gym.make(env) if isinstance(env, str) else env
-            self.max_episode_steps = env._max_episode_steps
-
             if not isinstance(env, HERGoalEnvWrapper):
                 env = HERGoalEnvWrapper(env)
 

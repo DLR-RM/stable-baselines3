@@ -77,6 +77,9 @@ class HindsightExperienceReplayBuffer(BaseBuffer):
         self.env = wrapped_env
 
         self.observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32)
+        if not self.add_her_while_sampling:
+            self.next_observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32)
+
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -112,7 +115,7 @@ class HindsightExperienceReplayBuffer(BaseBuffer):
         if not self.add_her_while_sampling:
             data = (self._normalize_obs(self.observations[batch_inds, 0, :], env),
                     self.actions[batch_inds, 0, :],
-                    self._normalize_obs(self.observations[(batch_inds + 1) % self.buffer_size, 0, :], env),
+                    self._normalize_obs(self.next_observations[batch_inds, 0, :], env),
                     self.dones[batch_inds],
                     self._normalize_reward(self.rewards[batch_inds], env))
             return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
@@ -124,7 +127,7 @@ class HindsightExperienceReplayBuffer(BaseBuffer):
             her_inds = np.where(np.random.uniform(size=batch_size) < 1 - (1. / (1 + self.n_sampled_goal)))
 
             obs_dict = self.env.convert_obs_to_dict(self.observations[batch_inds])
-            next_obs_dict = self.env.convert_obs_to_dict(self.observations[batch_inds + 1])
+            next_obs_dict = self.env.convert_obs_to_dict(self.observations[(batch_inds + 1) % self.buffer_size])
 
             if self.goal_selection_strategy == GoalSelectionStrategy.RANDOM:
                 desired_goal_timestep_inds = np.random.randint(0, self.pos if not self.full else self.buffer_size,
@@ -261,9 +264,11 @@ class HindsightExperienceReplayBuffer(BaseBuffer):
                         reward: Union[float, np.ndarray],
                         done: Union[bool, np.ndarray]):
 
-        # if not self.add_her_while_sampling:
         self.observations[self.pos] = np.array(obs).copy()
-        self.observations[(self.pos + 1) % self.buffer_size] = np.array(next_obs).copy()
+        if not self.add_her_while_sampling:
+            self.next_observations[self.pos] = np.array(next_obs).copy()
+        else:
+            self.observations[(self.pos + 1) % self.buffer_size] = np.array(next_obs).copy()
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
         self.dones[self.pos] = np.array(done).copy()
@@ -309,12 +314,9 @@ class HindsightExperienceReplayBuffer(BaseBuffer):
             selected_transition = episode_transitions[selected_idx]
         elif self.goal_selection_strategy == GoalSelectionStrategy.RANDOM:
             # Random goal achieved, from the entire replay buffer
-            selected_idx = np.random.choice(np.arange(len(self.observations)))
+            selected_idx = np.random.choice(np.arange(self.pos if not self.full else self.buffer_size))
             obs = self.observations[selected_idx]
-            next_obs = self.observations[(selected_idx + 1) % self.buffer_size]
-            reward = self.rewards[selected_idx]
-            done = self.dones[selected_idx]
-            selected_transition = (obs, next_obs, reward, done)
+            return self.env.convert_obs_to_dict(obs[0])['achieved_goal']
         else:
             raise ValueError("Invalid goal selection strategy,"
                              "please use one of {}".format(list(GoalSelectionStrategy)))

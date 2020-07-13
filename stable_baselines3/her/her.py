@@ -6,7 +6,6 @@ import numpy as np
 from stable_baselines3 import SAC, TD3
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
-from stable_baselines3.common.save_util import (load_from_zip_file)
 from stable_baselines3.common.type_aliases import GymEnv
 
 from .replay_buffer import HindsightExperienceReplayBuffer
@@ -60,9 +59,6 @@ def create_her(model_class: Union[Type[SAC], Type[TD3], Type[OffPolicyAlgorithm]
                                                                  self.device, 1, self.add_her_while_sampling,
                                                                  self.goal_selection_strategy, self.n_sampled_goal)
 
-            self.her_obs_space = self.observation_space
-            self.her_action_space = self.action_space
-
         def _create_her_env_wrapper(self, env: Union[GymEnv, str]):
             """
             Wrap the environment in a HERGoalEnvWrapper
@@ -94,17 +90,11 @@ def create_her(model_class: Union[Type[SAC], Type[TD3], Type[OffPolicyAlgorithm]
             return observation
 
         @classmethod
-        def load(cls, load_path: str, env: Optional[GymEnv] = None):
+        def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs):
 
-            data, params, tensors = load_from_zip_file(load_path)
-            model = cls(policy=data['policy_class'], env=env,
-                        n_sampled_goal=data['n_sampled_goal'],
-                        goal_selection_strategy=data['goal_selection_strategy'],
-                        _init_setup_model=True)
-
-            model.__dict__['observation_space'] = data['her_obs_space']
-            model.__dict__['action_space'] = data['her_action_space']
-
+            if env is not None:
+                env = HERGoalEnvWrapper(env)
+            model = super(HER, cls).load(load_path, env, **kwargs)
             return model
 
     return HER

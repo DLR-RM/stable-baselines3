@@ -27,7 +27,7 @@ Notes
 
 .. note::
 
-    The default policies for DDPG differ a bit from others MlpPolicy: it uses ReLU instead of tanh activation,
+    The default policy for DDPG uses a ReLU activation, to match the original paper, whereas most other algorithms' MlpPolicy uses a tanh activation.
     to match the original paper
 
 

@@ -28,10 +28,10 @@ class DDPG(TD3):
     :param batch_size: (int) Minibatch size for each gradient update
     :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1)
     :param gamma: (float) the discount factor
-    :param train_freq: (int) Update the model every ``train_freq`` steps.
+    :param train_freq: (int) Update the model every ``train_freq`` steps. Set to -1 to disable.
     :param gradient_steps: (int) How many gradient update after each step
     :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
-        Note that this cannot be used at the same time as ``train_freq``
+        Note that this cannot be used at the same time as ``train_freq``. Set to `-1` to disable.
     :param action_noise: (ActionNoise) the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
     :param optimize_memory_usage: (bool) Enable a memory efficient variant of the replay buffer

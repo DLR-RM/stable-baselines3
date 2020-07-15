@@ -53,7 +53,7 @@ Train a PPO agent on ``Pendulum-v0`` using 4 environments.
 
   import gym
 
-  from stable_baselines3 import A2C
+  from stable_baselines3 import PPO
   from stable_baselines3.ppo import MlpPolicy
   from stable_baselines3.common.cmd_util import make_vec_env
 

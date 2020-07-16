@@ -330,7 +330,8 @@ class BaseAlgorithm(ABC):
             env = data["env"]
 
         # noinspection PyArgumentList
-        model = cls(policy=data["policy_class"], env=env, device='auto', _init_setup_model=False)
+        model = cls(policy=data["policy_class"], env=env,
+                    device='auto', _init_setup_model=False)  # pytype: disable=not-instantiable,wrong-keyword-args
 
         # load parameters
         model.__dict__.update(data)
@@ -350,7 +351,7 @@ class BaseAlgorithm(ABC):
         # Sample gSDE exploration matrix, so it uses the right device
         # see issue #44
         if model.use_sde:
-            model.policy.reset_noise()
+            model.policy.reset_noise()  # pytype: disable=attribute-error
         return model
 
     def set_random_seed(self, seed: Optional[int] = None) -> None:

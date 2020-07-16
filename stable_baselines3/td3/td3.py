@@ -308,8 +308,8 @@ class TD3(OffPolicyAlgorithm):
 
         return self
 
-    def collect_rollouts(
-        self,  # noqa: C901
+    def collect_rollouts(  # noqa: C901
+        self,
         env: VecEnv,
         # Type hint as string to avoid circular import
         callback: "BaseCallback",

@@ -281,10 +281,7 @@ def polyak_update(params: Iterable[th.nn.Parameter], target_params: Iterable[th.
     :param target_params: (Iterable[th.nn.Parameter]) parameters to update
     :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1)
     """
-    params = list(params)
-    target_params = list(target_params)
-    if params:
-        with th.no_grad():
-            for param, target_param in zip(params, target_params):
-                target_param.data.mul_(1 - tau)
-                th.add(target_param.data, param.data, alpha=tau, out=target_param.data)
+    with th.no_grad():
+        for param, target_param in zip(params, target_params):
+            target_param.data.mul_(1 - tau)
+            th.add(target_param.data, param.data, alpha=tau, out=target_param.data)

@@ -41,8 +41,10 @@ Others:
 - Added ``_on_step()`` for off-policy base class
 - Optimized replay buffer size by removing the need of ``next_observations`` numpy array
 - Optimized polyak updates (1.5-1.95 speedup) through inplace operations (@PartiallyTyped)
+- Switch to ``black`` codestyle and added ``make format``, ``make check-codestyle`` and ``commit-checks``
 - Ignored errors from newer pytype version
 - Added a check when using ``gSDE``
+- Removed codacy dependency from Dockerfile
 
 Documentation:
 ^^^^^^^^^^^^^^

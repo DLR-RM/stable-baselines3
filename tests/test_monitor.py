@@ -1,9 +1,9 @@
-import uuid
 import json
 import os
+import uuid
 
-import pandas
 import gym
+import pandas
 
 from stable_baselines3.common.monitor import Monitor, get_monitor_files, load_results
 
@@ -37,15 +37,15 @@ def test_monitor(tmp_path):
     assert sum(monitor_env.get_episode_rewards()) == sum(ep_rewards)
     _ = monitor_env.get_episode_times()
 
-    with open(monitor_file, 'rt') as file_handler:
+    with open(monitor_file, "rt") as file_handler:
         first_line = file_handler.readline()
-        assert first_line.startswith('#')
+        assert first_line.startswith("#")
         metadata = json.loads(first_line[1:])
-        assert metadata['env_id'] == "CartPole-v1"
-        assert set(metadata.keys()) == {'env_id', 't_start'}, "Incorrect keys in monitor metadata"
+        assert metadata["env_id"] == "CartPole-v1"
+        assert set(metadata.keys()) == {"env_id", "t_start"}, "Incorrect keys in monitor metadata"
 
         last_logline = pandas.read_csv(file_handler, index_col=None)
-        assert set(last_logline.keys()) == {'l', 't', 'r'}, "Incorrect keys in monitor logline"
+        assert set(last_logline.keys()) == {"l", "t", "r"}, "Incorrect keys in monitor logline"
     os.remove(monitor_file)
 
 

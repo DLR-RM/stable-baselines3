@@ -14,6 +14,20 @@ lint:
 	# exit-zero treats all errors as warnings.
 	flake8 ${LINT_PATHS} --count --exit-zero --statistics
 
+format:
+	# Sort imports
+	isort ${LINT_PATHS}
+	# Reformat using black
+	black -l 127 ${LINT_PATHS}
+
+check-codestyle:
+	# Sort imports
+	isort --check ${LINT_PATHS}
+	# Reformat using black
+	black --check -l 127 ${LINT_PATHS}
+
+commit-checks: format type lint
+
 doc:
 	cd docs && make html
 
@@ -22,8 +36,6 @@ spelling:
 
 clean:
 	cd docs && make clean
-
-.PHONY: clean spelling doc lint
 
 # Build docker images
 # If you do export RELEASE=True, it will also push them
@@ -46,3 +58,5 @@ test-release:
 	python setup.py sdist
 	python setup.py bdist_wheel
 	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+
+.PHONY: clean spelling doc lint format check-codestyle commit-checks

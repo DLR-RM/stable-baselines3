@@ -1,5 +1,5 @@
-from typing import Union, Optional, Generator
 import warnings
+from typing import Generator, Optional, Union
 
 import numpy as np
 import torch as th
@@ -11,9 +11,9 @@ try:
 except ImportError:
     psutil = None
 
-from stable_baselines3.common.vec_env import VecNormalize
-from stable_baselines3.common.type_aliases import RolloutBufferSamples, ReplayBufferSamples
 from stable_baselines3.common.preprocessing import get_action_dim, get_obs_shape
+from stable_baselines3.common.type_aliases import ReplayBufferSamples, RolloutBufferSamples
+from stable_baselines3.common.vec_env import VecNormalize
 
 
 class BaseBuffer(object):
@@ -176,17 +176,13 @@ class ReplayBuffer(BaseBuffer):
             # `observations` contains also the next observation
             self.next_observations = None
         else:
-            self.next_observations = np.zeros(
-                (self.buffer_size, self.n_envs,) + self.obs_shape, dtype=observation_space.dtype
-            )
+            self.next_observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=observation_space.dtype)
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
 
         if psutil is not None:
-            total_memory_usage = (
-                self.observations.nbytes + self.actions.nbytes + self.rewards.nbytes + self.dones.nbytes
-            )
+            total_memory_usage = self.observations.nbytes + self.actions.nbytes + self.rewards.nbytes + self.dones.nbytes
             if self.next_observations is not None:
                 total_memory_usage += self.next_observations.nbytes
 
@@ -199,9 +195,7 @@ class ReplayBuffer(BaseBuffer):
                     f"replay buffer {total_memory_usage:.2f}GB > {mem_available:.2f}GB"
                 )
 
-    def add(
-        self, obs: np.ndarray, next_obs: np.ndarray, action: np.ndarray, reward: np.ndarray, done: np.ndarray
-    ) -> None:
+    def add(self, obs: np.ndarray, next_obs: np.ndarray, action: np.ndarray, reward: np.ndarray, done: np.ndarray) -> None:
         # Copy to avoid modification by reference
         self.observations[self.pos] = np.array(obs).copy()
         if self.optimize_memory_usage:
@@ -333,13 +327,7 @@ class RolloutBuffer(BaseBuffer):
         self.returns = self.advantages + self.values
 
     def add(
-        self,
-        obs: np.ndarray,
-        action: np.ndarray,
-        reward: np.ndarray,
-        done: np.ndarray,
-        value: th.Tensor,
-        log_prob: th.Tensor,
+        self, obs: np.ndarray, action: np.ndarray, reward: np.ndarray, done: np.ndarray, value: th.Tensor, log_prob: th.Tensor,
     ) -> None:
         """
         :param obs: (np.ndarray) Observation
@@ -380,7 +368,7 @@ class RolloutBuffer(BaseBuffer):
 
         start_idx = 0
         while start_idx < self.buffer_size * self.n_envs:
-            yield self._get_samples(indices[start_idx: start_idx + batch_size])
+            yield self._get_samples(indices[start_idx : start_idx + batch_size])
             start_idx += batch_size
 
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> RolloutBufferSamples:
@@ -413,6 +401,7 @@ class NstepReplayBuffer(ReplayBuffer):
     :param n_step: (int) The number of transitions to consider when computing n-step returns
     :param gamma:  (float) The discount factor for future rewards.
     """
+
     def __init__(
         self,
         buffer_size: int,
@@ -461,18 +450,18 @@ class NstepReplayBuffer(ReplayBuffer):
         # we do this by "shifting" the not_dones one step to the right
         # so a terminal transition has a 1, and the next has a 0
         filt = np.hstack([np.ones((len(batch_inds), 1)), not_dones[:, :-1]])
-        
+
         # We ignore self.pos indice since it points to older transitions.
         # we then accumulate to prevent continuing to the wrong transitions.
         current_episode = np.multiply.accumulate(indices != self.pos, 1).reshape(filt.shape)
-        
+
         # combine the filters
         filt = filt * current_episode
 
         # discount the rewards
         rewards = (rewards * filt) @ gammas.T
         rewards = rewards.reshape(len(batch_inds), 1).astype(np.float32)
-        
+
         # Increments counts how many transitions we need to skip
         # filt always sums up to 1 + k non terminal transitions due to hstack above
         # so we subtract 1.
@@ -485,7 +474,7 @@ class NstepReplayBuffer(ReplayBuffer):
         else:
             next_obs = self._normalize_obs(self.next_observations[next_obs_indices, 0, :], env)
 
-        dones = 1. - (not_dones[np.arange(len(batch_inds)), increments]).reshape(len(batch_inds), 1)
+        dones = 1.0 - (not_dones[np.arange(len(batch_inds)), increments]).reshape(len(batch_inds), 1)
 
         data = (obs, actions, next_obs, dones, rewards)
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))

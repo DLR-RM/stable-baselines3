@@ -1,13 +1,14 @@
+from typing import Any, Callable, Dict, Optional, Type, Union
+
 import torch as th
-import torch.nn.functional as F
 from gym import spaces
-from typing import Type, Union, Callable, Optional, Dict, Any
+from torch.nn import functional as F
 
 from stable_baselines3.common import logger
 from stable_baselines3.common.on_policy_algorithm import OnPolicyAlgorithm
+from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.utils import explained_variance
-from stable_baselines3.common.policies import ActorCriticPolicy
 
 
 class A2C(OnPolicyAlgorithm):
@@ -50,44 +51,59 @@ class A2C(OnPolicyAlgorithm):
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
 
-    def __init__(self, policy: Union[str, Type[ActorCriticPolicy]],
-                 env: Union[GymEnv, str],
-                 learning_rate: Union[float, Callable] = 7e-4,
-                 n_steps: int = 5,
-                 gamma: float = 0.99,
-                 gae_lambda: float = 1.0,
-                 ent_coef: float = 0.0,
-                 vf_coef: float = 0.5,
-                 max_grad_norm: float = 0.5,
-                 rms_prop_eps: float = 1e-5,
-                 use_rms_prop: bool = True,
-                 use_sde: bool = False,
-                 sde_sample_freq: int = -1,
-                 normalize_advantage: bool = False,
-                 tensorboard_log: Optional[str] = None,
-                 create_eval_env: bool = False,
-                 policy_kwargs: Optional[Dict[str, Any]] = None,
-                 verbose: int = 0,
-                 seed: Optional[int] = None,
-                 device: Union[th.device, str] = 'auto',
-                 _init_setup_model: bool = True):
+    def __init__(
+        self,
+        policy: Union[str, Type[ActorCriticPolicy]],
+        env: Union[GymEnv, str],
+        learning_rate: Union[float, Callable] = 7e-4,
+        n_steps: int = 5,
+        gamma: float = 0.99,
+        gae_lambda: float = 1.0,
+        ent_coef: float = 0.0,
+        vf_coef: float = 0.5,
+        max_grad_norm: float = 0.5,
+        rms_prop_eps: float = 1e-5,
+        use_rms_prop: bool = True,
+        use_sde: bool = False,
+        sde_sample_freq: int = -1,
+        normalize_advantage: bool = False,
+        tensorboard_log: Optional[str] = None,
+        create_eval_env: bool = False,
+        policy_kwargs: Optional[Dict[str, Any]] = None,
+        verbose: int = 0,
+        seed: Optional[int] = None,
+        device: Union[th.device, str] = "auto",
+        _init_setup_model: bool = True,
+    ):
 
-        super(A2C, self).__init__(policy, env, learning_rate=learning_rate,
-                                  n_steps=n_steps, gamma=gamma, gae_lambda=gae_lambda,
-                                  ent_coef=ent_coef, vf_coef=vf_coef, max_grad_norm=max_grad_norm,
-                                  use_sde=use_sde, sde_sample_freq=sde_sample_freq,
-                                  tensorboard_log=tensorboard_log, policy_kwargs=policy_kwargs,
-                                  verbose=verbose, device=device, create_eval_env=create_eval_env,
-                                  seed=seed, _init_setup_model=False)
+        super(A2C, self).__init__(
+            policy,
+            env,
+            learning_rate=learning_rate,
+            n_steps=n_steps,
+            gamma=gamma,
+            gae_lambda=gae_lambda,
+            ent_coef=ent_coef,
+            vf_coef=vf_coef,
+            max_grad_norm=max_grad_norm,
+            use_sde=use_sde,
+            sde_sample_freq=sde_sample_freq,
+            tensorboard_log=tensorboard_log,
+            policy_kwargs=policy_kwargs,
+            verbose=verbose,
+            device=device,
+            create_eval_env=create_eval_env,
+            seed=seed,
+            _init_setup_model=False,
+        )
 
         self.normalize_advantage = normalize_advantage
 
         # Update optimizer inside the policy if we want to use RMSProp
         # (original implementation) rather than Adam
-        if use_rms_prop and 'optimizer_class' not in self.policy_kwargs:
-            self.policy_kwargs['optimizer_class'] = th.optim.RMSprop
-            self.policy_kwargs['optimizer_kwargs'] = dict(alpha=0.99, eps=rms_prop_eps,
-                                                          weight_decay=0)
+        if use_rms_prop and "optimizer_class" not in self.policy_kwargs:
+            self.policy_kwargs["optimizer_class"] = th.optim.RMSprop
+            self.policy_kwargs["optimizer_kwargs"] = dict(alpha=0.99, eps=rms_prop_eps, weight_decay=0)
 
         if _init_setup_model:
             self._setup_model()
@@ -139,8 +155,7 @@ class A2C(OnPolicyAlgorithm):
             th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.policy.optimizer.step()
 
-        explained_var = explained_variance(self.rollout_buffer.returns.flatten(),
-                                           self.rollout_buffer.values.flatten())
+        explained_var = explained_variance(self.rollout_buffer.returns.flatten(), self.rollout_buffer.values.flatten())
 
         self._n_updates += 1
         logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
@@ -148,21 +163,30 @@ class A2C(OnPolicyAlgorithm):
         logger.record("train/entropy_loss", entropy_loss.item())
         logger.record("train/policy_loss", policy_loss.item())
         logger.record("train/value_loss", value_loss.item())
-        if hasattr(self.policy, 'log_std'):
+        if hasattr(self.policy, "log_std"):
             logger.record("train/std", th.exp(self.policy.log_std).mean().item())
 
-    def learn(self,
-              total_timesteps: int,
-              callback: MaybeCallback = None,
-              log_interval: int = 100,
-              eval_env: Optional[GymEnv] = None,
-              eval_freq: int = -1,
-              n_eval_episodes: int = 5,
-              tb_log_name: str = "A2C",
-              eval_log_path: Optional[str] = None,
-              reset_num_timesteps: bool = True) -> 'A2C':
+    def learn(
+        self,
+        total_timesteps: int,
+        callback: MaybeCallback = None,
+        log_interval: int = 100,
+        eval_env: Optional[GymEnv] = None,
+        eval_freq: int = -1,
+        n_eval_episodes: int = 5,
+        tb_log_name: str = "A2C",
+        eval_log_path: Optional[str] = None,
+        reset_num_timesteps: bool = True,
+    ) -> "A2C":
 
-        return super(A2C, self).learn(total_timesteps=total_timesteps, callback=callback,
-                                      log_interval=log_interval, eval_env=eval_env, eval_freq=eval_freq,
-                                      n_eval_episodes=n_eval_episodes, tb_log_name=tb_log_name,
-                                      eval_log_path=eval_log_path, reset_num_timesteps=reset_num_timesteps)
+        return super(A2C, self).learn(
+            total_timesteps=total_timesteps,
+            callback=callback,
+            log_interval=log_interval,
+            eval_env=eval_env,
+            eval_freq=eval_freq,
+            n_eval_episodes=n_eval_episodes,
+            tb_log_name=tb_log_name,
+            eval_log_path=eval_log_path,
+            reset_num_timesteps=reset_num_timesteps,
+        )

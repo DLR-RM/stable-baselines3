@@ -1,6 +1,6 @@
+import gym
 import numpy as np
 import pytest
-import gym
 
 from stable_baselines3 import DQN, SAC, TD3
 from stable_baselines3.common.evaluation import evaluate_policy

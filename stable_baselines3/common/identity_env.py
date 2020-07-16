@@ -1,18 +1,14 @@
-from typing import Union, Optional
+from typing import Optional, Union
 
 import numpy as np
 from gym import Env, Space
-from gym.spaces import Discrete, MultiDiscrete, MultiBinary, Box
+from gym.spaces import Box, Discrete, MultiBinary, MultiDiscrete
 
-
-from stable_baselines3.common.type_aliases import GymStepReturn, GymObs
+from stable_baselines3.common.type_aliases import GymObs, GymStepReturn
 
 
 class IdentityEnv(Env):
-    def __init__(self,
-                 dim: Optional[int] = None,
-                 space: Optional[Space] = None,
-                 ep_length: int = 100):
+    def __init__(self, dim: Optional[int] = None, space: Optional[Space] = None, ep_length: int = 100):
         """
         Identity environment for testing purposes
 
@@ -55,14 +51,12 @@ class IdentityEnv(Env):
     def _get_reward(self, action: Union[int, np.ndarray]) -> float:
         return 1.0 if np.all(self.state == action) else 0.0
 
-    def render(self, mode: str = 'human') -> None:
+    def render(self, mode: str = "human") -> None:
         pass
 
 
 class IdentityEnvBox(IdentityEnv):
-    def __init__(self, low: float = -1.0,
-                 high: float = 1.0, eps: float = 0.05,
-                 ep_length: int = 100):
+    def __init__(self, low: float = -1.0, high: float = 1.0, eps: float = 0.05, ep_length: int = 100):
         """
         Identity environment for testing purposes
 
@@ -120,14 +114,12 @@ class FakeImageEnv(Env):
     :param n_channels: (int) Number of color channels
     :param discrete: (bool)
     """
-    def __init__(self, action_dim: int = 6,
-                 screen_height: int = 84,
-                 screen_width: int = 84,
-                 n_channels: int = 1,
-                 discrete: bool = True):
 
-        self.observation_space = Box(low=0, high=255, shape=(screen_height, screen_width,
-                                                             n_channels), dtype=np.uint8)
+    def __init__(
+        self, action_dim: int = 6, screen_height: int = 84, screen_width: int = 84, n_channels: int = 1, discrete: bool = True
+    ):
+
+        self.observation_space = Box(low=0, high=255, shape=(screen_height, screen_width, n_channels), dtype=np.uint8)
         if discrete:
             self.action_space = Discrete(action_dim)
         else:
@@ -145,5 +137,5 @@ class FakeImageEnv(Env):
         done = self.current_step >= self.ep_length
         return self.observation_space.sample(), reward, done, {}
 
-    def render(self, mode: str = 'human') -> None:
+    def render(self, mode: str = "human") -> None:
         pass

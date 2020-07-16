@@ -1,23 +1,23 @@
+import io
+import pathlib
 import time
 import warnings
-import pathlib
-import io
-from typing import Union, Type, Optional, Dict, Any, Callable, List, Tuple, Mapping, Generic, TypeVar
+from typing import Any, Callable, Dict, Generic, List, Mapping, Optional, Tuple, Type, TypeVar, Union
 
 import gym
-import torch as th
 import numpy as np
+import torch as th
 
 from stable_baselines3.common import logger
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.policies import BasePolicy
-from stable_baselines3.common.utils import safe_mean
-from stable_baselines3.common.vec_env import VecEnv
-from stable_baselines3.common.type_aliases import GymEnv, RolloutReturn, MaybeCallback
+from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
-from stable_baselines3.common.buffers import ReplayBuffer
-from stable_baselines3.common.save_util import save_to_pkl, load_from_pkl
+from stable_baselines3.common.policies import BasePolicy
+from stable_baselines3.common.save_util import load_from_pkl, save_to_pkl
+from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
+from stable_baselines3.common.utils import safe_mean
+from stable_baselines3.common.vec_env import VecEnv
 
 
 class OffPolicyAlgorithm(BaseAlgorithm):
@@ -154,11 +154,17 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     def _setup_model(self) -> None:
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
-        self.replay_buffer = self.replay_buffer_cls(self.buffer_size, self.observation_space,
-                                          self.action_space, self.device,
-                                          optimize_memory_usage=self.optimize_memory_usage, **self.replay_buffer_kwargs)
-        self.policy = self.policy_class(self.observation_space, self.action_space,
-                                        self.lr_schedule, **self.policy_kwargs)  # pytype:disable=not-instantiable
+        self.replay_buffer = self.replay_buffer_cls(
+            self.buffer_size,
+            self.observation_space,
+            self.action_space,
+            self.device,
+            optimize_memory_usage=self.optimize_memory_usage,
+            **self.replay_buffer_kwargs
+        )
+        self.policy = self.policy_class(
+            self.observation_space, self.action_space, self.lr_schedule, **self.policy_kwargs
+        )  # pytype:disable=not-instantiable
         self.policy = self.policy.to(self.device)
 
     def save_replay_buffer(self, path: Union[str, pathlib.Path, io.BufferedIOBase]) -> None:
@@ -233,14 +239,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     ) -> "OffPolicyAlgorithm":
 
         total_timesteps, callback = self._setup_learn(
-            total_timesteps,
-            eval_env,
-            callback,
-            eval_freq,
-            n_eval_episodes,
-            eval_log_path,
-            reset_num_timesteps,
-            tb_log_name,
+            total_timesteps, eval_env, callback, eval_freq, n_eval_episodes, eval_log_path, reset_num_timesteps, tb_log_name,
         )
 
         callback.on_training_start(locals(), globals())

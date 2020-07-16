@@ -1,15 +1,16 @@
-import sys
 import datetime
 import json
 import os
+import sys
 import tempfile
 import warnings
 from collections import defaultdict
-from typing import Dict, List, TextIO, Union, Any, Optional, Tuple
+from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
 
-import pandas
 import numpy as np
+import pandas
 import torch as th
+
 try:
     from torch.utils.tensorboard import SummaryWriter
 except ImportError:
@@ -27,8 +28,7 @@ class KVWriter(object):
     Key Value writer
     """
 
-    def write(self, key_values: Dict[str, Any],
-              key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
+    def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
         """
         Write a dictionary to file
 
@@ -67,10 +67,10 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         :param filename_or_file: (str or File) the file to write the log to
         """
         if isinstance(filename_or_file, str):
-            self.file = open(filename_or_file, 'wt')
+            self.file = open(filename_or_file, "wt")
             self.own_file = True
         else:
-            assert hasattr(filename_or_file, 'write'), f'Expected file or str, got {filename_or_file}'
+            assert hasattr(filename_or_file, "write"), f"Expected file or str, got {filename_or_file}"
             self.file = filename_or_file
             self.own_file = False
 
@@ -80,56 +80,56 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         tag = None
         for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
 
-            if excluded is not None and 'stdout' in excluded:
+            if excluded is not None and "stdout" in excluded:
                 continue
 
             if isinstance(value, float):
                 # Align left
-                value_str = f'{value:<8.3g}'
+                value_str = f"{value:<8.3g}"
             else:
                 value_str = str(value)
 
-            if key.find('/') > 0:  # Find tag and add it to the dict
-                tag = key[:key.find('/') + 1]
-                key2str[self._truncate(tag)] = ''
+            if key.find("/") > 0:  # Find tag and add it to the dict
+                tag = key[: key.find("/") + 1]
+                key2str[self._truncate(tag)] = ""
             # Remove tag from key
             if tag is not None and tag in key:
-                key = str('   ' + key[len(tag):])
+                key = str("   " + key[len(tag) :])
 
             key2str[self._truncate(key)] = self._truncate(value_str)
 
         # Find max widths
         if len(key2str) == 0:
-            warnings.warn('Tried to write empty key-value dict')
+            warnings.warn("Tried to write empty key-value dict")
             return
         else:
             key_width = max(map(len, key2str.keys()))
             val_width = max(map(len, key2str.values()))
 
         # Write out the data
-        dashes = '-' * (key_width + val_width + 7)
+        dashes = "-" * (key_width + val_width + 7)
         lines = [dashes]
         for key, value in key2str.items():
-            key_space = ' ' * (key_width - len(key))
-            val_space = ' ' * (val_width - len(value))
+            key_space = " " * (key_width - len(key))
+            val_space = " " * (val_width - len(value))
             lines.append(f"| {key}{key_space} | {value}{val_space} |")
         lines.append(dashes)
-        self.file.write('\n'.join(lines) + '\n')
+        self.file.write("\n".join(lines) + "\n")
 
         # Flush the output to the file
         self.file.flush()
 
     @classmethod
     def _truncate(cls, string: str, max_length: int = 23) -> str:
-        return string[:max_length - 3] + '...' if len(string) > max_length else string
+        return string[: max_length - 3] + "..." if len(string) > max_length else string
 
     def write_sequence(self, sequence: List) -> None:
         sequence = list(sequence)
         for i, elem in enumerate(sequence):
             self.file.write(elem)
             if i < len(sequence) - 1:  # add space unless this is the last one
-                self.file.write(' ')
-        self.file.write('\n')
+                self.file.write(" ")
+        self.file.write("\n")
         self.file.flush()
 
     def close(self) -> None:
@@ -147,23 +147,22 @@ class JSONOutputFormat(KVWriter):
 
         :param filename: (str) the file to write the log to
         """
-        self.file = open(filename, 'wt')
+        self.file = open(filename, "wt")
 
-    def write(self, key_values: Dict[str, Any],
-              key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
+    def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
         for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
 
-            if excluded is not None and 'json' in excluded:
+            if excluded is not None and "json" in excluded:
                 continue
 
-            if hasattr(value, 'dtype'):
+            if hasattr(value, "dtype"):
                 if value.shape == () or len(value) == 1:
                     # if value is a dimensionless numpy array or of length 1, serialize as a float
                     key_values[key] = float(value)
                 else:
                     # otherwise, a value is a numpy array, serialize as a list or nested lists
                     key_values[key] = value.tolist()
-        self.file.write(json.dumps(key_values) + '\n')
+        self.file.write(json.dumps(key_values) + "\n")
         self.file.flush()
 
     def close(self) -> None:
@@ -182,12 +181,11 @@ class CSVOutputFormat(KVWriter):
         :param filename: (str) the file to write the log to
         """
 
-        self.file = open(filename, 'w+t')
+        self.file = open(filename, "w+t")
         self.keys = []
-        self.separator = ','
+        self.separator = ","
 
-    def write(self, key_values: Dict[str, Any],
-              key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
+    def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
         # Add our current row to the history
         extra_keys = key_values.keys() - self.keys
         if extra_keys:
@@ -197,20 +195,20 @@ class CSVOutputFormat(KVWriter):
             self.file.seek(0)
             for (i, key) in enumerate(self.keys):
                 if i > 0:
-                    self.file.write(',')
+                    self.file.write(",")
                 self.file.write(key)
-            self.file.write('\n')
+            self.file.write("\n")
             for line in lines[1:]:
                 self.file.write(line[:-1])
                 self.file.write(self.separator * len(extra_keys))
-                self.file.write('\n')
+                self.file.write("\n")
         for i, key in enumerate(self.keys):
             if i > 0:
-                self.file.write(',')
+                self.file.write(",")
             value = key_values.get(key)
             if value is not None:
                 self.file.write(str(value))
-        self.file.write('\n')
+        self.file.write("\n")
         self.file.flush()
 
     def close(self) -> None:
@@ -227,17 +225,14 @@ class TensorBoardOutputFormat(KVWriter):
 
         :param folder: (str) the folder to write the log to
         """
-        assert SummaryWriter is not None, ("tensorboard is not installed, you can use "
-                                           "pip install tensorboard to do so")
+        assert SummaryWriter is not None, "tensorboard is not installed, you can use " "pip install tensorboard to do so"
         self.writer = SummaryWriter(log_dir=folder)
 
-    def write(self, key_values: Dict[str, Any],
-              key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
+    def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
 
-        for (key, value), (_, excluded) in zip(sorted(key_values.items()),
-                                               sorted(key_excluded.items())):
+        for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
 
-            if excluded is not None and 'tensorboard' in excluded:
+            if excluded is not None and "tensorboard" in excluded:
                 continue
 
             if isinstance(value, np.ScalarType):
@@ -258,7 +253,7 @@ class TensorBoardOutputFormat(KVWriter):
             self.writer = None
 
 
-def make_output_format(_format: str, log_dir: str, log_suffix: str = '') -> KVWriter:
+def make_output_format(_format: str, log_dir: str, log_suffix: str = "") -> KVWriter:
     """
     return a logger for the requested format
 
@@ -268,26 +263,26 @@ def make_output_format(_format: str, log_dir: str, log_suffix: str = '') -> KVWr
     :return: (KVWriter) the logger
     """
     os.makedirs(log_dir, exist_ok=True)
-    if _format == 'stdout':
+    if _format == "stdout":
         return HumanOutputFormat(sys.stdout)
-    elif _format == 'log':
-        return HumanOutputFormat(os.path.join(log_dir, f'log{log_suffix}.txt'))
-    elif _format == 'json':
-        return JSONOutputFormat(os.path.join(log_dir, f'progress{log_suffix}.json'))
-    elif _format == 'csv':
-        return CSVOutputFormat(os.path.join(log_dir, f'progress{log_suffix}.csv'))
-    elif _format == 'tensorboard':
+    elif _format == "log":
+        return HumanOutputFormat(os.path.join(log_dir, f"log{log_suffix}.txt"))
+    elif _format == "json":
+        return JSONOutputFormat(os.path.join(log_dir, f"progress{log_suffix}.json"))
+    elif _format == "csv":
+        return CSVOutputFormat(os.path.join(log_dir, f"progress{log_suffix}.csv"))
+    elif _format == "tensorboard":
         return TensorBoardOutputFormat(log_dir)
     else:
-        raise ValueError(f'Unknown format specified: {_format}')
+        raise ValueError(f"Unknown format specified: {_format}")
 
 
 # ================================================================
 # API
 # ================================================================
 
-def record(key: str, value: Any,
-           exclude: Optional[Union[str, Tuple[str, ...]]] = None) -> None:
+
+def record(key: str, value: Any, exclude: Optional[Union[str, Tuple[str, ...]]] = None) -> None:
     """
     Log a value of some diagnostic
     Call this once for each diagnostic quantity, each iteration
@@ -300,8 +295,7 @@ def record(key: str, value: Any,
     Logger.CURRENT.record(key, value, exclude)
 
 
-def record_mean(key: str, value: Union[int, float],
-                exclude: Optional[Union[str, Tuple[str, ...]]] = None) -> None:
+def record_mean(key: str, value: Union[int, float], exclude: Optional[Union[str, Tuple[str, ...]]] = None) -> None:
     """
     The same as record(), but if called many times, values averaged.
 
@@ -431,6 +425,7 @@ dump_tabular = dump
 # Backend
 # ================================================================
 
+
 class Logger(object):
     # A logger with no output files. (See right below class definition)
     #  So that you can still log to the terminal without setting up any output files
@@ -453,8 +448,7 @@ class Logger(object):
 
     # Logging API, forwarded
     # ----------------------------------------
-    def record(self, key: str, value: Any,
-               exclude: Optional[Union[str, Tuple[str, ...]]] = None) -> None:
+    def record(self, key: str, value: Any, exclude: Optional[Union[str, Tuple[str, ...]]] = None) -> None:
         """
         Log a value of some diagnostic
         Call this once for each diagnostic quantity, each iteration
@@ -467,8 +461,7 @@ class Logger(object):
         self.name_to_value[key] = value
         self.name_to_excluded[key] = exclude
 
-    def record_mean(self, key: str, value: Any,
-                    exclude: Optional[Union[str, Tuple[str, ...]]] = None) -> None:
+    def record_mean(self, key: str, value: Any, exclude: Optional[Union[str, Tuple[str, ...]]] = None) -> None:
         """
         The same as record(), but if called many times, values averaged.
 
@@ -565,21 +558,21 @@ def configure(folder: Optional[str] = None, format_strings: Optional[List[str]] 
         (if None, $SB3_LOG_FORMAT, if still None, ['stdout', 'log', 'csv'])
     """
     if folder is None:
-        folder = os.getenv('SB3_LOGDIR')
+        folder = os.getenv("SB3_LOGDIR")
     if folder is None:
         folder = os.path.join(tempfile.gettempdir(), datetime.datetime.now().strftime("SB3-%Y-%m-%d-%H-%M-%S-%f"))
     assert isinstance(folder, str)
     os.makedirs(folder, exist_ok=True)
 
-    log_suffix = ''
+    log_suffix = ""
     if format_strings is None:
-        format_strings = os.getenv('SB3_LOG_FORMAT', 'stdout,log,csv').split(',')
+        format_strings = os.getenv("SB3_LOG_FORMAT", "stdout,log,csv").split(",")
 
     format_strings = filter(None, format_strings)
     output_formats = [make_output_format(f, folder, log_suffix) for f in format_strings]
 
     Logger.CURRENT = Logger(folder=folder, output_formats=output_formats)
-    log(f'Logging to {folder}')
+    log(f"Logging to {folder}")
 
 
 def reset() -> None:
@@ -589,7 +582,7 @@ def reset() -> None:
     if Logger.CURRENT is not Logger.DEFAULT:
         Logger.CURRENT.close()
         Logger.CURRENT = Logger.DEFAULT
-        log('Reset logger')
+        log("Reset logger")
 
 
 class ScopedConfigure(object):
@@ -621,6 +614,7 @@ class ScopedConfigure(object):
 # Readers
 # ================================================================
 
+
 def read_json(filename: str) -> pandas.DataFrame:
     """
     read a json file using pandas
@@ -629,7 +623,7 @@ def read_json(filename: str) -> pandas.DataFrame:
     :return: (pandas.DataFrame) the data in the json
     """
     data = []
-    with open(filename, 'rt') as file_handler:
+    with open(filename, "rt") as file_handler:
         for line in file_handler:
             data.append(json.loads(line))
     return pandas.DataFrame(data)
@@ -642,4 +636,4 @@ def read_csv(filename: str) -> pandas.DataFrame:
     :param filename: (str) the file path to read
     :return: (pandas.DataFrame) the data in the csv
     """
-    return pandas.read_csv(filename, index_col=None, comment='#')
+    return pandas.read_csv(filename, index_col=None, comment="#")

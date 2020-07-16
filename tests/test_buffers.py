@@ -1,11 +1,10 @@
-import pytest
-
 import numpy as np
+import pytest
 from gym import spaces
 
+from stable_baselines3 import DQN, SAC, TD3
 from stable_baselines3.common.buffers import NstepReplayBuffer
 from stable_baselines3.common.noise import NormalActionNoise
-from stable_baselines3 import DQN, TD3, SAC
 
 
 def test_nsteps():

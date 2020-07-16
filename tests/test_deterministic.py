@@ -1,6 +1,6 @@
 import pytest
 
-from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
+from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.noise import NormalActionNoise
 
 N_STEPS_TRAINING = 3000
@@ -12,18 +12,17 @@ def test_deterministic_training_common(algo):
     results = [[], []]
     rewards = [[], []]
     # Smaller network
-    kwargs = {'policy_kwargs': dict(net_arch=[64])}
+    kwargs = {"policy_kwargs": dict(net_arch=[64])}
     if algo in [TD3, SAC]:
-        env_id = 'Pendulum-v0'
-        kwargs.update({'action_noise': NormalActionNoise(0.0, 0.1),
-                       'learning_starts': 100})
+        env_id = "Pendulum-v0"
+        kwargs.update({"action_noise": NormalActionNoise(0.0, 0.1), "learning_starts": 100})
     else:
-        env_id = 'CartPole-v1'
+        env_id = "CartPole-v1"
         if algo == DQN:
-            kwargs.update({'learning_starts': 100})
+            kwargs.update({"learning_starts": 100})
 
     for i in range(2):
-        model = algo('MlpPolicy', env_id, seed=SEED, **kwargs)
+        model = algo("MlpPolicy", env_id, seed=SEED, **kwargs)
         model.learn(N_STEPS_TRAINING)
         env = model.get_env()
         obs = env.reset()

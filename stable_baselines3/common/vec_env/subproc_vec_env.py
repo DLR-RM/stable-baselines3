@@ -5,7 +5,7 @@ from typing import Sequence
 import gym
 import numpy as np
 
-from stable_baselines3.common.vec_env.base_vec_env import VecEnv, CloudpickleWrapper
+from stable_baselines3.common.vec_env.base_vec_env import CloudpickleWrapper, VecEnv
 
 
 def _worker(remote, parent_remote, env_fn_wrapper):
@@ -14,32 +14,32 @@ def _worker(remote, parent_remote, env_fn_wrapper):
     while True:
         try:
             cmd, data = remote.recv()
-            if cmd == 'step':
+            if cmd == "step":
                 observation, reward, done, info = env.step(data)
                 if done:
                     # save final observation where user can get it, then reset
-                    info['terminal_observation'] = observation
+                    info["terminal_observation"] = observation
                     observation = env.reset()
                 remote.send((observation, reward, done, info))
-            elif cmd == 'seed':
+            elif cmd == "seed":
                 remote.send(env.seed(data))
-            elif cmd == 'reset':
+            elif cmd == "reset":
                 observation = env.reset()
                 remote.send(observation)
-            elif cmd == 'render':
+            elif cmd == "render":
                 remote.send(env.render(data))
-            elif cmd == 'close':
+            elif cmd == "close":
                 env.close()
                 remote.close()
                 break
-            elif cmd == 'get_spaces':
+            elif cmd == "get_spaces":
                 remote.send((env.observation_space, env.action_space))
-            elif cmd == 'env_method':
+            elif cmd == "env_method":
                 method = getattr(env, data[0])
                 remote.send(method(*data[1], **data[2]))
-            elif cmd == 'get_attr':
+            elif cmd == "get_attr":
                 remote.send(getattr(env, data))
-            elif cmd == 'set_attr':
+            elif cmd == "set_attr":
                 remote.send(setattr(env, data[0], data[1]))
             else:
                 raise NotImplementedError(f"`{cmd}` is not implemented in the worker")
@@ -80,8 +80,8 @@ class SubprocVecEnv(VecEnv):
             # Fork is not a thread safe method (see issue #217)
             # but is more user friendly (does not require to wrap the code in
             # a `if __name__ == "__main__":`)
-            forkserver_available = 'forkserver' in multiprocessing.get_all_start_methods()
-            start_method = 'forkserver' if forkserver_available else 'spawn'
+            forkserver_available = "forkserver" in multiprocessing.get_all_start_methods()
+            start_method = "forkserver" if forkserver_available else "spawn"
         ctx = multiprocessing.get_context(start_method)
 
         self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(n_envs)])
@@ -94,13 +94,13 @@ class SubprocVecEnv(VecEnv):
             self.processes.append(process)
             work_remote.close()
 
-        self.remotes[0].send(('get_spaces', None))
+        self.remotes[0].send(("get_spaces", None))
         observation_space, action_space = self.remotes[0].recv()
         VecEnv.__init__(self, len(env_fns), observation_space, action_space)
 
     def step_async(self, actions):
         for remote, action in zip(self.remotes, actions):
-            remote.send(('step', action))
+            remote.send(("step", action))
         self.waiting = True
 
     def step_wait(self):
@@ -111,12 +111,12 @@ class SubprocVecEnv(VecEnv):
 
     def seed(self, seed=None):
         for idx, remote in enumerate(self.remotes):
-            remote.send(('seed', seed + idx))
+            remote.send(("seed", seed + idx))
         return [remote.recv() for remote in self.remotes]
 
     def reset(self):
         for remote in self.remotes:
-            remote.send(('reset', None))
+            remote.send(("reset", None))
         obs = [remote.recv() for remote in self.remotes]
         return _flatten_obs(obs, self.observation_space)
 
@@ -127,7 +127,7 @@ class SubprocVecEnv(VecEnv):
             for remote in self.remotes:
                 remote.recv()
         for remote in self.remotes:
-            remote.send(('close', None))
+            remote.send(("close", None))
         for process in self.processes:
             process.join()
         self.closed = True
@@ -136,7 +136,7 @@ class SubprocVecEnv(VecEnv):
         for pipe in self.remotes:
             # gather images from subprocesses
             # `mode` will be taken into account later
-            pipe.send(('render', 'rgb_array'))
+            pipe.send(("render", "rgb_array"))
         imgs = [pipe.recv() for pipe in self.remotes]
         return imgs
 
@@ -144,14 +144,14 @@ class SubprocVecEnv(VecEnv):
         """Return attribute from vectorized environment (see base class)."""
         target_remotes = self._get_target_remotes(indices)
         for remote in target_remotes:
-            remote.send(('get_attr', attr_name))
+            remote.send(("get_attr", attr_name))
         return [remote.recv() for remote in target_remotes]
 
     def set_attr(self, attr_name, value, indices=None):
         """Set attribute inside vectorized environments (see base class)."""
         target_remotes = self._get_target_remotes(indices)
         for remote in target_remotes:
-            remote.send(('set_attr', (attr_name, value)))
+            remote.send(("set_attr", (attr_name, value)))
         for remote in target_remotes:
             remote.recv()
 
@@ -159,7 +159,7 @@ class SubprocVecEnv(VecEnv):
         """Call instance methods of vectorized environments."""
         target_remotes = self._get_target_remotes(indices)
         for remote in target_remotes:
-            remote.send(('env_method', (method_name, method_args, method_kwargs)))
+            remote.send(("env_method", (method_name, method_args, method_kwargs)))
         return [remote.recv() for remote in target_remotes]
 
     def _get_target_remotes(self, indices):

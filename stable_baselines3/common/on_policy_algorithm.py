@@ -117,8 +117,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             self.lr_schedule,
             use_sde=self.use_sde,
             device=self.device,
-            **self.policy_kwargs
-        )  # pytype:disable=not-instantiable
+            **self.policy_kwargs  # pytype:disable=not-instantiable
+        )
         self.policy = self.policy.to(self.device)
 
     def collect_rollouts(

@@ -82,19 +82,19 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
     if not isinstance(observation_space, spaces.Tuple):
         assert not isinstance(
             obs, tuple
-        ), "The observation returned by the `{}()` " "method should be a single value, not a tuple".format(method_name)
+        ), "The observation returned by the `{}()` method should be a single value, not a tuple".format(method_name)
 
     # The check for a GoalEnv is done by the base class
     if isinstance(observation_space, spaces.Discrete):
         assert isinstance(obs, int), "The observation returned by `{}()` method must be an int".format(method_name)
     elif _enforce_array_obs(observation_space):
-        assert isinstance(obs, np.ndarray), "The observation returned by `{}()` " "method must be a numpy array".format(
+        assert isinstance(obs, np.ndarray), "The observation returned by `{}()` method must be a numpy array".format(
             method_name
         )
 
     assert observation_space.contains(
         obs
-    ), "The observation returned by the `{}()` " "method does not match the given observation space".format(method_name)
+    ), "The observation returned by the `{}()` method does not match the given observation space".format(method_name)
 
 
 def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action_space: spaces.Space) -> None:
@@ -187,9 +187,9 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
     :param skip_render_check: (bool) Whether to skip the checks for the render method.
         True by default (useful for the CI)
     """
-    assert isinstance(env, gym.Env), (
-        "You environment must inherit from gym.Env class " " cf https://github.com/openai/gym/blob/master/gym/core.py"
-    )
+    assert isinstance(
+        env, gym.Env
+    ), "You environment must inherit from gym.Env class cf https://github.com/openai/gym/blob/master/gym/core.py"
 
     # ============= Check the spaces (observation and action) ================
     _check_spaces(env)

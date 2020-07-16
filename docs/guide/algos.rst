@@ -9,10 +9,11 @@ along with some useful characteristics: support for discrete/continuous actions,
 Name         ``Box``     ``Discrete`` ``MultiDiscrete`` ``MultiBinary`` Multi Processing
 ============ =========== ============ ================= =============== ================
 A2C          ✔️           ✔️            ✔️                 ✔️               ✔️
+DDPG         ✔️          ❌            ❌                ❌              ❌
+DQN          ❌           ✔️           ❌                ❌              ❌
 PPO          ✔️           ✔️            ✔️                 ✔️               ✔️
 SAC          ✔️          ❌            ❌                ❌              ❌
 TD3          ✔️          ❌            ❌                ❌              ❌
-DQN          ❌           ✔️           ❌                ❌              ❌
 ============ =========== ============ ================= =============== ================
 
 

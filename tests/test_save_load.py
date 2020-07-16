@@ -9,19 +9,13 @@ import numpy as np
 import pytest
 import torch as th
 
-from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
+from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.identity_env import FakeImageEnv, IdentityEnv, IdentityEnvBox
 from stable_baselines3.common.save_util import load_from_pkl, open_path, save_to_pkl
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-MODEL_LIST = [
-    PPO,
-    A2C,
-    TD3,
-    SAC,
-    DQN,
-]
+MODEL_LIST = [PPO, A2C, TD3, SAC, DQN, DDPG]
 
 
 def select_env(model_class: BaseAlgorithm) -> gym.Env:

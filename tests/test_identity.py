@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
+from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.identity_env import IdentityEnv, IdentityEnvBox, IdentityEnvMultiBinary, IdentityEnvMultiDiscrete
 from stable_baselines3.common.noise import NormalActionNoise
@@ -31,11 +31,11 @@ def test_discrete(model_class, env):
     assert np.shape(model.predict(obs)[0]) == np.shape(obs)
 
 
-@pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3])
+@pytest.mark.parametrize("model_class", [A2C, PPO, SAC, DDPG, TD3])
 def test_continuous(model_class):
     env = IdentityEnvBox(eps=0.5)
 
-    n_steps = {A2C: 3500, PPO: 3000, SAC: 700, TD3: 500}[model_class]
+    n_steps = {A2C: 3500, PPO: 3000, SAC: 700, TD3: 500, DDPG: 500}[model_class]
 
     kwargs = dict(policy_kwargs=dict(net_arch=[64, 64]), seed=0, gamma=0.95)
     if model_class in [TD3]:

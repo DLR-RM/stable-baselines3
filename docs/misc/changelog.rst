@@ -37,6 +37,7 @@ Others:
 - Split the ``collect_rollout()`` method for off-policy algorithms
 - Added ``_on_step()`` for off-policy base class
 - Optimized replay buffer size by removing the need of ``next_observations`` numpy array
+- Ignored errors from newer pytype version
 
 Documentation:
 ^^^^^^^^^^^^^^

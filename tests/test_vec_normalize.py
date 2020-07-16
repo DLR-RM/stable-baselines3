@@ -1,13 +1,18 @@
 import gym
-import pytest
 import numpy as np
+import pytest
 
-from stable_baselines3.common.running_mean_std import RunningMeanStd
-from stable_baselines3.common.vec_env import (DummyVecEnv, VecNormalize, VecFrameStack, sync_envs_normalization,
-                                              unwrap_vec_normalize)
 from stable_baselines3 import SAC, TD3
+from stable_baselines3.common.running_mean_std import RunningMeanStd
+from stable_baselines3.common.vec_env import (
+    DummyVecEnv,
+    VecFrameStack,
+    VecNormalize,
+    sync_envs_normalization,
+    unwrap_vec_normalize,
+)
 
-ENV_ID = 'Pendulum-v0'
+ENV_ID = "Pendulum-v0"
 
 
 def make_env():
@@ -54,8 +59,9 @@ def _make_warmstart_cartpole():
 def test_runningmeanstd():
     """Test RunningMeanStd object"""
     for (x_1, x_2, x_3) in [
-            (np.random.randn(3), np.random.randn(4), np.random.randn(5)),
-            (np.random.randn(3, 2), np.random.randn(4, 2), np.random.randn(5, 2))]:
+        (np.random.randn(3), np.random.randn(4), np.random.randn(5)),
+        (np.random.randn(3, 2), np.random.randn(4, 2), np.random.randn(5, 2)),
+    ]:
         rms = RunningMeanStd(epsilon=0.0, shape=x_1.shape[1:])
 
         x_cat = np.concatenate([x_1, x_2, x_3], axis=0)
@@ -120,12 +126,12 @@ def test_normalize_external():
 @pytest.mark.parametrize("model_class", [SAC, TD3])
 def test_offpolicy_normalization(model_class):
     env = DummyVecEnv([make_env])
-    env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10., clip_reward=10.)
+    env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10.0, clip_reward=10.0)
 
     eval_env = DummyVecEnv([make_env])
-    eval_env = VecNormalize(eval_env, training=False, norm_obs=True, norm_reward=False, clip_obs=10., clip_reward=10.)
+    eval_env = VecNormalize(eval_env, training=False, norm_obs=True, norm_reward=False, clip_obs=10.0, clip_reward=10.0)
 
-    model = model_class('MlpPolicy', env, verbose=1, policy_kwargs=dict(net_arch=[64]))
+    model = model_class("MlpPolicy", env, verbose=1, policy_kwargs=dict(net_arch=[64]))
     model.learn(total_timesteps=1000, eval_env=eval_env, eval_freq=500)
     # Check getter
     assert isinstance(model.get_vec_normalize_env(), VecNormalize)
@@ -136,7 +142,7 @@ def test_sync_vec_normalize():
 
     assert unwrap_vec_normalize(env) is None
 
-    env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=100., clip_reward=100.)
+    env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=100.0, clip_reward=100.0)
 
     assert isinstance(unwrap_vec_normalize(env), VecNormalize)
 
@@ -145,8 +151,7 @@ def test_sync_vec_normalize():
     assert isinstance(unwrap_vec_normalize(env), VecNormalize)
 
     eval_env = DummyVecEnv([make_env])
-    eval_env = VecNormalize(eval_env, training=False, norm_obs=True, norm_reward=True,
-                            clip_obs=100., clip_reward=100.)
+    eval_env = VecNormalize(eval_env, training=False, norm_obs=True, norm_reward=True, clip_obs=100.0, clip_reward=100.0)
     eval_env = VecFrameStack(eval_env, 1)
 
     env.seed(0)

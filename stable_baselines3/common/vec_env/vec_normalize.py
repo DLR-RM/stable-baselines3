@@ -2,8 +2,8 @@ import pickle
 
 import numpy as np
 
-from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvWrapper
 from stable_baselines3.common.running_mean_std import RunningMeanStd
+from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvWrapper
 
 
 class VecNormalize(VecEnvWrapper):
@@ -21,8 +21,9 @@ class VecNormalize(VecEnvWrapper):
     :param epsilon: (float) To avoid division by zero
     """
 
-    def __init__(self, venv, training=True, norm_obs=True, norm_reward=True,
-                 clip_obs=10., clip_reward=10., gamma=0.99, epsilon=1e-8):
+    def __init__(
+        self, venv, training=True, norm_obs=True, norm_reward=True, clip_obs=10.0, clip_reward=10.0, gamma=0.99, epsilon=1e-8
+    ):
         VecEnvWrapper.__init__(self, venv)
         self.obs_rms = RunningMeanStd(shape=self.observation_space.shape)
         self.ret_rms = RunningMeanStd(shape=())
@@ -45,10 +46,10 @@ class VecNormalize(VecEnvWrapper):
         Excludes self.venv, as in general VecEnv's may not be pickleable."""
         state = self.__dict__.copy()
         # these attributes are not pickleable
-        del state['venv']
-        del state['class_attributes']
+        del state["venv"]
+        del state["class_attributes"]
         # these attributes depend on the above and so we would prefer not to pickle
-        del state['ret']
+        del state["ret"]
         return state
 
     def __setstate__(self, state):
@@ -59,7 +60,7 @@ class VecNormalize(VecEnvWrapper):
 
         :param state: (dict)"""
         self.__dict__.update(state)
-        assert 'venv' not in state
+        assert "venv" not in state
         self.venv = None
 
     def set_venv(self, venv):
@@ -110,9 +111,7 @@ class VecNormalize(VecEnvWrapper):
         Calling this method does not update statistics.
         """
         if self.norm_obs:
-            obs = np.clip((obs - self.obs_rms.mean) / np.sqrt(self.obs_rms.var + self.epsilon),
-                          -self.clip_obs,
-                          self.clip_obs)
+            obs = np.clip((obs - self.obs_rms.mean) / np.sqrt(self.obs_rms.var + self.epsilon), -self.clip_obs, self.clip_obs)
         return obs
 
     def normalize_reward(self, reward):
@@ -121,8 +120,7 @@ class VecNormalize(VecEnvWrapper):
         Calling this method does not update statistics.
         """
         if self.norm_reward:
-            reward = np.clip(reward / np.sqrt(self.ret_rms.var + self.epsilon),
-                             -self.clip_reward, self.clip_reward)
+            reward = np.clip(reward / np.sqrt(self.ret_rms.var + self.epsilon), -self.clip_reward, self.clip_reward)
         return reward
 
     def unnormalize_obs(self, obs):

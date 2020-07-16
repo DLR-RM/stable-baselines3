@@ -1,17 +1,17 @@
-from typing import Tuple, Callable, List, Optional
+from typing import Callable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+
 # import matplotlib
 # matplotlib.use('TkAgg')  # Can change to 'Agg' for non-interactive mode
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
 
 from stable_baselines3.common.monitor import load_results
 
-
-X_TIMESTEPS = 'timesteps'
-X_EPISODES = 'episodes'
-X_WALLTIME = 'walltime_hrs'
+X_TIMESTEPS = "timesteps"
+X_EPISODES = "episodes"
+X_WALLTIME = "walltime_hrs"
 POSSIBLE_X_AXES = [X_TIMESTEPS, X_EPISODES, X_WALLTIME]
 EPISODES_WINDOW = 100
 
@@ -29,8 +29,7 @@ def rolling_window(array: np.ndarray, window: int) -> np.ndarray:
     return np.lib.stride_tricks.as_strided(array, shape=shape, strides=strides)
 
 
-def window_func(var_1: np.ndarray, var_2: np.ndarray,
-                window: int, func: Callable) -> Tuple[np.ndarray, np.ndarray]:
+def window_func(var_1: np.ndarray, var_2: np.ndarray, window: int, func: Callable) -> Tuple[np.ndarray, np.ndarray]:
     """
     Apply a function to the rolling window of 2 arrays
 
@@ -42,7 +41,7 @@ def window_func(var_1: np.ndarray, var_2: np.ndarray,
     """
     var_2_window = rolling_window(var_2, window)
     function_on_var2 = func(var_2_window, axis=-1)
-    return var_1[window - 1:], function_on_var2
+    return var_1[window - 1 :], function_on_var2
 
 
 def ts2xy(data_frame: pd.DataFrame, x_axis: str) -> Tuple[np.ndarray, np.ndarray]:
@@ -62,15 +61,16 @@ def ts2xy(data_frame: pd.DataFrame, x_axis: str) -> Tuple[np.ndarray, np.ndarray
         y_var = data_frame.r.values
     elif x_axis == X_WALLTIME:
         # Convert to hours
-        x_var = data_frame.t.values / 3600.
+        x_var = data_frame.t.values / 3600.0
         y_var = data_frame.r.values
     else:
         raise NotImplementedError
     return x_var, y_var
 
 
-def plot_curves(xy_list: List[Tuple[np.ndarray, np.ndarray]],
-                x_axis: str, title: str, figsize: Tuple[int, int] = (8, 2)) -> None:
+def plot_curves(
+    xy_list: List[Tuple[np.ndarray, np.ndarray]], x_axis: str, title: str, figsize: Tuple[int, int] = (8, 2)
+) -> None:
     """
     plot the curves
 
@@ -98,8 +98,9 @@ def plot_curves(xy_list: List[Tuple[np.ndarray, np.ndarray]],
     plt.tight_layout()
 
 
-def plot_results(dirs: List[str], num_timesteps: Optional[int],
-                 x_axis: str, task_name: str, figsize: Tuple[int, int] = (8, 2)) -> None:
+def plot_results(
+    dirs: List[str], num_timesteps: Optional[int], x_axis: str, task_name: str, figsize: Tuple[int, int] = (8, 2)
+) -> None:
     """
     Plot the results using csv files from ``Monitor`` wrapper.
 

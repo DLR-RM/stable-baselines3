@@ -1,8 +1,10 @@
 import gym
-from gym import spaces
 import numpy as np
+from gym import spaces
+
 try:
     import cv2  # pytype:disable=import-error
+
     cv2.ocl.setUseOpenCL(False)
 except ImportError:
     cv2 = None
@@ -23,7 +25,7 @@ class NoopResetEnv(gym.Wrapper):
         self.noop_max = noop_max
         self.override_num_noops = None
         self.noop_action = 0
-        assert env.unwrapped.get_action_meanings()[0] == 'NOOP'
+        assert env.unwrapped.get_action_meanings()[0] == "NOOP"
 
     def reset(self, **kwargs) -> np.ndarray:
         self.env.reset(**kwargs)
@@ -48,7 +50,7 @@ class FireResetEnv(gym.Wrapper):
         :param env: (gym.Env) the environment to wrap
         """
         gym.Wrapper.__init__(self, env)
-        assert env.unwrapped.get_action_meanings()[1] == 'FIRE'
+        assert env.unwrapped.get_action_meanings()[1] == "FIRE"
         assert len(env.unwrapped.get_action_meanings()) >= 3
 
     def reset(self, **kwargs) -> np.ndarray:
@@ -180,8 +182,9 @@ class WarpFrame(gym.ObservationWrapper):
         gym.ObservationWrapper.__init__(self, env)
         self.width = width
         self.height = height
-        self.observation_space = spaces.Box(low=0, high=255, shape=(self.height, self.width, 1),
-                                            dtype=env.observation_space.dtype)
+        self.observation_space = spaces.Box(
+            low=0, high=255, shape=(self.height, self.width, 1), dtype=env.observation_space.dtype
+        )
 
     def observation(self, frame: np.ndarray) -> np.ndarray:
         """
@@ -217,17 +220,21 @@ class AtariWrapper(gym.Wrapper):
             life is lost.
     :param clip_reward: (bool) If True (default), the reward is clip to {-1, 0, 1} depending on its sign.
     """
-    def __init__(self, env: gym.Env,
-                 noop_max: int = 30,
-                 frame_skip: int = 4,
-                 screen_size: int = 84,
-                 terminal_on_life_loss: bool = True,
-                 clip_reward: bool = True):
+
+    def __init__(
+        self,
+        env: gym.Env,
+        noop_max: int = 30,
+        frame_skip: int = 4,
+        screen_size: int = 84,
+        terminal_on_life_loss: bool = True,
+        clip_reward: bool = True,
+    ):
         env = NoopResetEnv(env, noop_max=noop_max)
         env = MaxAndSkipEnv(env, skip=frame_skip)
         if terminal_on_life_loss:
             env = EpisodicLifeEnv(env)
-        if 'FIRE' in env.unwrapped.get_action_meanings():
+        if "FIRE" in env.unwrapped.get_action_meanings():
             env = FireResetEnv(env)
         env = WarpFrame(env, width=screen_size, height=screen_size)
         if clip_reward:

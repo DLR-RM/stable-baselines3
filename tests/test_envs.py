@@ -1,18 +1,22 @@
-import pytest
 import gym
-from gym import spaces
 import numpy as np
+import pytest
+from gym import spaces
 
-from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
-from stable_baselines3.common.identity_env import (IdentityEnv, IdentityEnvBox, FakeImageEnv,
-                                                   IdentityEnvMultiBinary, IdentityEnvMultiDiscrete)
+from stable_baselines3.common.env_checker import check_env
+from stable_baselines3.common.identity_env import (
+    FakeImageEnv,
+    IdentityEnv,
+    IdentityEnvBox,
+    IdentityEnvMultiBinary,
+    IdentityEnvMultiDiscrete,
+)
 
-ENV_CLASSES = [BitFlippingEnv, IdentityEnv, IdentityEnvBox, IdentityEnvMultiBinary,
-               IdentityEnvMultiDiscrete, FakeImageEnv]
+ENV_CLASSES = [BitFlippingEnv, IdentityEnv, IdentityEnvBox, IdentityEnvMultiBinary, IdentityEnvMultiDiscrete, FakeImageEnv]
 
 
-@pytest.mark.parametrize("env_id", ['CartPole-v0', 'Pendulum-v0'])
+@pytest.mark.parametrize("env_id", ["CartPole-v0", "Pendulum-v0"])
 def test_env(env_id):
     """
     Check that environmnent integrated in Gym pass the test.
@@ -25,7 +29,7 @@ def test_env(env_id):
 
     # Pendulum-v0 will produce a warning because the action space is
     # in [-2, 2] and not [-1, 1]
-    if env_id == 'Pendulum-v0':
+    if env_id == "Pendulum-v0":
         assert len(record) == 1
     else:
         # The other environments must pass without warning
@@ -50,24 +54,28 @@ def test_high_dimension_action_space():
     # Patch to avoid error
     def patched_step(_action):
         return env.observation_space.sample(), 0.0, False, {}
+
     env.step = patched_step
     check_env(env)
 
 
-@pytest.mark.parametrize("new_obs_space", [
-    # Small image
-    spaces.Box(low=0, high=255, shape=(32, 32, 3), dtype=np.uint8),
-    # Range not in [0, 255]
-    spaces.Box(low=0, high=1, shape=(64, 64, 3), dtype=np.uint8),
-    # Wrong dtype
-    spaces.Box(low=0, high=255, shape=(64, 64, 3), dtype=np.float32),
-    # Not an image, it should be a 1D vector
-    spaces.Box(low=-1, high=1, shape=(64, 3), dtype=np.float32),
-    # Tuple space is not supported by SB
-    spaces.Tuple([spaces.Discrete(5), spaces.Discrete(10)]),
-    # Dict space is not supported by SB when env is not a GoalEnv
-    spaces.Dict({"position": spaces.Discrete(5)}),
-])
+@pytest.mark.parametrize(
+    "new_obs_space",
+    [
+        # Small image
+        spaces.Box(low=0, high=255, shape=(32, 32, 3), dtype=np.uint8),
+        # Range not in [0, 255]
+        spaces.Box(low=0, high=1, shape=(64, 64, 3), dtype=np.uint8),
+        # Wrong dtype
+        spaces.Box(low=0, high=255, shape=(64, 64, 3), dtype=np.float32),
+        # Not an image, it should be a 1D vector
+        spaces.Box(low=-1, high=1, shape=(64, 3), dtype=np.float32),
+        # Tuple space is not supported by SB
+        spaces.Tuple([spaces.Discrete(5), spaces.Discrete(10)]),
+        # Dict space is not supported by SB when env is not a GoalEnv
+        spaces.Dict({"position": spaces.Discrete(5)}),
+    ],
+)
 def test_non_default_spaces(new_obs_space):
     env = FakeImageEnv()
     env.observation_space = new_obs_space

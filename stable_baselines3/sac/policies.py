@@ -1,13 +1,13 @@
-from typing import Optional, List, Tuple, Callable, Union, Type, Dict, Any
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import gym
 import torch as th
-import torch.nn as nn
+from torch import nn as nn
 
-from stable_baselines3.common.preprocessing import get_action_dim
-from stable_baselines3.common.policies import BasePolicy, register_policy, create_sde_features_extractor, ContinuousCritic
-from stable_baselines3.common.torch_layers import create_mlp, NatureCNN, BaseFeaturesExtractor, FlattenExtractor
 from stable_baselines3.common.distributions import SquashedDiagGaussianDistribution, StateDependentNoiseDistribution
+from stable_baselines3.common.policies import BasePolicy, ContinuousCritic, create_sde_features_extractor, register_policy
+from stable_baselines3.common.preprocessing import get_action_dim
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, FlattenExtractor, NatureCNN, create_mlp
 
 # CAP the standard deviation of the actor
 LOG_STD_MAX = 2
@@ -41,25 +41,31 @@ class Actor(BasePolicy):
     :param device: (Union[th.device, str]) Device on which the code should run.
     """
 
-    def __init__(self, observation_space: gym.spaces.Space,
-                 action_space: gym.spaces.Space,
-                 net_arch: List[int],
-                 features_extractor: nn.Module,
-                 features_dim: int,
-                 activation_fn: Type[nn.Module] = nn.ReLU,
-                 use_sde: bool = False,
-                 log_std_init: float = -3,
-                 full_std: bool = True,
-                 sde_net_arch: Optional[List[int]] = None,
-                 use_expln: bool = False,
-                 clip_mean: float = 2.0,
-                 normalize_images: bool = True,
-                 device: Union[th.device, str] = 'auto'):
-        super(Actor, self).__init__(observation_space, action_space,
-                                    features_extractor=features_extractor,
-                                    normalize_images=normalize_images,
-                                    device=device,
-                                    squash_output=True)
+    def __init__(
+        self,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        net_arch: List[int],
+        features_extractor: nn.Module,
+        features_dim: int,
+        activation_fn: Type[nn.Module] = nn.ReLU,
+        use_sde: bool = False,
+        log_std_init: float = -3,
+        full_std: bool = True,
+        sde_net_arch: Optional[List[int]] = None,
+        use_expln: bool = False,
+        clip_mean: float = 2.0,
+        normalize_images: bool = True,
+        device: Union[th.device, str] = "auto",
+    ):
+        super(Actor, self).__init__(
+            observation_space,
+            action_space,
+            features_extractor=features_extractor,
+            normalize_images=normalize_images,
+            device=device,
+            squash_output=True,
+        )
 
         # Save arguments to re-create object at loading
         self.use_sde = use_sde
@@ -83,14 +89,16 @@ class Actor(BasePolicy):
             latent_sde_dim = last_layer_dim
             # Separate feature extractor for gSDE
             if sde_net_arch is not None:
-                self.sde_features_extractor, latent_sde_dim = create_sde_features_extractor(features_dim, sde_net_arch,
-                                                                                            activation_fn)
+                self.sde_features_extractor, latent_sde_dim = create_sde_features_extractor(
+                    features_dim, sde_net_arch, activation_fn
+                )
 
-            self.action_dist = StateDependentNoiseDistribution(action_dim, full_std=full_std, use_expln=use_expln,
-                                                               learn_features=True, squash_output=True)
-            self.mu, self.log_std = self.action_dist.proba_distribution_net(latent_dim=last_layer_dim,
-                                                                            latent_sde_dim=latent_sde_dim,
-                                                                            log_std_init=log_std_init)
+            self.action_dist = StateDependentNoiseDistribution(
+                action_dim, full_std=full_std, use_expln=use_expln, learn_features=True, squash_output=True
+            )
+            self.mu, self.log_std = self.action_dist.proba_distribution_net(
+                latent_dim=last_layer_dim, latent_sde_dim=latent_sde_dim, log_std_init=log_std_init
+            )
             # Avoid numerical issues by limiting the mean of the Gaussian
             # to be in [-clip_mean, clip_mean]
             if clip_mean > 0.0:
@@ -103,18 +111,20 @@ class Actor(BasePolicy):
     def _get_data(self) -> Dict[str, Any]:
         data = super()._get_data()
 
-        data.update(dict(
-            net_arch=self.net_arch,
-            features_dim=self.features_dim,
-            activation_fn=self.activation_fn,
-            use_sde=self.use_sde,
-            log_std_init=self.log_std_init,
-            full_std=self.full_std,
-            sde_net_arch=self.sde_net_arch,
-            use_expln=self.use_expln,
-            features_extractor=self.features_extractor,
-            clip_mean=self.clip_mean
-        ))
+        data.update(
+            dict(
+                net_arch=self.net_arch,
+                features_dim=self.features_dim,
+                activation_fn=self.activation_fn,
+                use_sde=self.use_sde,
+                log_std_init=self.log_std_init,
+                full_std=self.full_std,
+                sde_net_arch=self.sde_net_arch,
+                use_expln=self.use_expln,
+                features_extractor=self.features_extractor,
+                clip_mean=self.clip_mean,
+            )
+        )
         return data
 
     def get_std(self) -> th.Tensor:
@@ -127,7 +137,7 @@ class Actor(BasePolicy):
 
         :return: (th.Tensor)
         """
-        msg = 'get_std() is only available when using gSDE'
+        msg = "get_std() is only available when using gSDE"
         assert isinstance(self.action_dist, StateDependentNoiseDistribution), msg
         return self.action_dist.get_std(self.log_std)
 
@@ -137,7 +147,7 @@ class Actor(BasePolicy):
 
         :param batch_size: (int)
         """
-        msg = 'reset_noise() is only available when using gSDE'
+        msg = "reset_noise() is only available when using gSDE"
         assert isinstance(self.action_dist, StateDependentNoiseDistribution), msg
         self.action_dist.sample_weights(self.log_std, batch_size=batch_size)
 
@@ -167,8 +177,7 @@ class Actor(BasePolicy):
     def forward(self, obs: th.Tensor, deterministic: bool = False) -> th.Tensor:
         mean_actions, log_std, kwargs = self.get_action_dist_params(obs)
         # Note: the action is squashed
-        return self.action_dist.actions_from_params(mean_actions, log_std,
-                                                    deterministic=deterministic, **kwargs)
+        return self.action_dist.actions_from_params(mean_actions, log_std, deterministic=deterministic, **kwargs)
 
     def action_log_prob(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         mean_actions, log_std, kwargs = self.get_action_dist_params(obs)
@@ -210,30 +219,36 @@ class SACPolicy(BasePolicy):
     :param n_critics: (int) Number of critic networks to create.
     """
 
-    def __init__(self, observation_space: gym.spaces.Space,
-                 action_space: gym.spaces.Space,
-                 lr_schedule: Callable,
-                 net_arch: Optional[List[int]] = None,
-                 device: Union[th.device, str] = 'auto',
-                 activation_fn: Type[nn.Module] = nn.ReLU,
-                 use_sde: bool = False,
-                 log_std_init: float = -3,
-                 sde_net_arch: Optional[List[int]] = None,
-                 use_expln: bool = False,
-                 clip_mean: float = 2.0,
-                 features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
-                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
-                 normalize_images: bool = True,
-                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
-                 optimizer_kwargs: Optional[Dict[str, Any]] = None,
-                 n_critics: int = 2):
-        super(SACPolicy, self).__init__(observation_space, action_space,
-                                        device,
-                                        features_extractor_class,
-                                        features_extractor_kwargs,
-                                        optimizer_class=optimizer_class,
-                                        optimizer_kwargs=optimizer_kwargs,
-                                        squash_output=True)
+    def __init__(
+        self,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        lr_schedule: Callable,
+        net_arch: Optional[List[int]] = None,
+        device: Union[th.device, str] = "auto",
+        activation_fn: Type[nn.Module] = nn.ReLU,
+        use_sde: bool = False,
+        log_std_init: float = -3,
+        sde_net_arch: Optional[List[int]] = None,
+        use_expln: bool = False,
+        clip_mean: float = 2.0,
+        features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
+        features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        normalize_images: bool = True,
+        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        n_critics: int = 2,
+    ):
+        super(SACPolicy, self).__init__(
+            observation_space,
+            action_space,
+            device,
+            features_extractor_class,
+            features_extractor_kwargs,
+            optimizer_class=optimizer_class,
+            optimizer_kwargs=optimizer_kwargs,
+            squash_output=True,
+        )
 
         if net_arch is None:
             if features_extractor_class == FlattenExtractor:
@@ -242,33 +257,32 @@ class SACPolicy(BasePolicy):
                 net_arch = []
 
         # Create shared features extractor
-        self.features_extractor = features_extractor_class(self.observation_space,
-                                                           **self.features_extractor_kwargs)
+        self.features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
         self.features_dim = self.features_extractor.features_dim
 
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.net_args = {
-            'observation_space': self.observation_space,
-            'action_space': self.action_space,
-            'features_extractor': self.features_extractor,
-            'features_dim': self.features_dim,
-            'net_arch': self.net_arch,
-            'activation_fn': self.activation_fn,
-            'normalize_images': normalize_images,
-            'device': device
+            "observation_space": self.observation_space,
+            "action_space": self.action_space,
+            "features_extractor": self.features_extractor,
+            "features_dim": self.features_dim,
+            "net_arch": self.net_arch,
+            "activation_fn": self.activation_fn,
+            "normalize_images": normalize_images,
+            "device": device,
         }
         self.actor_kwargs = self.net_args.copy()
         sde_kwargs = {
-            'use_sde': use_sde,
-            'log_std_init': log_std_init,
-            'sde_net_arch': sde_net_arch,
-            'use_expln': use_expln,
-            'clip_mean': clip_mean
+            "use_sde": use_sde,
+            "log_std_init": log_std_init,
+            "sde_net_arch": sde_net_arch,
+            "use_expln": use_expln,
+            "clip_mean": clip_mean,
         }
         self.actor_kwargs.update(sde_kwargs)
         self.critic_kwargs = self.net_args.copy()
-        self.critic_kwargs.update({'n_critics': n_critics})
+        self.critic_kwargs.update({"n_critics": n_critics})
 
         self.actor, self.actor_target = None, None
         self.critic, self.critic_target = None, None
@@ -277,8 +291,7 @@ class SACPolicy(BasePolicy):
 
     def _build(self, lr_schedule: Callable) -> None:
         self.actor = self.make_actor()
-        self.actor.optimizer = self.optimizer_class(self.actor.parameters(), lr=lr_schedule(1),
-                                                    **self.optimizer_kwargs)
+        self.actor.optimizer = self.optimizer_class(self.actor.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
 
         self.critic = self.make_critic()
         self.critic_target = self.make_critic()
@@ -286,29 +299,29 @@ class SACPolicy(BasePolicy):
         # Do not optimize the shared feature extractor with the critic loss
         # otherwise, there are gradient computation issues
         # Another solution: having duplicated features extractor but requires more memory and computation
-        critic_parameters = [param for name, param in self.critic.named_parameters() if
-                             'features_extractor' not in name]
-        self.critic.optimizer = self.optimizer_class(critic_parameters, lr=lr_schedule(1),
-                                                     **self.optimizer_kwargs)
+        critic_parameters = [param for name, param in self.critic.named_parameters() if "features_extractor" not in name]
+        self.critic.optimizer = self.optimizer_class(critic_parameters, lr=lr_schedule(1), **self.optimizer_kwargs)
 
     def _get_data(self) -> Dict[str, Any]:
         data = super()._get_data()
 
-        data.update(dict(
-            net_arch=self.net_args['net_arch'],
-            activation_fn=self.net_args['activation_fn'],
-            use_sde=self.actor_kwargs['use_sde'],
-            log_std_init=self.actor_kwargs['log_std_init'],
-            sde_net_arch=self.actor_kwargs['sde_net_arch'],
-            use_expln=self.actor_kwargs['use_expln'],
-            clip_mean=self.actor_kwargs['clip_mean'],
-            n_critics=self.critic_kwargs['n_critics'],
-            lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
-            optimizer_class=self.optimizer_class,
-            optimizer_kwargs=self.optimizer_kwargs,
-            features_extractor_class=self.features_extractor_class,
-            features_extractor_kwargs=self.features_extractor_kwargs
-        ))
+        data.update(
+            dict(
+                net_arch=self.net_args["net_arch"],
+                activation_fn=self.net_args["activation_fn"],
+                use_sde=self.actor_kwargs["use_sde"],
+                log_std_init=self.actor_kwargs["log_std_init"],
+                sde_net_arch=self.actor_kwargs["sde_net_arch"],
+                use_expln=self.actor_kwargs["use_expln"],
+                clip_mean=self.actor_kwargs["clip_mean"],
+                n_critics=self.critic_kwargs["n_critics"],
+                lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
+                optimizer_class=self.optimizer_class,
+                optimizer_kwargs=self.optimizer_kwargs,
+                features_extractor_class=self.features_extractor_class,
+                features_extractor_kwargs=self.features_extractor_kwargs,
+            )
+        )
         return data
 
     def reset_noise(self, batch_size: int = 1) -> None:
@@ -364,40 +377,45 @@ class CnnPolicy(SACPolicy):
     :param n_critics: (int) Number of critic networks to create.
     """
 
-    def __init__(self, observation_space: gym.spaces.Space,
-                 action_space: gym.spaces.Space,
-                 lr_schedule: Callable,
-                 net_arch: Optional[List[int]] = None,
-                 device: Union[th.device, str] = 'auto',
-                 activation_fn: Type[nn.Module] = nn.ReLU,
-                 use_sde: bool = False,
-                 log_std_init: float = -3,
-                 sde_net_arch: Optional[List[int]] = None,
-                 use_expln: bool = False,
-                 clip_mean: float = 2.0,
-                 features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
-                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
-                 normalize_images: bool = True,
-                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
-                 optimizer_kwargs: Optional[Dict[str, Any]] = None,
-                 n_critics: int = 2):
-        super(CnnPolicy, self).__init__(observation_space,
-                                        action_space,
-                                        lr_schedule,
-                                        net_arch,
-                                        device,
-                                        activation_fn,
-                                        use_sde,
-                                        log_std_init,
-                                        sde_net_arch,
-                                        use_expln,
-                                        clip_mean,
-                                        features_extractor_class,
-                                        features_extractor_kwargs,
-                                        normalize_images,
-                                        optimizer_class,
-                                        optimizer_kwargs,
-                                        n_critics)
+    def __init__(
+        self,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        lr_schedule: Callable,
+        net_arch: Optional[List[int]] = None,
+        device: Union[th.device, str] = "auto",
+        activation_fn: Type[nn.Module] = nn.ReLU,
+        use_sde: bool = False,
+        log_std_init: float = -3,
+        sde_net_arch: Optional[List[int]] = None,
+        use_expln: bool = False,
+        clip_mean: float = 2.0,
+        features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
+        features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        normalize_images: bool = True,
+        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        n_critics: int = 2,
+    ):
+        super(CnnPolicy, self).__init__(
+            observation_space,
+            action_space,
+            lr_schedule,
+            net_arch,
+            device,
+            activation_fn,
+            use_sde,
+            log_std_init,
+            sde_net_arch,
+            use_expln,
+            clip_mean,
+            features_extractor_class,
+            features_extractor_kwargs,
+            normalize_images,
+            optimizer_class,
+            optimizer_kwargs,
+            n_critics,
+        )
 
 
 register_policy("MlpPolicy", MlpPolicy)

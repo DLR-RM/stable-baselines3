@@ -158,7 +158,7 @@ class BaseAlgorithm(ABC):
                 )
 
         if self.use_sde and not isinstance(self.observation_space, gym.spaces.Box):
-            raise ValueError("generalized State-Dependent Exploration (gSDE) can only " "be used with continuous actions.")
+            raise ValueError("generalized State-Dependent Exploration (gSDE) can only be used with continuous actions.")
 
     def _wrap_env(self, env: GymEnv) -> VecEnv:
         if not isinstance(env, VecEnv):
@@ -349,8 +349,11 @@ class BaseAlgorithm(ABC):
 
         # noinspection PyArgumentList
         model = cls(
-            policy=data["policy_class"], env=env, device="auto", _init_setup_model=False
-        )  # pytype: disable=not-instantiable,wrong-keyword-args
+            policy=data["policy_class"],
+            env=env,
+            device="auto",
+            _init_setup_model=False,  # pytype: disable=not-instantiable,wrong-keyword-args
+        )
 
         # load parameters
         model.__dict__.update(data)

@@ -43,6 +43,7 @@ Others:
 - Switch to ``black`` codestyle and added ``make format``, ``make check-codestyle`` and ``commit-checks``
 - Ignored errors from newer pytype version
 - Added a check when using ``gSDE``
+- Removed codacy dependency from Dockerfile
 
 Documentation:
 ^^^^^^^^^^^^^^

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from stable_baselines3 import A2C, PPO, SAC, TD3, DQN
+from stable_baselines3 import A2C, PPO, SAC, TD3, DQN, DDPG
 from stable_baselines3.common.identity_env import (IdentityEnvBox, IdentityEnv,
                                                    IdentityEnvMultiBinary, IdentityEnvMultiDiscrete)
 
@@ -33,7 +33,7 @@ def test_discrete(model_class, env):
     assert np.shape(model.predict(obs)[0]) == np.shape(obs)
 
 
-@pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3])
+@pytest.mark.parametrize("model_class", [A2C, PPO, SAC, DDPG, TD3])
 def test_continuous(model_class):
     env = IdentityEnvBox(eps=0.5)
 
@@ -41,7 +41,8 @@ def test_continuous(model_class):
         A2C: 3500,
         PPO: 3000,
         SAC: 700,
-        TD3: 500
+        TD3: 500,
+        DDPG: 500
     }[model_class]
 
     kwargs = dict(

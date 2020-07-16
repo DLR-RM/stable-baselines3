@@ -34,10 +34,13 @@ class SAC(OffPolicyAlgorithm):
     :param batch_size: (int) Minibatch size for each gradient update
     :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1)
     :param gamma: (float) the discount factor
-    :param train_freq: (int) Update the model every ``train_freq`` steps.
-    :param gradient_steps: (int) How many gradient update after each step
+    :param train_freq: (int) Update the model every ``train_freq`` steps. Set to `-1` to disable.
+    :param gradient_steps: (int) How many gradient steps to do after each rollout
+        (see ``train_freq`` and ``n_episodes_rollout``)
+        Set to ``-1`` means to do as many gradient steps as steps done in the environment
+        during the rollout.
     :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
-        Note that this cannot be used at the same time as ``train_freq``
+        Note that this cannot be used at the same time as ``train_freq``. Set to `-1` to disable.
     :param action_noise: (ActionNoise) the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
     :param optimize_memory_usage: (bool) Enable a memory efficient variant of the replay buffer
@@ -118,7 +121,6 @@ class SAC(OffPolicyAlgorithm):
     def _setup_model(self) -> None:
         super(SAC, self)._setup_model()
         self._create_aliases()
-        assert self.critic.n_critics == 2, "SAC only supports `n_critics=2` for now"
         # Target entropy is used when learning the entropy coefficient
         if self.target_entropy == 'auto':
             # automatically set target entropy if needed
@@ -200,18 +202,20 @@ class SAC(OffPolicyAlgorithm):
             with th.no_grad():
                 # Select action according to policy
                 next_actions, next_log_prob = self.actor.action_log_prob(replay_data.next_observations)
-                # Compute the target Q value
-                target_q1, target_q2 = self.critic_target(replay_data.next_observations, next_actions)
-                target_q = th.min(target_q1, target_q2) - ent_coef * next_log_prob.reshape(-1, 1)
+                # Compute the target Q value: min over all critics targets
+                targets = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
+                target_q, _ = th.min(targets, dim=1, keepdim=True)
+                # add entropy term
+                target_q = target_q - ent_coef * next_log_prob.reshape(-1, 1)
                 # td error + entropy term
                 q_backup = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
 
-            # Get current Q estimates
+            # Get current Q estimates for each critic network
             # using action from the replay buffer
-            current_q1, current_q2 = self.critic(replay_data.observations, replay_data.actions)
+            current_q_esimates = self.critic(replay_data.observations, replay_data.actions)
 
             # Compute critic loss
-            critic_loss = 0.5 * (F.mse_loss(current_q1, q_backup) + F.mse_loss(current_q2, q_backup))
+            critic_loss = 0.5 * sum([F.mse_loss(current_q, q_backup) for current_q in current_q_esimates])
             critic_losses.append(critic_loss.item())
 
             # Optimize the critic
@@ -221,8 +225,9 @@ class SAC(OffPolicyAlgorithm):
 
             # Compute actor loss
             # Alternative: actor_loss = th.mean(log_prob - qf1_pi)
-            qf1_pi, qf2_pi = self.critic.forward(replay_data.observations, actions_pi)
-            min_qf_pi = th.min(qf1_pi, qf2_pi)
+            # Mean over all critic networks
+            q_values_pi = th.cat(self.critic.forward(replay_data.observations, actions_pi), dim=1)
+            min_qf_pi, _ = th.min(q_values_pi, dim=1, keepdim=True)
             actor_loss = (ent_coef * log_prob - min_qf_pi).mean()
             actor_losses.append(actor_loss.item())
 

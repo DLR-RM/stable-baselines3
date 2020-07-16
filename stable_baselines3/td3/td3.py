@@ -28,10 +28,13 @@ class TD3(OffPolicyAlgorithm):
     :param batch_size: (int) Minibatch size for each gradient update
     :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1)
     :param gamma: (float) the discount factor
-    :param train_freq: (int) Update the model every ``train_freq`` steps.
-    :param gradient_steps: (int) How many gradient update after each step
+    :param train_freq: (int) Update the model every ``train_freq`` steps. Set to `-1` to disable.
+    :param gradient_steps: (int) How many gradient steps to do after each rollout
+        (see ``train_freq`` and ``n_episodes_rollout``)
+        Set to ``-1`` means to do as many gradient steps as steps done in the environment
+        during the rollout.
     :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
-        Note that this cannot be used at the same time as ``train_freq``
+        Note that this cannot be used at the same time as ``train_freq``. Set to `-1` to disable.
     :param action_noise: (ActionNoise) the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
     :param optimize_memory_usage: (bool) Enable a memory efficient variant of the replay buffer
@@ -96,7 +99,6 @@ class TD3(OffPolicyAlgorithm):
     def _setup_model(self) -> None:
         super(TD3, self)._setup_model()
         self._create_aliases()
-        assert self.critic.n_critics == 2, "TD3 only supports `n_critics=2` for now"
 
     def _create_aliases(self) -> None:
         self.actor = self.policy.actor
@@ -120,18 +122,18 @@ class TD3(OffPolicyAlgorithm):
                 noise = noise.clamp(-self.target_noise_clip, self.target_noise_clip)
                 next_actions = (self.actor_target(replay_data.next_observations) + noise).clamp(-1, 1)
 
-                # Compute the target Q value
-                target_q1, target_q2 = self.critic_target(replay_data.next_observations, next_actions)
-                target_q = th.min(target_q1, target_q2)
+                # Compute the target Q value: min over all critics targets
+                targets = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
+                target_q, _ = th.min(targets, dim=1, keepdim=True)
                 target_q = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
 
-            # Get current Q estimates
-            current_q1, current_q2 = self.critic(replay_data.observations, replay_data.actions)
+            # Get current Q estimates for each critic network
+            current_q_esimates = self.critic(replay_data.observations, replay_data.actions)
 
             # Compute critic loss
-            critic_loss = F.mse_loss(current_q1, target_q) + F.mse_loss(current_q2, target_q)
+            critic_loss = sum([F.mse_loss(current_q, target_q) for current_q in current_q_esimates])
 
-            # Optimize the critic
+            # Optimize the critics
             self.critic.optimizer.zero_grad()
             critic_loss.backward()
             self.critic.optimizer.step()

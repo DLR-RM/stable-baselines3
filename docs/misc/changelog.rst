@@ -37,7 +37,7 @@ Others:
 - Split the ``collect_rollout()`` method for off-policy algorithms
 - Added ``_on_step()`` for off-policy base class
 - Optimized replay buffer size by removing the need of ``next_observations`` numpy array
-- Switch to ``black`` codestyle and added ``make format`` and ``make check-codestyle``
+- Switch to ``black`` codestyle and added ``make format``, ``make check-codestyle`` and ``commit-checks``
 - Ignored errors from newer pytype version
 
 Documentation:

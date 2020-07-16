@@ -26,6 +26,8 @@ check-codestyle:
 	# Reformat using black
 	black --check -l 127 ${LINT_PATHS}
 
+commit-checks: format type lint
+
 doc:
 	cd docs && make html
 
@@ -57,4 +59,4 @@ test-release:
 	python setup.py bdist_wheel
 	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
-.PHONY: clean spelling doc lint format check-codestyle
+.PHONY: clean spelling doc lint format check-codestyle commit-checks

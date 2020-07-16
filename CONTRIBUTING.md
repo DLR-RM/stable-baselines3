@@ -91,6 +91,11 @@ make check-codestyle
 make lint
 ```
 
+To run `pytype`, `format` and `lint` in one command:
+```
+make commit-checks
+```
+
 Build the documentation:
 
 ```

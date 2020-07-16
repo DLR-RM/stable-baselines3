@@ -37,8 +37,8 @@ You can also easily define a custom architecture for the policy (or value) netwo
 .. note::
 
     Defining a custom policy class is equivalent to passing ``policy_kwargs``.
-    However, it lets you name the policy and so makes usually the code clearer.
-    ``policy_kwargs`` should be rather used when doing hyperparameter search.
+    However, it lets you name the policy and so usually makes the code clearer.
+    ``policy_kwargs`` is particularly useful when doing hyperparameter search.
 
 
 

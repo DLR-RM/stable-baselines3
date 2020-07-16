@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
          curl \
          ca-certificates \
          libjpeg-dev \
-         libpng-dev && \
+         libpng-dev \
+         libglib2.0-0 && \
      rm -rf /var/lib/apt/lists/*
 
 # Install anaconda abd dependencies

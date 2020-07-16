@@ -1,6 +1,5 @@
 import os
 import shutil
-import copy
 
 import pytest
 import gym
@@ -158,8 +157,8 @@ def test_vec_noise():
 
 
 def test_polyak():
-    p1, p2 = th.nn.Parameter(th.ones((5,5))), th.nn.Parameter(th.zeros((5, 5)))
-    t1, t2 =th.nn.Parameter(th.ones((5,5))), th.nn.Parameter(th.zeros((5, 5)))
+    p1, p2 = th.nn.Parameter(th.ones((5, 5))), th.nn.Parameter(th.zeros((5, 5)))
+    t1, t2 = th.nn.Parameter(th.ones((5, 5))), th.nn.Parameter(th.zeros((5, 5)))
     tau = 0.1
     polyak_update([p1], [p2], tau)
     with th.no_grad():

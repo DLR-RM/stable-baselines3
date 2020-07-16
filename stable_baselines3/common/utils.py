@@ -290,7 +290,7 @@ def safe_mean(arr: Union[np.ndarray, list, deque]) -> np.ndarray:
 def polyak_update(params: Iterable[th.nn.Parameter], target_params: Iterable[th.nn.Parameter], tau: float):
     """
     Perform a polyak average update on target_params using params
-    
+
     :param params: (Iterable[th.nn.Parameter]) parameters to use to update the target params
     :param target_params: (Iterable[th.nn.Parameter]) parameters to update
     :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1)

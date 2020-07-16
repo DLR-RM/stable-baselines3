@@ -2,7 +2,7 @@ import io
 import pathlib
 import time
 import warnings
-from typing import Any, Callable, Dict, Generic, List, Mapping, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 import gym
 import numpy as np
@@ -148,7 +148,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.use_sde_at_warmup = use_sde_at_warmup
 
         self.replay_buffer = None
-        self.replay_buffer_cls = replay_buffer_cls if replay_buffer_cls is not None else ReplayBuffer
+        self.replay_buffer_cls = replay_buffer_cls or ReplayBuffer
         self.replay_buffer_kwargs = dict(replay_buffer_kwargs or {})
 
     def _setup_model(self) -> None:
@@ -225,7 +225,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             self.replay_buffer.dones[pos] = True
 
         return super()._setup_learn(
-            total_timesteps, eval_env, callback, eval_freq, n_eval_episodes, log_path, reset_num_timesteps, tb_log_name,
+            total_timesteps, eval_env, callback, eval_freq, n_eval_episodes, log_path, reset_num_timesteps, tb_log_name
         )
 
     def learn(
@@ -242,7 +242,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     ) -> "OffPolicyAlgorithm":
 
         total_timesteps, callback = self._setup_learn(
-            total_timesteps, eval_env, callback, eval_freq, n_eval_episodes, eval_log_path, reset_num_timesteps, tb_log_name,
+            total_timesteps, eval_env, callback, eval_freq, n_eval_episodes, eval_log_path, reset_num_timesteps, tb_log_name
         )
 
         callback.on_training_start(locals(), globals())
@@ -426,11 +426,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                         reward_ = self._vec_normalize_env.get_original_reward()
                     else:
                         # Avoid changing the original ones
-                        self._last_original_obs, new_obs_, reward_ = (
-                            self._last_obs,
-                            new_obs,
-                            reward,
-                        )
+                        self._last_original_obs, new_obs_, reward_ = self._last_obs, new_obs, reward
 
                     replay_buffer.add(self._last_original_obs, new_obs_, buffer_action, reward_, done)
 

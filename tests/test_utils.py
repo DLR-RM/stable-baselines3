@@ -148,13 +148,14 @@ def test_vec_noise():
 
 
 def test_polyak():
-    p1, p2 = th.nn.Parameter(th.ones((5, 5))), th.nn.Parameter(th.zeros((5, 5)))
-    t1, t2 = th.nn.Parameter(th.ones((5, 5))), th.nn.Parameter(th.zeros((5, 5)))
+    param1, param2 = th.nn.Parameter(th.ones((5, 5))), th.nn.Parameter(th.zeros((5, 5)))
+    target1, target2 = th.nn.Parameter(th.ones((5, 5))), th.nn.Parameter(th.zeros((5, 5)))
     tau = 0.1
-    polyak_update([p1], [p2], tau)
+    polyak_update([param1], [param2], tau)
     with th.no_grad():
-        for param, target_param in zip([t1], [t2]):
+        for param, target_param in zip([target1], [target2]):
             target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
 
-    assert th.allclose(p1, t1)
-    assert th.allclose(p2, t2)
+    assert th.allclose(param1, target1)
+    assert th.allclose(param2, target2)
+

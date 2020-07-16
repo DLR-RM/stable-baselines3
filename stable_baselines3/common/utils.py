@@ -273,7 +273,7 @@ def safe_mean(arr: Union[np.ndarray, list, deque]) -> np.ndarray:
     return np.nan if len(arr) == 0 else np.mean(arr)
 
 
-def polyak_update(params: Iterable[th.nn.Parameter], target_params: Iterable[th.nn.Parameter], tau: float):
+def polyak_update(params: Iterable[th.nn.Parameter], target_params: Iterable[th.nn.Parameter], tau: float) -> None:
     """
     Perform a polyak average update on target_params using params
 

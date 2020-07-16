@@ -13,7 +13,7 @@ Breaking Changes:
 - Refactored ``Critic`` class for ``TD3`` and ``SAC``, it is now called ``ContinuousCritic``
   and has an additional parameter ``n_critics``
 - ``SAC`` and ``TD3`` now accept an arbitrary number of critics (e.g. ``policy_kwargs=dict(n_critics=3)``)
-    instead of 2 only previously
+    instead of only 2 previously
 
 New Features:
 ^^^^^^^^^^^^^

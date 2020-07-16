@@ -1,10 +1,11 @@
-from typing import Optional, List, Callable, Union, Type, Any, Dict
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import gym
 import torch as th
-import torch.nn as nn
+from torch import nn as nn
+
 from stable_baselines3.common.policies import BasePolicy, register_policy
-from stable_baselines3.common.torch_layers import create_mlp, NatureCNN, BaseFeaturesExtractor, FlattenExtractor
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, FlattenExtractor, NatureCNN, create_mlp
 
 
 class QNetwork(BasePolicy):
@@ -20,18 +21,24 @@ class QNetwork(BasePolicy):
          dividing by 255.0 (True by default)
     """
 
-    def __init__(self, observation_space: gym.spaces.Space,
-                 action_space: gym.spaces.Space,
-                 features_extractor: nn.Module,
-                 features_dim: int,
-                 net_arch: Optional[List[int]] = None,
-                 device: Union[th.device, str] = 'auto',
-                 activation_fn: Type[nn.Module] = nn.ReLU,
-                 normalize_images: bool = True):
-        super(QNetwork, self).__init__(observation_space, action_space,
-                                       features_extractor=features_extractor,
-                                       normalize_images=normalize_images,
-                                       device=device)
+    def __init__(
+        self,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        features_extractor: nn.Module,
+        features_dim: int,
+        net_arch: Optional[List[int]] = None,
+        device: Union[th.device, str] = "auto",
+        activation_fn: Type[nn.Module] = nn.ReLU,
+        normalize_images: bool = True,
+    ):
+        super(QNetwork, self).__init__(
+            observation_space,
+            action_space,
+            features_extractor=features_extractor,
+            normalize_images=normalize_images,
+            device=device,
+        )
 
         if net_arch is None:
             net_arch = [64, 64]
@@ -63,13 +70,15 @@ class QNetwork(BasePolicy):
     def _get_data(self) -> Dict[str, Any]:
         data = super()._get_data()
 
-        data.update(dict(
-            net_arch=self.net_arch,
-            features_dim=self.features_dim,
-            activation_fn=self.activation_fn,
-            features_extractor=self.features_extractor,
-            epsilon=self.epsilon,
-        ))
+        data.update(
+            dict(
+                net_arch=self.net_arch,
+                features_dim=self.features_dim,
+                activation_fn=self.activation_fn,
+                features_extractor=self.features_extractor,
+                epsilon=self.epsilon,
+            )
+        )
         return data
 
 
@@ -94,23 +103,29 @@ class DQNPolicy(BasePolicy):
         excluding the learning rate, to pass to the optimizer
     """
 
-    def __init__(self, observation_space: gym.spaces.Space,
-                 action_space: gym.spaces.Space,
-                 lr_schedule: Callable,
-                 net_arch: Optional[List[int]] = None,
-                 device: Union[th.device, str] = 'auto',
-                 activation_fn: Type[nn.Module] = nn.ReLU,
-                 features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
-                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
-                 normalize_images: bool = True,
-                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
-                 optimizer_kwargs: Optional[Dict[str, Any]] = None):
-        super(DQNPolicy, self).__init__(observation_space, action_space,
-                                        device,
-                                        features_extractor_class,
-                                        features_extractor_kwargs,
-                                        optimizer_class=optimizer_class,
-                                        optimizer_kwargs=optimizer_kwargs)
+    def __init__(
+        self,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        lr_schedule: Callable,
+        net_arch: Optional[List[int]] = None,
+        device: Union[th.device, str] = "auto",
+        activation_fn: Type[nn.Module] = nn.ReLU,
+        features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
+        features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        normalize_images: bool = True,
+        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+    ):
+        super(DQNPolicy, self).__init__(
+            observation_space,
+            action_space,
+            device,
+            features_extractor_class,
+            features_extractor_kwargs,
+            optimizer_class=optimizer_class,
+            optimizer_kwargs=optimizer_kwargs,
+        )
 
         if net_arch is None:
             if features_extractor_class == FlattenExtractor:
@@ -118,22 +133,21 @@ class DQNPolicy(BasePolicy):
             else:
                 net_arch = []
 
-        self.features_extractor = features_extractor_class(self.observation_space,
-                                                           **self.features_extractor_kwargs)
+        self.features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
         self.features_dim = self.features_extractor.features_dim
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.normalize_images = normalize_images
 
         self.net_args = {
-            'observation_space': self.observation_space,
-            'action_space': self.action_space,
-            'features_extractor': self.features_extractor,
-            'features_dim': self.features_dim,
-            'net_arch': self.net_arch,
-            'activation_fn': self.activation_fn,
-            'normalize_images': normalize_images,
-            'device': device
+            "observation_space": self.observation_space,
+            "action_space": self.action_space,
+            "features_extractor": self.features_extractor,
+            "features_dim": self.features_dim,
+            "net_arch": self.net_arch,
+            "activation_fn": self.activation_fn,
+            "normalize_images": normalize_images,
+            "device": device,
         }
 
         self.q_net, self.q_net_target = None, None
@@ -152,8 +166,7 @@ class DQNPolicy(BasePolicy):
         self.q_net_target.load_state_dict(self.q_net.state_dict())
 
         # Setup optimizer with initial learning rate
-        self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1),
-                                              **self.optimizer_kwargs)
+        self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
 
     def make_q_net(self) -> QNetwork:
         return QNetwork(**self.net_args).to(self.device)
@@ -167,15 +180,17 @@ class DQNPolicy(BasePolicy):
     def _get_data(self) -> Dict[str, Any]:
         data = super()._get_data()
 
-        data.update(dict(
-            net_arch=self.net_args['net_arch'],
-            activation_fn=self.net_args['activation_fn'],
-            lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
-            optimizer_class=self.optimizer_class,
-            optimizer_kwargs=self.optimizer_kwargs,
-            features_extractor_class=self.features_extractor_class,
-            features_extractor_kwargs=self.features_extractor_kwargs
-        ))
+        data.update(
+            dict(
+                net_arch=self.net_args["net_arch"],
+                activation_fn=self.net_args["activation_fn"],
+                lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
+                optimizer_class=self.optimizer_class,
+                optimizer_kwargs=self.optimizer_kwargs,
+                features_extractor_class=self.features_extractor_class,
+                features_extractor_kwargs=self.features_extractor_kwargs,
+            )
+        )
         return data
 
 
@@ -201,28 +216,33 @@ class CnnPolicy(DQNPolicy):
         excluding the learning rate, to pass to the optimizer
     """
 
-    def __init__(self, observation_space: gym.spaces.Space,
-                 action_space: gym.spaces.Space,
-                 lr_schedule: Callable,
-                 net_arch: Optional[List[int]] = None,
-                 device: Union[th.device, str] = 'auto',
-                 activation_fn: Type[nn.Module] = nn.ReLU,
-                 features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
-                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
-                 normalize_images: bool = True,
-                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
-                 optimizer_kwargs: Optional[Dict[str, Any]] = None):
-        super(CnnPolicy, self).__init__(observation_space,
-                                        action_space,
-                                        lr_schedule,
-                                        net_arch,
-                                        device,
-                                        activation_fn,
-                                        features_extractor_class,
-                                        features_extractor_kwargs,
-                                        normalize_images,
-                                        optimizer_class,
-                                        optimizer_kwargs)
+    def __init__(
+        self,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        lr_schedule: Callable,
+        net_arch: Optional[List[int]] = None,
+        device: Union[th.device, str] = "auto",
+        activation_fn: Type[nn.Module] = nn.ReLU,
+        features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
+        features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        normalize_images: bool = True,
+        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+    ):
+        super(CnnPolicy, self).__init__(
+            observation_space,
+            action_space,
+            lr_schedule,
+            net_arch,
+            device,
+            activation_fn,
+            features_extractor_class,
+            features_extractor_kwargs,
+            normalize_images,
+            optimizer_class,
+            optimizer_kwargs,
+        )
 
 
 register_policy("MlpPolicy", MlpPolicy)

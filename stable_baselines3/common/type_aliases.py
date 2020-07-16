@@ -1,14 +1,13 @@
 """Common aliases for type hints"""
 
-from typing import Union, Dict, Any, NamedTuple, List, Callable, Tuple
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple, Union
 
+import gym
 import numpy as np
 import torch as th
-import gym
 
-from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.callbacks import BaseCallback
-
+from stable_baselines3.common.vec_env import VecEnv
 
 GymEnv = Union[gym.Env, VecEnv]
 GymObs = Union[Tuple, Dict[str, Any], np.ndarray, int]

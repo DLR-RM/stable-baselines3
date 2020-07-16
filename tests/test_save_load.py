@@ -1,33 +1,21 @@
-import os
 import io
+import os
+import pathlib
 import warnings
 from copy import deepcopy
-import pathlib
 
-import pytest
 import gym
 import numpy as np
+import pytest
 import torch as th
 
-from stable_baselines3 import A2C, PPO, SAC, TD3, DQN, DDPG
+from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.identity_env import IdentityEnvBox, IdentityEnv
+from stable_baselines3.common.identity_env import FakeImageEnv, IdentityEnv, IdentityEnvBox
+from stable_baselines3.common.save_util import load_from_pkl, open_path, save_to_pkl
 from stable_baselines3.common.vec_env import DummyVecEnv
-from stable_baselines3.common.identity_env import FakeImageEnv
-from stable_baselines3.common.save_util import (
-    open_path,
-    save_to_pkl,
-    load_from_pkl,
-)
 
-MODEL_LIST = [
-    PPO,
-    A2C,
-    TD3,
-    SAC,
-    DQN,
-    DDPG
-]
+MODEL_LIST = [PPO, A2C, TD3, SAC, DQN, DDPG]
 
 
 def select_env(model_class: BaseAlgorithm) -> gym.Env:
@@ -58,17 +46,13 @@ def test_save_load(tmp_path, model_class):
     model.learn(total_timesteps=500, eval_freq=250)
 
     env.reset()
-    observations = np.concatenate(
-        [env.step([env.action_space.sample()])[0] for _ in range(10)], axis=0
-    )
+    observations = np.concatenate([env.step([env.action_space.sample()])[0] for _ in range(10)], axis=0)
 
     # Get dictionary of current parameters
     params = deepcopy(model.policy.state_dict())
 
     # Modify all parameters to be random values
-    random_params = dict(
-        (param_name, th.rand_like(param)) for param_name, param in params.items()
-    )
+    random_params = dict((param_name, th.rand_like(param)) for param_name, param in params.items())
 
     # Update model parameters with the new random values
     model.policy.load_state_dict(random_params)
@@ -76,9 +60,7 @@ def test_save_load(tmp_path, model_class):
     new_params = model.policy.state_dict()
     # Check that all params are different now
     for k in params:
-        assert not th.allclose(
-            params[k], new_params[k]
-        ), "Parameters did not change as expected."
+        assert not th.allclose(params[k], new_params[k]), "Parameters did not change as expected."
 
     params = new_params
 
@@ -95,9 +77,7 @@ def test_save_load(tmp_path, model_class):
 
     # Check that all params are the same as before save load procedure now
     for key in params:
-        assert th.allclose(
-            params[key], new_params[key]
-        ), "Model parameters not the same after save and load."
+        assert th.allclose(params[key], new_params[key]), "Model parameters not the same after save and load."
 
     # check if model still selects the same actions
     new_selected_actions, _ = model.predict(observations, deterministic=True)
@@ -229,9 +209,7 @@ def test_warn_buffer(recwarn, model_class, optimize_memory_usage):
     if optimize_memory_usage:
         assert len(recwarn) == 1
         warning = recwarn.pop(UserWarning)
-        assert "The last trajectory in the replay buffer will be truncated" in str(
-            warning.message
-        )
+        assert "The last trajectory in the replay buffer will be truncated" in str(warning.message)
     else:
         assert len(recwarn) == 0
 
@@ -253,22 +231,16 @@ def test_save_load_policy(tmp_path, model_class, policy_str):
             # Avoid memory error when using replay buffer
             # Reduce the size of the features
             kwargs = dict(buffer_size=250)
-        env = FakeImageEnv(
-            screen_height=40, screen_width=40, n_channels=2, discrete=model_class == DQN
-        )
+        env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=2, discrete=model_class == DQN)
 
     env = DummyVecEnv([lambda: env])
 
     # create model
-    model = model_class(
-        policy_str, env, policy_kwargs=dict(net_arch=[16]), verbose=1, **kwargs
-    )
+    model = model_class(policy_str, env, policy_kwargs=dict(net_arch=[16]), verbose=1, **kwargs)
     model.learn(total_timesteps=500, eval_freq=250)
 
     env.reset()
-    observations = np.concatenate(
-        [env.step([env.action_space.sample()])[0] for _ in range(10)], axis=0
-    )
+    observations = np.concatenate([env.step([env.action_space.sample()])[0] for _ in range(10)], axis=0)
 
     policy = model.policy
     policy_class = policy.__class__
@@ -281,9 +253,7 @@ def test_save_load_policy(tmp_path, model_class, policy_str):
     params = deepcopy(policy.state_dict())
 
     # Modify all parameters to be random values
-    random_params = dict(
-        (param_name, th.rand_like(param)) for param_name, param in params.items()
-    )
+    random_params = dict((param_name, th.rand_like(param)) for param_name, param in params.items())
 
     # Update model parameters with the new random values
     policy.load_state_dict(random_params)
@@ -291,9 +261,7 @@ def test_save_load_policy(tmp_path, model_class, policy_str):
     new_params = policy.state_dict()
     # Check that all params are different now
     for k in params:
-        assert not th.allclose(
-            params[k], new_params[k]
-        ), "Parameters did not change as expected."
+        assert not th.allclose(params[k], new_params[k]), "Parameters did not change as expected."
 
     params = new_params
 
@@ -320,9 +288,7 @@ def test_save_load_policy(tmp_path, model_class, policy_str):
 
     # Check that all params are the same as before save load procedure now
     for key in params:
-        assert th.allclose(
-            params[key], new_params[key]
-        ), "Policy parameters not the same after save and load."
+        assert th.allclose(params[key], new_params[key]), "Policy parameters not the same after save and load."
 
     # check if model still selects the same actions
     new_selected_actions, _ = policy.predict(observations, deterministic=True)
@@ -370,17 +336,11 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
         save_to_pkl(fp1, "foo")
     assert fp1.closed
     with pytest.warns(None) as record:
-        assert (
-            load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl"))
-            == "foo"
-        )
+        assert load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl")) == "foo"
     assert len(record) == 0
 
     with pytest.warns(None) as record:
-        assert (
-            load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl", verbose=2))
-            == "foo"
-        )
+        assert load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl", verbose=2)) == "foo"
     assert len(record) == 1
 
     fp = pathlib.Path(f"{tmp_path}/t2").open("w")

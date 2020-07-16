@@ -1,10 +1,11 @@
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+
 import torch as th
-import torch.nn.functional as F
-from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
+from torch.nn import functional as F
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.noise import ActionNoise
+from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.td3.policies import TD3Policy
 
@@ -55,39 +56,56 @@ class TD3(OffPolicyAlgorithm):
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
 
-    def __init__(self, policy: Union[str, Type[TD3Policy]],
-                 env: Union[GymEnv, str],
-                 learning_rate: Union[float, Callable] = 1e-3,
-                 buffer_size: int = int(1e6),
-                 learning_starts: int = 100,
-                 batch_size: int = 100,
-                 tau: float = 0.005,
-                 gamma: float = 0.99,
-                 train_freq: int = -1,
-                 gradient_steps: int = -1,
-                 n_episodes_rollout: int = 1,
-                 action_noise: Optional[ActionNoise] = None,
-                 optimize_memory_usage: bool = False,
-                 policy_delay: int = 2,
-                 target_policy_noise: float = 0.2,
-                 target_noise_clip: float = 0.5,
-                 tensorboard_log: Optional[str] = None,
-                 create_eval_env: bool = False,
-                 policy_kwargs: Dict[str, Any] = None,
-                 verbose: int = 0,
-                 seed: Optional[int] = None,
-                 device: Union[th.device, str] = 'auto',
-                 _init_setup_model: bool = True):
+    def __init__(
+        self,
+        policy: Union[str, Type[TD3Policy]],
+        env: Union[GymEnv, str],
+        learning_rate: Union[float, Callable] = 1e-3,
+        buffer_size: int = int(1e6),
+        learning_starts: int = 100,
+        batch_size: int = 100,
+        tau: float = 0.005,
+        gamma: float = 0.99,
+        train_freq: int = -1,
+        gradient_steps: int = -1,
+        n_episodes_rollout: int = 1,
+        action_noise: Optional[ActionNoise] = None,
+        optimize_memory_usage: bool = False,
+        policy_delay: int = 2,
+        target_policy_noise: float = 0.2,
+        target_noise_clip: float = 0.5,
+        tensorboard_log: Optional[str] = None,
+        create_eval_env: bool = False,
+        policy_kwargs: Dict[str, Any] = None,
+        verbose: int = 0,
+        seed: Optional[int] = None,
+        device: Union[th.device, str] = "auto",
+        _init_setup_model: bool = True,
+    ):
 
-        super(TD3, self).__init__(policy, env, TD3Policy, learning_rate,
-                                  buffer_size, learning_starts, batch_size,
-                                  tau, gamma, train_freq, gradient_steps,
-                                  n_episodes_rollout, action_noise=action_noise,
-                                  policy_kwargs=policy_kwargs,
-                                  tensorboard_log=tensorboard_log,
-                                  verbose=verbose, device=device,
-                                  create_eval_env=create_eval_env, seed=seed,
-                                  sde_support=False, optimize_memory_usage=optimize_memory_usage)
+        super(TD3, self).__init__(
+            policy,
+            env,
+            TD3Policy,
+            learning_rate,
+            buffer_size,
+            learning_starts,
+            batch_size,
+            tau,
+            gamma,
+            train_freq,
+            gradient_steps,
+            n_episodes_rollout,
+            action_noise=action_noise,
+            policy_kwargs=policy_kwargs,
+            tensorboard_log=tensorboard_log,
+            verbose=verbose,
+            device=device,
+            create_eval_env=create_eval_env,
+            seed=seed,
+            sde_support=False,
+            optimize_memory_usage=optimize_memory_usage,
+        )
 
         self.policy_delay = policy_delay
         self.target_noise_clip = target_noise_clip
@@ -141,8 +159,7 @@ class TD3(OffPolicyAlgorithm):
             # Delayed policy updates
             if gradient_step % self.policy_delay == 0:
                 # Compute actor loss
-                actor_loss = -self.critic.q1_forward(replay_data.observations,
-                                                     self.actor(replay_data.observations)).mean()
+                actor_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
 
                 # Optimize the actor
                 self.actor.optimizer.zero_grad()
@@ -157,23 +174,32 @@ class TD3(OffPolicyAlgorithm):
                     target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
         self._n_updates += gradient_steps
-        logger.record("train/n_updates", self._n_updates, exclude='tensorboard')
+        logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
 
-    def learn(self,
-              total_timesteps: int,
-              callback: MaybeCallback = None,
-              log_interval: int = 4,
-              eval_env: Optional[GymEnv] = None,
-              eval_freq: int = -1,
-              n_eval_episodes: int = 5,
-              tb_log_name: str = "TD3",
-              eval_log_path: Optional[str] = None,
-              reset_num_timesteps: bool = True) -> OffPolicyAlgorithm:
+    def learn(
+        self,
+        total_timesteps: int,
+        callback: MaybeCallback = None,
+        log_interval: int = 4,
+        eval_env: Optional[GymEnv] = None,
+        eval_freq: int = -1,
+        n_eval_episodes: int = 5,
+        tb_log_name: str = "TD3",
+        eval_log_path: Optional[str] = None,
+        reset_num_timesteps: bool = True,
+    ) -> OffPolicyAlgorithm:
 
-        return super(TD3, self).learn(total_timesteps=total_timesteps, callback=callback, log_interval=log_interval,
-                                      eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,
-                                      tb_log_name=tb_log_name, eval_log_path=eval_log_path,
-                                      reset_num_timesteps=reset_num_timesteps)
+        return super(TD3, self).learn(
+            total_timesteps=total_timesteps,
+            callback=callback,
+            log_interval=log_interval,
+            eval_env=eval_env,
+            eval_freq=eval_freq,
+            n_eval_episodes=n_eval_episodes,
+            tb_log_name=tb_log_name,
+            eval_log_path=eval_log_path,
+            reset_num_timesteps=reset_num_timesteps,
+        )
 
     def excluded_save_params(self) -> List[str]:
         """

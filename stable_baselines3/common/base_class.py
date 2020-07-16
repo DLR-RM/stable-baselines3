@@ -1,28 +1,32 @@
 """Abstract base classes for RL algorithms."""
 
+import io
+import pathlib
 import time
-from typing import Union, Type, Optional, Dict, Any, Iterable, List, Tuple, Callable
 from abc import ABC, abstractmethod
 from collections import deque
-import pathlib
-import io
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 import gym
-import torch as th
 import numpy as np
+import torch as th
 
 from stable_baselines3.common import logger, utils
-from stable_baselines3.common.policies import BasePolicy, get_policy_from_name
-from stable_baselines3.common.utils import (set_random_seed, get_schedule_fn, update_learning_rate, get_device,
-                                            check_for_correct_spaces)
-from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, unwrap_vec_normalize, VecNormalize, VecTransposeImage
-from stable_baselines3.common.preprocessing import is_image_space
-from stable_baselines3.common.save_util import (recursive_getattr, recursive_setattr, save_to_zip_file,
-                                                load_from_zip_file)
-from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise
+from stable_baselines3.common.policies import BasePolicy, get_policy_from_name
+from stable_baselines3.common.preprocessing import is_image_space
+from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr, save_to_zip_file
+from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
+from stable_baselines3.common.utils import (
+    check_for_correct_spaces,
+    get_device,
+    get_schedule_fn,
+    set_random_seed,
+    update_learning_rate,
+)
+from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, VecNormalize, VecTransposeImage, unwrap_vec_normalize
 
 
 def maybe_make_env(env: Union[GymEnv, str, None], monitor_wrapper: bool, verbose: int) -> Optional[GymEnv]:
@@ -72,21 +76,23 @@ class BaseAlgorithm(ABC):
         Default: -1 (only sample at the beginning of the rollout)
     """
 
-    def __init__(self,
-                 policy: Type[BasePolicy],
-                 env: Union[GymEnv, str, None],
-                 policy_base: Type[BasePolicy],
-                 learning_rate: Union[float, Callable],
-                 policy_kwargs: Dict[str, Any] = None,
-                 tensorboard_log: Optional[str] = None,
-                 verbose: int = 0,
-                 device: Union[th.device, str] = 'auto',
-                 support_multi_env: bool = False,
-                 create_eval_env: bool = False,
-                 monitor_wrapper: bool = True,
-                 seed: Optional[int] = None,
-                 use_sde: bool = False,
-                 sde_sample_freq: int = -1):
+    def __init__(
+        self,
+        policy: Type[BasePolicy],
+        env: Union[GymEnv, str, None],
+        policy_base: Type[BasePolicy],
+        learning_rate: Union[float, Callable],
+        policy_kwargs: Dict[str, Any] = None,
+        tensorboard_log: Optional[str] = None,
+        verbose: int = 0,
+        device: Union[th.device, str] = "auto",
+        support_multi_env: bool = False,
+        create_eval_env: bool = False,
+        monitor_wrapper: bool = True,
+        seed: Optional[int] = None,
+        use_sde: bool = False,
+        sde_sample_freq: int = -1,
+    ):
 
         if isinstance(policy, str) and policy_base is not None:
             self.policy_class = get_policy_from_name(policy_base, policy)
@@ -147,12 +153,12 @@ class BaseAlgorithm(ABC):
             self.env = env
 
             if not support_multi_env and self.n_envs > 1:
-                raise ValueError("Error: the model does not support multiple envs; it requires "
-                                 "a single vectorized environment.")
+                raise ValueError(
+                    "Error: the model does not support multiple envs; it requires " "a single vectorized environment."
+                )
 
         if self.use_sde and not isinstance(self.observation_space, gym.spaces.Box):
-            raise ValueError("generalized State-Dependent Exploration (gSDE) can only "
-                             "be used with continuous actions.")
+            raise ValueError("generalized State-Dependent Exploration (gSDE) can only be used with continuous actions.")
 
     def _wrap_env(self, env: GymEnv) -> VecEnv:
         if not isinstance(env, VecEnv):
@@ -262,15 +268,18 @@ class BaseAlgorithm(ABC):
         return state_dicts, []
 
     @abstractmethod
-    def learn(self, total_timesteps: int,
-              callback: MaybeCallback = None,
-              log_interval: int = 100,
-              tb_log_name: str = "run",
-              eval_env: Optional[GymEnv] = None,
-              eval_freq: int = -1,
-              n_eval_episodes: int = 5,
-              eval_log_path: Optional[str] = None,
-              reset_num_timesteps: bool = True) -> 'BaseAlgorithm':
+    def learn(
+        self,
+        total_timesteps: int,
+        callback: MaybeCallback = None,
+        log_interval: int = 100,
+        tb_log_name: str = "run",
+        eval_env: Optional[GymEnv] = None,
+        eval_freq: int = -1,
+        n_eval_episodes: int = 5,
+        eval_log_path: Optional[str] = None,
+        reset_num_timesteps: bool = True,
+    ) -> "BaseAlgorithm":
         """
         Return a trained model.
 
@@ -286,10 +295,13 @@ class BaseAlgorithm(ABC):
         :return: (BaseAlgorithm) the trained model
         """
 
-    def predict(self, observation: np.ndarray,
-                state: Optional[np.ndarray] = None,
-                mask: Optional[np.ndarray] = None,
-                deterministic: bool = False) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    def predict(
+        self,
+        observation: np.ndarray,
+        state: Optional[np.ndarray] = None,
+        mask: Optional[np.ndarray] = None,
+        deterministic: bool = False,
+    ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
         """
         Get the model's action(s) from an observation
 
@@ -303,7 +315,7 @@ class BaseAlgorithm(ABC):
         return self.policy.predict(observation, state, mask, deterministic)
 
     @classmethod
-    def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs) -> 'BaseAlgorithm':
+    def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs) -> "BaseAlgorithm":
         """
         Load the model from a zip-file
 
@@ -314,14 +326,16 @@ class BaseAlgorithm(ABC):
         """
         data, params, tensors = load_from_zip_file(load_path)
 
-        if 'policy_kwargs' in data:
-            for arg_to_remove in ['device']:
-                if arg_to_remove in data['policy_kwargs']:
-                    del data['policy_kwargs'][arg_to_remove]
+        if "policy_kwargs" in data:
+            for arg_to_remove in ["device"]:
+                if arg_to_remove in data["policy_kwargs"]:
+                    del data["policy_kwargs"][arg_to_remove]
 
-        if 'policy_kwargs' in kwargs and kwargs['policy_kwargs'] != data['policy_kwargs']:
-            raise ValueError(f"The specified policy kwargs do not equal the stored policy kwargs."
-                             f"Stored kwargs: {data['policy_kwargs']}, specified kwargs: {kwargs['policy_kwargs']}")
+        if "policy_kwargs" in kwargs and kwargs["policy_kwargs"] != data["policy_kwargs"]:
+            raise ValueError(
+                f"The specified policy kwargs do not equal the stored policy kwargs."
+                f"Stored kwargs: {data['policy_kwargs']}, specified kwargs: {kwargs['policy_kwargs']}"
+            )
 
         # check if observation space and action space are part of the saved parameters
         if "observation_space" not in data or "action_space" not in data:
@@ -334,8 +348,12 @@ class BaseAlgorithm(ABC):
             env = data["env"]
 
         # noinspection PyArgumentList
-        model = cls(policy=data["policy_class"], env=env,
-                    device='auto', _init_setup_model=False)  # pytype: disable=not-instantiable,wrong-keyword-args
+        model = cls(
+            policy=data["policy_class"],
+            env=env,
+            device="auto",
+            _init_setup_model=False,  # pytype: disable=not-instantiable,wrong-keyword-args
+        )
 
         # load parameters
         model.__dict__.update(data)
@@ -367,19 +385,21 @@ class BaseAlgorithm(ABC):
         """
         if seed is None:
             return
-        set_random_seed(seed, using_cuda=self.device == th.device('cuda'))
+        set_random_seed(seed, using_cuda=self.device == th.device("cuda"))
         self.action_space.seed(seed)
         if self.env is not None:
             self.env.seed(seed)
         if self.eval_env is not None:
             self.eval_env.seed(seed)
 
-    def _init_callback(self,
-                       callback: MaybeCallback,
-                       eval_env: Optional[VecEnv] = None,
-                       eval_freq: int = 10000,
-                       n_eval_episodes: int = 5,
-                       log_path: Optional[str] = None) -> BaseCallback:
+    def _init_callback(
+        self,
+        callback: MaybeCallback,
+        eval_env: Optional[VecEnv] = None,
+        eval_freq: int = 10000,
+        n_eval_episodes: int = 5,
+        log_path: Optional[str] = None,
+    ) -> BaseCallback:
         """
         :param callback: (MaybeCallback) Callback(s) called at every step with state of the algorithm.
         :param eval_freq: (Optional[int]) How many steps between evaluations; if None, do not evaluate.
@@ -398,24 +418,29 @@ class BaseAlgorithm(ABC):
 
         # Create eval callback in charge of the evaluation
         if eval_env is not None:
-            eval_callback = EvalCallback(eval_env,
-                                         best_model_save_path=log_path,
-                                         log_path=log_path, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes)
+            eval_callback = EvalCallback(
+                eval_env,
+                best_model_save_path=log_path,
+                log_path=log_path,
+                eval_freq=eval_freq,
+                n_eval_episodes=n_eval_episodes,
+            )
             callback = CallbackList([callback, eval_callback])
 
         callback.init_callback(self)
         return callback
 
-    def _setup_learn(self,
-                     total_timesteps: int,
-                     eval_env: Optional[GymEnv],
-                     callback: MaybeCallback = None,
-                     eval_freq: int = 10000,
-                     n_eval_episodes: int = 5,
-                     log_path: Optional[str] = None,
-                     reset_num_timesteps: bool = True,
-                     tb_log_name: str = 'run',
-                     ) -> Tuple[int, BaseCallback]:
+    def _setup_learn(
+        self,
+        total_timesteps: int,
+        eval_env: Optional[GymEnv],
+        callback: MaybeCallback = None,
+        eval_freq: int = 10000,
+        n_eval_episodes: int = 5,
+        log_path: Optional[str] = None,
+        reset_num_timesteps: bool = True,
+        tb_log_name: str = "run",
+    ) -> Tuple[int, BaseCallback]:
         """
         Initialize different variables needed for training.
 
@@ -476,8 +501,8 @@ class BaseAlgorithm(ABC):
         if dones is None:
             dones = np.array([False] * len(infos))
         for idx, info in enumerate(infos):
-            maybe_ep_info = info.get('episode')
-            maybe_is_success = info.get('is_success')
+            maybe_ep_info = info.get("episode")
+            maybe_is_success = info.get("is_success")
             if maybe_ep_info is not None:
                 self.ep_info_buffer.extend([maybe_ep_info])
             if maybe_is_success is not None and dones[idx]:
@@ -522,7 +547,7 @@ class BaseAlgorithm(ABC):
         torch_variables = state_dicts_names + tensors_names
         for torch_var in torch_variables:
             # we need to get only the name of the top most module as we'll remove that
-            var_name = torch_var.split('.')[0]
+            var_name = torch_var.split(".")[0]
             exclude.add(var_name)
 
         # Remove parameter entries of parameters which are to be excluded

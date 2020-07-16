@@ -1,10 +1,9 @@
-from typing import Union, Type, Dict, List, Tuple
-
 from itertools import zip_longest
+from typing import Dict, List, Tuple, Type, Union
 
 import gym
 import torch as th
-import torch.nn as nn
+from torch import nn as nn
 
 from stable_baselines3.common.preprocessing import get_flattened_obs_dim, is_image_space
 from stable_baselines3.common.utils import get_device
@@ -60,22 +59,25 @@ class NatureCNN(BaseFeaturesExtractor):
         This corresponds to the number of unit for the last layer.
     """
 
-    def __init__(self, observation_space: gym.spaces.Box,
-                 features_dim: int = 512):
+    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512):
         super(NatureCNN, self).__init__(observation_space, features_dim)
         # We assume CxHxW images (channels first)
         # Re-ordering will be done by pre-preprocessing or wrapper
-        assert is_image_space(observation_space), ('You should use NatureCNN '
-                                                   f'only with images not with {observation_space} '
-                                                   '(you are probably using `CnnPolicy` instead of `MlpPolicy`)')
+        assert is_image_space(observation_space), (
+            "You should use NatureCNN "
+            f"only with images not with {observation_space} "
+            "(you are probably using `CnnPolicy` instead of `MlpPolicy`)"
+        )
         n_input_channels = observation_space.shape[0]
-        self.cnn = nn.Sequential(nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
-                                 nn.ReLU(),
-                                 nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
-                                 nn.ReLU(),
-                                 nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=0),
-                                 nn.ReLU(),
-                                 nn.Flatten())
+        self.cnn = nn.Sequential(
+            nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
+            nn.ReLU(),
+            nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=0),
+            nn.ReLU(),
+            nn.Flatten(),
+        )
 
         # Compute shape by doing one forward pass
         with th.no_grad():
@@ -87,11 +89,9 @@ class NatureCNN(BaseFeaturesExtractor):
         return self.linear(self.cnn(observations))
 
 
-def create_mlp(input_dim: int,
-               output_dim: int,
-               net_arch: List[int],
-               activation_fn: Type[nn.Module] = nn.ReLU,
-               squash_output: bool = False) -> List[nn.Module]:
+def create_mlp(
+    input_dim: int, output_dim: int, net_arch: List[int], activation_fn: Type[nn.Module] = nn.ReLU, squash_output: bool = False
+) -> List[nn.Module]:
     """
     Create a multi layer perceptron (MLP), which is
     a collection of fully-connected layers each followed by an activation function.
@@ -152,10 +152,13 @@ class MlpExtractor(nn.Module):
     :param device: (th.device)
     """
 
-    def __init__(self, feature_dim: int,
-                 net_arch: List[Union[int, Dict[str, List[int]]]],
-                 activation_fn: Type[nn.Module],
-                 device: Union[th.device, str] = 'auto'):
+    def __init__(
+        self,
+        feature_dim: int,
+        net_arch: List[Union[int, Dict[str, List[int]]]],
+        activation_fn: Type[nn.Module],
+        device: Union[th.device, str] = "auto",
+    ):
         super(MlpExtractor, self).__init__()
         device = get_device(device)
         shared_net, policy_net, value_net = [], [], []
@@ -173,13 +176,13 @@ class MlpExtractor(nn.Module):
                 last_layer_dim_shared = layer_size
             else:
                 assert isinstance(layer, dict), "Error: the net_arch list can only contain ints and dicts"
-                if 'pi' in layer:
-                    assert isinstance(layer['pi'], list), "Error: net_arch[-1]['pi'] must contain a list of integers."
-                    policy_only_layers = layer['pi']
+                if "pi" in layer:
+                    assert isinstance(layer["pi"], list), "Error: net_arch[-1]['pi'] must contain a list of integers."
+                    policy_only_layers = layer["pi"]
 
-                if 'vf' in layer:
-                    assert isinstance(layer['vf'], list), "Error: net_arch[-1]['vf'] must contain a list of integers."
-                    value_only_layers = layer['vf']
+                if "vf" in layer:
+                    assert isinstance(layer["vf"], list), "Error: net_arch[-1]['vf'] must contain a list of integers."
+                    value_only_layers = layer["vf"]
                 break  # From here on the network splits up in policy and value network
 
         last_layer_dim_pi = last_layer_dim_shared

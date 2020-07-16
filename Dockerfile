@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
          curl \
          ca-certificates \
          libjpeg-dev \
-         libpng-dev && \
+         libpng-dev \
+         libglib2.0-0 && \
      rm -rf /var/lib/apt/lists/*
 
 # Install anaconda abd dependencies
@@ -36,16 +37,5 @@ RUN \
     pip uninstall -y opencv-python && \
     pip install opencv-python-headless && \
     rm -rf $HOME/.cache/pip
-
-
-# Codacy deps
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    default-jre \
-    jq && \
-    rm -rf /var/lib/apt/lists/*
-
-# Codacy code coverage report: used for partial code coverage reporting
-RUN cd $CODE_DIR && \
-    curl -Ls -o codacy-coverage-reporter.jar "$(curl -Ls https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r '.assets | map({name, browser_download_url} | select(.name | (startswith("codacy-coverage-reporter") and contains("assembly") and endswith(".jar")))) | .[0].browser_download_url')"
 
 CMD /bin/bash

@@ -38,23 +38,9 @@ pip install -e .[docs,tests,extra]
 
 ## Codestyle
 
-We follow the [PEP8 codestyle](https://www.python.org/dev/peps/pep-0008/). Please order the imports as follows:
+We are using [black codestyle](https://github.com/psf/black) (max line length of 127 characters) together with [isort](https://github.com/timothycrosley/isort) to sort the imports.
 
-1. built-in
-2. packages
-3. current module
-
-with one space between each,  that gives for instance:
-```python
-import os
-import warnings
-
-import numpy as np
-
-from stable_baselines3 import PPO
-```
-
-In general, we recommend using pycharm to format everything in an efficient way.
+**Please run `make format`** to reformat your code. You can check the codestyle using `make check-codestyle` and `make lint`.
 
 Please document each function/method and [type](https://google.github.io/pytype/user_guide.html) them using the following template:
 
@@ -77,11 +63,10 @@ def my_function(arg1: type1, arg2: type2) -> returntype:
 Before proposing a PR, please open an issue, where the feature will be discussed. This prevent from duplicated PR to be proposed and also ease the code review process.
 
 Each PR need to be reviewed and accepted by at least one of the maintainers (@hill-a, @araffin, @erniejunior, @AdamGleave or @Miffyli).
-A PR must pass the Continuous Integration tests (travis + codacy) to be merged with the master branch.
+A PR must pass the Continuous Integration tests to be merged with the master branch.
 
-Note: in rare cases, we can create exception for codacy failure.
 
-## Test
+## Tests
 
 All new features must add tests in the `tests/` folder ensuring that everything works fine.
 We use [pytest](https://pytest.org/).
@@ -99,10 +84,16 @@ Type checking with `pytype`:
 make type
 ```
 
-Codestyle check with `flake8`:
+Codestyle check with `black`, `isort` and `flake8`:
 
 ```
+make check-codestyle
 make lint
+```
+
+To run `pytype`, `format` and `lint` in one command:
+```
+make commit-checks
 ```
 
 Build the documentation:
@@ -121,6 +112,7 @@ make spelling
 ## Changelog and Documentation
 
 Please do not forget to update the changelog (`docs/misc/changelog.rst`) and add documentation if needed.
+You should add your username next to each changelog entry that you added. If this is your first contribution, please add your username at the bottom too.
 A README is present in the `docs/` folder for instructions on how to build the documentation.
 
 

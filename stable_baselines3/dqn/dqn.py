@@ -1,8 +1,8 @@
-from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
 import torch as th
-import torch.nn.functional as F
+from torch.nn import functional as F
 
 from stable_baselines3.common import logger
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
@@ -55,41 +55,57 @@ class DQN(OffPolicyAlgorithm):
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
 
-    def __init__(self, policy: Union[str, Type[DQNPolicy]],
-                 env: Union[GymEnv, str],
-                 learning_rate: Union[float, Callable] = 1e-4,
-                 buffer_size: int = 1000000,
-                 learning_starts: int = 50000,
-                 batch_size: Optional[int] = 32,
-                 tau: float = 1.0,
-                 gamma: float = 0.99,
-                 train_freq: int = 4,
-                 gradient_steps: int = 1,
-                 n_episodes_rollout: int = -1,
-                 optimize_memory_usage: bool = False,
-                 target_update_interval: int = 10000,
-                 exploration_fraction: float = 0.1,
-                 exploration_initial_eps: float = 1.0,
-                 exploration_final_eps: float = 0.05,
-                 max_grad_norm: float = 10,
-                 tensorboard_log: Optional[str] = None,
-                 create_eval_env: bool = False,
-                 policy_kwargs: Optional[Dict[str, Any]] = None,
-                 verbose: int = 0,
-                 seed: Optional[int] = None,
-                 device: Union[th.device, str] = 'auto',
-                 _init_setup_model: bool = True):
+    def __init__(
+        self,
+        policy: Union[str, Type[DQNPolicy]],
+        env: Union[GymEnv, str],
+        learning_rate: Union[float, Callable] = 1e-4,
+        buffer_size: int = 1000000,
+        learning_starts: int = 50000,
+        batch_size: Optional[int] = 32,
+        tau: float = 1.0,
+        gamma: float = 0.99,
+        train_freq: int = 4,
+        gradient_steps: int = 1,
+        n_episodes_rollout: int = -1,
+        optimize_memory_usage: bool = False,
+        target_update_interval: int = 10000,
+        exploration_fraction: float = 0.1,
+        exploration_initial_eps: float = 1.0,
+        exploration_final_eps: float = 0.05,
+        max_grad_norm: float = 10,
+        tensorboard_log: Optional[str] = None,
+        create_eval_env: bool = False,
+        policy_kwargs: Optional[Dict[str, Any]] = None,
+        verbose: int = 0,
+        seed: Optional[int] = None,
+        device: Union[th.device, str] = "auto",
+        _init_setup_model: bool = True,
+    ):
 
-        super(DQN, self).__init__(policy, env, DQNPolicy, learning_rate,
-                                  buffer_size, learning_starts, batch_size,
-                                  tau, gamma, train_freq, gradient_steps,
-                                  n_episodes_rollout, action_noise=None,  # No action noise
-                                  policy_kwargs=policy_kwargs,
-                                  tensorboard_log=tensorboard_log,
-                                  verbose=verbose, device=device,
-                                  create_eval_env=create_eval_env,
-                                  seed=seed, sde_support=False,
-                                  optimize_memory_usage=optimize_memory_usage)
+        super(DQN, self).__init__(
+            policy,
+            env,
+            DQNPolicy,
+            learning_rate,
+            buffer_size,
+            learning_starts,
+            batch_size,
+            tau,
+            gamma,
+            train_freq,
+            gradient_steps,
+            n_episodes_rollout,
+            action_noise=None,  # No action noise
+            policy_kwargs=policy_kwargs,
+            tensorboard_log=tensorboard_log,
+            verbose=verbose,
+            device=device,
+            create_eval_env=create_eval_env,
+            seed=seed,
+            sde_support=False,
+            optimize_memory_usage=optimize_memory_usage,
+        )
 
         self.exploration_initial_eps = exploration_initial_eps
         self.exploration_final_eps = exploration_final_eps
@@ -108,8 +124,9 @@ class DQN(OffPolicyAlgorithm):
     def _setup_model(self) -> None:
         super(DQN, self)._setup_model()
         self._create_aliases()
-        self.exploration_schedule = get_linear_fn(self.exploration_initial_eps, self.exploration_final_eps,
-                                                  self.exploration_fraction)
+        self.exploration_schedule = get_linear_fn(
+            self.exploration_initial_eps, self.exploration_final_eps, self.exploration_fraction
+        )
 
     def _create_aliases(self) -> None:
         self.q_net = self.policy.q_net
@@ -164,12 +181,15 @@ class DQN(OffPolicyAlgorithm):
         # Increase update counter
         self._n_updates += gradient_steps
 
-        logger.record("train/n_updates", self._n_updates, exclude='tensorboard')
+        logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
 
-    def predict(self, observation: np.ndarray,
-                state: Optional[np.ndarray] = None,
-                mask: Optional[np.ndarray] = None,
-                deterministic: bool = False) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    def predict(
+        self,
+        observation: np.ndarray,
+        state: Optional[np.ndarray] = None,
+        mask: Optional[np.ndarray] = None,
+        deterministic: bool = False,
+    ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
         """
         Overrides the base_class predict function to include epsilon-greedy exploration.
 
@@ -187,21 +207,30 @@ class DQN(OffPolicyAlgorithm):
             action, state = self.policy.predict(observation, state, mask, deterministic)
         return action, state
 
-    def learn(self,
-              total_timesteps: int,
-              callback: MaybeCallback = None,
-              log_interval: int = 4,
-              eval_env: Optional[GymEnv] = None,
-              eval_freq: int = -1,
-              n_eval_episodes: int = 5,
-              tb_log_name: str = "DQN",
-              eval_log_path: Optional[str] = None,
-              reset_num_timesteps: bool = True) -> OffPolicyAlgorithm:
+    def learn(
+        self,
+        total_timesteps: int,
+        callback: MaybeCallback = None,
+        log_interval: int = 4,
+        eval_env: Optional[GymEnv] = None,
+        eval_freq: int = -1,
+        n_eval_episodes: int = 5,
+        tb_log_name: str = "DQN",
+        eval_log_path: Optional[str] = None,
+        reset_num_timesteps: bool = True,
+    ) -> OffPolicyAlgorithm:
 
-        return super(DQN, self).learn(total_timesteps=total_timesteps, callback=callback, log_interval=log_interval,
-                                      eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,
-                                      tb_log_name=tb_log_name, eval_log_path=eval_log_path,
-                                      reset_num_timesteps=reset_num_timesteps)
+        return super(DQN, self).learn(
+            total_timesteps=total_timesteps,
+            callback=callback,
+            log_interval=log_interval,
+            eval_env=eval_env,
+            eval_freq=eval_freq,
+            n_eval_episodes=n_eval_episodes,
+            tb_log_name=tb_log_name,
+            eval_log_path=eval_log_path,
+            reset_num_timesteps=reset_num_timesteps,
+        )
 
     def excluded_save_params(self) -> List[str]:
         """

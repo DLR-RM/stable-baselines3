@@ -1,13 +1,11 @@
 import numpy as np
 import pytest
 
-from stable_baselines3 import A2C, PPO, SAC, TD3, DQN, DDPG
-from stable_baselines3.common.identity_env import (IdentityEnvBox, IdentityEnv,
-                                                   IdentityEnvMultiBinary, IdentityEnvMultiDiscrete)
-
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.identity_env import IdentityEnv, IdentityEnvBox, IdentityEnvMultiBinary, IdentityEnvMultiDiscrete
 from stable_baselines3.common.noise import NormalActionNoise
+from stable_baselines3.common.vec_env import DummyVecEnv
 
 DIM = 4
 
@@ -25,7 +23,7 @@ def test_discrete(model_class, env):
         if isinstance(env, (IdentityEnvMultiDiscrete, IdentityEnvMultiBinary)):
             return
 
-    model = model_class('MlpPolicy', env_, gamma=0.5, seed=1, **kwargs).learn(n_steps)
+    model = model_class("MlpPolicy", env_, gamma=0.5, seed=1, **kwargs).learn(n_steps)
 
     evaluate_policy(model, env_, n_eval_episodes=20, reward_threshold=90)
     obs = env.reset()
@@ -37,24 +35,14 @@ def test_discrete(model_class, env):
 def test_continuous(model_class):
     env = IdentityEnvBox(eps=0.5)
 
-    n_steps = {
-        A2C: 3500,
-        PPO: 3000,
-        SAC: 700,
-        TD3: 500,
-        DDPG: 500
-    }[model_class]
+    n_steps = {A2C: 3500, PPO: 3000, SAC: 700, TD3: 500, DDPG: 500}[model_class]
 
-    kwargs = dict(
-        policy_kwargs=dict(net_arch=[64, 64]),
-        seed=0,
-        gamma=0.95
-    )
+    kwargs = dict(policy_kwargs=dict(net_arch=[64, 64]), seed=0, gamma=0.95)
     if model_class in [TD3]:
         n_actions = 1
         action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
-        kwargs['action_noise'] = action_noise
+        kwargs["action_noise"] = action_noise
 
-    model = model_class('MlpPolicy', env, **kwargs).learn(n_steps)
+    model = model_class("MlpPolicy", env, **kwargs).learn(n_steps)
 
     evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=90)

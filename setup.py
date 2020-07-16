@@ -1,7 +1,8 @@
 import os
-from setuptools import setup, find_packages
 
-with open(os.path.join('stable_baselines3', 'version.txt'), 'r') as file_handler:
+from setuptools import find_packages, setup
+
+with open(os.path.join("stable_baselines3", "version.txt"), "r") as file_handler:
     __version__ = file_handler.read().strip()
 
 
@@ -64,66 +65,69 @@ model = PPO('MlpPolicy', 'CartPole-v1').learn(10000)
 """  # noqa:E501
 
 
-setup(name='stable_baselines3',
-      packages=[package for package in find_packages()
-                if package.startswith('stable_baselines3')],
-      package_data={
-          'stable_baselines3': ['py.typed', 'version.txt']
-      },
-      install_requires=[
-          'gym>=0.17',
-          'numpy',
-          'torch>=1.4.0',
-          # For saving models
-          'cloudpickle',
-          # For reading logs
-          'pandas',
-          # Plotting learning curves
-          'matplotlib'
-      ],
-      extras_require={
-          'tests': [
-              # Run tests and coverage
-              'pytest',
-              'pytest-cov',
-              'pytest-env',
-              'pytest-xdist',
-              # Type check
-              'pytype',
-              # Lint code
-              'flake8>=3.8'
-          ],
-          'docs': [
-              'sphinx',
-              'sphinx-autobuild',
-              'sphinx-rtd-theme',
-              # For spelling
-              'sphinxcontrib.spelling',
-              # Type hints support
-              # 'sphinx-autodoc-typehints'
-          ],
-          'extra': [
-              # For render
-              'opencv-python',
-              # For atari games,
-              'atari_py~=0.2.0', 'pillow',
-              # Tensorboard support
-              'tensorboard',
-              # Checking memory taken by replay buffer
-              'psutil'
-          ]
-      },
-      description='Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.',
-      author='Antonin Raffin',
-      url='https://github.com/DLR-RM/stable-baselines3',
-      author_email='antonin.raffin@dlr.de',
-      keywords="reinforcement-learning-algorithms reinforcement-learning machine-learning "
-               "gym openai stable baselines toolbox python data-science",
-      license="MIT",
-      long_description=long_description,
-      long_description_content_type='text/markdown',
-      version=__version__,
-      )
+setup(
+    name="stable_baselines3",
+    packages=[package for package in find_packages() if package.startswith("stable_baselines3")],
+    package_data={"stable_baselines3": ["py.typed", "version.txt"]},
+    install_requires=[
+        "gym>=0.17",
+        "numpy",
+        "torch>=1.4.0",
+        # For saving models
+        "cloudpickle",
+        # For reading logs
+        "pandas",
+        # Plotting learning curves
+        "matplotlib",
+    ],
+    extras_require={
+        "tests": [
+            # Run tests and coverage
+            "pytest",
+            "pytest-cov",
+            "pytest-env",
+            "pytest-xdist",
+            # Type check
+            "pytype",
+            # Lint code
+            "flake8>=3.8",
+            # Sort imports
+            "isort>=5.0",
+            # Reformat
+            "black",
+        ],
+        "docs": [
+            "sphinx",
+            "sphinx-autobuild",
+            "sphinx-rtd-theme",
+            # For spelling
+            "sphinxcontrib.spelling",
+            # Type hints support
+            # 'sphinx-autodoc-typehints'
+        ],
+        "extra": [
+            # For render
+            "opencv-python",
+            # For atari games,
+            "atari_py~=0.2.0",
+            "pillow",
+            # Tensorboard support
+            "tensorboard",
+            # Checking memory taken by replay buffer
+            "psutil",
+        ],
+    },
+    description="Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.",
+    author="Antonin Raffin",
+    url="https://github.com/DLR-RM/stable-baselines3",
+    author_email="antonin.raffin@dlr.de",
+    keywords="reinforcement-learning-algorithms reinforcement-learning machine-learning "
+    "gym openai stable baselines toolbox python data-science",
+    license="MIT",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    version=__version__,
+)
 
 # python setup.py sdist
 # python setup.py bdist_wheel

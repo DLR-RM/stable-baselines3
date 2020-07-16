@@ -37,6 +37,7 @@ Others:
 - Split the ``collect_rollout()`` method for off-policy algorithms
 - Added ``_on_step()`` for off-policy base class
 - Optimized replay buffer size by removing the need of ``next_observations`` numpy array
+- Ignored errors from newer pytype version
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -44,6 +45,7 @@ Documentation:
 - Fixed a typo in the section of Enjoy a Trained Agent, in RL Baselines3 Zoo README. (@blurLake)
 - Added Unity reacher to the projects page (@koulakis)
 - Added PyBullet colab notebook
+- Fixed typo in PPO example code (@joeljosephjin)
 
 
 
@@ -346,4 +348,4 @@ And all the contributors:
 @Miffyli @dwiel @miguelrass @qxcv @jaberkow @eavelardev @ruifeng96150 @pedrohbtp @srivatsankrishnan @evilsocket
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
-@tirafesi @blurLake @koulakis
+@tirafesi @blurLake @koulakis @joeljosephjin

@@ -106,9 +106,8 @@ class BaseCallback(ABC):
     def update_locals(self, locals_: Dict[str, Any]) -> None:
         """
         Update the references to the local variables.
-        locals() returns a function level dictionary
 
-        :param: locals_ (Dict[str, Any]) the local variables during rollout collection
+        :param: ``locals_`` (Dict[str, Any]) the local variables during rollout collection
         """
         self.locals.update(locals_)
 

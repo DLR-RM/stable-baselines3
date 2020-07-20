@@ -1,23 +1,25 @@
 import os
 import warnings
-from typing import Dict, Any, Optional, Callable, Type, Union
+from typing import Any, Callable, Dict, Optional, Type, Union
 
 import gym
 
-from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.atari_wrappers import AtariWrapper
+from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 
-def make_vec_env(env_id: Union[str, Type[gym.Env]],
-                 n_envs: int = 1,
-                 seed: Optional[int] = None,
-                 start_index: int = 0,
-                 monitor_dir: Optional[str] = None,
-                 wrapper_class: Optional[Callable] = None,
-                 env_kwargs: Optional[Dict[str, Any]] = None,
-                 vec_env_cls: Optional[Union[DummyVecEnv, SubprocVecEnv]] = None,
-                 vec_env_kwargs: Optional[Dict[str, Any]] = None):
+def make_vec_env(
+    env_id: Union[str, Type[gym.Env]],
+    n_envs: int = 1,
+    seed: Optional[int] = None,
+    start_index: int = 0,
+    monitor_dir: Optional[str] = None,
+    wrapper_class: Optional[Callable] = None,
+    env_kwargs: Optional[Dict[str, Any]] = None,
+    vec_env_cls: Optional[Union[DummyVecEnv, SubprocVecEnv]] = None,
+    vec_env_kwargs: Optional[Dict[str, Any]] = None,
+):
     """
     Create a wrapped, monitored ``VecEnv``.
     By default it uses a ``DummyVecEnv`` which is usually faster
@@ -62,6 +64,7 @@ def make_vec_env(env_id: Union[str, Type[gym.Env]],
             if wrapper_class is not None:
                 env = wrapper_class(env)
             return env
+
         return _init
 
     # No custom VecEnv is passed
@@ -72,15 +75,17 @@ def make_vec_env(env_id: Union[str, Type[gym.Env]],
     return vec_env_cls([make_env(i + start_index) for i in range(n_envs)], **vec_env_kwargs)
 
 
-def make_atari_env(env_id: Union[str, Type[gym.Env]],
-                   n_envs: int = 1,
-                   seed: Optional[int] = None,
-                   start_index: int = 0,
-                   monitor_dir: Optional[str] = None,
-                   wrapper_kwargs: Optional[Dict[str, Any]] = None,
-                   env_kwargs: Optional[Dict[str, Any]] = None,
-                   vec_env_cls: Optional[Union[DummyVecEnv, SubprocVecEnv]] = None,
-                   vec_env_kwargs: Optional[Dict[str, Any]] = None):
+def make_atari_env(
+    env_id: Union[str, Type[gym.Env]],
+    n_envs: int = 1,
+    seed: Optional[int] = None,
+    start_index: int = 0,
+    monitor_dir: Optional[str] = None,
+    wrapper_kwargs: Optional[Dict[str, Any]] = None,
+    env_kwargs: Optional[Dict[str, Any]] = None,
+    vec_env_cls: Optional[Union[DummyVecEnv, SubprocVecEnv]] = None,
+    vec_env_kwargs: Optional[Dict[str, Any]] = None,
+):
     """
     Create a wrapped, monitored VecEnv for Atari.
     It is a wrapper around ``make_vec_env`` that includes common preprocessing for Atari games.
@@ -105,6 +110,14 @@ def make_atari_env(env_id: Union[str, Type[gym.Env]],
         env = AtariWrapper(env, **wrapper_kwargs)
         return env
 
-    return make_vec_env(env_id, n_envs=n_envs, seed=seed, start_index=start_index,
-                        monitor_dir=monitor_dir, wrapper_class=atari_wrapper,
-                        env_kwargs=env_kwargs, vec_env_cls=vec_env_cls, vec_env_kwargs=vec_env_kwargs)
+    return make_vec_env(
+        env_id,
+        n_envs=n_envs,
+        seed=seed,
+        start_index=start_index,
+        monitor_dir=monitor_dir,
+        wrapper_class=atari_wrapper,
+        env_kwargs=env_kwargs,
+        vec_env_cls=vec_env_cls,
+        vec_env_kwargs=vec_env_kwargs,
+    )

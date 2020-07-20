@@ -21,27 +21,31 @@ class BitFlippingEnv(GoalEnv):
     :param discrete_obs_space: (bool) Whether to use the discrete observation
         version or not, by default, it uses the MultiBinary one
     """
-    def __init__(self, n_bits: int = 10,
-                 continuous: bool = False,
-                 max_steps: Optional[int] = None,
-                 discrete_obs_space: bool = False):
+
+    def __init__(
+        self, n_bits: int = 10, continuous: bool = False, max_steps: Optional[int] = None, discrete_obs_space: bool = False
+    ):
         super(BitFlippingEnv, self).__init__()
         # The achieved goal is determined by the current state
         # here, it is a special where they are equal
         if discrete_obs_space:
             # In the discrete case, the agent act on the binary
             # representation of the observation
-            self.observation_space = spaces.Dict({
-                'observation': spaces.Discrete(2 ** n_bits - 1),
-                'achieved_goal': spaces.Discrete(2 ** n_bits - 1),
-                'desired_goal': spaces.Discrete(2 ** n_bits - 1)
-            })
+            self.observation_space = spaces.Dict(
+                {
+                    "observation": spaces.Discrete(2 ** n_bits - 1),
+                    "achieved_goal": spaces.Discrete(2 ** n_bits - 1),
+                    "desired_goal": spaces.Discrete(2 ** n_bits - 1),
+                }
+            )
         else:
-            self.observation_space = spaces.Dict({
-                'observation': spaces.MultiBinary(n_bits),
-                'achieved_goal': spaces.MultiBinary(n_bits),
-                'desired_goal': spaces.MultiBinary(n_bits)
-            })
+            self.observation_space = spaces.Dict(
+                {
+                    "observation": spaces.MultiBinary(n_bits),
+                    "achieved_goal": spaces.MultiBinary(n_bits),
+                    "desired_goal": spaces.MultiBinary(n_bits),
+                }
+            )
 
         self.obs_space = spaces.MultiBinary(n_bits)
 
@@ -69,7 +73,7 @@ class BitFlippingEnv(GoalEnv):
         if self.discrete_obs_space:
             # The internal state is the binary representation of the
             # observed one
-            return int(sum([state[i] * 2**i for i in range(len(state))]))
+            return int(sum([state[i] * 2 ** i for i in range(len(state))]))
         return state
 
     def _get_obs(self) -> OrderedDict:
@@ -78,11 +82,13 @@ class BitFlippingEnv(GoalEnv):
 
         :return: (OrderedDict<int or ndarray>)
         """
-        return OrderedDict([
-            ('observation', self.convert_if_needed(self.state.copy())),
-            ('achieved_goal', self.convert_if_needed(self.state.copy())),
-            ('desired_goal', self.convert_if_needed(self.desired_goal.copy()))
-        ])
+        return OrderedDict(
+            [
+                ("observation", self.convert_if_needed(self.state.copy())),
+                ("achieved_goal", self.convert_if_needed(self.state.copy())),
+                ("desired_goal", self.convert_if_needed(self.desired_goal.copy())),
+            ]
+        )
 
     def reset(self) -> OrderedDict:
         self.current_step = 0
@@ -95,25 +101,22 @@ class BitFlippingEnv(GoalEnv):
         else:
             self.state[action] = 1 - self.state[action]
         obs = self._get_obs()
-        reward = self.compute_reward(obs['achieved_goal'], obs['desired_goal'], None)
+        reward = self.compute_reward(obs["achieved_goal"], obs["desired_goal"], None)
         done = reward == 0
         self.current_step += 1
         # Episode terminate when we reached the goal or the max number of steps
-        info = {'is_success': done}
+        info = {"is_success": done}
         done = done or self.current_step >= self.max_steps
         return obs, reward, done, info
 
-    def compute_reward(self,
-                       achieved_goal: np.ndarray,
-                       desired_goal: np.ndarray,
-                       _info) -> float:
+    def compute_reward(self, achieved_goal: np.ndarray, desired_goal: np.ndarray, _info) -> float:
         # Deceptive reward: it is positive only when the goal is achieved
         if self.discrete_obs_space:
             return 0.0 if achieved_goal == desired_goal else -1.0
         return 0.0 if (achieved_goal == desired_goal).all() else -1.0
 
-    def render(self, mode: str = 'human') -> Optional[np.ndarray]:
-        if mode == 'rgb_array':
+    def render(self, mode: str = "human") -> Optional[np.ndarray]:
+        if mode == "rgb_array":
             return self.state.copy()
         print(self.state)
 

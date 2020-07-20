@@ -30,16 +30,14 @@ class VecFrameStack(VecEnvWrapper):
         self.stackedobs = np.roll(self.stackedobs, shift=-last_ax_size, axis=-1)
         for i, done in enumerate(dones):
             if done:
-                if 'terminal_observation' in infos[i]:
-                    old_terminal = infos[i]['terminal_observation']
-                    new_terminal = np.concatenate(
-                        (self.stackedobs[i, ..., :-last_ax_size], old_terminal), axis=-1)
-                    infos[i]['terminal_observation'] = new_terminal
+                if "terminal_observation" in infos[i]:
+                    old_terminal = infos[i]["terminal_observation"]
+                    new_terminal = np.concatenate((self.stackedobs[i, ..., :-last_ax_size], old_terminal), axis=-1)
+                    infos[i]["terminal_observation"] = new_terminal
                 else:
-                    warnings.warn(
-                        "VecFrameStack wrapping a VecEnv without terminal_observation info")
+                    warnings.warn("VecFrameStack wrapping a VecEnv without terminal_observation info")
                 self.stackedobs[i] = 0
-        self.stackedobs[..., -observations.shape[-1]:] = observations
+        self.stackedobs[..., -observations.shape[-1] :] = observations
         return self.stackedobs, rewards, dones, infos
 
     def reset(self):
@@ -48,7 +46,7 @@ class VecFrameStack(VecEnvWrapper):
         """
         obs = self.venv.reset()
         self.stackedobs[...] = 0
-        self.stackedobs[..., -obs.shape[-1]:] = obs
+        self.stackedobs[..., -obs.shape[-1] :] = obs
         return self.stackedobs
 
     def close(self):

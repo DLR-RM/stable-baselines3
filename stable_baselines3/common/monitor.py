@@ -1,15 +1,15 @@
-__all__ = ['Monitor', 'get_monitor_files', 'load_results']
+__all__ = ["Monitor", "get_monitor_files", "load_results"]
 
 import csv
 import json
 import os
 import time
 from glob import glob
-from typing import Tuple, Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import gym
-import pandas
 import numpy as np
+import pandas
 
 
 class Monitor(gym.Wrapper):
@@ -23,14 +23,17 @@ class Monitor(gym.Wrapper):
         if extra parameters are needed at reset
     :param info_keywords: (Tuple[str, ...]) extra information to log, from the information return of env.step()
     """
+
     EXT = "monitor.csv"
 
-    def __init__(self,
-                 env: gym.Env,
-                 filename: Optional[str] = None,
-                 allow_early_resets: bool = True,
-                 reset_keywords: Tuple[str, ...] = (),
-                 info_keywords: Tuple[str, ...] = ()):
+    def __init__(
+        self,
+        env: gym.Env,
+        filename: Optional[str] = None,
+        allow_early_resets: bool = True,
+        reset_keywords: Tuple[str, ...] = (),
+        info_keywords: Tuple[str, ...] = (),
+    ):
         super(Monitor, self).__init__(env=env)
         self.t_start = time.time()
         if filename is None:
@@ -43,9 +46,8 @@ class Monitor(gym.Wrapper):
                 else:
                     filename = filename + "." + Monitor.EXT
             self.file_handler = open(filename, "wt")
-            self.file_handler.write('#%s\n' % json.dumps({"t_start": self.t_start, 'env_id': env.spec and env.spec.id}))
-            self.logger = csv.DictWriter(self.file_handler,
-                                         fieldnames=('r', 'l', 't') + reset_keywords + info_keywords)
+            self.file_handler.write("#%s\n" % json.dumps({"t_start": self.t_start, "env_id": env.spec and env.spec.id}))
+            self.logger = csv.DictWriter(self.file_handler, fieldnames=("r", "l", "t") + reset_keywords + info_keywords)
             self.logger.writeheader()
             self.file_handler.flush()
 
@@ -68,14 +70,16 @@ class Monitor(gym.Wrapper):
         :return: (np.ndarray) the first observation of the environment
         """
         if not self.allow_early_resets and not self.needs_reset:
-            raise RuntimeError("Tried to reset an environment before done. If you want to allow early resets, "
-                               "wrap your env with Monitor(env, path, allow_early_resets=True)")
+            raise RuntimeError(
+                "Tried to reset an environment before done. If you want to allow early resets, "
+                "wrap your env with Monitor(env, path, allow_early_resets=True)"
+            )
         self.rewards = []
         self.needs_reset = False
         for key in self.reset_keywords:
             value = kwargs.get(key)
             if value is None:
-                raise ValueError('Expected you to pass kwarg {} into reset'.format(key))
+                raise ValueError("Expected you to pass kwarg {} into reset".format(key))
             self.current_reset_info[key] = value
         return self.env.reset(**kwargs)
 
@@ -104,7 +108,7 @@ class Monitor(gym.Wrapper):
             if self.logger:
                 self.logger.writerow(ep_info)
                 self.file_handler.flush()
-            info['episode'] = ep_info
+            info["episode"] = ep_info
         self.total_steps += 1
         return observation, reward, done, info
 
@@ -153,6 +157,7 @@ class LoadMonitorResultsError(Exception):
     """
     Raised when loading the monitor log fails.
     """
+
     pass
 
 
@@ -178,16 +183,16 @@ def load_results(path: str) -> pandas.DataFrame:
         raise LoadMonitorResultsError("no monitor files of the form *%s found in %s" % (Monitor.EXT, path))
     data_frames, headers = [], []
     for file_name in monitor_files:
-        with open(file_name, 'rt') as file_handler:
+        with open(file_name, "rt") as file_handler:
             first_line = file_handler.readline()
-            assert first_line[0] == '#'
+            assert first_line[0] == "#"
             header = json.loads(first_line[1:])
             data_frame = pandas.read_csv(file_handler, index_col=None)
             headers.append(header)
-            data_frame['t'] += header['t_start']
+            data_frame["t"] += header["t_start"]
         data_frames.append(data_frame)
     data_frame = pandas.concat(data_frames)
-    data_frame.sort_values('t', inplace=True)
+    data_frame.sort_values("t", inplace=True)
     data_frame.reset_index(inplace=True)
-    data_frame['t'] -= min(header['t_start'] for header in headers)
+    data_frame["t"] -= min(header["t_start"] for header in headers)
     return data_frame

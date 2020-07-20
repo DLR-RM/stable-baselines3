@@ -12,6 +12,7 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
 from stable_baselines3.common.utils import polyak_update, safe_mean
+from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.td3.policies import TD3Policy
 
 

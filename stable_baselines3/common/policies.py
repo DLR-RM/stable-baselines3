@@ -1,24 +1,28 @@
 """Policies: abstract base class and concrete implementations."""
 
-from abc import ABC, abstractmethod
 import collections
-from typing import Union, Type, Dict, List, Tuple, Optional, Any, Callable
+from abc import ABC, abstractmethod
 from functools import partial
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import gym
-import torch as th
-import torch.nn as nn
 import numpy as np
+import torch as th
+from torch import nn as nn
 
-from stable_baselines3.common.preprocessing import preprocess_obs, is_image_space, get_action_dim
-from stable_baselines3.common.torch_layers import (FlattenExtractor, BaseFeaturesExtractor, create_mlp,
-                                                   NatureCNN, MlpExtractor)
+from stable_baselines3.common.distributions import (
+    BernoulliDistribution,
+    CategoricalDistribution,
+    DiagGaussianDistribution,
+    Distribution,
+    MultiCategoricalDistribution,
+    StateDependentNoiseDistribution,
+    make_proba_distribution,
+)
+from stable_baselines3.common.preprocessing import get_action_dim, is_image_space, preprocess_obs
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, FlattenExtractor, MlpExtractor, NatureCNN, create_mlp
 from stable_baselines3.common.utils import get_device, is_vectorized_observation
 from stable_baselines3.common.vec_env import VecTransposeImage
-from stable_baselines3.common.distributions import (make_proba_distribution, Distribution,
-                                                    DiagGaussianDistribution, CategoricalDistribution,
-                                                    MultiCategoricalDistribution, BernoulliDistribution,
-                                                    StateDependentNoiseDistribution)
 
 
 class BaseModel(nn.Module, ABC):
@@ -44,16 +48,18 @@ class BaseModel(nn.Module, ABC):
         excluding the learning rate, to pass to the optimizer
     """
 
-    def __init__(self,
-                 observation_space: gym.spaces.Space,
-                 action_space: gym.spaces.Space,
-                 device: Union[th.device, str] = 'auto',
-                 features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
-                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
-                 features_extractor: Optional[nn.Module] = None,
-                 normalize_images: bool = True,
-                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
-                 optimizer_kwargs: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        device: Union[th.device, str] = "auto",
+        features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
+        features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        features_extractor: Optional[nn.Module] = None,
+        normalize_images: bool = True,
+        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+    ):
         super(BaseModel, self).__init__()
 
         if optimizer_kwargs is None:
@@ -86,7 +92,7 @@ class BaseModel(nn.Module, ABC):
         :param obs: (th.Tensor)
         :return: (th.Tensor)
         """
-        assert self.features_extractor is not None, 'No feature extractor was set'
+        assert self.features_extractor is not None, "No feature extractor was set"
         preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
         return self.features_extractor(preprocessed_obs)
 
@@ -112,10 +118,10 @@ class BaseModel(nn.Module, ABC):
 
         :param path: (str)
         """
-        th.save({'state_dict': self.state_dict(), 'data': self._get_data()}, path)
+        th.save({"state_dict": self.state_dict(), "data": self._get_data()}, path)
 
     @classmethod
-    def load(cls, path: str, device: Union[th.device, str] = 'auto') -> 'BaseModel':
+    def load(cls, path: str, device: Union[th.device, str] = "auto") -> "BaseModel":
         """
         Load model from path.
 
@@ -126,9 +132,9 @@ class BaseModel(nn.Module, ABC):
         device = get_device(device)
         saved_variables = th.load(path, map_location=device)
         # Create policy object
-        model = cls(**saved_variables['data'])  # pytype: disable=not-instantiable
+        model = cls(**saved_variables["data"])  # pytype: disable=not-instantiable
         # Load weights
-        model.load_state_dict(saved_variables['state_dict'])
+        model.load_state_dict(saved_variables["state_dict"])
         model.to(device)
         return model
 
@@ -159,6 +165,7 @@ class BasePolicy(BaseModel):
     :param squash_output: (bool) For continuous actions, whether the output is squashed
         or not using a ``tanh()`` function.
     """
+
     def __init__(self, *args, squash_output: bool = False, **kwargs):
         super(BasePolicy, self).__init__(*args, **kwargs)
         self._squash_output = squash_output
@@ -196,11 +203,13 @@ class BasePolicy(BaseModel):
         :return: (th.Tensor) Taken action according to the policy
         """
 
-    def predict(self,
-                observation: np.ndarray,
-                state: Optional[np.ndarray] = None,
-                mask: Optional[np.ndarray] = None,
-                deterministic: bool = False) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    def predict(
+        self,
+        observation: np.ndarray,
+        state: Optional[np.ndarray] = None,
+        mask: Optional[np.ndarray] = None,
+        deterministic: bool = False,
+    ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
         """
         Get the policy action and state from an observation (and optional state).
         Includes sugar-coating to handle different observations (e.g. normalizing images).
@@ -222,12 +231,15 @@ class BasePolicy(BaseModel):
         # Handle the different cases for images
         # as PyTorch use channel first format
         if is_image_space(self.observation_space):
-            if not (observation.shape == self.observation_space.shape
-                    or observation.shape[1:] == self.observation_space.shape):
+            if not (
+                observation.shape == self.observation_space.shape or observation.shape[1:] == self.observation_space.shape
+            ):
                 # Try to re-order the channels
                 transpose_obs = VecTransposeImage.transpose_image(observation)
-                if (transpose_obs.shape == self.observation_space.shape
-                        or transpose_obs.shape[1:] == self.observation_space.shape):
+                if (
+                    transpose_obs.shape == self.observation_space.shape
+                    or transpose_obs.shape[1:] == self.observation_space.shape
+                ):
                     observation = transpose_obs
 
         vectorized_env = is_vectorized_observation(observation, self.observation_space)
@@ -313,40 +325,44 @@ class ActorCriticPolicy(BasePolicy):
         excluding the learning rate, to pass to the optimizer
     """
 
-    def __init__(self,
-                 observation_space: gym.spaces.Space,
-                 action_space: gym.spaces.Space,
-                 lr_schedule: Callable[[float], float],
-                 net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
-                 device: Union[th.device, str] = 'auto',
-                 activation_fn: Type[nn.Module] = nn.Tanh,
-                 ortho_init: bool = True,
-                 use_sde: bool = False,
-                 log_std_init: float = 0.0,
-                 full_std: bool = True,
-                 sde_net_arch: Optional[List[int]] = None,
-                 use_expln: bool = False,
-                 squash_output: bool = False,
-                 features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
-                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
-                 normalize_images: bool = True,
-                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
-                 optimizer_kwargs: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        lr_schedule: Callable[[float], float],
+        net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
+        device: Union[th.device, str] = "auto",
+        activation_fn: Type[nn.Module] = nn.Tanh,
+        ortho_init: bool = True,
+        use_sde: bool = False,
+        log_std_init: float = 0.0,
+        full_std: bool = True,
+        sde_net_arch: Optional[List[int]] = None,
+        use_expln: bool = False,
+        squash_output: bool = False,
+        features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
+        features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        normalize_images: bool = True,
+        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+    ):
 
         if optimizer_kwargs is None:
             optimizer_kwargs = {}
             # Small values to avoid NaN in Adam optimizer
             if optimizer_class == th.optim.Adam:
-                optimizer_kwargs['eps'] = 1e-5
+                optimizer_kwargs["eps"] = 1e-5
 
-        super(ActorCriticPolicy, self).__init__(observation_space,
-                                                action_space,
-                                                device,
-                                                features_extractor_class,
-                                                features_extractor_kwargs,
-                                                optimizer_class=optimizer_class,
-                                                optimizer_kwargs=optimizer_kwargs,
-                                                squash_output=squash_output)
+        super(ActorCriticPolicy, self).__init__(
+            observation_space,
+            action_space,
+            device,
+            features_extractor_class,
+            features_extractor_kwargs,
+            optimizer_class=optimizer_class,
+            optimizer_kwargs=optimizer_kwargs,
+            squash_output=squash_output,
+        )
 
         # Default network architecture, from stable-baselines
         if net_arch is None:
@@ -359,8 +375,7 @@ class ActorCriticPolicy(BasePolicy):
         self.activation_fn = activation_fn
         self.ortho_init = ortho_init
 
-        self.features_extractor = features_extractor_class(self.observation_space,
-                                                           **self.features_extractor_kwargs)
+        self.features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
         self.features_dim = self.features_extractor.features_dim
 
         self.normalize_images = normalize_images
@@ -369,10 +384,10 @@ class ActorCriticPolicy(BasePolicy):
         # Keyword arguments for gSDE distribution
         if use_sde:
             dist_kwargs = {
-                'full_std': full_std,
-                'squash_output': squash_output,
-                'use_expln': use_expln,
-                'learn_features': sde_net_arch is not None
+                "full_std": full_std,
+                "squash_output": squash_output,
+                "use_expln": use_expln,
+                "learn_features": sde_net_arch is not None,
             }
 
         self.sde_features_extractor = None
@@ -390,22 +405,24 @@ class ActorCriticPolicy(BasePolicy):
 
         default_none_kwargs = self.dist_kwargs or collections.defaultdict(lambda: None)
 
-        data.update(dict(
-            net_arch=self.net_arch,
-            activation_fn=self.activation_fn,
-            use_sde=self.use_sde,
-            log_std_init=self.log_std_init,
-            squash_output=default_none_kwargs['squash_output'],
-            full_std=default_none_kwargs['full_std'],
-            sde_net_arch=default_none_kwargs['sde_net_arch'],
-            use_expln=default_none_kwargs['use_expln'],
-            lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
-            ortho_init=self.ortho_init,
-            optimizer_class=self.optimizer_class,
-            optimizer_kwargs=self.optimizer_kwargs,
-            features_extractor_class=self.features_extractor_class,
-            features_extractor_kwargs=self.features_extractor_kwargs
-        ))
+        data.update(
+            dict(
+                net_arch=self.net_arch,
+                activation_fn=self.activation_fn,
+                use_sde=self.use_sde,
+                log_std_init=self.log_std_init,
+                squash_output=default_none_kwargs["squash_output"],
+                full_std=default_none_kwargs["full_std"],
+                sde_net_arch=default_none_kwargs["sde_net_arch"],
+                use_expln=default_none_kwargs["use_expln"],
+                lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
+                ortho_init=self.ortho_init,
+                optimizer_class=self.optimizer_class,
+                optimizer_kwargs=self.optimizer_kwargs,
+                features_extractor_class=self.features_extractor_class,
+                features_extractor_kwargs=self.features_extractor_kwargs,
+            )
+        )
         return data
 
     def reset_noise(self, n_envs: int = 1) -> None:
@@ -414,8 +431,7 @@ class ActorCriticPolicy(BasePolicy):
 
         :param n_envs: (int)
         """
-        assert isinstance(self.action_dist,
-                          StateDependentNoiseDistribution), 'reset_noise() is only available when using gSDE'
+        assert isinstance(self.action_dist, StateDependentNoiseDistribution), "reset_noise() is only available when using gSDE"
         self.action_dist.sample_weights(self.log_std, batch_size=n_envs)
 
     def _build(self, lr_schedule: Callable[[float], float]) -> None:
@@ -428,25 +444,27 @@ class ActorCriticPolicy(BasePolicy):
         # Note: If net_arch is None and some features extractor is used,
         #       net_arch here is an empty list and mlp_extractor does not
         #       really contain any layers (acts like an identity module).
-        self.mlp_extractor = MlpExtractor(self.features_dim, net_arch=self.net_arch,
-                                          activation_fn=self.activation_fn, device=self.device)
+        self.mlp_extractor = MlpExtractor(
+            self.features_dim, net_arch=self.net_arch, activation_fn=self.activation_fn, device=self.device
+        )
 
         latent_dim_pi = self.mlp_extractor.latent_dim_pi
 
         # Separate feature extractor for gSDE
         if self.sde_net_arch is not None:
-            self.sde_features_extractor, latent_sde_dim = create_sde_features_extractor(self.features_dim,
-                                                                                        self.sde_net_arch,
-                                                                                        self.activation_fn)
+            self.sde_features_extractor, latent_sde_dim = create_sde_features_extractor(
+                self.features_dim, self.sde_net_arch, self.activation_fn
+            )
 
         if isinstance(self.action_dist, DiagGaussianDistribution):
-            self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi,
-                                                                                    log_std_init=self.log_std_init)
+            self.action_net, self.log_std = self.action_dist.proba_distribution_net(
+                latent_dim=latent_dim_pi, log_std_init=self.log_std_init
+            )
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
             latent_sde_dim = latent_dim_pi if self.sde_net_arch is None else latent_sde_dim
-            self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi,
-                                                                                    latent_sde_dim=latent_sde_dim,
-                                                                                    log_std_init=self.log_std_init)
+            self.action_net, self.log_std = self.action_dist.proba_distribution_net(
+                latent_dim=latent_dim_pi, latent_sde_dim=latent_sde_dim, log_std_init=self.log_std_init
+            )
         elif isinstance(self.action_dist, CategoricalDistribution):
             self.action_net = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi)
         elif isinstance(self.action_dist, MultiCategoricalDistribution):
@@ -468,7 +486,7 @@ class ActorCriticPolicy(BasePolicy):
                 self.features_extractor: np.sqrt(2),
                 self.mlp_extractor: np.sqrt(2),
                 self.action_net: 0.01,
-                self.value_net: 1
+                self.value_net: 1,
             }
             for module, gain in module_gains.items():
                 module.apply(partial(self.init_weights, gain=gain))
@@ -476,8 +494,7 @@ class ActorCriticPolicy(BasePolicy):
         # Setup optimizer with initial learning rate
         self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
 
-    def forward(self, obs: th.Tensor,
-                deterministic: bool = False) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
+    def forward(self, obs: th.Tensor, deterministic: bool = False) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
         Forward pass in all the networks (actor and critic)
 
@@ -512,8 +529,7 @@ class ActorCriticPolicy(BasePolicy):
             latent_sde = self.sde_features_extractor(features)
         return latent_pi, latent_vf, latent_sde
 
-    def _get_action_dist_from_latent(self, latent_pi: th.Tensor,
-                                     latent_sde: Optional[th.Tensor] = None) -> Distribution:
+    def _get_action_dist_from_latent(self, latent_pi: th.Tensor, latent_sde: Optional[th.Tensor] = None) -> Distribution:
         """
         Retrieve action distribution given the latent codes.
 
@@ -537,7 +553,7 @@ class ActorCriticPolicy(BasePolicy):
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
             return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)
         else:
-            raise ValueError('Invalid action distribution')
+            raise ValueError("Invalid action distribution")
 
     def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         """
@@ -551,8 +567,7 @@ class ActorCriticPolicy(BasePolicy):
         distribution = self._get_action_dist_from_latent(latent_pi, latent_sde)
         return distribution.get_actions(deterministic=deterministic)
 
-    def evaluate_actions(self, obs: th.Tensor,
-                         actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
+    def evaluate_actions(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
         Evaluate actions according to the current policy,
         given the observations.
@@ -604,43 +619,47 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         excluding the learning rate, to pass to the optimizer
     """
 
-    def __init__(self,
-                 observation_space: gym.spaces.Space,
-                 action_space: gym.spaces.Space,
-                 lr_schedule: Callable,
-                 net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
-                 device: Union[th.device, str] = 'auto',
-                 activation_fn: Type[nn.Module] = nn.Tanh,
-                 ortho_init: bool = True,
-                 use_sde: bool = False,
-                 log_std_init: float = 0.0,
-                 full_std: bool = True,
-                 sde_net_arch: Optional[List[int]] = None,
-                 use_expln: bool = False,
-                 squash_output: bool = False,
-                 features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
-                 features_extractor_kwargs: Optional[Dict[str, Any]] = None,
-                 normalize_images: bool = True,
-                 optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
-                 optimizer_kwargs: Optional[Dict[str, Any]] = None):
-        super(ActorCriticCnnPolicy, self).__init__(observation_space,
-                                                   action_space,
-                                                   lr_schedule,
-                                                   net_arch,
-                                                   device,
-                                                   activation_fn,
-                                                   ortho_init,
-                                                   use_sde,
-                                                   log_std_init,
-                                                   full_std,
-                                                   sde_net_arch,
-                                                   use_expln,
-                                                   squash_output,
-                                                   features_extractor_class,
-                                                   features_extractor_kwargs,
-                                                   normalize_images,
-                                                   optimizer_class,
-                                                   optimizer_kwargs)
+    def __init__(
+        self,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        lr_schedule: Callable,
+        net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
+        device: Union[th.device, str] = "auto",
+        activation_fn: Type[nn.Module] = nn.Tanh,
+        ortho_init: bool = True,
+        use_sde: bool = False,
+        log_std_init: float = 0.0,
+        full_std: bool = True,
+        sde_net_arch: Optional[List[int]] = None,
+        use_expln: bool = False,
+        squash_output: bool = False,
+        features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
+        features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        normalize_images: bool = True,
+        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+    ):
+        super(ActorCriticCnnPolicy, self).__init__(
+            observation_space,
+            action_space,
+            lr_schedule,
+            net_arch,
+            device,
+            activation_fn,
+            ortho_init,
+            use_sde,
+            log_std_init,
+            full_std,
+            sde_net_arch,
+            use_expln,
+            squash_output,
+            features_extractor_class,
+            features_extractor_kwargs,
+            normalize_images,
+            optimizer_class,
+            optimizer_kwargs,
+        )
 
 
 class ContinuousCritic(BaseModel):
@@ -669,19 +688,25 @@ class ContinuousCritic(BaseModel):
     :param n_critics: (int) Number of critic networks to create.
     """
 
-    def __init__(self, observation_space: gym.spaces.Space,
-                 action_space: gym.spaces.Space,
-                 net_arch: List[int],
-                 features_extractor: nn.Module,
-                 features_dim: int,
-                 activation_fn: Type[nn.Module] = nn.ReLU,
-                 normalize_images: bool = True,
-                 device: Union[th.device, str] = 'auto',
-                 n_critics: int = 2):
-        super().__init__(observation_space, action_space,
-                         features_extractor=features_extractor,
-                         normalize_images=normalize_images,
-                         device=device)
+    def __init__(
+        self,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        net_arch: List[int],
+        features_extractor: nn.Module,
+        features_dim: int,
+        activation_fn: Type[nn.Module] = nn.ReLU,
+        normalize_images: bool = True,
+        device: Union[th.device, str] = "auto",
+        n_critics: int = 2,
+    ):
+        super().__init__(
+            observation_space,
+            action_space,
+            features_extractor=features_extractor,
+            normalize_images=normalize_images,
+            device=device,
+        )
 
         action_dim = get_action_dim(self.action_space)
 
@@ -690,7 +715,7 @@ class ContinuousCritic(BaseModel):
         for idx in range(n_critics):
             q_net = create_mlp(features_dim + action_dim, 1, net_arch, activation_fn)
             q_net = nn.Sequential(*q_net)
-            self.add_module(f'qf{idx}', q_net)
+            self.add_module(f"qf{idx}", q_net)
             self.q_networks.append(q_net)
 
     def forward(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, ...]:
@@ -711,9 +736,9 @@ class ContinuousCritic(BaseModel):
         return self.q_networks[0](th.cat([features, actions], dim=1))
 
 
-def create_sde_features_extractor(features_dim: int,
-                                  sde_net_arch: List[int],
-                                  activation_fn: Type[nn.Module]) -> Tuple[nn.Sequential, int]:
+def create_sde_features_extractor(
+    features_dim: int, sde_net_arch: List[int], activation_fn: Type[nn.Module]
+) -> Tuple[nn.Sequential, int]:
     """
     Create the neural network that will be used to extract features
     for the gSDE exploration function.
@@ -747,8 +772,10 @@ def get_policy_from_name(base_policy_type: Type[BasePolicy], name: str) -> Type[
     if base_policy_type not in _policy_registry:
         raise KeyError(f"Error: the policy type {base_policy_type} is not registered!")
     if name not in _policy_registry[base_policy_type]:
-        raise KeyError(f"Error: unknown policy type {name},"
-                       f"the only registed policy type are: {list(_policy_registry[base_policy_type].keys())}!")
+        raise KeyError(
+            f"Error: unknown policy type {name},"
+            f"the only registed policy type are: {list(_policy_registry[base_policy_type].keys())}!"
+        )
     return _policy_registry[base_policy_type][name]
 
 

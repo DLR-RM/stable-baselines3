@@ -4,9 +4,16 @@ import numpy as np
 from stable_baselines3.common.vec_env import VecEnv
 
 
-def evaluate_policy(model, env, n_eval_episodes=10, deterministic=True,
-                    render=False, callback=None, reward_threshold=None,
-                    return_episode_rewards=False):
+def evaluate_policy(
+    model,
+    env,
+    n_eval_episodes=10,
+    deterministic=True,
+    render=False,
+    callback=None,
+    reward_threshold=None,
+    return_episode_rewards=False,
+):
     """
     Runs policy for ``n_eval_episodes`` episodes and returns average reward.
     This is made to work only with one env.
@@ -49,8 +56,7 @@ def evaluate_policy(model, env, n_eval_episodes=10, deterministic=True,
     mean_reward = np.mean(episode_rewards)
     std_reward = np.std(episode_rewards)
     if reward_threshold is not None:
-        assert mean_reward > reward_threshold, ('Mean reward below threshold: '
-                                                f'{mean_reward:.2f} < {reward_threshold:.2f}')
+        assert mean_reward > reward_threshold, "Mean reward below threshold: " f"{mean_reward:.2f} < {reward_threshold:.2f}"
     if return_episode_rewards:
         return episode_rewards, episode_lengths
     return mean_reward, std_reward

@@ -1,11 +1,12 @@
-from typing import List, Tuple, Type, Union, Callable, Optional, Dict, Any
-import torch as th
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+
 import numpy as np
+import torch as th
 
 from stable_baselines3.common import logger
+from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
-from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.tqc.policies import TQCPolicy
 
 
@@ -55,45 +56,62 @@ class TQC(OffPolicyAlgorithm):
     :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
     """
 
-    def __init__(self, policy: Union[str, Type[TQCPolicy]],
-                 env: Union[GymEnv, str],
-                 learning_rate: Union[float, Callable] = 3e-4,
-                 buffer_size: int = int(1e6),
-                 learning_starts: int = 100,
-                 batch_size: int = 256,
-                 tau: float = 0.005,
-                 gamma: float = 0.99,
-                 train_freq: int = 1,
-                 gradient_steps: int = 1,
-                 n_episodes_rollout: int = -1,
-                 action_noise: Optional[ActionNoise] = None,
-                 optimize_memory_usage: bool = False,
-                 ent_coef: Union[str, float] = 'auto',
-                 target_update_interval: int = 1,
-                 target_entropy: Union[str, float] = 'auto',
-                 top_quantiles_to_drop_per_net: int = 2,
-                 use_sde: bool = False,
-                 sde_sample_freq: int = -1,
-                 use_sde_at_warmup: bool = False,
-                 tensorboard_log: Optional[str] = None,
-                 create_eval_env: bool = False,
-                 policy_kwargs: Dict[str, Any] = None,
-                 verbose: int = 0,
-                 seed: Optional[int] = None,
-                 device: Union[th.device, str] = 'auto',
-                 _init_setup_model: bool = True):
+    def __init__(
+        self,
+        policy: Union[str, Type[TQCPolicy]],
+        env: Union[GymEnv, str],
+        learning_rate: Union[float, Callable] = 3e-4,
+        buffer_size: int = int(1e6),
+        learning_starts: int = 100,
+        batch_size: int = 256,
+        tau: float = 0.005,
+        gamma: float = 0.99,
+        train_freq: int = 1,
+        gradient_steps: int = 1,
+        n_episodes_rollout: int = -1,
+        action_noise: Optional[ActionNoise] = None,
+        optimize_memory_usage: bool = False,
+        ent_coef: Union[str, float] = "auto",
+        target_update_interval: int = 1,
+        target_entropy: Union[str, float] = "auto",
+        top_quantiles_to_drop_per_net: int = 2,
+        use_sde: bool = False,
+        sde_sample_freq: int = -1,
+        use_sde_at_warmup: bool = False,
+        tensorboard_log: Optional[str] = None,
+        create_eval_env: bool = False,
+        policy_kwargs: Dict[str, Any] = None,
+        verbose: int = 0,
+        seed: Optional[int] = None,
+        device: Union[th.device, str] = "auto",
+        _init_setup_model: bool = True,
+    ):
 
-        super(TQC, self).__init__(policy, env, TQCPolicy, learning_rate,
-                                  buffer_size, learning_starts, batch_size,
-                                  tau, gamma, train_freq, gradient_steps,
-                                  n_episodes_rollout, action_noise,
-                                  policy_kwargs=policy_kwargs,
-                                  tensorboard_log=tensorboard_log,
-                                  verbose=verbose, device=device,
-                                  create_eval_env=create_eval_env, seed=seed,
-                                  use_sde=use_sde, sde_sample_freq=sde_sample_freq,
-                                  use_sde_at_warmup=use_sde_at_warmup,
-                                  optimize_memory_usage=optimize_memory_usage)
+        super(TQC, self).__init__(
+            policy,
+            env,
+            TQCPolicy,
+            learning_rate,
+            buffer_size,
+            learning_starts,
+            batch_size,
+            tau,
+            gamma,
+            train_freq,
+            gradient_steps,
+            n_episodes_rollout,
+            action_noise,
+            policy_kwargs=policy_kwargs,
+            tensorboard_log=tensorboard_log,
+            verbose=verbose,
+            device=device,
+            create_eval_env=create_eval_env,
+            seed=seed,
+            use_sde=use_sde,
+            sde_sample_freq=sde_sample_freq,
+            use_sde_at_warmup=use_sde_at_warmup,
+            optimize_memory_usage=optimize_memory_usage,
+        )
 
         self.target_entropy = target_entropy
         self.log_ent_coef = None  # type: Optional[th.Tensor]
@@ -112,7 +130,7 @@ class TQC(OffPolicyAlgorithm):
         self._create_aliases()
 
         # Target entropy is used when learning the entropy coefficient
-        if self.target_entropy == 'auto':
+        if self.target_entropy == "auto":
             # automatically set target entropy if needed
             self.target_entropy = -np.prod(self.env.action_space.shape).astype(np.float32)
         else:
@@ -123,12 +141,12 @@ class TQC(OffPolicyAlgorithm):
         # The entropy coefficient or entropy can be learned automatically
         # see Automating Entropy Adjustment for Maximum Entropy RL section
         # of https://arxiv.org/abs/1812.05905
-        if isinstance(self.ent_coef, str) and self.ent_coef.startswith('auto'):
+        if isinstance(self.ent_coef, str) and self.ent_coef.startswith("auto"):
             # Default initial value of ent_coef when learned
             init_value = 1.0
-            if '_' in self.ent_coef:
-                init_value = float(self.ent_coef.split('_')[1])
-                assert init_value > 0., "The initial value of ent_coef must be greater than 0"
+            if "_" in self.ent_coef:
+                init_value = float(self.ent_coef.split("_")[1])
+                assert init_value > 0.0, "The initial value of ent_coef must be greater than 0"
 
             # Note: we optimize the log of the entropy coeff which is slightly different from the paper
             # as discussed in https://github.com/rail-berkeley/softlearning/issues/37
@@ -209,7 +227,7 @@ class TQC(OffPolicyAlgorithm):
                 # batch x nets x quantiles
                 next_z = self.critic_target(replay_data.next_observations, next_actions)
                 sorted_z, _ = th.sort(next_z.reshape(batch_size, -1))
-                sorted_z_part = sorted_z[:, :self.critic.quantiles_total - top_quantiles_to_drop]
+                sorted_z_part = sorted_z[:, : self.critic.quantiles_total - top_quantiles_to_drop]
 
                 target_q = sorted_z_part - ent_coef * next_log_prob.reshape(-1, 1)
                 # td error + entropy term
@@ -244,28 +262,37 @@ class TQC(OffPolicyAlgorithm):
 
         self._n_updates += gradient_steps
 
-        logger.record("train/n_updates", self._n_updates, exclude='tensorboard')
+        logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
         logger.record("train/ent_coef", np.mean(ent_coefs))
         logger.record("train/actor_loss", np.mean(actor_losses))
         logger.record("train/critic_loss", np.mean(critic_losses))
         if len(ent_coef_losses) > 0:
             logger.record("train/ent_coef_loss", np.mean(ent_coef_losses))
 
-    def learn(self,
-              total_timesteps: int,
-              callback: MaybeCallback = None,
-              log_interval: int = 4,
-              eval_env: Optional[GymEnv] = None,
-              eval_freq: int = -1,
-              n_eval_episodes: int = 5,
-              tb_log_name: str = "TQC",
-              eval_log_path: Optional[str] = None,
-              reset_num_timesteps: bool = True) -> OffPolicyAlgorithm:
+    def learn(
+        self,
+        total_timesteps: int,
+        callback: MaybeCallback = None,
+        log_interval: int = 4,
+        eval_env: Optional[GymEnv] = None,
+        eval_freq: int = -1,
+        n_eval_episodes: int = 5,
+        tb_log_name: str = "TQC",
+        eval_log_path: Optional[str] = None,
+        reset_num_timesteps: bool = True,
+    ) -> OffPolicyAlgorithm:
 
-        return super(TQC, self).learn(total_timesteps=total_timesteps, callback=callback, log_interval=log_interval,
-                                      eval_env=eval_env, eval_freq=eval_freq, n_eval_episodes=n_eval_episodes,
-                                      tb_log_name=tb_log_name, eval_log_path=eval_log_path,
-                                      reset_num_timesteps=reset_num_timesteps)
+        return super(TQC, self).learn(
+            total_timesteps=total_timesteps,
+            callback=callback,
+            log_interval=log_interval,
+            eval_env=eval_env,
+            eval_freq=eval_freq,
+            n_eval_episodes=n_eval_episodes,
+            tb_log_name=tb_log_name,
+            eval_log_path=eval_log_path,
+            reset_num_timesteps=reset_num_timesteps,
+        )
 
     def excluded_save_params(self) -> List[str]:
         """
@@ -282,9 +309,9 @@ class TQC(OffPolicyAlgorithm):
         cf base class
         """
         state_dicts = ["policy", "actor.optimizer", "critic.optimizer"]
-        saved_tensors = ['log_ent_coef']
+        saved_tensors = ["log_ent_coef"]
         if self.ent_coef_optimizer is not None:
-            state_dicts.append('ent_coef_optimizer')
+            state_dicts.append("ent_coef_optimizer")
         else:
-            saved_tensors.append('ent_coef_tensor')
+            saved_tensors.append("ent_coef_tensor")
         return state_dicts, saved_tensors

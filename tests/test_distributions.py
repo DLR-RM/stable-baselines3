@@ -2,12 +2,16 @@ import pytest
 import torch as th
 
 from stable_baselines3 import A2C, PPO
-from stable_baselines3.common.distributions import (DiagGaussianDistribution, TanhBijector,
-                                                    StateDependentNoiseDistribution,
-                                                    CategoricalDistribution, SquashedDiagGaussianDistribution,
-                                                    MultiCategoricalDistribution, BernoulliDistribution)
+from stable_baselines3.common.distributions import (
+    BernoulliDistribution,
+    CategoricalDistribution,
+    DiagGaussianDistribution,
+    MultiCategoricalDistribution,
+    SquashedDiagGaussianDistribution,
+    StateDependentNoiseDistribution,
+    TanhBijector,
+)
 from stable_baselines3.common.utils import set_random_seed
-
 
 N_ACTIONS = 2
 N_FEATURES = 3
@@ -33,7 +37,7 @@ def test_squashed_gaussian(model_class):
     """
     Test run with squashed Gaussian (notably entropy computation)
     """
-    model = model_class('MlpPolicy', 'Pendulum-v0', use_sde=True, n_steps=100, policy_kwargs=dict(squash_output=True))
+    model = model_class("MlpPolicy", "Pendulum-v0", use_sde=True, n_steps=100, policy_kwargs=dict(squash_output=True))
     model.learn(500)
 
     gaussian_mean = th.rand(N_SAMPLES, N_ACTIONS)
@@ -62,10 +66,9 @@ def test_sde_distribution():
 
 
 # TODO: analytical form for squashed Gaussian?
-@pytest.mark.parametrize("dist", [
-    DiagGaussianDistribution(N_ACTIONS),
-    StateDependentNoiseDistribution(N_ACTIONS, squash_output=False),
-])
+@pytest.mark.parametrize(
+    "dist", [DiagGaussianDistribution(N_ACTIONS), StateDependentNoiseDistribution(N_ACTIONS, squash_output=False),]
+)
 def test_entropy(dist):
     # The entropy can be approximated by averaging the negative log likelihood
     # mean negative log likelihood == differential entropy
@@ -89,7 +92,7 @@ def test_entropy(dist):
 categorical_params = [
     (CategoricalDistribution(N_ACTIONS), N_ACTIONS),
     (MultiCategoricalDistribution([2, 3]), sum([2, 3])),
-    (BernoulliDistribution(N_ACTIONS), N_ACTIONS)
+    (BernoulliDistribution(N_ACTIONS), N_ACTIONS),
 ]
 
 

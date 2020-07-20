@@ -7,7 +7,7 @@ from torch.nn import functional as F
 from stable_baselines3.common import logger
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
-from stable_baselines3.common.utils import get_linear_fn
+from stable_baselines3.common.utils import get_linear_fn, polyak_update
 from stable_baselines3.dqn.policies import DQNPolicy
 
 
@@ -138,8 +138,7 @@ class DQN(OffPolicyAlgorithm):
         This method is called in ``collect_rollout()`` after each step in the environment.
         """
         if self.num_timesteps % self.target_update_interval == 0:
-            for param, target_param in zip(self.q_net.parameters(), self.q_net_target.parameters()):
-                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+            polyak_update(self.q_net.parameters(), self.q_net_target.parameters(), self.tau)
 
         self.exploration_rate = self.exploration_schedule(self._current_progress_remaining)
         logger.record("rollout/exploration rate", self.exploration_rate)

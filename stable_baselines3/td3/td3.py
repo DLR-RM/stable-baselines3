@@ -11,8 +11,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
-from stable_baselines3.common.utils import safe_mean
-from stable_baselines3.common.vec_env import VecEnv
+from stable_baselines3.common.utils import polyak_update, safe_mean
 from stable_baselines3.td3.policies import TD3Policy
 
 
@@ -197,12 +196,8 @@ class TD3(OffPolicyAlgorithm):
                 actor_loss.backward()
                 self.actor.optimizer.step()
 
-                # Update the frozen target networks
-                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                    target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
-
-                for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
-                    target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+                polyak_update(self.critic.parameters(), self.critic_target.parameters(), self.tau)
+                polyak_update(self.actor.parameters(), self.actor_target.parameters(), self.tau)
 
         self._n_updates += gradient_steps
         logger.record("train/n_updates", self._n_updates, exclude="tensorboard")

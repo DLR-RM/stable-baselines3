@@ -292,12 +292,12 @@ def polyak_update(params: Iterable[th.nn.Parameter], target_params: Iterable[th.
     target parameters are slowly updated towards the main parameters.
     ``tau``, the soft update coefficient controls the interpolation:
     ``tau=1`` corresponds to copying the parameters to the target ones whereas nothing happens when ``tau=0``.
-    The Polyak update is done in place, with ``no_grad``, and therefore does not create intermediate tensors, 
-    or a computation graph, reducing memory cost and improving performance.  We scale the target params 
-    by ``1-tau`` (in-place), add the new weights, scaled by ``tau`` and store the result of the sum in the target 
-    params (in place). 
+    The Polyak update is done in place, with ``no_grad``, and therefore does not create intermediate tensors,
+    or a computation graph, reducing memory cost and improving performance.  We scale the target params
+    by ``1-tau`` (in-place), add the new weights, scaled by ``tau`` and store the result of the sum in the target
+    params (in place).
     See https://github.com/DLR-RM/stable-baselines3/issues/93
-    
+
     :param params: (Iterable[th.nn.Parameter]) parameters to use to update the target params
     :param target_params: (Iterable[th.nn.Parameter]) parameters to update
     :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1)

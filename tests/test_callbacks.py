@@ -4,7 +4,7 @@ import shutil
 import gym
 import pytest
 
-from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
+from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.callbacks import (
     CallbackList,
     CheckpointCallback,
@@ -14,7 +14,7 @@ from stable_baselines3.common.callbacks import (
 )
 
 
-@pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN])
+@pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN, DDPG])
 def test_callbacks(tmp_path, model_class):
     log_folder = tmp_path / "logs/callbacks/"
 

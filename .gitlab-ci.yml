@@ -1,4 +1,4 @@
-image: stablebaselines/stable-baselines3-cpu:0.8.0a1
+image: stablebaselines/stable-baselines3-cpu:0.8.0a4
 
 type-check:
   script:
@@ -15,4 +15,5 @@ doc-build:
 
 lint-check:
   script:
+  - make check-codestyle
   - make lint

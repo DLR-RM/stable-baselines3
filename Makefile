@@ -37,8 +37,6 @@ spelling:
 clean:
 	cd docs && make clean
 
-.PHONY: clean spelling doc lint
-
 # Build docker images
 # If you do export RELEASE=True, it will also push them
 docker: docker-cpu docker-gpu
@@ -60,3 +58,5 @@ test-release:
 	python setup.py sdist
 	python setup.py bdist_wheel
 	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+
+.PHONY: clean spelling doc lint format check-codestyle commit-checks

@@ -7,7 +7,7 @@ from torch.nn import functional as F
 from stable_baselines3.common import logger
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
-from stable_baselines3.common.utils import get_linear_fn
+from stable_baselines3.common.utils import get_linear_fn, polyak_update
 from stable_baselines3.dqn.policies import DQNPolicy
 
 
@@ -28,10 +28,13 @@ class DQN(OffPolicyAlgorithm):
     :param batch_size: (int) Minibatch size for each gradient update
     :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1) default 1 for hard update
     :param gamma: (float) the discount factor
-    :param train_freq: (int) Update the model every ``train_freq`` steps.
-    :param gradient_steps: (int) How many gradient update after each step
+    :param train_freq: (int) Update the model every ``train_freq`` steps. Set to `-1` to disable.
+    :param gradient_steps: (int) How many gradient steps to do after each rollout
+        (see ``train_freq`` and ``n_episodes_rollout``)
+        Set to ``-1`` means to do as many gradient steps as steps done in the environment
+        during the rollout.
     :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
-        Note that this cannot be used at the same time as ``train_freq``
+        Note that this cannot be used at the same time as ``train_freq``. Set to `-1` to disable.
     :param optimize_memory_usage: (bool) Enable a memory efficient variant of the replay buffer
         at a cost of more complexity.
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
@@ -135,8 +138,7 @@ class DQN(OffPolicyAlgorithm):
         This method is called in ``collect_rollout()`` after each step in the environment.
         """
         if self.num_timesteps % self.target_update_interval == 0:
-            for param, target_param in zip(self.q_net.parameters(), self.q_net_target.parameters()):
-                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+            polyak_update(self.q_net.parameters(), self.q_net_target.parameters(), self.tau)
 
         self.exploration_rate = self.exploration_schedule(self._current_progress_remaining)
         logger.record("rollout/exploration rate", self.exploration_rate)

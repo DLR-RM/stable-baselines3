@@ -24,7 +24,11 @@
 - [ ] My change requires a change to the documentation.
 - [ ] I have updated the tests accordingly (*required for a bug fix or a new feature*).
 - [ ] I have updated the documentation accordingly.
-- [ ] I have checked the codestyle using `make lint`
-- [ ] I have ensured `make pytest` and `make type` both pass.
+- [ ] I have reformatted the code using `make format` (**required**)
+- [ ] I have checked the codestyle using `make check-codestyle` and `make lint` (**required**)
+- [ ] I have ensured `make pytest` and `make type` both pass. (**required**)
+
+
+Note: we are using a maximum length of 127 characters per line
 
 <!--- This Template is an edited version of the one from https://github.com/evilsocket/pwnagotchi/ -->

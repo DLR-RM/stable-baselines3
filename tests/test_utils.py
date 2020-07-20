@@ -4,6 +4,7 @@ import shutil
 import gym
 import numpy as np
 import pytest
+import torch as th
 
 from stable_baselines3 import A2C
 from stable_baselines3.common.atari_wrappers import ClipRewardEnv
@@ -11,6 +12,7 @@ from stable_baselines3.common.cmd_util import make_atari_env, make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise, OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
+from stable_baselines3.common.utils import polyak_update
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 
@@ -152,3 +154,16 @@ def test_vec_noise():
         vec.noises = [base] * (num_envs - 1)
     assert all(isinstance(noise, type(base)) for noise in vec.noises)
     assert len(vec.noises) == num_envs
+
+
+def test_polyak():
+    param1, param2 = th.nn.Parameter(th.ones((5, 5))), th.nn.Parameter(th.zeros((5, 5)))
+    target1, target2 = th.nn.Parameter(th.ones((5, 5))), th.nn.Parameter(th.zeros((5, 5)))
+    tau = 0.1
+    polyak_update([param1], [param2], tau)
+    with th.no_grad():
+        for param, target_param in zip([target1], [target2]):
+            target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
+
+    assert th.allclose(param1, target1)
+    assert th.allclose(param2, target2)

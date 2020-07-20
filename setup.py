@@ -91,6 +91,10 @@ setup(
             "pytype",
             # Lint code
             "flake8>=3.8",
+            # Sort imports
+            "isort>=5.0",
+            # Reformat
+            "black",
         ],
         "docs": [
             "sphinx",

@@ -33,8 +33,8 @@ class BaseCallback(ABC):
         # n_envs * n times env.step() was called
         self.num_timesteps = 0  # type: int
         self.verbose = verbose
-        self.locals = None  # type: Optional[Dict[str, Any]]
-        self.globals = None  # type: Optional[Dict[str, Any]]
+        self.locals: Dict[str, Any] = {}
+        self.globals: Dict[str, Any] = {}
         self.logger = None
         # Sometimes, for event callback, it is useful
         # to have access to the parent object
@@ -102,6 +102,15 @@ class BaseCallback(ABC):
 
     def _on_rollout_end(self) -> None:
         pass
+
+    def update_locals(self, locals_: Dict[str, Any]) -> None:
+        """
+        Update the references to the local variables.
+        locals() returns a function level dictionary
+
+        :param: locals_ (Dict[str, Any]) the local variables during rollout collection
+        """
+        self.locals.update(locals_)
 
 
 class EventCallback(BaseCallback):
@@ -325,7 +334,10 @@ class EvalCallback(EventCallback):
             self.last_mean_reward = mean_reward
 
             if self.verbose > 0:
-                print(f"Eval num_timesteps={self.num_timesteps}, " f"episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
+                print(
+                    f"Eval num_timesteps={self.num_timesteps}, "
+                    f"episode_reward={mean_reward:.2f} +/- {std_reward:.2f}"
+                )
                 print(f"Episode length: {mean_ep_length:.2f} +/- {std_ep_length:.2f}")
             # Add to current Logger
             self.logger.record("eval/mean_reward", float(mean_reward))
@@ -361,7 +373,9 @@ class StopTrainingOnRewardThreshold(BaseCallback):
         self.reward_threshold = reward_threshold
 
     def _on_step(self) -> bool:
-        assert self.parent is not None, "``StopTrainingOnMinimumReward`` callback must be used " "with an ``EvalCallback``"
+        assert self.parent is not None, (
+            "``StopTrainingOnMinimumReward`` callback must be used " "with an ``EvalCallback``"
+        )
         # Convert np.bool to bool, otherwise callback() is False won't work
         continue_training = bool(self.parent.best_mean_reward < self.reward_threshold)
         if self.verbose > 0 and not continue_training:

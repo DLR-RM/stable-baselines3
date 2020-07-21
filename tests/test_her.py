@@ -9,28 +9,29 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.her.her import HER, GoalSelectionStrategy
 from stable_baselines3.sac.policies import SACPolicy
 from stable_baselines3.td3.policies import TD3Policy
-from stable_baselines3.td3.policies import CnnPolicy, MlpPolicy
+from stable_baselines3.td3.policies import MlpPolicy
 
 
-@pytest.mark.parametrize("model_class, policy, sde_support", [(SAC, SACPolicy, True), (TD3, TD3Policy, False), (DDPG, MlpPolicy, False)])
+@pytest.mark.parametrize("model_class, policy, sde_support",
+                         [(SAC, SACPolicy, True), (TD3, TD3Policy, False), (DDPG, MlpPolicy, False)])
 def test_her(model_class, policy, sde_support):
     """
     Test Hindsight Experience Replay.
     """
 
-    env = BitFlippingEnv(continuous=True)
+    env = BitFlippingEnv(n_bits=4, continuous=True)
     env = DummyVecEnv([lambda: env])
 
     # Create action noise
     n_actions = env.action_space.shape[0]
-    action_noise = OrnsteinUhlenbeckActionNoise(np.zeros(n_actions,), 0.2 * np.ones((n_actions,)))
+    action_noise = OrnsteinUhlenbeckActionNoise(np.zeros(n_actions, ), 0.2 * np.ones((n_actions,)))
 
     model = HER(
         policy,
         env,
         model_class,
         n_goals=5,
-        goal_strategy="random",
+        goal_strategy="future",
         action_noise=action_noise,
         verbose=1,
         tau=0.05,
@@ -43,7 +44,7 @@ def test_her(model_class, policy, sde_support):
         sde_support=sde_support
     )
 
-    model.learn(total_timesteps=1, callback=None)
+    model.learn(total_timesteps=500, callback=None)
 
     # Evaluate the agent
     n_eval_episodes = 5
@@ -51,7 +52,7 @@ def test_her(model_class, policy, sde_support):
     episode_rewards = []
     episode_reward = 0.0
 
-    eval_env = BitFlippingEnv(continuous=True)
+    eval_env = BitFlippingEnv(n_bits=4, continuous=True)
 
     observation = eval_env.reset()
 
@@ -66,7 +67,7 @@ def test_her(model_class, policy, sde_support):
         observation, reward, done, _ = eval_env.step(action)
 
         # Render the env
-        #eval_env.render()
+        # eval_env.render()
 
         episode_reward += reward
 
@@ -77,9 +78,6 @@ def test_her(model_class, policy, sde_support):
             episode_reward = 0.0
 
     eval_env.close()
-    print(f"Mean reward: {np.mean(episode_rewards)} +/- {np.std(episode_rewards)}")
-
-    #assert np.mean(episode_rewards) > -50, "The environment is not solved"
 
 
 @pytest.mark.parametrize(

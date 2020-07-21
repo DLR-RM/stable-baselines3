@@ -1,4 +1,5 @@
 SHELL=/bin/bash
+LINT_PATHS=stable_baselines3/ tests/ docs/conf.py setup.py
 
 pytest:
 	./scripts/run_tests.sh
@@ -9,9 +10,23 @@ type:
 lint:
 	# stop the build if there are Python syntax errors or undefined names
 	# see https://lintlyci.github.io/Flake8Rules/
-	flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+	flake8 ${LINT_PATHS} --count --select=E9,F63,F7,F82 --show-source --statistics
 	# exit-zero treats all errors as warnings.
-	flake8 . --count --exit-zero --statistics
+	flake8 ${LINT_PATHS} --count --exit-zero --statistics
+
+format:
+	# Sort imports
+	isort ${LINT_PATHS}
+	# Reformat using black
+	black -l 127 ${LINT_PATHS}
+
+check-codestyle:
+	# Sort imports
+	isort --check ${LINT_PATHS}
+	# Reformat using black
+	black --check -l 127 ${LINT_PATHS}
+
+commit-checks: format type lint
 
 doc:
 	cd docs && make html
@@ -21,8 +36,6 @@ spelling:
 
 clean:
 	cd docs && make clean
-
-.PHONY: clean spelling doc lint
 
 # Build docker images
 # If you do export RELEASE=True, it will also push them
@@ -45,3 +58,5 @@ test-release:
 	python setup.py sdist
 	python setup.py bdist_wheel
 	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+
+.PHONY: clean spelling doc lint format check-codestyle commit-checks

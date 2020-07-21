@@ -17,6 +17,7 @@ notebooks:
 -  `Monitor Training and Plotting`_
 -  `Atari Games`_
 -  `RL Baselines zoo`_
+-  `PyBullet`_
 
 .. -  `Hindsight Experience Replay`_
 
@@ -27,13 +28,14 @@ notebooks:
 .. _Atari Games: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/atari_games.ipynb
 .. _Hindsight Experience Replay: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/stable_baselines_her.ipynb
 .. _RL Baselines zoo: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/rl-baselines-zoo.ipynb
+.. _PyBullet: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/pybullet.ipynb
 
 .. |colab| image:: ../_static/img/colab.svg
 
 Basic Usage: Training, Saving, Loading
 --------------------------------------
 
-In the following example, we will train, save and load a A2C model on the Lunar Lander environment.
+In the following example, we will train, save and load a DQN model on the Lunar Lander environment.
 
 .. image:: ../_static/img/colab-badge.svg
    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/saving_loading_dqn.ipynb
@@ -57,7 +59,7 @@ In the following example, we will train, save and load a A2C model on the Lunar 
 
   import gym
 
-  from stable_baselines3 import A2C
+  from stable_baselines3 import DQN
   from stable_baselines3.common.evaluation import evaluate_policy
 
 
@@ -65,15 +67,15 @@ In the following example, we will train, save and load a A2C model on the Lunar 
   env = gym.make('LunarLander-v2')
 
   # Instantiate the agent
-  model = A2C('MlpPolicy', env, verbose=1)
+  model = DQN('MlpPolicy', env, verbose=1)
   # Train the agent
   model.learn(total_timesteps=int(2e5))
   # Save the agent
-  model.save("a2c_lunar")
+  model.save("dqn_lunar")
   del model  # delete trained model to demonstrate loading
 
   # Load the trained agent
-  model = A2C.load("a2c_lunar")
+  model = DQN.load("dqn_lunar")
 
   # Evaluate the agent
   mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10)
@@ -81,7 +83,7 @@ In the following example, we will train, save and load a A2C model on the Lunar 
   # Enjoy trained agent
   obs = env.reset()
   for i in range(1000):
-      action, _states = model.predict(obs)
+      action, _states = model.predict(obs, deterministic=True)
       obs, rewards, dones, info = env.step(action)
       env.render()
 
@@ -291,13 +293,17 @@ PyBullet: Normalizing input features
 
 Normalizing input features may be essential to successful training of an RL agent
 (by default, images are scaled but not other types of input),
-for instance when training on `PyBullet <https://github.com/bulletphysics/bullet3/>`_ environments. For that, a wrapper exists and
+for instance when training on `PyBullet <https://github.com/bulletphysics/bullet3/>`__ environments. For that, a wrapper exists and
 will compute a running average and standard deviation of input features (it can do the same for rewards).
 
 
 .. note::
 
 	you need to install pybullet with ``pip install pybullet``
+
+
+.. image:: ../_static/img/colab-badge.svg
+   :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/pybullet.ipynb
 
 
 .. code-block:: python

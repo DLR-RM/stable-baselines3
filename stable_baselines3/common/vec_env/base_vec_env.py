@@ -1,5 +1,4 @@
 import inspect
-import pickle
 from abc import ABC, abstractmethod
 from typing import Sequence, Optional, List, Union
 
@@ -343,7 +342,7 @@ class VecEnvWrapper(VecEnv):
         return shadowed_wrapper_class
 
 
-class CloudpickleWrapper(object):
+class CloudpickleWrapper:
     def __init__(self, var):
         """
         Uses cloudpickle to serialize contents (otherwise multiprocessing tries to use pickle)
@@ -356,4 +355,4 @@ class CloudpickleWrapper(object):
         return cloudpickle.dumps(self.var)
 
     def __setstate__(self, obs):
-        self.var = pickle.loads(obs)
+        self.var = cloudpickle.loads(obs)

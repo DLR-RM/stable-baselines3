@@ -1,13 +1,12 @@
-from typing import Union, Optional
+from typing import Optional, Union
 
 import numpy as np
 import torch as th
 from gym import spaces
 
 from stable_baselines3.common.buffers import BaseBuffer
-
 from stable_baselines3.common.type_aliases import ReplayBufferSamples
-from stable_baselines3.common.vec_env import VecNormalize, VecEnv
+from stable_baselines3.common.vec_env import VecEnv, VecNormalize
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 
 
@@ -28,11 +27,17 @@ class HerReplayBuffer(BaseBuffer):
             as many HER replays as regular replays are used)
     """
 
-    def __init__(self, env: VecEnv, buffer_size: int, goal_strategy: GoalSelectionStrategy,
-                 observation_space: spaces.Space,
-                 action_space: spaces.Space,
-                 device: Union[th.device, str] = "cpu",
-                 n_envs: int = 1, her_ratio: int = 2):
+    def __init__(
+        self,
+        env: VecEnv,
+        buffer_size: int,
+        goal_strategy: GoalSelectionStrategy,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
+        device: Union[th.device, str] = "cpu",
+        n_envs: int = 1,
+        her_ratio: int = 2,
+    ):
 
         super(HerReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs)
 
@@ -42,7 +47,7 @@ class HerReplayBuffer(BaseBuffer):
         # buffer with episodes
         self.buffer = []
         self.goal_strategy = goal_strategy
-        self.her_ratio = 1 - (1. / (1 + her_ratio))
+        self.her_ratio = 1 - (1.0 / (1 + her_ratio))
 
         # memory management
         # current size in episodes
@@ -72,7 +77,7 @@ class HerReplayBuffer(BaseBuffer):
         if self.goal_strategy == GoalSelectionStrategy.FINAL:
             # replay with final state of current episode
             last_transitions = buffer[episode_idxs[her_idxs]][:, -1][:, 0]
-            her_new_goals = [trans['achieved_goal'] for trans in last_transitions]
+            her_new_goals = [trans["achieved_goal"] for trans in last_transitions]
         elif self.goal_strategy == GoalSelectionStrategy.FUTURE:
             # replay with random state which comes from the same episode and was observed after current transition
             # we have no transition after last transition of episode
@@ -88,13 +93,13 @@ class HerReplayBuffer(BaseBuffer):
             # replay with random state which comes from the same episode as current transition
             index = np.array([np.random.choice(np.arange(ep_len)) for ep_len in her_episode_lenghts])
             episode_transitions = buffer[episode_idxs[her_idxs], index][:, 0]
-            her_new_goals = [trans['achieved_goal'] for trans in episode_transitions]
+            her_new_goals = [trans["achieved_goal"] for trans in episode_transitions]
         elif self.goal_strategy == GoalSelectionStrategy.RANDOM:
             # replay with random state from the entire replay buffer
             ep_idx = np.random.randint(0, self.current_size, len(her_idxs))
             state_idx = [np.random.choice(np.arange(len(ep))) for ep in buffer[ep_idx]]
             random_transitions = buffer[ep_idx][state_idx][:, 0][:, 0]
-            her_new_goals = [trans['achieved_goal'] for trans in random_transitions]
+            her_new_goals = [trans["achieved_goal"] for trans in random_transitions]
         else:
             raise ValueError("Strategy for sampling goals not supported!")
 
@@ -105,15 +110,24 @@ class HerReplayBuffer(BaseBuffer):
         observations, actions, rewards, new_observations, dones = list(zip(*transitions))
 
         # compute new reward with new goal
-        achieved_goals = [new_obs['achieved_goal'] for new_obs in np.array(new_observations)[her_idxs]]
+        achieved_goals = [new_obs["achieved_goal"] for new_obs in np.array(new_observations)[her_idxs]]
         new_rewards = np.array(rewards)
-        new_rewards[her_idxs] = [self.env.env_method("compute_reward", ag, her_new_goals, None) for ag, new_goal in zip(achieved_goals, her_new_goals)]
+        new_rewards[her_idxs] = [
+            self.env.env_method("compute_reward", ag, her_new_goals, None)
+            for ag, new_goal in zip(achieved_goals, her_new_goals)
+        ]
 
         # concatenate observation with (desired) goal
         obs = [np.concatenate([o["observation"], o["desired_goal"]], axis=1) for o in observations]
         new_obs = [np.concatenate([new_o["observation"], new_o["desired_goal"]], axis=1) for new_o in new_observations]
 
-        data = (np.array(obs)[:,0,:], np.array(actions), np.array(new_obs)[:,0,:], np.array(dones, dtype=int), rewards)
+        data = (
+            np.array(obs)[:, 0, :],
+            np.array(actions, dtype=np.float32),
+            np.array(new_obs)[:, 0, :],
+            np.array(dones, dtype=np.bool),
+            rewards,
+        )
 
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
 
@@ -132,7 +146,7 @@ class HerReplayBuffer(BaseBuffer):
                 self.buffer[idx] = episode
             elif len(self.buffer[idx]) > episode_length:
                 self.buffer[idx] = episode
-                self.n_transitions_stored -= (self.buffer[idx] - episode_length)
+                self.n_transitions_stored -= self.buffer[idx] - episode_length
 
         if self.n_transitions_stored == self.size:
             self.full = True

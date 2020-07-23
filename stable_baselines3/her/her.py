@@ -12,7 +12,7 @@ from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
 from stable_baselines3.common.vec_env import VecEnv
-from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy, KEY_TO_GOAL_STRATEGY
+from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
 from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
 from stable_baselines3.her.obs_wrapper import ObsWrapper
 
@@ -158,7 +158,16 @@ class HER(OffPolicyAlgorithm):
 
         self.online_sampling = online_sampling
         if self.online_sampling:
-            self.model.replay_buffer = HerReplayBuffer(self.env, buffer_size, self.goal_strategy, self.env.observation_space, self.env.action_space, device, self.n_envs, her_ratio)
+            self.model.replay_buffer = HerReplayBuffer(
+                self.env,
+                buffer_size,
+                self.goal_strategy,
+                self.env.observation_space,
+                self.env.action_space,
+                device,
+                self.n_envs,
+                her_ratio,
+            )
 
         # storage for transitions of current episode
         self.episode_storage = []

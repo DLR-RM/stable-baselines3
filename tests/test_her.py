@@ -2,18 +2,18 @@ import numpy as np
 import pytest
 import torch as th
 
-from stable_baselines3 import TD3, SAC, DDPG
+from stable_baselines3 import DDPG, SAC, TD3
 from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
 from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.her.her import HER, GoalSelectionStrategy
 from stable_baselines3.sac.policies import SACPolicy
-from stable_baselines3.td3.policies import TD3Policy
-from stable_baselines3.td3.policies import MlpPolicy
+from stable_baselines3.td3.policies import MlpPolicy, TD3Policy
 
 
-@pytest.mark.parametrize("model_class, policy, sde_support",
-                         [(SAC, SACPolicy, True), (TD3, TD3Policy, False), (DDPG, MlpPolicy, False)])
+@pytest.mark.parametrize(
+    "model_class, policy, sde_support", [(SAC, SACPolicy, True), (TD3, TD3Policy, False), (DDPG, MlpPolicy, False)]
+)
 @pytest.mark.parametrize("online_sampling", [True, False])
 def test_her(model_class, policy, sde_support, online_sampling):
     """
@@ -25,7 +25,7 @@ def test_her(model_class, policy, sde_support, online_sampling):
 
     # Create action noise
     n_actions = env.action_space.shape[0]
-    action_noise = OrnsteinUhlenbeckActionNoise(np.zeros(n_actions, ), 0.2 * np.ones((n_actions,)))
+    action_noise = OrnsteinUhlenbeckActionNoise(np.zeros(n_actions,), 0.2 * np.ones((n_actions,)))
 
     model = HER(
         policy,
@@ -43,7 +43,7 @@ def test_her(model_class, policy, sde_support, online_sampling):
         buffer_size=int(1e6),
         gamma=0.98,
         gradient_steps=40,
-        sde_support=sde_support
+        sde_support=sde_support,
     )
 
     model.learn(total_timesteps=500, callback=None)
@@ -93,7 +93,7 @@ def test_her(model_class, policy, sde_support, online_sampling):
         GoalSelectionStrategy.RANDOM,
         GoalSelectionStrategy.EPISODE,
         GoalSelectionStrategy.FINAL,
-    ]
+    ],
 )
 @pytest.mark.parametrize("online_sampling", [True, False])
 def test_goal_strategy(goal_strategy, online_sampling):

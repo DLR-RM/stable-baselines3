@@ -39,10 +39,12 @@ def test_her(model_class, policy, sde_support, online_sampling):
         tau=0.05,
         batch_size=128,
         learning_rate=0.001,
-        policy_kwargs=dict(net_arch=[256]),
+        policy_kwargs=dict(net_arch=[64]),
         buffer_size=int(1e6),
         gamma=0.98,
-        gradient_steps=40,
+        gradient_steps=1,
+        train_freq=1,
+        n_episodes_rollout=-1,
         sde_support=sde_support,
     )
 

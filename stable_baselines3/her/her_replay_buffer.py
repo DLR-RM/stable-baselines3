@@ -123,9 +123,9 @@ class HerReplayBuffer(BaseBuffer):
 
         data = (
             np.array(obs)[:, 0, :],
-            np.array(actions, dtype=np.float32),
+            np.array(actions, dtype=self.action_space.dtype)[:, 0, :],
             np.array(new_obs)[:, 0, :],
-            np.array(dones, dtype=np.bool),
+            np.array(dones, dtype=np.int8),
             rewards,
         )
 

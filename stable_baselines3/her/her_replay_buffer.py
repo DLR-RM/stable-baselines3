@@ -42,10 +42,12 @@ class HerReplayBuffer(BaseBuffer):
         super(HerReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs)
 
         self.env = env
-        self.size = buffer_size
+        self.buffer_size = buffer_size
 
         # buffer with episodes
         self.buffer = []
+        # TODO just for typing reason , need another solution
+        self.observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=observation_space.dtype)
         self.goal_strategy = goal_strategy
         self.her_ratio = 1 - (1.0 / (1 + her_ratio))
 
@@ -117,10 +119,10 @@ class HerReplayBuffer(BaseBuffer):
         for idx, goal in enumerate(her_new_goals):
             transitions[her_idxs][:, 0][idx]["desired_goal"] = goal
 
-        observations, actions, rewards, new_observations, dones = list(zip(*transitions))
+        observations, actions, rewards, next_observations, dones = list(zip(*transitions))
 
         # compute new rewards with new goal
-        achieved_goals = [new_obs["achieved_goal"] for new_obs in np.array(new_observations)[her_idxs]]
+        achieved_goals = [new_obs["achieved_goal"] for new_obs in np.array(next_observations)[her_idxs]]
         new_rewards = np.array(rewards)
         new_rewards[her_idxs] = [
             self.env.env_method("compute_reward", ag, her_new_goals, None)
@@ -129,7 +131,7 @@ class HerReplayBuffer(BaseBuffer):
 
         # concatenate observation with (desired) goal
         obs = [np.concatenate([o["observation"], o["desired_goal"]], axis=1) for o in observations]
-        new_obs = [np.concatenate([new_o["observation"], new_o["desired_goal"]], axis=1) for new_o in new_observations]
+        new_obs = [np.concatenate([new_o["observation"], new_o["desired_goal"]], axis=1) for new_o in next_observations]
 
         data = (
             np.array(obs)[:, 0, :],
@@ -141,16 +143,24 @@ class HerReplayBuffer(BaseBuffer):
 
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
 
-    def add(self, episode):
+    def add(self, obs: np.ndarray, next_obs: np.ndarray, action: np.ndarray, reward: np.ndarray, done: np.ndarray) -> None:
         """
         Add episode to replay buffer
 
+        :param obs:
+        :param next_obs:
+        :param action:
+        :param reward:
+        :param done:
+
         :param episode: (list) Episode to store.
         """
+        episode = list(zip(obs, action, reward, next_obs, done))
+
         episode_length = len(episode)
 
         # check if replay buffer has enough space for all transitions of episode
-        if self.n_transitions_stored + episode_length <= self.size:
+        if self.n_transitions_stored + episode_length <= self.size():
             self.buffer.append(episode)
             # update replay size
             self.current_size += 1
@@ -165,7 +175,7 @@ class HerReplayBuffer(BaseBuffer):
                 self.buffer[idx] = episode
                 self.n_transitions_stored -= self.buffer[idx] - episode_length
 
-        if self.n_transitions_stored == self.size:
+        if self.n_transitions_stored == self.size():
             self.full = True
         else:
             self.full = False

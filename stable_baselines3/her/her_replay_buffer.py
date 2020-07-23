@@ -55,34 +55,44 @@ class HerReplayBuffer(BaseBuffer):
         self.n_transitions_stored = 0
 
     def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
-        """Returns a dict {key: array(batch_size x shapes[key])}
+        """
+        :param batch_size: (int) Number of element to sample
+        :param env: (Optional[VecNormalize]) associated gym VecEnv
+            to normalize the observations/rewards when sampling
+        :return: (ReplayBufferSamples)
         """
         return self._sample_transitions(batch_size)
 
-    def _sample_transitions(self, batch_size: int):
-        # batch size in transitions
+    def _sample_transitions(self, batch_size: int) -> ReplayBufferSamples:
+        """
+        :param batch_size: (int) Number of element to sample
+        :return: (ReplayBufferSamples)
+        """
 
         # Select which episodes and time steps to use.
         episode_idxs = np.random.randint(0, self.current_size, batch_size)
         buffer = np.array(self.buffer)
+        # get episode lengths for selecting timesteps
         episode_lengths = np.array([len(ep) for ep in buffer[episode_idxs]])
+        # select timesteps
         t_samples = np.array([np.random.choice(np.arange(ep_len)) for ep_len in episode_lengths])
-
+        # get selected timesteps
         transitions = np.array([buffer[ep][trans] for ep, trans in zip(episode_idxs, t_samples)])
-
+        # get her samples indices with her_ratio
         her_idxs = np.where(np.random.uniform(size=batch_size) < self.her_ratio)[0]
+        # her samples episode lengths
         her_episode_lenghts = episode_lengths[her_idxs]
 
         # get new goals with goal selection strategy
         if self.goal_strategy == GoalSelectionStrategy.FINAL:
             # replay with final state of current episode
-            last_transitions = buffer[episode_idxs[her_idxs]][:, -1][:, 0]
+            last_transitions = buffer[episode_idxs[her_idxs], -1][:, 0]
             her_new_goals = [trans["achieved_goal"] for trans in last_transitions]
         elif self.goal_strategy == GoalSelectionStrategy.FUTURE:
             # replay with random state which comes from the same episode and was observed after current transition
-            # we have no transition after last transition of episode
             her_new_goals = []
             for idx, length in zip(her_idxs, her_episode_lenghts):
+                # we have no transition after last transition of episode
                 if t_samples[idx] + 1 < length:
                     index = np.random.choice(np.arange(t_samples[idx] + 1, length))
                     her_new_goals.append(buffer[episode_idxs[idx]][index][0]["achieved_goal"])
@@ -98,7 +108,7 @@ class HerReplayBuffer(BaseBuffer):
             # replay with random state from the entire replay buffer
             ep_idx = np.random.randint(0, self.current_size, len(her_idxs))
             state_idx = [np.random.choice(np.arange(len(ep))) for ep in buffer[ep_idx]]
-            random_transitions = buffer[ep_idx][state_idx][:, 0][:, 0]
+            random_transitions = buffer[ep_idx, state_idx][:, 0]
             her_new_goals = [trans["achieved_goal"] for trans in random_transitions]
         else:
             raise ValueError("Strategy for sampling goals not supported!")
@@ -109,7 +119,7 @@ class HerReplayBuffer(BaseBuffer):
 
         observations, actions, rewards, new_observations, dones = list(zip(*transitions))
 
-        # compute new reward with new goal
+        # compute new rewards with new goal
         achieved_goals = [new_obs["achieved_goal"] for new_obs in np.array(new_observations)[her_idxs]]
         new_rewards = np.array(rewards)
         new_rewards[her_idxs] = [
@@ -126,21 +136,28 @@ class HerReplayBuffer(BaseBuffer):
             np.array(actions, dtype=self.action_space.dtype)[:, 0, :],
             np.array(new_obs)[:, 0, :],
             np.array(dones, dtype=np.int8),
-            rewards,
+            new_rewards,
         )
 
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
 
     def add(self, episode):
+        """
+        Add episode to replay buffer
+
+        :param episode: (list) Episode to store.
+        """
         episode_length = len(episode)
 
+        # check if replay buffer has enough space for all transitions of episode
         if self.n_transitions_stored + episode_length <= self.size:
             self.buffer.append(episode)
             # update replay size
             self.current_size += 1
             self.n_transitions_stored += episode_length
         elif self.full:
-            idx = np.random.randint(0, self.size)
+            # if replay buffer is full take random stored episode and replace it
+            idx = np.random.randint(0, self.current_size)
 
             if len(self.buffer[idx]) == episode_length:
                 self.buffer[idx] = episode

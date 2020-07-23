@@ -1,4 +1,3 @@
-from enum import Enum
 from inspect import signature
 from typing import Any, Callable, Dict, Optional, Type, Union
 
@@ -156,6 +155,7 @@ class HER(OffPolicyAlgorithm):
         # model initialization
         self.model = model(env=self.env, **model_init_dict, **kwargs)
 
+        # if we sample her transitions online use custom replay buffer
         self.online_sampling = online_sampling
         if self.online_sampling:
             self.model.replay_buffer = HerReplayBuffer(
@@ -226,7 +226,7 @@ class HER(OffPolicyAlgorithm):
         n_steps: int = -1,
         action_noise: Optional[ActionNoise] = None,
         learning_starts: int = 0,
-        replay_buffer: Optional[ReplayBuffer] = None,
+        replay_buffer: Union[ReplayBuffer, HerReplayBuffer] = None,
         log_interval: Optional[int] = None,
     ) -> RolloutReturn:
         """
@@ -243,7 +243,7 @@ class HER(OffPolicyAlgorithm):
             Required for deterministic policy (e.g. TD3). This can also be used
             in addition to the stochastic policy for SAC.
         :param learning_starts: (int) Number of steps before learning for the warm-up phase.
-        :param replay_buffer: (ReplayBuffer)
+        :param replay_buffer: (ReplayBuffer or HerReplayBuffer)
         :param log_interval: (int) Log data every ``log_interval`` episodes
         :return: (RolloutReturn)
         """

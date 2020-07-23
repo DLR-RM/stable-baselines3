@@ -105,5 +105,14 @@ def test_goal_strategy(goal_strategy, online_sampling):
     env = BitFlippingEnv(continuous=True)
     env = DummyVecEnv([lambda: env])
 
-    model = HER(SACPolicy, env, SAC, goal_strategy=goal_strategy, online_sampling=online_sampling)
+    model = HER(
+        SACPolicy,
+        env,
+        SAC,
+        goal_strategy=goal_strategy,
+        online_sampling=online_sampling,
+        gradient_steps=1,
+        train_freq=1,
+        n_episodes_rollout=-1,
+    )
     model.learn(total_timesteps=200, callback=None)

@@ -25,6 +25,7 @@ New Features:
 - Refactored opening paths for saving and loading to use strings, pathlib or io.BufferedIOBase (@PartiallyTyped)
 - Added ``DDPG`` algorithm as a special case of ``TD3``.
 - Introduced ``BaseModel`` abstract parent for ``BasePolicy``, which critics inherit from.
+- Added Hindsight Experience Replay ``HER``. (@megan-klaiber)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -355,4 +356,4 @@ And all the contributors:
 @Miffyli @dwiel @miguelrass @qxcv @jaberkow @eavelardev @ruifeng96150 @pedrohbtp @srivatsankrishnan @evilsocket
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
-@tirafesi @blurLake @koulakis @joeljosephjin
+@tirafesi @blurLake @koulakis @joeljosephjin @megan-klaiber

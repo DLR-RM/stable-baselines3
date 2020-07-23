@@ -12,37 +12,9 @@ from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
 from stable_baselines3.common.vec_env import VecEnv
+from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy, KEY_TO_GOAL_STRATEGY
+from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
 from stable_baselines3.her.obs_wrapper import ObsWrapper
-
-
-class GoalSelectionStrategy(Enum):
-    """
-    The strategies for selecting new goals when
-    creating artificial transitions.
-    """
-
-    # Select a goal that was achieved
-    # after the current step, in the same episode
-    FUTURE = 0
-    # Select the goal that was achieved
-    # at the end of the episode
-    FINAL = 1
-    # Select a goal that was achieved in the episode
-    EPISODE = 2
-    # Select a goal that was achieved
-    # at some point in the training procedure
-    # (and that is present in the replay buffer)
-    RANDOM = 3
-
-
-# For convenience
-# that way, we can use string to select a strategy
-KEY_TO_GOAL_STRATEGY = {
-    "future": GoalSelectionStrategy.FUTURE,
-    "final": GoalSelectionStrategy.FINAL,
-    "episode": GoalSelectionStrategy.EPISODE,
-    "random": GoalSelectionStrategy.RANDOM,
-}
 
 
 class HER(OffPolicyAlgorithm):
@@ -55,6 +27,9 @@ class HER(OffPolicyAlgorithm):
     :param n_goals: (int) Number of sampled goals for replay.
     :param goal_strategy: (GoalSelectionStrategy or str) Strategy for sampling goals for replay.
         One of ['episode', 'final', 'future', 'random']
+    :param online_sampling: (bool) Sample HER transitions online.
+    :her_ratio: (int) The ratio between HER replays and regular replays (e.g. k = 4 -> 4 times
+            as many HER replays as regular replays are used)
     :param learning_rate: (float or callable) learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
     :param buffer_size: (int) size of the replay buffer
@@ -100,6 +75,8 @@ class HER(OffPolicyAlgorithm):
         model: Type[OffPolicyAlgorithm],
         n_goals: int = 5,
         goal_strategy: Union[GoalSelectionStrategy, str] = "final",
+        online_sampling: bool = False,
+        her_ratio: int = 2,
         learning_rate: Union[float, Callable] = 3e-4,
         buffer_size: int = int(1e6),
         learning_starts: int = 100,
@@ -114,7 +91,7 @@ class HER(OffPolicyAlgorithm):
         policy_kwargs: Dict[str, Any] = None,
         tensorboard_log: Optional[str] = None,
         verbose: int = 0,
-        device: Union[th.device, str] = "auto",
+        device: Union[th.device, str] = "cpu",
         support_multi_env: bool = False,
         create_eval_env: bool = False,
         monitor_wrapper: bool = True,
@@ -178,6 +155,10 @@ class HER(OffPolicyAlgorithm):
 
         # model initialization
         self.model = model(env=self.env, **model_init_dict, **kwargs)
+
+        self.online_sampling = online_sampling
+        if self.online_sampling:
+            self.model.replay_buffer = HerReplayBuffer(self.env, buffer_size, self.goal_strategy, self.env.observation_space, self.env.action_space, device, self.n_envs, her_ratio)
 
         # storage for transitions of current episode
         self.episode_storage = []
@@ -330,8 +311,12 @@ class HER(OffPolicyAlgorithm):
                     break
 
             if done:
-                # store episode in replay buffer
-                self.store_transitions()
+
+                if self.online_sampling:
+                    self.model.replay_buffer.add(self.episode_storage)
+                else:
+                    # store episode in replay buffer
+                    self.store_transitions()
                 # clear storage for current episode
                 self.episode_storage = []
 
@@ -369,6 +354,7 @@ class HER(OffPolicyAlgorithm):
         elif self.goal_strategy == GoalSelectionStrategy.FUTURE:
             # replay with random state which comes from the same episode and was observed after current transition
             # we have no transition after last transition of episode
+
             if (sample_idx + 1) < len(self.episode_storage):
                 index = np.random.choice(np.arange(sample_idx + 1, len(self.episode_storage)))
                 return self.episode_storage[index][0]["achieved_goal"]

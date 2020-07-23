@@ -14,7 +14,8 @@ from stable_baselines3.td3.policies import MlpPolicy
 
 @pytest.mark.parametrize("model_class, policy, sde_support",
                          [(SAC, SACPolicy, True), (TD3, TD3Policy, False), (DDPG, MlpPolicy, False)])
-def test_her(model_class, policy, sde_support):
+@pytest.mark.parametrize("online_sampling", [True, False])
+def test_her(model_class, policy, sde_support, online_sampling):
     """
     Test Hindsight Experience Replay.
     """
@@ -32,6 +33,7 @@ def test_her(model_class, policy, sde_support):
         model_class,
         n_goals=5,
         goal_strategy="future",
+        online_sampling=online_sampling,
         action_noise=action_noise,
         verbose=1,
         tau=0.05,
@@ -91,14 +93,15 @@ def test_her(model_class, policy, sde_support):
         GoalSelectionStrategy.RANDOM,
         GoalSelectionStrategy.EPISODE,
         GoalSelectionStrategy.FINAL,
-    ],
+    ]
 )
-def test_goal_strategy(goal_strategy):
+@pytest.mark.parametrize("online_sampling", [True, False])
+def test_goal_strategy(goal_strategy, online_sampling):
     """
     Test different goal strategies.
     """
     env = BitFlippingEnv(continuous=True)
     env = DummyVecEnv([lambda: env])
 
-    model = HER(SACPolicy, env, SAC, goal_strategy=goal_strategy)
-    model.learn(total_timesteps=50, callback=None)
+    model = HER(SACPolicy, env, SAC, goal_strategy=goal_strategy, online_sampling=online_sampling)
+    model.learn(total_timesteps=200, callback=None)

@@ -320,9 +320,11 @@ class HER(OffPolicyAlgorithm):
                     break
 
             if done:
-
                 if self.online_sampling:
-                    self.model.replay_buffer.add(self.episode_storage)
+                    observations, actions, rewards, next_observations, done = zip(*self.episode_storage)
+                    self.model.replay_buffer.add(observations, next_observations, actions, rewards, done)
+                    # self.model.replay_buffer.add(self.episode_storage)
+
                 else:
                     # store episode in replay buffer
                     self.store_transitions()

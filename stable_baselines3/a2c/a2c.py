@@ -116,6 +116,7 @@ class A2C(OnPolicyAlgorithm):
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
 
+        # This will only loop once (get all data in one go)
         for rollout_data in self.rollout_buffer.get(batch_size=None):
 
             actions = rollout_data.actions
@@ -151,8 +152,17 @@ class A2C(OnPolicyAlgorithm):
             self.policy.optimizer.zero_grad()
             loss.backward()
 
+            # Check gradient norm
+            grad_norm = 0
+            for p in self.policy.parameters():
+                param_norm = p.grad.data.norm(2)
+                grad_norm += param_norm.item() ** 2
+            import math as m
+            grad_norm = m.sqrt(grad_norm)
+
             # Clip grad norm
             th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+
             self.policy.optimizer.step()
 
         explained_var = explained_variance(self.rollout_buffer.returns.flatten(), self.rollout_buffer.values.flatten())
@@ -163,6 +173,7 @@ class A2C(OnPolicyAlgorithm):
         logger.record("train/entropy_loss", entropy_loss.item())
         logger.record("train/policy_loss", policy_loss.item())
         logger.record("train/value_loss", value_loss.item())
+        logger.record("train/grad_norm", grad_norm)
         if hasattr(self.policy, "log_std"):
             logger.record("train/std", th.exp(self.policy.log_std).mean().item())
 

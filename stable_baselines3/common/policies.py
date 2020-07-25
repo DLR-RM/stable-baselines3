@@ -188,7 +188,8 @@ class BasePolicy(BaseModel):
         """
         if isinstance(module, (nn.Linear, nn.Conv2d)):
             nn.init.orthogonal_(module.weight, gain=gain)
-            module.bias.data.fill_(0.0)
+            if module.bias is not None:
+                module.bias.data.fill_(0.0)
 
     @abstractmethod
     def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:

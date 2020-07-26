@@ -31,6 +31,7 @@ Bug Fixes:
 - Fixed a bug in the ``close()`` method of ``SubprocVecEnv``, causing wrappers further down in the wrapper stack to not be closed. (@NeoExtended)
 - Fix target for updating q values in SAC: the entropy term was not conditioned by terminals states
 - Use ``cloudpickle.load`` instead of ``pickle.load`` in ``CloudpickleWrapper``. (@shwang)
+- Fixed a bug with orthogonal initialization when `bias=False` in custom policy (@rk37)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -356,4 +357,4 @@ And all the contributors:
 @Miffyli @dwiel @miguelrass @qxcv @jaberkow @eavelardev @ruifeng96150 @pedrohbtp @srivatsankrishnan @evilsocket
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
-@tirafesi @blurLake @koulakis @joeljosephjin @shwang
+@tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37

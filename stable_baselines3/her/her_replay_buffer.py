@@ -52,9 +52,8 @@ class HerReplayBuffer(BaseBuffer):
         self.her_ratio = 1 - (1.0 / (1 + her_ratio))
 
         # memory management
-        # current size in episodes
-        self.current_size = 0
-        self.n_transitions_stored = 0
+        self.__n_episodes_stored = 0
+        self.__n_transitions_stored = 0
 
     def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
         """
@@ -72,7 +71,7 @@ class HerReplayBuffer(BaseBuffer):
         """
 
         # Select which episodes and time steps to use.
-        episode_idxs = np.random.randint(0, self.current_size, batch_size)
+        episode_idxs = np.random.randint(0, self.n_episodes_stored, batch_size)
         buffer = np.array(self.buffer)
         # get episode lengths for selecting timesteps
         episode_lengths = np.array([len(ep) for ep in buffer[episode_idxs]])
@@ -108,7 +107,7 @@ class HerReplayBuffer(BaseBuffer):
             her_new_goals = [trans["achieved_goal"] for trans in episode_transitions]
         elif self.goal_strategy == GoalSelectionStrategy.RANDOM:
             # replay with random state from the entire replay buffer
-            ep_idx = np.random.randint(0, self.current_size, len(her_idxs))
+            ep_idx = np.random.randint(0, self.n_episodes_stored, len(her_idxs))
             state_idx = [np.random.choice(np.arange(len(ep))) for ep in buffer[ep_idx]]
             random_transitions = buffer[ep_idx, state_idx][:, 0]
             her_new_goals = [trans["achieved_goal"] for trans in random_transitions]
@@ -125,13 +124,15 @@ class HerReplayBuffer(BaseBuffer):
         achieved_goals = [new_obs["achieved_goal"] for new_obs in np.array(next_observations)[her_idxs]]
         new_rewards = np.array(rewards)
         new_rewards[her_idxs] = [
-            self.env.env_method("compute_reward", ag, her_new_goals, None)
-            for ag, new_goal in zip(achieved_goals, her_new_goals)
+            self.env.env_method("compute_reward", achieved_goal, her_new_goals, None)
+            for achieved_goal, new_goal in zip(achieved_goals, her_new_goals)
         ]
 
         # concatenate observation with (desired) goal
-        obs = [np.concatenate([o["observation"], o["desired_goal"]], axis=1) for o in observations]
-        new_obs = [np.concatenate([new_o["observation"], new_o["desired_goal"]], axis=1) for new_o in next_observations]
+        obs = [np.concatenate([obs_["observation"], obs_["desired_goal"]], axis=1) for obs_ in observations]
+        new_obs = [
+            np.concatenate([new_obs_["observation"], new_obs_["desired_goal"]], axis=1) for new_obs_ in next_observations
+        ]
 
         data = (
             np.array(obs)[:, 0, :],
@@ -163,11 +164,11 @@ class HerReplayBuffer(BaseBuffer):
         if self.n_transitions_stored + episode_length <= self.size():
             self.buffer.append(episode)
             # update replay size
-            self.current_size += 1
+            self.n_episodes_stored += 1
             self.n_transitions_stored += episode_length
         elif self.full:
             # if replay buffer is full take random stored episode and replace it
-            idx = np.random.randint(0, self.current_size)
+            idx = np.random.randint(0, self.n_episodes_stored)
 
             if len(self.buffer[idx]) == episode_length:
                 self.buffer[idx] = episode
@@ -180,14 +181,23 @@ class HerReplayBuffer(BaseBuffer):
         else:
             self.full = False
 
-    def get_current_episode_size(self):
-        return self.current_size
+    @property
+    def n_episodes_stored(self):
+        return self.__n_episodes_stored
 
-    def get_current_size(self):
-        return self.n_transitions_stored
+    @n_episodes_stored.setter
+    def n_episodes_stored(self, n):
+        self.__n_episodes_stored = n
 
-    def get_transitions_stored(self):
-        return self.n_transitions_stored
+    @property
+    def n_transitions_stored(self):
+        return self.__n_transitions_stored
+
+    @n_transitions_stored.setter
+    def n_transitions_stored(self, n):
+        self.__n_transitions_stored = n
 
     def clear_buffer(self):
         self.buffer = []
+        self.n_episodes_stored = 0
+        self.n_transitions_stored = 0

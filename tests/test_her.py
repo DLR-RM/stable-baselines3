@@ -11,11 +11,9 @@ from stable_baselines3.sac.policies import SACPolicy
 from stable_baselines3.td3.policies import MlpPolicy, TD3Policy
 
 
-@pytest.mark.parametrize(
-    "model_class, policy, sde_support", [(SAC, SACPolicy, True), (TD3, TD3Policy, False), (DDPG, MlpPolicy, False)]
-)
+@pytest.mark.parametrize("model_class, policy", [(SAC, SACPolicy), (TD3, TD3Policy), (DDPG, MlpPolicy)])
 @pytest.mark.parametrize("online_sampling", [True, False])
-def test_her(model_class, policy, sde_support, online_sampling):
+def test_her(model_class, policy, online_sampling):
     """
     Test Hindsight Experience Replay.
     """
@@ -45,7 +43,6 @@ def test_her(model_class, policy, sde_support, online_sampling):
         gradient_steps=1,
         train_freq=1,
         n_episodes_rollout=-1,
-        sde_support=sde_support,
     )
 
     model.learn(total_timesteps=500, callback=None)

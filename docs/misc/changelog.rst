@@ -33,6 +33,7 @@ Bug Fixes:
 - Use ``cloudpickle.load`` instead of ``pickle.load`` in ``CloudpickleWrapper``. (@shwang)
 - Fixed a bug with orthogonal initialization when `bias=False` in custom policy (@rk37)
 - Fixed approximate entropy calculation in PPO and A2C. (@andyshih12)
+- Fixed DQN target network sharing feature extractor with the main network.
 
 Deprecations:
 ^^^^^^^^^^^^^

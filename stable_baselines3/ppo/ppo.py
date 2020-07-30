@@ -198,7 +198,7 @@ class PPO(OnPolicyAlgorithm):
                 # Entropy loss favor exploration
                 if entropy is None:
                     # Approximate entropy when no analytical form
-                    entropy_loss = -log_prob.mean()
+                    entropy_loss = -th.mean(-log_prob)
                 else:
                     entropy_loss = -th.mean(entropy)
 

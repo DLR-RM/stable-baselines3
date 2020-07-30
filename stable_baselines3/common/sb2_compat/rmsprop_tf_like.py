@@ -60,8 +60,8 @@ class RMSpropTFLike(Optimizer):
     def __setstate__(self, state):
         super(RMSpropTFLike, self).__setstate__(state)
         for group in self.param_groups:
-            group.setdefault('momentum', 0)
-            group.setdefault('centered', False)
+            group.setdefault("momentum", 0)
+            group.setdefault("centered", False)
 
     @torch.no_grad()
     def step(self, closure=None):
@@ -77,50 +77,50 @@ class RMSpropTFLike(Optimizer):
                 loss = closure()
 
         for group in self.param_groups:
-            for p in group['params']:
+            for p in group["params"]:
                 if p.grad is None:
                     continue
                 grad = p.grad
                 if grad.is_sparse:
-                    raise RuntimeError('RMSpropTF does not support sparse gradients')
+                    raise RuntimeError("RMSpropTF does not support sparse gradients")
                 state = self.state[p]
 
                 # State initialization
                 if len(state) == 0:
-                    state['step'] = 0
+                    state["step"] = 0
                     # PyTorch initialized to zeros here
-                    state['square_avg'] = torch.ones_like(p, memory_format=torch.preserve_format)
-                    if group['momentum'] > 0:
-                        state['momentum_buffer'] = torch.zeros_like(p, memory_format=torch.preserve_format)
-                    if group['centered']:
-                        state['grad_avg'] = torch.zeros_like(p, memory_format=torch.preserve_format)
+                    state["square_avg"] = torch.ones_like(p, memory_format=torch.preserve_format)
+                    if group["momentum"] > 0:
+                        state["momentum_buffer"] = torch.zeros_like(p, memory_format=torch.preserve_format)
+                    if group["centered"]:
+                        state["grad_avg"] = torch.zeros_like(p, memory_format=torch.preserve_format)
 
-                square_avg = state['square_avg']
-                alpha = group['alpha']
+                square_avg = state["square_avg"]
+                alpha = group["alpha"]
 
-                state['step'] += 1
+                state["step"] += 1
 
-                if group['weight_decay'] != 0:
-                    grad = grad.add(p, alpha=group['weight_decay'])
+                if group["weight_decay"] != 0:
+                    grad = grad.add(p, alpha=group["weight_decay"])
 
                 square_avg.mul_(alpha).addcmul_(grad, grad, value=1 - alpha)
 
-                if group['centered']:
-                    grad_avg = state['grad_avg']
+                if group["centered"]:
+                    grad_avg = state["grad_avg"]
                     grad_avg.mul_(alpha).add_(grad, alpha=1 - alpha)
                     # PyTorch added epsilon after square root
                     # avg = square_avg.addcmul(grad_avg, grad_avg, value=-1).sqrt_().add_(group['eps'])
-                    avg = square_avg.addcmul(grad_avg, grad_avg, value=-1).add_(group['eps']).sqrt_()
+                    avg = square_avg.addcmul(grad_avg, grad_avg, value=-1).add_(group["eps"]).sqrt_()
                 else:
                     # PyTorch added epsilon after square root
                     # avg = square_avg.sqrt().add_(group['eps'])
-                    avg = square_avg.add(group['eps']).sqrt_()
+                    avg = square_avg.add(group["eps"]).sqrt_()
 
-                if group['momentum'] > 0:
-                    buf = state['momentum_buffer']
-                    buf.mul_(group['momentum']).addcdiv_(grad, avg)
-                    p.add_(buf, alpha=-group['lr'])
+                if group["momentum"] > 0:
+                    buf = state["momentum_buffer"]
+                    buf.mul_(group["momentum"]).addcdiv_(grad, avg)
+                    p.add_(buf, alpha=-group["lr"])
                 else:
-                    p.addcdiv_(grad, avg, value=-group['lr'])
+                    p.addcdiv_(grad, avg, value=-group["lr"])
 
         return loss

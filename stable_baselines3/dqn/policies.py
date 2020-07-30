@@ -133,8 +133,6 @@ class DQNPolicy(BasePolicy):
             else:
                 net_arch = []
 
-        self.features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
-        self.features_dim = self.features_extractor.features_dim
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.normalize_images = normalize_images
@@ -142,8 +140,6 @@ class DQNPolicy(BasePolicy):
         self.net_args = {
             "observation_space": self.observation_space,
             "action_space": self.action_space,
-            "features_extractor": self.features_extractor,
-            "features_dim": self.features_dim,
             "net_arch": self.net_arch,
             "activation_fn": self.activation_fn,
             "normalize_images": normalize_images,
@@ -169,7 +165,10 @@ class DQNPolicy(BasePolicy):
         self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
 
     def make_q_net(self) -> QNetwork:
-        return QNetwork(**self.net_args).to(self.device)
+        # Make sure we always have separate networks for feature extractors etc
+        features_extractor = self.features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
+        features_dim = features_extractor.features_dim
+        return QNetwork(features_extractor=features_extractor, features_dim=features_dim, **self.net_args).to(self.device)
 
     def forward(self, obs: th.Tensor, deterministic: bool = True) -> th.Tensor:
         return self._predict(obs, deterministic=deterministic)

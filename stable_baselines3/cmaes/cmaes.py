@@ -94,7 +94,7 @@ class CMAES(BaseAlgorithm):
         if self.es is None:
             options = {"seed": self.seed}
             if self.env.num_envs > 1:
-                options['popsize'] = self.env.num_envs
+                options["popsize"] = self.env.num_envs
             self.es = cma.CMAEvolutionStrategy(self.best_individual, self.std_init, options)
         continue_training = True
 

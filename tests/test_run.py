@@ -82,6 +82,7 @@ def test_n_critics(n_critics):
     )
     model.learn(total_timesteps=1000)
 
+
 # "CartPole-v1"
 @pytest.mark.parametrize("env_id", ["MountainCarContinuous-v0"])
 def test_cmaes(env_id):
@@ -89,7 +90,6 @@ def test_cmaes(env_id):
         return
     model = CMAES("MlpPolicy", env_id, seed=0, policy_kwargs=dict(net_arch=[64]), verbose=1, create_eval_env=True)
     model.learn(total_timesteps=50000, eval_freq=10000)
-
 
 
 # def test_crr(tmp_path):

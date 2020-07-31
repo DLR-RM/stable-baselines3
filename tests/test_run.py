@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3, TQC
+from stable_baselines3 import A2C, CMAES, DDPG, DQN, PPO, SAC, TD3, TQC
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 
 normal_action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
@@ -81,6 +81,15 @@ def test_n_critics(n_critics):
         "MlpPolicy", "Pendulum-v0", policy_kwargs=dict(net_arch=[64, 64], n_critics=n_critics), learning_starts=100, verbose=1
     )
     model.learn(total_timesteps=1000)
+
+
+# "CartPole-v1"
+@pytest.mark.parametrize("env_id", ["MountainCarContinuous-v0"])
+def test_cmaes(env_id):
+    if CMAES is None:
+        return
+    model = CMAES("MlpPolicy", env_id, seed=0, policy_kwargs=dict(net_arch=[64]), verbose=1, create_eval_env=True)
+    model.learn(total_timesteps=50000, eval_freq=10000)
 
 
 # def test_crr(tmp_path):

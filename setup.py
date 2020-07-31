@@ -115,6 +115,8 @@ setup(
             "tensorboard",
             # Checking memory taken by replay buffer
             "psutil",
+            # Enable CMA
+            "cma",
         ],
     },
     description="Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.",

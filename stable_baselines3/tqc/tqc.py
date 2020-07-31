@@ -312,23 +312,23 @@ class TQC(OffPolicyAlgorithm):
             _, log_prob = self.actor.action_log_prob(replay_data.observations)
             log_prob = log_prob.reshape(-1, 1)
 
-            # ent_coef_loss = None
-            # if self.ent_coef_optimizer is not None:
-            #     # Important: detach the variable from the graph
-            #     # so we don't change it with other losses
-            #     # see https://github.com/rail-berkeley/softlearning/issues/60
-            #     ent_coef = th.exp(self.log_ent_coef.detach())
-            #     ent_coef_loss = -(self.log_ent_coef * (log_prob + self.target_entropy).detach()).mean()
-            # else:
-            #     ent_coef = self.ent_coef_tensor
-            #
-            # # Optimize entropy coefficient, also called
-            # # entropy temperature or alpha in the paper
-            # if ent_coef_loss is not None:
-            #     self.ent_coef_optimizer.zero_grad()
-            #     ent_coef_loss.backward()
-            #     self.ent_coef_optimizer.step()
-            #
+            ent_coef_loss = None
+            if self.ent_coef_optimizer is not None:
+                # Important: detach the variable from the graph
+                # so we don't change it with other losses
+                # see https://github.com/rail-berkeley/softlearning/issues/60
+                ent_coef = th.exp(self.log_ent_coef.detach())
+                ent_coef_loss = -(self.log_ent_coef * (log_prob + self.target_entropy).detach()).mean()
+            else:
+                ent_coef = self.ent_coef_tensor
+
+            # Optimize entropy coefficient, also called
+            # entropy temperature or alpha in the paper
+            if ent_coef_loss is not None:
+                self.ent_coef_optimizer.zero_grad()
+                ent_coef_loss.backward()
+                self.ent_coef_optimizer.step()
+
             with th.no_grad():
                 top_quantiles_to_drop = self.top_quantiles_to_drop_per_net * self.critic.n_critics
                 # Select action according to policy

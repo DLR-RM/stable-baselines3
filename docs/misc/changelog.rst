@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.8.0a5 (WIP)
+Pre-Release 0.8.0a6 (WIP)
 ------------------------------
 
 Breaking Changes:
@@ -31,6 +31,9 @@ Bug Fixes:
 - Fixed a bug in the ``close()`` method of ``SubprocVecEnv``, causing wrappers further down in the wrapper stack to not be closed. (@NeoExtended)
 - Fix target for updating q values in SAC: the entropy term was not conditioned by terminals states
 - Use ``cloudpickle.load`` instead of ``pickle.load`` in ``CloudpickleWrapper``. (@shwang)
+- Fixed a bug with orthogonal initialization when `bias=False` in custom policy (@rk37)
+- Fixed approximate entropy calculation in PPO and A2C. (@andyshih12)
+- Fixed DQN target network sharing feature extractor with the main network.
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -54,6 +57,7 @@ Documentation:
 - Added Unity reacher to the projects page (@koulakis)
 - Added PyBullet colab notebook
 - Fixed typo in PPO example code (@joeljosephjin)
+- Fixed typo in custom policy doc (@RaphaelWag)
 
 
 
@@ -356,4 +360,4 @@ And all the contributors:
 @Miffyli @dwiel @miguelrass @qxcv @jaberkow @eavelardev @ruifeng96150 @pedrohbtp @srivatsankrishnan @evilsocket
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
-@tirafesi @blurLake @koulakis @joeljosephjin @shwang
+@tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag

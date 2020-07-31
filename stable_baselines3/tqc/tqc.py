@@ -279,6 +279,7 @@ class TQC(OffPolicyAlgorithm):
         strategy: str = "binary",
         reduce: str = "mean",
         exp_temperature: float = 1.0,
+        off_policy_update_freq: int = -1,
     ) -> None:
         """
         Pretrain with Critic Regularized Regression (CRR)
@@ -295,6 +296,11 @@ class TQC(OffPolicyAlgorithm):
         actor_losses, critic_losses = [], []
 
         for gradient_step in tqdm(range(gradient_steps)):
+
+            if off_policy_update_freq > 0 and gradient_step % off_policy_update_freq == 0:
+                self.train(gradient_steps=1, batch_size=batch_size)
+                continue
+
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
@@ -302,19 +308,38 @@ class TQC(OffPolicyAlgorithm):
             if self.use_sde:
                 self.actor.reset_noise()
 
-            # Critic update without entropy term
-            # TODO: try adding entropy
+            # Action by the current actor for the sampled state
+            _, log_prob = self.actor.action_log_prob(replay_data.observations)
+            log_prob = log_prob.reshape(-1, 1)
+
+            # ent_coef_loss = None
+            # if self.ent_coef_optimizer is not None:
+            #     # Important: detach the variable from the graph
+            #     # so we don't change it with other losses
+            #     # see https://github.com/rail-berkeley/softlearning/issues/60
+            #     ent_coef = th.exp(self.log_ent_coef.detach())
+            #     ent_coef_loss = -(self.log_ent_coef * (log_prob + self.target_entropy).detach()).mean()
+            # else:
+            #     ent_coef = self.ent_coef_tensor
+            #
+            # # Optimize entropy coefficient, also called
+            # # entropy temperature or alpha in the paper
+            # if ent_coef_loss is not None:
+            #     self.ent_coef_optimizer.zero_grad()
+            #     ent_coef_loss.backward()
+            #     self.ent_coef_optimizer.step()
+            #
             with th.no_grad():
                 top_quantiles_to_drop = self.top_quantiles_to_drop_per_net * self.critic.n_critics
                 # Select action according to policy
-                next_actions, _ = self.actor.action_log_prob(replay_data.next_observations)
+                next_actions, next_log_prob = self.actor.action_log_prob(replay_data.next_observations)
                 # Compute and cut quantiles at the next state
                 # batch x nets x quantiles
                 next_z = self.critic_target(replay_data.next_observations, next_actions)
                 sorted_z, _ = th.sort(next_z.reshape(batch_size, -1))
                 sorted_z_part = sorted_z[:, : self.critic.quantiles_total - top_quantiles_to_drop]
 
-                target_q = sorted_z_part
+                target_q = sorted_z_part - ent_coef * next_log_prob.reshape(-1, 1)
                 # td error + entropy term
                 q_backup = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
 
@@ -381,6 +406,8 @@ class TQC(OffPolicyAlgorithm):
             # Hard copy
             if gradient_step % target_update_interval == 0:
                 self.critic_target.load_state_dict(self.critic.state_dict())
+        if self.use_sde:
+            print(f"std={(self.actor.get_std()).mean().item()}")
 
     def learn(
         self,

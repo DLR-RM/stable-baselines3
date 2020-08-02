@@ -7,9 +7,10 @@ from torch import nn as nn
 from stable_baselines3.common.policies import BasePolicy, register_policy
 from stable_baselines3.common.preprocessing import get_action_dim
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, FlattenExtractor, NatureCNN, create_mlp
+from stable_baselines3.sac.policies import Actor
 
 
-class Actor(BasePolicy):
+class ActorCMA(BasePolicy):
     """
     Actor network (policy) for TD3.
 
@@ -36,7 +37,7 @@ class Actor(BasePolicy):
         normalize_images: bool = True,
         device: Union[th.device, str] = "auto",
     ):
-        super(Actor, self).__init__(
+        super(ActorCMA, self).__init__(
             observation_space,
             action_space,
             features_extractor=features_extractor,
@@ -124,6 +125,7 @@ class CMAESPolicy(BasePolicy):
             "activation_fn": self.activation_fn,
             "normalize_images": normalize_images,
             "device": device,
+            "use_sde": True,
         }
         self.actor = Actor(**self.net_args).to(self.device)
         self.best_actor = Actor(**self.net_args).to(self.device)

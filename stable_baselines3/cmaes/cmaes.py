@@ -109,11 +109,6 @@ class CMAES(BaseAlgorithm):
             if self.diagonal_cov:
                 options["CMA_diagonal"] = True
             self.es = cma.CMAEvolutionStrategy(self.best_individual, self.std_init, options)
-        else:
-            # Remove extra history from saved model
-            self.es.fit.hist = self.es.fit.hist[: self.max_hist]
-            self.es.fit.histbest = self.es.fit.histbest[: self.max_hist]
-            self.es.fit.histmedian = self.es.fit.histmedian[: self.max_hist]
 
         continue_training = True
 
@@ -121,7 +116,7 @@ class CMAES(BaseAlgorithm):
             candidates = self.es.ask()
 
             # Prevent high memory usage but changes `es.stop()` behavior
-            if len(self.es.hist) > self.max_hist:
+            if len(self.es.fit.hist) > self.max_hist:
                 try:
                     self.es.fit.hist.pop()
                     self.es.fit.histbest.pop()
@@ -192,6 +187,8 @@ class CMAES(BaseAlgorithm):
             self.best_individual = self.best_ever.x
             self.policy.best_actor.load_from_vector(self.best_individual)
 
+        # TODO: fix saving/loading
+        del self.es
         callback.on_training_end()
 
         return self

@@ -24,6 +24,7 @@ class CMAES(BaseAlgorithm):
         std_init: float = 0.5,
         best_individual: Union[np.ndarray, None, str] = None,
         diagonal_cov: bool = False,
+        max_hist: int = 10,
         pop_size: Optional[int] = None,
         policy_kwargs: Dict[str, Any] = None,
         tensorboard_log: Optional[str] = None,
@@ -61,6 +62,7 @@ class CMAES(BaseAlgorithm):
         self.es = None
         self.diagonal_cov = diagonal_cov
         self.pop_size = pop_size
+        self.max_hist = max_hist
         if _init_setup_model:
             self._setup_model()
 
@@ -107,10 +109,27 @@ class CMAES(BaseAlgorithm):
             if self.diagonal_cov:
                 options["CMA_diagonal"] = True
             self.es = cma.CMAEvolutionStrategy(self.best_individual, self.std_init, options)
+        else:
+            # Remove extra history from saved model
+            self.es.fit.hist = self.es.fit.hist[: self.max_hist]
+            self.es.fit.histbest = self.es.fit.histbest[: self.max_hist]
+            self.es.fit.histmedian = self.es.fit.histmedian[: self.max_hist]
+
         continue_training = True
 
         while self.num_timesteps < total_timesteps and not self.es.stop() and continue_training:
             candidates = self.es.ask()
+
+            # Prevent high memory usage but changes `es.stop()` behavior
+            if len(self.es.hist) > self.max_hist:
+                try:
+                    self.es.fit.hist.pop()
+                    self.es.fit.histbest.pop()
+                    self.es.fit.histmedian.pop()
+                except IndexError:
+                    # Removing element from empty list
+                    pass
+
             # Add best
             candidates.append(self.best_individual)
             returns = np.zeros((len(candidates),))

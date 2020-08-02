@@ -188,7 +188,7 @@ class CMAES(BaseAlgorithm):
             self.policy.best_actor.load_from_vector(self.best_individual)
 
         # TODO: fix saving/loading
-        del self.es
+        # del self.es
         callback.on_training_end()
 
         return self

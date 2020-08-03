@@ -116,6 +116,7 @@ class A2C(OnPolicyAlgorithm):
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
 
+        # This will only loop once (get all data in one go)
         for rollout_data in self.rollout_buffer.get(batch_size=None):
 
             actions = rollout_data.actions
@@ -141,7 +142,7 @@ class A2C(OnPolicyAlgorithm):
             # Entropy loss favor exploration
             if entropy is None:
                 # Approximate entropy when no analytical form
-                entropy_loss = -log_prob.mean()
+                entropy_loss = -th.mean(-log_prob)
             else:
                 entropy_loss = -th.mean(entropy)
 

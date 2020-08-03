@@ -3,8 +3,10 @@
 Changelog
 ==========
 
-Pre-Release 0.8.0a6 (WIP)
+Pre-Release 0.8.0 (2020-08-03)
 ------------------------------
+
+**DQN, DDPG, bug fixes and performance matching for Atari games**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^

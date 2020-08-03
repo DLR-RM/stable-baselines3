@@ -58,6 +58,18 @@ Policies
 A2C
 ^^^
 
+- ``epsilon`` -> ``rms_prop_eps``
+- ``lr_schedule`` is part of ``learning_rate`` (it can be a callable).
+- ``alpha``, ``momentum`` are modifiable through ``policy_kwargs`` key ``optimizer_kwargs``.
+
+.. warning::
+
+	PyTorch implementation of RMSprop `differs from Tensorflow's <https://github.com/pytorch/pytorch/issues/23796>`_,
+	which leads to `different and potentially more unstable results <https://github.com/DLR-RM/stable-baselines3/pull/110#issuecomment-663255241>_,`.
+	Use ``stable_baselines3.common.sb2_compat.rmsprop_tf_like.RMSpropTFLike`` optimizer to match the results
+	with Tensorflow's implementation. This can be done through ``policy_kwargs``: ``A2C(policy_kwargs=dict(optimizer_class=RMSpropTFLike))``
+
+
 PPO
 ^^^
 
@@ -71,6 +83,8 @@ PPO
 
 
 - ``clip_range_vf`` behavior for PPO is slightly different: Set it to ``None`` (default) to deactivate clipping (in SB2, you had to pass ``-1``, ``None`` meant to use ``clip_range`` for the clipping)
+- ``lam`` -> ``gae_lambda``
+- ``noptepochs`` -> ``n_epochs``
 
 
 DQN

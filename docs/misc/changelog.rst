@@ -57,6 +57,7 @@ Documentation:
 - Added Unity reacher to the projects page (@koulakis)
 - Added PyBullet colab notebook
 - Fixed typo in PPO example code (@joeljosephjin)
+- Fixed typo in custom policy doc (@RaphaelWag)
 
 
 
@@ -359,4 +360,4 @@ And all the contributors:
 @Miffyli @dwiel @miguelrass @qxcv @jaberkow @eavelardev @ruifeng96150 @pedrohbtp @srivatsankrishnan @evilsocket
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
-@tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12
+@tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag

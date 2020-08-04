@@ -1,8 +1,7 @@
-from inspect import signature
-from typing import Any, Callable, Dict, Optional, Type, Union
+from typing import Callable, Optional, Type, Union
 
 import numpy as np
-import torch as th
+from stable_baselines3.common.base_class import BaseAlgorithm
 
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.callbacks import BaseCallback
@@ -10,13 +9,28 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
-from stable_baselines3.common.vec_env import VecEnv
+from stable_baselines3.common.vec_env import VecEnv, VecEnvWrapper
 from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
 from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
 from stable_baselines3.her.obs_wrapper import ObsWrapper
 
 
-class HER(OffPolicyAlgorithm):
+def check_wrapped_env(env: VecEnv) -> VecEnv:
+    """
+    Check if the environment is already wrapped by an ObsWrapper.
+
+    :param env: (VecEnv) Environment to check.
+    :return: (VecEnv) env
+    """
+    env_tmp = env
+    while isinstance(env_tmp, VecEnvWrapper):
+        if isinstance(env_tmp, ObsWrapper):
+            return env
+        env_tmp = env_tmp.venv
+    return ObsWrapper(env)
+
+
+class HER(BaseAlgorithm):
     """
     Hindsight Experience Replay (HER)
 
@@ -31,40 +45,6 @@ class HER(OffPolicyAlgorithm):
             as many HER replays as regular replays are used)
     :param learning_rate: (float or callable) learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
-    :param buffer_size: (int) size of the replay buffer
-    :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
-    :param batch_size: (int) Minibatch size for each gradient update
-    :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1)
-    :param gamma: (float) the discount factor
-    :param train_freq: (int) Update the model every ``train_freq`` steps.
-    :param gradient_steps: (int) How many gradient update after each step
-    :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
-        Note that this cannot be used at the same time as ``train_freq``
-    :param action_noise: (ActionNoise) the action noise type (None by default), this can help
-        for hard exploration problem. Cf common.noise for the different action noise type.
-    :param optimize_memory_usage: (bool) Enable a memory efficient variant of the replay buffer
-        at a cost of more complexity.
-        See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
-    :param policy_kwargs: Additional arguments to be passed to the policy on creation
-    :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
-    :param verbose: The verbosity level: 0 none, 1 training information, 2 debug
-    :param device: Device on which the code should run.
-        By default, it will try to use a Cuda compatible device and fallback to cpu
-        if it is not possible.
-    :param support_multi_env: Whether the algorithm supports training
-        with multiple environments (as in A2C)
-    :param create_eval_env: Whether to create a second environment that will be
-        used for evaluating the agent periodically. (Only available when passing string for the environment)
-    :param monitor_wrapper: When creating an environment, whether to wrap it
-        or not in a Monitor wrapper.
-    :param seed: Seed for the pseudo random generators
-    :param use_sde: Whether to use State Dependent Exploration (SDE)
-        instead of action noise exploration (default: False)
-    :param sde_sample_freq: Sample a new noise matrix every n steps when using gSDE
-        Default: -1 (only sample at the beginning of the rollout)
-    :param use_sde_at_warmup: (bool) Whether to use gSDE instead of uniform sampling
-        during the warm up phase (before learning starts)
-    :param sde_support: (bool) Whether the model support gSDE or not
     """
 
     def __init__(
@@ -73,104 +53,52 @@ class HER(OffPolicyAlgorithm):
         env: VecEnv,
         model: Type[OffPolicyAlgorithm],
         n_goals: int = 5,
-        goal_strategy: Union[GoalSelectionStrategy, str] = "final",
+        goal_strategy: Union[GoalSelectionStrategy, str] = "future",
         online_sampling: bool = False,
         her_ratio: int = 2,
         learning_rate: Union[float, Callable] = 3e-4,
-        buffer_size: int = int(1e6),
-        learning_starts: int = 100,
-        batch_size: int = 256,
-        tau: float = 0.005,
-        gamma: float = 0.99,
-        train_freq: int = 1,
-        gradient_steps: int = 1,
-        n_episodes_rollout: int = -1,
-        action_noise: Optional[ActionNoise] = None,
-        optimize_memory_usage: bool = False,
-        policy_kwargs: Dict[str, Any] = None,
-        tensorboard_log: Optional[str] = None,
-        verbose: int = 0,
-        device: Union[th.device, str] = "cpu",
-        support_multi_env: bool = False,
-        create_eval_env: bool = False,
-        monitor_wrapper: bool = True,
-        seed: Optional[int] = None,
-        use_sde: bool = False,
-        sde_sample_freq: int = -1,
-        use_sde_at_warmup: bool = False,
-        sde_support: bool = True,
         *args,
-        **kwargs
+        **kwargs,
     ):
 
+        # check if wrapper for dict support is needed
+        self.env = check_wrapped_env(env)
+
+        super(HER, self).__init__(policy=BasePolicy, env=self.env, policy_base=BasePolicy, learning_rate=learning_rate)
+
+        # model initialization
+        self.model = model(policy=policy, env=self.env, learning_rate=learning_rate, *args, **kwargs)
+
+        self.verbose = self.model.verbose
+        self.tensorboard_log = self.model.tensorboard_log
+
+        # convert goal_strategy into GoalSelectionStrategy if string
         if isinstance(goal_strategy, str):
             self.goal_strategy = KEY_TO_GOAL_STRATEGY[goal_strategy.lower()]
         else:
             self.goal_strategy = goal_strategy
 
+        # check if goal_strategy is valid
         assert isinstance(
             self.goal_strategy, GoalSelectionStrategy
-        ), "Invalid goal selection strategy," "please use one of {}".format(list(GoalSelectionStrategy))
-
-        self.env = ObsWrapper(env)
-
-        # get arguments for the model initialization
-        model_signature = signature(model.__init__)
-        arguments = locals()
-        model_init_dict = {
-            key: arguments[key]
-            for key in model_signature.parameters.keys()
-            if key in arguments and key != "self" and key != "env"
-        }
-
-        super(HER, self).__init__(
-            policy,
-            self.env,
-            BasePolicy,
-            learning_rate,
-            buffer_size,
-            learning_starts,
-            batch_size,
-            tau,
-            gamma,
-            train_freq,
-            gradient_steps,
-            n_episodes_rollout,
-            action_noise,
-            optimize_memory_usage,
-            policy_kwargs,
-            tensorboard_log,
-            verbose,
-            device,
-            support_multi_env,
-            create_eval_env,
-            monitor_wrapper,
-            seed,
-            use_sde,
-            sde_sample_freq,
-            use_sde_at_warmup,
-            sde_support,
-        )
-
-        # model initialization
-        self.model = model(env=self.env, **model_init_dict, **kwargs)
+        ), f"Invalid goal selection strategy, please use one of {list(GoalSelectionStrategy)}"
 
         # if we sample her transitions online use custom replay buffer
         self.online_sampling = online_sampling
         if self.online_sampling:
             self.model.replay_buffer = HerReplayBuffer(
                 self.env,
-                buffer_size,
+                self.buffer_size,
                 self.goal_strategy,
                 self.env.observation_space,
                 self.env.action_space,
-                device,
+                self.device,
                 self.n_envs,
                 her_ratio,
             )
 
         # storage for transitions of current episode
-        self.episode_storage = []
+        self.__episode_storage = []
         self.n_goals = n_goals
 
     def learn(
@@ -184,31 +112,37 @@ class HER(OffPolicyAlgorithm):
         tb_log_name: str = "run",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-    ) -> "OffPolicyAlgorithm":
+    ) -> BaseAlgorithm:
 
-        total_timesteps, callback = self.model._setup_learn(
+        total_timesteps, callback = self._setup_learn(
             total_timesteps, eval_env, callback, eval_freq, n_eval_episodes, eval_log_path, reset_num_timesteps, tb_log_name
         )
+        self.model.start_time = self.start_time
+        self.model.ep_info_buffer = self.ep_info_buffer
+        self.model.ep_success_buffer = self.ep_success_buffer
+        self.model.num_timesteps = self.num_timesteps
+        self.model._episode_num = self._episode_num
+        self.model._last_obs = self._last_obs
 
         callback.on_training_start(locals(), globals())
 
-        while self.model.num_timesteps < total_timesteps:
+        while self.num_timesteps < total_timesteps:
 
             rollout = self.collect_rollouts(
                 self.env,
-                n_episodes=self.model.n_episodes_rollout,
-                n_steps=self.model.train_freq,
-                action_noise=self.model.action_noise,
+                n_episodes=self.n_episodes_rollout,
+                n_steps=self.train_freq,
+                action_noise=self.action_noise,
                 callback=callback,
-                learning_starts=self.model.learning_starts,
-                replay_buffer=self.model.replay_buffer,
+                learning_starts=self.learning_starts,
+                replay_buffer=self.replay_buffer,
                 log_interval=log_interval,
             )
 
             if rollout.continue_training is False:
                 break
 
-            if self.model.num_timesteps > 0 and self.model.num_timesteps > self.model.learning_starts:
+            if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
                 # If no `gradient_steps` is specified,
                 # do as many gradients steps as steps performed during the rollout
                 gradient_steps = self.gradient_steps if self.gradient_steps > 0 else rollout.episode_timesteps
@@ -217,6 +151,15 @@ class HER(OffPolicyAlgorithm):
         callback.on_training_end()
 
         return self
+
+    def _setup_model(self) -> None:
+        self.model._setup_model()
+
+    def __getattr__(self, item):
+        if hasattr(self.model, item):
+            return getattr(self.model, item)
+        else:
+            raise AttributeError
 
     def collect_rollouts(
         self,
@@ -247,6 +190,7 @@ class HER(OffPolicyAlgorithm):
         :param log_interval: (int) Log data every ``log_interval`` episodes
         :return: (RolloutReturn)
         """
+
         episode_rewards, total_timesteps = [], []
         total_steps, total_episodes = 0, 0
 
@@ -254,7 +198,7 @@ class HER(OffPolicyAlgorithm):
         assert env.num_envs == 1, "OffPolicyAlgorithm only support single environment"
 
         if self.use_sde:
-            self.model.actor.reset_noise()
+            self.actor.reset_noise()
 
         callback.on_rollout_start()
         continue_training = True
@@ -265,15 +209,16 @@ class HER(OffPolicyAlgorithm):
 
             while not done:
                 # concatenate observation and (desired) goal
-                observation = self.model._last_obs
-                self.model._last_obs = np.concatenate([observation["observation"], observation["desired_goal"]], axis=1)
+                observation = self._last_obs
+                self._last_obs = np.concatenate([observation["observation"], observation["desired_goal"]], axis=1)
 
                 if self.use_sde and self.sde_sample_freq > 0 and total_steps % self.sde_sample_freq == 0:
                     # Sample a new noise matrix
-                    self.model.actor.reset_noise()
+                    self.actor.reset_noise()
 
                 # Select action randomly or according to policy
-                action, buffer_action = self.model._sample_action(learning_starts, action_noise)
+                self.model._last_obs = self._last_obs
+                action, buffer_action = self._sample_action(learning_starts, action_noise)
 
                 # Rescale and perform action
                 new_obs, reward, done, infos = env.step(action)
@@ -285,54 +230,61 @@ class HER(OffPolicyAlgorithm):
                 episode_reward += reward
 
                 # Retrieve reward and episode length if using Monitor wrapper
-                self.model._update_info_buffer(infos, done)
+                self._update_info_buffer(infos, done)
+                self.model.ep_info_buffer = self.ep_info_buffer
+                self.model.ep_success_buffer = self.ep_success_buffer
 
                 # Store episode in episode storage
                 if replay_buffer is not None:
                     # Store only the unnormalized version
-                    if self.model._vec_normalize_env is not None:
-                        new_obs_ = self.model._vec_normalize_env.get_original_obs()
-                        reward_ = self.model._vec_normalize_env.get_original_reward()
+                    if self._vec_normalize_env is not None:
+                        new_obs_ = self._vec_normalize_env.get_original_obs()
+                        reward_ = self._vec_normalize_env.get_original_reward()
                     else:
                         # Avoid changing the original ones
-                        self.model._last_original_obs, new_obs_, reward_ = observation, new_obs, reward
+                        self._last_original_obs, new_obs_, reward_ = observation, new_obs, reward
+                        self.model._last_original_obs = self._last_original_obs
 
                     # add current transition to episode storage
-                    self.episode_storage.append((self.model._last_original_obs, buffer_action, reward_, new_obs_, done))
+                    self.__episode_storage.append((self._last_original_obs, buffer_action, reward_, new_obs_, done))
 
-                self.model._last_obs = new_obs
+                self._last_obs = new_obs
+                self.model._last_obs = self._last_obs
                 # Save the unnormalized observation
-                if self.model._vec_normalize_env is not None:
-                    self.model._last_original_obs = new_obs_
+                if self._vec_normalize_env is not None:
+                    self._last_original_obs = new_obs_
+                    self.model._last_original_obs = self._last_original_obs
 
-                self.model.num_timesteps += 1
+                self.num_timesteps += 1
+                self.model.num_timesteps = self.num_timesteps
                 episode_timesteps += 1
                 total_steps += 1
-                self.model._update_current_progress_remaining(self.model.num_timesteps, self.model._total_timesteps)
+                self._update_current_progress_remaining(self.num_timesteps, self._total_timesteps)
 
                 # For DQN, check if the target network should be updated
                 # and update the exploration schedule
                 # For SAC/TD3, the update is done as the same time as the gradient update
                 # see https://github.com/hill-a/stable-baselines/issues/900
-                self.model._on_step()
+                self._on_step()
 
                 if 0 < n_steps <= total_steps:
                     break
 
             if done:
                 if self.online_sampling:
-                    observations, actions, rewards, next_observations, done = zip(*self.episode_storage)
-                    self.model.replay_buffer.add(observations, next_observations, actions, rewards, done)
-                    # self.model.replay_buffer.add(self.episode_storage)
+                    observations, actions, rewards, next_observations, done = zip(*self.__episode_storage)
+                    self.replay_buffer.add(observations, next_observations, actions, rewards, done)
+                    # self.replay_buffer.add(self.__episode_storage)
 
                 else:
                     # store episode in replay buffer
-                    self.store_transitions()
+                    self.__store_transitions()
                 # clear storage for current episode
-                self.episode_storage = []
+                self.__episode_storage = []
 
                 total_episodes += 1
-                self.model._episode_num += 1
+                self._episode_num += 1
+                self.model._episode_num = self._episode_num
                 episode_rewards.append(episode_reward)
                 total_timesteps.append(episode_timesteps)
 
@@ -340,17 +292,14 @@ class HER(OffPolicyAlgorithm):
                     action_noise.reset()
 
                 # Log training infos
-                if log_interval is not None and self.model._episode_num % log_interval == 0:
-                    self.model._dump_logs()
+                if log_interval is not None and self._episode_num % log_interval == 0:
+                    self._dump_logs()
 
         mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
 
         callback.on_rollout_end()
 
         return RolloutReturn(mean_reward, total_steps, total_episodes, continue_training)
-
-    def train(self, gradient_steps: int, batch_size: int) -> None:
-        self.model.train(gradient_steps=gradient_steps, batch_size=batch_size)
 
     def sample_goals(self, sample_idx: int) -> Union[np.ndarray, None]:
         """
@@ -361,35 +310,37 @@ class HER(OffPolicyAlgorithm):
         """
         if self.goal_strategy == GoalSelectionStrategy.FINAL:
             # replay with final state of current episode
-            return self.episode_storage[-1][0]["achieved_goal"]
+            return self.__episode_storage[-1][0]["achieved_goal"]
         elif self.goal_strategy == GoalSelectionStrategy.FUTURE:
             # replay with random state which comes from the same episode and was observed after current transition
             # we have no transition after last transition of episode
 
-            if (sample_idx + 1) < len(self.episode_storage):
-                index = np.random.choice(np.arange(sample_idx + 1, len(self.episode_storage)))
-                return self.episode_storage[index][0]["achieved_goal"]
+            if (sample_idx + 1) < len(self.__episode_storage):
+                index = np.random.choice(np.arange(sample_idx + 1, len(self.__episode_storage)))
+                return self.__episode_storage[index][0]["achieved_goal"]
         elif self.goal_strategy == GoalSelectionStrategy.EPISODE:
             # replay with random state which comes from the same episode as current transition
-            index = np.random.choice(np.arange(len(self.episode_storage)))
-            return self.episode_storage[index][0]["achieved_goal"]
+            index = np.random.choice(np.arange(len(self.__episode_storage)))
+            return self.__episode_storage[index][0]["achieved_goal"]
         elif self.goal_strategy == GoalSelectionStrategy.RANDOM:
             # replay with random state from the entire replay buffer
-            index = np.random.choice(np.arange(self.model.replay_buffer.size()))
-            obs = self.model.replay_buffer.observations[index]
+            index = np.random.choice(np.arange(self.replay_buffer.size()))
+            obs = self.replay_buffer.observations[index]
             # get only the observation part
-            obs_array = obs[:, : self.env.obs_dim]
+            # TODO
+            obs_dim = self.env.observation_space.shape[0] // 2
+            obs_array = obs[:, :obs_dim]
             return obs_array
         else:
             raise ValueError("Strategy for sampling goals not supported!")
 
-    def store_transitions(self) -> None:
+    def __store_transitions(self) -> None:
         """
         Store current episode in replay buffer. Sample additional goals and store new transitions in replay buffer.
         """
 
         # iterate over current episodes transitions
-        for idx, trans in enumerate(self.episode_storage):
+        for idx, trans in enumerate(self.__episode_storage):
 
             observation, action, reward, new_observation, done = trans
 
@@ -398,7 +349,7 @@ class HER(OffPolicyAlgorithm):
             new_obs = np.concatenate([new_observation["observation"], new_observation["desired_goal"]], axis=1)
 
             # store data in replay buffer
-            self.model.replay_buffer.add(obs, new_obs, action, reward, done)
+            self.replay_buffer.add(obs, new_obs, action, reward, done)
 
             # sample set of additional goals
             sampled_goals = [sample for sample in (self.sample_goals(idx) for i in range(self.n_goals)) if sample is not None]
@@ -413,4 +364,4 @@ class HER(OffPolicyAlgorithm):
                 new_obs = np.concatenate([new_observation["observation"], goal], axis=1)
 
                 # store data in replay buffer
-                self.model.replay_buffer.add(obs, new_obs, action, new_reward, done)
+                self.replay_buffer.add(obs, new_obs, action, new_reward, done)

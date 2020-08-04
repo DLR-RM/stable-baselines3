@@ -1,12 +1,12 @@
-from typing import List, Optional, Sequence, Union
+from typing import Union, Tuple
 
 import numpy as np
 from gym import spaces
 
-from stable_baselines3.common.vec_env import VecEnv
+from stable_baselines3.common.vec_env import VecEnv, VecEnvWrapper
 
 
-class ObsWrapper(VecEnv):
+class ObsWrapper(VecEnvWrapper):
     """
     Wrapper for a VecEnv which overrides the observation space for Hindsight Experience Replay to support dict observations.
 
@@ -14,9 +14,7 @@ class ObsWrapper(VecEnv):
     """
 
     def __init__(self, venv: VecEnv):
-        super(ObsWrapper, self).__init__(
-            num_envs=venv.num_envs, observation_space=venv.observation_space, action_space=venv.action_space
-        )
+        super(ObsWrapper, self).__init__(venv, venv.observation_space, venv.action_space)
 
         self.venv = venv
 
@@ -35,10 +33,10 @@ class ObsWrapper(VecEnv):
         # for the different types of spaces
         if isinstance(self.spaces[0], spaces.Box):
             low_values = np.concatenate(
-                [venv.observation_space["observation"].low, venv.observation_space["desired_goal"].low]
+                [venv.observation_space.spaces["observation"].low, venv.observation_space.spaces["desired_goal"].low]
             )
             high_values = np.concatenate(
-                [venv.observation_space["observation"].high, venv.observation_space["desired_goal"].high]
+                [venv.observation_space.spaces["observation"].high, venv.observation_space.spaces["desired_goal"].high]
             )
             self.observation_space = spaces.Box(low_values, high_values, dtype=np.float32)
         elif isinstance(self.spaces[0], spaces.MultiBinary):
@@ -48,31 +46,10 @@ class ObsWrapper(VecEnv):
             dimensions = [venv.observation_space.spaces["observation"].n, venv.observation_space.spaces["desired_goal"].n]
             self.observation_space = spaces.MultiDiscrete(dimensions)
         else:
-            raise NotImplementedError("{} space is not supported".format(type(self.spaces[0])))
+            raise NotImplementedError(f"{type(self.spaces[0])} space is not supported")
 
-    def reset(self):
+    def reset(self) -> Union[int, float]:
         return self.venv.reset()
 
-    def step_async(self, actions):
-        self.venv.step_async(actions)
-
-    def step_wait(self):
+    def step_wait(self) -> Tuple[Union[int, float], float, bool, dict]:
         return self.venv.step_wait()
-
-    def close(self):
-        return self.venv.close()
-
-    def get_attr(self, attr_name, indices=None):
-        return self.venv.get_attr(attr_name, indices)
-
-    def set_attr(self, attr_name, value, indices=None):
-        return self.venv.set_attr(attr_name, value, indices)
-
-    def env_method(self, method_name, *method_args, indices=None, **method_kwargs):
-        return self.venv.env_method(method_name, *method_args, indices=indices, **method_kwargs)
-
-    def get_images(self) -> Sequence[np.ndarray]:
-        return self.venv.get_images()
-
-    def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
-        return self.venv.seed(seed)

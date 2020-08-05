@@ -421,6 +421,7 @@ class NstepReplayBuffer(ReplayBuffer):
 
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
         # TODO(PartiallyTyped): explain why this assert was here
+        # and check why it can fail (it fails during some tests with DQN)
         # assert not np.any(batch_inds == self.pos)
         actions = self.actions[batch_inds, 0, :]
 
@@ -444,6 +445,23 @@ class NstepReplayBuffer(ReplayBuffer):
         # using indices we select the current transition, plus the next n_step ones
         rewards = self.rewards[indices].reshape(not_dones.shape)
         rewards = self._normalize_reward(rewards, env)
+
+        # TODO(PartiallyTyped): augment the n-step return with entropy term if needed
+        # the entropy term is not present in the first step
+        # if self.n_step > 1:
+        #     # Avoid computing entropy twice for the same observation
+        #     unique_indices = np.array(list(set(indices[:, 1:].flatten())))
+        #
+        #     # Compute entropy term
+        #     # TODO: convert to pytorch tensor on the correct device
+        #     _, log_prob = actor.action_log_prob(observations[unique_indices, :])
+        #
+        #     # Memory inneficient version but fast computation
+        #     # TODO: only allocate the memory for that array once
+        #     log_probs = np.zeros((self.buffer_size,))
+        #     log_probs[unique_indices] = log_prob.flatten()
+        #     # Add entropy term, only for n-step > 1
+        #     rewards[:, 1:] = rewards[:, 1:] - ent_coef * log_probs[indices[:, 1:]]
 
         # we filter through the indices.
         # The immediate indice, i.e. col 0 needs to be 1, so we ensure that it is here using np.ones

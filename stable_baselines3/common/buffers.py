@@ -418,7 +418,6 @@ class NstepReplayBuffer(ReplayBuffer):
         if not 0 < n_step <= buffer_size:
             raise ValueError("n_step needs to be strictly smaller than buffer_size, and strictly larger than 0")
         self.gamma = gamma
-        self.log_probs = np.zeros((self.buffer_size,))
 
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
         # TODO(PartiallyTyped): explain why this assert was here
@@ -449,24 +448,20 @@ class NstepReplayBuffer(ReplayBuffer):
 
         # TODO(PartiallyTyped): augment the n-step return with entropy term if needed
         # the entropy term is not present in the first step
-        if self.n_step > 1:
-            assert self.actor is not None
-            assert self.ent_coef is not None
-            # Avoid computing entropy twice for the same observation
-            unique_indices = np.array(list(set(indices[:, 1:].flatten())))
-
-            # Compute entropy term
-            # TODO: convert to pytorch tensor on the correct device
-            with th.no_grad():
-                obs = th.as_tensor(self.observations[unique_indices, :]).to(self.actor.device)
-                _, log_prob = self.actor.action_log_prob(obs)
-
-            # Memory inneficient version but fast computation
-            # TODO: only allocate the memory for that array once
-            # log_probs = np.zeros((self.buffer_size,))
-            self.log_probs[unique_indices] = log_prob.cpu().numpy().flatten()
-            # Add entropy term, only for n-step > 1
-            rewards[:, 1:] = rewards[:, 1:] - self.ent_coef * self.log_probs[indices[:, 1:]]
+        # if self.n_step > 1:
+        #     # Avoid computing entropy twice for the same observation
+        #     unique_indices = np.array(list(set(indices[:, 1:].flatten())))
+        #
+        #     # Compute entropy term
+        #     # TODO: convert to pytorch tensor on the correct device
+        #     _, log_prob = actor.action_log_prob(observations[unique_indices, :])
+        #
+        #     # Memory inneficient version but fast computation
+        #     # TODO: only allocate the memory for that array once
+        #     log_probs = np.zeros((self.buffer_size,))
+        #     log_probs[unique_indices] = log_prob.flatten()
+        #     # Add entropy term, only for n-step > 1
+        #     rewards[:, 1:] = rewards[:, 1:] - ent_coef * log_probs[indices[:, 1:]]
 
         # we filter through the indices.
         # The immediate indice, i.e. col 0 needs to be 1, so we ensure that it is here using np.ones

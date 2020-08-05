@@ -145,12 +145,6 @@ class SAC(OffPolicyAlgorithm):
     def _setup_model(self) -> None:
         super(SAC, self)._setup_model()
         self._create_aliases()
-        # HACK: pass the actor to the buffer
-        # when using n-step return
-        # TODO(PartiallyTyped): remove and pass it properly
-        self.replay_buffer.actor = self.actor
-        self.replay_buffer.ent_coef = 0.0
-
         # Target entropy is used when learning the entropy coefficient
         if self.target_entropy == "auto":
             # automatically set target entropy if needed
@@ -221,12 +215,6 @@ class SAC(OffPolicyAlgorithm):
                 ent_coef = self.ent_coef_tensor
 
             ent_coefs.append(ent_coef.item())
-
-            # HACK: pass the ent_coef to the buffer
-            # when using n-step return
-            # this is wrong for the first call to sample() (ent_coef=0.0)
-            # TODO(PartiallyTyped): remove and pass it properly
-            self.replay_buffer.ent_coef = ent_coef.item()
 
             # Optimize entropy coefficient, also called
             # entropy temperature or alpha in the paper

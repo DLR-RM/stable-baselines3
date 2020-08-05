@@ -8,9 +8,14 @@ import numpy as np
 
 from stable_baselines3.common import logger
 
-# Avoid circular import
+# Define type aliases here to avoid circular import
+# Used when we want to access one or more VecEnv
 VecEnvIndices = Union[None, int, Iterable[int]]
+# VecEnvObs is what is returned by the reset() method
+# it contains the observation for each env
 VecEnvObs = Union[np.ndarray, Dict[str, Any]]
+# VecEnvStepReturn is what is returned by the step() method
+# it contains the observation, reward, done, info for each env
 VecEnvStepReturn = Tuple[VecEnvObs, np.ndarray, np.ndarray, List[Dict]]
 
 

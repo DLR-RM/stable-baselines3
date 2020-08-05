@@ -70,7 +70,7 @@ def _check_nan(env: gym.Env) -> None:
     """Check for Inf and NaN using the VecWrapper."""
     vec_env = VecCheckNan(DummyVecEnv([lambda: env]))
     for _ in range(10):
-        action = [env.action_space.sample()]
+        action = np.array([env.action_space.sample()])
         _, _, _, _ = vec_env.step(action)
 
 

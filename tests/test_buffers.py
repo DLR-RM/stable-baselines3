@@ -108,7 +108,7 @@ def test_with_algo(algo):
     kwargs = {
         "policy_kwargs": dict(net_arch=[64]),
         "replay_buffer_class": NstepReplayBuffer,
-        "replay_buffer_kwargs": dict(gamma=0.99, n_step=10),
+        "replay_buffer_kwargs": dict(n_step=10),
     }
     if algo in [TD3, SAC]:
         env_id = "Pendulum-v0"

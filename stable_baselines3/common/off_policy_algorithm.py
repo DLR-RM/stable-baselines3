@@ -10,7 +10,7 @@ import torch as th
 
 from stable_baselines3.common import logger
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.buffers import ReplayBuffer
+from stable_baselines3.common.buffers import NstepReplayBuffer, ReplayBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.policies import BasePolicy
@@ -150,6 +150,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.replay_buffer = None
         self.replay_buffer_class = replay_buffer_class or ReplayBuffer
         self.replay_buffer_kwargs = dict(replay_buffer_kwargs or {})
+        if self.replay_buffer_class == NstepReplayBuffer:
+            self.replay_buffer_kwargs["gamma"] = gamma
 
     def _setup_model(self) -> None:
         self._setup_lr_schedule()

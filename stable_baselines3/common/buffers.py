@@ -420,7 +420,8 @@ class NstepReplayBuffer(ReplayBuffer):
         self.gamma = gamma
 
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
-        assert not np.any(batch_inds == self.pos)
+        # TODO(PartiallyTyped): explain why this assert was here
+        # assert not np.any(batch_inds == self.pos)
         actions = self.actions[batch_inds, 0, :]
 
         gamma = self.gamma

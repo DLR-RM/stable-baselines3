@@ -3,6 +3,31 @@
 Changelog
 ==========
 
+Pre-Release 0.9.0a0 (WIP)
+------------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+- Added ``unwrap_vec_wrapper()`` to ``common.vec_env`` to extract ``VecEnvWrapper`` if needed
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed a bug where the environment was reset twice when using ``evaluate_policy``
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Improve typing coverage of the ``VecEnv``
+- Removed ``AlreadySteppingError`` and ``NotSteppingError`` that were not used
+
+Documentation:
+^^^^^^^^^^^^^^
+
 Pre-Release 0.8.0 (2020-08-03)
 ------------------------------
 

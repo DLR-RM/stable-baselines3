@@ -1,7 +1,8 @@
 from collections import OrderedDict
 from copy import deepcopy
-from typing import Sequence
+from typing import Callable, List, Optional, Sequence
 
+import gym
 import numpy as np
 
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv
@@ -16,10 +17,11 @@ class DummyVecEnv(VecEnv):
     This can also be used for RL methods that
     require a vectorized environment, but that you want a single environments to train with.
 
-    :param env_fns: ([Gym Environment]) the list of environments to vectorize
+    :param env_fns: (List[Callable[[], gym.Env]]) a list of functions
+        that return environments to vectorize
     """
 
-    def __init__(self, env_fns):
+    def __init__(self, env_fns: List[Callable[[], gym.Env]]):
         self.envs = [fn() for fn in env_fns]
         env = self.envs[0]
         VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space)
@@ -33,7 +35,7 @@ class DummyVecEnv(VecEnv):
         self.actions = None
         self.metadata = env.metadata
 
-    def step_async(self, actions):
+    def step_async(self, actions: np.ndarray):
         self.actions = actions
 
     def step_wait(self):
@@ -48,7 +50,7 @@ class DummyVecEnv(VecEnv):
             self._save_obs(env_idx, obs)
         return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones), deepcopy(self.buf_infos))
 
-    def seed(self, seed=None):
+    def seed(self, seed: Optional[int] = None) -> List[int]:
         seeds = list()
         for idx, env in enumerate(self.envs):
             seeds.append(env.seed(seed + idx))

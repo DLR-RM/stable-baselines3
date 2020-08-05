@@ -2,7 +2,7 @@ import io
 import pathlib
 import time
 import warnings
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import gym
 import numpy as np
@@ -76,8 +76,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         env: Union[GymEnv, str],
         policy_base: Type[BasePolicy],
         learning_rate: Union[float, Callable],
-        replay_buffer_cls: Type[ReplayBuffer] = None,
-        replay_buffer_kwargs: Optional[Mapping[str, Any]] = None,
+        replay_buffer_class: Optional[Type[ReplayBuffer]] = None,
+        replay_buffer_kwargs: Optional[Dict[str, Any]] = None,
         buffer_size: int = int(1e6),
         learning_starts: int = 100,
         batch_size: int = 256,
@@ -148,13 +148,13 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.use_sde_at_warmup = use_sde_at_warmup
 
         self.replay_buffer = None
-        self.replay_buffer_cls = replay_buffer_cls or ReplayBuffer
+        self.replay_buffer_class = replay_buffer_class or ReplayBuffer
         self.replay_buffer_kwargs = dict(replay_buffer_kwargs or {})
 
     def _setup_model(self) -> None:
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
-        self.replay_buffer = self.replay_buffer_cls(
+        self.replay_buffer = self.replay_buffer_class(
             self.buffer_size,
             self.observation_space,
             self.action_space,

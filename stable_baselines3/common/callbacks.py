@@ -110,7 +110,15 @@ class BaseCallback(ABC):
         :param: ``locals_`` (Dict[str, Any]) the local variables during rollout collection
         """
         self.locals.update(locals_)
+        self.update_child_locals(locals_)
 
+    def update_child_locals(self, locals_: Dict[str, Any]) -> None:
+        """
+        Update the references to the local variables on sub callbacks.
+
+        :param: ``locals_`` (Dict[str, Any]) the local variables during rollout collection
+        """
+        pass
 
 class EventCallback(BaseCallback):
     """
@@ -145,6 +153,14 @@ class EventCallback(BaseCallback):
     def _on_step(self) -> bool:
         return True
 
+    def update_child_locals(self, locals_: Dict[str, Any]) -> None:
+        """
+        Update the references to the local variables.
+
+        :param: ``locals_`` (Dict[str, Any]) the local variables during rollout collection
+        """
+        if self.callback is not None:
+            self.callback.update_locals(locals_)
 
 class CallbackList(BaseCallback):
     """
@@ -185,6 +201,15 @@ class CallbackList(BaseCallback):
     def _on_training_end(self) -> None:
         for callback in self.callbacks:
             callback.on_training_end()
+    
+    def update_child_locals(self, locals_: Dict[str, Any]) -> None:
+        """
+        Update the references to the local variables.
+
+        :param: ``locals_`` (Dict[str, Any]) the local variables during rollout collection
+        """
+        for callback in self.callbacks:
+            callback.update_locals(locals_)
 
 
 class CheckpointCallback(BaseCallback):
@@ -350,6 +375,15 @@ class EvalCallback(EventCallback):
                     return self._on_event()
 
         return True
+
+    def update_child_locals(self, locals_: Dict[str, Any]) -> None:
+        """
+        Update the references to the local variables.
+
+        :param: ``locals_`` (Dict[str, Any]) the local variables during rollout collection
+        """
+        if self.callback:
+            self.callback.update_locals(locals_)
 
 
 class StopTrainingOnRewardThreshold(BaseCallback):

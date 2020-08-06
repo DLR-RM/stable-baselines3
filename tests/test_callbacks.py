@@ -12,7 +12,6 @@ from stable_baselines3.common.callbacks import (
     EvalCallback,
     EveryNTimesteps,
     StopTrainingOnRewardThreshold,
-    BaseCallback
 )
 
 def call_counter_wrapper(fn):

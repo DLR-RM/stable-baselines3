@@ -1,6 +1,6 @@
+import copy
 import os
 import shutil
-import copy
 
 import gym
 import pytest

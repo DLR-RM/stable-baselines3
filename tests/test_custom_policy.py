@@ -2,6 +2,7 @@ import pytest
 import torch as th
 
 from stable_baselines3 import A2C, PPO, SAC, TD3
+from stable_baselines3.common.sb2_compat.rmsprop_tf_like import RMSpropTFLike
 
 
 @pytest.mark.parametrize(
@@ -32,3 +33,8 @@ def test_custom_offpolicy(model_class, net_arch):
 def test_custom_optimizer(model_class, optimizer_kwargs):
     policy_kwargs = dict(optimizer_class=th.optim.AdamW, optimizer_kwargs=optimizer_kwargs, net_arch=[32])
     _ = model_class("MlpPolicy", "Pendulum-v0", policy_kwargs=policy_kwargs).learn(1000)
+
+
+def test_tf_like_rmsprop_optimizer():
+    policy_kwargs = dict(optimizer_class=RMSpropTFLike, net_arch=[32])
+    _ = A2C("MlpPolicy", "Pendulum-v0", policy_kwargs=policy_kwargs).learn(1000)

@@ -1,4 +1,4 @@
-from typing import Union, Tuple
+from typing import Tuple, Union
 
 import numpy as np
 from gym import spaces
@@ -25,9 +25,8 @@ class ObsWrapper(VecEnvWrapper):
             self.obs_dim = 1
             self.goal_dim = 1
         else:
-            goal_space_shape = venv.observation_space.spaces["achieved_goal"].shape
             self.obs_dim = venv.observation_space.spaces["observation"].shape[0]
-            self.goal_dim = goal_space_shape[0]
+            self.goal_dim = venv.observation_space.spaces["achieved_goal"].shape[0]
 
         # new observation space with concatenated observation and (desired) goal
         # for the different types of spaces

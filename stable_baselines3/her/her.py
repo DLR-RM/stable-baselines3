@@ -1,14 +1,18 @@
-from typing import Callable, Optional, Type, Union
+import io
+import pathlib
+from typing import Callable, Iterable, List, Optional, Tuple, Type, Union
 
 import numpy as np
-from stable_baselines3.common.base_class import BaseAlgorithm
 
+from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
+from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr, save_to_zip_file
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
+from stable_baselines3.common.utils import check_for_correct_spaces
 from stable_baselines3.common.vec_env import VecEnv, VecEnvWrapper
 from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
 from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
@@ -36,7 +40,7 @@ class HER(BaseAlgorithm):
 
     :param policy: (BasePolicy) The policy model to use.
     :param env: (VecEnv) The environment to learn from.
-    :param model: (OffPolicyAlgorithm) Off policy model which will be used with hindsight experience replay. (SAC, TD3)
+    :param model_class: (OffPolicyAlgorithm) Off policy model which will be used with hindsight experience replay. (SAC, TD3)
     :param n_goals: (int) Number of sampled goals for replay.
     :param goal_strategy: (GoalSelectionStrategy or str) Strategy for sampling goals for replay.
         One of ['episode', 'final', 'future', 'random']
@@ -51,7 +55,7 @@ class HER(BaseAlgorithm):
         self,
         policy: Type[BasePolicy],
         env: VecEnv,
-        model: Type[OffPolicyAlgorithm],
+        model_class: Type[OffPolicyAlgorithm],
         n_goals: int = 5,
         goal_strategy: Union[GoalSelectionStrategy, str] = "future",
         online_sampling: bool = False,
@@ -67,7 +71,10 @@ class HER(BaseAlgorithm):
         super(HER, self).__init__(policy=BasePolicy, env=self.env, policy_base=BasePolicy, learning_rate=learning_rate)
 
         # model initialization
-        self.model = model(policy=policy, env=self.env, learning_rate=learning_rate, *args, **kwargs)
+        self.model_class = model_class
+        self.model = model_class(
+            policy=policy, env=self.env, learning_rate=learning_rate, *args, **kwargs,  # pytype: disable=wrong-keyword-args
+        )
 
         self.verbose = self.model.verbose
         self.tensorboard_log = self.model.tensorboard_log
@@ -85,6 +92,7 @@ class HER(BaseAlgorithm):
 
         # if we sample her transitions online use custom replay buffer
         self.online_sampling = online_sampling
+        self.her_ratio = her_ratio
         if self.online_sampling:
             self.model.replay_buffer = HerReplayBuffer(
                 self.env,
@@ -94,12 +102,15 @@ class HER(BaseAlgorithm):
                 self.env.action_space,
                 self.device,
                 self.n_envs,
-                her_ratio,
+                self.her_ratio,
             )
 
         # storage for transitions of current episode
-        self.__episode_storage = []
+        self._episode_storage = []
         self.n_goals = n_goals
+
+    def _setup_model(self) -> None:
+        self.model._setup_model()
 
     def learn(
         self,
@@ -151,15 +162,6 @@ class HER(BaseAlgorithm):
         callback.on_training_end()
 
         return self
-
-    def _setup_model(self) -> None:
-        self.model._setup_model()
-
-    def __getattr__(self, item):
-        if hasattr(self.model, item):
-            return getattr(self.model, item)
-        else:
-            raise AttributeError
 
     def collect_rollouts(
         self,
@@ -246,7 +248,7 @@ class HER(BaseAlgorithm):
                         self.model._last_original_obs = self._last_original_obs
 
                     # add current transition to episode storage
-                    self.__episode_storage.append((self._last_original_obs, buffer_action, reward_, new_obs_, done))
+                    self._episode_storage.append((self._last_original_obs, buffer_action, reward_, new_obs_, done))
 
                 self._last_obs = new_obs
                 self.model._last_obs = self._last_obs
@@ -272,15 +274,15 @@ class HER(BaseAlgorithm):
 
             if done:
                 if self.online_sampling:
-                    observations, actions, rewards, next_observations, done = zip(*self.__episode_storage)
+                    observations, actions, rewards, next_observations, done = zip(*self._episode_storage)
                     self.replay_buffer.add(observations, next_observations, actions, rewards, done)
-                    # self.replay_buffer.add(self.__episode_storage)
+                    # self.replay_buffer.add(self._episode_storage)
 
                 else:
                     # store episode in replay buffer
-                    self.__store_transitions()
+                    self._store_transitions()
                 # clear storage for current episode
-                self.__episode_storage = []
+                self._episode_storage = []
 
                 total_episodes += 1
                 self._episode_num += 1
@@ -301,46 +303,45 @@ class HER(BaseAlgorithm):
 
         return RolloutReturn(mean_reward, total_steps, total_episodes, continue_training)
 
-    def sample_goals(self, sample_idx: int) -> Union[np.ndarray, None]:
+    def sample_goals(self, sample_idx: int, obs_dim: int) -> Union[np.ndarray, None]:
         """
         Sample a goal based on goal_strategy.
 
         :param sample_idx: (int) Index of current transition.
+        :param obs_dim: (int) Dimension of real observation without goal. It is needed for the random strategy.
         :return: (np.ndarray or None) Return sampled goal.
         """
         if self.goal_strategy == GoalSelectionStrategy.FINAL:
             # replay with final state of current episode
-            return self.__episode_storage[-1][0]["achieved_goal"]
+            return self._episode_storage[-1][0]["achieved_goal"]
         elif self.goal_strategy == GoalSelectionStrategy.FUTURE:
             # replay with random state which comes from the same episode and was observed after current transition
             # we have no transition after last transition of episode
 
-            if (sample_idx + 1) < len(self.__episode_storage):
-                index = np.random.choice(np.arange(sample_idx + 1, len(self.__episode_storage)))
-                return self.__episode_storage[index][0]["achieved_goal"]
+            if (sample_idx + 1) < len(self._episode_storage):
+                index = np.random.choice(np.arange(sample_idx + 1, len(self._episode_storage)))
+                return self._episode_storage[index][0]["achieved_goal"]
         elif self.goal_strategy == GoalSelectionStrategy.EPISODE:
             # replay with random state which comes from the same episode as current transition
-            index = np.random.choice(np.arange(len(self.__episode_storage)))
-            return self.__episode_storage[index][0]["achieved_goal"]
+            index = np.random.choice(np.arange(len(self._episode_storage)))
+            return self._episode_storage[index][0]["achieved_goal"]
         elif self.goal_strategy == GoalSelectionStrategy.RANDOM:
             # replay with random state from the entire replay buffer
             index = np.random.choice(np.arange(self.replay_buffer.size()))
             obs = self.replay_buffer.observations[index]
             # get only the observation part
-            # TODO
-            obs_dim = self.env.observation_space.shape[0] // 2
             obs_array = obs[:, :obs_dim]
             return obs_array
         else:
             raise ValueError("Strategy for sampling goals not supported!")
 
-    def __store_transitions(self) -> None:
+    def _store_transitions(self) -> None:
         """
         Store current episode in replay buffer. Sample additional goals and store new transitions in replay buffer.
         """
 
         # iterate over current episodes transitions
-        for idx, trans in enumerate(self.__episode_storage):
+        for idx, trans in enumerate(self._episode_storage):
 
             observation, action, reward, new_observation, done = trans
 
@@ -352,7 +353,10 @@ class HER(BaseAlgorithm):
             self.replay_buffer.add(obs, new_obs, action, reward, done)
 
             # sample set of additional goals
-            sampled_goals = [sample for sample in (self.sample_goals(idx) for i in range(self.n_goals)) if sample is not None]
+            obs_dim = observation["observation"].shape[1]
+            sampled_goals = [
+                sample for sample in (self.sample_goals(idx, obs_dim) for i in range(self.n_goals)) if sample is not None
+            ]
 
             # iterate over sampled goals and store new transitions in replay buffer
             for goal in sampled_goals:
@@ -365,3 +369,146 @@ class HER(BaseAlgorithm):
 
                 # store data in replay buffer
                 self.replay_buffer.add(obs, new_obs, action, new_reward, done)
+
+    def __getattr__(self, item):
+        """
+        Find attribute from model class if this class does not have it.
+        """
+        if hasattr(self.model, item):
+            return getattr(self.model, item)
+        else:
+            raise AttributeError
+
+    def get_torch_variables(self) -> Tuple[List[str], List[str]]:
+        return self.model.get_torch_variables()
+
+    def save(
+        self,
+        path: Union[str, pathlib.Path, io.BufferedIOBase],
+        exclude: Optional[Iterable[str]] = None,
+        include: Optional[Iterable[str]] = None,
+    ) -> None:
+        """
+        Save all the attributes of the object and the model parameters in a zip-file.
+
+        :param path: (Union[str, pathlib.Path, io.BufferedIOBase]) path to the file where the rl agent should be saved
+        :param exclude: name of parameters that should be excluded in addition to the default one
+        :param include: name of parameters that might be excluded but should be included anyway
+        """
+        # copy parameter list so we don't mutate the original dict
+        data = self.__dict__.copy()
+        # add model parameter
+        data["model_dict"] = self.model.__dict__.copy()
+
+        # Exclude is union of specified parameters (if any) and standard exclusions
+        if exclude is None:
+            exclude = []
+        exclude = set(exclude).union(self.excluded_save_params())
+        exclude.add("model")
+
+        # Do not exclude params if they are specifically included
+        if include is not None:
+            exclude = exclude.difference(include)
+
+        state_dicts_names, tensors_names = self.get_torch_variables()
+        # any params that are in the save vars must not be saved by data
+        torch_variables = state_dicts_names + tensors_names
+        for torch_var in torch_variables:
+            # we need to get only the name of the top most module as we'll remove that
+            var_name = torch_var.split(".")[0]
+            exclude.add(var_name)
+
+        # Remove parameter entries of parameters which are to be excluded
+        for param_name in exclude:
+            data.pop(param_name, None)
+            data["model_dict"].pop(param_name, None)
+
+        # Build dict of tensor variables
+        tensors = None
+        if tensors_names is not None:
+            tensors = {}
+            for name in tensors_names:
+                attr = recursive_getattr(self, name)
+                tensors[name] = attr
+
+        # Build dict of state_dicts
+        params_to_save = {}
+        for name in state_dicts_names:
+            # always take attribute from model class if possible
+            if hasattr(self.model, name):
+                attr = recursive_getattr(self.model, name)
+            else:
+                attr = recursive_getattr(self, name)
+            # Retrieve state dict
+            params_to_save[name] = attr.state_dict()
+
+        save_to_zip_file(path, data=data, params=params_to_save, tensors=tensors)
+
+    @classmethod
+    def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs) -> "BaseAlgorithm":
+        """
+        Load the model from a zip-file
+
+        :param load_path: the location of the saved data
+        :param env: the new environment to run the loaded model on
+            (can be None if you only need prediction from a trained model) has priority over any saved environment
+        :param kwargs: extra arguments to change the model when loading
+        """
+        data, params, tensors = load_from_zip_file(load_path)
+
+        if "policy_kwargs" in data:
+            for arg_to_remove in ["device"]:
+                if arg_to_remove in data["policy_kwargs"]:
+                    del data["policy_kwargs"][arg_to_remove]
+
+        if "policy_kwargs" in kwargs and kwargs["policy_kwargs"] != data["policy_kwargs"]:
+            raise ValueError(
+                f"The specified policy kwargs do not equal the stored policy kwargs."
+                f"Stored kwargs: {data['policy_kwargs']}, specified kwargs: {kwargs['policy_kwargs']}"
+            )
+
+        # check if observation space and action space are part of the saved parameters
+        if "observation_space" not in data or "action_space" not in data:
+            raise KeyError("The observation_space and action_space were not given, can't verify new environments")
+        # check if given env is valid
+        if env is not None:
+            env = check_wrapped_env(env)
+            check_for_correct_spaces(env, data["observation_space"], data["action_space"])
+        # if no new env was given use stored env if possible
+        if env is None and "env" in data:
+            env = data["env"]
+
+        # noinspection PyArgumentList
+        model = cls(
+            policy=data["model_dict"]["policy_class"],
+            env=env,
+            model_class=data["model_class"],
+            n_goals=data["n_goals"],
+            goal_strategy=data["goal_strategy"],
+            online_sampling=data["online_sampling"],
+            her_ratio=data["her_ratio"],
+            learning_rate=data["learning_rate"],
+            policy_kwargs=data["model_dict"]["policy_kwargs"],
+            _init_setup_model=True,  # pytype: disable=not-instantiable,wrong-keyword-args
+        )
+
+        # load parameters
+        model.__dict__.update(data)
+        model.model.__dict__.update(data["model_dict"])
+        model.__dict__.update(kwargs)
+
+        # put state_dicts back in place
+        for name in params:
+            attr = recursive_getattr(model.model, name)
+            attr.load_state_dict(params[name])
+
+        # put tensors back in place
+        if tensors is not None:
+            for name in tensors:
+                recursive_setattr(model.model, name, tensors[name])
+
+        # Sample gSDE exploration matrix, so it uses the right device
+        # see issue #44
+        if model.model.use_sde:
+            model.model.policy.reset_noise()  # pytype: disable=attribute-error
+        return model

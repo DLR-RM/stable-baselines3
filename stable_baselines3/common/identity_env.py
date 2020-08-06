@@ -119,7 +119,7 @@ class FakeImageEnv(Env):
         self, action_dim: int = 6, screen_height: int = 84, screen_width: int = 84, n_channels: int = 1, discrete: bool = True
     ):
 
-        self.observation_space = Box(low=0, high=255, shape=(screen_height, screen_width, n_channels), dtype=np.uint8)
+        self.observation_space = Box(low=0, high=255, shape=(n_channels, screen_height, screen_width), dtype=np.uint8)
         if discrete:
             self.action_space = Discrete(action_dim)
         else:

@@ -131,23 +131,25 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
 
 
 class StepEnv(gym.Env):
-    def __init__(self, max_steps):
+    def __init__(self, max_steps, n_dims):
         """Gym environment for testing that terminal observation is inserted
         correctly."""
         self.action_space = gym.spaces.Discrete(2)
-        self.observation_space = gym.spaces.Box(np.array([0]), np.array([999]), dtype="int")
+        assert n_dims >= 1
+        self.n_dims = n_dims
+        self.observation_space = gym.spaces.Box(0, 999, shape=(1, ) * n_dims, dtype="int")
         self.max_steps = max_steps
         self.current_step = 0
 
     def reset(self):
         self.current_step = 0
-        return np.array([self.current_step], dtype="int")
+        return np.array([self.current_step], dtype="int").reshape((1, ) * self.n_dims)
 
     def step(self, action):
         prev_step = self.current_step
         self.current_step += 1
         done = self.current_step >= self.max_steps
-        return np.array([prev_step], dtype="int"), 0.0, done, {}
+        return np.array([prev_step], dtype="int").reshape((1, ) * self.n_dims), 0.0, done, {}
 
 
 @pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
@@ -156,7 +158,7 @@ def test_vecenv_terminal_obs(vec_env_class, vec_env_wrapper):
     """Test that 'terminal_observation' gets added to info dict upon
     termination."""
     step_nums = [i + 5 for i in range(N_ENVS)]
-    vec_env = vec_env_class([functools.partial(StepEnv, n) for n in step_nums])
+    vec_env = vec_env_class([functools.partial(StepEnv, n, 1) for n in step_nums])
 
     if vec_env_wrapper is not None:
         if vec_env_wrapper == VecFrameStack:
@@ -191,6 +193,35 @@ def test_vecenv_terminal_obs(vec_env_class, vec_env_wrapper):
                     assert np.all(obs == 0)
 
         prev_obs_b = obs_b
+
+    vec_env.close()
+
+
+@pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
+@pytest.mark.parametrize("pad_dim", [0, 1, -1])
+def test_vec_frame_stack(vec_env_class, pad_dim):
+    """Test stacking along different axes."""
+    n_dims = 2
+    vec_env = vec_env_class([functools.partial(StepEnv, 4, n_dims) for _ in range(N_ENVS)])
+    vec_env = VecFrameStack(vec_env, n_stack=3, dim=pad_dim)
+
+    init_obs = vec_env.reset()
+    assert np.all(init_obs == 0)
+
+    zero_acts = np.zeros((N_ENVS,), dtype="int")
+    for i in range(3):
+        step_obs, _, _, _ = vec_env.step(zero_acts)
+    abs_dim = pad_dim + n_dims if pad_dim < 0 else pad_dim
+    before_dims = abs_dim
+    after_dims = n_dims - abs_dim - 1
+    # ensures that we get a range stacked along the correct axis
+    desired_range = np.arange(3).reshape((1, ) * before_dims + (-1, ) + (1, ) * after_dims)
+    batch_array = np.stack([desired_range] * N_ENVS, axis=0)
+    assert np.all(step_obs == batch_array)
+
+    # now reset (implicitly, at end of episode)
+    reset_obs, _, _, _ = vec_env.step(zero_acts)
+    assert np.all(reset_obs == 0)
 
     vec_env.close()
 

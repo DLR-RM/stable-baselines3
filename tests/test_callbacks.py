@@ -14,12 +14,15 @@ from stable_baselines3.common.callbacks import (
     StopTrainingOnRewardThreshold,
 )
 
+
 def call_counter_wrapper(fn):
     def internal(self, *args, **kwargs):
         v = fn(self, *args, **kwargs)
-        setattr(self, f"_{fn.__name__}_called", getattr(self, f"_{fn.__name__}_called", 0)+1)
+        setattr(self, f"_{fn.__name__}_called", getattr(self, f"_{fn.__name__}_called", 0) + 1)
         return v
+
     return internal
+
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN, DDPG])
 def test_callbacks(tmp_path, model_class):
@@ -30,7 +33,7 @@ def test_callbacks(tmp_path, model_class):
     # Create RL model
     # Small network for fast test
     model = model_class("MlpPolicy", env_name, policy_kwargs=dict(net_arch=[32]))
-    
+
     # Instrument the class to count the number of calls
     _CheckpointCallback = CheckpointCallback
     _CheckpointCallback.update_locals = call_counter_wrapper(_CheckpointCallback.update_locals)
@@ -53,7 +56,7 @@ def test_callbacks(tmp_path, model_class):
     _EveryNTimesteps = copy.deepcopy(EveryNTimesteps)
     _EveryNTimesteps.update_locals = call_counter_wrapper(_EveryNTimesteps.update_locals)
     _EveryNTimesteps.update_child_locals = call_counter_wrapper(_EveryNTimesteps.update_child_locals)
-    
+
     event_callback = _EveryNTimesteps(n_steps=500, callback=checkpoint_on_event)
 
     # Instrument the class to count the number of calls
@@ -63,13 +66,23 @@ def test_callbacks(tmp_path, model_class):
 
     callback = _CallbackList([checkpoint_callback, eval_callback, event_callback])
     model.learn(500, callback=callback)
-    
+
     # ensure we call update locals the correct number of times.
-    assert callback._update_locals_called == callback.n_calls == checkpoint_callback._update_locals_called == checkpoint_on_event._update_locals_called
-    
+    assert (
+        callback._update_locals_called
+        == callback.n_calls
+        == checkpoint_callback._update_locals_called
+        == checkpoint_on_event._update_locals_called
+    )
+
     # ensure we update the child locals the correct number of times.
-    assert callback._update_child_locals_called == callback.n_calls == checkpoint_callback._update_child_locals_called  == checkpoint_on_event._update_child_locals_called
-    
+    assert (
+        callback._update_child_locals_called
+        == callback.n_calls
+        == checkpoint_callback._update_child_locals_called
+        == checkpoint_on_event._update_child_locals_called
+    )
+
     model.learn(500, callback=None)
     # Transform callback into a callback list automatically
     model.learn(500, callback=[checkpoint_callback, eval_callback])
@@ -77,6 +90,7 @@ def test_callbacks(tmp_path, model_class):
     model.learn(500, callback=lambda _locals, _globals: True)
     if os.path.exists(log_folder):
         shutil.rmtree(log_folder)
+
 
 def select_env(model_class) -> str:
     if model_class is DQN:

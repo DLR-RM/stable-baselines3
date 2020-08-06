@@ -120,6 +120,7 @@ class BaseCallback(ABC):
         """
         pass
 
+
 class EventCallback(BaseCallback):
     """
     Base class for triggering callback on event.
@@ -162,6 +163,7 @@ class EventCallback(BaseCallback):
         if self.callback is not None:
             self.callback.update_locals(locals_)
 
+
 class CallbackList(BaseCallback):
     """
     Class for chaining callbacks.
@@ -201,7 +203,7 @@ class CallbackList(BaseCallback):
     def _on_training_end(self) -> None:
         for callback in self.callbacks:
             callback.on_training_end()
-    
+
     def update_child_locals(self, locals_: Dict[str, Any]) -> None:
         """
         Update the references to the local variables.

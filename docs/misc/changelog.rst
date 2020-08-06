@@ -3,8 +3,35 @@
 Changelog
 ==========
 
-Pre-Release 0.8.0a6 (WIP)
+Pre-Release 0.9.0a0 (WIP)
 ------------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+- Added ``unwrap_vec_wrapper()`` to ``common.vec_env`` to extract ``VecEnvWrapper`` if needed
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed a bug where the environment was reset twice when using ``evaluate_policy``
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Improve typing coverage of the ``VecEnv``
+- Removed ``AlreadySteppingError`` and ``NotSteppingError`` that were not used
+
+Documentation:
+^^^^^^^^^^^^^^
+
+Pre-Release 0.8.0 (2020-08-03)
+------------------------------
+
+**DQN, DDPG, bug fixes and performance matching for Atari games**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -34,6 +61,8 @@ Bug Fixes:
 - Fixed a bug with orthogonal initialization when `bias=False` in custom policy (@rk37)
 - Fixed approximate entropy calculation in PPO and A2C. (@andyshih12)
 - Fixed DQN target network sharing feature extractor with the main network.
+- Fixed storing correct ``dones`` in on-policy algorithm rollout collection. (@andyshih12)
+- Fixed number of filters in final convolutional layer in NatureCNN to match original implementation.
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -49,6 +78,7 @@ Others:
 - Ignored errors from newer pytype version
 - Added a check when using ``gSDE``
 - Removed codacy dependency from Dockerfile
+- Added ``common.sb2_compat.RMSpropTFLike`` optimizer, which corresponds closer to the implementation of RMSprop from Tensorflow.
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -57,6 +87,7 @@ Documentation:
 - Added Unity reacher to the projects page (@koulakis)
 - Added PyBullet colab notebook
 - Fixed typo in PPO example code (@joeljosephjin)
+- Fixed typo in custom policy doc (@RaphaelWag)
 
 
 
@@ -359,4 +390,4 @@ And all the contributors:
 @Miffyli @dwiel @miguelrass @qxcv @jaberkow @eavelardev @ruifeng96150 @pedrohbtp @srivatsankrishnan @evilsocket
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
-@tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12
+@tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag

@@ -10,7 +10,7 @@ import torch as th
 
 from stable_baselines3.common import logger
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.buffers import ReplayBuffer
+from stable_baselines3.common.buffers import NstepReplayBuffer, ReplayBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.policies import BasePolicy
@@ -67,6 +67,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param use_sde_at_warmup: (bool) Whether to use gSDE instead of uniform sampling
         during the warm up phase (before learning starts)
     :param sde_support: (bool) Whether the model support gSDE or not
+    :param n_step: (int) Number of steps to consider when computing the target Q-value
     """
 
     def __init__(
@@ -75,6 +76,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         env: Union[GymEnv, str],
         policy_base: Type[BasePolicy],
         learning_rate: Union[float, Callable],
+        replay_buffer_class: Optional[Type[ReplayBuffer]] = None,
+        replay_buffer_kwargs: Optional[Dict[str, Any]] = None,
         buffer_size: int = int(1e6),
         learning_starts: int = 100,
         batch_size: int = 256,
@@ -137,7 +140,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             )
 
         self.actor = None  # type: Optional[th.nn.Module]
-        self.replay_buffer = None  # type: Optional[ReplayBuffer]
         # Update policy keyword arguments
         if sde_support:
             self.policy_kwargs["use_sde"] = self.use_sde
@@ -145,15 +147,22 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # For gSDE only
         self.use_sde_at_warmup = use_sde_at_warmup
 
+        self.replay_buffer = None
+        self.replay_buffer_class = replay_buffer_class or ReplayBuffer
+        self.replay_buffer_kwargs = dict(replay_buffer_kwargs or {})
+        if self.replay_buffer_class == NstepReplayBuffer:
+            self.replay_buffer_kwargs["gamma"] = gamma
+
     def _setup_model(self) -> None:
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
-        self.replay_buffer = ReplayBuffer(
+        self.replay_buffer = self.replay_buffer_class(
             self.buffer_size,
             self.observation_space,
             self.action_space,
             self.device,
             optimize_memory_usage=self.optimize_memory_usage,
+            **self.replay_buffer_kwargs
         )
         self.policy = self.policy_class(
             self.observation_space,
@@ -205,7 +214,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             and self.replay_buffer is not None
             and (self.replay_buffer.full or self.replay_buffer.pos > 0)
         )
-
+        assert self.replay_buffer is not None
         if truncate_last_traj:
             warnings.warn(
                 "The last trajectory in the replay buffer will be truncated, "

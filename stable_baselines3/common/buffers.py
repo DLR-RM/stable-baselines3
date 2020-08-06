@@ -381,3 +381,119 @@ class RolloutBuffer(BaseBuffer):
             self.returns[batch_inds].flatten(),
         )
         return RolloutBufferSamples(*tuple(map(self.to_torch, data)))
+
+
+class NstepReplayBuffer(ReplayBuffer):
+    """
+    Replay Buffer that computes N-step returns.
+
+    :param buffer_size: (int) Max number of element in the buffer
+    :param observation_space: (spaces.Space) Observation space
+    :param action_space: (spaces.Space) Action space
+    :param device: (Union[th.device, str]) PyTorch device
+        to which the values will be converted
+    :param n_envs: (int) Number of parallel environments
+    :param optimize_memory_usage: (bool) Enable a memory efficient variant
+        of the replay buffer which reduces by almost a factor two the memory used,
+        at a cost of more complexity.
+        See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
+        and https://github.com/DLR-RM/stable-baselines3/pull/28#issuecomment-637559274
+    :param n_step: (int) The number of transitions to consider when computing n-step returns
+    :param gamma:  (float) The discount factor for future rewards.
+    """
+
+    def __init__(
+        self,
+        buffer_size: int,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
+        device: Union[th.device, str] = "cpu",
+        n_envs: int = 1,
+        optimize_memory_usage: bool = False,
+        n_step: int = 1,
+        gamma: float = 0.99,
+    ):
+        super().__init__(buffer_size, observation_space, action_space, device, n_envs, optimize_memory_usage)
+        self.n_step = int(n_step)
+        if not 0 < n_step <= buffer_size:
+            raise ValueError("n_step needs to be strictly smaller than buffer_size, and strictly larger than 0")
+        self.gamma = gamma
+
+    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
+        # TODO(PartiallyTyped): explain why this assert was here
+        # and check why it can fail (it fails during some tests with DQN)
+        # assert not np.any(batch_inds == self.pos)
+        actions = self.actions[batch_inds, 0, :]
+
+        gamma = self.gamma
+
+        # Broadcasting turns 1dim arange matrix to 2 dimensional matrix that contains all
+        # the indices, % buffersize keeps us in buffer range
+        # indices is a [B x n_step ] matrix
+        indices = (np.arange(self.n_step) + batch_inds.reshape(-1, 1)) % self.buffer_size
+
+        # two dim matrix of not dones. If done is true, then subsequent dones are turned to 0
+        # using accumulate. This ensures that we don't use invalid transitions
+        # not_dones is a [B x n_step] matrix
+        not_dones = np.multiply.accumulate(1 - self.dones[indices], 1).reshape(-1, self.n_step)
+
+        # vector of the discount factors
+        # [n_step] vector
+        gammas = gamma ** np.arange(self.n_step)
+
+        # two dim matrix of rewards for the indices
+        # using indices we select the current transition, plus the next n_step ones
+        rewards = self.rewards[indices].reshape(not_dones.shape)
+        rewards = self._normalize_reward(rewards, env)
+
+        # TODO(PartiallyTyped): augment the n-step return with entropy term if needed
+        # the entropy term is not present in the first step
+        # if self.n_step > 1:
+        #     # Avoid computing entropy twice for the same observation
+        #     unique_indices = np.array(list(set(indices[:, 1:].flatten())))
+        #
+        #     # Compute entropy term
+        #     # TODO: convert to pytorch tensor on the correct device
+        #     _, log_prob = actor.action_log_prob(observations[unique_indices, :])
+        #
+        #     # Memory inneficient version but fast computation
+        #     # TODO: only allocate the memory for that array once
+        #     log_probs = np.zeros((self.buffer_size,))
+        #     log_probs[unique_indices] = log_prob.flatten()
+        #     # Add entropy term, only for n-step > 1
+        #     rewards[:, 1:] = rewards[:, 1:] - ent_coef * log_probs[indices[:, 1:]]
+
+        # we filter through the indices.
+        # The immediate indice, i.e. col 0 needs to be 1, so we ensure that it is here using np.ones
+        # If the jth transition is terminal, we need to ignore the j+1 but keep the reward of the jth
+        # we do this by "shifting" the not_dones one step to the right
+        # so a terminal transition has a 1, and the next has a 0
+        filt = np.hstack([np.ones((len(batch_inds), 1)), not_dones[:, :-1]])
+
+        # We ignore self.pos indice since it points to older transitions.
+        # we then accumulate to prevent continuing to the wrong transitions.
+        current_episode = np.multiply.accumulate(indices != self.pos, 1).reshape(filt.shape)
+
+        # combine the filters
+        filt = filt * current_episode
+
+        # discount the rewards
+        rewards = (rewards * filt) @ gammas.T
+        rewards = rewards.reshape(len(batch_inds), 1).astype(np.float32)
+
+        # Increments counts how many transitions we need to skip
+        # filt always sums up to 1 + k non terminal transitions due to hstack above
+        # so we subtract 1.
+        increments = np.add.reduce(filt, 1).astype(np.int).reshape(batch_inds.shape) - 1
+
+        next_obs_indices = (increments + batch_inds) % self.buffer_size
+        obs = self._normalize_obs(self.observations[batch_inds, 0, :], env)
+        if self.optimize_memory_usage:
+            next_obs = self._normalize_obs(self.observations[(next_obs_indices + 1) % self.buffer_size, 0, :], env)
+        else:
+            next_obs = self._normalize_obs(self.next_observations[next_obs_indices, 0, :], env)
+
+        dones = 1.0 - (not_dones[np.arange(len(batch_inds)), increments]).reshape(len(batch_inds), 1)
+
+        data = (obs, actions, next_obs, dones, rewards)
+        return ReplayBufferSamples(*tuple(map(self.to_torch, data)))

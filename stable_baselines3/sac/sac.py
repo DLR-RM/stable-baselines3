@@ -6,6 +6,7 @@ from torch.nn import functional as F
 from tqdm import tqdm
 
 from stable_baselines3.common import logger
+from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
@@ -86,6 +87,8 @@ class SAC(OffPolicyAlgorithm):
         n_episodes_rollout: int = -1,
         action_noise: Optional[ActionNoise] = None,
         optimize_memory_usage: bool = False,
+        replay_buffer_class: Optional[Type[ReplayBuffer]] = None,
+        replay_buffer_kwargs: Optional[Dict[str, Any]] = None,
         ent_coef: Union[str, float] = "auto",
         target_update_interval: int = 1,
         target_entropy: Union[str, float] = "auto",
@@ -106,6 +109,8 @@ class SAC(OffPolicyAlgorithm):
             env,
             SACPolicy,
             learning_rate,
+            replay_buffer_class,
+            replay_buffer_kwargs,
             buffer_size,
             learning_starts,
             batch_size,

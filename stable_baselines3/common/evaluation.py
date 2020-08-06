@@ -1,19 +1,25 @@
-# Copied from stable_baselines
+import typing
+from typing import Callable, List, Optional, Tuple, Union
+
+import gym
 import numpy as np
 
 from stable_baselines3.common.vec_env import VecEnv
 
+if typing.TYPE_CHECKING:
+    from stable_baselines3.common.base_class import BaseAlgorithm
+
 
 def evaluate_policy(
-    model,
-    env,
-    n_eval_episodes=10,
-    deterministic=True,
-    render=False,
-    callback=None,
-    reward_threshold=None,
-    return_episode_rewards=False,
-):
+    model: "BaseAlgorithm",
+    env: Union[gym.Env, VecEnv],
+    n_eval_episodes: int = 10,
+    deterministic: bool = True,
+    render: bool = False,
+    callback: Optional[Callable] = None,
+    reward_threshold: Optional[float] = None,
+    return_episode_rewards: bool = False,
+) -> Union[Tuple[float, float], Tuple[List[float], List[int]]]:
     """
     Runs policy for ``n_eval_episodes`` episodes and returns average reward.
     This is made to work only with one env.
@@ -28,7 +34,7 @@ def evaluate_policy(
         called after each step.
     :param reward_threshold: (float) Minimum expected reward per episode,
         this will raise an error if the performance is not met
-    :param return_episode_rewards: (bool) If True, a list of reward per episode
+    :param return_episode_rewards: (Optional[float]) If True, a list of reward per episode
         will be returned instead of the mean.
     :return: (float, float) Mean reward per episode, std of reward per episode
         returns ([float], [int]) when ``return_episode_rewards`` is True
@@ -37,8 +43,10 @@ def evaluate_policy(
         assert env.num_envs == 1, "You must pass only one environment when using this function"
 
     episode_rewards, episode_lengths = [], []
-    for _ in range(n_eval_episodes):
-        obs = env.reset()
+    for i in range(n_eval_episodes):
+        # Avoid double reset, as VecEnv are reset automatically
+        if not isinstance(env, VecEnv) or i == 0:
+            obs = env.reset()
         done, state = False, None
         episode_reward = 0.0
         episode_length = 0

@@ -1,11 +1,22 @@
 import inspect
 from abc import ABC, abstractmethod
-from typing import List, Optional, Sequence, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import cloudpickle
+import gym
 import numpy as np
 
 from stable_baselines3.common import logger
+
+# Define type aliases here to avoid circular import
+# Used when we want to access one or more VecEnv
+VecEnvIndices = Union[None, int, Iterable[int]]
+# VecEnvObs is what is returned by the reset() method
+# it contains the observation for each env
+VecEnvObs = Union[np.ndarray, Dict[str, Any]]
+# VecEnvStepReturn is what is returned by the step() method
+# it contains the observation, reward, done, info for each env
+VecEnvStepReturn = Tuple[VecEnvObs, np.ndarray, np.ndarray, List[Dict]]
 
 
 def tile_images(img_nhwc: Sequence[np.ndarray]) -> np.ndarray:  # pragma: no cover
@@ -34,46 +45,24 @@ def tile_images(img_nhwc: Sequence[np.ndarray]) -> np.ndarray:  # pragma: no cov
     return out_image
 
 
-class AlreadySteppingError(Exception):
-    """
-    Raised when an asynchronous step is running while
-    step_async() is called again.
-    """
-
-    def __init__(self):
-        msg = "already running an async step"
-        Exception.__init__(self, msg)
-
-
-class NotSteppingError(Exception):
-    """
-    Raised when an asynchronous step is not running but
-    step_wait() is called.
-    """
-
-    def __init__(self):
-        msg = "not running an async step"
-        Exception.__init__(self, msg)
-
-
 class VecEnv(ABC):
     """
     An abstract asynchronous, vectorized environment.
 
     :param num_envs: (int) the number of environments
-    :param observation_space: (Gym Space) the observation space
-    :param action_space: (Gym Space) the action space
+    :param observation_space: (gym.spaces.Space) the observation space
+    :param action_space: (gym.spaces.Space) the action space
     """
 
     metadata = {"render.modes": ["human", "rgb_array"]}
 
-    def __init__(self, num_envs, observation_space, action_space):
+    def __init__(self, num_envs: int, observation_space: gym.spaces.Space, action_space: gym.spaces.Space):
         self.num_envs = num_envs
         self.observation_space = observation_space
         self.action_space = action_space
 
     @abstractmethod
-    def reset(self):
+    def reset(self) -> VecEnvObs:
         """
         Reset all the environments and return an array of
         observations, or a tuple of observation arrays.
@@ -82,12 +71,12 @@ class VecEnv(ABC):
         be cancelled and step_wait() should not be called
         until step_async() is invoked again.
 
-        :return: ([int] or [float]) observation
+        :return: (VecEnvObs) observation
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def step_async(self, actions):
+    def step_async(self, actions: np.ndarray):
         """
         Tell all the environments to start taking a step
         with the given actions.
@@ -99,23 +88,23 @@ class VecEnv(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def step_wait(self):
+    def step_wait(self) -> VecEnvStepReturn:
         """
         Wait for the step taken with step_async().
 
-        :return: ([int] or [float], [float], [bool], dict) observation, reward, done, information
+        :return: observation, reward, done, information
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def close(self):
+    def close(self) -> None:
         """
         Clean up the environment's resources.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def get_attr(self, attr_name, indices=None):
+    def get_attr(self, attr_name: str, indices: "VecEnvIndices" = None) -> List[Any]:
         """
         Return attribute from vectorized environment.
 
@@ -126,7 +115,7 @@ class VecEnv(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def set_attr(self, attr_name, value, indices=None):
+    def set_attr(self, attr_name: str, value: Any, indices: "VecEnvIndices" = None) -> None:
         """
         Set attribute inside vectorized environments.
 
@@ -138,7 +127,7 @@ class VecEnv(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def env_method(self, method_name, *method_args, indices=None, **method_kwargs):
+    def env_method(self, method_name: str, *method_args, indices: "VecEnvIndices" = None, **method_kwargs) -> List[Any]:
         """
         Call instance methods of vectorized environments.
 
@@ -150,12 +139,12 @@ class VecEnv(ABC):
         """
         raise NotImplementedError()
 
-    def step(self, actions):
+    def step(self, actions: np.ndarray) -> VecEnvStepReturn:
         """
         Step the environments with the given action
 
-        :param actions: ([int] or [float]) the action
-        :return: ([int] or [float], [float], [bool], dict) observation, reward, done, information
+        :param actions: (np.ndarray) the action
+        :return: (VecEnvStepReturn) observation, reward, done, information
         """
         self.step_async(actions)
         return self.step_wait()
@@ -166,7 +155,7 @@ class VecEnv(ABC):
         """
         raise NotImplementedError
 
-    def render(self, mode: str = "human"):
+    def render(self, mode: str = "human") -> Optional[np.ndarray]:
         """
         Gym environment rendering
 
@@ -203,25 +192,25 @@ class VecEnv(ABC):
         pass
 
     @property
-    def unwrapped(self):
+    def unwrapped(self) -> "VecEnv":
         if isinstance(self, VecEnvWrapper):
             return self.venv.unwrapped
         else:
             return self
 
-    def getattr_depth_check(self, name, already_found):
+    def getattr_depth_check(self, name: str, already_found: bool) -> Optional[str]:
         """Check if an attribute reference is being hidden in a recursive call to __getattr__
 
         :param name: (str) name of attribute to check for
         :param already_found: (bool) whether this attribute has already been found in a wrapper
-        :return: (str or None) name of module whose attribute is being shadowed, if any.
+        :return: (Optional[str]) name of module whose attribute is being shadowed, if any.
         """
         if hasattr(self, name) and already_found:
             return f"{type(self).__module__}.{type(self).__name__}"
         else:
             return None
 
-    def _get_indices(self, indices):
+    def _get_indices(self, indices: "VecEnvIndices") -> Iterable[int]:
         """
         Convert a flexibly-typed reference to environment indices to an implied list of indices.
 
@@ -240,11 +229,16 @@ class VecEnvWrapper(VecEnv):
     Vectorized environment base class
 
     :param venv: (VecEnv) the vectorized environment to wrap
-    :param observation_space: (Gym Space) the observation space (can be None to load from venv)
-    :param action_space: (Gym Space) the action space (can be None to load from venv)
+    :param observation_space: (Optional[gym.spaces.Space]) the observation space (can be None to load from venv)
+    :param action_space: (Optional[gym.spaces.Space]) the action space (can be None to load from venv)
     """
 
-    def __init__(self, venv, observation_space=None, action_space=None):
+    def __init__(
+        self,
+        venv: VecEnv,
+        observation_space: Optional[gym.spaces.Space] = None,
+        action_space: Optional[gym.spaces.Space] = None,
+    ):
         self.venv = venv
         VecEnv.__init__(
             self,
@@ -254,27 +248,27 @@ class VecEnvWrapper(VecEnv):
         )
         self.class_attributes = dict(inspect.getmembers(self.__class__))
 
-    def step_async(self, actions):
+    def step_async(self, actions: np.ndarray):
         self.venv.step_async(actions)
 
     @abstractmethod
-    def reset(self):
+    def reset(self) -> VecEnvObs:
         pass
 
     @abstractmethod
-    def step_wait(self):
+    def step_wait(self) -> VecEnvStepReturn:
         pass
 
-    def seed(self, seed=None):
+    def seed(self, seed: Optional[int] = None):
         return self.venv.seed(seed)
 
-    def close(self):
+    def close(self) -> None:
         return self.venv.close()
 
-    def render(self, mode: str = "human"):
+    def render(self, mode: str = "human") -> Optional[np.ndarray]:
         return self.venv.render(mode=mode)
 
-    def get_images(self):
+    def get_images(self) -> Sequence[np.ndarray]:
         return self.venv.get_images()
 
     def get_attr(self, attr_name, indices=None):
@@ -286,7 +280,7 @@ class VecEnvWrapper(VecEnv):
     def env_method(self, method_name, *method_args, indices=None, **method_kwargs):
         return self.venv.env_method(method_name, *method_args, indices=indices, **method_kwargs)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         """Find attribute from wrapped venv(s) if this wrapper does not have it.
         Useful for accessing attributes from venvs which are wrapped with multiple wrappers
         which have unique attributes of interest.
@@ -302,16 +296,16 @@ class VecEnvWrapper(VecEnv):
 
         return self.getattr_recursive(name)
 
-    def _get_all_attributes(self):
+    def _get_all_attributes(self) -> Dict[str, Any]:
         """Get all (inherited) instance and class attributes
 
-        :return: (dict<str, object>) all_attributes
+        :return: (Dict[str, Any]) all_attributes
         """
         all_attributes = self.__dict__.copy()
         all_attributes.update(self.class_attributes)
         return all_attributes
 
-    def getattr_recursive(self, name):
+    def getattr_recursive(self, name: str):
         """Recursively check wrappers to find attribute.
 
         :param name (str) name of attribute to look for
@@ -329,7 +323,7 @@ class VecEnvWrapper(VecEnv):
 
         return attr
 
-    def getattr_depth_check(self, name, already_found):
+    def getattr_depth_check(self, name: str, already_found: bool):
         """See base class.
 
         :return: (str or None) name of module whose attribute is being shadowed, if any.
@@ -349,16 +343,17 @@ class VecEnvWrapper(VecEnv):
 
 
 class CloudpickleWrapper:
-    def __init__(self, var):
-        """
-        Uses cloudpickle to serialize contents (otherwise multiprocessing tries to use pickle)
+    """
+    Uses cloudpickle to serialize contents (otherwise multiprocessing tries to use pickle)
 
-        :param var: (Any) the variable you wish to wrap for pickling with cloudpickle
-        """
+    :param var: (Any) the variable you wish to wrap for pickling with cloudpickle
+    """
+
+    def __init__(self, var: Any):
         self.var = var
 
-    def __getstate__(self):
+    def __getstate__(self) -> Any:
         return cloudpickle.dumps(self.var)
 
-    def __setstate__(self, obs):
-        self.var = cloudpickle.loads(obs)
+    def __setstate__(self, var: Any) -> None:
+        self.var = cloudpickle.loads(var)

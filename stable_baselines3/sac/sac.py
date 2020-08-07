@@ -282,6 +282,7 @@ class SAC(OffPolicyAlgorithm):
         target_update_interval: int = 100,
         strategy: str = "binary",
         reduce: str = "mean",
+        exp_temperature: float= 1.0,
     ) -> None:
         """
         Pretrain with Critic Regularized Regression (CRR)
@@ -361,7 +362,6 @@ class SAC(OffPolicyAlgorithm):
                     weight = advantage > 0
                 else:
                     # exp advantage
-                    exp_temperature = 1.0
                     exp_clip = 20.0
                     weight = th.clamp(th.exp(advantage / exp_temperature), 0.0, exp_clip)
 

@@ -419,6 +419,7 @@ class NstepReplayBuffer(ReplayBuffer):
             raise ValueError("n_step needs to be strictly smaller than buffer_size, and strictly larger than 0")
         self.gamma = gamma
         self.log_probs = np.zeros((self.buffer_size,))
+        self.actor = None
 
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
         # TODO(PartiallyTyped): explain why this assert was here

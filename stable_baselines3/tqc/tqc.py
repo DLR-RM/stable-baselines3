@@ -330,6 +330,8 @@ class TQC(OffPolicyAlgorithm):
             else:
                 ent_coef = self.ent_coef_tensor
 
+            self.replay_buffer.ent_coef = ent_coef.item()
+
             # Optimize entropy coefficient, also called
             # entropy temperature or alpha in the paper
             if ent_coef_loss is not None:

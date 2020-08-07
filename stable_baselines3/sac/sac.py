@@ -146,6 +146,10 @@ class SAC(OffPolicyAlgorithm):
     def _setup_model(self) -> None:
         super(SAC, self)._setup_model()
         self._create_aliases()
+
+        self.replay_buffer.actor = self.actor
+        self.replay_buffer.ent_coef = 0.0
+
         # Target entropy is used when learning the entropy coefficient
         if self.target_entropy == "auto":
             # automatically set target entropy if needed
@@ -217,6 +221,8 @@ class SAC(OffPolicyAlgorithm):
 
             ent_coefs.append(ent_coef.item())
 
+            self.replay_buffer.ent_coef = ent_coef.item()
+
             # Optimize entropy coefficient, also called
             # entropy temperature or alpha in the paper
             if ent_coef_loss is not None:
@@ -282,7 +288,7 @@ class SAC(OffPolicyAlgorithm):
         target_update_interval: int = 100,
         strategy: str = "binary",
         reduce: str = "mean",
-        exp_temperature: float= 1.0,
+        exp_temperature: float = 1.0,
     ) -> None:
         """
         Pretrain with Critic Regularized Regression (CRR)
@@ -306,24 +312,38 @@ class SAC(OffPolicyAlgorithm):
             if self.use_sde:
                 self.actor.reset_noise()
 
-            # Critic update without entropy term
-            # TODO: try adding entropy
+            # Action by the current actor for the sampled state
+            actions_pi, log_prob = self.actor.action_log_prob(replay_data.observations)
+            log_prob = log_prob.reshape(-1, 1)
+
+            if self.ent_coef_optimizer is not None:
+                # Important: detach the variable from the graph
+                # so we don't change it with other losses
+                # see https://github.com/rail-berkeley/softlearning/issues/60
+                ent_coef = th.exp(self.log_ent_coef.detach())
+                ent_coef_loss = -(self.log_ent_coef * (log_prob + self.target_entropy).detach()).mean()
+            else:
+                ent_coef = self.ent_coef_tensor
+
+            self.replay_buffer.ent_coef = ent_coef.item()
+
             with th.no_grad():
                 # Select action according to policy
                 next_actions, next_log_prob = self.actor.action_log_prob(replay_data.next_observations)
-                # Compute the target Q value
-                target_q1, target_q2 = self.critic_target(replay_data.next_observations, next_actions)
-                target_q = th.min(target_q1, target_q2)
-                # - ent_coef * next_log_prob.reshape(-1, 1)
+                # Compute the target Q value: min over all critics targets
+                targets = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
+                target_q, _ = th.min(targets, dim=1, keepdim=True)
+                # add entropy term
+                target_q = target_q - ent_coef * next_log_prob.reshape(-1, 1)
                 # td error + entropy term
                 q_backup = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
 
-            # Get current Q estimates
+            # Get current Q estimates for each critic network
             # using action from the replay buffer
-            current_q1, current_q2 = self.critic(replay_data.observations, replay_data.actions)
+            current_q_esimates = self.critic(replay_data.observations, replay_data.actions)
 
             # Compute critic loss
-            critic_loss = 0.5 * (F.mse_loss(current_q1, q_backup) + F.mse_loss(current_q2, q_backup))
+            critic_loss = 0.5 * sum([F.mse_loss(current_q, q_backup) for current_q in current_q_esimates])
             critic_losses.append(critic_loss.item())
 
             # Optimize the critic

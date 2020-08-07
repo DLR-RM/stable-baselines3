@@ -10,7 +10,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
-from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr, save_to_zip_file
+from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
 from stable_baselines3.common.utils import check_for_correct_spaces
 from stable_baselines3.common.vec_env import VecEnv, VecEnvWrapper
@@ -125,6 +125,8 @@ class HER(BaseAlgorithm):
         reset_num_timesteps: bool = True,
     ) -> BaseAlgorithm:
 
+        eval_env = check_wrapped_env(eval_env) if eval_env is not None else eval_env
+
         total_timesteps, callback = self._setup_learn(
             total_timesteps, eval_env, callback, eval_freq, n_eval_episodes, eval_log_path, reset_num_timesteps, tb_log_name
         )
@@ -134,6 +136,7 @@ class HER(BaseAlgorithm):
         self.model.num_timesteps = self.num_timesteps
         self.model._episode_num = self._episode_num
         self.model._last_obs = self._last_obs
+        self.model._total_timesteps = self._total_timesteps
 
         callback.on_training_start(locals(), globals())
 
@@ -395,54 +398,15 @@ class HER(BaseAlgorithm):
         :param exclude: name of parameters that should be excluded in addition to the default one
         :param include: name of parameters that might be excluded but should be included anyway
         """
-        # copy parameter list so we don't mutate the original dict
-        data = self.__dict__.copy()
-        # add model parameter
-        data["model_dict"] = self.model.__dict__.copy()
 
-        # Exclude is union of specified parameters (if any) and standard exclusions
-        if exclude is None:
-            exclude = []
-        exclude = set(exclude).union(self.excluded_save_params())
-        exclude.add("model")
+        # add HER parameters to model
+        self.model.n_goals = self.n_goals
+        self.model.her_ratio = self.her_ratio
+        self.model.goal_strategy = self.goal_strategy
+        self.model.online_sampling = self.online_sampling
+        self.model.model_class = self.model_class
 
-        # Do not exclude params if they are specifically included
-        if include is not None:
-            exclude = exclude.difference(include)
-
-        state_dicts_names, tensors_names = self.get_torch_variables()
-        # any params that are in the save vars must not be saved by data
-        torch_variables = state_dicts_names + tensors_names
-        for torch_var in torch_variables:
-            # we need to get only the name of the top most module as we'll remove that
-            var_name = torch_var.split(".")[0]
-            exclude.add(var_name)
-
-        # Remove parameter entries of parameters which are to be excluded
-        for param_name in exclude:
-            data.pop(param_name, None)
-            data["model_dict"].pop(param_name, None)
-
-        # Build dict of tensor variables
-        tensors = None
-        if tensors_names is not None:
-            tensors = {}
-            for name in tensors_names:
-                attr = recursive_getattr(self, name)
-                tensors[name] = attr
-
-        # Build dict of state_dicts
-        params_to_save = {}
-        for name in state_dicts_names:
-            # always take attribute from model class if possible
-            if hasattr(self.model, name):
-                attr = recursive_getattr(self.model, name)
-            else:
-                attr = recursive_getattr(self, name)
-            # Retrieve state dict
-            params_to_save[name] = attr.state_dict()
-
-        save_to_zip_file(path, data=data, params=params_to_save, tensors=tensors)
+        self.model.save(path, exclude, include)
 
     @classmethod
     def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs) -> "BaseAlgorithm":
@@ -479,8 +443,8 @@ class HER(BaseAlgorithm):
             env = data["env"]
 
         # noinspection PyArgumentList
-        model = cls(
-            policy=data["model_dict"]["policy_class"],
+        her_model = cls(
+            policy=data["policy_class"],
             env=env,
             model_class=data["model_class"],
             n_goals=data["n_goals"],
@@ -488,27 +452,30 @@ class HER(BaseAlgorithm):
             online_sampling=data["online_sampling"],
             her_ratio=data["her_ratio"],
             learning_rate=data["learning_rate"],
-            policy_kwargs=data["model_dict"]["policy_kwargs"],
+            policy_kwargs=data["policy_kwargs"],
             _init_setup_model=True,  # pytype: disable=not-instantiable,wrong-keyword-args
         )
 
         # load parameters
-        model.__dict__.update(data)
-        model.model.__dict__.update(data["model_dict"])
-        model.__dict__.update(kwargs)
+        her_model.model.__dict__.update(data)
+        her_model.__dict__.update(kwargs)
+
+        her_model._total_timesteps = her_model.model._total_timesteps
+        her_model.num_timesteps = her_model.model.num_timesteps
+        her_model._episode_num = her_model.model._episode_num
 
         # put state_dicts back in place
         for name in params:
-            attr = recursive_getattr(model.model, name)
+            attr = recursive_getattr(her_model.model, name)
             attr.load_state_dict(params[name])
 
         # put tensors back in place
         if tensors is not None:
             for name in tensors:
-                recursive_setattr(model.model, name, tensors[name])
+                recursive_setattr(her_model.model, name, tensors[name])
 
         # Sample gSDE exploration matrix, so it uses the right device
         # see issue #44
-        if model.model.use_sde:
-            model.model.policy.reset_noise()  # pytype: disable=attribute-error
-        return model
+        if her_model.model.use_sde:
+            her_model.model.policy.reset_noise()  # pytype: disable=attribute-error
+        return her_model

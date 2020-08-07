@@ -23,8 +23,8 @@ class HerReplayBuffer(BaseBuffer):
     :param device: (Union[th.device, str]) PyTorch device
         to which the values will be converted
     :param n_envs: (int) Number of parallel environments
-    :param her_ratio: (int) The ratio between HER replays and regular replays (e.g. k = 4 -> 4 times
-            as many HER replays as regular replays are used)
+    :her_ratio: (float) The ratio between HER replays and regular replays in percent (between 0 and 1, for online sampling)
+
     """
 
     def __init__(
@@ -36,7 +36,7 @@ class HerReplayBuffer(BaseBuffer):
         action_space: spaces.Space,
         device: Union[th.device, str] = "cpu",
         n_envs: int = 1,
-        her_ratio: int = 2,
+        her_ratio: float = 0.6,
     ):
 
         super(HerReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs)
@@ -47,8 +47,8 @@ class HerReplayBuffer(BaseBuffer):
         # buffer with episodes
         self.buffer = []
         self.goal_strategy = goal_strategy
-        # probability for selecting her indices
-        self.her_prob = 1 - (1.0 / (1 + her_ratio))
+        # percentage of her indices
+        self.her_ratio = her_ratio
 
         # memory management
         self._n_episodes_stored = 0
@@ -77,8 +77,8 @@ class HerReplayBuffer(BaseBuffer):
         t_samples = np.array([np.random.choice(np.arange(ep_len)) for ep_len in episode_lengths])
         # get selected timesteps
         transitions = np.array([buffer[ep][trans] for ep, trans in zip(episode_idxs, t_samples)], dtype=object)
-        # get her samples indices with her_prob
-        her_idxs = np.where(np.random.uniform(size=batch_size) < self.her_prob)[0]
+        # get her samples indices with her_ratio
+        her_idxs = np.random.choice(np.arange(batch_size), int(self.her_ratio * batch_size), replace=False)
         # her samples episode lengths
         her_episode_lenghts = episode_lengths[her_idxs]
 

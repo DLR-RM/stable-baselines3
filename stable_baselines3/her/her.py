@@ -41,12 +41,11 @@ class HER(BaseAlgorithm):
     :param policy: (BasePolicy) The policy model to use.
     :param env: (VecEnv) The environment to learn from.
     :param model_class: (OffPolicyAlgorithm) Off policy model which will be used with hindsight experience replay. (SAC, TD3)
-    :param n_goals: (int) Number of sampled goals for replay.
+    :param n_goals: (int) Number of sampled goals for replay. (offline sampling)
     :param goal_strategy: (GoalSelectionStrategy or str) Strategy for sampling goals for replay.
         One of ['episode', 'final', 'future', 'random']
     :param online_sampling: (bool) Sample HER transitions online.
-    :her_ratio: (int) The ratio between HER replays and regular replays (e.g. k = 4 -> 4 times
-            as many HER replays as regular replays are used)
+    :her_ratio: (float) The ratio between HER replays and regular replays in percent (between 0 and 1, for online sampling)
     :param learning_rate: (float or callable) learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
     """
@@ -59,7 +58,7 @@ class HER(BaseAlgorithm):
         n_goals: int = 5,
         goal_strategy: Union[GoalSelectionStrategy, str] = "future",
         online_sampling: bool = False,
-        her_ratio: int = 2,
+        her_ratio: float = 0.6,
         learning_rate: Union[float, Callable] = 3e-4,
         *args,
         **kwargs,

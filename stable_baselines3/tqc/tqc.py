@@ -369,7 +369,25 @@ class TQC(OffPolicyAlgorithm):
                 # Behavior cloning
                 weight = 1
             else:
+                # Tensor version: TODO: check that the reshape works as expected
+                # cleaner but not faster on cpu for large batch size
+                # with th.no_grad():
+                #     # Q-value for the action in the buffer
+                #     qf_buffer = self.critic(replay_data.observations, replay_data.actions).mean(2).mean(1, keepdim=True)
+                #     # Create tensor to avoid loop
+                #     # Note: For SDE, we need to sample several matrices
+                #     obs_ = replay_data.observations.repeat(n_action_samples, 1)
+                #     if self.use_sde:
+                #         self.actor.reset_noise(batch_size * n_action_samples)
+                #         actions_pi, _ = self.actor.action_log_prob(obs_)
+                #         qf_pi = self.critic(obs_, actions_pi.detach()).mean(2).mean(1, keepdim=True)
+                #         # Agregate: reduce mean or reduce max
+                #         if reduce == "max":
+                #             _, qf_agg = qf_pi.reshape(n_action_samples, batch_size, 1).max(axis=0)
+                #         else:
+                #             qf_agg = qf_pi.reshape(n_action_samples, batch_size, 1).mean(axis=0)
                 with th.no_grad():
+
                     qf_buffer = self.critic(replay_data.observations, replay_data.actions).mean(2).mean(1, keepdim=True)
 
                     qf_agg = None

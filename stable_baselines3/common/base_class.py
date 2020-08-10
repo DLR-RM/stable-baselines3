@@ -513,7 +513,8 @@ class BaseAlgorithm(ABC):
     def excluded_save_params(self) -> List[str]:
         """
         Returns the names of the parameters that should be excluded by default
-        when saving the model.
+        when saving the model. E.g. replay buffers are skipped by default
+        as they take up a lot of space.
 
         :return: ([str]) List of parameters that should be excluded from save
         """
@@ -529,10 +530,10 @@ class BaseAlgorithm(ABC):
         Save all the attributes of the object and the model parameters in a zip-file.
 
         :param (Union[str, pathlib.Path, io.BufferedIOBase]): path to the file where the rl agent should be saved
-        :param exclude: name of parameters that should be excluded in addition to the default one
+        :param exclude: name of parameters that should be excluded in addition to the default ones
         :param include: name of parameters that might be excluded but should be included anyway
         """
-        # copy parameter list so we don't mutate the original dict
+        # Copy parameter list so we don't mutate the original dict
         data = self.__dict__.copy()
 
         # Exclude is union of specified parameters (if any) and standard exclusions
@@ -545,11 +546,11 @@ class BaseAlgorithm(ABC):
             exclude = exclude.difference(include)
 
         state_dicts_names, tensors_names = self.get_torch_variables()
-        # any params that are in the save vars must not be saved by data
         torch_variables = state_dicts_names + tensors_names
         for torch_var in torch_variables:
-            # we need to get only the name of the top most module as we'll remove that
+            # We need to get only the name of the top most module as we'll remove that
             var_name = torch_var.split(".")[0]
+            # Any params that are in the save vars must not be saved by data
             exclude.add(var_name)
 
         # Remove parameter entries of parameters which are to be excluded

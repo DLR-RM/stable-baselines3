@@ -288,7 +288,7 @@ def save_to_zip_file(
     verbose=0,
 ) -> None:
     """
-    Save a model to a zip archive.
+    Save model data to a zip archive.
 
     :param save_path: (Union[str, pathlib.Path, io.BufferedIOBase]) Where to store the model.
         if save_path is a str or pathlib.Path ensures that the path actually exists.
@@ -385,7 +385,7 @@ def load_from_zip_file(
             if "tensors.pth" in namelist and load_data:
                 # Load extra tensors
                 with archive.open("tensors.pth", mode="r") as tensor_file:
-                    # File has to be seekable, but opt_param_file is not, so load in BytesIO first
+                    # File has to be seekable, but tensor_file is not, so load in BytesIO first
                     # fixed in python >= 3.7
                     file_content = io.BytesIO()
                     file_content.write(tensor_file.read())

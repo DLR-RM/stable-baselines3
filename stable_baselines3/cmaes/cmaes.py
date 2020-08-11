@@ -24,7 +24,7 @@ class CMAES(BaseAlgorithm):
         std_init: float = 0.5,
         best_individual: Union[np.ndarray, None, str] = None,
         diagonal_cov: bool = False,
-        max_hist: int = 10,
+        max_hist: int = 100,
         pop_size: Optional[int] = None,
         policy_kwargs: Dict[str, Any] = None,
         tensorboard_log: Optional[str] = None,
@@ -157,7 +157,14 @@ class CMAES(BaseAlgorithm):
                 candidate_steps += 1
                 self._update_current_progress_remaining(self.num_timesteps, self._total_timesteps)
 
-                if candidate_steps > self.n_steps:
+                if done:
+                    self._episode_num += 1
+
+                    # Log training infos
+                    if log_interval is not None and self._episode_num % log_interval == 0:
+                        self._dump_logs()
+
+                if candidate_steps > self.n_steps or done:
                     if self.verbose > 0:
                         print(f"Candidate {candidate_idx + 1}, return={returns[candidate_idx]:.2f}")
                     # force reset
@@ -169,12 +176,6 @@ class CMAES(BaseAlgorithm):
                     else:
                         break
 
-                if done:
-                    self._episode_num += 1
-
-                    # Log training infos
-                    if log_interval is not None and self._episode_num % log_interval == 0:
-                        self._dump_logs()
 
             callback.on_rollout_end()
 

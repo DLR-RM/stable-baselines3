@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 import torch as th
 
-from stable_baselines3 import DDPG, SAC, TD3
+from stable_baselines3 import DDPG, DQN, SAC, TD3
 from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
 from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
 from stable_baselines3.common.vec_env import DummyVecEnv
@@ -203,3 +203,43 @@ def test_save_load(tmp_path, model_class, policy):
 
     # clear file from os
     os.remove(tmp_path / "test_save.zip")
+
+
+@pytest.mark.parametrize("online_sampling", [False])
+@pytest.mark.parametrize("n_bits", [15])
+def test_dqn_her(online_sampling, n_bits):
+    """
+    Test HER with DQN for BitFlippingEnv.
+    """
+    env = BitFlippingEnv(n_bits=n_bits, continuous=False)
+
+    # offline
+    model = HER(
+        "MlpPolicy",
+        env,
+        DQN,
+        n_goals=4,
+        goal_strategy="future",
+        online_sampling=online_sampling,
+        her_ratio=0.6,
+        verbose=1,
+        tau=1,
+        batch_size=32,
+        learning_rate=0.0005,
+        policy_kwargs=dict(net_arch=[64, 64]),
+        buffer_size=50000,
+        gamma=0.99,
+        gradient_steps=1,
+        train_freq=1,
+        n_episodes_rollout=-1,
+        tensorboard_log="tensorboard",
+        learning_starts=1000,
+        exploration_fraction=0.1,
+        exploration_final_eps=0.02,
+        exploration_initial_eps=1.0,
+        target_update_interval=500,
+    )
+
+    tb_log_name = "run_" + str(online_sampling) + "_" + str(n_bits)
+
+    model.learn(total_timesteps=20000, callback=None, tb_log_name=tb_log_name)

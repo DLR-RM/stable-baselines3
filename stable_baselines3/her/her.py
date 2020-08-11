@@ -14,9 +14,9 @@ from stable_baselines3.common.save_util import load_from_zip_file, recursive_get
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
 from stable_baselines3.common.utils import check_for_correct_spaces
 from stable_baselines3.common.vec_env import VecEnv, VecEnvWrapper
+from stable_baselines3.common.vec_env.dict_obs_wrapper import ObsWrapper
 from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
 from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
-from stable_baselines3.her.obs_wrapper import ObsWrapper
 
 
 def check_wrapped_env(env: VecEnv) -> VecEnv:
@@ -38,8 +38,8 @@ class HER(BaseAlgorithm):
     """
     Hindsight Experience Replay (HER)
 
-    :param policy: (BasePolicy) The policy model to use.
-    :param env: (VecEnv) The environment to learn from.
+    :param policy: (BasePolicy or str) The policy model to use.
+    :param env: (GymEnv or str) The environment to learn from (if registered in Gym, can be str)
     :param model_class: (OffPolicyAlgorithm) Off policy model which will be used with hindsight experience replay. (SAC, TD3)
     :param n_goals: (int) Number of sampled goals for replay. (offline sampling)
     :param goal_strategy: (GoalSelectionStrategy or str) Strategy for sampling goals for replay.
@@ -52,8 +52,8 @@ class HER(BaseAlgorithm):
 
     def __init__(
         self,
-        policy: Type[BasePolicy],
-        env: VecEnv,
+        policy: Union[str, Type[BasePolicy]],
+        env: Union[GymEnv, str],
         model_class: Type[OffPolicyAlgorithm],
         n_goals: int = 5,
         goal_strategy: Union[GoalSelectionStrategy, str] = "future",
@@ -64,10 +64,10 @@ class HER(BaseAlgorithm):
         **kwargs,
     ):
 
-        # check if wrapper for dict support is needed
-        self.env = check_wrapped_env(env)
+        super(HER, self).__init__(policy=BasePolicy, env=env, policy_base=BasePolicy, learning_rate=learning_rate)
 
-        super(HER, self).__init__(policy=BasePolicy, env=self.env, policy_base=BasePolicy, learning_rate=learning_rate)
+        # check if wrapper for dict support is needed
+        self.env = check_wrapped_env(self.env)
 
         # model initialization
         self.model_class = model_class
@@ -111,6 +111,16 @@ class HER(BaseAlgorithm):
     def _setup_model(self) -> None:
         self.model._setup_model()
 
+    def predict(
+        self,
+        observation: np.ndarray,
+        state: Optional[np.ndarray] = None,
+        mask: Optional[np.ndarray] = None,
+        deterministic: bool = False,
+    ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+
+        return self.model.predict(observation, state, mask, deterministic)
+
     def learn(
         self,
         total_timesteps: int,
@@ -123,8 +133,6 @@ class HER(BaseAlgorithm):
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
     ) -> BaseAlgorithm:
-
-        eval_env = check_wrapped_env(eval_env) if eval_env is not None else eval_env
 
         total_timesteps, callback = self._setup_learn(
             total_timesteps, eval_env, callback, eval_freq, n_eval_episodes, eval_log_path, reset_num_timesteps, tb_log_name
@@ -224,7 +232,7 @@ class HER(BaseAlgorithm):
                 self.model._last_obs = self._last_obs
                 action, buffer_action = self._sample_action(learning_starts, action_noise)
 
-                # Rescale and perform action
+                # Perform action
                 new_obs, reward, done, infos = env.step(action)
 
                 # Only stop training if return value is False, not when it is None.
@@ -264,6 +272,7 @@ class HER(BaseAlgorithm):
                 episode_timesteps += 1
                 total_steps += 1
                 self._update_current_progress_remaining(self.num_timesteps, self._total_timesteps)
+                self.model._current_progress_remaining = self._current_progress_remaining
 
                 # For DQN, check if the target network should be updated
                 # and update the exploration schedule

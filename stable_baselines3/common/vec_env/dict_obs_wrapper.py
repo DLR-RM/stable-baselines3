@@ -1,5 +1,3 @@
-from typing import Tuple, Union
-
 import numpy as np
 from gym import spaces
 
@@ -47,8 +45,18 @@ class ObsWrapper(VecEnvWrapper):
         else:
             raise NotImplementedError(f"{type(self.spaces[0])} space is not supported")
 
-    def reset(self) -> Union[int, float]:
+    def reset(self):
         return self.venv.reset()
 
-    def step_wait(self) -> Tuple[Union[int, float], float, bool, dict]:
+    def step_wait(self):
         return self.venv.step_wait()
+
+    @staticmethod
+    def convert_dict(self, observation: dict) -> np.ndarray:
+        """
+        Concatenate observation and desired goal of observation dict.
+
+        :param observation: (dict)
+        :return: (np.ndarray)
+        """
+        return np.concatenate([observation["observation"], observation["desired_goal"]])

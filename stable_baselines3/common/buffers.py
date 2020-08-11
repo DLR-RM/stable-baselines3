@@ -478,7 +478,7 @@ class NstepReplayBuffer(ReplayBuffer):
         filt = filt * current_episode
 
         # discount the rewards
-        rewards = (rewards * filt) @ gammas.T
+        rewards = (rewards * filt) @ gammas
         rewards = rewards.reshape(len(batch_inds), 1).astype(np.float32)
 
         # Increments counts how many transitions we need to skip

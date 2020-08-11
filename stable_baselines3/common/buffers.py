@@ -435,15 +435,14 @@ class NstepReplayBuffer(ReplayBuffer):
         # two dim matrix of not dones. If done is true, then subsequent dones are turned to 0
         # using accumulate. This ensures that we don't use invalid transitions
         # not_dones is a [B x n_step] matrix
-        not_dones = np.multiply.accumulate(1 - self.dones[indices], 1).reshape(-1, self.n_step)
-
+        not_dones = np.squeeze(np.multiply.accumulate(1 - self.dones[indices], 1), -1)
         # vector of the discount factors
         # [n_step] vector
         gammas = gamma ** np.arange(self.n_step)
 
         # two dim matrix of rewards for the indices
         # using indices we select the current transition, plus the next n_step ones
-        rewards = self.rewards[indices].reshape(not_dones.shape)
+        rewards = np.squeeze(self.rewards[indices], -1)
         rewards = self._normalize_reward(rewards, env)
 
         # TODO(PartiallyTyped): augment the n-step return with entropy term if needed
@@ -468,11 +467,11 @@ class NstepReplayBuffer(ReplayBuffer):
         # If the jth transition is terminal, we need to ignore the j+1 but keep the reward of the jth
         # we do this by "shifting" the not_dones one step to the right
         # so a terminal transition has a 1, and the next has a 0
-        filt = np.hstack([np.ones((len(batch_inds), 1)), not_dones[:, :-1]])
+        filt = np.hstack([np.ones((not_dones.shape[0], 1)), not_dones[:, :-1]])
 
         # We ignore self.pos indice since it points to older transitions.
         # we then accumulate to prevent continuing to the wrong transitions.
-        current_episode = np.multiply.accumulate(indices != self.pos, 1).reshape(filt.shape)
+        current_episode = np.multiply.accumulate(indices != self.pos, 1)
 
         # combine the filters
         filt = filt * current_episode
@@ -484,7 +483,7 @@ class NstepReplayBuffer(ReplayBuffer):
         # Increments counts how many transitions we need to skip
         # filt always sums up to 1 + k non terminal transitions due to hstack above
         # so we subtract 1.
-        increments = np.add.reduce(filt, 1).astype(np.int).reshape(batch_inds.shape) - 1
+        increments = np.sum(filt, 1).astype(np.int) - 1
 
         next_obs_indices = (increments + batch_inds) % self.buffer_size
         obs = self._normalize_obs(self.observations[batch_inds, 0, :], env)

@@ -271,14 +271,13 @@ class HER(BaseAlgorithm):
                 self.model.num_timesteps = self.num_timesteps
                 episode_timesteps += 1
                 total_steps += 1
-                self._update_current_progress_remaining(self.num_timesteps, self._total_timesteps)
-                self.model._current_progress_remaining = self._current_progress_remaining
+                self.model._update_current_progress_remaining(self.num_timesteps, self._total_timesteps)
 
                 # For DQN, check if the target network should be updated
                 # and update the exploration schedule
                 # For SAC/TD3, the update is done as the same time as the gradient update
                 # see https://github.com/hill-a/stable-baselines/issues/900
-                self._on_step()
+                self.model._on_step()
 
                 if 0 < n_steps <= total_steps:
                     break

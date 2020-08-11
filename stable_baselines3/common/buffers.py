@@ -383,7 +383,7 @@ class RolloutBuffer(BaseBuffer):
         return RolloutBufferSamples(*tuple(map(self.to_torch, data)))
 
 
-class NstepReplayBuffer(ReplayBuffer):
+class NStepReplayBuffer(ReplayBuffer):
     """
     Replay Buffer that computes N-step returns.
 
@@ -420,9 +420,7 @@ class NstepReplayBuffer(ReplayBuffer):
         self.gamma = gamma
 
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
-        # TODO(PartiallyTyped): explain why this assert was here
-        # and check why it can fail (it fails during some tests with DQN)
-        # assert not np.any(batch_inds == self.pos)
+
         actions = self.actions[batch_inds, 0, :]
 
         gamma = self.gamma
@@ -435,32 +433,36 @@ class NstepReplayBuffer(ReplayBuffer):
         # two dim matrix of not dones. If done is true, then subsequent dones are turned to 0
         # using accumulate. This ensures that we don't use invalid transitions
         # not_dones is a [B x n_step] matrix
-        not_dones = np.squeeze(np.multiply.accumulate(1 - self.dones[indices], 1), -1)
+        not_dones = np.squeeze(1 - self.dones[indices], axis=-1)
+        not_dones = np.multiply.accumulate(not_dones, axis=1)
         # vector of the discount factors
         # [n_step] vector
         gammas = gamma ** np.arange(self.n_step)
 
         # two dim matrix of rewards for the indices
         # using indices we select the current transition, plus the next n_step ones
-        rewards = np.squeeze(self.rewards[indices], -1)
+        rewards = np.squeeze(self.rewards[indices], axis=-1)
         rewards = self._normalize_reward(rewards, env)
 
         # TODO(PartiallyTyped): augment the n-step return with entropy term if needed
         # the entropy term is not present in the first step
-        # if self.n_step > 1:
-        #     # Avoid computing entropy twice for the same observation
-        #     unique_indices = np.array(list(set(indices[:, 1:].flatten())))
-        #
-        #     # Compute entropy term
-        #     # TODO: convert to pytorch tensor on the correct device
-        #     _, log_prob = actor.action_log_prob(observations[unique_indices, :])
-        #
-        #     # Memory inneficient version but fast computation
-        #     # TODO: only allocate the memory for that array once
-        #     log_probs = np.zeros((self.buffer_size,))
-        #     log_probs[unique_indices] = log_prob.flatten()
-        #     # Add entropy term, only for n-step > 1
-        #     rewards[:, 1:] = rewards[:, 1:] - ent_coef * log_probs[indices[:, 1:]]
+        
+        # if self.n_step > 1: # not necessary since we assert 0 < n_step <= buffer_size
+
+
+        # # Avoid computing entropy twice for the same observation
+        # unique_indices = np.array(list(set(indices[:, 1:].flatten())))
+    
+        # # Compute entropy term
+        # # TODO: convert to pytorch tensor on the correct device
+        # _, log_prob = actor.action_log_prob(observations[unique_indices, :])
+    
+        # # Memory inneficient version but fast computation
+        # # TODO: only allocate the memory for that array once
+        # log_probs = np.zeros((self.buffer_size,))
+        # log_probs[unique_indices] = log_prob.flatten()
+        # # Add entropy term, only for n-step > 1
+        # rewards[:, 1:] = rewards[:, 1:] - ent_coef * log_probs[indices[:, 1:]]
 
         # we filter through the indices.
         # The immediate indice, i.e. col 0 needs to be 1, so we ensure that it is here using np.ones
@@ -483,7 +485,7 @@ class NstepReplayBuffer(ReplayBuffer):
         # Increments counts how many transitions we need to skip
         # filt always sums up to 1 + k non terminal transitions due to hstack above
         # so we subtract 1.
-        increments = np.sum(filt, 1).astype(np.int) - 1
+        increments = np.sum(filt, axis=1).astype(np.int) - 1
 
         next_obs_indices = (increments + batch_inds) % self.buffer_size
         obs = self._normalize_obs(self.observations[batch_inds, 0, :], env)
@@ -496,3 +498,4 @@ class NstepReplayBuffer(ReplayBuffer):
 
         data = (obs, actions, next_obs, dones, rewards)
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
+

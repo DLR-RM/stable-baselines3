@@ -3,12 +3,12 @@ import pytest
 from gym import spaces
 
 from stable_baselines3 import DQN, SAC, TD3
-from stable_baselines3.common.buffers import NstepReplayBuffer
+from stable_baselines3.common.buffers import NStepReplayBuffer
 from stable_baselines3.common.noise import NormalActionNoise
 
 
 def test_nsteps():
-    buffer = NstepReplayBuffer(5, spaces.Discrete(5), spaces.Discrete(5), n_step=5, gamma=1)
+    buffer = NStepReplayBuffer(5, spaces.Discrete(5), spaces.Discrete(5), n_step=5, gamma=1)
     buffer.add(0, 1, 10, 1, 0)
     buffer.add(1, 2, 11, 1, 0)
     buffer.add(2, 3, 12, 1, 0)
@@ -29,7 +29,7 @@ def test_nsteps():
     # with pytest.raises(AssertionError):
     #     buffer._get_samples(np.array([0, 1, 2, 3]))
 
-    buffer = NstepReplayBuffer(5, spaces.Discrete(5), spaces.Discrete(5), n_step=5, gamma=0.9)
+    buffer = NStepReplayBuffer(5, spaces.Discrete(5), spaces.Discrete(5), n_step=5, gamma=0.9)
     buffer.add(0, 1, 10, 1, 0)
     buffer.add(1, 2, 11, 1, 0)
     buffer.add(2, 3, 12, 1, 0)
@@ -46,7 +46,7 @@ def test_nsteps():
     assert np.allclose(rewards, np.array([1 + 0.9 + 0.9 ** 2 + 0.9 ** 3, 1 + 0.9 + 0.9 ** 2, 1 + 0.9, 1]).reshape(4, 1))
     assert np.allclose(act, np.array([11, 12, 13, 14]).reshape(4, 1))
 
-    buffer = NstepReplayBuffer(10, spaces.Discrete(5), spaces.Discrete(5), n_step=5, gamma=0.9)
+    buffer = NStepReplayBuffer(10, spaces.Discrete(5), spaces.Discrete(5), n_step=5, gamma=0.9)
     buffer.add(0, 1, 10, 1, 0)
     buffer.add(1, 2, 11, 1, 0)
     buffer.add(2, 3, 12, 1, 0)
@@ -67,7 +67,7 @@ def test_nsteps():
     # with pytest.raises(AssertionError):
     #     buffer._get_samples(np.array([5]))
 
-    buffer = NstepReplayBuffer(10, spaces.Discrete(5), spaces.Discrete(5), n_step=5, gamma=0.9)
+    buffer = NStepReplayBuffer(10, spaces.Discrete(5), spaces.Discrete(5), n_step=5, gamma=0.9)
     buffer.add(0, 1, 10, 1, 1)
     buffer.add(1, 2, 11, 1, 1)
     buffer.add(2, 3, 12, 1, 1)
@@ -84,7 +84,7 @@ def test_nsteps():
     assert np.allclose(act, np.array([11, 12, 13, 14]).reshape(4, 1))
     assert np.allclose(next_obs, np.array([[2], [3], [4], [5]]))
 
-    buffer = NstepReplayBuffer(5, spaces.Discrete(5), spaces.Discrete(5), n_step=2, gamma=0.99)
+    buffer = NStepReplayBuffer(5, spaces.Discrete(5), spaces.Discrete(5), n_step=2, gamma=0.99)
     buffer.add(0, 1, 10, 2, 0)
     buffer.add(1, 2, 11, 1, 0)
     buffer.add(2, 3, 12, 2, 0)
@@ -107,7 +107,7 @@ def test_with_algo(algo):
     # Integration test
     kwargs = {
         "policy_kwargs": dict(net_arch=[64]),
-        "replay_buffer_class": NstepReplayBuffer,
+        "replay_buffer_class": NStepReplayBuffer,
         "replay_buffer_kwargs": dict(n_step=10),
     }
     if algo in [TD3, SAC]:

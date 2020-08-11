@@ -30,6 +30,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param policy_base: The base policy used by this method
     :param learning_rate: (float or callable) learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
+    :param replay_buffer_class: (Optional[Type[ReplayBuffer]]) The class of replay buffer to use. Either ReplayBuffer or NStepReplayBuffer
+    :param replay_buffer_kwargs: (Optional[Dict[str, Any]]) The arguments to pass to the replay buffer
     :param buffer_size: (int) size of the replay buffer
     :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
     :param batch_size: (int) Minibatch size for each gradient update
@@ -67,7 +69,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param use_sde_at_warmup: (bool) Whether to use gSDE instead of uniform sampling
         during the warm up phase (before learning starts)
     :param sde_support: (bool) Whether the model support gSDE or not
-    :param n_step: (int) Number of steps to consider when computing the target Q-value
     """
 
     def __init__(
@@ -148,7 +149,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.use_sde_at_warmup = use_sde_at_warmup
 
         self.replay_buffer = None
-        self.replay_buffer_class = replay_buffer_class or ReplayBuffer
+        replay_buffer_class = replay_buffer_class or ReplayBuffer
+        assert issubclass(replay_buffer_class, ReplayBuffer)
+        self.replay_buffer_class = replay_buffer_class
         self.replay_buffer_kwargs = dict(replay_buffer_kwargs or {})
         if self.replay_buffer_class == NStepReplayBuffer:
             self.replay_buffer_kwargs["gamma"] = gamma

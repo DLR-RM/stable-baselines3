@@ -398,7 +398,7 @@ class NStepReplayBuffer(ReplayBuffer):
         at a cost of more complexity.
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
         and https://github.com/DLR-RM/stable-baselines3/pull/28#issuecomment-637559274
-    :param n_step: (int) The number of transitions to consider when computing n-step returns
+    :param n_steps: (int) The number of transitions to consider when computing n-step returns
     :param gamma:  (float) The discount factor for future rewards.
     """
 
@@ -410,13 +410,13 @@ class NStepReplayBuffer(ReplayBuffer):
         device: Union[th.device, str] = "cpu",
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
-        n_step: int = 1,
+        n_steps: int = 1,
         gamma: float = 0.99,
     ):
         super().__init__(buffer_size, observation_space, action_space, device, n_envs, optimize_memory_usage)
-        self.n_step = int(n_step)
-        if not 0 < n_step <= buffer_size:
-            raise ValueError("n_step needs to be strictly smaller than buffer_size, and strictly larger than 0")
+        self.n_steps = int(n_steps)
+        if not 0 < n_steps <= buffer_size:
+            raise ValueError("n_steps needs to be strictly smaller than buffer_size, and strictly larger than 0")
         self.gamma = gamma
 
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
@@ -427,8 +427,8 @@ class NStepReplayBuffer(ReplayBuffer):
 
         # Broadcasting turns 1dim arange matrix to 2 dimensional matrix that contains all
         # the indices, % buffersize keeps us in buffer range
-        # indices is a [B x n_step ] matrix
-        indices = (np.arange(self.n_step) + batch_inds.reshape(-1, 1)) % self.buffer_size
+        # indices is a [B x self.n_step ] matrix
+        indices = (np.arange(self.n_steps) + batch_inds.reshape(-1, 1)) % self.buffer_size
 
         # two dim matrix of not dones. If done is true, then subsequent dones are turned to 0
         # using accumulate. This ensures that we don't use invalid transitions
@@ -437,7 +437,7 @@ class NStepReplayBuffer(ReplayBuffer):
         not_dones = np.multiply.accumulate(not_dones, axis=1)
         # vector of the discount factors
         # [n_step] vector
-        gammas = gamma ** np.arange(self.n_step)
+        gammas = gamma ** np.arange(self.n_steps)
 
         # two dim matrix of rewards for the indices
         # using indices we select the current transition, plus the next n_step ones
@@ -446,17 +446,16 @@ class NStepReplayBuffer(ReplayBuffer):
 
         # TODO(PartiallyTyped): augment the n-step return with entropy term if needed
         # the entropy term is not present in the first step
-        
-        # if self.n_step > 1: # not necessary since we assert 0 < n_step <= buffer_size
 
+        # if self.n_steps > 1: # not necessary since we assert 0 < n_steps <= buffer_size
 
         # # Avoid computing entropy twice for the same observation
         # unique_indices = np.array(list(set(indices[:, 1:].flatten())))
-    
+
         # # Compute entropy term
         # # TODO: convert to pytorch tensor on the correct device
         # _, log_prob = actor.action_log_prob(observations[unique_indices, :])
-    
+
         # # Memory inneficient version but fast computation
         # # TODO: only allocate the memory for that array once
         # log_probs = np.zeros((self.buffer_size,))
@@ -498,4 +497,3 @@ class NStepReplayBuffer(ReplayBuffer):
 
         data = (obs, actions, next_obs, dones, rewards)
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
-

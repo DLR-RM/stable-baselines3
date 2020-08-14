@@ -24,6 +24,7 @@ Others:
 ^^^^^^^
 - Improve typing coverage of the ``VecEnv``
 - Removed ``AlreadySteppingError`` and ``NotSteppingError`` that were not used
+- Removed ``device`` keyword argument of policies; use ``policy.to(device)`` instead.
 
 Documentation:
 ^^^^^^^^^^^^^^

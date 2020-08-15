@@ -287,6 +287,8 @@ and multiprocessing for you.
       obs, rewards, dones, info = env.step(action)
       env.render()
 
+Note that ``make_atari_env`` implicitly applies a ``VecTransposeImage`` wrapper that puts channels along the leading axis, rather than the (default) final axis. If you want to use Stable Baselines 3 with a different image-based environment that puts channels last, then you will have to wrap the environment with a ``VecTransposeImage`` before passing the environment to any Stable Baselines 3 algorithms.
+
 
 PyBullet: Normalizing input features
 ------------------------------------

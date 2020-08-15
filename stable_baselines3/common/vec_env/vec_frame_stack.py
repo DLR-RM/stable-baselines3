@@ -16,7 +16,7 @@ class VecFrameStack(VecEnvWrapper):
     :param dim: Dimension along which to stack frames (not including batch dimension).
     """
 
-    def __init__(self, venv: VecEnv, n_stack: int, dim: int = -1):
+    def __init__(self, venv: VecEnv, n_stack: int, dim: int = 0):
         self.venv = venv
         self.n_stack = n_stack
         wrapped_obs_space = venv.observation_space

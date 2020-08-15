@@ -55,7 +55,7 @@ Pre-Processing
 To handle different observation spaces, some pre-processing needs to be done (e.g. one-hot encoding for discrete observation).
 Most of the code for pre-processing is in ``common/preprocessing.py`` and ``common/policies.py``.
 
-For images, we make use of an additional wrapper ``VecTransposeImage`` because PyTorch uses the "channel-first" convention.
+PyTorch uses the "channels-first" convention, and so we assume that all image-based environments produce channels-first observations. Environments that do not produce channels-first observations can be wrapped in a ``VecTransposeImage`` wrapper before being passed to policies.
 
 
 Policy Structure

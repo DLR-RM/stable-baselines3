@@ -24,6 +24,7 @@ Others:
 ^^^^^^^
 - Improve typing coverage of the ``VecEnv``
 - Removed ``AlreadySteppingError`` and ``NotSteppingError`` that were not used
+- All algorithms and policies now assume image-based environments put channels as the leading axis, rather than the final one. Environments that put channels last should be wrapped in a `VecTranspose` wrapper before being passed to any algorithms.
 
 Documentation:
 ^^^^^^^^^^^^^^

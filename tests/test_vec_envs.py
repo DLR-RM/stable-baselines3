@@ -137,19 +137,19 @@ class StepEnv(gym.Env):
         self.action_space = gym.spaces.Discrete(2)
         assert n_dims >= 1
         self.n_dims = n_dims
-        self.observation_space = gym.spaces.Box(0, 999, shape=(1, ) * n_dims, dtype="int")
+        self.observation_space = gym.spaces.Box(0, 999, shape=(1,) * n_dims, dtype="int")
         self.max_steps = max_steps
         self.current_step = 0
 
     def reset(self):
         self.current_step = 0
-        return np.array([self.current_step], dtype="int").reshape((1, ) * self.n_dims)
+        return np.array([self.current_step], dtype="int").reshape((1,) * self.n_dims)
 
     def step(self, action):
         prev_step = self.current_step
         self.current_step += 1
         done = self.current_step >= self.max_steps
-        return np.array([prev_step], dtype="int").reshape((1, ) * self.n_dims), 0.0, done, {}
+        return np.array([prev_step], dtype="int").reshape((1,) * self.n_dims), 0.0, done, {}
 
 
 @pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
@@ -215,7 +215,7 @@ def test_vec_frame_stack(vec_env_class, pad_dim):
     before_dims = abs_dim
     after_dims = n_dims - abs_dim - 1
     # ensures that we get a range stacked along the correct axis
-    desired_range = np.arange(3).reshape((1, ) * before_dims + (-1, ) + (1, ) * after_dims)
+    desired_range = np.arange(3).reshape((1,) * before_dims + (-1,) + (1,) * after_dims)
     batch_array = np.stack([desired_range] * N_ENVS, axis=0)
     assert np.all(step_obs == batch_array)
 

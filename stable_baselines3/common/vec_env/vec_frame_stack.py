@@ -23,8 +23,9 @@ class VecFrameStack(VecEnvWrapper):
         assert isinstance(wrapped_obs_space, spaces.Box), "VecFrameStack only work with gym.spaces.Box observation space"
         # convert dim to non-negative value, then add 1 to account for leading batch dimension
         self.dim_no_batch = dim if dim >= 0 else len(wrapped_obs_space.shape) + dim
-        assert 0 <= self.dim_no_batch < len(wrapped_obs_space.shape), \
-            f"dim={dim} out of range obs space with shape {wrapped_obs_space.shape}"
+        assert (
+            0 <= self.dim_no_batch < len(wrapped_obs_space.shape)
+        ), f"dim={dim} out of range obs space with shape {wrapped_obs_space.shape}"
         self.dim_batch = self.dim_no_batch + 1
         low = np.repeat(wrapped_obs_space.low, self.n_stack, axis=self.dim_no_batch)
         high = np.repeat(wrapped_obs_space.high, self.n_stack, axis=self.dim_no_batch)
@@ -44,14 +45,14 @@ class VecFrameStack(VecEnvWrapper):
                     old_terminal = infos[i]["terminal_observation"]
                     # this slice expression pulls out all but the oldest observation (which we moved to the back with our
                     # earlier .roll() call)
-                    obs_slice = (i, ) + (np.s_[:], ) * (self.dim_batch - 1) + (np.s_[:-stack_ax_size], )
+                    obs_slice = (i,) + (np.s_[:],) * (self.dim_batch - 1) + (np.s_[:-stack_ax_size],)
                     new_terminal = np.concatenate((self.stackedobs[obs_slice], old_terminal), axis=self.dim_no_batch)
                     infos[i]["terminal_observation"] = new_terminal
                 else:
                     warnings.warn("VecFrameStack wrapping a VecEnv without terminal_observation info")
                 self.stackedobs[i] = 0
         # replace the most recent obs
-        insert_index = (np.s_[:], ) * self.dim_batch + (np.s_[-stack_ax_size:], )
+        insert_index = (np.s_[:],) * self.dim_batch + (np.s_[-stack_ax_size:],)
         self.stackedobs[insert_index] = observations
         return self.stackedobs, rewards, dones, infos
 
@@ -63,7 +64,7 @@ class VecFrameStack(VecEnvWrapper):
         self.stackedobs[...] = 0
         stack_ax_size = obs.shape[-1]
         # this slice expression selects only the final observation
-        insert_slice = (np.s_[:], ) * self.dim_batch + (np.s_[-stack_ax_size:], )
+        insert_slice = (np.s_[:],) * self.dim_batch + (np.s_[-stack_ax_size:],)
         self.stackedobs[insert_slice] = obs
         return self.stackedobs
 

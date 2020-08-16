@@ -232,7 +232,7 @@ class BaseAlgorithm(ABC):
         """
         return ["policy", "device", "env", "eval_env", "replay_buffer", "rollout_buffer", "_vec_normalize_env"]
 
-    def _get_torch_variable_names(self) -> Tuple[List[str], List[str]]:
+    def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
         """
         Get the name of the torch variables that will be saved with
         PyTorch ``th.save``, ``th.load`` and ``state_dicts`` instead of the default
@@ -552,7 +552,7 @@ class BaseAlgorithm(ABC):
         if include is not None:
             exclude = exclude.difference(include)
 
-        state_dicts_names, tensors_names = self._get_torch_variable_names()
+        state_dicts_names, tensors_names = self._get_torch_save_params()
         torch_variables = state_dicts_names + tensors_names
         for torch_var in torch_variables:
             # We need to get only the name of the top most module as we'll remove that

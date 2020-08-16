@@ -296,7 +296,7 @@ class SAC(OffPolicyAlgorithm):
     def _excluded_save_params(self) -> List[str]:
         return super(SAC, self)._excluded_save_params() + ["actor", "critic", "critic_target"]
 
-    def _get_torch_variable_names(self) -> Tuple[List[str], List[str]]:
+    def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
         state_dicts = ["policy", "actor.optimizer", "critic.optimizer"]
         saved_tensors = ["log_ent_coef"]
         if self.ent_coef_optimizer is not None:

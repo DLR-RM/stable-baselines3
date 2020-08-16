@@ -231,15 +231,8 @@ class DQN(OffPolicyAlgorithm):
             reset_num_timesteps=reset_num_timesteps,
         )
 
-    def excluded_save_params(self) -> List[str]:
-        """
-        Returns the names of the parameters that should be excluded by default
-        when saving the model.
-
-        :return: (List[str]) List of parameters that should be excluded from save
-        """
-        # Exclude aliases
-        return super(DQN, self).excluded_save_params() + ["q_net", "q_net_target"]
+    def _excluded_save_params(self) -> List[str]:
+        return super(DQN, self)._excluded_save_params() + ["q_net", "q_net_target"]
 
     def _get_torch_variable_names(self) -> Tuple[List[str], List[str]]:
         state_dicts = ["policy", "policy.optimizer"]

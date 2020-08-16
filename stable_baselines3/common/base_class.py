@@ -221,6 +221,17 @@ class BaseAlgorithm(ABC):
         for optimizer in optimizers:
             update_learning_rate(optimizer, self.lr_schedule(self._current_progress_remaining))
 
+    def _excluded_save_params(self) -> List[str]:
+        """
+        Returns the names of the parameters that should be excluded from being
+        saved by pickling. E.g. replay buffers are skipped by default
+        as they take up a lot of space. PyTorch variables should be excluded
+        with this so they can be stored with ``th.save``.
+
+        :return: (List[str]) List of parameters that should be excluded from being saved with pickle.
+        """
+        return ["policy", "device", "env", "eval_env", "replay_buffer", "rollout_buffer", "_vec_normalize_env"]
+
     def _get_torch_variable_names(self) -> Tuple[List[str], List[str]]:
         """
         Get the name of the torch variables that will be saved with
@@ -516,16 +527,6 @@ class BaseAlgorithm(ABC):
             if maybe_is_success is not None and dones[idx]:
                 self.ep_success_buffer.append(maybe_is_success)
 
-    def excluded_save_params(self) -> List[str]:
-        """
-        Returns the names of the parameters that should be excluded by default
-        when saving the model. E.g. replay buffers are skipped by default
-        as they take up a lot of space.
-
-        :return: ([str]) List of parameters that should be excluded from save
-        """
-        return ["policy", "device", "env", "eval_env", "replay_buffer", "rollout_buffer", "_vec_normalize_env"]
-
     def save(
         self,
         path: Union[str, pathlib.Path, io.BufferedIOBase],
@@ -545,7 +546,7 @@ class BaseAlgorithm(ABC):
         # Exclude is union of specified parameters (if any) and standard exclusions
         if exclude is None:
             exclude = []
-        exclude = set(exclude).union(self.excluded_save_params())
+        exclude = set(exclude).union(self._excluded_save_params())
 
         # Do not exclude params if they are specifically included
         if include is not None:

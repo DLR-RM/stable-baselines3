@@ -221,6 +221,24 @@ class BaseAlgorithm(ABC):
         for optimizer in optimizers:
             update_learning_rate(optimizer, self.lr_schedule(self._current_progress_remaining))
 
+    def _get_torch_variable_names(self) -> Tuple[List[str], List[str]]:
+        """
+        Get the name of the torch variables that will be saved with
+        PyTorch ``th.save``, ``th.load`` and ``state_dicts`` instead of the default
+        pickling strategy.
+
+        Names can point to specific variables under classes, e.g.
+        "policy.optimizer" would point to ``optimizer`` object of ``self.policy``
+        if this object.
+
+        :return: (Tuple[List[str], List[str]])
+            List of Torch variables whose state dicts to save (e.g. th.nn.Modules),
+            and list of other Torch variables to store with ``th.save``.
+        """
+        state_dicts = ["policy"]
+
+        return state_dicts, []
+
     def get_env(self) -> Optional[VecEnv]:
         """
         Returns the current environment (can be None if not defined).
@@ -254,19 +272,6 @@ class BaseAlgorithm(ABC):
 
         self.n_envs = env.num_envs
         self.env = env
-
-    def get_torch_variables(self) -> Tuple[List[str], List[str]]:
-        """
-        Get the name of the torch variables that will be saved.
-        ``th.save`` and ``th.load`` will be used with the right device
-        instead of the default pickling strategy.
-
-        :return: (Tuple[List[str], List[str]])
-            name of the variables with state dicts to save, name of additional torch tensors,
-        """
-        state_dicts = ["policy"]
-
-        return state_dicts, []
 
     @abstractmethod
     def learn(
@@ -545,7 +550,7 @@ class BaseAlgorithm(ABC):
         if include is not None:
             exclude = exclude.difference(include)
 
-        state_dicts_names, tensors_names = self.get_torch_variables()
+        state_dicts_names, tensors_names = self._get_torch_variable_names()
         torch_variables = state_dicts_names + tensors_names
         for torch_var in torch_variables:
             # We need to get only the name of the top most module as we'll remove that

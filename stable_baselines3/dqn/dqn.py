@@ -241,10 +241,7 @@ class DQN(OffPolicyAlgorithm):
         # Exclude aliases
         return super(DQN, self).excluded_save_params() + ["q_net", "q_net_target"]
 
-    def get_torch_variables(self) -> Tuple[List[str], List[str]]:
-        """
-        cf base class
-        """
+    def _get_torch_variable_names(self) -> Tuple[List[str], List[str]]:
         state_dicts = ["policy", "policy.optimizer"]
 
         return state_dicts, []

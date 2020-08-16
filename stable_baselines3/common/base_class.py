@@ -332,10 +332,10 @@ class BaseAlgorithm(ABC):
         """
         data, params, tensors = load_from_zip_file(load_path)
 
+        # Remove stored device information and replace with ours
         if "policy_kwargs" in data:
-            for arg_to_remove in ["device"]:
-                if arg_to_remove in data["policy_kwargs"]:
-                    del data["policy_kwargs"][arg_to_remove]
+            if "device" in "policy_kwargs":
+                del data["policy_kwargs"]["device"]
 
         if "policy_kwargs" in kwargs and kwargs["policy_kwargs"] != data["policy_kwargs"]:
             raise ValueError(
@@ -343,15 +343,16 @@ class BaseAlgorithm(ABC):
                 f"Stored kwargs: {data['policy_kwargs']}, specified kwargs: {kwargs['policy_kwargs']}"
             )
 
-        # check if observation space and action space are part of the saved parameters
         if "observation_space" not in data or "action_space" not in data:
             raise KeyError("The observation_space and action_space were not given, can't verify new environments")
-        # check if given env is valid
+
         if env is not None:
+            # Check if given env is valid
             check_for_correct_spaces(env, data["observation_space"], data["action_space"])
-        # if no new env was given use stored env if possible
-        if env is None and "env" in data:
-            env = data["env"]
+        else:
+            # Use stored env, if one exists. If not, continue as is (can be used for predict)
+            if "env" in data:
+                env = data["env"]
 
         # noinspection PyArgumentList
         model = cls(

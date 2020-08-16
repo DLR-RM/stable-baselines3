@@ -292,10 +292,11 @@ def save_to_zip_file(
 
     :param save_path: (Union[str, pathlib.Path, io.BufferedIOBase]) Where to store the model.
         if save_path is a str or pathlib.Path ensures that the path actually exists.
-    :param data: Class parameters being stored.
+    :param data: Class parameters being stored (non-PyTorch variables)
     :param params: Model parameters being stored expected to contain an entry for every
                    state_dict with its name and the state_dict.
-    :param tensors: Extra tensor variables expected to contain name and value of tensors
+    :param tensors: Extra tensor variables expected to contain name and value of tensors.
+                    These are PyTorch variables other than state_dicts.
     :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information
     """
 
@@ -358,7 +359,7 @@ def load_from_zip_file(
     :param load_path: (str, pathlib.Path, io.BufferedIOBase) Where to load the model from
     :param load_data: Whether we should load and return data
         (class parameters). Mainly used by 'load_parameters' to only load model parameters (weights)
-    :return: (dict),(dict),(dict) Class parameters, model state_dicts (dict of state_dict)
+    :return: (dict),(dict),(dict) Class parameters, model state_dicts (aka "params", dict of state_dict)
         and dict of extra tensors
     """
     load_path = open_path(load_path, "r", verbose=verbose, suffix="zip")
@@ -383,7 +384,7 @@ def load_from_zip_file(
                 data = json_to_data(json_data)
 
             if "tensors.pth" in namelist and load_data:
-                # Load extra tensors
+                # Load extra tensors (PyTorch variables that are not stored via state dicts)
                 with archive.open("tensors.pth", mode="r") as tensor_file:
                     # File has to be seekable, but tensor_file is not, so load in BytesIO first
                     # fixed in python >= 3.7
@@ -394,12 +395,11 @@ def load_from_zip_file(
                     # load the parameters with the right ``map_location``
                     tensors = th.load(file_content, map_location=device)
 
-            # check for all other .pth files
+            # Check for all other .pth files, assume they are state dicts
+            # for th.nn.Modules/Parameters, and load them
             other_files = [
                 file_name for file_name in namelist if os.path.splitext(file_name)[1] == ".pth" and file_name != "tensors.pth"
             ]
-            # if there are any other files which end with .pth and aren't "params.pth"
-            # assume that they each are optimizer parameters
             if len(other_files) > 0:
                 for file_path in other_files:
                     with archive.open(file_path, mode="r") as opt_param_file:
@@ -409,7 +409,8 @@ def load_from_zip_file(
                         file_content.write(opt_param_file.read())
                         # go to start of file
                         file_content.seek(0)
-                        # load the parameters with the right ``map_location``
+                        # Load the parameters with the right ``map_location``.
+                        # Remove ".pth" ending with splitext
                         params[os.path.splitext(file_path)[0]] = th.load(file_content, map_location=device)
     except zipfile.BadZipFile:
         # load_path wasn't a zip file

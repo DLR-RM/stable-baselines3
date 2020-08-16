@@ -360,7 +360,7 @@ def load_from_zip_file(
     :param load_data: Whether we should load and return data
         (class parameters). Mainly used by 'load_parameters' to only load model parameters (weights)
     :return: (dict),(dict),(dict) Class parameters, model state_dicts (aka "params", dict of state_dict)
-        and dict of extra tensors
+        and dict of extra tensors (PyTorch variables)
     """
     load_path = open_path(load_path, "r", verbose=verbose, suffix="zip")
 
@@ -379,39 +379,35 @@ def load_from_zip_file(
             params = {}
 
             if "data" in namelist and load_data:
-                # Load class parameters and convert to string
+                # Load class parameters that are stored
+                # with either JSON or pickle (not PyTorch variables).
                 json_data = archive.read("data").decode()
                 data = json_to_data(json_data)
 
-            if "tensors.pth" in namelist and load_data:
-                # Load extra tensors (PyTorch variables that are not stored via state dicts)
-                with archive.open("tensors.pth", mode="r") as tensor_file:
-                    # File has to be seekable, but tensor_file is not, so load in BytesIO first
+            # Check for all .pth files and load them using th.load.
+            # "tensors.pth" stores PyTorch variables, and any other .pth
+            # files store state_dicts of variables with custom names (e.g. policy, policy.optimizer)
+            pth_files = [
+                file_name for file_name in namelist if os.path.splitext(file_name)[1] == ".pth"
+            ]
+            for file_path in pth_files:
+                with archive.open(file_path, mode="r") as param_file:
+                    # File has to be seekable, but param_file is not, so load in BytesIO first
                     # fixed in python >= 3.7
                     file_content = io.BytesIO()
-                    file_content.write(tensor_file.read())
+                    file_content.write(param_file.read())
                     # go to start of file
                     file_content.seek(0)
-                    # load the parameters with the right ``map_location``
-                    tensors = th.load(file_content, map_location=device)
-
-            # Check for all other .pth files, assume they are state dicts
-            # for th.nn.Modules/Parameters, and load them
-            other_files = [
-                file_name for file_name in namelist if os.path.splitext(file_name)[1] == ".pth" and file_name != "tensors.pth"
-            ]
-            if len(other_files) > 0:
-                for file_path in other_files:
-                    with archive.open(file_path, mode="r") as opt_param_file:
-                        # File has to be seekable, but opt_param_file is not, so load in BytesIO first
-                        # fixed in python >= 3.7
-                        file_content = io.BytesIO()
-                        file_content.write(opt_param_file.read())
-                        # go to start of file
-                        file_content.seek(0)
-                        # Load the parameters with the right ``map_location``.
-                        # Remove ".pth" ending with splitext
-                        params[os.path.splitext(file_path)[0]] = th.load(file_content, map_location=device)
+                    # Load the parameters with the right ``map_location``.
+                    # Remove ".pth" ending with splitext
+                    th_object = th.load(file_content, map_location=device)
+                    if file_path == "tensors.pth":
+                        # PyTorch variables (not state_dicts)
+                        tensors = th_object
+                    else:
+                        # State dicts. Store into params dictionary
+                        # with same name as in .zip file (without .pth)
+                        params[os.path.splitext(file_path)[0]] = th_object
     except zipfile.BadZipFile:
         # load_path wasn't a zip file
         raise ValueError(f"Error: the file {load_path} wasn't a zip-file")

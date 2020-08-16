@@ -236,7 +236,7 @@ class BaseAlgorithm(ABC):
         """
         Get the name of the torch variables that will be saved with
         PyTorch ``th.save``, ``th.load`` and ``state_dicts`` instead of the default
-        pickling strategy.
+        pickling strategy. This is to handle device placement correctly.
 
         Names can point to specific variables under classes, e.g.
         "policy.optimizer" would point to ``optimizer`` object of ``self.policy``

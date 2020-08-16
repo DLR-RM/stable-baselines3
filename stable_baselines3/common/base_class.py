@@ -341,7 +341,7 @@ class BaseAlgorithm(ABC):
             (can be None if you only need prediction from a trained model) has priority over any saved environment
         :param kwargs: extra arguments to change the model when loading
         """
-        data, params, tensors = load_from_zip_file(load_path)
+        data, params, pytorch_variables = load_from_zip_file(load_path)
 
         # Remove stored device information and replace with ours
         if "policy_kwargs" in data:
@@ -383,10 +383,10 @@ class BaseAlgorithm(ABC):
             attr = recursive_getattr(model, name)
             attr.load_state_dict(params[name])
 
-        # put tensors back in place
-        if tensors is not None:
-            for name in tensors:
-                recursive_setattr(model, name, tensors[name])
+        # py other pytorch variables back in place
+        if pytorch_variables is not None:
+            for name in pytorch_variables:
+                recursive_setattr(model, name, pytorch_variables[name])
 
         # Sample gSDE exploration matrix, so it uses the right device
         # see issue #44
@@ -552,9 +552,9 @@ class BaseAlgorithm(ABC):
         if include is not None:
             exclude = exclude.difference(include)
 
-        state_dicts_names, tensors_names = self._get_torch_save_params()
-        torch_variables = state_dicts_names + tensors_names
-        for torch_var in torch_variables:
+        state_dicts_names, torch_variable_names = self._get_torch_save_params()
+        all_pytorch_variables = state_dicts_names + torch_variable_names
+        for torch_var in all_pytorch_variables:
             # We need to get only the name of the top most module as we'll remove that
             var_name = torch_var.split(".")[0]
             # Any params that are in the save vars must not be saved by data
@@ -564,13 +564,13 @@ class BaseAlgorithm(ABC):
         for param_name in exclude:
             data.pop(param_name, None)
 
-        # Build dict of tensor variables
-        tensors = None
-        if tensors_names is not None:
-            tensors = {}
-            for name in tensors_names:
+        # Build dict of torch variables
+        pytorch_variables = None
+        if torch_variable_names is not None:
+            pytorch_variables = {}
+            for name in torch_variable_names:
                 attr = recursive_getattr(self, name)
-                tensors[name] = attr
+                pytorch_variables[name] = attr
 
         # Build dict of state_dicts
         params_to_save = {}
@@ -579,4 +579,4 @@ class BaseAlgorithm(ABC):
             # Retrieve state dict
             params_to_save[name] = attr.state_dict()
 
-        save_to_zip_file(path, data=data, params=params_to_save, tensors=tensors)
+        save_to_zip_file(path, data=data, params=params_to_save, pytorch_variables=pytorch_variables)

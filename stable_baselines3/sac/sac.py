@@ -298,9 +298,9 @@ class SAC(OffPolicyAlgorithm):
 
     def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
         state_dicts = ["policy", "actor.optimizer", "critic.optimizer"]
-        saved_tensors = ["log_ent_coef"]
+        saved_pytorch_variables = ["log_ent_coef"]
         if self.ent_coef_optimizer is not None:
             state_dicts.append("ent_coef_optimizer")
         else:
-            saved_tensors.append("ent_coef_tensor")
-        return state_dicts, saved_tensors
+            saved_pytorch_variables.append("ent_coef_tensor")
+        return state_dicts, saved_pytorch_variables

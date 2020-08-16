@@ -284,7 +284,7 @@ def save_to_zip_file(
     save_path: Union[str, pathlib.Path, io.BufferedIOBase],
     data: Dict[str, Any] = None,
     params: Dict[str, Any] = None,
-    tensors: Dict[str, Any] = None,
+    pytorch_variables: Dict[str, Any] = None,
     verbose=0,
 ) -> None:
     """
@@ -295,11 +295,9 @@ def save_to_zip_file(
     :param data: Class parameters being stored (non-PyTorch variables)
     :param params: Model parameters being stored expected to contain an entry for every
                    state_dict with its name and the state_dict.
-    :param tensors: Extra tensor variables expected to contain name and value of tensors.
-                    These are PyTorch variables other than state_dicts.
+    :param pytorch_variables: Other PyTorch variables expected to contain name and value of the variable.
     :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information
     """
-
     save_path = open_path(save_path, "w", verbose=0, suffix="zip")
     # data/params can be None, so do not
     # try to serialize them blindly
@@ -311,9 +309,9 @@ def save_to_zip_file(
         # Do not try to save "None" elements
         if data is not None:
             archive.writestr("data", serialized_data)
-        if tensors is not None:
-            with archive.open("tensors.pth", mode="w") as tensors_file:
-                th.save(tensors, tensors_file)
+        if pytorch_variables is not None:
+            with archive.open("pytorch_variables.pth", mode="w") as pytorch_variables_file:
+                th.save(pytorch_variables, pytorch_variables_file)
         if params is not None:
             for file_name, dict_ in params.items():
                 with archive.open(file_name + ".pth", mode="w") as param_file:
@@ -360,7 +358,7 @@ def load_from_zip_file(
     :param load_data: Whether we should load and return data
         (class parameters). Mainly used by 'load_parameters' to only load model parameters (weights)
     :return: (dict),(dict),(dict) Class parameters, model state_dicts (aka "params", dict of state_dict)
-        and dict of extra tensors (PyTorch variables)
+        and dict of pytorch variables
     """
     load_path = open_path(load_path, "r", verbose=verbose, suffix="zip")
 
@@ -375,7 +373,7 @@ def load_from_zip_file(
             # zip archive, assume they were stored
             # as None (_save_to_file_zip allows this).
             data = None
-            tensors = None
+            pytorch_variables = None
             params = {}
 
             if "data" in namelist and load_data:
@@ -385,7 +383,7 @@ def load_from_zip_file(
                 data = json_to_data(json_data)
 
             # Check for all .pth files and load them using th.load.
-            # "tensors.pth" stores PyTorch variables, and any other .pth
+            # "pytorch_variables.pth" stores PyTorch variables, and any other .pth
             # files store state_dicts of variables with custom names (e.g. policy, policy.optimizer)
             pth_files = [
                 file_name for file_name in namelist if os.path.splitext(file_name)[1] == ".pth"
@@ -401,9 +399,9 @@ def load_from_zip_file(
                     # Load the parameters with the right ``map_location``.
                     # Remove ".pth" ending with splitext
                     th_object = th.load(file_content, map_location=device)
-                    if file_path == "tensors.pth":
+                    if file_path == "pytorch_variables.pth":
                         # PyTorch variables (not state_dicts)
-                        tensors = th_object
+                        pytorch_variables = th_object
                     else:
                         # State dicts. Store into params dictionary
                         # with same name as in .zip file (without .pth)
@@ -411,4 +409,4 @@ def load_from_zip_file(
     except zipfile.BadZipFile:
         # load_path wasn't a zip file
         raise ValueError(f"Error: the file {load_path} wasn't a zip-file")
-    return data, params, tensors
+    return data, params, pytorch_variables

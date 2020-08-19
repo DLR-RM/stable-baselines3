@@ -52,11 +52,11 @@ class ObsWrapper(VecEnvWrapper):
         return self.venv.step_wait()
 
     @staticmethod
-    def convert_dict(self, observation: dict) -> np.ndarray:
+    def convert_dict(observation: dict) -> np.ndarray:
         """
         Concatenate observation and desired goal of observation dict.
 
         :param observation: (dict)
         :return: (np.ndarray)
         """
-        return np.concatenate([observation["observation"], observation["desired_goal"]])
+        return np.concatenate([observation["observation"], observation["desired_goal"]], axis=1)

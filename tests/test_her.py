@@ -9,6 +9,7 @@ from stable_baselines3 import DDPG, DQN, SAC, TD3
 from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
 from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
 from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env.dict_obs_wrapper import ObsWrapper
 from stable_baselines3.her.her import HER, GoalSelectionStrategy
 from stable_baselines3.sac.policies import SACPolicy
 from stable_baselines3.td3.policies import MlpPolicy, TD3Policy
@@ -32,8 +33,8 @@ def test_her(model_class, policy, online_sampling):
         policy,
         env,
         model_class,
-        n_goals=5,
-        goal_strategy="future",
+        n_sampled_goal=5,
+        goal_selection_strategy="future",
         online_sampling=online_sampling,
         action_noise=action_noise,
         verbose=0,
@@ -85,7 +86,7 @@ def test_her(model_class, policy, online_sampling):
 
 
 @pytest.mark.parametrize(
-    "goal_strategy",
+    "goal_selection_strategy",
     [
         "final",
         "episode",
@@ -98,7 +99,7 @@ def test_her(model_class, policy, online_sampling):
     ],
 )
 @pytest.mark.parametrize("online_sampling", [True, False])
-def test_goal_strategy(goal_strategy, online_sampling):
+def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
     """
     Test different goal strategies.
     """
@@ -109,7 +110,7 @@ def test_goal_strategy(goal_strategy, online_sampling):
         SACPolicy,
         env,
         SAC,
-        goal_strategy=goal_strategy,
+        goal_selection_strategy=goal_selection_strategy,
         online_sampling=online_sampling,
         gradient_steps=1,
         train_freq=1,
@@ -135,8 +136,8 @@ def test_save_load(tmp_path, model_class, policy):
         policy,
         env,
         model_class,
-        n_goals=5,
-        goal_strategy="future",
+        n_sampled_goal=5,
+        goal_selection_strategy="future",
         online_sampling=True,
         action_noise=action_noise,
         verbose=0,
@@ -158,7 +159,7 @@ def test_save_load(tmp_path, model_class, policy):
     observations_list = []
     for _ in range(10):
         obs = env.step([env.action_space.sample()])[0]
-        observation = np.concatenate([obs["observation"], obs["desired_goal"]], axis=1)
+        observation = ObsWrapper.convert_dict(obs)
         observations_list.append(observation)
 
     observations = np.concatenate(observations_list, axis=0)
@@ -218,10 +219,9 @@ def test_dqn_her(online_sampling, n_bits):
         "MlpPolicy",
         env,
         DQN,
-        n_goals=4,
-        goal_strategy="future",
+        n_sampled_goal=4,
+        goal_selection_strategy="future",
         online_sampling=online_sampling,
-        her_ratio=0.6,
         verbose=1,
         tau=1,
         batch_size=32,

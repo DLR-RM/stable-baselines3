@@ -41,11 +41,10 @@ class HER(BaseAlgorithm):
     :param policy: (BasePolicy or str) The policy model to use.
     :param env: (GymEnv or str) The environment to learn from (if registered in Gym, can be str)
     :param model_class: (OffPolicyAlgorithm) Off policy model which will be used with hindsight experience replay. (SAC, TD3)
-    :param n_goals: (int) Number of sampled goals for replay. (offline sampling)
-    :param goal_strategy: (GoalSelectionStrategy or str) Strategy for sampling goals for replay.
+    :param n_sampled_goal: (int) Number of sampled goals for replay. (offline sampling)
+    :param goal_selection_strategy: (GoalSelectionStrategy or str) Strategy for sampling goals for replay.
         One of ['episode', 'final', 'future', 'random']
     :param online_sampling: (bool) Sample HER transitions online.
-    :her_ratio: (float) The ratio between HER replays and regular replays in percent (between 0 and 1, for online sampling)
     :param learning_rate: (float or callable) learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
     """
@@ -55,10 +54,9 @@ class HER(BaseAlgorithm):
         policy: Union[str, Type[BasePolicy]],
         env: Union[GymEnv, str],
         model_class: Type[OffPolicyAlgorithm],
-        n_goals: int = 5,
-        goal_strategy: Union[GoalSelectionStrategy, str] = "future",
+        n_sampled_goal: int = 5,
+        goal_selection_strategy: Union[GoalSelectionStrategy, str] = "future",
         online_sampling: bool = False,
-        her_ratio: float = 0.6,
         learning_rate: Union[float, Callable] = 3e-4,
         *args,
         **kwargs,
@@ -78,35 +76,35 @@ class HER(BaseAlgorithm):
         self.verbose = self.model.verbose
         self.tensorboard_log = self.model.tensorboard_log
 
-        # convert goal_strategy into GoalSelectionStrategy if string
-        if isinstance(goal_strategy, str):
-            self.goal_strategy = KEY_TO_GOAL_STRATEGY[goal_strategy.lower()]
+        # convert goal_selection_strategy into GoalSelectionStrategy if string
+        if isinstance(goal_selection_strategy, str):
+            self.goal_selection_strategy = KEY_TO_GOAL_STRATEGY[goal_selection_strategy.lower()]
         else:
-            self.goal_strategy = goal_strategy
+            self.goal_selection_strategy = goal_selection_strategy
 
-        # check if goal_strategy is valid
+        # check if goal_selection_strategy is valid
         assert isinstance(
-            self.goal_strategy, GoalSelectionStrategy
+            self.goal_selection_strategy, GoalSelectionStrategy
         ), f"Invalid goal selection strategy, please use one of {list(GoalSelectionStrategy)}"
+
+        # storage for transitions of current episode
+        self._episode_storage = []
+        self.n_sampled_goal = n_sampled_goal
 
         # if we sample her transitions online use custom replay buffer
         self.online_sampling = online_sampling
-        self.her_ratio = her_ratio
+        self.her_ratio = 1 - (1.0 / (self.n_sampled_goal + 1))
         if self.online_sampling:
             self.model.replay_buffer = HerReplayBuffer(
                 self.env,
                 self.buffer_size,
-                self.goal_strategy,
+                self.goal_selection_strategy,
                 self.env.observation_space,
                 self.env.action_space,
                 self.device,
                 self.n_envs,
                 self.her_ratio,
             )
-
-        # storage for transitions of current episode
-        self._episode_storage = []
-        self.n_goals = n_goals
 
     def _setup_model(self) -> None:
         self.model._setup_model()
@@ -222,7 +220,7 @@ class HER(BaseAlgorithm):
             while not done:
                 # concatenate observation and (desired) goal
                 observation = self._last_obs
-                self._last_obs = np.concatenate([observation["observation"], observation["desired_goal"]], axis=1)
+                self._last_obs = ObsWrapper.convert_dict(observation)
 
                 if self.use_sde and self.sde_sample_freq > 0 and total_steps % self.sde_sample_freq == 0:
                     # Sample a new noise matrix
@@ -313,38 +311,6 @@ class HER(BaseAlgorithm):
 
         return RolloutReturn(mean_reward, total_steps, total_episodes, continue_training)
 
-    def sample_goals(self, sample_idx: int, obs_dim: int) -> Union[np.ndarray, None]:
-        """
-        Sample a goal based on goal_strategy.
-
-        :param sample_idx: (int) Index of current transition.
-        :param obs_dim: (int) Dimension of real observation without goal. It is needed for the random strategy.
-        :return: (np.ndarray or None) Return sampled goal.
-        """
-        if self.goal_strategy == GoalSelectionStrategy.FINAL:
-            # replay with final state of current episode
-            return self._episode_storage[-1][0]["achieved_goal"]
-        elif self.goal_strategy == GoalSelectionStrategy.FUTURE:
-            # replay with random state which comes from the same episode and was observed after current transition
-            # we have no transition after last transition of episode
-
-            if (sample_idx + 1) < len(self._episode_storage):
-                index = np.random.choice(np.arange(sample_idx + 1, len(self._episode_storage)))
-                return self._episode_storage[index][0]["achieved_goal"]
-        elif self.goal_strategy == GoalSelectionStrategy.EPISODE:
-            # replay with random state which comes from the same episode as current transition
-            index = np.random.choice(np.arange(len(self._episode_storage)))
-            return self._episode_storage[index][0]["achieved_goal"]
-        elif self.goal_strategy == GoalSelectionStrategy.RANDOM:
-            # replay with random state from the entire replay buffer
-            index = np.random.choice(np.arange(self.replay_buffer.size()))
-            obs = self.replay_buffer.observations[index]
-            # get only the observation part
-            obs_array = obs[:, :obs_dim]
-            return obs_array
-        else:
-            raise ValueError("Strategy for sampling goals not supported!")
-
     def _store_transitions(self) -> None:
         """
         Store current episode in replay buffer. Sample additional goals and store new transitions in replay buffer.
@@ -356,8 +322,8 @@ class HER(BaseAlgorithm):
             observation, action, reward, new_observation, done = trans
 
             # concatenate observation with (desired) goal
-            obs = np.concatenate([observation["observation"], observation["desired_goal"]], axis=1)
-            new_obs = np.concatenate([new_observation["observation"], new_observation["desired_goal"]], axis=1)
+            obs = ObsWrapper.convert_dict(observation)
+            new_obs = ObsWrapper.convert_dict(new_observation)
 
             # store data in replay buffer
             self.replay_buffer.add(obs, new_obs, action, reward, done)
@@ -365,7 +331,14 @@ class HER(BaseAlgorithm):
             # sample set of additional goals
             obs_dim = observation["observation"].shape[1]
             sampled_goals = [
-                sample for sample in (self.sample_goals(idx, obs_dim) for i in range(self.n_goals)) if sample is not None
+                sample
+                for sample in (
+                    HerReplayBuffer.sample_goal(
+                        self.goal_selection_strategy, idx, self._episode_storage, self.replay_buffer.observations, obs_dim
+                    )
+                    for i in range(self.n_sampled_goal)
+                )
+                if sample is not None
             ]
 
             # iterate over sampled goals and store new transitions in replay buffer
@@ -407,9 +380,8 @@ class HER(BaseAlgorithm):
         """
 
         # add HER parameters to model
-        self.model.n_goals = self.n_goals
-        self.model.her_ratio = self.her_ratio
-        self.model.goal_strategy = self.goal_strategy
+        self.model.n_sampled_goal = self.n_sampled_goal
+        self.model.goal_selection_strategy = self.goal_selection_strategy
         self.model.online_sampling = self.online_sampling
         self.model.model_class = self.model_class
 
@@ -454,10 +426,9 @@ class HER(BaseAlgorithm):
             policy=data["policy_class"],
             env=env,
             model_class=data["model_class"],
-            n_goals=data["n_goals"],
-            goal_strategy=data["goal_strategy"],
+            n_sampled_goal=data["n_sampled_goal"],
+            goal_selection_strategy=data["goal_selection_strategy"],
             online_sampling=data["online_sampling"],
-            her_ratio=data["her_ratio"],
             learning_rate=data["learning_rate"],
             policy_kwargs=data["policy_kwargs"],
             _init_setup_model=True,  # pytype: disable=not-instantiable,wrong-keyword-args

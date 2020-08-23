@@ -98,6 +98,15 @@ To cite this project in publications:
       howpublished = {\url{https://github.com/DLR-RM/stable-baselines3}},
     }
 
+Contributing
+------------
+
+To any interested in making the rl baselines better, there are still some improvements
+that need to be done.
+You can check issues in the `repo <https://github.com/DLR-RM/stable-baselines3/issues>`_.
+
+If you want to contribute, please read `CONTRIBUTING.md <https://github.com/DLR-RM/stable-baselines3/blob/master/CONTRIBUTING.md>`_ first.
+
 Indices and tables
 -------------------
 

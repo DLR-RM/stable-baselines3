@@ -33,15 +33,22 @@ def test_callbacks(tmp_path, model_class):
     eval_callback = EvalCallback(
         eval_env, callback_on_new_best=callback_on_best, best_model_save_path=log_folder, log_path=log_folder, eval_freq=100
     )
-
     # Equivalent to the `checkpoint_callback`
     # but here in an event-driven manner
     checkpoint_on_event = CheckpointCallback(save_freq=1, save_path=log_folder, name_prefix="event")
+
     event_callback = EveryNTimesteps(n_steps=500, callback=checkpoint_on_event)
 
     callback = CallbackList([checkpoint_callback, eval_callback, event_callback])
-
     model.learn(500, callback=callback)
+
+    # Check access to local variables
+    assert model.env.observation_space.contains(callback.locals["new_obs"][0])
+    # Check that the child callback was called
+    assert checkpoint_callback.locals["new_obs"] is callback.locals["new_obs"]
+    assert event_callback.locals["new_obs"] is callback.locals["new_obs"]
+    assert checkpoint_on_event.locals["new_obs"] is callback.locals["new_obs"]
+
     model.learn(500, callback=None)
     # Transform callback into a callback list automatically
     model.learn(500, callback=[checkpoint_callback, eval_callback])

@@ -3,11 +3,12 @@
 Changelog
 ==========
 
-Pre-Release 0.9.0a0 (WIP)
+Pre-Release 0.9.0a1 (WIP)
 ------------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Removed ``device`` keyword argument of policies; use ``policy.to(device)`` instead. (@qxcv)
 
 New Features:
 ^^^^^^^^^^^^^

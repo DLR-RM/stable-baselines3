@@ -385,9 +385,7 @@ def load_from_zip_file(
             # Check for all .pth files and load them using th.load.
             # "pytorch_variables.pth" stores PyTorch variables, and any other .pth
             # files store state_dicts of variables with custom names (e.g. policy, policy.optimizer)
-            pth_files = [
-                file_name for file_name in namelist if os.path.splitext(file_name)[1] == ".pth"
-            ]
+            pth_files = [file_name for file_name in namelist if os.path.splitext(file_name)[1] == ".pth"]
             for file_path in pth_files:
                 with archive.open(file_path, mode="r") as param_file:
                     # File has to be seekable, but param_file is not, so load in BytesIO first

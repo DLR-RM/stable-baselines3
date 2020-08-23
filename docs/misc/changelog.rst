@@ -3,11 +3,12 @@
 Changelog
 ==========
 
-Pre-Release 0.9.0a0 (WIP)
+Pre-Release 0.9.0a1 (WIP)
 ------------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Removed ``device`` keyword argument of policies; use ``policy.to(device)`` instead. (@qxcv)
 
 New Features:
 ^^^^^^^^^^^^^
@@ -53,6 +54,7 @@ New Features:
 - Refactored opening paths for saving and loading to use strings, pathlib or io.BufferedIOBase (@PartiallyTyped)
 - Added ``DDPG`` algorithm as a special case of ``TD3``.
 - Introduced ``BaseModel`` abstract parent for ``BasePolicy``, which critics inherit from.
+- Callbacks have access to rollout collection locals as in SB2. (@PartiallyTyped)
 
 Bug Fixes:
 ^^^^^^^^^^

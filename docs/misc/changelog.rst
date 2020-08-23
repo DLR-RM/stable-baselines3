@@ -25,6 +25,7 @@ Others:
 ^^^^^^^
 - Improve typing coverage of the ``VecEnv``
 - Removed ``AlreadySteppingError`` and ``NotSteppingError`` that were not used
+- Fixed typos in SAC and TD3
 
 Documentation:
 ^^^^^^^^^^^^^^

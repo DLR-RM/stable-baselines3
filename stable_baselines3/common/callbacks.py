@@ -107,7 +107,7 @@ class BaseCallback(ABC):
         """
         Update the references to the local variables.
 
-        :param: ``locals_`` (Dict[str, Any]) the local variables during rollout collection
+        :param locals_: (Dict[str, Any]) the local variables during rollout collection
         """
         self.locals.update(locals_)
         self.update_child_locals(locals_)
@@ -116,7 +116,7 @@ class BaseCallback(ABC):
         """
         Update the references to the local variables on sub callbacks.
 
-        :param: ``locals_`` (Dict[str, Any]) the local variables during rollout collection
+        :param locals_: (Dict[str, Any]) the local variables during rollout collection
         """
         pass
 
@@ -158,7 +158,7 @@ class EventCallback(BaseCallback):
         """
         Update the references to the local variables.
 
-        :param: ``locals_`` (Dict[str, Any]) the local variables during rollout collection
+        :param locals_: (Dict[str, Any]) the local variables during rollout collection
         """
         if self.callback is not None:
             self.callback.update_locals(locals_)
@@ -208,7 +208,7 @@ class CallbackList(BaseCallback):
         """
         Update the references to the local variables.
 
-        :param: ``locals_`` (Dict[str, Any]) the local variables during rollout collection
+        :param locals_: (Dict[str, Any]) the local variables during rollout collection
         """
         for callback in self.callbacks:
             callback.update_locals(locals_)
@@ -382,7 +382,7 @@ class EvalCallback(EventCallback):
         """
         Update the references to the local variables.
 
-        :param: ``locals_`` (Dict[str, Any]) the local variables during rollout collection
+        :param locals_: (Dict[str, Any]) the local variables during rollout collection
         """
         if self.callback:
             self.callback.update_locals(locals_)

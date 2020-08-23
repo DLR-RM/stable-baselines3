@@ -34,7 +34,6 @@ class BaseModel(nn.Module, ABC):
 
     :param observation_space: (gym.spaces.Space) The observation space of the environment
     :param action_space: (gym.spaces.Space) The action space of the environment
-    :param device: (Union[th.device, str]) Device on which the code should run.
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
     :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
         to pass to the feature extractor.
@@ -52,7 +51,6 @@ class BaseModel(nn.Module, ABC):
         self,
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
-        device: Union[th.device, str] = "auto",
         features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
         features_extractor: Optional[nn.Module] = None,
@@ -70,7 +68,6 @@ class BaseModel(nn.Module, ABC):
 
         self.observation_space = observation_space
         self.action_space = action_space
-        self.device = get_device(device)
         self.features_extractor = features_extractor
         self.normalize_images = normalize_images
 
@@ -111,6 +108,16 @@ class BaseModel(nn.Module, ABC):
             # features_extractor=self.features_extractor
             normalize_images=self.normalize_images,
         )
+
+    @property
+    def device(self) -> th.device:
+        """Infer which device this policy lives on by inspecting its parameters.
+        If it has no parameters, the 'auto' device is used as a fallback.
+
+        :return: (th.device)"""
+        for param in self.parameters():
+            return param.device
+        return get_device("auto")
 
     def save(self, path: str) -> None:
         """
@@ -300,7 +307,6 @@ class ActorCriticPolicy(BasePolicy):
     :param action_space: (gym.spaces.Space) Action space
     :param lr_schedule: (Callable) Learning rate schedule (could be constant)
     :param net_arch: ([int or dict]) The specification of the policy and value networks.
-    :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (Type[nn.Module]) Activation function
     :param ortho_init: (bool) Whether to use or not orthogonal initialization
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
@@ -332,7 +338,6 @@ class ActorCriticPolicy(BasePolicy):
         action_space: gym.spaces.Space,
         lr_schedule: Callable[[float], float],
         net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
-        device: Union[th.device, str] = "auto",
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
@@ -357,7 +362,6 @@ class ActorCriticPolicy(BasePolicy):
         super(ActorCriticPolicy, self).__init__(
             observation_space,
             action_space,
-            device,
             features_extractor_class,
             features_extractor_kwargs,
             optimizer_class=optimizer_class,
@@ -445,9 +449,7 @@ class ActorCriticPolicy(BasePolicy):
         # Note: If net_arch is None and some features extractor is used,
         #       net_arch here is an empty list and mlp_extractor does not
         #       really contain any layers (acts like an identity module).
-        self.mlp_extractor = MlpExtractor(
-            self.features_dim, net_arch=self.net_arch, activation_fn=self.activation_fn, device=self.device
-        )
+        self.mlp_extractor = MlpExtractor(self.features_dim, net_arch=self.net_arch, activation_fn=self.activation_fn)
 
         latent_dim_pi = self.mlp_extractor.latent_dim_pi
 
@@ -594,7 +596,6 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
     :param action_space: (gym.spaces.Space) Action space
     :param lr_schedule: (Callable) Learning rate schedule (could be constant)
     :param net_arch: ([int or dict]) The specification of the policy and value networks.
-    :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (Type[nn.Module]) Activation function
     :param ortho_init: (bool) Whether to use or not orthogonal initialization
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
@@ -626,7 +627,6 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         action_space: gym.spaces.Space,
         lr_schedule: Callable,
         net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
-        device: Union[th.device, str] = "auto",
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
@@ -646,7 +646,6 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
             action_space,
             lr_schedule,
             net_arch,
-            device,
             activation_fn,
             ortho_init,
             use_sde,
@@ -685,7 +684,6 @@ class ContinuousCritic(BaseModel):
     :param activation_fn: (Type[nn.Module]) Activation function
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
-    :param device: (Union[th.device, str]) Device on which the code should run.
     :param n_critics: (int) Number of critic networks to create.
     """
 
@@ -698,15 +696,10 @@ class ContinuousCritic(BaseModel):
         features_dim: int,
         activation_fn: Type[nn.Module] = nn.ReLU,
         normalize_images: bool = True,
-        device: Union[th.device, str] = "auto",
         n_critics: int = 2,
     ):
         super().__init__(
-            observation_space,
-            action_space,
-            features_extractor=features_extractor,
-            normalize_images=normalize_images,
-            device=device,
+            observation_space, action_space, features_extractor=features_extractor, normalize_images=normalize_images,
         )
 
         action_dim = get_action_dim(self.action_space)

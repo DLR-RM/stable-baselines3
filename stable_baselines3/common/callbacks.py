@@ -435,3 +435,47 @@ class EveryNTimesteps(EventCallback):
             self.last_time_trigger = self.num_timesteps
             return self._on_event()
         return True
+
+
+class StopTrainingOnMaxEpisodes(BaseCallback):
+    """
+    Stop the training once a maximum number of episodes are played.
+
+    For multiple environments presumes that, the desired behavior is that the agent trains on each env for ``max_episodes``
+    and in total for ``max_episodes * n_envs`` episodes.
+
+    :param max_episodes: (int) Maximum number of episodes to stop training.
+    :param verbose: (int)
+    """
+
+    def __init__(self, max_episodes: int, verbose: int = 0):
+        super(StopTrainingOnMaxEpisodes, self).__init__(verbose=verbose)
+        self.max_episodes = max_episodes
+        self._max_episodes_per_env = max_episodes
+        self.episodes_played = 0
+        self._first_step = True
+
+    def _on_step(self) -> bool:
+        # Checking for both 'done' and 'dones' keywords because:
+        # Some models use keyword 'done' (e.g.,: SAC, TD3, DQN, DDPG)
+        # While some models use keyword 'dones' (e.g.,: A2C, PPO)
+        done_array = np.array(self.locals.get("done") if self.locals.get("done") is not None else self.locals.get("dones"))
+        self.episodes_played += np.sum(done_array).item()
+
+        # Sets max episodes per env in first step to avoid doing this operation multiple times
+        if self._first_step:
+            self._max_episodes_per_env = self.max_episodes * done_array.size
+            self._first_step = False
+
+        continue_training = bool(self.episodes_played < self._max_episodes_per_env)
+
+        if self.verbose > 0 and not continue_training:
+            avg_eps_per_env = self.episodes_played // done_array.size
+
+            print(
+                f"Stopping training with a total of {self.num_timesteps} steps because the "
+                f"{self.locals.get('tb_log_name')} model reached max_episodes={self.max_episodes}, "
+                f"by playing for {self.episodes_played} episodes"
+                f"{f', with an average of {avg_eps_per_env} ep. per env' if done_array.size > 1 else ''}"
+            )
+        return continue_training

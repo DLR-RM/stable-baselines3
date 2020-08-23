@@ -52,7 +52,7 @@ with open(version_file, "r") as file_handler:
 # -- Project information -----------------------------------------------------
 
 project = "Stable Baselines3"
-copyright = "2020, Stable Baselines3"  # noqa: A001
+copyright = "2020, Stable Baselines3"
 author = "Stable Baselines3 Contributors"
 
 # The short X.Y version

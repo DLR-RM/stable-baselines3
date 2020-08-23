@@ -4,6 +4,7 @@ import torch as th
 
 from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.utils import get_device
 
 MODEL_LIST = [
     PPO,
@@ -42,8 +43,11 @@ def test_predict(model_class, env_id, device):
     elif model_class in [DQN]:
         return
 
-    # test detection of different shapes by the predict method
+    # Test detection of different shapes by the predict method
     model = model_class("MlpPolicy", env_id, device=device)
+    # Check that the policy is on the right device
+    assert get_device(device) == model.policy.device
+
     env = gym.make(env_id)
     vec_env = DummyVecEnv([lambda: gym.make(env_id), lambda: gym.make(env_id)])
 

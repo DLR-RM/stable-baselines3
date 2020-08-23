@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type
 
 import gym
 import torch as th
@@ -15,7 +15,6 @@ class QNetwork(BasePolicy):
     :param observation_space: (gym.spaces.Space) Observation space
     :param action_space: (gym.spaces.Space) Action space
     :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
-    :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (Type[nn.Module]) Activation function
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
@@ -28,16 +27,11 @@ class QNetwork(BasePolicy):
         features_extractor: nn.Module,
         features_dim: int,
         net_arch: Optional[List[int]] = None,
-        device: Union[th.device, str] = "auto",
         activation_fn: Type[nn.Module] = nn.ReLU,
         normalize_images: bool = True,
     ):
         super(QNetwork, self).__init__(
-            observation_space,
-            action_space,
-            features_extractor=features_extractor,
-            normalize_images=normalize_images,
-            device=device,
+            observation_space, action_space, features_extractor=features_extractor, normalize_images=normalize_images,
         )
 
         if net_arch is None:
@@ -90,7 +84,6 @@ class DQNPolicy(BasePolicy):
     :param action_space: (gym.spaces.Space) Action space
     :param lr_schedule: (callable) Learning rate schedule (could be constant)
     :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
-    :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (Type[nn.Module]) Activation function
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
     :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
@@ -109,7 +102,6 @@ class DQNPolicy(BasePolicy):
         action_space: gym.spaces.Space,
         lr_schedule: Callable,
         net_arch: Optional[List[int]] = None,
-        device: Union[th.device, str] = "auto",
         activation_fn: Type[nn.Module] = nn.ReLU,
         features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
@@ -120,7 +112,6 @@ class DQNPolicy(BasePolicy):
         super(DQNPolicy, self).__init__(
             observation_space,
             action_space,
-            device,
             features_extractor_class,
             features_extractor_kwargs,
             optimizer_class=optimizer_class,
@@ -143,7 +134,6 @@ class DQNPolicy(BasePolicy):
             "net_arch": self.net_arch,
             "activation_fn": self.activation_fn,
             "normalize_images": normalize_images,
-            "device": device,
         }
 
         self.q_net, self.q_net_target = None, None
@@ -204,7 +194,6 @@ class CnnPolicy(DQNPolicy):
     :param action_space: (gym.spaces.Space) Action space
     :param lr_schedule: (callable) Learning rate schedule (could be constant)
     :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
-    :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (Type[nn.Module]) Activation function
     :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
     :param normalize_images: (bool) Whether to normalize images or not,
@@ -221,7 +210,6 @@ class CnnPolicy(DQNPolicy):
         action_space: gym.spaces.Space,
         lr_schedule: Callable,
         net_arch: Optional[List[int]] = None,
-        device: Union[th.device, str] = "auto",
         activation_fn: Type[nn.Module] = nn.ReLU,
         features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
@@ -234,7 +222,6 @@ class CnnPolicy(DQNPolicy):
             action_space,
             lr_schedule,
             net_arch,
-            device,
             activation_fn,
             features_extractor_class,
             features_extractor_kwargs,

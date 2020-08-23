@@ -141,7 +141,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # Update policy keyword arguments
         if sde_support:
             self.policy_kwargs["use_sde"] = self.use_sde
-        self.policy_kwargs["device"] = self.device
         # For gSDE only
         self.use_sde_at_warmup = use_sde_at_warmup
 

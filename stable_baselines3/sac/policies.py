@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 import gym
 import torch as th
@@ -38,7 +38,6 @@ class Actor(BasePolicy):
     :param clip_mean: (float) Clip the mean output when using gSDE to avoid numerical instability.
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
-    :param device: (Union[th.device, str]) Device on which the code should run.
     """
 
     def __init__(
@@ -56,14 +55,12 @@ class Actor(BasePolicy):
         use_expln: bool = False,
         clip_mean: float = 2.0,
         normalize_images: bool = True,
-        device: Union[th.device, str] = "auto",
     ):
         super(Actor, self).__init__(
             observation_space,
             action_space,
             features_extractor=features_extractor,
             normalize_images=normalize_images,
-            device=device,
             squash_output=True,
         )
 
@@ -196,7 +193,6 @@ class SACPolicy(BasePolicy):
     :param action_space: (gym.spaces.Space) Action space
     :param lr_schedule: (callable) Learning rate schedule (could be constant)
     :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
-    :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (Type[nn.Module]) Activation function
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
@@ -225,7 +221,6 @@ class SACPolicy(BasePolicy):
         action_space: gym.spaces.Space,
         lr_schedule: Callable,
         net_arch: Optional[List[int]] = None,
-        device: Union[th.device, str] = "auto",
         activation_fn: Type[nn.Module] = nn.ReLU,
         use_sde: bool = False,
         log_std_init: float = -3,
@@ -242,7 +237,6 @@ class SACPolicy(BasePolicy):
         super(SACPolicy, self).__init__(
             observation_space,
             action_space,
-            device,
             features_extractor_class,
             features_extractor_kwargs,
             optimizer_class=optimizer_class,
@@ -270,7 +264,6 @@ class SACPolicy(BasePolicy):
             "net_arch": self.net_arch,
             "activation_fn": self.activation_fn,
             "normalize_images": normalize_images,
-            "device": device,
         }
         self.actor_kwargs = self.net_args.copy()
         sde_kwargs = {
@@ -356,7 +349,6 @@ class CnnPolicy(SACPolicy):
     :param action_space: (gym.spaces.Space) Action space
     :param lr_schedule: (callable) Learning rate schedule (could be constant)
     :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
-    :param device: (str or th.device) Device on which the code should run.
     :param activation_fn: (Type[nn.Module]) Activation function
     :param use_sde: (bool) Whether to use State Dependent Exploration or not
     :param log_std_init: (float) Initial value for the log standard deviation
@@ -383,7 +375,6 @@ class CnnPolicy(SACPolicy):
         action_space: gym.spaces.Space,
         lr_schedule: Callable,
         net_arch: Optional[List[int]] = None,
-        device: Union[th.device, str] = "auto",
         activation_fn: Type[nn.Module] = nn.ReLU,
         use_sde: bool = False,
         log_std_init: float = -3,
@@ -402,7 +393,6 @@ class CnnPolicy(SACPolicy):
             action_space,
             lr_schedule,
             net_arch,
-            device,
             activation_fn,
             use_sde,
             log_std_init,

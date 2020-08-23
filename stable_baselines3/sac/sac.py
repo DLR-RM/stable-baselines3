@@ -243,10 +243,10 @@ class SAC(OffPolicyAlgorithm):
 
             # Get current Q estimates for each critic network
             # using action from the replay buffer
-            current_q_esimates = self.critic(replay_data.observations, replay_data.actions)
+            current_q_estimates = self.critic(replay_data.observations, replay_data.actions)
 
             # Compute critic loss
-            critic_loss = 0.5 * sum([F.mse_loss(current_q, q_backup) for current_q in current_q_esimates])
+            critic_loss = 0.5 * sum([F.mse_loss(current_q, q_backup) for current_q in current_q_estimates])
             critic_losses.append(critic_loss.item())
 
             # Optimize the critic
@@ -289,6 +289,7 @@ class SAC(OffPolicyAlgorithm):
         strategy: str = "binary",
         reduce: str = "mean",
         exp_temperature: float = 1.0,
+        off_policy_update_freq: int = -1,
     ) -> None:
         """
         Pretrain with Critic Regularized Regression (CRR)
@@ -305,6 +306,11 @@ class SAC(OffPolicyAlgorithm):
         actor_losses, critic_losses = [], []
 
         for gradient_step in tqdm(range(gradient_steps)):
+
+            if off_policy_update_freq > 0 and gradient_step % off_policy_update_freq == 0:
+                self.train(gradient_steps=1, batch_size=batch_size)
+                continue
+
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
@@ -340,10 +346,10 @@ class SAC(OffPolicyAlgorithm):
 
             # Get current Q estimates for each critic network
             # using action from the replay buffer
-            current_q_esimates = self.critic(replay_data.observations, replay_data.actions)
+            current_q_estimates = self.critic(replay_data.observations, replay_data.actions)
 
             # Compute critic loss
-            critic_loss = 0.5 * sum([F.mse_loss(current_q, q_backup) for current_q in current_q_esimates])
+            critic_loss = 0.5 * sum([F.mse_loss(current_q, q_backup) for current_q in current_q_estimates])
             critic_losses.append(critic_loss.item())
 
             # Optimize the critic

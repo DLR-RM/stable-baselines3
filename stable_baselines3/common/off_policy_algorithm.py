@@ -401,6 +401,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 # Rescale and perform action
                 new_obs, reward, done, infos = env.step(action)
 
+                # Give access to local variables
+                callback.update_locals(locals())
                 # Only stop training if return value is False, not when it is None.
                 if callback.on_step() is False:
                     return RolloutReturn(0.0, total_steps, total_episodes, continue_training=False)

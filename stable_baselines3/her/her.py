@@ -3,6 +3,7 @@ import pathlib
 from typing import Callable, Iterable, List, Optional, Tuple, Type, Union
 
 import numpy as np
+from gym.wrappers import TimeLimit
 
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.buffers import ReplayBuffer
@@ -59,7 +60,7 @@ class HER(BaseAlgorithm):
         goal_selection_strategy: Union[GoalSelectionStrategy, str] = "future",
         online_sampling: bool = False,
         learning_rate: Union[float, Callable] = 3e-4,
-        max_episode_length: int = 1000,
+        max_episode_length: int = -1,
         *args,
         **kwargs,
     ):
@@ -100,6 +101,10 @@ class HER(BaseAlgorithm):
         # counter for steps in episode
         self.episode_steps = 0
         if self.online_sampling:
+            if isinstance(env, TimeLimit):
+                self.max_episode_length = env._max_episode_steps  # pytype: disable=attribute-error
+            elif self.max_episode_length <= 0:
+                raise ValueError("The maximum episode length must be greater than zero.")
             self.model.replay_buffer = HerReplayBuffer(
                 self.env,
                 self.buffer_size,
@@ -288,7 +293,7 @@ class HER(BaseAlgorithm):
                 if 0 < n_steps <= total_steps:
                     break
 
-            if done or self.episode_steps >= self.max_episode_length:
+            if done or self.episode_steps == self.max_episode_length:
                 if self.online_sampling:
                     observations, actions, rewards, next_observations, done = zip(*self._episode_storage)
                     self.replay_buffer.add(observations, next_observations, actions, rewards, done)
@@ -338,6 +343,10 @@ class HER(BaseAlgorithm):
             # store data in replay buffer
             self.replay_buffer.add(obs, new_obs, action, reward, done)
 
+            # We cannot sample a goal from the future in the last step of an episode
+            if idx == len(self._episode_storage) - 1 and self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
+                break
+
             # sample set of additional goals
             obs_dim = observation["observation"].shape[1]
             sampled_goals = [
@@ -348,7 +357,6 @@ class HER(BaseAlgorithm):
                     )
                     for _ in range(self.n_sampled_goal)
                 )
-                if sample is not None
             ]
 
             # iterate over sampled  new transitions in replay buffer

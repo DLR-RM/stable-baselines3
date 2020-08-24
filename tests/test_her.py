@@ -21,8 +21,8 @@ def test_her(model_class, policy, online_sampling):
     """
     Test Hindsight Experience Replay.
     """
-
-    env = BitFlippingEnv(n_bits=4, continuous=True)
+    n_bits = 4
+    env = BitFlippingEnv(n_bits=n_bits, continuous=True)
     env = DummyVecEnv([lambda: env])
 
     # Create action noise
@@ -47,6 +47,7 @@ def test_her(model_class, policy, online_sampling):
         gradient_steps=1,
         train_freq=1,
         n_episodes_rollout=-1,
+        max_episode_length=n_bits,
     )
 
     model.learn(total_timesteps=500, callback=None)
@@ -115,6 +116,7 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
         gradient_steps=1,
         train_freq=1,
         n_episodes_rollout=-1,
+        max_episode_length=10,
     )
     model.learn(total_timesteps=200, callback=None)
 
@@ -124,7 +126,8 @@ def test_save_load(tmp_path, model_class, policy):
     """
     Test if 'save' and 'load' saves and loads model correctly
     """
-    env = BitFlippingEnv(n_bits=4, continuous=True)
+    n_bits = 4
+    env = BitFlippingEnv(n_bits=n_bits, continuous=True)
     env = DummyVecEnv([lambda: env])
 
     # Create action noise
@@ -150,6 +153,7 @@ def test_save_load(tmp_path, model_class, policy):
         gradient_steps=1,
         train_freq=1,
         n_episodes_rollout=-1,
+        max_episode_length=n_bits,
     )
 
     model.learn(total_timesteps=500, callback=None)
@@ -219,28 +223,18 @@ def test_dqn_her(online_sampling, n_bits):
         "MlpPolicy",
         env,
         DQN,
-        n_sampled_goal=4,
+        n_sampled_goal=5,
         goal_selection_strategy="future",
         online_sampling=online_sampling,
         verbose=1,
-        tau=1,
-        batch_size=32,
         learning_rate=0.0005,
         max_episode_length=n_bits,
-        policy_kwargs=dict(net_arch=[64, 64]),
-        buffer_size=50000,
-        gamma=0.99,
-        gradient_steps=1,
         train_freq=1,
-        n_episodes_rollout=-1,
-        tensorboard_log="tensorboard",
-        learning_starts=1000,
-        exploration_fraction=0.1,
+        learning_starts=100,
         exploration_final_eps=0.02,
-        exploration_initial_eps=1.0,
         target_update_interval=500,
+        seed=0,
+        batch_size=32,
     )
 
-    tb_log_name = "run_" + str(online_sampling) + "_" + str(n_bits)
-
-    model.learn(total_timesteps=20000, callback=None, tb_log_name=tb_log_name)
+    model.learn(total_timesteps=20000)

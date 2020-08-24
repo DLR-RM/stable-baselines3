@@ -1,4 +1,4 @@
-from typing import Optional, Type, Union
+from typing import Optional, Union
 
 import numpy as np
 import torch as th
@@ -6,7 +6,7 @@ from gym import spaces
 
 from stable_baselines3.common.buffers import BaseBuffer
 from stable_baselines3.common.type_aliases import ReplayBufferSamples
-from stable_baselines3.common.vec_env import VecEnv, VecNormalize
+from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.dict_obs_wrapper import ObsWrapper
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 
@@ -95,7 +95,7 @@ class HerReplayBuffer(BaseBuffer):
         her_episode_indices = episode_indices[: int(self.her_ratio * batch_size)]
 
         observations = np.zeros((batch_size, self.env.obs_dim + self.env.goal_dim), dtype=self.observation_space.dtype)
-        actions = np.zeros((batch_size, 1), dtype=self.action_space.dtype)
+        actions = np.zeros((batch_size, self.action_dim), dtype=self.action_space.dtype)
         next_observations = np.zeros((batch_size, self.env.obs_dim + self.env.goal_dim), dtype=self.observation_space.dtype)
         dones = np.zeros((batch_size, 1), dtype=np.float32)
         rewards = np.zeros((batch_size, 1), dtype=np.float32)
@@ -174,12 +174,10 @@ class HerReplayBuffer(BaseBuffer):
             return episode[-1][0]["achieved_goal"]
         elif goal_selection_strategy == GoalSelectionStrategy.FUTURE:
             # replay with random state which comes from the same episode and was observed after current transition
-            # we have no transition after last transition of episode
-            if (sample_idx + 1) < len(episode):
-                index = np.random.choice(np.arange(sample_idx + 1, len(episode)))
-                if online_sampling:
-                    return episode[index]
-                return episode[index][0]["achieved_goal"]
+            index = np.random.choice(np.arange(sample_idx + 1, len(episode)))
+            if online_sampling:
+                return episode[index]
+            return episode[index][0]["achieved_goal"]
         elif goal_selection_strategy == GoalSelectionStrategy.EPISODE:
             # replay with random state which comes from the same episode as current transition
             index = np.random.choice(np.arange(len(episode)))

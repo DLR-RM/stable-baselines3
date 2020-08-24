@@ -128,8 +128,8 @@ class HerReplayBuffer(BaseBuffer):
                 # transition["done"] = False
 
             # concatenate observation with (desired) goal
-            obs = np.concatenate([transition["observation"], transition["desired_goal"]], axis=1)
-            next_obs = np.concatenate([transition["next_obs"], transition["desired_goal"]], axis=1)
+            obs = ObsWrapper.convert_dict(transition)
+            next_obs = ObsWrapper.convert_dict(transition, observation_key="next_obs")
             observations[idx] = obs
             next_observations[idx] = next_obs
             actions[idx] = transition["action"]

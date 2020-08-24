@@ -59,7 +59,7 @@ class HER(BaseAlgorithm):
         goal_selection_strategy: Union[GoalSelectionStrategy, str] = "future",
         online_sampling: bool = False,
         learning_rate: Union[float, Callable] = 3e-4,
-        max_episode_length: int = 10,
+        max_episode_length: int = 1000,
         *args,
         **kwargs,
     ):
@@ -109,7 +109,7 @@ class HER(BaseAlgorithm):
                 self.env.action_space,
                 self.device,
                 self.n_envs,
-                self.her_ratio,
+                self.her_ratio,  # pytype: disable=wrong-arg-types
             )
 
     def _setup_model(self) -> None:
@@ -346,7 +346,7 @@ class HER(BaseAlgorithm):
                     HerReplayBuffer.sample_goal(
                         self.goal_selection_strategy, idx, self._episode_storage, self.replay_buffer.observations, obs_dim
                     )
-                    for i in range(self.n_sampled_goal)
+                    for _ in range(self.n_sampled_goal)
                 )
                 if sample is not None
             ]

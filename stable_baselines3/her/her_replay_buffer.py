@@ -3,7 +3,6 @@ from typing import Optional, Type, Union
 import numpy as np
 import torch as th
 from gym import spaces
-from gym.spaces import Discrete
 
 from stable_baselines3.common.buffers import BaseBuffer
 from stable_baselines3.common.type_aliases import ReplayBufferSamples
@@ -31,7 +30,7 @@ class HerReplayBuffer(BaseBuffer):
 
     def __init__(
         self,
-        env: VecEnv,
+        env: ObsWrapper,
         buffer_size: int,
         max_episode_length: int,
         goal_selection_strategy: GoalSelectionStrategy,
@@ -51,6 +50,8 @@ class HerReplayBuffer(BaseBuffer):
         # buffer with episodes
         # number of episodes which can be stored until buffer size is reached
         n_episodes = self.buffer_size // self.max_episode_length
+        self.n_episodes = n_episodes
+
         # input dimensions for buffer initialization
         input_shape = {
             "observation": (self.env.num_envs, self.env.obs_dim),
@@ -64,18 +65,14 @@ class HerReplayBuffer(BaseBuffer):
             "done": (1,),
         }
         self.buffer = {
-            key: np.empty([n_episodes, self.max_episode_length, *dim], dtype=np.float32) for key, dim in input_shape.items()
+            key: np.empty((n_episodes, self.max_episode_length, *dim), dtype=np.float32) for key, dim in input_shape.items()
         }
         # episode length storage, needed for episodes which has less steps than the maximum length
-        self.episode_lengths = np.empty(n_episodes)
+        self.episode_lengths = np.empty(n_episodes, dtype=np.uint64)
 
         self.goal_selection_strategy = goal_selection_strategy
         # percentage of her indices
         self.her_ratio = her_ratio
-
-        # memory management
-        self._n_episodes_stored = 0
-        self._n_transitions_stored = 0
 
     def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
         """
@@ -94,57 +91,57 @@ class HerReplayBuffer(BaseBuffer):
         :return: (ReplayBufferSamples)
         """
         # Select which episodes to use
-        episode_idxs = np.random.randint(0, self.n_episodes_stored, batch_size)
-        # select timesteps of episodes
-        max_timestep_idx = self.episode_lengths[episode_idxs]
-        # transition_idxs = np.random.randint(self.max_episode_length, size=batch_size)
-        transition_idxs = np.random.randint(max_timestep_idx)
-        # get selected timesteps
-        transitions = {key: self.buffer[key][episode_idxs, transition_idxs].copy() for key in self.buffer.keys()}
-        # get her samples indices with her_ratio
-        her_idxs = np.random.choice(np.arange(batch_size), int(self.her_ratio * batch_size), replace=False)
+        episode_indices = np.random.randint(0, self.n_episodes_stored, batch_size)
+        her_episode_indices = episode_indices[: int(self.her_ratio * batch_size)]
 
-        # if we sample goals from future delete indices from her_idxs where we have no transition after current one
-        if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
-            her_idxs = her_idxs[transition_idxs[her_idxs] != max_timestep_idx[her_idxs] - 1]
+        observations = np.zeros((batch_size, self.env.obs_dim + self.env.goal_dim), dtype=self.observation_space.dtype)
+        actions = np.zeros((batch_size, 1), dtype=self.action_space.dtype)
+        next_observations = np.zeros((batch_size, self.env.obs_dim + self.env.goal_dim), dtype=self.observation_space.dtype)
+        dones = np.zeros((batch_size, 1), dtype=np.float32)
+        rewards = np.zeros((batch_size, 1), dtype=np.float32)
 
-        # get new goals with goal selection strategy
-        her_new_goals = [
-            self.sample_goal(self.goal_selection_strategy, trans, episode, self.buffer["achieved_goal"], online_sampling=True)
-            for episode, trans in zip(self.buffer["achieved_goal"][episode_idxs[her_idxs]], transition_idxs[her_idxs])
-        ]
+        for idx, ep_length in enumerate(self.episode_lengths[episode_indices]):
+            skip_her_sampling = False
+            if episode_indices[idx] in her_episode_indices and self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
+                max_timestep = ep_length - 1
+                # handle the case of 1 step episode: we must use a normal transition then
+                if max_timestep == 0:
+                    max_timestep = ep_length
+                    skip_her_sampling = True
+            else:
+                max_timestep = ep_length
 
-        # assign new goals as desired_goals
-        for idx, goal in enumerate(her_new_goals):
-            # observation
-            transitions["desired_goal"][her_idxs][idx] = goal
-            # next observation
-            transitions["next_desired_goal"][her_idxs][idx] = goal
+            transition_idx = np.random.randint(max_timestep)
+            transition = {key: self.buffer[key][episode_indices[idx], transition_idx].copy() for key in self.buffer.keys()}
 
-        # compute new rewards with new goal
-        achieved_goals = transitions["next_achieved_goal"][her_idxs]
-        new_rewards = transitions["reward"].copy()
-        new_rewards[her_idxs] = [
-            self.env.env_method("compute_reward", achieved_goal, new_goal, None)
-            for achieved_goal, new_goal in zip(achieved_goals, her_new_goals)
-        ]
+            if episode_indices[idx] in her_episode_indices and not skip_her_sampling:
+                episode = self.buffer["achieved_goal"][episode_indices[idx]]
+                new_goal = self.sample_goal(
+                    self.goal_selection_strategy, transition_idx, episode, self.buffer["achieved_goal"], online_sampling=True
+                )
+                # observation
+                transition["desired_goal"] = new_goal
+                # next observation
+                transition["next_desired_goal"] = new_goal
+                transition["reward"] = self.env.env_method("compute_reward", transition["next_achieved_goal"], new_goal, None)
+                # TODO: check that it does not change anything
+                # transition["done"] = False
 
-        # concatenate observation with (desired) goal
-        obs = [
-            np.concatenate([obs, desired_goal], axis=1)
-            for obs, desired_goal in zip(transitions["observation"], transitions["desired_goal"])
-        ]
-        next_obs = [
-            np.concatenate([obs, desired_goal], axis=1)
-            for obs, desired_goal in zip(transitions["next_obs"], transitions["next_desired_goal"])
-        ]
+            # concatenate observation with (desired) goal
+            obs = np.concatenate([transition["observation"], transition["desired_goal"]], axis=1)
+            next_obs = np.concatenate([transition["next_obs"], transition["desired_goal"]], axis=1)
+            observations[idx] = obs
+            next_observations[idx] = next_obs
+            actions[idx] = transition["action"]
+            dones[idx] = transition["done"]
+            rewards[idx] = transition["reward"]
 
         data = (
-            self._normalize_obs(np.asarray(obs, dtype=np.int8), env),
-            transitions["action"],
-            self._normalize_obs(np.asarray(next_obs, dtype=np.int8), env),
-            transitions["done"],
-            self._normalize_obs(new_rewards, env),
+            self._normalize_obs(observations, env),
+            actions,
+            self._normalize_obs(next_observations, env),
+            dones,
+            self._normalize_reward(rewards, env),
         )
 
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
@@ -218,26 +215,16 @@ class HerReplayBuffer(BaseBuffer):
         episode_length = len(action)
         episode = self._get_episode_dict(obs, next_obs, action, reward, done)
 
-        # check if replay buffer has enough space for all transitions of episode
-        if self.n_transitions_stored + episode_length <= self.buffer_size:
-            for key in self.buffer.keys():
-                self.buffer[key][self._n_episodes_stored][:episode_length] = episode[key]
-            # add episode length to length storage
-            self.episode_lengths[self._n_episodes_stored] = episode_length
-            # update replay size
-            self.n_episodes_stored += 1
-            self.n_transitions_stored += episode_length
-        elif self.full:
-            # if replay buffer is full take random stored episode and replace it
-            idx = np.random.randint(0, self.n_episodes_stored)
+        for key in self.buffer.keys():
+            self.buffer[key][self.pos][:episode_length] = episode[key]
+        # add episode length to length storage
+        self.episode_lengths[self.pos] = episode_length
 
-            for key in self.buffer.keys():
-                self.buffer[key][idx][:episode_length] = episode[key]
-            # add episode length to length storage
-            self.episode_lengths[idx] = episode_length
-
-        if self.n_transitions_stored == self.buffer_size:
+        # update current pointer
+        self.pos += 1
+        if self.pos == self.n_episodes:
             self.full = True
+            self.pos = 0
 
     def _get_episode_dict(self, obs, next_obs, action, reward, done) -> dict:
         """
@@ -284,27 +271,15 @@ class HerReplayBuffer(BaseBuffer):
 
     @property
     def n_episodes_stored(self):
-        return self._n_episodes_stored
-
-    @n_episodes_stored.setter
-    def n_episodes_stored(self, n):
-        self._n_episodes_stored = n
-
-    @property
-    def n_transitions_stored(self):
-        return self._n_transitions_stored
-
-    @n_transitions_stored.setter
-    def n_transitions_stored(self, n):
-        self._n_transitions_stored = n
+        if self.full:
+            return self.n_episodes
+        return self.pos
 
     def clear_buffer(self):
-        self.buffer = []
-        self.n_episodes_stored = 0
-        self.n_transitions_stored = 0
+        self.buffer = {}
 
     def size(self) -> int:
         """
         :return: (int) The current size of the buffer in transitions.
         """
-        return self.n_transitions_stored
+        return int(np.sum(self.episode_lengths))

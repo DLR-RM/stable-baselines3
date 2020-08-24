@@ -47,6 +47,7 @@ class HER(BaseAlgorithm):
     :param online_sampling: (bool) Sample HER transitions online.
     :param learning_rate: (float or callable) learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
+    :param max_episode_length: (int) The length of an episode. (time horizon)
     """
 
     def __init__(
@@ -58,6 +59,7 @@ class HER(BaseAlgorithm):
         goal_selection_strategy: Union[GoalSelectionStrategy, str] = "future",
         online_sampling: bool = False,
         learning_rate: Union[float, Callable] = 3e-4,
+        max_episode_length: int = 10,
         *args,
         **kwargs,
     ):
@@ -94,10 +96,14 @@ class HER(BaseAlgorithm):
         # if we sample her transitions online use custom replay buffer
         self.online_sampling = online_sampling
         self.her_ratio = 1 - (1.0 / (self.n_sampled_goal + 1))
+        self.max_episode_length = max_episode_length
+        # counter for steps in episode
+        self.episode_steps = 0
         if self.online_sampling:
             self.model.replay_buffer = HerReplayBuffer(
                 self.env,
                 self.buffer_size,
+                self.max_episode_length,
                 self.goal_selection_strategy,
                 self.env.observation_space,
                 self.env.action_space,
@@ -161,7 +167,7 @@ class HER(BaseAlgorithm):
             if rollout.continue_training is False:
                 break
 
-            if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
+            if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts and self.replay_buffer.size() > 0:
                 # If no `gradient_steps` is specified,
                 # do as many gradients steps as steps performed during the rollout
                 gradient_steps = self.gradient_steps if self.gradient_steps > 0 else rollout.episode_timesteps
@@ -277,15 +283,15 @@ class HER(BaseAlgorithm):
                 # see https://github.com/hill-a/stable-baselines/issues/900
                 self.model._on_step()
 
+                self.episode_steps += 1
+
                 if 0 < n_steps <= total_steps:
                     break
 
-            if done:
+            if done or self.episode_steps >= self.max_episode_length:
                 if self.online_sampling:
                     observations, actions, rewards, next_observations, done = zip(*self._episode_storage)
                     self.replay_buffer.add(observations, next_observations, actions, rewards, done)
-                    # self.replay_buffer.add(self._episode_storage)
-
                 else:
                     # store episode in replay buffer
                     self._store_transitions()
@@ -304,6 +310,10 @@ class HER(BaseAlgorithm):
                 # Log training infos
                 if log_interval is not None and self._episode_num % log_interval == 0:
                     self._dump_logs()
+
+                # reset if done or episode length is reached
+                self.env.reset()
+                self.episode_steps = 0
 
         mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
 
@@ -341,7 +351,7 @@ class HER(BaseAlgorithm):
                 if sample is not None
             ]
 
-            # iterate over sampled goals and store new transitions in replay buffer
+            # iterate over sampled  new transitions in replay buffer
             for goal in sampled_goals:
                 # compute new reward with new goal
                 new_reward = self.env.env_method("compute_reward", new_observation["achieved_goal"], goal, None)
@@ -384,6 +394,7 @@ class HER(BaseAlgorithm):
         self.model.goal_selection_strategy = self.goal_selection_strategy
         self.model.online_sampling = self.online_sampling
         self.model.model_class = self.model_class
+        self.model.max_episode_length = self.max_episode_length
 
         self.model.save(path, exclude, include)
 
@@ -430,6 +441,7 @@ class HER(BaseAlgorithm):
             goal_selection_strategy=data["goal_selection_strategy"],
             online_sampling=data["online_sampling"],
             learning_rate=data["learning_rate"],
+            max_episode_length=data["max_episode_length"],
             policy_kwargs=data["policy_kwargs"],
             _init_setup_model=True,  # pytype: disable=not-instantiable,wrong-keyword-args
         )

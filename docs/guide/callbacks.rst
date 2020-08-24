@@ -310,20 +310,16 @@ and in total for ``max_episodes * n_envs`` episodes.
 
 .. code-block:: python
 
-    import gym
-
     from stable_baselines3 import A2C
     from stable_baselines3.common.callbacks import StopTrainingOnMaxEpisodes
 
-    # Separate evaluation env
-    eval_env = gym.make('Pendulum-v0')
     # Stops training when the model reaches the maximum number of episodes
-    callback_max_eps = StopTrainingOnMaxEpisodes(max_episodes=5, verbose=1)
+    callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=5, verbose=1)
 
     model = A2C('MlpPolicy', 'Pendulum-v0', verbose=1)
     # Almost infinite number of timesteps, but the training will stop
     # early as soon as the max number of episodes is reached
-    model.learn(int(1e10), callback=callback_max_eps)
+    model.learn(int(1e10), callback=callback_max_episodes)
 
 
 .. automodule:: stable_baselines3.common.callbacks

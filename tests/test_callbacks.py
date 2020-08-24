@@ -14,7 +14,6 @@ from stable_baselines3.common.callbacks import (
     StopTrainingOnRewardThreshold,
 )
 from stable_baselines3.common.cmd_util import make_vec_env
-from stable_baselines3.common.vec_env import SubprocVecEnv
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN, DDPG])
@@ -54,6 +53,9 @@ def test_callbacks(tmp_path, model_class):
     assert checkpoint_callback.locals["new_obs"] is callback.locals["new_obs"]
     assert event_callback.locals["new_obs"] is callback.locals["new_obs"]
     assert checkpoint_on_event.locals["new_obs"] is callback.locals["new_obs"]
+    # Check that internal callback counters match models' counters
+    assert event_callback.num_timesteps == model.num_timesteps
+    assert event_callback.n_calls == model.num_timesteps
 
     model.learn(500, callback=None)
     # Transform callback into a callback list automatically
@@ -61,15 +63,23 @@ def test_callbacks(tmp_path, model_class):
     # Automatic wrapping, old way of doing callbacks
     model.learn(500, callback=lambda _locals, _globals: True)
 
-    # Testing for models that support multiple envs
+    # Testing models that support multiple envs
     if model_class in [A2C, PPO]:
-        envs = make_vec_env(env_name, n_envs=2, seed=0, vec_env_cls=SubprocVecEnv)
+        max_episodes = 1
+        n_envs = 2
+        envs = make_vec_env(env_name, n_envs=n_envs, seed=0)
 
         model = model_class("MlpPolicy", envs, policy_kwargs=dict(net_arch=[32]))
 
+        callback_max_eps = StopTrainingOnMaxEpisodes(max_episodes=max_episodes, verbose=1)
         callback = CallbackList([callback_max_eps])
-
         model.learn(1000, callback=callback)
+
+        # Check that the actual number of episodes and timestamps per env matches the expected one
+        episodes_per_env = callback_max_eps.n_episodes // n_envs
+        assert episodes_per_env == max_episodes
+        timesteps_per_env = model.num_timesteps // n_envs
+        assert timesteps_per_env == 200
 
     if os.path.exists(log_folder):
         shutil.rmtree(log_folder)

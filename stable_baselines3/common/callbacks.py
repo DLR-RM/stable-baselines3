@@ -87,7 +87,7 @@ class BaseCallback(ABC):
         """
         self.n_calls += 1
         # timesteps start at zero
-        self.num_timesteps = self.model.num_timesteps + 1
+        self.num_timesteps = self.model.num_timesteps
 
         return self._on_step()
 
@@ -445,14 +445,14 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
     and in total for ``max_episodes * n_envs`` episodes.
 
     :param max_episodes: (int) Maximum number of episodes to stop training.
-    :param verbose: (int)
+    :param verbose: (int) Select whether to print information about when training ended by reaching ``max_episodes``
     """
 
     def __init__(self, max_episodes: int, verbose: int = 0):
         super(StopTrainingOnMaxEpisodes, self).__init__(verbose=verbose)
         self.max_episodes = max_episodes
-        self._max_episodes_per_env = max_episodes
-        self.episodes_played = 0
+        self._total_max_episodes = max_episodes
+        self.n_episodes = 0
         self._first_step = True
 
     def _on_step(self) -> bool:
@@ -460,22 +460,22 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
         # Some models use keyword 'done' (e.g.,: SAC, TD3, DQN, DDPG)
         # While some models use keyword 'dones' (e.g.,: A2C, PPO)
         done_array = np.array(self.locals.get("done") if self.locals.get("done") is not None else self.locals.get("dones"))
-        self.episodes_played += np.sum(done_array).item()
+        self.n_episodes += np.sum(done_array).item()
 
-        # Sets max episodes per env in first step to avoid doing this operation multiple times
+        # Set total max episodes in first step to avoid doing this operation multiple times
         if self._first_step:
-            self._max_episodes_per_env = self.max_episodes * done_array.size
+            self._total_max_episodes = self.max_episodes * self.training_env.num_envs
             self._first_step = False
 
-        continue_training = bool(self.episodes_played < self._max_episodes_per_env)
+        continue_training = self.n_episodes < self._total_max_episodes
 
         if self.verbose > 0 and not continue_training:
-            avg_eps_per_env = self.episodes_played // done_array.size
+            avg_eps_per_env = self.n_episodes / self.training_env.num_envs
 
             print(
                 f"Stopping training with a total of {self.num_timesteps} steps because the "
                 f"{self.locals.get('tb_log_name')} model reached max_episodes={self.max_episodes}, "
-                f"by playing for {self.episodes_played} episodes"
-                f"{f', with an average of {avg_eps_per_env} ep. per env' if done_array.size > 1 else ''}"
+                f"by playing for {self.n_episodes} episodes"
+                f"{f', with an average of {avg_eps_per_env:.2f} ep. per env' if self.training_env.num_envs > 1 else ''}"
             )
         return continue_training

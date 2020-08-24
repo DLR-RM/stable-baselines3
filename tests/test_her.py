@@ -206,7 +206,7 @@ def test_save_load(tmp_path, model_class, policy):
     os.remove(tmp_path / "test_save.zip")
 
 
-@pytest.mark.parametrize("online_sampling", [False])
+@pytest.mark.parametrize("online_sampling", [False, True])
 @pytest.mark.parametrize("n_bits", [15])
 def test_dqn_her(online_sampling, n_bits):
     """
@@ -226,6 +226,7 @@ def test_dqn_her(online_sampling, n_bits):
         tau=1,
         batch_size=32,
         learning_rate=0.0005,
+        max_episode_length=n_bits,
         policy_kwargs=dict(net_arch=[64, 64]),
         buffer_size=50000,
         gamma=0.99,

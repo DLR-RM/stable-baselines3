@@ -147,10 +147,10 @@ class TD3(OffPolicyAlgorithm):
                 target_q = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
 
             # Get current Q estimates for each critic network
-            current_q_esimates = self.critic(replay_data.observations, replay_data.actions)
+            current_q_estimates = self.critic(replay_data.observations, replay_data.actions)
 
             # Compute critic loss
-            critic_loss = sum([F.mse_loss(current_q, target_q) for current_q in current_q_esimates])
+            critic_loss = sum([F.mse_loss(current_q, target_q) for current_q in current_q_estimates])
 
             # Optimize the critics
             self.critic.optimizer.zero_grad()

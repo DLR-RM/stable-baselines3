@@ -9,7 +9,7 @@ from stable_baselines3 import DDPG, DQN, SAC, TD3
 from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
 from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
 from stable_baselines3.common.vec_env import DummyVecEnv
-from stable_baselines3.common.vec_env.dict_obs_wrapper import ObsWrapper
+from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.her import HER, GoalSelectionStrategy
 from stable_baselines3.sac.policies import SACPolicy
 from stable_baselines3.td3.policies import MlpPolicy, TD3Policy
@@ -163,7 +163,7 @@ def test_save_load(tmp_path, model_class, policy):
     observations_list = []
     for _ in range(10):
         obs = env.step([env.action_space.sample()])[0]
-        observation = ObsWrapper.convert_dict(obs)
+        observation = ObsDictWrapper.convert_dict(obs)
         observations_list.append(observation)
 
     observations = np.concatenate(observations_list, axis=0)

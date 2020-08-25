@@ -4,7 +4,6 @@ from typing import Callable, Iterable, List, Optional, Tuple, Type, Union
 
 import gym
 import numpy as np
-from gym.wrappers import TimeLimit
 
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.buffers import ReplayBuffer
@@ -15,10 +14,37 @@ from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
 from stable_baselines3.common.utils import check_for_correct_spaces
-from stable_baselines3.common.vec_env import VecEnv
+from stable_baselines3.common.vec_env import VecEnv, VecEnvWrapper
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
 from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
+
+
+def get_time_limit(env: VecEnv, current_max_episode_length: int) -> int:
+    """
+    Get time limit from environment.
+
+    :param env: (VecEnv) Environment from which we want to get the time limit.
+    :param current_max_episode_length: (int) Current value for max_episode_length.
+    :return: (int) max episode length
+    """
+    # unwrap environment first
+    env_tmp = env
+    while isinstance(env_tmp, VecEnvWrapper):
+        env_tmp = env_tmp.venv
+    # try to get the attribute from environment
+    try:
+        current_max_episode_length = env_tmp.get_attr("_max_episode_steps")[0]
+    # if not available check if a valid value was passed as an argument
+    except AttributeError:
+        # throw an error when we have no valid value passed
+        if current_max_episode_length <= 0:
+            raise ValueError("The maximum episode length must be greater than zero.")
+        else:
+            # if valid value was passed take this as time limit
+            current_max_episode_length = current_max_episode_length
+
+    return current_max_episode_length
 
 
 class HER(BaseAlgorithm):
@@ -84,10 +110,7 @@ class HER(BaseAlgorithm):
         # counter for steps in episode
         self.episode_steps = 0
         if self.online_sampling:
-            if isinstance(self.env, TimeLimit):
-                self.max_episode_length = env._max_episode_steps  # pytype: disable=attribute-error
-            elif self.max_episode_length <= 0:
-                raise ValueError("The maximum episode length must be greater than zero.")
+            self.max_episode_length = get_time_limit(self.env, self.max_episode_length)
             self.model.replay_buffer = HerReplayBuffer(
                 self.env,
                 self.buffer_size,

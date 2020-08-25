@@ -266,8 +266,11 @@ class HER(BaseAlgorithm):
                         self._last_original_obs, new_obs_, reward_ = observation, new_obs, reward
                         self.model._last_original_obs = self._last_original_obs
 
-                    # add current transition to episode storage
-                    self._episode_storage.append((self._last_original_obs, buffer_action, reward_, new_obs_, done))
+                    if self.online_sampling:
+                        self.replay_buffer.add(self._last_original_obs, new_obs_, buffer_action, reward_, done)
+                    else:
+                        # add current transition to episode storage
+                        self._episode_storage.append((self._last_original_obs, new_obs_, buffer_action, reward_, done))
 
                 self._last_obs = new_obs
                 self.model._last_obs = self._last_obs
@@ -295,8 +298,7 @@ class HER(BaseAlgorithm):
 
             if done or self.episode_steps == self.max_episode_length:
                 if self.online_sampling:
-                    observations, actions, rewards, next_observations, done = zip(*self._episode_storage)
-                    self.replay_buffer.add(observations, next_observations, actions, rewards, done)
+                    self.replay_buffer.store_episode()
                 else:
                     # store episode in replay buffer
                     self._store_transitions()
@@ -334,7 +336,7 @@ class HER(BaseAlgorithm):
         # iterate over current episodes transitions
         for idx, trans in enumerate(self._episode_storage):
 
-            observation, action, reward, new_observation, done = trans
+            observation, new_observation, action, reward, done = trans
 
             # concatenate observation with (desired) goal
             obs = ObsWrapper.convert_dict(observation)

@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 import numpy as np
 import torch as th
@@ -49,8 +49,8 @@ class HerReplayBuffer(BaseBuffer):
 
         # buffer with episodes
         # number of episodes which can be stored until buffer size is reached
-        n_episodes = self.buffer_size // self.max_episode_length
-        self.n_episodes = n_episodes
+        self.max_episode_stored = self.buffer_size // self.max_episode_length
+        self.current_idx = 0
 
         # input dimensions for buffer initialization
         input_shape = {
@@ -65,10 +65,11 @@ class HerReplayBuffer(BaseBuffer):
             "done": (1,),
         }
         self.buffer = {
-            key: np.empty((n_episodes, self.max_episode_length, *dim), dtype=np.float32) for key, dim in input_shape.items()
+            key: np.empty((self.max_episode_stored, self.max_episode_length, *dim), dtype=np.float32)
+            for key, dim in input_shape.items()
         }
         # episode length storage, needed for episodes which has less steps than the maximum length
-        self.episode_lengths = np.empty(n_episodes, dtype=np.uint64)
+        self.episode_lengths = np.empty(self.max_episode_stored, dtype=np.uint64)
 
         self.goal_selection_strategy = goal_selection_strategy
         # percentage of her indices
@@ -92,7 +93,7 @@ class HerReplayBuffer(BaseBuffer):
         """
         # Select which episodes to use
         episode_indices = np.random.randint(0, self.n_episodes_stored, batch_size)
-        her_episode_indices = episode_indices[: int(self.her_ratio * batch_size)]
+        her_episode_indices = set(episode_indices[: int(self.her_ratio * batch_size)])
 
         observations = np.zeros((batch_size, self.env.obs_dim + self.env.goal_dim), dtype=self.observation_space.dtype)
         actions = np.zeros((batch_size, self.action_dim), dtype=self.action_space.dtype)
@@ -101,21 +102,23 @@ class HerReplayBuffer(BaseBuffer):
         rewards = np.zeros((batch_size, 1), dtype=np.float32)
 
         for idx, ep_length in enumerate(self.episode_lengths[episode_indices]):
-            skip_her_sampling = False
-            if episode_indices[idx] in her_episode_indices and self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
+            her_sampling = episode_indices[idx] in her_episode_indices
+
+            if her_sampling and self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
                 max_timestep = ep_length - 1
                 # handle the case of 1 step episode: we must use a normal transition then
                 if max_timestep == 0:
                     max_timestep = ep_length
-                    skip_her_sampling = True
+                    her_sampling = False
             else:
                 max_timestep = ep_length
 
             transition_idx = np.random.randint(max_timestep)
             transition = {key: self.buffer[key][episode_indices[idx], transition_idx].copy() for key in self.buffer.keys()}
 
-            if episode_indices[idx] in her_episode_indices and not skip_her_sampling:
-                episode = self.buffer["achieved_goal"][episode_indices[idx]]
+            if her_sampling:
+                episode = self.buffer["achieved_goal"][episode_indices[idx]][: self.episode_lengths[episode_indices[idx]]]
+                # TODO: check that episode lenght is taken into account for all sampling strategies
                 new_goal = self.sample_goal(
                     self.goal_selection_strategy, transition_idx, episode, self.buffer["achieved_goal"], online_sampling=True
                 )
@@ -200,77 +203,44 @@ class HerReplayBuffer(BaseBuffer):
         else:
             raise ValueError("Strategy for sampling goals not supported!")
 
-    def add(self, obs: np.ndarray, next_obs: np.ndarray, action: np.ndarray, reward: np.ndarray, done: np.ndarray) -> None:
-        """
-        Add episode to replay buffer
+    def add(
+        self,
+        obs: Dict[str, np.ndarray],
+        next_obs: Dict[str, np.ndarray],
+        action: np.ndarray,
+        reward: np.ndarray,
+        done: np.ndarray,
+    ) -> None:
 
-        :param obs: (np.ndarray) Observation.
-        :param next_obs: (np.ndarray) Next observation.
-        :param action: (np.ndarray) Action.
-        :param reward: (np.ndarray) Reward.
-        :param done: (np.ndarray) Done.
-        """
-        episode_length = len(action)
-        episode = self._get_episode_dict(obs, next_obs, action, reward, done)
-
-        for key in self.buffer.keys():
-            self.buffer[key][self.pos][:episode_length] = episode[key]
-        # add episode length to length storage
-        self.episode_lengths[self.pos] = episode_length
+        self.buffer["observation"][self.pos][self.current_idx] = obs["observation"]
+        self.buffer["achieved_goal"][self.pos][self.current_idx] = obs["achieved_goal"]
+        self.buffer["desired_goal"][self.pos][self.current_idx] = obs["desired_goal"]
+        self.buffer["action"][self.pos][self.current_idx] = action
+        self.buffer["done"][self.pos][self.current_idx] = done
+        self.buffer["reward"][self.pos][self.current_idx] = reward
+        self.buffer["next_obs"][self.pos][self.current_idx] = next_obs["observation"]
+        self.buffer["next_achieved_goal"][self.pos][self.current_idx] = next_obs["achieved_goal"]
+        self.buffer["next_desired_goal"][self.pos][self.current_idx] = next_obs["desired_goal"]
 
         # update current pointer
+        self.current_idx += 1
+
+    def store_episode(self):
+        # add episode length to length storage
+        self.episode_lengths[self.pos] = self.current_idx
+
+        # update current episode pointer
         self.pos += 1
-        if self.pos == self.n_episodes:
+        if self.pos == self.max_episode_stored:
             self.full = True
             self.pos = 0
-
-    def _get_episode_dict(self, obs, next_obs, action, reward, done) -> dict:
-        """
-        Convert episode to dictionary.
-
-        :param obs: (np.ndarray) Observation.
-        :param next_obs: (np.ndarray) Next observation.
-        :param action: (np.ndarray) Action.
-        :param reward: (np.ndarray) Reward.
-        :param done: (np.ndarray) Done.
-        """
-
-        observations = []
-        achieved_goals = []
-        desired_goals = []
-
-        for obs_ in obs:
-            observations.append(obs_["observation"])
-            achieved_goals.append(obs_["achieved_goal"])
-            desired_goals.append(obs_["desired_goal"])
-
-        next_observations = []
-        next_achieved_goals = []
-        next_desired_goals = []
-
-        for next_obs_ in next_obs:
-            next_observations.append(next_obs_["observation"])
-            next_achieved_goals.append(next_obs_["achieved_goal"])
-            next_desired_goals.append(next_obs_["desired_goal"])
-
-        episode = {
-            "observation": np.array(observations),
-            "achieved_goal": np.array(achieved_goals),
-            "desired_goal": np.array(desired_goals),
-            "action": action,
-            "reward": reward,
-            "next_obs": np.array(next_observations),
-            "next_achieved_goal": np.array(next_achieved_goals),
-            "next_desired_goal": np.array(next_desired_goals),
-            "done": done,
-        }
-
-        return episode
+        # reset transition pointer
+        self.current_idx = 0
 
     @property
     def n_episodes_stored(self):
         if self.full:
-            return self.n_episodes
+            return self.max_episode_stored
         return self.pos
 
     def clear_buffer(self):

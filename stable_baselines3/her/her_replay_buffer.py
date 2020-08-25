@@ -13,7 +13,8 @@ from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 
 class HerReplayBuffer(BaseBuffer):
     """
-    Replay Buffer for online Hindsight Experience Replay (HER)
+    Replay Buffer for sampling HER (Hindsight Experience Replay) transitions online.
+    These transitions will not be saved in the Buffer.
 
     :param env: (VecEnv) The training environment
     :param buffer_size: (int) The size of the buffer measured in transitions.

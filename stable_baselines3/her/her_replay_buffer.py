@@ -82,7 +82,7 @@ class HerReplayBuffer(BaseBuffer):
             to normalize the observations/rewards when sampling
         :return: (ReplayBufferSamples)
         """
-        return self._sample_transitions(batch_size, env)
+        return self._sample_transitions_2(batch_size, env)
 
     def _sample_transitions(self, batch_size: int, env: Optional[VecNormalize]) -> ReplayBufferSamples:
         """
@@ -126,6 +126,7 @@ class HerReplayBuffer(BaseBuffer):
                 transition["desired_goal"] = new_goal
                 # next observation
                 transition["next_desired_goal"] = new_goal
+                # TODO: vectorized computation of reward
                 transition["reward"] = self.env.env_method("compute_reward", transition["next_achieved_goal"], new_goal, None)
                 # TODO: check that it does not change anything
                 # transition["done"] = False
@@ -203,6 +204,46 @@ class HerReplayBuffer(BaseBuffer):
         else:
             raise ValueError("Strategy for sampling goals not supported!")
 
+    def _sample_transitions_2(self, batch_size: int, env: Optional[VecNormalize]) -> ReplayBufferSamples:
+        """
+        :param batch_size: (int) Number of element to sample
+        :param env: (Optional[VecNormalize]) associated gym VecEnv
+            to normalize the observations/rewards when sampling
+        :return: (ReplayBufferSamples)
+        """
+        # Select which episodes to use
+        episode_indices = np.random.randint(0, self.n_episodes_stored, batch_size)
+        transitions_indices = np.random.randint(self.episode_lengths[episode_indices], size=batch_size)
+        transitions = {key: self.buffer[key][episode_indices, transitions_indices].copy() for key in self.buffer.keys()}
+
+        her_indices = np.random.permutation(batch_size)[: int(self.her_ratio * batch_size)]
+        future_offset = np.random.uniform(size=batch_size) * (self.episode_lengths[episode_indices] - transitions_indices)
+        future_offset = future_offset.astype(int)
+        future_indices = (transitions_indices + future_offset)[her_indices]
+        # future_indices = (transitions_indices + 1 + future_offset)[her_indices]
+
+        future_achieved_goals = self.buffer["achieved_goal"][episode_indices[her_indices], future_indices]
+        transitions["desired_goal"][her_indices] = future_achieved_goals
+
+        for idx in her_indices:
+            transitions["reward"][idx] = self.env.env_method(
+                "compute_reward", transitions["next_achieved_goal"][idx], transitions["desired_goal"][idx], None
+            )
+
+        # concatenate observation with (desired) goal
+        observations = ObsDictWrapper.convert_dict(transitions)
+        next_observations = ObsDictWrapper.convert_dict(transitions, observation_key="next_obs")
+
+        data = (
+            self._normalize_obs(observations, env),
+            transitions["action"],
+            self._normalize_obs(next_observations, env),
+            transitions["done"],
+            self._normalize_reward(transitions["reward"], env),
+        )
+
+        return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
+
     def add(
         self,
         obs: Dict[str, np.ndarray],
@@ -230,6 +271,9 @@ class HerReplayBuffer(BaseBuffer):
         self.episode_lengths[self.pos] = self.current_idx
 
         # update current episode pointer
+        # Note: in the OpenAI implementation
+        # when the buffer is full, the episode replaced
+        # is randomly chosen
         self.pos += 1
         if self.pos == self.max_episode_stored:
             self.full = True

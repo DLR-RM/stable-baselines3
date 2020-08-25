@@ -61,7 +61,9 @@ class BitFlippingEnv(GoalEnv):
             max_steps = n_bits
         self.max_steps = max_steps
         self.current_step = 0
-        self.reset()
+
+    def seed(self, seed: int) -> None:
+        self.obs_space.seed(seed)
 
     def convert_if_needed(self, state: np.ndarray) -> Union[int, np.ndarray]:
         """

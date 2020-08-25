@@ -12,11 +12,9 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 from stable_baselines3.her.her import HER
-from stable_baselines3.sac.policies import SACPolicy
-from stable_baselines3.td3.policies import MlpPolicy, TD3Policy
 
 
-@pytest.mark.parametrize("model_class, policy", [(SAC, SACPolicy), (TD3, TD3Policy), (DDPG, MlpPolicy)])
+@pytest.mark.parametrize("model_class, policy", [(SAC, "MlpPolicy"), (TD3, "MlpPolicy"), (DDPG, "MlpPolicy")])
 @pytest.mark.parametrize("online_sampling", [True, False])
 def test_her(model_class, policy, online_sampling):
     """
@@ -109,7 +107,7 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
     env = DummyVecEnv([lambda: env])
 
     model = HER(
-        SACPolicy,
+        "MlpPolicy",
         env,
         SAC,
         goal_selection_strategy=goal_selection_strategy,
@@ -122,7 +120,7 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
     model.learn(total_timesteps=200, callback=None)
 
 
-@pytest.mark.parametrize("model_class, policy", [(SAC, SACPolicy), (TD3, TD3Policy), (DDPG, MlpPolicy)])
+@pytest.mark.parametrize("model_class, policy", [(SAC, "MlpPolicy"), (TD3, "MlpPolicy"), (DDPG, "MlpPolicy")])
 def test_save_load(tmp_path, model_class, policy):
     """
     Test if 'save' and 'load' saves and loads model correctly

@@ -82,73 +82,7 @@ class HerReplayBuffer(BaseBuffer):
             to normalize the observations/rewards when sampling
         :return: (ReplayBufferSamples)
         """
-        return self._sample_transitions_2(batch_size, env)
-
-    def _sample_transitions(self, batch_size: int, env: Optional[VecNormalize]) -> ReplayBufferSamples:
-        """
-        :param batch_size: (int) Number of element to sample
-        :param env: (Optional[VecNormalize]) associated gym VecEnv
-            to normalize the observations/rewards when sampling
-        :return: (ReplayBufferSamples)
-        """
-        # Select which episodes to use
-        episode_indices = np.random.randint(0, self.n_episodes_stored, batch_size)
-        her_episode_indices = set(episode_indices[: int(self.her_ratio * batch_size)])
-
-        observations = np.zeros((batch_size, self.env.obs_dim + self.env.goal_dim), dtype=self.observation_space.dtype)
-        actions = np.zeros((batch_size, self.action_dim), dtype=self.action_space.dtype)
-        next_observations = np.zeros((batch_size, self.env.obs_dim + self.env.goal_dim), dtype=self.observation_space.dtype)
-        dones = np.zeros((batch_size, 1), dtype=np.float32)
-        rewards = np.zeros((batch_size, 1), dtype=np.float32)
-
-        for idx, ep_length in enumerate(self.episode_lengths[episode_indices]):
-            her_sampling = episode_indices[idx] in her_episode_indices
-
-            if her_sampling and self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
-                max_timestep = ep_length - 1
-                # handle the case of 1 step episode: we must use a normal transition then
-                if max_timestep == 0:
-                    max_timestep = ep_length
-                    her_sampling = False
-            else:
-                max_timestep = ep_length
-
-            transition_idx = np.random.randint(max_timestep)
-            transition = {key: self.buffer[key][episode_indices[idx], transition_idx].copy() for key in self.buffer.keys()}
-
-            if her_sampling:
-                episode = self.buffer["achieved_goal"][episode_indices[idx]][: self.episode_lengths[episode_indices[idx]]]
-                # TODO: check that episode lenght is taken into account for all sampling strategies
-                new_goal = self.sample_goal(
-                    self.goal_selection_strategy, transition_idx, episode, self.buffer["achieved_goal"], online_sampling=True
-                )
-                # observation
-                transition["desired_goal"] = new_goal
-                # next observation
-                transition["next_desired_goal"] = new_goal
-                # TODO: vectorized computation of reward
-                transition["reward"] = self.env.env_method("compute_reward", transition["next_achieved_goal"], new_goal, None)
-                # TODO: check that it does not change anything
-                # transition["done"] = False
-
-            # concatenate observation with (desired) goal
-            obs = ObsDictWrapper.convert_dict(transition)
-            next_obs = ObsDictWrapper.convert_dict(transition, observation_key="next_obs")
-            observations[idx] = obs
-            next_observations[idx] = next_obs
-            actions[idx] = transition["action"]
-            dones[idx] = transition["done"]
-            rewards[idx] = transition["reward"]
-
-        data = (
-            self._normalize_obs(observations, env),
-            actions,
-            self._normalize_obs(next_observations, env),
-            dones,
-            self._normalize_reward(rewards, env),
-        )
-
-        return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
+        return self._sample_transitions(batch_size, env)
 
     @staticmethod
     def sample_goal(
@@ -204,7 +138,7 @@ class HerReplayBuffer(BaseBuffer):
         else:
             raise ValueError("Strategy for sampling goals not supported!")
 
-    def _sample_transitions_2(self, batch_size: int, env: Optional[VecNormalize]) -> ReplayBufferSamples:
+    def _sample_transitions(self, batch_size: int, env: Optional[VecNormalize]) -> ReplayBufferSamples:
         """
         :param batch_size: (int) Number of element to sample
         :param env: (Optional[VecNormalize]) associated gym VecEnv
@@ -213,22 +147,43 @@ class HerReplayBuffer(BaseBuffer):
         """
         # Select which episodes to use
         episode_indices = np.random.randint(0, self.n_episodes_stored, batch_size)
-        transitions_indices = np.random.randint(self.episode_lengths[episode_indices], size=batch_size)
+        her_indices = np.arange(batch_size)[: int(self.her_ratio * batch_size)]
+        # her_indices = np.random.permutation(batch_size)[: int(self.her_ratio * batch_size)]
+        ep_length = self.episode_lengths[episode_indices]
+
+        if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
+            # restrict the sampling domain when ep_length > 1
+            # otherwise filter out the indices
+            her_indices = her_indices[ep_length[her_indices] > 1]
+            ep_length[her_indices] -= 1
+
+        transitions_indices = np.random.randint(ep_length, size=batch_size)
         transitions = {key: self.buffer[key][episode_indices, transitions_indices].copy() for key in self.buffer.keys()}
 
-        her_indices = np.random.permutation(batch_size)[: int(self.her_ratio * batch_size)]
-        future_offset = np.random.uniform(size=batch_size) * (self.episode_lengths[episode_indices] - transitions_indices)
-        future_offset = future_offset.astype(int)
-        future_indices = (transitions_indices + future_offset)[her_indices]
-        # future_indices = (transitions_indices + 1 + future_offset)[her_indices]
-
-        future_achieved_goals = self.buffer["achieved_goal"][episode_indices[her_indices], future_indices]
-        transitions["desired_goal"][her_indices] = future_achieved_goals
+        # vectorized version of future sampling (fast)
+        # future_offset = np.random.uniform(size=batch_size) * (self.episode_lengths[episode_indices] - transitions_indices)
+        # future_offset = future_offset.astype(int)
+        # future_indices = (transitions_indices + future_offset)[her_indices]
+        # # future_indices = (transitions_indices + 1 + future_offset)[her_indices]
+        # future_achieved_goals = self.buffer["achieved_goal"][episode_indices[her_indices], future_indices]
+        # transitions["desired_goal"][her_indices] = future_achieved_goals
 
         for idx in her_indices:
-            transitions["reward"][idx] = self.env.env_method(
-                "compute_reward", transitions["next_achieved_goal"][idx], transitions["desired_goal"][idx], None
+            episode = self.buffer["achieved_goal"][episode_indices[idx]][: self.episode_lengths[episode_indices[idx]]]
+            # TODO: check that episode length is taken into account for all sampling strategies
+            new_goal = self.sample_goal(
+                self.goal_selection_strategy,
+                transitions_indices[idx],
+                episode,
+                self.buffer["achieved_goal"],
+                online_sampling=True,
             )
+            transitions["desired_goal"][idx] = new_goal
+
+        # Vectorized computation
+        transitions["reward"][her_indices] = self.env.env_method(
+            "compute_reward", transitions["next_achieved_goal"][her_indices], transitions["desired_goal"][her_indices], None
+        )
 
         # concatenate observation with (desired) goal
         observations = ObsDictWrapper.convert_dict(transitions)

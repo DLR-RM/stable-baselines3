@@ -2,6 +2,7 @@ import io
 import pathlib
 from typing import Callable, Iterable, List, Optional, Tuple, Type, Union
 
+import gym
 import numpy as np
 from gym.wrappers import TimeLimit
 
@@ -14,25 +15,10 @@ from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
 from stable_baselines3.common.utils import check_for_correct_spaces
-from stable_baselines3.common.vec_env import VecEnv, VecEnvWrapper
-from stable_baselines3.common.vec_env.dict_obs_wrapper import ObsWrapper
+from stable_baselines3.common.vec_env import VecEnv
+from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
 from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
-
-
-def check_wrapped_env(env: VecEnv) -> VecEnv:
-    """
-    Check if the environment is already wrapped by an ObsWrapper.
-
-    :param env: (VecEnv) Environment to check.
-    :return: (VecEnv) env
-    """
-    env_tmp = env
-    while isinstance(env_tmp, VecEnvWrapper):
-        if isinstance(env_tmp, ObsWrapper):
-            return env
-        env_tmp = env_tmp.venv
-    return ObsWrapper(env)
 
 
 class HER(BaseAlgorithm):
@@ -67,9 +53,6 @@ class HER(BaseAlgorithm):
 
         super(HER, self).__init__(policy=BasePolicy, env=env, policy_base=BasePolicy, learning_rate=learning_rate)
 
-        # check if wrapper for dict support is needed
-        self.env = check_wrapped_env(self.env)
-
         # model initialization
         self.model_class = model_class
         self.model = model_class(
@@ -101,7 +84,7 @@ class HER(BaseAlgorithm):
         # counter for steps in episode
         self.episode_steps = 0
         if self.online_sampling:
-            if isinstance(env, TimeLimit):
+            if isinstance(self.env, TimeLimit):
                 self.max_episode_length = env._max_episode_steps  # pytype: disable=attribute-error
             elif self.max_episode_length <= 0:
                 raise ValueError("The maximum episode length must be greater than zero.")
@@ -231,7 +214,7 @@ class HER(BaseAlgorithm):
             while not done:
                 # concatenate observation and (desired) goal
                 observation = self._last_obs
-                self._last_obs = ObsWrapper.convert_dict(observation)
+                self._last_obs = ObsDictWrapper.convert_dict(observation)
 
                 if self.use_sde and self.sde_sample_freq > 0 and total_steps % self.sde_sample_freq == 0:
                     # Sample a new noise matrix
@@ -339,8 +322,8 @@ class HER(BaseAlgorithm):
             observation, new_observation, action, reward, done = trans
 
             # concatenate observation with (desired) goal
-            obs = ObsWrapper.convert_dict(observation)
-            new_obs = ObsWrapper.convert_dict(new_observation)
+            obs = ObsDictWrapper.convert_dict(observation)
+            new_obs = ObsDictWrapper.convert_dict(new_observation)
 
             # store data in replay buffer
             self.replay_buffer.add(obs, new_obs, action, reward, done)
@@ -436,7 +419,9 @@ class HER(BaseAlgorithm):
             raise KeyError("The observation_space and action_space were not given, can't verify new environments")
         # check if given env is valid
         if env is not None:
-            env = check_wrapped_env(env)
+            # check if wrapper for dict support is needed
+            if isinstance(env.observation_space, gym.spaces.dict.Dict):
+                env = ObsDictWrapper(env)
             check_for_correct_spaces(env, data["observation_space"], data["action_space"])
         # if no new env was given use stored env if possible
         if env is None and "env" in data:

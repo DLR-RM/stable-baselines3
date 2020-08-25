@@ -4,7 +4,7 @@ from gym import spaces
 from stable_baselines3.common.vec_env import VecEnv, VecEnvWrapper
 
 
-class ObsWrapper(VecEnvWrapper):
+class ObsDictWrapper(VecEnvWrapper):
     """
     Wrapper for a VecEnv which overrides the observation space for Hindsight Experience Replay to support dict observations.
 
@@ -12,7 +12,7 @@ class ObsWrapper(VecEnvWrapper):
     """
 
     def __init__(self, venv: VecEnv):
-        super(ObsWrapper, self).__init__(venv, venv.observation_space, venv.action_space)
+        super(ObsDictWrapper, self).__init__(venv, venv.observation_space, venv.action_space)
 
         self.venv = venv
 

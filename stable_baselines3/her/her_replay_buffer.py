@@ -7,7 +7,7 @@ from gym import spaces
 from stable_baselines3.common.buffers import BaseBuffer
 from stable_baselines3.common.type_aliases import ReplayBufferSamples
 from stable_baselines3.common.vec_env import VecNormalize
-from stable_baselines3.common.vec_env.dict_obs_wrapper import ObsWrapper
+from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 
 
@@ -30,7 +30,7 @@ class HerReplayBuffer(BaseBuffer):
 
     def __init__(
         self,
-        env: ObsWrapper,
+        env: ObsDictWrapper,
         buffer_size: int,
         max_episode_length: int,
         goal_selection_strategy: GoalSelectionStrategy,
@@ -131,8 +131,8 @@ class HerReplayBuffer(BaseBuffer):
                 # transition["done"] = False
 
             # concatenate observation with (desired) goal
-            obs = ObsWrapper.convert_dict(transition)
-            next_obs = ObsWrapper.convert_dict(transition, observation_key="next_obs")
+            obs = ObsDictWrapper.convert_dict(transition)
+            next_obs = ObsDictWrapper.convert_dict(transition, observation_key="next_obs")
             observations[idx] = obs
             next_observations[idx] = next_obs
             actions[idx] = transition["action"]

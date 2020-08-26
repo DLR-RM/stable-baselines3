@@ -14,13 +14,13 @@ from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
 from stable_baselines3.common.utils import check_for_correct_spaces
-from stable_baselines3.common.vec_env import VecEnv, VecEnvWrapper
+from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
 from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
 
 
-def get_time_limit(env: VecEnv, current_max_episode_length: int) -> int:
+def get_time_limit(env: VecEnv, current_max_episode_length: Optional[int]) -> int:
     """
     Get time limit from environment.
 
@@ -28,28 +28,26 @@ def get_time_limit(env: VecEnv, current_max_episode_length: int) -> int:
     :param current_max_episode_length: (int) Current value for max_episode_length.
     :return: (int) max episode length
     """
-    # unwrap environment first
-    env_tmp = env
-    while isinstance(env_tmp, VecEnvWrapper):
-        env_tmp = env_tmp.venv
     # try to get the attribute from environment
-    try:
-        current_max_episode_length = env_tmp.get_attr("_max_episode_steps")[0]
-    # if not available check if a valid value was passed as an argument
-    except AttributeError:
-        # throw an error when we have no valid value passed
-        if current_max_episode_length <= 0:
-            raise ValueError("The maximum episode length must be greater than zero.")
-        else:
-            # if valid value was passed take this as time limit
-            current_max_episode_length = current_max_episode_length
-
+    if current_max_episode_length is None:
+        try:
+            current_max_episode_length = env.get_attr("spec")[0].max_episode_steps
+        # if not available check if a valid value was passed as an argument
+        except AttributeError:
+            raise ValueError(
+                "The max episode length could not be inferred."
+                "You must specify a `max_episode_steps` when registering the environment, "
+                "use a `gym.wrappers.TimeLimit` wrapper "
+                "or pass `max_episode_length` to the model constructor"
+            )
     return current_max_episode_length
 
 
 class HER(BaseAlgorithm):
     """
     Hindsight Experience Replay (HER)
+
+    Paper: https://arxiv.org/abs/1707.01495
 
     :param policy: (BasePolicy or str) The policy model to use.
     :param env: (GymEnv or str) The environment to learn from (if registered in Gym, can be str)
@@ -60,7 +58,8 @@ class HER(BaseAlgorithm):
     :param online_sampling: (bool) Sample HER transitions online.
     :param learning_rate: (float or callable) learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
-    :param max_episode_length: (int) The length of an episode. (time horizon)
+    :param max_episode_length: (int) The maximum length of an episode. If not specified,
+        it will be automatically inferred if the environment uses a ``gym.wrappers.TimeLimit`` wrapper
     """
 
     def __init__(
@@ -72,7 +71,7 @@ class HER(BaseAlgorithm):
         goal_selection_strategy: Union[GoalSelectionStrategy, str] = "future",
         online_sampling: bool = False,
         learning_rate: Union[float, Callable] = 3e-4,
-        max_episode_length: int = -1,
+        max_episode_length: Optional[int] = None,
         *args,
         **kwargs,
     ):

@@ -39,6 +39,8 @@ class VecFrameStack(VecEnvWrapper):
         assert isinstance(observations, np.ndarray)
         stack_ax_size = observations.shape[self.dim_batch]
         self.stackedobs = np.roll(self.stackedobs, shift=-stack_ax_size, axis=self.dim_batch)
+        # so that we can mutate infos in-place
+        infos = list(infos)
         for i, done in enumerate(dones):
             if done:
                 if "terminal_observation" in infos[i]:

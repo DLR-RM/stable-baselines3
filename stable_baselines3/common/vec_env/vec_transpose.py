@@ -47,6 +47,8 @@ class VecTransposeImage(VecEnvWrapper):
     def step_wait(self) -> VecEnvStepReturn:
         observations, rewards, dones, infos = self.venv.step_wait()
         terminal_key = "terminal_observation"
+        # copy infos so that we can safely mutate it
+        infos = list(infos)
         for info_idx, info in enumerate(infos):
             if terminal_key in info:
                 # copy dict instead of manipulating in-place b/c we don't know where else info dict is used in self.venv

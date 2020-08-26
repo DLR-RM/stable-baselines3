@@ -63,4 +63,4 @@ class ObsDictWrapper(VecEnvWrapper):
         :param goal_key: (str) Key of (desired) goal in dicitonary.
         :return: (np.ndarray)
         """
-        return np.concatenate([observation_dict[observation_key], observation_dict[goal_key]], axis=1)
+        return np.concatenate([observation_dict[observation_key], observation_dict[goal_key]], axis=-1)

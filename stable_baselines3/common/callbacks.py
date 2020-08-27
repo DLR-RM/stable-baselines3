@@ -453,7 +453,10 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
         self.max_episodes = max_episodes
         self._total_max_episodes = max_episodes
         self.n_episodes = 0
-        self._first_step = True
+
+    def _init_callback(self):
+        # At start set total max according to number of envirnments
+        self._total_max_episodes = self.max_episodes * self.training_env.num_envs
 
     def _on_step(self) -> bool:
         # Checking for both 'done' and 'dones' keywords because:
@@ -461,11 +464,6 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
         # While some models use keyword 'dones' (e.g.,: A2C, PPO)
         done_array = np.array(self.locals.get("done") if self.locals.get("done") is not None else self.locals.get("dones"))
         self.n_episodes += np.sum(done_array).item()
-
-        # Set total max episodes in first step to avoid doing this operation multiple times
-        if self._first_step:
-            self._total_max_episodes = self.max_episodes * self.training_env.num_envs
-            self._first_step = False
 
         continue_training = self.n_episodes < self._total_max_episodes
 

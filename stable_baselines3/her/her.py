@@ -276,10 +276,10 @@ class HER(BaseAlgorithm):
                         self.model._last_original_obs = self._last_original_obs
 
                     if self.online_sampling:
-                        self.replay_buffer.add(self._last_original_obs, new_obs_, buffer_action, reward_, done)
+                        self.replay_buffer.add(self._last_original_obs, new_obs_, buffer_action, reward_, done, infos)
                     else:
                         # add current transition to episode storage
-                        self._episode_storage.append((self._last_original_obs, new_obs_, buffer_action, reward_, done))
+                        self._episode_storage.append((self._last_original_obs, new_obs_, buffer_action, reward_, done, infos))
 
                 self._last_obs = new_obs
                 self.model._last_obs = self._last_obs
@@ -345,7 +345,7 @@ class HER(BaseAlgorithm):
         # iterate over current episodes transitions
         for idx, trans in enumerate(self._episode_storage):
 
-            observation, new_observation, action, reward, done = trans
+            observation, new_observation, action, reward, done, infos = trans
 
             # concatenate observation with (desired) goal
             obs = ObsDictWrapper.convert_dict(observation)
@@ -373,7 +373,7 @@ class HER(BaseAlgorithm):
             # iterate over sampled  new transitions in replay buffer
             for goal in sampled_goals:
                 # compute new reward with new goal
-                new_reward = self.env.env_method("compute_reward", new_observation["achieved_goal"], goal, None)
+                new_reward = self.env.env_method("compute_reward", new_observation["achieved_goal"], goal, infos)
 
                 # concatenate observation with (desired) goal
                 obs = np.concatenate([observation["observation"], goal], axis=1)

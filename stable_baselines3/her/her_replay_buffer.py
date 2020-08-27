@@ -64,6 +64,7 @@ class HerReplayBuffer(BaseBuffer):
             "next_achieved_goal": (self.env.num_envs, self.env.goal_dim),
             "next_desired_goal": (self.env.num_envs, self.env.goal_dim),
             "done": (1,),
+            "infos": (1,),
         }
         self.buffer = {
             key: np.empty((self.max_episode_stored, self.max_episode_length, *dim), dtype=np.float32)
@@ -194,7 +195,10 @@ class HerReplayBuffer(BaseBuffer):
 
         # Vectorized computation
         transitions["reward"][her_indices] = self.env.env_method(
-            "compute_reward", transitions["next_achieved_goal"][her_indices], transitions["desired_goal"][her_indices], None
+            "compute_reward",
+            transitions["next_achieved_goal"][her_indices],
+            transitions["desired_goal"][her_indices],
+            transitions["infos"][her_indices],
         )
 
         # concatenate observation with (desired) goal
@@ -218,6 +222,7 @@ class HerReplayBuffer(BaseBuffer):
         action: np.ndarray,
         reward: np.ndarray,
         done: np.ndarray,
+        infos: Dict[str, np.ndarray],
     ) -> None:
 
         self.buffer["observation"][self.pos][self.current_idx] = obs["observation"]
@@ -229,6 +234,7 @@ class HerReplayBuffer(BaseBuffer):
         self.buffer["next_obs"][self.pos][self.current_idx] = next_obs["observation"]
         self.buffer["next_achieved_goal"][self.pos][self.current_idx] = next_obs["achieved_goal"]
         self.buffer["next_desired_goal"][self.pos][self.current_idx] = next_obs["desired_goal"]
+        self.buffer["infos"][self.pos][self.current_idx] = infos
 
         # update current pointer
         self.current_idx += 1

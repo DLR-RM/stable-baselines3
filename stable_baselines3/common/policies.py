@@ -699,7 +699,10 @@ class ContinuousCritic(BaseModel):
         n_critics: int = 2,
     ):
         super().__init__(
-            observation_space, action_space, features_extractor=features_extractor, normalize_images=normalize_images,
+            observation_space,
+            action_space,
+            features_extractor=features_extractor,
+            normalize_images=normalize_images,
         )
 
         action_dim = get_action_dim(self.action_space)

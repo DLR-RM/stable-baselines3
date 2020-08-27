@@ -67,7 +67,11 @@ def test_sde_distribution():
 
 # TODO: analytical form for squashed Gaussian?
 @pytest.mark.parametrize(
-    "dist", [DiagGaussianDistribution(N_ACTIONS), StateDependentNoiseDistribution(N_ACTIONS, squash_output=False),]
+    "dist",
+    [
+        DiagGaussianDistribution(N_ACTIONS),
+        StateDependentNoiseDistribution(N_ACTIONS, squash_output=False),
+    ],
 )
 def test_entropy(dist):
     # The entropy can be approximated by averaging the negative log likelihood

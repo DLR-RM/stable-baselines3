@@ -231,10 +231,10 @@ class SAC(OffPolicyAlgorithm):
 
             # Get current Q estimates for each critic network
             # using action from the replay buffer
-            current_q_esimates = self.critic(replay_data.observations, replay_data.actions)
+            current_q_estimates = self.critic(replay_data.observations, replay_data.actions)
 
             # Compute critic loss
-            critic_loss = 0.5 * sum([F.mse_loss(current_q, q_backup) for current_q in current_q_esimates])
+            critic_loss = 0.5 * sum([F.mse_loss(current_q, q_backup) for current_q in current_q_estimates])
             critic_losses.append(critic_loss.item())
 
             # Optimize the critic

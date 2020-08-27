@@ -1,3 +1,4 @@
+from collections import deque
 from typing import Dict, Optional, Union
 
 import numpy as np
@@ -64,12 +65,12 @@ class HerReplayBuffer(BaseBuffer):
             "next_achieved_goal": (self.env.num_envs, self.env.goal_dim),
             "next_desired_goal": (self.env.num_envs, self.env.goal_dim),
             "done": (1,),
-            "infos": (1,),
         }
         self.buffer = {
             key: np.empty((self.max_episode_stored, self.max_episode_length, *dim), dtype=np.float32)
             for key, dim in input_shape.items()
         }
+        self.info_buffer = [deque(maxlen=self.max_episode_length) for _ in range(self.max_episode_stored)]
         # episode length storage, needed for episodes which has less steps than the maximum length
         self.episode_lengths = np.zeros(self.max_episode_stored, dtype=np.int64)
 
@@ -193,12 +194,21 @@ class HerReplayBuffer(BaseBuffer):
         new_goals = self.vectorized_sample_goal(episode_indices, her_indices, transitions_indices)
         transitions["desired_goal"][her_indices] = new_goals
 
+        # Convert to numpy array
+        # TODO: disable if not needed for faster computation
+        transitions["info"] = np.array(
+            [
+                self.info_buffer[episode_idx][transition_idx]
+                for episode_idx, transition_idx in zip(episode_indices, transitions_indices)
+            ]
+        )
+
         # Vectorized computation
         transitions["reward"][her_indices] = self.env.env_method(
             "compute_reward",
             transitions["next_achieved_goal"][her_indices],
             transitions["desired_goal"][her_indices],
-            transitions["infos"][her_indices],
+            transitions["info"][her_indices],
         )
 
         # concatenate observation with (desired) goal
@@ -225,6 +235,10 @@ class HerReplayBuffer(BaseBuffer):
         infos: Dict[str, np.ndarray],
     ) -> None:
 
+        if self.current_idx == 0 and self.full:
+            # Clear info buffer
+            self.info_buffer[self.pos] = deque(maxlen=self.max_episode_length)
+
         self.buffer["observation"][self.pos][self.current_idx] = obs["observation"]
         self.buffer["achieved_goal"][self.pos][self.current_idx] = obs["achieved_goal"]
         self.buffer["desired_goal"][self.pos][self.current_idx] = obs["desired_goal"]
@@ -234,7 +248,8 @@ class HerReplayBuffer(BaseBuffer):
         self.buffer["next_obs"][self.pos][self.current_idx] = next_obs["observation"]
         self.buffer["next_achieved_goal"][self.pos][self.current_idx] = next_obs["achieved_goal"]
         self.buffer["next_desired_goal"][self.pos][self.current_idx] = next_obs["desired_goal"]
-        self.buffer["infos"][self.pos][self.current_idx] = infos
+
+        self.info_buffer[self.pos].append(infos)
 
         # update current pointer
         self.current_idx += 1

@@ -26,7 +26,12 @@ def test_her(model_class, policy, online_sampling):
 
     # Create action noise
     n_actions = env.action_space.shape[0]
-    action_noise = OrnsteinUhlenbeckActionNoise(np.zeros(n_actions,), 0.2 * np.ones((n_actions,)))
+    action_noise = OrnsteinUhlenbeckActionNoise(
+        np.zeros(
+            n_actions,
+        ),
+        0.2 * np.ones((n_actions,)),
+    )
 
     model = HER(
         policy,
@@ -131,7 +136,12 @@ def test_save_load(tmp_path, model_class, policy):
 
     # Create action noise
     n_actions = env.action_space.shape[0]
-    action_noise = OrnsteinUhlenbeckActionNoise(np.zeros(n_actions,), 0.2 * np.ones((n_actions,)))
+    action_noise = OrnsteinUhlenbeckActionNoise(
+        np.zeros(
+            n_actions,
+        ),
+        0.2 * np.ones((n_actions,)),
+    )
 
     # create model
     model = HER(

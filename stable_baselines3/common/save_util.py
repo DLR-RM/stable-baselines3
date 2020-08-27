@@ -350,7 +350,9 @@ def load_from_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], verbose=0) 
 
 
 def load_from_zip_file(
-    load_path: Union[str, pathlib.Path, io.BufferedIOBase], load_data: bool = True, verbose=0,
+    load_path: Union[str, pathlib.Path, io.BufferedIOBase],
+    load_data: bool = True,
+    verbose=0,
 ) -> (Tuple[Optional[Dict[str, Any]], Optional[TensorDict], Optional[TensorDict]]):
     """
     Load model data from a .zip archive

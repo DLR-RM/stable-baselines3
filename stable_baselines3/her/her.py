@@ -81,7 +81,11 @@ class HER(BaseAlgorithm):
         # model initialization
         self.model_class = model_class
         self.model = model_class(
-            policy=policy, env=self.env, learning_rate=learning_rate, *args, **kwargs,  # pytype: disable=wrong-keyword-args
+            policy=policy,
+            env=self.env,
+            learning_rate=learning_rate,
+            *args,
+            **kwargs,  # pytype: disable=wrong-keyword-args
         )
 
         self.verbose = self.model.verbose

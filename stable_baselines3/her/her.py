@@ -223,7 +223,7 @@ class HER(BaseAlgorithm):
         assert isinstance(env, VecEnv), "You must pass a VecEnv"
         assert env.num_envs == 1, "OffPolicyAlgorithm only support single environment"
 
-        if self.use_sde:
+        if self.model.use_sde:
             self.actor.reset_noise()
 
         callback.on_rollout_start()
@@ -238,7 +238,7 @@ class HER(BaseAlgorithm):
                 observation = self._last_obs
                 self._last_obs = ObsDictWrapper.convert_dict(observation)
 
-                if self.use_sde and self.sde_sample_freq > 0 and total_steps % self.sde_sample_freq == 0:
+                if self.model.use_sde and self.model.sde_sample_freq > 0 and total_steps % self.model.sde_sample_freq == 0:
                     # Sample a new noise matrix
                     self.actor.reset_noise()
 

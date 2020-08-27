@@ -22,7 +22,7 @@ def test_flexible_mlp(model_class, net_arch):
     _ = model_class("MlpPolicy", "CartPole-v1", policy_kwargs=dict(net_arch=net_arch), n_steps=100).learn(1000)
 
 
-@pytest.mark.parametrize("net_arch", [[4], [4, 4],])
+@pytest.mark.parametrize("net_arch", [[4], [4, 4]])
 @pytest.mark.parametrize("model_class", [SAC, TD3])
 def test_custom_offpolicy(model_class, net_arch):
     _ = model_class("MlpPolicy", "Pendulum-v0", policy_kwargs=dict(net_arch=net_arch)).learn(1000)

@@ -468,12 +468,13 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
         continue_training = self.n_episodes < self._total_max_episodes
 
         if self.verbose > 0 and not continue_training:
-            avg_eps_per_env = self.n_episodes / self.training_env.num_envs
+            mean_episodes_per_env = self.n_episodes / self.training_env.num_envs
+            mean_ep_str = "with an average of {mean_episodes_per_env:.2f} episodes per env" if self.training_env.num_envs > 1 else ""
 
             print(
                 f"Stopping training with a total of {self.num_timesteps} steps because the "
                 f"{self.locals.get('tb_log_name')} model reached max_episodes={self.max_episodes}, "
-                f"by playing for {self.n_episodes} episodes"
-                f"{f', with an average of {avg_eps_per_env:.2f} ep. per env' if self.training_env.num_envs > 1 else ''}"
+                f"by playing for {self.n_episodes} episodes "
+                f"{mean_ep_str}"
             )
         return continue_training

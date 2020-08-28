@@ -469,7 +469,9 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
 
         if self.verbose > 0 and not continue_training:
             mean_episodes_per_env = self.n_episodes / self.training_env.num_envs
-            mean_ep_str = "with an average of {mean_episodes_per_env:.2f} episodes per env" if self.training_env.num_envs > 1 else ""
+            mean_ep_str = (
+                "with an average of {mean_episodes_per_env:.2f} episodes per env" if self.training_env.num_envs > 1 else ""
+            )
 
             print(
                 f"Stopping training with a total of {self.num_timesteps} steps because the "

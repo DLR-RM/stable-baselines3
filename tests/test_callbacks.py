@@ -20,7 +20,7 @@ from stable_baselines3.common.cmd_util import make_vec_env
 def test_callbacks(tmp_path, model_class):
     log_folder = tmp_path / "logs/callbacks/"
 
-    # Dyn only support discrete actions
+    # DQN only support discrete actions
     env_name = select_env(model_class)
     # Create RL model
     # Small network for fast test
@@ -42,9 +42,9 @@ def test_callbacks(tmp_path, model_class):
     event_callback = EveryNTimesteps(n_steps=500, callback=checkpoint_on_event)
 
     # Stop training if max number of episodes is reached
-    callback_max_eps = StopTrainingOnMaxEpisodes(max_episodes=1, verbose=1)
+    callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=100, verbose=1)
 
-    callback = CallbackList([checkpoint_callback, eval_callback, event_callback, callback_max_eps])
+    callback = CallbackList([checkpoint_callback, eval_callback, event_callback, callback_max_episodes])
     model.learn(500, callback=callback)
 
     # Check access to local variables
@@ -67,19 +67,21 @@ def test_callbacks(tmp_path, model_class):
     if model_class in [A2C, PPO]:
         max_episodes = 1
         n_envs = 2
+        # Pendulum-v0 has a timelimit of 200 timesteps
+        max_episode_length = 200
         envs = make_vec_env(env_name, n_envs=n_envs, seed=0)
 
         model = model_class("MlpPolicy", envs, policy_kwargs=dict(net_arch=[32]))
 
-        callback_max_eps = StopTrainingOnMaxEpisodes(max_episodes=max_episodes, verbose=1)
-        callback = CallbackList([callback_max_eps])
+        callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=max_episodes, verbose=1)
+        callback = CallbackList([callback_max_episodes])
         model.learn(1000, callback=callback)
 
-        # Check that the actual number of episodes and timestamps per env matches the expected one
+        # Check that the actual number of episodes and timesteps per env matches the expected one
         episodes_per_env = callback_max_eps.n_episodes // n_envs
         assert episodes_per_env == max_episodes
         timesteps_per_env = model.num_timesteps // n_envs
-        assert timesteps_per_env == 200
+        assert timesteps_per_env == max_episode_length
 
     if os.path.exists(log_folder):
         shutil.rmtree(log_folder)

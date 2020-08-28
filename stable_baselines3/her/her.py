@@ -110,10 +110,10 @@ class HER(BaseAlgorithm):
         self.online_sampling = online_sampling
         self.her_ratio = 1 - (1.0 / (self.n_sampled_goal + 1))
         self.max_episode_length = max_episode_length
+        self.max_episode_length = get_time_limit(self.env, self.max_episode_length)
         # counter for steps in episode
         self.episode_steps = 0
         if self.online_sampling:
-            self.max_episode_length = get_time_limit(self.env, self.max_episode_length)
             self.model.replay_buffer = HerReplayBuffer(
                 self.env,
                 self.buffer_size,
@@ -253,6 +253,8 @@ class HER(BaseAlgorithm):
                 # Perform action
                 new_obs, reward, done, infos = env.step(action)
 
+                done = done if episode_timesteps < self.max_episode_length else False
+
                 # Only stop training if return value is False, not when it is None.
                 if callback.on_step() is False:
                     return RolloutReturn(0.0, total_steps, total_episodes, continue_training=False)
@@ -380,7 +382,7 @@ class HER(BaseAlgorithm):
                 new_obs = np.concatenate([new_observation["observation"], goal], axis=1)
 
                 # store data in replay buffer
-                self.replay_buffer.add(obs, new_obs, action, new_reward, done)
+                self.replay_buffer.add(obs, new_obs, action, new_reward, np.array([False]))
 
     def __getattr__(self, item):
         """

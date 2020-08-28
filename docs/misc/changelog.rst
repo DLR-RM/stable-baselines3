@@ -13,7 +13,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added ``unwrap_vec_wrapper()`` to ``common.vec_env`` to extract ``VecEnvWrapper`` if needed
-- Added ``StopTrainingOnMaxEpisodes`` to callback collection - @xicocaio
+- Added ``StopTrainingOnMaxEpisodes`` to callback collection (@xicocaio)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -30,7 +30,7 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
-- Added ``StopTrainingOnMaxEpisodes`` details and example - @xicocaio
+- Added ``StopTrainingOnMaxEpisodes`` details and example (@xicocaio)
 
 
 

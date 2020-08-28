@@ -78,7 +78,7 @@ def test_callbacks(tmp_path, model_class):
         model.learn(1000, callback=callback)
 
         # Check that the actual number of episodes and timesteps per env matches the expected one
-        episodes_per_env = callback_max_eps.n_episodes // n_envs
+        episodes_per_env = callback_max_episodes.n_episodes // n_envs
         assert episodes_per_env == max_episodes
         timesteps_per_env = model.num_timesteps // n_envs
         assert timesteps_per_env == max_episode_length

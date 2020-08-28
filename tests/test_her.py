@@ -126,10 +126,14 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
 
 
 @pytest.mark.parametrize("model_class, policy", [(SAC, "MlpPolicy"), (TD3, "MlpPolicy"), (DDPG, "MlpPolicy")])
-def test_save_load(tmp_path, model_class, policy):
+@pytest.mark.parametrize("use_sde", [False, True])
+def test_save_load(tmp_path, model_class, policy, use_sde):
     """
     Test if 'save' and 'load' saves and loads model correctly
     """
+    if use_sde and model_class != SAC:
+        pytest.skip("Only SAC has gSDE support")
+
     n_bits = 4
     env = BitFlippingEnv(n_bits=n_bits, continuous=True)
     env = DummyVecEnv([lambda: env])
@@ -142,6 +146,8 @@ def test_save_load(tmp_path, model_class, policy):
         ),
         0.2 * np.ones((n_actions,)),
     )
+
+    kwargs = dict(use_sde=True) if use_sde else {}
 
     # create model
     model = HER(
@@ -163,6 +169,7 @@ def test_save_load(tmp_path, model_class, policy):
         train_freq=1,
         n_episodes_rollout=-1,
         max_episode_length=n_bits,
+        **kwargs
     )
 
     model.learn(total_timesteps=500, callback=None)

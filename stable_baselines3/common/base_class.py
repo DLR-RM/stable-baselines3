@@ -159,7 +159,7 @@ class BaseAlgorithm(ABC):
                     "Error: the model does not support multiple envs; it requires " "a single vectorized environment."
                 )
 
-        if self.use_sde and not isinstance(self.observation_space, gym.spaces.Box):
+        if self.use_sde and not isinstance(self.action_space, gym.spaces.Box):
             raise ValueError("generalized State-Dependent Exploration (gSDE) can only be used with continuous actions.")
 
     def _wrap_env(self, env: GymEnv) -> VecEnv:

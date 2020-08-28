@@ -455,6 +455,10 @@ class HER(BaseAlgorithm):
         if env is None and "env" in data:
             env = data["env"]
 
+        kwargs = {}
+        if "use_sde" in data and data["use_sde"]:
+            kwargs["use_sde"] = True
+
         # noinspection PyArgumentList
         her_model = cls(
             policy=data["policy_class"],
@@ -467,6 +471,7 @@ class HER(BaseAlgorithm):
             max_episode_length=data["max_episode_length"],
             policy_kwargs=data["policy_kwargs"],
             _init_setup_model=True,  # pytype: disable=not-instantiable,wrong-keyword-args
+            **kwargs,
         )
 
         # load parameters

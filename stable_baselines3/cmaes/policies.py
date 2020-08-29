@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type
 
 import gym
 import torch as th
@@ -23,7 +23,6 @@ class ActorCMA(BasePolicy):
     :param activation_fn: (Type[nn.Module]) Activation function
     :param normalize_images: (bool) Whether to normalize images or not,
          dividing by 255.0 (True by default)
-    :param device: (Union[th.device, str]) Device on which the code should run.
     """
 
     def __init__(
@@ -35,14 +34,12 @@ class ActorCMA(BasePolicy):
         features_dim: int,
         activation_fn: Type[nn.Module] = nn.ReLU,
         normalize_images: bool = True,
-        device: Union[th.device, str] = "auto",
     ):
         super(ActorCMA, self).__init__(
             observation_space,
             action_space,
             features_extractor=features_extractor,
             normalize_images=normalize_images,
-            device=device,
             squash_output=True,
         )
 
@@ -85,7 +82,6 @@ class CMAESPolicy(BasePolicy):
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
         net_arch: Optional[List[int]] = None,
-        device: Union[th.device, str] = "auto",
         activation_fn: Type[nn.Module] = nn.ReLU,
         features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
@@ -96,7 +92,6 @@ class CMAESPolicy(BasePolicy):
         super(CMAESPolicy, self).__init__(
             observation_space,
             action_space,
-            device,
             features_extractor_class,
             features_extractor_kwargs,
             optimizer_class=optimizer_class,
@@ -124,7 +119,6 @@ class CMAESPolicy(BasePolicy):
             "net_arch": self.net_arch,
             "activation_fn": self.activation_fn,
             "normalize_images": normalize_images,
-            "device": device,
             "use_sde": True,
         }
         self.actor = Actor(**self.net_args).to(self.device)
@@ -161,7 +155,6 @@ class CnnPolicy(CMAESPolicy):
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
         net_arch: Optional[List[int]] = None,
-        device: Union[th.device, str] = "auto",
         activation_fn: Type[nn.Module] = nn.ReLU,
         features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
@@ -173,7 +166,6 @@ class CnnPolicy(CMAESPolicy):
             observation_space,
             action_space,
             net_arch,
-            device,
             activation_fn,
             features_extractor_class,
             features_extractor_kwargs,

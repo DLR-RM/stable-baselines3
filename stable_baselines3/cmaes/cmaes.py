@@ -176,7 +176,6 @@ class CMAES(BaseAlgorithm):
                     else:
                         break
 
-
             callback.on_rollout_end()
 
             # TODO: inject best solution from time to time?

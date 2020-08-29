@@ -282,7 +282,9 @@ class SAC(OffPolicyAlgorithm):
         ent_coef_losses, ent_coefs = [], []
         actor_losses, critic_losses = [], []
 
-        for gradient_step in range(gradient_steps):
+        range_ = tqdm(range(gradient_steps)) if self.use_cql else range(gradient_steps)
+
+        for gradient_step in range_:
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 

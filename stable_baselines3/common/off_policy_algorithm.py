@@ -401,6 +401,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 # Rescale and perform action
                 new_obs, reward, done, infos = env.step(action)
 
+                self.num_timesteps += 1
+                episode_timesteps += 1
+                total_steps += 1
+
                 # Give access to local variables
                 callback.update_locals(locals())
                 # Only stop training if return value is False, not when it is None.
@@ -429,9 +433,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 if self._vec_normalize_env is not None:
                     self._last_original_obs = new_obs_
 
-                self.num_timesteps += 1
-                episode_timesteps += 1
-                total_steps += 1
                 self._update_current_progress_remaining(self.num_timesteps, self._total_timesteps)
 
                 # For DQN, check if the target network should be updated

@@ -162,6 +162,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             new_obs, rewards, dones, infos = env.step(clipped_actions)
 
+            self.num_timesteps += env.num_envs
+
             # Give access to local variables
             callback.update_locals(locals())
             if callback.on_step() is False:
@@ -169,7 +171,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             self._update_info_buffer(infos)
             n_steps += 1
-            self.num_timesteps += env.num_envs
 
             if isinstance(self.action_space, gym.spaces.Discrete):
                 # Reshape in case of discrete action

@@ -292,5 +292,35 @@ An :ref:`EventCallback` that will trigger its child callback every ``n_steps`` t
   model.learn(int(2e4), callback=event_callback)
 
 
+.. _StopTrainingOnMaxEpisodes:
+
+StopTrainingOnMaxEpisodes
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Stop the training upon reaching the maximum number of episodes, regardless of the model's ``total_timesteps`` value.
+Also, presumes that, for multiple environments, the desired behavior is that the agent trains on each env for ``max_episodes``
+and in total for ``max_episodes * n_envs`` episodes.
+
+
+.. note::
+    For multiple environments, the agent will train for a total of ``max_episodes * n_envs`` episodes.
+    However, it can't be guaranteed that this training will occur for an exact number of ``max_episodes`` per environment.
+    Thus, there is an assumption that, on average, each environment ran for ``max_episodes``.
+
+
+.. code-block:: python
+
+    from stable_baselines3 import A2C
+    from stable_baselines3.common.callbacks import StopTrainingOnMaxEpisodes
+
+    # Stops training when the model reaches the maximum number of episodes
+    callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=5, verbose=1)
+
+    model = A2C('MlpPolicy', 'Pendulum-v0', verbose=1)
+    # Almost infinite number of timesteps, but the training will stop
+    # early as soon as the max number of episodes is reached
+    model.learn(int(1e10), callback=callback_max_episodes)
+
+
 .. automodule:: stable_baselines3.common.callbacks
   :members:

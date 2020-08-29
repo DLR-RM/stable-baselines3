@@ -87,7 +87,7 @@ class BaseCallback(ABC):
         """
         self.n_calls += 1
         # timesteps start at zero
-        self.num_timesteps = self.model.num_timesteps + 1
+        self.num_timesteps = self.model.num_timesteps
 
         return self._on_step()
 
@@ -435,3 +435,48 @@ class EveryNTimesteps(EventCallback):
             self.last_time_trigger = self.num_timesteps
             return self._on_event()
         return True
+
+
+class StopTrainingOnMaxEpisodes(BaseCallback):
+    """
+    Stop the training once a maximum number of episodes are played.
+
+    For multiple environments presumes that, the desired behavior is that the agent trains on each env for ``max_episodes``
+    and in total for ``max_episodes * n_envs`` episodes.
+
+    :param max_episodes: (int) Maximum number of episodes to stop training.
+    :param verbose: (int) Select whether to print information about when training ended by reaching ``max_episodes``
+    """
+
+    def __init__(self, max_episodes: int, verbose: int = 0):
+        super(StopTrainingOnMaxEpisodes, self).__init__(verbose=verbose)
+        self.max_episodes = max_episodes
+        self._total_max_episodes = max_episodes
+        self.n_episodes = 0
+
+    def _init_callback(self):
+        # At start set total max according to number of envirnments
+        self._total_max_episodes = self.max_episodes * self.training_env.num_envs
+
+    def _on_step(self) -> bool:
+        # Checking for both 'done' and 'dones' keywords because:
+        # Some models use keyword 'done' (e.g.,: SAC, TD3, DQN, DDPG)
+        # While some models use keyword 'dones' (e.g.,: A2C, PPO)
+        done_array = np.array(self.locals.get("done") if self.locals.get("done") is not None else self.locals.get("dones"))
+        self.n_episodes += np.sum(done_array).item()
+
+        continue_training = self.n_episodes < self._total_max_episodes
+
+        if self.verbose > 0 and not continue_training:
+            mean_episodes_per_env = self.n_episodes / self.training_env.num_envs
+            mean_ep_str = (
+                "with an average of {mean_episodes_per_env:.2f} episodes per env" if self.training_env.num_envs > 1 else ""
+            )
+
+            print(
+                f"Stopping training with a total of {self.num_timesteps} steps because the "
+                f"{self.locals.get('tb_log_name')} model reached max_episodes={self.max_episodes}, "
+                f"by playing for {self.n_episodes} episodes "
+                f"{mean_ep_str}"
+            )
+        return continue_training

@@ -463,7 +463,7 @@ class NstepReplayBuffer(ReplayBuffer):
             # Memory inneficient version but fast computation
             self.log_probs[unique_indices] = log_prob.cpu().numpy().flatten()
             # Add entropy term, only for n-step > 1
-            rewards[:, 1:] = rewards[:, 1:] - self.ent_coef * self.log_probs[indices[:, 1:]]
+            rewards[:, 1:] = rewards[:, 1:] - self.ent_coef * self.log_probs[indices[:, 1:]]  # pytype: disable=attribute-error
 
         # we filter through the indices.
         # The immediate indice, i.e. col 0 needs to be 1, so we ensure that it is here using np.ones

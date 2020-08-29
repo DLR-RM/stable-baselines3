@@ -9,7 +9,8 @@ from stable_baselines3.common import logger
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
-from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
+from stable_baselines3.common.preprocessing import get_action_dim
+from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, ReplayBufferSamples
 from stable_baselines3.common.utils import polyak_update
 from stable_baselines3.sac.policies import SACPolicy
 
@@ -92,6 +93,10 @@ class SAC(OffPolicyAlgorithm):
         ent_coef: Union[str, float] = "auto",
         target_update_interval: int = 1,
         target_entropy: Union[str, float] = "auto",
+        initial_alpha: float = 5.0,
+        alpha_threshold: float = 10.0,
+        n_action_samples: int = 10,
+        use_cql: bool = False,
         use_sde: bool = False,
         sde_sample_freq: int = -1,
         use_sde_at_warmup: bool = False,
@@ -139,6 +144,12 @@ class SAC(OffPolicyAlgorithm):
         self.ent_coef = ent_coef
         self.target_update_interval = target_update_interval
         self.ent_coef_optimizer = None
+        # CQL
+        self.use_cql = use_cql
+        # TODO: allow constant alpha coeff
+        self.initial_alpha = initial_alpha
+        self.alpha_threshold = alpha_threshold
+        self.n_action_samples = n_action_samples
 
         if _init_setup_model:
             self._setup_model()
@@ -179,16 +190,91 @@ class SAC(OffPolicyAlgorithm):
             # is passed
             self.ent_coef_tensor = th.tensor(float(self.ent_coef)).to(self.device)
 
+        # CQL
+        if self.use_cql:
+            self.log_alpha = th.log(th.ones(1, device=self.device) * self.initial_alpha).requires_grad_(True)
+            self.alpha_optimizer = th.optim.Adam([self.log_alpha], lr=self.lr_schedule(1))
+
     def _create_aliases(self) -> None:
         self.actor = self.policy.actor
         self.critic = self.policy.critic
         self.critic_target = self.policy.critic_target
+
+    def update_alpha(self, replay_data: ReplayBufferSamples):
+        loss = -self._compute_conservative_loss(replay_data)
+        self.alpha_optimizer.zero_grad()
+        loss.backward()
+        self.alpha_optimizer.step()
+
+    def _compute_conservative_loss(self, replay_data: ReplayBufferSamples):
+        # from https://github.com/takuseno/d3rlpy
+        obs_t = replay_data.observations
+        act_t = replay_data.actions
+        action_dim = get_action_dim(self.action_space)
+        n_critics = self.critic.n_critics
+        assert n_critics == 1
+        with th.no_grad():
+            policy_actions, n_log_probs = [], []
+            for _ in range(self.n_action_samples):
+                if self.use_sde:
+                    self.actor.reset_noise()
+                actions_pi, log_prob = self.actor.action_log_prob(replay_data.observations)
+                policy_actions.append(actions_pi)
+                n_log_probs.append(log_prob)
+            # (batch, n, action_dim)
+            policy_actions = th.cat(policy_actions, dim=1).view(len(replay_data.observations), self.n_action_samples, action_dim)
+            # assert policy_actions.shape == (len(replay_data.observations), self.n_action_samples, action_dim)
+            # (batch, n, 1)
+            n_log_probs = th.cat(n_log_probs).view(len(replay_data.observations), self.n_action_samples, 1)
+            # assert n_log_probs.shape == (len(replay_data.observations), self.n_action_samples, 1)
+
+        repeated_obs_t = obs_t.expand(self.n_action_samples, *obs_t.shape)
+        # (n, batch, obs_dim) -> (batch, n, obs_dim)
+        transposed_obs_t = repeated_obs_t.transpose(0, 1)
+        # (batch, n, obs_dim) -> (batch * n, obs_dim)
+        flat_obs_t = transposed_obs_t.reshape(-1, *obs_t.shape[1:])
+        # (batch, n, action_dim) -> (batch * n, action_dim)
+        flat_policy_acts = policy_actions.reshape(-1, action_dim)
+
+        # estimate action-values for policy actions
+        policy_values = self.critic(flat_obs_t, flat_policy_acts)[0]
+        policy_values = policy_values.view(n_critics, obs_t.shape[0], self.n_action_samples, 1)
+        log_probs = n_log_probs.view(1, -1, self.n_action_samples, 1)
+
+        # estimate action-values for actions from uniform distribution
+        # uniform distribution between [-1.0, 1.0]
+        random_actions = th.zeros_like(flat_policy_acts).uniform_(-1.0, 1.0)
+        random_values = self.critic(flat_obs_t, random_actions)[0]
+        random_values = random_values.view(n_critics, obs_t.shape[0], self.n_action_samples, 1)
+
+        # get maximum value to avoid overflow
+        base = th.max(policy_values.max(), random_values.max()).detach()
+
+        # compute logsumexp
+        policy_meanexp = (policy_values - base - log_probs).exp().mean(dim=2)
+        random_meanexp = (random_values - base).exp().mean(dim=2) / 0.5
+        # small constant value seems to be necessary to avoid nan
+        logsumexp = (0.5 * random_meanexp + 0.5 * policy_meanexp + 1e-10).log()
+        logsumexp += base
+
+        # estimate action-values for data actions
+        data_values = self.critic(obs_t, act_t)[0]
+
+        element_wise_loss = logsumexp - data_values - self.alpha_threshold
+
+        # this clipping seems to stabilize training
+        clipped_alpha = self.log_alpha.clamp(-10.0, 2.0).exp()
+
+        return (clipped_alpha * element_wise_loss).sum(dim=0).mean()
 
     def train(self, gradient_steps: int, batch_size: int = 64) -> None:
         # Update optimizers learning rate
         optimizers = [self.actor.optimizer, self.critic.optimizer]
         if self.ent_coef_optimizer is not None:
             optimizers += [self.ent_coef_optimizer]
+
+        if self.use_cql:
+            optimizers += [self.alpha_optimizer]
 
         # Update learning rate according to lr schedule
         self._update_learning_rate(optimizers)
@@ -249,6 +335,10 @@ class SAC(OffPolicyAlgorithm):
             critic_loss = 0.5 * sum([F.mse_loss(current_q, q_backup) for current_q in current_q_estimates])
             critic_losses.append(critic_loss.item())
 
+            # CQL
+            if self.use_cql:
+                critic_loss += self._compute_conservative_loss(replay_data)
+
             # Optimize the critic
             self.critic.optimizer.zero_grad()
             critic_loss.backward()
@@ -267,6 +357,10 @@ class SAC(OffPolicyAlgorithm):
             actor_loss.backward()
             self.actor.optimizer.step()
 
+            # CQL
+            if self.use_cql:
+                self.update_alpha(replay_data)
+
             # Update target networks
             if gradient_step % self.target_update_interval == 0:
                 polyak_update(self.critic.parameters(), self.critic_target.parameters(), self.tau)
@@ -279,6 +373,8 @@ class SAC(OffPolicyAlgorithm):
         logger.record("train/critic_loss", np.mean(critic_losses))
         if len(ent_coef_losses) > 0:
             logger.record("train/ent_coef_loss", np.mean(ent_coef_losses))
+        if self.use_cql:
+            logger.record("train/alpha", th.exp(self.log_alpha.detach()).item())
 
     def pretrain(
         self,
@@ -454,4 +550,8 @@ class SAC(OffPolicyAlgorithm):
             state_dicts.append("ent_coef_optimizer")
         else:
             saved_tensors.append("ent_coef_tensor")
+
+        if self.use_cql:
+            state_dicts.append("alpha_optimizer")
+            saved_tensors.append("log_alpha")
         return state_dicts, saved_tensors

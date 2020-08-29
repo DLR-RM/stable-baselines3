@@ -13,6 +13,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added ``unwrap_vec_wrapper()`` to ``common.vec_env`` to extract ``VecEnvWrapper`` if needed
+- Added ``StopTrainingOnMaxEpisodes`` to callback collection (@xicocaio)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -29,6 +30,9 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Added ``StopTrainingOnMaxEpisodes`` details and example (@xicocaio)
+
+
 
 Pre-Release 0.8.0 (2020-08-03)
 ------------------------------
@@ -393,4 +397,4 @@ And all the contributors:
 @Miffyli @dwiel @miguelrass @qxcv @jaberkow @eavelardev @ruifeng96150 @pedrohbtp @srivatsankrishnan @evilsocket
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
-@tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag
+@tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio

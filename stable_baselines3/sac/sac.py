@@ -95,6 +95,7 @@ class SAC(OffPolicyAlgorithm):
         target_entropy: Union[str, float] = "auto",
         initial_alpha: float = 5.0,
         alpha_threshold: float = 10.0,
+        alpha_coef: Union[str, float] = "auto",
         n_action_samples: int = 10,
         use_cql: bool = False,
         use_sde: bool = False,
@@ -146,10 +147,12 @@ class SAC(OffPolicyAlgorithm):
         self.ent_coef_optimizer = None
         # CQL
         self.use_cql = use_cql
-        # TODO: allow constant alpha coeff
         self.initial_alpha = initial_alpha
         self.alpha_threshold = alpha_threshold
         self.n_action_samples = n_action_samples
+        self.alpha_coef = alpha_coef
+        self.alpha_coef_tensor = None
+        self.alpha_optimizer = None
 
         if _init_setup_model:
             self._setup_model()
@@ -192,8 +195,13 @@ class SAC(OffPolicyAlgorithm):
 
         # CQL
         if self.use_cql:
-            self.log_alpha = th.log(th.ones(1, device=self.device) * self.initial_alpha).requires_grad_(True)
-            self.alpha_optimizer = th.optim.Adam([self.log_alpha], lr=self.lr_schedule(1))
+            if self.alpha_coef == "auto":
+                self.log_alpha = th.log(th.ones(1, device=self.device) * self.initial_alpha).requires_grad_(True)
+                self.alpha_optimizer = th.optim.Adam([self.log_alpha], lr=self.lr_schedule(1))
+            else:
+                self.alpha_coef_tensor = th.tensor(float(self.alpha_coef)).to(self.device)
+                self.log_alpha = th.log(self.alpha_coef_tensor)
+
 
     def _create_aliases(self) -> None:
         self.actor = self.policy.actor
@@ -263,7 +271,10 @@ class SAC(OffPolicyAlgorithm):
         element_wise_loss = logsumexp - data_values - self.alpha_threshold
 
         # this clipping seems to stabilize training
-        clipped_alpha = self.log_alpha.clamp(-10.0, 2.0).exp()
+        if self.alpha_coef == "auto":
+            clipped_alpha = self.log_alpha.clamp(-10.0, 2.0).exp()
+        else:
+            clipped_alpha = self.alpha_coef_tensor
 
         return (clipped_alpha * element_wise_loss).sum(dim=0).mean()
 
@@ -273,7 +284,7 @@ class SAC(OffPolicyAlgorithm):
         if self.ent_coef_optimizer is not None:
             optimizers += [self.ent_coef_optimizer]
 
-        if self.use_cql:
+        if self.use_cql and self.alpha_coef == "auto":
             optimizers += [self.alpha_optimizer]
 
         # Update learning rate according to lr schedule
@@ -360,7 +371,7 @@ class SAC(OffPolicyAlgorithm):
             self.actor.optimizer.step()
 
             # CQL
-            if self.use_cql:
+            if self.use_cql and self.alpha_coef == "auto":
                 self.update_alpha(replay_data)
 
             # Update target networks
@@ -559,6 +570,10 @@ class SAC(OffPolicyAlgorithm):
             saved_tensors.append("ent_coef_tensor")
 
         if self.use_cql:
-            state_dicts.append("alpha_optimizer")
-            saved_tensors.append("log_alpha")
+            if self.alpha_coef == "auto":
+                state_dicts.append("alpha_optimizer")
+                saved_tensors.append("log_alpha")
+            else:
+                saved_tensors.append("alpha_coef_tensor")
+
         return state_dicts, saved_tensors

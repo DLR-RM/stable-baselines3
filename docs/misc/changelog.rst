@@ -18,6 +18,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed a bug where the environment was reset twice when using ``evaluate_policy``
+- Fix logging of ``clip_fraction`` in PPO (@diditforlulz273)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -398,3 +399,4 @@ And all the contributors:
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
+@diditforlulz273

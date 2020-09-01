@@ -228,7 +228,7 @@ class PPO(OnPolicyAlgorithm):
         logger.record("train/policy_gradient_loss", np.mean(pg_losses))
         logger.record("train/value_loss", np.mean(value_losses))
         logger.record("train/approx_kl", np.mean(approx_kl_divs))
-        logger.record("train/clip_fraction", np.mean(clip_fraction))
+        logger.record("train/clip_fraction", np.mean(clip_fractions))
         logger.record("train/loss", loss.item())
         logger.record("train/explained_variance", explained_var)
         if hasattr(self.policy, "log_std"):

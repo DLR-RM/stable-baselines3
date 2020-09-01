@@ -70,21 +70,26 @@ def test_save_load(tmp_path, model_class):
     # Check
     model.save(tmp_path / "test_save.zip")
     del model
-    model = model_class.load(str(tmp_path / "test_save.zip"), env=env)
 
-    # check if params are still the same after load
-    new_params = model.policy.state_dict()
+    # Check if the model loads as expected for every possible choice of device:
+    for device in ["auto", "cpu", "cuda"]:
+        model = model_class.load(str(tmp_path / "test_save.zip"), env=env, device=device)
 
-    # Check that all params are the same as before save load procedure now
-    for key in params:
-        assert th.allclose(params[key], new_params[key]), "Model parameters not the same after save and load."
+        # check if params are still the same after load
+        new_params = model.policy.state_dict()
 
-    # check if model still selects the same actions
-    new_selected_actions, _ = model.predict(observations, deterministic=True)
-    assert np.allclose(selected_actions, new_selected_actions, 1e-4)
+        # Check that all params are the same as before save load procedure now
+        for key in params:
+            assert th.allclose(params[key], new_params[key]), "Model parameters not the same after save and load."
 
-    # check if learn still works
-    model.learn(total_timesteps=1000, eval_freq=500)
+        # check if model still selects the same actions
+        new_selected_actions, _ = model.predict(observations, deterministic=True)
+        assert np.allclose(selected_actions, new_selected_actions, 1e-4)
+
+        # check if learn still works
+        model.learn(total_timesteps=1000, eval_freq=500)
+
+        del model
 
     # clear file from os
     os.remove(tmp_path / "test_save.zip")

@@ -73,7 +73,7 @@ def test_save_load(tmp_path, model_class):
     del model
 
     # Check if the model loads as expected for every possible choice of device:
-    for device in ["auto", "cpu", "cuda", th.device("cpu"), th.device("cuda")]:
+    for device in ["auto", "cpu", "cuda"]:
         model = model_class.load(str(tmp_path / "test_save.zip"), env=env, device=device)
 
         # check if the model was loaded to the correct device

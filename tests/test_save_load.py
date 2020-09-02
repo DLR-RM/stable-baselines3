@@ -77,7 +77,8 @@ def test_save_load(tmp_path, model_class):
         model = model_class.load(str(tmp_path / "test_save.zip"), env=env, device=device)
 
         # check if the model was loaded to the correct device
-        assert model.device.type == get_device(device).type
+        assert model.device == get_device(device)
+        assert model.policy.device == get_device(device)
 
         # check if params are still the same after load
         new_params = model.policy.state_dict()

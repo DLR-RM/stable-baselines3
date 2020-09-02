@@ -72,8 +72,14 @@ def test_save_load(tmp_path, model_class):
     del model
 
     # Check if the model loads as expected for every possible choice of device:
-    for device in ["auto", "cpu", "cuda"]:
+    for device in ["auto", "cpu", "cuda", th.device("cpu"), th.device("cuda")]:
         model = model_class.load(str(tmp_path / "test_save.zip"), env=env, device=device)
+
+        # check if the model was loaded to the correct device
+        if th.cuda.is_available():
+            assert model.device.type == (device if isinstance(device, str) else device.type)
+        else:
+            assert model.device.type == "cpu"
 
         # check if params are still the same after load
         new_params = model.policy.state_dict()

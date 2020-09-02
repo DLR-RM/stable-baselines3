@@ -13,6 +13,7 @@ from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.identity_env import FakeImageEnv, IdentityEnv, IdentityEnvBox
 from stable_baselines3.common.save_util import load_from_pkl, open_path, save_to_pkl
+from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 MODEL_LIST = [PPO, A2C, TD3, SAC, DQN, DDPG]
@@ -76,10 +77,7 @@ def test_save_load(tmp_path, model_class):
         model = model_class.load(str(tmp_path / "test_save.zip"), env=env, device=device)
 
         # check if the model was loaded to the correct device
-        if th.cuda.is_available():
-            assert model.device.type == (device if isinstance(device, str) else device.type)
-        else:
-            assert model.device.type == "cpu"
+        assert model.device.type == get_device(device).type
 
         # check if params are still the same after load
         new_params = model.policy.state_dict()

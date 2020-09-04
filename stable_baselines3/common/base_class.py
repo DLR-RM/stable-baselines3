@@ -328,7 +328,7 @@ class BaseAlgorithm(ABC):
         :param device: (Union[th.device, str]) Device on which the code should run.
         :param kwargs: extra arguments to change the model when loading
         """
-        data, params, tensors = load_from_zip_file(load_path)
+        data, params, tensors = load_from_zip_file(load_path, device=device)
 
         if "policy_kwargs" in data:
             for arg_to_remove in ["device"]:

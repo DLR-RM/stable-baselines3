@@ -77,15 +77,18 @@ def test_save_load(tmp_path, model_class):
         model = model_class.load(str(tmp_path / "test_save.zip"), env=env, device=device)
 
         # check if the model was loaded to the correct device
-        assert model.device == get_device(device)
-        assert model.policy.device == get_device(device)
+        assert model.device.type == get_device(device).type
+        assert model.policy.device.type == get_device(device).type
 
         # check if params are still the same after load
         new_params = model.policy.state_dict()
 
         # Check that all params are the same as before save load procedure now
         for key in params:
-            assert th.allclose(params[key], new_params[key]), "Model parameters not the same after save and load."
+            assert new_params[key].device.type == get_device(device).type
+            assert th.allclose(
+                params[key].to("cpu"), new_params[key].to("cpu")
+            ), "Model parameters not the same after save and load."
 
         # check if model still selects the same actions
         new_selected_actions, _ = model.predict(observations, deterministic=True)

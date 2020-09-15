@@ -14,6 +14,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Added ``unwrap_vec_wrapper()`` to ``common.vec_env`` to extract ``VecEnvWrapper`` if needed
 - Added ``StopTrainingOnMaxEpisodes`` to callback collection (@xicocaio)
+- Callbacks have access to rollout collection locals as in SB2. (@PartiallyTyped)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -59,7 +60,6 @@ New Features:
 - Refactored opening paths for saving and loading to use strings, pathlib or io.BufferedIOBase (@PartiallyTyped)
 - Added ``DDPG`` algorithm as a special case of ``TD3``.
 - Introduced ``BaseModel`` abstract parent for ``BasePolicy``, which critics inherit from.
-- Callbacks have access to rollout collection locals as in SB2. (@PartiallyTyped)
 
 Bug Fixes:
 ^^^^^^^^^^

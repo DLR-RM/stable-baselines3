@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import torch as th
@@ -87,11 +87,11 @@ class HerReplayBuffer(BaseBuffer):
         """
         return self._sample_transitions(batch_size, env)
 
-    @staticmethod
     def sample_goal(
+        self,
         goal_selection_strategy: GoalSelectionStrategy,
         sample_idx: int,
-        episode: list,
+        achieved_goals: list,
         observations: Union[list, np.ndarray],
         obs_dim: int = None,
     ) -> np.ndarray:
@@ -101,22 +101,22 @@ class HerReplayBuffer(BaseBuffer):
         :param goal_selection_strategy: (GoalSelectionStrategy ) Strategy for sampling goals for replay.
             One of ['episode', 'final', 'future', 'random']
         :param sample_idx: (int) Index of current transition.
-        :param episode: (list) Current episode.
+        :param achieved_goals: (list) Achieved goals of Current episode.
         :param observations: (list or np.ndarray)
         :param obs_dim: (int) Dimension of real observation without goal. It is needed for the random strategy.
         :return: (np.ndarray) Return sampled goal.
         """
         if goal_selection_strategy == GoalSelectionStrategy.FINAL:
             # replay with final state of current episode
-            return episode[-1][0]["achieved_goal"]
+            return achieved_goals[-1]
         elif goal_selection_strategy == GoalSelectionStrategy.FUTURE:
             # replay with random state which comes from the same episode and was observed after current transition
-            index = np.random.choice(np.arange(sample_idx + 1, len(episode)))
-            return episode[index][0]["achieved_goal"]
+            index = np.random.choice(np.arange(sample_idx + 1, len(achieved_goals)))
+            return achieved_goals[index]
         elif goal_selection_strategy == GoalSelectionStrategy.EPISODE:
             # replay with random state which comes from the same episode as current transition
-            index = np.random.choice(np.arange(len(episode)))
-            return episode[index][0]["achieved_goal"]
+            index = np.random.choice(np.arange(len(achieved_goals)))
+            return achieved_goals[index]
         elif goal_selection_strategy == GoalSelectionStrategy.RANDOM:
             # replay with random state from the entire replay buffer
             index = np.random.choice(np.arange(len(observations)))
@@ -232,7 +232,8 @@ class HerReplayBuffer(BaseBuffer):
         action: np.ndarray,
         reward: np.ndarray,
         done: np.ndarray,
-        infos: Dict[str, np.ndarray],
+        # infos: Dict[str, np.ndarray],
+        infos: List[dict],
     ) -> None:
 
         if self.current_idx == 0 and self.full:

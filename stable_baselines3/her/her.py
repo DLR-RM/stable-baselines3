@@ -102,15 +102,25 @@ class HER(BaseAlgorithm):
             self.goal_selection_strategy, GoalSelectionStrategy
         ), f"Invalid goal selection strategy, please use one of {list(GoalSelectionStrategy)}"
 
+        # maximum steps in episode
+        self.max_episode_length = get_time_limit(self.env, max_episode_length)
         # storage for transitions of current episode
-        self._episode_storage = []
+        self._episode_storage = HerReplayBuffer(
+            self.env,
+            self.max_episode_length,
+            self.max_episode_length,
+            self.goal_selection_strategy,
+            self.env.observation_space,
+            self.env.action_space,
+            self.device,
+            self.n_envs,
+            0.0,  # pytype: disable=wrong-arg-types
+        )
         self.n_sampled_goal = n_sampled_goal
 
         # if we sample her transitions online use custom replay buffer
         self.online_sampling = online_sampling
         self.her_ratio = 1 - (1.0 / (self.n_sampled_goal + 1))
-        self.max_episode_length = max_episode_length
-        self.max_episode_length = get_time_limit(self.env, self.max_episode_length)
         # counter for steps in episode
         self.episode_steps = 0
         if self.online_sampling:
@@ -281,7 +291,7 @@ class HER(BaseAlgorithm):
                         self.replay_buffer.add(self._last_original_obs, new_obs_, buffer_action, reward_, done, infos)
                     else:
                         # add current transition to episode storage
-                        self._episode_storage.append((self._last_original_obs, new_obs_, buffer_action, reward_, done, infos))
+                        self._episode_storage.add(self._last_original_obs, new_obs_, buffer_action, reward_, done, infos)
 
                 self._last_obs = new_obs
                 self.model._last_obs = self._last_obs
@@ -311,10 +321,11 @@ class HER(BaseAlgorithm):
                 if self.online_sampling:
                     self.replay_buffer.store_episode()
                 else:
+                    self._episode_storage.store_episode()
                     # store episode in replay buffer
                     self._store_transitions()
                 # clear storage for current episode
-                self._episode_storage = []
+                self._episode_storage.reset()
 
                 total_episodes += 1
                 self._episode_num += 1
@@ -345,44 +356,50 @@ class HER(BaseAlgorithm):
         """
 
         # iterate over current episodes transitions
-        for idx, trans in enumerate(self._episode_storage):
-
-            observation, new_observation, action, reward, done, infos = trans
+        for idx in range(self._episode_storage.size()):
+            # get data of episode index
+            observation = self._episode_storage.buffer["observation"][0][idx]
+            desired_goal = self._episode_storage.buffer["desired_goal"][0][idx]
+            next_observation = self._episode_storage.buffer["next_obs"][0][idx]
+            next_achieved_goal = self._episode_storage.buffer["next_achieved_goal"][0][idx]
+            next_desired_goal = self._episode_storage.buffer["next_desired_goal"][0][idx]
+            action = self._episode_storage.buffer["action"][0][idx]
+            reward = self._episode_storage.buffer["reward"][0][idx]
+            done = self._episode_storage.buffer["done"][0][idx]
+            infos = self._episode_storage.info_buffer[0][idx]
 
             # concatenate observation with (desired) goal
-            obs = ObsDictWrapper.convert_dict(observation)
-            new_obs = ObsDictWrapper.convert_dict(new_observation)
-
+            obs = np.concatenate([observation, desired_goal], axis=-1)
+            next_obs = np.concatenate([next_observation, next_desired_goal], axis=-1)
             # store data in replay buffer
-            self.replay_buffer.add(obs, new_obs, action, reward, done)
+            self.replay_buffer.add(obs, next_obs, action, reward, done)
 
             # We cannot sample a goal from the future in the last step of an episode
-            if idx == len(self._episode_storage) - 1 and self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
+            if idx == self._episode_storage.size() - 1 and self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
                 break
 
-            # sample set of additional goals
-            obs_dim = observation["observation"].shape[1]
-            sampled_goals = [
-                sample
-                for sample in (
-                    HerReplayBuffer.sample_goal(
-                        self.goal_selection_strategy, idx, self._episode_storage, self.replay_buffer.observations, obs_dim
-                    )
-                    for _ in range(self.n_sampled_goal)
-                )
-            ]
+            # dimsension of observation
+            obs_dim = observation.shape[1]
 
-            # iterate over sampled  new transitions in replay buffer
-            for goal in sampled_goals:
+            for _ in range(self.n_sampled_goal):
+                # sample goal
+                goal = self._episode_storage.sample_goal(
+                    self.goal_selection_strategy,
+                    idx,
+                    self._episode_storage.buffer["achieved_goal"][0],
+                    self.replay_buffer.observations,
+                    obs_dim,
+                )
+
                 # compute new reward with new goal
-                new_reward = self.env.env_method("compute_reward", new_observation["achieved_goal"], goal, infos)
+                new_reward = self.env.env_method("compute_reward", next_achieved_goal, goal, infos)
 
                 # concatenate observation with (desired) goal
-                obs = np.concatenate([observation["observation"], goal], axis=1)
-                new_obs = np.concatenate([new_observation["observation"], goal], axis=1)
+                obs = np.concatenate([observation, goal], axis=1)
+                next_obs = np.concatenate([next_observation, goal], axis=1)
 
                 # store data in replay buffer
-                self.replay_buffer.add(obs, new_obs, action, new_reward, np.array([False]))
+                self.replay_buffer.add(obs, next_obs, action, new_reward, np.array([False]))
 
     def __getattr__(self, item):
         """

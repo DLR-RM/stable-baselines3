@@ -234,7 +234,6 @@ def test_dqn_her(online_sampling, n_bits):
     """
     env = BitFlippingEnv(n_bits=n_bits, continuous=False)
 
-    # offline
     model = HER(
         "MlpPolicy",
         env,

@@ -265,6 +265,11 @@ class HER(BaseAlgorithm):
 
                 done = done if episode_timesteps < self.max_episode_length else False
 
+                self.num_timesteps += 1
+                self.model.num_timesteps = self.num_timesteps
+                episode_timesteps += 1
+                total_steps += 1
+
                 # Only stop training if return value is False, not when it is None.
                 if callback.on_step() is False:
                     return RolloutReturn(0.0, total_steps, total_episodes, continue_training=False)
@@ -300,10 +305,6 @@ class HER(BaseAlgorithm):
                     self._last_original_obs = new_obs_
                     self.model._last_original_obs = self._last_original_obs
 
-                self.num_timesteps += 1
-                self.model.num_timesteps = self.num_timesteps
-                episode_timesteps += 1
-                total_steps += 1
                 self.model._update_current_progress_remaining(self.num_timesteps, self._total_timesteps)
 
                 # For DQN, check if the target network should be updated

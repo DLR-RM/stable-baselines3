@@ -13,6 +13,7 @@ from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.identity_env import FakeImageEnv, IdentityEnv, IdentityEnvBox
 from stable_baselines3.common.save_util import load_from_pkl, open_path, save_to_pkl
+from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 MODEL_LIST = [PPO, A2C, TD3, SAC, DQN, DDPG]
@@ -70,21 +71,33 @@ def test_save_load(tmp_path, model_class):
     # Check
     model.save(tmp_path / "test_save.zip")
     del model
-    model = model_class.load(str(tmp_path / "test_save.zip"), env=env)
 
-    # check if params are still the same after load
-    new_params = model.policy.state_dict()
+    # Check if the model loads as expected for every possible choice of device:
+    for device in ["auto", "cpu", "cuda"]:
+        model = model_class.load(str(tmp_path / "test_save.zip"), env=env, device=device)
 
-    # Check that all params are the same as before save load procedure now
-    for key in params:
-        assert th.allclose(params[key], new_params[key]), "Model parameters not the same after save and load."
+        # check if the model was loaded to the correct device
+        assert model.device.type == get_device(device).type
+        assert model.policy.device.type == get_device(device).type
 
-    # check if model still selects the same actions
-    new_selected_actions, _ = model.predict(observations, deterministic=True)
-    assert np.allclose(selected_actions, new_selected_actions, 1e-4)
+        # check if params are still the same after load
+        new_params = model.policy.state_dict()
 
-    # check if learn still works
-    model.learn(total_timesteps=1000, eval_freq=500)
+        # Check that all params are the same as before save load procedure now
+        for key in params:
+            assert new_params[key].device.type == get_device(device).type
+            assert th.allclose(
+                params[key].to("cpu"), new_params[key].to("cpu")
+            ), "Model parameters not the same after save and load."
+
+        # check if model still selects the same actions
+        new_selected_actions, _ = model.predict(observations, deterministic=True)
+        assert np.allclose(selected_actions, new_selected_actions, 1e-4)
+
+        # check if learn still works
+        model.learn(total_timesteps=1000, eval_freq=500)
+
+        del model
 
     # clear file from os
     os.remove(tmp_path / "test_save.zip")

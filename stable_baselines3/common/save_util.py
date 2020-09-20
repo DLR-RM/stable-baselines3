@@ -352,6 +352,7 @@ def load_from_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], verbose=0) 
 def load_from_zip_file(
     load_path: Union[str, pathlib.Path, io.BufferedIOBase],
     load_data: bool = True,
+    device: Union[th.device, str] = "auto",
     verbose=0,
 ) -> (Tuple[Optional[Dict[str, Any]], Optional[TensorDict], Optional[TensorDict]]):
     """
@@ -360,13 +361,14 @@ def load_from_zip_file(
     :param load_path: (str, pathlib.Path, io.BufferedIOBase) Where to load the model from
     :param load_data: Whether we should load and return data
         (class parameters). Mainly used by 'load_parameters' to only load model parameters (weights)
+    :param device: (Union[th.device, str]) Device on which the code should run.
     :return: (dict),(dict),(dict) Class parameters, model state_dicts (dict of state_dict)
         and dict of extra tensors
     """
     load_path = open_path(load_path, "r", verbose=verbose, suffix="zip")
 
     # set device to cpu if cuda is not available
-    device = get_device()
+    device = get_device(device=device)
 
     # Open the zip archive and load data
     try:

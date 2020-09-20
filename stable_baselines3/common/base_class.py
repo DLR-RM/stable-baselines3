@@ -316,16 +316,19 @@ class BaseAlgorithm(ABC):
         return self.policy.predict(observation, state, mask, deterministic)
 
     @classmethod
-    def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs) -> "BaseAlgorithm":
+    def load(
+        cls, load_path: str, env: Optional[GymEnv] = None, device: Union[th.device, str] = "auto", **kwargs
+    ) -> "BaseAlgorithm":
         """
         Load the model from a zip-file
 
         :param load_path: the location of the saved data
         :param env: the new environment to run the loaded model on
             (can be None if you only need prediction from a trained model) has priority over any saved environment
+        :param device: (Union[th.device, str]) Device on which the code should run.
         :param kwargs: extra arguments to change the model when loading
         """
-        data, params, tensors = load_from_zip_file(load_path)
+        data, params, tensors = load_from_zip_file(load_path, device=device)
 
         if "policy_kwargs" in data:
             for arg_to_remove in ["device"]:
@@ -352,7 +355,7 @@ class BaseAlgorithm(ABC):
         model = cls(
             policy=data["policy_class"],
             env=env,
-            device="auto",
+            device=device,
             _init_setup_model=False,  # pytype: disable=not-instantiable,wrong-keyword-args
         )
 

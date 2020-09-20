@@ -14,11 +14,14 @@ New Features:
 ^^^^^^^^^^^^^
 - Added ``unwrap_vec_wrapper()`` to ``common.vec_env`` to extract ``VecEnvWrapper`` if needed
 - Added ``StopTrainingOnMaxEpisodes`` to callback collection (@xicocaio)
+- Added ``device`` keyword argument to ``BaseAlgorithm.load()`` (@liorcohen5)
+- Callbacks have access to rollout collection locals as in SB2. (@PartiallyTyped)
 
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed a bug where the environment was reset twice when using ``evaluate_policy``
 - Fix logging of ``clip_fraction`` in PPO (@diditforlulz273)
+- Fixed a bug where cuda support was wrongly checked when passing the GPU index, e.g., ``device="cuda:0"`` (@liorcohen5)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -59,7 +62,6 @@ New Features:
 - Refactored opening paths for saving and loading to use strings, pathlib or io.BufferedIOBase (@PartiallyTyped)
 - Added ``DDPG`` algorithm as a special case of ``TD3``.
 - Introduced ``BaseModel`` abstract parent for ``BasePolicy``, which critics inherit from.
-- Callbacks have access to rollout collection locals as in SB2. (@PartiallyTyped)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -399,4 +401,4 @@ And all the contributors:
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
-@diditforlulz273
+@diditforlulz273 @liorcohen5

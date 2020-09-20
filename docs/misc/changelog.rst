@@ -21,6 +21,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fixed a bug where the environment was reset twice when using ``evaluate_policy``
 - Fix logging of ``clip_fraction`` in PPO (@diditforlulz273)
+- Fixed a bug where cuda support was wrongly checked when passing the GPU index, e.g., ``device="cuda:0"`` (@liorcohen5)
 
 Deprecations:
 ^^^^^^^^^^^^^

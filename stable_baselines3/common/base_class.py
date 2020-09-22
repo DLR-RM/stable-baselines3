@@ -386,7 +386,7 @@ class BaseAlgorithm(ABC):
             attr = recursive_getattr(model, name)
             attr.load_state_dict(params[name])
 
-        # py other pytorch variables back in place
+        # put other pytorch variables back in place
         if pytorch_variables is not None:
             for name in pytorch_variables:
                 recursive_setattr(model, name, pytorch_variables[name])

@@ -12,22 +12,12 @@ import numpy as np
 import torch as th
 
 from stable_baselines3.common import logger, utils
-from stable_baselines3.common.callbacks import (
-    BaseCallback,
-    CallbackList,
-    ConvertCallback,
-    EvalCallback,
-)
+from stable_baselines3.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.policies import BasePolicy, get_policy_from_name
 from stable_baselines3.common.preprocessing import is_image_space
-from stable_baselines3.common.save_util import (
-    load_from_zip_file,
-    recursive_getattr,
-    recursive_setattr,
-    save_to_zip_file,
-)
+from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr, save_to_zip_file
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.utils import (
     check_for_correct_spaces,
@@ -36,13 +26,7 @@ from stable_baselines3.common.utils import (
     set_random_seed,
     update_learning_rate,
 )
-from stable_baselines3.common.vec_env import (
-    DummyVecEnv,
-    VecEnv,
-    VecNormalize,
-    VecTransposeImage,
-    unwrap_vec_normalize,
-)
+from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, VecNormalize, VecTransposeImage, unwrap_vec_normalize
 
 
 def maybe_make_env(env: Union[GymEnv, str, None], monitor_wrapper: bool, verbose: int) -> Optional[GymEnv]:
@@ -273,7 +257,6 @@ class BaseAlgorithm(ABC):
         state_dicts = ["policy"]
 
         return state_dicts, []
-
 
     def _init_callback(
         self,

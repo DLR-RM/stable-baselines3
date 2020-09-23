@@ -17,6 +17,7 @@ New Features:
 - Added ``device`` keyword argument to ``BaseAlgorithm.load()`` (@liorcohen5)
 - Callbacks have access to rollout collection locals as in SB2. (@PartiallyTyped)
 - Added ``get_parameters`` and ``set_parameters`` for accessing/setting parameters of the agent
+- Added actor/critic loss logging for TD3. (@mloo3)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -30,6 +31,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Improve typing coverage of the ``VecEnv``
+- Fix type annotation of ``make_vec_env`` (@ManifoldFR)
 - Removed ``AlreadySteppingError`` and ``NotSteppingError`` that were not used
 - Fixed typos in SAC and TD3
 - Rename ``BaseClass.get_torch_variables`` -> ``BaseClass._get_torch_save_params`` and
@@ -410,4 +412,4 @@ And all the contributors:
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
-@diditforlulz273 @liorcohen5
+@diditforlulz273 @liorcohen5 @ManifoldFR @mloo3

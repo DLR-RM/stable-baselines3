@@ -3,6 +3,7 @@ import os
 import pathlib
 import warnings
 from copy import deepcopy
+from collections import OrderedDict
 
 import gym
 import numpy as np
@@ -50,7 +51,8 @@ def test_save_load(tmp_path, model_class):
     observations = np.concatenate([env.step([env.action_space.sample()])[0] for _ in range(10)], axis=0)
 
     # Get parameters of different objects
-    original_params = model.get_parameters()
+    # deepcopy to avoid referencing to tensors we are about to modify
+    original_params = deepcopy(model.get_parameters())
 
     # Test different error cases of set_parameters.
     # Test that invalid object names throw errors
@@ -88,7 +90,7 @@ def test_save_load(tmp_path, model_class):
             random_params[object_name] = params
         else:
             # Again, skip the last item in state-dict
-            random_params[object_name] = dict(
+            random_params[object_name] = OrderedDict(
                 (param_name, th.rand_like(param)) for param_name, param in list(params.items())[:-1]
             )
 
@@ -107,16 +109,14 @@ def test_save_load(tmp_path, model_class):
         for k in original_params[object_name]:
             if k == last_key:
                 # Should be same as before
-                assert (
-                    th.allclose(original_params[object_name][k], new_params[object_name][k]),
-                    "Parameter changed despite not included in the loaded parameters.",
-                )
+                assert \
+                    th.allclose(original_params[object_name][k], new_params[object_name][k]), \
+                    "Parameter changed despite not included in the loaded parameters."
             else:
                 # Should be different
-                assert (
-                    not th.allclose(original_params[object_name][k], new_params[object_name][k]),
-                    "Parameters did not change as expected.",
-                )
+                assert \
+                    not th.allclose(original_params[object_name][k], new_params[object_name][k]), \
+                    "Parameters did not change as expected."
 
     params = new_params
 

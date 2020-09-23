@@ -50,6 +50,18 @@ Moved Files
 Parameters Change and Renaming
 ------------------------------
 
+Base-class (all algorithms)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- ``load_parameters`` -> ``set_parameters``
+  
+  - ``get/set_parameters`` return a dictionary mapping object names
+    to their respective PyTorch tensors and other objects representing
+    their parameters, instead of simpler mapping of parameter name to
+    a NumPy array. These functions also return PyTorch tensors rather
+    than NumPy arrays.
+
+
 Policies
 ^^^^^^^^
 

@@ -16,6 +16,7 @@ New Features:
 - Added ``StopTrainingOnMaxEpisodes`` to callback collection (@xicocaio)
 - Added ``device`` keyword argument to ``BaseAlgorithm.load()`` (@liorcohen5)
 - Callbacks have access to rollout collection locals as in SB2. (@PartiallyTyped)
+- Added actor/critic loss logging for TD3. (@mloo3)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -402,4 +403,4 @@ And all the contributors:
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
-@diditforlulz273 @liorcohen5 @ManifoldFR
+@diditforlulz273 @liorcohen5 @ManifoldFR @mloo3

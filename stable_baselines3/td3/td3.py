@@ -1,5 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
+import numpy as np
 import torch as th
 from torch.nn import functional as F
 
@@ -130,6 +131,8 @@ class TD3(OffPolicyAlgorithm):
         # Update learning rate according to lr schedule
         self._update_learning_rate([self.actor.optimizer, self.critic.optimizer])
 
+        actor_losses, critic_losses = [], []
+
         for gradient_step in range(gradient_steps):
 
             # Sample replay buffer
@@ -151,6 +154,7 @@ class TD3(OffPolicyAlgorithm):
 
             # Compute critic loss
             critic_loss = sum([F.mse_loss(current_q, target_q) for current_q in current_q_estimates])
+            critic_losses.append(critic_loss.item())
 
             # Optimize the critics
             self.critic.optimizer.zero_grad()
@@ -161,6 +165,7 @@ class TD3(OffPolicyAlgorithm):
             if gradient_step % self.policy_delay == 0:
                 # Compute actor loss
                 actor_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
+                actor_losses.append(actor_loss.item())
 
                 # Optimize the actor
                 self.actor.optimizer.zero_grad()
@@ -172,6 +177,8 @@ class TD3(OffPolicyAlgorithm):
 
         self._n_updates += gradient_steps
         logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
+        logger.record("train/actor_loss", np.mean(actor_losses))
+        logger.record("train/critic_loss", np.mean(critic_losses))
 
     def learn(
         self,

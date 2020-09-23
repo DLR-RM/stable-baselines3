@@ -16,6 +16,7 @@ New Features:
 - Added ``StopTrainingOnMaxEpisodes`` to callback collection (@xicocaio)
 - Added ``device`` keyword argument to ``BaseAlgorithm.load()`` (@liorcohen5)
 - Callbacks have access to rollout collection locals as in SB2. (@PartiallyTyped)
+- Added ``get_parameters`` and ``set_parameters`` for accessing/setting parameters of the agent
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -31,6 +32,13 @@ Others:
 - Improve typing coverage of the ``VecEnv``
 - Removed ``AlreadySteppingError`` and ``NotSteppingError`` that were not used
 - Fixed typos in SAC and TD3
+- Rename ``BaseClass.get_torch_variables`` -> ``BaseClass._get_torch_save_params`` and
+    ``BaseClass.excluded_save_params`` -> ``BaseClass._excluded_save_params``
+- Reorganized functions for clarity in ``BaseClass`` (save/load functions close to each other, private
+    functions at top)
+- Clarified docstrings on what is saved and loaded to/from files.
+- Renamed saved items ``tensors`` to ``pytorch_variables`` for clarity.
+- Simplified ``save_to_zip_file`` function by removing duplicate code.
 
 Documentation:
 ^^^^^^^^^^^^^^

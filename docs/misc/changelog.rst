@@ -36,9 +36,10 @@ Others:
     ``BaseClass.excluded_save_params`` -> ``BaseClass._excluded_save_params``
 - Reorganized functions for clarity in ``BaseClass`` (save/load functions close to each other, private
     functions at top)
-- Clarified docstrings on what is saved and loaded to/from files.
-- Renamed saved items ``tensors`` to ``pytorch_variables`` for clarity.
-- Simplified ``save_to_zip_file`` function by removing duplicate code.
+- Clarified docstrings on what is saved and loaded to/from files
+- Renamed saved items ``tensors`` to ``pytorch_variables`` for clarity
+- Simplified ``save_to_zip_file`` function by removing duplicate code
+- Store library version along with the saved models
 
 Documentation:
 ^^^^^^^^^^^^^^

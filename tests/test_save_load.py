@@ -2,8 +2,8 @@ import io
 import os
 import pathlib
 import warnings
-from copy import deepcopy
 from collections import OrderedDict
+from copy import deepcopy
 
 import gym
 import numpy as np

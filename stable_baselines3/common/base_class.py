@@ -274,6 +274,124 @@ class BaseAlgorithm(ABC):
 
         return state_dicts, []
 
+
+    def _init_callback(
+        self,
+        callback: MaybeCallback,
+        eval_env: Optional[VecEnv] = None,
+        eval_freq: int = 10000,
+        n_eval_episodes: int = 5,
+        log_path: Optional[str] = None,
+    ) -> BaseCallback:
+        """
+        :param callback: (MaybeCallback) Callback(s) called at every step with state of the algorithm.
+        :param eval_freq: (Optional[int]) How many steps between evaluations; if None, do not evaluate.
+        :param n_eval_episodes: (int) How many episodes to play per evaluation
+        :param n_eval_episodes: (int) Number of episodes to rollout during evaluation.
+        :param log_path: (Optional[str]) Path to a folder where the evaluations will be saved
+        :return: (BaseCallback) A hybrid callback calling `callback` and performing evaluation.
+        """
+        # Convert a list of callbacks into a callback
+        if isinstance(callback, list):
+            callback = CallbackList(callback)
+
+        # Convert functional callback to object
+        if not isinstance(callback, BaseCallback):
+            callback = ConvertCallback(callback)
+
+        # Create eval callback in charge of the evaluation
+        if eval_env is not None:
+            eval_callback = EvalCallback(
+                eval_env,
+                best_model_save_path=log_path,
+                log_path=log_path,
+                eval_freq=eval_freq,
+                n_eval_episodes=n_eval_episodes,
+            )
+            callback = CallbackList([callback, eval_callback])
+
+        callback.init_callback(self)
+        return callback
+
+    def _setup_learn(
+        self,
+        total_timesteps: int,
+        eval_env: Optional[GymEnv],
+        callback: MaybeCallback = None,
+        eval_freq: int = 10000,
+        n_eval_episodes: int = 5,
+        log_path: Optional[str] = None,
+        reset_num_timesteps: bool = True,
+        tb_log_name: str = "run",
+    ) -> Tuple[int, BaseCallback]:
+        """
+        Initialize different variables needed for training.
+
+        :param total_timesteps: (int) The total number of samples (env steps) to train on
+        :param eval_env: (Optional[VecEnv]) Environment to use for evaluation.
+        :param callback: (MaybeCallback) Callback(s) called at every step with state of the algorithm.
+        :param eval_freq: (int) How many steps between evaluations
+        :param n_eval_episodes: (int) How many episodes to play per evaluation
+        :param log_path: (Optional[str]) Path to a folder where the evaluations will be saved
+        :param reset_num_timesteps: (bool) Whether to reset or not the ``num_timesteps`` attribute
+        :param tb_log_name: (str) the name of the run for tensorboard log
+        :return: (Tuple[int, BaseCallback])
+        """
+        self.start_time = time.time()
+        if self.ep_info_buffer is None or reset_num_timesteps:
+            # Initialize buffers if they don't exist, or reinitialize if resetting counters
+            self.ep_info_buffer = deque(maxlen=100)
+            self.ep_success_buffer = deque(maxlen=100)
+
+        if self.action_noise is not None:
+            self.action_noise.reset()
+
+        if reset_num_timesteps:
+            self.num_timesteps = 0
+            self._episode_num = 0
+        else:
+            # Make sure training timesteps are ahead of the internal counter
+            total_timesteps += self.num_timesteps
+        self._total_timesteps = total_timesteps
+
+        # Avoid resetting the environment when calling ``.learn()`` consecutive times
+        if reset_num_timesteps or self._last_obs is None:
+            self._last_obs = self.env.reset()
+            self._last_dones = np.zeros((self.env.num_envs,), dtype=np.bool)
+            # Retrieve unnormalized observation for saving into the buffer
+            if self._vec_normalize_env is not None:
+                self._last_original_obs = self._vec_normalize_env.get_original_obs()
+
+        if eval_env is not None and self.seed is not None:
+            eval_env.seed(self.seed)
+
+        eval_env = self._get_eval_env(eval_env)
+
+        # Configure logger's outputs
+        utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
+
+        # Create eval callback if needed
+        callback = self._init_callback(callback, eval_env, eval_freq, n_eval_episodes, log_path)
+
+        return total_timesteps, callback
+
+    def _update_info_buffer(self, infos: List[Dict[str, Any]], dones: Optional[np.ndarray] = None) -> None:
+        """
+        Retrieve reward and episode length and update the buffer
+        if using Monitor wrapper.
+
+        :param infos: ([dict])
+        """
+        if dones is None:
+            dones = np.array([False] * len(infos))
+        for idx, info in enumerate(infos):
+            maybe_ep_info = info.get("episode")
+            maybe_is_success = info.get("is_success")
+            if maybe_ep_info is not None:
+                self.ep_info_buffer.extend([maybe_ep_info])
+            if maybe_is_success is not None and dones[idx]:
+                self.ep_success_buffer.append(maybe_is_success)
+
     def get_env(self) -> Optional[VecEnv]:
         """
         Returns the current environment (can be None if not defined).
@@ -354,6 +472,22 @@ class BaseAlgorithm(ABC):
             (used in recurrent policies)
         """
         return self.policy.predict(observation, state, mask, deterministic)
+
+    def set_random_seed(self, seed: Optional[int] = None) -> None:
+        """
+        Set the seed of the pseudo-random generators
+        (python, numpy, pytorch, gym, action_space)
+
+        :param seed: (int)
+        """
+        if seed is None:
+            return
+        set_random_seed(seed, using_cuda=self.device == th.device("cuda"))
+        self.action_space.seed(seed)
+        if self.env is not None:
+            self.env.seed(seed)
+        if self.eval_env is not None:
+            self.eval_env.seed(seed)
 
     def set_parameters(
         self,
@@ -491,139 +625,6 @@ class BaseAlgorithm(ABC):
         if model.use_sde:
             model.policy.reset_noise()  # pytype: disable=attribute-error
         return model
-
-    def set_random_seed(self, seed: Optional[int] = None) -> None:
-        """
-        Set the seed of the pseudo-random generators
-        (python, numpy, pytorch, gym, action_space)
-
-        :param seed: (int)
-        """
-        if seed is None:
-            return
-        set_random_seed(seed, using_cuda=self.device == th.device("cuda"))
-        self.action_space.seed(seed)
-        if self.env is not None:
-            self.env.seed(seed)
-        if self.eval_env is not None:
-            self.eval_env.seed(seed)
-
-    def _init_callback(
-        self,
-        callback: MaybeCallback,
-        eval_env: Optional[VecEnv] = None,
-        eval_freq: int = 10000,
-        n_eval_episodes: int = 5,
-        log_path: Optional[str] = None,
-    ) -> BaseCallback:
-        """
-        :param callback: (MaybeCallback) Callback(s) called at every step with state of the algorithm.
-        :param eval_freq: (Optional[int]) How many steps between evaluations; if None, do not evaluate.
-        :param n_eval_episodes: (int) How many episodes to play per evaluation
-        :param n_eval_episodes: (int) Number of episodes to rollout during evaluation.
-        :param log_path: (Optional[str]) Path to a folder where the evaluations will be saved
-        :return: (BaseCallback) A hybrid callback calling `callback` and performing evaluation.
-        """
-        # Convert a list of callbacks into a callback
-        if isinstance(callback, list):
-            callback = CallbackList(callback)
-
-        # Convert functional callback to object
-        if not isinstance(callback, BaseCallback):
-            callback = ConvertCallback(callback)
-
-        # Create eval callback in charge of the evaluation
-        if eval_env is not None:
-            eval_callback = EvalCallback(
-                eval_env,
-                best_model_save_path=log_path,
-                log_path=log_path,
-                eval_freq=eval_freq,
-                n_eval_episodes=n_eval_episodes,
-            )
-            callback = CallbackList([callback, eval_callback])
-
-        callback.init_callback(self)
-        return callback
-
-    def _setup_learn(
-        self,
-        total_timesteps: int,
-        eval_env: Optional[GymEnv],
-        callback: MaybeCallback = None,
-        eval_freq: int = 10000,
-        n_eval_episodes: int = 5,
-        log_path: Optional[str] = None,
-        reset_num_timesteps: bool = True,
-        tb_log_name: str = "run",
-    ) -> Tuple[int, BaseCallback]:
-        """
-        Initialize different variables needed for training.
-
-        :param total_timesteps: (int) The total number of samples (env steps) to train on
-        :param eval_env: (Optional[VecEnv]) Environment to use for evaluation.
-        :param callback: (MaybeCallback) Callback(s) called at every step with state of the algorithm.
-        :param eval_freq: (int) How many steps between evaluations
-        :param n_eval_episodes: (int) How many episodes to play per evaluation
-        :param log_path: (Optional[str]) Path to a folder where the evaluations will be saved
-        :param reset_num_timesteps: (bool) Whether to reset or not the ``num_timesteps`` attribute
-        :param tb_log_name: (str) the name of the run for tensorboard log
-        :return: (Tuple[int, BaseCallback])
-        """
-        self.start_time = time.time()
-        if self.ep_info_buffer is None or reset_num_timesteps:
-            # Initialize buffers if they don't exist, or reinitialize if resetting counters
-            self.ep_info_buffer = deque(maxlen=100)
-            self.ep_success_buffer = deque(maxlen=100)
-
-        if self.action_noise is not None:
-            self.action_noise.reset()
-
-        if reset_num_timesteps:
-            self.num_timesteps = 0
-            self._episode_num = 0
-        else:
-            # Make sure training timesteps are ahead of the internal counter
-            total_timesteps += self.num_timesteps
-        self._total_timesteps = total_timesteps
-
-        # Avoid resetting the environment when calling ``.learn()`` consecutive times
-        if reset_num_timesteps or self._last_obs is None:
-            self._last_obs = self.env.reset()
-            self._last_dones = np.zeros((self.env.num_envs,), dtype=np.bool)
-            # Retrieve unnormalized observation for saving into the buffer
-            if self._vec_normalize_env is not None:
-                self._last_original_obs = self._vec_normalize_env.get_original_obs()
-
-        if eval_env is not None and self.seed is not None:
-            eval_env.seed(self.seed)
-
-        eval_env = self._get_eval_env(eval_env)
-
-        # Configure logger's outputs
-        utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
-
-        # Create eval callback if needed
-        callback = self._init_callback(callback, eval_env, eval_freq, n_eval_episodes, log_path)
-
-        return total_timesteps, callback
-
-    def _update_info_buffer(self, infos: List[Dict[str, Any]], dones: Optional[np.ndarray] = None) -> None:
-        """
-        Retrieve reward and episode length and update the buffer
-        if using Monitor wrapper.
-
-        :param infos: ([dict])
-        """
-        if dones is None:
-            dones = np.array([False] * len(infos))
-        for idx, info in enumerate(infos):
-            maybe_ep_info = info.get("episode")
-            maybe_is_success = info.get("is_success")
-            if maybe_ep_info is not None:
-                self.ep_info_buffer.extend([maybe_ep_info])
-            if maybe_is_success is not None and dones[idx]:
-                self.ep_success_buffer.append(maybe_is_success)
 
     def get_parameters(self):
         """

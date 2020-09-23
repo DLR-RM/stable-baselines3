@@ -29,6 +29,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Improve typing coverage of the ``VecEnv``
+- Fix type annotation of ``make_vec_env`` (@ManifoldFR)
 - Removed ``AlreadySteppingError`` and ``NotSteppingError`` that were not used
 - Fixed typos in SAC and TD3
 
@@ -401,4 +402,4 @@ And all the contributors:
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
-@diditforlulz273 @liorcohen5
+@diditforlulz273 @liorcohen5 @ManifoldFR

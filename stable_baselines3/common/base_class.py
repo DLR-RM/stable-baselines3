@@ -393,7 +393,7 @@ class BaseAlgorithm(ABC):
                 # What errors recursive_getattr could throw? KeyError, but
                 # possible something else too (e.g. if key is an int?).
                 # Catch anything for now.
-                raise ValueError("Key {} is an invalid object name.".format(name))
+                raise ValueError(f"Key {name} is an invalid object name.")
 
             if isinstance(attr, th.optim.Optimizer):
                 # Optimizers do not support "strict" keyword...
@@ -419,9 +419,8 @@ class BaseAlgorithm(ABC):
 
         if exact_match and updated_objects != objects_needing_update:
             raise ValueError(
-                "Names of parameters do not match agents' parameters: expected {}, got {}".format(
-                    objects_needing_update, updated_objects
-                )
+                "Names of parameters do not match agents' parameters: "
+                f"expected {objects_needing_update}, got {updated_objects}"
             )
 
     @classmethod

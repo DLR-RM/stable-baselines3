@@ -434,8 +434,8 @@ class BaseAlgorithm(ABC):
         """
         Load the model from a zip-file
 
-        param (Union[str, pathlib.Path, io.BufferedIOBase]): path to the file (or a file-like) where to load the
-            agent from
+        :param path: (Union[str, pathlib.Path, io.BufferedIOBase]) path to the file (or a file-like) where to
+            load the agent from
         :param env: the new environment to run the loaded model on
             (can be None if you only need prediction from a trained model) has priority over any saved environment
         :param device: (Union[th.device, str]) Device on which the code should run.

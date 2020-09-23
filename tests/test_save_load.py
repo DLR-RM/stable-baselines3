@@ -109,14 +109,14 @@ def test_save_load(tmp_path, model_class):
         for k in original_params[object_name]:
             if k == last_key:
                 # Should be same as before
-                assert \
-                    th.allclose(original_params[object_name][k], new_params[object_name][k]), \
-                    "Parameter changed despite not included in the loaded parameters."
+                assert th.allclose(
+                    original_params[object_name][k], new_params[object_name][k]
+                ), "Parameter changed despite not included in the loaded parameters."
             else:
                 # Should be different
-                assert \
-                    not th.allclose(original_params[object_name][k], new_params[object_name][k]), \
-                    "Parameters did not change as expected."
+                assert not th.allclose(
+                    original_params[object_name][k], new_params[object_name][k]
+                ), "Parameters did not change as expected."
 
     params = new_params
 

@@ -12,12 +12,22 @@ import numpy as np
 import torch as th
 
 from stable_baselines3.common import logger, utils
-from stable_baselines3.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
+from stable_baselines3.common.callbacks import (
+    BaseCallback,
+    CallbackList,
+    ConvertCallback,
+    EvalCallback,
+)
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.policies import BasePolicy, get_policy_from_name
 from stable_baselines3.common.preprocessing import is_image_space
-from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr, save_to_zip_file
+from stable_baselines3.common.save_util import (
+    load_from_zip_file,
+    recursive_getattr,
+    recursive_setattr,
+    save_to_zip_file,
+)
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.utils import (
     check_for_correct_spaces,
@@ -26,7 +36,13 @@ from stable_baselines3.common.utils import (
     set_random_seed,
     update_learning_rate,
 )
-from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, VecNormalize, VecTransposeImage, unwrap_vec_normalize
+from stable_baselines3.common.vec_env import (
+    DummyVecEnv,
+    VecEnv,
+    VecNormalize,
+    VecTransposeImage,
+    unwrap_vec_normalize,
+)
 
 
 def maybe_make_env(env: Union[GymEnv, str, None], monitor_wrapper: bool, verbose: int) -> Optional[GymEnv]:
@@ -230,7 +246,15 @@ class BaseAlgorithm(ABC):
 
         :return: (List[str]) List of parameters that should be excluded from being saved with pickle.
         """
-        return ["policy", "device", "env", "eval_env", "replay_buffer", "rollout_buffer", "_vec_normalize_env"]
+        return [
+            "policy",
+            "device",
+            "env",
+            "eval_env",
+            "replay_buffer",
+            "rollout_buffer",
+            "_vec_normalize_env",
+        ]
 
     def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
         """
@@ -331,20 +355,94 @@ class BaseAlgorithm(ABC):
         """
         return self.policy.predict(observation, state, mask, deterministic)
 
+    def set_parameters(
+        self,
+        load_path_or_dict: Union[str, Dict[str, Dict]],
+        exact_match: bool = True,
+        device: Union[th.device, str] = "auto",
+    ):
+        """
+        Load parameters from a given zip-file or a nested dictionary containing parameters for
+        different modules (see ``get_parameters``).
+
+        :param load_path_or_iter: Location of the saved data (path or file-like, see ``save``), or a nested
+            dictionary containing nn.Module parameters used by the policy. The dictionary maps
+            object names to a state-dictionary returned by ``torch.nn.Module.state_dict()``.
+        :param exact_match: If True, the given parameters should include parameters for each
+            module and each of their parameters, otherwise raises an Exception. If set to False, this
+            can be used to update only specific parameters.
+        :param device: (Union[th.device, str]) Device on which the code should run.
+        """
+        params = None
+        if isinstance(load_path_or_dict, dict):
+            params = load_path_or_dict
+        else:
+            _, params, _ = load_from_zip_file(load_path_or_dict, device=device)
+
+        # Keep track which objects were updated.
+        # `_get_torch_save_params` returns [params, other_pytorch_variables].
+        # We are only interested in former here.
+        objects_needing_update = set(self._get_torch_save_params()[0])
+        updated_objects = set()
+
+        for name in params:
+            attr = None
+            try:
+                attr = recursive_getattr(self, name)
+            except Exception:
+                # What errors recursive_getattr could throw? KeyError, but
+                # possible something else too (e.g. if key is an int?).
+                # Catch anything for now.
+                raise ValueError("Key {} is an invalid object name.".format(name))
+
+            if isinstance(attr, th.optim.Optimizer):
+                # Optimizers do not support "strict" keyword...
+                # Seems like they will just replace the whole
+                # optimizer state with the given one.
+                # On top of this, optimizer state-dict
+                # seems to change (e.g. first ``optim.step()``),
+                # which makes comparing state dictionary keys
+                # invalid (there is also a nesting of dictionaries
+                # with lists with dictionaries with ...), adding to the
+                # mess.
+                #
+                # TL;DR: We might not be able to reliably say
+                # if given state-dict is missing keys.
+                #
+                # Solution: Just load the state-dict as is, and trust
+                # the user has provided a sensible state dictionary.
+                attr.load_state_dict(params[name])
+            else:
+                # Assume attr is th.nn.Module
+                attr.load_state_dict(params[name], strict=exact_match)
+            updated_objects.add(name)
+
+        if exact_match and updated_objects != objects_needing_update:
+            raise ValueError(
+                "Names of parameters do not match agents' parameters: expected {}, got {}".format(
+                    objects_needing_update, updated_objects
+                )
+            )
+
     @classmethod
     def load(
-        cls, load_path: str, env: Optional[GymEnv] = None, device: Union[th.device, str] = "auto", **kwargs
+        cls,
+        path: Union[str, pathlib.Path, io.BufferedIOBase],
+        env: Optional[GymEnv] = None,
+        device: Union[th.device, str] = "auto",
+        **kwargs,
     ) -> "BaseAlgorithm":
         """
         Load the model from a zip-file
 
-        :param load_path: the location of the saved data
+        param (Union[str, pathlib.Path, io.BufferedIOBase]): path to the file (or a file-like) where to load the
+            agent from
         :param env: the new environment to run the loaded model on
             (can be None if you only need prediction from a trained model) has priority over any saved environment
         :param device: (Union[th.device, str]) Device on which the code should run.
         :param kwargs: extra arguments to change the model when loading
         """
-        data, params, pytorch_variables = load_from_zip_file(load_path, device=device)
+        data, params, pytorch_variables = load_from_zip_file(path, device=device)
 
         # Remove stored device information and replace with ours
         if "policy_kwargs" in data:
@@ -382,9 +480,7 @@ class BaseAlgorithm(ABC):
         model._setup_model()
 
         # put state_dicts back in place
-        for name in params:
-            attr = recursive_getattr(model, name)
-            attr.load_state_dict(params[name])
+        model.set_parameters(params, exact_match=True, device=device)
 
         # put other pytorch variables back in place
         if pytorch_variables is not None:
@@ -530,6 +626,21 @@ class BaseAlgorithm(ABC):
             if maybe_is_success is not None and dones[idx]:
                 self.ep_success_buffer.append(maybe_is_success)
 
+    def get_parameters(self):
+        """
+        Return the parameters of the agent. This includes parameters from different networks, e.g.
+        critics (value functions) and policies (pi functions).
+
+        :return: (Dict[str, Dict]) Mapping of from names of the objects to PyTorch state-dicts.
+        """
+        state_dicts_names, _ = self._get_torch_save_params()
+        params = {}
+        for name in state_dicts_names:
+            attr = recursive_getattr(self, name)
+            # Retrieve state dict
+            params[name] = attr.state_dict()
+        return params
+
     def save(
         self,
         path: Union[str, pathlib.Path, io.BufferedIOBase],
@@ -576,10 +687,6 @@ class BaseAlgorithm(ABC):
                 pytorch_variables[name] = attr
 
         # Build dict of state_dicts
-        params_to_save = {}
-        for name in state_dicts_names:
-            attr = recursive_getattr(self, name)
-            # Retrieve state dict
-            params_to_save[name] = attr.state_dict()
+        params_to_save = self.get_parameters()
 
         save_to_zip_file(path, data=data, params=params_to_save, pytorch_variables=pytorch_variables)

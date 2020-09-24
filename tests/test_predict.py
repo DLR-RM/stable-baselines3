@@ -46,7 +46,7 @@ def test_predict(model_class, env_id, device):
     # Test detection of different shapes by the predict method
     model = model_class("MlpPolicy", env_id, device=device)
     # Check that the policy is on the right device
-    assert get_device(device) == model.policy.device
+    assert get_device(device).type == model.policy.device.type
 
     env = gym.make(env_id)
     vec_env = DummyVecEnv([lambda: gym.make(env_id), lambda: gym.make(env_id)])

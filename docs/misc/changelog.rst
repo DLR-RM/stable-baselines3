@@ -3,12 +3,15 @@
 Changelog
 ==========
 
-Pre-Release 0.9.0a1 (WIP)
+Pre-Release 0.9.0a2 (WIP)
 ------------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed ``device`` keyword argument of policies; use ``policy.to(device)`` instead. (@qxcv)
+- Rename ``BaseClass.get_torch_variables`` -> ``BaseClass._get_torch_save_params`` and
+    ``BaseClass.excluded_save_params`` -> ``BaseClass._excluded_save_params``
+- Renamed saved items ``tensors`` to ``pytorch_variables`` for clarity
 
 New Features:
 ^^^^^^^^^^^^^
@@ -35,12 +38,9 @@ Others:
 - Fix type annotation of ``make_vec_env`` (@ManifoldFR)
 - Removed ``AlreadySteppingError`` and ``NotSteppingError`` that were not used
 - Fixed typos in SAC and TD3
-- Rename ``BaseClass.get_torch_variables`` -> ``BaseClass._get_torch_save_params`` and
-    ``BaseClass.excluded_save_params`` -> ``BaseClass._excluded_save_params``
 - Reorganized functions for clarity in ``BaseClass`` (save/load functions close to each other, private
     functions at top)
 - Clarified docstrings on what is saved and loaded to/from files
-- Renamed saved items ``tensors`` to ``pytorch_variables`` for clarity
 - Simplified ``save_to_zip_file`` function by removing duplicate code
 - Store library version along with the saved models
 

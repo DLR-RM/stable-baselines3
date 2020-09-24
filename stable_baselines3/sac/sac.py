@@ -202,7 +202,6 @@ class SAC(OffPolicyAlgorithm):
                 self.alpha_coef_tensor = th.tensor(float(self.alpha_coef)).to(self.device)
                 self.log_alpha = th.log(self.alpha_coef_tensor)
 
-
     def _create_aliases(self) -> None:
         self.actor = self.policy.actor
         self.critic = self.policy.critic
@@ -230,7 +229,9 @@ class SAC(OffPolicyAlgorithm):
                 policy_actions.append(actions_pi)
                 n_log_probs.append(log_prob)
             # (batch, n, action_dim)
-            policy_actions = th.cat(policy_actions, dim=1).view(len(replay_data.observations), self.n_action_samples, action_dim)
+            policy_actions = th.cat(policy_actions, dim=1).view(
+                len(replay_data.observations), self.n_action_samples, action_dim
+            )
             # assert policy_actions.shape == (len(replay_data.observations), self.n_action_samples, action_dim)
             # (batch, n, 1)
             n_log_probs = th.cat(n_log_probs).view(len(replay_data.observations), self.n_action_samples, 1)

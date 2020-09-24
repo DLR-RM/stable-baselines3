@@ -205,19 +205,9 @@ class TD3(OffPolicyAlgorithm):
             reset_num_timesteps=reset_num_timesteps,
         )
 
-    def excluded_save_params(self) -> List[str]:
-        """
-        Returns the names of the parameters that should be excluded by default
-        when saving the model.
+    def _excluded_save_params(self) -> List[str]:
+        return super(TD3, self)._excluded_save_params() + ["actor", "critic", "actor_target", "critic_target"]
 
-        :return: (List[str]) List of parameters that should be excluded from save
-        """
-        # Exclude aliases
-        return super(TD3, self).excluded_save_params() + ["actor", "critic", "actor_target", "critic_target"]
-
-    def get_torch_variables(self) -> Tuple[List[str], List[str]]:
-        """
-        cf base class
-        """
+    def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
         state_dicts = ["policy", "actor.optimizer", "critic.optimizer"]
         return state_dicts, []

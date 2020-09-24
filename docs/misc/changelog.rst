@@ -16,6 +16,7 @@ New Features:
 - Added ``StopTrainingOnMaxEpisodes`` to callback collection (@xicocaio)
 - Added ``device`` keyword argument to ``BaseAlgorithm.load()`` (@liorcohen5)
 - Callbacks have access to rollout collection locals as in SB2. (@PartiallyTyped)
+- Added ``get_parameters`` and ``set_parameters`` for accessing/setting parameters of the agent
 - Added actor/critic loss logging for TD3. (@mloo3)
 
 Bug Fixes:
@@ -23,6 +24,7 @@ Bug Fixes:
 - Fixed a bug where the environment was reset twice when using ``evaluate_policy``
 - Fix logging of ``clip_fraction`` in PPO (@diditforlulz273)
 - Fixed a bug where cuda support was wrongly checked when passing the GPU index, e.g., ``device="cuda:0"`` (@liorcohen5)
+- Fixed a bug when the random seed was not properly set on cuda when passing the GPU index
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -33,6 +35,14 @@ Others:
 - Fix type annotation of ``make_vec_env`` (@ManifoldFR)
 - Removed ``AlreadySteppingError`` and ``NotSteppingError`` that were not used
 - Fixed typos in SAC and TD3
+- Rename ``BaseClass.get_torch_variables`` -> ``BaseClass._get_torch_save_params`` and
+    ``BaseClass.excluded_save_params`` -> ``BaseClass._excluded_save_params``
+- Reorganized functions for clarity in ``BaseClass`` (save/load functions close to each other, private
+    functions at top)
+- Clarified docstrings on what is saved and loaded to/from files
+- Renamed saved items ``tensors`` to ``pytorch_variables`` for clarity
+- Simplified ``save_to_zip_file`` function by removing duplicate code
+- Store library version along with the saved models
 
 Documentation:
 ^^^^^^^^^^^^^^

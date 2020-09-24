@@ -2,6 +2,7 @@ import io
 import os
 import pathlib
 import warnings
+from collections import OrderedDict
 from copy import deepcopy
 
 import gym
@@ -13,6 +14,7 @@ from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.identity_env import FakeImageEnv, IdentityEnv, IdentityEnvBox
 from stable_baselines3.common.save_util import load_from_pkl, open_path, save_to_pkl
+from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 MODEL_LIST = [PPO, A2C, TD3, SAC, DQN, DDPG]
@@ -32,7 +34,7 @@ def select_env(model_class: BaseAlgorithm) -> gym.Env:
 def test_save_load(tmp_path, model_class):
     """
     Test if 'save' and 'load' saves and loads model correctly
-    and if 'load_parameters' and 'get_policy_parameters' work correctly
+    and if 'get_parameters' and 'set_parameters' and work correctly.
 
     ''warning does not test function of optimizer parameter load
 
@@ -48,19 +50,73 @@ def test_save_load(tmp_path, model_class):
     env.reset()
     observations = np.concatenate([env.step([env.action_space.sample()])[0] for _ in range(10)], axis=0)
 
-    # Get dictionary of current parameters
-    params = deepcopy(model.policy.state_dict())
+    # Get parameters of different objects
+    # deepcopy to avoid referencing to tensors we are about to modify
+    original_params = deepcopy(model.get_parameters())
 
-    # Modify all parameters to be random values
-    random_params = dict((param_name, th.rand_like(param)) for param_name, param in params.items())
+    # Test different error cases of set_parameters.
+    # Test that invalid object names throw errors
+    invalid_object_params = deepcopy(original_params)
+    invalid_object_params["I_should_not_be_a_valid_object"] = "and_I_am_an_invalid_tensor"
+    with pytest.raises(ValueError):
+        model.set_parameters(invalid_object_params, exact_match=True)
+    with pytest.raises(ValueError):
+        model.set_parameters(invalid_object_params, exact_match=False)
+
+    # Test that exact_match catches when something was missed.
+    missing_object_params = dict((k, v) for k, v in list(original_params.items())[:-1])
+    with pytest.raises(ValueError):
+        model.set_parameters(missing_object_params, exact_match=True)
+
+    # Test that exact_match catches when something inside state-dict
+    # is missing but we have exact_match.
+    missing_state_dict_tensor_params = {}
+    for object_name in original_params:
+        object_params = {}
+        missing_state_dict_tensor_params[object_name] = object_params
+        # Skip last item in state-dict
+        for k, v in list(original_params[object_name].items())[:-1]:
+            object_params[k] = v
+    with pytest.raises(RuntimeError):
+        # PyTorch load_state_dict throws RuntimeError if strict but
+        # invalid state-dict.
+        model.set_parameters(missing_state_dict_tensor_params, exact_match=True)
+
+    # Test that parameters do indeed change.
+    random_params = {}
+    for object_name, params in original_params.items():
+        # Do not randomize optimizer parameters (custom layout)
+        if "optim" in object_name:
+            random_params[object_name] = params
+        else:
+            # Again, skip the last item in state-dict
+            random_params[object_name] = OrderedDict(
+                (param_name, th.rand_like(param)) for param_name, param in list(params.items())[:-1]
+            )
 
     # Update model parameters with the new random values
-    model.policy.load_state_dict(random_params)
+    model.set_parameters(random_params, exact_match=False)
 
-    new_params = model.policy.state_dict()
-    # Check that all params are different now
-    for k in params:
-        assert not th.allclose(params[k], new_params[k]), "Parameters did not change as expected."
+    new_params = model.get_parameters()
+    # Check that all params except the final item in each state-dict are different.
+    for object_name in original_params:
+        # Skip optimizers (no valid comparison with just th.allclose)
+        if "optim" in object_name:
+            continue
+        # state-dicts use ordered dictionaries, so key order
+        # is guaranteed.
+        last_key = list(original_params[object_name].keys())[-1]
+        for k in original_params[object_name]:
+            if k == last_key:
+                # Should be same as before
+                assert th.allclose(
+                    original_params[object_name][k], new_params[object_name][k]
+                ), "Parameter changed despite not included in the loaded parameters."
+            else:
+                # Should be different
+                assert not th.allclose(
+                    original_params[object_name][k], new_params[object_name][k]
+                ), "Parameters did not change as expected."
 
     params = new_params
 
@@ -70,21 +126,37 @@ def test_save_load(tmp_path, model_class):
     # Check
     model.save(tmp_path / "test_save.zip")
     del model
-    model = model_class.load(str(tmp_path / "test_save.zip"), env=env)
 
-    # check if params are still the same after load
-    new_params = model.policy.state_dict()
+    # Check if the model loads as expected for every possible choice of device:
+    for device in ["auto", "cpu", "cuda"]:
+        model = model_class.load(str(tmp_path / "test_save.zip"), env=env, device=device)
 
-    # Check that all params are the same as before save load procedure now
-    for key in params:
-        assert th.allclose(params[key], new_params[key]), "Model parameters not the same after save and load."
+        # check if the model was loaded to the correct device
+        assert model.device.type == get_device(device).type
+        assert model.policy.device.type == get_device(device).type
 
-    # check if model still selects the same actions
-    new_selected_actions, _ = model.predict(observations, deterministic=True)
-    assert np.allclose(selected_actions, new_selected_actions, 1e-4)
+        # check if params are still the same after load
+        new_params = model.get_parameters()
 
-    # check if learn still works
-    model.learn(total_timesteps=1000, eval_freq=500)
+        # Check that all params are the same as before save load procedure now
+        for object_name in new_params:
+            # Skip optimizers (no valid comparison with just th.allclose)
+            if "optim" in object_name:
+                continue
+            for key in params[object_name]:
+                assert new_params[object_name][key].device.type == get_device(device).type
+                assert th.allclose(
+                    params[object_name][key].to("cpu"), new_params[object_name][key].to("cpu")
+                ), "Model parameters not the same after save and load."
+
+        # check if model still selects the same actions
+        new_selected_actions, _ = model.predict(observations, deterministic=True)
+        assert np.allclose(selected_actions, new_selected_actions, 1e-4)
+
+        # check if learn still works
+        model.learn(total_timesteps=1000, eval_freq=500)
+
+        del model
 
     # clear file from os
     os.remove(tmp_path / "test_save.zip")

@@ -3,25 +3,33 @@
 Changelog
 ==========
 
-Pre-Release 0.9.0a1 (WIP)
+Pre-Release 0.9.0a2 (WIP)
 ------------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed ``device`` keyword argument of policies; use ``policy.to(device)`` instead. (@qxcv)
+- Rename ``BaseClass.get_torch_variables`` -> ``BaseClass._get_torch_save_params`` and
+    ``BaseClass.excluded_save_params`` -> ``BaseClass._excluded_save_params``
+- Renamed saved items ``tensors`` to ``pytorch_variables`` for clarity
 
 New Features:
 ^^^^^^^^^^^^^
 - Added Hindsight Experience Replay ``HER``. (@megan-klaiber)
 - Added ``unwrap_vec_wrapper()`` to ``common.vec_env`` to extract ``VecEnvWrapper`` if needed
 - Added ``StopTrainingOnMaxEpisodes`` to callback collection (@xicocaio)
+- Added ``device`` keyword argument to ``BaseAlgorithm.load()`` (@liorcohen5)
 - Callbacks have access to rollout collection locals as in SB2. (@PartiallyTyped)
+- Added ``get_parameters`` and ``set_parameters`` for accessing/setting parameters of the agent
+- Added actor/critic loss logging for TD3. (@mloo3)
 
 Bug Fixes:
 ^^^^^^^^^^
 - Added ``unwrap_vec_wrapper()`` to ``common.vec_env`` to extract ``VecEnvWrapper`` if needed
 - Fixed a bug where the environment was reset twice when using ``evaluate_policy``
 - Fix logging of ``clip_fraction`` in PPO (@diditforlulz273)
+- Fixed a bug where cuda support was wrongly checked when passing the GPU index, e.g., ``device="cuda:0"`` (@liorcohen5)
+- Fixed a bug when the random seed was not properly set on cuda when passing the GPU index
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -29,8 +37,14 @@ Deprecations:
 Others:
 ^^^^^^^
 - Improve typing coverage of the ``VecEnv``
+- Fix type annotation of ``make_vec_env`` (@ManifoldFR)
 - Removed ``AlreadySteppingError`` and ``NotSteppingError`` that were not used
 - Fixed typos in SAC and TD3
+- Reorganized functions for clarity in ``BaseClass`` (save/load functions close to each other, private
+    functions at top)
+- Clarified docstrings on what is saved and loaded to/from files
+- Simplified ``save_to_zip_file`` function by removing duplicate code
+- Store library version along with the saved models
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -399,5 +413,5 @@ And all the contributors:
 @Miffyli @dwiel @miguelrass @qxcv @jaberkow @eavelardev @ruifeng96150 @pedrohbtp @srivatsankrishnan @evilsocket
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
-@tirafesi @blurLake @koulakis @joeljosephjin @shwang @megan-klaiber @rk37 @andyshih12 @RaphaelWag @xicocaio
-@diditforlulz273
+@tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
+@diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @megan-klaiber

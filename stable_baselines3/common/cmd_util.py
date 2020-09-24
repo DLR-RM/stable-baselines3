@@ -17,7 +17,7 @@ def make_vec_env(
     monitor_dir: Optional[str] = None,
     wrapper_class: Optional[Callable] = None,
     env_kwargs: Optional[Dict[str, Any]] = None,
-    vec_env_cls: Optional[Union[DummyVecEnv, SubprocVecEnv]] = None,
+    vec_env_cls: Optional[Type[Union[DummyVecEnv, SubprocVecEnv]]] = None,
     vec_env_kwargs: Optional[Dict[str, Any]] = None,
 ):
     """

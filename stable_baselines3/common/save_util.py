@@ -16,6 +16,7 @@ from typing import Any, Dict, Optional, Tuple, Union
 import cloudpickle
 import torch as th
 
+import stable_baselines3
 from stable_baselines3.common.type_aliases import TensorDict
 from stable_baselines3.common.utils import get_device
 
@@ -284,21 +285,20 @@ def save_to_zip_file(
     save_path: Union[str, pathlib.Path, io.BufferedIOBase],
     data: Dict[str, Any] = None,
     params: Dict[str, Any] = None,
-    tensors: Dict[str, Any] = None,
+    pytorch_variables: Dict[str, Any] = None,
     verbose=0,
 ) -> None:
     """
-    Save a model to a zip archive.
+    Save model data to a zip archive.
 
     :param save_path: (Union[str, pathlib.Path, io.BufferedIOBase]) Where to store the model.
         if save_path is a str or pathlib.Path ensures that the path actually exists.
-    :param data: Class parameters being stored.
+    :param data: Class parameters being stored (non-PyTorch variables)
     :param params: Model parameters being stored expected to contain an entry for every
                    state_dict with its name and the state_dict.
-    :param tensors: Extra tensor variables expected to contain name and value of tensors
+    :param pytorch_variables: Other PyTorch variables expected to contain name and value of the variable.
     :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information
     """
-
     save_path = open_path(save_path, "w", verbose=0, suffix="zip")
     # data/params can be None, so do not
     # try to serialize them blindly
@@ -310,13 +310,15 @@ def save_to_zip_file(
         # Do not try to save "None" elements
         if data is not None:
             archive.writestr("data", serialized_data)
-        if tensors is not None:
-            with archive.open("tensors.pth", mode="w") as tensors_file:
-                th.save(tensors, tensors_file)
+        if pytorch_variables is not None:
+            with archive.open("pytorch_variables.pth", mode="w") as pytorch_variables_file:
+                th.save(pytorch_variables, pytorch_variables_file)
         if params is not None:
             for file_name, dict_ in params.items():
                 with archive.open(file_name + ".pth", mode="w") as param_file:
                     th.save(dict_, param_file)
+        # Save metadata: library version when file was saved
+        archive.writestr("_stable_baselines3_version", stable_baselines3.__version__)
 
 
 def save_to_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], obj, verbose=0) -> None:
@@ -362,8 +364,8 @@ def load_from_zip_file(
     :param load_data: Whether we should load and return data
         (class parameters). Mainly used by 'load_parameters' to only load model parameters (weights)
     :param device: (Union[th.device, str]) Device on which the code should run.
-    :return: (dict),(dict),(dict) Class parameters, model state_dicts (dict of state_dict)
-        and dict of extra tensors
+    :return: (dict),(dict),(dict) Class parameters, model state_dicts (aka "params", dict of state_dict)
+        and dict of pytorch variables
     """
     load_path = open_path(load_path, "r", verbose=verbose, suffix="zip")
 
@@ -378,44 +380,38 @@ def load_from_zip_file(
             # zip archive, assume they were stored
             # as None (_save_to_file_zip allows this).
             data = None
-            tensors = None
+            pytorch_variables = None
             params = {}
 
             if "data" in namelist and load_data:
-                # Load class parameters and convert to string
+                # Load class parameters that are stored
+                # with either JSON or pickle (not PyTorch variables).
                 json_data = archive.read("data").decode()
                 data = json_to_data(json_data)
 
-            if "tensors.pth" in namelist and load_data:
-                # Load extra tensors
-                with archive.open("tensors.pth", mode="r") as tensor_file:
-                    # File has to be seekable, but opt_param_file is not, so load in BytesIO first
+            # Check for all .pth files and load them using th.load.
+            # "pytorch_variables.pth" stores PyTorch variables, and any other .pth
+            # files store state_dicts of variables with custom names (e.g. policy, policy.optimizer)
+            pth_files = [file_name for file_name in namelist if os.path.splitext(file_name)[1] == ".pth"]
+            for file_path in pth_files:
+                with archive.open(file_path, mode="r") as param_file:
+                    # File has to be seekable, but param_file is not, so load in BytesIO first
                     # fixed in python >= 3.7
                     file_content = io.BytesIO()
-                    file_content.write(tensor_file.read())
+                    file_content.write(param_file.read())
                     # go to start of file
                     file_content.seek(0)
-                    # load the parameters with the right ``map_location``
-                    tensors = th.load(file_content, map_location=device)
-
-            # check for all other .pth files
-            other_files = [
-                file_name for file_name in namelist if os.path.splitext(file_name)[1] == ".pth" and file_name != "tensors.pth"
-            ]
-            # if there are any other files which end with .pth and aren't "params.pth"
-            # assume that they each are optimizer parameters
-            if len(other_files) > 0:
-                for file_path in other_files:
-                    with archive.open(file_path, mode="r") as opt_param_file:
-                        # File has to be seekable, but opt_param_file is not, so load in BytesIO first
-                        # fixed in python >= 3.7
-                        file_content = io.BytesIO()
-                        file_content.write(opt_param_file.read())
-                        # go to start of file
-                        file_content.seek(0)
-                        # load the parameters with the right ``map_location``
-                        params[os.path.splitext(file_path)[0]] = th.load(file_content, map_location=device)
+                    # Load the parameters with the right ``map_location``.
+                    # Remove ".pth" ending with splitext
+                    th_object = th.load(file_content, map_location=device)
+                    if file_path == "pytorch_variables.pth":
+                        # PyTorch variables (not state_dicts)
+                        pytorch_variables = th_object
+                    else:
+                        # State dicts. Store into params dictionary
+                        # with same name as in .zip file (without .pth)
+                        params[os.path.splitext(file_path)[0]] = th_object
     except zipfile.BadZipFile:
         # load_path wasn't a zip file
         raise ValueError(f"Error: the file {load_path} wasn't a zip-file")
-    return data, params, tensors
+    return data, params, pytorch_variables

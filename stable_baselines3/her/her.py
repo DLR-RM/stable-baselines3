@@ -411,8 +411,8 @@ class HER(BaseAlgorithm):
         else:
             raise AttributeError
 
-    def get_torch_variables(self) -> Tuple[List[str], List[str]]:
-        return self.model.get_torch_variables()
+    def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
+        return self.model._get_torch_save_params()
 
     def save(
         self,

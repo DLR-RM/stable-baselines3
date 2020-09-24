@@ -476,7 +476,7 @@ class TQC(OffPolicyAlgorithm):
         :return: (List[str]) List of parameters that should be excluded from save
         """
         # Exclude aliases
-        return super(TQC, self).excluded_save_params() + ["actor", "critic", "critic_target"]
+        return super(TQC, self)._excluded_save_params() + ["actor", "critic", "critic_target"]
 
     def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
         """

@@ -562,7 +562,7 @@ class BaseAlgorithm(ABC):
 
         # Remove stored device information and replace with ours
         if "policy_kwargs" in data:
-            if "device" in "policy_kwargs":
+            if "device" in data["policy_kwargs"]:
                 del data["policy_kwargs"]["device"]
 
         if "policy_kwargs" in kwargs and kwargs["policy_kwargs"] != data["policy_kwargs"]:

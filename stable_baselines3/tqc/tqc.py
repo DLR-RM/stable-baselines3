@@ -277,9 +277,10 @@ class TQC(OffPolicyAlgorithm):
         logger.record("train/critic_loss", np.mean(critic_losses))
         if len(ent_coef_losses) > 0:
             logger.record("train/ent_coef_loss", np.mean(ent_coef_losses))
-        if hasattr(self.actor, "scale_expert"):
-            with th.no_grad():
+        with th.no_grad():
+            if hasattr(self.actor, "scale_expert"):
                 logger.record("train/scale_expert", th.sigmoid(self.actor.scale_expert).mean().item())
+            if hasattr(self.actor, "scale_rl"):
                 logger.record("train/scale_rl", th.sigmoid(self.actor.scale_rl).mean().item())
 
     def pretrain(

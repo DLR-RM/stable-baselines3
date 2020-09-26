@@ -457,7 +457,7 @@ class NstepReplayBuffer(ReplayBuffer):
             # Compute entropy term
             # TODO: convert to pytorch tensor on the correct device
             with th.no_grad():
-                obs = th.as_tensor(self.observations[unique_indices, :]).to(self.actor.device)
+                obs = th.as_tensor(self.observations[unique_indices, 0, :]).to(self.actor.device)
                 _, log_prob = self.actor.action_log_prob(obs)
 
             # Memory inneficient version but fast computation

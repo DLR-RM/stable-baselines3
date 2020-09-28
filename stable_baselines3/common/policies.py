@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 import gym
 import numpy as np
 import torch as th
-from torch import nn as nn
+from torch import nn
 
 from stable_baselines3.common.distributions import (
     BernoulliDistribution,

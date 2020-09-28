@@ -47,6 +47,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Added ``StopTrainingOnMaxEpisodes`` details and example (@xicocaio)
+- Updated custom policy section (added custom feature extractor example)
 
 
 

@@ -15,3 +15,4 @@ dependencies:
     - numpy
     - matplotlib
     - pip>=20.0
+    - sphinx_autodoc_typehints

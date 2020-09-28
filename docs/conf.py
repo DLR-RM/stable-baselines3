@@ -72,7 +72,7 @@ release = __version__
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
-    # 'sphinx_autodoc_typehints',
+    "sphinx_autodoc_typehints",
     "sphinx.ext.autosummary",
     "sphinx.ext.mathjax",
     "sphinx.ext.ifconfig",

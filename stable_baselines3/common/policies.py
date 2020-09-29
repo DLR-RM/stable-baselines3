@@ -439,7 +439,7 @@ class ActorCriticPolicy(BasePolicy):
         assert isinstance(self.action_dist, StateDependentNoiseDistribution), "reset_noise() is only available when using gSDE"
         self.action_dist.sample_weights(self.log_std, batch_size=n_envs)
 
-    def _build_mlp_extractor() -> None:
+    def _build_mlp_extractor(self) -> None:
         """
         Create the policy and value networks.
         Part of the layers can be shared.

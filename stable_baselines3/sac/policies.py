@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 import gym
 import torch as th
-from torch import nn as nn
+from torch import nn
 
 from stable_baselines3.common.distributions import SquashedDiagGaussianDistribution, StateDependentNoiseDistribution
 from stable_baselines3.common.policies import BasePolicy, ContinuousCritic, create_sde_features_extractor, register_policy

@@ -90,6 +90,7 @@ class TQC(OffPolicyAlgorithm):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
+        remove_time_limit_termination: bool = False,
     ):
 
         super(TQC, self).__init__(
@@ -118,6 +119,7 @@ class TQC(OffPolicyAlgorithm):
             sde_sample_freq=sde_sample_freq,
             use_sde_at_warmup=use_sde_at_warmup,
             optimize_memory_usage=optimize_memory_usage,
+            remove_time_limit_termination=remove_time_limit_termination,
         )
 
         self.target_entropy = target_entropy

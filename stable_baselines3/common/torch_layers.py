@@ -13,8 +13,8 @@ class BaseFeaturesExtractor(nn.Module):
     """
     Base class that represents a features extractor.
 
-    :param observation_space: (gym.Space)
-    :param features_dim: (int) Number of features extracted.
+    :param observation_space:
+    :param features_dim: Number of features extracted.
     """
 
     def __init__(self, observation_space: gym.Space, features_dim: int = 0):
@@ -36,7 +36,7 @@ class FlattenExtractor(BaseFeaturesExtractor):
     Feature extract that flatten the input.
     Used as a placeholder when feature extraction is not needed.
 
-    :param observation_space: (gym.Space)
+    :param observation_space:
     """
 
     def __init__(self, observation_space: gym.Space):
@@ -54,8 +54,8 @@ class NatureCNN(BaseFeaturesExtractor):
         "Human-level control through deep reinforcement learning."
         Nature 518.7540 (2015): 529-533.
 
-    :param observation_space: (gym.Space)
-    :param features_dim: (int) Number of features extracted.
+    :param observation_space:
+    :param features_dim: Number of features extracted.
         This corresponds to the number of unit for the last layer.
     """
 
@@ -96,16 +96,16 @@ def create_mlp(
     Create a multi layer perceptron (MLP), which is
     a collection of fully-connected layers each followed by an activation function.
 
-    :param input_dim: (int) Dimension of the input vector
-    :param output_dim: (int)
-    :param net_arch: (List[int]) Architecture of the neural net
+    :param input_dim: Dimension of the input vector
+    :param output_dim:
+    :param net_arch: Architecture of the neural net
         It represents the number of units per layer.
         The length of this list is the number of layers.
-    :param activation_fn: (Type[nn.Module]) The activation function
+    :param activation_fn: The activation function
         to use after each layer.
-    :param squash_output: (bool) Whether to squash the output using a Tanh
+    :param squash_output: Whether to squash the output using a Tanh
         activation function
-    :return: (List[nn.Module])
+    :return:
     """
 
     if len(net_arch) > 0:
@@ -145,11 +145,11 @@ class MlpExtractor(nn.Module):
 
     Adapted from Stable Baselines.
 
-    :param feature_dim: (int) Dimension of the feature vector (can be the output of a CNN)
-    :param net_arch: ([int or dict]) The specification of the policy and value networks.
+    :param feature_dim: Dimension of the feature vector (can be the output of a CNN)
+    :param net_arch: The specification of the policy and value networks.
         See above for details on its formatting.
-    :param activation_fn: (Type[nn.Module]) The activation function to use for the networks.
-    :param device: (th.device)
+    :param activation_fn: The activation function to use for the networks.
+    :param device:
     """
 
     def __init__(
@@ -214,7 +214,7 @@ class MlpExtractor(nn.Module):
 
     def forward(self, features: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
         """
-        :return: (th.Tensor, th.Tensor) latent_policy, latent_value of the specified network.
+        :return: latent_policy, latent_value of the specified network.
             If all layers are shared, then ``latent_policy == latent_value``
         """
         shared_latent = self.shared_net(features)

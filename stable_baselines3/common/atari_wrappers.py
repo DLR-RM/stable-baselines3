@@ -18,8 +18,8 @@ class NoopResetEnv(gym.Wrapper):
         Sample initial states by taking random number of no-ops on reset.
         No-op is assumed to be action 0.
 
-        :param env: (gym.Env) the environment to wrap
-        :param noop_max: (int) the maximum value of no-ops to run
+        :param env: the environment to wrap
+        :param noop_max: the maximum value of no-ops to run
         """
         gym.Wrapper.__init__(self, env)
         self.noop_max = noop_max
@@ -47,7 +47,7 @@ class FireResetEnv(gym.Wrapper):
         """
         Take action on reset for environments that are fixed until firing.
 
-        :param env: (gym.Env) the environment to wrap
+        :param env: the environment to wrap
         """
         gym.Wrapper.__init__(self, env)
         assert env.unwrapped.get_action_meanings()[1] == "FIRE"
@@ -70,7 +70,7 @@ class EpisodicLifeEnv(gym.Wrapper):
         Make end-of-life == end-of-episode, but only reset on true game over.
         Done by DeepMind for the DQN and co. since it helps value estimation.
 
-        :param env: (gym.Env) the environment to wrap
+        :param env: the environment to wrap
         """
         gym.Wrapper.__init__(self, env)
         self.lives = 0
@@ -97,7 +97,7 @@ class EpisodicLifeEnv(gym.Wrapper):
         and the learner need not know about any of this behind-the-scenes.
 
         :param kwargs: Extra keywords passed to env.reset() call
-        :return: (np.ndarray) the first observation of the environment
+        :return: the first observation of the environment
         """
         if self.was_real_done:
             obs = self.env.reset(**kwargs)
@@ -113,8 +113,8 @@ class MaxAndSkipEnv(gym.Wrapper):
         """
         Return only every ``skip``-th frame (frameskipping)
 
-        :param env: (gym.Env) the environment
-        :param skip: (int) number of ``skip``-th frame
+        :param env: the environment
+        :param skip: number of ``skip``-th frame
         """
         gym.Wrapper.__init__(self, env)
         # most recent raw observations (for max pooling across time steps)
@@ -126,8 +126,8 @@ class MaxAndSkipEnv(gym.Wrapper):
         Step the environment with the given action
         Repeat action, sum reward, and max over last observations.
 
-        :param action: ([int] or [float]) the action
-        :return: ([int] or [float], [float], [bool], dict) observation, reward, done, information
+        :param action: the action
+        :return: observation, reward, done, information
         """
         total_reward = 0.0
         done = None
@@ -155,7 +155,7 @@ class ClipRewardEnv(gym.RewardWrapper):
         """
         Clips the reward to {+1, 0, -1} by its sign.
 
-        :param env: (gym.Env) the environment
+        :param env: the environment
         """
         gym.RewardWrapper.__init__(self, env)
 
@@ -163,8 +163,8 @@ class ClipRewardEnv(gym.RewardWrapper):
         """
         Bin reward to {+1, 0, -1} by its sign.
 
-        :param reward: (float)
-        :return: (float)
+        :param reward:
+        :return:
         """
         return np.sign(reward)
 
@@ -175,9 +175,9 @@ class WarpFrame(gym.ObservationWrapper):
         Convert to grayscale and warp frames to 84x84 (default)
         as done in the Nature paper and later work.
 
-        :param env: (gym.Env) the environment
-        :param width: (int)
-        :param height: (int)
+        :param env: the environment
+        :param width:
+        :param height:
         """
         gym.ObservationWrapper.__init__(self, env)
         self.width = width
@@ -190,8 +190,8 @@ class WarpFrame(gym.ObservationWrapper):
         """
         returns the current observation from a frame
 
-        :param frame: (np.ndarray) environment frame
-        :return: (np.ndarray) the observation
+        :param frame: environment frame
+        :return: the observation
         """
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
@@ -212,13 +212,13 @@ class AtariWrapper(gym.Wrapper):
     * Grayscale observation
     * Clip reward to {-1, 0, 1}
 
-    :param env: (gym.Env) gym environment
-    :param noop_max: (int): max number of no-ops
-    :param frame_skip: (int): the frequency at which the agent experiences the game.
-    :param screen_size: (int): resize Atari frame
-    :param terminal_on_life_loss: (bool): if True, then step() returns done=True whenever a
+    :param env: gym environment
+    :param noop_max:: max number of no-ops
+    :param frame_skip:: the frequency at which the agent experiences the game.
+    :param screen_size:: resize Atari frame
+    :param terminal_on_life_loss:: if True, then step() returns done=True whenever a
             life is lost.
-    :param clip_reward: (bool) If True (default), the reward is clip to {-1, 0, 1} depending on its sign.
+    :param clip_reward: If True (default), the reward is clip to {-1, 0, 1} depending on its sign.
     """
 
     def __init__(

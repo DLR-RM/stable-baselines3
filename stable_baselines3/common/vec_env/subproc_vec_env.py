@@ -65,8 +65,8 @@ class SubprocVecEnv(VecEnv):
         ``if __name__ == "__main__":`` block.
         For more information, see the multiprocessing documentation.
 
-    :param env_fns: ([Gym Environment]) Environments to run in subprocesses
-    :param start_method: (str) method used to start the subprocesses.
+    :param env_fns: Environments to run in subprocesses
+    :param start_method: method used to start the subprocesses.
            Must be one of the methods returned by multiprocessing.get_all_start_methods().
            Defaults to 'forkserver' on available platforms, and 'spawn' otherwise.
     """
@@ -167,8 +167,8 @@ class SubprocVecEnv(VecEnv):
         Get the connection object needed to communicate with the wanted
         envs that are in subprocesses.
 
-        :param indices: (None,int,Iterable) refers to indices of envs.
-        :return: ([multiprocessing.Connection]) Connection object to communicate between processes.
+        :param indices: refers to indices of envs.
+        :return: Connection object to communicate between processes.
         """
         indices = self._get_indices(indices)
         return [self.remotes[i] for i in indices]

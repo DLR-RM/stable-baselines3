@@ -19,40 +19,40 @@ class DQN(OffPolicyAlgorithm):
     Default hyperparameters are taken from the nature paper,
     except for the optimizer and learning rate that were taken from Stable Baselines defaults.
 
-    :param policy: (DQNPolicy or str) The policy model to use (MlpPolicy, CnnPolicy, ...)
-    :param env: (Gym environment or str) The environment to learn from (if registered in Gym, can be str)
-    :param learning_rate: (float or callable) The learning rate, it can be a function
+    :param policy: The policy model to use (MlpPolicy, CnnPolicy, ...)
+    :param env: The environment to learn from (if registered in Gym, can be str)
+    :param learning_rate: The learning rate, it can be a function
         of the current progress (from 1 to 0)
-    :param buffer_size: (int) size of the replay buffer
-    :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
-    :param batch_size: (int) Minibatch size for each gradient update
-    :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1) default 1 for hard update
-    :param gamma: (float) the discount factor
-    :param train_freq: (int) Update the model every ``train_freq`` steps. Set to `-1` to disable.
-    :param gradient_steps: (int) How many gradient steps to do after each rollout
+    :param buffer_size: size of the replay buffer
+    :param learning_starts: how many steps of the model to collect transitions for before learning starts
+    :param batch_size: Minibatch size for each gradient update
+    :param tau: the soft update coefficient ("Polyak update", between 0 and 1) default 1 for hard update
+    :param gamma: the discount factor
+    :param train_freq: Update the model every ``train_freq`` steps. Set to `-1` to disable.
+    :param gradient_steps: How many gradient steps to do after each rollout
         (see ``train_freq`` and ``n_episodes_rollout``)
         Set to ``-1`` means to do as many gradient steps as steps done in the environment
         during the rollout.
-    :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
+    :param n_episodes_rollout: Update the model every ``n_episodes_rollout`` episodes.
         Note that this cannot be used at the same time as ``train_freq``. Set to `-1` to disable.
-    :param optimize_memory_usage: (bool) Enable a memory efficient variant of the replay buffer
+    :param optimize_memory_usage: Enable a memory efficient variant of the replay buffer
         at a cost of more complexity.
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
-    :param target_update_interval: (int) update the target network every ``target_update_interval``
+    :param target_update_interval: update the target network every ``target_update_interval``
         environment steps.
-    :param exploration_fraction: (float) fraction of entire training period over which the exploration rate is reduced
-    :param exploration_initial_eps: (float) initial value of random action probability
-    :param exploration_final_eps: (float) final value of random action probability
-    :param max_grad_norm: (float) The maximum value for the gradient clipping
-    :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
-    :param create_eval_env: (bool) Whether to create a second environment that will be
+    :param exploration_fraction: fraction of entire training period over which the exploration rate is reduced
+    :param exploration_initial_eps: initial value of random action probability
+    :param exploration_final_eps: final value of random action probability
+    :param max_grad_norm: The maximum value for the gradient clipping
+    :param tensorboard_log: the log location for tensorboard (if None, no logging)
+    :param create_eval_env: Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
-    :param policy_kwargs: (dict) additional arguments to be passed to the policy on creation
-    :param verbose: (int) the verbosity level: 0 no output, 1 info, 2 debug
-    :param seed: (int) Seed for the pseudo random generators
-    :param device: (str or th.device) Device (cpu, cuda, ...) on which the code should be run.
+    :param policy_kwargs: additional arguments to be passed to the policy on creation
+    :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
+    :param seed: Seed for the pseudo random generators
+    :param device: Device (cpu, cuda, ...) on which the code should be run.
         Setting it to auto, the code will be run on the GPU if possible.
-    :param _init_setup_model: (bool) Whether or not to build the network at the creation of the instance
+    :param _init_setup_model: Whether or not to build the network at the creation of the instance
     """
 
     def __init__(
@@ -192,11 +192,11 @@ class DQN(OffPolicyAlgorithm):
         """
         Overrides the base_class predict function to include epsilon-greedy exploration.
 
-        :param observation: (np.ndarray) the input observation
-        :param state: (Optional[np.ndarray]) The last states (can be None, used in recurrent policies)
-        :param mask: (Optional[np.ndarray]) The last masks (can be None, used in recurrent policies)
-        :param deterministic: (bool) Whether or not to return deterministic actions.
-        :return: (Tuple[np.ndarray, Optional[np.ndarray]]) the model's action and the next state
+        :param observation: the input observation
+        :param state: The last states (can be None, used in recurrent policies)
+        :param mask: The last masks (can be None, used in recurrent policies)
+        :param deterministic: Whether or not to return deterministic actions.
+        :return: the model's action and the next state
             (used in recurrent policies)
         """
         if not deterministic and np.random.rand() < self.exploration_rate:

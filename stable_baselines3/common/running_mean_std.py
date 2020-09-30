@@ -9,8 +9,8 @@ class RunningMeanStd(object):
         Calulates the running mean and std of a data stream
         https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
 
-        :param epsilon: (float) helps with arithmetic issues
-        :param shape: (tuple) the shape of the data stream's output
+        :param epsilon: helps with arithmetic issues
+        :param shape: the shape of the data stream's output
         """
         self.mean = np.zeros(shape, np.float64)
         self.var = np.ones(shape, np.float64)

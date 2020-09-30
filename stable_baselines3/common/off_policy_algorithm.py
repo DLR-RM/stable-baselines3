@@ -28,27 +28,27 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param env: The environment to learn from
                 (if registered in Gym, can be str. Can be None for loading trained models)
     :param policy_base: The base policy used by this method
-    :param learning_rate: (float or callable) learning rate for the optimizer,
+    :param learning_rate: learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
-    :param buffer_size: (int) size of the replay buffer
-    :param learning_starts: (int) how many steps of the model to collect transitions for before learning starts
-    :param batch_size: (int) Minibatch size for each gradient update
-    :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1)
-    :param gamma: (float) the discount factor
-    :param train_freq: (int) Update the model every ``train_freq`` steps. Set to `-1` to disable.
-    :param gradient_steps: (int) How many gradient steps to do after each rollout
+    :param buffer_size: size of the replay buffer
+    :param learning_starts: how many steps of the model to collect transitions for before learning starts
+    :param batch_size: Minibatch size for each gradient update
+    :param tau: the soft update coefficient ("Polyak update", between 0 and 1)
+    :param gamma: the discount factor
+    :param train_freq: Update the model every ``train_freq`` steps. Set to `-1` to disable.
+    :param gradient_steps: How many gradient steps to do after each rollout
         (see ``train_freq`` and ``n_episodes_rollout``)
         Set to ``-1`` means to do as many gradient steps as steps done in the environment
         during the rollout.
-    :param n_episodes_rollout: (int) Update the model every ``n_episodes_rollout`` episodes.
+    :param n_episodes_rollout: Update the model every ``n_episodes_rollout`` episodes.
         Note that this cannot be used at the same time as ``train_freq``. Set to `-1` to disable.
-    :param action_noise: (ActionNoise) the action noise type (None by default), this can help
+    :param action_noise: the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
-    :param optimize_memory_usage: (bool) Enable a memory efficient variant of the replay buffer
+    :param optimize_memory_usage: Enable a memory efficient variant of the replay buffer
         at a cost of more complexity.
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param policy_kwargs: Additional arguments to be passed to the policy on creation
-    :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
+    :param tensorboard_log: the log location for tensorboard (if None, no logging)
     :param verbose: The verbosity level: 0 none, 1 training information, 2 debug
     :param device: Device on which the code should run.
         By default, it will try to use a Cuda compatible device and fallback to cpu
@@ -64,9 +64,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         instead of action noise exploration (default: False)
     :param sde_sample_freq: Sample a new noise matrix every n steps when using gSDE
         Default: -1 (only sample at the beginning of the rollout)
-    :param use_sde_at_warmup: (bool) Whether to use gSDE instead of uniform sampling
+    :param use_sde_at_warmup: Whether to use gSDE instead of uniform sampling
         during the warm up phase (before learning starts)
-    :param sde_support: (bool) Whether the model support gSDE or not
+    :param sde_support: Whether the model support gSDE or not
     """
 
     def __init__(
@@ -166,7 +166,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         """
         Save the replay buffer as a pickle file.
 
-        :param path: (Union[str,pathlib.Path, io.BufferedIOBase]) Path to the file where the replay buffer should be saved.
+        :param path: Path to the file where the replay buffer should be saved.
             if path is a str or pathlib.Path, the path is automatically created if necessary.
         """
         assert self.replay_buffer is not None, "The replay buffer is not defined"
@@ -176,7 +176,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         """
         Load a replay buffer from a pickle file.
 
-        :param path: (Union[str, pathlib.Path, io.BufferedIOBase]) Path to the pickled replay buffer.
+        :param path: Path to the pickled replay buffer.
         """
         self.replay_buffer = load_from_pkl(path, self.verbose)
         assert isinstance(self.replay_buffer, ReplayBuffer), "The replay buffer must inherit from ReplayBuffer class"
@@ -281,11 +281,11 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         or sampling a random action (from a uniform distribution over the action space)
         or by adding noise to the deterministic output.
 
-        :param action_noise: (Optional[ActionNoise]) Action noise that will be used for exploration
+        :param action_noise: Action noise that will be used for exploration
             Required for deterministic policy (e.g. TD3). This can also be used
             in addition to the stochastic policy for SAC.
-        :param learning_starts: (int) Number of steps before learning for the warm-up phase.
-        :return: (Tuple[np.ndarray, np.ndarray]) action to take in the environment
+        :param learning_starts: Number of steps before learning for the warm-up phase.
+        :return: action to take in the environment
             and scaled action that will be stored in the replay buffer.
             The two differs when the action space is not normalized (bounds are not [-1, 1]).
         """
@@ -358,20 +358,20 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         """
         Collect experiences and store them into a ReplayBuffer.
 
-        :param env: (VecEnv) The training environment
-        :param callback: (BaseCallback) Callback that will be called at each step
+        :param env: The training environment
+        :param callback: Callback that will be called at each step
             (and at the beginning and end of the rollout)
-        :param n_episodes: (int) Number of episodes to use to collect rollout data
+        :param n_episodes: Number of episodes to use to collect rollout data
             You can also specify a ``n_steps`` instead
-        :param n_steps: (int) Number of steps to use to collect rollout data
+        :param n_steps: Number of steps to use to collect rollout data
             You can also specify a ``n_episodes`` instead.
-        :param action_noise: (Optional[ActionNoise]) Action noise that will be used for exploration
+        :param action_noise: Action noise that will be used for exploration
             Required for deterministic policy (e.g. TD3). This can also be used
             in addition to the stochastic policy for SAC.
-        :param learning_starts: (int) Number of steps before learning for the warm-up phase.
-        :param replay_buffer: (ReplayBuffer)
-        :param log_interval: (int) Log data every ``log_interval`` episodes
-        :return: (RolloutReturn)
+        :param learning_starts: Number of steps before learning for the warm-up phase.
+        :param replay_buffer:
+        :param log_interval: Log data every ``log_interval`` episodes
+        :return:
         """
         episode_rewards, total_timesteps = [], []
         total_steps, total_episodes = 0, 0

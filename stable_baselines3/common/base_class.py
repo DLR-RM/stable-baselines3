@@ -387,7 +387,8 @@ class BaseAlgorithm(ABC):
         """
         Return the ``VecNormalize`` wrapper of the training env
         if it exists.
-        :return: Optional[VecNormalize] The ``VecNormalize`` env.
+
+        :return: The ``VecNormalize`` env.
         """
         return self._vec_normalize_env
 
@@ -633,7 +634,7 @@ class BaseAlgorithm(ABC):
         """
         Save all the attributes of the object and the model parameters in a zip-file.
 
-        :param (Union[str, pathlib.Path, io.BufferedIOBase]): path to the file where the rl agent should be saved
+        :param path: path to the file where the rl agent should be saved
         :param exclude: name of parameters that should be excluded in addition to the default ones
         :param include: name of parameters that might be excluded but should be included anyway
         """

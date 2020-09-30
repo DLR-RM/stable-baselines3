@@ -56,6 +56,7 @@ Documentation:
 - Added ``StopTrainingOnMaxEpisodes`` details and example (@xicocaio)
 - Updated custom policy section (added custom feature extractor example)
 - Re-enable ``sphinx_autodoc_typehints``
+- Updated doc style for type hints and remove duplicated type hints
 
 
 

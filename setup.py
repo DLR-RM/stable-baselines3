@@ -103,7 +103,7 @@ setup(
             # For spelling
             "sphinxcontrib.spelling",
             # Type hints support
-            # 'sphinx-autodoc-typehints'
+            "sphinx-autodoc-typehints",
         ],
         "extra": [
             # For render

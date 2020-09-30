@@ -1,17 +1,14 @@
-import typing
 from typing import Callable, List, Optional, Tuple, Union
 
 import gym
 import numpy as np
 
+from stable_baselines3.common import base_class
 from stable_baselines3.common.vec_env import VecEnv
-
-if typing.TYPE_CHECKING:
-    from stable_baselines3.common.base_class import BaseAlgorithm
 
 
 def evaluate_policy(
-    model: "BaseAlgorithm",
+    model: "base_class.BaseAlgorithm",
     env: Union[gym.Env, VecEnv],
     n_eval_episodes: int = 10,
     deterministic: bool = True,

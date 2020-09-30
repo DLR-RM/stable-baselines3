@@ -97,6 +97,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         sde_sample_freq: int = -1,
         use_sde_at_warmup: bool = False,
         sde_support: bool = True,
+        remove_time_limit_termination: bool = False,
     ):
 
         super(OffPolicyAlgorithm, self).__init__(
@@ -125,6 +126,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.n_episodes_rollout = n_episodes_rollout
         self.action_noise = action_noise
         self.optimize_memory_usage = optimize_memory_usage
+        # Remove terminations (dones) that are due to time limit
+        # see https://github.com/hill-a/stable-baselines/issues/863
+        self.remove_time_limit_termination = remove_time_limit_termination
 
         if train_freq > 0 and n_episodes_rollout > 0:
             warnings.warn(
@@ -426,7 +430,19 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                         # Avoid changing the original ones
                         self._last_original_obs, new_obs_, reward_ = self._last_obs, new_obs, reward
 
-                    replay_buffer.add(self._last_original_obs, new_obs_, buffer_action, reward_, done)
+                    # Remove termination signal due to timelimit if needed
+                    # NOTE: this may cause issue when using memory optimized replay
+                    # or n-step replay
+                    if self.remove_time_limit_termination and infos[0].get("TimeLimit.truncated", False):
+                        done_ = np.array([False])
+                        # As the VecEnv resets automatically, new_obs is already the
+                        # first observation of the next episode
+                        next_obs = infos[0]["terminal_observation"]
+                        if self._vec_normalize_env is not None:
+                            next_obs = self._vec_normalize_env.unnormalize_obs(next_obs)
+                        replay_buffer.add(self._last_original_obs, next_obs, buffer_action, reward_, done_)
+                    else:
+                        replay_buffer.add(self._last_original_obs, new_obs_, buffer_action, reward_, done)
 
                 self._last_obs = new_obs
                 # Save the unnormalized observation

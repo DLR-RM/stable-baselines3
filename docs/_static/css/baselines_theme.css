@@ -51,8 +51,11 @@ a.icon.icon-home {
         background: #f8f8f8;;
 }
 
-/* Change style of types in the docstrings*/
-.field-list em
+/* Change style of types in the docstrings .rst-content .field-list */
+.field-list .xref.py.docutils, .field-list code.docutils, .field-list .docutils.literal.notranslate
 {
-  font-size: 90%;
+  border: None;
+  padding-left: 0;
+  padding-right: 0;
+  color: #404040;
 }

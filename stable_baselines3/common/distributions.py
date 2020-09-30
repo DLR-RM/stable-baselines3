@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import gym
 import torch as th
 from gym import spaces
-from torch import nn as nn
+from torch import nn
 from torch.distributions import Bernoulli, Categorical, Normal
 
 from stable_baselines3.common.preprocessing import get_action_dim

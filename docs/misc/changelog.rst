@@ -12,6 +12,13 @@ Breaking Changes:
 - Rename ``BaseClass.get_torch_variables`` -> ``BaseClass._get_torch_save_params`` and
     ``BaseClass.excluded_save_params`` -> ``BaseClass._excluded_save_params``
 - Renamed saved items ``tensors`` to ``pytorch_variables`` for clarity
+- ``make_atari_env``, ``make_vec_env`` and ``set_random_seed`` must be imported with (and not directly from ``stable_baselines3.common``):
+
+.. code-block:: python
+
+  from stable_baselines3.common.cmd_util import make_atari_env, make_vec_env
+  from stable_baselines3.common.utils import set_random_seed
+
 
 New Features:
 ^^^^^^^^^^^^^
@@ -47,6 +54,8 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Added ``StopTrainingOnMaxEpisodes`` details and example (@xicocaio)
+- Updated custom policy section (added custom feature extractor example)
+- Re-enable ``sphinx_autodoc_typehints``
 
 
 

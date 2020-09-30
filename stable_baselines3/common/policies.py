@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 import gym
 import numpy as np
 import torch as th
-from torch import nn as nn
+from torch import nn
 
 from stable_baselines3.common.distributions import (
     BernoulliDistribution,
@@ -439,6 +439,16 @@ class ActorCriticPolicy(BasePolicy):
         assert isinstance(self.action_dist, StateDependentNoiseDistribution), "reset_noise() is only available when using gSDE"
         self.action_dist.sample_weights(self.log_std, batch_size=n_envs)
 
+    def _build_mlp_extractor(self) -> None:
+        """
+        Create the policy and value networks.
+        Part of the layers can be shared.
+        """
+        # Note: If net_arch is None and some features extractor is used,
+        #       net_arch here is an empty list and mlp_extractor does not
+        #       really contain any layers (acts like an identity module).
+        self.mlp_extractor = MlpExtractor(self.features_dim, net_arch=self.net_arch, activation_fn=self.activation_fn)
+
     def _build(self, lr_schedule: Callable[[float], float]) -> None:
         """
         Create the networks and the optimizer.
@@ -446,10 +456,7 @@ class ActorCriticPolicy(BasePolicy):
         :param lr_schedule: (Callable) Learning rate schedule
             lr_schedule(1) is the initial learning rate
         """
-        # Note: If net_arch is None and some features extractor is used,
-        #       net_arch here is an empty list and mlp_extractor does not
-        #       really contain any layers (acts like an identity module).
-        self.mlp_extractor = MlpExtractor(self.features_dim, net_arch=self.net_arch, activation_fn=self.activation_fn)
+        self._build_mlp_extractor()
 
         latent_dim_pi = self.mlp_extractor.latent_dim_pi
 

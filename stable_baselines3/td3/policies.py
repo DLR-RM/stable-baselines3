@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, List, Optional, Type
 
 import gym
 import torch as th
-from torch import nn as nn
+from torch import nn
 
 from stable_baselines3.common.policies import BasePolicy, ContinuousCritic, register_policy
 from stable_baselines3.common.preprocessing import get_action_dim

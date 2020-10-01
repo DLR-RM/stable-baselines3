@@ -189,7 +189,7 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
     """
     assert isinstance(
         env, gym.Env
-    ), "You environment must inherit from gym.Env class cf https://github.com/openai/gym/blob/master/gym/core.py"
+    ), "Your environment must inherit from the gym.Env class cf https://github.com/openai/gym/blob/master/gym/core.py"
 
     # ============= Check the spaces (observation and action) ================
     _check_spaces(env)

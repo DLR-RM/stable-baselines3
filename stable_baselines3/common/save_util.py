@@ -364,7 +364,7 @@ def load_from_zip_file(
     :param load_data: Whether we should load and return data
         (class parameters). Mainly used by 'load_parameters' to only load model parameters (weights)
     :param device: Device on which the code should run.
-    :return:,(dict),(dict) Class parameters, model state_dicts (aka "params", dict of state_dict)
+    :return: Class parameters, model state_dicts (aka "params", dict of state_dict)
         and dict of pytorch variables
     """
     load_path = open_path(load_path, "r", verbose=verbose, suffix="zip")

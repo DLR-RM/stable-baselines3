@@ -180,7 +180,7 @@ def load_results(path: str) -> pandas.DataFrame:
     """
     monitor_files = get_monitor_files(path)
     if len(monitor_files) == 0:
-        raise LoadMonitorResultsError("no monitor files of the form *%s found in %s" % (Monitor.EXT, path))
+        raise LoadMonitorResultsError(f"No monitor files of the form *{Monitor.EXT} found in {path}")
     data_frames, headers = [], []
     for file_name in monitor_files:
         with open(file_name, "rt") as file_handler:

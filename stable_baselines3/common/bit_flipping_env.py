@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 import numpy as np
 from gym import GoalEnv, spaces
@@ -76,11 +76,11 @@ class BitFlippingEnv(GoalEnv):
             return int(sum([state[i] * 2 ** i for i in range(len(state))]))
         return state
 
-    def _get_obs(self) -> OrderedDict:
+    def _get_obs(self) -> Dict[str, Union[int, np.ndarray]]:
         """
         Helper to create the observation.
 
-        :return: (OrderedDict<int or ndarray>)
+        :return:
         """
         return OrderedDict(
             [
@@ -90,7 +90,7 @@ class BitFlippingEnv(GoalEnv):
             ]
         )
 
-    def reset(self) -> OrderedDict:
+    def reset(self) -> Dict[str, Union[int, np.ndarray]]:
         self.current_step = 0
         self.state = self.obs_space.sample()
         return self._get_obs()

@@ -308,7 +308,7 @@ class VecEnvWrapper(VecEnv):
     def getattr_recursive(self, name: str):
         """Recursively check wrappers to find attribute.
 
-        :param name (str) name of attribute to look for
+        :param name: name of attribute to look for
         :return: attribute
         """
         all_attributes = self._get_all_attributes()

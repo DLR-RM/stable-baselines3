@@ -96,9 +96,9 @@ def get_linear_fn(start: float, end: float, end_fraction: float) -> Callable:
     This is used in DQN for linearly annealing the exploration fraction
     (epsilon for the epsilon-greedy strategy).
 
-    :params start: (float) value to start with if ``progress_remaining`` = 1
-    :params end: (float) value to end with if ``progress_remaining`` = 0
-    :params end_fraction: (float) fraction of ``progress_remaining``
+    :params start: value to start with if ``progress_remaining`` = 1
+    :params end: value to end with if ``progress_remaining`` = 0
+    :params end_fraction: fraction of ``progress_remaining``
         where end is reached e.g 0.1 then end is reached after 10%
         of the complete training process.
     :return:

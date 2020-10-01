@@ -296,6 +296,7 @@ class TQC(OffPolicyAlgorithm):
         reduce: str = "mean",
         exp_temperature: float = 1.0,
         off_policy_update_freq: int = -1,
+        normalize_advantage: bool = True
     ) -> None:
         """
         Pretrain with Critic Regularized Regression (CRR)
@@ -421,6 +422,12 @@ class TQC(OffPolicyAlgorithm):
                                     qf_agg += qf_pi / n_action_samples
 
                     advantage = qf_buffer - qf_agg
+
+                if normalize_advantage:
+                    mean_values = advantage.mean(dim=0, keepdims=True)
+                    std_values = advantage.std(dim=0, keepdims=True) + 1e-5
+                    advantage = (advantage - mean_values) / std_values
+
                 if strategy == "binary":
                     # binary advantage
                     weight = advantage > 0

@@ -21,9 +21,9 @@ def unwrap_vec_wrapper(env: Union["GymEnv", VecEnv], vec_wrapper_class: Type[Vec
     """
     Retrieve a ``VecEnvWrapper`` object by recursively searching.
 
-    :param env: (gym.Env)
-    :param vec_wrapper_class: (VecEnvWrapper)
-    :return: (VecEnvWrapper)
+    :param env:
+    :param vec_wrapper_class:
+    :return:
     """
     env_tmp = env
     while isinstance(env_tmp, VecEnvWrapper):
@@ -35,8 +35,8 @@ def unwrap_vec_wrapper(env: Union["GymEnv", VecEnv], vec_wrapper_class: Type[Vec
 
 def unwrap_vec_normalize(env: Union["GymEnv", VecEnv]) -> Optional[VecNormalize]:
     """
-    :param env: (gym.Env)
-    :return: (VecNormalize)
+    :param env:
+    :return:
     """
     return unwrap_vec_wrapper(env, VecNormalize)  # pytype:disable=bad-return-type
 
@@ -46,8 +46,8 @@ def sync_envs_normalization(env: "GymEnv", eval_env: "GymEnv") -> None:
     """
     Sync eval env and train env when using VecNormalize
 
-    :param env: (GymEnv)
-    :param eval_env: (GymEnv)
+    :param env:
+    :param eval_env:
     """
     env_tmp, eval_env_tmp = env, eval_env
     while isinstance(env_tmp, VecEnvWrapper):

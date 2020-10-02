@@ -147,9 +147,9 @@ def _check_render(env: gym.Env, warn: bool = True, headless: bool = False) -> No
     Check the declared render modes and the `render()`/`close()`
     method of the environment.
 
-    :param env: (gym.Env) The environment to check
-    :param warn: (bool) Whether to output additional warnings
-    :param headless: (bool) Whether to disable render modes
+    :param env: The environment to check
+    :param warn: Whether to output additional warnings
+    :param headless: Whether to disable render modes
         that require a graphical interface. False by default.
     """
     render_modes = env.metadata.get("render.modes")
@@ -181,15 +181,15 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
 
     It also optionally check that the environment is compatible with Stable-Baselines.
 
-    :param env: (gym.Env) The Gym environment that will be checked
-    :param warn: (bool) Whether to output additional warnings
+    :param env: The Gym environment that will be checked
+    :param warn: Whether to output additional warnings
         mainly related to the interaction with Stable Baselines
-    :param skip_render_check: (bool) Whether to skip the checks for the render method.
+    :param skip_render_check: Whether to skip the checks for the render method.
         True by default (useful for the CI)
     """
     assert isinstance(
         env, gym.Env
-    ), "You environment must inherit from gym.Env class cf https://github.com/openai/gym/blob/master/gym/core.py"
+    ), "Your environment must inherit from the gym.Env class cf https://github.com/openai/gym/blob/master/gym/core.py"
 
     # ============= Check the spaces (observation and action) ================
     _check_spaces(env)

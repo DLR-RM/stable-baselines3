@@ -32,9 +32,9 @@ class KVWriter(object):
         """
         Write a dictionary to file
 
-        :param key_values: (dict)
-        :param key_excluded: (dict)
-        :param step: (int)
+        :param key_values:
+        :param key_excluded:
+        :param step:
         """
         raise NotImplementedError
 
@@ -54,7 +54,7 @@ class SeqWriter(object):
         """
         write_sequence an array to file
 
-        :param sequence: (list)
+        :param sequence:
         """
         raise NotImplementedError
 
@@ -64,7 +64,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         """
         log to a file, in a human readable format
 
-        :param filename_or_file: (str or File) the file to write the log to
+        :param filename_or_file: the file to write the log to
         """
         if isinstance(filename_or_file, str):
             self.file = open(filename_or_file, "wt")
@@ -145,7 +145,7 @@ class JSONOutputFormat(KVWriter):
         """
         log to a file, in the JSON format
 
-        :param filename: (str) the file to write the log to
+        :param filename: the file to write the log to
         """
         self.file = open(filename, "wt")
 
@@ -178,7 +178,7 @@ class CSVOutputFormat(KVWriter):
         """
         log to a file, in a CSV format
 
-        :param filename: (str) the file to write the log to
+        :param filename: the file to write the log to
         """
 
         self.file = open(filename, "w+t")
@@ -223,7 +223,7 @@ class TensorBoardOutputFormat(KVWriter):
         """
         Dumps key/value pairs into TensorBoard's numeric format.
 
-        :param folder: (str) the folder to write the log to
+        :param folder: the folder to write the log to
         """
         assert SummaryWriter is not None, "tensorboard is not installed, you can use " "pip install tensorboard to do so"
         self.writer = SummaryWriter(log_dir=folder)
@@ -257,10 +257,10 @@ def make_output_format(_format: str, log_dir: str, log_suffix: str = "") -> KVWr
     """
     return a logger for the requested format
 
-    :param _format: (str) the requested format to log to ('stdout', 'log', 'json' or 'csv' or 'tensorboard')
-    :param log_dir: (str) the logging directory
-    :param log_suffix: (str) the suffix for the log file
-    :return: (KVWriter) the logger
+    :param _format: the requested format to log to ('stdout', 'log', 'json' or 'csv' or 'tensorboard')
+    :param log_dir: the logging directory
+    :param log_suffix: the suffix for the log file
+    :return: the logger
     """
     os.makedirs(log_dir, exist_ok=True)
     if _format == "stdout":
@@ -288,9 +288,9 @@ def record(key: str, value: Any, exclude: Optional[Union[str, Tuple[str, ...]]] 
     Call this once for each diagnostic quantity, each iteration
     If called many times, last value will be used.
 
-    :param key: (Any) save to log this key
-    :param value: (Any) save to log this value
-    :param exclude: (str or tuple) outputs to be excluded
+    :param key: save to log this key
+    :param value: save to log this value
+    :param exclude: outputs to be excluded
     """
     Logger.CURRENT.record(key, value, exclude)
 
@@ -299,9 +299,9 @@ def record_mean(key: str, value: Union[int, float], exclude: Optional[Union[str,
     """
     The same as record(), but if called many times, values averaged.
 
-    :param key: (Any) save to log this key
-    :param value: (Number) save to log this value
-    :param exclude: (str or tuple) outputs to be excluded
+    :param key: save to log this key
+    :param value: save to log this value
+    :param exclude: outputs to be excluded
     """
     Logger.CURRENT.record_mean(key, value, exclude)
 
@@ -310,7 +310,7 @@ def record_dict(key_values: Dict[str, Any]) -> None:
     """
     Log a dictionary of key-value pairs.
 
-    :param key_values: (dict) the list of keys and values to save to log
+    :param key_values: the list of keys and values to save to log
     """
     for key, value in key_values.items():
         record(key, value)
@@ -327,7 +327,7 @@ def get_log_dict() -> Dict:
     """
     get the key values logs
 
-    :return: (dict) the logged values
+    :return: the logged values
     """
     return Logger.CURRENT.name_to_value
 
@@ -340,8 +340,8 @@ def log(*args, level: int = INFO) -> None:
     level: int. (see logger.py docs) If the global logger level is higher than
                 the level argument here, don't print to stdout.
 
-    :param args: (list) log the arguments
-    :param level: (int) the logging level (can be DEBUG=10, INFO=20, WARN=30, ERROR=40, DISABLED=50)
+    :param args: log the arguments
+    :param level: the logging level (can be DEBUG=10, INFO=20, WARN=30, ERROR=40, DISABLED=50)
     """
     Logger.CURRENT.log(*args, level=level)
 
@@ -352,7 +352,7 @@ def debug(*args) -> None:
     to the console and output files (if you've configured an output file).
     Using the DEBUG level.
 
-    :param args: (list) log the arguments
+    :param args: log the arguments
     """
     log(*args, level=DEBUG)
 
@@ -363,7 +363,7 @@ def info(*args) -> None:
     to the console and output files (if you've configured an output file).
     Using the INFO level.
 
-    :param args: (list) log the arguments
+    :param args: log the arguments
     """
     log(*args, level=INFO)
 
@@ -374,7 +374,7 @@ def warn(*args) -> None:
     to the console and output files (if you've configured an output file).
     Using the WARN level.
 
-    :param args: (list) log the arguments
+    :param args: log the arguments
     """
     log(*args, level=WARN)
 
@@ -385,7 +385,7 @@ def error(*args) -> None:
     to the console and output files (if you've configured an output file).
     Using the ERROR level.
 
-    :param args: (list) log the arguments
+    :param args: log the arguments
     """
     log(*args, level=ERROR)
 
@@ -394,7 +394,7 @@ def set_level(level: int) -> None:
     """
     Set logging threshold on current logger.
 
-    :param level: (int) the logging level (can be DEBUG=10, INFO=20, WARN=30, ERROR=40, DISABLED=50)
+    :param level: the logging level (can be DEBUG=10, INFO=20, WARN=30, ERROR=40, DISABLED=50)
     """
     Logger.CURRENT.set_level(level)
 
@@ -402,7 +402,7 @@ def set_level(level: int) -> None:
 def get_level() -> int:
     """
     Get logging threshold on current logger.
-    :return: (int) the logging level (can be DEBUG=10, INFO=20, WARN=30, ERROR=40, DISABLED=50)
+    :return: the logging level (can be DEBUG=10, INFO=20, WARN=30, ERROR=40, DISABLED=50)
     """
     return Logger.CURRENT.level
 
@@ -412,7 +412,7 @@ def get_dir() -> str:
     Get directory that log files are being written to.
     will be None if there is no output directory (i.e., if you didn't call start)
 
-    :return: (str) the logging directory
+    :return: the logging directory
     """
     return Logger.CURRENT.get_dir()
 
@@ -436,8 +436,8 @@ class Logger(object):
         """
         the logger class
 
-        :param folder: (str) the logging location
-        :param output_formats: ([str]) the list of output format
+        :param folder: the logging location
+        :param output_formats: the list of output format
         """
         self.name_to_value = defaultdict(float)  # values this iteration
         self.name_to_count = defaultdict(int)
@@ -454,9 +454,9 @@ class Logger(object):
         Call this once for each diagnostic quantity, each iteration
         If called many times, last value will be used.
 
-        :param key: (Any) save to log this key
-        :param value: (Any) save to log this value
-        :param exclude: (str or tuple) outputs to be excluded
+        :param key: save to log this key
+        :param value: save to log this value
+        :param exclude: outputs to be excluded
         """
         self.name_to_value[key] = value
         self.name_to_excluded[key] = exclude
@@ -465,9 +465,9 @@ class Logger(object):
         """
         The same as record(), but if called many times, values averaged.
 
-        :param key: (Any) save to log this key
-        :param value: (Number) save to log this value
-        :param exclude: (str or tuple) outputs to be excluded
+        :param key: save to log this key
+        :param value: save to log this value
+        :param exclude: outputs to be excluded
         """
         if value is None:
             self.name_to_value[key] = None
@@ -499,8 +499,8 @@ class Logger(object):
         level: int. (see logger.py docs) If the global logger level is higher than
                     the level argument here, don't print to stdout.
 
-        :param args: (list) log the arguments
-        :param level: (int) the logging level (can be DEBUG=10, INFO=20, WARN=30, ERROR=40, DISABLED=50)
+        :param args: log the arguments
+        :param level: the logging level (can be DEBUG=10, INFO=20, WARN=30, ERROR=40, DISABLED=50)
         """
         if self.level <= level:
             self._do_log(args)
@@ -511,7 +511,7 @@ class Logger(object):
         """
         Set logging threshold on current logger.
 
-        :param level: (int) the logging level (can be DEBUG=10, INFO=20, WARN=30, ERROR=40, DISABLED=50)
+        :param level: the logging level (can be DEBUG=10, INFO=20, WARN=30, ERROR=40, DISABLED=50)
         """
         self.level = level
 
@@ -520,7 +520,7 @@ class Logger(object):
         Get directory that log files are being written to.
         will be None if there is no output directory (i.e., if you didn't call start)
 
-        :return: (str) the logging directory
+        :return: the logging directory
         """
         return self.dir
 
@@ -537,7 +537,7 @@ class Logger(object):
         """
         log to the requested format outputs
 
-        :param args: (list) the arguments to log
+        :param args: the arguments to log
         """
         for _format in self.output_formats:
             if isinstance(_format, SeqWriter):
@@ -552,9 +552,9 @@ def configure(folder: Optional[str] = None, format_strings: Optional[List[str]] 
     """
     configure the current logger
 
-    :param folder: (Optional[str]) the save location
+    :param folder: the save location
         (if None, $SB3_LOGDIR, if still None, tempdir/baselines-[date & time])
-    :param format_strings: (Optional[List[str]]) the output logging format
+    :param format_strings: the output logging format
         (if None, $SB3_LOG_FORMAT, if still None, ['stdout', 'log', 'csv'])
     """
     if folder is None:
@@ -594,8 +594,8 @@ class ScopedConfigure(object):
         with ScopedConfigure(folder=None, format_strings=None):
             {code}
 
-        :param folder: (str) the logging folder
-        :param format_strings: ([str]) the list of output logging format
+        :param folder: the logging folder
+        :param format_strings: the list of output logging format
         """
         self.dir = folder
         self.format_strings = format_strings
@@ -619,8 +619,8 @@ def read_json(filename: str) -> pandas.DataFrame:
     """
     read a json file using pandas
 
-    :param filename: (str) the file path to read
-    :return: (pandas.DataFrame) the data in the json
+    :param filename: the file path to read
+    :return: the data in the json
     """
     data = []
     with open(filename, "rt") as file_handler:
@@ -633,7 +633,7 @@ def read_csv(filename: str) -> pandas.DataFrame:
     """
     read a csv file using pandas
 
-    :param filename: (str) the file path to read
-    :return: (pandas.DataFrame) the data in the csv
+    :param filename: the file path to read
+    :return: the data in the csv
     """
     return pandas.read_csv(filename, index_col=None, comment="#")

@@ -11,14 +11,14 @@ class VecNormalize(VecEnvWrapper):
     A moving average, normalizing wrapper for vectorized environment.
     has support for saving/loading moving average,
 
-    :param venv: (VecEnv) the vectorized environment to wrap
-    :param training: (bool) Whether to update or not the moving average
-    :param norm_obs: (bool) Whether to normalize observation or not (default: True)
-    :param norm_reward: (bool) Whether to normalize rewards or not (default: True)
-    :param clip_obs: (float) Max absolute value for observation
-    :param clip_reward: (float) Max value absolute for discounted reward
-    :param gamma: (float) discount factor
-    :param epsilon: (float) To avoid division by zero
+    :param venv: the vectorized environment to wrap
+    :param training: Whether to update or not the moving average
+    :param norm_obs: Whether to normalize observation or not (default: True)
+    :param norm_reward: Whether to normalize rewards or not (default: True)
+    :param clip_obs: Max absolute value for observation
+    :param clip_reward: Max value absolute for discounted reward
+    :param gamma: discount factor
+    :param epsilon: To avoid division by zero
     """
 
     def __init__(
@@ -58,7 +58,7 @@ class VecNormalize(VecEnvWrapper):
 
         User must call set_venv() after unpickling before using.
 
-        :param state: (dict)"""
+        :param state:"""
         self.__dict__.update(state)
         assert "venv" not in state
         self.venv = None
@@ -69,7 +69,7 @@ class VecNormalize(VecEnvWrapper):
 
         Also sets attributes derived from this such as `num_env`.
 
-        :param venv: (VecEnv)
+        :param venv:
         """
         if self.venv is not None:
             raise ValueError("Trying to set venv of already initialized VecNormalize wrapper.")
@@ -162,9 +162,9 @@ class VecNormalize(VecEnvWrapper):
         """
         Loads a saved VecNormalize object.
 
-        :param load_path: (str) the path to load from.
-        :param venv: (VecEnv) the VecEnv to wrap.
-        :return: (VecNormalize)
+        :param load_path: the path to load from.
+        :param venv: the VecEnv to wrap.
+        :return:
         """
         with open(load_path, "rb") as file_handler:
             vec_normalize = pickle.load(file_handler)
@@ -176,7 +176,7 @@ class VecNormalize(VecEnvWrapper):
         Save current VecNormalize object with
         all running statistics and settings (e.g. clip_obs)
 
-        :param save_path: (str) The path to save to
+        :param save_path: The path to save to
         """
         with open(save_path, "wb") as file_handler:
             pickle.dump(self, file_handler)

@@ -17,7 +17,7 @@ class DummyVecEnv(VecEnv):
     This can also be used for RL methods that
     require a vectorized environment, but that you want a single environments to train with.
 
-    :param env_fns: (List[Callable[[], gym.Env]]) a list of functions
+    :param env_fns: a list of functions
         that return environments to vectorize
     """
 

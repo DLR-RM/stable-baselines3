@@ -25,19 +25,19 @@ def make_vec_env(
     By default it uses a ``DummyVecEnv`` which is usually faster
     than a ``SubprocVecEnv``.
 
-    :param env_id: (str or Type[gym.Env]) the environment ID or the environment class
-    :param n_envs: (int) the number of environments you wish to have in parallel
-    :param seed: (int) the initial seed for the random number generator
-    :param start_index: (int) start rank index
-    :param monitor_dir: (str) Path to a folder where the monitor files will be saved.
+    :param env_id: the environment ID or the environment class
+    :param n_envs: the number of environments you wish to have in parallel
+    :param seed: the initial seed for the random number generator
+    :param start_index: start rank index
+    :param monitor_dir: Path to a folder where the monitor files will be saved.
         If None, no file will be written, however, the env will still be wrapped
         in a Monitor wrapper to provide additional information about training.
-    :param wrapper_class: (gym.Wrapper or callable) Additional wrapper to use on the environment.
+    :param wrapper_class: Additional wrapper to use on the environment.
         This can also be a function with single argument that wraps the environment in many things.
-    :param env_kwargs: (dict) Optional keyword argument to pass to the env constructor
-    :param vec_env_cls: (Type[VecEnv]) A custom ``VecEnv`` class constructor. Default: None.
-    :param vec_env_kwargs: (dict) Keyword arguments to pass to the ``VecEnv`` class constructor.
-    :return: (VecEnv) The wrapped environment
+    :param env_kwargs: Optional keyword argument to pass to the env constructor
+    :param vec_env_cls: A custom ``VecEnv`` class constructor. Default: None.
+    :param vec_env_kwargs: Keyword arguments to pass to the ``VecEnv`` class constructor.
+    :return: The wrapped environment
     """
     env_kwargs = {} if env_kwargs is None else env_kwargs
     vec_env_kwargs = {} if vec_env_kwargs is None else vec_env_kwargs
@@ -90,18 +90,18 @@ def make_atari_env(
     Create a wrapped, monitored VecEnv for Atari.
     It is a wrapper around ``make_vec_env`` that includes common preprocessing for Atari games.
 
-    :param env_id: (str or Type[gym.Env]) the environment ID or the environment class
-    :param n_envs: (int) the number of environments you wish to have in parallel
-    :param seed: (int) the initial seed for the random number generator
-    :param start_index: (int) start rank index
-    :param monitor_dir: (str) Path to a folder where the monitor files will be saved.
+    :param env_id: the environment ID or the environment class
+    :param n_envs: the number of environments you wish to have in parallel
+    :param seed: the initial seed for the random number generator
+    :param start_index: start rank index
+    :param monitor_dir: Path to a folder where the monitor files will be saved.
         If None, no file will be written, however, the env will still be wrapped
         in a Monitor wrapper to provide additional information about training.
-    :param wrapper_kwargs: (Dict[str, Any]) Optional keyword argument to pass to the ``AtariWrapper``
-    :param env_kwargs: (Dict[str, Any]) Optional keyword argument to pass to the env constructor
-    :param vec_env_cls: (Type[VecEnv]) A custom ``VecEnv`` class constructor. Default: None.
-    :param vec_env_kwargs: (Dict[str, Any]) Keyword arguments to pass to the ``VecEnv`` class constructor.
-    :return: (VecEnv) The wrapped environment
+    :param wrapper_kwargs: Optional keyword argument to pass to the ``AtariWrapper``
+    :param env_kwargs: Optional keyword argument to pass to the env constructor
+    :param vec_env_cls: A custom ``VecEnv`` class constructor. Default: None.
+    :param vec_env_kwargs: Keyword arguments to pass to the ``VecEnv`` class constructor.
+    :return: The wrapped environment
     """
     if wrapper_kwargs is None:
         wrapper_kwargs = {}

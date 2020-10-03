@@ -21,19 +21,24 @@ Overall Stable-Baselines3 (SB3) keeps the high-level API of Stable-Baselines (SB
 Most of the changes are to ensure more consistency and are internal ones.
 Because of the backend change, from Tensorflow to PyTorch, the internal code is much much readable and easy to debug
 at the cost of some speed (dynamic graph vs static graph., see `Issue #90 <https://github.com/DLR-RM/stable-baselines3/issues/90>`_)
-However, the algorithms were extensively benchmarked (see `Issue #48 <https://github.com/DLR-RM/stable-baselines3/issues/48>`_  and `Issue #49 <https://github.com/DLR-RM/stable-baselines3/issues/49>`_)
+However, the algorithms were extensively benchmarked on Atari games and continuous control PyBullet envs
+(see `Issue #48 <https://github.com/DLR-RM/stable-baselines3/issues/48>`_  and `Issue #49 <https://github.com/DLR-RM/stable-baselines3/issues/49>`_)
 so you should not expect performance drop when switching from SB2 to SB3.
 
 Breaking Changes
 ================
 
+- SB3 requires python 3.6+ (instead of python 3.5+ for SB2)
 - Dropped MPI support
 - Dropped layer normalized policies (e.g. ``LnMlpPolicy``)
 - Dropped parameter noise for DDPG and DQN
 - PPO is now closer to the original implementation (no clipping of the value function by default), cf PPO section below
 - orthogonal initialization is only used by A2C/PPO
 - the features extractor (CNN extractor) is shared between policy and q-networks for DDPG/SAC/TD3 and only the policy loss used to update it (much faster)
-
+- Tensorboard legacy logging was dropped in favor of having one logger for the terminal and Tensorboard (cf :ref:`Tensorboard integration <tensorboard>`)
+- we dropped ACKTR/ACER support because of their complexity compared to simpler alternatives (PPO, SAC, TD3) performing as good.
+- we dropped GAIL support as we are focusing on model-free RL only, you can however take a look at the `Imitation Learning Baseline Implementations <https://github.com/HumanCompatibleAI/imitation>`_
+  which are based on SB3.
 
 TODO: change to deterministic predict for SAC/TD3
 
@@ -46,6 +51,16 @@ Moved Files
 - ``logger.py`` -> ``common/logger.py``
 - ``results_plotter.py`` -> ``common/results_plotter.py``
 
+Utility functions are no longer exported from ``common`` module, you should import them with their absolute path, e.g.:
+
+.. code-block:: python
+
+  from stable_baselines3.common.cmd_util import make_atari_env, make_vec_env
+  from stable_baselines3.common.utils import set_random_seed
+
+instead of ``from stable_baselines3.common import make_atari_env``
+
+
 
 Parameters Change and Renaming
 ------------------------------
@@ -54,7 +69,7 @@ Base-class (all algorithms)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - ``load_parameters`` -> ``set_parameters``
-  
+
   - ``get/set_parameters`` return a dictionary mapping object names
     to their respective PyTorch tensors and other objects representing
     their parameters, instead of simpler mapping of parameter name to
@@ -65,7 +80,7 @@ Base-class (all algorithms)
 Policies
 ^^^^^^^^
 
-- ``cnn_extractor`` -> ``feature_extractor``
+- ``cnn_extractor`` -> ``feature_extractor``, as ``feature_extractor`` in now used with ``MlpPolicy`` too
 
 A2C
 ^^^
@@ -77,7 +92,7 @@ A2C
 .. warning::
 
 	PyTorch implementation of RMSprop `differs from Tensorflow's <https://github.com/pytorch/pytorch/issues/23796>`_,
-	which leads to `different and potentially more unstable results <https://github.com/DLR-RM/stable-baselines3/pull/110#issuecomment-663255241>_,`.
+	which leads to `different and potentially more unstable results <https://github.com/DLR-RM/stable-baselines3/pull/110#issuecomment-663255241>`_.
 	Use ``stable_baselines3.common.sb2_compat.rmsprop_tf_like.RMSpropTFLike`` optimizer to match the results
 	with Tensorflow's implementation. This can be done through ``policy_kwargs``: ``A2C(policy_kwargs=dict(optimizer_class=RMSpropTFLike))``
 
@@ -98,11 +113,15 @@ PPO
 - ``lam`` -> ``gae_lambda``
 - ``noptepochs`` -> ``n_epochs``
 
+PPO default hyperparameters are the one tuned for continuous control environment.
+We recommend taking a look at the :ref:`RL Zoo <rl_zoo>` for hyperparameters tuned for Atari games.
+
 
 DQN
 ^^^
 
 Only the vanilla DQN is implemented right now but extensions will follow (cf planned features).
+Default hyperparameters are taken from the nature paper, except for the optimizer and learning rate that were taken from Stable Baselines defaults.
 
 DDPG
 ^^^^
@@ -114,6 +133,12 @@ SAC/TD3
 ^^^^^^^
 
 SAC/TD3 now accept any number of critics, e.g. ``policy_kwargs=dict(n_critics=3)``, instead of only two before.
+
+
+.. note::
+
+	SAC/TD3 default hyperparameters (including network architecture) now match the ones from the original papers.
+	DDPG is using TD3 defaults.
 
 
 New logger API
@@ -135,7 +160,7 @@ Please read the :ref:`Developper Guide <developer>` section.
 New Features
 ============
 
-- much cleaner base code (and no more warnings =D )
+- much cleaner and consistent base code (and no more warnings =D!) and static type checks
 - independent saving/loading/predict for policies
 - A2C now supports Generalized Advantage Estimation (GAE) and advantage normalization (both are deactivated by default)
 - generalized State-Dependent Exploration (gSDE) exploration is available for A2C/PPO/SAC. It allows to use RL directly on real robots (cf https://arxiv.org/abs/2005.05719)
@@ -144,16 +169,19 @@ New Features
 - better saving/loading: optimizers are now included in the saved parameters and there is two new methods ``save_replay_buffer`` and ``load_replay_buffer`` for the replay buffer when using off-policy algorithms (DQN/DDPG/SAC/TD3)
 - you can pass ``optimizer_class`` and ``optimizer_kwargs`` to ``policy_kwargs`` in order to easily
   customize optimizers
-- when using continuous actions
 - seeding now works properly to have deterministic results
 - replay buffer does not grow, allocate everything at build time (faster)
+- we added a memory efficient replay buffer variant (pass ``optimize_memory_usage=True`` to the constructor), it reduces drastically the memory used especially when using images
+- you can specify an arbitrary number of critics for SAC/TD3 (e.g. ``policy_kwargs=dict(n_critics=3)``)
 
 
 How to migrate?
 ===============
 
 In most cases, replacing ``from stable_baselines`` by ``from stable_baselines3`` will be sufficient.
-Some files were moved to the common folder (cf above) and could result to .
+Some files were moved to the common folder (cf above) and could result to import errors.
+We recommend looking at the `rl-zoo3 <https://github.com/DLR-RM/rl-baselines3-zoo>`_ and compare the imports
+to the `rl-zoo <https://github.com/araffin/rl-baselines-zoo>`_ of SB2 to have a concrete example of successful migration.
 
 Planned Features
 ================

@@ -10,10 +10,10 @@ class VecCheckNan(VecEnvWrapper):
     NaN and inf checking wrapper for vectorized environment, will raise a warning by default,
     allowing you to know from what the NaN of inf originated from.
 
-    :param venv: (VecEnv) the vectorized environment to wrap
-    :param raise_exception: (bool) Whether or not to raise a ValueError, instead of a UserWarning
-    :param warn_once: (bool) Whether or not to only warn once.
-    :param check_inf: (bool) Whether or not to check for +inf or -inf as well
+    :param venv: the vectorized environment to wrap
+    :param raise_exception: Whether or not to raise a ValueError, instead of a UserWarning
+    :param warn_once: Whether or not to only warn once.
+    :param check_inf: Whether or not to check for +inf or -inf as well
     """
 
     def __init__(self, venv, raise_exception=False, warn_once=True, check_inf=True):

@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 import numpy as np
 from gym import GoalEnv, spaces
@@ -14,11 +14,11 @@ class BitFlippingEnv(GoalEnv):
     In the continuous variant, if the ith action component has a value > 0,
     then the ith bit will be flipped.
 
-    :param n_bits: (int) Number of bits to flip
-    :param continuous: (bool) Whether to use the continuous actions version or not,
+    :param n_bits: Number of bits to flip
+    :param continuous: Whether to use the continuous actions version or not,
         by default, it uses the discrete one
-    :param max_steps: (Optional[int]) Max number of steps, by default, equal to n_bits
-    :param discrete_obs_space: (bool) Whether to use the discrete observation
+    :param max_steps: Max number of steps, by default, equal to n_bits
+    :param discrete_obs_space: Whether to use the discrete observation
         version or not, by default, it uses the MultiBinary one
     """
 
@@ -67,8 +67,8 @@ class BitFlippingEnv(GoalEnv):
         """
         Convert to discrete space if needed.
 
-        :param state: (np.ndarray)
-        :return: (np.ndarray or int)
+        :param state:
+        :return:
         """
         if self.discrete_obs_space:
             # The internal state is the binary representation of the
@@ -76,11 +76,11 @@ class BitFlippingEnv(GoalEnv):
             return int(sum([state[i] * 2 ** i for i in range(len(state))]))
         return state
 
-    def _get_obs(self) -> OrderedDict:
+    def _get_obs(self) -> Dict[str, Union[int, np.ndarray]]:
         """
         Helper to create the observation.
 
-        :return: (OrderedDict<int or ndarray>)
+        :return:
         """
         return OrderedDict(
             [
@@ -90,7 +90,7 @@ class BitFlippingEnv(GoalEnv):
             ]
         )
 
-    def reset(self) -> OrderedDict:
+    def reset(self) -> Dict[str, Union[int, np.ndarray]]:
         self.current_step = 0
         self.state = self.obs_space.sample()
         return self._get_obs()

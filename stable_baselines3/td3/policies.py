@@ -13,14 +13,14 @@ class Actor(BasePolicy):
     """
     Actor network (policy) for TD3.
 
-    :param observation_space: (gym.spaces.Space) Obervation space
-    :param action_space: (gym.spaces.Space) Action space
-    :param net_arch: ([int]) Network architecture
-    :param features_extractor: (nn.Module) Network to extract features
+    :param observation_space: Obervation space
+    :param action_space: Action space
+    :param net_arch: Network architecture
+    :param features_extractor: Network to extract features
         (a CNN when using images, a nn.Flatten() layer otherwise)
-    :param features_dim: (int) Number of features
-    :param activation_fn: (Type[nn.Module]) Activation function
-    :param normalize_images: (bool) Whether to normalize images or not,
+    :param features_dim: Number of features
+    :param activation_fn: Activation function
+    :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     """
 
@@ -79,21 +79,21 @@ class TD3Policy(BasePolicy):
     """
     Policy class (with both actor and critic) for TD3.
 
-    :param observation_space: (gym.spaces.Space) Observation space
-    :param action_space: (gym.spaces.Space) Action space
-    :param lr_schedule: (Callable) Learning rate schedule (could be constant)
-    :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
-    :param activation_fn: (Type[nn.Module]) Activation function
-    :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
-    :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
+    :param observation_space: Observation space
+    :param action_space: Action space
+    :param lr_schedule: Learning rate schedule (could be constant)
+    :param net_arch: The specification of the policy and value networks.
+    :param activation_fn: Activation function
+    :param features_extractor_class: Features extractor to use.
+    :param features_extractor_kwargs: Keyword arguments
         to pass to the feature extractor.
-    :param normalize_images: (bool) Whether to normalize images or not,
+    :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
-    :param optimizer_class: (Type[th.optim.Optimizer]) The optimizer to use,
+    :param optimizer_class: The optimizer to use,
         ``th.optim.Adam`` by default
-    :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
+    :param optimizer_kwargs: Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
-    :param n_critics: (int) Number of critic networks to create.
+    :param n_critics: Number of critic networks to create.
     """
 
     def __init__(
@@ -195,21 +195,21 @@ class CnnPolicy(TD3Policy):
     """
     Policy class (with both actor and critic) for TD3.
 
-    :param observation_space: (gym.spaces.Space) Observation space
-    :param action_space: (gym.spaces.Space) Action space
-    :param lr_schedule: (Callable) Learning rate schedule (could be constant)
-    :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
-    :param activation_fn: (Type[nn.Module]) Activation function
-    :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
-    :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
+    :param observation_space: Observation space
+    :param action_space: Action space
+    :param lr_schedule: Learning rate schedule (could be constant)
+    :param net_arch: The specification of the policy and value networks.
+    :param activation_fn: Activation function
+    :param features_extractor_class: Features extractor to use.
+    :param features_extractor_kwargs: Keyword arguments
         to pass to the feature extractor.
-    :param normalize_images: (bool) Whether to normalize images or not,
+    :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
-    :param optimizer_class: (Type[th.optim.Optimizer]) The optimizer to use,
+    :param optimizer_class: The optimizer to use,
         ``th.optim.Adam`` by default
-    :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
+    :param optimizer_kwargs: Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
-    :param n_critics: (int) Number of critic networks to create.
+    :param n_critics: Number of critic networks to create.
     """
 
     def __init__(

@@ -50,9 +50,9 @@ def my_function(arg1: type1, arg2: type2) -> returntype:
     """
     Short description of the function.
 
-    :param arg1: (type1) describe what is arg1
-    :param arg2: (type2) describe what is arg2
-    :return: (returntype) describe what is returned
+    :param arg1: describe what is arg1
+    :param arg2: describe what is arg2
+    :return: describe what is returned
     """
     ...
     return my_variable

@@ -13,7 +13,7 @@ from stable_baselines3.common import logger
 VecEnvIndices = Union[None, int, Iterable[int]]
 # VecEnvObs is what is returned by the reset() method
 # it contains the observation for each env
-VecEnvObs = Union[np.ndarray, Dict[str, Any]]
+VecEnvObs = Union[np.ndarray, Dict[str, np.ndarray], Tuple[np.ndarray, ...]]
 # VecEnvStepReturn is what is returned by the step() method
 # it contains the observation, reward, done, info for each env
 VecEnvStepReturn = Tuple[VecEnvObs, np.ndarray, np.ndarray, List[Dict]]
@@ -76,7 +76,7 @@ class VecEnv(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def step_async(self, actions: np.ndarray):
+    def step_async(self, actions: np.ndarray) -> None:
         """
         Tell all the environments to start taking a step
         with the given actions.
@@ -104,7 +104,7 @@ class VecEnv(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_attr(self, attr_name: str, indices: "VecEnvIndices" = None) -> List[Any]:
+    def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:
         """
         Return attribute from vectorized environment.
 
@@ -115,7 +115,7 @@ class VecEnv(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def set_attr(self, attr_name: str, value: Any, indices: "VecEnvIndices" = None) -> None:
+    def set_attr(self, attr_name: str, value: Any, indices: VecEnvIndices = None) -> None:
         """
         Set attribute inside vectorized environments.
 
@@ -127,7 +127,7 @@ class VecEnv(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def env_method(self, method_name: str, *method_args, indices: "VecEnvIndices" = None, **method_kwargs) -> List[Any]:
+    def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> List[Any]:
         """
         Call instance methods of vectorized environments.
 
@@ -210,7 +210,7 @@ class VecEnv(ABC):
         else:
             return None
 
-    def _get_indices(self, indices: "VecEnvIndices") -> Iterable[int]:
+    def _get_indices(self, indices: VecEnvIndices) -> Iterable[int]:
         """
         Convert a flexibly-typed reference to environment indices to an implied list of indices.
 
@@ -259,7 +259,7 @@ class VecEnvWrapper(VecEnv):
     def step_wait(self) -> VecEnvStepReturn:
         pass
 
-    def seed(self, seed: Optional[int] = None):
+    def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
         return self.venv.seed(seed)
 
     def close(self) -> None:
@@ -271,13 +271,13 @@ class VecEnvWrapper(VecEnv):
     def get_images(self) -> Sequence[np.ndarray]:
         return self.venv.get_images()
 
-    def get_attr(self, attr_name, indices=None):
+    def get_attr(self, attr_name, indices: VecEnvIndices = None):
         return self.venv.get_attr(attr_name, indices)
 
-    def set_attr(self, attr_name, value, indices=None):
+    def set_attr(self, attr_name, value, indices: VecEnvIndices = None):
         return self.venv.set_attr(attr_name, value, indices)
 
-    def env_method(self, method_name, *method_args, indices=None, **method_kwargs):
+    def env_method(self, method_name, *method_args, indices: VecEnvIndices = None, **method_kwargs):
         return self.venv.env_method(method_name, *method_args, indices=indices, **method_kwargs)
 
     def __getattr__(self, name: str) -> Any:

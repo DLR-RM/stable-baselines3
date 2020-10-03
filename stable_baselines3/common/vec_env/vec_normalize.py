@@ -149,7 +149,7 @@ class VecNormalize(VecEnvWrapper):
         """
         return self.old_obs.copy()
 
-    def get_original_reward(self):
+    def get_original_reward(self) -> np.ndarray:
         """
         Returns an unnormalized version of the rewards from the most recent step.
         """

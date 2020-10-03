@@ -176,7 +176,7 @@ def json_to_data(json_string: str, custom_objects: Optional[Dict[str, Any]] = No
 
 
 @functools.singledispatch
-def open_path(path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verbose=0, suffix=None):
+def open_path(path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verbose: int = 0, suffix: Optional[str] = None):
     """
     Opens a path for reading or writing with a preferred suffix and raises debug information.
     If the provided path is a derivative of io.BufferedIOBase it ensures that the file
@@ -197,6 +197,7 @@ def open_path(path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verb
     :param suffix: The preferred suffix. If mode is "w" then the opened file has the suffix.
         If mode is "r" then we attempt to open the path. If an error is raised and the suffix
         is not None, we attempt to open the path with the suffix.
+    :return:
     """
     if not isinstance(path, io.BufferedIOBase):
         raise TypeError("Path parameter has invalid type.", io.BufferedIOBase)
@@ -214,7 +215,7 @@ def open_path(path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verb
 
 
 @open_path.register(str)
-def open_path_str(path: str, mode: str, verbose=0, suffix=None) -> io.BufferedIOBase:
+def open_path_str(path: str, mode: str, verbose: int = 0, suffix: Optional[str] = None) -> io.BufferedIOBase:
     """
     Open a path given by a string. If writing to the path, the function ensures
     that the path exists.
@@ -226,12 +227,13 @@ def open_path_str(path: str, mode: str, verbose=0, suffix=None) -> io.BufferedIO
     :param suffix: The preferred suffix. If mode is "w" then the opened file has the suffix.
         If mode is "r" then we attempt to open the path. If an error is raised and the suffix
         is not None, we attempt to open the path with the suffix.
+    :return:
     """
     return open_path(pathlib.Path(path), mode, verbose, suffix)
 
 
 @open_path.register(pathlib.Path)
-def open_path_pathlib(path: pathlib.Path, mode: str, verbose=0, suffix=None) -> io.BufferedIOBase:
+def open_path_pathlib(path: pathlib.Path, mode: str, verbose: int = 0, suffix: Optional[str] = None) -> io.BufferedIOBase:
     """
     Open a path given by a string. If writing to the path, the function ensures
     that the path exists.
@@ -244,6 +246,7 @@ def open_path_pathlib(path: pathlib.Path, mode: str, verbose=0, suffix=None) -> 
     :param suffix: The preferred suffix. If mode is "w" then the opened file has the suffix.
         If mode is "r" then we attempt to open the path. If an error is raised and the suffix
         is not None, we attempt to open the path with the suffix.
+    :return:
     """
     if mode not in ("w", "r"):
         raise ValueError("Expected mode to be either 'w' or 'r'.")
@@ -286,7 +289,7 @@ def save_to_zip_file(
     data: Dict[str, Any] = None,
     params: Dict[str, Any] = None,
     pytorch_variables: Dict[str, Any] = None,
-    verbose=0,
+    verbose: int = 0,
 ) -> None:
     """
     Save model data to a zip archive.
@@ -321,7 +324,7 @@ def save_to_zip_file(
         archive.writestr("_stable_baselines3_version", stable_baselines3.__version__)
 
 
-def save_to_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], obj, verbose=0) -> None:
+def save_to_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], obj: Any, verbose: int = 0) -> None:
     """
     Save an object to path creating the necessary folders along the way.
     If the path exists and is a directory, it will raise a warning and rename the path.
@@ -337,7 +340,7 @@ def save_to_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], obj, verbose=
         pickle.dump(obj, file_handler)
 
 
-def load_from_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], verbose=0) -> Any:
+def load_from_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], verbose: int = 0) -> Any:
     """
     Load an object from the path. If a suffix is provided in the path, it will use that suffix.
     If the path does not exist, it will attempt to load using the .pkl suffix.
@@ -355,7 +358,7 @@ def load_from_zip_file(
     load_path: Union[str, pathlib.Path, io.BufferedIOBase],
     load_data: bool = True,
     device: Union[th.device, str] = "auto",
-    verbose=0,
+    verbose: int = 0,
 ) -> (Tuple[Optional[Dict[str, Any]], Optional[TensorDict], Optional[TensorDict]]):
     """
     Load model data from a .zip archive

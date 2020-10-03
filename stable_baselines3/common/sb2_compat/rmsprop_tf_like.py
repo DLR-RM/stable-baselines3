@@ -1,3 +1,5 @@
+from typing import Any, Callable, Dict, Iterable, Optional
+
 import torch
 from torch.optim import Optimizer
 
@@ -42,7 +44,16 @@ class RMSpropTFLike(Optimizer):
 
     """
 
-    def __init__(self, params, lr=1e-2, alpha=0.99, eps=1e-8, weight_decay=0, momentum=0, centered=False):
+    def __init__(
+        self,
+        params: Iterable[torch.nn.Parameter],
+        lr: float = 1e-2,
+        alpha: float = 0.99,
+        eps: float = 1e-8,
+        weight_decay: float = 0,
+        momentum: float = 0,
+        centered: bool = False,
+    ):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -57,14 +68,14 @@ class RMSpropTFLike(Optimizer):
         defaults = dict(lr=lr, momentum=momentum, alpha=alpha, eps=eps, centered=centered, weight_decay=weight_decay)
         super(RMSpropTFLike, self).__init__(params, defaults)
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: Dict[str, Any]) -> None:
         super(RMSpropTFLike, self).__setstate__(state)
         for group in self.param_groups:
             group.setdefault("momentum", 0)
             group.setdefault("centered", False)
 
     @torch.no_grad()
-    def step(self, closure=None):
+    def step(self, closure: Optional[Callable] = None) -> Optional[torch.Tensor]:
         """Performs a single optimization step.
 
         Arguments:

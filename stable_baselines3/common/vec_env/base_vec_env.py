@@ -248,7 +248,7 @@ class VecEnvWrapper(VecEnv):
         )
         self.class_attributes = dict(inspect.getmembers(self.__class__))
 
-    def step_async(self, actions: np.ndarray):
+    def step_async(self, actions: np.ndarray) -> None:
         self.venv.step_async(actions)
 
     @abstractmethod
@@ -271,13 +271,13 @@ class VecEnvWrapper(VecEnv):
     def get_images(self) -> Sequence[np.ndarray]:
         return self.venv.get_images()
 
-    def get_attr(self, attr_name, indices: VecEnvIndices = None):
+    def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:
         return self.venv.get_attr(attr_name, indices)
 
-    def set_attr(self, attr_name, value, indices: VecEnvIndices = None):
+    def set_attr(self, attr_name: str, value: Any, indices: VecEnvIndices = None) -> None:
         return self.venv.set_attr(attr_name, value, indices)
 
-    def env_method(self, method_name, *method_args, indices: VecEnvIndices = None, **method_kwargs):
+    def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> List[Any]:
         return self.venv.env_method(method_name, *method_args, indices=indices, **method_kwargs)
 
     def __getattr__(self, name: str) -> Any:
@@ -305,7 +305,7 @@ class VecEnvWrapper(VecEnv):
         all_attributes.update(self.class_attributes)
         return all_attributes
 
-    def getattr_recursive(self, name: str):
+    def getattr_recursive(self, name: str) -> Any:
         """Recursively check wrappers to find attribute.
 
         :param name: name of attribute to look for
@@ -323,7 +323,7 @@ class VecEnvWrapper(VecEnv):
 
         return attr
 
-    def getattr_depth_check(self, name: str, already_found: bool):
+    def getattr_depth_check(self, name: str, already_found: bool) -> str:
         """See base class.
 
         :return: name of module whose attribute is being shadowed, if any.

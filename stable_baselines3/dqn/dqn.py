@@ -132,7 +132,7 @@ class DQN(OffPolicyAlgorithm):
         self.q_net = self.policy.q_net
         self.q_net_target = self.policy.q_net_target
 
-    def _on_step(self):
+    def _on_step(self) -> None:
         """
         Update the exploration rate and target network if needed.
         This method is called in ``collect_rollout()`` after each step in the environment.

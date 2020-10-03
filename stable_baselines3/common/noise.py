@@ -139,7 +139,7 @@ class VectorizedActionNoise(ActionNoise):
         return self._base_noise
 
     @base_noise.setter
-    def base_noise(self, base_noise: ActionNoise):
+    def base_noise(self, base_noise: ActionNoise) -> None:
         if base_noise is None:
             raise ValueError("Expected base_noise to be an instance of ActionNoise, not None", ActionNoise)
         if not isinstance(base_noise, ActionNoise):

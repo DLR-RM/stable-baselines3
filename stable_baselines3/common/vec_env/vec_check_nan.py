@@ -48,7 +48,7 @@ class VecCheckNan(VecEnvWrapper):
         self._observations = observations
         return observations
 
-    def _check_val(self, *, async_step: bool, **kwargs):
+    def _check_val(self, *, async_step: bool, **kwargs) -> None:
         # if warn and warn once and have warned once: then stop checking
         if not self.raise_exception and self.warn_once and self._user_warned:
             return

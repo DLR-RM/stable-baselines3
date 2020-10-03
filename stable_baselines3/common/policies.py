@@ -145,7 +145,7 @@ class BaseModel(nn.Module, ABC):
         model.to(device)
         return model
 
-    def load_from_vector(self, vector: np.ndarray):
+    def load_from_vector(self, vector: np.ndarray) -> None:
         """
         Load parameters from a 1D vector.
 

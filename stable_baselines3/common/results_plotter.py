@@ -20,9 +20,9 @@ def rolling_window(array: np.ndarray, window: int) -> np.ndarray:
     """
     Apply a rolling window to a np.ndarray
 
-    :param array: (np.ndarray) the input Array
-    :param window: (int) length of the rolling window
-    :return: (np.ndarray) rolling window on the input array
+    :param array: the input Array
+    :param window: length of the rolling window
+    :return: rolling window on the input array
     """
     shape = array.shape[:-1] + (array.shape[-1] - window + 1, window)
     strides = array.strides + (array.strides[-1],)
@@ -33,11 +33,11 @@ def window_func(var_1: np.ndarray, var_2: np.ndarray, window: int, func: Callabl
     """
     Apply a function to the rolling window of 2 arrays
 
-    :param var_1: (np.ndarray) variable 1
-    :param var_2: (np.ndarray) variable 2
-    :param window: (int) length of the rolling window
-    :param func: (numpy function) function to apply on the rolling window on variable 2 (such as np.mean)
-    :return: (Tuple[np.ndarray, np.ndarray])  the rolling output with applied function
+    :param var_1: variable 1
+    :param var_2: variable 2
+    :param window: length of the rolling window
+    :param func: function to apply on the rolling window on variable 2 (such as np.mean)
+    :return:  the rolling output with applied function
     """
     var_2_window = rolling_window(var_2, window)
     function_on_var2 = func(var_2_window, axis=-1)
@@ -48,10 +48,10 @@ def ts2xy(data_frame: pd.DataFrame, x_axis: str) -> Tuple[np.ndarray, np.ndarray
     """
     Decompose a data frame variable to x ans ys
 
-    :param data_frame: (pd.DataFrame) the input data
-    :param x_axis: (str) the axis for the x and y output
+    :param data_frame: the input data
+    :param x_axis: the axis for the x and y output
         (can be X_TIMESTEPS='timesteps', X_EPISODES='episodes' or X_WALLTIME='walltime_hrs')
-    :return: (Tuple[np.ndarray, np.ndarray]) the x and y output
+    :return: the x and y output
     """
     if x_axis == X_TIMESTEPS:
         x_var = np.cumsum(data_frame.l.values)
@@ -74,11 +74,11 @@ def plot_curves(
     """
     plot the curves
 
-    :param xy_list: (List[Tuple[np.ndarray, np.ndarray]]) the x and y coordinates to plot
-    :param x_axis: (str) the axis for the x and y output
+    :param xy_list: the x and y coordinates to plot
+    :param x_axis: the axis for the x and y output
         (can be X_TIMESTEPS='timesteps', X_EPISODES='episodes' or X_WALLTIME='walltime_hrs')
-    :param title: (str) the title of the plot
-    :param figsize: (Tuple[int, int]) Size of the figure (width, height)
+    :param title: the title of the plot
+    :param figsize: Size of the figure (width, height)
     """
 
     plt.figure(title, figsize=figsize)
@@ -104,12 +104,12 @@ def plot_results(
     """
     Plot the results using csv files from ``Monitor`` wrapper.
 
-    :param dirs: ([str]) the save location of the results to plot
-    :param num_timesteps: (int or None) only plot the points below this value
-    :param x_axis: (str) the axis for the x and y output
+    :param dirs: the save location of the results to plot
+    :param num_timesteps: only plot the points below this value
+    :param x_axis: the axis for the x and y output
         (can be X_TIMESTEPS='timesteps', X_EPISODES='episodes' or X_WALLTIME='walltime_hrs')
-    :param task_name: (str) the title of the task to plot
-    :param figsize: (Tuple[int, int]) Size of the figure (width, height)
+    :param task_name: the title of the task to plot
+    :param figsize: Size of the figure (width, height)
     """
 
     data_frames = []

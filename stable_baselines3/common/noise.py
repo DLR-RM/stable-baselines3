@@ -28,8 +28,8 @@ class NormalActionNoise(ActionNoise):
     """
     A Gaussian action noise
 
-    :param mean: (np.ndarray) the mean value of the noise
-    :param sigma: (np.ndarray) the scale of the noise (std here)
+    :param mean: the mean value of the noise
+    :param sigma: the scale of the noise (std here)
     """
 
     def __init__(self, mean: np.ndarray, sigma: np.ndarray):
@@ -50,11 +50,11 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
 
     Based on http://math.stackexchange.com/questions/1287634/implementing-ornstein-uhlenbeck-in-matlab
 
-    :param mean: (np.ndarray) the mean of the noise
-    :param sigma: (np.ndarray) the scale of the noise
-    :param theta: (float) the rate of mean reversion
-    :param dt: (float) the timestep for the noise
-    :param initial_noise: (Optional[np.ndarray]) the initial value for the noise output, (if None: 0)
+    :param mean: the mean of the noise
+    :param sigma: the scale of the noise
+    :param theta: the rate of mean reversion
+    :param dt: the timestep for the noise
+    :param initial_noise: the initial value for the noise output, (if None: 0)
     """
 
     def __init__(
@@ -98,7 +98,7 @@ class VectorizedActionNoise(ActionNoise):
     A Vectorized action noise for parallel environments.
 
     :param base_noise: ActionNoise The noise generator to use
-    :param n_envs: (int) The number of parallel environments
+    :param n_envs: The number of parallel environments
     """
 
     def __init__(self, base_noise: ActionNoise, n_envs: int):

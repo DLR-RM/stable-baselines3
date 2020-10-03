@@ -12,11 +12,11 @@ class QNetwork(BasePolicy):
     """
     Action-Value (Q-Value) network for DQN
 
-    :param observation_space: (gym.spaces.Space) Observation space
-    :param action_space: (gym.spaces.Space) Action space
-    :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
-    :param activation_fn: (Type[nn.Module]) Activation function
-    :param normalize_images: (bool) Whether to normalize images or not,
+    :param observation_space: Observation space
+    :param action_space: Action space
+    :param net_arch: The specification of the policy and value networks.
+    :param activation_fn: Activation function
+    :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     """
 
@@ -53,8 +53,8 @@ class QNetwork(BasePolicy):
         """
         Predict the q-values.
 
-        :param obs: (th.Tensor) Observation
-        :return: (th.Tensor) The estimated Q-Value for each action.
+        :param obs: Observation
+        :return: The estimated Q-Value for each action.
         """
         return self.q_net(self.extract_features(obs))
 
@@ -83,19 +83,19 @@ class DQNPolicy(BasePolicy):
     """
     Policy class with Q-Value Net and target net for DQN
 
-    :param observation_space: (gym.spaces.Space) Observation space
-    :param action_space: (gym.spaces.Space) Action space
-    :param lr_schedule: (callable) Learning rate schedule (could be constant)
-    :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
-    :param activation_fn: (Type[nn.Module]) Activation function
-    :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
-    :param features_extractor_kwargs: (Optional[Dict[str, Any]]) Keyword arguments
+    :param observation_space: Observation space
+    :param action_space: Action space
+    :param lr_schedule: Learning rate schedule (could be constant)
+    :param net_arch: The specification of the policy and value networks.
+    :param activation_fn: Activation function
+    :param features_extractor_class: Features extractor to use.
+    :param features_extractor_kwargs: Keyword arguments
         to pass to the feature extractor.
-    :param normalize_images: (bool) Whether to normalize images or not,
+    :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
-    :param optimizer_class: (Type[th.optim.Optimizer]) The optimizer to use,
+    :param optimizer_class: The optimizer to use,
         ``th.optim.Adam`` by default
-    :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
+    :param optimizer_kwargs: Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
     """
 
@@ -146,7 +146,7 @@ class DQNPolicy(BasePolicy):
         """
         Create the network and the optimizer.
 
-        :param lr_schedule: (Callable) Learning rate schedule
+        :param lr_schedule: Learning rate schedule
             lr_schedule(1) is the initial learning rate
         """
 
@@ -193,17 +193,17 @@ class CnnPolicy(DQNPolicy):
     """
     Policy class for DQN when using images as input.
 
-    :param observation_space: (gym.spaces.Space) Observation space
-    :param action_space: (gym.spaces.Space) Action space
-    :param lr_schedule: (callable) Learning rate schedule (could be constant)
-    :param net_arch: (Optional[List[int]]) The specification of the policy and value networks.
-    :param activation_fn: (Type[nn.Module]) Activation function
-    :param features_extractor_class: (Type[BaseFeaturesExtractor]) Features extractor to use.
-    :param normalize_images: (bool) Whether to normalize images or not,
+    :param observation_space: Observation space
+    :param action_space: Action space
+    :param lr_schedule: Learning rate schedule (could be constant)
+    :param net_arch: The specification of the policy and value networks.
+    :param activation_fn: Activation function
+    :param features_extractor_class: Features extractor to use.
+    :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
-    :param optimizer_class: (Type[th.optim.Optimizer]) The optimizer to use,
+    :param optimizer_class: The optimizer to use,
         ``th.optim.Adam`` by default
-    :param optimizer_kwargs: (Optional[Dict[str, Any]]) Additional keyword arguments,
+    :param optimizer_kwargs: Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
     """
 

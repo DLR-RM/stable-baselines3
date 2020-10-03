@@ -29,9 +29,9 @@ def recursive_getattr(obj: Any, attr: str, *args) -> Any:
     Ex:
     > MyObject.sub_object = SubObject(name='test')
     > recursive_getattr(MyObject, 'sub_object.name')  # return test
-    :param obj: (Any)
-    :param attr: (str) Attribute to retrieve
-    :return: (Any) The attribute
+    :param obj:
+    :param attr: Attribute to retrieve
+    :return: The attribute
     """
 
     def _getattr(obj: Any, attr: str) -> Any:
@@ -48,9 +48,9 @@ def recursive_setattr(obj: Any, attr: str, val: Any) -> None:
     Ex:
     > MyObject.sub_object = SubObject(name='test')
     > recursive_setattr(MyObject, 'sub_object.name', 'hello')
-    :param obj: (Any)
-    :param attr: (str) Attribute to set
-    :param val: (Any) New value of the attribute
+    :param obj:
+    :param attr: Attribute to set
+    :param val: New value of the attribute
     """
     pre, _, post = attr.rpartition(".")
     return setattr(recursive_getattr(obj, pre) if pre else obj, post, val)
@@ -60,8 +60,8 @@ def is_json_serializable(item: Any) -> bool:
     """
     Test if an object is serializable into JSON
 
-    :param item: (object) The object to be tested for JSON serialization.
-    :return: (bool) True if object is JSON serializable, false otherwise.
+    :param item: The object to be tested for JSON serialization.
+    :return: True if object is JSON serializable, false otherwise.
     """
     # Try with try-except struct.
     json_serializable = True
@@ -76,11 +76,11 @@ def data_to_json(data: Dict[str, Any]) -> str:
     """
     Turn data (class parameters) into a JSON string for storing
 
-    :param data: (Dict[str, Any]) Dictionary of class parameters to be
+    :param data: Dictionary of class parameters to be
         stored. Items that are not JSON serializable will be
         pickled with Cloudpickle and stored as bytearray in
         the JSON file
-    :return: (str) JSON string of the data serialized.
+    :return: JSON string of the data serialized.
     """
     # First, check what elements can not be JSONfied,
     # and turn them into byte-strings
@@ -131,15 +131,15 @@ def json_to_data(json_string: str, custom_objects: Optional[Dict[str, Any]] = No
     """
     Turn JSON serialization of class-parameters back into dictionary.
 
-    :param json_string: (str) JSON serialization of the class-parameters
+    :param json_string: JSON serialization of the class-parameters
         that should be loaded.
-    :param custom_objects: (dict) Dictionary of objects to replace
+    :param custom_objects: Dictionary of objects to replace
         upon loading. If a variable is present in this dictionary as a
         key, it will not be deserialized and the corresponding item
         will be used instead. Similar to custom_objects in
         `keras.models.load_model`. Useful when you have an object in
         file that can not be deserialized.
-    :return: (dict) Loaded class parameters.
+    :return: Loaded class parameters.
     """
     if custom_objects is not None and not isinstance(custom_objects, dict):
         raise ValueError("custom_objects argument must be a dict or None")
@@ -189,12 +189,12 @@ def open_path(path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verb
     points to a folder, it changes the path to path_2. If the path already exists and verbose == 2,
     it raises a warning.
 
-    :param path: (Union[str, pathlib.Path, io.BufferedIOBase]) the path to open.
+    :param path: the path to open.
         if save_path is a str or pathlib.Path and mode is "w", single dispatch ensures that the
         path actually exists. If path is a io.BufferedIOBase the path exists.
-    :param mode: (str) how to open the file. "w"|"write" for writing, "r"|"read" for reading.
-    :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information.
-    :param suffix: (str) The preferred suffix. If mode is "w" then the opened file has the suffix.
+    :param mode: how to open the file. "w"|"write" for writing, "r"|"read" for reading.
+    :param verbose: Verbosity level, 0 means only warnings, 2 means debug information.
+    :param suffix: The preferred suffix. If mode is "w" then the opened file has the suffix.
         If mode is "r" then we attempt to open the path. If an error is raised and the suffix
         is not None, we attempt to open the path with the suffix.
     """
@@ -219,11 +219,11 @@ def open_path_str(path: str, mode: str, verbose=0, suffix=None) -> io.BufferedIO
     Open a path given by a string. If writing to the path, the function ensures
     that the path exists.
 
-    :param path: (str) the path to open. If mode is "w" then it ensures that the path exists
+    :param path: the path to open. If mode is "w" then it ensures that the path exists
         by creating the necessary folders and renaming path if it points to a folder.
-    :param mode: (str) how to open the file. "w" for writing, "r" for reading.
-    :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information.
-    :param suffix: (str) The preferred suffix. If mode is "w" then the opened file has the suffix.
+    :param mode: how to open the file. "w" for writing, "r" for reading.
+    :param verbose: Verbosity level, 0 means only warnings, 2 means debug information.
+    :param suffix: The preferred suffix. If mode is "w" then the opened file has the suffix.
         If mode is "r" then we attempt to open the path. If an error is raised and the suffix
         is not None, we attempt to open the path with the suffix.
     """
@@ -236,12 +236,12 @@ def open_path_pathlib(path: pathlib.Path, mode: str, verbose=0, suffix=None) -> 
     Open a path given by a string. If writing to the path, the function ensures
     that the path exists.
 
-    :param path: (pathlib.Path) the path to check. If mode is "w" then it
+    :param path: the path to check. If mode is "w" then it
         ensures that the path exists by creating the necessary folders and
         renaming path if it points to a folder.
-    :param mode: (str) how to open the file. "w" for writing, "r" for reading.
-    :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information.
-    :param suffix: (str) The preferred suffix. If mode is "w" then the opened file has the suffix.
+    :param mode: how to open the file. "w" for writing, "r" for reading.
+    :param verbose: Verbosity level, 0 means only warnings, 2 means debug information.
+    :param suffix: The preferred suffix. If mode is "w" then the opened file has the suffix.
         If mode is "r" then we attempt to open the path. If an error is raised and the suffix
         is not None, we attempt to open the path with the suffix.
     """
@@ -291,13 +291,13 @@ def save_to_zip_file(
     """
     Save model data to a zip archive.
 
-    :param save_path: (Union[str, pathlib.Path, io.BufferedIOBase]) Where to store the model.
+    :param save_path: Where to store the model.
         if save_path is a str or pathlib.Path ensures that the path actually exists.
     :param data: Class parameters being stored (non-PyTorch variables)
     :param params: Model parameters being stored expected to contain an entry for every
                    state_dict with its name and the state_dict.
     :param pytorch_variables: Other PyTorch variables expected to contain name and value of the variable.
-    :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information
+    :param verbose: Verbosity level, 0 means only warnings, 2 means debug information
     """
     save_path = open_path(save_path, "w", verbose=0, suffix="zip")
     # data/params can be None, so do not
@@ -327,11 +327,11 @@ def save_to_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], obj, verbose=
     If the path exists and is a directory, it will raise a warning and rename the path.
     If a suffix is provided in the path, it will use that suffix, otherwise, it will use '.pkl'.
 
-    :param path: (Union[str, pathlib.Path, io.BufferedIOBase]) the path to open.
+    :param path: the path to open.
         if save_path is a str or pathlib.Path and mode is "w", single dispatch ensures that the
         path actually exists. If path is a io.BufferedIOBase the path exists.
     :param obj: The object to save.
-    :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information.
+    :param verbose: Verbosity level, 0 means only warnings, 2 means debug information.
     """
     with open_path(path, "w", verbose=verbose, suffix="pkl") as file_handler:
         pickle.dump(obj, file_handler)
@@ -342,10 +342,10 @@ def load_from_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], verbose=0) 
     Load an object from the path. If a suffix is provided in the path, it will use that suffix.
     If the path does not exist, it will attempt to load using the .pkl suffix.
 
-    :param path: (Union[str, pathlib.Path, io.BufferedIOBase]) the path to open.
+    :param path: the path to open.
         if save_path is a str or pathlib.Path and mode is "w", single dispatch ensures that the
         path actually exists. If path is a io.BufferedIOBase the path exists.
-    :param verbose: (int) Verbosity level, 0 means only warnings, 2 means debug information.
+    :param verbose: Verbosity level, 0 means only warnings, 2 means debug information.
     """
     with open_path(path, "r", verbose=verbose, suffix="pkl") as file_handler:
         return pickle.load(file_handler)
@@ -360,11 +360,11 @@ def load_from_zip_file(
     """
     Load model data from a .zip archive
 
-    :param load_path: (str, pathlib.Path, io.BufferedIOBase) Where to load the model from
+    :param load_path: Where to load the model from
     :param load_data: Whether we should load and return data
         (class parameters). Mainly used by 'load_parameters' to only load model parameters (weights)
-    :param device: (Union[th.device, str]) Device on which the code should run.
-    :return: (dict),(dict),(dict) Class parameters, model state_dicts (aka "params", dict of state_dict)
+    :param device: Device on which the code should run.
+    :return: Class parameters, model state_dicts (aka "params", dict of state_dict)
         and dict of pytorch variables
     """
     load_path = open_path(load_path, "r", verbose=verbose, suffix="zip")

@@ -32,9 +32,9 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, VecNormalize, 
 def maybe_make_env(env: Union[GymEnv, str, None], monitor_wrapper: bool, verbose: int) -> Optional[GymEnv]:
     """If env is a string, make the environment; otherwise, return env.
 
-    :param env: (Union[GymEnv, str, None]) The environment to learn from.
-    :param monitor_wrapper: (bool) Whether to wrap env in a Monitor when creating env.
-    :param verbose: (int) logging verbosity
+    :param env: The environment to learn from.
+    :param monitor_wrapper: Whether to wrap env in a Monitor when creating env.
+    :param verbose: logging verbosity
     :return A Gym (vector) environment.
     """
     if isinstance(env, str):
@@ -51,28 +51,28 @@ class BaseAlgorithm(ABC):
     """
     The base of RL algorithms
 
-    :param policy: (Type[BasePolicy]) Policy object
-    :param env: (Union[GymEnv, str, None]) The environment to learn from
+    :param policy: Policy object
+    :param env: The environment to learn from
                 (if registered in Gym, can be str. Can be None for loading trained models)
-    :param policy_base: (Type[BasePolicy]) The base policy used by this method
-    :param learning_rate: (float or callable) learning rate for the optimizer,
+    :param policy_base: The base policy used by this method
+    :param learning_rate: learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
-    :param policy_kwargs: (Dict[str, Any]) Additional arguments to be passed to the policy on creation
-    :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
-    :param verbose: (int) The verbosity level: 0 none, 1 training information, 2 debug
-    :param device: (Union[th.device, str]) Device on which the code should run.
+    :param policy_kwargs: Additional arguments to be passed to the policy on creation
+    :param tensorboard_log: the log location for tensorboard (if None, no logging)
+    :param verbose: The verbosity level: 0 none, 1 training information, 2 debug
+    :param device: Device on which the code should run.
         By default, it will try to use a Cuda compatible device and fallback to cpu
         if it is not possible.
-    :param support_multi_env: (bool) Whether the algorithm supports training
+    :param support_multi_env: Whether the algorithm supports training
         with multiple environments (as in A2C)
-    :param create_eval_env: (bool) Whether to create a second environment that will be
+    :param create_eval_env: Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
-    :param monitor_wrapper: (bool) When creating an environment, whether to wrap it
+    :param monitor_wrapper: When creating an environment, whether to wrap it
         or not in a Monitor wrapper.
-    :param seed: (Optional[int]) Seed for the pseudo random generators
-    :param use_sde: (bool) Whether to use generalized State Dependent Exploration (gSDE)
+    :param seed: Seed for the pseudo random generators
+    :param use_sde: Whether to use generalized State Dependent Exploration (gSDE)
         instead of action noise exploration (default: False)
-    :param sde_sample_freq: (int) Sample a new noise matrix every n steps when using gSDE
+    :param sde_sample_freq: Sample a new noise matrix every n steps when using gSDE
         Default: -1 (only sample at the beginning of the rollout)
     """
 
@@ -181,8 +181,8 @@ class BaseAlgorithm(ABC):
         """
         Return the environment that will be used for evaluation.
 
-        :param eval_env: (Optional[GymEnv]))
-        :return: (Optional[GymEnv])
+        :param eval_env:)
+        :return:
         """
         if eval_env is None:
             eval_env = self.eval_env
@@ -210,7 +210,7 @@ class BaseAlgorithm(ABC):
         Update the optimizers learning rate using the current learning rate schedule
         and the current progress remaining (from 1 to 0).
 
-        :param optimizers: (Union[List[th.optim.Optimizer], th.optim.Optimizer])
+        :param optimizers:
             An optimizer or a list of optimizers.
         """
         # Log the current learning rate
@@ -228,7 +228,7 @@ class BaseAlgorithm(ABC):
         as they take up a lot of space. PyTorch variables should be excluded
         with this so they can be stored with ``th.save``.
 
-        :return: (List[str]) List of parameters that should be excluded from being saved with pickle.
+        :return: List of parameters that should be excluded from being saved with pickle.
         """
         return [
             "policy",
@@ -250,7 +250,7 @@ class BaseAlgorithm(ABC):
         "policy.optimizer" would point to ``optimizer`` object of ``self.policy``
         if this object.
 
-        :return: (Tuple[List[str], List[str]])
+        :return:
             List of Torch variables whose state dicts to save (e.g. th.nn.Modules),
             and list of other Torch variables to store with ``th.save``.
         """
@@ -267,12 +267,12 @@ class BaseAlgorithm(ABC):
         log_path: Optional[str] = None,
     ) -> BaseCallback:
         """
-        :param callback: (MaybeCallback) Callback(s) called at every step with state of the algorithm.
-        :param eval_freq: (Optional[int]) How many steps between evaluations; if None, do not evaluate.
-        :param n_eval_episodes: (int) How many episodes to play per evaluation
-        :param n_eval_episodes: (int) Number of episodes to rollout during evaluation.
-        :param log_path: (Optional[str]) Path to a folder where the evaluations will be saved
-        :return: (BaseCallback) A hybrid callback calling `callback` and performing evaluation.
+        :param callback: Callback(s) called at every step with state of the algorithm.
+        :param eval_freq: How many steps between evaluations; if None, do not evaluate.
+        :param n_eval_episodes: How many episodes to play per evaluation
+        :param n_eval_episodes: Number of episodes to rollout during evaluation.
+        :param log_path: Path to a folder where the evaluations will be saved
+        :return: A hybrid callback calling `callback` and performing evaluation.
         """
         # Convert a list of callbacks into a callback
         if isinstance(callback, list):
@@ -310,15 +310,15 @@ class BaseAlgorithm(ABC):
         """
         Initialize different variables needed for training.
 
-        :param total_timesteps: (int) The total number of samples (env steps) to train on
-        :param eval_env: (Optional[VecEnv]) Environment to use for evaluation.
-        :param callback: (MaybeCallback) Callback(s) called at every step with state of the algorithm.
-        :param eval_freq: (int) How many steps between evaluations
-        :param n_eval_episodes: (int) How many episodes to play per evaluation
-        :param log_path: (Optional[str]) Path to a folder where the evaluations will be saved
-        :param reset_num_timesteps: (bool) Whether to reset or not the ``num_timesteps`` attribute
-        :param tb_log_name: (str) the name of the run for tensorboard log
-        :return: (Tuple[int, BaseCallback])
+        :param total_timesteps: The total number of samples (env steps) to train on
+        :param eval_env: Environment to use for evaluation.
+        :param callback: Callback(s) called at every step with state of the algorithm.
+        :param eval_freq: How many steps between evaluations
+        :param n_eval_episodes: How many episodes to play per evaluation
+        :param log_path: Path to a folder where the evaluations will be saved
+        :param reset_num_timesteps: Whether to reset or not the ``num_timesteps`` attribute
+        :param tb_log_name: the name of the run for tensorboard log
+        :return:
         """
         self.start_time = time.time()
         if self.ep_info_buffer is None or reset_num_timesteps:
@@ -363,7 +363,7 @@ class BaseAlgorithm(ABC):
         Retrieve reward and episode length and update the buffer
         if using Monitor wrapper.
 
-        :param infos: ([dict])
+        :param infos:
         """
         if dones is None:
             dones = np.array([False] * len(infos))
@@ -379,7 +379,7 @@ class BaseAlgorithm(ABC):
         """
         Returns the current environment (can be None if not defined).
 
-        :return: (Optional[VecEnv]) The current environment
+        :return: The current environment
         """
         return self.env
 
@@ -387,7 +387,8 @@ class BaseAlgorithm(ABC):
         """
         Return the ``VecNormalize`` wrapper of the training env
         if it exists.
-        :return: Optional[VecNormalize] The ``VecNormalize`` env.
+
+        :return: The ``VecNormalize`` env.
         """
         return self._vec_normalize_env
 
@@ -425,16 +426,16 @@ class BaseAlgorithm(ABC):
         """
         Return a trained model.
 
-        :param total_timesteps: (int) The total number of samples (env steps) to train on
-        :param callback: (MaybeCallback) callback(s) called at every step with state of the algorithm.
-        :param log_interval: (int) The number of timesteps before logging.
-        :param tb_log_name: (str) the name of the run for TensorBoard logging
-        :param eval_env: (gym.Env) Environment that will be used to evaluate the agent
-        :param eval_freq: (int) Evaluate the agent every ``eval_freq`` timesteps (this may vary a little)
-        :param n_eval_episodes: (int) Number of episode to evaluate the agent
-        :param eval_log_path: (Optional[str]) Path to a folder where the evaluations will be saved
-        :param reset_num_timesteps: (bool) whether or not to reset the current timestep number (used in logging)
-        :return: (BaseAlgorithm) the trained model
+        :param total_timesteps: The total number of samples (env steps) to train on
+        :param callback: callback(s) called at every step with state of the algorithm.
+        :param log_interval: The number of timesteps before logging.
+        :param tb_log_name: the name of the run for TensorBoard logging
+        :param eval_env: Environment that will be used to evaluate the agent
+        :param eval_freq: Evaluate the agent every ``eval_freq`` timesteps (this may vary a little)
+        :param n_eval_episodes: Number of episode to evaluate the agent
+        :param eval_log_path: Path to a folder where the evaluations will be saved
+        :param reset_num_timesteps: whether or not to reset the current timestep number (used in logging)
+        :return: the trained model
         """
 
     def predict(
@@ -447,11 +448,11 @@ class BaseAlgorithm(ABC):
         """
         Get the model's action(s) from an observation
 
-        :param observation: (np.ndarray) the input observation
-        :param state: (Optional[np.ndarray]) The last states (can be None, used in recurrent policies)
-        :param mask: (Optional[np.ndarray]) The last masks (can be None, used in recurrent policies)
-        :param deterministic: (bool) Whether or not to return deterministic actions.
-        :return: (Tuple[np.ndarray, Optional[np.ndarray]]) the model's action and the next state
+        :param observation: the input observation
+        :param state: The last states (can be None, used in recurrent policies)
+        :param mask: The last masks (can be None, used in recurrent policies)
+        :param deterministic: Whether or not to return deterministic actions.
+        :return: the model's action and the next state
             (used in recurrent policies)
         """
         return self.policy.predict(observation, state, mask, deterministic)
@@ -461,7 +462,7 @@ class BaseAlgorithm(ABC):
         Set the seed of the pseudo-random generators
         (python, numpy, pytorch, gym, action_space)
 
-        :param seed: (int)
+        :param seed:
         """
         if seed is None:
             return
@@ -488,7 +489,7 @@ class BaseAlgorithm(ABC):
         :param exact_match: If True, the given parameters should include parameters for each
             module and each of their parameters, otherwise raises an Exception. If set to False, this
             can be used to update only specific parameters.
-        :param device: (Union[th.device, str]) Device on which the code should run.
+        :param device: Device on which the code should run.
         """
         params = None
         if isinstance(load_path_or_dict, dict):
@@ -551,11 +552,11 @@ class BaseAlgorithm(ABC):
         """
         Load the model from a zip-file
 
-        :param path: (Union[str, pathlib.Path, io.BufferedIOBase]) path to the file (or a file-like) where to
+        :param path: path to the file (or a file-like) where to
             load the agent from
         :param env: the new environment to run the loaded model on
             (can be None if you only need prediction from a trained model) has priority over any saved environment
-        :param device: (Union[th.device, str]) Device on which the code should run.
+        :param device: Device on which the code should run.
         :param kwargs: extra arguments to change the model when loading
         """
         data, params, pytorch_variables = load_from_zip_file(path, device=device)
@@ -614,7 +615,7 @@ class BaseAlgorithm(ABC):
         Return the parameters of the agent. This includes parameters from different networks, e.g.
         critics (value functions) and policies (pi functions).
 
-        :return: (Dict[str, Dict]) Mapping of from names of the objects to PyTorch state-dicts.
+        :return: Mapping of from names of the objects to PyTorch state-dicts.
         """
         state_dicts_names, _ = self._get_torch_save_params()
         params = {}
@@ -633,7 +634,7 @@ class BaseAlgorithm(ABC):
         """
         Save all the attributes of the object and the model parameters in a zip-file.
 
-        :param (Union[str, pathlib.Path, io.BufferedIOBase]): path to the file where the rl agent should be saved
+        :param path: path to the file where the rl agent should be saved
         :param exclude: name of parameters that should be excluded in addition to the default ones
         :param include: name of parameters that might be excluded but should be included anyway
         """

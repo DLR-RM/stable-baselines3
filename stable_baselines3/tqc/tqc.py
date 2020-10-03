@@ -296,7 +296,7 @@ class TQC(OffPolicyAlgorithm):
         reduce: str = "mean",
         exp_temperature: float = 1.0,
         off_policy_update_freq: int = -1,
-        normalize_advantage: bool = True
+        normalize_advantage: bool = True,
     ) -> None:
         """
         Pretrain with Critic Regularized Regression (CRR)

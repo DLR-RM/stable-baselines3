@@ -32,7 +32,7 @@ class VecVideoRecorder(VecEnvWrapper):
         name_prefix: str = "rl-video",
     ):
 
-        super().__init__(self, venv)
+        VecEnvWrapper.__init__(self, venv)
 
         self.env = venv
         # Temp variable to retrieve metadata
@@ -107,7 +107,7 @@ class VecVideoRecorder(VecEnvWrapper):
         self.recorded_frames = 1
 
     def close(self) -> None:
-        super().close()
+        VecEnvWrapper.close(self)
         self.close_video_recorder()
 
     def __del__(self):

@@ -387,18 +387,18 @@ class NstepReplayBuffer(ReplayBuffer):
     """
     Replay Buffer that computes N-step returns.
 
-    :param buffer_size: (int) Max number of element in the buffer
-    :param observation_space: (spaces.Space) Observation space
-    :param action_space: (spaces.Space) Action space
-    :param device: (Union[th.device, str]) PyTorch device
+    :param buffer_size: Max number of element in the buffer
+    :param observation_space: Observation space
+    :param action_space: Action space
+    :param device: PyTorch device
         to which the values will be converted
-    :param n_envs: (int) Number of parallel environments
-    :param optimize_memory_usage: (bool) Enable a memory efficient variant
+    :param n_envs: Number of parallel environments
+    :param optimize_memory_usage: Enable a memory efficient variant
         of the replay buffer which reduces by almost a factor two the memory used,
         at a cost of more complexity.
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
         and https://github.com/DLR-RM/stable-baselines3/pull/28#issuecomment-637559274
-    :param n_step: (int) The number of transitions to consider when computing n-step returns
+    :param n_step: The number of transitions to consider when computing n-step returns
     :param gamma:  (float) The discount factor for future rewards.
     """
 

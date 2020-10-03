@@ -188,9 +188,9 @@ class Actor(BasePolicy):
         """
         Evaluate actions according to the current policy,
         given the observations. Only useful when using SDE.
-        :param obs: (th.Tensor)
-        :param actions: (th.Tensor)
-        :return: (th.Tensor) log likelihood of taking those actions
+        :param obs:
+        :param actions:
+        :return: log likelihood of taking those actions
         """
         mean_actions, log_std, kwargs = self.get_action_dist_params(obs)
         self.action_dist.proba_distribution(mean_actions, log_std, **kwargs)

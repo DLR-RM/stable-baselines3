@@ -14,14 +14,14 @@ class ActorCMA(BasePolicy):
     """
     Actor network (policy) for TD3.
 
-    :param observation_space: (gym.spaces.Space) Obervation space
-    :param action_space: (gym.spaces.Space) Action space
-    :param net_arch: ([int]) Network architecture
-    :param features_extractor: (nn.Module) Network to extract features
+    :param observation_space: Obervation space
+    :param action_space: Action space
+    :param net_arch: Network architecture
+    :param features_extractor: Network to extract features
         (a CNN when using images, a nn.Flatten() layer otherwise)
-    :param features_dim: (int) Number of features
-    :param activation_fn: (Type[nn.Module]) Activation function
-    :param normalize_images: (bool) Whether to normalize images or not,
+    :param features_dim: Number of features
+    :param activation_fn: Activation function
+    :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     """
 

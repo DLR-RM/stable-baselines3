@@ -3,6 +3,30 @@
 Changelog
 ==========
 
+
+Pre-Release 0.10.0a0 (WIP)
+------------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Improve typing coverage
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
 Pre-Release 0.9.0 (2020-10-03)
 ------------------------------
 

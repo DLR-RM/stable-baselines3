@@ -147,6 +147,7 @@ class DQN(OffPolicyAlgorithm):
         # Update learning rate according to schedule
         self._update_learning_rate(self.policy.optimizer)
 
+        losses = []
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
@@ -169,6 +170,7 @@ class DQN(OffPolicyAlgorithm):
 
             # Compute Huber loss (less sensitive to outliers)
             loss = F.smooth_l1_loss(current_q, target_q)
+            losses.append(loss.item())
 
             # Optimize the policy
             self.policy.optimizer.zero_grad()
@@ -181,6 +183,7 @@ class DQN(OffPolicyAlgorithm):
         self._n_updates += gradient_steps
 
         logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
+        logger.record("train/loss", np.mean(losses))
 
     def predict(
         self,

@@ -23,8 +23,8 @@ from stable_baselines3.common.vec_env import VecTransposeImage
 def set_random_seed(seed: int, using_cuda: bool = False) -> None:
     """
     Seed the different random generators
-    :param seed: (int)
-    :param using_cuda: (bool)
+    :param seed:
+    :param using_cuda:
     """
     # Seed python RNG
     random.seed(seed)
@@ -50,9 +50,9 @@ def explained_variance(y_pred: np.ndarray, y_true: np.ndarray) -> np.ndarray:
         ev=1  =>  perfect prediction
         ev<0  =>  worse than just predicting zero
 
-    :param y_pred: (np.ndarray) the prediction
-    :param y_true: (np.ndarray) the expected value
-    :return: (float) explained variance of ypred and y
+    :param y_pred: the prediction
+    :param y_true: the expected value
+    :return: explained variance of ypred and y
     """
     assert y_true.ndim == 1 and y_pred.ndim == 1
     var_y = np.var(y_true)
@@ -64,8 +64,8 @@ def update_learning_rate(optimizer: th.optim.Optimizer, learning_rate: float) ->
     Update the learning rate for a given optimizer.
     Useful when doing linear schedule.
 
-    :param optimizer: (th.optim.Optimizer)
-    :param learning_rate: (float)
+    :param optimizer:
+    :param learning_rate:
     """
     for param_group in optimizer.param_groups:
         param_group["lr"] = learning_rate
@@ -76,8 +76,8 @@ def get_schedule_fn(value_schedule: Union[Callable, float]) -> Callable:
     Transform (if needed) learning rate and clip range (for PPO)
     to callable.
 
-    :param value_schedule: (callable or float)
-    :return: (function)
+    :param value_schedule:
+    :return:
     """
     # If the passed schedule is a float
     # create a constant function
@@ -96,12 +96,12 @@ def get_linear_fn(start: float, end: float, end_fraction: float) -> Callable:
     This is used in DQN for linearly annealing the exploration fraction
     (epsilon for the epsilon-greedy strategy).
 
-    :params start: (float) value to start with if ``progress_remaining`` = 1
-    :params end: (float) value to end with if ``progress_remaining`` = 0
-    :params end_fraction: (float) fraction of ``progress_remaining``
+    :params start: value to start with if ``progress_remaining`` = 1
+    :params end: value to end with if ``progress_remaining`` = 0
+    :params end_fraction: fraction of ``progress_remaining``
         where end is reached e.g 0.1 then end is reached after 10%
         of the complete training process.
-    :return: (Callable)
+    :return:
     """
 
     def func(progress_remaining: float) -> float:
@@ -118,8 +118,8 @@ def constant_fn(val: float) -> Callable:
     Create a function that returns a constant
     It is useful for learning rate schedule (to avoid code duplication)
 
-    :param val: (float)
-    :return: (Callable)
+    :param val:
+    :return:
     """
 
     def func(_):
@@ -135,8 +135,8 @@ def get_device(device: Union[th.device, str] = "auto") -> th.device:
     For now, it supports only cpu and cuda.
     By default, it tries to use the gpu.
 
-    :param device: (Union[str, th.device]) One for 'auto', 'cuda', 'cpu'
-    :return: (th.device)
+    :param device: One for 'auto', 'cuda', 'cpu'
+    :return:
     """
     # Cuda by default
     if device == "auto":
@@ -156,7 +156,7 @@ def get_latest_run_id(log_path: Optional[str] = None, log_name: str = "") -> int
     Returns the latest run number for the given log name and log path,
     by finding the greatest number in the directories.
 
-    :return: (int) latest run number
+    :return: latest run number
     """
     max_run_id = 0
     for path in glob.glob(f"{log_path}/{log_name}_[0-9]*"):
@@ -173,9 +173,9 @@ def configure_logger(
     """
     Configure the logger's outputs.
 
-    :param verbose: (int) the verbosity level: 0 no output, 1 info, 2 debug
-    :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
-    :param tb_log_name: (str) tensorboard log
+    :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
+    :param tensorboard_log: the log location for tensorboard (if None, no logging)
+    :param tb_log_name: tensorboard log
     """
     if tensorboard_log is not None and SummaryWriter is not None:
         latest_run_id = get_latest_run_id(tensorboard_log, tb_log_name)
@@ -199,9 +199,9 @@ def check_for_correct_spaces(env: GymEnv, observation_space: gym.spaces.Space, a
     - observation_space
     - action_space
 
-    :param env: (GymEnv) Environment to check for valid spaces
-    :param observation_space: (gym.spaces.Space) Observation space to check against
-    :param action_space: (gym.spaces.Space) Action space to check against
+    :param env: Environment to check for valid spaces
+    :param observation_space: Observation space to check against
+    :param action_space: Action space to check against
     """
     if (
         observation_space != env.observation_space
@@ -221,9 +221,9 @@ def is_vectorized_observation(observation: np.ndarray, observation_space: gym.sp
     For every observation type, detects and validates the shape,
     then returns whether or not the observation is vectorized.
 
-    :param observation: (np.ndarray) the input observation to validate
-    :param observation_space: (gym.spaces) the observation space
-    :return: (bool) whether the given observation is vectorized or not
+    :param observation: the input observation to validate
+    :param observation_space: the observation space
+    :return: whether the given observation is vectorized or not
     """
     if isinstance(observation_space, gym.spaces.Box):
         if observation.shape == observation_space.shape:
@@ -298,9 +298,9 @@ def polyak_update(params: Iterable[th.nn.Parameter], target_params: Iterable[th.
     params (in place).
     See https://github.com/DLR-RM/stable-baselines3/issues/93
 
-    :param params: (Iterable[th.nn.Parameter]) parameters to use to update the target params
-    :param target_params: (Iterable[th.nn.Parameter]) parameters to update
-    :param tau: (float) the soft update coefficient ("Polyak update", between 0 and 1)
+    :param params: parameters to use to update the target params
+    :param target_params: parameters to update
+    :param tau: the soft update coefficient ("Polyak update", between 0 and 1)
     """
     with th.no_grad():
         for param, target_param in zip(params, target_params):

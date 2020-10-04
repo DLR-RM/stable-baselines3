@@ -15,7 +15,7 @@ class BaseCallback(ABC):
     """
     Base class for callback.
 
-    :param verbose: (int)
+    :param verbose:
     """
 
     def __init__(self, verbose: int = 0):
@@ -68,7 +68,7 @@ class BaseCallback(ABC):
     @abstractmethod
     def _on_step(self) -> bool:
         """
-        :return: (bool) If the callback returns False, training is aborted early.
+        :return: If the callback returns False, training is aborted early.
         """
         return True
 
@@ -79,7 +79,7 @@ class BaseCallback(ABC):
         For child callback (of an ``EventCallback``), this will be called
         when the event is triggered.
 
-        :return: (bool) If the callback returns False, training is aborted early.
+        :return: If the callback returns False, training is aborted early.
         """
         self.n_calls += 1
         # timesteps start at zero
@@ -103,7 +103,7 @@ class BaseCallback(ABC):
         """
         Update the references to the local variables.
 
-        :param locals_: (Dict[str, Any]) the local variables during rollout collection
+        :param locals_: the local variables during rollout collection
         """
         self.locals.update(locals_)
         self.update_child_locals(locals_)
@@ -112,7 +112,7 @@ class BaseCallback(ABC):
         """
         Update the references to the local variables on sub callbacks.
 
-        :param locals_: (Dict[str, Any]) the local variables during rollout collection
+        :param locals_: the local variables during rollout collection
         """
         pass
 
@@ -121,9 +121,9 @@ class EventCallback(BaseCallback):
     """
     Base class for triggering callback on event.
 
-    :param callback: (Optional[BaseCallback]) Callback that will be called
+    :param callback: Callback that will be called
         when an event is triggered.
-    :param verbose: (int)
+    :param verbose:
     """
 
     def __init__(self, callback: Optional[BaseCallback] = None, verbose: int = 0):
@@ -154,7 +154,7 @@ class EventCallback(BaseCallback):
         """
         Update the references to the local variables.
 
-        :param locals_: (Dict[str, Any]) the local variables during rollout collection
+        :param locals_: the local variables during rollout collection
         """
         if self.callback is not None:
             self.callback.update_locals(locals_)
@@ -164,7 +164,7 @@ class CallbackList(BaseCallback):
     """
     Class for chaining callbacks.
 
-    :param callbacks: (List[BaseCallback]) A list of callbacks that will be called
+    :param callbacks: A list of callbacks that will be called
         sequentially.
     """
 
@@ -204,7 +204,7 @@ class CallbackList(BaseCallback):
         """
         Update the references to the local variables.
 
-        :param locals_: (Dict[str, Any]) the local variables during rollout collection
+        :param locals_: the local variables during rollout collection
         """
         for callback in self.callbacks:
             callback.update_locals(locals_)
@@ -214,9 +214,9 @@ class CheckpointCallback(BaseCallback):
     """
     Callback for saving a model every ``save_freq`` steps
 
-    :param save_freq: (int)
-    :param save_path: (str) Path to the folder where the model will be saved.
-    :param name_prefix: (str) Common prefix to the saved models
+    :param save_freq:
+    :param save_path: Path to the folder where the model will be saved.
+    :param name_prefix: Common prefix to the saved models
     """
 
     def __init__(self, save_freq: int, save_path: str, name_prefix="rl_model", verbose=0):
@@ -243,8 +243,8 @@ class ConvertCallback(BaseCallback):
     """
     Convert functional callback (old-style) to object.
 
-    :param callback: (callable)
-    :param verbose: (int)
+    :param callback:
+    :param verbose:
     """
 
     def __init__(self, callback, verbose=0):
@@ -261,20 +261,20 @@ class EvalCallback(EventCallback):
     """
     Callback for evaluating an agent.
 
-    :param eval_env: (Union[gym.Env, VecEnv]) The environment used for initialization
-    :param callback_on_new_best: (Optional[BaseCallback]) Callback to trigger
+    :param eval_env: The environment used for initialization
+    :param callback_on_new_best: Callback to trigger
         when there is a new best model according to the ``mean_reward``
-    :param n_eval_episodes: (int) The number of episodes to test the agent
-    :param eval_freq: (int) Evaluate the agent every eval_freq call of the callback.
-    :param log_path: (str) Path to a folder where the evaluations (``evaluations.npz``)
+    :param n_eval_episodes: The number of episodes to test the agent
+    :param eval_freq: Evaluate the agent every eval_freq call of the callback.
+    :param log_path: Path to a folder where the evaluations (``evaluations.npz``)
         will be saved. It will be updated at each evaluation.
-    :param best_model_save_path: (str) Path to a folder where the best model
+    :param best_model_save_path: Path to a folder where the best model
         according to performance on the eval env will be saved.
-    :param deterministic: (bool) Whether the evaluation should
+    :param deterministic: Whether the evaluation should
         use a stochastic or deterministic actions.
-    :param deterministic: (bool) Whether to render or not the environment during evaluation
-    :param render: (bool) Whether to render or not the environment during evaluation
-    :param verbose: (int)
+    :param deterministic: Whether to render or not the environment during evaluation
+    :param render: Whether to render or not the environment during evaluation
+    :param verbose:
     """
 
     def __init__(
@@ -378,7 +378,7 @@ class EvalCallback(EventCallback):
         """
         Update the references to the local variables.
 
-        :param locals_: (Dict[str, Any]) the local variables during rollout collection
+        :param locals_: the local variables during rollout collection
         """
         if self.callback:
             self.callback.update_locals(locals_)
@@ -391,9 +391,9 @@ class StopTrainingOnRewardThreshold(BaseCallback):
 
     It must be used with the ``EvalCallback``.
 
-    :param reward_threshold: (float)  Minimum expected reward per episode
+    :param reward_threshold:  Minimum expected reward per episode
         to stop training.
-    :param verbose: (int)
+    :param verbose:
     """
 
     def __init__(self, reward_threshold: float, verbose: int = 0):
@@ -416,8 +416,8 @@ class EveryNTimesteps(EventCallback):
     """
     Trigger a callback every ``n_steps`` timesteps
 
-    :param n_steps: (int) Number of timesteps between two trigger.
-    :param callback: (BaseCallback) Callback that will be called
+    :param n_steps: Number of timesteps between two trigger.
+    :param callback: Callback that will be called
         when the event is triggered.
     """
 
@@ -440,8 +440,8 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
     For multiple environments presumes that, the desired behavior is that the agent trains on each env for ``max_episodes``
     and in total for ``max_episodes * n_envs`` episodes.
 
-    :param max_episodes: (int) Maximum number of episodes to stop training.
-    :param verbose: (int) Select whether to print information about when training ended by reaching ``max_episodes``
+    :param max_episodes: Maximum number of episodes to stop training.
+    :param verbose: Select whether to print information about when training ended by reaching ``max_episodes``
     """
 
     def __init__(self, max_episodes: int, verbose: int = 0):

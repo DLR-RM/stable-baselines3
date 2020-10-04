@@ -25,9 +25,9 @@ def tile_images(img_nhwc: Sequence[np.ndarray]) -> np.ndarray:  # pragma: no cov
     (P,Q) are chosen to be as close as possible, and if N
     is square, then P=Q.
 
-    :param img_nhwc: (Sequence[np.ndarray]) list or array of images, ndim=4 once turned into array. img nhwc
+    :param img_nhwc: list or array of images, ndim=4 once turned into array. img nhwc
         n = batch index, h = height, w = width, c = channel
-    :return: (np.ndarray) img_HWc, ndim=3
+    :return: img_HWc, ndim=3
     """
     img_nhwc = np.asarray(img_nhwc)
     n_images, height, width, n_channels = img_nhwc.shape
@@ -49,9 +49,9 @@ class VecEnv(ABC):
     """
     An abstract asynchronous, vectorized environment.
 
-    :param num_envs: (int) the number of environments
-    :param observation_space: (gym.spaces.Space) the observation space
-    :param action_space: (gym.spaces.Space) the action space
+    :param num_envs: the number of environments
+    :param observation_space: the observation space
+    :param action_space: the action space
     """
 
     metadata = {"render.modes": ["human", "rgb_array"]}
@@ -71,7 +71,7 @@ class VecEnv(ABC):
         be cancelled and step_wait() should not be called
         until step_async() is invoked again.
 
-        :return: (VecEnvObs) observation
+        :return: observation
         """
         raise NotImplementedError()
 
@@ -108,9 +108,9 @@ class VecEnv(ABC):
         """
         Return attribute from vectorized environment.
 
-        :param attr_name: (str) The name of the attribute whose value to return
-        :param indices: (list,int) Indices of envs to get attribute from
-        :return: (list) List of values of 'attr_name' in all environments
+        :param attr_name: The name of the attribute whose value to return
+        :param indices: Indices of envs to get attribute from
+        :return: List of values of 'attr_name' in all environments
         """
         raise NotImplementedError()
 
@@ -119,10 +119,10 @@ class VecEnv(ABC):
         """
         Set attribute inside vectorized environments.
 
-        :param attr_name: (str) The name of attribute to assign new value
-        :param value: (obj) Value to assign to `attr_name`
-        :param indices: (list,int) Indices of envs to assign value
-        :return: (NoneType)
+        :param attr_name: The name of attribute to assign new value
+        :param value: Value to assign to `attr_name`
+        :param indices: Indices of envs to assign value
+        :return:
         """
         raise NotImplementedError()
 
@@ -131,11 +131,11 @@ class VecEnv(ABC):
         """
         Call instance methods of vectorized environments.
 
-        :param method_name: (str) The name of the environment method to invoke.
-        :param indices: (list,int) Indices of envs whose method to call
-        :param method_args: (tuple) Any positional arguments to provide in the call
-        :param method_kwargs: (dict) Any keyword arguments to provide in the call
-        :return: (list) List of items returned by the environment's method call
+        :param method_name: The name of the environment method to invoke.
+        :param indices: Indices of envs whose method to call
+        :param method_args: Any positional arguments to provide in the call
+        :param method_kwargs: Any keyword arguments to provide in the call
+        :return: List of items returned by the environment's method call
         """
         raise NotImplementedError()
 
@@ -143,8 +143,8 @@ class VecEnv(ABC):
         """
         Step the environments with the given action
 
-        :param actions: (np.ndarray) the action
-        :return: (VecEnvStepReturn) observation, reward, done, information
+        :param actions: the action
+        :return: observation, reward, done, information
         """
         self.step_async(actions)
         return self.step_wait()
@@ -185,8 +185,8 @@ class VecEnv(ABC):
         Sets the random seeds for all environments, based on a given seed.
         Each individual environment will still get its own seed, by incrementing the given seed.
 
-        :param seed: (Optional[int]) The random seed. May be None for completely random seeding.
-        :return: (List[Union[None, int]]) Returns a list containing the seeds for each individual env.
+        :param seed: The random seed. May be None for completely random seeding.
+        :return: Returns a list containing the seeds for each individual env.
             Note that all list elements may be None, if the env does not return anything when being seeded.
         """
         pass
@@ -201,9 +201,9 @@ class VecEnv(ABC):
     def getattr_depth_check(self, name: str, already_found: bool) -> Optional[str]:
         """Check if an attribute reference is being hidden in a recursive call to __getattr__
 
-        :param name: (str) name of attribute to check for
-        :param already_found: (bool) whether this attribute has already been found in a wrapper
-        :return: (Optional[str]) name of module whose attribute is being shadowed, if any.
+        :param name: name of attribute to check for
+        :param already_found: whether this attribute has already been found in a wrapper
+        :return: name of module whose attribute is being shadowed, if any.
         """
         if hasattr(self, name) and already_found:
             return f"{type(self).__module__}.{type(self).__name__}"
@@ -214,8 +214,8 @@ class VecEnv(ABC):
         """
         Convert a flexibly-typed reference to environment indices to an implied list of indices.
 
-        :param indices: (None,int,Iterable) refers to indices of envs.
-        :return: (list) the implied list of indices.
+        :param indices: refers to indices of envs.
+        :return: the implied list of indices.
         """
         if indices is None:
             indices = range(self.num_envs)
@@ -228,9 +228,9 @@ class VecEnvWrapper(VecEnv):
     """
     Vectorized environment base class
 
-    :param venv: (VecEnv) the vectorized environment to wrap
-    :param observation_space: (Optional[gym.spaces.Space]) the observation space (can be None to load from venv)
-    :param action_space: (Optional[gym.spaces.Space]) the action space (can be None to load from venv)
+    :param venv: the vectorized environment to wrap
+    :param observation_space: the observation space (can be None to load from venv)
+    :param action_space: the action space (can be None to load from venv)
     """
 
     def __init__(
@@ -299,7 +299,7 @@ class VecEnvWrapper(VecEnv):
     def _get_all_attributes(self) -> Dict[str, Any]:
         """Get all (inherited) instance and class attributes
 
-        :return: (Dict[str, Any]) all_attributes
+        :return: all_attributes
         """
         all_attributes = self.__dict__.copy()
         all_attributes.update(self.class_attributes)
@@ -308,8 +308,8 @@ class VecEnvWrapper(VecEnv):
     def getattr_recursive(self, name: str):
         """Recursively check wrappers to find attribute.
 
-        :param name (str) name of attribute to look for
-        :return: (object) attribute
+        :param name: name of attribute to look for
+        :return: attribute
         """
         all_attributes = self._get_all_attributes()
         if name in all_attributes:  # attribute is present in this wrapper
@@ -326,7 +326,7 @@ class VecEnvWrapper(VecEnv):
     def getattr_depth_check(self, name: str, already_found: bool):
         """See base class.
 
-        :return: (str or None) name of module whose attribute is being shadowed, if any.
+        :return: name of module whose attribute is being shadowed, if any.
         """
         all_attributes = self._get_all_attributes()
         if name in all_attributes and already_found:
@@ -346,7 +346,7 @@ class CloudpickleWrapper:
     """
     Uses cloudpickle to serialize contents (otherwise multiprocessing tries to use pickle)
 
-    :param var: (Any) the variable you wish to wrap for pickling with cloudpickle
+    :param var: the variable you wish to wrap for pickling with cloudpickle
     """
 
     def __init__(self, var: Any):

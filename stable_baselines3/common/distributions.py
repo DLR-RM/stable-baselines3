@@ -29,7 +29,7 @@ class Distribution(ABC):
     def proba_distribution(self, *args, **kwargs) -> "Distribution":
         """Set parameters of the distribution.
 
-        :return: (Distribution) self
+        :return: self
         """
 
     @abstractmethod
@@ -37,8 +37,8 @@ class Distribution(ABC):
         """
         Returns the log likelihood
 
-        :param x: (th.Tensor) the taken action
-        :return: (th.Tensor) The log likelihood of the distribution
+        :param x: the taken action
+        :return: The log likelihood of the distribution
         """
 
     @abstractmethod
@@ -46,7 +46,7 @@ class Distribution(ABC):
         """
         Returns Shannon's entropy of the probability
 
-        :return: (Optional[th.Tensor]) the entropy, or None if no analytical form is known
+        :return: the entropy, or None if no analytical form is known
         """
 
     @abstractmethod
@@ -54,7 +54,7 @@ class Distribution(ABC):
         """
         Returns a sample from the probability distribution
 
-        :return: (th.Tensor) the stochastic action
+        :return: the stochastic action
         """
 
     @abstractmethod
@@ -63,15 +63,15 @@ class Distribution(ABC):
         Returns the most likely action (deterministic output)
         from the probability distribution
 
-        :return: (th.Tensor) the stochastic action
+        :return: the stochastic action
         """
 
     def get_actions(self, deterministic: bool = False) -> th.Tensor:
         """
         Return actions according to the probability distribution.
 
-        :param deterministic: (bool)
-        :return: (th.Tensor)
+        :param deterministic:
+        :return:
         """
         if deterministic:
             return self.mode()
@@ -83,7 +83,7 @@ class Distribution(ABC):
         Returns samples from the probability distribution
         given its parameters.
 
-        :return: (th.Tensor) actions
+        :return: actions
         """
 
     @abstractmethod
@@ -92,7 +92,7 @@ class Distribution(ABC):
         Returns samples and the associated log probabilities
         from the probability distribution given its parameters.
 
-        :return: (th.Tuple[th.Tensor, th.Tensor]) actions and log prob
+        :return: actions and log prob
         """
 
 
@@ -101,8 +101,8 @@ def sum_independent_dims(tensor: th.Tensor) -> th.Tensor:
     Continuous actions are usually considered to be independent,
     so we can sum components of the ``log_prob`` or the entropy.
 
-    :param tensor: (th.Tensor) shape: (n_batch, n_actions) or (n_batch,)
-    :return: (th.Tensor) shape: (n_batch,)
+    :param tensor: shape: (n_batch, n_actions) or (n_batch,)
+    :return: shape: (n_batch,)
     """
     if len(tensor.shape) > 1:
         tensor = tensor.sum(dim=1)
@@ -115,7 +115,7 @@ class DiagGaussianDistribution(Distribution):
     """
     Gaussian distribution with diagonal covariance matrix, for continuous actions.
 
-    :param action_dim: (int)  Dimension of the action space.
+    :param action_dim:  Dimension of the action space.
     """
 
     def __init__(self, action_dim: int):
@@ -131,9 +131,9 @@ class DiagGaussianDistribution(Distribution):
         one output will be the mean of the Gaussian, the other parameter will be the
         standard deviation (log std in fact to allow negative values)
 
-        :param latent_dim: (int) Dimension of the last layer of the policy (before the action layer)
-        :param log_std_init: (float) Initial value for the log standard deviation
-        :return: (nn.Linear, nn.Parameter)
+        :param latent_dim: Dimension of the last layer of the policy (before the action layer)
+        :param log_std_init: Initial value for the log standard deviation
+        :return:
         """
         mean_actions = nn.Linear(latent_dim, self.action_dim)
         # TODO: allow action dependent std
@@ -144,9 +144,9 @@ class DiagGaussianDistribution(Distribution):
         """
         Create the distribution given its parameters (mean, std)
 
-        :param mean_actions: (th.Tensor)
-        :param log_std: (th.Tensor)
-        :return: (DiagGaussianDistribution)
+        :param mean_actions:
+        :param log_std:
+        :return:
         """
         action_std = th.ones_like(mean_actions) * log_std.exp()
         self.distribution = Normal(mean_actions, action_std)
@@ -157,8 +157,8 @@ class DiagGaussianDistribution(Distribution):
         Get the log probabilities of actions according to the distribution.
         Note that you must first call the ``proba_distribution()`` method.
 
-        :param actions: (th.Tensor)
-        :return: (th.Tensor)
+        :param actions:
+        :return:
         """
         log_prob = self.distribution.log_prob(actions)
         return sum_independent_dims(log_prob)
@@ -183,9 +183,9 @@ class DiagGaussianDistribution(Distribution):
         Compute the log probability of taking an action
         given the distribution parameters.
 
-        :param mean_actions: (th.Tensor)
-        :param log_std: (th.Tensor)
-        :return: (Tuple[th.Tensor, th.Tensor])
+        :param mean_actions:
+        :param log_std:
+        :return:
         """
         actions = self.actions_from_params(mean_actions, log_std)
         log_prob = self.log_prob(actions)
@@ -196,8 +196,8 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
     """
     Gaussian distribution with diagonal covariance matrix, followed by a squashing function (tanh) to ensure bounds.
 
-    :param action_dim: (int) Dimension of the action space.
-    :param epsilon: (float) small value to avoid NaN due to numerical imprecision.
+    :param action_dim: Dimension of the action space.
+    :param epsilon: small value to avoid NaN due to numerical imprecision.
     """
 
     def __init__(self, action_dim: int, epsilon: float = 1e-6):
@@ -250,7 +250,7 @@ class CategoricalDistribution(Distribution):
     """
     Categorical distribution for discrete actions.
 
-    :param action_dim: (int) Number of discrete actions
+    :param action_dim: Number of discrete actions
     """
 
     def __init__(self, action_dim: int):
@@ -264,9 +264,9 @@ class CategoricalDistribution(Distribution):
         it will be the logits of the Categorical distribution.
         You can then get probabilities using a softmax.
 
-        :param latent_dim: (int) Dimension of the last layer
+        :param latent_dim: Dimension of the last layer
             of the policy network (before the action layer)
-        :return: (nn.Linear)
+        :return:
         """
         action_logits = nn.Linear(latent_dim, self.action_dim)
         return action_logits
@@ -302,7 +302,7 @@ class MultiCategoricalDistribution(Distribution):
     """
     MultiCategorical distribution for multi discrete actions.
 
-    :param action_dims: (List[int]) List of sizes of discrete action spaces
+    :param action_dims: List of sizes of discrete action spaces
     """
 
     def __init__(self, action_dims: List[int]):
@@ -316,9 +316,9 @@ class MultiCategoricalDistribution(Distribution):
         it will be the logits (flattened) of the MultiCategorical distribution.
         You can then get probabilities using a softmax on each sub-space.
 
-        :param latent_dim: (int) Dimension of the last layer
+        :param latent_dim: Dimension of the last layer
             of the policy network (before the action layer)
-        :return: (nn.Linear)
+        :return:
         """
 
         action_logits = nn.Linear(latent_dim, sum(self.action_dims))
@@ -358,7 +358,7 @@ class BernoulliDistribution(Distribution):
     """
     Bernoulli distribution for MultiBinary action spaces.
 
-    :param action_dim: (int) Number of binary actions
+    :param action_dim: Number of binary actions
     """
 
     def __init__(self, action_dims: int):
@@ -371,9 +371,9 @@ class BernoulliDistribution(Distribution):
         Create the layer that represents the distribution:
         it will be the logits of the Bernoulli distribution.
 
-        :param latent_dim: (int) Dimension of the last layer
+        :param latent_dim: Dimension of the last layer
             of the policy network (before the action layer)
-        :return: (nn.Linear)
+        :return:
         """
         action_logits = nn.Linear(latent_dim, self.action_dims)
         return action_logits
@@ -413,18 +413,18 @@ class StateDependentNoiseDistribution(Distribution):
     It is used to create the noise exploration matrix and
     compute the log probability of an action with that noise.
 
-    :param action_dim: (int) Dimension of the action space.
-    :param full_std: (bool) Whether to use (n_features x n_actions) parameters
+    :param action_dim: Dimension of the action space.
+    :param full_std: Whether to use (n_features x n_actions) parameters
         for the std instead of only (n_features,)
-    :param use_expln: (bool) Use ``expln()`` function instead of ``exp()`` to ensure
+    :param use_expln: Use ``expln()`` function instead of ``exp()`` to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
-    :param squash_output: (bool) Whether to squash the output using a tanh function,
+    :param squash_output: Whether to squash the output using a tanh function,
         this ensures bounds are satisfied.
-    :param learn_features: (bool) Whether to learn features for gSDE or not.
+    :param learn_features: Whether to learn features for gSDE or not.
         This will enable gradients to be backpropagated through the features
         ``latent_sde`` in the code.
-    :param epsilon: (float) small value to avoid NaN due to numerical imprecision.
+    :param epsilon: small value to avoid NaN due to numerical imprecision.
     """
 
     def __init__(
@@ -460,8 +460,8 @@ class StateDependentNoiseDistribution(Distribution):
         Get the standard deviation from the learned parameter
         (log of it by default). This ensures that the std is positive.
 
-        :param log_std: (th.Tensor)
-        :return: (th.Tensor)
+        :param log_std:
+        :return:
         """
         if self.use_expln:
             # From gSDE paper, it allows to keep variance
@@ -485,8 +485,8 @@ class StateDependentNoiseDistribution(Distribution):
         Sample weights for the noise exploration matrix,
         using a centered Gaussian distribution.
 
-        :param log_std: (th.Tensor)
-        :param batch_size: (int)
+        :param log_std:
+        :param batch_size:
         """
         std = self.get_std(log_std)
         self.weights_dist = Normal(th.zeros_like(std), std)
@@ -503,11 +503,11 @@ class StateDependentNoiseDistribution(Distribution):
         one output will be the deterministic action, the other parameter will be the
         standard deviation of the distribution that control the weights of the noise matrix.
 
-        :param latent_dim: (int) Dimension of the last layer of the policy (before the action layer)
-        :param log_std_init: (float) Initial value for the log standard deviation
-        :param latent_sde_dim: (Optional[int]) Dimension of the last layer of the feature extractor
+        :param latent_dim: Dimension of the last layer of the policy (before the action layer)
+        :param log_std_init: Initial value for the log standard deviation
+        :param latent_sde_dim: Dimension of the last layer of the feature extractor
             for gSDE. By default, it is shared with the policy network.
-        :return: (nn.Linear, nn.Parameter)
+        :return:
         """
         # Network for the deterministic action, it represents the mean of the distribution
         mean_actions_net = nn.Linear(latent_dim, self.action_dim)
@@ -528,10 +528,10 @@ class StateDependentNoiseDistribution(Distribution):
         """
         Create the distribution given its parameters (mean, std)
 
-        :param mean_actions: (th.Tensor)
-        :param log_std: (th.Tensor)
-        :param latent_sde: (th.Tensor)
-        :return: (StateDependentNoiseDistribution)
+        :param mean_actions:
+        :param log_std:
+        :param latent_sde:
+        :return:
         """
         # Stop gradient if we don't want to influence the features
         self._latent_sde = latent_sde if self.learn_features else latent_sde.detach()
@@ -607,7 +607,7 @@ class TanhBijector(object):
     using a squashing function (tanh)
     TODO: use Pyro instead (https://pyro.ai/)
 
-    :param epsilon: (float) small value to avoid NaN due to numerical imprecision.
+    :param epsilon: small value to avoid NaN due to numerical imprecision.
     """
 
     def __init__(self, epsilon: float = 1e-6):
@@ -633,8 +633,8 @@ class TanhBijector(object):
         """
         Inverse tanh.
 
-        :param y: (th.Tensor)
-        :return: (th.Tensor)
+        :param y:
+        :return:
         """
         eps = th.finfo(y.dtype).eps
         # Clip the action to avoid NaN
@@ -651,11 +651,11 @@ def make_proba_distribution(
     """
     Return an instance of Distribution for the correct type of action space
 
-    :param action_space: (gym.spaces.Space) the input action space
-    :param use_sde: (bool) Force the use of StateDependentNoiseDistribution
+    :param action_space: the input action space
+    :param use_sde: Force the use of StateDependentNoiseDistribution
         instead of DiagGaussianDistribution
-    :param dist_kwargs: (Optional[Dict[str, Any]]) Keyword arguments to pass to the probability distribution
-    :return: (Distribution) the appropriate Distribution object
+    :param dist_kwargs: Keyword arguments to pass to the probability distribution
+    :return: the appropriate Distribution object
     """
     if dist_kwargs is None:
         dist_kwargs = {}

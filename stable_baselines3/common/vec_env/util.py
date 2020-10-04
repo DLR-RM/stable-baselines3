@@ -1,35 +1,36 @@
 """
 Helpers for dealing with vectorized environments.
 """
-
 from collections import OrderedDict
+from typing import Any, Dict, List, Tuple, Union
 
 import gym
 import numpy as np
 
 
-def copy_obs_dict(obs):
+def copy_obs_dict(obs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
     """
     Deep-copy a dict of numpy arrays.
 
-    :param obs: (OrderedDict<ndarray>): a dict of numpy arrays.
-    :return (OrderedDict<ndarray>) a dict of copied numpy arrays.
+    :param obs: a dict of numpy arrays.
+    :return: a dict of copied numpy arrays.
     """
     assert isinstance(obs, OrderedDict), f"unexpected type for observations '{type(obs)}'"
     return OrderedDict([(k, np.copy(v)) for k, v in obs.items()])
 
 
-def dict_to_obs(space, obs_dict):
+def dict_to_obs(
+    space: gym.spaces.Space, obs_dict: Dict[Any, np.ndarray]
+) -> Union[Dict[Any, np.ndarray], Tuple[np.ndarray, ...], np.ndarray]:
     """
     Convert an internal representation raw_obs into the appropriate type
     specified by space.
 
-    :param space: (gym.spaces.Space) an observation space.
-    :param obs_dict: (OrderedDict<ndarray>) a dict of numpy arrays.
-    :return (ndarray, tuple<ndarray> or dict<ndarray>): returns an observation
-            of the same type as space. If space is Dict, function is identity;
-            if space is Tuple, converts dict to Tuple; otherwise, space is
-            unstructured and returns the value raw_obs[None].
+    :param space: an observation space.
+    :param obs_dict: a dict of numpy arrays.
+    :return: returns an observation of the same type as space.
+        If space is Dict, function is identity; if space is Tuple, converts dict to Tuple;
+        otherwise, space is unstructured and returns the value raw_obs[None].
     """
     if isinstance(space, gym.spaces.Dict):
         return obs_dict
@@ -41,7 +42,7 @@ def dict_to_obs(space, obs_dict):
         return obs_dict[None]
 
 
-def obs_space_info(obs_space):
+def obs_space_info(obs_space: gym.spaces.Space) -> Tuple[List[str], Dict[Any, Tuple[int, ...]], Dict[Any, np.dtype]]:
     """
     Get dict-structured information about a gym.Space.
 
@@ -49,8 +50,8 @@ def obs_space_info(obs_space):
     Tuple spaces are converted into a dict with keys indexing into the tuple.
     Unstructured spaces are represented by {None: obs_space}.
 
-    :param obs_space: (gym.spaces.Space) an observation space
-    :return (tuple) A tuple (keys, shapes, dtypes):
+    :param obs_space: an observation space
+    :return: A tuple (keys, shapes, dtypes):
         keys: a list of dict keys.
         shapes: a dict mapping keys to shapes.
         dtypes: a dict mapping keys to dtypes.

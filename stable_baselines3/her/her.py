@@ -295,6 +295,11 @@ class HER(BaseAlgorithm):
                     if self.online_sampling:
                         self.replay_buffer.add(self._last_original_obs, new_obs_, buffer_action, reward_, done, infos)
                     else:
+                        # concatenate observation with (desired) goal
+                        obs = ObsDictWrapper.convert_dict(self._last_original_obs)
+                        next_obs = ObsDictWrapper.convert_dict(new_obs_)
+                        # add to replay bufffer
+                        self.replay_buffer.add(obs, next_obs, buffer_action, reward_, done)
                         # add current transition to episode storage
                         self._episode_storage.add(self._last_original_obs, new_obs_, buffer_action, reward_, done, infos)
 
@@ -318,6 +323,7 @@ class HER(BaseAlgorithm):
                 if 0 < n_steps <= total_steps:
                     break
 
+            # TODO check again
             if done or self.episode_steps == self.max_episode_length:
                 if self.online_sampling:
                     self.replay_buffer.store_episode()
@@ -355,52 +361,62 @@ class HER(BaseAlgorithm):
         """
         Store current episode in replay buffer. Sample additional goals and store new transitions in replay buffer.
         """
+        # use vectorized sample goal function fom her_replay_buffer
+        episode_length = self._episode_storage.episode_lengths[0]
+        episode_indices = np.array(list(range(self._episode_storage.n_episodes_stored)) * episode_length * self.n_sampled_goal)
+        her_indices = np.arange(len(episode_indices))
+        # repeat every transition index n_sampled_goals times
+        transitions_indices = np.array(list(range(episode_length)) * self.n_sampled_goal)
 
-        # iterate over current episodes transitions
-        for idx in range(self._episode_storage.size()):
-            # get data of episode index
-            observation = self._episode_storage.buffer["observation"][0][idx]
-            desired_goal = self._episode_storage.buffer["desired_goal"][0][idx]
-            next_observation = self._episode_storage.buffer["next_obs"][0][idx]
-            next_achieved_goal = self._episode_storage.buffer["next_achieved_goal"][0][idx]
-            next_desired_goal = self._episode_storage.buffer["next_desired_goal"][0][idx]
-            action = self._episode_storage.buffer["action"][0][idx]
-            reward = self._episode_storage.buffer["reward"][0][idx]
-            done = self._episode_storage.buffer["done"][0][idx]
-            infos = self._episode_storage.info_buffer[0][idx]
+        if self._episode_storage.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
+            # restrict the sampling domain when ep_length > 1
+            # otherwise filter out the indices
+            # only consider transitions which are not the last one in the episode
+            her_indices = her_indices[episode_length > 1 and transitions_indices < episode_length - 1]
 
-            # concatenate observation with (desired) goal
-            obs = np.concatenate([observation, desired_goal], axis=-1)
-            next_obs = np.concatenate([next_observation, next_desired_goal], axis=-1)
-            # store data in replay buffer
-            self.replay_buffer.add(obs, next_obs, action, reward, done)
+        # transitions
+        transitions = {
+            key: self._episode_storage.buffer[key][episode_indices, transitions_indices].copy()
+            for key in self._episode_storage.buffer.keys()
+        }
 
-            # We cannot sample a goal from the future in the last step of an episode
-            if idx == self._episode_storage.size() - 1 and self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
-                break
+        # get sampled goals
+        new_goals = self._episode_storage.vectorized_sample_goal(episode_indices, her_indices, transitions_indices)
+        # assign new goals as desired goals
+        transitions["desired_goal"][her_indices] = new_goals
 
-            # dimsension of observation
-            obs_dim = observation.shape[1]
+        # Convert to numpy array
+        # TODO: disable if not needed for faster computation
+        transitions["info"] = np.array(
+            [
+                self._episode_storage.info_buffer[episode_idx][transition_idx]
+                for episode_idx, transition_idx in zip(episode_indices, transitions_indices)
+            ]
+        )
 
-            for _ in range(self.n_sampled_goal):
-                # sample goal
-                goal = self._episode_storage.sample_goal(
-                    self.goal_selection_strategy,
-                    idx,
-                    self._episode_storage.buffer["achieved_goal"][0],
-                    self.replay_buffer.observations,
-                    obs_dim,
-                )
+        # Vectorized computation
+        transitions["reward"][her_indices] = self.env.env_method(
+            "compute_reward",
+            transitions["next_achieved_goal"][her_indices],
+            transitions["desired_goal"][her_indices],
+            transitions["info"][her_indices],
+        )
 
-                # compute new reward with new goal
-                new_reward = self.env.env_method("compute_reward", next_achieved_goal, goal, infos)
+        # concatenate observation with (desired) goal
+        observations = ObsDictWrapper.convert_dict(transitions)
+        next_observations = ObsDictWrapper.convert_dict(transitions, observation_key="next_obs")
 
-                # concatenate observation with (desired) goal
-                obs = np.concatenate([observation, goal], axis=1)
-                next_obs = np.concatenate([next_observation, goal], axis=1)
+        # TODO check random strategy -> with online_sampling flag?
+        # TODO done = False? or recompute -> compare desired and achieved goal
 
-                # store data in replay buffer
-                self.replay_buffer.add(obs, next_obs, action, new_reward, np.array([False]))
+        # store data in replay buffer
+        for i in her_indices:
+            obs = observations[i]
+            next_obs = next_observations[i]
+            buffer_action = transitions["action"][i]
+            reward = transitions["reward"][i]
+            done = np.array([False])
+            self.replay_buffer.add(obs, next_obs, buffer_action, reward, done)
 
     def __getattr__(self, item):
         """

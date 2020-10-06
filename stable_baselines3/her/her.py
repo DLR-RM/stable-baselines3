@@ -102,6 +102,10 @@ class HER(BaseAlgorithm):
             self.goal_selection_strategy, GoalSelectionStrategy
         ), f"Invalid goal selection strategy, please use one of {list(GoalSelectionStrategy)}"
 
+        self.n_sampled_goal = n_sampled_goal
+        # if we sample her transitions online use custom replay buffer
+        self.online_sampling = online_sampling
+        self.her_ratio = 1 - (1.0 / (self.n_sampled_goal + 1))
         # maximum steps in episode
         self.max_episode_length = get_time_limit(self.env, max_episode_length)
         # storage for transitions of current episode
@@ -114,13 +118,9 @@ class HER(BaseAlgorithm):
             self.env.action_space,
             self.device,
             self.n_envs,
-            0.0,  # pytype: disable=wrong-arg-types
+            self.her_ratio,  # pytype: disable=wrong-arg-types
         )
-        self.n_sampled_goal = n_sampled_goal
 
-        # if we sample her transitions online use custom replay buffer
-        self.online_sampling = online_sampling
-        self.her_ratio = 1 - (1.0 / (self.n_sampled_goal + 1))
         # counter for steps in episode
         self.episode_steps = 0
         if self.online_sampling:
@@ -361,54 +361,17 @@ class HER(BaseAlgorithm):
         """
         Store current episode in replay buffer. Sample additional goals and store new transitions in replay buffer.
         """
-        # use vectorized sample goal function fom her_replay_buffer
-        episode_length = self._episode_storage.episode_lengths[0]
-        episode_indices = np.array(list(range(self._episode_storage.n_episodes_stored)) * episode_length * self.n_sampled_goal)
-        her_indices = np.arange(len(episode_indices))
-        # repeat every transition index n_sampled_goals times
-        transitions_indices = np.array(list(range(episode_length)) * self.n_sampled_goal)
 
-        if self._episode_storage.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
-            # restrict the sampling domain when ep_length > 1
-            # otherwise filter out the indices
-            # only consider transitions which are not the last one in the episode
-            her_indices = her_indices[episode_length > 1 and transitions_indices < episode_length - 1]
-
-        # transitions
-        transitions = {
-            key: self._episode_storage.buffer[key][episode_indices, transitions_indices].copy()
-            for key in self._episode_storage.buffer.keys()
-        }
-
-        # get sampled goals
-        new_goals = self._episode_storage.vectorized_sample_goal(episode_indices, her_indices, transitions_indices)
-        # assign new goals as desired goals
-        transitions["desired_goal"][her_indices] = new_goals
-
-        # Convert to numpy array
-        # TODO: disable if not needed for faster computation
-        transitions["info"] = np.array(
-            [
-                self._episode_storage.info_buffer[episode_idx][transition_idx]
-                for episode_idx, transition_idx in zip(episode_indices, transitions_indices)
-            ]
+        # sample goals and get new observations
+        observations, next_observations, transitions, her_indices = self._episode_storage.sample(
+            self.batch_size,
+            self.env,
+            self.online_sampling,
+            self.n_sampled_goal,
+            self.replay_buffer.observations,
         )
 
-        # Vectorized computation
-        transitions["reward"][her_indices] = self.env.env_method(
-            "compute_reward",
-            transitions["next_achieved_goal"][her_indices],
-            transitions["desired_goal"][her_indices],
-            transitions["info"][her_indices],
-        )
-
-        # concatenate observation with (desired) goal
-        observations = ObsDictWrapper.convert_dict(transitions)
-        next_observations = ObsDictWrapper.convert_dict(transitions, observation_key="next_obs")
-
-        # TODO check random strategy -> with online_sampling flag?
-        # TODO done = False? or recompute -> compare desired and achieved goal
-
+        # TODO done = False?
         # store data in replay buffer
         for i in her_indices:
             obs = observations[i]

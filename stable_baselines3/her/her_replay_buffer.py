@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch as th
@@ -78,77 +78,49 @@ class HerReplayBuffer(BaseBuffer):
         # percentage of her indices
         self.her_ratio = her_ratio
 
-    def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
+    def sample(
+        self,
+        batch_size: int,
+        env: Optional[VecNormalize] = None,
+        online_sampling: bool = True,
+        n_sampled_goal: int = None,
+        replay_observations: np.ndarray = None,
+    ) -> Union[ReplayBufferSamples, Tuple]:
         """
         :param batch_size: (int) Number of element to sample
         :param env: (Optional[VecNormalize]) associated gym VecEnv
             to normalize the observations/rewards when sampling
-        :return: (ReplayBufferSamples)
+        :param online_sampling: (bool) Using online_sampling for HER or not.
+        :param n_sampled_goal: (int) Number of sampled goals for replay. (offline sampling)
+        :param replay_observations: (np.ndarray) Observations of the offline replay buffer. Needed for 'RANDOM' goal strategy.
+        :return: (ReplayBufferSamples or Tuple)
         """
-        return self._sample_transitions(batch_size, env)
-
-    def sample_goal(
-        self,
-        goal_selection_strategy: GoalSelectionStrategy,
-        sample_idx: int,
-        achieved_goals: list,
-        observations: Union[list, np.ndarray],
-        obs_dim: int = None,
-    ) -> np.ndarray:
-        """
-        Sample a goal based on goal_selection_strategy.
-
-        :param goal_selection_strategy: (GoalSelectionStrategy ) Strategy for sampling goals for replay.
-            One of ['episode', 'final', 'future', 'random']
-        :param sample_idx: (int) Index of current transition.
-        :param achieved_goals: (list) Achieved goals of Current episode.
-        :param observations: (list or np.ndarray)
-        :param obs_dim: (int) Dimension of real observation without goal. It is needed for the random strategy.
-        :return: (np.ndarray) Return sampled goal.
-        """
-        if goal_selection_strategy == GoalSelectionStrategy.FINAL:
-            # replay with final state of current episode
-            return achieved_goals[-1]
-        elif goal_selection_strategy == GoalSelectionStrategy.FUTURE:
-            # replay with random state which comes from the same episode and was observed after current transition
-            index = np.random.choice(np.arange(sample_idx + 1, len(achieved_goals)))
-            return achieved_goals[index]
-        elif goal_selection_strategy == GoalSelectionStrategy.EPISODE:
-            # replay with random state which comes from the same episode as current transition
-            index = np.random.choice(np.arange(len(achieved_goals)))
-            return achieved_goals[index]
-        elif goal_selection_strategy == GoalSelectionStrategy.RANDOM:
-            # replay with random state from the entire replay buffer
-            index = np.random.choice(np.arange(len(observations)))
-            obs = observations[index]
-            # get only the observation part
-            # TODO: check that line (or the comment at least)
-            obs_array = obs[:, :obs_dim]
-            return obs_array
-        else:
-            raise ValueError("Strategy for sampling goals not supported!")
+        return self._sample_transitions(batch_size, env, online_sampling, n_sampled_goal, replay_observations)
 
     def vectorized_sample_goal(
-        self, episode_indices: np.ndarray, her_indices: np.ndarray, transitions_indices: np.ndarray
+        self,
+        episode_indices: np.ndarray,
+        her_indices: np.ndarray,
+        transitions_indices: np.ndarray,
+        online_sampling: bool = True,
+        replay_observations: np.ndarray = None,
     ) -> np.ndarray:
         """
         Sample goals based on goal_selection_strategy.
-        This is the vectorized (faster) version of ``sample_goal()``
+        This is a vectorized (fast) version.
 
-        :param goal_selection_strategy: (GoalSelectionStrategy ) Strategy for sampling goals for replay.
-            One of ['episode', 'final', 'future', 'random']
-        :param sample_idx: (int) Index of current transition.
-        :param episode: (list) Current episode.
-        :param observations: (list or np.ndarray)
-        :param obs_dim: (int) Dimension of real observation without goal. It is needed for the random strategy.
-        :param online_sampling: (bool) Sample HER transitions online.
+        :param episode_indices: (np.ndarray) Episode indices to use.
+        :param her_indices: (np.ndarray) HER indices.
+        :param transitions_indices: (np.ndarray) Transition indices to use.
+        :param online_sampling: (bool) Using online_sampling for HER or not.
+        :param replay_observations: (np.ndarray) Observations of the offline replay buffer. Needed for 'RANDOM' goal strategy.
         :return: (np.ndarray) Return sampled goals.
         """
         her_episode_indices = episode_indices[her_indices]
 
         if self.goal_selection_strategy == GoalSelectionStrategy.FINAL:
             # replay with final state of current episode
-            transitions_indices = self.episode_lengths[her_indices] - 1
+            transitions_indices = self.episode_lengths[her_episode_indices] - 1
 
         elif self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
             # replay with random state which comes from the same episode and was observed after current transition
@@ -161,37 +133,70 @@ class HerReplayBuffer(BaseBuffer):
             transitions_indices = np.random.randint(self.episode_lengths[her_episode_indices])
 
         elif self.goal_selection_strategy == GoalSelectionStrategy.RANDOM:
-            # replay with random state from the entire replay buffer
-            her_episode_indices = np.random.randint(self.n_episodes_stored, size=len(her_indices))
-            transitions_indices = np.random.randint(self.episode_lengths[her_episode_indices])
+            if online_sampling:
+                # replay with random state from the entire replay buffer
+                her_episode_indices = np.random.randint(self.n_episodes_stored, size=len(her_indices))
+                transitions_indices = np.random.randint(self.episode_lengths[her_episode_indices])
+            else:
+                # replay with random state from the entire replay buffer
+                index = np.random.choice(np.arange(len(replay_observations)), len(her_indices))
+                obs = replay_observations[index]
+                # get only the observation part of the state
+                obs_dim = self.env.obs_dim
+                obs_array = obs[:, :, :obs_dim]
+                return obs_array
         else:
             raise ValueError("Strategy for sampling goals not supported!")
 
         return self.buffer["achieved_goal"][her_episode_indices, transitions_indices]
 
-    def _sample_transitions(self, batch_size: int, env: Optional[VecNormalize]) -> ReplayBufferSamples:
+    def _sample_transitions(
+        self,
+        batch_size: int,
+        env: Optional[VecNormalize],
+        online_sampling: bool = True,
+        n_sampled_goal: int = None,
+        replay_observations: np.ndarray = None,
+    ) -> Union[ReplayBufferSamples, Tuple]:
         """
         :param batch_size: (int) Number of element to sample
         :param env: (Optional[VecNormalize]) associated gym VecEnv
             to normalize the observations/rewards when sampling
-        :return: (ReplayBufferSamples)
+        :param online_sampling: (bool) Using online_sampling for HER or not.
+        :param n_sampled_goal: (int) Number of sampled goals for replay. (offline sampling)
+        :param replay_observations: (np.ndarray) Observations of the offline replay buffer. Needed for 'RANDOM' goal strategy.
+        :return: (ReplayBufferSamples or Tuple)
         """
         # Select which episodes to use
-        episode_indices = np.random.randint(0, self.n_episodes_stored, batch_size)
-        her_indices = np.arange(batch_size)[: int(self.her_ratio * batch_size)]
-        # her_indices = np.random.permutation(batch_size)[: int(self.her_ratio * batch_size)]
-        ep_length = self.episode_lengths[episode_indices]
+        if online_sampling:
+            episode_indices = np.random.randint(0, self.n_episodes_stored, batch_size)
+            her_indices = np.arange(batch_size)[: int(self.her_ratio * batch_size)]
+            ep_length = self.episode_lengths[episode_indices]
+        else:
+            episode_length = self.episode_lengths[0]
+            episode_indices = np.array(list(range(self.n_episodes_stored)) * episode_length * n_sampled_goal)
+            her_indices = np.arange(len(episode_indices))
+            # repeat every transition index n_sampled_goals times
+            transitions_indices = np.array(list(range(episode_length)) * n_sampled_goal)
 
         if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
             # restrict the sampling domain when ep_length > 1
             # otherwise filter out the indices
-            her_indices = her_indices[ep_length[her_indices] > 1]
-            ep_length[her_indices] -= 1
+            if online_sampling:
+                her_indices = her_indices[ep_length[her_indices] > 1]
+                ep_length[her_indices] -= 1
+            else:
+                her_indices = her_indices[episode_length > 1 and transitions_indices < episode_length - 1]
 
-        transitions_indices = np.random.randint(ep_length)
+        if online_sampling:
+            # Select which transitions to use
+            transitions_indices = np.random.randint(ep_length)
+        # get selected transitions
         transitions = {key: self.buffer[key][episode_indices, transitions_indices].copy() for key in self.buffer.keys()}
 
-        new_goals = self.vectorized_sample_goal(episode_indices, her_indices, transitions_indices)
+        new_goals = self.vectorized_sample_goal(
+            episode_indices, her_indices, transitions_indices, online_sampling, replay_observations
+        )
         transitions["desired_goal"][her_indices] = new_goals
 
         # Convert to numpy array
@@ -215,15 +220,18 @@ class HerReplayBuffer(BaseBuffer):
         observations = ObsDictWrapper.convert_dict(transitions)
         next_observations = ObsDictWrapper.convert_dict(transitions, observation_key="next_obs")
 
-        data = (
-            self._normalize_obs(observations, env),
-            transitions["action"],
-            self._normalize_obs(next_observations, env),
-            transitions["done"],
-            self._normalize_reward(transitions["reward"], env),
-        )
+        if online_sampling:
+            data = (
+                self._normalize_obs(observations, env),
+                transitions["action"],
+                self._normalize_obs(next_observations, env),
+                transitions["done"],
+                self._normalize_reward(transitions["reward"], env),
+            )
 
-        return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
+            return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
+        else:
+            return observations, next_observations, transitions, her_indices
 
     def add(
         self,
@@ -232,7 +240,6 @@ class HerReplayBuffer(BaseBuffer):
         action: np.ndarray,
         reward: np.ndarray,
         done: np.ndarray,
-        # infos: Dict[str, np.ndarray],
         infos: List[dict],
     ) -> None:
 

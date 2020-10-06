@@ -323,7 +323,6 @@ class HER(BaseAlgorithm):
                 if 0 < n_steps <= total_steps:
                     break
 
-            # TODO check again
             if done or self.episode_steps == self.max_episode_length:
                 if self.online_sampling:
                     self.replay_buffer.store_episode()

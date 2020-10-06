@@ -24,30 +24,12 @@ def test_her(model_class, policy, online_sampling):
     env = BitFlippingEnv(n_bits=n_bits, continuous=True)
     env = DummyVecEnv([lambda: env])
 
-    # Create action noise
-    n_actions = env.action_space.shape[0]
-    action_noise = OrnsteinUhlenbeckActionNoise(
-        np.zeros(
-            n_actions,
-        ),
-        0.2 * np.ones((n_actions,)),
-    )
-
     model = HER(
         policy,
         env,
         model_class,
-        n_sampled_goal=5,
         goal_selection_strategy="future",
         online_sampling=online_sampling,
-        action_noise=action_noise,
-        verbose=0,
-        tau=0.05,
-        batch_size=128,
-        learning_rate=0.001,
-        policy_kwargs=dict(net_arch=[64]),
-        buffer_size=int(1e6),
-        gamma=0.98,
         gradient_steps=1,
         train_freq=1,
         n_episodes_rollout=-1,
@@ -55,39 +37,6 @@ def test_her(model_class, policy, online_sampling):
     )
 
     model.learn(total_timesteps=500, callback=None)
-
-    # Evaluate the agent
-    n_eval_episodes = 5
-    n_episodes = 0
-    episode_rewards = []
-    episode_reward = 0.0
-
-    eval_env = BitFlippingEnv(n_bits=4, continuous=True)
-
-    observation = eval_env.reset()
-
-    while n_episodes < n_eval_episodes:
-
-        obs = np.concatenate([observation["observation"], observation["desired_goal"]])
-
-        with th.no_grad():
-            obs_ = th.FloatTensor(np.array(obs).reshape(1, -1)).to(model.model.device)
-            action = model.model.policy.predict(obs_)[0][0]
-
-        observation, reward, done, _ = eval_env.step(action)
-
-        # Render the env
-        # eval_env.render()
-
-        episode_reward += reward
-
-        if done:
-            n_episodes += 1
-            observation = eval_env.reset()
-            episode_rewards.append(episode_reward)
-            episode_reward = 0.0
-
-    eval_env.close()
 
 
 @pytest.mark.parametrize(
@@ -252,4 +201,6 @@ def test_dqn_her(online_sampling, n_bits):
         batch_size=32,
     )
 
-    model.learn(total_timesteps=20000)
+    model.learn(total_timesteps=10000)
+
+    assert np.mean(model.ep_success_buffer) > 0.0

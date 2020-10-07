@@ -10,7 +10,7 @@ class VecTransposeImage(VecEnvWrapper):
     Re-order channels, from HxWxC to CxHxW.
     It is required for PyTorch convolution layers.
 
-    :param venv: (VecEnv)
+    :param venv:
     """
 
     def __init__(self, venv: VecEnv):
@@ -24,8 +24,8 @@ class VecTransposeImage(VecEnvWrapper):
         """
         Transpose an observation space (re-order channels).
 
-        :param observation_space: (spaces.Box)
-        :return: (spaces.Box)
+        :param observation_space:
+        :return:
         """
         assert is_image_space(observation_space), "The observation space must be an image"
         width, height, channels = observation_space.shape
@@ -37,8 +37,8 @@ class VecTransposeImage(VecEnvWrapper):
         """
         Transpose an image or batch of images (re-order channels).
 
-        :param image: (np.ndarray)
-        :return: (np.ndarray)
+        :param image:
+        :return:
         """
         if len(image.shape) == 3:
             return np.transpose(image, (2, 0, 1))

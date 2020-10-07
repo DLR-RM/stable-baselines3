@@ -50,3 +50,12 @@ a.icon.icon-home {
 .codeblock,pre.literal-block,.rst-content .literal-block,.rst-content pre.literal-block,div[class^='highlight'] {
         background: #f8f8f8;;
 }
+
+/* Change style of types in the docstrings .rst-content .field-list */
+.field-list .xref.py.docutils, .field-list code.docutils, .field-list .docutils.literal.notranslate
+{
+  border: None;
+  padding-left: 0;
+  padding-right: 0;
+  color: #404040;
+}

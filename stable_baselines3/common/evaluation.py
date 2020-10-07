@@ -21,19 +21,19 @@ def evaluate_policy(
     Runs policy for ``n_eval_episodes`` episodes and returns average reward.
     This is made to work only with one env.
 
-    :param model: (BaseAlgorithm) The RL agent you want to evaluate.
-    :param env: (gym.Env or VecEnv) The gym environment. In the case of a ``VecEnv``
+    :param model: The RL agent you want to evaluate.
+    :param env: The gym environment. In the case of a ``VecEnv``
         this must contain only one environment.
-    :param n_eval_episodes: (int) Number of episode to evaluate the agent
-    :param deterministic: (bool) Whether to use deterministic or stochastic actions
-    :param render: (bool) Whether to render the environment or not
-    :param callback: (callable) callback function to do additional checks,
+    :param n_eval_episodes: Number of episode to evaluate the agent
+    :param deterministic: Whether to use deterministic or stochastic actions
+    :param render: Whether to render the environment or not
+    :param callback: callback function to do additional checks,
         called after each step.
-    :param reward_threshold: (float) Minimum expected reward per episode,
+    :param reward_threshold: Minimum expected reward per episode,
         this will raise an error if the performance is not met
-    :param return_episode_rewards: (Optional[float]) If True, a list of reward per episode
+    :param return_episode_rewards: If True, a list of reward per episode
         will be returned instead of the mean.
-    :return: (float, float) Mean reward per episode, std of reward per episode
+    :return: Mean reward per episode, std of reward per episode
         returns ([float], [int]) when ``return_episode_rewards`` is True
     """
     if isinstance(env, VecEnv):

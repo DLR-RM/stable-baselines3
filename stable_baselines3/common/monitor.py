@@ -5,23 +5,25 @@ import json
 import os
 import time
 from glob import glob
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import gym
 import numpy as np
 import pandas
+
+from stable_baselines3.common.type_aliases import GymObs, GymStepReturn
 
 
 class Monitor(gym.Wrapper):
     """
     A monitor wrapper for Gym environments, it is used to know the episode reward, length, time and other data.
 
-    :param env: (gym.Env) The environment
-    :param filename: (Optional[str]) the location to save a log file, can be None for no log
-    :param allow_early_resets: (bool) allows the reset of the environment before it is done
-    :param reset_keywords: (Tuple[str, ...]) extra keywords for the reset call,
+    :param env: The environment
+    :param filename: the location to save a log file, can be None for no log
+    :param allow_early_resets: allows the reset of the environment before it is done
+    :param reset_keywords: extra keywords for the reset call,
         if extra parameters are needed at reset
-    :param info_keywords: (Tuple[str, ...]) extra information to log, from the information return of env.step()
+    :param info_keywords: extra information to log, from the information return of env.step()
     """
 
     EXT = "monitor.csv"
@@ -62,12 +64,12 @@ class Monitor(gym.Wrapper):
         self.total_steps = 0
         self.current_reset_info = {}  # extra info about the current episode, that was passed in during reset()
 
-    def reset(self, **kwargs) -> np.ndarray:
+    def reset(self, **kwargs) -> GymObs:
         """
         Calls the Gym environment reset. Can only be called if the environment is over, or if allow_early_resets is True
 
         :param kwargs: Extra keywords saved for the next episode. only if defined by reset_keywords
-        :return: (np.ndarray) the first observation of the environment
+        :return: the first observation of the environment
         """
         if not self.allow_early_resets and not self.needs_reset:
             raise RuntimeError(
@@ -83,12 +85,12 @@ class Monitor(gym.Wrapper):
             self.current_reset_info[key] = value
         return self.env.reset(**kwargs)
 
-    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, Dict[Any, Any]]:
+    def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:
         """
         Step the environment with the given action
 
-        :param action: (np.ndarray) the action
-        :return: (Tuple[np.ndarray, float, bool, Dict[Any, Any]]) observation, reward, done, information
+        :param action: the action
+        :return: observation, reward, done, information
         """
         if self.needs_reset:
             raise RuntimeError("Tried to step environment that needs reset")
@@ -112,7 +114,7 @@ class Monitor(gym.Wrapper):
         self.total_steps += 1
         return observation, reward, done, info
 
-    def close(self):
+    def close(self) -> None:
         """
         Closes the environment
         """
@@ -124,7 +126,7 @@ class Monitor(gym.Wrapper):
         """
         Returns the total number of timesteps
 
-        :return: (int)
+        :return:
         """
         return self.total_steps
 
@@ -132,7 +134,7 @@ class Monitor(gym.Wrapper):
         """
         Returns the rewards of all the episodes
 
-        :return: ([float])
+        :return:
         """
         return self.episode_rewards
 
@@ -140,7 +142,7 @@ class Monitor(gym.Wrapper):
         """
         Returns the number of timesteps of all the episodes
 
-        :return: ([int])
+        :return:
         """
         return self.episode_lengths
 
@@ -148,7 +150,7 @@ class Monitor(gym.Wrapper):
         """
         Returns the runtime in seconds of all the episodes
 
-        :return: ([float])
+        :return:
         """
         return self.episode_times
 
@@ -165,8 +167,8 @@ def get_monitor_files(path: str) -> List[str]:
     """
     get all the monitor files in the given path
 
-    :param path: (str) the logging folder
-    :return: ([str]) the log files
+    :param path: the logging folder
+    :return: the log files
     """
     return glob(os.path.join(path, "*" + Monitor.EXT))
 
@@ -175,12 +177,12 @@ def load_results(path: str) -> pandas.DataFrame:
     """
     Load all Monitor logs from a given directory path matching ``*monitor.csv``
 
-    :param path: (str) the directory path containing the log file(s)
-    :return: (pandas.DataFrame) the logged data
+    :param path: the directory path containing the log file(s)
+    :return: the logged data
     """
     monitor_files = get_monitor_files(path)
     if len(monitor_files) == 0:
-        raise LoadMonitorResultsError("no monitor files of the form *%s found in %s" % (Monitor.EXT, path))
+        raise LoadMonitorResultsError(f"No monitor files of the form *{Monitor.EXT} found in {path}")
     data_frames, headers = [], []
     for file_name in monitor_files:
         with open(file_name, "rt") as file_handler:

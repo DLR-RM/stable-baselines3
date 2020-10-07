@@ -60,10 +60,10 @@ class IdentityEnvBox(IdentityEnv):
         """
         Identity environment for testing purposes
 
-        :param low: (float) the lower bound of the box dim
-        :param high: (float) the upper bound of the box dim
-        :param eps: (float) the epsilon bound for correct value
-        :param ep_length: (int) the length of each episode in timesteps
+        :param low: the lower bound of the box dim
+        :param high: the upper bound of the box dim
+        :param eps: the epsilon bound for correct value
+        :param ep_length: the length of each episode in timesteps
         """
         space = Box(low=low, high=high, shape=(1,), dtype=np.float32)
         super().__init__(ep_length=ep_length, space=space)
@@ -85,8 +85,8 @@ class IdentityEnvMultiDiscrete(IdentityEnv):
         """
         Identity environment for testing purposes
 
-        :param dim: (int) the size of the dimensions you want to learn
-        :param ep_length: (int) the length of each episode in timesteps
+        :param dim: the size of the dimensions you want to learn
+        :param ep_length: the length of each episode in timesteps
         """
         space = MultiDiscrete([dim, dim])
         super().__init__(ep_length=ep_length, space=space)
@@ -97,8 +97,8 @@ class IdentityEnvMultiBinary(IdentityEnv):
         """
         Identity environment for testing purposes
 
-        :param dim: (int) the size of the dimensions you want to learn
-        :param ep_length: (int) the length of each episode in timesteps
+        :param dim: the size of the dimensions you want to learn
+        :param ep_length: the length of each episode in timesteps
         """
         space = MultiBinary(dim)
         super().__init__(ep_length=ep_length, space=space)
@@ -108,11 +108,11 @@ class FakeImageEnv(Env):
     """
     Fake image environment for testing purposes, it mimics Atari games.
 
-    :param action_dim: (int) Number of discrete actions
-    :param screen_height: (int) Height of the image
-    :param screen_width: (int) Width of the image
-    :param n_channels: (int) Number of color channels
-    :param discrete: (bool)
+    :param action_dim: Number of discrete actions
+    :param screen_height: Height of the image
+    :param screen_width: Width of the image
+    :param n_channels: Number of color channels
+    :param discrete:
     """
 
     def __init__(

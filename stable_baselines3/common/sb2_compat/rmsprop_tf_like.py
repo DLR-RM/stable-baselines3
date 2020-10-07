@@ -30,17 +30,16 @@ class RMSpropTFLike(Optimizer):
     is the scheduled learning rate and :math:`v` is the weighted moving average
     of the squared gradient.
 
-    Arguments:
-        params (iterable): iterable of parameters to optimize or dicts defining
-            parameter groups
-        lr (float, optional): learning rate (default: 1e-2)
-        momentum (float, optional): momentum factor (default: 0)
-        alpha (float, optional): smoothing constant (default: 0.99)
-        eps (float, optional): term added to the denominator to improve
-            numerical stability (default: 1e-8)
-        centered (bool, optional) : if ``True``, compute the centered RMSProp,
-            the gradient is normalized by an estimation of its variance
-        weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
+    :params: iterable of parameters to optimize or dicts defining
+        parameter groups
+    :param lr: learning rate (default: 1e-2)
+    :param momentum: momentum factor (default: 0)
+    :param alpha: smoothing constant (default: 0.99)
+    :param eps: term added to the denominator to improve
+        numerical stability (default: 1e-8)
+    :param centered: if ``True``, compute the centered RMSProp,
+        the gradient is normalized by an estimation of its variance
+    :param weight_decay: weight decay (L2 penalty) (default: 0)
 
     """
 
@@ -78,9 +77,9 @@ class RMSpropTFLike(Optimizer):
     def step(self, closure: Optional[Callable] = None) -> Optional[torch.Tensor]:
         """Performs a single optimization step.
 
-        Arguments:
-            closure (callable, optional): A closure that reevaluates the model
-                and returns the loss.
+        :param closure: A closure that reevaluates the model
+            and returns the loss.
+        :return: loss
         """
         loss = None
         if closure is not None:

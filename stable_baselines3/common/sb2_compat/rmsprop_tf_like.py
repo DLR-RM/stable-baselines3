@@ -1,3 +1,5 @@
+from typing import Any, Callable, Dict, Iterable, Optional
+
 import torch
 from torch.optim import Optimizer
 
@@ -28,21 +30,29 @@ class RMSpropTFLike(Optimizer):
     is the scheduled learning rate and :math:`v` is the weighted moving average
     of the squared gradient.
 
-    Arguments:
-        params (iterable): iterable of parameters to optimize or dicts defining
-            parameter groups
-        lr (float, optional): learning rate (default: 1e-2)
-        momentum (float, optional): momentum factor (default: 0)
-        alpha (float, optional): smoothing constant (default: 0.99)
-        eps (float, optional): term added to the denominator to improve
-            numerical stability (default: 1e-8)
-        centered (bool, optional) : if ``True``, compute the centered RMSProp,
-            the gradient is normalized by an estimation of its variance
-        weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
+    :params: iterable of parameters to optimize or dicts defining
+        parameter groups
+    :param lr: learning rate (default: 1e-2)
+    :param momentum: momentum factor (default: 0)
+    :param alpha: smoothing constant (default: 0.99)
+    :param eps: term added to the denominator to improve
+        numerical stability (default: 1e-8)
+    :param centered: if ``True``, compute the centered RMSProp,
+        the gradient is normalized by an estimation of its variance
+    :param weight_decay: weight decay (L2 penalty) (default: 0)
 
     """
 
-    def __init__(self, params, lr=1e-2, alpha=0.99, eps=1e-8, weight_decay=0, momentum=0, centered=False):
+    def __init__(
+        self,
+        params: Iterable[torch.nn.Parameter],
+        lr: float = 1e-2,
+        alpha: float = 0.99,
+        eps: float = 1e-8,
+        weight_decay: float = 0,
+        momentum: float = 0,
+        centered: bool = False,
+    ):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -57,19 +67,19 @@ class RMSpropTFLike(Optimizer):
         defaults = dict(lr=lr, momentum=momentum, alpha=alpha, eps=eps, centered=centered, weight_decay=weight_decay)
         super(RMSpropTFLike, self).__init__(params, defaults)
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: Dict[str, Any]) -> None:
         super(RMSpropTFLike, self).__setstate__(state)
         for group in self.param_groups:
             group.setdefault("momentum", 0)
             group.setdefault("centered", False)
 
     @torch.no_grad()
-    def step(self, closure=None):
+    def step(self, closure: Optional[Callable] = None) -> Optional[torch.Tensor]:
         """Performs a single optimization step.
 
-        Arguments:
-            closure (callable, optional): A closure that reevaluates the model
-                and returns the loss.
+        :param closure: A closure that reevaluates the model
+            and returns the loss.
+        :return: loss
         """
         loss = None
         if closure is not None:

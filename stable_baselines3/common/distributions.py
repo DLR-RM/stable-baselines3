@@ -1,7 +1,7 @@
 """Probability distributions."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import gym
 import torch as th
@@ -19,7 +19,7 @@ class Distribution(ABC):
         super(Distribution, self).__init__()
 
     @abstractmethod
-    def proba_distribution_net(self, *args, **kwargs):
+    def proba_distribution_net(self, *args, **kwargs) -> Union[nn.Module, Tuple[nn.Module, nn.Parameter]]:
         """Create the layers and parameters that represent the distribution.
 
         Subclasses must define this, but the arguments and return type vary between

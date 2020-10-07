@@ -78,7 +78,7 @@ def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space, normalize_im
         return obs.float()
 
     else:
-        raise NotImplementedError()
+        raise NotImplementedError(f"Preprocessing not implemented for {observation_space}")
 
 
 def get_obs_shape(observation_space: spaces.Space) -> Tuple[int, ...]:
@@ -100,7 +100,7 @@ def get_obs_shape(observation_space: spaces.Space) -> Tuple[int, ...]:
         # Number of binary features
         return (int(observation_space.n),)
     else:
-        raise NotImplementedError()
+        raise NotImplementedError(f"{observation_space} observation space is not supported")
 
 
 def get_flattened_obs_dim(observation_space: spaces.Space) -> int:
@@ -139,4 +139,4 @@ def get_action_dim(action_space: spaces.Space) -> int:
         # Number of binary actions
         return int(action_space.n)
     else:
-        raise NotImplementedError()
+        raise NotImplementedError(f"{action_space} action space is not supported")

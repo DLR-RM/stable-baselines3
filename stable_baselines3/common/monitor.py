@@ -5,11 +5,13 @@ import json
 import os
 import time
 from glob import glob
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import gym
 import numpy as np
 import pandas
+
+from stable_baselines3.common.type_aliases import GymObs, GymStepReturn
 
 
 class Monitor(gym.Wrapper):
@@ -62,7 +64,7 @@ class Monitor(gym.Wrapper):
         self.total_steps = 0
         self.current_reset_info = {}  # extra info about the current episode, that was passed in during reset()
 
-    def reset(self, **kwargs) -> np.ndarray:
+    def reset(self, **kwargs) -> GymObs:
         """
         Calls the Gym environment reset. Can only be called if the environment is over, or if allow_early_resets is True
 
@@ -83,7 +85,7 @@ class Monitor(gym.Wrapper):
             self.current_reset_info[key] = value
         return self.env.reset(**kwargs)
 
-    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, Dict[Any, Any]]:
+    def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:
         """
         Step the environment with the given action
 
@@ -112,7 +114,7 @@ class Monitor(gym.Wrapper):
         self.total_steps += 1
         return observation, reward, done, info
 
-    def close(self):
+    def close(self) -> None:
         """
         Closes the environment
         """

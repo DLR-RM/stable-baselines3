@@ -26,6 +26,7 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Added first draft of migration guide
 
 
 Pre-Release 0.9.0 (2020-10-03)

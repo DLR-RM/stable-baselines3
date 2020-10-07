@@ -3,8 +3,35 @@
 Changelog
 ==========
 
-Pre-Release 0.9.0a2 (WIP)
+
+Pre-Release 0.10.0a0 (WIP)
 ------------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Improved typing coverage
+- Improved error messages for unsupported spaces
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
+Pre-Release 0.9.0 (2020-10-03)
+------------------------------
+
+**Bug fixes, get/set parameters  and improved docs**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -50,6 +77,7 @@ Others:
 - Clarified docstrings on what is saved and loaded to/from files
 - Simplified ``save_to_zip_file`` function by removing duplicate code
 - Store library version along with the saved models
+- DQN loss is now logged
 
 Documentation:
 ^^^^^^^^^^^^^^

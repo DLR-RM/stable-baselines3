@@ -1,9 +1,10 @@
 import pickle
+from typing import Any, Dict
 
 import numpy as np
 
 from stable_baselines3.common.running_mean_std import RunningMeanStd
-from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvWrapper
+from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvStepReturn, VecEnvWrapper
 
 
 class VecNormalize(VecEnvWrapper):
@@ -22,7 +23,15 @@ class VecNormalize(VecEnvWrapper):
     """
 
     def __init__(
-        self, venv, training=True, norm_obs=True, norm_reward=True, clip_obs=10.0, clip_reward=10.0, gamma=0.99, epsilon=1e-8
+        self,
+        venv: VecEnv,
+        training: bool = True,
+        norm_obs: bool = True,
+        norm_reward: bool = True,
+        clip_obs: float = 10.0,
+        clip_reward: float = 10.0,
+        gamma: float = 0.99,
+        epsilon: float = 1e-8,
     ):
         VecEnvWrapper.__init__(self, venv)
         self.obs_rms = RunningMeanStd(shape=self.observation_space.shape)
@@ -39,7 +48,7 @@ class VecNormalize(VecEnvWrapper):
         self.old_obs = np.array([])
         self.old_reward = np.array([])
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[str, Any]:
         """
         Gets state for pickling.
 
@@ -52,7 +61,7 @@ class VecNormalize(VecEnvWrapper):
         del state["ret"]
         return state
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: Dict[str, Any]) -> None:
         """
         Restores pickled state.
 
@@ -63,7 +72,7 @@ class VecNormalize(VecEnvWrapper):
         assert "venv" not in state
         self.venv = None
 
-    def set_venv(self, venv):
+    def set_venv(self, venv: VecEnv) -> None:
         """
         Sets the vector environment to wrap to venv.
 
@@ -78,7 +87,7 @@ class VecNormalize(VecEnvWrapper):
             raise ValueError("venv is incompatible with current statistics.")
         self.ret = np.zeros(self.num_envs)
 
-    def step_wait(self):
+    def step_wait(self) -> VecEnvStepReturn:
         """
         Apply sequence of actions to sequence of environments
         actions -> (observations, rewards, news)
@@ -100,12 +109,12 @@ class VecNormalize(VecEnvWrapper):
         self.ret[news] = 0
         return obs, rews, news, infos
 
-    def _update_reward(self, reward):
+    def _update_reward(self, reward: np.ndarray) -> None:
         """Update reward normalization statistics."""
         self.ret = self.ret * self.gamma + reward
         self.ret_rms.update(self.ret)
 
-    def normalize_obs(self, obs):
+    def normalize_obs(self, obs: np.ndarray) -> np.ndarray:
         """
         Normalize observations using this VecNormalize's observations statistics.
         Calling this method does not update statistics.
@@ -114,7 +123,7 @@ class VecNormalize(VecEnvWrapper):
             obs = np.clip((obs - self.obs_rms.mean) / np.sqrt(self.obs_rms.var + self.epsilon), -self.clip_obs, self.clip_obs)
         return obs
 
-    def normalize_reward(self, reward):
+    def normalize_reward(self, reward: np.ndarray) -> np.ndarray:
         """
         Normalize rewards using this VecNormalize's rewards statistics.
         Calling this method does not update statistics.
@@ -123,30 +132,30 @@ class VecNormalize(VecEnvWrapper):
             reward = np.clip(reward / np.sqrt(self.ret_rms.var + self.epsilon), -self.clip_reward, self.clip_reward)
         return reward
 
-    def unnormalize_obs(self, obs):
+    def unnormalize_obs(self, obs: np.ndarray) -> np.ndarray:
         if self.norm_obs:
             return (obs * np.sqrt(self.obs_rms.var + self.epsilon)) + self.obs_rms.mean
         return obs
 
-    def unnormalize_reward(self, reward):
+    def unnormalize_reward(self, reward: np.ndarray) -> np.ndarray:
         if self.norm_reward:
             return reward * np.sqrt(self.ret_rms.var + self.epsilon)
         return reward
 
-    def get_original_obs(self):
+    def get_original_obs(self) -> np.ndarray:
         """
         Returns an unnormalized version of the observations from the most recent
         step or reset.
         """
         return self.old_obs.copy()
 
-    def get_original_reward(self):
+    def get_original_reward(self) -> np.ndarray:
         """
         Returns an unnormalized version of the rewards from the most recent step.
         """
         return self.old_reward.copy()
 
-    def reset(self):
+    def reset(self) -> np.ndarray:
         """
         Reset all environments
         """

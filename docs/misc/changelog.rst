@@ -21,7 +21,8 @@ Deprecations:
 
 Others:
 ^^^^^^^
-- Improve typing coverage
+- Improved typing coverage
+- Improved error messages for unsupported spaces
 
 Documentation:
 ^^^^^^^^^^^^^^

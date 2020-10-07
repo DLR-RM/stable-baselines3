@@ -181,7 +181,7 @@ class TD3Policy(BasePolicy):
     def make_critic(self) -> ContinuousCritic:
         return ContinuousCritic(**self.critic_kwargs).to(self.device)
 
-    def forward(self, observation: th.Tensor, deterministic: bool = False):
+    def forward(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         return self._predict(observation, deterministic=deterministic)
 
     def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:

@@ -1,4 +1,5 @@
 import warnings
+from abc import ABC, abstractmethod
 from typing import Generator, Optional, Union
 
 import numpy as np
@@ -16,7 +17,7 @@ from stable_baselines3.common.type_aliases import ReplayBufferSamples, RolloutBu
 from stable_baselines3.common.vec_env import VecNormalize
 
 
-class BaseBuffer(object):
+class BaseBuffer(ABC):
     """
     Base class that represent a buffer (rollout or replay)
 
@@ -102,7 +103,10 @@ class BaseBuffer(object):
         batch_inds = np.random.randint(0, upper_bound, size=batch_size)
         return self._get_samples(batch_inds, env=env)
 
-    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None):
+    @abstractmethod
+    def _get_samples(
+        self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None
+    ) -> Union[ReplayBufferSamples, RolloutBufferSamples]:
         """
         :param batch_inds:
         :param env:

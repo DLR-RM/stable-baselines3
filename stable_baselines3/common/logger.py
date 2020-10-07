@@ -50,7 +50,7 @@ class SeqWriter(object):
     sequence writer
     """
 
-    def write_sequence(self, sequence: List):
+    def write_sequence(self, sequence: List) -> None:
         """
         write_sequence an array to file
 

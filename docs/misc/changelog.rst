@@ -3,6 +3,31 @@
 Changelog
 ==========
 
+
+Pre-Release 0.10.0a0 (WIP)
+------------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Improved typing coverage
+- Improved error messages for unsupported spaces
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
 Pre-Release 0.9.0 (2020-10-03)
 ------------------------------
 

@@ -24,9 +24,9 @@ def get_time_limit(env: VecEnv, current_max_episode_length: Optional[int]) -> in
     """
     Get time limit from environment.
 
-    :param env: (VecEnv) Environment from which we want to get the time limit.
-    :param current_max_episode_length: (int) Current value for max_episode_length.
-    :return: (int) max episode length
+    :param env: Environment from which we want to get the time limit.
+    :param current_max_episode_length: Current value for max_episode_length.
+    :return: max episode length
     """
     # try to get the attribute from environment
     if current_max_episode_length is None:
@@ -49,16 +49,16 @@ class HER(BaseAlgorithm):
 
     Paper: https://arxiv.org/abs/1707.01495
 
-    :param policy: (BasePolicy or str) The policy model to use.
-    :param env: (GymEnv or str) The environment to learn from (if registered in Gym, can be str)
-    :param model_class: (OffPolicyAlgorithm) Off policy model which will be used with hindsight experience replay. (SAC, TD3)
-    :param n_sampled_goal: (int) Number of sampled goals for replay. (offline sampling)
-    :param goal_selection_strategy: (GoalSelectionStrategy or str) Strategy for sampling goals for replay.
+    :param policy: The policy model to use.
+    :param env: The environment to learn from (if registered in Gym, can be str)
+    :param model_class: Off policy model which will be used with hindsight experience replay. (SAC, TD3)
+    :param n_sampled_goal: Number of sampled goals for replay. (offline sampling)
+    :param goal_selection_strategy: Strategy for sampling goals for replay.
         One of ['episode', 'final', 'future', 'random']
-    :param online_sampling: (bool) Sample HER transitions online.
-    :param learning_rate: (float or callable) learning rate for the optimizer,
+    :param online_sampling: Sample HER transitions online.
+    :param learning_rate: learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
-    :param max_episode_length: (int) The maximum length of an episode. If not specified,
+    :param max_episode_length: The maximum length of an episode. If not specified,
         it will be automatically inferred if the environment uses a ``gym.wrappers.TimeLimit`` wrapper
     """
 
@@ -215,20 +215,20 @@ class HER(BaseAlgorithm):
         """
         Collect experiences and store them into a ReplayBuffer.
 
-        :param env: (VecEnv) The training environment
-        :param callback: (BaseCallback) Callback that will be called at each step
+        :param env: The training environment
+        :param callback: Callback that will be called at each step
             (and at the beginning and end of the rollout)
-        :param n_episodes: (int) Number of episodes to use to collect rollout data
+        :param n_episodes: Number of episodes to use to collect rollout data
             You can also specify a ``n_steps`` instead
-        :param n_steps: (int) Number of steps to use to collect rollout data
+        :param n_steps: Number of steps to use to collect rollout data
             You can also specify a ``n_episodes`` instead.
-        :param action_noise: (Optional[ActionNoise]) Action noise that will be used for exploration
+        :param action_noise: Action noise that will be used for exploration
             Required for deterministic policy (e.g. TD3). This can also be used
             in addition to the stochastic policy for SAC.
-        :param learning_starts: (int) Number of steps before learning for the warm-up phase.
-        :param replay_buffer: (ReplayBuffer or HerReplayBuffer)
-        :param log_interval: (int) Log data every ``log_interval`` episodes
-        :return: (RolloutReturn)
+        :param learning_starts: Number of steps before learning for the warm-up phase.
+        :param replay_buffer:
+        :param log_interval: Log data every ``log_interval`` episodes
+        :return:
         """
 
         episode_rewards, total_timesteps = [], []
@@ -401,7 +401,7 @@ class HER(BaseAlgorithm):
         """
         Save all the attributes of the object and the model parameters in a zip-file.
 
-        :param path: (Union[str, pathlib.Path, io.BufferedIOBase]) path to the file where the rl agent should be saved
+        :param path: path to the file where the rl agent should be saved
         :param exclude: name of parameters that should be excluded in addition to the default one
         :param include: name of parameters that might be excluded but should be included anyway
         """

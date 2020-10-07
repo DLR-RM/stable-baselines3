@@ -8,7 +8,7 @@ class ObsDictWrapper(VecEnvWrapper):
     """
     Wrapper for a VecEnv which overrides the observation space for Hindsight Experience Replay to support dict observations.
 
-    :param env: (VecEnv) The vectorized environment to wrap.
+    :param env: The vectorized environment to wrap.
     """
 
     def __init__(self, venv: VecEnv):
@@ -58,9 +58,9 @@ class ObsDictWrapper(VecEnvWrapper):
         """
         Concatenate observation and (desired) goal of observation dict.
 
-        :param observation_dict: (dict) Dictionary with observation.
-        :param observation_key: (str) Key of observation in dicitonary.
-        :param goal_key: (str) Key of (desired) goal in dicitonary.
-        :return: (np.ndarray)
+        :param observation_dict: Dictionary with observation.
+        :param observation_key: Key of observation in dicitonary.
+        :param goal_key: Key of (desired) goal in dicitonary.
+        :return:
         """
         return np.concatenate([observation_dict[observation_key], observation_dict[goal_key]], axis=-1)

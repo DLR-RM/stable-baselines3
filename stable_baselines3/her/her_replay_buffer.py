@@ -17,16 +17,16 @@ class HerReplayBuffer(BaseBuffer):
     Replay Buffer for sampling HER (Hindsight Experience Replay) transitions online.
     These transitions will not be saved in the Buffer.
 
-    :param env: (VecEnv) The training environment
-    :param buffer_size: (int) The size of the buffer measured in transitions.
-    :param max_episode_length: (int) The length of an episode. (time horizon)
-    :param goal_selection_strategy: (GoalSelectionStrategy ) Strategy for sampling goals for replay.
+    :param env: The training environment
+    :param buffer_size: The size of the buffer measured in transitions.
+    :param max_episode_length: The length of an episode. (time horizon)
+    :param goal_selection_strategy: Strategy for sampling goals for replay.
         One of ['episode', 'final', 'future', 'random']
-    :param observation_space: (spaces.Space) Observation space
-    :param action_space: (spaces.Space) Action space
-    :param device: (Union[th.device, str]) PyTorch device
+    :param observation_space: Observation space
+    :param action_space: Action space
+    :param device: PyTorch device
         to which the values will be converted
-    :param n_envs: (int) Number of parallel environments
+    :param n_envs: Number of parallel environments
     :her_ratio: (float) The ratio between HER replays and regular replays in percent (between 0 and 1, for online sampling)
     """
 
@@ -87,13 +87,13 @@ class HerReplayBuffer(BaseBuffer):
         replay_observations: np.ndarray = None,
     ) -> Union[ReplayBufferSamples, Tuple]:
         """
-        :param batch_size: (int) Number of element to sample
-        :param env: (Optional[VecNormalize]) associated gym VecEnv
+        :param batch_size: Number of element to sample
+        :param env: associated gym VecEnv
             to normalize the observations/rewards when sampling
-        :param online_sampling: (bool) Using online_sampling for HER or not.
-        :param n_sampled_goal: (int) Number of sampled goals for replay. (offline sampling)
-        :param replay_observations: (np.ndarray) Observations of the offline replay buffer. Needed for 'RANDOM' goal strategy.
-        :return: (ReplayBufferSamples or Tuple)
+        :param online_sampling: Using online_sampling for HER or not.
+        :param n_sampled_goal: Number of sampled goals for replay. (offline sampling)
+        :param replay_observations: Observations of the offline replay buffer. Needed for 'RANDOM' goal strategy.
+        :return:
         """
         return self._sample_transitions(batch_size, env, online_sampling, n_sampled_goal, replay_observations)
 
@@ -109,12 +109,12 @@ class HerReplayBuffer(BaseBuffer):
         Sample goals based on goal_selection_strategy.
         This is a vectorized (fast) version.
 
-        :param episode_indices: (np.ndarray) Episode indices to use.
-        :param her_indices: (np.ndarray) HER indices.
-        :param transitions_indices: (np.ndarray) Transition indices to use.
-        :param online_sampling: (bool) Using online_sampling for HER or not.
-        :param replay_observations: (np.ndarray) Observations of the offline replay buffer. Needed for 'RANDOM' goal strategy.
-        :return: (np.ndarray) Return sampled goals.
+        :param episode_indices: Episode indices to use.
+        :param her_indices: HER indices.
+        :param transitions_indices: Transition indices to use.
+        :param online_sampling: Using online_sampling for HER or not.
+        :param replay_observations: Observations of the offline replay buffer. Needed for 'RANDOM' goal strategy.
+        :return: Return sampled goals.
         """
         her_episode_indices = episode_indices[her_indices]
 
@@ -159,13 +159,13 @@ class HerReplayBuffer(BaseBuffer):
         replay_observations: np.ndarray = None,
     ) -> Union[ReplayBufferSamples, Tuple]:
         """
-        :param batch_size: (int) Number of element to sample
-        :param env: (Optional[VecNormalize]) associated gym VecEnv
+        :param batch_size: Number of element to sample
+        :param env: associated gym VecEnv
             to normalize the observations/rewards when sampling
-        :param online_sampling: (bool) Using online_sampling for HER or not.
-        :param n_sampled_goal: (int) Number of sampled goals for replay. (offline sampling)
-        :param replay_observations: (np.ndarray) Observations of the offline replay buffer. Needed for 'RANDOM' goal strategy.
-        :return: (ReplayBufferSamples or Tuple)
+        :param online_sampling: Using online_sampling for HER or not.
+        :param n_sampled_goal: Number of sampled goals for replay. (offline sampling)
+        :param replay_observations: Observations of the offline replay buffer. Needed for 'RANDOM' goal strategy.
+        :return:
         """
         # Select which episodes to use
         if online_sampling:
@@ -288,6 +288,6 @@ class HerReplayBuffer(BaseBuffer):
 
     def size(self) -> int:
         """
-        :return: (int) The current size of the buffer in transitions.
+        :return: The current size of the buffer in transitions.
         """
         return int(np.sum(self.episode_lengths))

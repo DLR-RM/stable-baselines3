@@ -12,6 +12,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Added Hindsight Experience Replay ``HER``. (@megan-klaiber)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -49,7 +50,6 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-- Added Hindsight Experience Replay ``HER``. (@megan-klaiber)
 - Added ``unwrap_vec_wrapper()`` to ``common.vec_env`` to extract ``VecEnvWrapper`` if needed
 - Added ``StopTrainingOnMaxEpisodes`` to callback collection (@xicocaio)
 - Added ``device`` keyword argument to ``BaseAlgorithm.load()`` (@liorcohen5)

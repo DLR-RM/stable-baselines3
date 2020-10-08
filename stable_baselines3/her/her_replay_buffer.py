@@ -6,7 +6,7 @@ import torch as th
 from gym import spaces
 
 from stable_baselines3.common.buffers import BaseBuffer
-from stable_baselines3.common.type_aliases import ReplayBufferSamples
+from stable_baselines3.common.type_aliases import ReplayBufferSamples, RolloutBufferSamples
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
@@ -27,7 +27,7 @@ class HerReplayBuffer(BaseBuffer):
     :param device: PyTorch device
         to which the values will be converted
     :param n_envs: Number of parallel environments
-    :her_ratio: (float) The ratio between HER replays and regular replays in percent (between 0 and 1, for online sampling)
+    :her_ratio: The ratio between HER replays and regular replays in percent (between 0 and 1, for online sampling)
     """
 
     def __init__(
@@ -40,7 +40,7 @@ class HerReplayBuffer(BaseBuffer):
         action_space: spaces.Space,
         device: Union[th.device, str] = "cpu",
         n_envs: int = 1,
-        her_ratio: float = 0.6,
+        her_ratio: float = 0.8,
     ):
 
         super(HerReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs)
@@ -78,6 +78,11 @@ class HerReplayBuffer(BaseBuffer):
         # percentage of her indices
         self.her_ratio = her_ratio
 
+    def _get_samples(
+        self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None
+    ) -> Union[ReplayBufferSamples, RolloutBufferSamples]:
+        pass
+
     def sample(
         self,
         batch_size: int,
@@ -88,16 +93,16 @@ class HerReplayBuffer(BaseBuffer):
     ) -> Union[ReplayBufferSamples, Tuple]:
         """
         :param batch_size: Number of element to sample
-        :param env: associated gym VecEnv
+        :param env: Associated gym VecEnv
             to normalize the observations/rewards when sampling
         :param online_sampling: Using online_sampling for HER or not.
         :param n_sampled_goal: Number of sampled goals for replay. (offline sampling)
         :param replay_observations: Observations of the offline replay buffer. Needed for 'RANDOM' goal strategy.
-        :return:
+        :return: Samples.
         """
         return self._sample_transitions(batch_size, env, online_sampling, n_sampled_goal, replay_observations)
 
-    def vectorized_sample_goal(
+    def sample_goal(
         self,
         episode_indices: np.ndarray,
         her_indices: np.ndarray,
@@ -165,7 +170,7 @@ class HerReplayBuffer(BaseBuffer):
         :param online_sampling: Using online_sampling for HER or not.
         :param n_sampled_goal: Number of sampled goals for replay. (offline sampling)
         :param replay_observations: Observations of the offline replay buffer. Needed for 'RANDOM' goal strategy.
-        :return:
+        :return: Samples.
         """
         # Select which episodes to use
         if online_sampling:
@@ -176,17 +181,23 @@ class HerReplayBuffer(BaseBuffer):
             episode_length = self.episode_lengths[0]
             episode_indices = np.array(list(range(self.n_episodes_stored)) * episode_length * n_sampled_goal)
             her_indices = np.arange(len(episode_indices))
+            ep_length = self.episode_lengths[episode_indices]
             # repeat every transition index n_sampled_goals times
             transitions_indices = np.array(list(range(episode_length)) * n_sampled_goal)
 
         if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
             # restrict the sampling domain when ep_length > 1
             # otherwise filter out the indices
+
             if online_sampling:
                 her_indices = her_indices[ep_length[her_indices] > 1]
                 ep_length[her_indices] -= 1
             else:
                 her_indices = her_indices[episode_length > 1 and transitions_indices < episode_length - 1]
+            """
+            her_indices = her_indices[ep_length[her_indices] > 1]
+            ep_length[her_indices] -= 1
+            """
 
         if online_sampling:
             # Select which transitions to use
@@ -194,13 +205,10 @@ class HerReplayBuffer(BaseBuffer):
         # get selected transitions
         transitions = {key: self.buffer[key][episode_indices, transitions_indices].copy() for key in self.buffer.keys()}
 
-        new_goals = self.vectorized_sample_goal(
-            episode_indices, her_indices, transitions_indices, online_sampling, replay_observations
-        )
+        new_goals = self.sample_goal(episode_indices, her_indices, transitions_indices, online_sampling, replay_observations)
         transitions["desired_goal"][her_indices] = new_goals
 
-        # Convert to numpy array
-        # TODO: disable if not needed for faster computation
+        # Convert info buffer to numpy array
         transitions["info"] = np.array(
             [
                 self.info_buffer[episode_idx][transition_idx]
@@ -209,11 +217,11 @@ class HerReplayBuffer(BaseBuffer):
         )
 
         # Vectorized computation
-        transitions["reward"][her_indices] = self.env.env_method(
+        transitions["reward"][her_indices, 0] = self.env.env_method(
             "compute_reward",
-            transitions["next_achieved_goal"][her_indices],
-            transitions["desired_goal"][her_indices],
-            transitions["info"][her_indices],
+            transitions["next_achieved_goal"][her_indices, 0],
+            transitions["desired_goal"][her_indices, 0],
+            transitions["info"][her_indices, 0],
         )
 
         # concatenate observation with (desired) goal
@@ -222,9 +230,9 @@ class HerReplayBuffer(BaseBuffer):
 
         if online_sampling:
             data = (
-                self._normalize_obs(observations, env),
+                self._normalize_obs(observations[:, 0], env),
                 transitions["action"],
-                self._normalize_obs(next_observations, env),
+                self._normalize_obs(next_observations[:, 0], env),
                 transitions["done"],
                 self._normalize_reward(transitions["reward"], env),
             )

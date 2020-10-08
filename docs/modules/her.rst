@@ -35,8 +35,7 @@ Example
 
 .. code-block:: python
 
-    from stable_baselines3 import DDPG, DQN, SAC, TD3
-    from stable_baselines3.her.her import HER
+    from stable_baselines3 import HER, DDPG, DQN, SAC, TD3
     from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
     from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
     from stable_baselines3.common.vec_env import DummyVecEnv
@@ -62,16 +61,11 @@ Example
     model.learn(1000)
 
     model.save("./her_bit_env")
-
-    # WARNING: you must pass an VecEnv
-    env = DummyVecEnv([lambda: env])
     model = HER.load('./her_bit_env', env=env)
 
     obs = env.reset()
     for _ in range(100):
-        # we need to convert the observation dict
-        obs = ObsDictWrapper.convert_dict(obs)
-        action, _ = model.model.predict(obs)
+        action, _ = model.model.predict(obs, deterministic=True)
         obs, reward, done, _ = env.step(action)
 
         if done:

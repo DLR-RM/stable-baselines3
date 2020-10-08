@@ -5,27 +5,23 @@ import numpy as np
 import pytest
 import torch as th
 
-from stable_baselines3 import DDPG, DQN, SAC, TD3
+from stable_baselines3 import DDPG, DQN, HER, SAC, TD3
 from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
-from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
-from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
-from stable_baselines3.her.her import HER
 
 
-@pytest.mark.parametrize("model_class, policy", [(SAC, "MlpPolicy"), (TD3, "MlpPolicy"), (DDPG, "MlpPolicy")])
+@pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
 @pytest.mark.parametrize("online_sampling", [True, False])
-def test_her(model_class, policy, online_sampling):
+def test_her(model_class, online_sampling):
     """
     Test Hindsight Experience Replay.
     """
     n_bits = 4
-    env = BitFlippingEnv(n_bits=n_bits, continuous=True)
-    env = DummyVecEnv([lambda: env])
+    env = BitFlippingEnv(n_bits=n_bits, continuous=not (model_class == DQN))
 
     model = HER(
-        policy,
+        "MlpPolicy",
         env,
         model_class,
         goal_selection_strategy="future",
@@ -34,9 +30,10 @@ def test_her(model_class, policy, online_sampling):
         train_freq=1,
         n_episodes_rollout=-1,
         max_episode_length=n_bits,
+        policy_kwargs=dict(net_arch=[64]),
     )
 
-    model.learn(total_timesteps=500, callback=None)
+    model.learn(total_timesteps=500)
 
 
 @pytest.mark.parametrize(
@@ -58,7 +55,6 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
     Test different goal strategies.
     """
     env = BitFlippingEnv(continuous=True)
-    env = DummyVecEnv([lambda: env])
 
     model = HER(
         "MlpPolicy",
@@ -70,13 +66,14 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
         train_freq=1,
         n_episodes_rollout=-1,
         max_episode_length=10,
+        policy_kwargs=dict(net_arch=[64]),
     )
-    model.learn(total_timesteps=200, callback=None)
+    model.learn(total_timesteps=200)
 
 
-@pytest.mark.parametrize("model_class, policy", [(SAC, "MlpPolicy"), (TD3, "MlpPolicy"), (DDPG, "MlpPolicy")])
+@pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
 @pytest.mark.parametrize("use_sde", [False, True])
-def test_save_load(tmp_path, model_class, policy, use_sde):
+def test_save_load(tmp_path, model_class, use_sde):
     """
     Test if 'save' and 'load' saves and loads model correctly
     """
@@ -84,29 +81,18 @@ def test_save_load(tmp_path, model_class, policy, use_sde):
         pytest.skip("Only SAC has gSDE support")
 
     n_bits = 4
-    env = BitFlippingEnv(n_bits=n_bits, continuous=True)
-    env = DummyVecEnv([lambda: env])
-
-    # Create action noise
-    n_actions = env.action_space.shape[0]
-    action_noise = OrnsteinUhlenbeckActionNoise(
-        np.zeros(
-            n_actions,
-        ),
-        0.2 * np.ones((n_actions,)),
-    )
+    env = BitFlippingEnv(n_bits=n_bits, continuous=not (model_class == DQN))
 
     kwargs = dict(use_sde=True) if use_sde else {}
 
     # create model
     model = HER(
-        policy,
+        "MlpPolicy",
         env,
         model_class,
         n_sampled_goal=5,
         goal_selection_strategy="future",
         online_sampling=True,
-        action_noise=action_noise,
         verbose=0,
         tau=0.05,
         batch_size=128,
@@ -121,17 +107,16 @@ def test_save_load(tmp_path, model_class, policy, use_sde):
         **kwargs
     )
 
-    model.learn(total_timesteps=500, callback=None)
+    model.learn(total_timesteps=500)
 
     env.reset()
 
     observations_list = []
     for _ in range(10):
-        obs = env.step([env.action_space.sample()])[0]
+        obs = env.step(env.action_space.sample())[0]
         observation = ObsDictWrapper.convert_dict(obs)
         observations_list.append(observation)
-
-    observations = np.concatenate(observations_list, axis=0)
+    observations = np.array(observations_list)
 
     # Get dictionary of current parameters
     params = deepcopy(model.model.policy.state_dict())

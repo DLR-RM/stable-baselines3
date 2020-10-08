@@ -1,6 +1,6 @@
 import io
 import pathlib
-from typing import Callable, Iterable, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, Union
 
 import gym
 import numpy as np
@@ -11,10 +11,11 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
+from stable_baselines3.common.preprocessing import is_image_space
 from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
 from stable_baselines3.common.utils import check_for_correct_spaces
-from stable_baselines3.common.vec_env import VecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, VecTransposeImage
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
 from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
@@ -43,6 +44,7 @@ def get_time_limit(env: VecEnv, current_max_episode_length: Optional[int]) -> in
     return current_max_episode_length
 
 
+# TODO: rewrite HER class as soon as dict obs are supported
 class HER(BaseAlgorithm):
     """
     Hindsight Experience Replay (HER)
@@ -51,7 +53,7 @@ class HER(BaseAlgorithm):
 
     :param policy: The policy model to use.
     :param env: The environment to learn from (if registered in Gym, can be str)
-    :param model_class: Off policy model which will be used with hindsight experience replay. (SAC, TD3)
+    :param model_class: Off policy model which will be used with hindsight experience replay. (SAC, TD3, DDPG, DQN)
     :param n_sampled_goal: Number of sampled goals for replay. (offline sampling)
     :param goal_selection_strategy: Strategy for sampling goals for replay.
         One of ['episode', 'final', 'future', 'random']
@@ -67,7 +69,7 @@ class HER(BaseAlgorithm):
         policy: Union[str, Type[BasePolicy]],
         env: Union[GymEnv, str],
         model_class: Type[OffPolicyAlgorithm],
-        n_sampled_goal: int = 5,
+        n_sampled_goal: int = 4,
         goal_selection_strategy: Union[GoalSelectionStrategy, str] = "future",
         online_sampling: bool = False,
         learning_rate: Union[float, Callable] = 3e-4,
@@ -105,6 +107,7 @@ class HER(BaseAlgorithm):
         self.n_sampled_goal = n_sampled_goal
         # if we sample her transitions online use custom replay buffer
         self.online_sampling = online_sampling
+        # compute ratio between HER replays and regular replays in percent for online HER sampling
         self.her_ratio = 1 - (1.0 / (self.n_sampled_goal + 1))
         # maximum steps in episode
         self.max_episode_length = get_time_limit(self.env, max_episode_length)
@@ -263,8 +266,6 @@ class HER(BaseAlgorithm):
                 # Perform action
                 new_obs, reward, done, infos = env.step(action)
 
-                done = done if episode_timesteps < self.max_episode_length else False
-
                 self.num_timesteps += 1
                 self.model.num_timesteps = self.num_timesteps
                 episode_timesteps += 1
@@ -292,16 +293,30 @@ class HER(BaseAlgorithm):
                         self._last_original_obs, new_obs_, reward_ = observation, new_obs, reward
                         self.model._last_original_obs = self._last_original_obs
 
+                    # Remove termination signal due to timelimit if needed
+                    # NOTE: this may cause issue when using memory optimized replay
+                    # or n-step replay
+                    if self.remove_time_limit_termination and infos[0].get("TimeLimit.truncated", False):
+                        done_ = np.array([False])
+                        # As the VecEnv resets automatically, new_obs is already the
+                        # first observation of the next episode
+                        next_obs = infos[0]["terminal_observation"]
+                        if self._vec_normalize_env is not None:
+                            next_obs = self._vec_normalize_env.unnormalize_obs(next_obs)
+                    else:
+                        done_ = done
+                        next_obs = new_obs_
+
                     if self.online_sampling:
-                        self.replay_buffer.add(self._last_original_obs, new_obs_, buffer_action, reward_, done, infos)
+                        self.replay_buffer.add(self._last_original_obs, next_obs, buffer_action, reward_, done_, infos)
                     else:
                         # concatenate observation with (desired) goal
                         obs = ObsDictWrapper.convert_dict(self._last_original_obs)
-                        next_obs = ObsDictWrapper.convert_dict(new_obs_)
-                        # add to replay bufffer
-                        self.replay_buffer.add(obs, next_obs, buffer_action, reward_, done)
+                        next_obs_ = ObsDictWrapper.convert_dict(next_obs)
+                        # add to replay buffer
+                        self.replay_buffer.add(obs, next_obs_, buffer_action, reward_, done_)
                         # add current transition to episode storage
-                        self._episode_storage.add(self._last_original_obs, new_obs_, buffer_action, reward_, done, infos)
+                        self._episode_storage.add(self._last_original_obs, next_obs, buffer_action, reward_, done_, infos)
 
                 self._last_obs = new_obs
                 self.model._last_obs = self._last_obs
@@ -370,8 +385,9 @@ class HER(BaseAlgorithm):
             self.replay_buffer.observations,
         )
 
-        # TODO done = False?
         # store data in replay buffer
+        # self.replay_buffer.extend(observations, next_observations, transitions["action"], transitions["reward"], np.array([False]))
+
         for i in her_indices:
             obs = observations[i]
             next_obs = next_observations[i]
@@ -380,14 +396,14 @@ class HER(BaseAlgorithm):
             done = np.array([False])
             self.replay_buffer.add(obs, next_obs, buffer_action, reward, done)
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str) -> Any:
         """
         Find attribute from model class if this class does not have it.
         """
         if hasattr(self.model, item):
             return getattr(self.model, item)
         else:
-            raise AttributeError
+            raise AttributeError(f"{self} has no attribute {item}")
 
     def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
         return self.model._get_torch_save_params()
@@ -444,11 +460,22 @@ class HER(BaseAlgorithm):
         # check if given env is valid
         if env is not None:
             # check if wrapper for dict support is needed
+            # if isinstance(env.observation_space, gym.spaces.dict.Dict):
+            #    env = ObsDictWrapper(env)
+
+            if not isinstance(env, VecEnv):
+                env = DummyVecEnv([lambda: env])
+
+            if is_image_space(env.observation_space) and not isinstance(env, VecTransposeImage):
+                env = VecTransposeImage(env)
+
+            # check if wrapper for dict support when using HER is needed
             if isinstance(env.observation_space, gym.spaces.dict.Dict):
                 env = ObsDictWrapper(env)
+
             check_for_correct_spaces(env, data["observation_space"], data["action_space"])
         # if no new env was given use stored env if possible
-        if env is None and "env" in data:
+        if env is None:
             env = data["env"]
 
         kwargs = {}

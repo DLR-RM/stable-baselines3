@@ -26,6 +26,7 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Added first draft of migration guide
 
 
 Pre-Release 0.9.0 (2020-10-03)
@@ -36,8 +37,7 @@ Pre-Release 0.9.0 (2020-10-03)
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed ``device`` keyword argument of policies; use ``policy.to(device)`` instead. (@qxcv)
-- Rename ``BaseClass.get_torch_variables`` -> ``BaseClass._get_torch_save_params`` and
-    ``BaseClass.excluded_save_params`` -> ``BaseClass._excluded_save_params``
+- Rename ``BaseClass.get_torch_variables`` -> ``BaseClass._get_torch_save_params`` and ``BaseClass.excluded_save_params`` -> ``BaseClass._excluded_save_params``
 - Renamed saved items ``tensors`` to ``pytorch_variables`` for clarity
 - ``make_atari_env``, ``make_vec_env`` and ``set_random_seed`` must be imported with (and not directly from ``stable_baselines3.common``):
 
@@ -73,7 +73,7 @@ Others:
 - Removed ``AlreadySteppingError`` and ``NotSteppingError`` that were not used
 - Fixed typos in SAC and TD3
 - Reorganized functions for clarity in ``BaseClass`` (save/load functions close to each other, private
-    functions at top)
+  functions at top)
 - Clarified docstrings on what is saved and loaded to/from files
 - Simplified ``save_to_zip_file`` function by removing duplicate code
 - Store library version along with the saved models
@@ -100,7 +100,7 @@ Breaking Changes:
 - Refactored ``Critic`` class for ``TD3`` and ``SAC``, it is now called ``ContinuousCritic``
   and has an additional parameter ``n_critics``
 - ``SAC`` and ``TD3`` now accept an arbitrary number of critics (e.g. ``policy_kwargs=dict(n_critics=3)``)
-    instead of only 2 previously
+  instead of only 2 previously
 
 New Features:
 ^^^^^^^^^^^^^

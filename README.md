@@ -50,9 +50,9 @@ Planned features:
 - [ ] TRPO
 
 
-## Migration guide
+## Migration guide: from Stable-Baselines (SB2) to Stable-Baselines3 (SB3)
 
-**TODO: migration guide from Stable-Baselines in the documentation**
+A migration guide from SB2 to SB3 can be found in the [documentation](https://stable-baselines3.readthedocs.io/en/master/guide/migration.html).
 
 ## Documentation
 

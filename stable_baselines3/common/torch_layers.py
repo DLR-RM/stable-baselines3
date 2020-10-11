@@ -245,7 +245,7 @@ def get_actor_critic_arch(net_arch: Union[List[int], Dict[str, List[int]]]) -> T
 
     .. note::
         Compared to their on-policy counterparts, no shared layers (other than the feature extractor)
-        between the actor and the critic are allowed
+        between the actor and the critic are allowed (to prevent issues with target networks).
 
     :param net_arch: The specification of the actor and critic networks.
         See above for details on its formatting.

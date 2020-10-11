@@ -262,7 +262,7 @@ Off-Policy Algorithms
 ^^^^^^^^^^^^^^^^^^^^^
 
 If you need a network architecture that is different for the actor and the critic when using ``SAC``, ``DDPG`` or ``TD3``,
-you can pass a dictionnary of the following structure: ``dict(qf=[<critic network architecture>], pi=[<actor network architecture>])``.
+you can pass a dictionary of the following structure: ``dict(qf=[<critic network architecture>], pi=[<actor network architecture>])``.
 
 For example, if you want a different architecture for the actor (aka ``pi``) and the critic (Q-function aka ``qf``) networks,
 then you can specify ``net_arch=dict(qf=[400, 300], pi=[64, 64])``.
@@ -273,7 +273,7 @@ you only need to specify ``net_arch=[256, 256]`` (here, two hidden layers of 256
 
 .. note::
     Compared to their on-policy counterparts, no shared layers (other than the feature extractor)
-    between the actor and the critic are allowed
+    between the actor and the critic are allowed (to prevent issues with target networks).
 
 
 .. code-block:: python

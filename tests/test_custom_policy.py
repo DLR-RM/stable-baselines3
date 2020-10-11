@@ -1,7 +1,7 @@
 import pytest
 import torch as th
 
-from stable_baselines3 import A2C, PPO, SAC, TD3
+from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.sb2_compat.rmsprop_tf_like import RMSpropTFLike
 
 
@@ -22,10 +22,12 @@ def test_flexible_mlp(model_class, net_arch):
     _ = model_class("MlpPolicy", "CartPole-v1", policy_kwargs=dict(net_arch=net_arch), n_steps=100).learn(1000)
 
 
-@pytest.mark.parametrize("net_arch", [[4], [4, 4]])
+@pytest.mark.parametrize("net_arch", [[], [4], [4, 4], dict(qf=[8], pi=[8, 4])])
 @pytest.mark.parametrize("model_class", [SAC, TD3])
 def test_custom_offpolicy(model_class, net_arch):
     _ = model_class("MlpPolicy", "Pendulum-v0", policy_kwargs=dict(net_arch=net_arch)).learn(1000)
+    if isinstance(net_arch, dict):
+        import ipdb; ipdb.set_trace()
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3])
@@ -38,3 +40,8 @@ def test_custom_optimizer(model_class, optimizer_kwargs):
 def test_tf_like_rmsprop_optimizer():
     policy_kwargs = dict(optimizer_class=RMSpropTFLike, net_arch=[32])
     _ = A2C("MlpPolicy", "Pendulum-v0", policy_kwargs=policy_kwargs).learn(1000)
+
+
+def test_dqn_custom_policy():
+    policy_kwargs = dict(optimizer_class=RMSpropTFLike, net_arch=[32])
+    _ = DQN("MlpPolicy", "CartPole-v1", policy_kwargs=policy_kwargs, learning_starts=100).learn(1000)

@@ -5,13 +5,9 @@ Migrating from Stable-Baselines
 ================================
 
 
-This is a guide to migrate from Stable-Baselines to Stable-Baselines3.
+This is a guide to migrate from Stable-Baselines (SB2) to Stable-Baselines3 (SB3).
 
 It also references the main changes.
-
-.. warning::
-	This section is still a Work In Progress (WIP) Things might be added in the future before 1.0 release.
-
 
 
 Overview
@@ -52,6 +48,7 @@ Breaking Changes
 - We dropped ACKTR/ACER support because of their complexity compared to simpler alternatives (PPO, SAC, TD3) performing as good.
 - We dropped GAIL support as we are focusing on model-free RL only, you can however take a look at the `Imitation Learning Baseline Implementations <https://github.com/HumanCompatibleAI/imitation>`_
   which are based on SB3.
+- ``action_probability`` is currently not implemented in the base class
 
 You can take a look at the `issue about SB3 implementation design <https://github.com/hill-a/stable-baselines/issues/576>`_ for more details.
 
@@ -183,8 +180,8 @@ Internal Changes
 Please read the :ref:`Developer Guide <developer>` section.
 
 
-New Features
-============
+New Features (SB3 vs SB2)
+=========================
 
 - Much cleaner and consistent base code (and no more warnings =D!) and static type checks
 - Independent saving/loading/predict for policies

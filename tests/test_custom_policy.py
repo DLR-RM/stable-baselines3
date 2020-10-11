@@ -26,8 +26,6 @@ def test_flexible_mlp(model_class, net_arch):
 @pytest.mark.parametrize("model_class", [SAC, TD3])
 def test_custom_offpolicy(model_class, net_arch):
     _ = model_class("MlpPolicy", "Pendulum-v0", policy_kwargs=dict(net_arch=net_arch)).learn(1000)
-    if isinstance(net_arch, dict):
-        import ipdb; ipdb.set_trace()
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3])

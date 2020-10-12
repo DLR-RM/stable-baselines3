@@ -287,13 +287,13 @@ def safe_mean(arr: Union[np.ndarray, list, deque]) -> np.ndarray:
     return np.nan if len(arr) == 0 else np.mean(arr)
 
 
-def zip_strict(*iterables: Iterable):
+def zip_strict(*iterables: Iterable) -> Iterable:
     """
     zip() function but enforces that iterables are of equal length.
     Raises ValueError if iterables not of equal length.
     Code inspired by Stackoverflow answer for question #32954486.
 
-    :param *iterables: iterables to zip()
+    :param \*iterables: iterables to zip()
     """
     # As in Stackoverflow #32954486, use
     # new object for "empty" in case we have

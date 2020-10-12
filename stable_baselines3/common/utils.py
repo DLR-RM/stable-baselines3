@@ -302,6 +302,9 @@ def polyak_update(params: Iterable[th.nn.Parameter], target_params: Iterable[th.
     :param target_params: parameters to update
     :param tau: the soft update coefficient ("Polyak update", between 0 and 1)
     """
+    # zip does now raise an exception if length of parameters does not match.
+    # (runs till shortest iterable runs out items)
+    assert len(params) == len(target_params), "Number of parameters does not match"
     with th.no_grad():
         for param, target_param in zip(params, target_params):
             target_param.data.mul_(1 - tau)

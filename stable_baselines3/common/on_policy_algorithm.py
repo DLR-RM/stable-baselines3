@@ -180,7 +180,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             self._last_dones = dones
 
         with th.no_grad():
-            # Convert to pytorch tensor
+            # Compute value for the last timestep
             obs_tensor = th.as_tensor(new_obs).to(self.device)
             _, values, _ = self.policy.forward(obs_tensor)
 

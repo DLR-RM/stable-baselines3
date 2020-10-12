@@ -23,7 +23,7 @@ def test_discrete(model_class, env):
         if isinstance(env, (IdentityEnvMultiDiscrete, IdentityEnvMultiBinary)):
             return
 
-    model = model_class("MlpPolicy", env_, gamma=0.5, seed=1, **kwargs).learn(n_steps)
+    model = model_class("MlpPolicy", env_, gamma=0.4, seed=1, **kwargs).learn(n_steps)
 
     evaluate_policy(model, env_, n_eval_episodes=20, reward_threshold=90)
     obs = env.reset()

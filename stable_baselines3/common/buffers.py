@@ -318,19 +318,16 @@ class RolloutBuffer(BaseBuffer):
         last_values = last_values.clone().cpu().numpy().flatten()
 
         last_gae_lam = 0
-        # Last timestep: use the last predicted value for bootstrap
-        # step == self.buffer_size - 1
-        next_non_terminal = 1.0 - dones
-        next_values = last_values
         for step in reversed(range(self.buffer_size)):
-            # The very last timestep is treated before the loop
-            if step < self.buffer_size - 1:
+            if step == self.buffer_size - 1:
+                next_non_terminal = 1.0 - dones
+                next_values = last_values
+            else:
                 next_non_terminal = 1.0 - self.dones[step + 1]
                 next_values = self.values[step + 1]
             delta = self.rewards[step] + self.gamma * next_values * next_non_terminal - self.values[step]
             last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
             self.advantages[step] = last_gae_lam
-
         self.returns = self.advantages + self.values
 
     def add(

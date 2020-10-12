@@ -81,7 +81,7 @@ class HerReplayBuffer(BaseBuffer):
     def _get_samples(
         self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None
     ) -> Union[ReplayBufferSamples, RolloutBufferSamples]:
-        pass
+        raise NotImplementedError()
 
     def sample(
         self,

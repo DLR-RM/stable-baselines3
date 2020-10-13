@@ -12,6 +12,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Allow custom actor/critic network architectures using ``net_arch=dict(qf=[400, 300], pi=[64, 64])`` for off-policy algorithms (SAC, TD3, DDPG)
 
 Bug Fixes:
 ^^^^^^^^^^

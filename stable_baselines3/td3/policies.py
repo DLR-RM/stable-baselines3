@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 import gym
 import torch as th
@@ -6,7 +6,13 @@ from torch import nn
 
 from stable_baselines3.common.policies import BasePolicy, ContinuousCritic, register_policy
 from stable_baselines3.common.preprocessing import get_action_dim
-from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, FlattenExtractor, NatureCNN, create_mlp
+from stable_baselines3.common.torch_layers import (
+    BaseFeaturesExtractor,
+    FlattenExtractor,
+    NatureCNN,
+    create_mlp,
+    get_actor_critic_arch,
+)
 
 
 class Actor(BasePolicy):
@@ -101,7 +107,7 @@ class TD3Policy(BasePolicy):
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
         lr_schedule: Callable,
-        net_arch: Optional[List[int]] = None,
+        net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
         features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
@@ -127,6 +133,8 @@ class TD3Policy(BasePolicy):
             else:
                 net_arch = []
 
+        actor_arch, critic_arch = get_actor_critic_arch(net_arch)
+
         self.features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
         self.features_dim = self.features_extractor.features_dim
 
@@ -137,12 +145,13 @@ class TD3Policy(BasePolicy):
             "action_space": self.action_space,
             "features_extractor": self.features_extractor,
             "features_dim": self.features_dim,
-            "net_arch": self.net_arch,
+            "net_arch": actor_arch,
             "activation_fn": self.activation_fn,
             "normalize_images": normalize_images,
         }
+        self.actor_kwargs = self.net_args.copy()
         self.critic_kwargs = self.net_args.copy()
-        self.critic_kwargs.update({"n_critics": n_critics})
+        self.critic_kwargs.update({"n_critics": n_critics, "net_arch": critic_arch})
         self.actor, self.actor_target = None, None
         self.critic, self.critic_target = None, None
 
@@ -163,7 +172,7 @@ class TD3Policy(BasePolicy):
 
         data.update(
             dict(
-                net_arch=self.net_args["net_arch"],
+                net_arch=self.net_arch,
                 activation_fn=self.net_args["activation_fn"],
                 n_critics=self.critic_kwargs["n_critics"],
                 lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
@@ -176,7 +185,7 @@ class TD3Policy(BasePolicy):
         return data
 
     def make_actor(self) -> Actor:
-        return Actor(**self.net_args).to(self.device)
+        return Actor(**self.actor_kwargs).to(self.device)
 
     def make_critic(self) -> ContinuousCritic:
         return ContinuousCritic(**self.critic_kwargs).to(self.device)
@@ -217,7 +226,7 @@ class CnnPolicy(TD3Policy):
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
         lr_schedule: Callable,
-        net_arch: Optional[List[int]] = None,
+        net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
         features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,

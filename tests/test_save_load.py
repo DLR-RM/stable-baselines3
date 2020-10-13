@@ -45,7 +45,7 @@ def test_save_load(tmp_path, model_class):
 
     # create model
     model = model_class("MlpPolicy", env, policy_kwargs=dict(net_arch=[16]), verbose=1)
-    model.learn(total_timesteps=500, eval_freq=250)
+    model.learn(total_timesteps=500)
 
     env.reset()
     observations = np.concatenate([env.step([env.action_space.sample()])[0] for _ in range(10)], axis=0)
@@ -154,7 +154,7 @@ def test_save_load(tmp_path, model_class):
         assert np.allclose(selected_actions, new_selected_actions, 1e-4)
 
         # check if learn still works
-        model.learn(total_timesteps=1000, eval_freq=500)
+        model.learn(total_timesteps=500)
 
         del model
 
@@ -174,20 +174,26 @@ def test_set_env(model_class):
     env2 = DummyVecEnv([lambda: select_env(model_class)])
     env3 = select_env(model_class)
 
+    kwargs = {}
+    if model_class in {DQN, DDPG, SAC, TD3}:
+        kwargs = dict(learning_starts=100)
+    elif model_class in {A2C, PPO}:
+        kwargs = dict(n_steps=100)
+
     # create model
-    model = model_class("MlpPolicy", env, policy_kwargs=dict(net_arch=[16]))
+    model = model_class("MlpPolicy", env, policy_kwargs=dict(net_arch=[16]), **kwargs)
     # learn
-    model.learn(total_timesteps=1000, eval_freq=500)
+    model.learn(total_timesteps=300)
 
     # change env
     model.set_env(env2)
     # learn again
-    model.learn(total_timesteps=1000, eval_freq=500)
+    model.learn(total_timesteps=300)
 
     # change env test wrapping
     model.set_env(env3)
     # learn again
-    model.learn(total_timesteps=1000, eval_freq=500)
+    model.learn(total_timesteps=300)
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
@@ -309,7 +315,7 @@ def test_save_load_policy(tmp_path, model_class, policy_str):
 
     # create model
     model = model_class(policy_str, env, policy_kwargs=dict(net_arch=[16]), verbose=1, **kwargs)
-    model.learn(total_timesteps=500, eval_freq=250)
+    model.learn(total_timesteps=500)
 
     env.reset()
     observations = np.concatenate([env.step([env.action_space.sample()])[0] for _ in range(10)], axis=0)

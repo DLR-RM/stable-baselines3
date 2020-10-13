@@ -478,7 +478,7 @@ class BaseAlgorithm(ABC):
         load_path_or_dict: Union[str, Dict[str, Dict]],
         exact_match: bool = True,
         device: Union[th.device, str] = "auto",
-    ):
+    ) -> None:
         """
         Load parameters from a given zip-file or a nested dictionary containing parameters for
         different modules (see ``get_parameters``).
@@ -610,7 +610,7 @@ class BaseAlgorithm(ABC):
             model.policy.reset_noise()  # pytype: disable=attribute-error
         return model
 
-    def get_parameters(self):
+    def get_parameters(self) -> Dict[str, Dict]:
         """
         Return the parameters of the agent. This includes parameters from different networks, e.g.
         critics (value functions) and policies (pi functions).

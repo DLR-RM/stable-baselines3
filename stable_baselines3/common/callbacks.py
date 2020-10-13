@@ -1,7 +1,7 @@
 import os
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import gym
 import numpy as np
@@ -217,9 +217,10 @@ class CheckpointCallback(BaseCallback):
     :param save_freq:
     :param save_path: Path to the folder where the model will be saved.
     :param name_prefix: Common prefix to the saved models
+    :param verbose:
     """
 
-    def __init__(self, save_freq: int, save_path: str, name_prefix="rl_model", verbose=0):
+    def __init__(self, save_freq: int, save_path: str, name_prefix: str = "rl_model", verbose: int = 0):
         super(CheckpointCallback, self).__init__(verbose)
         self.save_freq = save_freq
         self.save_path = save_path
@@ -247,7 +248,7 @@ class ConvertCallback(BaseCallback):
     :param verbose:
     """
 
-    def __init__(self, callback, verbose=0):
+    def __init__(self, callback: Callable, verbose: int = 0):
         super(ConvertCallback, self).__init__(verbose)
         self.callback = callback
 
@@ -314,7 +315,7 @@ class EvalCallback(EventCallback):
         self.evaluations_timesteps = []
         self.evaluations_length = []
 
-    def _init_callback(self):
+    def _init_callback(self) -> None:
         # Does not work in some corner cases, where the wrapper is not the same
         if not isinstance(self.training_env, type(self.eval_env)):
             warnings.warn("Training and eval env are not of the same type" f"{self.training_env} != {self.eval_env}")
@@ -450,7 +451,7 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
         self._total_max_episodes = max_episodes
         self.n_episodes = 0
 
-    def _init_callback(self):
+    def _init_callback(self) -> None:
         # At start set total max according to number of envirnments
         self._total_max_episodes = self.max_episodes * self.training_env.num_envs
 

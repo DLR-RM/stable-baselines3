@@ -12,7 +12,7 @@ from stable_baselines3.common.cmd_util import make_atari_env, make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise, OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
-from stable_baselines3.common.utils import polyak_update
+from stable_baselines3.common.utils import polyak_update, zip_strict
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 
@@ -167,3 +167,21 @@ def test_polyak():
 
     assert th.allclose(param1, target1)
     assert th.allclose(param2, target2)
+
+
+def test_zip_strict():
+    # Iterables with different lengths
+    list_a = [0, 1]
+    list_b = [1, 2, 3]
+    # zip does not raise any error
+    for _, _ in zip(list_a, list_b):
+        pass
+
+    # zip_strict does raise an error
+    with pytest.raises(ValueError):
+        for _, _ in zip_strict(list_a, list_b):
+            pass
+
+    # same length, should not raise an error
+    for _, _ in zip_strict(list_a, list_b[: len(list_a)]):
+        pass

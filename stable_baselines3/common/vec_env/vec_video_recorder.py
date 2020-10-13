@@ -1,13 +1,12 @@
 import os
+from typing import Callable
 
 from gym.wrappers.monitoring import video_recorder
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.vec_env.base_vec_env import VecEnvWrapper
+from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvObs, VecEnvStepReturn, VecEnvWrapper
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
-from stable_baselines3.common.vec_env.vec_frame_stack import VecFrameStack
-from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 
 
 class VecVideoRecorder(VecEnvWrapper):
@@ -24,7 +23,14 @@ class VecVideoRecorder(VecEnvWrapper):
     :param name_prefix: Prefix to the video name
     """
 
-    def __init__(self, venv, video_folder, record_video_trigger, video_length=200, name_prefix="rl-video"):
+    def __init__(
+        self,
+        venv: VecEnv,
+        video_folder: str,
+        record_video_trigger: Callable[[int], bool],
+        video_length: int = 200,
+        name_prefix: str = "rl-video",
+    ):
 
         VecEnvWrapper.__init__(self, venv)
 
@@ -34,7 +40,7 @@ class VecVideoRecorder(VecEnvWrapper):
 
         # Unwrap to retrieve metadata dict
         # that will be used by gym recorder
-        while isinstance(temp_env, VecNormalize) or isinstance(temp_env, VecFrameStack):
+        while isinstance(temp_env, VecEnvWrapper):
             temp_env = temp_env.venv
 
         if isinstance(temp_env, DummyVecEnv) or isinstance(temp_env, SubprocVecEnv):
@@ -58,12 +64,12 @@ class VecVideoRecorder(VecEnvWrapper):
         self.recording = False
         self.recorded_frames = 0
 
-    def reset(self):
+    def reset(self) -> VecEnvObs:
         obs = self.venv.reset()
         self.start_video_recorder()
         return obs
 
-    def start_video_recorder(self):
+    def start_video_recorder(self) -> None:
         self.close_video_recorder()
 
         video_name = f"{self.name_prefix}-step-{self.step_id}-to-step-{self.step_id + self.video_length}"
@@ -76,10 +82,10 @@ class VecVideoRecorder(VecEnvWrapper):
         self.recorded_frames = 1
         self.recording = True
 
-    def _video_enabled(self):
+    def _video_enabled(self) -> bool:
         return self.record_video_trigger(self.step_id)
 
-    def step_wait(self):
+    def step_wait(self) -> VecEnvStepReturn:
         obs, rews, dones, infos = self.venv.step_wait()
 
         self.step_id += 1
@@ -94,13 +100,13 @@ class VecVideoRecorder(VecEnvWrapper):
 
         return obs, rews, dones, infos
 
-    def close_video_recorder(self):
+    def close_video_recorder(self) -> None:
         if self.recording:
             self.video_recorder.close()
         self.recording = False
         self.recorded_frames = 1
 
-    def close(self):
+    def close(self) -> None:
         VecEnvWrapper.close(self)
         self.close_video_recorder()
 

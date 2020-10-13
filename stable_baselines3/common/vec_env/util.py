@@ -2,10 +2,12 @@
 Helpers for dealing with vectorized environments.
 """
 from collections import OrderedDict
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple
 
 import gym
 import numpy as np
+
+from stable_baselines3.common.vec_env.base_vec_env import VecEnvObs
 
 
 def copy_obs_dict(obs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
@@ -19,9 +21,7 @@ def copy_obs_dict(obs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
     return OrderedDict([(k, np.copy(v)) for k, v in obs.items()])
 
 
-def dict_to_obs(
-    space: gym.spaces.Space, obs_dict: Dict[Any, np.ndarray]
-) -> Union[Dict[Any, np.ndarray], Tuple[np.ndarray, ...], np.ndarray]:
+def dict_to_obs(space: gym.spaces.Space, obs_dict: Dict[Any, np.ndarray]) -> VecEnvObs:
     """
     Convert an internal representation raw_obs into the appropriate type
     specified by space.

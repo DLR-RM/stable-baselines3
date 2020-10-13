@@ -68,3 +68,6 @@ def test_state_dependent_offpolicy_noise(model_class, sde_net_arch, use_expln):
         policy_kwargs=dict(log_std_init=-2, sde_net_arch=sde_net_arch, use_expln=use_expln),
     )
     model.learn(total_timesteps=int(500), eval_freq=250)
+    model.policy.reset_noise()
+    if model_class == SAC:
+        model.policy.actor.get_std()

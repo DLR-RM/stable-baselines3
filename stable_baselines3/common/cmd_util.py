@@ -6,7 +6,7 @@ import gym
 
 from stable_baselines3.common.atari_wrappers import AtariWrapper
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv
 
 
 def make_vec_env(
@@ -19,7 +19,7 @@ def make_vec_env(
     env_kwargs: Optional[Dict[str, Any]] = None,
     vec_env_cls: Optional[Type[Union[DummyVecEnv, SubprocVecEnv]]] = None,
     vec_env_kwargs: Optional[Dict[str, Any]] = None,
-):
+) -> VecEnv:
     """
     Create a wrapped, monitored ``VecEnv``.
     By default it uses a ``DummyVecEnv`` which is usually faster
@@ -85,7 +85,7 @@ def make_atari_env(
     env_kwargs: Optional[Dict[str, Any]] = None,
     vec_env_cls: Optional[Union[DummyVecEnv, SubprocVecEnv]] = None,
     vec_env_kwargs: Optional[Dict[str, Any]] = None,
-):
+) -> VecEnv:
     """
     Create a wrapped, monitored VecEnv for Atari.
     It is a wrapper around ``make_vec_env`` that includes common preprocessing for Atari games.

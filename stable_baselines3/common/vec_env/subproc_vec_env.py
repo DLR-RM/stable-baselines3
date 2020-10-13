@@ -1,14 +1,22 @@
-import multiprocessing
+import multiprocessing as mp
 from collections import OrderedDict
-from typing import Sequence
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 
 import gym
 import numpy as np
 
-from stable_baselines3.common.vec_env.base_vec_env import CloudpickleWrapper, VecEnv
+from stable_baselines3.common.vec_env.base_vec_env import (
+    CloudpickleWrapper,
+    VecEnv,
+    VecEnvIndices,
+    VecEnvObs,
+    VecEnvStepReturn,
+)
 
 
-def _worker(remote, parent_remote, env_fn_wrapper):
+def _worker(
+    remote: mp.connection.Connection, parent_remote: mp.connection.Connection, env_fn_wrapper: CloudpickleWrapper
+) -> None:
     parent_remote.close()
     env = env_fn_wrapper.var()
     while True:
@@ -71,7 +79,7 @@ class SubprocVecEnv(VecEnv):
            Defaults to 'forkserver' on available platforms, and 'spawn' otherwise.
     """
 
-    def __init__(self, env_fns, start_method=None):
+    def __init__(self, env_fns: List[Callable[[], gym.Env]], start_method: Optional[str] = None):
         self.waiting = False
         self.closed = False
         n_envs = len(env_fns)
@@ -80,9 +88,9 @@ class SubprocVecEnv(VecEnv):
             # Fork is not a thread safe method (see issue #217)
             # but is more user friendly (does not require to wrap the code in
             # a `if __name__ == "__main__":`)
-            forkserver_available = "forkserver" in multiprocessing.get_all_start_methods()
+            forkserver_available = "forkserver" in mp.get_all_start_methods()
             start_method = "forkserver" if forkserver_available else "spawn"
-        ctx = multiprocessing.get_context(start_method)
+        ctx = mp.get_context(start_method)
 
         self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(n_envs)])
         self.processes = []
@@ -98,29 +106,29 @@ class SubprocVecEnv(VecEnv):
         observation_space, action_space = self.remotes[0].recv()
         VecEnv.__init__(self, len(env_fns), observation_space, action_space)
 
-    def step_async(self, actions):
+    def step_async(self, actions: np.ndarray) -> None:
         for remote, action in zip(self.remotes, actions):
             remote.send(("step", action))
         self.waiting = True
 
-    def step_wait(self):
+    def step_wait(self) -> VecEnvStepReturn:
         results = [remote.recv() for remote in self.remotes]
         self.waiting = False
         obs, rews, dones, infos = zip(*results)
         return _flatten_obs(obs, self.observation_space), np.stack(rews), np.stack(dones), infos
 
-    def seed(self, seed=None):
+    def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
         for idx, remote in enumerate(self.remotes):
             remote.send(("seed", seed + idx))
         return [remote.recv() for remote in self.remotes]
 
-    def reset(self):
+    def reset(self) -> VecEnvObs:
         for remote in self.remotes:
             remote.send(("reset", None))
         obs = [remote.recv() for remote in self.remotes]
         return _flatten_obs(obs, self.observation_space)
 
-    def close(self):
+    def close(self) -> None:
         if self.closed:
             return
         if self.waiting:
@@ -140,14 +148,14 @@ class SubprocVecEnv(VecEnv):
         imgs = [pipe.recv() for pipe in self.remotes]
         return imgs
 
-    def get_attr(self, attr_name, indices=None):
+    def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:
         """Return attribute from vectorized environment (see base class)."""
         target_remotes = self._get_target_remotes(indices)
         for remote in target_remotes:
             remote.send(("get_attr", attr_name))
         return [remote.recv() for remote in target_remotes]
 
-    def set_attr(self, attr_name, value, indices=None):
+    def set_attr(self, attr_name: str, value: Any, indices: VecEnvIndices = None) -> None:
         """Set attribute inside vectorized environments (see base class)."""
         target_remotes = self._get_target_remotes(indices)
         for remote in target_remotes:
@@ -155,14 +163,14 @@ class SubprocVecEnv(VecEnv):
         for remote in target_remotes:
             remote.recv()
 
-    def env_method(self, method_name, *method_args, indices=None, **method_kwargs):
+    def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> List[Any]:
         """Call instance methods of vectorized environments."""
         target_remotes = self._get_target_remotes(indices)
         for remote in target_remotes:
             remote.send(("env_method", (method_name, method_args, method_kwargs)))
         return [remote.recv() for remote in target_remotes]
 
-    def _get_target_remotes(self, indices):
+    def _get_target_remotes(self, indices: VecEnvIndices) -> List[Any]:
         """
         Get the connection object needed to communicate with the wanted
         envs that are in subprocesses.
@@ -174,14 +182,14 @@ class SubprocVecEnv(VecEnv):
         return [self.remotes[i] for i in indices]
 
 
-def _flatten_obs(obs, space):
+def _flatten_obs(obs: Union[List[VecEnvObs], Tuple[VecEnvObs]], space: gym.spaces.Space) -> VecEnvObs:
     """
     Flatten observations, depending on the observation space.
 
-    :param obs: (list<X> or tuple<X> where X is dict<ndarray>, tuple<ndarray> or ndarray) observations.
+    :param obs: observations.
                 A list or tuple of observations, one per environment.
                 Each environment observation may be a NumPy array, or a dict or tuple of NumPy arrays.
-    :return (OrderedDict<ndarray>, tuple<ndarray> or ndarray) flattened observations.
+    :return: flattened observations.
             A flattened NumPy array or an OrderedDict or tuple of flattened numpy arrays.
             Each NumPy array has the environment index as its first axis.
     """

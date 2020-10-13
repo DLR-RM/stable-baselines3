@@ -4,6 +4,7 @@ from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, Union
 
 import gym
 import numpy as np
+import torch as th
 
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.buffers import ReplayBuffer
@@ -48,8 +49,11 @@ def get_time_limit(env: VecEnv, current_max_episode_length: Optional[int]) -> in
 class HER(BaseAlgorithm):
     """
     Hindsight Experience Replay (HER)
-
     Paper: https://arxiv.org/abs/1707.01495
+
+    WARNING: Requires maximum episode length provided either by the environment or by the user!
+
+    For additional offline algorithm specific arguments please have a look at the corresponding documentation.
 
     :param policy: The policy model to use.
     :param env: The environment to learn from (if registered in Gym, can be str)
@@ -61,7 +65,7 @@ class HER(BaseAlgorithm):
     :param learning_rate: learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
     :param max_episode_length: The maximum length of an episode. If not specified,
-        it will be automatically inferred if the environment uses a ``gym.wrappers.TimeLimit`` wrapper
+        it will be automatically inferred if the environment uses a ``gym.wrappers.TimeLimit`` wrapper.
     """
 
     def __init__(
@@ -72,20 +76,18 @@ class HER(BaseAlgorithm):
         n_sampled_goal: int = 4,
         goal_selection_strategy: Union[GoalSelectionStrategy, str] = "future",
         online_sampling: bool = False,
-        learning_rate: Union[float, Callable] = 3e-4,
         max_episode_length: Optional[int] = None,
         *args,
         **kwargs,
     ):
 
-        super(HER, self).__init__(policy=BasePolicy, env=env, policy_base=BasePolicy, learning_rate=learning_rate)
+        super(HER, self).__init__(policy=BasePolicy, env=env, policy_base=BasePolicy, learning_rate=3e-4)
 
         # model initialization
         self.model_class = model_class
         self.model = model_class(
             policy=policy,
             env=self.env,
-            learning_rate=learning_rate,
             *args,
             **kwargs,  # pytype: disable=wrong-keyword-args
         )
@@ -114,7 +116,7 @@ class HER(BaseAlgorithm):
         # storage for transitions of current episode
         self._episode_storage = HerReplayBuffer(
             self.env,
-            self.max_episode_length,
+            self.buffer_size,
             self.max_episode_length,
             self.goal_selection_strategy,
             self.env.observation_space,
@@ -124,20 +126,12 @@ class HER(BaseAlgorithm):
             self.her_ratio,  # pytype: disable=wrong-arg-types
         )
 
+        # assign episode storage to replay buffer when using online HER sampling
+        if self.online_sampling:
+            self.model.replay_buffer = self._episode_storage
+
         # counter for steps in episode
         self.episode_steps = 0
-        if self.online_sampling:
-            self.model.replay_buffer = HerReplayBuffer(
-                self.env,
-                self.buffer_size,
-                self.max_episode_length,
-                self.goal_selection_strategy,
-                self.env.observation_space,
-                self.env.action_space,
-                self.device,
-                self.n_envs,
-                self.her_ratio,  # pytype: disable=wrong-arg-types
-            )
 
     def _setup_model(self) -> None:
         self.model._setup_model()
@@ -338,15 +332,15 @@ class HER(BaseAlgorithm):
                 if 0 < n_steps <= total_steps:
                     break
 
-            if done or self.episode_steps == self.max_episode_length:
+            if done or self.episode_steps >= self.max_episode_length:
                 if self.online_sampling:
                     self.replay_buffer.store_episode()
                 else:
                     self._episode_storage.store_episode()
                     # store episode in replay buffer
                     self._store_transitions()
-                # clear storage for current episode
-                self._episode_storage.reset()
+                    # clear storage for current episode
+                    self._episode_storage.reset()
 
                 total_episodes += 1
                 self._episode_num += 1
@@ -361,8 +355,6 @@ class HER(BaseAlgorithm):
                 if log_interval is not None and self._episode_num % log_interval == 0:
                     self._dump_logs()
 
-                # reset if done or episode length is reached
-                self.env.reset()
                 self.episode_steps = 0
 
         mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
@@ -377,7 +369,7 @@ class HER(BaseAlgorithm):
         """
 
         # sample goals and get new observations
-        observations, next_observations, transitions, her_indices = self._episode_storage.sample(
+        observations, next_observations, transitions = self._episode_storage.sample(
             self.batch_size,
             self.env,
             self.online_sampling,
@@ -386,15 +378,8 @@ class HER(BaseAlgorithm):
         )
 
         # store data in replay buffer
-        # self.replay_buffer.extend(observations, next_observations, transitions["action"], transitions["reward"], np.array([False]))
-
-        for i in her_indices:
-            obs = observations[i]
-            next_obs = next_observations[i]
-            buffer_action = transitions["action"][i]
-            reward = transitions["reward"][i]
-            done = np.array([False])
-            self.replay_buffer.add(obs, next_obs, buffer_action, reward, done)
+        dones = np.zeros((len(observations)), dtype=bool)
+        self.replay_buffer.extend(observations, next_observations, transitions["action"], transitions["reward"], dones)
 
     def __getattr__(self, item: str) -> Any:
         """
@@ -429,24 +414,37 @@ class HER(BaseAlgorithm):
         self.model.model_class = self.model_class
         self.model.max_episode_length = self.max_episode_length
 
+        # exclude episode storage
+        if exclude is None:
+            exclude = []
+        exclude = ["_episode_storage"].extend(exclude)
+
         self.model.save(path, exclude, include)
 
     @classmethod
-    def load(cls, load_path: str, env: Optional[GymEnv] = None, **kwargs) -> "BaseAlgorithm":
+    def load(
+        cls,
+        path: Union[str, pathlib.Path, io.BufferedIOBase],
+        env: Optional[GymEnv] = None,
+        device: Union[th.device, str] = "auto",
+        **kwargs,
+    ) -> "BaseAlgorithm":
         """
         Load the model from a zip-file
 
-        :param load_path: the location of the saved data
+        :param path: path to the file (or a file-like) where to
+            load the agent from
         :param env: the new environment to run the loaded model on
             (can be None if you only need prediction from a trained model) has priority over any saved environment
+        :param device: Device on which the code should run.
         :param kwargs: extra arguments to change the model when loading
         """
-        data, params, tensors = load_from_zip_file(load_path)
+        data, params, pytorch_variables = load_from_zip_file(path, device=device)
 
+        # Remove stored device information and replace with ours
         if "policy_kwargs" in data:
-            for arg_to_remove in ["device"]:
-                if arg_to_remove in data["policy_kwargs"]:
-                    del data["policy_kwargs"][arg_to_remove]
+            if "device" in data["policy_kwargs"]:
+                del data["policy_kwargs"]["device"]
 
         if "policy_kwargs" in kwargs and kwargs["policy_kwargs"] != data["policy_kwargs"]:
             raise ValueError(
@@ -457,12 +455,10 @@ class HER(BaseAlgorithm):
         # check if observation space and action space are part of the saved parameters
         if "observation_space" not in data or "action_space" not in data:
             raise KeyError("The observation_space and action_space were not given, can't verify new environments")
+
         # check if given env is valid
         if env is not None:
             # check if wrapper for dict support is needed
-            # if isinstance(env.observation_space, gym.spaces.dict.Dict):
-            #    env = ObsDictWrapper(env)
-
             if not isinstance(env, VecEnv):
                 env = DummyVecEnv([lambda: env])
 
@@ -475,8 +471,10 @@ class HER(BaseAlgorithm):
 
             check_for_correct_spaces(env, data["observation_space"], data["action_space"])
         # if no new env was given use stored env if possible
-        if env is None:
-            env = data["env"]
+        else:
+            # Use stored env, if one exists. If not, continue as is (can be used for predict)
+            if "env" in data:
+                env = data["env"]
 
         kwargs = {}
         if "use_sde" in data and data["use_sde"]:
@@ -490,7 +488,6 @@ class HER(BaseAlgorithm):
             n_sampled_goal=data["n_sampled_goal"],
             goal_selection_strategy=data["goal_selection_strategy"],
             online_sampling=data["online_sampling"],
-            learning_rate=data["learning_rate"],
             max_episode_length=data["max_episode_length"],
             policy_kwargs=data["policy_kwargs"],
             _init_setup_model=True,  # pytype: disable=not-instantiable,wrong-keyword-args
@@ -506,14 +503,12 @@ class HER(BaseAlgorithm):
         her_model._episode_num = her_model.model._episode_num
 
         # put state_dicts back in place
-        for name in params:
-            attr = recursive_getattr(her_model.model, name)
-            attr.load_state_dict(params[name])
+        her_model.model.set_parameters(params, exact_match=True, device=device)
 
-        # put tensors back in place
-        if tensors is not None:
-            for name in tensors:
-                recursive_setattr(her_model.model, name, tensors[name])
+        # put other pytorch variables back in place
+        if pytorch_variables is not None:
+            for name in pytorch_variables:
+                recursive_setattr(her_model.model, name, pytorch_variables[name])
 
         # Sample gSDE exploration matrix, so it uses the right device
         # see issue #44

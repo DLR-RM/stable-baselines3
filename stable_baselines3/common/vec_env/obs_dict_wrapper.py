@@ -1,3 +1,5 @@
+from typing import Dict
+
 import numpy as np
 from gym import spaces
 
@@ -53,7 +55,7 @@ class ObsDictWrapper(VecEnvWrapper):
 
     @staticmethod
     def convert_dict(
-        observation_dict: dict, observation_key: str = "observation", goal_key: str = "desired_goal"
+        observation_dict: Dict[str, np.ndarray], observation_key: str = "observation", goal_key: str = "desired_goal"
     ) -> np.ndarray:
         """
         Concatenate observation and (desired) goal of observation dict.
@@ -61,6 +63,6 @@ class ObsDictWrapper(VecEnvWrapper):
         :param observation_dict: Dictionary with observation.
         :param observation_key: Key of observation in dicitonary.
         :param goal_key: Key of (desired) goal in dicitonary.
-        :return:
+        :return: Concatenated observation.
         """
         return np.concatenate([observation_dict[observation_key], observation_dict[goal_key]], axis=-1)

@@ -14,8 +14,8 @@ from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 
 class HerReplayBuffer(BaseBuffer):
     """
-    Replay Buffer for sampling HER (Hindsight Experience Replay) transitions online.
-    These transitions will not be saved in the Buffer.
+    Replay Buffer for sampling HER (Hindsight Experience Replay) transitions.
+    In the online sampling case these new transitions will not be saved in the Buffer.
 
     :param env: The training environment
     :param buffer_size: The size of the buffer measured in transitions.
@@ -148,6 +148,7 @@ class HerReplayBuffer(BaseBuffer):
                 obs = replay_observations[index]
                 # get only the observation part of the state
                 obs_dim = self.env.obs_dim
+                # get from every observation from first env the observation part (without concatenated desired goal)
                 obs_array = obs[:, :, :obs_dim]
                 return obs_array
         else:
@@ -179,29 +180,24 @@ class HerReplayBuffer(BaseBuffer):
             ep_length = self.episode_lengths[episode_indices]
         else:
             episode_length = self.episode_lengths[0]
-            episode_indices = np.array(list(range(self.n_episodes_stored)) * episode_length * n_sampled_goal)
+            episode_indices = np.array(list(range(1)) * episode_length * n_sampled_goal)
             her_indices = np.arange(len(episode_indices))
-            ep_length = self.episode_lengths[episode_indices]
             # repeat every transition index n_sampled_goals times
             transitions_indices = np.array(list(range(episode_length)) * n_sampled_goal)
 
         if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
             # restrict the sampling domain when ep_length > 1
             # otherwise filter out the indices
-
             if online_sampling:
                 her_indices = her_indices[ep_length[her_indices] > 1]
                 ep_length[her_indices] -= 1
             else:
                 her_indices = her_indices[episode_length > 1 and transitions_indices < episode_length - 1]
-            """
-            her_indices = her_indices[ep_length[her_indices] > 1]
-            ep_length[her_indices] -= 1
-            """
 
         if online_sampling:
             # Select which transitions to use
             transitions_indices = np.random.randint(ep_length)
+
         # get selected transitions
         transitions = {key: self.buffer[key][episode_indices, transitions_indices].copy() for key in self.buffer.keys()}
 
@@ -239,7 +235,7 @@ class HerReplayBuffer(BaseBuffer):
 
             return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
         else:
-            return observations, next_observations, transitions, her_indices
+            return observations, next_observations, transitions
 
     def add(
         self,

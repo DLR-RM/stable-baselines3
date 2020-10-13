@@ -83,8 +83,6 @@ class BaseBuffer(ABC):
         """
         # Do a for loop along the batch axis
         for data in zip(*args):
-            # import ipdb
-            # ipdb.set_trace()
             self.add(*data)
 
     def reset(self) -> None:

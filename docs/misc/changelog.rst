@@ -17,7 +17,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fix GAE computation for on-policy algorithms (off-by one for the last value) (thanks @Wovchena)
-- Make `make_vec_env` support the `env_kwargs` argument when using an env ID str (@ManifoldFR)
+- Make ``make_vec_env`` support the `env_kwargs` argument when using an env ID str (@ManifoldFR)
 
 Deprecations:
 ^^^^^^^^^^^^^

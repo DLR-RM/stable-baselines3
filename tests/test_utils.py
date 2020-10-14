@@ -71,9 +71,7 @@ def test_vec_env_kwargs(tmp_path):
     env = make_vec_env(
         "MountainCarContinuous-v0",
         n_envs=1,
-        monitor_dir=monitor_dir,
         seed=0,
-        vec_env_cls=SubprocVecEnv,
         env_kwargs={"goal_velocity": 0.1}
     )
     

@@ -18,6 +18,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fix GAE computation for on-policy algorithms (off-by one for the last value) (thanks @Wovchena)
+- Fixed potential issue when loading a different environment
 
 Deprecations:
 ^^^^^^^^^^^^^

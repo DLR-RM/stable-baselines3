@@ -1,8 +1,7 @@
 import io
 import pathlib
-from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, Union
+from typing import Any, Iterable, List, Optional, Tuple, Type, Union
 
-import gym
 import numpy as np
 import torch as th
 
@@ -12,11 +11,10 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
-from stable_baselines3.common.preprocessing import is_image_space
-from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr
+from stable_baselines3.common.save_util import load_from_zip_file, recursive_setattr
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
 from stable_baselines3.common.utils import check_for_correct_spaces
-from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, VecTransposeImage
+from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
 from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
@@ -443,19 +441,10 @@ class HER(BaseAlgorithm):
 
         # check if given env is valid
         if env is not None:
-            # check if wrapper for dict support is needed
-            if not isinstance(env, VecEnv):
-                env = DummyVecEnv([lambda: env])
-
-            if is_image_space(env.observation_space) and not isinstance(env, VecTransposeImage):
-                env = VecTransposeImage(env)
-
-            # check if wrapper for dict support when using HER is needed
-            if isinstance(env.observation_space, gym.spaces.dict.Dict):
-                env = ObsDictWrapper(env)
-
+            # Wrap first if needed
+            env = cls._wrap_env(env, data["verbose"])
+            # Check if given env is valid
             check_for_correct_spaces(env, data["observation_space"], data["action_space"])
-        # if no new env was given use stored env if possible
         else:
             # Use stored env, if one exists. If not, continue as is (can be used for predict)
             if "env" in data:

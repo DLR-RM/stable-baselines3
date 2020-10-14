@@ -1,5 +1,6 @@
 import os
 import shutil
+from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 
 import gym
 import numpy as np
@@ -10,7 +11,7 @@ from stable_baselines3 import A2C
 from stable_baselines3.common.atari_wrappers import ClipRewardEnv
 from stable_baselines3.common.cmd_util import make_atari_env, make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.monitor import Monitor, monitor
 from stable_baselines3.common.noise import ActionNoise, OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
 from stable_baselines3.common.utils import polyak_update, zip_strict
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
@@ -63,6 +64,24 @@ def test_make_atari_env(env_id, n_envs, wrapper_kwargs):
         assert wrapped_atari_env.observation_space.shape == (84, 84, 1)
         assert isinstance(wrapped_atari_env.env, ClipRewardEnv)
         assert np.max(np.abs(reward)) < 1.0
+
+
+def test_vec_env_kwargs(tmp_path):
+    monitor_dir = tmp_path / "test_make_vec_env/"
+    env = make_vec_env(
+        "MountainCarContinuous-v0",
+        n_envs=1,
+        monitor_dir=monitor_dir,
+        seed=0,
+        vec_env_cls=SubprocVecEnv,
+        env_kwargs={"goal_velocity": 0.1}
+    )
+    
+    assert env.goal_velocity == 0.1
+    # Kill subprocess
+    env.close()
+    # leanup folder
+    shutil.rmtree(monitor_dir)
 
 
 def test_custom_vec_env(tmp_path):

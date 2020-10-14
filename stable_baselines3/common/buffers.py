@@ -299,7 +299,7 @@ class RolloutBuffer(BaseBuffer):
         self.generator_ready = False
         super(RolloutBuffer, self).reset()
 
-    def compute_returns_and_advantage(self, last_value: th.Tensor, dones: np.ndarray) -> None:
+    def compute_returns_and_advantage(self, last_values: th.Tensor, dones: np.ndarray) -> None:
         """
         Post-processing step: compute the returns (sum of discounted rewards)
         and GAE advantage.
@@ -310,22 +310,22 @@ class RolloutBuffer(BaseBuffer):
         where R is the discounted reward with value bootstrap,
         set ``gae_lambda=1.0`` during initialization.
 
-        :param last_value:
+        :param last_values:
         :param dones:
 
         """
         # convert to numpy
-        last_value = last_value.clone().cpu().numpy().flatten()
+        last_values = last_values.clone().cpu().numpy().flatten()
 
         last_gae_lam = 0
         for step in reversed(range(self.buffer_size)):
             if step == self.buffer_size - 1:
                 next_non_terminal = 1.0 - dones
-                next_value = last_value
+                next_values = last_values
             else:
                 next_non_terminal = 1.0 - self.dones[step + 1]
-                next_value = self.values[step + 1]
-            delta = self.rewards[step] + self.gamma * next_value * next_non_terminal - self.values[step]
+                next_values = self.values[step + 1]
+            delta = self.rewards[step] + self.gamma * next_values * next_non_terminal - self.values[step]
             last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
             self.advantages[step] = last_gae_lam
         self.returns = self.advantages + self.values

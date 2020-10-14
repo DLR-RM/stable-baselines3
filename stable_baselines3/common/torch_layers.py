@@ -219,3 +219,43 @@ class MlpExtractor(nn.Module):
         """
         shared_latent = self.shared_net(features)
         return self.policy_net(shared_latent), self.value_net(shared_latent)
+
+
+def get_actor_critic_arch(net_arch: Union[List[int], Dict[str, List[int]]]) -> Tuple[List[int], List[int]]:
+    """
+    Get the actor and critic network architectures for off-policy actor-critic algorithms (SAC, TD3, DDPG).
+
+    The ``net_arch`` parameter allows to specify the amount and size of the hidden layers,
+    which can be different for the actor and the critic.
+    It is assumed to be a list of ints or a dict.
+
+    1. If it is a list, actor and critic networks will have the same architecture.
+        The architecture is represented by a list of integers (of arbitrary length (zero allowed))
+        each specifying the number of units per layer.
+       If the number of ints is zero, the network will be linear.
+    2. If it is a dict,  it should have the following structure:
+       ``dict(qf=[<critic network architecture>], pi=[<actor network architecture>])``.
+       where the network architecture is a list as described in 1.
+
+    For example, to have actor and critic that share the same network architecture,
+    you only need to specify ``net_arch=[256, 256]`` (here, two hidden layers of 256 units each).
+
+    If you want a different architecture for the actor and the critic,
+    then you can specify ``net_arch=dict(qf=[400, 300], pi=[64, 64])``.
+
+    .. note::
+        Compared to their on-policy counterparts, no shared layers (other than the feature extractor)
+        between the actor and the critic are allowed (to prevent issues with target networks).
+
+    :param net_arch: The specification of the actor and critic networks.
+        See above for details on its formatting.
+    :return: The network architectures for the actor and the critic
+    """
+    if isinstance(net_arch, list):
+        actor_arch, critic_arch = net_arch, net_arch
+    else:
+        assert isinstance(net_arch, dict), "Error: the net_arch can only contain be a list of ints or a dict"
+        assert "pi" in net_arch, "Error: no key 'pi' was provided in net_arch for the actor network"
+        assert "qf" in net_arch, "Error: no key 'qf' was provided in net_arch for the critic network"
+        actor_arch, critic_arch = net_arch["pi"], net_arch["qf"]
+    return actor_arch, critic_arch

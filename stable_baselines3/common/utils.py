@@ -2,6 +2,7 @@ import glob
 import os
 import random
 from collections import deque
+from itertools import zip_longest
 from typing import Callable, Iterable, Optional, Union
 
 import gym
@@ -286,6 +287,24 @@ def safe_mean(arr: Union[np.ndarray, list, deque]) -> np.ndarray:
     return np.nan if len(arr) == 0 else np.mean(arr)
 
 
+def zip_strict(*iterables: Iterable) -> Iterable:
+    r"""
+    ``zip()`` function but enforces that iterables are of equal length.
+    Raises ``ValueError`` if iterables not of equal length.
+    Code inspired by Stackoverflow answer for question #32954486.
+
+    :param \*iterables: iterables to ``zip()``
+    """
+    # As in Stackoverflow #32954486, use
+    # new object for "empty" in case we have
+    # Nones in iterable.
+    sentinel = object()
+    for combo in zip_longest(*iterables, fillvalue=sentinel):
+        if sentinel in combo:
+            raise ValueError("Iterables have different lengths")
+        yield combo
+
+
 def polyak_update(params: Iterable[th.nn.Parameter], target_params: Iterable[th.nn.Parameter], tau: float) -> None:
     """
     Perform a Polyak average update on ``target_params`` using ``params``:
@@ -303,6 +322,7 @@ def polyak_update(params: Iterable[th.nn.Parameter], target_params: Iterable[th.
     :param tau: the soft update coefficient ("Polyak update", between 0 and 1)
     """
     with th.no_grad():
-        for param, target_param in zip(params, target_params):
+        # zip does not raise an exception if length of parameters does not match.
+        for param, target_param in zip_strict(params, target_params):
             target_param.data.mul_(1 - tau)
             th.add(target_param.data, param.data, alpha=tau, out=target_param.data)

@@ -258,9 +258,31 @@ If your task requires even more granular control over the policy/value architect
 
 
 
-.. TODO (see https://github.com/DLR-RM/stable-baselines3/issues/113)
-.. Off-Policy Algorithms
-.. ^^^^^^^^^^^^^^^^^^^^^
-..
-.. If you need a network architecture that is different for the actor and the critic when using ``SAC``, ``DDPG`` or ``TD3``,
-.. you can easily redefine the actor class for instance.
+Off-Policy Algorithms
+^^^^^^^^^^^^^^^^^^^^^
+
+If you need a network architecture that is different for the actor and the critic when using ``SAC``, ``DDPG`` or ``TD3``,
+you can pass a dictionary of the following structure: ``dict(qf=[<critic network architecture>], pi=[<actor network architecture>])``.
+
+For example, if you want a different architecture for the actor (aka ``pi``) and the critic (Q-function aka ``qf``) networks,
+then you can specify ``net_arch=dict(qf=[400, 300], pi=[64, 64])``.
+
+Otherwise, to have actor and critic that share the same network architecture,
+you only need to specify ``net_arch=[256, 256]`` (here, two hidden layers of 256 units each).
+
+
+.. note::
+    Compared to their on-policy counterparts, no shared layers (other than the feature extractor)
+    between the actor and the critic are allowed (to prevent issues with target networks).
+
+
+.. code-block:: python
+
+  from stable_baselines3 import SAC
+
+  # Custom actor architecture with two layers of 64 units each
+  # Custom critic architecture with two layers of 400 and 300 units
+  policy_kwargs = dict(net_arch=dict(pi=[64, 64], qf=[400, 300]))
+  # Create the agent
+  model = SAC("MlpPolicy", "Pendulum-v0", policy_kwargs=policy_kwargs, verbose=1)
+  model.learn(5000)

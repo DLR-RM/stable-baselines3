@@ -287,30 +287,16 @@ class HER(BaseAlgorithm):
                         self._last_original_obs, new_obs_, reward_ = observation, new_obs, reward
                         self.model._last_original_obs = self._last_original_obs
 
-                    # Remove termination signal due to timelimit if needed
-                    # NOTE: this may cause issue when using memory optimized replay
-                    # or n-step replay
-                    if self.remove_time_limit_termination and infos[0].get("TimeLimit.truncated", False):
-                        done_ = np.array([False])
-                        # As the VecEnv resets automatically, new_obs is already the
-                        # first observation of the next episode
-                        next_obs = infos[0]["terminal_observation"]
-                        if self._vec_normalize_env is not None:
-                            next_obs = self._vec_normalize_env.unnormalize_obs(next_obs)
-                    else:
-                        done_ = done
-                        next_obs = new_obs_
-
                     if self.online_sampling:
-                        self.replay_buffer.add(self._last_original_obs, next_obs, buffer_action, reward_, done_, infos)
+                        self.replay_buffer.add(self._last_original_obs, new_obs_, buffer_action, reward_, done, infos)
                     else:
                         # concatenate observation with (desired) goal
                         obs = ObsDictWrapper.convert_dict(self._last_original_obs)
-                        next_obs_ = ObsDictWrapper.convert_dict(next_obs)
+                        next_obs = ObsDictWrapper.convert_dict(new_obs_)
                         # add to replay buffer
-                        self.replay_buffer.add(obs, next_obs_, buffer_action, reward_, done_)
+                        self.replay_buffer.add(obs, next_obs, buffer_action, reward_, done)
                         # add current transition to episode storage
-                        self._episode_storage.add(self._last_original_obs, next_obs, buffer_action, reward_, done_, infos)
+                        self._episode_storage.add(self._last_original_obs, new_obs_, buffer_action, reward_, done, infos)
 
                 self._last_obs = new_obs
                 self.model._last_obs = self._last_obs

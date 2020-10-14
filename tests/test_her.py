@@ -42,11 +42,9 @@ def test_her(model_class, online_sampling):
         "final",
         "episode",
         "future",
-        "random",
-        GoalSelectionStrategy.FUTURE,
-        GoalSelectionStrategy.RANDOM,
-        GoalSelectionStrategy.EPISODE,
         GoalSelectionStrategy.FINAL,
+        GoalSelectionStrategy.EPISODE,
+        GoalSelectionStrategy.FUTURE,
     ],
 )
 @pytest.mark.parametrize("online_sampling", [True, False])

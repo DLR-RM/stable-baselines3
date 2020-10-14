@@ -46,7 +46,7 @@ Example
 
     env = BitFlippingEnv(n_bits=N_BITS, continuous=model_class in [DDPG, SAC, TD3], max_steps=N_BITS)
 
-    # Available strategies (cf paper): future, final, episode, random
+    # Available strategies (cf paper): future, final, episode
     goal_selection_strategy = 'future' # equivalent to GoalSelectionStrategy.FUTURE
 
     # If True the HER transitions will get sampled online

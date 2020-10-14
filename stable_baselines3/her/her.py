@@ -369,17 +369,16 @@ class HER(BaseAlgorithm):
         """
 
         # sample goals and get new observations
-        observations, next_observations, transitions = self._episode_storage.sample(
+        observations, next_observations, actions, rewards = self._episode_storage.sample(
             self.batch_size,
             self.env,
             self.online_sampling,
             self.n_sampled_goal,
-            self.replay_buffer.observations,
         )
 
         # store data in replay buffer
         dones = np.zeros((len(observations)), dtype=bool)
-        self.replay_buffer.extend(observations, next_observations, transitions["action"], transitions["reward"], dones)
+        self.replay_buffer.extend(observations, next_observations, actions, rewards, dones)
 
     def __getattr__(self, item: str) -> Any:
         """

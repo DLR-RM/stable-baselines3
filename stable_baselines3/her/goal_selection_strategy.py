@@ -15,10 +15,6 @@ class GoalSelectionStrategy(Enum):
     FINAL = 1
     # Select a goal that was achieved in the episode
     EPISODE = 2
-    # Select a goal that was achieved
-    # at some point in the training procedure
-    # (and that is present in the replay buffer)
-    RANDOM = 3
 
 
 # For convenience
@@ -27,5 +23,4 @@ KEY_TO_GOAL_STRATEGY = {
     "future": GoalSelectionStrategy.FUTURE,
     "final": GoalSelectionStrategy.FINAL,
     "episode": GoalSelectionStrategy.EPISODE,
-    "random": GoalSelectionStrategy.RANDOM,
 }

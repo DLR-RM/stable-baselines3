@@ -17,6 +17,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fix GAE computation for on-policy algorithms (off-by one for the last value) (thanks @Wovchena)
+- Fix ignoring the exclude parameter when recording logs using json, csv or log as logging format (@SwamyDev)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -453,4 +454,4 @@ And all the contributors:
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
-@diditforlulz273 @liorcohen5 @ManifoldFR @mloo3
+@diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev

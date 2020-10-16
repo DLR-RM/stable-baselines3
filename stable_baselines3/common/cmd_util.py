@@ -1,5 +1,4 @@
 import os
-import warnings
 from typing import Any, Callable, Dict, Optional, Type, Union
 
 import gym

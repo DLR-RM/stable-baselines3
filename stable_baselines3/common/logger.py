@@ -152,7 +152,7 @@ def filter_excluded_keys(
     :return: dict without the excluded keys
     """
 
-    def is_excluded(key: str):
+    def is_excluded(key: str) -> bool:
         return key in key_excluded and key_excluded[key] is not None and _format in key_excluded[key]
 
     return {key: value for key, value in key_values.items() if not is_excluded(key)}

@@ -11,10 +11,16 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
 def _enforce_array_obs(observation_space: spaces.Space) -> bool:
     """
     Whether to check that the returned observation is a numpy array
-    it is not mandatory for `Dict` and `Tuple` spaces.
+    `Dict` and `Tuple` spaces are not guaranteed to contain only numpy arrays
     """
     return not isinstance(observation_space, (spaces.Dict, spaces.Tuple))
 
+def _enforce_array_act(action_space: spaces.Space) -> bool:
+    """
+    Whether to check that the returned action is a numpy array
+    `Dict` and `Tuple` spaces are not guaranteed to contain only numpy arrays
+    """
+    return not isinstance(action_space, (spaces.Dict, spaces.Tuple))
 
 def _check_image_input(observation_space: spaces.Box) -> None:
     """
@@ -234,5 +240,5 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
         _check_render(env, warn=warn)
 
     # The check only works with numpy arrays
-    if _enforce_array_obs(observation_space):
+    if _enforce_array_obs(observation_space) and _enforce_array_act(action_space):
         _check_nan(env)

@@ -15,12 +15,14 @@ def _enforce_array_obs(observation_space: spaces.Space) -> bool:
     """
     return not isinstance(observation_space, (spaces.Dict, spaces.Tuple))
 
+
 def _enforce_array_act(action_space: spaces.Space) -> bool:
     """
     Whether to check that the returned action is a numpy array
     `Dict` and `Tuple` spaces are not guaranteed to contain only numpy arrays
     """
     return not isinstance(action_space, (spaces.Dict, spaces.Tuple))
+
 
 def _check_image_input(observation_space: spaces.Box) -> None:
     """

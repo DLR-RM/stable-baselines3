@@ -26,7 +26,7 @@ Others:
 ^^^^^^^
 - Improved typing coverage
 - Improved error messages for unsupported spaces
-- Added `.vscode` to the gitignore
+- Added ``.vscode`` to the gitignore
 
 Documentation:
 ^^^^^^^^^^^^^^

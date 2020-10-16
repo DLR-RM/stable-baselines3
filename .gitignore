@@ -6,6 +6,7 @@
 .pytest_cache
 .DS_Store
 .idea
+.vscode
 .coverage
 .coverage.*
 __pycache__/

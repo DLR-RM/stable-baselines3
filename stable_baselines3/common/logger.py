@@ -152,7 +152,7 @@ def filter_excluded_keys(
     :return: dict without the excluded keys
     """
 
-    def is_excluded(key):
+    def is_excluded(key: str):
         return key in key_excluded and key_excluded[key] is not None and _format in key_excluded[key]
 
     return {key: value for key, value in key_values.items() if not is_excluded(key)}
@@ -168,7 +168,7 @@ class JSONOutputFormat(KVWriter):
         self.file = open(filename, "wt")
 
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
-        def cast_to_json_serializable(value):
+        def cast_to_json_serializable(value: Any):
             if hasattr(value, "dtype"):
                 if value.shape == () or len(value) == 1:
                     # if value is a dimensionless numpy array or of length 1, serialize as a float

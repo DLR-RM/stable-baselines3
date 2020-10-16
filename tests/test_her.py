@@ -1,4 +1,5 @@
 import os
+import pathlib
 from copy import deepcopy
 
 import numpy as np
@@ -159,6 +160,38 @@ def test_save_load(tmp_path, model_class, use_sde):
 
     # clear file from os
     os.remove(tmp_path / "test_save.zip")
+
+
+@pytest.mark.parametrize("model_class", [HER])
+def test_save_load_replay_buffer(tmp_path, model_class):
+    path = pathlib.Path(tmp_path / "logs/replay_buffer.pkl")
+    path.parent.mkdir(exist_ok=True, parents=True)  # to not raise a warning
+    env = BitFlippingEnv(n_bits=4, continuous=True)
+    model = HER(
+        "MlpPolicy",
+        env,
+        SAC,
+        goal_selection_strategy="future",
+        online_sampling=True,
+        gradient_steps=1,
+        train_freq=1,
+        n_episodes_rollout=-1,
+        max_episode_length=4,
+        policy_kwargs=dict(net_arch=[64]),
+    )
+    model.learn(300)
+    old_replay_buffer = deepcopy(model.replay_buffer)
+    model.save_replay_buffer(path)
+    model.model.replay_buffer = None
+    model.load_replay_buffer(path)
+    # set environment
+    model.replay_buffer.set_env(env)
+
+    assert np.allclose(old_replay_buffer.buffer["observation"], model.replay_buffer.buffer["observation"])
+    assert np.allclose(old_replay_buffer.buffer["next_obs"], model.replay_buffer.buffer["next_obs"])
+    assert np.allclose(old_replay_buffer.buffer["action"], model.replay_buffer.buffer["action"])
+    assert np.allclose(old_replay_buffer.buffer["reward"], model.replay_buffer.buffer["reward"])
+    assert np.allclose(old_replay_buffer.buffer["done"], model.replay_buffer.buffer["done"])
 
 
 @pytest.mark.parametrize("online_sampling", [False, True])

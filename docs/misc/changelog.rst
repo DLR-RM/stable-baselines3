@@ -19,6 +19,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fix GAE computation for on-policy algorithms (off-by one for the last value) (thanks @Wovchena)
 - Fixed potential issue when loading a different environment
+- Make ``make_vec_env`` support the ``env_kwargs`` argument when using an env ID str (@ManifoldFR)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -27,6 +28,7 @@ Others:
 ^^^^^^^
 - Improved typing coverage
 - Improved error messages for unsupported spaces
+- Added ``.vscode`` to the gitignore
 
 Documentation:
 ^^^^^^^^^^^^^^

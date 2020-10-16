@@ -65,6 +65,11 @@ def test_make_atari_env(env_id, n_envs, wrapper_kwargs):
         assert np.max(np.abs(reward)) < 1.0
 
 
+def test_vec_env_kwargs():
+    env = make_vec_env("MountainCarContinuous-v0", n_envs=1, seed=0, env_kwargs={"goal_velocity": 0.11})
+    assert env.get_attr("goal_velocity")[0] == 0.11
+
+
 def test_custom_vec_env(tmp_path):
     """
     Stand alone test for a special case (passing a custom VecEnv class) to avoid doubling the number of tests.

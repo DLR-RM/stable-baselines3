@@ -1,5 +1,4 @@
 import os
-import warnings
 from typing import Any, Callable, Dict, Optional, Type, Union
 
 import gym
@@ -45,9 +44,7 @@ def make_vec_env(
     def make_env(rank):
         def _init():
             if isinstance(env_id, str):
-                env = gym.make(env_id)
-                if len(env_kwargs) > 0:
-                    warnings.warn("No environment class was passed (only an env ID) so ``env_kwargs`` will be ignored")
+                env = gym.make(env_id, **env_kwargs)
             else:
                 env = env_id(**env_kwargs)
             if seed is not None:

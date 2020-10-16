@@ -1,5 +1,8 @@
+from typing import Sequence
+
 import numpy as np
 import pytest
+from pandas.errors import EmptyDataError
 
 from stable_baselines3.common.logger import (
     DEBUG,
@@ -33,6 +36,60 @@ KEY_VALUES = {
 KEY_EXCLUDED = {}
 for key in KEY_VALUES.keys():
     KEY_EXCLUDED[key] = None
+
+
+class LogContent:
+    """
+    A simple wrapper class to provide a common interface to check content for emptiness and report the log format
+    """
+
+    def __init__(self, _format: str, lines: Sequence):
+        self.format = _format
+        self.lines = lines
+
+    @property
+    def empty(self):
+        return len(self.lines) == 0
+
+    def __repr__(self):
+        return f"LogContent(_format={self.format}, lines={self.lines})"
+
+
+@pytest.fixture
+def read_log(tmp_path, capsys):
+    def read_fn(_format):
+        if _format == "csv":
+            try:
+                df = read_csv(tmp_path / "progress.csv")
+            except EmptyDataError:
+                return LogContent(_format, [])
+            return LogContent(_format, [r for _, r in df.iterrows() if not r.empty])
+        elif _format == "json":
+            try:
+                df = read_json(tmp_path / "progress.json")
+            except EmptyDataError:
+                return LogContent(_format, [])
+            return LogContent(_format, [r for _, r in df.iterrows() if not r.empty])
+        elif _format == "stdout":
+            captured = capsys.readouterr()
+            return LogContent(_format, captured.out.splitlines())
+        elif _format == "log":
+            return LogContent(_format, (tmp_path / "log.txt").read_text().splitlines())
+        elif _format == "tensorboard":
+            from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+
+            acc = EventAccumulator(str(tmp_path))
+            acc.Reload()
+
+            tb_values_logged = []
+            for reservoir in [acc.scalars, acc.tensors, acc.images, acc.histograms, acc.compressed_histograms]:
+                for k in reservoir.Keys():
+                    tb_values_logged.append(f"{k}: {str(reservoir.Items(k))}")
+
+            content = LogContent(_format, tb_values_logged)
+            return content
+
+    return read_fn
 
 
 def test_main(tmp_path):
@@ -71,7 +128,7 @@ def test_main(tmp_path):
 
 
 @pytest.mark.parametrize("_format", ["stdout", "log", "json", "csv", "tensorboard"])
-def test_make_output(tmp_path, _format):
+def test_make_output(tmp_path, read_log, _format):
     """
     test make output
 
@@ -83,10 +140,7 @@ def test_make_output(tmp_path, _format):
 
     writer = make_output_format(_format, tmp_path)
     writer.write(KEY_VALUES, KEY_EXCLUDED)
-    if _format == "csv":
-        read_csv(tmp_path / "progress.csv")
-    elif _format == "json":
-        read_json(tmp_path / "progress.json")
+    assert not read_log(_format).empty
     writer.close()
 
 
@@ -96,3 +150,15 @@ def test_make_output_fail(tmp_path):
     """
     with pytest.raises(ValueError):
         make_output_format("dummy_format", tmp_path)
+
+
+@pytest.mark.parametrize("_format", ["stdout", "log", "json", "csv", "tensorboard"])
+def test_exclude_keys(tmp_path, read_log, _format):
+    if _format == "tensorboard":
+        # Skip if no tensorboard installed
+        pytest.importorskip("tensorboard")
+
+    writer = make_output_format(_format, tmp_path)
+    writer.write(dict(some_tag=42), key_excluded=dict(some_tag=(_format)))
+    writer.close()
+    assert read_log(_format).empty

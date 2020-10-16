@@ -144,11 +144,12 @@ def filter_excluded_keys(
     key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], _format: str
 ) -> Dict[str, Any]:
     """
-    filters the keys specified by `key_exclude` for the specified format
+    Filters the keys specified by ``key_exclude`` for the specified format
 
     :param key_values: log dictionary to be filtered
     :param key_excluded: keys to be excluded per format
     :param _format: format for which this filter is run
+    :return: dict without the excluded keys
     """
 
     def is_excluded(key):

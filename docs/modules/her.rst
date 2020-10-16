@@ -15,6 +15,11 @@ HER is an algorithm that works with Off policy methods (DQN, SAC, TD3 and DDPG f
     HER requires the environment to inherits from `gym.GoalEnv <https://github.com/openai/gym/blob/3394e245727c1ae6851b504a50ba77c73cd4c65b/gym/core.py#L160>`_
 
 
+.. warning::
+
+	``HER`` supports ``VecNormalize`` wrapper but only when ``online_sampling=True``
+
+
 Notes
 -----
 

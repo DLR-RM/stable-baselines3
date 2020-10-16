@@ -166,9 +166,9 @@ Despite this change, no change in performance should be expected.
 HER
 ^^^
 
-The HER implementation now also supports online sampling of the new goals. This is done in a vectorized version.
+The ``HER`` implementation now also supports online sampling of the new goals. This is done in a vectorized version.
 The goal selection strategy ``RANDOM`` is no longer supported.
-
+``HER`` now supports ``VecNormalize`` wrapper but only when ``online_sampling=True``
 
 
 New logger API

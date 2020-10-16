@@ -207,14 +207,16 @@ class HerReplayBuffer(BaseBuffer):
         )
 
         # concatenate observation with (desired) goal
-        observations = ObsDictWrapper.convert_dict(transitions)
-        next_observations = ObsDictWrapper.convert_dict(transitions, observation_key="next_obs")
+        observations = ObsDictWrapper.convert_dict(self._normalize_obs(transitions, env))
+        # HACK to make normalize obs work with the next observation
+        transitions["observation"] = transitions["next_obs"]
+        next_observations = ObsDictWrapper.convert_dict(self._normalize_obs(transitions, env))
 
         if online_sampling:
             data = (
-                self._normalize_obs(observations[:, 0], env),
+                observations[:, 0],
                 transitions["action"],
-                self._normalize_obs(next_observations[:, 0], env),
+                next_observations[:, 0],
                 transitions["done"],
                 self._normalize_reward(transitions["reward"], env),
             )

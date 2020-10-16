@@ -6,7 +6,6 @@ import numpy as np
 import torch as th
 
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
@@ -80,6 +79,9 @@ class HER(BaseAlgorithm):
     ):
 
         super(HER, self).__init__(policy=BasePolicy, env=env, policy_base=BasePolicy, learning_rate=3e-4)
+
+        if self.get_vec_normalize_env() is not None:
+            assert online_sampling, "You must pass `online_sampling=True` if you want to use `VecNormalize` with `HER`"
 
         # model initialization
         self.model_class = model_class
@@ -179,7 +181,6 @@ class HER(BaseAlgorithm):
                 action_noise=self.action_noise,
                 callback=callback,
                 learning_starts=self.learning_starts,
-                replay_buffer=self.replay_buffer,
                 log_interval=log_interval,
             )
 
@@ -204,7 +205,6 @@ class HER(BaseAlgorithm):
         n_steps: int = -1,
         action_noise: Optional[ActionNoise] = None,
         learning_starts: int = 0,
-        replay_buffer: Union[ReplayBuffer, HerReplayBuffer] = None,
         log_interval: Optional[int] = None,
     ) -> RolloutReturn:
         """
@@ -221,7 +221,6 @@ class HER(BaseAlgorithm):
             Required for deterministic policy (e.g. TD3). This can also be used
             in addition to the stochastic policy for SAC.
         :param learning_starts: Number of steps before learning for the warm-up phase.
-        :param replay_buffer:
         :param log_interval: Log data every ``log_interval`` episodes
         :return:
         """
@@ -275,7 +274,7 @@ class HER(BaseAlgorithm):
                 self.model.ep_success_buffer = self.ep_success_buffer
 
                 # Store episode in episode storage
-                if replay_buffer is not None:
+                if self.replay_buffer is not None:
                     # Store only the unnormalized version
                     if self._vec_normalize_env is not None:
                         new_obs_ = self._vec_normalize_env.get_original_obs()
@@ -355,7 +354,7 @@ class HER(BaseAlgorithm):
         # sample goals and get new observations
         observations, next_observations, actions, rewards = self._episode_storage.sample(
             self.batch_size,
-            self.env,
+            self.get_vec_normalize_env(),
             self.online_sampling,
             self.n_sampled_goal,
         )

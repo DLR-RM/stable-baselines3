@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import numpy as np
 from gym import GoalEnv, spaces
@@ -111,7 +111,9 @@ class BitFlippingEnv(GoalEnv):
         done = done or self.current_step >= self.max_steps
         return obs, reward, done, info
 
-    def compute_reward(self, achieved_goal: np.ndarray, desired_goal: np.ndarray, _info) -> np.float32:
+    def compute_reward(
+        self, achieved_goal: Union[int, np.ndarray], desired_goal: Union[int, np.ndarray], _info: Optional[Dict[str, Any]]
+    ) -> np.float32:
         # Deceptive reward: it is positive only when the goal is achieved
         # vectorized version
         distance = np.linalg.norm(achieved_goal - desired_goal, axis=-1)

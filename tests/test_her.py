@@ -31,9 +31,10 @@ def test_her(model_class, online_sampling):
         n_episodes_rollout=-1,
         max_episode_length=n_bits,
         policy_kwargs=dict(net_arch=[64]),
+        learning_starts=100,
     )
 
-    model.learn(total_timesteps=500)
+    model.learn(total_timesteps=300)
 
 
 @pytest.mark.parametrize(
@@ -65,8 +66,9 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
         n_episodes_rollout=-1,
         max_episode_length=10,
         policy_kwargs=dict(net_arch=[64]),
+        learning_starts=100,
     )
-    model.learn(total_timesteps=200)
+    model.learn(total_timesteps=300)
 
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
@@ -99,7 +101,8 @@ def test_save_load(tmp_path, model_class, use_sde):
         buffer_size=int(1e6),
         gamma=0.98,
         gradient_steps=1,
-        train_freq=1,
+        train_freq=4,
+        learning_starts=100,
         n_episodes_rollout=-1,
         max_episode_length=n_bits,
         **kwargs
@@ -152,17 +155,18 @@ def test_save_load(tmp_path, model_class, use_sde):
     assert np.allclose(selected_actions, new_selected_actions, 1e-4)
 
     # check if learn still works
-    model.learn(total_timesteps=1000, eval_freq=500)
+    model.learn(total_timesteps=300)
 
     # clear file from os
     os.remove(tmp_path / "test_save.zip")
 
 
 @pytest.mark.parametrize("online_sampling", [False, True])
-@pytest.mark.parametrize("n_bits", [15])
-def test_dqn_her(online_sampling, n_bits):
+@pytest.mark.parametrize("n_bits", [10])
+def test_performance_her(online_sampling, n_bits):
     """
-    Test HER with DQN for BitFlippingEnv.
+    That that DQN+HER can solve BitFlippingEnv.
+    It should not work when n_sampled_goal=0 (DQN alone).
     """
     env = BitFlippingEnv(n_bits=n_bits, continuous=False)
 
@@ -174,7 +178,7 @@ def test_dqn_her(online_sampling, n_bits):
         goal_selection_strategy="future",
         online_sampling=online_sampling,
         verbose=1,
-        learning_rate=0.0005,
+        learning_rate=5e-4,
         max_episode_length=n_bits,
         train_freq=1,
         learning_starts=100,
@@ -184,6 +188,7 @@ def test_dqn_her(online_sampling, n_bits):
         batch_size=32,
     )
 
-    model.learn(total_timesteps=10000)
+    model.learn(total_timesteps=5000, log_interval=50)
 
-    assert np.mean(model.ep_success_buffer) > 0.0
+    # 90% training success
+    assert np.mean(model.ep_success_buffer) > 0.90

@@ -1,18 +1,18 @@
 from collections import deque
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch as th
 from gym import spaces
 
-from stable_baselines3.common.buffers import BaseBuffer
+from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.type_aliases import ReplayBufferSamples, RolloutBufferSamples
 from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 
 
-class HerReplayBuffer(BaseBuffer):
+class HerReplayBuffer(ReplayBuffer):
     """
     Replay Buffer for sampling HER (Hindsight Experience Replay) transitions.
     In the online sampling case these new transitions will not be saved in the Buffer.
@@ -77,6 +77,38 @@ class HerReplayBuffer(BaseBuffer):
         self.goal_selection_strategy = goal_selection_strategy
         # percentage of her indices
         self.her_ratio = her_ratio
+
+    def __getstate__(self) -> Dict[str, Any]:
+        """
+        Gets state for pickling.
+
+        Excludes self.env, as in general Env's may not be pickleable."""
+        state = self.__dict__.copy()
+        # these attributes are not pickleable
+        del state["env"]
+        return state
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        """
+        Restores pickled state.
+
+        User must call set_env() after unpickling before using.
+
+        :param state:
+        """
+        self.__dict__.update(state)
+        assert "env" not in state
+        self.env = None
+
+    def set_env(self, env: ObsDictWrapper) -> None:
+        """
+        Sets the environment.
+        :param env:
+        """
+        if self.env is not None:
+            raise ValueError("Trying to set env of already initialized environment.")
+
+        self.env = env
 
     def _get_samples(
         self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None

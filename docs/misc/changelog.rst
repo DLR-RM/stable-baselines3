@@ -20,6 +20,7 @@ Bug Fixes:
 - Fix ignoring the exclude parameter when recording logs using json, csv or log as logging format (@SwamyDev)
 - Make ``make_vec_env`` support the ``env_kwargs`` argument when using an env ID str (@ManifoldFR)
 - Fix ``check_env`` not checking if the env has a Dict actionspace before calling ``_check_nan`` (@wmmc88)
+- Update the check for spaces unsupported by Stable Baselines 3 to include checks on the action space (@wmmc88)
 
 Deprecations:
 ^^^^^^^^^^^^^

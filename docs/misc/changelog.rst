@@ -20,6 +20,8 @@ Bug Fixes:
 - Fix ignoring the exclude parameter when recording logs using json, csv or log as logging format (@SwamyDev)
 - Make ``make_vec_env`` support the ``env_kwargs`` argument when using an env ID str (@ManifoldFR)
 - Fix model creation initializing CUDA even when `device="cpu"` is provided
+- Fix ``check_env`` not checking if the env has a Dict actionspace before calling ``_check_nan`` (@wmmc88)
+- Update the check for spaces unsupported by Stable Baselines 3 to include checks on the action space (@wmmc88)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -457,4 +459,4 @@ And all the contributors:
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
-@diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev
+@diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88

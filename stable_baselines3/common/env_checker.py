@@ -10,8 +10,8 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
 
 def _is_numpy_array_space(space: spaces.Space) -> bool:
     """
-    Checks whether the space consists of a numpy array
-    `Dict` and `Tuple` spaces are not just a numpy array
+    Returns False if provided space is not representable as a single numpy array
+    (e.g. Dict and Tuple spaces return False)
     """
     return not isinstance(space, (spaces.Dict, spaces.Tuple))
 
@@ -46,7 +46,7 @@ def _check_image_input(observation_space: spaces.Box) -> None:
 
 
 def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, action_space: spaces.Space) -> None:
-    """Emit warnings when the observation space used is not supported by Stable-Baselines."""
+    """Emit warnings when the observation space or action space used is not supported by Stable-Baselines."""
 
     if isinstance(observation_space, spaces.Dict) and not isinstance(env, gym.GoalEnv):
         warnings.warn(

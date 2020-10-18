@@ -1,5 +1,6 @@
 import gym
 import numpy as np
+import pytest
 from gym.spaces import Box, Dict, Discrete
 
 from stable_baselines3.common.env_checker import check_env
@@ -25,4 +26,6 @@ class ActionDictTestEnv(gym.Env):
 
 def test_check_env_dict_action():
     test_env = ActionDictTestEnv()
-    check_env(env=test_env, warn=True)
+
+    with pytest.warns(Warning):
+        check_env(env=test_env, warn=True)

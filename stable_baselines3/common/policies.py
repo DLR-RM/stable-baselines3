@@ -112,12 +112,12 @@ class BaseModel(nn.Module, ABC):
     @property
     def device(self) -> th.device:
         """Infer which device this policy lives on by inspecting its parameters.
-        If it has no parameters, the 'auto' device is used as a fallback.
+        If it has no parameters, the 'cpu' device is used as a fallback.
 
         :return:"""
         for param in self.parameters():
             return param.device
-        return get_device("auto")
+        return get_device("cpu")
 
     def save(self, path: str) -> None:
         """
@@ -447,7 +447,9 @@ class ActorCriticPolicy(BasePolicy):
         # Note: If net_arch is None and some features extractor is used,
         #       net_arch here is an empty list and mlp_extractor does not
         #       really contain any layers (acts like an identity module).
-        self.mlp_extractor = MlpExtractor(self.features_dim, net_arch=self.net_arch, activation_fn=self.activation_fn)
+        self.mlp_extractor = MlpExtractor(
+            self.features_dim, net_arch=self.net_arch, activation_fn=self.activation_fn, device=self.device
+        )
 
     def _build(self, lr_schedule: Callable[[float], float]) -> None:
         """

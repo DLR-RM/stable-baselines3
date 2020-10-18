@@ -19,6 +19,7 @@ Bug Fixes:
 - Fix GAE computation for on-policy algorithms (off-by one for the last value) (thanks @Wovchena)
 - Fix ignoring the exclude parameter when recording logs using json, csv or log as logging format (@SwamyDev)
 - Make ``make_vec_env`` support the ``env_kwargs`` argument when using an env ID str (@ManifoldFR)
+- Fix model creation initializing CUDA even when `device="cpu"` is provided
 
 Deprecations:
 ^^^^^^^^^^^^^

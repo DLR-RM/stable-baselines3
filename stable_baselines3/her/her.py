@@ -495,3 +495,4 @@ class HER(BaseAlgorithm):
         if self.online_sampling:
             # set environment
             self.replay_buffer.set_env(self.env)
+            self.replay_buffer.current_idx = 0

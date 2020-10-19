@@ -80,7 +80,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         tag = None
         for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
 
-            if excluded is not None and "stdout" in excluded:
+            if excluded is not None and ("stdout" in excluded or "log" in excluded):
                 continue
 
             if isinstance(value, float):
@@ -140,6 +140,24 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             self.file.close()
 
 
+def filter_excluded_keys(
+    key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], _format: str
+) -> Dict[str, Any]:
+    """
+    Filters the keys specified by ``key_exclude`` for the specified format
+
+    :param key_values: log dictionary to be filtered
+    :param key_excluded: keys to be excluded per format
+    :param _format: format for which this filter is run
+    :return: dict without the excluded keys
+    """
+
+    def is_excluded(key: str) -> bool:
+        return key in key_excluded and key_excluded[key] is not None and _format in key_excluded[key]
+
+    return {key: value for key, value in key_values.items() if not is_excluded(key)}
+
+
 class JSONOutputFormat(KVWriter):
     def __init__(self, filename: str):
         """
@@ -150,18 +168,20 @@ class JSONOutputFormat(KVWriter):
         self.file = open(filename, "wt")
 
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
-        for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
-
-            if excluded is not None and "json" in excluded:
-                continue
-
+        def cast_to_json_serializable(value: Any):
             if hasattr(value, "dtype"):
                 if value.shape == () or len(value) == 1:
                     # if value is a dimensionless numpy array or of length 1, serialize as a float
-                    key_values[key] = float(value)
+                    return float(value)
                 else:
                     # otherwise, a value is a numpy array, serialize as a list or nested lists
-                    key_values[key] = value.tolist()
+                    return value.tolist()
+            return value
+
+        key_values = {
+            key: cast_to_json_serializable(value)
+            for key, value in filter_excluded_keys(key_values, key_excluded, "json").items()
+        }
         self.file.write(json.dumps(key_values) + "\n")
         self.file.flush()
 
@@ -187,6 +207,7 @@ class CSVOutputFormat(KVWriter):
 
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
         # Add our current row to the history
+        key_values = filter_excluded_keys(key_values, key_excluded, "csv")
         extra_keys = key_values.keys() - self.keys
         if extra_keys:
             self.keys.extend(extra_keys)

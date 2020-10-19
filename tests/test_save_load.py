@@ -305,7 +305,7 @@ def test_save_load_policy(tmp_path, model_class, policy_str):
     if policy_str == "MlpPolicy":
         env = select_env(model_class)
     else:
-        if model_class in [SAC, TD3, DQN]:
+        if model_class in [SAC, TD3, DQN, DDPG]:
             # Avoid memory error when using replay buffer
             # Reduce the size of the features
             kwargs = dict(buffer_size=250)

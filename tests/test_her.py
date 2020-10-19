@@ -74,7 +74,8 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
 @pytest.mark.parametrize("use_sde", [False, True])
-def test_save_load(tmp_path, model_class, use_sde):
+@pytest.mark.parametrize("online_sampling", [False, True])
+def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     """
     Test if 'save' and 'load' saves and loads model correctly
     """
@@ -93,7 +94,7 @@ def test_save_load(tmp_path, model_class, use_sde):
         model_class,
         n_sampled_goal=5,
         goal_selection_strategy="future",
-        online_sampling=True,
+        online_sampling=online_sampling,
         verbose=0,
         tau=0.05,
         batch_size=128,
@@ -162,8 +163,11 @@ def test_save_load(tmp_path, model_class, use_sde):
     os.remove(tmp_path / "test_save.zip")
 
 
-@pytest.mark.parametrize("model_class", [HER])
-def test_save_load_replay_buffer(tmp_path, model_class):
+@pytest.mark.parametrize("online_sampling", [False, True])
+def test_save_load_replay_buffer(tmp_path, online_sampling):
+    """
+    Test if 'save_replay_buffer' and 'load_replay_buffer' works correctly
+    """
     path = pathlib.Path(tmp_path / "logs/replay_buffer.pkl")
     path.parent.mkdir(exist_ok=True, parents=True)  # to not raise a warning
     env = BitFlippingEnv(n_bits=4, continuous=True)
@@ -172,7 +176,7 @@ def test_save_load_replay_buffer(tmp_path, model_class):
         env,
         SAC,
         goal_selection_strategy="future",
-        online_sampling=True,
+        online_sampling=online_sampling,
         gradient_steps=1,
         train_freq=1,
         n_episodes_rollout=-1,
@@ -184,21 +188,25 @@ def test_save_load_replay_buffer(tmp_path, model_class):
     model.save_replay_buffer(path)
     model.model.replay_buffer = None
     model.load_replay_buffer(path)
-    # set environment
-    model.replay_buffer.set_env(env)
 
-    assert np.allclose(old_replay_buffer.buffer["observation"], model.replay_buffer.buffer["observation"])
-    assert np.allclose(old_replay_buffer.buffer["next_obs"], model.replay_buffer.buffer["next_obs"])
-    assert np.allclose(old_replay_buffer.buffer["action"], model.replay_buffer.buffer["action"])
-    assert np.allclose(old_replay_buffer.buffer["reward"], model.replay_buffer.buffer["reward"])
-    assert np.allclose(old_replay_buffer.buffer["done"], model.replay_buffer.buffer["done"])
+    if online_sampling:
+        assert np.allclose(old_replay_buffer.buffer["observation"], model.replay_buffer.buffer["observation"], equal_nan=True)
+        assert np.allclose(old_replay_buffer.buffer["next_obs"], model.replay_buffer.buffer["next_obs"], equal_nan=True)
+        assert np.allclose(old_replay_buffer.buffer["action"], model.replay_buffer.buffer["action"], equal_nan=True)
+        assert np.allclose(old_replay_buffer.buffer["reward"], model.replay_buffer.buffer["reward"], equal_nan=True)
+        assert np.allclose(old_replay_buffer.buffer["done"], model.replay_buffer.buffer["done"], equal_nan=True)
+    else:
+        assert np.allclose(old_replay_buffer.observations, model.replay_buffer.observations)
+        assert np.allclose(old_replay_buffer.actions, model.replay_buffer.actions)
+        assert np.allclose(old_replay_buffer.rewards, model.replay_buffer.rewards)
+        assert np.allclose(old_replay_buffer.dones, model.replay_buffer.dones)
 
 
 @pytest.mark.parametrize("online_sampling", [False, True])
 @pytest.mark.parametrize("n_bits", [10])
 def test_performance_her(online_sampling, n_bits):
     """
-    That that DQN+HER can solve BitFlippingEnv.
+    That DQN+HER can solve BitFlippingEnv.
     It should not work when n_sampled_goal=0 (DQN alone).
     """
     env = BitFlippingEnv(n_bits=n_bits, continuous=False)

@@ -396,11 +396,6 @@ class HER(BaseAlgorithm):
         self.model.model_class = self.model_class
         self.model.max_episode_length = self.max_episode_length
 
-        # exclude episode storage
-        if exclude is None:
-            exclude = []
-        exclude = ["_episode_storage"].extend(exclude)
-
         self.model.save(path, exclude, include)
 
     @classmethod
@@ -488,3 +483,15 @@ class HER(BaseAlgorithm):
         if her_model.model.use_sde:
             her_model.model.policy.reset_noise()  # pytype: disable=attribute-error
         return her_model
+
+    def load_replay_buffer(self, path: Union[str, pathlib.Path, io.BufferedIOBase]) -> None:
+        """
+        Load a replay buffer from a pickle file and set environment for replay buffer (only online sampling).
+
+        :param path: Path to the pickled replay buffer.
+        """
+        self.model.load_replay_buffer(path=path)
+
+        if self.online_sampling:
+            # set environment
+            self.replay_buffer.set_env(self.env)

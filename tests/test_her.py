@@ -190,11 +190,24 @@ def test_save_load_replay_buffer(tmp_path, online_sampling):
     model.load_replay_buffer(path)
 
     if online_sampling:
-        assert np.allclose(old_replay_buffer.buffer["observation"], model.replay_buffer.buffer["observation"], equal_nan=True)
-        assert np.allclose(old_replay_buffer.buffer["next_obs"], model.replay_buffer.buffer["next_obs"], equal_nan=True)
-        assert np.allclose(old_replay_buffer.buffer["action"], model.replay_buffer.buffer["action"], equal_nan=True)
-        assert np.allclose(old_replay_buffer.buffer["reward"], model.replay_buffer.buffer["reward"], equal_nan=True)
-        assert np.allclose(old_replay_buffer.buffer["done"], model.replay_buffer.buffer["done"], equal_nan=True)
+        n_episodes_stored = old_replay_buffer.n_episodes_stored
+        assert np.allclose(
+            old_replay_buffer.buffer["observation"][:n_episodes_stored],
+            model.replay_buffer.buffer["observation"][:n_episodes_stored],
+        )
+        assert np.allclose(
+            old_replay_buffer.buffer["next_obs"][:n_episodes_stored],
+            model.replay_buffer.buffer["next_obs"][:n_episodes_stored],
+        )
+        assert np.allclose(
+            old_replay_buffer.buffer["action"][:n_episodes_stored], model.replay_buffer.buffer["action"][:n_episodes_stored]
+        )
+        assert np.allclose(
+            old_replay_buffer.buffer["reward"][:n_episodes_stored], model.replay_buffer.buffer["reward"][:n_episodes_stored]
+        )
+        assert np.allclose(
+            old_replay_buffer.buffer["done"][:n_episodes_stored], model.replay_buffer.buffer["done"][:n_episodes_stored]
+        )
     else:
         assert np.allclose(old_replay_buffer.observations, model.replay_buffer.observations)
         assert np.allclose(old_replay_buffer.actions, model.replay_buffer.actions)

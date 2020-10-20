@@ -31,6 +31,9 @@ def get_time_limit(env: VecEnv, current_max_episode_length: Optional[int]) -> in
     if current_max_episode_length is None:
         try:
             current_max_episode_length = env.get_attr("spec")[0].max_episode_steps
+            # Raise the error because the attribute is present but is None
+            if current_max_episode_length is None:
+                raise AttributeError
         # if not available check if a valid value was passed as an argument
         except AttributeError:
             raise ValueError(

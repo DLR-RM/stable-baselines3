@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional, Union
 
 import numpy as np
 from gym import GoalEnv, spaces
+from gym.envs.registration import EnvSpec
 
 from stable_baselines3.common.type_aliases import GymStepReturn
 
@@ -21,6 +22,8 @@ class BitFlippingEnv(GoalEnv):
     :param discrete_obs_space: Whether to use the discrete observation
         version or not, by default, it uses the MultiBinary one
     """
+
+    spec = EnvSpec("BitFlippingEnv-v0")
 
     def __init__(
         self, n_bits: int = 10, continuous: bool = False, max_steps: Optional[int] = None, discrete_obs_space: bool = False

@@ -2,14 +2,17 @@ import os
 import pathlib
 from copy import deepcopy
 
+import gym
 import numpy as np
 import pytest
 import torch as th
 
 from stable_baselines3 import DDPG, DQN, HER, SAC, TD3
 from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
+from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
+from stable_baselines3.her.her import get_time_limit
 
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
@@ -110,7 +113,7 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
         **kwargs
     )
 
-    model.learn(total_timesteps=500)
+    model.learn(total_timesteps=300)
 
     env.reset()
 
@@ -213,6 +216,41 @@ def test_save_load_replay_buffer(tmp_path, online_sampling):
         assert np.allclose(old_replay_buffer.actions, model.replay_buffer.actions)
         assert np.allclose(old_replay_buffer.rewards, model.replay_buffer.rewards)
         assert np.allclose(old_replay_buffer.dones, model.replay_buffer.dones)
+
+
+def test_get_max_episode_length():
+    dict_env = DummyVecEnv([lambda: BitFlippingEnv()])
+
+    # Cannot infer max epsiode length
+    with pytest.raises(ValueError):
+        get_time_limit(dict_env, current_max_episode_length=None)
+
+    default_length = 10
+    assert get_time_limit(dict_env, current_max_episode_length=default_length) == default_length
+
+    env = gym.make("CartPole-v1")
+    vec_env = DummyVecEnv([lambda: env])
+
+    assert get_time_limit(vec_env, current_max_episode_length=None) == 500
+    # Overwrite max_episode_steps
+    assert get_time_limit(vec_env, current_max_episode_length=default_length) == default_length
+
+    # Set max_episode_steps to None
+    env.spec.max_episode_steps = None
+    vec_env = DummyVecEnv([lambda: env])
+    with pytest.raises(ValueError):
+        get_time_limit(vec_env, current_max_episode_length=None)
+
+    # Initialize HER and specify max_episode_length, should not raise an issue
+    HER("MlpPolicy", dict_env, DQN, max_episode_length=5)
+
+    with pytest.raises(ValueError):
+        HER("MlpPolicy", dict_env, DQN)
+
+    # Wrapped in a timelimit, should be fine
+    # Note: it requires env.spec to be defined
+    env = DummyVecEnv([lambda: gym.wrappers.TimeLimit(BitFlippingEnv(), 10)])
+    HER("MlpPolicy", env, DQN)
 
 
 @pytest.mark.parametrize("online_sampling", [False, True])

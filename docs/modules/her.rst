@@ -8,7 +8,11 @@ HER
 
 `Hindsight Experience Replay (HER) <https://arxiv.org/abs/1707.01495>`_
 
-HER is an algorithm that works with Off policy methods (DQN, SAC, TD3 and DDPG for example).
+HER is an algorithm that works with off-policy methods (DQN, SAC, TD3 and DDPG for example).
+HER uses the fact that even if a desired goal was not achieved, other goal may have been achieved during a rollout.
+It creates "virtual" transitions by relabeling transitions (changing the desired goal) from past episodes.
+
+
 
 .. warning::
 

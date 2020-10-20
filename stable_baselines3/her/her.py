@@ -323,8 +323,8 @@ class HER(BaseAlgorithm):
                     self.replay_buffer.store_episode()
                 else:
                     self._episode_storage.store_episode()
-                    # store episode in replay buffer
-                    self._store_transitions()
+                    # sample virtual transitions and store them in replay buffer
+                    self._sample_her_transitions()
                     # clear storage for current episode
                     self._episode_storage.reset()
 
@@ -349,16 +349,16 @@ class HER(BaseAlgorithm):
 
         return RolloutReturn(mean_reward, total_steps, total_episodes, continue_training)
 
-    def _store_transitions(self) -> None:
+    def _sample_her_transitions(self) -> None:
         """
-        Store current episode in replay buffer when using offline sampling.
-        Sample additional goals and store new transitions in replay buffer.
+        Sample additional goals and store new transitions in replay buffer
+        when using offline sampling
         """
 
         # sample goals and get new observations
         observations, next_observations, actions, rewards = self._episode_storage.sample(
             self.batch_size,
-            None, # we should store unnormalized transitions, they will be normalized at sampling time
+            None,  # we should store unnormalized transitions, they will be normalized at sampling time
             self.online_sampling,
             self.n_sampled_goal,
         )

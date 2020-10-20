@@ -9,6 +9,7 @@ Pre-Release 0.10.0a0 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Renamed ``common.cmd_util`` to ``common.env_util`` for clarity
 
 New Features:
 ^^^^^^^^^^^^^

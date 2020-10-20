@@ -1,7 +1,7 @@
-.. _cmd_util:
+.. _env_util:
 
 Command Utils
 =========================
 
-.. automodule:: stable_baselines3.common.cmd_util
+.. automodule:: stable_baselines3.common.env_util
   :members:

@@ -14,20 +14,23 @@ from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 
 class HerReplayBuffer(ReplayBuffer):
     """
-    Replay Buffer for sampling HER (Hindsight Experience Replay) transitions.
-    In the online sampling case these new transitions will not be saved in the Buffer.
+    Replay buffer for sampling HER (Hindsight Experience Replay) transitions.
+    In the online sampling case, these new transitions will not be saved in the replay buffer
+    and will only be created at sampling time.
 
     :param env: The training environment
     :param buffer_size: The size of the buffer measured in transitions.
     :param max_episode_length: The length of an episode. (time horizon)
     :param goal_selection_strategy: Strategy for sampling goals for replay.
-        One of ['episode', 'final', 'future', 'random']
+        One of ['episode', 'final', 'future']
     :param observation_space: Observation space
     :param action_space: Action space
     :param device: PyTorch device
-        to which the values will be converted
     :param n_envs: Number of parallel environments
-    :her_ratio: The ratio between HER replays and regular replays in percent (between 0 and 1, for online sampling)
+    :her_ratio: The ratio between HER transitions and regular transitions in percent
+        (between 0 and 1, for online sampling)
+        The default value ``her_ratio=0.8`` corresponds to 4 virtual transitions
+        for one real transition (4 / (4 + 1) = 0.8)
     """
 
     def __init__(
@@ -70,6 +73,7 @@ class HerReplayBuffer(ReplayBuffer):
             key: np.empty((self.max_episode_stored, self.max_episode_length, *dim), dtype=np.float32)
             for key, dim in input_shape.items()
         }
+        # Store info dicts are it can be used to compute the reward (e.g. continuity cost)
         self.info_buffer = [deque(maxlen=self.max_episode_length) for _ in range(self.max_episode_stored)]
         # episode length storage, needed for episodes which has less steps than the maximum length
         self.episode_lengths = np.zeros(self.max_episode_stored, dtype=np.int64)
@@ -92,7 +96,7 @@ class HerReplayBuffer(ReplayBuffer):
         """
         Restores pickled state.
 
-        User must call set_env() after unpickling before using.
+        User must call ``set_env()`` after unpickling before using.
 
         :param state:
         """
@@ -103,6 +107,7 @@ class HerReplayBuffer(ReplayBuffer):
     def set_env(self, env: ObsDictWrapper) -> None:
         """
         Sets the environment.
+
         :param env:
         """
         if self.env is not None:
@@ -167,21 +172,21 @@ class HerReplayBuffer(ReplayBuffer):
             transitions_indices = np.random.randint(self.episode_lengths[her_episode_indices])
 
         else:
-            raise ValueError("Strategy for sampling goals not supported!")
+            raise ValueError(f"Strategy {self.goal_selection_strategy} for sampling goals not supported!")
 
         return self.buffer["achieved_goal"][her_episode_indices, transitions_indices]
 
     def _sample_transitions(
         self,
         batch_size: int,
-        env: Optional[VecNormalize],
+        maybe_vec_env: Optional[VecNormalize],
         online_sampling: bool = True,
         n_sampled_goal: int = None,
     ) -> Union[ReplayBufferSamples, Tuple]:
         """
         :param batch_size: Number of element to sample
-        :param env: associated gym VecEnv
-            to normalize the observations/rewards when sampling
+        :param env: associated gym VecEnv to normalize the observations/rewards
+            Only valid when using online sampling
         :param online_sampling: Using online_sampling for HER or not.
         :param n_sampled_goal: Number of sampled goals for replay. (offline sampling)
         :return: Samples.
@@ -191,9 +196,13 @@ class HerReplayBuffer(ReplayBuffer):
             episode_indices = np.random.randint(0, self.n_episodes_stored, batch_size)
             her_indices = np.arange(batch_size)[: int(self.her_ratio * batch_size)]
         else:
+            assert maybe_vec_env is None, "Transitions must be stored unnormalized in the replay buffer"
+            # Offline sampling: there is only one episode stored
             episode_length = self.episode_lengths[0]
+            # we sample n_sampled_goal per timestep in the episode (only one is stored).
             episode_indices = np.tile(0, (episode_length * n_sampled_goal))
-            # episode_indices = np.array(list(range(1)) * episode_length * n_sampled_goal)
+            # we only sample virtual transitions
+            # as real transitions are already stored in the replay buffer
             her_indices = np.arange(len(episode_indices))
 
         ep_length = self.episode_lengths[episode_indices]
@@ -209,9 +218,13 @@ class HerReplayBuffer(ReplayBuffer):
             transitions_indices = np.random.randint(ep_length)
         else:
             if her_indices.size == 0:
+                # Episode of one timestep, not enough for using the "future" strategy
+                # no virtual transitions are created in that case
                 return np.empty(0), np.empty(0), np.empty(0), np.empty(0)
             else:
-                # repeat every transition index n_sampled_goals times
+                # Repeat every transition index n_sampled_goals times
+                # to sample n_sampled_goal per timestep in the episode (only one is stored).
+                # Now with the corrected episode length when using "future" strategy
                 transitions_indices = np.tile(np.arange(ep_length[0]), n_sampled_goal)
                 episode_indices = episode_indices[transitions_indices]
                 her_indices = np.arange(len(episode_indices))
@@ -219,6 +232,7 @@ class HerReplayBuffer(ReplayBuffer):
         # get selected transitions
         transitions = {key: self.buffer[key][episode_indices, transitions_indices].copy() for key in self.buffer.keys()}
 
+        # sample new desired goals and relabel the transitions
         new_goals = self.sample_goals(episode_indices, her_indices, transitions_indices)
         transitions["desired_goal"][her_indices] = new_goals
 
@@ -239,10 +253,10 @@ class HerReplayBuffer(ReplayBuffer):
         )
 
         # concatenate observation with (desired) goal
-        observations = ObsDictWrapper.convert_dict(self._normalize_obs(transitions, env))
+        observations = ObsDictWrapper.convert_dict(self._normalize_obs(transitions, maybe_vec_env))
         # HACK to make normalize obs work with the next observation
         transitions["observation"] = transitions["next_obs"]
-        next_observations = ObsDictWrapper.convert_dict(self._normalize_obs(transitions, env))
+        next_observations = ObsDictWrapper.convert_dict(self._normalize_obs(transitions, maybe_vec_env))
 
         if online_sampling:
             data = (
@@ -250,7 +264,7 @@ class HerReplayBuffer(ReplayBuffer):
                 transitions["action"],
                 next_observations[:, 0],
                 transitions["done"],
-                self._normalize_reward(transitions["reward"], env),
+                self._normalize_reward(transitions["reward"], maybe_vec_env),
             )
 
             return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
@@ -286,7 +300,11 @@ class HerReplayBuffer(ReplayBuffer):
         # update current pointer
         self.current_idx += 1
 
-    def store_episode(self):
+    def store_episode(self) -> None:
+        """
+        Increment episode counter
+        and reset transition pointer.
+        """
         # add episode length to length storage
         self.episode_lengths[self.pos] = self.current_idx
 
@@ -302,13 +320,10 @@ class HerReplayBuffer(ReplayBuffer):
         self.current_idx = 0
 
     @property
-    def n_episodes_stored(self):
+    def n_episodes_stored(self) -> int:
         if self.full:
             return self.max_episode_stored
         return self.pos
-
-    def clear_buffer(self):
-        self.buffer = {}
 
     def size(self) -> int:
         """

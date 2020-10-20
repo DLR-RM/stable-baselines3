@@ -351,13 +351,14 @@ class HER(BaseAlgorithm):
 
     def _store_transitions(self) -> None:
         """
-        Store current episode in replay buffer. Sample additional goals and store new transitions in replay buffer.
+        Store current episode in replay buffer when using offline sampling.
+        Sample additional goals and store new transitions in replay buffer.
         """
 
         # sample goals and get new observations
         observations, next_observations, actions, rewards = self._episode_storage.sample(
             self.batch_size,
-            self.get_vec_normalize_env(),
+            None, # we should store unnormalized transitions, they will be normalized at sampling time
             self.online_sampling,
             self.n_sampled_goal,
         )

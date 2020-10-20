@@ -276,31 +276,32 @@ class HER(BaseAlgorithm):
                 self.model.ep_info_buffer = self.ep_info_buffer
                 self.model.ep_success_buffer = self.ep_success_buffer
 
-                # Store episode in episode storage
-                if self.replay_buffer is not None:
-                    # Store only the unnormalized version
-                    if self._vec_normalize_env is not None:
-                        new_obs_ = self._vec_normalize_env.get_original_obs()
-                        reward_ = self._vec_normalize_env.get_original_reward()
-                    else:
-                        # Avoid changing the original ones
-                        self._last_original_obs, new_obs_, reward_ = observation, new_obs, reward
-                        self.model._last_original_obs = self._last_original_obs
+                # == Store transition in the replay buffer and/or in the episode storage ==
 
-                    if self.online_sampling:
-                        self.replay_buffer.add(self._last_original_obs, new_obs_, buffer_action, reward_, done, infos)
-                    else:
-                        # concatenate observation with (desired) goal
-                        obs = ObsDictWrapper.convert_dict(self._last_original_obs)
-                        next_obs = ObsDictWrapper.convert_dict(new_obs_)
-                        # add to replay buffer
-                        self.replay_buffer.add(obs, next_obs, buffer_action, reward_, done)
-                        # add current transition to episode storage
-                        self._episode_storage.add(self._last_original_obs, new_obs_, buffer_action, reward_, done, infos)
+                if self._vec_normalize_env is not None:
+                    # Store only the unnormalized version
+                    new_obs_ = self._vec_normalize_env.get_original_obs()
+                    reward_ = self._vec_normalize_env.get_original_reward()
+                else:
+                    # Avoid changing the original ones
+                    self._last_original_obs, new_obs_, reward_ = observation, new_obs, reward
+                    self.model._last_original_obs = self._last_original_obs
+
+                if self.online_sampling:
+                    self.replay_buffer.add(self._last_original_obs, new_obs_, buffer_action, reward_, done, infos)
+                else:
+                    # concatenate observation with (desired) goal
+                    obs = ObsDictWrapper.convert_dict(self._last_original_obs)
+                    next_obs = ObsDictWrapper.convert_dict(new_obs_)
+                    # add to replay buffer
+                    self.replay_buffer.add(obs, next_obs, buffer_action, reward_, done)
+                    # add current transition to episode storage
+                    self._episode_storage.add(self._last_original_obs, new_obs_, buffer_action, reward_, done, infos)
 
                 self._last_obs = new_obs
                 self.model._last_obs = self._last_obs
-                # Save the unnormalized observation
+
+                # Save the unnormalized new observation
                 if self._vec_normalize_env is not None:
                     self._last_original_obs = new_obs_
                     self.model._last_original_obs = self._last_original_obs

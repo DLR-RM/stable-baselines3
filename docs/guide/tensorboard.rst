@@ -80,3 +80,44 @@ Here is a simple example on how to log both additional tensor or arbitrary scala
 
 
     model.learn(50000, callback=TensorboardCallback())
+
+Logging Videos
+--------------
+
+Tensorboard supports periodic logging of video data, which helps evaluating agents at various stages during training.
+Here is an example of how to render an episode and log the resulting video to tensorboard at regular intervals:
+
+.. code-block:: python
+
+    import gym
+    import torch as th
+
+    from stable_baselines3 import A2C
+    from stable_baselines3.common.callbacks import BaseCallback
+    from stable_baselines3.common.evaluation import evaluate_policy
+    from stable_baselines3.common.logger import Video
+    from typing import Any, Dict
+
+
+    class ReportTrajectoryCallback(BaseCallback):
+        def __init__(self, eval_env: gym.Env, check_freq: int):
+            super().__init__()
+            self._eval_env = eval_env
+            self._check_freq = check_freq
+
+        def _on_step(self) -> bool:
+            if self.n_calls % self._check_freq == 0:
+                screens = []
+
+                def grab_screens(_locals: Dict[str, Any], _globals: Dict[str, Any]):
+                    e = _locals["env"]
+                    screen = e.render(mode="rgb_array")
+                    screens.append(screen.transpose(2, 0, 1))
+
+                evaluate_policy(self.model, self._eval_env, callback=grab_screens)
+                self.logger.record("trajectory/video", Video(th.ByteTensor([screens]), fps=40))
+            return True
+
+
+    model = A2C("MlpPolicy", "CartPole-v1", tensorboard_log=f"runs/")
+    model.learn(total_timesteps=int(1e4), callback=ReportTrajectoryCallback(gym.make("CartPole-v1"), 1000))

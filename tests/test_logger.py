@@ -2,11 +2,14 @@ from typing import Sequence
 
 import numpy as np
 import pytest
+import torch as th
 from pandas.errors import EmptyDataError
 
 from stable_baselines3.common.logger import (
     DEBUG,
+    FormatUnsupportedError,
     ScopedConfigure,
+    Video,
     configure,
     debug,
     dump,
@@ -162,3 +165,25 @@ def test_exclude_keys(tmp_path, read_log, _format):
     writer.write(dict(some_tag=42), key_excluded=dict(some_tag=(_format)))
     writer.close()
     assert read_log(_format).empty
+
+
+def test_report_video_to_tensorboard(tmp_path, read_log):
+    pytest.importorskip("tensorboard")
+    pytest.importorskip("moviepy")
+
+    video = Video(frames=th.rand(1, 20, 3, 16, 16), fps=20)
+    writer = make_output_format("tensorboard", tmp_path)
+    writer.write({"video": video}, key_excluded={"video": ()})
+
+    assert not read_log("tensorboard").empty
+    writer.close()
+
+
+@pytest.mark.parametrize("unsupported_format", ["stdout", "log", "json", "csv"])
+def test_report_video_to_unsupported_format_raises_error(tmp_path, unsupported_format):
+    writer = make_output_format(unsupported_format, tmp_path)
+
+    with pytest.raises(FormatUnsupportedError):
+        video = Video(frames=th.rand(1, 20, 3, 16, 16), fps=20)
+        writer.write({"video": video}, key_excluded={"video": ()})
+    writer.close()

@@ -384,6 +384,9 @@ The parking env is a goal-conditioned continuous control task, in which the vehi
       SAC,
       n_sampled_goal=n_sampled_goal,
       goal_selection_strategy="future",
+      # IMPORTANT: because the env is not wrapped with a TimeLimit wrapper
+      # we have to manually specify the max number of steps per episode
+      max_episode_length=100,
       verbose=1,
       buffer_size=int(1e6),
       learning_rate=1e-3,

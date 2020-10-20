@@ -142,7 +142,8 @@ def test_runningmeanstd():
         assert np.allclose(moments_1, moments_2)
 
 
-def test_vec_env(tmp_path):
+@pytest.mark.parametrize("make_env", [make_env, make_dict_env])
+def test_vec_env(tmp_path, make_env):
     """Test VecNormalize Object"""
     clip_obs = 0.5
     clip_reward = 5.0
@@ -153,7 +154,11 @@ def test_vec_env(tmp_path):
     while not done[0]:
         actions = [norm_venv.action_space.sample()]
         obs, rew, done, _ = norm_venv.step(actions)
-        assert np.max(np.abs(obs)) <= clip_obs
+        if isinstance(obs, dict):
+            for key in obs.keys():
+                assert np.max(np.abs(obs[key])) <= clip_obs
+        else:
+            assert np.max(np.abs(obs)) <= clip_obs
         assert np.max(np.abs(rew)) <= clip_reward
 
     path = tmp_path / "vec_normalize"
@@ -178,6 +183,26 @@ def test_get_original():
         assert not np.array_equal(orig_obs, obs)
         assert not np.array_equal(orig_rewards, rewards)
         np.testing.assert_allclose(venv.normalize_obs(orig_obs), obs)
+        np.testing.assert_allclose(venv.normalize_reward(orig_rewards), rewards)
+
+
+def test_get_original_dict():
+    venv = _make_warmstart_dict_env()
+    for _ in range(3):
+        actions = [venv.action_space.sample()]
+        obs, rewards, _, _ = venv.step(actions)
+        # obs = obs[0]
+        orig_obs = venv.get_original_obs()
+        rewards = rewards[0]
+        orig_rewards = venv.get_original_reward()[0]
+
+        for key in orig_obs.keys():
+            assert orig_obs[key].shape == obs[key].shape
+        assert orig_rewards.dtype == rewards.dtype
+
+        assert not allclose(orig_obs, obs)
+        assert not np.array_equal(orig_rewards, rewards)
+        assert allclose(venv.normalize_obs(orig_obs), obs)
         np.testing.assert_allclose(venv.normalize_reward(orig_rewards), rewards)
 
 

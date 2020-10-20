@@ -8,12 +8,12 @@ from gym import spaces
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
 
 
-def _enforce_array_obs(observation_space: spaces.Space) -> bool:
+def _is_numpy_array_space(space: spaces.Space) -> bool:
     """
-    Whether to check that the returned observation is a numpy array
-    it is not mandatory for `Dict` and `Tuple` spaces.
+    Returns False if provided space is not representable as a single numpy array
+    (e.g. Dict and Tuple spaces return False)
     """
-    return not isinstance(observation_space, (spaces.Dict, spaces.Tuple))
+    return not isinstance(space, (spaces.Dict, spaces.Tuple))
 
 
 def _check_image_input(observation_space: spaces.Box) -> None:
@@ -45,8 +45,8 @@ def _check_image_input(observation_space: spaces.Box) -> None:
         )
 
 
-def _check_unsupported_obs_spaces(env: gym.Env, observation_space: spaces.Space) -> None:
-    """Emit warnings when the observation space used is not supported by Stable-Baselines."""
+def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, action_space: spaces.Space) -> None:
+    """Emit warnings when the observation space or action space used is not supported by Stable-Baselines."""
 
     if isinstance(observation_space, spaces.Dict) and not isinstance(env, gym.GoalEnv):
         warnings.warn(
@@ -63,6 +63,13 @@ def _check_unsupported_obs_spaces(env: gym.Env, observation_space: spaces.Space)
             "this is currently not supported by Stable Baselines "
             "(cf https://github.com/hill-a/stable-baselines/issues/133), "
             "you will need to flatten the observation and maybe use a custom policy. "
+        )
+
+    if not _is_numpy_array_space(action_space):
+        warnings.warn(
+            "The action space is not based off a numpy array. Typically this means it's either a Dict or Tuple space. "
+            "This type of action space is currently not supported by Stable Baselines 3. You should try to flatten the "
+            "action using a wrapper."
         )
 
 
@@ -87,7 +94,7 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
     # The check for a GoalEnv is done by the base class
     if isinstance(observation_space, spaces.Discrete):
         assert isinstance(obs, int), "The observation returned by `{}()` method must be an int".format(method_name)
-    elif _enforce_array_obs(observation_space):
+    elif _is_numpy_array_space(observation_space):
         assert isinstance(obs, np.ndarray), "The observation returned by `{}()` method must be a numpy array".format(
             method_name
         )
@@ -201,7 +208,7 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
     # Warn the user if needed.
     # A warning means that the environment may run but not work properly with Stable Baselines algorithms
     if warn:
-        _check_unsupported_obs_spaces(env, observation_space)
+        _check_unsupported_spaces(env, observation_space, action_space)
 
         # If image, check the low and high values, the type and the number of channels
         # and the shape (minimal value)
@@ -234,5 +241,5 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
         _check_render(env, warn=warn)
 
     # The check only works with numpy arrays
-    if _enforce_array_obs(observation_space):
+    if _is_numpy_array_space(observation_space) and _is_numpy_array_space(action_space):
         _check_nan(env)

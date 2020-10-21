@@ -345,4 +345,3 @@ class HerReplayBuffer(ReplayBuffer):
         self.current_idx = 0
         self.full = False
         self.episode_lengths = np.zeros(self.max_episode_stored, dtype=np.int64)
-

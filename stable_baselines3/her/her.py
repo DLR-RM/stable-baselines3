@@ -117,9 +117,10 @@ class HER(BaseAlgorithm):
         # maximum steps in episode
         self.max_episode_length = get_time_limit(self.env, max_episode_length)
         # storage for transitions of current episode
+        her_buffer_size = self.buffer_size if online_sampling else self.max_episode_length
         self._episode_storage = HerReplayBuffer(
             self.env,
-            self.buffer_size,
+            her_buffer_size,
             self.max_episode_length,
             self.goal_selection_strategy,
             self.env.observation_space,

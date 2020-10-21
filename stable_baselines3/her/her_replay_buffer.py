@@ -336,3 +336,13 @@ class HerReplayBuffer(ReplayBuffer):
         :return: The current size of the buffer in transitions.
         """
         return int(np.sum(self.episode_lengths))
+
+    def reset(self) -> None:
+        """
+        Reset the buffer.
+        """
+        self.pos = 0
+        self.current_idx = 0
+        self.full = False
+        self.episode_lengths = np.zeros(self.max_episode_stored, dtype=np.int64)
+

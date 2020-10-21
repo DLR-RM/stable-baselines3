@@ -184,16 +184,18 @@ def test_save_load_replay_buffer(tmp_path, online_sampling):
         train_freq=1,
         n_episodes_rollout=-1,
         max_episode_length=4,
+        buffer_size=int(2e4),
+        seed=0,
         policy_kwargs=dict(net_arch=[64]),
     )
-    model.learn(300)
+    model.learn(200)
     old_replay_buffer = deepcopy(model.replay_buffer)
     model.save_replay_buffer(path)
     model.model.replay_buffer = None
     model.load_replay_buffer(path)
 
     if online_sampling:
-        n_episodes_stored = old_replay_buffer.n_episodes_stored
+        n_episodes_stored = model.replay_buffer.n_episodes_stored
         assert np.allclose(
             old_replay_buffer.buffer["observation"][:n_episodes_stored],
             model.replay_buffer.buffer["observation"][:n_episodes_stored],

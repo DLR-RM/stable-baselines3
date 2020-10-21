@@ -231,8 +231,10 @@ def test_exclude_include_saved_params(tmp_path, model_class):
 def test_save_load_replay_buffer(tmp_path, model_class):
     path = pathlib.Path(tmp_path / "logs/replay_buffer.pkl")
     path.parent.mkdir(exist_ok=True, parents=True)  # to not raise a warning
-    model = model_class("MlpPolicy", select_env(model_class), buffer_size=1000)
-    model.learn(500)
+    model = model_class(
+        "MlpPolicy", select_env(model_class), buffer_size=1000, policy_kwargs=dict(net_arch=[64]), learning_starts=200
+    )
+    model.learn(300)
     old_replay_buffer = deepcopy(model.replay_buffer)
     model.save_replay_buffer(path)
     model.replay_buffer = None

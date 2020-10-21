@@ -287,16 +287,26 @@ class HER(BaseAlgorithm):
                     self._last_original_obs, new_obs_, reward_ = observation, new_obs, reward
                     self.model._last_original_obs = self._last_original_obs
 
+                # As the VecEnv resets automatically, new_obs is already the
+                # first observation of the next episode
+                if done and infos[0].get("terminal_observation") is not None:
+                    # The saved terminal_observation is not passed through other
+                    # VecEnvWrapper, so no need to unnormalize
+                    # NOTE: this may be an issue when using other wrappers
+                    next_obs = infos[0]["terminal_observation"]
+                else:
+                    next_obs = new_obs_
+
                 if self.online_sampling:
-                    self.replay_buffer.add(self._last_original_obs, new_obs_, buffer_action, reward_, done, infos)
+                    self.replay_buffer.add(self._last_original_obs, next_obs, buffer_action, reward_, done, infos)
                 else:
                     # concatenate observation with (desired) goal
-                    obs = ObsDictWrapper.convert_dict(self._last_original_obs)
-                    next_obs = ObsDictWrapper.convert_dict(new_obs_)
+                    flattened_obs = ObsDictWrapper.convert_dict(self._last_original_obs)
+                    flattened_next_obs = ObsDictWrapper.convert_dict(next_obs)
                     # add to replay buffer
-                    self.replay_buffer.add(obs, next_obs, buffer_action, reward_, done)
+                    self.replay_buffer.add(flattened_obs, flattened_next_obs, buffer_action, reward_, done)
                     # add current transition to episode storage
-                    self._episode_storage.add(self._last_original_obs, new_obs_, buffer_action, reward_, done, infos)
+                    self._episode_storage.add(self._last_original_obs, next_obs, buffer_action, reward_, done, infos)
 
                 self._last_obs = new_obs
                 self.model._last_obs = self._last_obs

@@ -193,7 +193,8 @@ def is_moviepy_installed():
 def test_report_video_to_unsupported_format_raises_error(tmp_path, unsupported_format):
     writer = make_output_format(unsupported_format, tmp_path)
 
-    with pytest.raises(FormatUnsupportedError):
+    with pytest.raises(FormatUnsupportedError) as exec_info:
         video = Video(frames=th.rand(1, 20, 3, 16, 16), fps=20)
         writer.write({"video": video}, key_excluded={"video": ()})
+    assert unsupported_format in str(exec_info.value)
     writer.close()

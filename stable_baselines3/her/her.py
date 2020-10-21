@@ -87,16 +87,22 @@ class HER(BaseAlgorithm):
         **kwargs,
     ):
 
-        super(HER, self).__init__(policy=BasePolicy, env=env, policy_base=BasePolicy, learning_rate=3e-4)
+        # we will use the policy and learning rate from the model
+        super(HER, self).__init__(policy=BasePolicy, env=env, policy_base=BasePolicy, learning_rate=0.0)
+        del self.policy, self.learning_rate
 
         if self.get_vec_normalize_env() is not None:
             assert online_sampling, "You must pass `online_sampling=True` if you want to use `VecNormalize` with `HER`"
 
+        _init_setup_model = kwargs.get("_init_setup_model", True)
+        if "_init_setup_model" in kwargs:
+            del kwargs["_init_setup_model"]
         # model initialization
         self.model_class = model_class
         self.model = model_class(
             policy=policy,
             env=self.env,
+            _init_setup_model=False,  # pytype: disable=wrong-keyword-args
             *args,
             **kwargs,  # pytype: disable=wrong-keyword-args
         )
@@ -122,7 +128,8 @@ class HER(BaseAlgorithm):
         self.her_ratio = 1 - (1.0 / (self.n_sampled_goal + 1))
         # maximum steps in episode
         self.max_episode_length = get_time_limit(self.env, max_episode_length)
-        # storage for transitions of current episode
+        # storage for transitions of current episode for offline sampling
+        # for online sampling, it replaces the "classic" replay buffer completely
         her_buffer_size = self.buffer_size if online_sampling else self.max_episode_length
         self._episode_storage = HerReplayBuffer(
             self.env,
@@ -136,15 +143,17 @@ class HER(BaseAlgorithm):
             self.her_ratio,  # pytype: disable=wrong-arg-types
         )
 
-        # assign episode storage to replay buffer when using online HER sampling
-        if self.online_sampling:
-            self.model.replay_buffer = self._episode_storage
-
         # counter for steps in episode
         self.episode_steps = 0
 
+        if _init_setup_model:
+            self._setup_model()
+
     def _setup_model(self) -> None:
         self.model._setup_model()
+        # assign episode storage to replay buffer when using online HER sampling
+        if self.online_sampling:
+            self.model.replay_buffer = self._episode_storage
 
     def predict(
         self,
@@ -466,9 +475,19 @@ class HER(BaseAlgorithm):
             if "env" in data:
                 env = data["env"]
 
-        kwargs = {}
         if "use_sde" in data and data["use_sde"]:
             kwargs["use_sde"] = True
+
+        # Keys that cannot be changed
+        for key in {"model_class", "online_sampling", "max_episode_length"}:
+            if key in kwargs:
+                del kwargs[key]
+
+        # Keys that can be changed
+        for key in {"n_sampled_goal", "goal_selection_strategy"}:
+            if key in kwargs:
+                data[key] = kwargs[key]  # pytype: disable=unsupported-operands
+                del kwargs[key]
 
         # noinspection PyArgumentList
         her_model = cls(
@@ -480,13 +499,14 @@ class HER(BaseAlgorithm):
             online_sampling=data["online_sampling"],
             max_episode_length=data["max_episode_length"],
             policy_kwargs=data["policy_kwargs"],
-            _init_setup_model=True,  # pytype: disable=not-instantiable,wrong-keyword-args
+            _init_setup_model=False,  # pytype: disable=not-instantiable,wrong-keyword-args
             **kwargs,
         )
 
         # load parameters
         her_model.model.__dict__.update(data)
-        her_model.__dict__.update(kwargs)
+        her_model.model.__dict__.update(kwargs)
+        her_model._setup_model()
 
         her_model._total_timesteps = her_model.model._total_timesteps
         her_model.num_timesteps = her_model.model.num_timesteps

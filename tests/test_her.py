@@ -162,6 +162,11 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     # check if learn still works
     model.learn(total_timesteps=300)
 
+    # Test that the change of parameters works
+    model = HER.load(str(tmp_path / "test_save.zip"), env=env, verbose=3, learning_rate=2.0)
+    assert model.model.learning_rate == 2.0
+    assert model.verbose == 3
+
     # clear file from os
     os.remove(tmp_path / "test_save.zip")
 

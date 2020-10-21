@@ -93,6 +93,8 @@ Here is an example of how to render an episode and log the resulting video to Te
 
 .. code-block:: python
 
+    from typing import Any, Dict
+
     import gym
     import torch as th
 
@@ -100,23 +102,26 @@ Here is an example of how to render an episode and log the resulting video to Te
     from stable_baselines3.common.callbacks import BaseCallback
     from stable_baselines3.common.evaluation import evaluate_policy
     from stable_baselines3.common.logger import Video
-    from typing import Any, Dict
 
 
     class VideoRecorderCallback(BaseCallback):
-        def __init__(self, eval_env: gym.Env, check_freq: int):
+        def __init__(self, eval_env: gym.Env, render_freq: int, n_eval_episodes: int = 1, deterministic: bool = True):
             """
-            Records a video of an agent's trajectory traversing `eval_env` and logs it to TensorBoard
+            Records a video of an agent's trajectory traversing ``eval_env`` and logs it to TensorBoard
 
             :param eval_env: A gym environment from which the trajectory is recorded
-            :param check_freq: Render the agent's trajectory every eval_freq call of the callback.
+            :param render_freq: Render the agent's trajectory every eval_freq call of the callback.
+            :param n_eval_episodes: Number of episodes to render
+            :param deterministic: Whether to use deterministic or stochastic policy
             """
             super().__init__()
             self._eval_env = eval_env
-            self._check_freq = check_freq
+            self._render_freq = render_freq
+            self._n_eval_episodes = n_eval_episodes
+            self._deterministic = deterministic
 
         def _on_step(self) -> bool:
-            if self.n_calls % self._check_freq == 0:
+            if self.n_calls % self._render_freq == 0:
                 screens = []
 
                 def grab_screens(_locals: Dict[str, Any], _globals: Dict[str, Any]) -> None:
@@ -127,13 +132,24 @@ Here is an example of how to render an episode and log the resulting video to Te
                     :param _globals: A dictionary containing all global variables of the callback's scope
                     """
                     screen = self._eval_env.render(mode="rgb_array")
+                    # PyTorch uses CxHxW vs HxWxC gym (and tensorflow) image convention
                     screens.append(screen.transpose(2, 0, 1))
 
-                evaluate_policy(self.model, self._eval_env, callback=grab_screens)
-                self.logger.record("trajectory/video", Video(th.ByteTensor([screens]), fps=40))
+                evaluate_policy(
+                    self.model,
+                    self._eval_env,
+                    callback=grab_screens,
+                    n_eval_episodes=self._n_eval_episodes,
+                    deterministic=self._deterministic,
+                )
+                self.logger.record(
+                    "trajectory/video",
+                    Video(th.ByteTensor([screens]), fps=40),
+                    exclude=("stdout", "log", "json", "csv"),
+                )
             return True
 
 
-    model = A2C("MlpPolicy", "CartPole-v1", tensorboard_log=f"runs/")
-    video_recorder = VideoRecorderCallback(gym.make("CartPole-v1"), 1000)
-    model.learn(total_timesteps=int(1e4), callback=video_recorder)
+    model = A2C("MlpPolicy", "CartPole-v1", tensorboard_log="runs/", verbose=1)
+    video_recorder = VideoRecorderCallback(gym.make("CartPole-v1"), render_freq=5000)
+    model.learn(total_timesteps=int(5e4), callback=video_recorder)

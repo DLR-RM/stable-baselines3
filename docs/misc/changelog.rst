@@ -38,6 +38,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Added first draft of migration guide
+- Enabled doc for ``CnnPolicies``
 
 
 Pre-Release 0.9.0 (2020-10-03)

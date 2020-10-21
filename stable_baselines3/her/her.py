@@ -51,7 +51,13 @@ class HER(BaseAlgorithm):
     Hindsight Experience Replay (HER)
     Paper: https://arxiv.org/abs/1707.01495
 
-    WARNING: Requires maximum episode length provided either by the environment or by the user!
+    .. warning::
+
+      For performance reasons, the maximum number of steps per episodes must be specified.
+      In most cases, it will be inferred if you specify ``max_episode_steps`` when registering the environment
+      or if you use a ``gym.wrappers.TimeLimit`` (and ``env.spec`` is not None).
+      Otherwise, you can directly pass ``max_episode_length`` to the model constructor
+
 
     For additional offline algorithm specific arguments please have a look at the corresponding documentation.
 

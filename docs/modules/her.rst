@@ -22,7 +22,7 @@ It creates "virtual" transitions by relabeling transitions (changing the desired
 .. warning::
 
   For performance reasons, the maximum number of steps per episodes must be specified.
-  In most cases, it will be inferred if you specify ```max_episode_steps`` when registering the environment
+  In most cases, it will be inferred if you specify ``max_episode_steps`` when registering the environment
   or if you use a ``gym.wrappers.TimeLimit`` (and ``env.spec`` is not None).
   Otherwise, you can directly pass ``max_episode_length`` to the model constructor
 

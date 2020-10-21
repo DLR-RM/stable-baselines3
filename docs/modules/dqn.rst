@@ -90,5 +90,9 @@ DQN Policies
   :members:
   :inherited-members:
 
+.. autoclass:: stable_baselines3.dqn.policies.DQNPolicy
+  :members:
+  :noindex:
+
 .. autoclass:: CnnPolicy
   :members:

@@ -35,20 +35,9 @@ These algorithms will make it easier for the research community and industry to 
 | Type hints                  | :heavy_check_mark: |
 
 
-### Roadmap to V1.0
-
-Please look at the issue for more details.
-Planned features:
-
-- [ ] HER
-
 ### Planned features (v1.1+)
 
-- [ ] DQN extensions (prioritized replay, double q-learning, ...)
-- [ ] Support for `Tuple` and `Dict` observation spaces
-- [ ] Recurrent Policies
-- [ ] TRPO
-
+Please take a look at the [Roadmap](https://github.com/DLR-RM/stable-baselines3/issues/1) and [Milestones](https://github.com/DLR-RM/stable-baselines3/milestones).
 
 ## Migration guide: from Stable-Baselines (SB2) to Stable-Baselines3 (SB3)
 

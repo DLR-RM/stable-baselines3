@@ -70,7 +70,7 @@ class HerReplayBuffer(ReplayBuffer):
             "done": (1,),
         }
         self.buffer = {
-            key: np.empty((self.max_episode_stored, self.max_episode_length, *dim), dtype=np.float32)
+            key: np.zeros((self.max_episode_stored, self.max_episode_length, *dim), dtype=np.float32)
             for key, dim in input_shape.items()
         }
         # Store info dicts are it can be used to compute the reward (e.g. continuity cost)
@@ -129,7 +129,7 @@ class HerReplayBuffer(ReplayBuffer):
         env: Optional[VecNormalize] = None,
         online_sampling: bool = True,
         n_sampled_goal: int = None,
-    ) -> Union[ReplayBufferSamples, Tuple]:
+    ) -> Union[ReplayBufferSamples, Tuple[np.ndarray, ...]]:
         """
         :param batch_size: Number of element to sample
         :param env: Associated gym VecEnv
@@ -182,7 +182,7 @@ class HerReplayBuffer(ReplayBuffer):
         maybe_vec_env: Optional[VecNormalize],
         online_sampling: bool = True,
         n_sampled_goal: int = None,
-    ) -> Union[ReplayBufferSamples, Tuple]:
+    ) -> Union[ReplayBufferSamples, Tuple[np.ndarray, ...]]:
         """
         :param batch_size: Number of element to sample
         :param env: associated gym VecEnv to normalize the observations/rewards
@@ -194,6 +194,7 @@ class HerReplayBuffer(ReplayBuffer):
         # Select which episodes to use
         if online_sampling:
             episode_indices = np.random.randint(0, self.n_episodes_stored, batch_size)
+            # A subset of the transitions will be relabeled using HER algorithm
             her_indices = np.arange(batch_size)[: int(self.her_ratio * batch_size)]
         else:
             assert maybe_vec_env is None, "Transitions must be stored unnormalized in the replay buffer"
@@ -205,27 +206,29 @@ class HerReplayBuffer(ReplayBuffer):
             # as real transitions are already stored in the replay buffer
             her_indices = np.arange(len(episode_indices))
 
-        ep_length = self.episode_lengths[episode_indices]
+        ep_lengths = self.episode_lengths[episode_indices]
 
+        # Special case when using the "future" goal sampling strategy
+        # we cannot sample all transitions, we have to remove the last timestep
         if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
-            # restrict the sampling domain when ep_length > 1
+            # restrict the sampling domain when ep_lengths > 1
             # otherwise filter out the indices
-            her_indices = her_indices[ep_length[her_indices] > 1]
-            ep_length[her_indices] -= 1
+            her_indices = her_indices[ep_lengths[her_indices] > 1]
+            ep_lengths[her_indices] -= 1
 
         if online_sampling:
             # Select which transitions to use
-            transitions_indices = np.random.randint(ep_length)
+            transitions_indices = np.random.randint(ep_lengths)
         else:
             if her_indices.size == 0:
                 # Episode of one timestep, not enough for using the "future" strategy
                 # no virtual transitions are created in that case
-                return np.empty(0), np.empty(0), np.empty(0), np.empty(0)
+                return np.zeros(0), np.zeros(0), np.zeros(0), np.zeros(0)
             else:
                 # Repeat every transition index n_sampled_goals times
                 # to sample n_sampled_goal per timestep in the episode (only one is stored).
                 # Now with the corrected episode length when using "future" strategy
-                transitions_indices = np.tile(np.arange(ep_length[0]), n_sampled_goal)
+                transitions_indices = np.tile(np.arange(ep_lengths[0]), n_sampled_goal)
                 episode_indices = episode_indices[transitions_indices]
                 her_indices = np.arange(len(episode_indices))
 
@@ -254,6 +257,7 @@ class HerReplayBuffer(ReplayBuffer):
             # r_t = reward(s_t, a_t) = reward(next_achieved_goal, desired_goal)
             # therefore we have to use "next_achieved_goal" and not "achieved_goal"
             transitions["next_achieved_goal"][her_indices, 0],
+            # here we use the new desired goal
             transitions["desired_goal"][her_indices, 0],
             transitions["info"][her_indices, 0],
         )
@@ -333,7 +337,7 @@ class HerReplayBuffer(ReplayBuffer):
 
     def size(self) -> int:
         """
-        :return: The current size of the buffer in transitions.
+        :return: The current number of transitions in the buffer.
         """
         return int(np.sum(self.episode_lengths))
 

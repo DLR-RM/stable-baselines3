@@ -125,15 +125,15 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     observations = np.array(observations_list)
 
     # Get dictionary of current parameters
-    params = deepcopy(model.model.policy.state_dict())
+    params = deepcopy(model.policy.state_dict())
 
     # Modify all parameters to be random values
     random_params = dict((param_name, th.rand_like(param)) for param_name, param in params.items())
 
     # Update model parameters with the new random values
-    model.model.policy.load_state_dict(random_params)
+    model.policy.load_state_dict(random_params)
 
-    new_params = model.model.policy.state_dict()
+    new_params = model.policy.state_dict()
     # Check that all params are different now
     for k in params:
         assert not th.allclose(params[k], new_params[k]), "Parameters did not change as expected."
@@ -141,7 +141,7 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     params = new_params
 
     # get selected actions
-    selected_actions, _ = model.model.predict(observations, deterministic=True)
+    selected_actions, _ = model.predict(observations, deterministic=True)
 
     # Check
     model.save(tmp_path / "test_save.zip")
@@ -149,14 +149,14 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     model = HER.load(str(tmp_path / "test_save.zip"), env=env)
 
     # check if params are still the same after load
-    new_params = model.model.policy.state_dict()
+    new_params = model.policy.state_dict()
 
     # Check that all params are the same as before save load procedure now
     for key in params:
         assert th.allclose(params[key], new_params[key]), "Model parameters not the same after save and load."
 
     # check if model still selects the same actions
-    new_selected_actions, _ = model.model.predict(observations, deterministic=True)
+    new_selected_actions, _ = model.predict(observations, deterministic=True)
     assert np.allclose(selected_actions, new_selected_actions, 1e-4)
 
     # check if learn still works
@@ -185,13 +185,16 @@ def test_save_load_replay_buffer(tmp_path, online_sampling):
         n_episodes_rollout=-1,
         max_episode_length=4,
         buffer_size=int(2e4),
-        seed=0,
         policy_kwargs=dict(net_arch=[64]),
     )
     model.learn(200)
     old_replay_buffer = deepcopy(model.replay_buffer)
     model.save_replay_buffer(path)
-    model.model.replay_buffer = None
+    del model.model.replay_buffer
+
+    with pytest.raises(AttributeError):
+        model.replay_buffer
+
     model.load_replay_buffer(path)
 
     if online_sampling:

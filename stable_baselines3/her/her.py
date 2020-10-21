@@ -1,5 +1,6 @@
 import io
 import pathlib
+import warnings
 from typing import Any, Iterable, List, Optional, Tuple, Type, Union
 
 import numpy as np
@@ -526,15 +527,37 @@ class HER(BaseAlgorithm):
             her_model.model.policy.reset_noise()  # pytype: disable=attribute-error
         return her_model
 
-    def load_replay_buffer(self, path: Union[str, pathlib.Path, io.BufferedIOBase]) -> None:
+    def load_replay_buffer(
+        self, path: Union[str, pathlib.Path, io.BufferedIOBase], truncate_last_trajectory: bool = True
+    ) -> None:
         """
         Load a replay buffer from a pickle file and set environment for replay buffer (only online sampling).
 
         :param path: Path to the pickled replay buffer.
+        :param truncate_last_trajectory:
+            If set to ``True`` we assume that the last trajectory in the replay buffer was finished.
+            If it is set to ``False`` we assume it is the same trajectory where we continue.
         """
         self.model.load_replay_buffer(path=path)
 
         if self.online_sampling:
             # set environment
             self.replay_buffer.set_env(self.env)
-            self.replay_buffer.current_idx = 0
+
+            # truncate interrupted episode
+            if truncate_last_trajectory:
+                warnings.warn(
+                    "The last trajectory in the replay buffer will be truncated, "
+                    "You should use `truncate_last_trajectory=False` to avoid that issue."
+                )
+                # get current episode and transition index
+                pos = self.replay_buffer.pos
+                current_idx = self.replay_buffer.current_idx
+                # set episode length for current episode
+                self.replay_buffer.episode_lengths[pos] = current_idx
+                # set done = True for current episode
+                self.replay_buffer.buffer["done"][pos][current_idx] = np.array([True], dtype=np.float32)
+                # reset current transition index
+                self.replay_buffer.current_idx = 0
+                # increment episode counter
+                self.replay_buffer.pos += 1

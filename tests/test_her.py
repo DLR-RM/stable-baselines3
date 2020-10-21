@@ -171,8 +171,8 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     os.remove(tmp_path / "test_save.zip")
 
 
-@pytest.mark.parametrize("online_sampling", [False, True])
-def test_save_load_replay_buffer(tmp_path, online_sampling):
+@pytest.mark.parametrize("online_sampling, truncate_last_trajectory", [(False, None), (True, True), (True, False)])
+def test_save_load_replay_buffer(tmp_path, online_sampling, truncate_last_trajectory):
     """
     Test if 'save_replay_buffer' and 'load_replay_buffer' works correctly
     """
@@ -200,7 +200,7 @@ def test_save_load_replay_buffer(tmp_path, online_sampling):
     with pytest.raises(AttributeError):
         model.replay_buffer
 
-    model.load_replay_buffer(path)
+    model.load_replay_buffer(path, truncate_last_trajectory)
 
     if online_sampling:
         n_episodes_stored = model.replay_buffer.n_episodes_stored
@@ -218,14 +218,19 @@ def test_save_load_replay_buffer(tmp_path, online_sampling):
         assert np.allclose(
             old_replay_buffer.buffer["reward"][:n_episodes_stored], model.replay_buffer.buffer["reward"][:n_episodes_stored]
         )
+        # we might change the last done of the last trajectory so we don't compare it
         assert np.allclose(
-            old_replay_buffer.buffer["done"][:n_episodes_stored], model.replay_buffer.buffer["done"][:n_episodes_stored]
+            old_replay_buffer.buffer["done"][: n_episodes_stored - 1],
+            model.replay_buffer.buffer["done"][: n_episodes_stored - 1],
         )
     else:
         assert np.allclose(old_replay_buffer.observations, model.replay_buffer.observations)
         assert np.allclose(old_replay_buffer.actions, model.replay_buffer.actions)
         assert np.allclose(old_replay_buffer.rewards, model.replay_buffer.rewards)
         assert np.allclose(old_replay_buffer.dones, model.replay_buffer.dones)
+
+    # test if continuing training works properly
+    model.learn(200)
 
 
 def test_get_max_episode_length():

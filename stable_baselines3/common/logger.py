@@ -34,13 +34,13 @@ class Video(object):
 
 
 class FormatUnsupportedError(NotImplementedError):
-    def __init__(self, unsupported_formats: Sequence[str], value: Any):
+    def __init__(self, unsupported_formats: Sequence[str], value: str):
         if len(unsupported_formats) > 1:
             format_str = f"formats {', '.join(unsupported_formats)} are"
         else:
             format_str = f"format {unsupported_formats[0]} is"
         super(FormatUnsupportedError, self).__init__(
-            f"The {format_str} not supported for the value {str(value)} logged.\n"
+            f"The {format_str} not supported for the value {value} logged.\n"
             f"You can exclude formats via the `exclude` parameter of the logger's `record` function."
         )
 
@@ -106,7 +106,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
                 continue
 
             if isinstance(value, Video):
-                raise FormatUnsupportedError(["stdout", "log"], value)
+                raise FormatUnsupportedError(["stdout", "log"], str(value))
 
             if isinstance(value, float):
                 # Align left
@@ -195,7 +195,7 @@ class JSONOutputFormat(KVWriter):
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
         def cast_to_json_serializable(value: Any):
             if isinstance(value, Video):
-                raise FormatUnsupportedError(["json"], value)
+                raise FormatUnsupportedError(["json"], str(value))
             if hasattr(value, "dtype"):
                 if value.shape == () or len(value) == 1:
                     # if value is a dimensionless numpy array or of length 1, serialize as a float
@@ -256,7 +256,7 @@ class CSVOutputFormat(KVWriter):
             value = key_values.get(key)
 
             if isinstance(value, Video):
-                raise FormatUnsupportedError(["csv"], value)
+                raise FormatUnsupportedError(["csv"], str(value))
 
             if value is not None:
                 self.file.write(str(value))

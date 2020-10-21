@@ -1,6 +1,6 @@
 .. _env_util:
 
-Command Utils
+Environments Utils
 =========================
 
 .. automodule:: stable_baselines3.common.env_util

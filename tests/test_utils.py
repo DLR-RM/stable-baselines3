@@ -195,7 +195,4 @@ def test_zip_strict():
 def test_cmd_util_rename():
     """Test that importing cmd_util still works but raises warning"""
     with pytest.warns(FutureWarning):
-        from stable_baselines3.common import cmd_util
-
-        # Test that we have at least one function there
-        assert hasattr(cmd_util, "make_vec_env")
+        from stable_baselines3.common.cmd_util import make_vec_env

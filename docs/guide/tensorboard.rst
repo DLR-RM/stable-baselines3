@@ -84,8 +84,12 @@ Here is a simple example on how to log both additional tensor or arbitrary scala
 Logging Videos
 --------------
 
-Tensorboard supports periodic logging of video data, which helps evaluating agents at various stages during training.
-Here is an example of how to render an episode and log the resulting video to tensorboard at regular intervals:
+TensorBoard supports periodic logging of video data, which helps evaluating agents at various stages during training.
+
+.. warning::
+    To support video logging `moviepy <https://zulko.github.io/moviepy/>`_ must be installed otherwise, TensorBoard ignores the video and logs a warning.
+
+Here is an example of how to render an episode and log the resulting video to TensorBoard at regular intervals:
 
 .. code-block:: python
 
@@ -99,8 +103,14 @@ Here is an example of how to render an episode and log the resulting video to te
     from typing import Any, Dict
 
 
-    class ReportTrajectoryCallback(BaseCallback):
+    class VideoRecorderCallback(BaseCallback):
         def __init__(self, eval_env: gym.Env, check_freq: int):
+            """
+            Records a video of an agent's trajectory traversing `eval_env` and logs it to TensorBoard
+
+            :param eval_env: A gym environment from which the trajectory is recorded
+            :param check_freq: Render the agent's trajectory every eval_freq call of the callback.
+            """
             super().__init__()
             self._eval_env = eval_env
             self._check_freq = check_freq
@@ -109,9 +119,14 @@ Here is an example of how to render an episode and log the resulting video to te
             if self.n_calls % self._check_freq == 0:
                 screens = []
 
-                def grab_screens(_locals: Dict[str, Any], _globals: Dict[str, Any]):
-                    e = _locals["env"]
-                    screen = e.render(mode="rgb_array")
+                def grab_screens(_locals: Dict[str, Any], _globals: Dict[str, Any]) -> None:
+                    """
+                    Renders the environment in its current state, recording the screen in the captured `screens` list
+
+                    :param _locals: A dictionary containing all local variables of the callback's scope
+                    :param _globals: A dictionary containing all global variables of the callback's scope
+                    """
+                    screen = self._eval_env.render(mode="rgb_array")
                     screens.append(screen.transpose(2, 0, 1))
 
                 evaluate_policy(self.model, self._eval_env, callback=grab_screens)
@@ -120,4 +135,5 @@ Here is an example of how to render an episode and log the resulting video to te
 
 
     model = A2C("MlpPolicy", "CartPole-v1", tensorboard_log=f"runs/")
-    model.learn(total_timesteps=int(1e4), callback=ReportTrajectoryCallback(gym.make("CartPole-v1"), 1000))
+    video_recorder = VideoRecorderCallback(gym.make("CartPole-v1"), 1000)
+    model.learn(total_timesteps=int(1e4), callback=video_recorder)

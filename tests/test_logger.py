@@ -167,16 +167,26 @@ def test_exclude_keys(tmp_path, read_log, _format):
     assert read_log(_format).empty
 
 
-def test_report_video_to_tensorboard(tmp_path, read_log):
+def test_report_video_to_tensorboard(tmp_path, read_log, capsys):
     pytest.importorskip("tensorboard")
-    pytest.importorskip("moviepy")
 
     video = Video(frames=th.rand(1, 20, 3, 16, 16), fps=20)
     writer = make_output_format("tensorboard", tmp_path)
     writer.write({"video": video}, key_excluded={"video": ()})
 
-    assert not read_log("tensorboard").empty
+    if is_moviepy_installed():
+        assert not read_log("tensorboard").empty
+    else:
+        assert "moviepy" in capsys.readouterr().out
     writer.close()
+
+
+def is_moviepy_installed():
+    try:
+        import moviepy  # noqa: F401
+    except ModuleNotFoundError:
+        return False
+    return True
 
 
 @pytest.mark.parametrize("unsupported_format", ["stdout", "log", "json", "csv"])

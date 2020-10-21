@@ -113,8 +113,6 @@ setup(
             "pillow",
             # Tensorboard support
             "tensorboard",
-            # Tensorboard video logging support
-            "moviepy",
             # Checking memory taken by replay buffer
             "psutil",
         ],

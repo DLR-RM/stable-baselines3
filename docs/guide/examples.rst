@@ -106,7 +106,7 @@ Multiprocessing: Unleashing the Power of Vectorized Environments
 
   from stable_baselines3 import PPO
   from stable_baselines3.common.vec_env import SubprocVecEnv
-  from stable_baselines3.common.cmd_util import make_vec_env
+  from stable_baselines3.common.env_util import make_vec_env
   from stable_baselines3.common.utils import set_random_seed
 
   def make_env(env_id, rank, seed=0):
@@ -267,7 +267,7 @@ and multiprocessing for you.
 
 .. code-block:: python
 
-  from stable_baselines3.common.cmd_util import make_atari_env
+  from stable_baselines3.common.env_util import make_atari_env
   from stable_baselines3.common.vec_env import VecFrameStack
   from stable_baselines3 import A2C
 

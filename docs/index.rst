@@ -66,7 +66,7 @@ Main Features
   :caption: Common
 
   common/atari_wrappers
-  common/cmd_util
+  common/env_util
   common/distributions
   common/evaluation
   common/env_checker

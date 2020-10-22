@@ -8,7 +8,7 @@ import torch as th
 
 from stable_baselines3 import A2C
 from stable_baselines3.common.atari_wrappers import ClipRewardEnv
-from stable_baselines3.common.cmd_util import make_atari_env, make_vec_env
+from stable_baselines3.common.env_util import make_atari_env, make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise, OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
@@ -190,3 +190,9 @@ def test_zip_strict():
     # same length, should not raise an error
     for _, _ in zip_strict(list_a, list_b[: len(list_a)]):
         pass
+
+
+def test_cmd_util_rename():
+    """Test that importing cmd_util still works but raises warning"""
+    with pytest.warns(FutureWarning):
+        from stable_baselines3.common.cmd_util import make_vec_env

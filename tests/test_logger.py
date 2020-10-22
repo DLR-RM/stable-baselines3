@@ -2,11 +2,14 @@ from typing import Sequence
 
 import numpy as np
 import pytest
+import torch as th
 from pandas.errors import EmptyDataError
 
 from stable_baselines3.common.logger import (
     DEBUG,
+    FormatUnsupportedError,
     ScopedConfigure,
+    Video,
     configure,
     debug,
     dump,
@@ -162,3 +165,36 @@ def test_exclude_keys(tmp_path, read_log, _format):
     writer.write(dict(some_tag=42), key_excluded=dict(some_tag=(_format)))
     writer.close()
     assert read_log(_format).empty
+
+
+def test_report_video_to_tensorboard(tmp_path, read_log, capsys):
+    pytest.importorskip("tensorboard")
+
+    video = Video(frames=th.rand(1, 20, 3, 16, 16), fps=20)
+    writer = make_output_format("tensorboard", tmp_path)
+    writer.write({"video": video}, key_excluded={"video": ()})
+
+    if is_moviepy_installed():
+        assert not read_log("tensorboard").empty
+    else:
+        assert "moviepy" in capsys.readouterr().out
+    writer.close()
+
+
+def is_moviepy_installed():
+    try:
+        import moviepy  # noqa: F401
+    except ModuleNotFoundError:
+        return False
+    return True
+
+
+@pytest.mark.parametrize("unsupported_format", ["stdout", "log", "json", "csv"])
+def test_report_video_to_unsupported_format_raises_error(tmp_path, unsupported_format):
+    writer = make_output_format(unsupported_format, tmp_path)
+
+    with pytest.raises(FormatUnsupportedError) as exec_info:
+        video = Video(frames=th.rand(1, 20, 3, 16, 16), fps=20)
+        writer.write({"video": video}, key_excluded={"video": ()})
+    assert unsupported_format in str(exec_info.value)
+    writer.close()

@@ -196,6 +196,7 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
         max_episode_length=4,
         buffer_size=int(2e4),
         policy_kwargs=dict(net_arch=[64]),
+        seed=0,
     )
     model.learn(200)
     old_replay_buffer = deepcopy(model.replay_buffer)

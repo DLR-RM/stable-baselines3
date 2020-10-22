@@ -542,9 +542,11 @@ class HER(BaseAlgorithm):
         if self.online_sampling:
             # set environment
             self.replay_buffer.set_env(self.env)
+            # If we are at the start of an episode, no need to truncate
+            current_idx = self.replay_buffer.current_idx
 
             # truncate interrupted episode
-            if truncate_last_trajectory:
+            if truncate_last_trajectory and current_idx > 0:
                 warnings.warn(
                     "The last trajectory in the replay buffer will be truncated.\n"
                     "If you are in the same episode as when the replay buffer was saved,\n"
@@ -552,7 +554,6 @@ class HER(BaseAlgorithm):
                 )
                 # get current episode and transition index
                 pos = self.replay_buffer.pos
-                current_idx = self.replay_buffer.current_idx
                 # set episode length for current episode
                 self.replay_buffer.episode_lengths[pos] = current_idx
                 # set done = True for current episode

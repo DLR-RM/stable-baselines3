@@ -1,5 +1,6 @@
 import os
 import pathlib
+import warnings
 from copy import deepcopy
 
 import gym
@@ -172,10 +173,14 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
 
 
 @pytest.mark.parametrize("online_sampling, truncate_last_trajectory", [(False, None), (True, True), (True, False)])
-def test_save_load_replay_buffer(tmp_path, online_sampling, truncate_last_trajectory):
+def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_last_trajectory):
     """
     Test if 'save_replay_buffer' and 'load_replay_buffer' works correctly
     """
+    # remove gym warnings
+    warnings.filterwarnings(action="ignore", category=DeprecationWarning)
+    warnings.filterwarnings(action="ignore", category=UserWarning, module="gym")
+
     path = pathlib.Path(tmp_path / "logs/replay_buffer.pkl")
     path.parent.mkdir(exist_ok=True, parents=True)  # to not raise a warning
     env = BitFlippingEnv(n_bits=4, continuous=True)
@@ -200,7 +205,17 @@ def test_save_load_replay_buffer(tmp_path, online_sampling, truncate_last_trajec
     with pytest.raises(AttributeError):
         model.replay_buffer
 
+    # Check that there is no warning
+    assert len(recwarn) == 0
+
     model.load_replay_buffer(path, truncate_last_trajectory)
+
+    if truncate_last_trajectory:
+        assert len(recwarn) == 1
+        warning = recwarn.pop(UserWarning)
+        assert "The last trajectory in the replay buffer will be truncated" in str(warning.message)
+    else:
+        assert len(recwarn) == 0
 
     if online_sampling:
         n_episodes_stored = model.replay_buffer.n_episodes_stored
@@ -230,7 +245,8 @@ def test_save_load_replay_buffer(tmp_path, online_sampling, truncate_last_trajec
         assert np.allclose(old_replay_buffer.dones, model.replay_buffer.dones)
 
     # test if continuing training works properly
-    model.learn(200)
+    reset_num_timesteps = False if truncate_last_trajectory is False else True
+    model.learn(200, reset_num_timesteps=reset_num_timesteps)
 
 
 def test_get_max_episode_length():

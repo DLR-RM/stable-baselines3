@@ -126,19 +126,36 @@ class HerReplayBuffer(ReplayBuffer):
     def sample(
         self,
         batch_size: int,
-        env: Optional[VecNormalize] = None,
-        online_sampling: bool = True,
-        n_sampled_goal: int = None,
+        env: Optional[VecNormalize],
     ) -> Union[ReplayBufferSamples, Tuple[np.ndarray, ...]]:
         """
+        Sample function for online sampling of HER transition,
+        this replaces the "regular" replay buffer ``sample()``
+        method in the ``train()`` function.
+
         :param batch_size: Number of element to sample
         :param env: Associated gym VecEnv
             to normalize the observations/rewards when sampling
-        :param online_sampling: Using online_sampling for HER or not.
-        :param n_sampled_goal: Number of sampled goals for replay. (offline sampling)
         :return: Samples.
         """
-        return self._sample_transitions(batch_size, env, online_sampling, n_sampled_goal)
+        return self._sample_transitions(batch_size, maybe_vec_env=env, online_sampling=True)
+
+    def sample_offline(
+        self,
+        n_sampled_goal: Optional[int] = None,
+    ) -> Union[ReplayBufferSamples, Tuple[np.ndarray, ...]]:
+        """
+        Sample function for offline sampling of HER transition,
+        in that case, only one episode is used and transitions
+        are added to the regular replay buffer.
+
+        :param n_sampled_goal: Number of sampled goals for replay
+        :return: at most(n_sampled_goal * episode_length) HER transitions.
+        """
+        # env=None as we should store unnormalized transitions, they will be normalized at sampling time
+        return self._sample_transitions(
+            batch_size=None, maybe_vec_env=None, online_sampling=False, n_sampled_goal=n_sampled_goal
+        )
 
     def sample_goals(
         self,
@@ -178,13 +195,13 @@ class HerReplayBuffer(ReplayBuffer):
 
     def _sample_transitions(
         self,
-        batch_size: int,
+        batch_size: Optional[int],
         maybe_vec_env: Optional[VecNormalize],
-        online_sampling: bool = True,
-        n_sampled_goal: int = None,
+        online_sampling: bool,
+        n_sampled_goal: Optional[int] = None,
     ) -> Union[ReplayBufferSamples, Tuple[np.ndarray, ...]]:
         """
-        :param batch_size: Number of element to sample
+        :param batch_size: Number of element to sample (only used for online sampling)
         :param env: associated gym VecEnv to normalize the observations/rewards
             Only valid when using online sampling
         :param online_sampling: Using online_sampling for HER or not.
@@ -193,11 +210,13 @@ class HerReplayBuffer(ReplayBuffer):
         """
         # Select which episodes to use
         if online_sampling:
+            assert batch_size is not None, "No batch_size specified for online sampling of HER transitions"
             episode_indices = np.random.randint(0, self.n_episodes_stored, batch_size)
             # A subset of the transitions will be relabeled using HER algorithm
             her_indices = np.arange(batch_size)[: int(self.her_ratio * batch_size)]
         else:
             assert maybe_vec_env is None, "Transitions must be stored unnormalized in the replay buffer"
+            assert n_sampled_goal is not None, "No n_sampled_goal specified for offline sampling of HER transitions"
             # Offline sampling: there is only one episode stored
             episode_length = self.episode_lengths[0]
             # we sample n_sampled_goal per timestep in the episode (only one is stored).

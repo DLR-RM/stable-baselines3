@@ -380,15 +380,14 @@ class HER(BaseAlgorithm):
     def _sample_her_transitions(self) -> None:
         """
         Sample additional goals and store new transitions in replay buffer
-        when using offline sampling
+        when using offline sampling.
         """
 
-        # sample goals and get new observations
-        observations, next_observations, actions, rewards = self._episode_storage.sample(
-            self.batch_size,
-            None,  # we should store unnormalized transitions, they will be normalized at sampling time
-            self.online_sampling,
-            self.n_sampled_goal,
+        # Sample goals and get new observations
+        # maybe_vec_env=None as we should store unnormalized transitions,
+        # they will be normalized at sampling time
+        observations, next_observations, actions, rewards = self._episode_storage.sample_offline(
+            n_sampled_goal=self.n_sampled_goal
         )
 
         # store data in replay buffer
@@ -534,9 +533,9 @@ class HER(BaseAlgorithm):
         Load a replay buffer from a pickle file and set environment for replay buffer (only online sampling).
 
         :param path: Path to the pickled replay buffer.
-        :param truncate_last_trajectory:
+        :param truncate_last_trajectory: Only for online sampling.
             If set to ``True`` we assume that the last trajectory in the replay buffer was finished.
-            If it is set to ``False`` we assume it is the same trajectory where we continue.
+            If it is set to ``False`` we assume that we continue the same trajectory (same episode).
         """
         self.model.load_replay_buffer(path=path)
 
@@ -547,8 +546,9 @@ class HER(BaseAlgorithm):
             # truncate interrupted episode
             if truncate_last_trajectory:
                 warnings.warn(
-                    "The last trajectory in the replay buffer will be truncated, "
-                    "You should use `truncate_last_trajectory=False` to avoid that issue."
+                    "The last trajectory in the replay buffer will be truncated.\n"
+                    "If you are in the same episode as when the replay buffer was saved,\n"
+                    "you should use `truncate_last_trajectory=False` to avoid that issue."
                 )
                 # get current episode and transition index
                 pos = self.replay_buffer.pos
@@ -556,8 +556,11 @@ class HER(BaseAlgorithm):
                 # set episode length for current episode
                 self.replay_buffer.episode_lengths[pos] = current_idx
                 # set done = True for current episode
-                self.replay_buffer.buffer["done"][pos][current_idx] = np.array([True], dtype=np.float32)
+                # current_idx was already incremented
+                self.replay_buffer.buffer["done"][pos][current_idx - 1] = np.array([True], dtype=np.float32)
                 # reset current transition index
                 self.replay_buffer.current_idx = 0
                 # increment episode counter
-                self.replay_buffer.pos += 1
+                self.replay_buffer.pos = (self.replay_buffer.pos + 1) % self.replay_buffer.max_episode_stored
+                # update "full" indicator
+                self.replay_buffer.full = self.replay_buffer.full or self.replay_buffer.pos == 0

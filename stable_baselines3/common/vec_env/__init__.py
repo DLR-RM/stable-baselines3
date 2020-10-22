@@ -41,6 +41,17 @@ def unwrap_vec_normalize(env: Union["GymEnv", VecEnv]) -> Optional[VecNormalize]
     return unwrap_vec_wrapper(env, VecNormalize)  # pytype:disable=bad-return-type
 
 
+def is_wrapped(env: Union["GymEnv", VecEnv], vec_wrapper_class: Type[VecEnvWrapper]) -> bool:
+    """
+    Check if an environment is already wrapped by a given ``VecEnvWrapper``.
+
+    :param env:
+    :param vec_wrapper_class:
+    :return:
+    """
+    return unwrap_vec_wrapper(env, vec_wrapper_class) is not None
+
+
 # Define here to avoid circular import
 def sync_envs_normalization(env: "GymEnv", eval_env: "GymEnv") -> None:
     """

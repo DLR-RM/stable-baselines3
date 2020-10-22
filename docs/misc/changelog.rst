@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Pre-Release 0.10.0a0 (WIP)
+Pre-Release 0.10.0a1 (WIP)
 ------------------------------
 
 Breaking Changes:
@@ -14,11 +14,14 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Allow custom actor/critic network architectures using ``net_arch=dict(qf=[400, 300], pi=[64, 64])`` for off-policy algorithms (SAC, TD3, DDPG)
+- Added Hindsight Experience Replay ``HER``. (@megan-klaiber)
+- ``VecNormalize`` now supports ``gym.spaces.Dict`` observation spaces
 - Support logging videos to Tensorboard (@SwamyDev)
 
 Bug Fixes:
 ^^^^^^^^^^
 - Fix GAE computation for on-policy algorithms (off-by one for the last value) (thanks @Wovchena)
+- Fixed potential issue when loading a different environment
 - Fix ignoring the exclude parameter when recording logs using json, csv or log as logging format (@SwamyDev)
 - Make ``make_vec_env`` support the ``env_kwargs`` argument when using an env ID str (@ManifoldFR)
 - Fix model creation initializing CUDA even when `device="cpu"` is provided
@@ -37,6 +40,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Added first draft of migration guide
+- Enabled doc for ``CnnPolicies``
 
 
 Pre-Release 0.9.0 (2020-10-03)
@@ -68,6 +72,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Added ``unwrap_vec_wrapper()`` to ``common.vec_env`` to extract ``VecEnvWrapper`` if needed
 - Fixed a bug where the environment was reset twice when using ``evaluate_policy``
 - Fix logging of ``clip_fraction`` in PPO (@diditforlulz273)
 - Fixed a bug where cuda support was wrongly checked when passing the GPU index, e.g., ``device="cuda:0"`` (@liorcohen5)
@@ -158,7 +163,6 @@ Documentation:
 - Added PyBullet colab notebook
 - Fixed typo in PPO example code (@joeljosephjin)
 - Fixed typo in custom policy doc (@RaphaelWag)
-
 
 
 Pre-Release 0.7.0 (2020-06-10)
@@ -461,4 +465,4 @@ And all the contributors:
 @MarvineGothic @jdossgollin @SyllogismRXS @rusu24edward @jbulow @Antymon @seheevic @justinkterry @edbeeching
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
-@diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88
+@diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber

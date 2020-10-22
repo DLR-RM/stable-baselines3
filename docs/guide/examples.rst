@@ -18,8 +18,7 @@ notebooks:
 -  `Atari Games`_
 -  `RL Baselines zoo`_
 -  `PyBullet`_
-
-.. -  `Hindsight Experience Replay`_
+-  `Hindsight Experience Replay`_
 
 .. _Getting Started: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/stable_baselines_getting_started.ipynb
 .. _Training, Saving, Loading: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/saving_loading_dqn.ipynb
@@ -341,6 +340,81 @@ will compute a running average and standard deviation of input features (it can 
   env.training = False
   # reward normalization is not needed at test time
   env.norm_reward = False
+
+
+Hindsight Experience Replay (HER)
+---------------------------------
+
+For this example, we are using `Highway-Env <https://github.com/eleurent/highway-env>`_ by `@eleurent <https://github.com/eleurent>`_.
+
+
+.. image:: ../_static/img/colab-badge.svg
+   :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/stable_baselines_her.ipynb
+
+
+.. figure:: https://raw.githubusercontent.com/eleurent/highway-env/gh-media/docs/media/parking-env.gif
+
+   The highway-parking-v0 environment.
+
+The parking env is a goal-conditioned continuous control task, in which the vehicle must park in a given space with the appropriate heading.
+
+.. note::
+
+  The hyperparameters in the following example were optimized for that environment.
+
+
+.. code-block:: python
+
+  import gym
+  import highway_env
+  import numpy as np
+
+  from stable_baselines3 import HER, SAC, DDPG, TD3
+  from stable_baselines3.common.noise import NormalActionNoise
+
+  env = gym.make("parking-v0")
+
+  # Create 4 artificial transitions per real transition
+  n_sampled_goal = 4
+
+  # SAC hyperparams:
+  model = HER(
+      "MlpPolicy",
+      env,
+      SAC,
+      n_sampled_goal=n_sampled_goal,
+      goal_selection_strategy="future",
+      # IMPORTANT: because the env is not wrapped with a TimeLimit wrapper
+      # we have to manually specify the max number of steps per episode
+      max_episode_length=100,
+      verbose=1,
+      buffer_size=int(1e6),
+      learning_rate=1e-3,
+      gamma=0.95,
+      batch_size=256,
+      online_sampling=True,
+      policy_kwargs=dict(net_arch=[256, 256, 256]),
+  )
+
+  model.learn(int(2e5))
+  model.save("her_sac_highway")
+
+  # Load saved model
+  model = HER.load("her_sac_highway", env=env)
+
+  obs = env.reset()
+
+  # Evaluate the agent
+  episode_reward = 0
+  for _ in range(100):
+      action, _ = model.predict(obs, deterministic=True)
+      obs, reward, done, info = env.step(action)
+      env.render()
+      episode_reward += reward
+      if done or info.get("is_success", False):
+          print("Reward:", episode_reward, "Success?", info.get("is_success", False))
+          episode_reward = 0.0
+          obs = env.reset()
 
 
 Record a Video

@@ -23,6 +23,7 @@ from stable_baselines3.common.preprocessing import get_action_dim, is_image_spac
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, FlattenExtractor, MlpExtractor, NatureCNN, create_mlp
 from stable_baselines3.common.utils import get_device, is_vectorized_observation
 from stable_baselines3.common.vec_env import VecTransposeImage
+from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 
 
 class BaseModel(nn.Module, ABC):
@@ -234,7 +235,10 @@ class BasePolicy(BaseModel):
         #     state = self.initial_state
         # if mask is None:
         #     mask = [False for _ in range(self.n_envs)]
-        observation = np.array(observation)
+        if isinstance(observation, dict):
+            observation = ObsDictWrapper.convert_dict(observation)
+        else:
+            observation = np.array(observation)
 
         # Handle the different cases for images
         # as PyTorch use channel first format

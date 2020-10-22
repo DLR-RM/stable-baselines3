@@ -11,7 +11,7 @@ It uses multiple workers to avoid the use of a replay buffer.
 
 
 .. warning::
-  
+
   If you find training unstable or want to match performance of stable-baselines A2C, consider using
   ``RMSpropTFLike`` optimizer from ``stable_baselines3.common.sb2_compat.rmsprop_tf_like``.
   You can change optimizer with ``A2C(policy_kwargs=dict(optimizer_class=RMSpropTFLike))``.
@@ -79,3 +79,22 @@ Parameters
 .. autoclass:: A2C
   :members:
   :inherited-members:
+
+
+A2C Policies
+-------------
+
+.. autoclass:: MlpPolicy
+  :members:
+  :inherited-members:
+
+.. autoclass:: stable_baselines3.common.policies.ActorCriticPolicy
+  :members:
+  :noindex:
+
+.. autoclass:: CnnPolicy
+  :members:
+
+.. autoclass:: stable_baselines3.common.policies.ActorCriticCnnPolicy
+  :members:
+  :noindex:

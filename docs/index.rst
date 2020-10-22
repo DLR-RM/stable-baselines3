@@ -57,6 +57,7 @@ Main Features
   modules/a2c
   modules/ddpg
   modules/dqn
+  modules/her
   modules/ppo
   modules/sac
   modules/td3

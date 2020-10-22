@@ -98,7 +98,9 @@ DDPG Policies
   :members:
   :inherited-members:
 
+.. autoclass:: stable_baselines3.td3.policies.TD3Policy
+  :members:
+  :noindex:
 
-.. .. autoclass:: CnnPolicy
-..   :members:
-..   :inherited-members:
+.. autoclass:: CnnPolicy
+  :members:

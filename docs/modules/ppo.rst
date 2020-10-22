@@ -80,3 +80,22 @@ Parameters
 .. autoclass:: PPO
   :members:
   :inherited-members:
+
+
+PPO Policies
+-------------
+
+.. autoclass:: MlpPolicy
+  :members:
+  :inherited-members:
+
+.. autoclass:: stable_baselines3.common.policies.ActorCriticPolicy
+  :members:
+  :noindex:
+
+.. autoclass:: CnnPolicy
+  :members:
+
+.. autoclass:: stable_baselines3.common.policies.ActorCriticCnnPolicy
+  :members:
+  :noindex:

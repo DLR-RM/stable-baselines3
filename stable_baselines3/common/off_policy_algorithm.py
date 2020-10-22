@@ -67,6 +67,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param use_sde_at_warmup: Whether to use gSDE instead of uniform sampling
         during the warm up phase (before learning starts)
     :param sde_support: Whether the model support gSDE or not
+    :param remove_time_limit_termination: Remove terminations (dones) that are due to time limit.
+        See https://github.com/hill-a/stable-baselines/issues/863
     """
 
     def __init__(
@@ -97,6 +99,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         sde_sample_freq: int = -1,
         use_sde_at_warmup: bool = False,
         sde_support: bool = True,
+        remove_time_limit_termination: bool = False,
     ):
 
         super(OffPolicyAlgorithm, self).__init__(
@@ -125,6 +128,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.n_episodes_rollout = n_episodes_rollout
         self.action_noise = action_noise
         self.optimize_memory_usage = optimize_memory_usage
+
+        # Remove terminations (dones) that are due to time limit
+        # see https://github.com/hill-a/stable-baselines/issues/863
+        self.remove_time_limit_termination = remove_time_limit_termination
 
         if train_freq > 0 and n_episodes_rollout > 0:
             warnings.warn(

@@ -5,7 +5,7 @@ pytest:
 	./scripts/run_tests.sh
 
 type:
-	pytype
+	pytype -j auto
 
 lint:
 	# stop the build if there are Python syntax errors or undefined names

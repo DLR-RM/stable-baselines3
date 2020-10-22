@@ -34,7 +34,7 @@ class NoopResetEnv(gym.Wrapper):
         else:
             noops = self.unwrapped.np_random.randint(1, self.noop_max + 1)
         assert noops > 0
-        obs = np.empty(0)
+        obs = np.zeros(0)
         for _ in range(noops):
             obs, _, done, _ = self.env.step(self.noop_action)
             if done:

@@ -9,6 +9,7 @@ Pre-Release 0.10.0a0 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- **Warning:** Renamed ``common.cmd_util`` to ``common.env_util`` for clarity (affects ``make_vec_env`` and ``make_atari_env`` functions)
 
 New Features:
 ^^^^^^^^^^^^^

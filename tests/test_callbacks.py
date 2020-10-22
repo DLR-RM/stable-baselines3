@@ -13,7 +13,7 @@ from stable_baselines3.common.callbacks import (
     StopTrainingOnMaxEpisodes,
     StopTrainingOnRewardThreshold,
 )
-from stable_baselines3.common.cmd_util import make_vec_env
+from stable_baselines3.common.env_util import make_vec_env
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN, DDPG])

@@ -174,7 +174,7 @@ class HER(BaseAlgorithm):
         eval_env: Optional[GymEnv] = None,
         eval_freq: int = -1,
         n_eval_episodes: int = 5,
-        tb_log_name: str = "run",
+        tb_log_name: str = "HER",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
     ) -> BaseAlgorithm:

@@ -64,7 +64,7 @@ Utility functions are no longer exported from ``common`` module, you should impo
 
 .. code-block:: python
 
-  from stable_baselines3.common.cmd_util import make_atari_env, make_vec_env
+  from stable_baselines3.common.env_util import make_atari_env, make_vec_env
   from stable_baselines3.common.utils import set_random_seed
 
 instead of ``from stable_baselines3.common import make_atari_env``

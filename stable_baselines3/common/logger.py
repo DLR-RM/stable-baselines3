@@ -5,7 +5,7 @@ import sys
 import tempfile
 import warnings
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, TextIO, Tuple, Union
 
 import numpy as np
 import pandas
@@ -21,6 +21,28 @@ INFO = 20
 WARN = 30
 ERROR = 40
 DISABLED = 50
+
+
+class Video(object):
+    """
+    Video data class storing the video frames and the frame per seconds
+    """
+
+    def __init__(self, frames: th.Tensor, fps: Union[float, int]):
+        self.frames = frames
+        self.fps = fps
+
+
+class FormatUnsupportedError(NotImplementedError):
+    def __init__(self, unsupported_formats: Sequence[str], value_description: str):
+        if len(unsupported_formats) > 1:
+            format_str = f"formats {', '.join(unsupported_formats)} are"
+        else:
+            format_str = f"format {unsupported_formats[0]} is"
+        super(FormatUnsupportedError, self).__init__(
+            f"The {format_str} not supported for the {value_description} value logged.\n"
+            f"You can exclude formats via the `exclude` parameter of the logger's `record` function."
+        )
 
 
 class KVWriter(object):
@@ -82,6 +104,9 @@ class HumanOutputFormat(KVWriter, SeqWriter):
 
             if excluded is not None and ("stdout" in excluded or "log" in excluded):
                 continue
+
+            if isinstance(value, Video):
+                raise FormatUnsupportedError(["stdout", "log"], "video")
 
             if isinstance(value, float):
                 # Align left
@@ -169,6 +194,8 @@ class JSONOutputFormat(KVWriter):
 
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
         def cast_to_json_serializable(value: Any):
+            if isinstance(value, Video):
+                raise FormatUnsupportedError(["json"], "video")
             if hasattr(value, "dtype"):
                 if value.shape == () or len(value) == 1:
                     # if value is a dimensionless numpy array or of length 1, serialize as a float
@@ -227,6 +254,10 @@ class CSVOutputFormat(KVWriter):
             if i > 0:
                 self.file.write(",")
             value = key_values.get(key)
+
+            if isinstance(value, Video):
+                raise FormatUnsupportedError(["csv"], "video")
+
             if value is not None:
                 self.file.write(str(value))
         self.file.write("\n")
@@ -261,6 +292,9 @@ class TensorBoardOutputFormat(KVWriter):
 
             if isinstance(value, th.Tensor):
                 self.writer.add_histogram(key, value, step)
+
+            if isinstance(value, Video):
+                self.writer.add_video(key, value.frames, step, value.fps)
 
         # Flush the output to the file
         self.writer.flush()

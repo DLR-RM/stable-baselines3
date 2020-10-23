@@ -144,5 +144,7 @@ def test_feature_extractor_target_net(model_class):
     if model_class == TD3:
         params_should_differ(original_actor_target_param, model.actor_target.parameters())
 
+        params_should_match(original_actor_param, model.actor.parameters())
+
         # Actor and critic feature extractor should be the same
         check_td3_feature_extractor_match(model)

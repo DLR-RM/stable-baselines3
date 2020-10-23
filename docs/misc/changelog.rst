@@ -41,7 +41,7 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Added first draft of migration guide
 - Enabled doc for ``CnnPolicies``
-
+- Added advanced saving and loading example
 
 Pre-Release 0.9.0 (2020-10-03)
 ------------------------------

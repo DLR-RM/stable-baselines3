@@ -19,6 +19,7 @@ notebooks:
 -  `RL Baselines zoo`_
 -  `PyBullet`_
 -  `Hindsight Experience Replay`_
+-  `Advanced Saving and Loading`_
 
 .. _Getting Started: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/stable_baselines_getting_started.ipynb
 .. _Training, Saving, Loading: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/saving_loading_dqn.ipynb
@@ -28,6 +29,7 @@ notebooks:
 .. _Hindsight Experience Replay: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/stable_baselines_her.ipynb
 .. _RL Baselines zoo: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/rl-baselines-zoo.ipynb
 .. _PyBullet: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/pybullet.ipynb
+.. _Advanced Saving and Loading: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/advanced_saving_loading.ipynb
 
 .. |colab| image:: ../_static/img/colab.svg
 
@@ -415,6 +417,54 @@ The parking env is a goal-conditioned continuous control task, in which the vehi
           print("Reward:", episode_reward, "Success?", info.get("is_success", False))
           episode_reward = 0.0
           obs = env.reset()
+
+
+Advanced Saving and Loading
+---------------------------------
+
+In Stable-Baselines3 (SB3), you can easily create a test environment for periodic evaluation and use a policy independently from a model.
+
+.. image:: ../_static/img/colab-badge.svg
+   :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/advanced_saving_loading.ipynb
+
+Stable-Baselines3 allows to automatically create an environment for evaluation.
+For that, you only to specify ``create_eval_env=True`` when passing the Gym ID of the environment.
+Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
+
+.. code-block:: python
+
+  from stable_baselines3 import SAC
+  from stable_baselines3.common.evaluation import evaluate_policy
+  from stable_baselines3.sac.policies import MlpPolicy
+
+  model = SAC('MlpPolicy', 'Pendulum-v0', verbose=1, learning_rate=1e-3, create_eval_env=True)
+  # Evaluate the model every 1000 steps on 5 test episodes
+  # and save the evaluation to the logs folder
+  model.learn(6000, eval_freq=1000, n_eval_episodes=5, eval_log_path="./logs/")
+
+  # Save the policy independently from the model
+  # Note: if you don't save the complete model, you cannot continue training afterward
+  policy = model.policy
+  policy.save("sac_policy_pendulum.pkl")
+
+  # Retrieve the environment
+  env = model.get_env()
+
+  # Evaluate the policy
+  mean_reward, std_reward = evaluate_policy(policy, env, n_eval_episodes=10, deterministic=True)
+
+  print(f"mean_reward={mean_reward:.2f} +/- {std_reward}")
+
+  # Load the policy independently from the model
+  saved_policy = MlpPolicy.load("sac_policy_pendulum")
+
+  # Evaluate the loaded policy
+  mean_reward, std_reward = evaluate_policy(saved_policy, env, n_eval_episodes=10, deterministic=True)
+
+  print(f"mean_reward={mean_reward:.2f} +/- {std_reward}")
+
+
+
 
 
 Record a Video

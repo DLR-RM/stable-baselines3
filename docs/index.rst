@@ -44,6 +44,7 @@ Main Features
    guide/callbacks
    guide/tensorboard
    guide/rl_zoo
+   guide/imitation
    guide/migration
    guide/checking_nan
    guide/developer

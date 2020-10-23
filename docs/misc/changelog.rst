@@ -35,6 +35,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Added first draft of migration guide
+- Added intro to `imitation <https://github.com/HumanCompatibleAI/imitation>`_ library (@shwang)
 
 
 Pre-Release 0.9.0 (2020-10-03)

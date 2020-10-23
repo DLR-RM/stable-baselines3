@@ -1,10 +1,13 @@
 import os
+from copy import deepcopy
 
 import numpy as np
 import pytest
+import torch as th
 
 from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.identity_env import FakeImageEnv
+from stable_baselines3.common.utils import zip_strict
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN])
@@ -35,3 +38,111 @@ def test_cnn(tmp_path, model_class):
     assert np.allclose(action, model.predict(obs, deterministic=True)[0])
 
     os.remove(str(tmp_path / SAVE_NAME))
+
+
+def patch_dqn_names_(model):
+    # Small hack to make the test work with DQN
+    if isinstance(model, DQN):
+        model.critic = model.q_net
+        model.critic_target = model.q_net_target
+
+
+def params_should_match(params, other_params):
+    for param, other_param in zip_strict(params, other_params):
+        assert th.allclose(param, other_param)
+
+
+def params_should_differ(params, other_params):
+    for param, other_param in zip_strict(params, other_params):
+        assert not th.allclose(param, other_param)
+
+
+def check_td3_feature_extractor_match(model):
+    for (key, actor_param), critic_param in zip(model.actor_target.named_parameters(), model.critic_target.parameters()):
+        if "features_extractor" in key:
+            assert th.allclose(actor_param, critic_param)
+
+
+@pytest.mark.parametrize("model_class", [SAC, TD3, DQN])
+def test_feature_extractor_target_net(model_class):
+    env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=1, discrete=model_class not in {SAC, TD3})
+    # Avoid memory error when using replay buffer
+    # Reduce the size of the features
+    kwargs = dict(buffer_size=250, learning_starts=100, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)))
+    model = model_class("CnnPolicy", env, seed=0, **kwargs)
+
+    patch_dqn_names_(model)
+
+    # Critic and target should be equal at the begginning of training
+    params_should_match(model.critic.parameters(), model.critic_target.parameters())
+
+    # TD3 has also a target actor net
+    if model_class == TD3:
+        params_should_match(model.actor.parameters(), model.actor_target.parameters())
+
+    model.learn(200)
+
+    # Critic and target should differ
+    params_should_differ(model.critic.parameters(), model.critic_target.parameters())
+
+    if model_class == TD3:
+        params_should_differ(model.actor.parameters(), model.actor_target.parameters())
+
+        # Actor and critic feature extractor should be the same
+        check_td3_feature_extractor_match(model)
+
+    # Re-initialize and collect some random data (without doing gradient steps)
+    model = model_class("CnnPolicy", env, seed=0, **kwargs).learn(10)
+
+    patch_dqn_names_(model)
+
+    original_param = deepcopy(list(model.critic.parameters()))
+    original_target_param = deepcopy(list(model.critic_target.parameters()))
+    if model_class == TD3:
+        original_actor_target_param = deepcopy(list(model.actor_target.parameters()))
+
+    # Deactivate copy to target
+    model.tau = 0.0
+    model.train(gradient_steps=1)
+
+    # Target should be the same
+    params_should_match(original_target_param, model.critic_target.parameters())
+
+    if model_class == TD3:
+        params_should_match(original_actor_target_param, model.actor_target.parameters())
+
+        # Actor and critic feature extractor should be the same
+        check_td3_feature_extractor_match(model)
+
+    # not the same for critic net (updated by gradient descent)
+    params_should_differ(original_param, model.critic.parameters())
+
+    # Update the reference as it should not change in the next step
+    original_param = deepcopy(list(model.critic.parameters()))
+
+    if model_class == TD3:
+        original_actor_param = deepcopy(list(model.actor.parameters()))
+
+    # Deactivate learning rate
+    model.lr_schedule = lambda _: 0.0
+    # Re-activate polyak update
+    model.tau = 0.01
+    # Special case for DQN: target net is updated in the `collect_rollout()`
+    # not the `train()` method
+    if model_class == DQN:
+        model.target_update_interval = 1
+        model._on_step()
+
+    model.train(gradient_steps=1)
+
+    # Target should have changed now (due to polyak update)
+    params_should_differ(original_target_param, model.critic_target.parameters())
+
+    # Critic should be the same
+    params_should_match(original_param, model.critic.parameters())
+
+    if model_class == TD3:
+        params_should_differ(original_actor_target_param, model.actor_target.parameters())
+
+        # Actor and critic feature extractor should be the same
+        check_td3_feature_extractor_match(model)

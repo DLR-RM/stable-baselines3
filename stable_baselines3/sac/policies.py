@@ -296,7 +296,12 @@ class SACPolicy(BasePolicy):
 
         self.critic = self.make_critic()
         self.critic_target = self.make_critic()
+        # Critic target should not share the feature extactor with critic
+        self.critic_target.features_extractor = self.features_extractor_class(
+            self.observation_space, **self.features_extractor_kwargs
+        )
         self.critic_target.load_state_dict(self.critic.state_dict())
+
         # Do not optimize the shared feature extractor with the critic loss
         # otherwise, there are gradient computation issues
         # Another solution: having duplicated features extractor but requires more memory and computation

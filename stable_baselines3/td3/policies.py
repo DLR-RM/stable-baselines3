@@ -160,10 +160,20 @@ class TD3Policy(BasePolicy):
     def _build(self, lr_schedule: Callable) -> None:
         self.actor = self.make_actor()
         self.actor_target = self.make_actor()
+        # Actor target should not share the feature extactor with actor
+        self.actor_target.features_extractor = self.features_extractor_class(
+            self.observation_space, **self.features_extractor_kwargs
+        )
         self.actor_target.load_state_dict(self.actor.state_dict())
         self.actor.optimizer = self.optimizer_class(self.actor.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
         self.critic = self.make_critic()
         self.critic_target = self.make_critic()
+        # Critic target should not share the feature extactor with critic
+        # but it shares it with the target as actor and critic are sharing
+        # the same features_extractor too
+        # NOTE: as a results the effective poliak coefficient for the feature extactor
+        # will be 2 * tau instead of tau (updated one time with the actor, a second time with the critic)
+        self.critic_target.features_extractor = self.actor_target.features_extractor
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic.optimizer = self.optimizer_class(self.critic.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
 

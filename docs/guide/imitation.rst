@@ -7,12 +7,12 @@ The `imitation <https://github.com/HumanCompatibleAI/imitation>`__ library imple
 imitation learning algorithms on top of Stable-Baselines3, including:
 
   - Behavioral Cloning
-  - `DAgger <https://arxiv.org/pdf/1011.0686.pdf>`_ with synthetic examples
+  - `DAgger <https://arxiv.org/abs/1011.0686>`_ with synthetic examples
   - `Adversarial Inverse Reinforcement Learning <https://arxiv.org/abs/1710.11248>`_ (AIRL)
   - `Generative Adversarial Imitation Learning <https://arxiv.org/abs/1606.03476>`_  (GAIL)
 
 
-It also provides `CLI scripts <#Sacred-CLI-Quickstart>`_ for training and saving
+It also provides `CLI scripts <#cli-quickstart>`_ for training and saving
 demonstrations from RL experts, and for training imitation learners on these demonstrations.
 
 

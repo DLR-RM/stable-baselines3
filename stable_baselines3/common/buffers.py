@@ -1,6 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import Generator, Optional, Union
+from typing import Dict, Generator, Optional, Union
 
 import numpy as np
 import torch as th
@@ -129,9 +129,11 @@ class BaseBuffer(ABC):
         return th.as_tensor(array).to(self.device)
 
     @staticmethod
-    def _normalize_obs(obs: np.ndarray, env: Optional[VecNormalize] = None) -> np.ndarray:
+    def _normalize_obs(
+        obs: Union[np.ndarray, Dict[str, np.ndarray]], env: Optional[VecNormalize] = None
+    ) -> Union[np.ndarray, Dict[str, np.ndarray]]:
         if env is not None:
-            return env.normalize_obs(obs).astype(np.float32)
+            return env.normalize_obs(obs)
         return obs
 
     @staticmethod

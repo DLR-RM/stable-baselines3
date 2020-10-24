@@ -16,9 +16,7 @@ except ImportError:
     SummaryWriter = None
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.preprocessing import is_image_space
 from stable_baselines3.common.type_aliases import GymEnv
-from stable_baselines3.common.vec_env import VecTransposeImage
 
 
 def set_random_seed(seed: int, using_cuda: bool = False) -> None:
@@ -204,14 +202,7 @@ def check_for_correct_spaces(env: GymEnv, observation_space: gym.spaces.Space, a
     :param observation_space: Observation space to check against
     :param action_space: Action space to check against
     """
-    if (
-        observation_space != env.observation_space
-        # Special cases for images that need to be transposed
-        and not (
-            is_image_space(env.observation_space)
-            and observation_space == VecTransposeImage.transpose_space(env.observation_space)
-        )
-    ):
+    if observation_space != env.observation_space:
         raise ValueError(f"Observation spaces do not match: {observation_space} != {env.observation_space}")
     if action_space != env.action_space:
         raise ValueError(f"Action spaces do not match: {action_space} != {env.action_space}")

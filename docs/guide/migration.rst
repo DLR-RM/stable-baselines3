@@ -64,7 +64,7 @@ Utility functions are no longer exported from ``common`` module, you should impo
 
 .. code-block:: python
 
-  from stable_baselines3.common.cmd_util import make_atari_env, make_vec_env
+  from stable_baselines3.common.env_util import make_atari_env, make_vec_env
   from stable_baselines3.common.utils import set_random_seed
 
 instead of ``from stable_baselines3.common import make_atari_env``
@@ -162,6 +162,14 @@ Despite this change, no change in performance should be expected.
 	SAC ``predict()`` method has now ``deterministic=False`` by default for consistency.
 	To match SB2 behavior, you need to explicitly pass ``deterministic=True``
 
+
+HER
+^^^
+
+The ``HER`` implementation now also supports online sampling of the new goals. This is done in a vectorized version.
+The goal selection strategy ``RANDOM`` is no longer supported.
+``HER`` now supports ``VecNormalize`` wrapper but only when ``online_sampling=True``.
+For performance reasons, the maximum number of steps per episodes must be specified (see :ref:`HER <her>` documentation).
 
 
 New logger API

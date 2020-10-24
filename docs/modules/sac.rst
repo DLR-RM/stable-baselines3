@@ -82,7 +82,7 @@ Example
 
   obs = env.reset()
   while True:
-      action, _states = model.predict(obs)
+      action, _states = model.predict(obs, deterministic=True)
       obs, reward, done, info = env.step(action)
       env.render()
       if done:
@@ -104,6 +104,9 @@ SAC Policies
   :members:
   :inherited-members:
 
-.. .. autoclass:: CnnPolicy
-..   :members:
-..   :inherited-members:
+.. autoclass:: stable_baselines3.sac.policies.SACPolicy
+  :members:
+  :noindex:
+
+.. autoclass:: CnnPolicy
+  :members:

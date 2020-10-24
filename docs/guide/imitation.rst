@@ -1,9 +1,9 @@
 .. _imitation:
-==================
+
 Imitation Learning
 ==================
 
-The `imitation <https://github.com/HumanCompatibleAI/imitation>`_ library implements
+The `imitation <https://github.com/HumanCompatibleAI/imitation>`__ library implements
 imitation learning algorithms on top of Stable-Baselines3, including:
 
   - Behavioral Cloning

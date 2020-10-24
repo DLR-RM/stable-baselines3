@@ -422,13 +422,19 @@ The parking env is a goal-conditioned continuous control task, in which the vehi
 Advanced Saving and Loading
 ---------------------------------
 
-In Stable-Baselines3 (SB3), you can easily create a test environment for periodic evaluation and use a policy independently from a model.
+In this example, we show how to use some advanced features of Stable-Baselines3 (SB3):
+how to easily create a test environment to evaluate an agent periodically,
+use a policy independently from a model (and how to save it, load it) and save/load a replay buffer.
+
+By default, the replay buffer is not saved when calling ``model.save()``, in order to save space on the disk (a replay buffer can be up to several GB when using images).
+However, SB3 provides a ``save_replay_buffer()`` and ``load_replay_buffer()`` method to save it separately.
+
 
 .. image:: ../_static/img/colab-badge.svg
    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/advanced_saving_loading.ipynb
 
 Stable-Baselines3 allows to automatically create an environment for evaluation.
-For that, you only to specify ``create_eval_env=True`` when passing the Gym ID of the environment.
+For that, you only need to specify ``create_eval_env=True`` when passing the Gym ID of the environment.
 Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
 
 .. code-block:: python
@@ -437,10 +443,30 @@ Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
   from stable_baselines3.common.evaluation import evaluate_policy
   from stable_baselines3.sac.policies import MlpPolicy
 
-  model = SAC('MlpPolicy', 'Pendulum-v0', verbose=1, learning_rate=1e-3, create_eval_env=True)
+  # Create the model, the training environment
+  # and the test environment (for evaluation)
+  model = SAC('MlpPolicy', 'Pendulum-v0', verbose=1,
+              learning_rate=1e-3, create_eval_env=True)
+
   # Evaluate the model every 1000 steps on 5 test episodes
-  # and save the evaluation to the logs folder
+  # and save the evaluation to the "logs/" folder
   model.learn(6000, eval_freq=1000, n_eval_episodes=5, eval_log_path="./logs/")
+
+  # save the model
+  model.save("sac_pendulum")
+
+  # the saved model does not contain the replay buffer
+  loaded_model = SAC.load("sac_pendulum")
+  print(f"The loaded_model has {loaded_model.replay_buffer.size()} transitions in its buffer")
+
+  # now save the replay buffer too
+  model.save_replay_buffer("sac_replay_buffer")
+
+  # load it into the loaded_model
+  loaded_model.load_replay_buffer("sac_replay_buffer")
+
+  # now the loaded replay is not empty anymore
+  print(f"The loaded_model has {loaded_model.replay_buffer.size()} transitions in its buffer")
 
   # Save the policy independently from the model
   # Note: if you don't save the complete model, you cannot continue training afterward
@@ -462,8 +488,6 @@ Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
   mean_reward, std_reward = evaluate_policy(saved_policy, env, n_eval_episodes=10, deterministic=True)
 
   print(f"mean_reward={mean_reward:.2f} +/- {std_reward}")
-
-
 
 
 

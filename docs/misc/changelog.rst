@@ -40,6 +40,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Added first draft of migration guide
+- Added intro to `imitation <https://github.com/HumanCompatibleAI/imitation>`_ library (@shwang)
 - Enabled doc for ``CnnPolicies``
 - Added advanced saving and loading example
 - Added base doc for exporting models

@@ -43,6 +43,8 @@ Documentation:
 - Enabled doc for ``CnnPolicies``
 - Added advanced saving and loading example
 - Added base doc for exporting models
+- Added example for getting and setting model parameters
+
 
 Pre-Release 0.9.0 (2020-10-03)
 ------------------------------

@@ -7,6 +7,12 @@ Stable Baselines3 provides policy networks for images (CnnPolicies)
 and other type of input features (MlpPolicies).
 
 
+.. warning::
+  For all algorithms (except DDPG, TD3 and SAC), continuous actions are clipped during training and testing
+  (to avoid out of bound error).
+
+
+
 Custom Policy Architecture
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 

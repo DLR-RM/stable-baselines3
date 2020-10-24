@@ -47,6 +47,8 @@ Main Features
    guide/migration
    guide/checking_nan
    guide/developer
+   guide/save_format
+   guide/export
 
 
 .. toctree::

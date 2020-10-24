@@ -19,7 +19,7 @@ demonstrations from RL experts, and for training imitation learners on these dem
 Installation
 ------------
 
-Requires Python 3.7+.
+Installation requires Python 3.7+:
 
 ::
 

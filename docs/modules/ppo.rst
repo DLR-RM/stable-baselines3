@@ -74,6 +74,72 @@ Train a PPO agent on ``Pendulum-v0`` using 4 environments.
       obs, rewards, dones, info = env.step(action)
       env.render()
 
+
+Results
+-------
+
+Atari Games
+^^^^^^^^^^^
+
+The complete learning curves are available in the `associated PR #110 <https://github.com/DLR-RM/stable-baselines3/pull/110>`_.
+
+
+PyBullet Environments
+^^^^^^^^^^^^^^^^^^^^^
+
+Results on the PyBullet benchmark (2M steps) using 6 seeds.
+The complete learning curves are available in the `associated issue #48 <https://github.com/DLR-RM/stable-baselines3/issues/48>`_.
+
+
+.. note::
+
+  Hyperparameters from the `gSDE paper <https://arxiv.org/abs/2005.05719>`_ were used (as they are tuned for PyBullet envs).
+
+
+*Gaussian* means that the unstructured Gaussian noise is used for exploration,
+*gSDE* (generalized State-Dependent Exploration) is used otherwise.
+
++--------------+--------------+--------------+--------------+-------------+
+| Environments | A2C          | A2C          | PPO          | PPO         |
++==============+==============+==============+==============+=============+
+|              | Gaussian     | gSDE         | Gaussian     | gSDE        |
++--------------+--------------+--------------+--------------+-------------+
+| HalfCheetah  | 2003 +/- 54  | 2032 +/- 122 | 1976 +/- 479 | 2826 +/- 45 |
++--------------+--------------+--------------+--------------+-------------+
+| Ant          | 2286 +/- 72  | 2443 +/- 89  | 2364 +/- 120 | 2782 +/- 76 |
++--------------+--------------+--------------+--------------+-------------+
+| Hopper       | 1627 +/- 158 | 1561 +/- 220 | 1567 +/- 339 | 2512 +/- 21 |
++--------------+--------------+--------------+--------------+-------------+
+| Walker2D     | 577 +/- 65   | 839 +/- 56   | 1230 +/- 147 | 2019 +/- 64 |
++--------------+--------------+--------------+--------------+-------------+
+
+
+How to replicate the results?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Clone the `rl-zoo repo <https://github.com/DLR-RM/rl-baselines3-zoo>`_:
+
+.. code-block:: bash
+
+  git clone https://github.com/DLR-RM/rl-baselines3-zoo
+  cd rl-baselines3-zoo/
+
+
+Run the benchmark (replace ``$ENV_ID`` by the envs mentioned above):
+
+.. code-block:: bash
+
+  python train.py --algo ppo --env $ENV_ID --eval-episodes 10 --eval-freq 10000
+
+
+Plot the results (here for PyBullet envs only):
+
+.. code-block:: bash
+
+  python scripts/all_plots.py -a ppo -e HalfCheetah Ant Hopper Walker2D -f logs/ -o logs/ppo_results
+  python scripts/plot_from_file.py -i logs/ppo_results.pkl -latex -l PPO
+
+
 Parameters
 ----------
 

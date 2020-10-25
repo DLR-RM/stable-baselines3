@@ -10,12 +10,19 @@ DDPG
 trick for DQN with the deterministic policy gradient, to obtain an algorithm for continuous actions.
 
 
+.. note::
+
+  As ``DDPG`` can be seen as a special case of its successor :ref:`TD3 <td3>`,
+  they share the same policies.
+
+
 .. rubric:: Available Policies
 
 .. autosummary::
     :nosignatures:
 
     MlpPolicy
+    CnnPolicy
 
 
 Notes
@@ -25,10 +32,6 @@ Notes
 - DDPG Paper: https://arxiv.org/abs/1509.02971
 - OpenAI Spinning Guide for DDPG: https://spinningup.openai.com/en/latest/algorithms/ddpg.html
 
-.. note::
-
-    The default policy for DDPG uses a ReLU activation, to match the original paper, whereas most other algorithms' MlpPolicy uses a tanh activation.
-    to match the original paper
 
 
 Can I use?
@@ -80,6 +83,12 @@ Example
       action, _states = model.predict(obs)
       obs, rewards, dones, info = env.step(action)
       env.render()
+
+Results
+-------
+
+As ``DDPG`` is currently treated as a special case of :ref:`TD3 <td3>`,
+this implementation can be trusted as TD3 results are macthing the one from the original implementation.
 
 
 Parameters

@@ -8,7 +8,7 @@ TD3
 
 `Twin Delayed DDPG (TD3) <https://spinningup.openai.com/en/latest/algorithms/td3.html>`_ Addressing Function Approximation Error in Actor-Critic Methods.
 
-TD3 is a direct successor of DDPG and improves it using three major tricks: clipped double Q-Learning, delayed policy update and target policy smoothing.
+TD3 is a direct successor of :ref:`DDPG <ddpg>` and improves it using three major tricks: clipped double Q-Learning, delayed policy update and target policy smoothing.
 We recommend reading `OpenAI Spinning guide on TD3 <https://spinningup.openai.com/en/latest/algorithms/td3.html>`_ to learn more about those.
 
 
@@ -18,6 +18,7 @@ We recommend reading `OpenAI Spinning guide on TD3 <https://spinningup.openai.co
     :nosignatures:
 
     MlpPolicy
+    CnnPolicy
 
 
 Notes

@@ -6,7 +6,9 @@
 DQN
 ===
 
-`Deep Q Network (DQN) <https://arxiv.org/abs/1312.5602>`_
+`Deep Q Network (DQN) <https://arxiv.org/abs/1312.5602>`_ builds on `Fitted Q-Iteration (FQI) <http://ml.informatik.uni-freiburg.de/former/_media/publications/rieecml05.pdf>`_
+and make use of different tricks to stabilize the learning with neural networks: it uses a replay buffer, a target network and gradient clipping.
+
 
 .. rubric:: Available Policies
 

@@ -26,6 +26,7 @@ Main Features
 - Tests, high code coverage and type hints
 - Clean code
 - Tensorboard support
+- **The performance of each algorithm was tested** (see *Results* section in their respective page)
 
 
 .. toctree::

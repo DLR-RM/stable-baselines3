@@ -59,6 +59,7 @@ Moved Files
 - ``bench/monitor.py`` -> ``common/monitor.py``
 - ``logger.py`` -> ``common/logger.py``
 - ``results_plotter.py`` -> ``common/results_plotter.py``
+- ``common/cmd_util.py`` -> ``common/env_util.py``
 
 Utility functions are no longer exported from ``common`` module, you should import them with their absolute path, e.g.:
 

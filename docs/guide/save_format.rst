@@ -20,7 +20,7 @@ Terminology used in this page:
 Zip-archive
 -----------
 
-A zip-archived JSON dump, PyTorch state dictionnaries and PyTorch variables. The data dictionary (class parameters)
+A zip-archived JSON dump, PyTorch state dictionaries and PyTorch variables. The data dictionary (class parameters)
 is stored as a JSON file, model parameters and optimizers are serialized with ``torch.save()`` function and these files
 are stored under a single .zip archive.
 

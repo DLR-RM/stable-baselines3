@@ -16,7 +16,7 @@ Background
 
 In Stable Baselines3, the controller is stored inside policies which convert
 observations into actions. Each learning algorithm (e.g. DQN, A2C, SAC) contains
-one policy, accesible via ``model.policy``.
+one policy, accessible via ``model.policy``.
 
 Policies hold enough information to do the inference (i.e. predict actions),
 so it is enough to export these policies (cf :ref:`examples <examples>`)
@@ -55,6 +55,11 @@ network in your desired framework.
 
 You can access parameters of the model via agents'
 :func:`get_parameters <stable_baselines3.common.base_class.BaseAlgorithm.get_parameters>` function.
-As policies are also PyTorch modules, you also access ``model.policy.state_dict()`` directly.
+As policies are also PyTorch modules, you can also access ``model.policy.state_dict()`` directly.
 To find the architecture of the networks for each algorithm, best is to check the ``policies.py`` file located
 in their respective folders.
+
+.. note::
+
+  In most cases, we recommend using PyTorch methods ``state_dict()`` and ``load_state_dict()`` from the policy,
+  unless you need to access the optimizers' state dict too. In that case, you need to call ``get_parameters()``.

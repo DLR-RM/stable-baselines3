@@ -149,7 +149,13 @@ class TD3Policy(BasePolicy):
         }
         self.actor_kwargs = self.net_args.copy()
         self.critic_kwargs = self.net_args.copy()
-        self.critic_kwargs.update({"n_critics": n_critics, "net_arch": critic_arch})
+        self.critic_kwargs.update(
+            {
+                "n_critics": n_critics,
+                "net_arch": critic_arch,
+                "share_features_extractor": share_features_extractor,
+            }
+        )
 
         self.actor, self.actor_target = None, None
         self.critic, self.critic_target = None, None
@@ -162,7 +168,7 @@ class TD3Policy(BasePolicy):
         # the features extractor should not be shared
         self.actor = self.make_actor(features_extractor=None)
         self.actor_target = self.make_actor(features_extractor=None)
-        # Initialize the target to have the weights as the actor
+        # Initialize the target to have the same weights as the actor
         self.actor_target.load_state_dict(self.actor.state_dict())
 
         self.actor.optimizer = self.optimizer_class(self.actor.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
@@ -177,8 +183,8 @@ class TD3Policy(BasePolicy):
             self.critic_target = self.make_critic(features_extractor=self.actor_target.features_extractor)
         else:
             # Create new features extractor for each network
-            self.critic(features_extractor=None)
-            self.critic_target(features_extractor=None)
+            self.critic = self.make_critic(features_extractor=None)
+            self.critic_target = self.make_critic(features_extractor=None)
 
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic.optimizer = self.optimizer_class(self.critic.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)

@@ -60,18 +60,48 @@ def params_should_differ(params, other_params):
 def check_td3_feature_extractor_match(model):
     for (key, actor_param), critic_param in zip(model.actor_target.named_parameters(), model.critic_target.parameters()):
         if "features_extractor" in key:
-            assert th.allclose(actor_param, critic_param)
+            assert th.allclose(actor_param, critic_param), key
+
+
+def check_td3_feature_extractor_differ(model):
+    for (key, actor_param), critic_param in zip(model.actor_target.named_parameters(), model.critic_target.parameters()):
+        if "features_extractor" in key:
+            assert not th.allclose(actor_param, critic_param), key
 
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DQN])
-def test_features_extractor_target_net(model_class):
+@pytest.mark.parametrize("share_features_extractor", [True, False])
+def test_features_extractor_target_net(model_class, share_features_extractor):
+    if model_class == DQN and share_features_extractor:
+        pytest.skip()
+
     env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=1, discrete=model_class not in {SAC, TD3})
     # Avoid memory error when using replay buffer
     # Reduce the size of the features
     kwargs = dict(buffer_size=250, learning_starts=100, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)))
+    if model_class != DQN:
+        kwargs["policy_kwargs"]["share_features_extractor"] = share_features_extractor
+
     model = model_class("CnnPolicy", env, seed=0, **kwargs)
 
     patch_dqn_names_(model)
+
+    if share_features_extractor:
+        # Check that the objects are the same and not just copied
+        assert id(model.policy.actor.features_extractor) == id(model.policy.critic.features_extractor)
+        if model_class == TD3:
+            assert id(model.policy.actor_target.features_extractor) == id(model.policy.critic_target.features_extractor)
+        # Actor and critic feature extractor should be the same
+        td3_features_extractor_check = check_td3_feature_extractor_match
+    else:
+        # Actor and critic feature extractor should differ same
+        td3_features_extractor_check = check_td3_feature_extractor_differ
+        # Check that the object differ
+        if model_class != DQN:
+            assert id(model.policy.actor.features_extractor) != id(model.policy.critic.features_extractor)
+
+        if model_class == TD3:
+            assert id(model.policy.actor_target.features_extractor) != id(model.policy.critic_target.features_extractor)
 
     # Critic and target should be equal at the begginning of training
     params_should_match(model.critic.parameters(), model.critic_target.parameters())
@@ -87,11 +117,10 @@ def test_features_extractor_target_net(model_class):
 
     if model_class == TD3:
         params_should_differ(model.actor.parameters(), model.actor_target.parameters())
+        td3_features_extractor_check(model)
 
-        # Actor and critic feature extractor should be the same
-        check_td3_feature_extractor_match(model)
-
-    # Re-initialize and collect some random data (without doing gradient steps)
+    # Re-initialize and collect some random data (without doing gradient steps,
+    # since 10 < learning_starts = 100)
     model = model_class("CnnPolicy", env, seed=0, **kwargs).learn(10)
 
     patch_dqn_names_(model)
@@ -110,9 +139,7 @@ def test_features_extractor_target_net(model_class):
 
     if model_class == TD3:
         params_should_match(original_actor_target_param, model.actor_target.parameters())
-
-        # Actor and critic feature extractor should be the same
-        check_td3_feature_extractor_match(model)
+        td3_features_extractor_check(model)
 
     # not the same for critic net (updated by gradient descent)
     params_should_differ(original_param, model.critic.parameters())
@@ -146,5 +173,4 @@ def test_features_extractor_target_net(model_class):
 
         params_should_match(original_actor_param, model.actor.parameters())
 
-        # Actor and critic feature extractor should be the same
-        check_td3_feature_extractor_match(model)
+        td3_features_extractor_check(model)

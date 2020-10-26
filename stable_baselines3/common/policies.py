@@ -722,6 +722,8 @@ class ContinuousCritic(BaseModel):
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param n_critics: Number of critic networks to create.
+    :param share_features_extractor: Whether the features extractor is shared or not
+        between the actor and the critic (this saves computation time)
     """
 
     def __init__(
@@ -734,6 +736,7 @@ class ContinuousCritic(BaseModel):
         activation_fn: Type[nn.Module] = nn.ReLU,
         normalize_images: bool = True,
         n_critics: int = 2,
+        share_features_extractor: bool = True,
     ):
         super().__init__(
             observation_space,
@@ -744,6 +747,7 @@ class ContinuousCritic(BaseModel):
 
         action_dim = get_action_dim(self.action_space)
 
+        self.share_features_extractor = share_features_extractor
         self.n_critics = n_critics
         self.q_networks = []
         for idx in range(n_critics):
@@ -754,7 +758,8 @@ class ContinuousCritic(BaseModel):
 
     def forward(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, ...]:
         # Learn the features extractor using the policy loss only
-        with th.no_grad():
+        # when the features_extractor is shared with the actor
+        with th.set_grad_enabled(not self.share_features_extractor):
             features = self.extract_features(obs)
         qvalue_input = th.cat([features, actions], dim=1)
         return tuple(q_net(qvalue_input) for q_net in self.q_networks)

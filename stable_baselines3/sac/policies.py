@@ -280,7 +280,13 @@ class SACPolicy(BasePolicy):
         }
         self.actor_kwargs.update(sde_kwargs)
         self.critic_kwargs = self.net_args.copy()
-        self.critic_kwargs.update({"n_critics": n_critics, "net_arch": critic_arch})
+        self.critic_kwargs.update(
+            {
+                "n_critics": n_critics,
+                "net_arch": critic_arch,
+                "share_features_extractor": share_features_extractor,
+            }
+        )
 
         self.actor, self.actor_target = None, None
         self.critic, self.critic_target = None, None

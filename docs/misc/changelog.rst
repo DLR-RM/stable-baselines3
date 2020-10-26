@@ -17,6 +17,7 @@ New Features:
 - Added Hindsight Experience Replay ``HER``. (@megan-klaiber)
 - ``VecNormalize`` now supports ``gym.spaces.Dict`` observation spaces
 - Support logging videos to Tensorboard (@SwamyDev)
+- Added ``share_features_extractor`` argument to ``SAC`` and ``TD3`` policies
 
 Bug Fixes:
 ^^^^^^^^^^

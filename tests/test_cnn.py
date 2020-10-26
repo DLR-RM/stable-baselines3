@@ -64,7 +64,7 @@ def check_td3_feature_extractor_match(model):
 
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DQN])
-def test_feature_extractor_target_net(model_class):
+def test_features_extractor_target_net(model_class):
     env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=1, discrete=model_class not in {SAC, TD3})
     # Avoid memory error when using replay buffer
     # Reduce the size of the features

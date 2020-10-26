@@ -92,7 +92,7 @@ class TD3Policy(BasePolicy):
     :param activation_fn: Activation function
     :param features_extractor_class: Features extractor to use.
     :param features_extractor_kwargs: Keyword arguments
-        to pass to the feature extractor.
+        to pass to the features extractor.
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer_class: The optimizer to use,
@@ -100,7 +100,7 @@ class TD3Policy(BasePolicy):
     :param optimizer_kwargs: Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
     :param n_critics: Number of critic networks to create.
-    :param share_features_extractor: Whether to share or not the feature extractor
+    :param share_features_extractor: Whether to share or not the features extractor
         between the actor and the critic (this saves computation time)
     """
 
@@ -180,7 +180,6 @@ class TD3Policy(BasePolicy):
             self.critic(features_extractor=None)
             self.critic_target(features_extractor=None)
 
-
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic.optimizer = self.optimizer_class(self.critic.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
 
@@ -201,25 +200,6 @@ class TD3Policy(BasePolicy):
             )
         )
         return data
-
-    def _update_features_extractor(
-        self, net_kwargs: Dict[str, Any], features_extractor: Optional[BaseFeaturesExtractor] = None
-    ) -> Dict[str, Any]:
-        """
-        Update the network keyword arguments and create a new features extractor object if needed.
-        If a ``features_extractor`` object is passed, then it will be shared.
-
-        :param net_kwargs: the base network keyword arugments, without the ones
-            related to features extractor
-        :param features_extractor: a features extractor object.
-            If None, a new object will be created.
-        """
-        net_kwargs = net_kwargs.copy()
-        if features_extractor is None:
-            # The feature extractor is not shared, create a new one
-            features_extractor = self.make_features_extractor()
-        net_kwargs.update(dict(features_extractor=features_extractor, features_dim=features_extractor.features_dim))
-        return net_kwargs
 
     def make_actor(self, features_extractor: Optional[BaseFeaturesExtractor] = None) -> Actor:
         actor_kwargs = self._update_features_extractor(self.actor_kwargs, features_extractor)
@@ -250,7 +230,7 @@ class CnnPolicy(TD3Policy):
     :param activation_fn: Activation function
     :param features_extractor_class: Features extractor to use.
     :param features_extractor_kwargs: Keyword arguments
-        to pass to the feature extractor.
+        to pass to the features extractor.
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer_class: The optimizer to use,
@@ -258,7 +238,7 @@ class CnnPolicy(TD3Policy):
     :param optimizer_kwargs: Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
     :param n_critics: Number of critic networks to create.
-    :param share_features_extractor: Whether to share or not the feature extractor
+    :param share_features_extractor: Whether to share or not the features extractor
         between the actor and the critic (this saves computation time)
     """
 

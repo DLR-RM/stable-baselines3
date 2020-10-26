@@ -37,7 +37,7 @@ class BaseModel(nn.Module, ABC):
     :param action_space: The action space of the environment
     :param features_extractor_class: Features extractor to use.
     :param features_extractor_kwargs: Keyword arguments
-        to pass to the feature extractor.
+        to pass to the features extractor.
     :param features_extractor: Network to extract features
         (a CNN when using images, a nn.Flatten() layer otherwise)
     :param normalize_images: Whether to normalize images or not,
@@ -83,6 +83,26 @@ class BaseModel(nn.Module, ABC):
     def forward(self, *args, **kwargs):
         del args, kwargs
 
+    def _update_features_extractor(
+        self, net_kwargs: Dict[str, Any], features_extractor: Optional[BaseFeaturesExtractor] = None
+    ) -> Dict[str, Any]:
+        """
+        Update the network keyword arguments and create a new features extractor object if needed.
+        If a ``features_extractor`` object is passed, then it will be shared.
+
+        :param net_kwargs: the base network keyword arguments, without the ones
+            related to features extractor
+        :param features_extractor: a features extractor object.
+            If None, a new object will be created.
+        :return: The updated keyword arguments
+        """
+        net_kwargs = net_kwargs.copy()
+        if features_extractor is None:
+            # The features extractor is not shared, create a new one
+            features_extractor = self.make_features_extractor()
+        net_kwargs.update(dict(features_extractor=features_extractor, features_dim=features_extractor.features_dim))
+        return net_kwargs
+
     def make_features_extractor(self) -> BaseFeaturesExtractor:
         """ Helper method to create a features extractor."""
         return self.features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
@@ -94,7 +114,7 @@ class BaseModel(nn.Module, ABC):
         :param obs:
         :return:
         """
-        assert self.features_extractor is not None, "No feature extractor was set"
+        assert self.features_extractor is not None, "No features extractor was set"
         preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
         return self.features_extractor(preprocessed_obs)
 
@@ -331,7 +351,7 @@ class ActorCriticPolicy(BasePolicy):
         this allows to ensure boundaries when using gSDE.
     :param features_extractor_class: Features extractor to use.
     :param features_extractor_kwargs: Keyword arguments
-        to pass to the feature extractor.
+        to pass to the features extractor.
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer_class: The optimizer to use,
@@ -470,7 +490,7 @@ class ActorCriticPolicy(BasePolicy):
 
         latent_dim_pi = self.mlp_extractor.latent_dim_pi
 
-        # Separate feature extractor for gSDE
+        # Separate features extractor for gSDE
         if self.sde_net_arch is not None:
             self.sde_features_extractor, latent_sde_dim = create_sde_features_extractor(
                 self.features_dim, self.sde_net_arch, self.activation_fn
@@ -500,7 +520,7 @@ class ActorCriticPolicy(BasePolicy):
         if self.ortho_init:
             # TODO: check for features_extractor
             # Values from stable-baselines.
-            # feature_extractor/mlp values are
+            # features_extractor/mlp values are
             # originally from openai/baselines (default gains/init_scales).
             module_gains = {
                 self.features_extractor: np.sqrt(2),
@@ -629,7 +649,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         this allows to ensure boundaries when using gSDE.
     :param features_extractor_class: Features extractor to use.
     :param features_extractor_kwargs: Keyword arguments
-        to pass to the feature extractor.
+        to pass to the features extractor.
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer_class: The optimizer to use,

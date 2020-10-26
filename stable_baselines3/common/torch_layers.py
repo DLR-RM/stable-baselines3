@@ -244,7 +244,7 @@ def get_actor_critic_arch(net_arch: Union[List[int], Dict[str, List[int]]]) -> T
     then you can specify ``net_arch=dict(qf=[400, 300], pi=[64, 64])``.
 
     .. note::
-        Compared to their on-policy counterparts, no shared layers (other than the feature extractor)
+        Compared to their on-policy counterparts, no shared layers (other than the features extractor)
         between the actor and the critic are allowed (to prevent issues with target networks).
 
     :param net_arch: The specification of the actor and critic networks.

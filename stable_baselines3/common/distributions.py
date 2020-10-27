@@ -505,7 +505,7 @@ class StateDependentNoiseDistribution(Distribution):
 
         :param latent_dim: Dimension of the last layer of the policy (before the action layer)
         :param log_std_init: Initial value for the log standard deviation
-        :param latent_sde_dim: Dimension of the last layer of the feature extractor
+        :param latent_sde_dim: Dimension of the last layer of the features extractor
             for gSDE. By default, it is shared with the policy network.
         :return:
         """

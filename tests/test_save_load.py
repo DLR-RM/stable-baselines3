@@ -303,21 +303,23 @@ def test_save_load_policy(tmp_path, model_class, policy_str):
     :param model_class: (BaseAlgorithm) A RL model
     :param policy_str: (str) Name of the policy.
     """
-    kwargs = {}
+    kwargs = dict(policy_kwargs=dict(net_arch=[16]))
     if policy_str == "MlpPolicy":
         env = select_env(model_class)
     else:
         if model_class in [SAC, TD3, DQN, DDPG]:
             # Avoid memory error when using replay buffer
             # Reduce the size of the features
-            kwargs = dict(buffer_size=250)
+            kwargs = dict(
+                buffer_size=250, learning_starts=100, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32))
+            )
         env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=2, discrete=model_class == DQN)
 
     env = DummyVecEnv([lambda: env])
 
     # create model
-    model = model_class(policy_str, env, policy_kwargs=dict(net_arch=[16]), verbose=1, **kwargs)
-    model.learn(total_timesteps=500)
+    model = model_class(policy_str, env, verbose=1, **kwargs)
+    model.learn(total_timesteps=300)
 
     env.reset()
     observations = np.concatenate([env.step([env.action_space.sample()])[0] for _ in range(10)], axis=0)

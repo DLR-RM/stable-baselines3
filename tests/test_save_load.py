@@ -230,9 +230,9 @@ def test_exclude_include_saved_params(tmp_path, model_class):
 @pytest.mark.parametrize("model_class", [A2C, TD3])
 def test_save_load_env_cnn(tmp_path, model_class):
     """
-    Test loading with an env that requires a CnnPolicy.
+    Test loading with an env that requires a ``CnnPolicy``.
     This is to test wrapping and observation space check.
-    We test one on-policy, one off-policy and HER
+    We test one on-policy and one off-policy
     algorithm as the rest share the loading part.
     """
     env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=2, discrete=False)

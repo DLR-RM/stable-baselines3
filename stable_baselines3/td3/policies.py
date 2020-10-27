@@ -176,7 +176,7 @@ class TD3Policy(BasePolicy):
         if self.share_features_extractor:
             self.critic = self.make_critic(features_extractor=self.actor.features_extractor)
             # Critic target should not share the features extactor with critic
-            # but it can share it with the target as actor and critic are sharing
+            # but it can share it with the actor target as actor and critic are sharing
             # the same features_extractor too
             # NOTE: as a result the effective poliak (soft-copy) coefficient for the features extractor
             # will be 2 * tau instead of tau (updated one time with the actor, a second time with the critic)

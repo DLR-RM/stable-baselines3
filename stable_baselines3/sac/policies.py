@@ -309,7 +309,7 @@ class SACPolicy(BasePolicy):
             self.critic = self.make_critic(features_extractor=None)
             critic_parameters = self.critic.parameters()
 
-        # Critic target should not share the feature extactor with critic
+        # Critic target should not share the features extractor with critic
         self.critic_target = self.make_critic(features_extractor=None)
         self.critic_target.load_state_dict(self.critic.state_dict())
 

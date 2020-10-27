@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Pre-Release 0.10.0a1 (WIP)
+Pre-Release 0.10.0a2 (WIP)
 ------------------------------
 
 Breaking Changes:
@@ -27,6 +27,8 @@ Bug Fixes:
 - Fix model creation initializing CUDA even when `device="cpu"` is provided
 - Fix ``check_env`` not checking if the env has a Dict actionspace before calling ``_check_nan`` (@wmmc88)
 - Update the check for spaces unsupported by Stable Baselines 3 to include checks on the action space (@wmmc88)
+- Fixed a bug when passing an environment when loading a saved model with a ``CnnPolicy``, the passed env was not wrapped properly
+  (the bug was introduced when implementing ``HER`` so it should not be present in previous versions)
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -17,6 +17,7 @@ New Features:
 - Added Hindsight Experience Replay ``HER``. (@megan-klaiber)
 - ``VecNormalize`` now supports ``gym.spaces.Dict`` observation spaces
 - Support logging videos to Tensorboard (@SwamyDev)
+- Added ``share_features_extractor`` argument to ``SAC`` and ``TD3`` policies
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -27,6 +28,8 @@ Bug Fixes:
 - Fix model creation initializing CUDA even when `device="cpu"` is provided
 - Fix ``check_env`` not checking if the env has a Dict actionspace before calling ``_check_nan`` (@wmmc88)
 - Update the check for spaces unsupported by Stable Baselines 3 to include checks on the action space (@wmmc88)
+- Fixed feature extractor bug for target network where the same net was shared instead
+  of being separate. This bug affects ``SAC``, ``DDPG`` and ``TD3`` when using ``CnnPolicy`` (or custom feature extractor)
 
 Deprecations:
 ^^^^^^^^^^^^^

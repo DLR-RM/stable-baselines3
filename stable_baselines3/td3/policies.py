@@ -92,7 +92,7 @@ class TD3Policy(BasePolicy):
     :param activation_fn: Activation function
     :param features_extractor_class: Features extractor to use.
     :param features_extractor_kwargs: Keyword arguments
-        to pass to the feature extractor.
+        to pass to the features extractor.
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer_class: The optimizer to use,
@@ -100,6 +100,8 @@ class TD3Policy(BasePolicy):
     :param optimizer_kwargs: Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
     :param n_critics: Number of critic networks to create.
+    :param share_features_extractor: Whether to share or not the features extractor
+        between the actor and the critic (this saves computation time)
     """
 
     def __init__(
@@ -115,6 +117,7 @@ class TD3Policy(BasePolicy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
         n_critics: int = 2,
+        share_features_extractor: bool = True,
     ):
         super(TD3Policy, self).__init__(
             observation_space,
@@ -135,35 +138,54 @@ class TD3Policy(BasePolicy):
 
         actor_arch, critic_arch = get_actor_critic_arch(net_arch)
 
-        self.features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
-        self.features_dim = self.features_extractor.features_dim
-
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.net_args = {
             "observation_space": self.observation_space,
             "action_space": self.action_space,
-            "features_extractor": self.features_extractor,
-            "features_dim": self.features_dim,
             "net_arch": actor_arch,
             "activation_fn": self.activation_fn,
             "normalize_images": normalize_images,
         }
         self.actor_kwargs = self.net_args.copy()
         self.critic_kwargs = self.net_args.copy()
-        self.critic_kwargs.update({"n_critics": n_critics, "net_arch": critic_arch})
+        self.critic_kwargs.update(
+            {
+                "n_critics": n_critics,
+                "net_arch": critic_arch,
+                "share_features_extractor": share_features_extractor,
+            }
+        )
+
         self.actor, self.actor_target = None, None
         self.critic, self.critic_target = None, None
+        self.share_features_extractor = share_features_extractor
 
         self._build(lr_schedule)
 
     def _build(self, lr_schedule: Callable) -> None:
-        self.actor = self.make_actor()
-        self.actor_target = self.make_actor()
+        # Create actor and target
+        # the features extractor should not be shared
+        self.actor = self.make_actor(features_extractor=None)
+        self.actor_target = self.make_actor(features_extractor=None)
+        # Initialize the target to have the same weights as the actor
         self.actor_target.load_state_dict(self.actor.state_dict())
+
         self.actor.optimizer = self.optimizer_class(self.actor.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
-        self.critic = self.make_critic()
-        self.critic_target = self.make_critic()
+
+        if self.share_features_extractor:
+            self.critic = self.make_critic(features_extractor=self.actor.features_extractor)
+            # Critic target should not share the features extactor with critic
+            # but it can share it with the actor target as actor and critic are sharing
+            # the same features_extractor too
+            # NOTE: as a result the effective poliak (soft-copy) coefficient for the features extractor
+            # will be 2 * tau instead of tau (updated one time with the actor, a second time with the critic)
+            self.critic_target = self.make_critic(features_extractor=self.actor_target.features_extractor)
+        else:
+            # Create new features extractor for each network
+            self.critic = self.make_critic(features_extractor=None)
+            self.critic_target = self.make_critic(features_extractor=None)
+
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic.optimizer = self.optimizer_class(self.critic.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
 
@@ -180,15 +202,18 @@ class TD3Policy(BasePolicy):
                 optimizer_kwargs=self.optimizer_kwargs,
                 features_extractor_class=self.features_extractor_class,
                 features_extractor_kwargs=self.features_extractor_kwargs,
+                share_features_extractor=self.share_features_extractor,
             )
         )
         return data
 
-    def make_actor(self) -> Actor:
-        return Actor(**self.actor_kwargs).to(self.device)
+    def make_actor(self, features_extractor: Optional[BaseFeaturesExtractor] = None) -> Actor:
+        actor_kwargs = self._update_features_extractor(self.actor_kwargs, features_extractor)
+        return Actor(**actor_kwargs).to(self.device)
 
-    def make_critic(self) -> ContinuousCritic:
-        return ContinuousCritic(**self.critic_kwargs).to(self.device)
+    def make_critic(self, features_extractor: Optional[BaseFeaturesExtractor] = None) -> ContinuousCritic:
+        critic_kwargs = self._update_features_extractor(self.critic_kwargs, features_extractor)
+        return ContinuousCritic(**critic_kwargs).to(self.device)
 
     def forward(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         return self._predict(observation, deterministic=deterministic)
@@ -211,7 +236,7 @@ class CnnPolicy(TD3Policy):
     :param activation_fn: Activation function
     :param features_extractor_class: Features extractor to use.
     :param features_extractor_kwargs: Keyword arguments
-        to pass to the feature extractor.
+        to pass to the features extractor.
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer_class: The optimizer to use,
@@ -219,6 +244,8 @@ class CnnPolicy(TD3Policy):
     :param optimizer_kwargs: Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
     :param n_critics: Number of critic networks to create.
+    :param share_features_extractor: Whether to share or not the features extractor
+        between the actor and the critic (this saves computation time)
     """
 
     def __init__(
@@ -234,6 +261,7 @@ class CnnPolicy(TD3Policy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
         n_critics: int = 2,
+        share_features_extractor: bool = True,
     ):
         super(CnnPolicy, self).__init__(
             observation_space,
@@ -247,6 +275,7 @@ class CnnPolicy(TD3Policy):
             optimizer_class,
             optimizer_kwargs,
             n_critics,
+            share_features_extractor,
         )
 
 

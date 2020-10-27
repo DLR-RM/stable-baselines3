@@ -8,8 +8,9 @@ and other type of input features (MlpPolicies).
 
 
 .. warning::
-  For all algorithms (except DDPG, TD3 and SAC), continuous actions are clipped during training and testing
-  (to avoid out of bound error).
+  For A2C and PPO, continuous actions are clipped during training and testing
+  (to avoid out of bound error). SAC, DDPG and TD3 squash the action, using a ``tanh()`` transformation,
+  which allows to correctly handle bounds.
 
 
 

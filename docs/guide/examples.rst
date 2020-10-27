@@ -434,7 +434,7 @@ However, SB3 provides a ``save_replay_buffer()`` and ``load_replay_buffer()`` me
    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/advanced_saving_loading.ipynb
 
 Stable-Baselines3 allows to automatically create an environment for evaluation.
-For that, you only need to specify ``create_eval_env=True`` when passing the Gym ID of the environment.
+For that, you only need to specify ``create_eval_env=True`` when passing the Gym ID of the environment while creating the agent.
 Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
 
 .. code-block:: python
@@ -469,7 +469,8 @@ Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
   print(f"The loaded_model has {loaded_model.replay_buffer.size()} transitions in its buffer")
 
   # Save the policy independently from the model
-  # Note: if you don't save the complete model, you cannot continue training afterward
+  # Note: if you don't save the complete model with `model.save()`
+  # you cannot continue training afterward
   policy = model.policy
   policy.save("sac_policy_pendulum.pkl")
 

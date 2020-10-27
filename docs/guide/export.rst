@@ -15,15 +15,17 @@ Background
 ----------
 
 In Stable Baselines3, the controller is stored inside policies which convert
-observations into actions. Each learning algorithm (e.g. DQN, A2C, SAC) contains
-one policy, accessible via ``model.policy``.
+observations into actions. Each learning algorithm (e.g. DQN, A2C, SAC)
+contains a policy object which represents the currently learned behavior,
+accessible via ``model.policy``.
 
 Policies hold enough information to do the inference (i.e. predict actions),
 so it is enough to export these policies (cf :ref:`examples <examples>`)
 to do inference in an another framework.
 
 .. warning::
-  When using CNN policies, the observation is normalized during pre-preprocessing (dividing by 255 to have values in [0, 1])
+  When using CNN policies, the observation is normalized during pre-preprocessing.
+  This pre-processing is done *inside* the policy (dividing by 255 to have values in [0, 1])
 
 
 Export to ONNX

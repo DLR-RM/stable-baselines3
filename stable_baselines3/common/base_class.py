@@ -592,7 +592,7 @@ class BaseAlgorithm(ABC):
 
         if env is not None:
             # Wrap first if needed
-            cls._wrap_env(env, data["verbose"])
+            env = cls._wrap_env(env, data["verbose"])
             # Check if given env is valid
             check_for_correct_spaces(env, data["observation_space"], data["action_space"])
         else:

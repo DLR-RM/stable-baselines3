@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Pre-Release 0.10.0a1 (WIP)
+Pre-Release 0.10.0a2 (WIP)
 ------------------------------
 
 Breaking Changes:
@@ -30,6 +30,8 @@ Bug Fixes:
 - Update the check for spaces unsupported by Stable Baselines 3 to include checks on the action space (@wmmc88)
 - Fixed feature extractor bug for target network where the same net was shared instead
   of being separate. This bug affects ``SAC``, ``DDPG`` and ``TD3`` when using ``CnnPolicy`` (or custom feature extractor)
+- Fixed a bug when passing an environment when loading a saved model with a ``CnnPolicy``, the passed env was not wrapped properly
+  (the bug was introduced when implementing ``HER`` so it should not be present in previous versions)
 
 Deprecations:
 ^^^^^^^^^^^^^

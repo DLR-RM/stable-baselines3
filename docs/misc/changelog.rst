@@ -4,8 +4,10 @@ Changelog
 ==========
 
 
-Pre-Release 0.10.0a2 (WIP)
-------------------------------
+Pre-Release 0.10.0 (2020-10-28)
+-------------------------------
+
+**HER with online and offline sampling, bug fixes for features extraction**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^

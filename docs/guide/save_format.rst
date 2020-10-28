@@ -14,7 +14,7 @@ Terminology used in this page:
 -  *parameters* refer to neural network parameters (also called "weights"). This is a dictionary
    mapping variable name to a PyTorch tensor.
 -  *data* refers to RL algorithm parameters, e.g. learning rate, exploration schedule, action/observation space.
-   These depend on the algorithm used. This is a dictionary mapping classes variable names their values.
+   These depend on the algorithm used. This is a dictionary mapping classes variable names to their values.
 
 
 Zip-archive
@@ -49,7 +49,7 @@ File structure:
 Pros:
 
 - More robust to unserializable objects (one bad object does not break everything).
-- Saved file can be inspected/extracted with zip-archive explorers and by other languages.
+- Saved files can be inspected/extracted with zip-archive explorers and by other languages.
 
 
 Cons:

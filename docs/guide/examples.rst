@@ -433,7 +433,7 @@ However, SB3 provides a ``save_replay_buffer()`` and ``load_replay_buffer()`` me
 .. image:: ../_static/img/colab-badge.svg
    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/advanced_saving_loading.ipynb
 
-Stable-Baselines3 allows to automatically create an environment for evaluation.
+Stable-Baselines3 automatic creation of an environment for evaluation.
 For that, you only need to specify ``create_eval_env=True`` when passing the Gym ID of the environment while creating the agent.
 Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
 
@@ -507,7 +507,7 @@ and ``load_from_vector()`` method.
 
 Following example demonstrates reading parameters, modifying some of them and loading them to model
 by implementing `evolution strategy (es) <http://blog.otoro.net/2017/10/29/visual-evolution-strategies/>`_
-for solving ``CartPole-v1`` environment. The initial guess for parameters is obtained by running
+for solving the ``CartPole-v1`` environment. The initial guess for parameters is obtained by running
 A2C policy gradient updates on the model.
 
 .. code-block:: python

@@ -4,7 +4,7 @@
 Exporting models
 ================
 
-After training an agent, you may want to deploy/use it in an other language
+After training an agent, you may want to deploy/use it in another language
 or framework, like `tensorflowjs <https://github.com/tensorflow/tfjs>`_.
 Stable Baselines3 does not include tools to export models to other frameworks, but
 this document aims to cover parts that are required for exporting along with
@@ -21,7 +21,7 @@ accessible via ``model.policy``.
 
 Policies hold enough information to do the inference (i.e. predict actions),
 so it is enough to export these policies (cf :ref:`examples <examples>`)
-to do inference in an another framework.
+to do inference in another framework.
 
 .. warning::
   When using CNN policies, the observation is normalized during pre-preprocessing.
@@ -31,14 +31,14 @@ to do inference in an another framework.
 Export to ONNX
 -----------------
 
-TODO: contributors help is welcomed!
+TODO: help is welcomed!
 
 
 Export to C++
 -----------------
 
 (using PyTorch JIT)
-TODO: contributors help is welcomed!
+TODO: help is welcomed!
 
 
 Export to tensorflowjs / ONNX-JS

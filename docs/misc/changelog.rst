@@ -47,6 +47,9 @@ Documentation:
 - Added first draft of migration guide
 - Added intro to `imitation <https://github.com/HumanCompatibleAI/imitation>`_ library (@shwang)
 - Enabled doc for ``CnnPolicies``
+- Added advanced saving and loading example
+- Added base doc for exporting models
+- Added example for getting and setting model parameters
 
 
 Pre-Release 0.9.0 (2020-10-03)

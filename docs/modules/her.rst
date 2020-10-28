@@ -89,6 +89,41 @@ Example
             obs = env.reset()
 
 
+Results
+-------
+
+This implementation was tested on the `parking env <https://github.com/eleurent/highway-env>`_
+using 3 seeds.
+
+The complete learning curves are available in the `associated PR #120 <https://github.com/DLR-RM/stable-baselines3/pull/120>`_.
+
+
+
+How to replicate the results?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Clone the `rl-zoo repo <https://github.com/DLR-RM/rl-baselines3-zoo>`_:
+
+.. code-block:: bash
+
+  git clone https://github.com/DLR-RM/rl-baselines3-zoo
+  cd rl-baselines3-zoo/
+
+
+Run the benchmark:
+
+.. code-block:: bash
+
+  python train.py --algo her --env parking-v0 --eval-episodes 10 --eval-freq 10000
+
+
+Plot the results:
+
+.. code-block:: bash
+
+  python scripts/all_plots.py -a her -e parking-v0 -f logs/ --no-million
+
+
 Parameters
 ----------
 

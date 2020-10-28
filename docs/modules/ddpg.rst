@@ -10,12 +10,19 @@ DDPG
 trick for DQN with the deterministic policy gradient, to obtain an algorithm for continuous actions.
 
 
+.. note::
+
+  As ``DDPG`` can be seen as a special case of its successor :ref:`TD3 <td3>`,
+  they share the same policies and same implementation.
+
+
 .. rubric:: Available Policies
 
 .. autosummary::
     :nosignatures:
 
     MlpPolicy
+    CnnPolicy
 
 
 Notes
@@ -25,10 +32,6 @@ Notes
 - DDPG Paper: https://arxiv.org/abs/1509.02971
 - OpenAI Spinning Guide for DDPG: https://spinningup.openai.com/en/latest/algorithms/ddpg.html
 
-.. note::
-
-    The default policy for DDPG uses a ReLU activation, to match the original paper, whereas most other algorithms' MlpPolicy uses a tanh activation.
-    to match the original paper
 
 
 Can I use?
@@ -80,6 +83,66 @@ Example
       action, _states = model.predict(obs)
       obs, rewards, dones, info = env.step(action)
       env.render()
+
+Results
+-------
+
+PyBullet Environments
+^^^^^^^^^^^^^^^^^^^^^
+
+Results on the PyBullet benchmark (1M steps) using 6 seeds.
+The complete learning curves are available in the `associated issue #48 <https://github.com/DLR-RM/stable-baselines3/issues/48>`_.
+
+
+.. note::
+
+  Hyperparameters of :ref:`TD3 <td3>` from the `gSDE paper <https://arxiv.org/abs/2005.05719>`_ were used for ``DDPG``.
+
+
+*Gaussian* means that the unstructured Gaussian noise is used for exploration,
+*gSDE* (generalized State-Dependent Exploration) is used otherwise.
+
++--------------+--------------+--------------+--------------+
+| Environments | DDPG         | TD3          | SAC          |
++==============+==============+==============+==============+
+|              | Gaussian     | Gaussian     | gSDE         |
++--------------+--------------+--------------+--------------+
+| HalfCheetah  | 2272 +/- 69  | 2774 +/- 35  | 2984 +/- 202 |
++--------------+--------------+--------------+--------------+
+| Ant          | 1651 +/- 407 | 3305 +/- 43  | 3102 +/- 37  |
++--------------+--------------+--------------+--------------+
+| Hopper       | 1201 +/- 211 | 2429 +/- 126 | 2262 +/- 1   |
++--------------+--------------+--------------+--------------+
+| Walker2D     | 882 +/- 186  | 2063 +/- 185 | 2136 +/- 67  |
++--------------+--------------+--------------+--------------+
+
+
+
+How to replicate the results?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Clone the `rl-zoo repo <https://github.com/DLR-RM/rl-baselines3-zoo>`_:
+
+.. code-block:: bash
+
+  git clone https://github.com/DLR-RM/rl-baselines3-zoo
+  cd rl-baselines3-zoo/
+
+
+Run the benchmark (replace ``$ENV_ID`` by the envs mentioned above):
+
+.. code-block:: bash
+
+  python train.py --algo ddpg --env $ENV_ID --eval-episodes 10 --eval-freq 10000
+
+
+Plot the results:
+
+.. code-block:: bash
+
+  python scripts/all_plots.py -a ddpg -e HalfCheetah Ant Hopper Walker2D -f logs/ -o logs/ddpg_results
+  python scripts/plot_from_file.py -i logs/ddpg_results.pkl -latex -l DDPG
+
 
 
 Parameters

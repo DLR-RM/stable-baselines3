@@ -7,6 +7,13 @@ Stable Baselines3 provides policy networks for images (CnnPolicies)
 and other type of input features (MlpPolicies).
 
 
+.. warning::
+  For A2C and PPO, continuous actions are clipped during training and testing
+  (to avoid out of bound error). SAC, DDPG and TD3 squash the action, using a ``tanh()`` transformation,
+  which handles bounds more correctly.
+
+
+
 Custom Policy Architecture
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 

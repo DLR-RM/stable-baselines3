@@ -15,7 +15,7 @@ To build a custom callback, you need to create a class that derives from ``BaseC
 This will give you access to events (``_on_training_start``, ``_on_step``) and useful variables (like `self.model` for the RL model).
 
 
-.. You can find two examples of custom callbacks in the documentation: one for saving the best model according to the training reward (see :ref:`Examples <examples>`), and one for logging additional values with Tensorboard (see :ref:`Tensorboard section <tensorboard>`).
+You can find two examples of custom callbacks in the documentation: one for saving the best model according to the training reward (see :ref:`Examples <examples>`), and one for logging additional values with Tensorboard (see :ref:`Tensorboard section <tensorboard>`).
 
 
 .. code-block:: python

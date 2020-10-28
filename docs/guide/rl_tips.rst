@@ -146,17 +146,17 @@ for continuous actions problems (cf *Bullet* envs).
 
 
 
-.. Goal Environment
-.. -----------------
-..
-.. If your environment follows the ``GoalEnv`` interface (cf `HER <../modules/her.html>`_), then you should use
-.. HER + (SAC/TD3/DDPG/DQN) depending on the action space.
-..
-..
-.. .. note::
-..
-.. 	The number of workers is an important hyperparameters for experiments with HER
-..
+Goal Environment
+-----------------
+
+If your environment follows the ``GoalEnv`` interface (cf :ref:`HER <her>`), then you should use
+HER + (SAC/TD3/DDPG/DQN) depending on the action space.
+
+
+.. note::
+
+	The number of workers is an important hyperparameters for experiments with HER
+
 
 
 Tips and Tricks when creating a custom environment

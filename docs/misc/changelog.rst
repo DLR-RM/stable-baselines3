@@ -3,6 +3,30 @@
 Changelog
 ==========
 
+Pre-Release 0.11.0a0 (WIP)
+-------------------------------
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Add more issue templates
+
+Documentation:
+^^^^^^^^^^^^^^
+- Updated algorithm table
+
 
 Pre-Release 0.10.0 (2020-10-28)
 -------------------------------

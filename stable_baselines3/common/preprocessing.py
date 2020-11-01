@@ -6,6 +6,19 @@ from gym import spaces
 from torch.nn import functional as F
 
 
+def is_image_space_channels_first(observation_space: spaces.Space) -> bool:
+    """
+    Check if an image observation space (see ``is_image_space``)
+    is channels-first (CxHxW, True) or channels-last (CxHxW, False).
+
+    Use a heuristic that a channel-dimension is the smallest of the three.
+
+    :param observation_space:
+    :return: True if observation space is channels-first image, False if channels-last.
+    """
+    return observation_space.shape[0] < observation_space.shape[1]
+
+
 def is_image_space(observation_space: spaces.Space, channels_last: bool = True, check_channels: bool = False) -> bool:
     """
     Check if a observation space has the shape, limits and dtype

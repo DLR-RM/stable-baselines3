@@ -341,3 +341,28 @@ def test_vecenv_wrapper_getattr():
         _ = double_wrapped.var_b
     with pytest.raises(AttributeError):  # should raise as does not exist
         _ = double_wrapped.nonexistent_attribute
+
+
+def test_framestack_vecenv():
+    """Test that framestack environment stacks on desired axis"""
+
+    space_shape = [1, 5, 10]
+    zero_acts = np.zeros([N_ENVS] + space_shape)
+
+    def make_env():
+        return CustomGymEnv(gym.spaces.Box(low=np.zeros(space_shape), high=np.ones(space_shape)))
+
+    vec_env = DummyVecEnv([make_env for _ in range(N_ENVS)])
+    vec_env = VecFrameStack(vec_env, n_stack=2)
+    obs, _, _, _ = vec_env.step(zero_acts)
+
+    # Should be stacked on the last dimension
+    assert obs.shape[-1] == (space_shape[-1] * 2)
+
+    # Try stacking on first dimension now
+    vec_env = DummyVecEnv([make_env for _ in range(N_ENVS)])
+    vec_env = VecFrameStack(vec_env, n_stack=2, channels_first=True)
+    obs, _, _, _ = vec_env.step(zero_acts)
+
+    # Should be stacked on the first dimension
+    assert obs.shape[1] == (space_shape[0] * 2)

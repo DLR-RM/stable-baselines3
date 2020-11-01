@@ -43,22 +43,20 @@ class VecFrameStack(VecEnvWrapper):
                     old_terminal = infos[i]["terminal_observation"]
                     if self.channels_first:
                         new_terminal = np.concatenate(
-                            (self.stackedobs[i, :-stack_ax_size, ...], old_terminal),
-                            axis=self.stack_dimension
+                            (self.stackedobs[i, :-stack_ax_size, ...], old_terminal), axis=self.stack_dimension
                         )
                     else:
                         new_terminal = np.concatenate(
-                            (self.stackedobs[i, ..., :-stack_ax_size], old_terminal),
-                            axis=self.stack_dimension
+                            (self.stackedobs[i, ..., :-stack_ax_size], old_terminal), axis=self.stack_dimension
                         )
                     infos[i]["terminal_observation"] = new_terminal
                 else:
                     warnings.warn("VecFrameStack wrapping a VecEnv without terminal_observation info")
                 self.stackedobs[i] = 0
         if self.channels_first:
-            self.stackedobs[:, -observations.shape[-1]:, ...] = observations
+            self.stackedobs[:, -observations.shape[-1] :, ...] = observations
         else:
-            self.stackedobs[..., -observations.shape[-1]:] = observations
+            self.stackedobs[..., -observations.shape[-1] :] = observations
 
         return self.stackedobs, rewards, dones, infos
 
@@ -69,9 +67,9 @@ class VecFrameStack(VecEnvWrapper):
         obs: np.ndarray = self.venv.reset()  # pytype:disable=annotation-type-mismatch
         self.stackedobs[...] = 0
         if self.channels_first:
-            self.stackedobs[:, -obs.shape[self.stack_dimension]:, ...] = obs
+            self.stackedobs[:, -obs.shape[self.stack_dimension] :, ...] = obs
         else:
-            self.stackedobs[..., -obs.shape[self.stack_dimension]:] = obs
+            self.stackedobs[..., -obs.shape[self.stack_dimension] :] = obs
         return self.stackedobs
 
     def close(self) -> None:

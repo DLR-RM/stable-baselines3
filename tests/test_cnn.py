@@ -174,3 +174,30 @@ def test_features_extractor_target_net(model_class, share_features_extractor):
         params_should_match(original_actor_param, model.actor.parameters())
 
         td3_features_extractor_check(model)
+
+
+def test_channel_first_env(tmp_path):
+    # test_cnn uses environment with HxWxC setup that is transposed, but we
+    # also want to work with CxHxW envs directly without transpoing wrapper.
+    SAVE_NAME = "cnn_model.zip"
+
+    # Create environment with transposed images (CxHxW).
+    # If underlying CNN processes the data in wrong format,
+    # it will raise an error of negative dimension sizes while creating convolutions
+    env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=1, discrete=True, channel_first=True)
+
+    model = A2C("CnnPolicy", env, n_steps=100).learn(250)
+
+    obs = env.reset()
+
+    action, _ = model.predict(obs, deterministic=True)
+
+    model.save(tmp_path / SAVE_NAME)
+    del model
+
+    model = A2C.load(tmp_path / SAVE_NAME)
+
+    # Check that the prediction is the same
+    assert np.allclose(action, model.predict(obs, deterministic=True)[0])
+
+    os.remove(str(tmp_path / SAVE_NAME))

@@ -84,6 +84,6 @@ Add any other context about the problem here.
 ### Checklist
 
 - [ ] I have read the [documentation](https://stable-baselines3.readthedocs.io/en/master/) (**required**)
-- [ ] I have check that there is no similar [issue](https://github.com/DLR-RM/stable-baselines3/issues) in the repo (**required**)
+- [ ] I have checked that there is no similar [issue](https://github.com/DLR-RM/stable-baselines3/issues) in the repo (**required**)
 - [ ] I have checked my env using the env checker (**required**)
 - [ ] I have provided a minimal working example to reproduce the bug (**required**)

@@ -11,8 +11,7 @@ Please post your question on [reddit](https://www.reddit.com/r/reinforcementlear
 
 ### Question
 
-Your question.
-
+Your question. This can be e.g. questions regarding confusing or unclear behaviour of functions or a question if X can be done using stable-baselines3. Make sure to check out the documentation first.
 
 ### Additional context
 
@@ -22,6 +21,6 @@ Add any other context about the question here.
 ### Checklist
 
 - [ ] I have read the [documentation](https://stable-baselines3.readthedocs.io/en/master/) (**required**)
-- [ ] I have check that there is no similar [issue](https://github.com/DLR-RM/stable-baselines3/issues) in the repo (**required**)
+- [ ] I have checked that there is no similar [issue](https://github.com/DLR-RM/stable-baselines3/issues) in the repo (**required**)
 
 <!--- This Template is an edited version of the one from https://github.com/pytorch/pytorch -->

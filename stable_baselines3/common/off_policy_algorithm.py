@@ -363,7 +363,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         log_interval: Optional[int] = None,
     ) -> RolloutReturn:
         """
-        Collect experiences and store them into a ReplayBuffer.
+        Collect experiences and store them into a ``ReplayBuffer``.
 
         :param env: The training environment
         :param callback: Callback that will be called at each step

@@ -65,8 +65,11 @@ class NatureCNN(BaseFeaturesExtractor):
         # Re-ordering will be done by pre-preprocessing or wrapper
         assert is_image_space(observation_space), (
             "You should use NatureCNN "
-            f"only with images not with {observation_space} "
-            "(you are probably using `CnnPolicy` instead of `MlpPolicy`)"
+            f"only with images not with {observation_space}\n"
+            "(you are probably using `CnnPolicy` instead of `MlpPolicy`)\n"
+            "If you are using a custom environment,\n"
+            "please check it using our env checker:\n"
+            "https://stable-baselines3.readthedocs.io/en/master/common/env_checker.html"
         )
         n_input_channels = observation_space.shape[0]
         self.cnn = nn.Sequential(

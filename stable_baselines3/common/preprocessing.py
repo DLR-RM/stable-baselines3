@@ -1,4 +1,5 @@
 from typing import Tuple
+import warnings
 
 import numpy as np
 import torch as th
@@ -6,17 +7,21 @@ from gym import spaces
 from torch.nn import functional as F
 
 
-def is_image_space_channels_first(observation_space: spaces.Space) -> bool:
+def is_image_space_channels_first(observation_space: spaces.Box) -> bool:
     """
     Check if an image observation space (see ``is_image_space``)
-    is channels-first (CxHxW, True) or channels-last (CxHxW, False).
+    is channels-first (CxHxW, True) or channels-last (HxWxC, False).
 
-    Use a heuristic that a channel-dimension is the smallest of the three.
+    Use a heuristic that channel dimension is the smallest of the three.
+    If second dimension is smallest, raise an exception (no support).
 
     :param observation_space:
     :return: True if observation space is channels-first image, False if channels-last.
     """
-    return observation_space.shape[0] < observation_space.shape[1]
+    smallest_dimension = np.argmin(observation_space.shape).item()
+    if smallest_dimension == 1:
+        warnings.warn("Treating image space as channels-last, while second dimension was smallest of the three.")
+    return smallest_dimension == 0
 
 
 def is_image_space(observation_space: spaces.Space, channels_last: bool = True, check_channels: bool = False) -> bool:

@@ -154,7 +154,7 @@ def test_features_extractor_target_net(model_class, share_features_extractor):
     model.lr_schedule = lambda _: 0.0
     # Re-activate polyak update
     model.tau = 0.01
-    # Special case for DQN: target net is updated in the `collect_rollout()`
+    # Special case for DQN: target net is updated in the `collect_rollouts()`
     # not the `train()` method
     if model_class == DQN:
         model.target_update_interval = 1

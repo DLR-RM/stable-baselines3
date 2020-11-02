@@ -132,8 +132,7 @@ class PPO(OnPolicyAlgorithm):
 
     def train(self) -> None:
         """
-        Update policy using the currently gathered
-        rollout buffer.
+        Update policy using the currently gathered rollout buffer.
         """
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
@@ -147,7 +146,7 @@ class PPO(OnPolicyAlgorithm):
         pg_losses, value_losses = [], []
         clip_fractions = []
 
-        # train for gradient_steps epochs
+        # train for n_epochs epochs
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
             # Do a complete pass on the rollout buffer

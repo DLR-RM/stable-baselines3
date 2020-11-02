@@ -1,30 +1,25 @@
 ---
-name: Issue Template
-about: How to create an issue for this repository
-
+name: "\U0001F41B Bug Report"
+about: Submit a bug report to help us improve Stable-Baselines3
+labels: bug
+title: [Bug] bug title
 ---
 
 **Important Note: We do not do technical support, nor consulting** and don't answer personal questions per email.
 Please post your question on [reddit](https://www.reddit.com/r/reinforcementlearning/) or [stack overflow](https://stackoverflow.com/) in that case.
 
-If you have any questions, feel free to create an issue with the tag [question].  
-If you wish to suggest an enhancement or feature request, add the tag [feature request].  
-If you are submitting a bug report, please fill in the following details.
 
-If your issue is related to a custom gym environment, please check it first using:
+If your issue is related to a **custom gym environment**, please use the custom gym env template.
 
-```python
-from stable_baselines3.common.env_checker import check_env
+### 🐛 Bug
 
-env = CustomEnv(arg1, ...)
-# It will check your custom environment and output additional warnings if needed
-check_env(env)
-```
-
-**Describe the bug**
 A clear and concise description of what the bug is.
 
-**Code example**
+
+### To Reproduce
+
+Steps to reproduce the behavior.
+
 Please try to provide a minimal example to reproduce the bug. Error messages and stack traces are also helpful.
 
 Please use the [markdown code blocks](https://help.github.com/en/articles/creating-and-highlighting-code-blocks)
@@ -40,7 +35,13 @@ Traceback (most recent call last): File ...
 
 ```
 
-**System Info**
+### Expected behavior
+
+A clear and concise description of what you expected to happen.
+
+
+### System Info
+
 Describe the characteristic of your environment:
  * Describe how the library was installed (pip, docker, source, ...)
  * GPU models and configuration
@@ -49,5 +50,11 @@ Describe the characteristic of your environment:
  * Gym version
  * Versions of any other relevant libraries
 
-**Additional context**
+### Additional context
 Add any other context about the problem here.
+
+### Checklist
+
+- [ ] I have checked that there is no similar [issue](https://github.com/DLR-RM/stable-baselines3/issues) in the repo (**required**)
+- [ ] I have read the [documentation](https://stable-baselines3.readthedocs.io/en/master/) (**required**)
+- [ ] I have provided a minimal working example to reproduce the bug (**required**)

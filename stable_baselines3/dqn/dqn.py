@@ -135,7 +135,7 @@ class DQN(OffPolicyAlgorithm):
     def _on_step(self) -> None:
         """
         Update the exploration rate and target network if needed.
-        This method is called in ``collect_rollout()`` after each step in the environment.
+        This method is called in ``collect_rollouts()`` after each step in the environment.
         """
         if self.num_timesteps % self.target_update_interval == 0:
             polyak_update(self.q_net.parameters(), self.q_net_target.parameters(), self.tau)

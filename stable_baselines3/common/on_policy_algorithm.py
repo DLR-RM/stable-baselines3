@@ -124,7 +124,9 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         self, env: VecEnv, callback: BaseCallback, rollout_buffer: RolloutBuffer, n_rollout_steps: int
     ) -> bool:
         """
-        Collect rollouts using the current policy and fill a `RolloutBuffer`.
+        Collect experiences using the current policy and fill a ``RolloutBuffer``.
+        The term rollout here refers to the model-free notion and should not
+        be used with the concept of rollout used in model-based RL or planning.
 
         :param env: The training environment
         :param callback: Callback that will be called at each step

@@ -117,12 +117,13 @@ class FakeImageEnv(Env):
     """
 
     def __init__(
-        self, action_dim: int = 6,
+        self,
+        action_dim: int = 6,
         screen_height: int = 84,
         screen_width: int = 84,
         n_channels: int = 1,
         discrete: bool = True,
-        channel_first: bool = False
+        channel_first: bool = False,
     ):
         self.observation_shape = (screen_height, screen_width, n_channels)
         if channel_first:

@@ -2,7 +2,7 @@
 name: ❓Question
 about: How to ask a question regarding Stable-Baselines3
 labels: question
-title: [Question] question title
+title: "[Question] question title"
 ---
 
 **Important Note: We do not do technical support, nor consulting** and don't answer personal questions per email.

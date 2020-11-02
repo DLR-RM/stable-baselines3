@@ -2,7 +2,7 @@
 name: "\U0001F41B Bug Report"
 about: Submit a bug report to help us improve Stable-Baselines3
 labels: bug
-title: [Bug] bug title
+title: "[Bug] bug title"
 ---
 
 **Important Note: We do not do technical support, nor consulting** and don't answer personal questions per email.

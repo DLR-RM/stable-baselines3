@@ -259,6 +259,9 @@ class ReplayBuffer(BaseBuffer):
 class RolloutBuffer(BaseBuffer):
     """
     Rollout buffer used in on-policy algorithms like A2C/PPO.
+    The term rollout here refers to the model-free notion and should not
+    be used with the concept of rollout used in model-based RL or planning.
+    Hence, it is only involved in policy and value function training but not action selection.
 
     :param buffer_size: Max number of element in the buffer
     :param observation_space: Observation space

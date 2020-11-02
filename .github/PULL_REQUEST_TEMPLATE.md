@@ -27,7 +27,9 @@
 - [ ] I have reformatted the code using `make format` (**required**)
 - [ ] I have checked the codestyle using `make check-codestyle` and `make lint` (**required**)
 - [ ] I have ensured `make pytest` and `make type` both pass. (**required**)
+- [ ] I have checked that the documentation builds using `make doc` (**required**)
 
+Note: You can run most of the checks using `make commit-checks`.
 
 Note: we are using a maximum length of 127 characters per line
 

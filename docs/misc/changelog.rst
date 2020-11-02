@@ -22,6 +22,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Add more issue templates
+- Improve error message in ``NatureCNN``
 
 Documentation:
 ^^^^^^^^^^^^^^

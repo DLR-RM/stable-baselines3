@@ -71,7 +71,7 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
 
     if vec_env_wrapper is not None:
         if vec_env_wrapper == VecFrameStack:
-            vec_env = vec_env_wrapper(vec_env, n_stack=2)
+            vec_env = vec_env_wrapper(vec_env, n_stack=2, channels_order="last")
         else:
             vec_env = vec_env_wrapper(vec_env)
 
@@ -160,7 +160,7 @@ def test_vecenv_terminal_obs(vec_env_class, vec_env_wrapper):
 
     if vec_env_wrapper is not None:
         if vec_env_wrapper == VecFrameStack:
-            vec_env = vec_env_wrapper(vec_env, n_stack=2)
+            vec_env = vec_env_wrapper(vec_env, n_stack=2, channels_order="last")
         else:
             vec_env = vec_env_wrapper(vec_env)
 
@@ -346,23 +346,74 @@ def test_vecenv_wrapper_getattr():
 def test_framestack_vecenv():
     """Test that framestack environment stacks on desired axis"""
 
-    space_shape = [1, 5, 10]
-    zero_acts = np.zeros([N_ENVS] + space_shape)
+    image_space_shape = [12, 8, 3]
+    zero_acts = np.zeros([N_ENVS] + image_space_shape)
 
-    def make_env():
-        return CustomGymEnv(gym.spaces.Box(low=np.zeros(space_shape), high=np.ones(space_shape)))
+    transposed_image_space_shape = image_space_shape[::-1]
+    transposed_zero_acts = np.zeros([N_ENVS] + transposed_image_space_shape)
 
-    vec_env = DummyVecEnv([make_env for _ in range(N_ENVS)])
+    def make_image_env():
+        return CustomGymEnv(
+            gym.spaces.Box(low=np.zeros(image_space_shape), high=np.ones(image_space_shape) * 255, dtype=np.uint8)
+        )
+
+    def make_transposed_image_env():
+        return CustomGymEnv(
+            gym.spaces.Box(
+                low=np.zeros(transposed_image_space_shape),
+                high=np.ones(transposed_image_space_shape) * 255,
+                dtype=np.uint8
+            )
+        )
+
+    def make_non_image_env():
+        return CustomGymEnv(
+            gym.spaces.Box(low=np.zeros((2,)), high=np.ones((2,)))
+        )
+
+    vec_env = DummyVecEnv([make_image_env for _ in range(N_ENVS)])
     vec_env = VecFrameStack(vec_env, n_stack=2)
     obs, _, _, _ = vec_env.step(zero_acts)
+    vec_env.close()
 
     # Should be stacked on the last dimension
-    assert obs.shape[-1] == (space_shape[-1] * 2)
+    assert obs.shape[-1] == (image_space_shape[-1] * 2)
 
-    # Try stacking on first dimension now
-    vec_env = DummyVecEnv([make_env for _ in range(N_ENVS)])
-    vec_env = VecFrameStack(vec_env, n_stack=2, channels_first=True)
+    # Try automatic stacking on first dimension now
+    vec_env = DummyVecEnv([make_transposed_image_env for _ in range(N_ENVS)])
+    vec_env = VecFrameStack(vec_env, n_stack=2)
+    obs, _, _, _ = vec_env.step(transposed_zero_acts)
+    vec_env.close()
+
+    # Should be stacked on the first dimension (note the transposing in make_transposed_image_env)
+    assert obs.shape[1] == (image_space_shape[-1] * 2)
+
+    # Try forcing dimensions
+    vec_env = DummyVecEnv([make_image_env for _ in range(N_ENVS)])
+    vec_env = VecFrameStack(vec_env, n_stack=2, channels_order="last")
     obs, _, _, _ = vec_env.step(zero_acts)
+    vec_env.close()
+
+    # Should be stacked on the last dimension
+    assert obs.shape[-1] == (image_space_shape[-1] * 2)
+
+    vec_env = DummyVecEnv([make_image_env for _ in range(N_ENVS)])
+    vec_env = VecFrameStack(vec_env, n_stack=2, channels_order="first")
+    obs, _, _, _ = vec_env.step(zero_acts)
+    vec_env.close()
 
     # Should be stacked on the first dimension
-    assert obs.shape[1] == (space_shape[0] * 2)
+    assert obs.shape[1] == (image_space_shape[0] * 2)
+
+    # Test invalid channels_order
+    vec_env = DummyVecEnv([make_image_env for _ in range(N_ENVS)])
+    with pytest.raises(AssertionError):
+        vec_env = VecFrameStack(vec_env, n_stack=2, channels_order="not_valid")
+
+    # Test that exception is risen with non-image envs when no channels_order is
+    # given
+    vec_env = DummyVecEnv([make_non_image_env for _ in range(N_ENVS)])
+    with pytest.raises(ValueError):
+        vec_env = VecFrameStack(vec_env, n_stack=2)
+    # But this works
+    vec_env = VecFrameStack(vec_env, n_stack=2, channels_order="first")

@@ -1,6 +1,8 @@
 import os
 from copy import deepcopy
 
+
+from gym import spaces
 import numpy as np
 import pytest
 import torch as th
@@ -8,6 +10,7 @@ import torch as th
 from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.identity_env import FakeImageEnv
 from stable_baselines3.common.utils import zip_strict
+from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN])
@@ -201,3 +204,44 @@ def test_channel_first_env(tmp_path):
     assert np.allclose(action, model.predict(obs, deterministic=True)[0])
 
     os.remove(str(tmp_path / SAVE_NAME))
+
+
+def test_image_space_checks():
+    not_image_space = spaces.Box(0, 1, shape=(10,))
+    assert not is_image_space(not_image_space)
+
+    # Not uint8
+    not_image_space = spaces.Box(0, 255, shape=(10, 10, 3))
+    assert not is_image_space(not_image_space)
+
+    # Not correct shape
+    not_image_space = spaces.Box(0, 255, shape=(10, 10), dtype=np.uint8)
+    assert not is_image_space(not_image_space)
+
+    # Not correct low/high
+    not_image_space = spaces.Box(0, 10, shape=(10, 10, 3), dtype=np.uint8)
+    assert not is_image_space(not_image_space)
+
+    # Not correct space
+    not_image_space = spaces.Discrete(n=10)
+    assert not is_image_space(not_image_space)
+
+    an_image_space = spaces.Box(0, 255, shape=(10, 10, 3), dtype=np.uint8)
+    assert is_image_space(an_image_space)
+
+    an_image_space_with_odd_channels = spaces.Box(0, 255, shape=(10, 10, 5), dtype=np.uint8)
+    assert is_image_space(an_image_space_with_odd_channels)
+    # Should not pass if we check if channels are valid for an image
+    assert not is_image_space(an_image_space_with_odd_channels, check_channels=True)
+
+    # Test if channel-check works
+    channel_first_space = spaces.Box(0, 255, shape=(3, 10, 10), dtype=np.uint8)
+    assert is_image_space_channels_first(channel_first_space)
+
+    channel_last_space = spaces.Box(0, 255, shape=(10, 10, 3), dtype=np.uint8)
+    assert not is_image_space_channels_first(channel_last_space)
+
+    channel_mid_space = spaces.Box(0, 255, shape=(10, 3, 10), dtype=np.uint8)
+    # Should raise a warning
+    with pytest.warns(Warning):
+        assert not is_image_space_channels_first(channel_mid_space)

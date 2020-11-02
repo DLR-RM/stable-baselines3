@@ -26,7 +26,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Updated algorithm table
-- minor docstring improvements regarding rollout
+- Minor docstring improvements regarding rollout (@stheid)
 
 
 Pre-Release 0.10.0 (2020-10-28)

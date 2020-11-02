@@ -2,7 +2,7 @@
 name: "\U0001F680Feature Request"
 about: How to create an issue for requesting a feature
 labels: enhancement
-title: [Feature Request] request title
+title: "[Feature Request] request title"
 ---
 
 **Important Note: We do not do technical support, nor consulting** and don't answer personal questions per email.

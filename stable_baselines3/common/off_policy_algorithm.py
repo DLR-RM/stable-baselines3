@@ -192,7 +192,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self,
         total_timesteps: int,
         eval_env: Optional[GymEnv],
-        callback: Union[None, Callable, List[BaseCallback], BaseCallback] = None,
+        callback: MaybeCallback = None,
         eval_freq: int = 10000,
         n_eval_episodes: int = 5,
         log_path: Optional[str] = None,

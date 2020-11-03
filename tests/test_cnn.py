@@ -4,10 +4,13 @@ from copy import deepcopy
 import numpy as np
 import pytest
 import torch as th
+from gym import spaces
 
 from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.identity_env import FakeImageEnv
+from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
 from stable_baselines3.common.utils import zip_strict
+from stable_baselines3.common.vec_env import VecTransposeImage, is_wrapped
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN])
@@ -24,6 +27,9 @@ def test_cnn(tmp_path, model_class):
         # Reduce the size of the features
         kwargs = dict(buffer_size=250, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)))
     model = model_class("CnnPolicy", env, **kwargs).learn(250)
+
+    # FakeImageEnv is channel last by default and should be wrapped
+    assert is_wrapped(model.get_env(), VecTransposeImage)
 
     obs = env.reset()
 
@@ -174,3 +180,73 @@ def test_features_extractor_target_net(model_class, share_features_extractor):
         params_should_match(original_actor_param, model.actor.parameters())
 
         td3_features_extractor_check(model)
+
+
+def test_channel_first_env(tmp_path):
+    # test_cnn uses environment with HxWxC setup that is transposed, but we
+    # also want to work with CxHxW envs directly without transposing wrapper.
+    SAVE_NAME = "cnn_model.zip"
+
+    # Create environment with transposed images (CxHxW).
+    # If underlying CNN processes the data in wrong format,
+    # it will raise an error of negative dimension sizes while creating convolutions
+    env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=1, discrete=True, channel_first=True)
+
+    model = A2C("CnnPolicy", env, n_steps=100).learn(250)
+
+    assert not is_wrapped(model.get_env(), VecTransposeImage)
+
+    obs = env.reset()
+
+    action, _ = model.predict(obs, deterministic=True)
+
+    model.save(tmp_path / SAVE_NAME)
+    del model
+
+    model = A2C.load(tmp_path / SAVE_NAME)
+
+    # Check that the prediction is the same
+    assert np.allclose(action, model.predict(obs, deterministic=True)[0])
+
+    os.remove(str(tmp_path / SAVE_NAME))
+
+
+def test_image_space_checks():
+    not_image_space = spaces.Box(0, 1, shape=(10,))
+    assert not is_image_space(not_image_space)
+
+    # Not uint8
+    not_image_space = spaces.Box(0, 255, shape=(10, 10, 3))
+    assert not is_image_space(not_image_space)
+
+    # Not correct shape
+    not_image_space = spaces.Box(0, 255, shape=(10, 10), dtype=np.uint8)
+    assert not is_image_space(not_image_space)
+
+    # Not correct low/high
+    not_image_space = spaces.Box(0, 10, shape=(10, 10, 3), dtype=np.uint8)
+    assert not is_image_space(not_image_space)
+
+    # Not correct space
+    not_image_space = spaces.Discrete(n=10)
+    assert not is_image_space(not_image_space)
+
+    an_image_space = spaces.Box(0, 255, shape=(10, 10, 3), dtype=np.uint8)
+    assert is_image_space(an_image_space)
+
+    an_image_space_with_odd_channels = spaces.Box(0, 255, shape=(10, 10, 5), dtype=np.uint8)
+    assert is_image_space(an_image_space_with_odd_channels)
+    # Should not pass if we check if channels are valid for an image
+    assert not is_image_space(an_image_space_with_odd_channels, check_channels=True)
+
+    # Test if channel-check works
+    channel_first_space = spaces.Box(0, 255, shape=(3, 10, 10), dtype=np.uint8)
+    assert is_image_space_channels_first(channel_first_space)
+
+    channel_last_space = spaces.Box(0, 255, shape=(10, 10, 3), dtype=np.uint8)
+    assert not is_image_space_channels_first(channel_last_space)
+
+    channel_mid_space = spaces.Box(0, 255, shape=(10, 3, 10), dtype=np.uint8)
+    # Should raise a warning
+    with pytest.warns(Warning):
+        assert not is_image_space_channels_first(channel_mid_space)

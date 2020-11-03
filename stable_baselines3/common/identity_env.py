@@ -112,14 +112,23 @@ class FakeImageEnv(Env):
     :param screen_height: Height of the image
     :param screen_width: Width of the image
     :param n_channels: Number of color channels
-    :param discrete:
+    :param discrete: Create discrete action space instead of continuous
+    :param channel_first: Put channels on first axis instead of last
     """
 
     def __init__(
-        self, action_dim: int = 6, screen_height: int = 84, screen_width: int = 84, n_channels: int = 1, discrete: bool = True
+        self,
+        action_dim: int = 6,
+        screen_height: int = 84,
+        screen_width: int = 84,
+        n_channels: int = 1,
+        discrete: bool = True,
+        channel_first: bool = False,
     ):
-
-        self.observation_space = Box(low=0, high=255, shape=(screen_height, screen_width, n_channels), dtype=np.uint8)
+        self.observation_shape = (screen_height, screen_width, n_channels)
+        if channel_first:
+            self.observation_shape = (n_channels, screen_height, screen_width)
+        self.observation_space = Box(low=0, high=255, shape=self.observation_shape, dtype=np.uint8)
         if discrete:
             self.action_space = Discrete(action_dim)
         else:

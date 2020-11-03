@@ -88,7 +88,7 @@ def get_schedule_fn(value_schedule: Union[Callable[[float], float], float, int])
     return value_schedule
 
 
-def get_linear_fn(start: float, end: float, end_fraction: float) -> Callable:
+def get_linear_fn(start: float, end: float, end_fraction: float) -> Callable[[float], float]:
     """
     Create a function that interpolates linearly between start and end
     between ``progress_remaining`` = 1 and ``progress_remaining`` = ``end_fraction``.
@@ -112,7 +112,7 @@ def get_linear_fn(start: float, end: float, end_fraction: float) -> Callable:
     return func
 
 
-def constant_fn(val: float) -> Callable:
+def constant_fn(val: float) -> Callable[[float], float]:
     """
     Create a function that returns a constant
     It is useful for learning rate schedule (to avoid code duplication)

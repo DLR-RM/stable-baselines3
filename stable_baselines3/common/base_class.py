@@ -129,7 +129,7 @@ class BaseAlgorithm(ABC):
         self.policy = None
         self.learning_rate = learning_rate
         self.tensorboard_log = tensorboard_log
-        self.lr_schedule = None  # type: Optional[Callable]
+        self.lr_schedule = None  # type: Optional[Callable[[float], float]]
         self._last_obs = None  # type: Optional[np.ndarray]
         self._last_dones = None  # type: Optional[np.ndarray]
         # When using VecNormalize:

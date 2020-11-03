@@ -52,7 +52,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         self,
         policy: Union[str, Type[ActorCriticPolicy]],
         env: Union[GymEnv, str],
-        learning_rate: Union[float, Callable],
+        learning_rate: Union[float, Callable[[float], float]],
         n_steps: int,
         gamma: float,
         gae_lambda: float,

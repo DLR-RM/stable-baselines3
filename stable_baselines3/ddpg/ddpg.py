@@ -55,7 +55,7 @@ class DDPG(TD3):
         self,
         policy: Union[str, Type[TD3Policy]],
         env: Union[GymEnv, str],
-        learning_rate: Union[float, Callable] = 1e-3,
+        learning_rate: Union[float, Callable[[float], float]] = 1e-3,
         buffer_size: int = int(1e6),
         learning_starts: int = 100,
         batch_size: int = 100,

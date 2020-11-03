@@ -89,7 +89,7 @@ class BaseAlgorithm(ABC):
         policy: Type[BasePolicy],
         env: Union[GymEnv, str, None],
         policy_base: Type[BasePolicy],
-        learning_rate: Union[float, Callable],
+        learning_rate: Union[float, Callable[[float], float]],
         policy_kwargs: Dict[str, Any] = None,
         tensorboard_log: Optional[str] = None,
         verbose: int = 0,

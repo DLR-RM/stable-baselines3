@@ -55,7 +55,7 @@ class A2C(OnPolicyAlgorithm):
         self,
         policy: Union[str, Type[ActorCriticPolicy]],
         env: Union[GymEnv, str],
-        learning_rate: Union[float, Callable] = 7e-4,
+        learning_rate: Union[float, Callable[[float], float]] = 7e-4,
         n_steps: int = 5,
         gamma: float = 0.99,
         gae_lambda: float = 1.0,

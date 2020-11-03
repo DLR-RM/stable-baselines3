@@ -74,7 +74,7 @@ class SAC(OffPolicyAlgorithm):
         self,
         policy: Union[str, Type[SACPolicy]],
         env: Union[GymEnv, str],
-        learning_rate: Union[float, Callable] = 3e-4,
+        learning_rate: Union[float, Callable[[float], float]] = 3e-4,
         buffer_size: int = int(1e6),
         learning_starts: int = 100,
         batch_size: int = 256,

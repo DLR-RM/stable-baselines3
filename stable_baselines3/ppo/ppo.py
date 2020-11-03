@@ -66,7 +66,7 @@ class PPO(OnPolicyAlgorithm):
         self,
         policy: Union[str, Type[ActorCriticPolicy]],
         env: Union[GymEnv, str],
-        learning_rate: Union[float, Callable] = 3e-4,
+        learning_rate: Union[float, Callable[[float], float]] = 3e-4,
         n_steps: int = 2048,
         batch_size: Optional[int] = 64,
         n_epochs: int = 10,

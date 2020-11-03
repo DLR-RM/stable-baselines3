@@ -354,13 +354,19 @@ def test_framestack_vecenv():
 
     def make_image_env():
         return CustomGymEnv(
-            gym.spaces.Box(low=np.zeros(image_space_shape), high=np.ones(image_space_shape) * 255, dtype=np.uint8)
+            gym.spaces.Box(
+                low=np.zeros(image_space_shape),
+                high=np.ones(image_space_shape) * 255,
+                dtype=np.uint8,
+            )
         )
 
     def make_transposed_image_env():
         return CustomGymEnv(
             gym.spaces.Box(
-                low=np.zeros(transposed_image_space_shape), high=np.ones(transposed_image_space_shape) * 255, dtype=np.uint8
+                low=np.zeros(transposed_image_space_shape),
+                high=np.ones(transposed_image_space_shape) * 255,
+                dtype=np.uint8,
             )
         )
 
@@ -406,10 +412,6 @@ def test_framestack_vecenv():
     with pytest.raises(AssertionError):
         vec_env = VecFrameStack(vec_env, n_stack=2, channels_order="not_valid")
 
-    # Test that exception is risen with non-image envs when no channels_order is
-    # given
+    # Test that it works with non-image envs when no channels_order is given
     vec_env = DummyVecEnv([make_non_image_env for _ in range(N_ENVS)])
-    with pytest.raises(ValueError):
-        vec_env = VecFrameStack(vec_env, n_stack=2)
-    # But this works
-    vec_env = VecFrameStack(vec_env, n_stack=2, channels_order="first")
+    vec_env = VecFrameStack(vec_env, n_stack=2)

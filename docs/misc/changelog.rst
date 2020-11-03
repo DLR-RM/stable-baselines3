@@ -8,13 +8,14 @@ Pre-Release 0.11.0a0 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-- ``VecFrameStack`` now uses ``channels_order`` argument to tell if observations should be stacked
-  on the first or last observation dimension (originally always stacked on last).
+
 
 New Features:
 ^^^^^^^^^^^^^
 - Add support for ``VecFrameStack`` to stack on first or last observation dimension, along with
   automatic check for image spaces.
+- ``VecFrameStack`` now has a ``channels_order`` argument to tell if observations should be stacked
+  on the first or last observation dimension (originally always stacked on last).
 
 Bug Fixes:
 ^^^^^^^^^^

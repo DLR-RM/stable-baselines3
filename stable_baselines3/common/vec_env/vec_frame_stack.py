@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from gym import spaces
@@ -23,28 +23,30 @@ class VecFrameStack(VecEnvWrapper):
         If None, automatically detect which dimension to stack over (default)
     """
 
-    def __init__(self, venv: VecEnv, n_stack: int, channels_order: str = None):
+    def __init__(self, venv: VecEnv, n_stack: int, channels_order: Optional[str] = None):
         self.venv = venv
         self.n_stack = n_stack
-        assert channels_order in [None, "last", "first"], "channels_order must be one of following: None, 'last', 'first'"
 
         wrapped_obs_space = venv.observation_space
         assert isinstance(wrapped_obs_space, spaces.Box), "VecFrameStack only work with gym.spaces.Box observation space"
 
-        self.channels_first = None
         if channels_order is None:
             # Detect channel location automatically for images
             if is_image_space(wrapped_obs_space):
                 self.channels_first = is_image_space_channels_first(wrapped_obs_space)
             else:
-                raise ValueError("Could not deduce dimension to stack frames over. Provide ``channels_last`` argument.")
+                # Default behavior for non-image space, stack on the last axis
+                self.channels_first = False
         else:
+            assert channels_order in {"last", "first"}, "`channels_order` must be one of following: 'last', 'first'"
+
             self.channels_first = channels_order == "first"
 
         # This includes the vec-env dimension (first)
         self.stack_dimension = 1 if self.channels_first else -1
-        low = np.repeat(wrapped_obs_space.low, self.n_stack, axis=0 if self.channels_first else -1)
-        high = np.repeat(wrapped_obs_space.high, self.n_stack, axis=0 if self.channels_first else -1)
+        repeat_axis = 0 if self.channels_first else -1
+        low = np.repeat(wrapped_obs_space.low, self.n_stack, axis=repeat_axis)
+        high = np.repeat(wrapped_obs_space.high, self.n_stack, axis=repeat_axis)
         self.stackedobs = np.zeros((venv.num_envs,) + low.shape, low.dtype)
         observation_space = spaces.Box(low=low, high=high, dtype=venv.observation_space.dtype)
         VecEnvWrapper.__init__(self, venv, observation_space=observation_space)

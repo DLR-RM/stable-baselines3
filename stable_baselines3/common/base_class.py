@@ -16,7 +16,7 @@ from stable_baselines3.common.callbacks import BaseCallback, CallbackList, Conve
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.policies import BasePolicy, get_policy_from_name
-from stable_baselines3.common.preprocessing import is_image_space
+from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
 from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr, save_to_zip_file
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
 from stable_baselines3.common.utils import (
@@ -176,7 +176,11 @@ class BaseAlgorithm(ABC):
                 print("Wrapping the env in a DummyVecEnv.")
             env = DummyVecEnv([lambda: env])
 
-        if is_image_space(env.observation_space) and not is_wrapped(env, VecTransposeImage):
+        if (
+            is_image_space(env.observation_space)
+            and not is_wrapped(env, VecTransposeImage)
+            and not is_image_space_channels_first(env.observation_space)
+        ):
             if verbose >= 1:
                 print("Wrapping the env in a VecTransposeImage.")
             env = VecTransposeImage(env)

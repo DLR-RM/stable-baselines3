@@ -1,16 +1,15 @@
 import os
 from copy import deepcopy
 
-
-from gym import spaces
 import numpy as np
 import pytest
 import torch as th
+from gym import spaces
 
 from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.identity_env import FakeImageEnv
-from stable_baselines3.common.utils import zip_strict
 from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
+from stable_baselines3.common.utils import zip_strict
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN])

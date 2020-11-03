@@ -360,16 +360,12 @@ def test_framestack_vecenv():
     def make_transposed_image_env():
         return CustomGymEnv(
             gym.spaces.Box(
-                low=np.zeros(transposed_image_space_shape),
-                high=np.ones(transposed_image_space_shape) * 255,
-                dtype=np.uint8
+                low=np.zeros(transposed_image_space_shape), high=np.ones(transposed_image_space_shape) * 255, dtype=np.uint8
             )
         )
 
     def make_non_image_env():
-        return CustomGymEnv(
-            gym.spaces.Box(low=np.zeros((2,)), high=np.ones((2,)))
-        )
+        return CustomGymEnv(gym.spaces.Box(low=np.zeros((2,)), high=np.ones((2,))))
 
     vec_env = DummyVecEnv([make_image_env for _ in range(N_ENVS)])
     vec_env = VecFrameStack(vec_env, n_stack=2)

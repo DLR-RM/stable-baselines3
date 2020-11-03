@@ -71,7 +71,7 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
 
     if vec_env_wrapper is not None:
         if vec_env_wrapper == VecFrameStack:
-            vec_env = vec_env_wrapper(vec_env, n_stack=2, channels_order="last")
+            vec_env = vec_env_wrapper(vec_env, n_stack=2)
         else:
             vec_env = vec_env_wrapper(vec_env)
 
@@ -160,7 +160,7 @@ def test_vecenv_terminal_obs(vec_env_class, vec_env_wrapper):
 
     if vec_env_wrapper is not None:
         if vec_env_wrapper == VecFrameStack:
-            vec_env = vec_env_wrapper(vec_env, n_stack=2, channels_order="last")
+            vec_env = vec_env_wrapper(vec_env, n_stack=2)
         else:
             vec_env = vec_env_wrapper(vec_env)
 

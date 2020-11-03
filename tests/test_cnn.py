@@ -10,6 +10,7 @@ from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.identity_env import FakeImageEnv
 from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
 from stable_baselines3.common.utils import zip_strict
+from stable_baselines3.common.vec_env import VecTransposeImage, is_wrapped
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN])
@@ -26,6 +27,9 @@ def test_cnn(tmp_path, model_class):
         # Reduce the size of the features
         kwargs = dict(buffer_size=250, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)))
     model = model_class("CnnPolicy", env, **kwargs).learn(250)
+
+    # FakeImageEnv is channel last by default and should be wrapped
+    assert is_wrapped(model.get_env(), VecTransposeImage)
 
     obs = env.reset()
 
@@ -180,7 +184,7 @@ def test_features_extractor_target_net(model_class, share_features_extractor):
 
 def test_channel_first_env(tmp_path):
     # test_cnn uses environment with HxWxC setup that is transposed, but we
-    # also want to work with CxHxW envs directly without transpoing wrapper.
+    # also want to work with CxHxW envs directly without transposing wrapper.
     SAVE_NAME = "cnn_model.zip"
 
     # Create environment with transposed images (CxHxW).
@@ -189,6 +193,8 @@ def test_channel_first_env(tmp_path):
     env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=1, discrete=True, channel_first=True)
 
     model = A2C("CnnPolicy", env, n_steps=100).learn(250)
+
+    assert not is_wrapped(model.get_env(), VecTransposeImage)
 
     obs = env.reset()
 

@@ -7,7 +7,7 @@ from torch.nn import functional as F
 from stable_baselines3.common import logger
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
-from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
+from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, LearningRateSchedule
 from stable_baselines3.common.utils import polyak_update
 from stable_baselines3.td3.policies import TD3Policy
 
@@ -21,7 +21,7 @@ class TD3(OffPolicyAlgorithm):
     Paper: https://arxiv.org/abs/1802.09477
     Introduction to TD3: https://spinningup.openai.com/en/latest/algorithms/td3.html
 
-    :param policy: The policy model to use (MlpPolicy, CnnPolicy, ...)
+    :param policy: The policy model to use (MlpPolicy, CnnPolicy, ...)  # TODO(max): is this true, the type annotations say otherwise
     :param env: The environment to learn from (if registered in Gym, can be str)
     :param learning_rate: learning rate for adam optimizer,
         the same learning rate will be used for all networks (Q-Values, Actor and Value function)
@@ -62,7 +62,7 @@ class TD3(OffPolicyAlgorithm):
         self,
         policy: Union[str, Type[TD3Policy]],
         env: Union[GymEnv, str],
-        learning_rate: Union[float, Callable[[float], float]] = 1e-3,
+        learning_rate: Union[float, LearningRateSchedule] = 1e-3,
         buffer_size: int = int(1e6),
         learning_starts: int = 100,
         batch_size: int = 100,

@@ -1,10 +1,10 @@
-from typing import Any, Callable, Dict, Optional, Type, Union
+from typing import Any, Dict, Optional, Type, Union
 
 import torch as th
 
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
-from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, LearningRateSchedule
+from stable_baselines3.common.type_aliases import GymEnv, LearningRateSchedule, MaybeCallback
 from stable_baselines3.td3.policies import TD3Policy
 from stable_baselines3.td3.td3 import TD3
 

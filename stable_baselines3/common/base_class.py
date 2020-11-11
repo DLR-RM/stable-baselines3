@@ -5,7 +5,7 @@ import pathlib
 import time
 from abc import ABC, abstractmethod
 from collections import deque
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 import gym
 import numpy as np
@@ -18,7 +18,7 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.policies import BasePolicy, get_policy_from_name
 from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
 from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr, save_to_zip_file
-from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, LearningRateSchedule
+from stable_baselines3.common.type_aliases import GymEnv, LearningRateSchedule, MaybeCallback
 from stable_baselines3.common.utils import (
     check_for_correct_spaces,
     get_device,

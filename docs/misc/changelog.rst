@@ -16,6 +16,7 @@ New Features:
   automatic check for image spaces.
 - ``VecFrameStack`` now has a ``channels_order`` argument to tell if observations should be stacked
   on the first or last observation dimension (originally always stacked on last).
+- ``evaluate_policy`` now returns rewards/episode lengths from a Monitor wrapper if one is present.
 
 Bug Fixes:
 ^^^^^^^^^^

@@ -17,7 +17,7 @@ TL;DR
 
 1. Read about RL and Stable Baselines3
 2. Do quantitative experiments and hyperparameter tuning if needed
-3. Evaluate the performance using a separate test environment
+3. Evaluate the performance using a separate test environment (remember to check wrappers!)
 4. For better performance, increase the training budget
 
 
@@ -68,18 +68,24 @@ Other method, like ``TRPO`` or ``PPO`` make use of a *trust region* to minimize 
 How to evaluate an RL algorithm?
 --------------------------------
 
+.. note::
+
+  Pay attention to environment wrappers when evaluating your agent and comparing results to others' results. Modifications to episode rewards
+  or lengths may also affect evaluation results which may not be desirable. Check ``evaluate_policy`` helper function in :ref:`Evaluation Helper <eval>` section.
+
 Because most algorithms use exploration noise during training, you need a separate test environment to evaluate the performance
 of your agent at a given time. It is recommended to periodically evaluate your agent for ``n`` test episodes (``n`` is usually between 5 and 20)
 and average the reward per episode to have a good estimate.
+
+.. note::
+
+	We provide an ``EvalCallback`` for doing such evaluation. You can read more about it in the :ref:`Callbacks <callbacks>` section.
 
 As some policy are stochastic by default (e.g. A2C or PPO), you should also try to set `deterministic=True` when calling the `.predict()` method,
 this frequently leads to better performance.
 Looking at the training curve (episode reward function of the timesteps) is a good proxy but underestimates the agent true performance.
 
 
-.. note::
-
-	We provide an ``EvalCallback`` for doing such evaluation. You can read more about it in the :ref:`Callbacks <callbacks>` section.
 
 
 

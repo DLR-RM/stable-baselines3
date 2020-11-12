@@ -1,11 +1,11 @@
-from typing import Callable, List, Optional, Tuple, Union
 import warnings
+from typing import Callable, List, Optional, Tuple, Union
 
 import gym
 import numpy as np
 
-from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common import base_class
+from stable_baselines3.common.vec_env import VecEnv
 
 
 def evaluate_policy(
@@ -82,7 +82,7 @@ def evaluate_policy(
                 "Evaluation environment does not provide 'episode' environment (not wrapped with ``Monitor`` wrapper?). "
                 "This may result in reporting modified episode lengths and results, depending on the other wrappers. "
                 "Consider wrapping environment first with ``Monitor`` wrapper.",
-                UserWarning
+                UserWarning,
             )
     mean_reward = np.mean(episode_rewards)
     std_reward = np.std(episode_rewards)

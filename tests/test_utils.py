@@ -146,7 +146,6 @@ def test_evaluate_policy():
 
     # Test that we gather correct reward with Monitor wrapper
     class ZeroReward(gym.RewardWrapper):
-
         def reward(self, reward):
             return reward * 0
 

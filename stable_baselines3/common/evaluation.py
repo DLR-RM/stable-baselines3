@@ -1,10 +1,11 @@
 from typing import Callable, List, Optional, Tuple, Union
+import warnings
 
 import gym
 import numpy as np
 
-from stable_baselines3.common import base_class
 from stable_baselines3.common.vec_env import VecEnv
+from stable_baselines3.common import base_class
 
 
 def evaluate_policy(
@@ -20,6 +21,12 @@ def evaluate_policy(
     """
     Runs policy for ``n_eval_episodes`` episodes and returns average reward.
     This is made to work only with one env.
+
+    If environment has not been wrapped with ``Monitor`` wrapper, reward and
+    episode lengths are counted as it appears with ``env.step`` calls. However
+    if the environment contains wrappers that modify rewards or episode lengths
+    (e.g. reward scaling, early episode reset), these will affect the evaluation
+    results as well.
 
     :param model: The RL agent you want to evaluate.
     :param env: The gym environment. In the case of a ``VecEnv``
@@ -49,15 +56,32 @@ def evaluate_policy(
         episode_length = 0
         while not done:
             action, state = model.predict(obs, state=state, deterministic=deterministic)
-            obs, reward, done, _info = env.step(action)
+            obs, reward, done, info = env.step(action)
             episode_reward += reward
             if callback is not None:
                 callback(locals(), globals())
             episode_length += 1
             if render:
                 env.render()
-        episode_rewards.append(episode_reward)
-        episode_lengths.append(episode_length)
+
+        # Remove VecEnv stacking (if any)
+        if isinstance(env, VecEnv):
+            info = info[0]
+
+        if "episode" in info.keys():
+            # Monitor wrapper includes "episode" key in info if environment
+            # has been wrapped with it. Use those rewards instead.
+            episode_rewards.append(info["episode"]["r"])
+            episode_lengths.append(info["episode"]["l"])
+        else:
+            episode_rewards.append(episode_reward)
+            episode_lengths.append(episode_length)
+            warnings.warn(
+                "Evaluation environment does not provide 'episode' environment (not wrapped with ``Monitor`` wrapper?). "
+                "This may result in reporting modified episode lengths and results, depending on the other wrappers. "
+                "Consider wrapping environment first with ``Monitor`` wrapper.",
+                UserWarning
+            )
     mean_reward = np.mean(episode_rewards)
     std_reward = np.std(episode_rewards)
     if reward_threshold is not None:

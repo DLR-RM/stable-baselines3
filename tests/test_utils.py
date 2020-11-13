@@ -8,11 +8,11 @@ import torch as th
 
 from stable_baselines3 import A2C
 from stable_baselines3.common.atari_wrappers import ClipRewardEnv
-from stable_baselines3.common.env_util import make_atari_env, make_vec_env, is_wrapped, unwrap_wrapper
+from stable_baselines3.common.env_util import make_atari_env, make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise, OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
-from stable_baselines3.common.utils import polyak_update, zip_strict
+from stable_baselines3.common.utils import polyak_update, zip_strict, is_wrapped, unwrap_wrapper
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 

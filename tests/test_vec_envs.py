@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack, VecNormalize
+from stable_baselines3.common.monitor import Monitor
 
 N_ENVS = 3
 VEC_ENV_CLASSES = [DummyVecEnv, SubprocVecEnv]
@@ -415,3 +416,20 @@ def test_framestack_vecenv():
     # Test that it works with non-image envs when no channels_order is given
     vec_env = DummyVecEnv([make_non_image_env for _ in range(N_ENVS)])
     vec_env = VecFrameStack(vec_env, n_stack=2)
+
+
+def test_subproc_is_wrapped():
+    # Test is_wrapped call of subproc workers
+
+    def make_env():
+        return CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)))
+
+    def make_monitored_env():
+        return Monitor(CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2))))
+
+    # One with monitor, one without
+    vec_env = SubprocVecEnv([make_env, make_monitored_env])
+
+    assert vec_env.env_is_wrapped(Monitor) == [False, True]
+
+    vec_env.close()

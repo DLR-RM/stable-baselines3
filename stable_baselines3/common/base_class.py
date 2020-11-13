@@ -31,7 +31,7 @@ from stable_baselines3.common.vec_env import (
     VecEnv,
     VecNormalize,
     VecTransposeImage,
-    is_wrapped,
+    is_vecenv_wrapped,
     unwrap_vec_normalize,
 )
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
@@ -178,7 +178,7 @@ class BaseAlgorithm(ABC):
 
         if (
             is_image_space(env.observation_space)
-            and not is_wrapped(env, VecTransposeImage)
+            and not is_vecenv_wrapped(env, VecTransposeImage)
             and not is_image_space_channels_first(env.observation_space)
         ):
             if verbose >= 1:

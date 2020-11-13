@@ -17,6 +17,10 @@ New Features:
   automatic check for image spaces.
 - ``VecFrameStack`` now has a ``channels_order`` argument to tell if observations should be stacked
   on the first or last observation dimension (originally always stacked on last).
+- ``common.env_util.is_wrapped`` and ``common.env_util.unwrap_wrapper`` functions for checking/unwrapping
+  an environment for specific wrapper.
+- ``env_is_wrapped`` function for ``SubProcVecEnv`` for checking if its environments are wrapped
+  with given wrappers.
 
 Bug Fixes:
 ^^^^^^^^^^

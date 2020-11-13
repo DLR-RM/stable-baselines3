@@ -8,7 +8,7 @@ import torch as th
 
 from stable_baselines3 import A2C
 from stable_baselines3.common.atari_wrappers import ClipRewardEnv
-from stable_baselines3.common.env_util import make_atari_env, make_vec_env, is_wrapped, unwrap_wrapper
+from stable_baselines3.common.env_util import is_wrapped, make_atari_env, make_vec_env, unwrap_wrapper
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise, OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
@@ -132,37 +132,95 @@ def test_evaluate_policy():
     with pytest.warns(UserWarning):
         _ = evaluate_policy(model, eval_env, n_eval_episodes)
 
+
+class ZeroRewardWrapper(gym.RewardWrapper):
+    def reward(self, reward):
+        return reward * 0
+
+
+class AlwaysDoneWrapper(gym.Wrapper):
+    # Pretends that environment only has single step for each
+    # episode.
+    def __init__(self, env):
+        super(AlwaysDoneWrapper, self).__init__(env)
+        self.last_obs = None
+        self.needs_reset = True
+
+    def step(self, action):
+        obs, reward, done, info = self.env.step(action)
+        self.needs_reset = done
+        self.last_obs = obs
+        return obs, reward, True, info
+
+    def reset(self, **kwargs):
+        if self.needs_reset:
+            obs = self.env.reset(**kwargs)
+            self.last_obs = obs
+            self.needs_reset = False
+        return self.last_obs
+
+
+@pytest.mark.parametrize("vec_env_class", [None, DummyVecEnv, SubprocVecEnv])
+def test_evaluate_policy_monitors(vec_env_class):
+    # Test that results are correct with monitor environments.
+    # Also test VecEnvs
+    n_eval_episodes = 2
+    env_id = "CartPole-v0"
+    model = A2C("MlpPolicy", env_id, seed=0)
+
+    def make_eval_env(with_monitor, wrapper_class=gym.Wrapper):
+        # Make eval environment with or without monitor in root,
+        # and additionally wrapped with another wrapper (after Monitor).
+        env = None
+        if vec_env_class is None:
+            # No vecenv, traditional env
+            env = gym.make(env_id)
+            if with_monitor:
+                env = Monitor(env)
+            env = wrapper_class(env)
+        else:
+            if with_monitor:
+                env = vec_env_class([lambda: wrapper_class(Monitor(gym.make(env_id)))])
+            else:
+                env = vec_env_class([lambda: wrapper_class(gym.make(env_id))])
+        return env
+
     # Test that evaluation with VecEnvs works as expected
-    eval_vecenv = make_vec_env("Pendulum-v0", 1)
-    _ = evaluate_policy(model, eval_vecenv, n_eval_episodes)
-    # Test SubProcVecEnv, too
-    eval_vecenv = make_vec_env("Pendulum-v0", 1, vec_env_cls=SubprocVecEnv)
-    _ = evaluate_policy(model, eval_vecenv, n_eval_episodes)
+    eval_env = make_eval_env(with_monitor=True)
+    _ = evaluate_policy(model, eval_env, n_eval_episodes)
+    eval_env.close()
 
     # Warning without Monitor
-    eval_vecenv = DummyVecEnv([lambda: gym.make("Pendulum-v0")])
+    eval_env = make_eval_env(with_monitor=False)
     with pytest.warns(UserWarning):
-        _ = evaluate_policy(model, eval_vecenv, n_eval_episodes)
+        _ = evaluate_policy(model, eval_env, n_eval_episodes)
+    eval_env.close()
 
     # Test that we gather correct reward with Monitor wrapper
-    class ZeroReward(gym.RewardWrapper):
-        def reward(self, reward):
-            return reward * 0
-
-    # CartPole always gives reward
-    model = A2C("MlpPolicy", "CartPole-v0", seed=0)
     # Sanity check that we get zero-reward without Monitor
-    eval_env = ZeroReward(gym.make("CartPole-v0"))
+    eval_env = make_eval_env(with_monitor=False, wrapper_class=ZeroRewardWrapper)
     average_reward, _ = evaluate_policy(model, eval_env, n_eval_episodes)
-    assert average_reward == 0.0, "ZeroReward wrapper for testing did not work"
-    # Normal envs
-    eval_env = ZeroReward(Monitor(gym.make("CartPole-v0")))
-    average_reward, _ = evaluate_policy(model, eval_env, n_eval_episodes)
-    assert average_reward > 0.0, "evaluate_policy did not get reward from Monitor"
-    # Same for vecenvs
-    eval_vecenv = DummyVecEnv([lambda: ZeroReward(Monitor(gym.make("CartPole-v0")))])
+    assert average_reward == 0.0, "ZeroRewardWrapper wrapper for testing did not work"
+    eval_env.close()
+
+    # Should get non-zero-rewards with Monitor (true reward)
+    eval_env = make_eval_env(with_monitor=True, wrapper_class=ZeroRewardWrapper)
     average_reward, _ = evaluate_policy(model, eval_env, n_eval_episodes)
     assert average_reward > 0.0, "evaluate_policy did not get reward from Monitor"
+    eval_env.close()
+
+    # Test that we also track correct episode dones, not the wrapped ones.
+    # Sanity check that we get only one step per episode.
+    eval_env = make_eval_env(with_monitor=False, wrapper_class=AlwaysDoneWrapper)
+    episode_rewards, episode_lengths = evaluate_policy(model, eval_env, n_eval_episodes, return_episode_rewards=True)
+    assert all(map(lambda l: l == 1, episode_lengths)), "AlwaysDoneWrapper did not fix episode lengths to one"
+    eval_env.close()
+
+    # Should get longer episodes with with Monitor (true episodes)
+    eval_env = make_eval_env(with_monitor=True, wrapper_class=AlwaysDoneWrapper)
+    episode_rewards, episode_lengths = evaluate_policy(model, eval_env, n_eval_episodes, return_episode_rewards=True)
+    assert all(map(lambda l: l > 1, episode_lengths)), "evaluate_policy did not get episode lengths from Monitor"
+    eval_env.close()
 
 
 def test_vec_noise():

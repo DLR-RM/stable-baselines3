@@ -5,9 +5,9 @@ import gym
 import numpy as np
 
 from stable_baselines3.common import base_class
-from stable_baselines3.common.vec_env import VecEnv, DummyVecEnv, SubprocVecEnv
-from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.env_util import is_wrapped
+from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv
 
 
 def evaluate_policy(
@@ -101,8 +101,6 @@ def evaluate_policy(
                 # has been wrapped with it. Use those rewards instead.
                 episode_rewards.append(info["episode"]["r"])
                 episode_lengths.append(info["episode"]["l"])
-            else:
-                raise RuntimeError("Evaluation episode ended but no 'episode' information was provided in info.")
         else:
             episode_rewards.append(episode_reward)
             episode_lengths.append(episode_length)

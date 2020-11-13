@@ -1,6 +1,6 @@
 import multiprocessing as mp
 from collections import OrderedDict
-from typing import Any, Callable, List, Optional, Sequence, Tuple, Union, Type
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
 
 import gym
 import numpy as np

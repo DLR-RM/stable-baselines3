@@ -8,7 +8,7 @@ import torch as th
 
 from stable_baselines3 import A2C
 from stable_baselines3.common.atari_wrappers import ClipRewardEnv
-from stable_baselines3.common.env_util import make_atari_env, make_vec_env
+from stable_baselines3.common.env_util import make_atari_env, make_vec_env, is_wrapped, unwrap_wrapper
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise, OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
@@ -233,3 +233,16 @@ def test_cmd_util_rename():
     """Test that importing cmd_util still works but raises warning"""
     with pytest.warns(FutureWarning):
         from stable_baselines3.common.cmd_util import make_vec_env  # noqa: F401
+
+
+def test_is_wrapped():
+    """Test that is_wrapped correctly detects wraps"""
+    env = gym.make("Pendulum-v0")
+    env = gym.Wrapper(env)
+    assert not is_wrapped(env, Monitor)
+    monitor_env = Monitor(env)
+    assert is_wrapped(monitor_env, Monitor)
+    env = gym.Wrapper(monitor_env)
+    assert is_wrapped(env, Monitor)
+    # Test that unwrap works as expected
+    assert unwrap_wrapper(env, Monitor) == monitor_env

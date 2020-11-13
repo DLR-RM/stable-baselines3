@@ -5,7 +5,9 @@ import gym
 import numpy as np
 
 from stable_baselines3.common import base_class
-from stable_baselines3.common.vec_env import VecEnv
+from stable_baselines3.common.vec_env import VecEnv, DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.env_util import is_wrapped
 
 
 def evaluate_policy(
@@ -45,14 +47,35 @@ def evaluate_policy(
     :return: Mean reward per episode, std of reward per episode
         returns ([float], [int]) when ``return_episode_rewards`` is True
     """
+    is_monitor_wrapped = False
     if isinstance(env, VecEnv):
         assert env.num_envs == 1, "You must pass only one environment when using this function"
+        if isinstance(env, DummyVecEnv):
+            is_monitor_wrapped = is_wrapped(env.envs[0], Monitor)
+        elif isinstance(env, SubprocVecEnv):
+            is_monitor_wrapped = env.env_is_wrapped(Monitor)[0]
+        else:
+            raise NotImplementedError("Evaluation function does not support provided VecEnv type")
+    else:
+        is_monitor_wrapped = is_wrapped(env, Monitor)
+
+    if not is_monitor_wrapped:
+        warnings.warn(
+            "Evaluation environment is not wrapped with a ``Monitor`` wrapper. "
+            "This may result in reporting modified episode lengths and rewards, if other wrappers happen to modify these. "
+            "Consider wrapping environment first with ``Monitor`` wrapper.",
+            UserWarning,
+        )
 
     episode_rewards, episode_lengths = [], []
-    for i in range(n_eval_episodes):
-        # Avoid double reset, as VecEnv are reset automatically
-        if not isinstance(env, VecEnv) or i == 0:
+    not_reseted = True
+    while len(episode_rewards) < n_eval_episodes:
+        # Number of loops here might differ from true episodes
+        # played, if underlying wrappers modify episode lengths.
+        # Avoid double reset, as VecEnv are reset automatically.
+        if not isinstance(env, VecEnv) or not_reseted:
             obs = env.reset()
+            not_reseted = False
         done, state = False, None
         episode_reward = 0.0
         episode_length = 0
@@ -66,24 +89,22 @@ def evaluate_policy(
             if render:
                 env.render()
 
-        # Remove VecEnv stacking (if any)
-        if isinstance(env, VecEnv):
-            info = info[0]
-
-        if "episode" in info.keys():
-            # Monitor wrapper includes "episode" key in info if environment
-            # has been wrapped with it. Use those rewards instead.
-            episode_rewards.append(info["episode"]["r"])
-            episode_lengths.append(info["episode"]["l"])
+        if is_monitor_wrapped:
+            # Do not trust "done" with episode endings.
+            # Remove vecenv stacking (if any)
+            if isinstance(env, VecEnv):
+                info = info[0]
+            if "episode" in info.keys():
+                # Monitor wrapper includes "episode" key in info if environment
+                # has been wrapped with it. Use those rewards instead.
+                episode_rewards.append(info["episode"]["r"])
+                episode_lengths.append(info["episode"]["l"])
+            else:
+                raise RuntimeError("Evaluation episode ended but no 'episode' information was provided in info.")
         else:
             episode_rewards.append(episode_reward)
             episode_lengths.append(episode_length)
-            warnings.warn(
-                "Evaluation environment does not provide 'episode' environment (not wrapped with ``Monitor`` wrapper?). "
-                "This may result in reporting modified episode lengths and results, depending on the other wrappers. "
-                "Consider wrapping environment first with ``Monitor`` wrapper.",
-                UserWarning,
-            )
+
     mean_reward = np.mean(episode_rewards)
     std_reward = np.std(episode_rewards)
     if reward_threshold is not None:

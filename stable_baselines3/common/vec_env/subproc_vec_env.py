@@ -18,7 +18,7 @@ def _worker(
     remote: mp.connection.Connection, parent_remote: mp.connection.Connection, env_fn_wrapper: CloudpickleWrapper
 ) -> None:
     # Import here to avoid a circular import
-    from stable_baselines3.common.utils import is_wrapped
+    from stable_baselines3.common.env_util import is_wrapped
 
     parent_remote.close()
     env = env_fn_wrapper.var()

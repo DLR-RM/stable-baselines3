@@ -42,10 +42,12 @@ def evaluate_policy(
         called after each step.
     :param reward_threshold: Minimum expected reward per episode,
         this will raise an error if the performance is not met
-    :param return_episode_rewards: If True, a list of reward per episode
-        will be returned instead of the mean.
-    :return: Mean reward per episode, std of reward per episode
-        returns ([float], [int]) when ``return_episode_rewards`` is True
+    :param return_episode_rewards: If True, a list of rewards and episde lengths
+        per episode will be returned instead of the mean.
+    :return: Mean reward per episode, std of reward per episode.
+        Returns ([float], [int]) when ``return_episode_rewards`` is True, first
+        list containing per-episode rewards and second containing per-episode lengths
+        (in number of steps).
     """
     is_monitor_wrapped = False
     if isinstance(env, VecEnv):

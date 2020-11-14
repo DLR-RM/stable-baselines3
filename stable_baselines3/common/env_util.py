@@ -8,7 +8,6 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv
 
 
-# This and is_wrapped are placed here instead of env_utils to avoid circular imports
 def unwrap_wrapper(env: gym.Env, wrapper_class: Type[gym.Wrapper]) -> Optional[gym.Wrapper]:
     """
     Retrieve a ``VecEnvWrapper`` object by recursively searching.
@@ -31,7 +30,7 @@ def is_wrapped(env: Type[gym.Env], wrapper_class: Type[gym.Wrapper]) -> bool:
 
     :param env: Environment to check
     :param wrapper_class: Wrapper class to look for
-    :return: True if environment has been wrapped with wrapper_class.
+    :return: True if environment has been wrapped with ``wrapper_class``.
     """
     return unwrap_wrapper(env, wrapper_class) is not None
 

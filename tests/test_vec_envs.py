@@ -418,9 +418,8 @@ def test_framestack_vecenv():
     vec_env = VecFrameStack(vec_env, n_stack=2)
 
 
-def test_subproc_is_wrapped():
+def test_vec_env_is_wrapped():
     # Test is_wrapped call of subproc workers
-
     def make_env():
         return CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)))
 
@@ -433,3 +432,11 @@ def test_subproc_is_wrapped():
     assert vec_env.env_is_wrapped(Monitor) == [False, True]
 
     vec_env.close()
+
+    # One with monitor, one without
+    vec_env = DummyVecEnv([make_env, make_monitored_env])
+
+    assert vec_env.env_is_wrapped(Monitor) == [False, True]
+
+    vec_env = VecFrameStack(vec_env, n_stack=2)
+    assert vec_env.env_is_wrapped(Monitor) == [False, True]

@@ -5,9 +5,7 @@ import gym
 import numpy as np
 
 from stable_baselines3.common import base_class
-from stable_baselines3.common.env_util import is_wrapped
-from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv
+from stable_baselines3.common.vec_env import VecEnv
 
 
 def evaluate_policy(
@@ -50,14 +48,13 @@ def evaluate_policy(
         (in number of steps).
     """
     is_monitor_wrapped = False
+    # Avoid circular import
+    from stable_baselines3.common.env_util import is_wrapped
+    from stable_baselines3.common.monitor import Monitor
+
     if isinstance(env, VecEnv):
         assert env.num_envs == 1, "You must pass only one environment when using this function"
-        if isinstance(env, DummyVecEnv):
-            is_monitor_wrapped = is_wrapped(env.envs[0], Monitor)
-        elif isinstance(env, SubprocVecEnv):
-            is_monitor_wrapped = env.env_is_wrapped(Monitor)[0]
-        else:
-            raise NotImplementedError("Evaluation function does not support provided VecEnv type")
+        is_monitor_wrapped = env.env_is_wrapped(Monitor)[0]
     else:
         is_monitor_wrapped = is_wrapped(env, Monitor)
 

@@ -1,23 +1,19 @@
 """Common aliases for type hints"""
 
-import typing
 from typing import Any, Callable, Dict, List, NamedTuple, Tuple, Union
 
 import gym
 import numpy as np
 import torch as th
 
-from stable_baselines3.common.vec_env import VecEnv
+from stable_baselines3.common import callbacks, vec_env
 
-if typing.TYPE_CHECKING:
-    from stable_baselines3.common.callbacks import BaseCallback
-
-GymEnv = Union[gym.Env, VecEnv]
+GymEnv = Union[gym.Env, vec_env.VecEnv]
 GymObs = Union[Tuple, Dict[str, Any], np.ndarray, int]
 GymStepReturn = Tuple[GymObs, float, bool, Dict]
 TensorDict = Dict[str, th.Tensor]
 OptimizerStateDict = Dict[str, Any]
-MaybeCallback = Union[None, Callable, List["BaseCallback"], "BaseCallback"]
+MaybeCallback = Union[None, Callable, List[callbacks.BaseCallback], callbacks.BaseCallback]
 
 
 class RolloutBufferSamples(NamedTuple):

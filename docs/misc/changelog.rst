@@ -19,7 +19,7 @@ New Features:
   on the first or last observation dimension (originally always stacked on last).
 - ``common.env_util.is_wrapped`` and ``common.env_util.unwrap_wrapper`` functions for checking/unwrapping
   an environment for specific wrapper.
-- ``env_is_wrapped`` function for ``SubProcVecEnv`` for checking if its environments are wrapped
+- ``env_is_wrapped`` function for ``VecEnv`` for checking if its environments are wrapped
   with given wrappers.
 
 Bug Fixes:

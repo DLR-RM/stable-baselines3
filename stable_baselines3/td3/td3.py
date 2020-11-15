@@ -21,7 +21,7 @@ class TD3(OffPolicyAlgorithm):
     Paper: https://arxiv.org/abs/1802.09477
     Introduction to TD3: https://spinningup.openai.com/en/latest/algorithms/td3.html
 
-    :param policy: The policy model to use (MlpPolicy, CnnPolicy, ...)  # TODO(max): is this true, the type annotations say otherwise
+    :param policy: The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: The environment to learn from (if registered in Gym, can be str)
     :param learning_rate: learning rate for adam optimizer,
         the same learning rate will be used for all networks (Q-Values, Actor and Value function)

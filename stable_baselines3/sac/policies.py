@@ -14,10 +14,9 @@ from stable_baselines3.common.torch_layers import (
     create_mlp,
     get_actor_critic_arch,
 )
-
-# CAP the standard deviation of the actor
 from stable_baselines3.common.type_aliases import LearningRateSchedule
 
+# CAP the standard deviation of the actor
 LOG_STD_MAX = 2
 LOG_STD_MIN = -20
 

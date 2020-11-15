@@ -3,7 +3,7 @@ import os
 import random
 from collections import deque
 from itertools import zip_longest
-from typing import Callable, Iterable, Optional, Union
+from typing import Iterable, Optional, Union
 
 import gym
 import numpy as np

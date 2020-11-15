@@ -20,6 +20,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed bug where code added VecTranspose on channel-first image environments (thanks @qxcv)
+- Fixed ``DQN`` predict method when using single ``gym.Env`` with ``deterministic=False``
 
 Deprecations:
 ^^^^^^^^^^^^^

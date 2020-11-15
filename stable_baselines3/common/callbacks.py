@@ -248,7 +248,7 @@ class ConvertCallback(BaseCallback):
     :param verbose:
     """
 
-    def __init__(self, callback: Callable, verbose: int = 0):
+    def __init__(self, callback: Callable[[Dict[str, Any], Dict[str, Any]], bool], verbose: int = 0):
         super(ConvertCallback, self).__init__(verbose)
         self.callback = callback
 

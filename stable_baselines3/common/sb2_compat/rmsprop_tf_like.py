@@ -74,7 +74,7 @@ class RMSpropTFLike(Optimizer):
             group.setdefault("centered", False)
 
     @torch.no_grad()
-    def step(self, closure: Optional[Callable] = None) -> Optional[torch.Tensor]:
+    def step(self, closure: Optional[Callable[[], None]] = None) -> Optional[torch.Tensor]:
         """Performs a single optimization step.
 
         :param closure: A closure that reevaluates the model

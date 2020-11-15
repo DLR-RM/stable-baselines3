@@ -14,6 +14,7 @@ GymStepReturn = Tuple[GymObs, float, bool, Dict]
 TensorDict = Dict[str, th.Tensor]
 OptimizerStateDict = Dict[str, Any]
 MaybeCallback = Union[None, Callable, List[callbacks.BaseCallback], callbacks.BaseCallback]
+LearningRateSchedule = Callable[[float], float]
 
 
 class RolloutBufferSamples(NamedTuple):

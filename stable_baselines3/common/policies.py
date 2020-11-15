@@ -21,6 +21,7 @@ from stable_baselines3.common.distributions import (
 )
 from stable_baselines3.common.preprocessing import get_action_dim, is_image_space, preprocess_obs
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, FlattenExtractor, MlpExtractor, NatureCNN, create_mlp
+from stable_baselines3.common.type_aliases import LearningRateSchedule
 from stable_baselines3.common.utils import get_device, is_vectorized_observation
 from stable_baselines3.common.vec_env import VecTransposeImage
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
@@ -364,7 +365,7 @@ class ActorCriticPolicy(BasePolicy):
         self,
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
-        lr_schedule: Callable[[float], float],
+        lr_schedule: LearningRateSchedule,
         net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
@@ -479,7 +480,7 @@ class ActorCriticPolicy(BasePolicy):
             self.features_dim, net_arch=self.net_arch, activation_fn=self.activation_fn, device=self.device
         )
 
-    def _build(self, lr_schedule: Callable[[float], float]) -> None:
+    def _build(self, lr_schedule: LearningRateSchedule) -> None:
         """
         Create the networks and the optimizer.
 
@@ -662,7 +663,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         self,
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
-        lr_schedule: Callable,
+        lr_schedule: LearningRateSchedule,
         net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,

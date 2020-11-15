@@ -1,5 +1,5 @@
 import warnings
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import gym
 import numpy as np
@@ -14,7 +14,7 @@ def evaluate_policy(
     n_eval_episodes: int = 10,
     deterministic: bool = True,
     render: bool = False,
-    callback: Optional[Callable] = None,
+    callback: Optional[Callable[[Dict[str, Any], Dict[str, Any]], None]] = None,
     reward_threshold: Optional[float] = None,
     return_episode_rewards: bool = False,
     warn: bool = True,
@@ -38,7 +38,7 @@ def evaluate_policy(
     :param deterministic: Whether to use deterministic or stochastic actions
     :param render: Whether to render the environment or not
     :param callback: callback function to do additional checks,
-        called after each step.
+        called after each step. Gets locals() and globals() passed as parameters.
     :param reward_threshold: Minimum expected reward per episode,
         this will raise an error if the performance is not met
     :param return_episode_rewards: If True, a list of rewards and episde lengths

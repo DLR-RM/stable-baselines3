@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional, Type, Union
+from typing import Any, Dict, Optional, Type, Union
 
 import numpy as np
 import torch as th
@@ -8,7 +8,7 @@ from torch.nn import functional as F
 from stable_baselines3.common import logger
 from stable_baselines3.common.on_policy_algorithm import OnPolicyAlgorithm
 from stable_baselines3.common.policies import ActorCriticPolicy
-from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
+from stable_baselines3.common.type_aliases import GymEnv, LearningRateSchedule, MaybeCallback
 from stable_baselines3.common.utils import explained_variance, get_schedule_fn
 
 
@@ -66,7 +66,7 @@ class PPO(OnPolicyAlgorithm):
         self,
         policy: Union[str, Type[ActorCriticPolicy]],
         env: Union[GymEnv, str],
-        learning_rate: Union[float, Callable] = 3e-4,
+        learning_rate: Union[float, LearningRateSchedule] = 3e-4,
         n_steps: int = 2048,
         batch_size: Optional[int] = 64,
         n_epochs: int = 10,

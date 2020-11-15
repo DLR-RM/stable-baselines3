@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
 import torch as th
@@ -7,7 +7,7 @@ from torch.nn import functional as F
 from stable_baselines3.common import logger
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
-from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback
+from stable_baselines3.common.type_aliases import GymEnv, LearningRateSchedule, MaybeCallback
 from stable_baselines3.common.utils import polyak_update
 from stable_baselines3.td3.policies import TD3Policy
 
@@ -62,7 +62,7 @@ class TD3(OffPolicyAlgorithm):
         self,
         policy: Union[str, Type[TD3Policy]],
         env: Union[GymEnv, str],
-        learning_rate: Union[float, Callable] = 1e-3,
+        learning_rate: Union[float, LearningRateSchedule] = 1e-3,
         buffer_size: int = int(1e6),
         learning_starts: int = 100,
         batch_size: int = 100,

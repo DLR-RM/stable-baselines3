@@ -17,6 +17,7 @@ def evaluate_policy(
     callback: Optional[Callable] = None,
     reward_threshold: Optional[float] = None,
     return_episode_rewards: bool = False,
+    warn: bool = True,
 ) -> Union[Tuple[float, float], Tuple[List[float], List[int]]]:
     """
     Runs policy for ``n_eval_episodes`` episodes and returns average reward.
@@ -42,6 +43,8 @@ def evaluate_policy(
         this will raise an error if the performance is not met
     :param return_episode_rewards: If True, a list of rewards and episde lengths
         per episode will be returned instead of the mean.
+    :param warn: If True (default), warns user about lack of a Monitor wrapper in the
+        evaluation environment.
     :return: Mean reward per episode, std of reward per episode.
         Returns ([float], [int]) when ``return_episode_rewards`` is True, first
         list containing per-episode rewards and second containing per-episode lengths
@@ -58,7 +61,7 @@ def evaluate_policy(
     else:
         is_monitor_wrapped = is_wrapped(env, Monitor)
 
-    if not is_monitor_wrapped:
+    if not is_monitor_wrapped and warn:
         warnings.warn(
             "Evaluation environment is not wrapped with a ``Monitor`` wrapper. "
             "This may result in reporting modified episode lengths and rewards, if other wrappers happen to modify these. "

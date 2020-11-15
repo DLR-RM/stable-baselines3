@@ -276,6 +276,8 @@ class EvalCallback(EventCallback):
     :param deterministic: Whether to render or not the environment during evaluation
     :param render: Whether to render or not the environment during evaluation
     :param verbose:
+    :param warn: Passed to ``evaluate_policy`` (warns if ``eval_env`` has not been
+        wrapped with a Monitor wrapper)
     """
 
     def __init__(
@@ -289,6 +291,7 @@ class EvalCallback(EventCallback):
         deterministic: bool = True,
         render: bool = False,
         verbose: int = 1,
+        warn: bool = True,
     ):
         super(EvalCallback, self).__init__(callback_on_new_best, verbose=verbose)
         self.n_eval_episodes = n_eval_episodes
@@ -297,6 +300,7 @@ class EvalCallback(EventCallback):
         self.last_mean_reward = -np.inf
         self.deterministic = deterministic
         self.render = render
+        self.warn = warn
 
         # Convert to VecEnv for consistency
         if not isinstance(eval_env, VecEnv):
@@ -339,6 +343,7 @@ class EvalCallback(EventCallback):
                 render=self.render,
                 deterministic=self.deterministic,
                 return_episode_rewards=True,
+                warn=self.warn,
             )
 
             if self.log_path is not None:

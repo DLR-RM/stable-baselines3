@@ -199,7 +199,7 @@ def test_evaluate_policy_monitors(vec_env_class):
     # Test that we gather correct reward with Monitor wrapper
     # Sanity check that we get zero-reward without Monitor
     eval_env = make_eval_env(with_monitor=False, wrapper_class=ZeroRewardWrapper)
-    average_reward, _ = evaluate_policy(model, eval_env, n_eval_episodes)
+    average_reward, _ = evaluate_policy(model, eval_env, n_eval_episodes, warn=False)
     assert average_reward == 0.0, "ZeroRewardWrapper wrapper for testing did not work"
     eval_env.close()
 
@@ -212,7 +212,9 @@ def test_evaluate_policy_monitors(vec_env_class):
     # Test that we also track correct episode dones, not the wrapped ones.
     # Sanity check that we get only one step per episode.
     eval_env = make_eval_env(with_monitor=False, wrapper_class=AlwaysDoneWrapper)
-    episode_rewards, episode_lengths = evaluate_policy(model, eval_env, n_eval_episodes, return_episode_rewards=True)
+    episode_rewards, episode_lengths = evaluate_policy(
+        model, eval_env, n_eval_episodes, return_episode_rewards=True, warn=False
+    )
     assert all(map(lambda l: l == 1, episode_lengths)), "AlwaysDoneWrapper did not fix episode lengths to one"
     eval_env.close()
 

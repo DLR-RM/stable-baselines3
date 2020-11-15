@@ -25,7 +25,7 @@ def test_discrete(model_class, env):
 
     model = model_class("MlpPolicy", env_, gamma=0.4, seed=1, **kwargs).learn(n_steps)
 
-    evaluate_policy(model, env_, n_eval_episodes=20, reward_threshold=90)
+    evaluate_policy(model, env_, n_eval_episodes=20, reward_threshold=90, warn=False)
     obs = env.reset()
 
     assert np.shape(model.predict(obs)[0]) == np.shape(obs)
@@ -45,4 +45,4 @@ def test_continuous(model_class):
 
     model = model_class("MlpPolicy", env, **kwargs).learn(n_steps)
 
-    evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=90)
+    evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=90, warn=False)

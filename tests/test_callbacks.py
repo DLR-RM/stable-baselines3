@@ -33,7 +33,12 @@ def test_callbacks(tmp_path, model_class):
     callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=-1200, verbose=1)
 
     eval_callback = EvalCallback(
-        eval_env, callback_on_new_best=callback_on_best, best_model_save_path=log_folder, log_path=log_folder, eval_freq=100
+        eval_env,
+        callback_on_new_best=callback_on_best,
+        best_model_save_path=log_folder,
+        log_path=log_folder,
+        eval_freq=100,
+        warn=False,
     )
     # Equivalent to the `checkpoint_callback`
     # but here in an event-driven manner

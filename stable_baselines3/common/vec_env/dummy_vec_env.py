@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from copy import deepcopy
-from typing import Any, Callable, List, Optional, Sequence, Union
+from typing import Any, Callable, List, Optional, Sequence, Type, Union
 
 import gym
 import numpy as np
@@ -111,6 +111,14 @@ class DummyVecEnv(VecEnv):
         """Call instance methods of vectorized environments."""
         target_envs = self._get_target_envs(indices)
         return [getattr(env_i, method_name)(*method_args, **method_kwargs) for env_i in target_envs]
+
+    def env_is_wrapped(self, wrapper_class: Type[gym.Wrapper], indices: VecEnvIndices = None) -> List[bool]:
+        """Check if worker environments are wrapped with a given wrapper"""
+        target_envs = self._get_target_envs(indices)
+        # Import here to avoid a circular import
+        from stable_baselines3.common import env_util
+
+        return [env_util.is_wrapped(env_i, wrapper_class) for env_i in target_envs]
 
     def _get_target_envs(self, indices: VecEnvIndices) -> List[gym.Env]:
         indices = self._get_indices(indices)

@@ -4,6 +4,7 @@ import pytest
 from gym import spaces
 
 from stable_baselines3 import HER, SAC, TD3
+from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 from stable_baselines3.common.vec_env import (
     DummyVecEnv,
@@ -61,11 +62,11 @@ def allclose(obs_1, obs_2):
 
 
 def make_env():
-    return gym.make(ENV_ID)
+    return Monitor(gym.make(ENV_ID))
 
 
 def make_dict_env():
-    return DummyDictEnv()
+    return Monitor(DummyDictEnv())
 
 
 def check_rms_equal(rmsa, rmsb):

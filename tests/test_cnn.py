@@ -10,7 +10,7 @@ from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.identity_env import FakeImageEnv
 from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
 from stable_baselines3.common.utils import zip_strict
-from stable_baselines3.common.vec_env import VecTransposeImage, is_wrapped
+from stable_baselines3.common.vec_env import VecTransposeImage, is_vecenv_wrapped
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN])
@@ -29,7 +29,7 @@ def test_cnn(tmp_path, model_class):
     model = model_class("CnnPolicy", env, **kwargs).learn(250)
 
     # FakeImageEnv is channel last by default and should be wrapped
-    assert is_wrapped(model.get_env(), VecTransposeImage)
+    assert is_vecenv_wrapped(model.get_env(), VecTransposeImage)
 
     obs = env.reset()
 
@@ -194,7 +194,7 @@ def test_channel_first_env(tmp_path):
 
     model = A2C("CnnPolicy", env, n_steps=100).learn(250)
 
-    assert not is_wrapped(model.get_env(), VecTransposeImage)
+    assert not is_vecenv_wrapped(model.get_env(), VecTransposeImage)
 
     obs = env.reset()
 

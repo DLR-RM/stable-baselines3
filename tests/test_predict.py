@@ -59,3 +59,13 @@ def test_predict(model_class, env_id, device):
     vec_env_obs = vec_env.reset()
     action, _ = model.predict(vec_env_obs)
     assert action.shape[0] == vec_env_obs.shape[0]
+
+    # Special case for DQN to check the epsilon greedy exploration
+    if model_class == DQN:
+        model.exploration_rate = 1.0
+        action, _ = model.predict(obs, deterministic=False)
+        assert action.shape == env.action_space.shape
+        assert env.action_space.contains(action)
+
+        action, _ = model.predict(vec_env_obs, deterministic=False)
+        assert action.shape[0] == vec_env_obs.shape[0]

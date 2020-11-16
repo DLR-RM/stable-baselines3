@@ -27,6 +27,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed bug where code added VecTranspose on channel-first image environments (thanks @qxcv)
+- Fixed ``DQN`` predict method when using single ``gym.Env`` with ``deterministic=False``
 - Fixed bug that the arguments order of ``explained_variance()`` in ``ppo.py`` and ``a2c.py`` is not correct (@thisray)
 
 Deprecations:

@@ -3,7 +3,7 @@
 import collections
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import gym
 import numpy as np

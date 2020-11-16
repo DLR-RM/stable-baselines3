@@ -1,6 +1,6 @@
 import multiprocessing as mp
 from collections import OrderedDict
-from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
 
 import gym
 import numpy as np
@@ -17,6 +17,9 @@ from stable_baselines3.common.vec_env.base_vec_env import (
 def _worker(
     remote: mp.connection.Connection, parent_remote: mp.connection.Connection, env_fn_wrapper: CloudpickleWrapper
 ) -> None:
+    # Import here to avoid a circular import
+    from stable_baselines3.common.env_util import is_wrapped
+
     parent_remote.close()
     env = env_fn_wrapper.var()
     while True:
@@ -49,6 +52,8 @@ def _worker(
                 remote.send(getattr(env, data))
             elif cmd == "set_attr":
                 remote.send(setattr(env, data[0], data[1]))
+            elif cmd == "is_wrapped":
+                remote.send(is_wrapped(env, data))
             else:
                 raise NotImplementedError(f"`{cmd}` is not implemented in the worker")
         except EOFError:
@@ -168,6 +173,13 @@ class SubprocVecEnv(VecEnv):
         target_remotes = self._get_target_remotes(indices)
         for remote in target_remotes:
             remote.send(("env_method", (method_name, method_args, method_kwargs)))
+        return [remote.recv() for remote in target_remotes]
+
+    def env_is_wrapped(self, wrapper_class: Type[gym.Wrapper], indices: VecEnvIndices = None) -> List[bool]:
+        """Check if worker environments are wrapped with a given wrapper"""
+        target_remotes = self._get_target_remotes(indices)
+        for remote in target_remotes:
+            remote.send(("is_wrapped", wrapper_class))
         return [remote.recv() for remote in target_remotes]
 
     def _get_target_remotes(self, indices: VecEnvIndices) -> List[Any]:

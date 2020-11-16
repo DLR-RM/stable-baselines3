@@ -8,7 +8,10 @@ Pre-Release 0.11.0a0 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-
+- ``evaluate_policy`` now returns rewards/episode lengths from a ``Monitor`` wrapper if one is present,
+  this allows to return the unnormalized reward in the case of Atari games for instance.
+- Renamed ``common.vec_env.is_wrapped`` to ``common.vec_env.is_vecenv_wrapped`` to avoid confusion
+  with the new ``is_wrapped()`` helper
 
 New Features:
 ^^^^^^^^^^^^^
@@ -16,6 +19,10 @@ New Features:
   automatic check for image spaces.
 - ``VecFrameStack`` now has a ``channels_order`` argument to tell if observations should be stacked
   on the first or last observation dimension (originally always stacked on last).
+- Added ``common.env_util.is_wrapped`` and ``common.env_util.unwrap_wrapper`` functions for checking/unwrapping
+  an environment for specific wrapper.
+- Added ``env_is_wrapped()`` method for ``VecEnv`` to check if its environments are wrapped
+  with given Gym wrappers.
 
 Bug Fixes:
 ^^^^^^^^^^

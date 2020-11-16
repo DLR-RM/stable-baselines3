@@ -1,6 +1,6 @@
 import inspect
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union
 
 import cloudpickle
 import gym
@@ -136,6 +136,19 @@ class VecEnv(ABC):
         :param method_args: Any positional arguments to provide in the call
         :param method_kwargs: Any keyword arguments to provide in the call
         :return: List of items returned by the environment's method call
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def env_is_wrapped(self, wrapper_class: Type[gym.Wrapper], indices: VecEnvIndices = None) -> List[bool]:
+        """
+        Check if environments are wrapped with a given wrapper.
+
+        :param method_name: The name of the environment method to invoke.
+        :param indices: Indices of envs whose method to call
+        :param method_args: Any positional arguments to provide in the call
+        :param method_kwargs: Any keyword arguments to provide in the call
+        :return: True if the env is wrapped, False otherwise, for each env queried.
         """
         raise NotImplementedError()
 
@@ -279,6 +292,9 @@ class VecEnvWrapper(VecEnv):
 
     def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> List[Any]:
         return self.venv.env_method(method_name, *method_args, indices=indices, **method_kwargs)
+
+    def env_is_wrapped(self, wrapper_class: Type[gym.Wrapper], indices: VecEnvIndices = None) -> List[bool]:
+        return self.venv.env_is_wrapped(wrapper_class, indices=indices)
 
     def __getattr__(self, name: str) -> Any:
         """Find attribute from wrapped venv(s) if this wrapper does not have it.

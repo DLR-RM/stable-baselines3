@@ -156,7 +156,7 @@ class A2C(OnPolicyAlgorithm):
             th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
             self.policy.optimizer.step()
 
-        explained_var = explained_variance(self.rollout_buffer.returns.flatten(), self.rollout_buffer.values.flatten())
+        explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())
 
         self._n_updates += 1
         logger.record("train/n_updates", self._n_updates, exclude="tensorboard")

@@ -149,4 +149,5 @@ def make_atari_env(
         env_kwargs=env_kwargs,
         vec_env_cls=vec_env_cls,
         vec_env_kwargs=vec_env_kwargs,
+        monitor_kwargs=monitor_kwargs,
     )

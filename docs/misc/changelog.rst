@@ -23,6 +23,7 @@ New Features:
   an environment for specific wrapper.
 - Added ``env_is_wrapped()`` method for ``VecEnv`` to check if its environments are wrapped
   with given Gym wrappers.
+- Added ``monitor_kwargs`` parameter to ``make_vec_env`` and ``make_atari_env``
 
 Bug Fixes:
 ^^^^^^^^^^

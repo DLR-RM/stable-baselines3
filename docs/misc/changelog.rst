@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.11.0a0 (WIP)
+Pre-Release 0.11.0a1 (WIP)
 -------------------------------
 
 Breaking Changes:
@@ -43,6 +43,8 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Updated algorithm table
 - Minor docstring improvements regarding rollout (@stheid)
+- Fix migration doc for ``A2C`` (epsilon parameter)
+- Fix ``clip_range`` docstring
 
 
 Pre-Release 0.10.0 (2020-10-28)

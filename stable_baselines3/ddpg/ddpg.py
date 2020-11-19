@@ -4,7 +4,7 @@ import torch as th
 
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
-from stable_baselines3.common.type_aliases import GymEnv, LearningRateSchedule, MaybeCallback
+from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.td3.policies import TD3Policy
 from stable_baselines3.td3.td3 import TD3
 
@@ -55,7 +55,7 @@ class DDPG(TD3):
         self,
         policy: Union[str, Type[TD3Policy]],
         env: Union[GymEnv, str],
-        learning_rate: Union[float, LearningRateSchedule] = 1e-3,
+        learning_rate: Union[float, Schedule] = 1e-3,
         buffer_size: int = int(1e6),
         learning_starts: int = 100,
         batch_size: int = 100,

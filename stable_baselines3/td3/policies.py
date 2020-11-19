@@ -13,7 +13,7 @@ from stable_baselines3.common.torch_layers import (
     create_mlp,
     get_actor_critic_arch,
 )
-from stable_baselines3.common.type_aliases import LearningRateSchedule
+from stable_baselines3.common.type_aliases import Schedule
 
 
 class Actor(BasePolicy):
@@ -109,7 +109,7 @@ class TD3Policy(BasePolicy):
         self,
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
-        lr_schedule: LearningRateSchedule,
+        lr_schedule: Schedule,
         net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
         features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
@@ -164,7 +164,7 @@ class TD3Policy(BasePolicy):
 
         self._build(lr_schedule)
 
-    def _build(self, lr_schedule: LearningRateSchedule) -> None:
+    def _build(self, lr_schedule: Schedule) -> None:
         # Create actor and target
         # the features extractor should not be shared
         self.actor = self.make_actor(features_extractor=None)
@@ -253,7 +253,7 @@ class CnnPolicy(TD3Policy):
         self,
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
-        lr_schedule: LearningRateSchedule,
+        lr_schedule: Schedule,
         net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
         features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,

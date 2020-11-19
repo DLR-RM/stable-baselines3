@@ -18,7 +18,7 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.policies import BasePolicy, get_policy_from_name
 from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
 from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr, save_to_zip_file
-from stable_baselines3.common.type_aliases import GymEnv, LearningRateSchedule, MaybeCallback
+from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import (
     check_for_correct_spaces,
     get_device,
@@ -89,7 +89,7 @@ class BaseAlgorithm(ABC):
         policy: Type[BasePolicy],
         env: Union[GymEnv, str, None],
         policy_base: Type[BasePolicy],
-        learning_rate: Union[float, LearningRateSchedule],
+        learning_rate: Union[float, Schedule],
         policy_kwargs: Dict[str, Any] = None,
         tensorboard_log: Optional[str] = None,
         verbose: int = 0,
@@ -129,7 +129,7 @@ class BaseAlgorithm(ABC):
         self.policy = None
         self.learning_rate = learning_rate
         self.tensorboard_log = tensorboard_log
-        self.lr_schedule = None  # type: Optional[LearningRateSchedule]
+        self.lr_schedule = None  # type: Optional[Schedule]
         self._last_obs = None  # type: Optional[np.ndarray]
         self._last_dones = None  # type: Optional[np.ndarray]
         # When using VecNormalize:

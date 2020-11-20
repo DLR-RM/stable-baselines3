@@ -250,6 +250,34 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
     model.learn(200, reset_num_timesteps=reset_num_timesteps)
 
 
+def test_full_replay_buffer():
+    """
+    Test if HER works correctly with a full replay buffer when using online sampling.
+    It should not sample the current episode which is not finished.
+    """
+    n_bits = 4
+    env = BitFlippingEnv(n_bits=n_bits, continuous=True)
+
+    # use small buffer size to get the buffer full
+    model = HER(
+        "MlpPolicy",
+        env,
+        SAC,
+        goal_selection_strategy="future",
+        online_sampling=True,
+        gradient_steps=1,
+        train_freq=1,
+        n_episodes_rollout=-1,
+        max_episode_length=n_bits,
+        policy_kwargs=dict(net_arch=[64]),
+        learning_starts=1,
+        buffer_size=20,
+        verbose=1,
+    )
+
+    model.learn(total_timesteps=100)
+
+
 def test_get_max_episode_length():
     dict_env = DummyVecEnv([lambda: BitFlippingEnv()])
 

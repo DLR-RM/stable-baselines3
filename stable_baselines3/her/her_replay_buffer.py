@@ -211,7 +211,13 @@ class HerReplayBuffer(ReplayBuffer):
         # Select which episodes to use
         if online_sampling:
             assert batch_size is not None, "No batch_size specified for online sampling of HER transitions"
-            episode_indices = np.random.randint(0, self.n_episodes_stored, batch_size)
+            # Do not sample the episode with index `self.pos` as the episode is invalid
+            if self.full:
+                episode_indices = (
+                    np.random.randint(1, self.n_episodes_stored, batch_size) + self.pos
+                ) % self.n_episodes_stored
+            else:
+                episode_indices = np.random.randint(0, self.n_episodes_stored, batch_size)
             # A subset of the transitions will be relabeled using HER algorithm
             her_indices = np.arange(batch_size)[: int(self.her_ratio * batch_size)]
         else:

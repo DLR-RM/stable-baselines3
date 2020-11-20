@@ -84,6 +84,19 @@ def test_vec_env_monitor_kwargs():
     assert env.get_attr("allow_early_resets")[0] is True
 
 
+def test_env_auto_monitor_wrap():
+    env = gym.make("Pendulum-v0")
+    model = A2C("MlpPolicy", env)
+    assert model.env.env_is_wrapped(Monitor)[0] is True
+
+    env = Monitor(env)
+    model = A2C("MlpPolicy", env)
+    assert model.env.env_is_wrapped(Monitor)[0] is True
+
+    model = A2C("MlpPolicy", "Pendulum-v0")
+    assert model.env.env_is_wrapped(Monitor)[0] is True
+
+
 def test_custom_vec_env(tmp_path):
     """
     Stand alone test for a special case (passing a custom VecEnv class) to avoid doubling the number of tests.

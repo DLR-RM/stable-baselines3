@@ -6,7 +6,7 @@ from torch.nn import functional as F
 
 from stable_baselines3.common import logger
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
-from stable_baselines3.common.type_aliases import GymEnv, LearningRateSchedule, MaybeCallback
+from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import get_linear_fn, is_vectorized_observation, polyak_update
 from stable_baselines3.dqn.policies import DQNPolicy
 
@@ -59,7 +59,7 @@ class DQN(OffPolicyAlgorithm):
         self,
         policy: Union[str, Type[DQNPolicy]],
         env: Union[GymEnv, str],
-        learning_rate: Union[float, LearningRateSchedule] = 1e-4,
+        learning_rate: Union[float, Schedule] = 1e-4,
         buffer_size: int = 1000000,
         learning_starts: int = 50000,
         batch_size: Optional[int] = 32,

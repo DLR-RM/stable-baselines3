@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.11.0a0 (WIP)
+Pre-Release 0.11.0a1 (WIP)
 -------------------------------
 
 Breaking Changes:
@@ -23,6 +23,7 @@ New Features:
   an environment for specific wrapper.
 - Added ``env_is_wrapped()`` method for ``VecEnv`` to check if its environments are wrapped
   with given Gym wrappers.
+- Added ``monitor_kwargs`` parameter to ``make_vec_env`` and ``make_atari_env``
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -43,7 +44,9 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Updated algorithm table
 - Minor docstring improvements regarding rollout (@stheid)
-
+- Fix migration doc for ``A2C`` (epsilon parameter)
+- Fix ``clip_range`` docstring
+- Fix duplicated parameter in ``EvalCallback`` docstring (thanks @tfederico)
 
 Pre-Release 0.10.0 (2020-10-28)
 -------------------------------
@@ -518,3 +521,4 @@ And all the contributors:
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
+@tfederico

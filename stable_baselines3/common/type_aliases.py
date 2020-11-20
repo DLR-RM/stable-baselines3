@@ -14,7 +14,9 @@ GymStepReturn = Tuple[GymObs, float, bool, Dict]
 TensorDict = Dict[str, th.Tensor]
 OptimizerStateDict = Dict[str, Any]
 MaybeCallback = Union[None, Callable, List[callbacks.BaseCallback], callbacks.BaseCallback]
-LearningRateSchedule = Callable[[float], float]
+# A schedule takes the remaining progress as input
+# and ouputs a scalar (e.g. learning rate, clip range, ...)
+Schedule = Callable[[float], float]
 
 
 class RolloutBufferSamples(NamedTuple):

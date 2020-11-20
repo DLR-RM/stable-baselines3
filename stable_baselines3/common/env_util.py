@@ -45,6 +45,7 @@ def make_vec_env(
     env_kwargs: Optional[Dict[str, Any]] = None,
     vec_env_cls: Optional[Type[Union[DummyVecEnv, SubprocVecEnv]]] = None,
     vec_env_kwargs: Optional[Dict[str, Any]] = None,
+    monitor_kwargs: Optional[Dict[str, Any]] = None,
 ) -> VecEnv:
     """
     Create a wrapped, monitored ``VecEnv``.
@@ -63,10 +64,12 @@ def make_vec_env(
     :param env_kwargs: Optional keyword argument to pass to the env constructor
     :param vec_env_cls: A custom ``VecEnv`` class constructor. Default: None.
     :param vec_env_kwargs: Keyword arguments to pass to the ``VecEnv`` class constructor.
+    :param monitor_kwargs: Keyword arguments to pass to the ``Monitor`` class constructor.
     :return: The wrapped environment
     """
     env_kwargs = {} if env_kwargs is None else env_kwargs
     vec_env_kwargs = {} if vec_env_kwargs is None else vec_env_kwargs
+    monitor_kwargs = {} if monitor_kwargs is None else monitor_kwargs
 
     def make_env(rank):
         def _init():
@@ -83,7 +86,7 @@ def make_vec_env(
             # Create the monitor folder if needed
             if monitor_path is not None:
                 os.makedirs(monitor_dir, exist_ok=True)
-            env = Monitor(env, filename=monitor_path)
+            env = Monitor(env, filename=monitor_path, **monitor_kwargs)
             # Optionally, wrap the environment with the provided wrapper
             if wrapper_class is not None:
                 env = wrapper_class(env)
@@ -109,6 +112,7 @@ def make_atari_env(
     env_kwargs: Optional[Dict[str, Any]] = None,
     vec_env_cls: Optional[Union[DummyVecEnv, SubprocVecEnv]] = None,
     vec_env_kwargs: Optional[Dict[str, Any]] = None,
+    monitor_kwargs: Optional[Dict[str, Any]] = None,
 ) -> VecEnv:
     """
     Create a wrapped, monitored VecEnv for Atari.
@@ -125,6 +129,7 @@ def make_atari_env(
     :param env_kwargs: Optional keyword argument to pass to the env constructor
     :param vec_env_cls: A custom ``VecEnv`` class constructor. Default: None.
     :param vec_env_kwargs: Keyword arguments to pass to the ``VecEnv`` class constructor.
+    :param monitor_kwargs: Keyword arguments to pass to the ``Monitor`` class constructor.
     :return: The wrapped environment
     """
     if wrapper_kwargs is None:
@@ -144,4 +149,5 @@ def make_atari_env(
         env_kwargs=env_kwargs,
         vec_env_cls=vec_env_cls,
         vec_env_kwargs=vec_env_kwargs,
+        monitor_kwargs=monitor_kwargs,
     )

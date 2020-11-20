@@ -70,6 +70,20 @@ def test_vec_env_kwargs():
     assert env.get_attr("goal_velocity")[0] == 0.11
 
 
+def test_vec_env_monitor_kwargs():
+    env = make_vec_env("MountainCarContinuous-v0", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": False})
+    assert env.get_attr("allow_early_resets")[0] is False
+
+    env = make_atari_env("BreakoutNoFrameskip-v4", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": False})
+    assert env.get_attr("allow_early_resets")[0] is False
+
+    env = make_vec_env("MountainCarContinuous-v0", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": True})
+    assert env.get_attr("allow_early_resets")[0] is True
+
+    env = make_atari_env("BreakoutNoFrameskip-v4", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": True})
+    assert env.get_attr("allow_early_resets")[0] is True
+
+
 def test_custom_vec_env(tmp_path):
     """
     Stand alone test for a special case (passing a custom VecEnv class) to avoid doubling the number of tests.

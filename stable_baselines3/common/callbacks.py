@@ -273,7 +273,6 @@ class EvalCallback(EventCallback):
         according to performance on the eval env will be saved.
     :param deterministic: Whether the evaluation should
         use a stochastic or deterministic actions.
-    :param deterministic: Whether to render or not the environment during evaluation
     :param render: Whether to render or not the environment during evaluation
     :param verbose:
     :param warn: Passed to ``evaluate_policy`` (warns if ``eval_env`` has not been

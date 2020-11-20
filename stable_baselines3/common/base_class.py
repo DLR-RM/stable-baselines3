@@ -181,7 +181,7 @@ class BaseAlgorithm(ABC):
         if not isinstance(env, VecEnv):
             if not is_wrapped(env, Monitor) and monitor_wrapper:
                 if verbose >= 1:
-                    print("Wrapping the env in with a `Monitor` wrapper")
+                    print("Wrapping the env with a `Monitor` wrapper")
                 env = Monitor(env)
             if verbose >= 1:
                 print("Wrapping the env in a DummyVecEnv.")

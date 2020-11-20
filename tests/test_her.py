@@ -253,6 +253,7 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
 def test_full_replay_buffer():
     """
     Test if HER works correctly with a full replay buffer when using online sampling.
+    It should not sample the current episode which is not finished.
     """
     n_bits = 4
     env = BitFlippingEnv(n_bits=n_bits, continuous=True)

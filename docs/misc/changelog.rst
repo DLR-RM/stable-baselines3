@@ -32,6 +32,7 @@ Bug Fixes:
 - Fixed ``DQN`` predict method when using single ``gym.Env`` with ``deterministic=False``
 - Fixed bug that the arguments order of ``explained_variance()`` in ``ppo.py`` and ``a2c.py`` is not correct (@thisray)
 - Fixed bug where full ``HerReplayBuffer`` leads to an index error. (@megan-klaiber)
+- Fixed bug where replay buffer could not be saved if it was too big (> 4 Gb) for python<3.8 (thanks @hn2)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -523,4 +524,4 @@ And all the contributors:
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
-@tfederico
+@tfederico @hn2

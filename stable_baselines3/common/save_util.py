@@ -337,7 +337,9 @@ def save_to_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], obj: Any, ver
     :param verbose: Verbosity level, 0 means only warnings, 2 means debug information.
     """
     with open_path(path, "w", verbose=verbose, suffix="pkl") as file_handler:
-        pickle.dump(obj, file_handler)
+        # Use protocol>=4 to support saving replay buffers >= 4Gb
+        # See https://docs.python.org/3/library/pickle.html
+        pickle.dump(obj, file_handler, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def load_from_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], verbose: int = 0) -> Any:

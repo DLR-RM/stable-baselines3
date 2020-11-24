@@ -3,7 +3,8 @@ import os
 import random
 from collections import deque
 from itertools import zip_longest
-from typing import Iterable, Optional, Union
+from typing import Callable, Iterable, Optional, Union, Dict
+
 
 import gym
 import numpy as np
@@ -16,7 +17,7 @@ except ImportError:
     SummaryWriter = None
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.type_aliases import GymEnv, Schedule
+from stable_baselines3.common.type_aliases import GymEnv, TensorDict, Schedule
 
 
 def set_random_seed(seed: int, using_cuda: bool = False) -> None:
@@ -161,13 +162,20 @@ def get_latest_run_id(log_path: Optional[str] = None, log_name: str = "") -> int
     for path in glob.glob(f"{log_path}/{log_name}_[0-9]*"):
         file_name = path.split(os.sep)[-1]
         ext = file_name.split("_")[-1]
-        if log_name == "_".join(file_name.split("_")[:-1]) and ext.isdigit() and int(ext) > max_run_id:
+        if (
+            log_name == "_".join(file_name.split("_")[:-1])
+            and ext.isdigit()
+            and int(ext) > max_run_id
+        ):
             max_run_id = int(ext)
     return max_run_id
 
 
 def configure_logger(
-    verbose: int = 0, tensorboard_log: Optional[str] = None, tb_log_name: str = "", reset_num_timesteps: bool = True
+    verbose: int = 0,
+    tensorboard_log: Optional[str] = None,
+    tb_log_name: str = "",
+    reset_num_timesteps: bool = True,
 ) -> None:
     """
     Configure the logger's outputs.
@@ -190,7 +198,9 @@ def configure_logger(
         logger.configure(format_strings=[""])
 
 
-def check_for_correct_spaces(env: GymEnv, observation_space: gym.spaces.Space, action_space: gym.spaces.Space) -> None:
+def check_for_correct_spaces(
+    env: GymEnv, observation_space: gym.spaces.Space, action_space: gym.spaces.Space
+) -> None:
     """
     Checks that the environment has same spaces as provided ones. Used by BaseAlgorithm to check if
     spaces match after loading the model with given env.
@@ -203,12 +213,18 @@ def check_for_correct_spaces(env: GymEnv, observation_space: gym.spaces.Space, a
     :param action_space: Action space to check against
     """
     if observation_space != env.observation_space:
-        raise ValueError(f"Observation spaces do not match: {observation_space} != {env.observation_space}")
+        raise ValueError(
+            f"Observation spaces do not match: {observation_space} != {env.observation_space}"
+        )
     if action_space != env.action_space:
-        raise ValueError(f"Action spaces do not match: {action_space} != {env.action_space}")
+        raise ValueError(
+            f"Action spaces do not match: {action_space} != {env.action_space}"
+        )
 
 
-def is_vectorized_observation(observation: np.ndarray, observation_space: gym.spaces.Space) -> bool:
+def is_vectorized_observation(
+    observation: np.ndarray, observation_space: gym.spaces.Space
+) -> bool:
     """
     For every observation type, detects and validates the shape,
     then returns whether or not the observation is vectorized.
@@ -226,10 +242,14 @@ def is_vectorized_observation(observation: np.ndarray, observation_space: gym.sp
             raise ValueError(
                 f"Error: Unexpected observation shape {observation.shape} for "
                 + f"Box environment, please use {observation_space.shape} "
-                + "or (n_env, {}) for the observation shape.".format(", ".join(map(str, observation_space.shape)))
+                + "or (n_env, {}) for the observation shape.".format(
+                    ", ".join(map(str, observation_space.shape))
+                )
             )
     elif isinstance(observation_space, gym.spaces.Discrete):
-        if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
+        if (
+            observation.shape == ()
+        ):  # A numpy array of a number, has shape empty tuple '()'
             return False
         elif len(observation.shape) == 1:
             return True
@@ -238,11 +258,12 @@ def is_vectorized_observation(observation: np.ndarray, observation_space: gym.sp
                 f"Error: Unexpected observation shape {observation.shape} for "
                 + "Discrete environment, please use (1,) or (n_env, 1) for the observation shape."
             )
-
     elif isinstance(observation_space, gym.spaces.MultiDiscrete):
         if observation.shape == (len(observation_space.nvec),):
             return False
-        elif len(observation.shape) == 2 and observation.shape[1] == len(observation_space.nvec):
+        elif len(observation.shape) == 2 and observation.shape[1] == len(
+            observation_space.nvec
+        ):
             return True
         else:
             raise ValueError(
@@ -253,7 +274,9 @@ def is_vectorized_observation(observation: np.ndarray, observation_space: gym.sp
     elif isinstance(observation_space, gym.spaces.MultiBinary):
         if observation.shape == (observation_space.n,):
             return False
-        elif len(observation.shape) == 2 and observation.shape[1] == observation_space.n:
+        elif (
+            len(observation.shape) == 2 and observation.shape[1] == observation_space.n
+        ):
             return True
         else:
             raise ValueError(
@@ -261,9 +284,29 @@ def is_vectorized_observation(observation: np.ndarray, observation_space: gym.sp
                 + f"environment, please use ({observation_space.n},) or "
                 + f"(n_env, {observation_space.n}) for the observation shape."
             )
+    elif isinstance(observation_space, gym.spaces.Dict):
+        for key, subspace in observation_space.spaces.items():
+            if observation[key].shape == subspace.shape:
+                return False
+
+        all_good = True
+
+        for key, subspace in observation_space.spaces.items():
+            if observation[key].shape[1:] != subspace.shape:
+                all_good = False
+                break
+
+        if all_good:
+            return True
+        else:
+            raise ValueError(
+                f"Error: Unexpected observation shape {observation.shape} for "
+                + f"Tuple environment, please use {(obs.shape for obs in observation_space.spaces)} "
+            )
     else:
         raise ValueError(
-            "Error: Cannot determine if the observation is vectorized " + f" with the space type {observation_space}."
+            "Error: Cannot determine if the observation is vectorized "
+            + f" with the space type {observation_space}."
         )
 
 
@@ -296,7 +339,11 @@ def zip_strict(*iterables: Iterable) -> Iterable:
         yield combo
 
 
-def polyak_update(params: Iterable[th.nn.Parameter], target_params: Iterable[th.nn.Parameter], tau: float) -> None:
+def polyak_update(
+    params: Iterable[th.nn.Parameter],
+    target_params: Iterable[th.nn.Parameter],
+    tau: float,
+) -> None:
     """
     Perform a Polyak average update on ``target_params`` using ``params``:
     target parameters are slowly updated towards the main parameters.
@@ -317,3 +364,14 @@ def polyak_update(params: Iterable[th.nn.Parameter], target_params: Iterable[th.
         for param, target_param in zip_strict(params, target_params):
             target_param.data.mul_(1 - tau)
             th.add(target_param.data, param.data, alpha=tau, out=target_param.data)
+
+
+def obs_as_tensor(
+    obs: Union[np.ndarray, Dict[Union[str, int], np.ndarray]], device: th.device
+) -> Union[th.tensor, TensorDict]:
+    if isinstance(obs, np.ndarray):
+        return th.as_tensor(obs).to(device)
+    elif isinstance(obs, dict):
+        return {key: th.as_tensor(_obs).to(device) for (key, _obs) in obs.items()}
+    else:
+        raise Exception(f"Unrecognized type of observation {type(obs)}")

@@ -61,17 +61,13 @@ class SimpleMultiObsEnv(gym.Env):
 
         self.max_state = len(self.state_mapping) - 1
 
-    def random_upsample_img(
-        self, v_rng=(0, 255), initial_size=(4, 4), up_size=(20, 20)
-    ):
+    def random_upsample_img(self, v_rng=(0, 255), initial_size=(4, 4), up_size=(20, 20)):
         im = np.random.randint(v_rng[0], v_rng[1], initial_size, dtype=np.int32)
         return np.array(
             [
                 [
                     [
-                        im[int(initial_size[0] * r / up_size[0])][
-                            int(initial_size[1] * c / up_size[1])
-                        ]
+                        im[int(initial_size[0] * r / up_size[0])][int(initial_size[1] * c / up_size[1])]
                         for c in range(up_size[0])
                     ]
                     for r in range(up_size[1])
@@ -94,9 +90,7 @@ class SimpleMultiObsEnv(gym.Env):
         if self.noise > 0:
             state_dict["vec"] += np.random.random(self.vector_size) * self.noise
             img_noise = int(255 * self.noise)
-            state_dict["img"] += np.random.randint(
-                -img_noise, img_noise, (1, 20, 20), dtype=np.int32
-            )
+            state_dict["img"] += np.random.randint(-img_noise, img_noise, (1, 20, 20), dtype=np.int32)
             state_dict["img"] = np.clip(state_dict["img"], 0, 255)
         return state_dict
 
@@ -164,9 +158,7 @@ class NineRoomMultiObsEnv(SimpleMultiObsEnv):
     # actions are = [left, down, right, up]
 
     def __init__(self, random_start=True, noise=0.0):
-        super(NineRoomMultiObsEnv, self).__init__(
-            9, 9, random_start=random_start, noise=noise
-        )
+        super(NineRoomMultiObsEnv, self).__init__(9, 9, random_start=random_start, noise=noise)
 
     def init_possible_transitions(self):
         self.left_possible = (
@@ -181,13 +173,7 @@ class NineRoomMultiObsEnv(SimpleMultiObsEnv):
             + [73, 74, 76, 77, 79, 80]
         )
 
-        self.down_possible = (
-            list(range(18))
-            + [19, 22, 25]
-            + list(range(27, 45))
-            + [46, 49, 52]
-            + list(range(54, 72))
-        )
+        self.down_possible = list(range(18)) + [19, 22, 25] + list(range(27, 45)) + [46, 49, 52] + list(range(54, 72))
 
         self.right_possible = (
             [0, 1, 3, 4, 6, 7]
@@ -201,10 +187,4 @@ class NineRoomMultiObsEnv(SimpleMultiObsEnv):
             + [72, 73, 75, 76, 78, 79]
         )
 
-        self.up_possible = (
-            list(range(9, 27))
-            + [28, 31, 34]
-            + list(range(36, 54))
-            + [55, 58, 61]
-            + list(range(63, 81))
-        )
+        self.up_possible = list(range(9, 27)) + [28, 31, 34] + list(range(36, 54)) + [55, 58, 61] + list(range(63, 81))

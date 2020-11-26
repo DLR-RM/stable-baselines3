@@ -4,11 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 from gym import spaces
 
-from stable_baselines3.common.preprocessing import (
-    is_image_space,
-    has_image_space,
-    is_image_space_channels_first,
-)
+from stable_baselines3.common.preprocessing import has_image_space, is_image_space, is_image_space_channels_first
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvWrapper
 
 
@@ -27,9 +23,7 @@ class VecFrameStack(VecEnvWrapper):
         If None, automatically detect channel to stack over in case of image observation or default to "last" (default).
     """
 
-    def __init__(
-        self, venv: VecEnv, n_stack: int, channels_order: Optional[str] = None
-    ):
+    def __init__(self, venv: VecEnv, n_stack: int, channels_order: Optional[str] = None):
         self.venv = venv
         self.n_stack = n_stack
 
@@ -60,9 +54,7 @@ class VecFrameStack(VecEnvWrapper):
                 ) = self.compute_stacking(channels_order, subspace)
             observation_space = spaces.Dict(spaces=space_dict)
         else:
-            raise Exception(
-                "VecFrameStack only works with gym.spaces.Box and gym.spaces.Dict observation spaces"
-            )
+            raise Exception("VecFrameStack only works with gym.spaces.Box and gym.spaces.Dict observation spaces")
 
         VecEnvWrapper.__init__(self, venv, observation_space=observation_space)
 
@@ -100,9 +92,7 @@ class VecFrameStack(VecEnvWrapper):
 
         if isinstance(self.venv.observation_space, spaces.Box):
             stack_ax_size = observations.shape[self.stack_dimension]
-            self.stackedobs = np.roll(
-                self.stackedobs, shift=-stack_ax_size, axis=self.stack_dimension
-            )
+            self.stackedobs = np.roll(self.stackedobs, shift=-stack_ax_size, axis=self.stack_dimension)
             for i, done in enumerate(dones):
                 if done:
                     if "terminal_observation" in infos[i]:
@@ -125,18 +115,12 @@ class VecFrameStack(VecEnvWrapper):
                             )
                         infos[i]["terminal_observation"] = new_terminal
                     else:
-                        warnings.warn(
-                            "VecFrameStack wrapping a VecEnv without terminal_observation info"
-                        )
+                        warnings.warn("VecFrameStack wrapping a VecEnv without terminal_observation info")
                     self.stackedobs[i] = 0
             if self.channels_first:
-                self.stackedobs[
-                    :, -observations.shape[self.stack_dimension] :, ...
-                ] = observations
+                self.stackedobs[:, -observations.shape[self.stack_dimension] :, ...] = observations
             else:
-                self.stackedobs[
-                    ..., -observations.shape[self.stack_dimension] :
-                ] = observations
+                self.stackedobs[..., -observations.shape[self.stack_dimension] :] = observations
         elif isinstance(self.venv.observation_space, spaces.Dict):
             for key in self.stackedobs.keys():
                 stack_ax_size = observations[key].shape[self.stack_dimension[key]]
@@ -172,22 +156,14 @@ class VecFrameStack(VecEnvWrapper):
                                 )
                             infos[i]["terminal_observation"][key] = new_terminal
                         else:
-                            warnings.warn(
-                                "VecFrameStack wrapping a VecEnv without terminal_observation info"
-                            )
+                            warnings.warn("VecFrameStack wrapping a VecEnv without terminal_observation info")
                         self.stackedobs[key][i] = 0
                 if self.channels_first:
-                    self.stackedobs[key][
-                        :, -observations[key].shape[self.stack_dimension[key]] :, ...
-                    ] = observations[key]
+                    self.stackedobs[key][:, -observations[key].shape[self.stack_dimension[key]] :, ...] = observations[key]
                 else:
-                    self.stackedobs[key][
-                        ..., -observations[key].shape[self.stack_dimension] :
-                    ] = observations[key]
+                    self.stackedobs[key][..., -observations[key].shape[self.stack_dimension] :] = observations[key]
         else:
-            raise Exception(
-                f"Unhandled observation type {type(self.venv.observation_space)}"
-            )
+            raise Exception(f"Unhandled observation type {type(self.venv.observation_space)}")
 
         return self.stackedobs, rewards, dones, infos
 
@@ -200,25 +176,17 @@ class VecFrameStack(VecEnvWrapper):
         if isinstance(self.venv.observation_space, spaces.Box):
             self.stackedobs[...] = 0
             if self.channels_first:
-                self.stackedobs[
-                    :, -observation.shape[self.stack_dimension] :, ...
-                ] = observation
+                self.stackedobs[:, -observation.shape[self.stack_dimension] :, ...] = observation
             else:
-                self.stackedobs[
-                    ..., -observation.shape[self.stack_dimension] :
-                ] = observation
+                self.stackedobs[..., -observation.shape[self.stack_dimension] :] = observation
 
         elif isinstance(self.venv.observation_space, spaces.Dict):
             for key, obs in observation.items():
                 self.stackedobs[key][...] = 0
                 if self.channels_first[key]:
-                    self.stackedobs[key][
-                        :, -obs.shape[self.stack_dimension[key]] :, ...
-                    ] = obs
+                    self.stackedobs[key][:, -obs.shape[self.stack_dimension[key]] :, ...] = obs
                 else:
-                    self.stackedobs[key][
-                        ..., -obs.shape[self.stack_dimension[key]] :
-                    ] = obs
+                    self.stackedobs[key][..., -obs.shape[self.stack_dimension[key]] :] = obs
 
         return self.stackedobs
 

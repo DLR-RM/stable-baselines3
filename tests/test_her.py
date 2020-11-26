@@ -129,9 +129,7 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     params = deepcopy(model.policy.state_dict())
 
     # Modify all parameters to be random values
-    random_params = dict(
-        (param_name, th.rand_like(param)) for param_name, param in params.items()
-    )
+    random_params = dict((param_name, th.rand_like(param)) for param_name, param in params.items())
 
     # Update model parameters with the new random values
     model.policy.load_state_dict(random_params)
@@ -139,9 +137,7 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     new_params = model.policy.state_dict()
     # Check that all params are different now
     for k in params:
-        assert not th.allclose(
-            params[k], new_params[k]
-        ), "Parameters did not change as expected."
+        assert not th.allclose(params[k], new_params[k]), "Parameters did not change as expected."
 
     params = new_params
 
@@ -158,9 +154,7 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
 
     # Check that all params are the same as before save load procedure now
     for key in params:
-        assert th.allclose(
-            params[key], new_params[key]
-        ), "Model parameters not the same after save and load."
+        assert th.allclose(params[key], new_params[key]), "Model parameters not the same after save and load."
 
     # check if model still selects the same actions
     new_selected_actions, _ = model.predict(observations, deterministic=True)
@@ -170,9 +164,7 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     model.learn(total_timesteps=300)
 
     # Test that the change of parameters works
-    model = HER.load(
-        str(tmp_path / "test_save.zip"), env=env, verbose=3, learning_rate=2.0
-    )
+    model = HER.load(str(tmp_path / "test_save.zip"), env=env, verbose=3, learning_rate=2.0)
     assert model.model.learning_rate == 2.0
     assert model.verbose == 3
 
@@ -184,9 +176,7 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     "online_sampling, truncate_last_trajectory",
     [(False, None), (True, True), (True, False)],
 )
-def test_save_load_replay_buffer(
-    tmp_path, recwarn, online_sampling, truncate_last_trajectory
-):
+def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_last_trajectory):
     """
     Test if 'save_replay_buffer' and 'load_replay_buffer' works correctly
     """
@@ -227,9 +217,7 @@ def test_save_load_replay_buffer(
     if truncate_last_trajectory:
         assert len(recwarn) == 1
         warning = recwarn.pop(UserWarning)
-        assert "The last trajectory in the replay buffer will be truncated" in str(
-            warning.message
-        )
+        assert "The last trajectory in the replay buffer will be truncated" in str(warning.message)
     else:
         assert len(recwarn) == 0
 
@@ -257,9 +245,7 @@ def test_save_load_replay_buffer(
             model.replay_buffer.buffer["done"][: n_episodes_stored - 1],
         )
     else:
-        assert np.allclose(
-            old_replay_buffer.observations, model.replay_buffer.observations
-        )
+        assert np.allclose(old_replay_buffer.observations, model.replay_buffer.observations)
         assert np.allclose(old_replay_buffer.actions, model.replay_buffer.actions)
         assert np.allclose(old_replay_buffer.rewards, model.replay_buffer.rewards)
         assert np.allclose(old_replay_buffer.dones, model.replay_buffer.dones)
@@ -305,20 +291,14 @@ def test_get_max_episode_length():
         get_time_limit(dict_env, current_max_episode_length=None)
 
     default_length = 10
-    assert (
-        get_time_limit(dict_env, current_max_episode_length=default_length)
-        == default_length
-    )
+    assert get_time_limit(dict_env, current_max_episode_length=default_length) == default_length
 
     env = gym.make("CartPole-v1")
     vec_env = DummyVecEnv([lambda: env])
 
     assert get_time_limit(vec_env, current_max_episode_length=None) == 500
     # Overwrite max_episode_steps
-    assert (
-        get_time_limit(vec_env, current_max_episode_length=default_length)
-        == default_length
-    )
+    assert get_time_limit(vec_env, current_max_episode_length=default_length) == default_length
 
     # Set max_episode_steps to None
     env.spec.max_episode_steps = None

@@ -197,8 +197,9 @@ class BaseAlgorithm(ABC):
             env = VecTransposeImage(env)
 
         # check if wrapper for dict support is needed when using HER
-        if isinstance(env.observation_space, gym.spaces.dict.Dict) and \
-            set(env.observation_space.spaces.keys()) == set(["observation", "desired_goal"]):
+        if isinstance(env.observation_space, gym.spaces.dict.Dict) and set(env.observation_space.spaces.keys()) == set(
+            ["observation", "desired_goal", "achieved_goal"]
+        ):
             env = ObsDictWrapper(env)
 
         return env

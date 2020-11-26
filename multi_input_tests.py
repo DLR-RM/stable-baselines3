@@ -21,8 +21,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--timesteps",
         type=int,
-        default=30000,
-        help="Number of timesteps to train for (default: 20000)",
+        default=3000,
+        help="Number of timesteps to train for (default: 3000)",
     )
     parser.add_argument(
         "--num_envs",

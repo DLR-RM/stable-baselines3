@@ -1,5 +1,5 @@
 import warnings
-from typing import Tuple
+from typing import Dict, Tuple, Union
 
 import numpy as np
 import torch as th
@@ -20,9 +20,7 @@ def is_image_space_channels_first(observation_space: spaces.Box) -> bool:
     """
     smallest_dimension = np.argmin(observation_space.shape).item()
     if smallest_dimension == 1:
-        warnings.warn(
-            "Treating image space as channels-last, while second dimension was smallest of the three."
-        )
+        warnings.warn("Treating image space as channels-last, while second dimension was smallest of the three.")
     return smallest_dimension == 0
 
 
@@ -74,9 +72,7 @@ def has_image_space(observation_space: spaces.Dict):
     return False
 
 
-def preprocess_obs(
-    obs: th.Tensor, observation_space: spaces.Space, normalize_images: bool = True
-) -> th.Tensor:
+def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space, normalize_images: bool = True) -> th.Tensor:
     """
     Preprocess observation to be to a neural network.
     For images, it normalizes the values by dividing them by 255 (to have values in [0, 1])
@@ -101,9 +97,7 @@ def preprocess_obs(
         # Tensor concatenation of one hot encodings of each Categorical sub-space
         return th.cat(
             [
-                F.one_hot(
-                    obs_.long(), num_classes=int(observation_space.nvec[idx])
-                ).float()
+                F.one_hot(obs_.long(), num_classes=int(observation_space.nvec[idx])).float()
                 for idx, obs_ in enumerate(th.split(obs.long(), 1, dim=1))
             ],
             dim=-1,
@@ -118,12 +112,10 @@ def preprocess_obs(
         return obs
 
     else:
-        raise NotImplementedError(
-            f"Preprocessing not implemented for {observation_space}"
-        )
+        raise NotImplementedError(f"Preprocessing not implemented for {observation_space}")
 
 
-def get_obs_shape(observation_space: spaces.Space) -> Tuple[int, ...]:
+def get_obs_shape(observation_space: spaces.Space) -> Union[Tuple[int, ...], Dict[str, Tuple[int, ...]]]:
     """
     Get the shape of the observation (useful for the buffers).
 
@@ -142,14 +134,10 @@ def get_obs_shape(observation_space: spaces.Space) -> Tuple[int, ...]:
         # Number of binary features
         return (int(observation_space.n),)
     elif isinstance(observation_space, spaces.Dict):
-        return {
-            key: subspace.shape for (key, subspace) in observation_space.spaces.items()
-        }
+        return {key: subspace.shape for (key, subspace) in observation_space.spaces.items()}
 
     else:
-        raise NotImplementedError(
-            f"{observation_space} observation space is not supported"
-        )
+        raise NotImplementedError(f"{observation_space} observation space is not supported")
 
 
 def get_flattened_obs_dim(observation_space: spaces.Space) -> int:

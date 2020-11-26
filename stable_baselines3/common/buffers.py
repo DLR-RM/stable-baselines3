@@ -14,10 +14,10 @@ except ImportError:
 
 from stable_baselines3.common.preprocessing import get_action_dim, get_obs_shape
 from stable_baselines3.common.type_aliases import (
+    DictReplayBufferSamples,
+    DictRolloutBufferSamples,
     ReplayBufferSamples,
     RolloutBufferSamples,
-    DictRolloutBufferSamples,
-    DictReplayBufferSamples,
 )
 from stable_baselines3.common.vec_env import VecNormalize
 
@@ -144,9 +144,7 @@ class BaseBuffer(ABC):
         return obs
 
     @staticmethod
-    def _normalize_reward(
-        reward: np.ndarray, env: Optional[VecNormalize] = None
-    ) -> np.ndarray:
+    def _normalize_reward(reward: np.ndarray, env: Optional[VecNormalize] = None) -> np.ndarray:
         if env is not None:
             return env.normalize_reward(reward).astype(np.float32)
         return reward
@@ -177,9 +175,7 @@ class ReplayBuffer(BaseBuffer):
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
     ):
-        super(ReplayBuffer, self).__init__(
-            buffer_size, observation_space, action_space, device, n_envs=n_envs
-        )
+        super(ReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
 
         assert n_envs == 1, "Replay buffer only support single environment for now"
 
@@ -193,6 +189,7 @@ class ReplayBuffer(BaseBuffer):
             (self.buffer_size, self.n_envs) + self.obs_shape,
             dtype=observation_space.dtype,
         )
+
         if optimize_memory_usage:
             # `observations` contains also the next observation
             self.next_observations = None
@@ -201,21 +198,16 @@ class ReplayBuffer(BaseBuffer):
                 (self.buffer_size, self.n_envs) + self.obs_shape,
                 dtype=observation_space.dtype,
             )
-        self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype
-        )
+
+        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
+
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
 
         if psutil is not None:
             obs_nbytes = self.observations.nbytes
 
-            total_memory_usage = (
-                obs_nbytes
-                + self.actions.nbytes
-                + self.rewards.nbytes
-                + self.dones.nbytes
-            )
+            total_memory_usage = obs_nbytes + self.actions.nbytes + self.rewards.nbytes + self.dones.nbytes
             if self.next_observations is not None:
                 next_obs_nbytes = self.next_observations.nbytes
                 total_memory_usage += next_obs_nbytes
@@ -242,9 +234,8 @@ class ReplayBuffer(BaseBuffer):
         self.observations[self.pos] = np.array(obs).copy()
 
         if self.optimize_memory_usage:
-            self.observations[(self.pos + 1) % self.buffer_size] = np.array(
-                next_obs
-            ).copy()
+
+            self.observations[(self.pos + 1) % self.buffer_size] = np.array(next_obs).copy()
         else:
             self.next_observations[self.pos] = np.array(next_obs).copy()
 
@@ -257,9 +248,7 @@ class ReplayBuffer(BaseBuffer):
             self.full = True
             self.pos = 0
 
-    def sample(
-        self, batch_size: int, env: Optional[VecNormalize] = None
-    ) -> ReplayBufferSamples:
+    def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
         """
         Sample elements from the replay buffer.
         Custom sampling when using memory efficient variant,
@@ -276,25 +265,17 @@ class ReplayBuffer(BaseBuffer):
         # Do not sample the element with index `self.pos` as the transitions is invalid
         # (we use only one array to store `obs` and `next_obs`)
         if self.full:
-            batch_inds = (
-                np.random.randint(1, self.buffer_size, size=batch_size) + self.pos
-            ) % self.buffer_size
+            batch_inds = (np.random.randint(1, self.buffer_size, size=batch_size) + self.pos) % self.buffer_size
         else:
             batch_inds = np.random.randint(0, self.pos, size=batch_size)
         return self._get_samples(batch_inds, env=env)
 
-    def _get_samples(
-        self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None
-    ) -> ReplayBufferSamples:
+    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
 
         if self.optimize_memory_usage:
-            next_obs = self._normalize_obs(
-                self.observations[(batch_inds + 1) % self.buffer_size, 0, :], env
-            )
+            next_obs = self._normalize_obs(self.observations[(batch_inds + 1) % self.buffer_size, 0, :], env)
         else:
-            next_obs = self._normalize_obs(
-                self.next_observations[batch_inds, 0, :], env
-            )
+            next_obs = self._normalize_obs(self.next_observations[batch_inds, 0, :], env)
 
         data = (
             self._normalize_obs(self.observations[batch_inds, 0, :], env),
@@ -340,9 +321,7 @@ class RolloutBuffer(BaseBuffer):
         n_envs: int = 1,
     ):
 
-        super(RolloutBuffer, self).__init__(
-            buffer_size, observation_space, action_space, device, n_envs=n_envs
-        )
+        super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
         self.observations, self.actions, self.rewards, self.advantages = (
@@ -357,12 +336,8 @@ class RolloutBuffer(BaseBuffer):
 
     def reset(self) -> None:
 
-        self.observations = np.zeros(
-            (self.buffer_size, self.n_envs) + self.obs_shape, dtype=np.float32
-        )
-        self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32
-        )
+        self.observations = np.zeros((self.buffer_size, self.n_envs) + self.obs_shape, dtype=np.float32)
+        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -372,9 +347,7 @@ class RolloutBuffer(BaseBuffer):
         self.generator_ready = False
         super(RolloutBuffer, self).reset()
 
-    def compute_returns_and_advantage(
-        self, last_values: th.Tensor, dones: np.ndarray
-    ) -> None:
+    def compute_returns_and_advantage(self, last_values: th.Tensor, dones: np.ndarray) -> None:
         """
         Post-processing step: compute the returns (sum of discounted rewards)
         and GAE advantage.
@@ -400,14 +373,8 @@ class RolloutBuffer(BaseBuffer):
             else:
                 next_non_terminal = 1.0 - self.dones[step + 1]
                 next_values = self.values[step + 1]
-            delta = (
-                self.rewards[step]
-                + self.gamma * next_values * next_non_terminal
-                - self.values[step]
-            )
-            last_gae_lam = (
-                delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
-            )
+            delta = self.rewards[step] + self.gamma * next_values * next_non_terminal - self.values[step]
+            last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
             self.advantages[step] = last_gae_lam
         self.returns = self.advantages + self.values
 
@@ -444,9 +411,7 @@ class RolloutBuffer(BaseBuffer):
         if self.pos == self.buffer_size:
             self.full = True
 
-    def get(
-        self, batch_size: Optional[int] = None
-    ) -> Generator[RolloutBufferSamples, None, None]:
+    def get(self, batch_size: Optional[int] = None) -> Generator[RolloutBufferSamples, None, None]:
         assert self.full, ""
         indices = np.random.permutation(self.buffer_size * self.n_envs)
         # Prepare the data
@@ -474,10 +439,7 @@ class RolloutBuffer(BaseBuffer):
             yield self._get_samples(indices[start_idx : start_idx + batch_size])
             start_idx += batch_size
 
-    def _get_samples(
-        self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None
-    ) -> RolloutBufferSamples:
-
+    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> RolloutBufferSamples:
         data = (
             self.observations[batch_inds],
             self.actions[batch_inds],
@@ -514,9 +476,7 @@ class DictReplayBuffer(ReplayBuffer):
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
     ):
-        super(BaseBuffer, self).__init__(
-            buffer_size, observation_space, action_space, device, n_envs=n_envs
-        )
+        super(BaseBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
 
         assert n_envs == 1, "Replay buffer only support single environment for now"
 
@@ -527,21 +487,17 @@ class DictReplayBuffer(ReplayBuffer):
         self.optimize_memory_usage = optimize_memory_usage
 
         self.observations = {
-            key: np.zeros((self.buffer_size, self.n_envs) + _obs_shape)
-            for key, _obs_shape in self.obs_shape.items()
+            key: np.zeros((self.buffer_size, self.n_envs) + _obs_shape) for key, _obs_shape in self.obs_shape.items()
         }
         if optimize_memory_usage:
             # `observations` contains also the next observation
             self.next_observations = None
         else:
             self.next_observations = {
-                key: np.zeros((self.buffer_size, self.n_envs) + _obs_shape)
-                for key, _obs_shape in self.obs_shape.items()
+                key: np.zeros((self.buffer_size, self.n_envs) + _obs_shape) for key, _obs_shape in self.obs_shape.items()
             }
 
-        self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype
-        )
+        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
 
@@ -550,12 +506,7 @@ class DictReplayBuffer(ReplayBuffer):
             for key, obs in self.observations.items():
                 obs_nbytes += obs.nbytes
 
-            total_memory_usage = (
-                obs_nbytes
-                + self.actions.nbytes
-                + self.rewards.nbytes
-                + self.dones.nbytes
-            )
+            total_memory_usage = obs_nbytes + self.actions.nbytes + self.rewards.nbytes + self.dones.nbytes
             if self.next_observations is not None:
                 next_obs_nbytes = 0
                 for key, obs in self.observations.items():
@@ -586,9 +537,7 @@ class DictReplayBuffer(ReplayBuffer):
 
         if self.optimize_memory_usage:
             for key in self.observations.keys():
-                self.observations[key][(self.pos + 1) % self.buffer_size] = np.array(
-                    next_obs[key]
-                ).copy()
+                self.observations[key][(self.pos + 1) % self.buffer_size] = np.array(next_obs[key]).copy()
         else:
             for key in self.next_observations.keys():
                 self.next_observations[key][self.pos] = np.array(next_obs[key]).copy()
@@ -602,9 +551,7 @@ class DictReplayBuffer(ReplayBuffer):
             self.full = True
             self.pos = 0
 
-    def sample(
-        self, batch_size: int, env: Optional[VecNormalize] = None
-    ) -> DictReplayBufferSamples:
+    def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> DictReplayBufferSamples:
         """
         Sample elements from the replay buffer.
         Custom sampling when using memory efficient variant,
@@ -621,16 +568,12 @@ class DictReplayBuffer(ReplayBuffer):
         # Do not sample the element with index `self.pos` as the transitions is invalid
         # (we use only one array to store `obs` and `next_obs`)
         if self.full:
-            batch_inds = (
-                np.random.randint(1, self.buffer_size, size=batch_size) + self.pos
-            ) % self.buffer_size
+            batch_inds = (np.random.randint(1, self.buffer_size, size=batch_size) + self.pos) % self.buffer_size
         else:
             batch_inds = np.random.randint(0, self.pos, size=batch_size)
         return self._get_samples(batch_inds, env=env)
 
-    def _get_samples(
-        self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None
-    ) -> DictReplayBufferSamples:
+    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> DictReplayBufferSamples:
 
         if self.optimize_memory_usage:
             next_obs = {
@@ -649,8 +592,7 @@ class DictReplayBuffer(ReplayBuffer):
             }
 
         normalized_obs = {
-            key: self.to_torch(self._normalize_obs(obs[batch_inds, 0, :], env))
-            for key, obs in self.observations.items()
+            key: self.to_torch(self._normalize_obs(obs[batch_inds, 0, :], env)) for key, obs in self.observations.items()
         }
 
         return DictReplayBufferSamples(
@@ -658,9 +600,7 @@ class DictReplayBuffer(ReplayBuffer):
             actions=self.to_torch(self.actions[batch_inds]),
             next_observations=next_obs,
             dones=self.to_torch(self.dones[batch_inds]),
-            returns=self.to_torch(
-                self._normalize_reward(self.rewards[batch_inds], env)
-            ),
+            returns=self.to_torch(self._normalize_reward(self.rewards[batch_inds], env)),
         )
 
 
@@ -698,9 +638,7 @@ class DictRolloutBuffer(RolloutBuffer):
         n_envs: int = 1,
     ):
 
-        super(RolloutBuffer, self).__init__(
-            buffer_size, observation_space, action_space, device, n_envs=n_envs
-        )
+        super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
         self.observations, self.actions, self.rewards, self.advantages = (
@@ -717,12 +655,8 @@ class DictRolloutBuffer(RolloutBuffer):
 
         self.observations = {}
         for (key, obs_input_shape) in self.obs_shape.items():
-            self.observations[key] = np.zeros(
-                (self.buffer_size, self.n_envs) + obs_input_shape, dtype=np.float32
-            )
-        self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32
-        )
+            self.observations[key] = np.zeros((self.buffer_size, self.n_envs) + obs_input_shape, dtype=np.float32)
+        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -766,9 +700,7 @@ class DictRolloutBuffer(RolloutBuffer):
         if self.pos == self.buffer_size:
             self.full = True
 
-    def get(
-        self, batch_size: Optional[int] = None
-    ) -> Generator[DictRolloutBufferSamples, None, None]:
+    def get(self, batch_size: Optional[int] = None) -> Generator[DictRolloutBufferSamples, None, None]:
         assert self.full, ""
         indices = np.random.permutation(self.buffer_size * self.n_envs)
         # Prepare the data
@@ -792,15 +724,10 @@ class DictRolloutBuffer(RolloutBuffer):
             yield self._get_samples(indices[start_idx : start_idx + batch_size])
             start_idx += batch_size
 
-    def _get_samples(
-        self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None
-    ) -> RolloutBufferSamples:
+    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> RolloutBufferSamples:
 
         return DictRolloutBufferSamples(
-            observations={
-                key: self.to_torch(obs[batch_inds])
-                for (key, obs) in self.observations.items()
-            },
+            observations={key: self.to_torch(obs[batch_inds]) for (key, obs) in self.observations.items()},
             actions=self.to_torch(self.actions[batch_inds]),
             old_values=self.to_torch(self.values[batch_inds].flatten()),
             old_log_prob=self.to_torch(self.log_probs[batch_inds].flatten()),

@@ -1,11 +1,10 @@
 """Policies: abstract base class and concrete implementations."""
 
 import collections
+import copy
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple, Type, Union, Callable
-
-import copy
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import gym
 import numpy as np
@@ -28,13 +27,12 @@ from stable_baselines3.common.preprocessing import (
 )
 from stable_baselines3.common.torch_layers import (
     BaseFeaturesExtractor,
+    CombinedExtractor,
     FlattenExtractor,
     MlpExtractor,
     NatureCNN,
     create_mlp,
-    CombinedExtractor,
 )
-
 from stable_baselines3.common.type_aliases import Schedule
 from stable_baselines3.common.utils import get_device, is_vectorized_observation
 from stable_baselines3.common.vec_env import VecTransposeImage
@@ -127,9 +125,7 @@ class BaseModel(nn.Module, ABC):
 
     def make_features_extractor(self) -> BaseFeaturesExtractor:
         """ Helper method to create a features extractor."""
-        return self.features_extractor_class(
-            self.observation_space, **self.features_extractor_kwargs
-        )
+        return self.features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
 
     def extract_features(self, obs: th.Tensor) -> th.Tensor:
         """
@@ -139,9 +135,7 @@ class BaseModel(nn.Module, ABC):
         :return:
         """
         assert self.features_extractor is not None, "No features extractor was set"
-        preprocessed_obs = preprocess_obs(
-            obs, self.observation_space, normalize_images=self.normalize_images
-        )
+        preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
         return self.features_extractor(preprocessed_obs)
 
     def _get_data(self) -> Dict[str, Any]:
@@ -202,9 +196,7 @@ class BaseModel(nn.Module, ABC):
 
         :param vector:
         """
-        th.nn.utils.vector_to_parameters(
-            th.FloatTensor(vector).to(self.device), self.parameters()
-        )
+        th.nn.utils.vector_to_parameters(th.FloatTensor(vector).to(self.device), self.parameters())
 
     def parameters_to_vector(self) -> np.ndarray:
         """
@@ -212,9 +204,7 @@ class BaseModel(nn.Module, ABC):
 
         :return:
         """
-        return (
-            th.nn.utils.parameters_to_vector(self.parameters()).detach().cpu().numpy()
-        )
+        return th.nn.utils.parameters_to_vector(self.parameters()).detach().cpu().numpy()
 
 
 class BasePolicy(BaseModel):
@@ -254,9 +244,7 @@ class BasePolicy(BaseModel):
                 module.bias.data.fill_(0.0)
 
     @abstractmethod
-    def _predict(
-        self, observation: th.Tensor, deterministic: bool = False
-    ) -> th.Tensor:
+    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         """
         Get the action according to the policy for a given observation.
 
@@ -302,28 +290,20 @@ class BasePolicy(BaseModel):
                 obs_space = self.observation_space.spaces[key]
                 if is_image_space(obs_space):
                     obs = np.array(obs)
-                    if not (
-                        obs.shape == obs_space.shape or obs.shape[1:] == obs_space.shape
-                    ):
+                    if not (obs.shape == obs_space.shape or obs.shape[1:] == obs_space.shape):
                         # Try to re-order the channels
                         transpose_obs = VecTransposeImage.transpose_image(obs)
-                        if (
-                            transpose_obs.shape == obs_space.shape
-                            or transpose_obs.shape[1:] == obs_space.shape
-                        ):
+                        if transpose_obs.shape == obs_space.shape or transpose_obs.shape[1:] == obs_space.shape:
                             observation = transpose_obs
                 else:
-                    observation[key] = obs.reshape(
-                        (-1,) + self.observation_space[key].shape
-                    )
+                    observation[key] = obs.reshape((-1,) + self.observation_space[key].shape)
 
         elif is_image_space(self.observation_space):
             # Handle the different cases for images
             # as PyTorch use channel first format
 
             if not (
-                observation.shape == self.observation_space.shape
-                or observation.shape[1:] == self.observation_space.shape
+                observation.shape == self.observation_space.shape or observation.shape[1:] == self.observation_space.shape
             ):
                 # Try to re-order the channels
                 transpose_obs = VecTransposeImage.transpose_image(observation)
@@ -356,15 +336,11 @@ class BasePolicy(BaseModel):
             else:
                 # Actions could be on arbitrary scale, so clip the actions to avoid
                 # out of bound error (e.g. if sampling from a Gaussian distribution)
-                actions = np.clip(
-                    actions, self.action_space.low, self.action_space.high
-                )
+                actions = np.clip(actions, self.action_space.low, self.action_space.high)
 
         if not vectorized_env:
             if state is not None:
-                raise ValueError(
-                    "Error: The environment must be vectorized when using recurrent policies."
-                )
+                raise ValueError("Error: The environment must be vectorized when using recurrent policies.")
             actions = actions[0]
 
         return actions, state
@@ -473,9 +449,7 @@ class ActorCriticPolicy(BasePolicy):
         self.activation_fn = activation_fn
         self.ortho_init = ortho_init
 
-        self.features_extractor = features_extractor_class(
-            self.observation_space, **self.features_extractor_kwargs
-        )
+        self.features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
         self.features_dim = self.features_extractor.features_dim
 
         self.normalize_images = normalize_images
@@ -496,9 +470,7 @@ class ActorCriticPolicy(BasePolicy):
         self.dist_kwargs = dist_kwargs
 
         # Action distribution
-        self.action_dist = make_proba_distribution(
-            action_space, use_sde=use_sde, dist_kwargs=dist_kwargs
-        )
+        self.action_dist = make_proba_distribution(action_space, use_sde=use_sde, dist_kwargs=dist_kwargs)
 
         self._build(lr_schedule)
 
@@ -533,9 +505,7 @@ class ActorCriticPolicy(BasePolicy):
 
         :param n_envs:
         """
-        assert isinstance(
-            self.action_dist, StateDependentNoiseDistribution
-        ), "reset_noise() is only available when using gSDE"
+        assert isinstance(self.action_dist, StateDependentNoiseDistribution), "reset_noise() is only available when using gSDE"
         self.action_dist.sample_weights(self.log_std, batch_size=n_envs)
 
     def _build_mlp_extractor(self) -> None:
@@ -575,26 +545,18 @@ class ActorCriticPolicy(BasePolicy):
                 latent_dim=latent_dim_pi, log_std_init=self.log_std_init
             )
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
-            latent_sde_dim = (
-                latent_dim_pi if self.sde_net_arch is None else latent_sde_dim
-            )
+            latent_sde_dim = latent_dim_pi if self.sde_net_arch is None else latent_sde_dim
             self.action_net, self.log_std = self.action_dist.proba_distribution_net(
                 latent_dim=latent_dim_pi,
                 latent_sde_dim=latent_sde_dim,
                 log_std_init=self.log_std_init,
             )
         elif isinstance(self.action_dist, CategoricalDistribution):
-            self.action_net = self.action_dist.proba_distribution_net(
-                latent_dim=latent_dim_pi
-            )
+            self.action_net = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi)
         elif isinstance(self.action_dist, MultiCategoricalDistribution):
-            self.action_net = self.action_dist.proba_distribution_net(
-                latent_dim=latent_dim_pi
-            )
+            self.action_net = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi)
         elif isinstance(self.action_dist, BernoulliDistribution):
-            self.action_net = self.action_dist.proba_distribution_net(
-                latent_dim=latent_dim_pi
-            )
+            self.action_net = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi)
         else:
             raise NotImplementedError(f"Unsupported distribution '{self.action_dist}'.")
 
@@ -616,13 +578,9 @@ class ActorCriticPolicy(BasePolicy):
                 module.apply(partial(self.init_weights, gain=gain))
 
         # Setup optimizer with initial learning rate
-        self.optimizer = self.optimizer_class(
-            self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs
-        )
+        self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
 
-    def forward(
-        self, obs: th.Tensor, deterministic: bool = False
-    ) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
+    def forward(self, obs: th.Tensor, deterministic: bool = False) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
         Forward pass in all the networks (actor and critic)
 
@@ -633,9 +591,7 @@ class ActorCriticPolicy(BasePolicy):
         latent_pi, latent_vf, latent_sde = self._get_latent(obs)
         # Evaluate the values for the given observations
         values = self.value_net(latent_vf)
-        distribution = self._get_action_dist_from_latent(
-            latent_pi, latent_sde=latent_sde
-        )
+        distribution = self._get_action_dist_from_latent(latent_pi, latent_sde=latent_sde)
         actions = distribution.get_actions(deterministic=deterministic)
         log_prob = distribution.log_prob(actions)
         return actions, values, log_prob
@@ -659,9 +615,7 @@ class ActorCriticPolicy(BasePolicy):
             latent_sde = self.sde_features_extractor(features)
         return latent_pi, latent_vf, latent_sde
 
-    def _get_action_dist_from_latent(
-        self, latent_pi: th.Tensor, latent_sde: Optional[th.Tensor] = None
-    ) -> Distribution:
+    def _get_action_dist_from_latent(self, latent_pi: th.Tensor, latent_sde: Optional[th.Tensor] = None) -> Distribution:
         """
         Retrieve action distribution given the latent codes.
 
@@ -683,15 +637,11 @@ class ActorCriticPolicy(BasePolicy):
             # Here mean_actions are the logits (before rounding to get the binary actions)
             return self.action_dist.proba_distribution(action_logits=mean_actions)
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
-            return self.action_dist.proba_distribution(
-                mean_actions, self.log_std, latent_sde
-            )
+            return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_sde)
         else:
             raise ValueError("Invalid action distribution")
 
-    def _predict(
-        self, observation: th.Tensor, deterministic: bool = False
-    ) -> th.Tensor:
+    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         """
         Get the action according to the policy for a given observation.
 
@@ -703,9 +653,7 @@ class ActorCriticPolicy(BasePolicy):
         distribution = self._get_action_dist_from_latent(latent_pi, latent_sde)
         return distribution.get_actions(deterministic=deterministic)
 
-    def evaluate_actions(
-        self, obs: th.Tensor, actions: th.Tensor
-    ) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
+    def evaluate_actions(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
         Evaluate actions according to the current policy,
         given the observations.
@@ -978,9 +926,7 @@ def create_sde_features_extractor(
 _policy_registry = dict()  # type: Dict[Type[BasePolicy], Dict[str, Type[BasePolicy]]]
 
 
-def get_policy_from_name(
-    base_policy_type: Type[BasePolicy], name: str
-) -> Type[BasePolicy]:
+def get_policy_from_name(base_policy_type: Type[BasePolicy], name: str) -> Type[BasePolicy]:
     """
     Returns the registered policy from the base type and name.
     See `register_policy` for registering policies and explanation.
@@ -1029,9 +975,7 @@ def register_policy(name: str, policy: Type[BasePolicy]) -> None:
             sub_class = cls
             break
     if sub_class is None:
-        raise ValueError(
-            f"Error: the policy {policy} is not of any known subclasses of BasePolicy!"
-        )
+        raise ValueError(f"Error: the policy {policy} is not of any known subclasses of BasePolicy!")
 
     if sub_class not in _policy_registry:
         _policy_registry[sub_class] = {}
@@ -1040,7 +984,5 @@ def register_policy(name: str, policy: Type[BasePolicy]) -> None:
         # we try to register. If not so,
         # do not override and complain.
         if _policy_registry[sub_class][name] != policy:
-            raise ValueError(
-                f"Error: the name {name} is already registered for a different policy, will not override."
-            )
+            raise ValueError(f"Error: the name {name} is already registered for a different policy, will not override.")
     _policy_registry[sub_class][name] = policy

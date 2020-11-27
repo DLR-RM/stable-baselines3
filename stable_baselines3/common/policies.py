@@ -35,6 +35,7 @@ from stable_baselines3.common.torch_layers import (
 )
 from stable_baselines3.common.type_aliases import Schedule
 from stable_baselines3.common.utils import get_device, is_vectorized_observation
+from stable_baselines3.common.env_util import is_wrapped
 from stable_baselines3.common.vec_env import VecTransposeImage
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 
@@ -256,6 +257,16 @@ class BasePolicy(BaseModel):
         :return: Taken action according to the policy
         """
 
+    @staticmethod
+    def try_transpose_img_observation(obs: np.ndarray, observation_space: gym.spaces.Space):
+        obs = np.array(obs)
+        if not (obs.shape == observation_space.shape or obs.shape[1:] == observation_space.shape):
+            # Try to re-order the channels
+            transpose_obs = VecTransposeImage.transpose_image(obs)
+            if transpose_obs.shape == observation_space.shape or transpose_obs.shape[1:] == observation_space.shape:
+                obs = transpose_obs
+        return obs
+
     def predict(
         self,
         observation: np.ndarray,
@@ -281,7 +292,7 @@ class BasePolicy(BaseModel):
         #     mask = [False for _ in range(self.n_envs)]
         # Need to check the observation if its a ObsDictWrapper
 
-        if isinstance(self.observation_space, ObsDictWrapper):
+        if is_wrapped(self.observation_space, ObsDictWrapper):
             observation = ObsDictWrapper.convert_dict(observation)
         elif isinstance(observation, dict):
             # need to copy the dict as the dict in VecFrameStack will become a torch tensor
@@ -289,29 +300,14 @@ class BasePolicy(BaseModel):
             for key, obs in observation.items():
                 obs_space = self.observation_space.spaces[key]
                 if is_image_space(obs_space):
-                    obs = np.array(obs)
-                    if not (obs.shape == obs_space.shape or obs.shape[1:] == obs_space.shape):
-                        # Try to re-order the channels
-                        transpose_obs = VecTransposeImage.transpose_image(obs)
-                        if transpose_obs.shape == obs_space.shape or transpose_obs.shape[1:] == obs_space.shape:
-                            observation = transpose_obs
+                    obs = BasePolicy.try_transpose_img_observation(obs, obs_space)
                 else:
                     observation[key] = obs.reshape((-1,) + self.observation_space[key].shape)
 
         elif is_image_space(self.observation_space):
             # Handle the different cases for images
             # as PyTorch use channel first format
-
-            if not (
-                observation.shape == self.observation_space.shape or observation.shape[1:] == self.observation_space.shape
-            ):
-                # Try to re-order the channels
-                transpose_obs = VecTransposeImage.transpose_image(observation)
-                if (
-                    transpose_obs.shape == self.observation_space.shape
-                    or transpose_obs.shape[1:] == self.observation_space.shape
-                ):
-                    observation = transpose_obs
+            observation = BasePolicy.try_transpose_img_observation(observation, self.observation_space)
         else:
             observation = np.array(observation)
 

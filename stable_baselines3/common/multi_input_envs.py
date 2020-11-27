@@ -90,7 +90,7 @@ class SimpleMultiObsEnv(gym.Env):
         if self.noise > 0:
             state_dict["vec"] += np.random.random(self.vector_size) * self.noise
             img_noise = int(255 * self.noise)
-            state_dict["img"] += np.random.randint(-img_noise, img_noise, (1, 20, 20), dtype=np.int32)
+            state_dict["img"] += np.random.randint(-img_noise, img_noise, tuple(self.img_size), dtype=np.int32)
             state_dict["img"] = np.clip(state_dict["img"], 0, 255)
         return state_dict
 
@@ -101,6 +101,9 @@ class SimpleMultiObsEnv(gym.Env):
         self.up_possible = [4, 8, 12, 7, 11, 15]
 
     def step(self, action):
+
+        action = int(action)
+
         self.count += 1
 
         prev_state = self.state

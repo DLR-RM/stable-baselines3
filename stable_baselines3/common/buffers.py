@@ -476,7 +476,7 @@ class DictReplayBuffer(ReplayBuffer):
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
     ):
-        super(BaseBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
+        super(ReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
 
         assert n_envs == 1, "Replay buffer only support single environment for now"
 
@@ -484,6 +484,10 @@ class DictReplayBuffer(ReplayBuffer):
         if psutil is not None:
             mem_available = psutil.virtual_memory().available
 
+        if optimize_memory_usage:
+            optimize_memory_usage = False
+            # disabling as this adds quite a bit of complexity
+            # https://github.com/DLR-RM/stable-baselines3/pull/243#discussion_r531535702
         self.optimize_memory_usage = optimize_memory_usage
 
         self.observations = {
@@ -600,7 +604,7 @@ class DictReplayBuffer(ReplayBuffer):
             actions=self.to_torch(self.actions[batch_inds]),
             next_observations=next_obs,
             dones=self.to_torch(self.dones[batch_inds]),
-            returns=self.to_torch(self._normalize_reward(self.rewards[batch_inds], env)),
+            rewards=self.to_torch(self._normalize_reward(self.rewards[batch_inds], env)),
         )
 
 

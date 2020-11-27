@@ -49,8 +49,6 @@ class Actor(BasePolicy):
             squash_output=True,
         )
 
-        self.features_extractor = features_extractor
-        self.normalize_images = normalize_images
         self.net_arch = net_arch
         self.features_dim = features_dim
         self.activation_fn = activation_fn

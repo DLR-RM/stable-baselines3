@@ -136,8 +136,7 @@ class BaseBuffer(ABC):
 
     @staticmethod
     def _normalize_obs(
-        obs: Union[np.ndarray, Dict[str, np.ndarray]],
-        env: Optional[VecNormalize] = None,
+        obs: Union[np.ndarray, Dict[str, np.ndarray]], env: Optional[VecNormalize] = None
     ) -> Union[np.ndarray, Dict[str, np.ndarray]]:
         if env is not None:
             return env.normalize_obs(obs)
@@ -185,19 +184,13 @@ class ReplayBuffer(BaseBuffer):
 
         self.optimize_memory_usage = optimize_memory_usage
 
-        self.observations = np.zeros(
-            (self.buffer_size, self.n_envs) + self.obs_shape,
-            dtype=observation_space.dtype,
-        )
+        self.observations = np.zeros((self.buffer_size, self.n_envs) + self.obs_shape, dtype=observation_space.dtype)
 
         if optimize_memory_usage:
             # `observations` contains also the next observation
             self.next_observations = None
         else:
-            self.next_observations = np.zeros(
-                (self.buffer_size, self.n_envs) + self.obs_shape,
-                dtype=observation_space.dtype,
-            )
+            self.next_observations = np.zeros((self.buffer_size, self.n_envs) + self.obs_shape, dtype=observation_space.dtype)
 
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
 
@@ -205,12 +198,10 @@ class ReplayBuffer(BaseBuffer):
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
 
         if psutil is not None:
-            obs_nbytes = self.observations.nbytes
+            total_memory_usage = self.observations.nbytes + self.actions.nbytes + self.rewards.nbytes + self.dones.nbytes
 
-            total_memory_usage = obs_nbytes + self.actions.nbytes + self.rewards.nbytes + self.dones.nbytes
             if self.next_observations is not None:
-                next_obs_nbytes = self.next_observations.nbytes
-                total_memory_usage += next_obs_nbytes
+                total_memory_usage += self.next_observations.nbytes
 
             if total_memory_usage > mem_available:
                 # Convert to GB
@@ -222,12 +213,7 @@ class ReplayBuffer(BaseBuffer):
                 )
 
     def add(
-        self,
-        obs: Union[np.ndarray, dict],
-        next_obs: np.ndarray,
-        action: np.ndarray,
-        reward: np.ndarray,
-        done: np.ndarray,
+        self, obs: Union[np.ndarray, dict], next_obs: np.ndarray, action: np.ndarray, reward: np.ndarray, done: np.ndarray
     ) -> None:
         # Copy to avoid modification by reference
 
@@ -324,12 +310,7 @@ class RolloutBuffer(BaseBuffer):
         super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
-        self.observations, self.actions, self.rewards, self.advantages = (
-            None,
-            None,
-            None,
-            None,
-        )
+        self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
         self.returns, self.dones, self.values, self.log_probs = None, None, None, None
         self.generator_ready = False
         self.reset()
@@ -417,14 +398,7 @@ class RolloutBuffer(BaseBuffer):
         # Prepare the data
         if not self.generator_ready:
 
-            _tensor_names = [
-                "observations",
-                "actions",
-                "values",
-                "log_probs",
-                "advantages",
-                "returns",
-            ]
+            _tensor_names = ["observations", "actions", "values", "log_probs", "advantages", "returns"]
 
             for tensor in _tensor_names:
                 self.__dict__[tensor] = self.swap_and_flatten(self.__dict__[tensor])
@@ -641,12 +615,7 @@ class DictRolloutBuffer(RolloutBuffer):
         super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
-        self.observations, self.actions, self.rewards, self.advantages = (
-            None,
-            None,
-            None,
-            None,
-        )
+        self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
         self.returns, self.dones, self.values, self.log_probs = None, None, None, None
         self.generator_ready = False
         self.reset()
@@ -654,7 +623,7 @@ class DictRolloutBuffer(RolloutBuffer):
     def reset(self) -> None:
 
         self.observations = {}
-        for (key, obs_input_shape) in self.obs_shape.items():
+        for key, obs_input_shape in self.obs_shape.items():
             self.observations[key] = np.zeros((self.buffer_size, self.n_envs) + obs_input_shape, dtype=np.float32)
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)

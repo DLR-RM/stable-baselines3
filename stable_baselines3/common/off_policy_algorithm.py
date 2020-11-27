@@ -10,17 +10,12 @@ import torch as th
 
 from stable_baselines3.common import logger
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.buffers import ReplayBuffer, DictReplayBuffer
+from stable_baselines3.common.buffers import DictReplayBuffer, ReplayBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.save_util import load_from_pkl, save_to_pkl
-from stable_baselines3.common.type_aliases import (
-    GymEnv,
-    MaybeCallback,
-    RolloutReturn,
-    Schedule,
-)
+from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn, Schedule
 from stable_baselines3.common.utils import safe_mean
 from stable_baselines3.common.vec_env import VecEnv
 

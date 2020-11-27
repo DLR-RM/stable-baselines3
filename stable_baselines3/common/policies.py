@@ -20,6 +20,7 @@ from stable_baselines3.common.distributions import (
     StateDependentNoiseDistribution,
     make_proba_distribution,
 )
+from stable_baselines3.common.env_util import is_wrapped
 from stable_baselines3.common.preprocessing import get_action_dim, is_image_space, preprocess_obs
 from stable_baselines3.common.torch_layers import (
     BaseFeaturesExtractor,
@@ -31,7 +32,6 @@ from stable_baselines3.common.torch_layers import (
 )
 from stable_baselines3.common.type_aliases import Schedule
 from stable_baselines3.common.utils import get_device, is_vectorized_observation
-from stable_baselines3.common.env_util import is_wrapped
 from stable_baselines3.common.vec_env import VecTransposeImage
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 

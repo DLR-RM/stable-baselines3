@@ -2,18 +2,10 @@ import gym
 import numpy as np
 import pytest
 
-from stable_baselines3 import PPO, SAC, TD3, DQN
-from stable_baselines3.common.vec_env import (
-    DummyVecEnv,
-    VecFrameStack,
-    VecTransposeImage,
-)
-
-from stable_baselines3.common.multi_input_envs import (
-    SimpleMultiObsEnv,
-    NineRoomMultiObsEnv,
-)
+from stable_baselines3 import DQN, PPO, SAC, TD3
 from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.multi_input_envs import NineRoomMultiObsEnv, SimpleMultiObsEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack, VecTransposeImage
 
 
 @pytest.mark.slow

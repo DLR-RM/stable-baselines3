@@ -452,6 +452,7 @@ class RolloutBuffer(BaseBuffer):
 class DictReplayBuffer(ReplayBuffer):
     """
     Dict Replay buffer used in off-policy algorithms like SAC/TD3.
+    Extends the ReplayBuffer to use dictionary observations
 
     :param buffer_size: Max number of element in the buffer
     :param observation_space: Observation space
@@ -610,6 +611,8 @@ class DictReplayBuffer(ReplayBuffer):
 class DictRolloutBuffer(RolloutBuffer):
     """
     Dict Rollout buffer used in on-policy algorithms like A2C/PPO.
+    Extends the RolloutBuffer to use dictionary observations
+
     It corresponds to ``buffer_size`` transitions collected
     using the current policy.
     This experience will be discarded after the policy update.

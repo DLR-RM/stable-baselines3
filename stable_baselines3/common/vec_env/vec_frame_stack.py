@@ -4,17 +4,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 from gym import spaces
 
-from stable_baselines3.common.preprocessing import (
-    has_image_space,
-    is_image_space,
-    is_image_space_channels_first,
-)
+from stable_baselines3.common.preprocessing import has_image_space, is_image_space, is_image_space_channels_first
+from stable_baselines3.common.stacked_observations import StackedDictObservations, StackedObservations
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvWrapper
-
-from stable_baselines3.common.stacked_observations import (
-    StackedObservations,
-    StackedDictObservations,
-)
 
 
 class VecFrameStack(VecEnvWrapper):

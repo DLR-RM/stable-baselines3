@@ -476,8 +476,9 @@ class DictReplayBuffer(ReplayBuffer):
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
     ):
-        super(ReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
+        super(DictReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
 
+        assert isinstance(self.obs_shape, dict), "DictReplayBuffer must be used with Dict obs space only"
         assert n_envs == 1, "Replay buffer only support single environment for now"
 
         # Check that the replay buffer can fit into the memory
@@ -568,7 +569,10 @@ class DictReplayBuffer(ReplayBuffer):
         :return:
         """
         if not self.optimize_memory_usage:
-            return super().sample(batch_size=batch_size, env=env)
+            upper_bound = self.buffer_size if self.full else self.pos
+            batch_inds = np.random.randint(0, upper_bound, size=batch_size)
+            return self._get_samples(batch_inds, env=env)
+
         # Do not sample the element with index `self.pos` as the transitions is invalid
         # (we use only one array to store `obs` and `next_obs`)
         if self.full:
@@ -644,7 +648,10 @@ class DictRolloutBuffer(RolloutBuffer):
         n_envs: int = 1,
     ):
 
-        super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
+        super(DictRolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
+
+        assert isinstance(self.obs_shape, dict), "DictRolloutBuffer must be used with Dict obs space only"
+
         self.gae_lambda = gae_lambda
         self.gamma = gamma
         self.observations, self.actions, self.rewards, self.advantages = (
@@ -658,7 +665,7 @@ class DictRolloutBuffer(RolloutBuffer):
         self.reset()
 
     def reset(self) -> None:
-
+        assert isinstance(self.obs_shape, dict), "DictRolloutBuffer must be used with Dict obs space only"
         self.observations = {}
         for key, obs_input_shape in self.obs_shape.items():
             self.observations[key] = np.zeros((self.buffer_size, self.n_envs) + obs_input_shape, dtype=np.float32)
@@ -730,7 +737,7 @@ class DictRolloutBuffer(RolloutBuffer):
             yield self._get_samples(indices[start_idx : start_idx + batch_size])
             start_idx += batch_size
 
-    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> RolloutBufferSamples:
+    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> DictRolloutBufferSamples:
 
         return DictRolloutBufferSamples(
             observations={key: self.to_torch(obs[batch_inds]) for (key, obs) in self.observations.items()},

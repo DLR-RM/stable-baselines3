@@ -23,6 +23,7 @@ def test_dict_spaces(model_class):
         env,
         gamma=0.5,
         seed=1,
+        n_steps=250,
         policy_kwargs=dict(net_arch=[64]),
     )
     model.learn(total_timesteps=500)

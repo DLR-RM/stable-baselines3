@@ -41,7 +41,7 @@ class VecFrameStack(VecEnvWrapper):
 
     def step_wait(
         self,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[Dict[str, Any]]]:
+    ) -> Tuple[Union[np.ndarray, Dict[str, np.ndarray]], np.ndarray, np.ndarray, List[Dict[str, Any]]]:
 
         observations, rewards, dones, infos = self.venv.step_wait()
 

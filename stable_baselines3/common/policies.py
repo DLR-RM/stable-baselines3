@@ -20,7 +20,6 @@ from stable_baselines3.common.distributions import (
     StateDependentNoiseDistribution,
     make_proba_distribution,
 )
-from stable_baselines3.common.env_util import is_wrapped
 from stable_baselines3.common.preprocessing import get_action_dim, is_image_space, preprocess_obs
 from stable_baselines3.common.torch_layers import (
     BaseFeaturesExtractor,
@@ -267,7 +266,7 @@ class BasePolicy(BaseModel):
 
     def predict(
         self,
-        observation: np.ndarray,
+        observation: Union[np.ndarray, Dict[str, np.ndarray]],
         state: Optional[np.ndarray] = None,
         mask: Optional[np.ndarray] = None,
         deterministic: bool = False,
@@ -290,7 +289,8 @@ class BasePolicy(BaseModel):
         #     mask = [False for _ in range(self.n_envs)]
         # Need to check the observation if its a ObsDictWrapper
 
-        if is_wrapped(self.observation_space, ObsDictWrapper):
+        # Special Case for GoalEnd (using HER normally)
+        if isinstance(observation, dict) and set(observation.keys()) == set(["observation", "desired_goal", "achieved_goal"]):
             observation = ObsDictWrapper.convert_dict(observation)
         elif isinstance(observation, dict):
             # need to copy the dict as the dict in VecFrameStack will become a torch tensor

@@ -185,19 +185,13 @@ class ReplayBuffer(BaseBuffer):
 
         self.optimize_memory_usage = optimize_memory_usage
 
-        self.observations = np.zeros(
-            (self.buffer_size, self.n_envs) + self.obs_shape,
-            dtype=observation_space.dtype,
-        )
+        self.observations = np.zeros((self.buffer_size, self.n_envs) + self.obs_shape, dtype=observation_space.dtype)
 
         if optimize_memory_usage:
             # `observations` contains also the next observation
             self.next_observations = None
         else:
-            self.next_observations = np.zeros(
-                (self.buffer_size, self.n_envs) + self.obs_shape,
-                dtype=observation_space.dtype,
-            )
+            self.next_observations = np.zeros((self.buffer_size, self.n_envs) + self.obs_shape, dtype=observation_space.dtype)
 
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
 
@@ -322,12 +316,7 @@ class RolloutBuffer(BaseBuffer):
         super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
-        self.observations, self.actions, self.rewards, self.advantages = (
-            None,
-            None,
-            None,
-            None,
-        )
+        self.observations, self.actions, self.rewards, self.advantages = (None, None, None, None)
         self.returns, self.dones, self.values, self.log_probs = None, None, None, None
         self.generator_ready = False
         self.reset()
@@ -415,14 +404,7 @@ class RolloutBuffer(BaseBuffer):
         # Prepare the data
         if not self.generator_ready:
 
-            _tensor_names = [
-                "observations",
-                "actions",
-                "values",
-                "log_probs",
-                "advantages",
-                "returns",
-            ]
+            _tensor_names = ["observations", "actions", "values", "log_probs", "advantages", "returns"]
 
             for tensor in _tensor_names:
                 self.__dict__[tensor] = self.swap_and_flatten(self.__dict__[tensor])
@@ -581,12 +563,7 @@ class DictReplayBuffer(ReplayBuffer):
 
         if self.optimize_memory_usage:
             next_obs = {
-                key: self.to_torch(
-                    self._normalize_obs(
-                        obs[(batch_inds + 1) % self.buffer_size, 0, :],
-                        env,
-                    )
-                )
+                key: self.to_torch(self._normalize_obs(obs[(batch_inds + 1) % self.buffer_size, 0, :], env))
                 for key, obs in self.observations.items()
             }
         else:
@@ -647,12 +624,7 @@ class DictRolloutBuffer(RolloutBuffer):
         super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
-        self.observations, self.actions, self.rewards, self.advantages = (
-            None,
-            None,
-            None,
-            None,
-        )
+        self.observations, self.actions, self.rewards, self.advantages = (None, None, None, None)
         self.returns, self.dones, self.values, self.log_probs = None, None, None, None
         self.generator_ready = False
         self.reset()

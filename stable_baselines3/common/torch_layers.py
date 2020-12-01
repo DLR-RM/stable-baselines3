@@ -282,13 +282,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
 
             else:
                 extractors[key] = nn.Sequential(
-                    *create_mlp(
-                        subspace.shape[0],
-                        mlp_output_dim,
-                        mlp_net_arch,
-                        activation_fn,
-                        squash_output=False,
-                    )
+                    *create_mlp(subspace.shape[0], mlp_output_dim, mlp_net_arch, activation_fn, squash_output=False)
                 )
 
                 total_concat_size += mlp_output_dim
@@ -296,13 +290,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
         self.extractors = nn.ModuleDict(extractors)
 
         self.combined = nn.Sequential(
-            *create_mlp(
-                total_concat_size,
-                features_dim,
-                comb_net_arch,
-                activation_fn,
-                squash_output=False,
-            )
+            *create_mlp(total_concat_size, features_dim, comb_net_arch, activation_fn, squash_output=False)
         )
 
     def forward(self, observations: TensorDict) -> th.Tensor:

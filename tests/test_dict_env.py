@@ -18,13 +18,7 @@ def test_dict_spaces(model_class):
     env = DummyVecEnv([make_env])
     env = VecFrameStack(env, n_stack=2)
 
-    model = model_class(
-        "MultiInputPolicy",
-        env,
-        gamma=0.5,
-        seed=1,
-        policy_kwargs=dict(net_arch=[64]),
-    )
+    model = model_class("MultiInputPolicy", env, gamma=0.5, seed=1, policy_kwargs=dict(net_arch=[64]))
     model.learn(total_timesteps=500)
 
     evaluate_policy(model, env, n_eval_episodes=5, warn=False)

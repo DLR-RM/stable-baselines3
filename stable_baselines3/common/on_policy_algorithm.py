@@ -102,26 +102,17 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
 
-        if isinstance(self.observation_space, gym.spaces.Dict):
-            self.rollout_buffer = DictRolloutBuffer(
-                self.n_steps,
-                self.observation_space,
-                self.action_space,
-                self.device,
-                gamma=self.gamma,
-                gae_lambda=self.gae_lambda,
-                n_envs=self.n_envs,
-            )
-        else:
-            self.rollout_buffer = RolloutBuffer(
-                self.n_steps,
-                self.observation_space,
-                self.action_space,
-                self.device,
-                gamma=self.gamma,
-                gae_lambda=self.gae_lambda,
-                n_envs=self.n_envs,
-            )
+        BUFFER_CLS = DictRolloutBuffer if isinstance(self.observation_space, gym.spaces.Dict) else RolloutBuffer
+
+        self.rollout_buffer = BUFFER_CLS(
+            self.n_steps,
+            self.observation_space,
+            self.action_space,
+            self.device,
+            gamma=self.gamma,
+            gae_lambda=self.gae_lambda,
+            n_envs=self.n_envs,
+        )
 
         self.policy = self.policy_class(
             self.observation_space,

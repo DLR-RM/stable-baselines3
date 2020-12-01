@@ -112,12 +112,7 @@ class BaseModel(nn.Module, ABC):
         if features_extractor is None:
             # The features extractor is not shared, create a new one
             features_extractor = self.make_features_extractor()
-        net_kwargs.update(
-            dict(
-                features_extractor=features_extractor,
-                features_dim=features_extractor.features_dim,
-            )
-        )
+        net_kwargs.update(dict(features_extractor=features_extractor, features_dim=features_extractor.features_dim))
         return net_kwargs
 
     def make_features_extractor(self) -> BaseFeaturesExtractor:
@@ -544,9 +539,7 @@ class ActorCriticPolicy(BasePolicy):
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
             latent_sde_dim = latent_dim_pi if self.sde_net_arch is None else latent_sde_dim
             self.action_net, self.log_std = self.action_dist.proba_distribution_net(
-                latent_dim=latent_dim_pi,
-                latent_sde_dim=latent_sde_dim,
-                log_std_init=self.log_std_init,
+                latent_dim=latent_dim_pi, latent_sde_dim=latent_sde_dim, log_std_init=self.log_std_init
             )
         elif isinstance(self.action_dist, CategoricalDistribution):
             self.action_net = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi)
@@ -908,13 +901,7 @@ def create_sde_features_extractor(
     # Special case: when using states as features (i.e. sde_net_arch is an empty list)
     # don't use any activation function
     sde_activation = activation_fn if len(sde_net_arch) > 0 else None
-    latent_sde_net = create_mlp(
-        features_dim,
-        -1,
-        sde_net_arch,
-        activation_fn=sde_activation,
-        squash_output=False,
-    )
+    latent_sde_net = create_mlp(features_dim, -1, sde_net_arch, activation_fn=sde_activation, squash_output=False)
     latent_sde_dim = sde_net_arch[-1] if len(sde_net_arch) > 0 else features_dim
     sde_features_extractor = nn.Sequential(*latent_sde_net)
     return sde_features_extractor, latent_sde_dim

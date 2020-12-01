@@ -228,14 +228,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             self.replay_buffer.dones[pos] = True
 
         return super()._setup_learn(
-            total_timesteps,
-            eval_env,
-            callback,
-            eval_freq,
-            n_eval_episodes,
-            log_path,
-            reset_num_timesteps,
-            tb_log_name,
+            total_timesteps, eval_env, callback, eval_freq, n_eval_episodes, log_path, reset_num_timesteps, tb_log_name
         )
 
     def learn(
@@ -252,14 +245,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     ) -> "OffPolicyAlgorithm":
 
         total_timesteps, callback = self._setup_learn(
-            total_timesteps,
-            eval_env,
-            callback,
-            eval_freq,
-            n_eval_episodes,
-            eval_log_path,
-            reset_num_timesteps,
-            tb_log_name,
+            total_timesteps, eval_env, callback, eval_freq, n_eval_episodes, eval_log_path, reset_num_timesteps, tb_log_name
         )
 
         callback.on_training_start(locals(), globals())
@@ -348,20 +334,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         fps = int(self.num_timesteps / (time.time() - self.start_time))
         logger.record("time/episodes", self._episode_num, exclude="tensorboard")
         if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
-            logger.record(
-                "rollout/ep_rew_mean",
-                safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]),
-            )
-            logger.record(
-                "rollout/ep_len_mean",
-                safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]),
-            )
+            logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
+            logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
         logger.record("time/fps", fps)
-        logger.record(
-            "time/time_elapsed",
-            int(time.time() - self.start_time),
-            exclude="tensorboard",
-        )
+        logger.record("time/time_elapsed", int(time.time() - self.start_time), exclude="tensorboard")
         logger.record("time/total timesteps", self.num_timesteps, exclude="tensorboard")
         if self.use_sde:
             logger.record("train/std", (self.actor.get_std()).mean().item())
@@ -459,11 +435,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                         reward_ = self._vec_normalize_env.get_original_reward()
                     else:
                         # Avoid changing the original ones
-                        self._last_original_obs, new_obs_, reward_ = (
-                            self._last_obs,
-                            new_obs,
-                            reward,
-                        )
+                        self._last_original_obs, new_obs_, reward_ = (self._last_obs, new_obs, reward)
 
                     replay_buffer.add(self._last_original_obs, new_obs_, buffer_action, reward_, done)
 

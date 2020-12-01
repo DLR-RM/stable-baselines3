@@ -31,12 +31,9 @@ class StackedObservations:
     ):
 
         self.n_stack = n_stack
-        (
-            self.channels_first,
-            self.stack_dimension,
-            self.stackedobs,
-            self.repeat_axis,
-        ) = self.compute_stacking(num_envs, n_stack, observation_space, channels_order)
+        (self.channels_first, self.stack_dimension, self.stackedobs, self.repeat_axis) = self.compute_stacking(
+            num_envs, n_stack, observation_space, channels_order
+        )
 
     @staticmethod
     def compute_stacking(
@@ -62,10 +59,7 @@ class StackedObservations:
                 # Default behavior for non-image space, stack on the last axis
                 channels_first = False
         else:
-            assert channels_order in {
-                "last",
-                "first",
-            }, "`channels_order` must be one of following: 'last', 'first'"
+            assert channels_order in {"last", "first"}, "`channels_order` must be one of following: 'last', 'first'"
 
             channels_first = channels_order == "first"
 
@@ -114,18 +108,12 @@ class StackedObservations:
                     old_terminal = infos[i]["terminal_observation"]
                     if self.channels_first:
                         new_terminal = np.concatenate(
-                            (
-                                self.stackedobs[i, :-stack_ax_size, ...],
-                                old_terminal,
-                            ),
+                            (self.stackedobs[i, :-stack_ax_size, ...], old_terminal),
                             axis=self.stack_dimension,
                         )
                     else:
                         new_terminal = np.concatenate(
-                            (
-                                self.stackedobs[i, ..., :-stack_ax_size],
-                                old_terminal,
-                            ),
+                            (self.stackedobs[i, ..., :-stack_ax_size], old_terminal),
                             axis=self.stack_dimension,
                         )
                     infos[i]["terminal_observation"] = new_terminal
@@ -213,29 +201,17 @@ class StackedDictObservations(StackedObservations):
         """
         for key in self.stackedobs.keys():
             stack_ax_size = observations[key].shape[self.stack_dimension[key]]
-            self.stackedobs[key] = np.roll(
-                self.stackedobs[key],
-                shift=-stack_ax_size,
-                axis=self.stack_dimension[key],
-            )
+            self.stackedobs[key] = np.roll(self.stackedobs[key], shift=-stack_ax_size, axis=self.stack_dimension[key])
 
             for i, done in enumerate(dones):
                 if done:
                     if "terminal_observation" in infos[i]:
                         old_terminal = infos[i]["terminal_observation"][key]
                         if self.channels_first[key]:
-                            new_terminal = np.vstack(
-                                (
-                                    self.stackedobs[key][i, :-stack_ax_size, ...],
-                                    old_terminal,
-                                )
-                            )
+                            new_terminal = np.vstack((self.stackedobs[key][i, :-stack_ax_size, ...], old_terminal))
                         else:
                             new_terminal = np.concatenate(
-                                (
-                                    self.stackedobs[key][i, ..., :-stack_ax_size],
-                                    old_terminal,
-                                ),
+                                (self.stackedobs[key][i, ..., :-stack_ax_size], old_terminal),
                                 axis=self.stack_dimension[key],
                             )
                         infos[i]["terminal_observation"][key] = new_terminal

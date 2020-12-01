@@ -16,7 +16,7 @@ def test_dict_spaces(model_class):
     """
     make_env = lambda: SimpleMultiObsEnv(random_start=True)
     env = DummyVecEnv([make_env])
-    # env = VecFrameStack(env, n_stack=2)
+    env = VecFrameStack(env, n_stack=2)
 
     model = model_class(
         "MultiInputPolicy",

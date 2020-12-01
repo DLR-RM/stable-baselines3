@@ -347,6 +347,12 @@ def polyak_update(
 def obs_as_tensor(
     obs: Union[np.ndarray, Dict[Union[str, int], np.ndarray]], device: th.device
 ) -> Union[th.tensor, TensorDict]:
+    """
+    Moves the observeration to the given device
+    :param obs:
+    :param device:
+    :return:
+    """
     if isinstance(obs, np.ndarray):
         return th.as_tensor(obs).to(device)
     elif isinstance(obs, dict):

@@ -31,7 +31,7 @@ from stable_baselines3.common.torch_layers import (
     create_mlp,
 )
 from stable_baselines3.common.type_aliases import Schedule
-from stable_baselines3.common.utils import get_device, is_vectorized_observation
+from stable_baselines3.common.utils import get_device, is_vectorized_observation, obs_as_tensor
 from stable_baselines3.common.vec_env import VecTransposeImage
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 
@@ -112,7 +112,12 @@ class BaseModel(nn.Module, ABC):
         if features_extractor is None:
             # The features extractor is not shared, create a new one
             features_extractor = self.make_features_extractor()
-        net_kwargs.update(dict(features_extractor=features_extractor, features_dim=features_extractor.features_dim))
+        net_kwargs.update(
+            dict(
+                features_extractor=features_extractor,
+                features_dim=features_extractor.features_dim,
+            )
+        )
         return net_kwargs
 
     def make_features_extractor(self) -> BaseFeaturesExtractor:
@@ -249,7 +254,14 @@ class BasePolicy(BaseModel):
         """
 
     @staticmethod
-    def try_transpose_img_observation(obs: np.ndarray, observation_space: gym.spaces.Space):
+    def try_transpose_img_observation(obs: np.ndarray, observation_space: gym.spaces.Space) -> np.ndarray:
+        """
+        Try to transpose an observation such that it matches the shape of the observation_space
+
+        :param obs:
+        :param observation_space:
+        :return: (potentially transposed) observation
+        """
         obs = np.array(obs)
         if not (obs.shape == observation_space.shape or obs.shape[1:] == observation_space.shape):
             # Try to re-order the channels
@@ -304,12 +316,10 @@ class BasePolicy(BaseModel):
 
         vectorized_env = is_vectorized_observation(observation, self.observation_space)
 
-        if isinstance(observation, dict):
-            for key, obs in observation.items():
-                observation[key] = th.as_tensor(observation[key]).to(self.device)
-        else:
+        if not isinstance(observation, dict):
             observation = observation.reshape((-1,) + self.observation_space.shape)
-            observation = th.as_tensor(observation).to(self.device)
+
+        observation = obs_as_tensor(observation, self.device)
 
         with th.no_grad():
             actions = self._predict(observation, deterministic=deterministic)

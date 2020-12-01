@@ -65,14 +65,22 @@ def is_image_space(
     return False
 
 
-def has_image_space(observation_space: spaces.Dict):
+def has_image_space(observation_space: spaces.Dict) -> bool:
+    """
+    Check if a Dict observation space has an image space within its subspaces
+
+    :param observation_space:
+    :return:
+    """
     for key, subspace in observation_space.spaces.items():
         if is_image_space(subspace):
             return True
     return False
 
 
-def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space, normalize_images: bool = True) -> th.Tensor:
+def preprocess_obs(
+    obs: th.Tensor, observation_space: spaces.Space, normalize_images: bool = True
+) -> Union[th.Tensor, Dict[str, th.Tensor]]:
     """
     Preprocess observation to be to a neural network.
     For images, it normalizes the values by dividing them by 255 (to have values in [0, 1])
@@ -115,7 +123,9 @@ def preprocess_obs(obs: th.Tensor, observation_space: spaces.Space, normalize_im
         raise NotImplementedError(f"Preprocessing not implemented for {observation_space}")
 
 
-def get_obs_shape(observation_space: spaces.Space) -> Union[Tuple[int, ...], Dict[str, Tuple[int, ...]]]:
+def get_obs_shape(
+    observation_space: spaces.Space,
+) -> Union[Tuple[int, ...], Dict[str, Tuple[int, ...]]]:
     """
     Get the shape of the observation (useful for the buffers).
 

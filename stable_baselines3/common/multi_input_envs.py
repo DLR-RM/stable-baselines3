@@ -1,41 +1,40 @@
+from typing import Dict, Iterable, Union
+
 import gym
 import numpy as np
 
 
 class SimpleMultiObsEnv(gym.Env):
-    ## simple 4x4  grid world
-    #
-    #    ____________
-    #   | 0  1  2   3|
-    #   | 4|¯5¯¯6¯| 7|
-    #   | 8|_9_10_|11|
-    #   |12 13  14 15|
-    #   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-    # start is 0
-    # states 5, 6, 9, and 10 are blocked
-    # goal is 15
-    # actions are = [left, down, right, up]
+    """
+    Base class for GridWorld-based MultiObs Environments 4x4  grid world
 
-    # simple linear state env of 15 states but encoded with a vector and an image observation
-    # State Mapping
-    # State     Vector    Img
-    # 0         Vec * 0     Img * 0
-    # 1         Vec * 0     Img * 1/3
-    # 2         Vec * 0     Img * 2/3
-    # 3         Vec * 0     Img * 3/3
-    # 4         Vec * 1/3   Img * 0
-    # 5         Vec * 1/3   Img * 1/3
-    # 6         Vec * 1/3   Img * 2/3
-    # 7         Vec * 2/3   Img * 0
-    # 8         Vec * 2/3   Img * 1/3
-    # 9         Vec * 2/3   Img * 2/3
-    # 10        Vec * 2/3   Img * 3/3
-    # 11        Vec * 3/3   Img * 0
-    # 12        Vec * 3/3   Img * 1/3
-    # 13        Vec * 3/3   Img * 2/3
-    # 14        Vec * 3/3   Img * 3/3
 
-    def __init__(self, num_col=4, num_row=4, random_start=True, noise=0.0):
+        ____________
+       | 0  1  2   3|
+       | 4|¯5¯¯6¯| 7|
+       | 8|_9_10_|11|
+       |12 13  14 15|
+       ¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+    start is 0
+    states 5, 6, 9, and 10 are blocked
+    goal is 15
+    actions are = [left, down, right, up]
+
+    simple linear state env of 15 states but encoded with a vector and an image observation
+
+    :param num_col: Number of columns in the grid
+    :param num_row: Number of rows in the grid
+    :param random_start: If true, agent starts in random position
+    :param noise: Noise added to the observations
+    """
+
+    def __init__(
+        self,
+        num_col: int = 4,
+        num_row: int = 4,
+        random_start: bool = True,
+        noise: float = 0.0,
+    ):
         super(SimpleMultiObsEnv, self).__init__()
 
         self.vector_size = 5
@@ -61,7 +60,20 @@ class SimpleMultiObsEnv(gym.Env):
 
         self.max_state = len(self.state_mapping) - 1
 
-    def random_upsample_img(self, v_rng=(0, 255), initial_size=(4, 4), up_size=(20, 20)):
+    def random_upsample_img(
+        self,
+        v_rng: Iterable = (0, 255),
+        initial_size: Iterable = (4, 4),
+        up_size: Iterable = (20, 20),
+    ) -> np.ndarray:
+        """
+        Generated a random image and upsample it
+
+        :param v_rng: The range of values for the img
+        :param initial_size: The initial size of the image to generate
+        :param up_size: The size of the upsample
+        :return: upsampled img
+        """
         im = np.random.randint(v_rng[0], v_rng[1], initial_size, dtype=np.int32)
         return np.array(
             [
@@ -75,7 +87,13 @@ class SimpleMultiObsEnv(gym.Env):
             ]
         ).astype(np.int32)
 
-    def init_state_mapping(self, num_col, num_row):
+    def init_state_mapping(self, num_col: int, num_row: int) -> None:
+        """
+        Initializes the state_mapping array which holds the observation values for each state
+
+        :param num_col:
+        :param num_row:
+        """
         self.num_col = num_col
         self.state_mapping = []
 
@@ -85,7 +103,11 @@ class SimpleMultiObsEnv(gym.Env):
             for j in range(num_row):
                 self.state_mapping.append({"vec": col_vecs[i], "img": row_imgs[j]})
 
-    def get_state_mapping(self):
+    def get_state_mapping(self) -> Dict:
+        """
+        Uses the state to get the observation mapping and applies noise if there is any
+        :return: observation dict {'vec': ..., 'img': ...}
+        """
         state_dict = self.state_mapping[self.state]
         if self.noise > 0:
             state_dict["vec"] += np.random.random(self.vector_size) * self.noise
@@ -94,14 +116,35 @@ class SimpleMultiObsEnv(gym.Env):
             state_dict["img"] = np.clip(state_dict["img"], 0, 255)
         return state_dict
 
-    def init_possible_transitions(self):
+    def init_possible_transitions(self) -> None:
+        """
+        Initializes the transitions of the environment
+        The environment exploits the cardinal directions of the grid by noting that
+        they correspond to simple addition and subtraction from the cell id within the grid
+
+        - up => means moving up a row => means subtracting the length of a column
+        - down => means moving down a row => means adding the length of a column
+        - left => means moving left by one => means subtracting 1
+        - right => means moving right by one => means adding 1
+
+        Thus one only needs to specify in which states each action is possible
+        in order to define the transitions of the environment
+        """
         self.left_possible = [1, 2, 3, 13, 14, 15]
         self.down_possible = [0, 4, 8, 3, 7, 11]
         self.right_possible = [0, 1, 2, 12, 13, 14]
         self.up_possible = [4, 8, 12, 7, 11, 15]
 
-    def step(self, action):
+    def step(self, action: Union[int, float]):
+        """
+        Run one timestep of the environment's dynamics. When end of
+        episode is reached, you are responsible for calling `reset()`
+        to reset this environment's state.
+        Accepts an action and returns a tuple (observation, reward, done, info).
 
+        :param action:
+        :return: tuple (observation, reward, done, info).
+        """
         action = int(action)
 
         self.count += 1
@@ -127,10 +170,17 @@ class SimpleMultiObsEnv(gym.Env):
 
         return self.get_state_mapping(), rwd, done, {"got_to_end": got_to_end}
 
-    def render(self, mode=None):
+    def render(self, mode: str = None) -> None:
+        """
+        Prints the log of the environment
+        """
         print(self.log)
 
-    def reset(self):
+    def reset(self) -> None:
+        """
+        Resets the environment state and step count and returns reset observation
+        :return: observation dict {'vec': ..., 'img': ...}
+        """
         self.count = 0
         if not self.random_start:
             self.state = 0
@@ -140,30 +190,32 @@ class SimpleMultiObsEnv(gym.Env):
 
 
 class NineRoomMultiObsEnv(SimpleMultiObsEnv):
+    """
+    Extension of the SimpleMultiObsEnv to a 9 room  grid world
+        ____________________________________
+       | 0  1  2  |  3   4   5 | 6   7   8  |
+       | 9  10 11   12  13  14   15  16  17 |
+       | 18 19 20 | 21  22  23 | 24  25  26 |
+       |¯¯¯¯   ¯¯¯|¯¯¯¯    ¯¯¯¯|¯¯¯¯    ¯¯¯¯|
+       | 27 28 29 | 30  31  32 | 33  34  35 |
+       | 36 37 38   39  40  41   42  43  44 |
+       | 45 46 47 | 48  49  50 | 51  52  53 |
+       |¯¯¯    ¯¯¯|¯¯¯¯    ¯¯¯¯|¯¯¯¯    ¯¯¯¯|
+       | 54 55 56 | 57  58  59 | 60  61  62 |
+       | 63 64 65   66  67  68   69  70  71 |
+       | 72 73 74 | 75  76  77 | 78  79  80 |
+       ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+    :param random_start: If true, agent starts in random position
+    :param noise: Noise added to the observations
+    """
 
-    ## 9 room  grid world
-    #
-    #    ____________________________________
-    #   | 0  1  2  |  3   4   5 | 6   7   8  |
-    #   | 9  10 11   12  13  14   15  16  17 |
-    #   | 18 19 20 | 21  22  23 | 24  25  26 |
-    #   |¯¯¯¯   ¯¯¯|¯¯¯¯    ¯¯¯¯|¯¯¯¯    ¯¯¯¯|
-    #   | 27 28 29 | 30  31  32 | 33  34  35 |
-    #   | 36 37 38   39  40  41   42  43  44 |
-    #   | 45 46 47 | 48  49  50 | 51  52  53 |
-    #   |¯¯¯    ¯¯¯|¯¯¯¯    ¯¯¯¯|¯¯¯¯    ¯¯¯¯|
-    #   | 54 55 56 | 57  58  59 | 60  61  62 |
-    #   | 63 64 65   66  67  68   69  70  71 |
-    #   | 72 73 74 | 75  76  77 | 78  79  80 |
-    #   ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-    # start is 0
-    # goal is 80
-    # actions are = [left, down, right, up]
-
-    def __init__(self, random_start=True, noise=0.0):
+    def __init__(self, random_start: bool = True, noise: float = 0.0):
         super(NineRoomMultiObsEnv, self).__init__(9, 9, random_start=random_start, noise=noise)
 
     def init_possible_transitions(self):
+        """
+        Initializes the state_mapping array which holds the observation values for each state
+        """
         self.left_possible = (
             [1, 2, 4, 5, 7, 8]
             + list(range(10, 18))

@@ -8,7 +8,6 @@ Pre-Release 0.11.0a1 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-- Breaks HER as HER needs to be updated to use the new dictionary observations
 - ``evaluate_policy`` now returns rewards/episode lengths from a ``Monitor`` wrapper if one is present,
   this allows to return the unnormalized reward in the case of Atari games for instance.
 - Renamed ``common.vec_env.is_wrapped`` to ``common.vec_env.is_vecenv_wrapped`` to avoid confusion
@@ -20,7 +19,8 @@ New Features:
   automatic check for image spaces.
 - ``VecFrameStack`` now has a ``channels_order`` argument to tell if observations should be stacked
   on the first or last observation dimension (originally always stacked on last).
-- Add support for dictionary observations in both RolloutBuffer (need to be tested in ReplayBuffer)
+- Add ``DictRolloutBuffer`` to support dictionary observations (need to be tested in ReplayBuffer)
+- Add ``StackedObservations`` and ``StackedDictObservations`` that are used within ``VecFrameStack``
 - Added simple 4x4 and 9room test environments
 - Added ``common.env_util.is_wrapped`` and ``common.env_util.unwrap_wrapper`` functions for checking/unwrapping
   an environment for specific wrapper.

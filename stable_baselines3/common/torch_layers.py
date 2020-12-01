@@ -229,6 +229,20 @@ class MlpExtractor(nn.Module):
 
 
 class CombinedExtractor(BaseFeaturesExtractor):
+    """
+    Combined feature extractor for Dict observation spaces.
+    Builds a feature extractor for each key of the space
+
+    :param observation_space:
+    :param features_dim: Number of features extracted.
+        This corresponds to the number of unit for the last layer.
+    :param cnn_output_dim: Number of features to output from each cnn submodule
+    :param mlp_output_dim: Number of features to output from each mlp submodule
+    :param mlp_net_arch: Architecture of each mlp network module
+    :param activation_fn: The activation function to use within each mlp
+    :param comb_net_arch: Architecture of the combined network module which calculates the final feature extracted
+    """
+
     def __init__(
         self,
         observation_space: gym.spaces.Dict,

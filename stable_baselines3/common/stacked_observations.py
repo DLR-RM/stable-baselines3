@@ -44,7 +44,15 @@ class StackedObservations:
         n_stack: int,
         observation_space: spaces.Space,
         channels_order: Optional[str] = None,
-    ):
+    ) -> Tuple:
+        """
+        Calculates the parameters in order to stack observations
+        :param num_envs:
+        :param n_stack:
+        :param observation_space:
+        :param channels_order:
+        :return: tuple of channels_first, stack_dimension, stackedobs, repeat_axis
+        """
         channels_first = False
         if channels_order is None:
             # Detect channel location automatically for images
@@ -68,12 +76,21 @@ class StackedObservations:
         stackedobs = np.zeros((num_envs,) + low.shape, low.dtype)
         return channels_first, stack_dimension, stackedobs, repeat_axis
 
-    def stack_observation_space(self, observation_space):
+    def stack_observation_space(self, observation_space: spaces.Box) -> spaces.Box:
+        """
+        Given an observation space, returns a new observation space with stacked observations
+        :return:
+        """
         low = np.repeat(observation_space.low, self.n_stack, axis=self.repeat_axis)
         high = np.repeat(observation_space.high, self.n_stack, axis=self.repeat_axis)
         return spaces.Box(low=low, high=high, dtype=observation_space.dtype)
 
-    def reset(self, observation):
+    def reset(self, observation: np.ndarray) -> np.ndarray:
+        """
+        Resets the stackedobs, adds the reset observation to the stack, and returns the stack
+        :param observation:
+        :return:
+        """
         self.stackedobs[...] = 0
         if self.channels_first:
             self.stackedobs[:, -observation.shape[self.stack_dimension] :, ...] = observation
@@ -81,7 +98,14 @@ class StackedObservations:
             self.stackedobs[..., -observation.shape[self.stack_dimension] :] = observation
         return self.stackedobs
 
-    def update(self, observations, dones, infos):
+    def update(self, observations: np.ndarray, dones: np.ndarray, infos: Dict) -> Tuple[np.ndarray, Dict]:
+        """
+        Adds the observations to the stack and uses the dones to update the infos.
+        :param observations:
+        :param dones:
+        :param infos:
+        :return: tuple of the stacked observations and the updated infos
+        """
         stack_ax_size = observations.shape[self.stack_dimension]
         self.stackedobs = np.roll(self.stackedobs, shift=-stack_ax_size, axis=self.stack_dimension)
         for i, done in enumerate(dones):
@@ -130,7 +154,13 @@ class StackedDictObservations(StackedObservations):
         If None, automatically detect channel to stack over in case of image observation or default to "last" (default).
     """
 
-    def __init__(self, num_envs, n_stack, observation_space, channels_order):
+    def __init__(
+        self,
+        num_envs: int,
+        n_stack: int,
+        observation_space: spaces.Dict,
+        channels_order: Optional[str] = None,
+    ):
         self.n_stack = n_stack
         self.channels_first = {}
         self.stack_dimension = {}
@@ -146,7 +176,12 @@ class StackedDictObservations(StackedObservations):
                 self.repeat_axis[key],
             ) = self.compute_stacking(num_envs, n_stack, subspace, channels_order)
 
-    def stack_observation_space(self, observation_space):
+    def stack_observation_space(self, observation_space: spaces.Dict) -> spaces.Dict:
+        """
+        Returns the stacked verson of a Dict observation space
+        :param observation_space:
+        :return: stacked observation space
+        """
         spaces_dict = {}
         for key, subspace in observation_space.spaces.items():
             low = np.repeat(subspace.low, self.n_stack, axis=self.repeat_axis[key])
@@ -154,7 +189,12 @@ class StackedDictObservations(StackedObservations):
             spaces_dict[key] = spaces.Box(low=low, high=high, dtype=subspace.dtype)
         return spaces.Dict(spaces=spaces_dict)
 
-    def reset(self, observation):
+    def reset(self, observation: Dict) -> Dict:
+        """
+        Resets the stacked observations, adds the reset observation to the stack, and returns the stack
+        :param observation:
+        :return: stacked observations
+        """
         for key, obs in observation.items():
             self.stackedobs[key][...] = 0
             if self.channels_first[key]:
@@ -163,7 +203,14 @@ class StackedDictObservations(StackedObservations):
                 self.stackedobs[key][..., -obs.shape[self.stack_dimension[key]] :] = obs
         return self.stackedobs
 
-    def update(self, observations, dones, infos):
+    def update(self, observations: Dict, dones: np.ndarray, infos: Dict) -> Tuple[Dict, Dict]:
+        """
+        Adds the observations to the stack and uses the dones to update the infos.
+        :param observations:
+        :param dones:
+        :param infos:
+        :return: tuple of the stacked observations and the updated infos
+        """
         for key in self.stackedobs.keys():
             stack_ax_size = observations[key].shape[self.stack_dimension[key]]
             self.stackedobs[key] = np.roll(

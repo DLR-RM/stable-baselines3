@@ -551,9 +551,7 @@ class DictReplayBuffer(ReplayBuffer):
         :return:
         """
         if not self.optimize_memory_usage:
-            upper_bound = self.buffer_size if self.full else self.pos
-            batch_inds = np.random.randint(0, upper_bound, size=batch_size)
-            return self._get_samples(batch_inds, env=env)
+            return super(ReplayBuffer, self).sample(batch_size=batch_size, env=env)
 
         # Do not sample the element with index `self.pos` as the transitions is invalid
         # (we use only one array to store `obs` and `next_obs`)

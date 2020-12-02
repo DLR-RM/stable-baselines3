@@ -1,13 +1,13 @@
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from gym import spaces
 
-from stable_baselines3.common.preprocessing import has_image_space, is_image_space, is_image_space_channels_first
+from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
 
 
-class StackedObservations:
+class StackedObservations(object):
     """
     Frame stacking wrapper for data.
 
@@ -31,17 +31,18 @@ class StackedObservations:
     ):
 
         self.n_stack = n_stack
-        (self.channels_first, self.stack_dimension, self.stackedobs, self.repeat_axis) = self.compute_stacking(
+        self.channels_first, self.stack_dimension, self.stackedobs, self.repeat_axis = self.compute_stacking(
             num_envs, n_stack, observation_space, channels_order
         )
+        super().__init__()
 
     @staticmethod
     def compute_stacking(
         num_envs: int,
         n_stack: int,
-        observation_space: spaces.Space,
+        observation_space: spaces.Box,
         channels_order: Optional[str] = None,
-    ) -> Tuple:
+    ) -> Tuple[bool, int, np.ndarray, int]:
         """
         Calculates the parameters in order to stack observations
         :param num_envs:
@@ -82,6 +83,7 @@ class StackedObservations:
     def reset(self, observation: np.ndarray) -> np.ndarray:
         """
         Resets the stackedobs, adds the reset observation to the stack, and returns the stack
+
         :param observation:
         :return:
         """
@@ -92,9 +94,15 @@ class StackedObservations:
             self.stackedobs[..., -observation.shape[self.stack_dimension] :] = observation
         return self.stackedobs
 
-    def update(self, observations: np.ndarray, dones: np.ndarray, infos: Dict) -> Tuple[np.ndarray, Dict]:
+    def update(
+        self,
+        observations: np.ndarray,
+        dones: np.ndarray,
+        infos: List[Dict[str, Any]],
+    ) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
         """
         Adds the observations to the stack and uses the dones to update the infos.
+
         :param observations:
         :param dones:
         :param infos:
@@ -155,7 +163,8 @@ class StackedDictObservations(StackedObservations):
         self.stackedobs = {}
         self.repeat_axis = {}
 
-        for (key, subspace) in observation_space.spaces.items():
+        for key, subspace in observation_space.spaces.items():
+            # assert isinstance(key, str), f"The key {key} of the observation space is not a string"
             assert isinstance(subspace, spaces.Box), "StackedDictObservations only works with nested gym.spaces.Box"
             (
                 self.channels_first[key],
@@ -177,7 +186,7 @@ class StackedDictObservations(StackedObservations):
             spaces_dict[key] = spaces.Box(low=low, high=high, dtype=subspace.dtype)
         return spaces.Dict(spaces=spaces_dict)
 
-    def reset(self, observation: Dict) -> Dict:
+    def reset(self, observation: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
         """
         Resets the stacked observations, adds the reset observation to the stack, and returns the stack
         :param observation:
@@ -191,7 +200,12 @@ class StackedDictObservations(StackedObservations):
                 self.stackedobs[key][..., -obs.shape[self.stack_dimension[key]] :] = obs
         return self.stackedobs
 
-    def update(self, observations: Dict, dones: np.ndarray, infos: Dict) -> Tuple[Dict, Dict]:
+    def update(
+        self,
+        observations: Dict[str, np.ndarray],
+        dones: np.ndarray,
+        infos: List[Dict[str, Any]],
+    ) -> Tuple[Dict[str, np.ndarray], List[Dict[str, Any]]]:
         """
         Adds the observations to the stack and uses the dones to update the infos.
         :param observations:
@@ -219,7 +233,7 @@ class StackedDictObservations(StackedObservations):
                         warnings.warn("VecFrameStack wrapping a VecEnv without terminal_observation info")
                     self.stackedobs[key][i] = 0
             if self.channels_first:
-                self.stackedobs[key][:, -observations[key].shape[self.stack_dimension[key]] :, ...] = observations[key]
+                self.stackedobs[key][:, -stack_ax_size:, ...] = observations[key]
             else:
-                self.stackedobs[key][..., -observations[key].shape[self.stack_dimension] :] = observations[key]
+                self.stackedobs[key][..., -stack_ax_size:] = observations[key]
         return self.stackedobs, infos

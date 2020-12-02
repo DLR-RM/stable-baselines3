@@ -1,7 +1,9 @@
-from typing import Dict, Iterable, Union
+from typing import Dict, Tuple, Union
 
 import gym
 import numpy as np
+
+from stable_baselines3.common.type_aliases import GymStepReturn
 
 
 class SimpleMultiObsEnv(gym.Env):
@@ -62,27 +64,27 @@ class SimpleMultiObsEnv(gym.Env):
 
     def random_upsample_img(
         self,
-        v_rng: Iterable = (0, 255),
-        initial_size: Iterable = (4, 4),
-        up_size: Iterable = (20, 20),
+        value_range: Tuple[int, int] = (0, 255),
+        initial_size: Tuple[int, int] = (4, 4),
+        up_size: Tuple[int, int] = (20, 20),
     ) -> np.ndarray:
         """
-        Generated a random image and upsample it
+        Generated a random image and upsample it.
 
-        :param v_rng: The range of values for the img
+        :param value_range: The range of values for the img
         :param initial_size: The initial size of the image to generate
         :param up_size: The size of the upsample
         :return: upsampled img
         """
-        im = np.random.randint(v_rng[0], v_rng[1], initial_size, dtype=np.int32)
+        im = np.random.randint(value_range[0], value_range[1], initial_size, dtype=np.int32)
         return np.array(
             [
                 [
                     [
-                        im[int(initial_size[0] * r / up_size[0])][int(initial_size[1] * c / up_size[1])]
-                        for c in range(up_size[0])
+                        im[int(initial_size[0] * row / up_size[0])][int(initial_size[1] * col / up_size[1])]
+                        for col in range(up_size[0])
                     ]
-                    for r in range(up_size[1])
+                    for row in range(up_size[1])
                 ]
             ]
         ).astype(np.int32)
@@ -91,8 +93,8 @@ class SimpleMultiObsEnv(gym.Env):
         """
         Initializes the state_mapping array which holds the observation values for each state
 
-        :param num_col:
-        :param num_row:
+        :param num_col: Number of columns.
+        :param num_row: Number of rows.
         """
         self.num_col = num_col
         self.state_mapping = []
@@ -103,9 +105,10 @@ class SimpleMultiObsEnv(gym.Env):
             for j in range(num_row):
                 self.state_mapping.append({"vec": col_vecs[i], "img": row_imgs[j]})
 
-    def get_state_mapping(self) -> Dict:
+    def get_state_mapping(self) -> Dict[str, np.ndarray]:
         """
-        Uses the state to get the observation mapping and applies noise if there is any
+        Uses the state to get the observation mapping and applies noise if there is any.
+
         :return: observation dict {'vec': ..., 'img': ...}
         """
         state_dict = self.state_mapping[self.state]
@@ -135,7 +138,7 @@ class SimpleMultiObsEnv(gym.Env):
         self.right_possible = [0, 1, 2, 12, 13, 14]
         self.up_possible = [4, 8, 12, 7, 11, 15]
 
-    def step(self, action: Union[int, float]):
+    def step(self, action: Union[int, float]) -> GymStepReturn:
         """
         Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`
@@ -151,7 +154,7 @@ class SimpleMultiObsEnv(gym.Env):
 
         prev_state = self.state
 
-        rwd = -0.1
+        reward = -0.1
         # define state transition
         if self.state in self.left_possible and action == 0:  # left
             self.state -= 1
@@ -163,22 +166,25 @@ class SimpleMultiObsEnv(gym.Env):
             self.state -= self.num_col
 
         got_to_end = self.state == self.max_state
-        rwd = 1 if got_to_end else rwd
+        reward = 1 if got_to_end else reward
         done = self.count > self.max_count or got_to_end
 
         self.log = f"Went {self.action2str[action]} in state {prev_state}, got to state {self.state}"
 
-        return self.get_state_mapping(), rwd, done, {"got_to_end": got_to_end}
+        return self.get_state_mapping(), reward, done, {"got_to_end": got_to_end}
 
-    def render(self, mode: str = None) -> None:
+    def render(self, mode: str = "human") -> None:
         """
-        Prints the log of the environment
+        Prints the log of the environment.
+
+        :param mode:
         """
         print(self.log)
 
-    def reset(self) -> None:
+    def reset(self) -> Dict[str, np.ndarray]:
         """
-        Resets the environment state and step count and returns reset observation
+        Resets the environment state and step count and returns reset observation.
+
         :return: observation dict {'vec': ..., 'img': ...}
         """
         self.count = 0
@@ -212,7 +218,7 @@ class NineRoomMultiObsEnv(SimpleMultiObsEnv):
     def __init__(self, random_start: bool = True, noise: float = 0.0):
         super(NineRoomMultiObsEnv, self).__init__(9, 9, random_start=random_start, noise=noise)
 
-    def init_possible_transitions(self):
+    def init_possible_transitions(self) -> None:
         """
         Initializes the state_mapping array which holds the observation values for each state
         """

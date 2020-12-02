@@ -425,7 +425,7 @@ The parking env is a goal-conditioned continuous control task, in which the vehi
 Learning Rate Schedule
 ----------------------
 
-All algorithms allow to pass a learning rate schedule that takes as input the current progress remaining (from 1 to 0).
+All algorithms allow you to pass a learning rate schedule that takes as input the current progress remaining (from 1 to 0).
 ``PPO``'s ``clip_range``` parameter also accepts such schedule.
 
 The `RL Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_ already includes

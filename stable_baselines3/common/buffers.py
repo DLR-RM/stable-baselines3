@@ -3,12 +3,16 @@ from abc import ABC, abstractmethod
 from typing import Dict, Generator, Optional, Union
 
 import numpy as np
+import torch as th
 from gym import spaces
 
-import torch as th
 from stable_baselines3.common.preprocessing import get_action_dim, get_obs_shape
-from stable_baselines3.common.type_aliases import (DictReplayBufferSamples, DictRolloutBufferSamples, ReplayBufferSamples,
-                                                   RolloutBufferSamples)
+from stable_baselines3.common.type_aliases import (
+    DictReplayBufferSamples,
+    DictRolloutBufferSamples,
+    ReplayBufferSamples,
+    RolloutBufferSamples,
+)
 from stable_baselines3.common.vec_env import VecNormalize
 
 try:
@@ -16,7 +20,6 @@ try:
     import psutil
 except ImportError:
     psutil = None
-
 
 
 class BaseBuffer(ABC):

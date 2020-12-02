@@ -447,9 +447,6 @@ linear and constant schedules.
       :return: schedule that computes
         current learning rate depending on remaining progress
       """
-      if isinstance(initial_value, str):
-          initial_value = float(initial_value)
-
       def func(progress_remaining: float) -> float:
           """
           Progress will decrease from 1 (beginning) to 0.
@@ -464,7 +461,7 @@ linear and constant schedules.
   # Initial learning rate of 0.001
   model = PPO("MlpPolicy", "CartPole-v1", learning_rate=linear_schedule(0.001), verbose=1)
   model.learn(total_timesteps=20000)
-  # On the second call, by default, the learning rate schedule resets
+  # By default, `reset_num_timesteps` is True, in which case the learning rate schedule resets.
   # progress_remaining = 1.0 - (num_timesteps / total_timesteps)
   model.learn(total_timesteps=10000, reset_num_timesteps=True)
 

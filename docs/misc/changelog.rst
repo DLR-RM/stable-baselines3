@@ -19,7 +19,7 @@ New Features:
   automatic check for image spaces.
 - ``VecFrameStack`` now has a ``channels_order`` argument to tell if observations should be stacked
   on the first or last observation dimension (originally always stacked on last).
-- Add ``DictRolloutBuffer`` to support dictionary observations (need to be tested in ReplayBuffer)
+- Add ``DictRolloutBuffer`` to support dictionary observations (need to be tested in ReplayBuffer) (@JadenTravnik)
 - Add ``StackedObservations`` and ``StackedDictObservations`` that are used within ``VecFrameStack``
 - Added simple 4x4 and 9room test environments
 - Added ``common.env_util.is_wrapped`` and ``common.env_util.unwrap_wrapper`` functions for checking/unwrapping
@@ -529,4 +529,4 @@ And all the contributors:
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
-@tfederico @hn2
+@tfederico @hn2 @JadenTravnik

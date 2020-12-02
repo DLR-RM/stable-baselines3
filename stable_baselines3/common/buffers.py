@@ -3,8 +3,13 @@ from abc import ABC, abstractmethod
 from typing import Dict, Generator, Optional, Union
 
 import numpy as np
-import torch as th
 from gym import spaces
+
+import torch as th
+from stable_baselines3.common.preprocessing import get_action_dim, get_obs_shape
+from stable_baselines3.common.type_aliases import (DictReplayBufferSamples, DictRolloutBufferSamples, ReplayBufferSamples,
+                                                   RolloutBufferSamples)
+from stable_baselines3.common.vec_env import VecNormalize
 
 try:
     # Check memory used by replay buffer when possible
@@ -12,14 +17,6 @@ try:
 except ImportError:
     psutil = None
 
-from stable_baselines3.common.preprocessing import get_action_dim, get_obs_shape
-from stable_baselines3.common.type_aliases import (
-    DictReplayBufferSamples,
-    DictRolloutBufferSamples,
-    ReplayBufferSamples,
-    RolloutBufferSamples,
-)
-from stable_baselines3.common.vec_env import VecNormalize
 
 
 class BaseBuffer(ABC):
@@ -185,13 +182,19 @@ class ReplayBuffer(BaseBuffer):
 
         self.optimize_memory_usage = optimize_memory_usage
 
-        self.observations = np.zeros((self.buffer_size, self.n_envs) + self.obs_shape, dtype=observation_space.dtype)
+        self.observations = np.zeros(
+            (self.buffer_size, self.n_envs) + self.obs_shape,
+            dtype=observation_space.dtype,
+        )
 
         if optimize_memory_usage:
             # `observations` contains also the next observation
             self.next_observations = None
         else:
-            self.next_observations = np.zeros((self.buffer_size, self.n_envs) + self.obs_shape, dtype=observation_space.dtype)
+            self.next_observations = np.zeros(
+                (self.buffer_size, self.n_envs) + self.obs_shape,
+                dtype=observation_space.dtype,
+            )
 
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
 
@@ -316,7 +319,12 @@ class RolloutBuffer(BaseBuffer):
         super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
-        self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
+        self.observations, self.actions, self.rewards, self.advantages = (
+            None,
+            None,
+            None,
+            None,
+        )
         self.returns, self.dones, self.values, self.log_probs = None, None, None, None
         self.generator_ready = False
         self.reset()
@@ -404,7 +412,14 @@ class RolloutBuffer(BaseBuffer):
         # Prepare the data
         if not self.generator_ready:
 
-            _tensor_names = ["observations", "actions", "values", "log_probs", "advantages", "returns"]
+            _tensor_names = [
+                "observations",
+                "actions",
+                "values",
+                "log_probs",
+                "advantages",
+                "returns",
+            ]
 
             for tensor in _tensor_names:
                 self.__dict__[tensor] = self.swap_and_flatten(self.__dict__[tensor])
@@ -467,10 +482,9 @@ class DictReplayBuffer(ReplayBuffer):
         if psutil is not None:
             mem_available = psutil.virtual_memory().available
 
-        if optimize_memory_usage:
-            optimize_memory_usage = False
-            # disabling as this adds quite a bit of complexity
-            # https://github.com/DLR-RM/stable-baselines3/pull/243#discussion_r531535702
+        assert optimize_memory_usage == False, "DictReplayBuffer does not support optimize_memory_usage"
+        # disabling as this adds quite a bit of complexity
+        # https://github.com/DLR-RM/stable-baselines3/pull/243#discussion_r531535702
         self.optimize_memory_usage = optimize_memory_usage
 
         self.observations = {
@@ -629,7 +643,12 @@ class DictRolloutBuffer(RolloutBuffer):
 
         self.gae_lambda = gae_lambda
         self.gamma = gamma
-        self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
+        self.observations, self.actions, self.rewards, self.advantages = (
+            None,
+            None,
+            None,
+            None,
+        )
         self.returns, self.dones, self.values, self.log_probs = None, None, None, None
         self.generator_ready = False
         self.reset()

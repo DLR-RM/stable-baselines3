@@ -164,7 +164,6 @@ class StackedDictObservations(StackedObservations):
         self.repeat_axis = {}
 
         for key, subspace in observation_space.spaces.items():
-            # assert isinstance(key, str), f"The key {key} of the observation space is not a string"
             assert isinstance(subspace, spaces.Box), "StackedDictObservations only works with nested gym.spaces.Box"
             (
                 self.channels_first[key],

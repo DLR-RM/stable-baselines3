@@ -289,7 +289,7 @@ class BasePolicy(BaseModel):
         #     mask = [False for _ in range(self.n_envs)]
         # Need to check the observation if its a ObsDictWrapper
 
-        # Special Case for GoalEnd (using HER normally)
+        # Special Case for GoalEnv (using HER normally)
         if isinstance(observation, dict) and set(observation.keys()) == set(["observation", "desired_goal", "achieved_goal"]):
             observation = ObsDictWrapper.convert_dict(observation)
         elif isinstance(observation, dict):

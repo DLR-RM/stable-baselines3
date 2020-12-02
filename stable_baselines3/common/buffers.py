@@ -316,7 +316,7 @@ class RolloutBuffer(BaseBuffer):
         super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
-        self.observations, self.actions, self.rewards, self.advantages = (None, None, None, None)
+        self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
         self.returns, self.dones, self.values, self.log_probs = None, None, None, None
         self.generator_ready = False
         self.reset()
@@ -458,7 +458,7 @@ class DictReplayBuffer(ReplayBuffer):
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
     ):
-        super(DictReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
+        super(ReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
 
         assert isinstance(self.obs_shape, dict), "DictReplayBuffer must be used with Dict obs space only"
         assert n_envs == 1, "Replay buffer only support single environment for now"
@@ -623,13 +623,13 @@ class DictRolloutBuffer(RolloutBuffer):
         n_envs: int = 1,
     ):
 
-        super(DictRolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
+        super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
 
         assert isinstance(self.obs_shape, dict), "DictRolloutBuffer must be used with Dict obs space only"
 
         self.gae_lambda = gae_lambda
         self.gamma = gamma
-        self.observations, self.actions, self.rewards, self.advantages = (None, None, None, None)
+        self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
         self.returns, self.dones, self.values, self.log_probs = None, None, None, None
         self.generator_ready = False
         self.reset()

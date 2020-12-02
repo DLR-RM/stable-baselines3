@@ -22,7 +22,7 @@ class DQN(OffPolicyAlgorithm):
     :param policy: The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: The environment to learn from (if registered in Gym, can be str)
     :param learning_rate: The learning rate, it can be a function
-        of the current progress (from 1 to 0)
+        of the current progress remaining (from 1 to 0)
     :param buffer_size: size of the replay buffer
     :param learning_starts: how many steps of the model to collect transitions for before learning starts
     :param batch_size: Minibatch size for each gradient update

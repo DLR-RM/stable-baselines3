@@ -50,6 +50,7 @@ Documentation:
 - Fix migration doc for ``A2C`` (epsilon parameter)
 - Fix ``clip_range`` docstring
 - Fix duplicated parameter in ``EvalCallback`` docstring (thanks @tfederico)
+- Added example of learning rate schedule
 
 Pre-Release 0.10.0 (2020-10-28)
 -------------------------------

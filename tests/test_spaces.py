@@ -58,7 +58,7 @@ def test_action_spaces(model_class, env):
         supported_action_space = env == "Pendulum-v0"
     elif model_class == DQN:
         supported_action_space = env == "CartPole-v1"
-    else:
+    elif model_class in [A2C, PPO]:
         supported_action_space = True
 
     if supported_action_space:

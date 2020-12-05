@@ -25,6 +25,7 @@ New Features:
   with given Gym wrappers.
 - Added ``monitor_kwargs`` parameter to ``make_vec_env`` and ``make_atari_env``
 - Wrap the environments automatically with a ``Monitor`` wrapper when possible.
+- ``EvalCallback`` now logs the success rate when available (``is_success`` must be present in the info dict)
 
 Bug Fixes:
 ^^^^^^^^^^

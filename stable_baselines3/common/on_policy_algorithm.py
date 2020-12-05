@@ -46,6 +46,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     :param device: Device (cpu, cuda, ...) on which the code should be run.
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: Whether or not to build the network at the creation of the instance
+    :param supported_action_spaces: The action spaces supported by the algorithm.
     """
 
     def __init__(
@@ -69,6 +70,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
+        supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
     ):
 
         super(OnPolicyAlgorithm, self).__init__(
@@ -85,6 +87,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             support_multi_env=True,
             seed=seed,
             tensorboard_log=tensorboard_log,
+            supported_action_spaces=supported_action_spaces,
         )
 
         self.n_steps = n_steps

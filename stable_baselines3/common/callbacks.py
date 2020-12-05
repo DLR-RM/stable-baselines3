@@ -396,7 +396,7 @@ class EvalCallback(EventCallback):
                 success_rate = np.mean(self._is_success_buffer)
                 if self.verbose > 0:
                     print(f"Success rate: {100 * success_rate:.2f}%")
-                self.logger.record("eval/success rate", success_rate)
+                self.logger.record("eval/success_rate", success_rate)
 
             if mean_reward > self.best_mean_reward:
                 if self.verbose > 0:

@@ -103,13 +103,14 @@ def select_env(model_class) -> str:
         return "Pendulum-v0"
 
 
-def test_eval_success_logging():
+def test_eval_success_logging(tmp_path):
     n_bits = 2
     env = BitFlippingEnv(n_bits=n_bits)
     eval_env = DummyVecEnv([lambda: BitFlippingEnv(n_bits=n_bits)])
     eval_callback = EvalCallback(
         ObsDictWrapper(eval_env),
         eval_freq=250,
+        log_path=tmp_path,
         warn=False,
     )
     model = HER("MlpPolicy", env, DQN, learning_starts=100, seed=0, max_episode_length=n_bits)

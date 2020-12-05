@@ -319,6 +319,7 @@ class EvalCallback(EventCallback):
         self.evaluations_length = []
         # For computing success rate
         self._is_success_buffer = []
+        self.evaluations_successes = []
 
     def _init_callback(self) -> None:
         # Does not work in some corner cases, where the wrapper is not the same
@@ -374,11 +375,19 @@ class EvalCallback(EventCallback):
                 self.evaluations_timesteps.append(self.num_timesteps)
                 self.evaluations_results.append(episode_rewards)
                 self.evaluations_length.append(episode_lengths)
+
+                kwargs = {}
+                # Save success log if present
+                if len(self._is_success_buffer) > 0:
+                    self.evaluations_successes.append(self._is_success_buffer)
+                    kwargs = dict(successes=self.evaluations_successes)
+
                 np.savez(
                     self.log_path,
                     timesteps=self.evaluations_timesteps,
                     results=self.evaluations_results,
                     ep_lengths=self.evaluations_length,
+                    **kwargs,
                 )
 
             mean_reward, std_reward = np.mean(episode_rewards), np.std(episode_rewards)

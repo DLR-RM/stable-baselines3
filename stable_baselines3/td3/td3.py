@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
+import gym
 import numpy as np
 import torch as th
 from torch.nn import functional as F
@@ -107,6 +108,7 @@ class TD3(OffPolicyAlgorithm):
             seed=seed,
             sde_support=False,
             optimize_memory_usage=optimize_memory_usage,
+            supported_action_spaces=(gym.spaces.Box),
         )
 
         self.policy_delay = policy_delay

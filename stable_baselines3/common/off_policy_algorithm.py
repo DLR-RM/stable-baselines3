@@ -69,6 +69,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param sde_support: Whether the model support gSDE or not
     :param remove_time_limit_termination: Remove terminations (dones) that are due to time limit.
         See https://github.com/hill-a/stable-baselines/issues/863
+    :param supported_action_spaces: The action spaces supported by the algorithm.
     """
 
     def __init__(
@@ -100,6 +101,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         use_sde_at_warmup: bool = False,
         sde_support: bool = True,
         remove_time_limit_termination: bool = False,
+        supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
     ):
 
         super(OffPolicyAlgorithm, self).__init__(
@@ -117,6 +119,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             seed=seed,
             use_sde=use_sde,
             sde_sample_freq=sde_sample_freq,
+            supported_action_spaces=supported_action_spaces,
         )
         self.buffer_size = buffer_size
         self.batch_size = batch_size

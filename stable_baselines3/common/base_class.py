@@ -79,6 +79,7 @@ class BaseAlgorithm(ABC):
         instead of action noise exploration (default: False)
     :param sde_sample_freq: Sample a new noise matrix every n steps when using gSDE
         Default: -1 (only sample at the beginning of the rollout)
+    :param supported_action_spaces: The action spaces supported by the algorithm.
     """
 
     def __init__(
@@ -97,6 +98,7 @@ class BaseAlgorithm(ABC):
         seed: Optional[int] = None,
         use_sde: bool = False,
         sde_sample_freq: int = -1,
+        supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
     ):
 
         if isinstance(policy, str) and policy_base is not None:
@@ -158,13 +160,19 @@ class BaseAlgorithm(ABC):
             self.n_envs = env.num_envs
             self.env = env
 
+            if supported_action_spaces is not None:
+                assert isinstance(self.action_space, supported_action_spaces), (
+                    f"The algorithm only supports {supported_action_spaces} as action spaces "
+                    f"but {self.action_space} was provided"
+                )
+
             if not support_multi_env and self.n_envs > 1:
                 raise ValueError(
                     "Error: the model does not support multiple envs; it requires " "a single vectorized environment."
                 )
 
-        if self.use_sde and not isinstance(self.action_space, gym.spaces.Box):
-            raise ValueError("generalized State-Dependent Exploration (gSDE) can only be used with continuous actions.")
+            if self.use_sde and not isinstance(self.action_space, gym.spaces.Box):
+                raise ValueError("generalized State-Dependent Exploration (gSDE) can only be used with continuous actions.")
 
     @staticmethod
     def _wrap_env(env: GymEnv, verbose: int = 0, monitor_wrapper: bool = True) -> VecEnv:

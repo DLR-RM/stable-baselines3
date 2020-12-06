@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
+import gym
 import numpy as np
 import torch as th
 from torch.nn import functional as F
@@ -124,6 +125,7 @@ class SAC(OffPolicyAlgorithm):
             sde_sample_freq=sde_sample_freq,
             use_sde_at_warmup=use_sde_at_warmup,
             optimize_memory_usage=optimize_memory_usage,
+            supported_action_spaces=(gym.spaces.Box),
         )
 
         self.target_entropy = target_entropy

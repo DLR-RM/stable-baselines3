@@ -2,7 +2,7 @@ import pytest
 
 from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.common.multi_input_envs import NineRoomMultiObsEnv, SimpleMultiObsEnv
+from stable_baselines3.common.multi_input_envs import SimpleMultiObsEnv
 from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
 
 

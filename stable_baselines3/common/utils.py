@@ -211,6 +211,118 @@ def check_for_correct_spaces(env: GymEnv, observation_space: gym.spaces.Space, a
         raise ValueError(f"Action spaces do not match: {action_space} != {env.action_space}")
 
 
+def is_vectorized_box_observation(observation: np.ndarray, observation_space: gym.spaces.Box) -> bool:
+    """
+    For box observation type, detects and validates the shape,
+    then returns whether or not the observation is vectorized.
+
+    :param observation: the input observation to validate
+    :param observation_space: the observation space
+    :return: whether the given observation is vectorized or not
+    """
+    if observation.shape == observation_space.shape:
+        return False
+    elif observation.shape[1:] == observation_space.shape:
+        return True
+    else:
+        raise ValueError(
+            f"Error: Unexpected observation shape {observation.shape} for "
+            + f"Box environment, please use {observation_space.shape} "
+            + "or (n_env, {}) for the observation shape.".format(", ".join(map(str, observation_space.shape)))
+        )
+
+
+def is_vectorized_discrete_observation(observation: np.ndarray, observation_space: gym.spaces.Discrete) -> bool:
+    """
+    For discrete observation type, detects and validates the shape,
+    then returns whether or not the observation is vectorized.
+
+    :param observation: the input observation to validate
+    :param observation_space: the observation space
+    :return: whether the given observation is vectorized or not
+    """
+    if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
+        return False
+    elif len(observation.shape) == 1:
+        return True
+    else:
+        raise ValueError(
+            f"Error: Unexpected observation shape {observation.shape} for "
+            + "Discrete environment, please use (1,) or (n_env, 1) for the observation shape."
+        )
+
+
+def is_vectorized_multidiscrete_observation(observation: np.ndarray, observation_space: gym.spaces.MultiDiscrete) -> bool:
+    """
+    For multidiscrete observation type, detects and validates the shape,
+    then returns whether or not the observation is vectorized.
+
+    :param observation: the input observation to validate
+    :param observation_space: the observation space
+    :return: whether the given observation is vectorized or not
+    """
+    if observation.shape == (len(observation_space.nvec),):
+        return False
+    elif len(observation.shape) == 2 and observation.shape[1] == len(observation_space.nvec):
+        return True
+    else:
+        raise ValueError(
+            f"Error: Unexpected observation shape {observation.shape} for MultiDiscrete "
+            + f"environment, please use ({len(observation_space.nvec)},) or "
+            + f"(n_env, {len(observation_space.nvec)}) for the observation shape."
+        )
+
+
+def is_vectorized_multibinary_observation(observation: np.ndarray, observation_space: gym.spaces.MultiBinary) -> bool:
+    """
+    For multibinary observation type, detects and validates the shape,
+    then returns whether or not the observation is vectorized.
+
+    :param observation: the input observation to validate
+    :param observation_space: the observation space
+    :return: whether the given observation is vectorized or not
+    """
+    if observation.shape == (observation_space.n,):
+        return False
+    elif len(observation.shape) == 2 and observation.shape[1] == observation_space.n:
+        return True
+    else:
+        raise ValueError(
+            f"Error: Unexpected observation shape {observation.shape} for MultiBinary "
+            + f"environment, please use ({observation_space.n},) or "
+            + f"(n_env, {observation_space.n}) for the observation shape."
+        )
+
+
+def is_vectorized_dict_observation(observation: np.ndarray, observation_space: gym.spaces.Dict) -> bool:
+    """
+    For dict observation type, detects and validates the shape,
+    then returns whether or not the observation is vectorized.
+
+    :param observation: the input observation to validate
+    :param observation_space: the observation space
+    :return: whether the given observation is vectorized or not
+    """
+    for key, subspace in observation_space.spaces.items():
+        if observation[key].shape == subspace.shape:
+            return False
+
+    all_good = True
+
+    for key, subspace in observation_space.spaces.items():
+        if observation[key].shape[1:] != subspace.shape:
+            all_good = False
+            break
+
+    if all_good:
+        return True
+    else:
+        raise ValueError(
+            f"Error: Unexpected observation shape {observation.shape} for "
+            + f"Tuple environment, please use {(obs.shape for obs in observation_space.spaces)} "
+        )
+
+
 def is_vectorized_observation(observation: np.ndarray, observation_space: gym.spaces.Space) -> bool:
     """
     For every observation type, detects and validates the shape,
@@ -220,69 +332,19 @@ def is_vectorized_observation(observation: np.ndarray, observation_space: gym.sp
     :param observation_space: the observation space
     :return: whether the given observation is vectorized or not
     """
-    if isinstance(observation_space, gym.spaces.Box):
-        if observation.shape == observation_space.shape:
-            return False
-        elif observation.shape[1:] == observation_space.shape:
-            return True
-        else:
-            raise ValueError(
-                f"Error: Unexpected observation shape {observation.shape} for "
-                + f"Box environment, please use {observation_space.shape} "
-                + "or (n_env, {}) for the observation shape.".format(", ".join(map(str, observation_space.shape)))
-            )
-    elif isinstance(observation_space, gym.spaces.Discrete):
-        if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
-            return False
-        elif len(observation.shape) == 1:
-            return True
-        else:
-            raise ValueError(
-                f"Error: Unexpected observation shape {observation.shape} for "
-                + "Discrete environment, please use (1,) or (n_env, 1) for the observation shape."
-            )
-    elif isinstance(observation_space, gym.spaces.MultiDiscrete):
-        if observation.shape == (len(observation_space.nvec),):
-            return False
-        elif len(observation.shape) == 2 and observation.shape[1] == len(observation_space.nvec):
-            return True
-        else:
-            raise ValueError(
-                f"Error: Unexpected observation shape {observation.shape} for MultiDiscrete "
-                + f"environment, please use ({len(observation_space.nvec)},) or "
-                + f"(n_env, {len(observation_space.nvec)}) for the observation shape."
-            )
-    elif isinstance(observation_space, gym.spaces.MultiBinary):
-        if observation.shape == (observation_space.n,):
-            return False
-        elif len(observation.shape) == 2 and observation.shape[1] == observation_space.n:
-            return True
-        else:
-            raise ValueError(
-                f"Error: Unexpected observation shape {observation.shape} for MultiBinary "
-                + f"environment, please use ({observation_space.n},) or "
-                + f"(n_env, {observation_space.n}) for the observation shape."
-            )
-    elif isinstance(observation_space, gym.spaces.Dict):
-        for key, subspace in observation_space.spaces.items():
-            if observation[key].shape == subspace.shape:
-                return False
 
-        all_good = True
+    is_vec_obs_func_dict = {
+        gym.spaces.Box: is_vectorized_box_observation,
+        gym.spaces.Discrete: is_vectorized_discrete_observation,
+        gym.spaces.MultiDiscrete: is_vectorized_multidiscrete_observation,
+        gym.spaces.MultiBinary: is_vectorized_multibinary_observation,
+        gym.spaces.Dict: is_vectorized_dict_observation,
+    }
 
-        for key, subspace in observation_space.spaces.items():
-            if observation[key].shape[1:] != subspace.shape:
-                all_good = False
-                break
-
-        if all_good:
-            return True
-        else:
-            raise ValueError(
-                f"Error: Unexpected observation shape {observation.shape} for "
-                + f"Tuple environment, please use {(obs.shape for obs in observation_space.spaces)} "
-            )
-    else:
+    try:
+        is_vec_obs_func = is_vec_obs_func_dict[type(observation_space)]
+        return is_vec_obs_func(observation, observation_space)
+    except KeyError:
         raise ValueError(
             "Error: Cannot determine if the observation is vectorized " + f" with the space type {observation_space}."
         )

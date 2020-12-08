@@ -82,7 +82,7 @@ class BaseModel(nn.Module, ABC):
 
     @abstractmethod
     def forward(self, *args, **kwargs):
-        del args, kwargs
+        pass
 
     def _update_features_extractor(
         self, net_kwargs: Dict[str, Any], features_extractor: Optional[BaseFeaturesExtractor] = None

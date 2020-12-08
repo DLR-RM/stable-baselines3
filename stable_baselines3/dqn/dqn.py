@@ -127,7 +127,9 @@ class DQN(OffPolicyAlgorithm):
         super(DQN, self)._setup_model()
         self._create_aliases()
         self.exploration_schedule = get_linear_fn(
-            self.exploration_initial_eps, self.exploration_final_eps, self.exploration_fraction
+            self.exploration_initial_eps,
+            self.exploration_final_eps,
+            self.exploration_fraction,
         )
 
     def _create_aliases(self) -> None:
@@ -166,7 +168,6 @@ class DQN(OffPolicyAlgorithm):
 
             # Get current Q estimates
             current_q = self.q_net(replay_data.observations)
-
             # Retrieve the q-values for the actions from the replay buffer
             current_q = th.gather(current_q, dim=1, index=replay_data.actions.long())
 
@@ -206,7 +207,10 @@ class DQN(OffPolicyAlgorithm):
         """
         if not deterministic and np.random.rand() < self.exploration_rate:
             if is_vectorized_observation(observation, self.observation_space):
-                n_batch = observation.shape[0]
+                if isinstance(self.observation_space, gym.spaces.Dict):
+                    n_batch = observation[list(observation.keys())[0]].shape[0]
+                else:
+                    n_batch = observation.shape[0]
                 action = np.array([self.action_space.sample() for _ in range(n_batch)])
             else:
                 action = np.array(self.action_space.sample())

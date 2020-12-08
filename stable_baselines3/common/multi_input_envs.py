@@ -36,6 +36,7 @@ class SimpleMultiObsEnv(gym.Env):
         num_row: int = 4,
         random_start: bool = True,
         noise: float = 0.0,
+        discrete_actions: bool = True,
     ):
         super(SimpleMultiObsEnv, self).__init__()
 
@@ -43,7 +44,12 @@ class SimpleMultiObsEnv(gym.Env):
         self.img_size = [1, 20, 20]
 
         self.random_start = random_start
-        self.action_space = gym.spaces.Discrete(3)
+        self.discrete_actions = discrete_actions
+        if discrete_actions:
+            self.action_space = gym.spaces.Discrete(4)
+        else:
+            self.action_space = gym.spaces.Box(0, 1, (4,))
+
         self.observation_space = gym.spaces.Dict(
             spaces={
                 "vec": gym.spaces.Box(0, 1, (self.vector_size,)),
@@ -138,7 +144,7 @@ class SimpleMultiObsEnv(gym.Env):
         self.right_possible = [0, 1, 2, 12, 13, 14]
         self.up_possible = [4, 8, 12, 7, 11, 15]
 
-    def step(self, action: Union[int, float]) -> GymStepReturn:
+    def step(self, action: Union[int, float, np.ndarray]) -> GymStepReturn:
         """
         Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`
@@ -148,7 +154,10 @@ class SimpleMultiObsEnv(gym.Env):
         :param action:
         :return: tuple (observation, reward, done, info).
         """
-        action = int(action)
+        if not self.discrete_actions:
+            action = np.argmax(action)
+        else:
+            action = int(action)
 
         self.count += 1
 

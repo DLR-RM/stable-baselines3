@@ -41,7 +41,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Add more issue templates
-- Add signatures to callable type annotations (@erniejunior)
+- Add signatures to callable type annotations (@ernestum)
 - Improve error message in ``NatureCNN``
 - Added checks for supported action spaces to improve clarity of error messages for the user
 

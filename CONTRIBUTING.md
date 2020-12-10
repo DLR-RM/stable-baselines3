@@ -62,7 +62,7 @@ def my_function(arg1: type1, arg2: type2) -> returntype:
 
 Before proposing a PR, please open an issue, where the feature will be discussed. This prevent from duplicated PR to be proposed and also ease the code review process.
 
-Each PR need to be reviewed and accepted by at least one of the maintainers (@hill-a, @araffin, @erniejunior, @AdamGleave or @Miffyli).
+Each PR need to be reviewed and accepted by at least one of the maintainers (@hill-a, @araffin, @ernestum, @AdamGleave or @Miffyli).
 A PR must pass the Continuous Integration tests to be merged with the master branch.
 
 

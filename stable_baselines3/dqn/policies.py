@@ -65,8 +65,8 @@ class QNetwork(BasePolicy):
         action = q_values.argmax(dim=1).reshape(-1)
         return action
 
-    def _get_data(self) -> Dict[str, Any]:
-        data = super()._get_data()
+    def _get_data_to_reconstruct_model(self) -> Dict[str, Any]:
+        data = super()._get_data_to_reconstruct_model()
 
         data.update(
             dict(
@@ -169,8 +169,8 @@ class DQNPolicy(BasePolicy):
     def _predict(self, obs: th.Tensor, deterministic: bool = True) -> th.Tensor:
         return self.q_net._predict(obs, deterministic=deterministic)
 
-    def _get_data(self) -> Dict[str, Any]:
-        data = super()._get_data()
+    def _get_data_to_reconstruct_model(self) -> Dict[str, Any]:
+        data = super()._get_data_to_reconstruct_model()
 
         data.update(
             dict(

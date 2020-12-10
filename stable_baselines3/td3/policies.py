@@ -71,13 +71,15 @@ class Actor(BasePolicy):
         )
         return data
 
-    def forward(self, obs: th.Tensor, deterministic: bool = True) -> th.Tensor:
+    def forward(self, obs: th.Tensor) -> th.Tensor:
         # assert deterministic, 'The TD3 actor only outputs deterministic actions'
         features = self.extract_features(obs)
         return self.mu(features)
 
     def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
-        return self.forward(observation, deterministic=deterministic)
+        # Note: the deterministic deterministic parameter is ignored in the case of TD3.
+        #   Predictions are always deterministic.
+        return self.forward(observation)
 
 
 class TD3Policy(BasePolicy):
@@ -218,7 +220,9 @@ class TD3Policy(BasePolicy):
         return self._predict(observation, deterministic=deterministic)
 
     def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
-        return self.actor(observation, deterministic=deterministic)
+        # Note: the deterministic deterministic parameter is ignored in the case of TD3.
+        #   Predictions are always deterministic.
+        return self.actor(observation)
 
 
 MlpPolicy = TD3Policy

@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.11.0a1 (WIP)
+Pre-Release 0.11.0a2 (WIP)
 -------------------------------
 
 Breaking Changes:
@@ -25,6 +25,7 @@ New Features:
   with given Gym wrappers.
 - Added ``monitor_kwargs`` parameter to ``make_vec_env`` and ``make_atari_env``
 - Wrap the environments automatically with a ``Monitor`` wrapper when possible.
+- ``EvalCallback`` now logs the success rate when available (``is_success`` must be present in the info dict)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -40,7 +41,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Add more issue templates
-- Add signatures to callable type annotations (@erniejunior)
+- Add signatures to callable type annotations (@ernestum)
 - Improve error message in ``NatureCNN``
 - Added checks for supported action spaces to improve clarity of error messages for the user
 
@@ -498,11 +499,11 @@ Maintainers
 -----------
 
 Stable-Baselines3 is currently maintained by `Antonin Raffin`_ (aka `@araffin`_), `Ashley Hill`_ (aka @hill-a),
-`Maximilian Ernestus`_ (aka @erniejunior), `Adam Gleave`_ (`@AdamGleave`_) and `Anssi Kanervisto`_ (aka `@Miffyli`_).
+`Maximilian Ernestus`_ (aka @ernestum), `Adam Gleave`_ (`@AdamGleave`_) and `Anssi Kanervisto`_ (aka `@Miffyli`_).
 
 .. _Ashley Hill: https://github.com/hill-a
 .. _Antonin Raffin: https://araffin.github.io/
-.. _Maximilian Ernestus: https://github.com/erniejunior
+.. _Maximilian Ernestus: https://github.com/ernestum
 .. _Adam Gleave: https://gleave.me/
 .. _@araffin: https://github.com/araffin
 .. _@AdamGleave: https://github.com/adamgleave

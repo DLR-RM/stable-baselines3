@@ -20,6 +20,7 @@ class NoopResetEnv(gym.Wrapper):
     :param env: the environment to wrap
     :param noop_max: the maximum value of no-ops to run
     """
+
     def __init__(self, env: gym.Env, noop_max: int = 30):
         gym.Wrapper.__init__(self, env)
         self.noop_max = noop_max
@@ -48,6 +49,7 @@ class FireResetEnv(gym.Wrapper):
 
     :param env: the environment to wrap
     """
+
     def __init__(self, env: gym.Env):
         gym.Wrapper.__init__(self, env)
         assert env.unwrapped.get_action_meanings()[1] == "FIRE"
@@ -71,6 +73,7 @@ class EpisodicLifeEnv(gym.Wrapper):
 
     :param env: the environment to wrap
     """
+
     def __init__(self, env: gym.Env):
         gym.Wrapper.__init__(self, env)
         self.lives = 0
@@ -115,6 +118,7 @@ class MaxAndSkipEnv(gym.Wrapper):
     :param env: the environment
     :param skip: number of ``skip``-th frame
     """
+
     def __init__(self, env: gym.Env, skip: int = 4):
         gym.Wrapper.__init__(self, env)
         # most recent raw observations (for max pooling across time steps)
@@ -156,6 +160,7 @@ class ClipRewardEnv(gym.RewardWrapper):
 
     :param env: the environment
     """
+
     def __init__(self, env: gym.Env):
         gym.RewardWrapper.__init__(self, env)
 
@@ -178,6 +183,7 @@ class WarpFrame(gym.ObservationWrapper):
     :param width:
     :param height:
     """
+
     def __init__(self, env: gym.Env, width: int = 84, height: int = 84):
         gym.ObservationWrapper.__init__(self, env)
         self.width = width
@@ -219,6 +225,7 @@ class AtariWrapper(gym.Wrapper):
     :param terminal_on_life_loss: if True, then step() returns done=True whenever a life is lost.
     :param clip_reward: If True (default), the reward is clip to {-1, 0, 1} depending on its sign.
     """
+
     def __init__(
         self,
         env: gym.Env,

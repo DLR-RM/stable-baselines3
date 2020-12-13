@@ -37,3 +37,14 @@ It is an example of:
 
 | Author: Marios Koulakis
 | Github: https://github.com/koulakis/reacher-deep-reinforcement-learning
+
+SUMO-RL
+-------
+A simple interface to instantiate RL environments with SUMO for Traffic Signal Control.
+
+- Supports Multiagent RL
+- Compatibility with gym.Env and popular RL libraries such as stable-baselines3 and RLlib
+- Easy customisation: state and reward definitions are easily modifiable
+
+| Author: Lucas Alegre
+| Github: https://github.com/LucasAlegre/sumo-rl

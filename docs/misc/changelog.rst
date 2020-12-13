@@ -54,7 +54,7 @@ Documentation:
 - Fix duplicated parameter in ``EvalCallback`` docstring (thanks @tfederico)
 - Added example of learning rate schedule
 - Added SUMO-RL as example project (@LucasAlegre)
-- Fix docstring of AtariWrapper which was not inside of __init__ method (@LucasAlegre)
+- Fix docstring of classes in atari_wrappers.py which were inside the constructor (@LucasAlegre)
 
 Pre-Release 0.10.0 (2020-10-28)
 -------------------------------

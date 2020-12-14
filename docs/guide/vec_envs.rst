@@ -63,6 +63,10 @@ VecFrameStack
 .. autoclass:: VecFrameStack
   :members:
 
+StackedObservations
+~~~~~~~~~~~~~
+.. autoclass:: StackedObservations
+  :members:
 
 VecNormalize
 ~~~~~~~~~~~~

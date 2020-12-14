@@ -19,7 +19,8 @@ TD3          ✔️          ❌            ❌                ❌              
 
 
 .. note::
-    Non-array spaces such as ``Dict`` or ``Tuple`` are not currently supported by any algorithm.
+   ``Tuple`` spaces are not supported by any environment however ``Dict`` spaces of ``Box`` spaces are. 
+   ``Dict`` spaces of containing other kinds of spaces (e.g., ``Discrete``) have not yet been explored.
 
 Actions ``gym.spaces``:
 

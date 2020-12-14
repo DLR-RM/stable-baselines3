@@ -6,7 +6,6 @@ import numpy as np
 import pytest
 
 from stable_baselines3 import A2C, DDPG, DQN, HER, PPO, SAC, TD3
-from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
 from stable_baselines3.common.callbacks import (
     CallbackList,
     CheckpointCallback,
@@ -16,6 +15,7 @@ from stable_baselines3.common.callbacks import (
     StopTrainingOnRewardThreshold,
 )
 from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.envs.bit_flipping_env import BitFlippingEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 

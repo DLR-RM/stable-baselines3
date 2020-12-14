@@ -31,9 +31,12 @@ class StackedObservations(object):
     ):
 
         self.n_stack = n_stack
-        self.channels_first, self.stack_dimension, self.stackedobs, self.repeat_axis = self.compute_stacking(
-            num_envs, n_stack, observation_space, channels_order
-        )
+        (
+            self.channels_first,
+            self.stack_dimension,
+            self.stackedobs,
+            self.repeat_axis,
+        ) = self.compute_stacking(num_envs, n_stack, observation_space, channels_order)
         super().__init__()
 
     @staticmethod
@@ -45,10 +48,11 @@ class StackedObservations(object):
     ) -> Tuple[bool, int, np.ndarray, int]:
         """
         Calculates the parameters in order to stack observations
-        :param num_envs:
-        :param n_stack:
-        :param observation_space:
-        :param channels_order:
+
+        :param num_envs: Number of environments in the stack
+        :param n_stack: The number of observations to stack
+        :param observation_space: The observation space
+        :param channels_order: The order of the channels
         :return: tuple of channels_first, stack_dimension, stackedobs, repeat_axis
         """
         channels_first = False
@@ -60,7 +64,10 @@ class StackedObservations(object):
                 # Default behavior for non-image space, stack on the last axis
                 channels_first = False
         else:
-            assert channels_order in {"last", "first"}, "`channels_order` must be one of following: 'last', 'first'"
+            assert channels_order in {
+                "last",
+                "first",
+            }, "`channels_order` must be one of following: 'last', 'first'"
 
             channels_first = channels_order == "first"
 
@@ -74,7 +81,8 @@ class StackedObservations(object):
     def stack_observation_space(self, observation_space: spaces.Box) -> spaces.Box:
         """
         Given an observation space, returns a new observation space with stacked observations
-        :return:
+
+        :return: New observation space with stacked dimensions
         """
         low = np.repeat(observation_space.low, self.n_stack, axis=self.repeat_axis)
         high = np.repeat(observation_space.high, self.n_stack, axis=self.repeat_axis)
@@ -84,8 +92,8 @@ class StackedObservations(object):
         """
         Resets the stackedobs, adds the reset observation to the stack, and returns the stack
 
-        :param observation:
-        :return:
+        :param observation: Reset observation
+        :return: The stacked reset observation
         """
         self.stackedobs[...] = 0
         if self.channels_first:
@@ -103,9 +111,9 @@ class StackedObservations(object):
         """
         Adds the observations to the stack and uses the dones to update the infos.
 
-        :param observations:
-        :param dones:
-        :param infos:
+        :param observations: numpy array of observations
+        :param dones: numpy array of done info
+        :param infos: numpy array of info dicts
         :return: tuple of the stacked observations and the updated infos
         """
         stack_ax_size = observations.shape[self.stack_dimension]
@@ -175,7 +183,8 @@ class StackedDictObservations(StackedObservations):
     def stack_observation_space(self, observation_space: spaces.Dict) -> spaces.Dict:
         """
         Returns the stacked verson of a Dict observation space
-        :param observation_space:
+
+        :param observation_space: Dict observation space to stack
         :return: stacked observation space
         """
         spaces_dict = {}
@@ -188,8 +197,9 @@ class StackedDictObservations(StackedObservations):
     def reset(self, observation: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
         """
         Resets the stacked observations, adds the reset observation to the stack, and returns the stack
-        :param observation:
-        :return: stacked observations
+
+        :param observation: Reset observation
+        :return: Stacked reset observations
         """
         for key, obs in observation.items():
             self.stackedobs[key][...] = 0
@@ -207,24 +217,37 @@ class StackedDictObservations(StackedObservations):
     ) -> Tuple[Dict[str, np.ndarray], List[Dict[str, Any]]]:
         """
         Adds the observations to the stack and uses the dones to update the infos.
-        :param observations:
-        :param dones:
-        :param infos:
+
+        :param observations: Dict of numpy arrays of observations
+        :param dones: numpy array of dones
+        :param infos: dict of infos
         :return: tuple of the stacked observations and the updated infos
         """
         for key in self.stackedobs.keys():
             stack_ax_size = observations[key].shape[self.stack_dimension[key]]
-            self.stackedobs[key] = np.roll(self.stackedobs[key], shift=-stack_ax_size, axis=self.stack_dimension[key])
+            self.stackedobs[key] = np.roll(
+                self.stackedobs[key],
+                shift=-stack_ax_size,
+                axis=self.stack_dimension[key],
+            )
 
             for i, done in enumerate(dones):
                 if done:
                     if "terminal_observation" in infos[i]:
                         old_terminal = infos[i]["terminal_observation"][key]
                         if self.channels_first[key]:
-                            new_terminal = np.vstack((self.stackedobs[key][i, :-stack_ax_size, ...], old_terminal))
+                            new_terminal = np.vstack(
+                                (
+                                    self.stackedobs[key][i, :-stack_ax_size, ...],
+                                    old_terminal,
+                                )
+                            )
                         else:
                             new_terminal = np.concatenate(
-                                (self.stackedobs[key][i, ..., :-stack_ax_size], old_terminal),
+                                (
+                                    self.stackedobs[key][i, ..., :-stack_ax_size],
+                                    old_terminal,
+                                ),
                                 axis=self.stack_dimension[key],
                             )
                         infos[i]["terminal_observation"][key] = new_terminal

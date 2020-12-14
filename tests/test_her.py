@@ -9,7 +9,7 @@ import pytest
 import torch as th
 
 from stable_baselines3 import DDPG, DQN, HER, SAC, TD3
-from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
+from stable_baselines3.common.envs.bit_flipping_env import BitFlippingEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
@@ -44,7 +44,14 @@ def test_her(model_class, online_sampling):
 
 @pytest.mark.parametrize(
     "goal_selection_strategy",
-    ["final", "episode", "future", GoalSelectionStrategy.FINAL, GoalSelectionStrategy.EPISODE, GoalSelectionStrategy.FUTURE],
+    [
+        "final",
+        "episode",
+        "future",
+        GoalSelectionStrategy.FINAL,
+        GoalSelectionStrategy.EPISODE,
+        GoalSelectionStrategy.FUTURE,
+    ],
 )
 @pytest.mark.parametrize("online_sampling", [True, False])
 def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
@@ -165,7 +172,10 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     os.remove(tmp_path / "test_save.zip")
 
 
-@pytest.mark.parametrize("online_sampling, truncate_last_trajectory", [(False, None), (True, True), (True, False)])
+@pytest.mark.parametrize(
+    "online_sampling, truncate_last_trajectory",
+    [(False, None), (True, True), (True, False)],
+)
 def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_last_trajectory):
     """
     Test if 'save_replay_buffer' and 'load_replay_buffer' works correctly
@@ -222,10 +232,12 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
             model.replay_buffer.buffer["next_obs"][:n_episodes_stored],
         )
         assert np.allclose(
-            old_replay_buffer.buffer["action"][:n_episodes_stored], model.replay_buffer.buffer["action"][:n_episodes_stored]
+            old_replay_buffer.buffer["action"][:n_episodes_stored],
+            model.replay_buffer.buffer["action"][:n_episodes_stored],
         )
         assert np.allclose(
-            old_replay_buffer.buffer["reward"][:n_episodes_stored], model.replay_buffer.buffer["reward"][:n_episodes_stored]
+            old_replay_buffer.buffer["reward"][:n_episodes_stored],
+            model.replay_buffer.buffer["reward"][:n_episodes_stored],
         )
         # we might change the last done of the last trajectory so we don't compare it
         assert np.allclose(

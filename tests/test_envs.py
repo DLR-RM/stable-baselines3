@@ -3,8 +3,8 @@ import numpy as np
 import pytest
 from gym import spaces
 
-from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
 from stable_baselines3.common.env_checker import check_env
+from stable_baselines3.common.envs.bit_flipping_env import BitFlippingEnv
 from stable_baselines3.common.identity_env import (
     FakeImageEnv,
     IdentityEnv,
@@ -13,7 +13,14 @@ from stable_baselines3.common.identity_env import (
     IdentityEnvMultiDiscrete,
 )
 
-ENV_CLASSES = [BitFlippingEnv, IdentityEnv, IdentityEnvBox, IdentityEnvMultiBinary, IdentityEnvMultiDiscrete, FakeImageEnv]
+ENV_CLASSES = [
+    BitFlippingEnv,
+    IdentityEnv,
+    IdentityEnvBox,
+    IdentityEnvMultiBinary,
+    IdentityEnvMultiDiscrete,
+    FakeImageEnv,
+]
 
 
 @pytest.mark.parametrize("env_id", ["CartPole-v0", "Pendulum-v0"])

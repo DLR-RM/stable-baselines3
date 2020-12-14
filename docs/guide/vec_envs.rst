@@ -64,8 +64,15 @@ VecFrameStack
   :members:
 
 StackedObservations
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+
 .. autoclass:: StackedObservations
+  :members:
+
+StackedDictObservations
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: StackedDictObservations
   :members:
 
 VecNormalize

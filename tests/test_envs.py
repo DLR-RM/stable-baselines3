@@ -4,7 +4,7 @@ import pytest
 from gym import spaces
 
 from stable_baselines3.common.env_checker import check_env
-from stable_baselines3.common.envs.bit_flipping_env import BitFlippingEnv
+from stable_baselines3.common.envs import BitFlippingEnv
 from stable_baselines3.common.identity_env import (
     FakeImageEnv,
     IdentityEnv,

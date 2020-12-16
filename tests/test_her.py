@@ -9,7 +9,7 @@ import pytest
 import torch as th
 
 from stable_baselines3 import DDPG, DQN, HER, SAC, TD3
-from stable_baselines3.common.envs.bit_flipping_env import BitFlippingEnv
+from stable_baselines3.common.envs import BitFlippingEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy

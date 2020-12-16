@@ -12,6 +12,7 @@ Breaking Changes:
   this allows to return the unnormalized reward in the case of Atari games for instance.
 - Renamed ``common.vec_env.is_wrapped`` to ``common.vec_env.is_vecenv_wrapped`` to avoid confusion
   with the new ``is_wrapped()`` helper
+- All customs environments (e.g. the ``BitFlippingEnv``) were moved to ``stable_baselines3.common.envs`` folder
 
 New Features:
 ^^^^^^^^^^^^^

@@ -13,7 +13,6 @@ notebooks:
 -  `All Notebooks <https://github.com/Stable-Baselines-Team/rl-colab-notebooks/tree/sb3>`_
 -  `Getting Started`_
 -  `Training, Saving, Loading`_
--  `Dict Observations`_
 -  `Multiprocessing`_
 -  `Monitor Training and Plotting`_
 -  `Atari Games`_
@@ -153,40 +152,33 @@ Multiprocessing: Unleashing the Power of Vectorized Environments
 Dict Observations
 -----------------
 
-You can use environments with dictionary observation spaces. This is useful in the case where one can't directly 
+You can use environments with dictionary observation spaces. This is useful in the case where one can't directly
 concatenate observations such as an image from a camera combined with a vector of servo sensor data (e.g., rotation angles).
-Stable Baselines provides SimpleMultiObsEnv as an example of this kind of of setting.
+Stable Baselines3 provides ``SimpleMultiObsEnv`` as an example of this kind of of setting.
 The environment is a simple grid world but the observations for each cell come in the form of dictionaries.
 These dictionaries are randomly initilaized on the creation of the environment and contain a vector observation and an image observation.
 
 .. code-block:: python
 
-  import gym
-  import numpy as np
-
   from stable_baselines3 import PPO
-  from stable_baselines3.common.vec_env import DummyVecEnv
-  from stable_baselines3.common.envs.multi_input_envs import SimpleMultiObsEnv
+  from stable_baselines3.common.envs import SimpleMultiObsEnv
 
-  if __name__ == '__main__':
 
-      # Stable Baselines provides SimpleMultiObsEnv as an example environment with Dict observations
-      env = DummyVecEnv([lambda: SimpleMultiObsEnv(random_start=False) for i in range(10)])
+  # Stable Baselines provides SimpleMultiObsEnv as an example environment with Dict observations
+  env = SimpleMultiObsEnv(random_start=False)
 
-      model = PPO('MultiInputPolicy', env, verbose=1)
-      model.learn(total_timesteps=1e5)
-      env.close()
+  model = PPO("MultiInputPolicy", env, verbose=1)
+  model.learn(total_timesteps=1e5)
 
-      env = DummyVecEnv([lambda: SimpleMultiObsEnv(random_start=False)])
-      obs = env.reset()
+  obs = env.reset()
 
-      for _ in range(100):
-          action, _states = model.predict(obs)
-          obs, rewards, dones, info = env.step(action)
-          env.render()
-          if dones[0]:
-              print('Got to end')
-              break
+  for _ in range(100):
+      action, _states = model.predict(obs)
+      obs, rewards, dones, info = env.step(action)
+      env.render()
+      if dones[0]:
+          print("Got to end")
+          break
 
 
 Using Callback: Monitoring Training

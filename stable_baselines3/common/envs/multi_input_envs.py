@@ -8,8 +8,9 @@ from stable_baselines3.common.type_aliases import GymStepReturn
 
 class SimpleMultiObsEnv(gym.Env):
     """
-    Base class for GridWorld-based MultiObs Environments 4x4  grid world
+    Base class for GridWorld-based MultiObs Environments 4x4  grid world.
 
+    .. code-block:: text
 
         ____________
        | 0  1  2   3|
@@ -17,6 +18,7 @@ class SimpleMultiObsEnv(gym.Env):
        | 8|_9_10_|11|
        |12 13  14 15|
        ¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+
     start is 0
     states 5, 6, 9, and 10 are blocked
     goal is 15
@@ -207,6 +209,9 @@ class SimpleMultiObsEnv(gym.Env):
 class NineRoomMultiObsEnv(SimpleMultiObsEnv):
     """
     Extension of the SimpleMultiObsEnv to a 9 room  grid world
+
+    .. code-block:: text
+
         ____________________________________
        | 0  1  2  |  3   4   5 | 6   7   8  |
        | 9  10 11   12  13  14   15  16  17 |
@@ -220,6 +225,7 @@ class NineRoomMultiObsEnv(SimpleMultiObsEnv):
        | 63 64 65   66  67  68   69  70  71 |
        | 72 73 74 | 75  76  77 | 78  79  80 |
        ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+
     :param random_start: If true, agent starts in random position
     :param noise: Noise added to the observations
     """

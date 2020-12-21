@@ -33,6 +33,10 @@ Actions ``gym.spaces``:
 
 .. note::
 
+  More algorithms (like QR-DQN or TQC) are implemented in our :ref:`contrib repo <sb3_contrib>`.
+
+.. note::
+
   Some logging values (like ``ep_rew_mean``, ``ep_len_mean``) are only available when using a ``Monitor`` wrapper
   See `Issue #339 <https://github.com/hill-a/stable-baselines/issues/339>`_ for more info.
 

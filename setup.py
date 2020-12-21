@@ -112,7 +112,7 @@ setup(
             "atari_py~=0.2.0",
             "pillow",
             # Tensorboard support
-            "tensorboard",
+            "tensorboard>=2.2.0",
             # Checking memory taken by replay buffer
             "psutil",
         ],

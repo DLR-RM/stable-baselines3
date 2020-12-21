@@ -44,6 +44,7 @@ Others:
 - Add signatures to callable type annotations (@ernestum)
 - Improve error message in ``NatureCNN``
 - Added checks for supported action spaces to improve clarity of error messages for the user
+- Renamed variables in the ``train()`` method of ``SAC``, ``TD3`` and ``DQN`` to match SB3-Contrib.
 
 Documentation:
 ^^^^^^^^^^^^^^

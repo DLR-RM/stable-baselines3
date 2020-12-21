@@ -21,7 +21,7 @@ and learning algorithms.
 
 However sometimes these utilities were too niche to be considered for
 stable-baselines or proved to be too difficult to integrate well into
-existing code without a mess. sb3-contrib aims to fix this by not
+the existing code without creating a mess. sb3-contrib aims to fix this by not
 requiring the neatest code integration with existing code and not
 setting limits on what is too niche: almost everything remotely useful
 goes! We hope this allows to extend the known quality of
@@ -64,7 +64,7 @@ To install Stable Baselines3 ``master`` version:
 
    pip install git+https://github.com/DLR-RM/stable-baselines3
 
-To install Stable Baselines3 ``master`` version:
+To install Stable Baselines3 contrib ``master`` version:
 
 ::
 
@@ -74,7 +74,7 @@ To install Stable Baselines3 ``master`` version:
 Example
 -------
 
-SB3-Contrib follows SB3 interface and folder structure. So, if you are familiar with SB3,
+SB3-Contrib follows the SB3 API and folder structure. So, if you are familiar with SB3,
 using SB3-Contrib should be easy too.
 
 Here is an example of training a Quantile Regression DQN (QR-DQN) agent on the CartPole environment.

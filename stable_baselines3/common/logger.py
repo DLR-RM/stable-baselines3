@@ -7,6 +7,7 @@ import warnings
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Sequence, TextIO, Tuple, Union
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas
 import torch as th
@@ -31,6 +32,26 @@ class Video(object):
     def __init__(self, frames: th.Tensor, fps: Union[float, int]):
         self.frames = frames
         self.fps = fps
+
+
+class Figure(object):
+    """
+    Figure data class storing a matplotlib figure (or list of figures) and associated parameters
+    """
+
+    def __init__(self, figure: Union[plt.figure, list], close: bool):
+        self.figure = figure
+        self.close = close
+
+
+class Image(object):
+    """
+    Image data class storing an image (or list of images) and associated parameters
+    """
+
+    def __init__(self, image: th.Tensor, dataformats: str):
+        self.image = image
+        self.dataformats = dataformats
 
 
 class FormatUnsupportedError(NotImplementedError):
@@ -107,6 +128,12 @@ class HumanOutputFormat(KVWriter, SeqWriter):
 
             if isinstance(value, Video):
                 raise FormatUnsupportedError(["stdout", "log"], "video")
+
+            if isinstance(value, Figure):
+                raise FormatUnsupportedError(["stdout", "log"], "figure")
+
+            if isinstance(value, Image):
+                raise FormatUnsupportedError(["stdout", "log"], "image")
 
             if isinstance(value, float):
                 # Align left
@@ -196,6 +223,10 @@ class JSONOutputFormat(KVWriter):
         def cast_to_json_serializable(value: Any):
             if isinstance(value, Video):
                 raise FormatUnsupportedError(["json"], "video")
+            if isinstance(value, Figure):
+                raise FormatUnsupportedError(["json"], "figure")
+            if isinstance(value, Image):
+                raise FormatUnsupportedError(["json"], "image")
             if hasattr(value, "dtype"):
                 if value.shape == () or len(value) == 1:
                     # if value is a dimensionless numpy array or of length 1, serialize as a float
@@ -258,6 +289,12 @@ class CSVOutputFormat(KVWriter):
             if isinstance(value, Video):
                 raise FormatUnsupportedError(["csv"], "video")
 
+            if isinstance(value, Figure):
+                raise FormatUnsupportedError(["csv"], "figure")
+
+            if isinstance(value, Image):
+                raise FormatUnsupportedError(["csv"], "image")
+
             if value is not None:
                 self.file.write(str(value))
         self.file.write("\n")
@@ -295,6 +332,12 @@ class TensorBoardOutputFormat(KVWriter):
 
             if isinstance(value, Video):
                 self.writer.add_video(key, value.frames, step, value.fps)
+
+            if isinstance(value, Figure):
+                self.writer.add_figure(key, value.figure, step, close=value.close)
+
+            if isinstance(value, Image):
+                self.writer.add_image(key, value.image, step, dataformats=value.dataformats)
 
         # Flush the output to the file
         self.writer.flush()

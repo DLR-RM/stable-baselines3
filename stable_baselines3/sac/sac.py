@@ -223,20 +223,20 @@ class SAC(OffPolicyAlgorithm):
             with th.no_grad():
                 # Select action according to policy
                 next_actions, next_log_prob = self.actor.action_log_prob(replay_data.next_observations)
-                # Compute the target Q value: min over all critics targets
-                targets = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
-                target_q, _ = th.min(targets, dim=1, keepdim=True)
+                # Compute the next Q values: min over all critics targets
+                next_q_values = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
+                next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
                 # add entropy term
-                target_q = target_q - ent_coef * next_log_prob.reshape(-1, 1)
+                next_q_values = next_q_values - ent_coef * next_log_prob.reshape(-1, 1)
                 # td error + entropy term
-                q_backup = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
+                target_q_values = replay_data.rewards + (1 - replay_data.dones) * self.gamma * next_q_values
 
-            # Get current Q estimates for each critic network
+            # Get current Q-values estimates for each critic network
             # using action from the replay buffer
-            current_q_estimates = self.critic(replay_data.observations, replay_data.actions)
+            current_q_values = self.critic(replay_data.observations, replay_data.actions)
 
             # Compute critic loss
-            critic_loss = 0.5 * sum([F.mse_loss(current_q, q_backup) for current_q in current_q_estimates])
+            critic_loss = 0.5 * sum([F.mse_loss(current_q, target_q_values) for current_q in current_q_values])
             critic_losses.append(critic_loss.item())
 
             # Optimize the critic

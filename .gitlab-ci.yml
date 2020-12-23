@@ -1,4 +1,4 @@
-image: stablebaselines/stable-baselines3-cpu:0.9.0a2
+image: stablebaselines/stable-baselines3-cpu:0.11.0a4
 
 type-check:
   script:

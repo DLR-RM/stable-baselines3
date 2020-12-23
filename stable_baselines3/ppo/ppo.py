@@ -30,7 +30,8 @@ class PPO(OnPolicyAlgorithm):
     :param learning_rate: The learning rate, it can be a function
         of the current progress remaining (from 1 to 0)
     :param n_steps: The number of steps to run for each environment per update
-        (i.e. batch size is n_steps * n_env where n_env is number of environment copies running in parallel)
+        (i.e. replay buffer size is n_steps * n_env where n_env is number of environment copies running in parallel)
+        NOTE: n_steps*n_env cannot be equal to 1, since that would imply a maximum training batch size of 1
     :param batch_size: Minibatch size
     :param n_epochs: Number of epoch when optimizing the surrogate loss
     :param gamma: Discount factor
@@ -117,19 +118,22 @@ class PPO(OnPolicyAlgorithm):
                 spaces.MultiBinary,
             ),
         )
-        total_env_steps = len(self.env.envs) * self.n_steps
-        assert total_env_steps > 1, (
-            f"n_steps*n_envs must be greater than 1. " f"Currently n_steps={self.n_steps} and n_envs={len(self.env.envs)}"
-        )
-        untruncated_batches = floor(total_env_steps / batch_size)
-        if total_env_steps % batch_size != 0:
-            warnings.warn(
-                f"You have specified a desired batch size of {batch_size},"
-                f" but because your buffer of environment steps will be of size n_steps*n_envs, which"
-                f" is currently {total_env_steps}, after every {untruncated_batches} untruncated batches,"
-                f" there will be a truncated batch of size {total_env_steps % batch_size}"
-                f" Info: (n_steps={self.n_steps} and n_envs={len(self.env.envs)})"
+        if self.env is not None:
+            # Checks for scenarios when we are collecting steps from a live environment (self.env not None)
+
+            total_env_steps = len(self.env.envs) * self.n_steps
+            assert total_env_steps > 1, (
+                f"n_steps*n_envs must be greater than 1. " f"Currently n_steps={self.n_steps} and n_envs={len(self.env.envs)}"
             )
+            untruncated_batches = floor(total_env_steps / batch_size)
+            if total_env_steps % batch_size != 0:
+                warnings.warn(
+                    f"You have specified a desired batch size of {batch_size},"
+                    f" but because your buffer of environment steps will be of size n_steps*n_envs, which"
+                    f" is currently {total_env_steps}, after every {untruncated_batches} untruncated batches,"
+                    f" there will be a truncated batch of size {total_env_steps % batch_size}"
+                    f" Info: (n_steps={self.n_steps} and n_envs={len(self.env.envs)})"
+                )
         self.batch_size = batch_size
         self.n_epochs = n_epochs
         self.clip_range = clip_range

@@ -1,4 +1,6 @@
+from math import floor
 from typing import Any, Dict, Optional, Type, Union
+import warnings
 
 import numpy as np
 import torch as th
@@ -115,7 +117,17 @@ class PPO(OnPolicyAlgorithm):
                 spaces.MultiBinary,
             ),
         )
-
+        total_env_steps = len(self.env.envs)*self.n_steps
+        assert total_env_steps> 1, \
+            f"n_steps*n_envs must be greater than 1. " \
+            f"Currently n_steps={self.n_steps} and n_envs={len(self.env.envs)}"
+        untruncated_batches = floor(total_env_steps/batch_size)
+        if total_env_steps % batch_size != 0:
+            warnings.warn(f"You have specified a desired batch size of {batch_size},"
+                        f" but because your buffer of environment steps will be n_steps*n_envs, which"
+                        f" is currently {total_env_steps}, after every {untruncated_batches} untruncated batches,"
+                        f" there will be a truncated batch of size {total_env_steps % batch_size}"
+                        f" Info: (n_steps={self.n_steps} and n_envs={len(self.env.envs)})")
         self.batch_size = batch_size
         self.n_epochs = n_epochs
         self.clip_range = clip_range

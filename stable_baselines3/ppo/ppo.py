@@ -129,7 +129,7 @@ class PPO(OnPolicyAlgorithm):
             if total_env_steps % batch_size != 0:
                 warnings.warn(
                     f"You have specified a desired batch size of {batch_size},"
-                    f" but because your buffer of environment steps will be of size n_steps*n_envs, which"
+                    f" but because the `RolloutBuffer` is of size n_steps*n_envs, which"
                     f" is currently {total_env_steps}, after every {untruncated_batches} untruncated batches,"
                     f" there will be a truncated batch of size {total_env_steps % batch_size}"
                     f" Info: (n_steps={self.n_steps} and n_envs={len(self.env.envs)})"

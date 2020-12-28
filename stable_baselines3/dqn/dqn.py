@@ -155,23 +155,23 @@ class DQN(OffPolicyAlgorithm):
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
             with th.no_grad():
-                # Compute the target Q values
-                target_q = self.q_net_target(replay_data.next_observations)
+                # Compute the next Q-values using the target network
+                next_q_values = self.q_net_target(replay_data.next_observations)
                 # Follow greedy policy: use the one with the highest value
-                target_q, _ = target_q.max(dim=1)
+                next_q_values, _ = next_q_values.max(dim=1)
                 # Avoid potential broadcast issue
-                target_q = target_q.reshape(-1, 1)
+                next_q_values = next_q_values.reshape(-1, 1)
                 # 1-step TD target
-                target_q = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
+                target_q_values = replay_data.rewards + (1 - replay_data.dones) * self.gamma * next_q_values
 
-            # Get current Q estimates
-            current_q = self.q_net(replay_data.observations)
+            # Get current Q-values estimates
+            current_q_values = self.q_net(replay_data.observations)
 
             # Retrieve the q-values for the actions from the replay buffer
-            current_q = th.gather(current_q, dim=1, index=replay_data.actions.long())
+            current_q_values = th.gather(current_q_values, dim=1, index=replay_data.actions.long())
 
             # Compute Huber loss (less sensitive to outliers)
-            loss = F.smooth_l1_loss(current_q, target_q)
+            loss = F.smooth_l1_loss(current_q_values, target_q_values)
             losses.append(loss.item())
 
             # Optimize the policy

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-CPU_PARENT=ubuntu:16.04
-GPU_PARENT=nvidia/cuda:10.1-cudnn7-runtime-ubuntu16.04
+CPU_PARENT=ubuntu:18.04
+GPU_PARENT=nvidia/cuda:10.1-cudnn7-runtime-ubuntu18.04
 
 TAG=stablebaselines/stable-baselines3
 VERSION=$(cat ./stable_baselines3/version.txt)

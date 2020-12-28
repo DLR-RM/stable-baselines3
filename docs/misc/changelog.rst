@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.11.0a2 (WIP)
+Pre-Release 0.11.0a4 (WIP)
 -------------------------------
 
 Breaking Changes:
@@ -34,7 +34,7 @@ Bug Fixes:
 - Fixed bug that the arguments order of ``explained_variance()`` in ``ppo.py`` and ``a2c.py`` is not correct (@thisray)
 - Fixed bug where full ``HerReplayBuffer`` leads to an index error. (@megan-klaiber)
 - Fixed bug where replay buffer could not be saved if it was too big (> 4 Gb) for python<3.8 (thanks @hn2)
-- Added informative PPO construction error in edge-case scenario where n_steps*n_envs (size of replay buffer) == 1,
+- Added informative ``PPO`` construction error in edge-case scenario where ``n_steps * n_envs = 1`` (size of rollout buffer),
   which otherwise causes downstream breaking errors in training (@decodyng)
 
 
@@ -47,6 +47,10 @@ Others:
 - Add signatures to callable type annotations (@ernestum)
 - Improve error message in ``NatureCNN``
 - Added checks for supported action spaces to improve clarity of error messages for the user
+- Renamed variables in the ``train()`` method of ``SAC``, ``TD3`` and ``DQN`` to match SB3-Contrib.
+- Updated docker base image to Ubuntu 18.04
+- Set tensorboard min version to 2.2.0 (earlier version are apparently not working with PyTorch)
+- Added warning for ``PPO`` when ``n_steps * n_envs`` is not a multiple of ``batch_size`` (last mini-batch truncated) (@decodyng)
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -58,6 +62,7 @@ Documentation:
 - Added example of learning rate schedule
 - Added SUMO-RL as example project (@LucasAlegre)
 - Fix docstring of classes in atari_wrappers.py which were inside the constructor (@LucasAlegre)
+- Added SB3-Contrib page
 
 Pre-Release 0.10.0 (2020-10-28)
 -------------------------------

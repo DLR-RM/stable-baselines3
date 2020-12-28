@@ -85,6 +85,9 @@ Logging Images
 --------------
 TensorBoard supports periodic logging of image data, which helps evaluating agents at various stages during training.
 
+.. warning::
+    To support image logging `pillow <https://github.com/python-pillow/Pillow>`_ must be installed otherwise, TensorBoard ignores the image and logs a warning.
+
 Here is an example of how to render an image to TensorBoard at regular intervals:
 
 .. code-block:: python
@@ -111,6 +114,9 @@ Here is an example of how to render an image to TensorBoard at regular intervals
 Logging Figures/Plots
 ---------------------
 TensorBoard supports periodic logging of figures/plots created with matplotlib, which helps evaluating agents at various stages during training.
+
+.. warning::
+    To support figure logging `matplotlib <https://matplotlib.org/>`_ must be installed otherwise, TensorBoard ignores the figure and logs a warning.
 
 Here is an example of how to store a plot in TensorBoard at regular intervals:
 

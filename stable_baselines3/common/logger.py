@@ -36,20 +36,20 @@ class Video(object):
 
 class Figure(object):
     """
-    Figure data class storing a matplotlib figure (or list of figures) and associated parameters
+    Figure data class storing a matplotlib figure and whether to close the figure after logging it
     """
 
-    def __init__(self, figure: Union[plt.figure, list], close: bool):
+    def __init__(self, figure: plt.figure, close: bool):
         self.figure = figure
         self.close = close
 
 
 class Image(object):
     """
-    Image data class storing an image (or list of images) and associated parameters
+    Image data class storing an image and data format (gym envs normally use 'HWC')
     """
 
-    def __init__(self, image: th.Tensor, dataformats: str):
+    def __init__(self, image: Union[th.Tensor, np.array, str], dataformats: str):
         self.image = image
         self.dataformats = dataformats
 

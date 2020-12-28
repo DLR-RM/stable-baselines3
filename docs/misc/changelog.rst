@@ -26,6 +26,7 @@ New Features:
 - Added ``monitor_kwargs`` parameter to ``make_vec_env`` and ``make_atari_env``
 - Wrap the environments automatically with a ``Monitor`` wrapper when possible.
 - ``EvalCallback`` now logs the success rate when available (``is_success`` must be present in the info dict)
+- Added new wrappers to log images and matplotlib figures to tensorboard. (@zampanteymedio)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -529,4 +530,4 @@ And all the contributors:
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
-@tfederico @hn2 @LucasAlegre
+@tfederico @hn2 @LucasAlegre @zampanteymedio

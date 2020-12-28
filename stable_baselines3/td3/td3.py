@@ -146,16 +146,16 @@ class TD3(OffPolicyAlgorithm):
                 noise = noise.clamp(-self.target_noise_clip, self.target_noise_clip)
                 next_actions = (self.actor_target(replay_data.next_observations) + noise).clamp(-1, 1)
 
-                # Compute the target Q value: min over all critics targets
-                targets = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
-                target_q, _ = th.min(targets, dim=1, keepdim=True)
-                target_q = replay_data.rewards + (1 - replay_data.dones) * self.gamma * target_q
+                # Compute the next Q-values: min over all critics targets
+                next_q_values = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
+                next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
+                target_q_values = replay_data.rewards + (1 - replay_data.dones) * self.gamma * next_q_values
 
-            # Get current Q estimates for each critic network
-            current_q_estimates = self.critic(replay_data.observations, replay_data.actions)
+            # Get current Q-values estimates for each critic network
+            current_q_values = self.critic(replay_data.observations, replay_data.actions)
 
             # Compute critic loss
-            critic_loss = sum([F.mse_loss(current_q, target_q) for current_q in current_q_estimates])
+            critic_loss = sum([F.mse_loss(current_q, target_q_values) for current_q in current_q_values])
             critic_losses.append(critic_loss.item())
 
             # Optimize the critics

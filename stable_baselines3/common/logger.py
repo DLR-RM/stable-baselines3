@@ -49,7 +49,7 @@ class Image(object):
     Image data class storing an image and data format (gym envs normally use 'HWC')
     """
 
-    def __init__(self, image: Union[th.Tensor, np.array, str], dataformats: str):
+    def __init__(self, image: Union[th.Tensor, np.ndarray, str], dataformats: str):
         self.image = image
         self.dataformats = dataformats
 

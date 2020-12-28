@@ -30,8 +30,9 @@ class PPO(OnPolicyAlgorithm):
     :param learning_rate: The learning rate, it can be a function
         of the current progress remaining (from 1 to 0)
     :param n_steps: The number of steps to run for each environment per update
-        (i.e. replay buffer size is n_steps * n_env where n_env is number of environment copies running in parallel)
-        NOTE: n_steps*n_env cannot be equal to 1, since that would imply a maximum training batch size of 1
+        (i.e. rollout buffer size is n_steps * n_envs where n_envs is number of environment copies running in parallel)
+        NOTE: n_steps * n_envs must be greater than 1 (because of the advantage normalization)
+        See https://github.com/pytorch/pytorch/issues/29372
     :param batch_size: Minibatch size
     :param n_epochs: Number of epoch when optimizing the surrogate loss
     :param gamma: Discount factor

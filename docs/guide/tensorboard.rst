@@ -81,6 +81,62 @@ Here is a simple example on how to log both additional tensor or arbitrary scala
 
     model.learn(50000, callback=TensorboardCallback())
 
+Logging Images
+--------------
+TensorBoard supports periodic logging of image data, which helps evaluating agents at various stages during training.
+
+Here is an example of how to render an image to TensorBoard at regular intervals:
+
+.. code-block:: python
+
+    from stable_baselines3 import SAC
+    from stable_baselines3.common.callbacks import BaseCallback
+    from stable_baselines3.common.logger import Image
+
+    model = SAC("MlpPolicy", "Pendulum-v0", tensorboard_log="/tmp/sac/", verbose=1)
+
+
+    class ImageRecorderCallback(BaseCallback):
+        def __init__(self, verbose=0):
+            super(ImageRecorderCallback, self).__init__(verbose)
+
+        def _on_step(self):
+            image = self.locals.get('env').render('rgb_array')
+            self.logger.record('trajectory/image', Image(image, "HWC"), exclude=("stdout", "log", "json", "csv"))
+            return True
+
+
+    model.learn(50000, callback=ImageRecorderCallback())
+
+Logging Figures/Plots
+---------------------
+TensorBoard supports periodic logging of figures/plots created with matplotlib, which helps evaluating agents at various stages during training.
+
+Here is an example of how to store a plot in TensorBoard at regular intervals:
+
+.. code-block:: python
+
+    from stable_baselines3 import SAC
+    from stable_baselines3.common.callbacks import BaseCallback
+    from stable_baselines3.common.logger import Figure
+
+    model = SAC("MlpPolicy", "MyCustomEnv-v0", tensorboard_log="/tmp/sac/", verbose=1)
+
+
+    class FigureRecorderCallback(BaseCallback):
+        def __init__(self, verbose=0):
+            super(FigureRecorderCallback, self).__init__(verbose)
+
+        def _on_step(self):
+            # We are here assuming that this custom environment has a "plot" render mode
+            # that returns a matplotlib figure.
+            figure = self.locals.get('env').render('plot')
+            self.logger.record('trajectory/figure', Figure(figure, True), exclude=("stdout", "log", "json", "csv"))
+            return True
+
+
+    model.learn(50000, callback=FigureRecorderCallback())
+
 Logging Videos
 --------------
 

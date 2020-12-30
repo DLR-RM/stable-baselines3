@@ -6,7 +6,10 @@ import numpy as np
 import pytest
 import torch as th
 
-from stable_baselines3 import A2C, PPO
+from stable_baselines3 import (
+    A2C,
+    PPO
+)
 from stable_baselines3.common.atari_wrappers import ClipRewardEnv
 from stable_baselines3.common.env_util import (
     is_wrapped,

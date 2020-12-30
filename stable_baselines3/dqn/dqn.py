@@ -30,9 +30,8 @@ class DQN(OffPolicyAlgorithm):
     :param tau: the soft update coefficient ("Polyak update", between 0 and 1) default 1 for hard update
     :param gamma: the discount factor
     :param train_freq: Update the model every ``train_freq`` steps. Alternatively pass a tuple of frequency and unit
-    like ``(5, "step")`` or ``(2, "episode")``.
-    :param gradient_steps: How many gradient steps to do after each rollout
-        (see ``train_freq`` and ``n_episodes_rollout``)
+        like ``(5, "step")`` or ``(2, "episode")``.
+    :param gradient_steps: How many gradient steps to do after each rollout (see ``train_freq``)
         Set to ``-1`` means to do as many gradient steps as steps done in the environment
         during the rollout.
     :param optimize_memory_usage: Enable a memory efficient variant of the replay buffer

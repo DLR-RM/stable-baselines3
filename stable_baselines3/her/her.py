@@ -193,11 +193,16 @@ class HER(BaseAlgorithm):
         callback.on_training_start(locals(), globals())
 
         while self.num_timesteps < total_timesteps:
-
+            if isinstance(self.train_freq, int):
+                n_steps = self.train_freq
+                n_episodes = -1
+            else:
+                n_steps = self.train_freq[0] if self.train_freq[1] == "step" else -1
+                n_episodes = self.train_freq[0] if self.train_freq[1] == "episode" else -1
             rollout = self.collect_rollouts(
                 self.env,
-                n_episodes=self.n_episodes_rollout,
-                n_steps=self.train_freq,
+                n_episodes=n_episodes,
+                n_steps=n_steps,
                 action_noise=self.action_noise,
                 callback=callback,
                 learning_starts=self.learning_starts,

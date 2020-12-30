@@ -35,13 +35,12 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param batch_size: Minibatch size for each gradient update
     :param tau: the soft update coefficient ("Polyak update", between 0 and 1)
     :param gamma: the discount factor
-    :param train_freq: Update the model every ``train_freq`` steps. Set to `-1` to disable.
+    :param train_freq: Update the model every ``train_freq`` steps. Alternatively pass a tuple of frequency and unit
+    like ``(5, "step")`` or ``(2, "episode")``.
     :param gradient_steps: How many gradient steps to do after each rollout
         (see ``train_freq`` and ``n_episodes_rollout``)
         Set to ``-1`` means to do as many gradient steps as steps done in the environment
         during the rollout.
-    :param n_episodes_rollout: Update the model every ``n_episodes_rollout`` episodes.
-        Note that this cannot be used at the same time as ``train_freq``. Set to `-1` to disable.
     :param action_noise: the action noise type (None by default), this can help
         for hard exploration problem. Cf common.noise for the different action noise type.
     :param optimize_memory_usage: Enable a memory efficient variant of the replay buffer
@@ -83,9 +82,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         batch_size: int = 256,
         tau: float = 0.005,
         gamma: float = 0.99,
-        train_freq: int = 1,
+        train_freq: Union[int, Tuple[int, str]] = (1, "episode"),
         gradient_steps: int = 1,
-        n_episodes_rollout: int = -1,
         action_noise: Optional[ActionNoise] = None,
         optimize_memory_usage: bool = False,
         policy_kwargs: Dict[str, Any] = None,
@@ -128,7 +126,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.gamma = gamma
         self.train_freq = train_freq
         self.gradient_steps = gradient_steps
-        self.n_episodes_rollout = n_episodes_rollout
         self.action_noise = action_noise
         self.optimize_memory_usage = optimize_memory_usage
 
@@ -136,15 +133,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # see https://github.com/hill-a/stable-baselines/issues/863
         self.remove_time_limit_termination = remove_time_limit_termination
 
-        if train_freq > 0 and n_episodes_rollout > 0:
-            warnings.warn(
-                "You passed a positive value for `train_freq` and `n_episodes_rollout`."
-                "Please make sure this is intended. "
-                "The agent will collect data by stepping in the environment "
-                "until both conditions are true: "
-                "`number of steps in the env` >= `train_freq` and "
-                "`number of episodes` > `n_episodes_rollout`"
-            )
+        if isinstance(train_freq, tuple) and train_freq[1] not in ("step", "episode"):
+            warnings.warn(f"The units of the train_freq must be either `step` or `episode` not `{train_freq[1]}`!")
 
         self.actor = None  # type: Optional[th.nn.Module]
         self.replay_buffer = None  # type: Optional[ReplayBuffer]
@@ -250,11 +240,17 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         callback.on_training_start(locals(), globals())
 
         while self.num_timesteps < total_timesteps:
+            if isinstance(self.train_freq, int):
+                n_steps = self.train_freq
+                n_episodes = -1
+            else:
+                n_steps = self.train_freq[0] if self.train_freq[1] == "step" else -1
+                n_episodes = self.train_freq[0] if self.train_freq[1] == "episode" else -1
 
             rollout = self.collect_rollouts(
                 self.env,
-                n_episodes=self.n_episodes_rollout,
-                n_steps=self.train_freq,
+                n_episodes=n_episodes,
+                n_steps=n_steps,
                 action_noise=self.action_noise,
                 callback=callback,
                 learning_starts=self.learning_starts,

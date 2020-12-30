@@ -74,7 +74,6 @@ class QNetwork(BasePolicy):
                 features_dim=self.features_dim,
                 activation_fn=self.activation_fn,
                 features_extractor=self.features_extractor,
-                epsilon=self.epsilon,
             )
         )
         return data

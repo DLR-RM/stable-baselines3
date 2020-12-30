@@ -8,7 +8,7 @@
 
 # Stable Baselines3
 
-Stable Baselines3 is a set of improved implementations of reinforcement learning algorithms in PyTorch. It is the next major version of [Stable Baselines](https://github.com/hill-a/stable-baselines).
+Stable Baselines3 (SB3) is a set of reliable implementations of reinforcement learning algorithms in PyTorch. It is the next major version of [Stable Baselines](https://github.com/hill-a/stable-baselines).
 
 You can read a detailed presentation of Stable Baselines in the [Medium article](https://medium.com/@araffin/stable-baselines-a-fork-of-openai-baselines-reinforcement-learning-made-easy-df87c4b2fc82).
 
@@ -50,7 +50,6 @@ A migration guide from SB2 to SB3 can be found in the [documentation](https://st
 
 Documentation is available online: [https://stable-baselines3.readthedocs.io/](https://stable-baselines3.readthedocs.io/)
 
-
 ## RL Baselines3 Zoo: A Collection of Trained RL Agents
 
 [RL Baselines3 Zoo](https://github.com/DLR-RM/rl-baselines3-zoo). is a collection of pre-trained Reinforcement Learning agents using Stable-Baselines3.
@@ -67,6 +66,15 @@ Goals of this repository:
 Github repo: https://github.com/DLR-RM/rl-baselines3-zoo
 
 Documentation: https://stable-baselines3.readthedocs.io/en/master/guide/rl_zoo.html
+
+## SB3-Contrib: Experimental RL Features
+
+We implement experimental features in a separate contrib repository: [SB3-Contrib](https://github.com/Stable-Baselines-Team/stable-baselines3-contrib)
+
+This allows SB3 to maintain a stable and compact core, while still providing the latest features, like Truncated Quantile Critics (TQC) or Quantile Regression DQN (QR-DQN).
+
+Documentation is available online: [https://sb3-contrib.readthedocs.io/](https://sb3-contrib.readthedocs.io/)
+
 
 ## Installation
 

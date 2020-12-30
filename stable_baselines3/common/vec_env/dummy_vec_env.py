@@ -19,11 +19,23 @@ class DummyVecEnv(VecEnv):
 
     :param env_fns: a list of functions
         that return environments to vectorize
+    :param render: If true, renders first environment on each time-step. This is
+        useful for rendering terminal time-steps which would otherwise not
+        get rendered.
+    :param render_mode: If ``render == True``, then ``.render`` method is called
+        with ``mode`` set to ``render_mode``.
     """
 
-    def __init__(self, env_fns: List[Callable[[], gym.Env]]):
+    def __init__(
+        self,
+        env_fns: List[Callable[[], gym.Env]],
+        render: bool = False,
+        render_mode: str = "human",
+    ):
         self.envs = [fn() for fn in env_fns]
         env = self.envs[0]
+        self._render = render
+        self._render_mode = render_mode
         VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space)
         obs_space = env.observation_space
         self.keys, shapes, dtypes = obs_space_info(obs_space)
@@ -40,15 +52,24 @@ class DummyVecEnv(VecEnv):
 
     def step_wait(self) -> VecEnvStepReturn:
         for env_idx in range(self.num_envs):
-            obs, self.buf_rews[env_idx], self.buf_dones[env_idx], self.buf_infos[env_idx] = self.envs[env_idx].step(
-                self.actions[env_idx]
-            )
+            (obs, self.buf_rews[env_idx], self.buf_dones[env_idx], self.buf_infos[env_idx],) = self.envs[
+                env_idx
+            ].step(self.actions[env_idx])
+            if self._render and env_idx == 0:
+                self.envs[env_idx].render(mode=self._render_mode)
             if self.buf_dones[env_idx]:
                 # save final observation where user can get it, then reset
                 self.buf_infos[env_idx]["terminal_observation"] = obs
                 obs = self.envs[env_idx].reset()
+                if self._render and env_idx == 0:
+                    self.envs[env_idx].render(mode=self._render_mode)
             self._save_obs(env_idx, obs)
-        return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones), deepcopy(self.buf_infos))
+        return (
+            self._obs_from_buf(),
+            np.copy(self.buf_rews),
+            np.copy(self.buf_dones),
+            deepcopy(self.buf_infos),
+        )
 
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
         seeds = list()
@@ -60,6 +81,9 @@ class DummyVecEnv(VecEnv):
         for env_idx in range(self.num_envs):
             obs = self.envs[env_idx].reset()
             self._save_obs(env_idx, obs)
+
+        if self._render:
+            self.envs[0].render(mode=self._render_mode)
         return self._obs_from_buf()
 
     def close(self) -> None:

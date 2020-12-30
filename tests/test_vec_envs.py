@@ -196,6 +196,58 @@ def test_vecenv_terminal_obs(vec_env_class, vec_env_wrapper):
     vec_env.close()
 
 
+class RenderEnv(gym.Env):
+    def __init__(self):
+        """Gym environment for testing rendering."""
+        self.render_values = []
+        self.action_space = gym.spaces.Discrete(1)
+        self.observation_space = gym.spaces.Box(low=0, high=1, shape=(1,))
+        self.done = False
+
+    def render(self, mode="human"):
+        self.render_values += [self.done]
+        if mode == "rgb_array":
+            return np.zeros((4, 4, 3))
+
+    def reset(self):
+        self.done = False
+        return np.array([0])
+
+    def step(self, action):
+        self.done = True
+        return np.array([0]), 0, True, {}
+
+
+@pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
+@pytest.mark.parametrize("vec_env_wrapper", VEC_ENV_WRAPPERS)
+def test_vecenv_render(vec_env_class, vec_env_wrapper):
+    """Test that 'render' arg works as expected and renders
+    'terminal_observation.'"""
+    vec_env = vec_env_class(
+        [functools.partial(RenderEnv) for _ in range(N_ENVS)],
+        render=True,
+        render_mode="rgb_array",
+    )
+
+    if vec_env_wrapper is not None:
+        if vec_env_wrapper == VecFrameStack:
+            vec_env = vec_env_wrapper(vec_env, n_stack=2)
+        else:
+            vec_env = vec_env_wrapper(vec_env)
+
+    vec_env.reset()
+
+    expected_render_values = [False]  # first render with reset
+    for step_num in range(10):
+        vec_env.step(np.zeros(N_ENVS))
+        expected_render_values += [True, False]
+        # step terminates episode, then render first step of next episode
+        for i, render_values in enumerate(vec_env.get_attr("render_values")):
+            assert tuple(render_values) == (tuple(expected_render_values) if i == 0 else ())
+
+    vec_env.close()
+
+
 SPACES = collections.OrderedDict(
     [
         ("discrete", gym.spaces.Discrete(2)),

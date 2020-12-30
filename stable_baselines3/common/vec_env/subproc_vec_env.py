@@ -15,7 +15,11 @@ from stable_baselines3.common.vec_env.base_vec_env import (
 
 
 def _worker(
-    remote: mp.connection.Connection, parent_remote: mp.connection.Connection, env_fn_wrapper: CloudpickleWrapper
+    remote: mp.connection.Connection,
+    parent_remote: mp.connection.Connection,
+    env_fn_wrapper: CloudpickleWrapper,
+    render: bool,
+    render_mode: str,
 ) -> None:
     # Import here to avoid a circular import
     from stable_baselines3.common.env_util import is_wrapped
@@ -27,15 +31,21 @@ def _worker(
             cmd, data = remote.recv()
             if cmd == "step":
                 observation, reward, done, info = env.step(data)
+                if render:
+                    env.render(mode=render_mode)
                 if done:
                     # save final observation where user can get it, then reset
                     info["terminal_observation"] = observation
                     observation = env.reset()
+                    if render:
+                        env.render(mode=render_mode)
                 remote.send((observation, reward, done, info))
             elif cmd == "seed":
                 remote.send(env.seed(data))
             elif cmd == "reset":
                 observation = env.reset()
+                if render:
+                    env.render(mode=render_mode)
                 remote.send(observation)
             elif cmd == "render":
                 remote.send(env.render(data))
@@ -82,9 +92,20 @@ class SubprocVecEnv(VecEnv):
     :param start_method: method used to start the subprocesses.
            Must be one of the methods returned by multiprocessing.get_all_start_methods().
            Defaults to 'forkserver' on available platforms, and 'spawn' otherwise.
+    :param render: If true, renders first environment on each time-step. This is
+           useful for rendering terminal time-steps which would otherwise not
+           get rendered.
+    :param render_mode: If ``render == True``, then ``.render`` method is called
+           with ``mode`` set to ``render_mode``.
     """
 
-    def __init__(self, env_fns: List[Callable[[], gym.Env]], start_method: Optional[str] = None):
+    def __init__(
+        self,
+        env_fns: List[Callable[[], gym.Env]],
+        start_method: Optional[str] = None,
+        render: bool = False,
+        render_mode: str = "human",
+    ):
         self.waiting = False
         self.closed = False
         n_envs = len(env_fns)
@@ -100,7 +121,14 @@ class SubprocVecEnv(VecEnv):
         self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(n_envs)])
         self.processes = []
         for work_remote, remote, env_fn in zip(self.work_remotes, self.remotes, env_fns):
-            args = (work_remote, remote, CloudpickleWrapper(env_fn))
+            args = (
+                work_remote,
+                remote,
+                CloudpickleWrapper(env_fn),
+                render,
+                render_mode,
+            )
+            render = False  # only render from first environment
             # daemon=True: if the main process crashes, we should not cause things to hang
             process = ctx.Process(target=_worker, args=args, daemon=True)  # pytype:disable=attribute-error
             process.start()
@@ -120,7 +148,12 @@ class SubprocVecEnv(VecEnv):
         results = [remote.recv() for remote in self.remotes]
         self.waiting = False
         obs, rews, dones, infos = zip(*results)
-        return _flatten_obs(obs, self.observation_space), np.stack(rews), np.stack(dones), infos
+        return (
+            _flatten_obs(obs, self.observation_space),
+            np.stack(rews),
+            np.stack(dones),
+            infos,
+        )
 
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
         for idx, remote in enumerate(self.remotes):
@@ -168,7 +201,13 @@ class SubprocVecEnv(VecEnv):
         for remote in target_remotes:
             remote.recv()
 
-    def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> List[Any]:
+    def env_method(
+        self,
+        method_name: str,
+        *method_args,
+        indices: VecEnvIndices = None,
+        **method_kwargs,
+    ) -> List[Any]:
         """Call instance methods of vectorized environments."""
         target_remotes = self._get_target_remotes(indices)
         for remote in target_remotes:

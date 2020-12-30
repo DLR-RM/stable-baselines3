@@ -371,7 +371,7 @@ def test_ppo_replay_buffer():
 
     single_vec_env = DummyVecEnv([make_pendulum])
     with pytest.raises(AssertionError):
-        ppo_model = PPO("MlpPolicy", single_vec_env, n_steps=1)
+        _ = PPO("MlpPolicy", single_vec_env, n_steps=1)
 
     with pytest.warns(UserWarning):
-        ppo_model = PPO("MlpPolicy", single_vec_env, n_steps=6, batch_size=8)
+        _ = PPO("MlpPolicy", single_vec_env, n_steps=6, batch_size=8)

@@ -87,8 +87,6 @@ Looking at the training curve (episode reward function of the timesteps) is a go
 
 
 
-
-
 We suggest you reading `Deep Reinforcement Learning that Matters <https://arxiv.org/abs/1709.06560>`_ for a good discussion about RL evaluation.
 
 You can also take a look at this `blog post <https://openlab-flowers.inria.fr/t/how-many-random-seeds-should-i-use-statistical-power-analysis-in-deep-reinforcement-learning-experiments/457>`_
@@ -122,6 +120,7 @@ Discrete Actions - Single Process
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 DQN with extensions (double DQN, prioritized replay, ...) are the recommended algorithms.
+We notably provide QR-DQN in our :ref:`contrib repo <sb3_contrib>`.
 DQN is usually slower to train (regarding wall clock time) but is the most sample efficient (because of its replay buffer).
 
 Discrete Actions - Multiprocessed
@@ -136,7 +135,7 @@ Continuous Actions
 Continuous Actions - Single Process
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Current State Of The Art (SOTA) algorithms are ``SAC`` and ``TD3``.
+Current State Of The Art (SOTA) algorithms are ``SAC``, ``TD3`` and ``TQC`` (available in our :ref:`contrib repo <sb3_contrib>`).
 Please use the hyperparameters in the `RL zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_ for best results.
 
 
@@ -156,7 +155,7 @@ Goal Environment
 -----------------
 
 If your environment follows the ``GoalEnv`` interface (cf :ref:`HER <her>`), then you should use
-HER + (SAC/TD3/DDPG/DQN) depending on the action space.
+HER + (SAC/TD3/DDPG/DQN/TQC) depending on the action space.
 
 
 .. note::

@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.11.0a2 (WIP)
+Pre-Release 0.11.0a4 (WIP)
 -------------------------------
 
 Breaking Changes:
@@ -49,6 +49,9 @@ Others:
 - Add signatures to callable type annotations (@ernestum)
 - Improve error message in ``NatureCNN``
 - Added checks for supported action spaces to improve clarity of error messages for the user
+- Renamed variables in the ``train()`` method of ``SAC``, ``TD3`` and ``DQN`` to match SB3-Contrib.
+- Updated docker base image to Ubuntu 18.04
+- Set tensorboard min version to 2.2.0 (earlier version are apparently not working with PyTorch)
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -60,6 +63,8 @@ Documentation:
 - Added example of learning rate schedule
 - Added SUMO-RL as example project (@LucasAlegre)
 - Fix docstring of classes in atari_wrappers.py which were inside the constructor (@LucasAlegre)
+- Added SB3-Contrib page
+- Fix bug in the example code of DQN (@AptX395)
 
 Pre-Release 0.10.0 (2020-10-28)
 -------------------------------
@@ -534,4 +539,4 @@ And all the contributors:
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
-@tfederico @hn2 @LucasAlegre @JadenTravnik
+@tfederico @hn2 @LucasAlegre @AptX395 @JadenTravnik

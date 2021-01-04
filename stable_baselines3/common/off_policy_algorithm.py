@@ -15,12 +15,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.save_util import load_from_pkl, save_to_pkl
-from stable_baselines3.common.type_aliases import (
-    GymEnv,
-    MaybeCallback,
-    RolloutReturn,
-    Schedule,
-)
+from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn, Schedule
 from stable_baselines3.common.utils import safe_mean
 from stable_baselines3.common.vec_env import VecEnv
 
@@ -163,11 +158,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
 
-        BUFFER_CLS = (
-            DictReplayBuffer
-            if isinstance(self.observation_space, gym.spaces.Dict)
-            else ReplayBuffer
-        )
+        BUFFER_CLS = DictReplayBuffer if isinstance(self.observation_space, gym.spaces.Dict) else ReplayBuffer
 
         self.replay_buffer = BUFFER_CLS(
             self.buffer_size,
@@ -185,9 +176,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         )
         self.policy = self.policy.to(self.device)
 
-    def save_replay_buffer(
-        self, path: Union[str, pathlib.Path, io.BufferedIOBase]
-    ) -> None:
+    def save_replay_buffer(self, path: Union[str, pathlib.Path, io.BufferedIOBase]) -> None:
         """
         Save the replay buffer as a pickle file.
 
@@ -197,18 +186,14 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         assert self.replay_buffer is not None, "The replay buffer is not defined"
         save_to_pkl(path, self.replay_buffer, self.verbose)
 
-    def load_replay_buffer(
-        self, path: Union[str, pathlib.Path, io.BufferedIOBase]
-    ) -> None:
+    def load_replay_buffer(self, path: Union[str, pathlib.Path, io.BufferedIOBase]) -> None:
         """
         Load a replay buffer from a pickle file.
 
         :param path: Path to the pickled replay buffer.
         """
         self.replay_buffer = load_from_pkl(path, self.verbose)
-        assert isinstance(
-            self.replay_buffer, ReplayBuffer
-        ), "The replay buffer must inherit from ReplayBuffer class"
+        assert isinstance(self.replay_buffer, ReplayBuffer), "The replay buffer must inherit from ReplayBuffer class"
 
     def _setup_learn(
         self,
@@ -301,11 +286,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
                 # If no `gradient_steps` is specified,
                 # do as many gradients steps as steps performed during the rollout
-                gradient_steps = (
-                    self.gradient_steps
-                    if self.gradient_steps > 0
-                    else rollout.episode_timesteps
-                )
+                gradient_steps = self.gradient_steps if self.gradient_steps > 0 else rollout.episode_timesteps
                 self.train(batch_size=self.batch_size, gradient_steps=gradient_steps)
 
         callback.on_training_end()
@@ -337,9 +318,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             The two differs when the action space is not normalized (bounds are not [-1, 1]).
         """
         # Select action randomly or according to policy
-        if self.num_timesteps < learning_starts and not (
-            self.use_sde and self.use_sde_at_warmup
-        ):
+        if self.num_timesteps < learning_starts and not (self.use_sde and self.use_sde_at_warmup):
             # Warmup phase
             unscaled_action = np.array([self.action_space.sample()])
         else:
@@ -448,18 +427,12 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
             while not done:
 
-                if (
-                    self.use_sde
-                    and self.sde_sample_freq > 0
-                    and total_steps % self.sde_sample_freq == 0
-                ):
+                if self.use_sde and self.sde_sample_freq > 0 and total_steps % self.sde_sample_freq == 0:
                     # Sample a new noise matrix
                     self.actor.reset_noise()
 
                 # Select action randomly or according to policy
-                action, buffer_action = self._sample_action(
-                    learning_starts, action_noise
-                )
+                action, buffer_action = self._sample_action(learning_starts, action_noise)
 
                 # Rescale and perform action
                 new_obs, reward, done, infos = env.step(action)
@@ -472,9 +445,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 callback.update_locals(locals())
                 # Only stop training if return value is False, not when it is None.
                 if callback.on_step() is False:
-                    return RolloutReturn(
-                        0.0, total_steps, total_episodes, continue_training=False
-                    )
+                    return RolloutReturn(0.0, total_steps, total_episodes, continue_training=False)
 
                 episode_reward += reward
 
@@ -495,18 +466,14 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                             reward,
                         )
 
-                    replay_buffer.add(
-                        self._last_original_obs, new_obs_, buffer_action, reward_, done
-                    )
+                    replay_buffer.add(self._last_original_obs, new_obs_, buffer_action, reward_, done)
 
                 self._last_obs = new_obs
                 # Save the unnormalized observation
                 if self._vec_normalize_env is not None:
                     self._last_original_obs = new_obs_
 
-                self._update_current_progress_remaining(
-                    self.num_timesteps, self._total_timesteps
-                )
+                self._update_current_progress_remaining(self.num_timesteps, self._total_timesteps)
 
                 # For DQN, check if the target network should be updated
                 # and update the exploration schedule
@@ -534,6 +501,4 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_rollout_end()
 
-        return RolloutReturn(
-            mean_reward, total_steps, total_episodes, continue_training
-        )
+        return RolloutReturn(mean_reward, total_steps, total_episodes, continue_training)

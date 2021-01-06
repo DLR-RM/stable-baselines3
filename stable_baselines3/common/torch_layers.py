@@ -262,10 +262,14 @@ class CombinedExtractor(BaseFeaturesExtractor):
 
             if is_image_space(subspace):
                 n_input_channels = subspace.shape[0]
+
+                # Nature CNN
                 cnn = nn.Sequential(
                     nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
                     nn.ReLU(),
                     nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
+                    nn.ReLU(),
+                    nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=0),
                     nn.ReLU(),
                     nn.Flatten(),
                 )
@@ -282,7 +286,13 @@ class CombinedExtractor(BaseFeaturesExtractor):
 
             else:
                 extractors[key] = nn.Sequential(
-                    *create_mlp(subspace.shape[0], mlp_output_dim, mlp_net_arch, activation_fn, squash_output=False)
+                    *create_mlp(
+                        subspace.shape[0],
+                        mlp_output_dim,
+                        mlp_net_arch,
+                        activation_fn,
+                        squash_output=False,
+                    )
                 )
 
                 total_concat_size += mlp_output_dim
@@ -290,7 +300,13 @@ class CombinedExtractor(BaseFeaturesExtractor):
         self.extractors = nn.ModuleDict(extractors)
 
         self.combined = nn.Sequential(
-            *create_mlp(total_concat_size, features_dim, comb_net_arch, activation_fn, squash_output=False)
+            *create_mlp(
+                total_concat_size,
+                features_dim,
+                comb_net_arch,
+                activation_fn,
+                squash_output=False,
+            )
         )
 
     def forward(self, observations: TensorDict) -> th.Tensor:

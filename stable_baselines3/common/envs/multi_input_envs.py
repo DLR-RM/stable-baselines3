@@ -43,7 +43,7 @@ class SimpleMultiObsEnv(gym.Env):
         super(SimpleMultiObsEnv, self).__init__()
 
         self.vector_size = 5
-        self.img_size = [1, 20, 20]
+        self.img_size = [1, 64, 64]
 
         self.random_start = random_start
         self.discrete_actions = discrete_actions
@@ -74,7 +74,7 @@ class SimpleMultiObsEnv(gym.Env):
         self,
         value_range: Tuple[int, int] = (0, 255),
         initial_size: Tuple[int, int] = (4, 4),
-        up_size: Tuple[int, int] = (20, 20),
+        up_size: Tuple[int, int] = (64, 64),
     ) -> np.ndarray:
         """
         Generated a random image and upsample it.

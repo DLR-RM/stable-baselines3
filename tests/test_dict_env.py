@@ -18,8 +18,17 @@ def test_dict_spaces(model_class):
     kwargs = {}
     n_steps = 250
 
-    if model_class == DQN:
-        kwargs = dict(learning_starts=0)
+    if model_class in {A2C, PPO}:
+        kwargs = dict(n_steps=100)
+    else:
+        # Avoid memory error when using replay buffer
+        # Reduce the size of the features
+        kwargs = dict(
+            buffer_size=250,
+            policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)),
+        )
+        if model_class == DQN:
+            kwargs["learning_starts"] = 0
 
     model = model_class("MultiInputPolicy", env, gamma=0.5, seed=1, **kwargs)
 

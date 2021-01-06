@@ -158,9 +158,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
 
-        BUFFER_CLS = DictReplayBuffer if isinstance(self.observation_space, gym.spaces.Dict) else ReplayBuffer
+        buffer_cls = DictReplayBuffer if isinstance(self.observation_space, gym.spaces.Dict) else ReplayBuffer
 
-        self.replay_buffer = BUFFER_CLS(
+        self.replay_buffer = buffer_cls(
             self.buffer_size,
             self.observation_space,
             self.action_space,

@@ -231,16 +231,18 @@ class MlpExtractor(nn.Module):
 class CombinedExtractor(BaseFeaturesExtractor):
     """
     Combined feature extractor for Dict observation spaces.
-    Builds a feature extractor for each key of the space
+    Builds a feature extractor for each key of the space. Input from each space
+    is fed through a separate submodule (CNN or MLP, depending on input shape),
+    the output features are concatenated and fed through additional MLP network ("combined").
 
     :param observation_space:
     :param features_dim: Number of features extracted.
         This corresponds to the number of unit for the last layer.
-    :param cnn_output_dim: Number of features to output from each cnn submodule
-    :param mlp_output_dim: Number of features to output from each mlp submodule
-    :param mlp_net_arch: Architecture of each mlp network module
-    :param activation_fn: The activation function to use within each mlp
-    :param comb_net_arch: Architecture of the combined network module which calculates the final feature extracted
+    :param cnn_output_dim: Number of features to output from each CNN submodule(s)
+    :param mlp_output_dim: Number of features to output from each MLP submodule(s)
+    :param mlp_net_arch: Architecture of each MLP network module
+    :param activation_fn: The activation function used in all MLP submodules and combined network
+    :param combined_net_arch: Architecture of the combined network module which calculates the final feature extracted
     """
 
     def __init__(
@@ -251,7 +253,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
         mlp_output_dim: int = 64,
         mlp_net_arch: List[int] = [64, 64],
         activation_fn: Type[nn.Module] = nn.ReLU,
-        comb_net_arch: List[int] = [64, 64],
+        combined_net_arch: List[int] = [64, 64],
     ):
         super(CombinedExtractor, self).__init__(observation_space, features_dim=features_dim)
 
@@ -300,13 +302,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
         self.extractors = nn.ModuleDict(extractors)
 
         self.combined = nn.Sequential(
-            *create_mlp(
-                total_concat_size,
-                features_dim,
-                comb_net_arch,
-                activation_fn,
-                squash_output=False,
-            )
+            *create_mlp(total_concat_size, features_dim, combined_net_arch, activation_fn, squash_output=False)
         )
 
     def forward(self, observations: TensorDict) -> th.Tensor:

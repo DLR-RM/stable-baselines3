@@ -25,31 +25,39 @@ DISABLED = 50
 
 
 class Video(object):
-    """
-    Video data class storing the video frames and the frame per seconds
-    """
-
     def __init__(self, frames: th.Tensor, fps: Union[float, int]):
+        """
+        Video data class storing the video frames and the frame per seconds
+
+        :param frames: frames to create the video from
+        :param fps: frames per second
+        """
         self.frames = frames
         self.fps = fps
 
 
 class Figure(object):
-    """
-    Figure data class storing a matplotlib figure and whether to close the figure after logging it
-    """
-
     def __init__(self, figure: plt.figure, close: bool):
+        """
+        Figure data class storing a matplotlib figure and whether to close the figure after logging it
+
+        :param figure: figure to log
+        :param close: if true, close the figure after logging it
+        """
         self.figure = figure
         self.close = close
 
 
 class Image(object):
-    """
-    Image data class storing an image and data format (gym envs normally use 'HWC')
-    """
-
     def __init__(self, image: Union[th.Tensor, np.ndarray, str], dataformats: str):
+        """
+        Image data class storing an image and data format
+
+        :param image: image to log
+        :param dataformats: Image data format specification of the form NCHW, NHWC, CHW, HWC, HW, WH, etc.
+                            More info in add_image method doc at https://pytorch.org/docs/stable/tensorboard.html
+                            Gym envs normally use 'HWC'
+        """
         self.image = image
         self.dataformats = dataformats
 

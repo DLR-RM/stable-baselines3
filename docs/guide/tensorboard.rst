@@ -104,8 +104,8 @@ Here is an example of how to render an image to TensorBoard at regular intervals
             super(ImageRecorderCallback, self).__init__(verbose)
 
         def _on_step(self):
-            image = self.training_env.render(mode='rgb_array')
-            self.logger.record('trajectory/image', Image(image, "HWC"), exclude=("stdout", "log", "json", "csv"))
+            image = self.training_env.render(mode="rgb_array")
+            self.logger.record("trajectory/image", Image(image, "HWC"), exclude=("stdout", "log", "json", "csv"))
             return True
 
 
@@ -139,7 +139,7 @@ Here is an example of how to store a plot in TensorBoard at regular intervals:
             # Plot values (here a random variable)
             figure = plt.figure()
             figure.add_subplot().plot(np.random.random(3))
-            self.logger.record('trajectory/figure', Figure(figure, True), exclude=("stdout", "log", "json", "csv"))
+            self.logger.record("trajectory/figure", Figure(figure, True), exclude=("stdout", "log", "json", "csv"))
             return True
 
 

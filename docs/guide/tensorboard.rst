@@ -128,12 +128,13 @@ Here is an example of how to store a plot in TensorBoard at regular intervals:
 .. code-block:: python
 
     import numpy as np
+    import matplotlib.pyplot as plt
 
     from stable_baselines3 import SAC
     from stable_baselines3.common.callbacks import BaseCallback
     from stable_baselines3.common.logger import Figure
 
-    model = SAC("MlpPolicy", "MyCustomEnv-v0", tensorboard_log="/tmp/sac/", verbose=1)
+    model = SAC("MlpPolicy", "Pendulum-v0", tensorboard_log="/tmp/sac/", verbose=1)
 
 
     class FigureRecorderCallback(BaseCallback):
@@ -146,6 +147,7 @@ Here is an example of how to store a plot in TensorBoard at regular intervals:
             figure.add_subplot().plot(np.random.random(3))
             # Close the figure after logging it
             self.logger.record("trajectory/figure", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
+            plt.close()
             return True
 
 

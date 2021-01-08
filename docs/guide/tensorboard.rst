@@ -83,6 +83,7 @@ Here is a simple example on how to log both additional tensor or arbitrary scala
 
 Logging Images
 --------------
+
 TensorBoard supports periodic logging of image data, which helps evaluating agents at various stages during training.
 
 .. warning::
@@ -105,6 +106,10 @@ Here is an example of how to render an image to TensorBoard at regular intervals
 
         def _on_step(self):
             image = self.training_env.render(mode="rgb_array")
+            # "HWC" specify the dataformat of the image, here channel last
+            # (H for height, W for width, C for channel)
+            # See https://pytorch.org/docs/stable/tensorboard.html
+            # for supported formats
             self.logger.record("trajectory/image", Image(image, "HWC"), exclude=("stdout", "log", "json", "csv"))
             return True
 
@@ -139,7 +144,8 @@ Here is an example of how to store a plot in TensorBoard at regular intervals:
             # Plot values (here a random variable)
             figure = plt.figure()
             figure.add_subplot().plot(np.random.random(3))
-            self.logger.record("trajectory/figure", Figure(figure, True), exclude=("stdout", "log", "json", "csv"))
+            # Close the figure after logging it
+            self.logger.record("trajectory/figure", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
             return True
 
 

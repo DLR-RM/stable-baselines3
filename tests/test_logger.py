@@ -1,9 +1,9 @@
 from typing import Sequence
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 import torch as th
+from matplotlib import pyplot as plt
 from pandas.errors import EmptyDataError
 
 from stable_baselines3.common.logger import (

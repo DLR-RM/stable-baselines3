@@ -170,16 +170,6 @@ These dictionaries are randomly initilaized on the creation of the environment a
   model = PPO("MultiInputPolicy", env, verbose=1)
   model.learn(total_timesteps=1e5)
 
-  obs = env.reset()
-
-  for _ in range(100):
-      action, _states = model.predict(obs)
-      obs, rewards, dones, info = env.step(action)
-      env.render()
-      if dones[0]:
-          print("Got to end")
-          break
-
 
 Using Callback: Monitoring Training
 -----------------------------------

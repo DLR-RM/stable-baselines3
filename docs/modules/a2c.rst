@@ -40,6 +40,7 @@ Discrete      ✔️      ✔️
 Box           ✔️      ✔️
 MultiDiscrete ✔️      ✔️
 MultiBinary   ✔️      ✔️
+Dict          ❌     ✔️
 ============= ====== ===========
 
 
@@ -162,5 +163,12 @@ A2C Policies
   :members:
 
 .. autoclass:: stable_baselines3.common.policies.ActorCriticCnnPolicy
+  :members:
+  :noindex:
+
+.. autoclass:: MultiInputPolicy
+  :members:
+
+.. autoclass:: stable_baselines3.common.policies.MultiInputActorCriticPolicy
   :members:
   :noindex:

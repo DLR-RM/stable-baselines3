@@ -48,6 +48,8 @@ def _check_image_input(observation_space: spaces.Box) -> None:
 def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, action_space: spaces.Space) -> None:
     """Emit warnings when the observation space or action space used is not supported by Stable-Baselines."""
 
+    # TODO(antonin): no need for that warning but check that it is a first level dict
+    # also tell the user to convert tuple to dict obs space
     if isinstance(observation_space, spaces.Dict) and not isinstance(env, gym.GoalEnv):
         warnings.warn(
             "The observation space is a Dict but the environment is not a gym.GoalEnv "

@@ -3,11 +3,14 @@ from typing import Sequence
 import numpy as np
 import pytest
 import torch as th
+from matplotlib import pyplot as plt
 from pandas.errors import EmptyDataError
 
 from stable_baselines3.common.logger import (
     DEBUG,
+    Figure,
     FormatUnsupportedError,
+    Image,
     ScopedConfigure,
     Video,
     configure,
@@ -196,5 +199,53 @@ def test_report_video_to_unsupported_format_raises_error(tmp_path, unsupported_f
     with pytest.raises(FormatUnsupportedError) as exec_info:
         video = Video(frames=th.rand(1, 20, 3, 16, 16), fps=20)
         writer.write({"video": video}, key_excluded={"video": ()})
+    assert unsupported_format in str(exec_info.value)
+    writer.close()
+
+
+def test_report_image_to_tensorboard(tmp_path, read_log):
+    pytest.importorskip("tensorboard")
+
+    image = Image(image=th.rand(16, 16, 3), dataformats="HWC")
+    writer = make_output_format("tensorboard", tmp_path)
+    writer.write({"image": image}, key_excluded={"image": ()})
+
+    assert not read_log("tensorboard").empty
+    writer.close()
+
+
+@pytest.mark.parametrize("unsupported_format", ["stdout", "log", "json", "csv"])
+def test_report_image_to_unsupported_format_raises_error(tmp_path, unsupported_format):
+    writer = make_output_format(unsupported_format, tmp_path)
+
+    with pytest.raises(FormatUnsupportedError) as exec_info:
+        image = Image(image=th.rand(16, 16, 3), dataformats="HWC")
+        writer.write({"image": image}, key_excluded={"image": ()})
+    assert unsupported_format in str(exec_info.value)
+    writer.close()
+
+
+def test_report_figure_to_tensorboard(tmp_path, read_log):
+    pytest.importorskip("tensorboard")
+
+    fig = plt.figure()
+    fig.add_subplot().plot(np.random.random(3))
+    figure = Figure(figure=fig, close=True)
+    writer = make_output_format("tensorboard", tmp_path)
+    writer.write({"figure": figure}, key_excluded={"figure": ()})
+
+    assert not read_log("tensorboard").empty
+    writer.close()
+
+
+@pytest.mark.parametrize("unsupported_format", ["stdout", "log", "json", "csv"])
+def test_report_figure_to_unsupported_format_raises_error(tmp_path, unsupported_format):
+    writer = make_output_format(unsupported_format, tmp_path)
+
+    with pytest.raises(FormatUnsupportedError) as exec_info:
+        fig = plt.figure()
+        fig.add_subplot().plot(np.random.random(3))
+        figure = Figure(figure=fig, close=True)
+        writer.write({"figure": figure}, key_excluded={"figure": ()})
     assert unsupported_format in str(exec_info.value)
     writer.close()

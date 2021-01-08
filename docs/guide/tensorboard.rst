@@ -81,6 +81,78 @@ Here is a simple example on how to log both additional tensor or arbitrary scala
 
     model.learn(50000, callback=TensorboardCallback())
 
+Logging Images
+--------------
+
+TensorBoard supports periodic logging of image data, which helps evaluating agents at various stages during training.
+
+.. warning::
+    To support image logging `pillow <https://github.com/python-pillow/Pillow>`_ must be installed otherwise, TensorBoard ignores the image and logs a warning.
+
+Here is an example of how to render an image to TensorBoard at regular intervals:
+
+.. code-block:: python
+
+    from stable_baselines3 import SAC
+    from stable_baselines3.common.callbacks import BaseCallback
+    from stable_baselines3.common.logger import Image
+
+    model = SAC("MlpPolicy", "Pendulum-v0", tensorboard_log="/tmp/sac/", verbose=1)
+
+
+    class ImageRecorderCallback(BaseCallback):
+        def __init__(self, verbose=0):
+            super(ImageRecorderCallback, self).__init__(verbose)
+
+        def _on_step(self):
+            image = self.training_env.render(mode="rgb_array")
+            # "HWC" specify the dataformat of the image, here channel last
+            # (H for height, W for width, C for channel)
+            # See https://pytorch.org/docs/stable/tensorboard.html
+            # for supported formats
+            self.logger.record("trajectory/image", Image(image, "HWC"), exclude=("stdout", "log", "json", "csv"))
+            return True
+
+
+    model.learn(50000, callback=ImageRecorderCallback())
+
+Logging Figures/Plots
+---------------------
+TensorBoard supports periodic logging of figures/plots created with matplotlib, which helps evaluating agents at various stages during training.
+
+.. warning::
+    To support figure logging `matplotlib <https://matplotlib.org/>`_ must be installed otherwise, TensorBoard ignores the figure and logs a warning.
+
+Here is an example of how to store a plot in TensorBoard at regular intervals:
+
+.. code-block:: python
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    from stable_baselines3 import SAC
+    from stable_baselines3.common.callbacks import BaseCallback
+    from stable_baselines3.common.logger import Figure
+
+    model = SAC("MlpPolicy", "Pendulum-v0", tensorboard_log="/tmp/sac/", verbose=1)
+
+
+    class FigureRecorderCallback(BaseCallback):
+        def __init__(self, verbose=0):
+            super(FigureRecorderCallback, self).__init__(verbose)
+
+        def _on_step(self):
+            # Plot values (here a random variable)
+            figure = plt.figure()
+            figure.add_subplot().plot(np.random.random(3))
+            # Close the figure after logging it
+            self.logger.record("trajectory/figure", Figure(figure, close=True), exclude=("stdout", "log", "json", "csv"))
+            plt.close()
+            return True
+
+
+    model.learn(50000, callback=FigureRecorderCallback())
+
 Logging Videos
 --------------
 

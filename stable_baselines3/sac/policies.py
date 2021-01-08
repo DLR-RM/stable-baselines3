@@ -433,7 +433,7 @@ class CnnPolicy(SACPolicy):
         )
 
 
-class MultiInputSACPolicy(SACPolicy):
+class MultiInputPolicy(SACPolicy):
     """
     Policy class (with both actor and critic) for SAC.
 
@@ -483,7 +483,7 @@ class MultiInputSACPolicy(SACPolicy):
         n_critics: int = 2,
         share_features_extractor: bool = True,
     ):
-        super(MultiInputSACPolicy, self).__init__(
+        super(MultiInputPolicy, self).__init__(
             observation_space,
             action_space,
             lr_schedule,
@@ -506,4 +506,4 @@ class MultiInputSACPolicy(SACPolicy):
 
 register_policy("MlpPolicy", MlpPolicy)
 register_policy("CnnPolicy", CnnPolicy)
-register_policy("MultiInputPolicy", MultiInputSACPolicy)
+register_policy("MultiInputPolicy", MultiInputPolicy)

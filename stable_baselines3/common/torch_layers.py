@@ -260,9 +260,9 @@ class CombinedExtractor(BaseFeaturesExtractor):
         extractors = {}
 
         total_concat_size = 0
-        for (key, subspace) in observation_space.spaces.items():
-
+        for key, subspace in observation_space.spaces.items():
             if is_image_space(subspace):
+                # The observation key is an image: create a CNN for it
                 n_input_channels = subspace.shape[0]
 
                 # Nature CNN
@@ -287,6 +287,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
                 total_concat_size += cnn_output_dim
 
             else:
+                # The observation key is a vector, create a MLP for it
                 extractors[key] = nn.Sequential(
                     *create_mlp(
                         subspace.shape[0],

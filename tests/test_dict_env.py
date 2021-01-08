@@ -1,18 +1,18 @@
 import pytest
 
-from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
+from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.envs.multi_input_envs import SimpleMultiObsEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
 
 
-@pytest.mark.parametrize("model_class", [PPO, A2C, DQN, SAC, TD3])
+@pytest.mark.parametrize("model_class", [PPO, A2C, DQN, DDPG, SAC, TD3])
 def test_dict_spaces(model_class):
     """
-    Additional tests for PPO/A2C/SAC/TD3/DQN to check observation space support
+    Additional tests for PPO/A2C/SAC/DDPG/TD3/DQN to check observation space support
     for Dictionary spaces using MultiInputPolicy.
     """
-    use_discrete_actions = model_class not in [SAC, TD3]
+    use_discrete_actions = model_class not in [SAC, TD3, DDPG]
     env = DummyVecEnv([lambda: SimpleMultiObsEnv(random_start=True, discrete_actions=use_discrete_actions)])
     env = VecFrameStack(env, n_stack=2)
     kwargs = {}

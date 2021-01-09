@@ -212,7 +212,7 @@ class PPO(OnPolicyAlgorithm):
                 loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
 
                 # Optimization step
-                self.policy.optimizer.zero_grad()
+                self.policy.optimizer.zero_grad(set_to_none=True)
                 loss.backward()
                 # Clip grad norm
                 th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)

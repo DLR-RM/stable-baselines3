@@ -240,7 +240,7 @@ class SAC(OffPolicyAlgorithm):
             critic_losses.append(critic_loss.item())
 
             # Optimize the critic
-            self.critic.optimizer.zero_grad()
+            self.critic.optimizer.zero_grad(set_to_none=True)
             critic_loss.backward()
             self.critic.optimizer.step()
 
@@ -253,7 +253,7 @@ class SAC(OffPolicyAlgorithm):
             actor_losses.append(actor_loss.item())
 
             # Optimize the actor
-            self.actor.optimizer.zero_grad()
+            self.actor.optimizer.zero_grad(set_to_none=True)
             actor_loss.backward()
             self.actor.optimizer.step()
 

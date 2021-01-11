@@ -119,20 +119,22 @@ class PPO(OnPolicyAlgorithm):
             ),
         )
         if self.env is not None:
-            # Checks for scenarios when we are collecting steps from a live environment (self.env not None)
-
-            total_env_steps = self.env.num_envs * self.n_steps
-            assert total_env_steps > 1, (
-                f"n_steps*n_envs must be greater than 1. " f"Currently n_steps={self.n_steps} and n_envs={self.env.num_envs}"
-            )
-            untruncated_batches = total_env_steps // batch_size
-            if total_env_steps % batch_size != 0:
+            # Check that `n_steps * n_envs > 1` to avoid NaN
+            # when doing advantage normalization
+            buffer_size = self.env.num_envs * self.n_steps
+            assert (
+                buffer_size > 1
+            ), f"`n_steps * n_envs` must be greater than 1. Currently n_steps={self.n_steps} and n_envs={self.env.num_envs}"
+            # Check that the rollout buffer size is a multiple of the mini-batch size
+            untruncated_batches = buffer_size // batch_size
+            if buffer_size % batch_size > 0:
                 warnings.warn(
                     f"You have specified a mini-batch size of {batch_size},"
-                    f" but because the `RolloutBuffer` is of size n_steps*n_envs, which"
-                    f" is currently {total_env_steps}, after every {untruncated_batches} untruncated batches,"
-                    f" there will be a truncated batch of size {total_env_steps % batch_size}"
-                    f" Info: (n_steps={self.n_steps} and n_envs={self.env.num_envs})"
+                    f" but because the `RolloutBuffer` is of size `n_steps * n_envs = {buffer_size}`,"
+                    f" after every {untruncated_batches} untruncated mini-batches,"
+                    f" there will be a truncated mini-batch of size {buffer_size % batch_size}\n"
+                    f"We recommend using a `batch_size` that is a multiple of `n_steps * n_envs`.\n"
+                    f"Info: (n_steps={self.n_steps} and n_envs={self.env.num_envs})"
                 )
         self.batch_size = batch_size
         self.n_epochs = n_epochs

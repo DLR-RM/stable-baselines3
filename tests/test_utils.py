@@ -21,14 +21,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 @pytest.mark.parametrize("vec_env_cls", [None, SubprocVecEnv])
 @pytest.mark.parametrize("wrapper_class", [None, gym.wrappers.TimeLimit])
 def test_make_vec_env(env_id, n_envs, vec_env_cls, wrapper_class):
-    env = make_vec_env(
-        env_id,
-        n_envs,
-        vec_env_cls=vec_env_cls,
-        wrapper_class=wrapper_class,
-        monitor_dir=None,
-        seed=0,
-    )
+    env = make_vec_env(env_id, n_envs, vec_env_cls=vec_env_cls, wrapper_class=wrapper_class, monitor_dir=None, seed=0)
 
     assert env.num_envs == n_envs
 
@@ -78,28 +71,13 @@ def test_vec_env_kwargs():
 
 
 def test_vec_env_monitor_kwargs():
-    env = make_vec_env(
-        "MountainCarContinuous-v0",
-        n_envs=1,
-        seed=0,
-        monitor_kwargs={"allow_early_resets": False},
-    )
+    env = make_vec_env("MountainCarContinuous-v0", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": False})
     assert env.get_attr("allow_early_resets")[0] is False
 
-    env = make_atari_env(
-        "BreakoutNoFrameskip-v4",
-        n_envs=1,
-        seed=0,
-        monitor_kwargs={"allow_early_resets": False},
-    )
+    env = make_atari_env("BreakoutNoFrameskip-v4", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": False})
     assert env.get_attr("allow_early_resets")[0] is False
 
-    env = make_vec_env(
-        "MountainCarContinuous-v0",
-        n_envs=1,
-        seed=0,
-        monitor_kwargs={"allow_early_resets": True},
-    )
+    env = make_vec_env("MountainCarContinuous-v0", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": True})
     assert env.get_attr("allow_early_resets")[0] is True
 
     env = make_atari_env(
@@ -362,16 +340,14 @@ def test_is_wrapped():
     assert unwrap_wrapper(env, Monitor) == monitor_env
 
 
-def test_ppo_replay_buffer():
+def test_ppo_warnings():
     """Test that PPO warns and errors correctly on
-    problematic replay buffer sizes"""
+    problematic rollour buffer sizes"""
 
-    def make_pendulum():
-        return gym.make("Pendulum-v0")
-
-    single_vec_env = DummyVecEnv([make_pendulum])
+    # Only 1 step: advantage normalization will return NaN
     with pytest.raises(AssertionError):
-        _ = PPO("MlpPolicy", single_vec_env, n_steps=1)
+        PPO("MlpPolicy", "Pendulum-v0", n_steps=1)
 
+    # Truncated mini-batch
     with pytest.warns(UserWarning):
-        _ = PPO("MlpPolicy", single_vec_env, n_steps=6, batch_size=8)
+        PPO("MlpPolicy", "Pendulum-v0", n_steps=6, batch_size=8)

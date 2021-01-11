@@ -35,6 +35,9 @@ Bug Fixes:
 - Fixed bug that the arguments order of ``explained_variance()`` in ``ppo.py`` and ``a2c.py`` is not correct (@thisray)
 - Fixed bug where full ``HerReplayBuffer`` leads to an index error. (@megan-klaiber)
 - Fixed bug where replay buffer could not be saved if it was too big (> 4 Gb) for python<3.8 (thanks @hn2)
+- Added informative ``PPO`` construction error in edge-case scenario where ``n_steps * n_envs = 1`` (size of rollout buffer),
+  which otherwise causes downstream breaking errors in training (@decodyng)
+
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -48,6 +51,7 @@ Others:
 - Renamed variables in the ``train()`` method of ``SAC``, ``TD3`` and ``DQN`` to match SB3-Contrib.
 - Updated docker base image to Ubuntu 18.04
 - Set tensorboard min version to 2.2.0 (earlier version are apparently not working with PyTorch)
+- Added warning for ``PPO`` when ``n_steps * n_envs`` is not a multiple of ``batch_size`` (last mini-batch truncated) (@decodyng)
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -535,4 +539,4 @@ And all the contributors:
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
-@tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio
+@tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng

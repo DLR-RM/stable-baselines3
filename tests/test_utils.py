@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import torch as th
 
-from stable_baselines3 import A2C
+from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.atari_wrappers import ClipRewardEnv
 from stable_baselines3.common.env_util import is_wrapped, make_atari_env, make_vec_env, unwrap_wrapper
 from stable_baselines3.common.evaluation import evaluate_policy
@@ -80,7 +80,12 @@ def test_vec_env_monitor_kwargs():
     env = make_vec_env("MountainCarContinuous-v0", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": True})
     assert env.get_attr("allow_early_resets")[0] is True
 
-    env = make_atari_env("BreakoutNoFrameskip-v4", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": True})
+    env = make_atari_env(
+        "BreakoutNoFrameskip-v4",
+        n_envs=1,
+        seed=0,
+        monitor_kwargs={"allow_early_resets": True},
+    )
     assert env.get_attr("allow_early_resets")[0] is True
 
 
@@ -333,3 +338,16 @@ def test_is_wrapped():
     assert is_wrapped(env, Monitor)
     # Test that unwrap works as expected
     assert unwrap_wrapper(env, Monitor) == monitor_env
+
+
+def test_ppo_warnings():
+    """Test that PPO warns and errors correctly on
+    problematic rollour buffer sizes"""
+
+    # Only 1 step: advantage normalization will return NaN
+    with pytest.raises(AssertionError):
+        PPO("MlpPolicy", "Pendulum-v0", n_steps=1)
+
+    # Truncated mini-batch
+    with pytest.warns(UserWarning):
+        PPO("MlpPolicy", "Pendulum-v0", n_steps=6, batch_size=8)

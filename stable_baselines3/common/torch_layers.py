@@ -259,7 +259,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
 
         if mlp_net_arch is None:
             mlp_net_arch = [64, 64]
-        
+
         if combined_net_arch is None:
             combined_net_arch = [64, 64]
 

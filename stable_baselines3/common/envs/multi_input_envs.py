@@ -69,7 +69,6 @@ class SimpleMultiObsEnv(gym.Env):
 
         self.max_state = len(self.state_mapping) - 1
 
-
     def init_state_mapping(self, num_col: int, num_row: int) -> None:
         """
         Initializes the state_mapping array which holds the observation values for each state

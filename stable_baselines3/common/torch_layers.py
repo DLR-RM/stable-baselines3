@@ -251,11 +251,17 @@ class CombinedExtractor(BaseFeaturesExtractor):
         features_dim: int = 64,
         cnn_output_dim: int = 64,
         mlp_output_dim: int = 64,
-        mlp_net_arch: List[int] = [64, 64],
+        mlp_net_arch: List[int] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
-        combined_net_arch: List[int] = [64, 64],
+        combined_net_arch: List[int] = None,
     ):
         super(CombinedExtractor, self).__init__(observation_space, features_dim=features_dim)
+
+        if mlp_net_arch is None:
+            mlp_net_arch = [64, 64]
+        
+        if combined_net_arch is None:
+            combined_net_arch = [64, 64]
 
         extractors = {}
 

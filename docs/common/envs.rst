@@ -22,10 +22,3 @@ SimpleMultiObsEnv
 
 .. autoclass:: SimpleMultiObsEnv
   :members:
-
-
-NineRoomMultiObsEnv
--------------------
-
-.. autoclass:: NineRoomMultiObsEnv
-  :members:

@@ -116,7 +116,7 @@ def preprocess_obs(
 
     elif isinstance(observation_space, spaces.Dict):
         for key, _obs in obs.items():
-            obs[key] = _obs.float()
+            obs[key] = preprocess_obs(_obs, observation_space[key], normalize_images=normalize_images)
         return obs
 
     else:

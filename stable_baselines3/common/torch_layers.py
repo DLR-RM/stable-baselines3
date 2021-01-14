@@ -243,6 +243,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
     :param mlp_net_arch: Architecture of each MLP network module
     :param activation_fn: The activation function used in all MLP submodules and combined network
     :param combined_net_arch: Architecture of the combined network module which calculates the final feature extracted
+    :param check_channels: Whether channels should be checked for is_image_space
     """
 
     def __init__(
@@ -254,6 +255,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
         mlp_net_arch: List[int] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
         combined_net_arch: List[int] = None,
+        check_channels: bool=True
     ):
         super(CombinedExtractor, self).__init__(observation_space, features_dim=features_dim)
 
@@ -267,7 +269,8 @@ class CombinedExtractor(BaseFeaturesExtractor):
 
         total_concat_size = 0
         for key, subspace in observation_space.spaces.items():
-            if is_image_space(subspace):
+            
+            if is_image_space(subspace, check_channels=check_channels):
                 # The observation key is an image: create a CNN for it
                 n_input_channels = subspace.shape[0]
 
@@ -313,7 +316,11 @@ class CombinedExtractor(BaseFeaturesExtractor):
         )
 
     def forward(self, observations: TensorDict) -> th.Tensor:
-        encoded_tensor_list = [extractor(observations[key]) for key, extractor in self.extractors.items()]
+        encoded_tensor_list = []
+
+        for key, extractor in self.extractors.items():
+                encoded_tensor_list.append(extractor(observations[key]))
+
         return self.combined(th.cat(encoded_tensor_list, dim=1))
 
 

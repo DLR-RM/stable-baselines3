@@ -17,15 +17,17 @@ class VecFrameStack(VecEnvWrapper):
     :param n_stack: Number of frames to stack
     :param channels_order: If "first", stack on first image dimension. If "last", stack on last dimension.
         If None, automatically detect channel to stack over in case of image observation or default to "last" (default).
+        Alternatively channels_order can be a dictionary which can be used with environments with Dict observation spaces
     """
 
-    def __init__(self, venv: VecEnv, n_stack: int, channels_order: Optional[str] = None):
+    def __init__(self, venv: VecEnv, n_stack: int, channels_order: Optional[Union[str, Dict[str, str]]] = None):
         self.venv = venv
         self.n_stack = n_stack
 
         wrapped_obs_space = venv.observation_space
 
         if isinstance(wrapped_obs_space, spaces.Box):
+            assert not isinstance(channels_order, dict), f"Expected None or string for channels_order but received {channels_order}"
             self.stackedobs = StackedObservations(venv.num_envs, n_stack, wrapped_obs_space, channels_order)
 
         elif isinstance(wrapped_obs_space, spaces.Dict):

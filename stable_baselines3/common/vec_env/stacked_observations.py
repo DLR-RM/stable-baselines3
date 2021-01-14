@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from gym import spaces
@@ -163,7 +163,7 @@ class StackedDictObservations(StackedObservations):
         num_envs: int,
         n_stack: int,
         observation_space: spaces.Dict,
-        channels_order: Optional[str] = None,
+        channels_order: Optional[Union[str, Dict[str, str]]] = None,
     ):
         self.n_stack = n_stack
         self.channels_first = {}
@@ -173,12 +173,16 @@ class StackedDictObservations(StackedObservations):
 
         for key, subspace in observation_space.spaces.items():
             assert isinstance(subspace, spaces.Box), "StackedDictObservations only works with nested gym.spaces.Box"
+            if isinstance(channels_order, str) or channels_order is None:
+                subspace_channel_order = channels_order
+            else:
+                subspace_channel_order = channels_order[key]
             (
                 self.channels_first[key],
                 self.stack_dimension[key],
                 self.stackedobs[key],
                 self.repeat_axis[key],
-            ) = self.compute_stacking(num_envs, n_stack, subspace, channels_order)
+            ) = self.compute_stacking(num_envs, n_stack, subspace, subspace_channel_order)
 
     def stack_observation_space(self, observation_space: spaces.Dict) -> spaces.Dict:
         """

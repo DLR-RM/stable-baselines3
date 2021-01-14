@@ -27,7 +27,9 @@ class VecFrameStack(VecEnvWrapper):
         wrapped_obs_space = venv.observation_space
 
         if isinstance(wrapped_obs_space, spaces.Box):
-            assert not isinstance(channels_order, dict), f"Expected None or string for channels_order but received {channels_order}"
+            assert not isinstance(
+                channels_order, dict
+            ), f"Expected None or string for channels_order but received {channels_order}"
             self.stackedobs = StackedObservations(venv.num_envs, n_stack, wrapped_obs_space, channels_order)
 
         elif isinstance(wrapped_obs_space, spaces.Dict):

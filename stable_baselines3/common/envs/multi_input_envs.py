@@ -30,6 +30,7 @@ class SimpleMultiObsEnv(gym.Env):
     :param num_row: Number of rows in the grid
     :param random_start: If true, agent starts in random position
     :param noise: Noise added to the observations
+    :param channel_last: If true, the image will be channel last, else it will be channel first
     """
 
     def __init__(
@@ -39,11 +40,15 @@ class SimpleMultiObsEnv(gym.Env):
         random_start: bool = True,
         noise: float = 0.0,
         discrete_actions: bool = True,
+        channel_last: bool = True,
     ):
         super(SimpleMultiObsEnv, self).__init__()
 
         self.vector_size = 5
-        self.img_size = [1, 64, 64]
+        if channel_last:
+            self.img_size = [64, 64, 1]
+        else:
+            self.img_size = [1, 64, 64]
 
         self.random_start = random_start
         self.discrete_actions = discrete_actions
@@ -80,11 +85,11 @@ class SimpleMultiObsEnv(gym.Env):
         self.state_mapping = []
 
         col_vecs = np.random.random((num_col, self.vector_size))
-        row_imgs = np.random.randint(0, 255, (num_row, 1, 64, 64), dtype=np.int32)
+        row_imgs = np.random.randint(0, 255, (num_row, 64, 64), dtype=np.int32)
 
         for i in range(num_col):
             for j in range(num_row):
-                self.state_mapping.append({"vec": col_vecs[i], "img": row_imgs[j]})
+                self.state_mapping.append({"vec": col_vecs[i], "img": row_imgs[j].reshape(self.img_size)})
 
     def get_state_mapping(self) -> Dict[str, np.ndarray]:
         """

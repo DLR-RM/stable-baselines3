@@ -13,19 +13,25 @@ def test_dict_spaces(model_class):
     for Dictionary spaces using MultiInputPolicy.
     """
     use_discrete_actions = model_class not in [SAC, TD3, DDPG]
-    env = DummyVecEnv([lambda: SimpleMultiObsEnv(random_start=True, discrete_actions=use_discrete_actions)])
-    env = VecFrameStack(env, n_stack=2)
+
+    channels_order = {"vec": None, "img": "first"}
+    env = DummyVecEnv(
+        [lambda: SimpleMultiObsEnv(random_start=True, discrete_actions=use_discrete_actions, channel_last=False)]
+    )
+
+    env = VecFrameStack(env, n_stack=3, channels_order=channels_order)
+
     kwargs = {}
     n_steps = 250
 
     if model_class in {A2C, PPO}:
-        kwargs = dict(n_steps=100)
+        kwargs = dict(n_steps=100, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32, check_channels=False)))
     else:
         # Avoid memory error when using replay buffer
         # Reduce the size of the features
         kwargs = dict(
             buffer_size=250,
-            policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)),
+            policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32, check_channels=False)),
         )
         if model_class == DQN:
             kwargs["learning_starts"] = 0

@@ -1,7 +1,7 @@
 import pytest
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
-from stable_baselines3.common.envs.multi_input_envs import SimpleMultiObsEnv
+from stable_baselines3.common.envs import SimpleMultiObsEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
 
@@ -22,10 +22,10 @@ def test_dict_spaces(model_class):
     env = VecFrameStack(env, n_stack=3, channels_order=channels_order)
 
     kwargs = {}
-    n_steps = 250
+    n_steps = 256
 
     if model_class in {A2C, PPO}:
-        kwargs = dict(n_steps=100, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32, check_channels=False)))
+        kwargs = dict(n_steps=128, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32, check_channels=False)))
     else:
         # Avoid memory error when using replay buffer
         # Reduce the size of the features

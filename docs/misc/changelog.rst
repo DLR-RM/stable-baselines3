@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.11.0a5 (WIP)
+Pre-Release 0.11.0a6 (WIP)
 -------------------------------
 
 Breaking Changes:
@@ -12,7 +12,7 @@ Breaking Changes:
   this allows to return the unnormalized reward in the case of Atari games for instance.
 - Renamed ``common.vec_env.is_wrapped`` to ``common.vec_env.is_vecenv_wrapped`` to avoid confusion
   with the new ``is_wrapped()`` helper
-- All customs environments (e.g. the ``BitFlippingEnv``) were moved to ``stable_baselines3.common.envs`` folder
+- All customs environments (e.g. the ``BitFlippingEnv`` or ``IdentityEnv``) were moved to ``stable_baselines3.common.envs`` folder
 
 New Features:
 ^^^^^^^^^^^^^
@@ -57,6 +57,7 @@ Others:
 - Updated docker base image to Ubuntu 18.04
 - Set tensorboard min version to 2.2.0 (earlier version are apparently not working with PyTorch)
 - Added warning for ``PPO`` when ``n_steps * n_envs`` is not a multiple of ``batch_size`` (last mini-batch truncated) (@decodyng)
+- Updated ``env_checker`` because SB3 now supports Dict envs
 
 Documentation:
 ^^^^^^^^^^^^^^

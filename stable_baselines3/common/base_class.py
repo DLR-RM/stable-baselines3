@@ -211,6 +211,8 @@ class BaseAlgorithm(ABC):
         ):
             env = ObsDictWrapper(env)
 
+        # TODO(@J-Travnik): check that it is a first-level dict obs space only
+
         return env
 
     @abstractmethod

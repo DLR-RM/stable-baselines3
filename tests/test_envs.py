@@ -4,13 +4,14 @@ import pytest
 from gym import spaces
 
 from stable_baselines3.common.env_checker import check_env
-from stable_baselines3.common.envs import BitFlippingEnv
-from stable_baselines3.common.identity_env import (
+from stable_baselines3.common.envs import (
+    BitFlippingEnv,
     FakeImageEnv,
     IdentityEnv,
     IdentityEnvBox,
     IdentityEnvMultiBinary,
     IdentityEnvMultiDiscrete,
+    SimpleMultiObsEnv,
 )
 
 ENV_CLASSES = [
@@ -20,6 +21,7 @@ ENV_CLASSES = [
     IdentityEnvMultiBinary,
     IdentityEnvMultiDiscrete,
     FakeImageEnv,
+    SimpleMultiObsEnv,
 ]
 
 

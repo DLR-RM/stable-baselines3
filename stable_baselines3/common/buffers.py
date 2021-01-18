@@ -185,19 +185,13 @@ class ReplayBuffer(BaseBuffer):
 
         self.optimize_memory_usage = optimize_memory_usage
 
-        self.observations = np.zeros(
-            (self.buffer_size, self.n_envs) + self.obs_shape,
-            dtype=observation_space.dtype,
-        )
+        self.observations = np.zeros((self.buffer_size, self.n_envs) + self.obs_shape, dtype=observation_space.dtype)
 
         if optimize_memory_usage:
             # `observations` contains also the next observation
             self.next_observations = None
         else:
-            self.next_observations = np.zeros(
-                (self.buffer_size, self.n_envs) + self.obs_shape,
-                dtype=observation_space.dtype,
-            )
+            self.next_observations = np.zeros((self.buffer_size, self.n_envs) + self.obs_shape, dtype=observation_space.dtype)
 
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
 
@@ -220,12 +214,7 @@ class ReplayBuffer(BaseBuffer):
                 )
 
     def add(
-        self,
-        obs: Union[np.ndarray, dict],
-        next_obs: np.ndarray,
-        action: np.ndarray,
-        reward: np.ndarray,
-        done: np.ndarray,
+        self, obs: Union[np.ndarray, dict], next_obs: np.ndarray, action: np.ndarray, reward: np.ndarray, done: np.ndarray
     ) -> None:
         # Copy to avoid modification by reference
 
@@ -322,12 +311,7 @@ class RolloutBuffer(BaseBuffer):
         super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
-        self.observations, self.actions, self.rewards, self.advantages = (
-            None,
-            None,
-            None,
-            None,
-        )
+        self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
         self.returns, self.dones, self.values, self.log_probs = None, None, None, None
         self.generator_ready = False
         self.reset()
@@ -460,10 +444,6 @@ class DictReplayBuffer(ReplayBuffer):
     :param device:
     :param n_envs: Number of parallel environments
     :param optimize_memory_usage: Enable a memory efficient variant
-        of the replay buffer which reduces by almost a factor two the memory used,
-        at a cost of more complexity.
-        See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
-        and https://github.com/DLR-RM/stable-baselines3/pull/28#issuecomment-637559274
         Disabled for now (see https://github.com/DLR-RM/stable-baselines3/pull/243#discussion_r531535702)
     """
 
@@ -493,13 +473,9 @@ class DictReplayBuffer(ReplayBuffer):
         self.observations = {
             key: np.zeros((self.buffer_size, self.n_envs) + _obs_shape) for key, _obs_shape in self.obs_shape.items()
         }
-        if optimize_memory_usage:
-            # `observations` contains also the next observation
-            self.next_observations = None
-        else:
-            self.next_observations = {
-                key: np.zeros((self.buffer_size, self.n_envs) + _obs_shape) for key, _obs_shape in self.obs_shape.items()
-            }
+        self.next_observations = {
+            key: np.zeros((self.buffer_size, self.n_envs) + _obs_shape) for key, _obs_shape in self.obs_shape.items()
+        }
 
         # only 1 env is supported
         self.actions = np.zeros((self.buffer_size, self.action_dim), dtype=action_space.dtype)
@@ -528,24 +504,15 @@ class DictReplayBuffer(ReplayBuffer):
                 )
 
     def add(
-        self,
-        obs: Union[np.ndarray, dict],
-        next_obs: np.ndarray,
-        action: np.ndarray,
-        reward: np.ndarray,
-        done: np.ndarray,
+        self, obs: Union[np.ndarray, Dict], next_obs: np.ndarray, action: np.ndarray, reward: np.ndarray, done: np.ndarray
     ) -> None:
         # Copy to avoid modification by reference
 
         for key in self.observations.keys():
             self.observations[key][self.pos] = np.array(obs[key]).copy()
 
-        if self.optimize_memory_usage:
-            for key in self.observations.keys():
-                self.observations[key][(self.pos + 1) % self.buffer_size] = np.array(next_obs[key]).copy()
-        else:
-            for key in self.next_observations.keys():
-                self.next_observations[key][self.pos] = np.array(next_obs[key]).copy()
+        for key in self.next_observations.keys():
+            self.next_observations[key][self.pos] = np.array(next_obs[key]).copy()
 
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
@@ -559,38 +526,19 @@ class DictReplayBuffer(ReplayBuffer):
     def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> DictReplayBufferSamples:
         """
         Sample elements from the replay buffer.
-        Custom sampling when using memory efficient variant,
-        as we should not sample the element with index `self.pos`
-        See https://github.com/DLR-RM/stable-baselines3/pull/28#issuecomment-637559274
 
         :param batch_size: Number of element to sample
         :param env: associated gym VecEnv
             to normalize the observations/rewards when sampling
         :return:
         """
-        if not self.optimize_memory_usage:
-            return super(ReplayBuffer, self).sample(batch_size=batch_size, env=env)
-
-        # Do not sample the element with index `self.pos` as the transitions is invalid
-        # (we use only one array to store `obs` and `next_obs`)
-        if self.full:
-            batch_inds = (np.random.randint(1, self.buffer_size, size=batch_size) + self.pos) % self.buffer_size
-        else:
-            batch_inds = np.random.randint(0, self.pos, size=batch_size)
-        return self._get_samples(batch_inds, env=env)
+        return super(ReplayBuffer, self).sample(batch_size=batch_size, env=env)
 
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> DictReplayBufferSamples:
 
-        if self.optimize_memory_usage:
-            next_obs = {
-                key: self.to_torch(self._normalize_obs(obs[(batch_inds + 1) % self.buffer_size, 0, :], env))
-                for key, obs in self.observations.items()
-            }
-        else:
-            next_obs = {
-                key: self.to_torch(self._normalize_obs(obs[batch_inds, 0, :], env))
-                for key, obs in self.next_observations.items()
-            }
+        next_obs = {
+            key: self.to_torch(self._normalize_obs(obs[batch_inds, 0, :], env)) for key, obs in self.next_observations.items()
+        }
 
         normalized_obs = {
             key: self.to_torch(self._normalize_obs(obs[batch_inds, 0, :], env)) for key, obs in self.observations.items()
@@ -647,12 +595,7 @@ class DictRolloutBuffer(RolloutBuffer):
 
         self.gae_lambda = gae_lambda
         self.gamma = gamma
-        self.observations, self.actions, self.rewards, self.advantages = (
-            None,
-            None,
-            None,
-            None,
-        )
+        self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
         self.returns, self.dones, self.values, self.log_probs = None, None, None, None
         self.generator_ready = False
         self.reset()
@@ -674,7 +617,7 @@ class DictRolloutBuffer(RolloutBuffer):
 
     def add(
         self,
-        obs: Union[np.ndarray, dict],
+        obs: Union[np.ndarray, Dict],
         action: np.ndarray,
         reward: np.ndarray,
         done: np.ndarray,

@@ -255,7 +255,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
         mlp_net_arch: List[int] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
         combined_net_arch: List[int] = None,
-        check_channels: bool = True,
+        check_channels: bool = False,
     ):
         super(CombinedExtractor, self).__init__(observation_space, features_dim=features_dim)
 
@@ -296,18 +296,9 @@ class CombinedExtractor(BaseFeaturesExtractor):
                 total_concat_size += cnn_output_dim
 
             else:
-                # The observation key is a vector, create a MLP for it
-                extractors[key] = nn.Sequential(
-                    *create_mlp(
-                        subspace.shape[0],
-                        mlp_output_dim,
-                        mlp_net_arch,
-                        activation_fn,
-                        squash_output=False,
-                    )
-                )
-
-                total_concat_size += mlp_output_dim
+                # The observation key is a vector, flatten it if needed
+                extractors[key] = nn.Flatten()
+                total_concat_size += get_flattened_obs_dim(subspace)
 
         self.extractors = nn.ModuleDict(extractors)
 
@@ -320,7 +311,6 @@ class CombinedExtractor(BaseFeaturesExtractor):
 
         for key, extractor in self.extractors.items():
             encoded_tensor_list.append(extractor(observations[key]))
-
         return self.combined(th.cat(encoded_tensor_list, dim=1))
 
 

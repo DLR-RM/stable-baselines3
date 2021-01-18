@@ -298,9 +298,11 @@ class BasePolicy(BaseModel):
             for key, obs in observation.items():
                 obs_space = self.observation_space.spaces[key]
                 if is_image_space(obs_space):
-                    obs = BasePolicy.try_transpose_img_observation(obs, obs_space)
+                    obs_ = BasePolicy.try_transpose_img_observation(obs, obs_space)
                 else:
-                    observation[key] = obs.reshape((-1,) + self.observation_space[key].shape)
+                    obs_ = np.array(obs)
+                # Add batch dimension if needed
+                observation[key] = obs_.reshape((-1,) + self.observation_space[key].shape)
 
         elif is_image_space(self.observation_space):
             # Handle the different cases for images
@@ -312,6 +314,7 @@ class BasePolicy(BaseModel):
         vectorized_env = is_vectorized_observation(observation, self.observation_space)
 
         if not isinstance(observation, dict):
+            # Add batch dimension if needed
             observation = observation.reshape((-1,) + self.observation_space.shape)
 
         observation = obs_as_tensor(observation, self.device)

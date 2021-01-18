@@ -115,9 +115,11 @@ def preprocess_obs(
         return obs.float()
 
     elif isinstance(observation_space, spaces.Dict):
+        # Do not modify by reference the original observation
+        preprocessed_obs = {}
         for key, _obs in obs.items():
-            obs[key] = preprocess_obs(_obs, observation_space[key], normalize_images=normalize_images)
-        return obs
+            preprocessed_obs[key] = preprocess_obs(_obs, observation_space[key], normalize_images=normalize_images)
+        return preprocessed_obs
 
     else:
         raise NotImplementedError(f"Preprocessing not implemented for {observation_space}")

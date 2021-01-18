@@ -57,7 +57,7 @@ Others:
 - Updated docker base image to Ubuntu 18.04
 - Set tensorboard min version to 2.2.0 (earlier version are apparently not working with PyTorch)
 - Added warning for ``PPO`` when ``n_steps * n_envs`` is not a multiple of ``batch_size`` (last mini-batch truncated) (@decodyng)
-- Updated ``env_checker`` because SB3 now supports Dict envs
+.. - Updated ``env_checker`` because SB3 now supports Dict envs
 
 Documentation:
 ^^^^^^^^^^^^^^

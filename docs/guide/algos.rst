@@ -19,7 +19,7 @@ TD3          ✔️          ❌            ❌                ❌              
 
 
 .. note::
-   ``Tuple`` spaces are not supported by any environment however ``Dict`` spaces of ``Box`` spaces are. 
+   ``Tuple`` spaces are not supported by any environment however ``Dict`` spaces of ``Box`` spaces are.
    ``Dict`` spaces of containing other kinds of spaces (e.g., ``Discrete``) have not yet been explored.
 
 Actions ``gym.spaces``:
@@ -45,7 +45,7 @@ Actions ``gym.spaces``:
 Reproducibility
 ---------------
 
-Completely reproducible results are not guaranteed across Tensorflow releases or different platforms.
+Completely reproducible results are not guaranteed across PyTorch releases or different platforms.
 Furthermore, results need not be reproducible between CPU and GPU executions, even when using identical seeds.
 
 In order to make computations deterministics, on your specific problem on one specific platform,

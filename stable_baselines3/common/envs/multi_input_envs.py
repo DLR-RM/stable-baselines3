@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Union
+from typing import Dict, Union
 
 import gym
 import numpy as np
@@ -24,12 +24,13 @@ class SimpleMultiObsEnv(gym.Env):
     goal is 15
     actions are = [left, down, right, up]
 
-    simple linear state env of 15 states but encoded with a vector and an image observation
+    simple linear state env of 15 states but encoded with a vector and an image observation:
+    each column is represented by a random vector and each row is
+    represented by a random image, both sampled once at creation time.
 
     :param num_col: Number of columns in the grid
     :param num_row: Number of rows in the grid
     :param random_start: If true, agent starts in random position
-    :param noise: Noise added to the observations
     :param channel_last: If true, the image will be channel last, else it will be channel first
     """
 
@@ -38,7 +39,6 @@ class SimpleMultiObsEnv(gym.Env):
         num_col: int = 4,
         num_row: int = 4,
         random_start: bool = True,
-        noise: float = 0.0,
         discrete_actions: bool = True,
         channel_last: bool = True,
     ):
@@ -64,12 +64,15 @@ class SimpleMultiObsEnv(gym.Env):
             }
         )
         self.count = 0
+        # Timeout
         self.max_count = 100
         self.log = ""
         self.state = 0
         self.action2str = ["left", "down", "right", "up"]
         self.init_possible_transitions()
 
+        self.num_col = num_col
+        self.state_mapping = []
         self.init_state_mapping(num_col, num_row)
 
         self.max_state = len(self.state_mapping) - 1
@@ -81,10 +84,9 @@ class SimpleMultiObsEnv(gym.Env):
         :param num_col: Number of columns.
         :param num_row: Number of rows.
         """
-        self.num_col = num_col
-        self.state_mapping = []
-
+        # Each column is represented by a random vector
         col_vecs = np.random.random((num_col, self.vector_size))
+        # Each row is represented by a random image
         row_imgs = np.random.randint(0, 255, (num_row, 64, 64), dtype=np.int32)
 
         for i in range(num_col):
@@ -93,7 +95,7 @@ class SimpleMultiObsEnv(gym.Env):
 
     def get_state_mapping(self) -> Dict[str, np.ndarray]:
         """
-        Uses the state to get the observation mapping and applies noise if there is any.
+        Uses the state to get the observation mapping.
 
         :return: observation dict {'vec': ..., 'img': ...}
         """

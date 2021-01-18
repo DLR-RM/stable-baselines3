@@ -158,6 +158,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
 
+        # Use DictReplayBuffer if needed
         buffer_cls = DictReplayBuffer if isinstance(self.observation_space, gym.spaces.Dict) else ReplayBuffer
 
         self.replay_buffer = buffer_cls(
@@ -349,18 +350,11 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         Write log.
         """
         time_elapsed = time.time() - self.start_time
-        time_elapsed += 1e-10
-        fps = int(self.num_timesteps / time_elapsed)
+        fps = int(self.num_timesteps / (time_elapsed + 1e-8))
         logger.record("time/episodes", self._episode_num, exclude="tensorboard")
         if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
-            logger.record(
-                "rollout/ep_rew_mean",
-                safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]),
-            )
-            logger.record(
-                "rollout/ep_len_mean",
-                safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]),
-            )
+            logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
+            logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
         logger.record("time/fps", fps)
         logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
         logger.record("time/total timesteps", self.num_timesteps, exclude="tensorboard")
@@ -460,11 +454,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                         reward_ = self._vec_normalize_env.get_original_reward()
                     else:
                         # Avoid changing the original ones
-                        self._last_original_obs, new_obs_, reward_ = (
-                            self._last_obs,
-                            new_obs,
-                            reward,
-                        )
+                        self._last_original_obs, new_obs_, reward_ = self._last_obs, new_obs, reward
 
                     replay_buffer.add(self._last_original_obs, new_obs_, buffer_action, reward_, done)
 

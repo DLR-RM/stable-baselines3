@@ -91,19 +91,17 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
     if not isinstance(observation_space, spaces.Tuple):
         assert not isinstance(
             obs, tuple
-        ), "The observation returned by the `{}()` method should be a single value, not a tuple".format(method_name)
+        ), f"The observation returned by the `{method_name}()` method should be a single value, not a tuple"
 
     # The check for a GoalEnv is done by the base class
     if isinstance(observation_space, spaces.Discrete):
-        assert isinstance(obs, int), "The observation returned by `{}()` method must be an int".format(method_name)
+        assert isinstance(obs, int), f"The observation returned by `{method_name}()` method must be an int"
     elif _is_numpy_array_space(observation_space):
-        assert isinstance(obs, np.ndarray), "The observation returned by `{}()` method must be a numpy array".format(
-            method_name
-        )
+        assert isinstance(obs, np.ndarray), f"The observation returned by `{method_name}()` method must be a numpy array"
 
     assert observation_space.contains(
         obs
-    ), "The observation returned by the `{}()` method does not match the given observation space".format(method_name)
+    ), f"The observation returned by the `{method_name}()` method does not match the given observation space"
 
 
 def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action_space: spaces.Space) -> None:

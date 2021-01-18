@@ -144,7 +144,7 @@ def get_obs_shape(
         # Number of binary features
         return (int(observation_space.n),)
     elif isinstance(observation_space, spaces.Dict):
-        return {key: subspace.shape for (key, subspace) in observation_space.spaces.items()}
+        return {key: get_obs_shape(subspace) for (key, subspace) in observation_space.spaces.items()}
 
     else:
         raise NotImplementedError(f"{observation_space} observation space is not supported")
@@ -154,6 +154,8 @@ def get_flattened_obs_dim(observation_space: spaces.Space) -> int:
     """
     Get the dimension of the observation space when flattened.
     It does not apply to image observation space.
+
+    Used by the ``FlattenExtractor`` to compute the input shape.
 
     :param observation_space:
     :return:

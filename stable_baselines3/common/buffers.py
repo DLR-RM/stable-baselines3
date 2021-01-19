@@ -358,7 +358,8 @@ class RolloutBuffer(BaseBuffer):
             # Reshape 0-d tensor to avoid error
             log_prob = log_prob.reshape(-1, 1)
 
-        self.observations[self.pos] = np.array(obs).copy()
+        # Reshape needed when using multiple envs with discrete observations
+        self.observations[self.pos] = np.array(obs).reshape((self.n_envs,) + self.obs_shape).copy()
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
         self.dones[self.pos] = np.array(done).copy()

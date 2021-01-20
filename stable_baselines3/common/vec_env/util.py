@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Tuple
 import gym
 import numpy as np
 
+from stable_baselines3.common.preprocessing import get_obs_shape
 from stable_baselines3.common.vec_env.base_vec_env import VecEnvObs
 
 
@@ -69,6 +70,6 @@ def obs_space_info(obs_space: gym.spaces.Space) -> Tuple[List[str], Dict[Any, Tu
     dtypes = {}
     for key, box in subspaces.items():
         keys.append(key)
-        shapes[key] = box.shape
+        shapes[key] = get_obs_shape(box)
         dtypes[key] = box.dtype
     return keys, shapes, dtypes

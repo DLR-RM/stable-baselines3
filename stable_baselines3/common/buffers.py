@@ -359,7 +359,11 @@ class RolloutBuffer(BaseBuffer):
             log_prob = log_prob.reshape(-1, 1)
 
         # Reshape needed when using multiple envs with discrete observations
-        self.observations[self.pos] = np.array(obs).reshape((self.n_envs,) + self.obs_shape).copy()
+        # as numpy cannot broadcast (n_discrete,) to (n_discrete, 1)
+        if isinstance(self.observation_space, spaces.Discrete):
+            obs = obs.reshape((self.n_envs,) + self.obs_shape)
+
+        self.observations[self.pos] = np.array(obs).copy()
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
         self.dones[self.pos] = np.array(done).copy()

@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
+from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
 
 
@@ -66,3 +67,10 @@ def test_action_spaces(model_class, env):
     else:
         with pytest.raises(AssertionError):
             model_class("MlpPolicy", env)
+
+
+@pytest.mark.parametrize("model_class", [A2C, PPO])
+@pytest.mark.parametrize("env", ["Taxi-v3"])
+def test_discrete_obs_space(model_class, env):
+    env = make_vec_env(env, n_envs=2, seed=0)
+    model_class("MlpPolicy", env, n_steps=256).learn(500)

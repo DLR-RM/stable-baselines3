@@ -21,7 +21,7 @@ def test_cnn(tmp_path, model_class):
     # to check that the network handle it automatically
     env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=1, discrete=model_class not in {SAC, TD3})
     if model_class in {A2C, PPO}:
-        kwargs = dict(n_steps=100)
+        kwargs = dict(n_steps=64)
     else:
         # Avoid memory error when using replay buffer
         # Reduce the size of the features

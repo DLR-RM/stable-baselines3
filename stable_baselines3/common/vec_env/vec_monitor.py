@@ -1,6 +1,8 @@
-from stable_baselines3.common.vec_env.base_vec_env import VecEnvObs, VecEnvStepReturn, VecEnvWrapper
-import numpy as np
 import time
+
+import numpy as np
+
+from stable_baselines3.common.vec_env.base_vec_env import VecEnvObs, VecEnvStepReturn, VecEnvWrapper
 
 
 class VecMonitor(VecEnvWrapper):
@@ -19,8 +21,8 @@ class VecMonitor(VecEnvWrapper):
 
     def reset(self) -> VecEnvObs:
         obs = self.venv.reset()
-        self.eprets = np.zeros(self.num_envs, 'f')
-        self.eplens = np.zeros(self.num_envs, 'i')
+        self.eprets = np.zeros(self.num_envs, "f")
+        self.eplens = np.zeros(self.num_envs, "i")
         return obs
 
     def step_wait(self) -> VecEnvStepReturn:
@@ -33,8 +35,8 @@ class VecMonitor(VecEnvWrapper):
                 info = infos[i].copy()
                 ret = self.eprets[i]
                 eplen = self.eplens[i]
-                epinfo = {'r': ret, 'l': eplen, 't': round(time.time() - self.tstart, 6)}
-                info['episode'] = epinfo
+                epinfo = {"r": ret, "l": eplen, "t": round(time.time() - self.tstart, 6)}
+                info["episode"] = epinfo
                 self.epcount += 1
                 self.eprets[i] = 0
                 self.eplens[i] = 0

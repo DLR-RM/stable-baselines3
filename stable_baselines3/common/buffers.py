@@ -213,15 +213,11 @@ class ReplayBuffer(BaseBuffer):
                     f"replay buffer {total_memory_usage:.2f}GB > {mem_available:.2f}GB"
                 )
 
-    def add(
-        self, obs: Union[np.ndarray, dict], next_obs: np.ndarray, action: np.ndarray, reward: np.ndarray, done: np.ndarray
-    ) -> None:
+    def add(self, obs: np.ndarray, next_obs: np.ndarray, action: np.ndarray, reward: np.ndarray, done: np.ndarray) -> None:
         # Copy to avoid modification by reference
-
         self.observations[self.pos] = np.array(obs).copy()
 
         if self.optimize_memory_usage:
-
             self.observations[(self.pos + 1) % self.buffer_size] = np.array(next_obs).copy()
         else:
             self.next_observations[self.pos] = np.array(next_obs).copy()
@@ -362,7 +358,7 @@ class RolloutBuffer(BaseBuffer):
 
     def add(
         self,
-        obs: Union[np.ndarray, dict],
+        obs: np.ndarray,
         action: np.ndarray,
         reward: np.ndarray,
         done: np.ndarray,
@@ -509,7 +505,12 @@ class DictReplayBuffer(ReplayBuffer):
                 )
 
     def add(
-        self, obs: Union[np.ndarray, Dict], next_obs: np.ndarray, action: np.ndarray, reward: np.ndarray, done: np.ndarray
+        self,
+        obs: Dict[str, np.ndarray],
+        next_obs: Dict[str, np.ndarray],
+        action: np.ndarray,
+        reward: np.ndarray,
+        done: np.ndarray,
     ) -> None:
         # Copy to avoid modification by reference
 
@@ -622,7 +623,7 @@ class DictRolloutBuffer(RolloutBuffer):
 
     def add(
         self,
-        obs: Union[np.ndarray, Dict],
+        obs: Dict[str, np.ndarray],
         action: np.ndarray,
         reward: np.ndarray,
         done: np.ndarray,
@@ -644,7 +645,13 @@ class DictRolloutBuffer(RolloutBuffer):
             log_prob = log_prob.reshape(-1, 1)
 
         for key in self.observations.keys():
-            self.observations[key][self.pos] = np.array(obs[key]).copy()
+            obs_ = np.array(obs[key]).copy()
+            # Reshape needed when using multiple envs with discrete observations
+            # as numpy cannot broadcast (n_discrete,) to (n_discrete, 1)
+            if isinstance(self.observation_space.spaces[key], spaces.Discrete):
+                obs_ = obs_.reshape((self.n_envs,) + self.obs_shape[key])
+            self.observations[key][self.pos] = obs_
+
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
         self.dones[self.pos] = np.array(done).copy()

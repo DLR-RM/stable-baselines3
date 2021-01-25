@@ -4,6 +4,7 @@ import pytest
 from gym import spaces
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
+from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.envs import SimpleMultiObsEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
@@ -88,6 +89,29 @@ def test_dict_spaces(model_class):
     evaluate_policy(model, env, n_eval_episodes=5, warn=False)
 
 
+@pytest.mark.parametrize("model_class", [PPO, A2C])
+def test_multiprocessing(model_class):
+    use_discrete_actions = model_class not in [SAC, TD3, DDPG]
+
+    def make_env():
+        # TODO(@J-Travnik): add test for channel last env
+        env = DummyDictEnv(use_discrete_actions=use_discrete_actions, channel_last=False)
+        env = gym.wrappers.TimeLimit(env, 100)
+        return env
+
+    env = make_vec_env(make_env, n_envs=2)
+
+    kwargs = {}
+    n_steps = 256
+
+    if model_class in {A2C, PPO}:
+        kwargs = dict(n_steps=128, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)))
+
+    model = model_class("MultiInputPolicy", env, gamma=0.5, seed=1, **kwargs)
+
+    model.learn(total_timesteps=n_steps)
+
+
 @pytest.mark.parametrize("model_class", [PPO, A2C, DQN, DDPG, SAC, TD3])
 def test_dict_vec_framestack(model_class):
     """
@@ -96,7 +120,6 @@ def test_dict_vec_framestack(model_class):
     """
     use_discrete_actions = model_class not in [SAC, TD3, DDPG]
     # TODO(@J-Travnik): add test for channel last env
-    # TODO(@J-Travnik): add test for more types of dict env (ex: discrete + Box)
     channels_order = {"vec": None, "img": "first"}
     env = DummyVecEnv(
         [lambda: SimpleMultiObsEnv(random_start=True, discrete_actions=use_discrete_actions, channel_last=False)]

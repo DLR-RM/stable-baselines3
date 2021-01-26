@@ -137,19 +137,20 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             if excluded is not None and ("stdout" in excluded or "log" in excluded):
                 continue
 
-            if isinstance(value, Video):
+            elif isinstance(value, Video):
                 raise FormatUnsupportedError(["stdout", "log"], "video")
 
-            if isinstance(value, Figure):
+            elif isinstance(value, Figure):
                 raise FormatUnsupportedError(["stdout", "log"], "figure")
 
-            if isinstance(value, Image):
+            elif isinstance(value, Image):
                 raise FormatUnsupportedError(["stdout", "log"], "image")
 
-            if isinstance(value, str):
-                value_str = f"<{value}>"
+            elif isinstance(value, str):
+                value = value.encode("unicode_escape").decode("utf-8") # escape any funky characters that may mess up output formatting
+                value_str = f'"{value}"'
 
-            if isinstance(value, float):
+            elif isinstance(value, float):
                 # Align left
                 value_str = f"{value:<8.3g}"
             else:

@@ -236,8 +236,8 @@ can get direct access to the underlying SummaryWriter in a callback:
 .. warning::
     This is method is not recommended and should only be used by advanced users.
 
-
 .. code-block:: python
+
     from stable_baselines3 import SAC
     from stable_baselines3.common.callbacks import BaseCallback
 

@@ -27,6 +27,8 @@ New Features:
 - Wrap the environments automatically with a ``Monitor`` wrapper when possible.
 - ``EvalCallback`` now logs the success rate when available (``is_success`` must be present in the info dict)
 - Added new wrappers to log images and matplotlib figures to tensorboard. (@zampanteymedio)
+- Add support for text records to ``Logger``. (@lorenz-h)
+- Add hint on how to access the tensorboard summary writer directly to docs. (@lorenz-h)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -540,4 +542,4 @@ And all the contributors:
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
-@tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour
+@tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h

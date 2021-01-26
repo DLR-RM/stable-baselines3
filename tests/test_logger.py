@@ -37,6 +37,7 @@ KEY_VALUES = {
     "a": np.array([1, 2, 3]),
     "f": np.array(1),
     "g": np.array([[[1]]]),
+    "h": "this ,'is a \n tes:,t"
 }
 
 KEY_EXCLUDED = {}
@@ -114,6 +115,9 @@ def test_main(tmp_path):
     record("a", 5.5)
     dump()
     info("^^^ should see a = 5.5")
+    record("f", "this text \n \r should appear in one line")
+    dump()
+    info('^^^ should see f = "this text \\n \\r should appear in one line"')
     record_mean("b", -22.5)
     record_mean("b", -44.4)
     record("a", 5.5)

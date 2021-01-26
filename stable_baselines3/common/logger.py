@@ -147,7 +147,9 @@ class HumanOutputFormat(KVWriter, SeqWriter):
                 raise FormatUnsupportedError(["stdout", "log"], "image")
 
             elif isinstance(value, str):
-                value = value.encode("unicode_escape").decode("utf-8") # escape any funky characters that may mess up output formatting
+                value = value.encode("unicode_escape").decode(
+                    "utf-8"
+                )  # escape any funky characters that may mess up output formatting
                 value_str = f'"{value}"'
 
             elif isinstance(value, float):
@@ -311,9 +313,11 @@ class CSVOutputFormat(KVWriter):
                 raise FormatUnsupportedError(["csv"], "image")
 
             elif isinstance(value, str):
-                value = value.encode("unicode_escape").decode("utf-8") # escape any funky characters that may break the csv
-                self.file.write(f'"{value}"') # additionally wrap with double quotes so that delimiters in the text are ignored by csv readers
-            
+                value = value.encode("unicode_escape").decode("utf-8")  # escape any funky characters that may break the csv
+                self.file.write(
+                    f'"{value}"'
+                )  # additionally wrap with double quotes so that delimiters in the text are ignored by csv readers
+
             elif value is not None:
                 self.file.write(str(value))
         self.file.write("\n")

@@ -146,6 +146,9 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             if isinstance(value, Image):
                 raise FormatUnsupportedError(["stdout", "log"], "image")
 
+            if isinstance(value, str):
+                value_str = f"<{value}>"
+
             if isinstance(value, float):
                 # Align left
                 value_str = f"{value:<8.3g}"
@@ -300,13 +303,17 @@ class CSVOutputFormat(KVWriter):
             if isinstance(value, Video):
                 raise FormatUnsupportedError(["csv"], "video")
 
-            if isinstance(value, Figure):
+            elif isinstance(value, Figure):
                 raise FormatUnsupportedError(["csv"], "figure")
 
-            if isinstance(value, Image):
+            elif isinstance(value, Image):
                 raise FormatUnsupportedError(["csv"], "image")
 
-            if value is not None:
+            elif isinstance(value, str):
+                value = value.encode("unicode_escape").decode("utf-8") # escape any funky characters that may break the csv
+                self.file.write(f'"{value}"') # additionally wrap with double quotes so that delimiters in the text are ignored by csv readers
+            
+            elif value is not None:
                 self.file.write(str(value))
         self.file.write("\n")
         self.file.flush()
@@ -336,7 +343,10 @@ class TensorBoardOutputFormat(KVWriter):
                 continue
 
             if isinstance(value, np.ScalarType):
-                self.writer.add_scalar(key, value, step)
+                if isinstance(value, str):
+                    self.writer.add_text(key, value, step)
+                else:
+                    self.writer.add_scalar(key, value, step)
 
             if isinstance(value, th.Tensor):
                 self.writer.add_histogram(key, value, step)

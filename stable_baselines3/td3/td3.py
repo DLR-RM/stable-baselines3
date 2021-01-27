@@ -133,6 +133,7 @@ class TD3(OffPolicyAlgorithm):
 
         for gradient_step in range(gradient_steps):
 
+            self._n_updates += 1
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
@@ -160,7 +161,7 @@ class TD3(OffPolicyAlgorithm):
             self.critic.optimizer.step()
 
             # Delayed policy updates
-            if gradient_step % self.policy_delay == 0:
+            if self._n_updates % self.policy_delay == 0:
                 # Compute actor loss
                 actor_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
                 actor_losses.append(actor_loss.item())
@@ -173,7 +174,6 @@ class TD3(OffPolicyAlgorithm):
                 polyak_update(self.critic.parameters(), self.critic_target.parameters(), self.tau)
                 polyak_update(self.actor.parameters(), self.actor_target.parameters(), self.tau)
 
-        self._n_updates += gradient_steps
         logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
         logger.record("train/actor_loss", np.mean(actor_losses))
         logger.record("train/critic_loss", np.mean(critic_losses))

@@ -119,7 +119,7 @@ class BaseModel(nn.Module, ABC):
         preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
         return self.features_extractor(preprocessed_obs)
 
-    def _get_data_to_reconstruct_model(self) -> Dict[str, Any]:
+    def _get_constructor_parameters(self) -> Dict[str, Any]:
         """
         Get data that need to be saved in order to re-create the model when loading it from disk.
 
@@ -150,7 +150,7 @@ class BaseModel(nn.Module, ABC):
 
         :param path:
         """
-        th.save({"state_dict": self.state_dict(), "data": self._get_data_to_reconstruct_model()}, path)
+        th.save({"state_dict": self.state_dict(), "data": self._get_constructor_parameters()}, path)
 
     @classmethod
     def load(cls, path: str, device: Union[th.device, str] = "auto") -> "BaseModel":
@@ -433,8 +433,8 @@ class ActorCriticPolicy(BasePolicy):
 
         self._build(lr_schedule)
 
-    def _get_data_to_reconstruct_model(self) -> Dict[str, Any]:
-        data = super()._get_data_to_reconstruct_model()
+    def _get_constructor_parameters(self) -> Dict[str, Any]:
+        data = super()._get_constructor_parameters()
 
         default_none_kwargs = self.dist_kwargs or collections.defaultdict(lambda: None)
 

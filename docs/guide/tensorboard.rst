@@ -258,7 +258,7 @@ can get direct access to the underlying SummaryWriter in a callback:
             self.tb_formatter = next(formatter for formatter in output_formats if isinstance(formatter, TensorBoardOutputFormat))
 
         def _on_step(self) -> bool:
-            if self.n_calls % self._log_freq == 0:
+            if self.num_timesteps % self._log_freq == 0:
                 self.tb_formatter.writer.add_text("direct_access", "this is a value", self.n_calls)
                 self.tb_formatter.writer.flush()
 

@@ -147,9 +147,8 @@ class HumanOutputFormat(KVWriter, SeqWriter):
                 raise FormatUnsupportedError(["stdout", "log"], "image")
 
             elif isinstance(value, str):
-                value = value.encode("unicode_escape").decode(
-                    "utf-8"
-                )  # escape any funky characters that may mess up output formatting
+                value = escape_unicode(value)
+                # wrap in double quotes to illustrate to the user where the logged text ends and where it starts
                 value_str = f'"{value}"'
 
             elif isinstance(value, float):
@@ -227,6 +226,16 @@ def filter_excluded_keys(
     return {key: value for key, value in key_values.items() if not is_excluded(key)}
 
 
+def escape_unicode(sequence: str) -> str:
+    """
+    Escapes unicode characters such as newlines and carriage returns.
+
+    :param sequence: an arbitrary string, which may contain newlines etc.
+    :return: a string where all unicode escapes have been escaped
+    """
+    return sequence.encode("unicode_escape").decode("utf-8")
+
+
 class JSONOutputFormat(KVWriter):
     def __init__(self, filename: str):
         """
@@ -279,6 +288,7 @@ class CSVOutputFormat(KVWriter):
         self.file = open(filename, "w+t")
         self.keys = []
         self.separator = ","
+        self.quotechar = '"'
 
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
         # Add our current row to the history
@@ -313,10 +323,14 @@ class CSVOutputFormat(KVWriter):
                 raise FormatUnsupportedError(["csv"], "image")
 
             elif isinstance(value, str):
-                value = value.encode("unicode_escape").decode("utf-8")  # escape any funky characters that may break the csv
-                self.file.write(
-                    f'"{value}"'
-                )  # additionally wrap with double quotes so that delimiters in the text are ignored by csv readers
+                # escape any funky characters that may break the csv
+                value = escape_unicode(value)
+
+                # escape quotechars by prepending them with another quotechar
+                value = value.replace(self.quotechar, self.quotechar + self.quotechar)
+
+                # additionally wrap text with quotechars so that any delimiters in the text are ignored by csv readers
+                self.file.write(self.quotechar + value + self.quotechar)
 
             elif value is not None:
                 self.file.write(str(value))

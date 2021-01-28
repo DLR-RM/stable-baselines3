@@ -28,7 +28,6 @@ New Features:
 - ``EvalCallback`` now logs the success rate when available (``is_success`` must be present in the info dict)
 - Added new wrappers to log images and matplotlib figures to tensorboard. (@zampanteymedio)
 - Add support for text records to ``Logger``. (@lorenz-h)
-- Add hint on how to access the tensorboard summary writer directly to docs. (@lorenz-h)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -68,6 +67,7 @@ Documentation:
 - Fix docstring of classes in atari_wrappers.py which were inside the constructor (@LucasAlegre)
 - Added SB3-Contrib page
 - Fix bug in the example code of DQN (@AptX395)
+- Add hint on how to access the tensorboard summary writer directly. (@lorenz-h)
 
 Pre-Release 0.10.0 (2020-10-28)
 -------------------------------

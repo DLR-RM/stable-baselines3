@@ -363,6 +363,7 @@ class TensorBoardOutputFormat(KVWriter):
 
             if isinstance(value, np.ScalarType):
                 if isinstance(value, str):
+                    # str is considered a np.ScalarType
                     self.writer.add_text(key, value, step)
                 else:
                     self.writer.add_scalar(key, value, step)

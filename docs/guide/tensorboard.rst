@@ -250,7 +250,7 @@ can get direct access to the underlying SummaryWriter in a callback:
     class SummaryWriterCallback(BaseCallback):
 
         def _on_training_start(self):
-            self._log_freq = 1000
+            self._log_freq = 1000  # log every 1000 calls
 
             output_formats = self.logger.Logger.CURRENT.output_formats
             # Save reference to tensorboard formatter object
@@ -264,4 +264,3 @@ can get direct access to the underlying SummaryWriter in a callback:
 
 
     model.learn(50000, callback=SummaryWriterCallback())
-

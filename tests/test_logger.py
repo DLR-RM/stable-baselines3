@@ -109,7 +109,6 @@ def test_main(tmp_path):
     """
     info("hi")
     debug("shouldn't appear")
-    assert get_dir() is None
     assert get_level() == INFO
     set_level(DEBUG)
     assert get_level() == DEBUG

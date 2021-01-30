@@ -146,11 +146,6 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             elif isinstance(value, Image):
                 raise FormatUnsupportedError(["stdout", "log"], "image")
 
-            elif isinstance(value, str):
-                value = escape_unicode(value)
-                # wrap in double quotes to illustrate to the user where the logged text ends and where it starts
-                value_str = f'"{value}"'
-
             elif isinstance(value, float):
                 # Align left
                 value_str = f"{value:<8.3g}"

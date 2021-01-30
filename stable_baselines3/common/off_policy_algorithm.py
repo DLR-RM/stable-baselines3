@@ -132,8 +132,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # see https://github.com/hill-a/stable-baselines/issues/863
         self.remove_time_limit_termination = remove_time_limit_termination
 
-        if isinstance(train_freq, tuple) and train_freq[1] not in ("step", "episode"):
-            warnings.warn(f"The units of the train_freq must be either `step` or `episode` not `{train_freq[1]}`!")
+        if isinstance(self.train_freq, int):
+            self.train_freq = (self.train_freq, "step")
+        assert self.train_freq[1] in ("step", "episode"), \
+            f"The units of the train_freq must be either `step` or `episode` not `{train_freq[1]}`!"
 
         self.actor = None  # type: Optional[th.nn.Module]
         self.replay_buffer = None  # type: Optional[ReplayBuffer]
@@ -239,12 +241,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         callback.on_training_start(locals(), globals())
 
         while self.num_timesteps < total_timesteps:
-            if isinstance(self.train_freq, int):
-                n_steps = self.train_freq
-                n_episodes = -1
-            else:
-                n_steps = self.train_freq[0] if self.train_freq[1] == "step" else -1
-                n_episodes = self.train_freq[0] if self.train_freq[1] == "episode" else -1
+            # Here we convert from the new style (amount, unit) way te specify the train frequency to the old style with
+            # the two parameters n_steps and n_episodes which is still used internally in collect_collouts
+            n_steps = self.train_freq[0] if self.train_freq[1] == "step" else -1
+            n_episodes = self.train_freq[0] if self.train_freq[1] == "episode" else -1
 
             rollout = self.collect_rollouts(
                 self.env,

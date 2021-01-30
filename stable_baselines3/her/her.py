@@ -193,12 +193,11 @@ class HER(BaseAlgorithm):
         callback.on_training_start(locals(), globals())
 
         while self.num_timesteps < total_timesteps:
-            if isinstance(self.train_freq, int):
-                n_steps = self.train_freq
-                n_episodes = -1
-            else:
-                n_steps = self.train_freq[0] if self.train_freq[1] == "step" else -1
-                n_episodes = self.train_freq[0] if self.train_freq[1] == "episode" else -1
+            # Here we convert from the new style (amount, unit) way te specify the train frequency to the old style with
+            # the two parameters n_steps and n_episodes which is still used internally in collect_collouts
+            n_steps = self.train_freq[0] if self.train_freq[1] == "step" else -1
+            n_episodes = self.train_freq[0] if self.train_freq[1] == "episode" else -1
+
             rollout = self.collect_rollouts(
                 self.env,
                 n_episodes=n_episodes,

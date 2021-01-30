@@ -134,8 +134,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         if isinstance(self.train_freq, int):
             self.train_freq = (self.train_freq, "step")
-        assert self.train_freq[1] in ("step", "episode"), \
-            f"The units of the train_freq must be either `step` or `episode` not `{train_freq[1]}`!"
+        assert self.train_freq[1] in (
+            "step",
+            "episode",
+        ), f"The units of the train_freq must be either `step` or `episode` not `{train_freq[1]}`!"
 
         self.actor = None  # type: Optional[th.nn.Module]
         self.replay_buffer = None  # type: Optional[ReplayBuffer]

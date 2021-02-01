@@ -40,6 +40,7 @@ Bug Fixes:
   which otherwise causes downstream breaking errors in training (@decodyng)
 - Fixed discrete observation space support when using multiple envs with A2C/PPO (thanks @ardabbour)
 - Fixed a bug for TD3 delayed update (the update was off-by-one and not delayed when ``train_freq=1``)
+- Fixed numpy warning (replaced ``np.bool`` with ``bool``)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -68,6 +69,7 @@ Documentation:
 - Fix docstring of classes in atari_wrappers.py which were inside the constructor (@LucasAlegre)
 - Added SB3-Contrib page
 - Fix bug in the example code of DQN (@AptX395)
+- Updated migration guide
 
 Pre-Release 0.10.0 (2020-10-28)
 -------------------------------

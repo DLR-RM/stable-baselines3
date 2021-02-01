@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.11.0a6 (WIP)
+Pre-Release 0.11.0a7 (WIP)
 -------------------------------
 
 Breaking Changes:
@@ -38,6 +38,7 @@ Bug Fixes:
 - Added informative ``PPO`` construction error in edge-case scenario where ``n_steps * n_envs = 1`` (size of rollout buffer),
   which otherwise causes downstream breaking errors in training (@decodyng)
 - Fixed discrete observation space support when using multiple envs with A2C/PPO (thanks @ardabbour)
+- Fixed numpy warning (replaced ``np.bool`` with ``bool``)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -66,6 +67,7 @@ Documentation:
 - Fix docstring of classes in atari_wrappers.py which were inside the constructor (@LucasAlegre)
 - Added SB3-Contrib page
 - Fix bug in the example code of DQN (@AptX395)
+- Updated migration guide
 
 Pre-Release 0.10.0 (2020-10-28)
 -------------------------------

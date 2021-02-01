@@ -137,16 +137,16 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             if excluded is not None and ("stdout" in excluded or "log" in excluded):
                 continue
 
-            if isinstance(value, Video):
+            elif isinstance(value, Video):
                 raise FormatUnsupportedError(["stdout", "log"], "video")
 
-            if isinstance(value, Figure):
+            elif isinstance(value, Figure):
                 raise FormatUnsupportedError(["stdout", "log"], "figure")
 
-            if isinstance(value, Image):
+            elif isinstance(value, Image):
                 raise FormatUnsupportedError(["stdout", "log"], "image")
 
-            if isinstance(value, float):
+            elif isinstance(value, float):
                 # Align left
                 value_str = f"{value:<8.3g}"
             else:
@@ -273,6 +273,7 @@ class CSVOutputFormat(KVWriter):
         self.file = open(filename, "w+t")
         self.keys = []
         self.separator = ","
+        self.quotechar = '"'
 
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
         # Add our current row to the history
@@ -300,13 +301,20 @@ class CSVOutputFormat(KVWriter):
             if isinstance(value, Video):
                 raise FormatUnsupportedError(["csv"], "video")
 
-            if isinstance(value, Figure):
+            elif isinstance(value, Figure):
                 raise FormatUnsupportedError(["csv"], "figure")
 
-            if isinstance(value, Image):
+            elif isinstance(value, Image):
                 raise FormatUnsupportedError(["csv"], "image")
 
-            if value is not None:
+            elif isinstance(value, str):
+                # escape quotechars by prepending them with another quotechar
+                value = value.replace(self.quotechar, self.quotechar + self.quotechar)
+
+                # additionally wrap text with quotechars so that any delimiters in the text are ignored by csv readers
+                self.file.write(self.quotechar + value + self.quotechar)
+
+            elif value is not None:
                 self.file.write(str(value))
         self.file.write("\n")
         self.file.flush()
@@ -336,7 +344,11 @@ class TensorBoardOutputFormat(KVWriter):
                 continue
 
             if isinstance(value, np.ScalarType):
-                self.writer.add_scalar(key, value, step)
+                if isinstance(value, str):
+                    # str is considered a np.ScalarType
+                    self.writer.add_text(key, value, step)
+                else:
+                    self.writer.add_scalar(key, value, step)
 
             if isinstance(value, th.Tensor):
                 self.writer.add_histogram(key, value, step)

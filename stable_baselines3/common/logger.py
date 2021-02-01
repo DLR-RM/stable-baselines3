@@ -150,7 +150,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
                 # Align left
                 value_str = f"{value:<8.3g}"
             else:
-                value_str = repr(value)
+                value_str = str(value)
 
             if key.find("/") > 0:  # Find tag and add it to the dict
                 tag = key[: key.find("/") + 1]
@@ -308,9 +308,6 @@ class CSVOutputFormat(KVWriter):
                 raise FormatUnsupportedError(["csv"], "image")
 
             elif isinstance(value, str):
-                # escape newlines etc.
-                value = repr(value)
-
                 # escape quotechars by prepending them with another quotechar
                 value = value.replace(self.quotechar, self.quotechar + self.quotechar)
 

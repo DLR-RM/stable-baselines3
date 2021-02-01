@@ -49,6 +49,7 @@ Breaking Changes
 - We dropped GAIL support as we are focusing on model-free RL only, you can however take a look at the :ref:`imitation project <imitation>` which implements
   GAIL and other imitation learning algorithms on top of SB3.
 - ``action_probability`` is currently not implemented in the base class
+- ``pretrain()`` method for behavior cloning was removed (see `issue #27 <https://github.com/DLR-RM/stable-baselines3/issues/27>`_)
 
 You can take a look at the `issue about SB3 implementation design <https://github.com/hill-a/stable-baselines/issues/576>`_ for more details.
 

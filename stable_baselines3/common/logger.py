@@ -150,7 +150,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
                 # Align left
                 value_str = f"{value:<8.3g}"
             else:
-                value_str = str(value)
+                value_str = repr(value)
 
             if key.find("/") > 0:  # Find tag and add it to the dict
                 tag = key[: key.find("/") + 1]
@@ -219,16 +219,6 @@ def filter_excluded_keys(
         return key in key_excluded and key_excluded[key] is not None and _format in key_excluded[key]
 
     return {key: value for key, value in key_values.items() if not is_excluded(key)}
-
-
-def escape_unicode(sequence: str) -> str:
-    """
-    Escapes unicode characters such as newlines and carriage returns.
-
-    :param sequence: an arbitrary string, which may contain newlines etc.
-    :return: a string where all unicode escapes have been escaped
-    """
-    return sequence.encode("unicode_escape").decode("utf-8")
 
 
 class JSONOutputFormat(KVWriter):
@@ -318,8 +308,8 @@ class CSVOutputFormat(KVWriter):
                 raise FormatUnsupportedError(["csv"], "image")
 
             elif isinstance(value, str):
-                # escape any funky characters that may break the csv
-                value = escape_unicode(value)
+                # escape newlines etc.
+                value = repr(value)
 
                 # escape quotechars by prepending them with another quotechar
                 value = value.replace(self.quotechar, self.quotechar + self.quotechar)

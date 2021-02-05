@@ -2,17 +2,45 @@ import time
 
 import numpy as np
 
-from stable_baselines3.common.vec_env.base_vec_env import VecEnvObs, VecEnvStepReturn, VecEnvWrapper
+from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvObs, VecEnvStepReturn, VecEnvWrapper
 
 
 class VecMonitor(VecEnvWrapper):
     """
-    A vectorized monitor wrapper for Gym environments, it is used to know the episode reward, length, time and other data.
+    A vectorized monitor wrapper for *vectorized* Gym environments, it is used to record the episode reward, length, time and other data.
+
+    Some environments like [`openai/procgen`](https://github.com/openai/procgen) or [`gym3`](https://github.com/openai/gym3) directly
+    initialize the vectorized environments, without giving us a chance to use the `Monitor` wrapper. So this class simply does the job
+    of the `Monitor` wrapper on a vectorized level.
+
+    As an example, the following two ways of initializing vectorized envs should be equivalent
+
+    ```python
+    from stable_baselines3.common.monitor import Monitor
+    from stable_baselines3.common.vec_env import DummyVecEnv
+    import gym
+    def make_env(gym_id):
+        def thunk():
+            env = gym.make(gym_id, render_mode='rgb_array')
+            env = Monitor(env)
+            return env
+        return thunk
+    envs = DummyVecEnv([make_env('procgen-starpilot-v0')])
+    ```
+
+    ```python
+    from procgen import ProcgenEnv
+    from stable_baselines3.common.vec_env import VecExtractDictObs, VecMonitor
+    venv = ProcgenEnv(num_envs=1, env_name='starpilot')
+    venv = VecExtractDictObs(venv, "rgb")
+    venv = VecMonitor(venv=venv)
+    ```
+    See [here](https://github.com/openai/train-procgen/blob/1a2ae2194a61f76a733a39339530401c024c3ad8/train_procgen/train.py#L36-L43) for a full example.
 
     :param venv: The vectorized environment
     """
 
-    def __init__(self, venv):
+    def __init__(self, venv: VecEnv):
         VecEnvWrapper.__init__(self, venv)
         self.eprets = None
         self.eplens = None

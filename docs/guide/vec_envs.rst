@@ -90,3 +90,15 @@ VecTransposeImage
 
 .. autoclass:: VecTransposeImage
   :members:
+
+VecMonitor
+~~~~~~~~~~~~~~~~~
+
+.. autoclass:: VecMonitor
+  :members:
+
+VecExtractDictObs
+~~~~~~~~~~~~~~~~~
+
+.. autoclass:: VecExtractDictObs
+  :members:

@@ -8,6 +8,7 @@ from pandas.errors import EmptyDataError
 
 from stable_baselines3.common.logger import (
     DEBUG,
+    INFO,
     Figure,
     FormatUnsupportedError,
     Image,
@@ -17,6 +18,9 @@ from stable_baselines3.common.logger import (
     debug,
     dump,
     error,
+    get_dir,
+    get_level,
+    get_log_dict,
     info,
     make_output_format,
     read_csv,
@@ -37,6 +41,7 @@ KEY_VALUES = {
     "a": np.array([1, 2, 3]),
     "f": np.array(1),
     "g": np.array([[[1]]]),
+    "h": 'this ", ;is a \n tes:,t',
 }
 
 KEY_EXCLUDED = {}
@@ -104,9 +109,12 @@ def test_main(tmp_path):
     """
     info("hi")
     debug("shouldn't appear")
+    assert get_level() == INFO
     set_level(DEBUG)
+    assert get_level() == DEBUG
     debug("should appear")
     configure(folder=str(tmp_path))
+    assert get_dir() == str(tmp_path)
     record("a", 3)
     record("b", 2.5)
     dump()
@@ -114,6 +122,9 @@ def test_main(tmp_path):
     record("a", 5.5)
     dump()
     info("^^^ should see a = 5.5")
+    record("f", "this text \n \r should appear in one line")
+    dump()
+    info('^^^ should see f = "this text \n \r should appear in one line"')
     record_mean("b", -22.5)
     record_mean("b", -44.4)
     record("a", 5.5)
@@ -131,6 +142,7 @@ def test_main(tmp_path):
     warn("hey")
     error("oh")
     record_dict({"test": 1})
+    assert isinstance(get_log_dict(), dict) and set(get_log_dict().keys()) == {"test"}
 
 
 @pytest.mark.parametrize("_format", ["stdout", "log", "json", "csv", "tensorboard"])
@@ -159,6 +171,7 @@ def test_make_output_fail(tmp_path):
 
 
 @pytest.mark.parametrize("_format", ["stdout", "log", "json", "csv", "tensorboard"])
+@pytest.mark.filterwarnings("ignore:Tried to write empty key-value dict")
 def test_exclude_keys(tmp_path, read_log, _format):
     if _format == "tensorboard":
         # Skip if no tensorboard installed

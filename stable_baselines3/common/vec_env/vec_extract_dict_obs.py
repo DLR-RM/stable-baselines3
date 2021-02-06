@@ -1,5 +1,3 @@
-import time
-
 import numpy as np
 
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvStepReturn, VecEnvWrapper
@@ -7,7 +5,7 @@ from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvStepRetu
 
 class VecExtractDictObs(VecEnvWrapper):
     """
-    A vectorized monitor wrapper for extracting dictionary observations.
+    A vectorized wrapper for extracting dictionary observations.
 
     :param venv: The vectorized environment
     :param key: The key of the dictionary observation

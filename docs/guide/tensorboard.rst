@@ -225,3 +225,42 @@ Here is an example of how to render an episode and log the resulting video to Te
     model = A2C("MlpPolicy", "CartPole-v1", tensorboard_log="runs/", verbose=1)
     video_recorder = VideoRecorderCallback(gym.make("CartPole-v1"), render_freq=5000)
     model.learn(total_timesteps=int(5e4), callback=video_recorder)
+
+
+Directly Accessing The Summary Writer
+-------------------------------------
+
+If you would like to log arbitrary data (in one of the formats supported by `pytorch <https://pytorch.org/docs/stable/tensorboard.html>`_), you 
+can get direct access to the underlying SummaryWriter in a callback:
+
+.. warning::
+    This is method is not recommended and should only be used by advanced users.
+
+.. code-block:: python
+
+    from stable_baselines3 import SAC
+    from stable_baselines3.common.callbacks import BaseCallback
+    from stable_baselines3.common.logger import TensorBoardOutputFormat
+
+
+
+    model = SAC("MlpPolicy", "Pendulum-v0", tensorboard_log="/tmp/sac/", verbose=1)
+
+
+    class SummaryWriterCallback(BaseCallback):
+
+        def _on_training_start(self):
+            self._log_freq = 1000  # log every 1000 calls
+
+            output_formats = self.logger.Logger.CURRENT.output_formats
+            # Save reference to tensorboard formatter object
+            # note: the failure case (not formatter found) is not handled here, should be done with try/except.
+            self.tb_formatter = next(formatter for formatter in output_formats if isinstance(formatter, TensorBoardOutputFormat))
+
+        def _on_step(self) -> bool:
+            if self.n_calls % self._log_freq == 0:
+                self.tb_formatter.writer.add_text("direct_access", "this is a value", self.num_timesteps)
+                self.tb_formatter.writer.flush()
+
+
+    model.learn(50000, callback=SummaryWriterCallback())

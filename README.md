@@ -203,7 +203,7 @@ please tell us when if you want your project to appear on this page ;)
 
 To cite this repository in publications:
 
-```
+```bibtex
 @misc{stable-baselines3,
   author = {Raffin, Antonin and Hill, Ashley and Ernestus, Maximilian and Gleave, Adam and Kanervisto, Anssi and Dormann, Noah},
   title = {Stable Baselines3},

@@ -203,7 +203,7 @@ please tell us when if you want your project to appear on this page ;)
 
 To cite this repository in publications:
 
-```
+```bibtex
 @misc{stable-baselines3,
   author = {Raffin, Antonin and Hill, Ashley and Ernestus, Maximilian and Gleave, Adam and Kanervisto, Anssi and Dormann, Noah},
   title = {Stable Baselines3},
@@ -219,6 +219,7 @@ To cite this repository in publications:
 Stable-Baselines3 is currently maintained by [Ashley Hill](https://github.com/hill-a) (aka @hill-a), [Antonin Raffin](https://araffin.github.io/) (aka [@araffin](https://github.com/araffin)), [Maximilian Ernestus](https://github.com/ernestum) (aka @ernestum), [Adam Gleave](https://github.com/adamgleave) (@AdamGleave) and [Anssi Kanervisto](https://github.com/Miffyli) (@Miffyli).
 
 **Important Note: We do not do technical support, nor consulting** and don't answer personal questions per email.
+Please post your question on the [RL Discord](https://discord.com/invite/xhfNqQv), [Reddit](https://www.reddit.com/r/reinforcementlearning/) or [Stack Overflow](https://stackoverflow.com/) in that case.
 
 
 ## How To Contribute

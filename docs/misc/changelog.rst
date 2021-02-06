@@ -71,6 +71,7 @@ Documentation:
 - Add example on how to access the tensorboard summary writer directly. (@lorenz-h)
 - Updated migration guide
 - Updated custom policy doc (separate policy architecture recommended)
+- Added a note about OpenCV headless version
 
 
 Pre-Release 0.10.0 (2020-10-28)

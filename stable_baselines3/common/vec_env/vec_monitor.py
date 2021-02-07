@@ -3,7 +3,6 @@ from typing import Optional, Tuple
 
 import numpy as np
 
-from stable_baselines3.common.monitor import ResultsWriter
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvObs, VecEnvStepReturn, VecEnvWrapper
 
 
@@ -29,6 +28,9 @@ class VecMonitor(VecEnvWrapper):
         filename: Optional[str] = None,
         info_keywords: Tuple[str, ...] = (),
     ):
+        # Avoid circular import
+        from stable_baselines3.common.monitor import ResultsWriter
+
         VecEnvWrapper.__init__(self, venv)
         self.episode_returns = None
         self.episode_lengths = None

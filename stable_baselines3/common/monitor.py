@@ -14,8 +14,7 @@ import gym
 import numpy as np
 import pandas
 
-if typing.TYPE_CHECKING:
-    from stable_baselines3.common.type_aliases import GymObs, GymStepReturn
+from stable_baselines3.common.type_aliases import GymObs, GymStepReturn
 
 
 class Monitor(gym.Wrapper):

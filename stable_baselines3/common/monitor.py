@@ -1,17 +1,21 @@
-__all__ = ["Monitor", "get_monitor_files", "load_results"]
+# flake8: noqa F401
+
+__all__ = ["Monitor", "ResultsWriter", "get_monitor_files", "load_results"]
 
 import csv
 import json
 import os
 import time
+import typing
 from glob import glob
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import gym
 import numpy as np
 import pandas
 
-from stable_baselines3.common.type_aliases import GymObs, GymStepReturn
+if typing.TYPE_CHECKING:
+    from stable_baselines3.common.type_aliases import GymObs, GymStepReturn
 
 
 class Monitor(gym.Wrapper):
@@ -38,33 +42,26 @@ class Monitor(gym.Wrapper):
     ):
         super(Monitor, self).__init__(env=env)
         self.t_start = time.time()
-        if filename is None:
-            self.file_handler = None
-            self.logger = None
+        if filename:
+            self.results_writer = ResultsWriter(
+                filename,
+                header={"t_start": self.t_start, "env_id": env.spec and env.spec.id},
+                extra_keys=reset_keywords + info_keywords,
+            )
         else:
-            if not filename.endswith(Monitor.EXT):
-                if os.path.isdir(filename):
-                    filename = os.path.join(filename, Monitor.EXT)
-                else:
-                    filename = filename + "." + Monitor.EXT
-            self.file_handler = open(filename, "wt")
-            self.file_handler.write("#%s\n" % json.dumps({"t_start": self.t_start, "env_id": env.spec and env.spec.id}))
-            self.logger = csv.DictWriter(self.file_handler, fieldnames=("r", "l", "t") + reset_keywords + info_keywords)
-            self.logger.writeheader()
-            self.file_handler.flush()
-
+            self.results_writer = None
         self.reset_keywords = reset_keywords
         self.info_keywords = info_keywords
         self.allow_early_resets = allow_early_resets
         self.rewards = None
         self.needs_reset = True
-        self.episode_rewards = []
+        self.episode_returns = []
         self.episode_lengths = []
         self.episode_times = []
         self.total_steps = 0
         self.current_reset_info = {}  # extra info about the current episode, that was passed in during reset()
 
-    def reset(self, **kwargs) -> GymObs:
+    def reset(self, **kwargs) -> "GymObs":
         """
         Calls the Gym environment reset. Can only be called if the environment is over, or if allow_early_resets is True
 
@@ -85,7 +82,7 @@ class Monitor(gym.Wrapper):
             self.current_reset_info[key] = value
         return self.env.reset(**kwargs)
 
-    def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:
+    def step(self, action: Union[np.ndarray, int]) -> "GymStepReturn":
         """
         Step the environment with the given action
 
@@ -103,13 +100,12 @@ class Monitor(gym.Wrapper):
             ep_info = {"r": round(ep_rew, 6), "l": ep_len, "t": round(time.time() - self.t_start, 6)}
             for key in self.info_keywords:
                 ep_info[key] = info[key]
-            self.episode_rewards.append(ep_rew)
+            self.episode_returns.append(ep_rew)
             self.episode_lengths.append(ep_len)
             self.episode_times.append(time.time() - self.t_start)
             ep_info.update(self.current_reset_info)
-            if self.logger:
-                self.logger.writerow(ep_info)
-                self.file_handler.flush()
+            if self.results_writer:
+                self.results_writer.write_row(ep_info)
             info["episode"] = ep_info
         self.total_steps += 1
         return observation, reward, done, info
@@ -119,8 +115,8 @@ class Monitor(gym.Wrapper):
         Closes the environment
         """
         super(Monitor, self).close()
-        if self.file_handler is not None:
-            self.file_handler.close()
+        if self.results_writer is not None:
+            self.results_writer.close()
 
     def get_total_steps(self) -> int:
         """
@@ -136,7 +132,7 @@ class Monitor(gym.Wrapper):
 
         :return:
         """
-        return self.episode_rewards
+        return self.episode_returns
 
     def get_episode_lengths(self) -> List[int]:
         """
@@ -161,6 +157,42 @@ class LoadMonitorResultsError(Exception):
     """
 
     pass
+
+
+class ResultsWriter:
+    """
+    A result writer that saves the data from the `Monitor` class
+
+    :param filename: the location to save a log file, can be None for no log
+    :param header: the header dictionary object of the saved csv
+    :param reset_keywords: the extra information to log, typically is composed of
+        `reset_keywords` and `info_keywords`
+    """
+
+    def __init__(
+        self,
+        filename: Optional[str] = None,
+        header: Dict[str, Union[int, str]] = {},
+        extra_keys: Tuple[str, ...] = (),
+    ):
+        if not filename.endswith(Monitor.EXT):
+            if os.path.isdir(filename):
+                filename = os.path.join(filename, Monitor.EXT)
+            else:
+                filename = filename + "." + Monitor.EXT
+        self.file_handler = open(filename, "wt")
+        self.file_handler.write("#%s\n" % json.dumps(header))
+        self.logger = csv.DictWriter(self.file_handler, fieldnames=("r", "l", "t") + extra_keys)
+        self.logger.writeheader()
+        self.file_handler.flush()
+
+    def write_row(self, epinfo):
+        if self.logger:
+            self.logger.writerow(epinfo)
+            self.file_handler.flush()
+
+    def close(self):
+        self.file_handler.close()
 
 
 def get_monitor_files(path: str) -> List[str]:

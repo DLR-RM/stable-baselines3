@@ -1,7 +1,9 @@
 import time
+from typing import Optional, Tuple
 
 import numpy as np
 
+from stable_baselines3.common.monitor import ResultsWriter
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvObs, VecEnvStepReturn, VecEnvWrapper
 
 
@@ -17,14 +19,26 @@ class VecMonitor(VecEnvWrapper):
     a vectorized level.
 
     :param venv: The vectorized environment
+    :param filename: the location to save a log file, can be None for no log
+    :param info_keywords: extra information to log, from the information return of env.step()
     """
 
-    def __init__(self, venv: VecEnv):
+    def __init__(
+        self,
+        venv: VecEnv,
+        filename: Optional[str] = None,
+        info_keywords: Tuple[str, ...] = (),
+    ):
         VecEnvWrapper.__init__(self, venv)
         self.episode_returns = None
         self.episode_lengths = None
         self.episode_count = 0
         self.t_start = time.time()
+        if filename:
+            self.results_writer = ResultsWriter(filename, header={"t_start": self.t_start}, extra_keys=info_keywords)
+        else:
+            self.results_writer = None
+        self.info_keywords = info_keywords
 
     def reset(self) -> VecEnvObs:
         obs = self.venv.reset()
@@ -47,5 +61,12 @@ class VecMonitor(VecEnvWrapper):
                 self.episode_count += 1
                 self.episode_returns[i] = 0
                 self.episode_lengths[i] = 0
+                if self.results_writer:
+                    self.results_writer.write_row(episode_info)
                 newinfos[i] = info
         return obs, rewards, dones, newinfos
+
+    def close(self) -> None:
+        if self.results_writer:
+            self.results_writer.close()
+        return self.venv.close()

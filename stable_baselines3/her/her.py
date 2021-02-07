@@ -200,8 +200,7 @@ class HER(BaseAlgorithm):
 
             rollout = self.collect_rollouts(
                 self.env,
-                n_episodes=n_episodes,
-                n_steps=n_steps,
+                length=self.train_freq,
                 action_noise=self.action_noise,
                 callback=callback,
                 learning_starts=self.learning_starts,
@@ -225,8 +224,7 @@ class HER(BaseAlgorithm):
         self,
         env: VecEnv,
         callback: BaseCallback,
-        n_episodes: int = 1,
-        n_steps: int = -1,
+        length: Tuple[int, str] = (1, "episode"),
         action_noise: Optional[ActionNoise] = None,
         learning_starts: int = 0,
         log_interval: Optional[int] = None,
@@ -237,10 +235,8 @@ class HER(BaseAlgorithm):
         :param env: The training environment
         :param callback: Callback that will be called at each step
             (and at the beginning and end of the rollout)
-        :param n_episodes: Number of episodes to use to collect rollout data
-            You can also specify a ``n_steps`` instead
-        :param n_steps: Number of steps to use to collect rollout data
-            You can also specify a ``n_episodes`` instead.
+        :param length: How much rollout to collect. Either ``(<n>, "step")`` or ``(<n>, "episode")`` with ``<n>`` being
+            an integer greater than 0.
         :param action_noise: Action noise that will be used for exploration
             Required for deterministic policy (e.g. TD3). This can also be used
             in addition to the stochastic policy for SAC.
@@ -250,10 +246,15 @@ class HER(BaseAlgorithm):
         """
 
         episode_rewards, total_timesteps = [], []
-        total_steps, total_episodes = 0, 0
+        num_collected_steps, num_collected_episodes = 0, 0
 
         assert isinstance(env, VecEnv), "You must pass a VecEnv"
         assert env.num_envs == 1, "OffPolicyAlgorithm only support single environment"
+        assert length[0] > 0, "Should at least collect one step or episode."
+        assert length[1] in (
+            "step",
+            "episode",
+        ), "The lenght of the rollout must be either defined in terms of episodes or in terms of steps."
 
         if self.model.use_sde:
             self.actor.reset_noise()
@@ -261,7 +262,17 @@ class HER(BaseAlgorithm):
         callback.on_rollout_start()
         continue_training = True
 
-        while total_steps < n_steps or total_episodes < n_episodes:
+        if length[1] == "step":
+
+            def should_collect_more_steps():
+                return num_collected_steps < length[0]
+
+        elif length[1] == "episode":
+
+            def should_collect_more_steps():
+                return num_collected_episodes < length[0]
+
+        while should_collect_more_steps():
             done = False
             episode_reward, episode_timesteps = 0.0, 0
 
@@ -270,7 +281,11 @@ class HER(BaseAlgorithm):
                 observation = self._last_obs
                 self._last_obs = ObsDictWrapper.convert_dict(observation)
 
-                if self.model.use_sde and self.model.sde_sample_freq > 0 and total_steps % self.model.sde_sample_freq == 0:
+                if (
+                    self.model.use_sde
+                    and self.model.sde_sample_freq > 0
+                    and num_collected_steps % self.model.sde_sample_freq == 0
+                ):
                     # Sample a new noise matrix
                     self.actor.reset_noise()
 
@@ -284,11 +299,11 @@ class HER(BaseAlgorithm):
                 self.num_timesteps += 1
                 self.model.num_timesteps = self.num_timesteps
                 episode_timesteps += 1
-                total_steps += 1
+                num_collected_steps += 1
 
                 # Only stop training if return value is False, not when it is None.
                 if callback.on_step() is False:
-                    return RolloutReturn(0.0, total_steps, total_episodes, continue_training=False)
+                    return RolloutReturn(0.0, num_collected_steps, num_collected_episodes, continue_training=False)
 
                 episode_reward += reward
 
@@ -347,7 +362,7 @@ class HER(BaseAlgorithm):
 
                 self.episode_steps += 1
 
-                if 0 < n_steps <= total_steps:
+                if not should_collect_more_steps():
                     break
 
             if done or self.episode_steps >= self.max_episode_length:
@@ -360,7 +375,7 @@ class HER(BaseAlgorithm):
                     # clear storage for current episode
                     self._episode_storage.reset()
 
-                total_episodes += 1
+                num_collected_episodes += 1
                 self._episode_num += 1
                 self.model._episode_num = self._episode_num
                 episode_rewards.append(episode_reward)
@@ -375,11 +390,11 @@ class HER(BaseAlgorithm):
 
                 self.episode_steps = 0
 
-        mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
+        mean_reward = np.mean(episode_rewards) if num_collected_episodes > 0 else 0.0
 
         callback.on_rollout_end()
 
-        return RolloutReturn(mean_reward, total_steps, total_episodes, continue_training)
+        return RolloutReturn(mean_reward, num_collected_steps, num_collected_episodes, continue_training)
 
     def _sample_her_transitions(self) -> None:
         """

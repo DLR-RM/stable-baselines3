@@ -171,7 +171,7 @@ class ResultsWriter:
     def __init__(
         self,
         filename: str = '',
-        header: Dict[str, Union[int, str]] = {},
+        header: Dict[str, Union[float, str]] = {},
         extra_keys: Tuple[str, ...] = (),
     ):
         if not filename.endswith(Monitor.EXT):

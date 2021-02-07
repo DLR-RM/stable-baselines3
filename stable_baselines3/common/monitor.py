@@ -170,7 +170,7 @@ class ResultsWriter:
 
     def __init__(
         self,
-        filename: Optional[str] = None,
+        filename: str = '',
         header: Dict[str, Union[int, str]] = {},
         extra_keys: Tuple[str, ...] = (),
     ):

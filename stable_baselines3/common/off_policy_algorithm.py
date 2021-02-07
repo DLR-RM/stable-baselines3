@@ -243,15 +243,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         callback.on_training_start(locals(), globals())
 
         while self.num_timesteps < total_timesteps:
-            # Here we convert from the new style (amount, unit) way te specify the train frequency to the old style with
-            # the two parameters n_steps and n_episodes which is still used internally in collect_collouts
-            n_steps = self.train_freq[0] if self.train_freq[1] == "step" else -1
-            n_episodes = self.train_freq[0] if self.train_freq[1] == "episode" else -1
-
             rollout = self.collect_rollouts(
                 self.env,
-                n_episodes=n_episodes,
-                n_steps=n_steps,
+                length=self.train_freq,
                 action_noise=self.action_noise,
                 callback=callback,
                 learning_starts=self.learning_starts,
@@ -355,8 +349,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self,
         env: VecEnv,
         callback: BaseCallback,
-        n_episodes: int = 1,
-        n_steps: int = -1,
+        length: Tuple[int, str] = (1, "episode"),
         action_noise: Optional[ActionNoise] = None,
         learning_starts: int = 0,
         replay_buffer: Optional[ReplayBuffer] = None,
@@ -368,10 +361,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         :param env: The training environment
         :param callback: Callback that will be called at each step
             (and at the beginning and end of the rollout)
-        :param n_episodes: Number of episodes to use to collect rollout data
-            You can also specify a ``n_steps`` instead
-        :param n_steps: Number of steps to use to collect rollout data
-            You can also specify a ``n_episodes`` instead.
+        :param length: How much rollout to collect. Either ``(<n>, "step")`` or ``(<n>, "episode")`` with ``<n>`` being
+            an integer greater than 0.
         :param action_noise: Action noise that will be used for exploration
             Required for deterministic policy (e.g. TD3). This can also be used
             in addition to the stochastic policy for SAC.
@@ -381,10 +372,15 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         :return:
         """
         episode_rewards, total_timesteps = [], []
-        total_steps, total_episodes = 0, 0
+        num_collected_steps, num_collected_episodes = 0, 0
 
         assert isinstance(env, VecEnv), "You must pass a VecEnv"
         assert env.num_envs == 1, "OffPolicyAlgorithm only support single environment"
+        assert length[0] > 0, "Should at least collect one step or episode."
+        assert length[1] in (
+            "step",
+            "episode",
+        ), "The lenght of the rollout must be either defined in terms of episodes or in terms of steps."
 
         if self.use_sde:
             self.actor.reset_noise()
@@ -392,13 +388,23 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         callback.on_rollout_start()
         continue_training = True
 
-        while total_steps < n_steps or total_episodes < n_episodes:
+        if length[1] == "step":
+
+            def should_collect_more_steps():
+                return num_collected_steps < length[0]
+
+        elif length[1] == "episode":
+
+            def should_collect_more_steps():
+                return num_collected_episodes < length[0]
+
+        while should_collect_more_steps():
             done = False
             episode_reward, episode_timesteps = 0.0, 0
 
             while not done:
 
-                if self.use_sde and self.sde_sample_freq > 0 and total_steps % self.sde_sample_freq == 0:
+                if self.use_sde and self.sde_sample_freq > 0 and num_collected_steps % self.sde_sample_freq == 0:
                     # Sample a new noise matrix
                     self.actor.reset_noise()
 
@@ -410,13 +416,13 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
                 self.num_timesteps += 1
                 episode_timesteps += 1
-                total_steps += 1
+                num_collected_steps += 1
 
                 # Give access to local variables
                 callback.update_locals(locals())
                 # Only stop training if return value is False, not when it is None.
                 if callback.on_step() is False:
-                    return RolloutReturn(0.0, total_steps, total_episodes, continue_training=False)
+                    return RolloutReturn(0.0, num_collected_steps, num_collected_episodes, continue_training=False)
 
                 episode_reward += reward
 
@@ -448,11 +454,11 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 # see https://github.com/hill-a/stable-baselines/issues/900
                 self._on_step()
 
-                if 0 < n_steps <= total_steps:
+                if not should_collect_more_steps():
                     break
 
             if done:
-                total_episodes += 1
+                num_collected_episodes += 1
                 self._episode_num += 1
                 episode_rewards.append(episode_reward)
                 total_timesteps.append(episode_timesteps)
@@ -464,8 +470,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 if log_interval is not None and self._episode_num % log_interval == 0:
                     self._dump_logs()
 
-        mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
+        mean_reward = np.mean(episode_rewards) if num_collected_episodes > 0 else 0.0
 
         callback.on_rollout_end()
 
-        return RolloutReturn(mean_reward, total_steps, total_episodes, continue_training)
+        return RolloutReturn(mean_reward, num_collected_steps, num_collected_episodes, continue_training)

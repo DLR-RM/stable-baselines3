@@ -27,8 +27,10 @@ using ``policy_kwargs`` parameter:
 
   from stable_baselines3 import PPO
 
-  # Custom MLP policy of two layers of size 32 each with Relu activation function
-  policy_kwargs = dict(activation_fn=th.nn.ReLU, net_arch=[32, 32])
+  # Custom actor (pi) and value function (vf) networks
+  # of two layers of size 32 each with Relu activation function
+  policy_kwargs = dict(activation_fn=th.nn.ReLU,
+                       net_arch=[dict(pi=[32, 32], vf=[32, 32])])
   # Create the agent
   model = PPO("MlpPolicy", "CartPole-v1", policy_kwargs=policy_kwargs, verbose=1)
   # Retrieve the environment
@@ -36,20 +38,11 @@ using ``policy_kwargs`` parameter:
   # Train the agent
   model.learn(total_timesteps=100000)
   # Save the agent
-  model.save("ppo-cartpole")
+  model.save("ppo_cartpole")
 
   del model
   # the policy_kwargs are automatically loaded
-  model = PPO.load("ppo-cartpole")
-
-
-You can also easily define a custom architecture for the policy (or value) network:
-
-.. note::
-
-    Defining a custom policy class is equivalent to passing ``policy_kwargs``.
-    However, it lets you name the policy and so usually makes the code clearer.
-    ``policy_kwargs`` is particularly useful when doing hyperparameter search.
+  model = PPO.load("ppo_cartpole")
 
 
 Custom Feature Extractor
@@ -57,6 +50,15 @@ Custom Feature Extractor
 
 If you want to have a custom feature extractor (e.g. custom CNN when using images), you can define class
 that derives from ``BaseFeaturesExtractor`` and then pass it to the model when training.
+
+
+.. note::
+
+  By default the feature extractor is shared between the actor and the critic to save computation (when applicable).
+  However, this can be changed by defining a custom policy for on-policy algorithms or setting
+  ``share_features_extractor=False`` in the ``policy_kwargs`` for off-policy algorithms
+  (and when applicable).
+
 
 .. code-block:: python
 
@@ -105,7 +107,6 @@ that derives from ``BaseFeaturesExtractor`` and then pass it to the model when t
   )
   model = PPO("CnnPolicy", "BreakoutNoFrameskip-v4", policy_kwargs=policy_kwargs, verbose=1)
   model.learn(1000)
-
 
 
 

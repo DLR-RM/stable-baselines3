@@ -36,6 +36,12 @@ This includes an optional dependencies like Tensorboard, OpenCV or ``atari-py`` 
     pip install stable-baselines3
 
 
+.. note::
+
+  If you need to work with OpenCV on a machine without a X-server (for instance inside a docker image),
+  you will need to install ``opencv-python-headless``, see `issue #298 <https://github.com/DLR-RM/stable-baselines3/issues/298>`_.
+
+
 Bleeding-edge version
 ---------------------
 

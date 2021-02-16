@@ -5,7 +5,7 @@ labels: question, custom gym env
 ---
 
 **Important Note: We do not do technical support, nor consulting** and don't answer personal questions per email.
-Please post your question on [reddit](https://www.reddit.com/r/reinforcementlearning/) or [stack overflow](https://stackoverflow.com/) in that case.
+Please post your question on the [RL Discord](https://discord.com/invite/xhfNqQv), [Reddit](https://www.reddit.com/r/reinforcementlearning/) or [Stack Overflow](https://stackoverflow.com/) in that case.
 
 ### 🤖 Custom Gym Environment
 

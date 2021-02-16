@@ -15,8 +15,8 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.save_util import load_from_pkl, save_to_pkl
-from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn, Schedule
-from stable_baselines3.common.utils import safe_mean
+from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn, Schedule, TrainFreq, TrainFrequencyUnit
+from stable_baselines3.common.utils import safe_mean, should_collect_more_steps
 from stable_baselines3.common.vec_env import VecEnv
 
 
@@ -123,7 +123,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.learning_starts = learning_starts
         self.tau = tau
         self.gamma = gamma
-        self.train_freq = train_freq
         self.gradient_steps = gradient_steps
         self.action_noise = action_noise
         self.optimize_memory_usage = optimize_memory_usage
@@ -132,12 +131,15 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # see https://github.com/hill-a/stable-baselines/issues/863
         self.remove_time_limit_termination = remove_time_limit_termination
 
-        if isinstance(self.train_freq, int):
-            self.train_freq = (self.train_freq, "step")
-        assert self.train_freq[1] in (
-            "step",
-            "episode",
-        ), f"The units of the train_freq must be either `step` or `episode` not `{train_freq[1]}`!"
+        if isinstance(train_freq, int):
+            train_freq = (train_freq, "step")
+
+        try:
+            train_freq = (train_freq[0], TrainFrequencyUnit(train_freq[1]))
+        except ValueError:
+            raise ValueError(f"The unit of the `train_freq` must be either 'step' or 'episode' not '{train_freq[1]}'!")
+
+        self.train_freq = TrainFreq(*train_freq)
 
         self.actor = None  # type: Optional[th.nn.Module]
         self.replay_buffer = None  # type: Optional[ReplayBuffer]
@@ -245,7 +247,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         while self.num_timesteps < total_timesteps:
             rollout = self.collect_rollouts(
                 self.env,
-                length=self.train_freq,
+                train_freq=self.train_freq,
                 action_noise=self.action_noise,
                 callback=callback,
                 learning_starts=self.learning_starts,
@@ -349,7 +351,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self,
         env: VecEnv,
         callback: BaseCallback,
-        length: Tuple[int, str] = (1, "episode"),
+        train_freq: TrainFreq,
         action_noise: Optional[ActionNoise] = None,
         learning_starts: int = 0,
         replay_buffer: Optional[ReplayBuffer] = None,
@@ -361,8 +363,11 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         :param env: The training environment
         :param callback: Callback that will be called at each step
             (and at the beginning and end of the rollout)
-        :param length: How much rollout to collect. Either ``(<n>, "step")`` or ``(<n>, "episode")`` with ``<n>`` being
-            an integer greater than 0.
+        :param train_freq: How much experience to collect
+            by doing rollouts of current policy.
+            Either ``TrainFreq(<n>, TrainFrequencyUnit.STEP)``
+            or ``TrainFreq(<n>, TrainFrequencyUnit.EPISODE)``
+            with ``<n>`` being an integer greater than 0.
         :param action_noise: Action noise that will be used for exploration
             Required for deterministic policy (e.g. TD3). This can also be used
             in addition to the stochastic policy for SAC.
@@ -376,11 +381,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         assert isinstance(env, VecEnv), "You must pass a VecEnv"
         assert env.num_envs == 1, "OffPolicyAlgorithm only support single environment"
-        assert length[0] > 0, "Should at least collect one step or episode."
-        assert length[1] in (
-            "step",
-            "episode",
-        ), "The lenght of the rollout must be either defined in terms of episodes or in terms of steps."
+        assert train_freq.frequency > 0, "Should at least collect one step or episode."
 
         if self.use_sde:
             self.actor.reset_noise()
@@ -388,17 +389,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         callback.on_rollout_start()
         continue_training = True
 
-        if length[1] == "step":
-
-            def should_collect_more_steps():
-                return num_collected_steps < length[0]
-
-        elif length[1] == "episode":
-
-            def should_collect_more_steps():
-                return num_collected_episodes < length[0]
-
-        while should_collect_more_steps():
+        while should_collect_more_steps(train_freq, num_collected_steps, num_collected_episodes):
             done = False
             episode_reward, episode_timesteps = 0.0, 0
 
@@ -454,7 +445,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 # see https://github.com/hill-a/stable-baselines/issues/900
                 self._on_step()
 
-                if not should_collect_more_steps():
+                if not should_collect_more_steps(train_freq, num_collected_steps, num_collected_episodes):
                     break
 
             if done:

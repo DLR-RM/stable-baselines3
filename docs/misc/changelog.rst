@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.11.0a7 (WIP)
+Pre-Release 0.11.0a8 (WIP)
 -------------------------------
 
 Breaking Changes:
@@ -13,6 +13,16 @@ Breaking Changes:
 - Renamed ``common.vec_env.is_wrapped`` to ``common.vec_env.is_vecenv_wrapped`` to avoid confusion
   with the new ``is_wrapped()`` helper
 - Renamed ``_get_data()`` to ``_get_constructor_parameters()`` for policies (this affects independent saving/loading of policies)
+- Removed ``n_episodes_rollout`` and merged it with ``train_freq``, which now accepts a tuple ``(frequency, unit)``:
+
+.. code-block:: python
+
+  # SB3 < 0.11.0
+  # model = SAC("MlpPolicy", env, n_episodes_rollout=1, train_freq=-1)
+  # SB3 >= 0.11.0:
+  model = SAC("MlpPolicy", env, train_freq=(1, "episode"))
+
+
 
 New Features:
 ^^^^^^^^^^^^^

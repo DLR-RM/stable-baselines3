@@ -1,5 +1,6 @@
 """Common aliases for type hints"""
 
+from enum import Enum
 from typing import Any, Callable, Dict, List, NamedTuple, Tuple, Union
 
 import gym
@@ -41,3 +42,13 @@ class RolloutReturn(NamedTuple):
     episode_timesteps: int
     n_episodes: int
     continue_training: bool
+
+
+class TrainFrequencyUnit(Enum):
+    STEP = "step"
+    EPISODE = "episode"
+
+
+class TrainFreq(NamedTuple):
+    frequency: int
+    unit: TrainFrequencyUnit  # either "step" or "episode"

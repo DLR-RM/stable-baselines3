@@ -44,11 +44,11 @@ class RolloutReturn(NamedTuple):
     continue_training: bool
 
 
-class TrainFrequencyUnit(Enum):
+class ExperienceUnit(Enum):
     STEP = "step"
     EPISODE = "episode"
 
 
-class TrainFreq(NamedTuple):
-    frequency: int
-    unit: TrainFrequencyUnit  # either "step" or "episode"
+class ExperienceDuration(NamedTuple):
+    amount: int
+    unit: ExperienceUnit  # either "step" or "episode"

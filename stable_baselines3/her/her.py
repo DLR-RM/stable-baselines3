@@ -12,7 +12,7 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.save_util import load_from_zip_file, recursive_setattr
-from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn, TrainFreq
+from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn, ExperienceDuration
 from stable_baselines3.common.utils import check_for_correct_spaces, should_collect_more_steps
 from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
@@ -195,7 +195,7 @@ class HER(BaseAlgorithm):
         while self.num_timesteps < total_timesteps:
             rollout = self.collect_rollouts(
                 self.env,
-                train_freq=self.train_freq,
+                duration=self.train_every,
                 action_noise=self.action_noise,
                 callback=callback,
                 learning_starts=self.learning_starts,
@@ -219,7 +219,7 @@ class HER(BaseAlgorithm):
         self,
         env: VecEnv,
         callback: BaseCallback,
-        train_freq: TrainFreq,
+        duration: ExperienceDuration,
         action_noise: Optional[ActionNoise] = None,
         learning_starts: int = 0,
         log_interval: Optional[int] = None,
@@ -230,10 +230,10 @@ class HER(BaseAlgorithm):
         :param env: The training environment
         :param callback: Callback that will be called at each step
             (and at the beginning and end of the rollout)
-        :param train_freq: How much experience to collect
+        :param duration: How much experience to collect
             by doing rollouts of current policy.
-            Either ``TrainFreq(<n>, TrainFrequencyUnit.STEP)``
-            or ``TrainFreq(<n>, TrainFrequencyUnit.EPISODE)``
+            Either ``ExperienceDuration(<n>, ExperienceUnit.STEP)``
+            or ``ExperienceDuration(<n>, ExperienceUnit.EPISODE)``
             with ``<n>`` being an integer greater than 0.
         :param action_noise: Action noise that will be used for exploration
             Required for deterministic policy (e.g. TD3). This can also be used
@@ -248,7 +248,7 @@ class HER(BaseAlgorithm):
 
         assert isinstance(env, VecEnv), "You must pass a VecEnv"
         assert env.num_envs == 1, "OffPolicyAlgorithm only support single environment"
-        assert train_freq.frequency > 0, "Should at least collect one step or episode."
+        assert duration.amount > 0, "Should at least collect one step or episode."
 
         if self.model.use_sde:
             self.actor.reset_noise()
@@ -256,7 +256,7 @@ class HER(BaseAlgorithm):
         callback.on_rollout_start()
         continue_training = True
 
-        while should_collect_more_steps(train_freq, num_collected_steps, num_collected_episodes):
+        while should_collect_more_steps(duration, num_collected_steps, num_collected_episodes):
             done = False
             episode_reward, episode_timesteps = 0.0, 0
 
@@ -346,7 +346,7 @@ class HER(BaseAlgorithm):
 
                 self.episode_steps += 1
 
-                if not should_collect_more_steps(train_freq, num_collected_steps, num_collected_episodes):
+                if not should_collect_more_steps(duration, num_collected_steps, num_collected_episodes):
                     break
 
             if done or self.episode_steps >= self.max_episode_length:

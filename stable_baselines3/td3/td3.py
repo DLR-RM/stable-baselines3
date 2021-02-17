@@ -8,7 +8,7 @@ from torch.nn import functional as F
 from stable_baselines3.common import logger
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
-from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
+from stable_baselines3.common.type_aliases import ExperienceDuration, GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import polyak_update
 from stable_baselines3.td3.policies import TD3Policy
 
@@ -32,9 +32,9 @@ class TD3(OffPolicyAlgorithm):
     :param batch_size: Minibatch size for each gradient update
     :param tau: the soft update coefficient ("Polyak update", between 0 and 1)
     :param gamma: the discount factor
-    :param train_freq: Update the model every ``train_freq`` steps. Alternatively pass a tuple of frequency and unit
-        like ``(5, "step")`` or ``(2, "episode")``.
-    :param gradient_steps: How many gradient steps to do after each rollout (see ``train_freq``)
+    :param train_every: How much experience to collect before training the model. Alternatively pass a tuple of
+        frequency and unit like ``(5, "step")`` or ``(2, "episode")`` or an ``ExperienceDuration``.
+    :param gradient_steps: How many gradient steps to do after each rollout (see ``train_every``)
         Set to ``-1`` means to do as many gradient steps as steps done in the environment
         during the rollout.
     :param action_noise: the action noise type (None by default), this can help
@@ -67,7 +67,7 @@ class TD3(OffPolicyAlgorithm):
         batch_size: int = 100,
         tau: float = 0.005,
         gamma: float = 0.99,
-        train_freq: Union[int, Tuple[int, str]] = (1, "episode"),
+        train_every: Union[int, Tuple[int, str], ExperienceDuration] = (1, "episode"),
         gradient_steps: int = -1,
         action_noise: Optional[ActionNoise] = None,
         optimize_memory_usage: bool = False,
@@ -93,7 +93,7 @@ class TD3(OffPolicyAlgorithm):
             batch_size,
             tau,
             gamma,
-            train_freq,
+            train_every,
             gradient_steps,
             action_noise=action_noise,
             policy_kwargs=policy_kwargs,

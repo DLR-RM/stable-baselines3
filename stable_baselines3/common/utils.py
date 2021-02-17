@@ -16,7 +16,7 @@ except ImportError:
     SummaryWriter = None
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.type_aliases import GymEnv, Schedule, TrainFreq, TrainFrequencyUnit
+from stable_baselines3.common.type_aliases import GymEnv, Schedule, ExperienceDuration, ExperienceUnit
 
 
 def set_random_seed(seed: int, using_cuda: bool = False) -> None:
@@ -320,7 +320,7 @@ def polyak_update(params: Iterable[th.nn.Parameter], target_params: Iterable[th.
 
 
 def should_collect_more_steps(
-    train_freq: TrainFreq,
+    duration: ExperienceDuration,
     num_collected_steps: int,
     num_collected_episodes: int,
 ) -> bool:
@@ -328,20 +328,20 @@ def should_collect_more_steps(
     Helper used in ``collect_rollouts()`` of off-policy algorithms
     to determine the termination condition.
 
-    :param train_freq:
-    :param num_collected_steps:
-    :param num_collected_episodes:
+    :param duration: How long rollouts should be collected.
+    :param num_collected_steps: The number of already collected steps.
+    :param num_collected_episodes: The number of already collected episodes.
     :return: Whether to continue or not collecting experience
         by doing rollouts of the current policy.
     """
-    if train_freq.unit == TrainFrequencyUnit.STEP:
-        return num_collected_steps < train_freq.frequency
+    if duration.unit == ExperienceUnit.STEP:
+        return num_collected_steps < duration.amount
 
-    elif train_freq.unit == TrainFrequencyUnit.EPISODE:
-        return num_collected_episodes < train_freq.frequency
+    elif duration.unit == ExperienceUnit.EPISODE:
+        return num_collected_episodes < duration.amount
 
     else:
         raise ValueError(
-            "The unit of the `train_freq` must be either TrainFrequencyUnit.STEP "
-            f"or TrainFrequencyUnit.EPISODE not '{train_freq.unit}'!"
+            "The unit of the `duration` must be either ExperienceUnit.STEP "
+            f"or ExperienceUnit.EPISODE not '{duration.unit}'!"
         )

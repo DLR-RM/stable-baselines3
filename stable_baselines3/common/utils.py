@@ -16,7 +16,7 @@ except ImportError:
     SummaryWriter = None
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.type_aliases import GymEnv, Schedule, ExperienceDuration, ExperienceUnit
+from stable_baselines3.common.type_aliases import ExperienceDuration, ExperienceUnit, GymEnv, Schedule
 
 
 def set_random_seed(seed: int, using_cuda: bool = False) -> None:

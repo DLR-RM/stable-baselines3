@@ -65,19 +65,6 @@ def is_image_space(
     return False
 
 
-def has_image_space(observation_space: spaces.Dict) -> bool:
-    """
-    Check if a Dict observation space has an image space within its subspaces
-
-    :param observation_space:
-    :return:
-    """
-    for key, subspace in observation_space.spaces.items():
-        if is_image_space(subspace):
-            return True
-    return False
-
-
 def preprocess_obs(
     obs: th.Tensor, observation_space: spaces.Space, normalize_images: bool = True
 ) -> Union[th.Tensor, Dict[str, th.Tensor]]:

@@ -195,14 +195,23 @@ class BaseAlgorithm(ABC):
                 print("Wrapping the env in a DummyVecEnv.")
             env = DummyVecEnv([lambda: env])
 
-        if (
-            is_image_space(env.observation_space)
-            and not is_vecenv_wrapped(env, VecTransposeImage)
-            and not is_image_space_channels_first(env.observation_space)
-        ):
-            if verbose >= 1:
-                print("Wrapping the env in a VecTransposeImage.")
-            env = VecTransposeImage(env)
+        if not is_vecenv_wrapped(env, VecTransposeImage):
+            wrap_with_vectranspose = False
+            if isinstance(env.observation_space, gym.spaces.dict.Dict):
+                # If even one of the keys is a image-space in need of transpose, apply transpose
+                for space in env.observation_space.spaces.values():
+                    wrap_with_vectranspose = wrap_with_vectranspose or (
+                        is_image_space(space) and not is_image_space_channels_first(space)
+                    )
+            else:
+                wrap_with_vectranspose = is_image_space(env.observation_space) and not is_image_space_channels_first(
+                    env.observation_space
+                )
+
+            if wrap_with_vectranspose:
+                if verbose >= 1:
+                    print("Wrapping the env in a VecTransposeImage.")
+                env = VecTransposeImage(env)
 
         # check if wrapper for dict support is needed when using HER
         # TODO(antonin): remove this with the new version of HER

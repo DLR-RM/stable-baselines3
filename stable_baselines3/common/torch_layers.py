@@ -269,7 +269,6 @@ class CombinedExtractor(BaseFeaturesExtractor):
 
         total_concat_size = 0
         for key, subspace in observation_space.spaces.items():
-
             if is_image_space(subspace, check_channels=check_channels):
                 # The observation key is an image: create a CNN for it
                 n_input_channels = subspace.shape[0]

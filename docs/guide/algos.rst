@@ -44,7 +44,7 @@ Actions ``gym.spaces``:
 Reproducibility
 ---------------
 
-Completely reproducible results are not guaranteed across Tensorflow releases or different platforms.
+Completely reproducible results are not guaranteed across PyTorch releases or different platforms.
 Furthermore, results need not be reproducible between CPU and GPU executions, even when using identical seeds.
 
 In order to make computations deterministics, on your specific problem on one specific platform,

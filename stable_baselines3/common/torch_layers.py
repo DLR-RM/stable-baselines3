@@ -236,64 +236,20 @@ class CombinedExtractor(BaseFeaturesExtractor):
     the output features are concatenated and fed through additional MLP network ("combined").
 
     :param observation_space:
-    :param features_dim: Number of features extracted.
-        This corresponds to the number of unit for the last layer.
     :param cnn_output_dim: Number of features to output from each CNN submodule(s)
-    :param mlp_output_dim: Number of features to output from each MLP submodule(s)
-    :param mlp_net_arch: Architecture of each MLP network module
-    :param activation_fn: The activation function used in all MLP submodules and combined network
-    :param combined_net_arch: Architecture of the combined network module which calculates the final feature extracted
-    :param check_channels: Whether channels should be checked for is_image_space
     """
 
-    def __init__(
-        self,
-        observation_space: gym.spaces.Dict,
-        features_dim: int = 64,
-        cnn_output_dim: int = 64,
-        mlp_output_dim: int = 64,
-        mlp_net_arch: List[int] = None,
-        activation_fn: Type[nn.Module] = nn.ReLU,
-        combined_net_arch: List[int] = None,
-        check_channels: bool = False,
-    ):
-        super(CombinedExtractor, self).__init__(observation_space, features_dim=features_dim)
-
-        if mlp_net_arch is None:
-            mlp_net_arch = [64, 64]
-
-        if combined_net_arch is None:
-            combined_net_arch = [64, 64]
+    def __init__(self, observation_space: gym.spaces.Dict, cnn_output_dim: int = 64):
+        # TODO we do not know features-dim here before going over all the items, so put something there. This is dirty!
+        super(CombinedExtractor, self).__init__(observation_space, features_dim=1)
 
         extractors = {}
 
         total_concat_size = 0
         for key, subspace in observation_space.spaces.items():
-            if is_image_space(subspace, check_channels=check_channels):
-                # The observation key is an image: create a CNN for it
-                n_input_channels = subspace.shape[0]
-
-                # Nature CNN
-                cnn = nn.Sequential(
-                    nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
-                    nn.ReLU(),
-                    nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
-                    nn.ReLU(),
-                    nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=0),
-                    nn.ReLU(),
-                    nn.Flatten(),
-                )
-
-                # TODO is this the best practice for finding out the size?
-                with th.no_grad():
-                    n_flatten = cnn(th.as_tensor(subspace.sample()[None]).float()).shape[1]
-
-                cnn_linear = nn.Sequential(nn.Linear(n_flatten, cnn_output_dim), nn.ReLU())
-
-                extractors[key] = nn.Sequential(*(list(cnn) + list(cnn_linear)))
-
+            if is_image_space(subspace):
+                extractors[key] = NatureCNN(subspace, features_dim=cnn_output_dim)
                 total_concat_size += cnn_output_dim
-
             else:
                 # The observation key is a vector, flatten it if needed
                 extractors[key] = nn.Flatten()
@@ -301,16 +257,15 @@ class CombinedExtractor(BaseFeaturesExtractor):
 
         self.extractors = nn.ModuleDict(extractors)
 
-        self.combined = nn.Sequential(
-            *create_mlp(total_concat_size, features_dim, combined_net_arch, activation_fn, squash_output=False)
-        )
+        # Update the features dim manually
+        self._features_dim = total_concat_size
 
     def forward(self, observations: TensorDict) -> th.Tensor:
         encoded_tensor_list = []
 
         for key, extractor in self.extractors.items():
             encoded_tensor_list.append(extractor(observations[key]))
-        return self.combined(th.cat(encoded_tensor_list, dim=1))
+        return th.cat(encoded_tensor_list, dim=1)
 
 
 def get_actor_critic_arch(net_arch: Union[List[int], Dict[str, List[int]]]) -> Tuple[List[int], List[int]]:

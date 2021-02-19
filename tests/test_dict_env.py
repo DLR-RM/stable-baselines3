@@ -57,14 +57,14 @@ class DummyDictEnv(gym.Env):
 
 
 @pytest.mark.parametrize("model_class", [PPO, A2C, DQN, DDPG, SAC, TD3])
-def test_dict_spaces(model_class):
+@pytest.mark.parametrize("channel_last", [False, True])
+def test_dict_spaces(model_class, channel_last):
     """
     Additional tests for PPO/A2C/SAC/DDPG/TD3/DQN to check observation space support
     with mixed observation.
     """
     use_discrete_actions = model_class not in [SAC, TD3, DDPG]
-    # TODO(@J-Travnik): add test for channel last env
-    env = DummyDictEnv(use_discrete_actions=use_discrete_actions, channel_last=False)
+    env = DummyDictEnv(use_discrete_actions=use_discrete_actions, channel_last=channel_last)
     env = gym.wrappers.TimeLimit(env, 100)
 
     kwargs = {}
@@ -94,7 +94,6 @@ def test_multiprocessing(model_class):
     use_discrete_actions = model_class not in [SAC, TD3, DDPG]
 
     def make_env():
-        # TODO(@J-Travnik): add test for channel last env
         env = DummyDictEnv(use_discrete_actions=use_discrete_actions, channel_last=False)
         env = gym.wrappers.TimeLimit(env, 100)
         return env
@@ -113,16 +112,16 @@ def test_multiprocessing(model_class):
 
 
 @pytest.mark.parametrize("model_class", [PPO, A2C, DQN, DDPG, SAC, TD3])
-def test_dict_vec_framestack(model_class):
+@pytest.mark.parametrize("channel_last", [False, True])
+def test_dict_vec_framestack(model_class, channel_last):
     """
     Additional tests for PPO/A2C/SAC/DDPG/TD3/DQN to check observation space support
     for Dictionary spaces and VecEnvWrapper using MultiInputPolicy.
     """
     use_discrete_actions = model_class not in [SAC, TD3, DDPG]
-    # TODO(@J-Travnik): add test for channel last env
-    channels_order = {"vec": None, "img": "first"}
+    channels_order = {"vec": None, "img": "last" if channel_last else "first"}
     env = DummyVecEnv(
-        [lambda: SimpleMultiObsEnv(random_start=True, discrete_actions=use_discrete_actions, channel_last=False)]
+        [lambda: SimpleMultiObsEnv(random_start=True, discrete_actions=use_discrete_actions, channel_last=channel_last)]
     )
 
     env = VecFrameStack(env, n_stack=3, channels_order=channels_order)

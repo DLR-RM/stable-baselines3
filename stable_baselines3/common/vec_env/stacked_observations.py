@@ -258,7 +258,7 @@ class StackedDictObservations(StackedObservations):
                     else:
                         warnings.warn("VecFrameStack wrapping a VecEnv without terminal_observation info")
                     self.stackedobs[key][i] = 0
-            if self.channels_first:
+            if self.channels_first[key]:
                 self.stackedobs[key][:, -stack_ax_size:, ...] = observations[key]
             else:
                 self.stackedobs[key][..., -stack_ax_size:] = observations[key]

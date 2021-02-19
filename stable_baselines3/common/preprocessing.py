@@ -188,9 +188,10 @@ def check_for_nested_spaces(obs_space: spaces.Space):
     :param obs_space: an observation space
     :return:
     """
-    if isinstance(obs_space, (spaces.dict.Dict, spaces.tuple.Tuple)):
-        for sub_space in obs_space.spaces.values():
-            if isinstance(sub_space, (spaces.dict.Dict, spaces.tuple.Tuple)):
+    if isinstance(obs_space, (spaces.Dict, spaces.Tuple)):
+        sub_spaces = obs_space.spaces.values() if isinstance(obs_space, spaces.Dict) else obs_space.spaces
+        for sub_space in sub_spaces:
+            if isinstance(sub_space, (spaces.Dict, spaces.Tuple)):
                 raise NotImplementedError(
                     "Nested observation spaces are not supported (Tuple/Dict space inside Tuple/Dict space)."
                 )

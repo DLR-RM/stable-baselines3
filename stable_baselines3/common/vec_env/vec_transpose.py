@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Dict, Union
+from typing import Dict, Union
 
 import numpy as np
 from gym import spaces

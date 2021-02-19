@@ -178,3 +178,19 @@ def get_action_dim(action_space: spaces.Space) -> int:
         return int(action_space.n)
     else:
         raise NotImplementedError(f"{action_space} action space is not supported")
+
+
+def check_for_nested_spaces(obs_space: spaces.Space):
+    """
+    Make sure the observation space does not have nested spaces (Dicts/Tuples inside Dicts/Tuples).
+    If so, raise an Exception informing that there is no support for this.
+
+    :param obs_space: an observation space
+    :return:
+    """
+    if isinstance(obs_space, (spaces.dict.Dict, spaces.tuple.Tuple)):
+        for sub_space in obs_space.spaces.values():
+            if isinstance(sub_space, (spaces.dict.Dict, spaces.tuple.Tuple)):
+                raise NotImplementedError(
+                    "Nested observation spaces are not supported (Tuple/Dict space inside Tuple/Dict space)."
+                )

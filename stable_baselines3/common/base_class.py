@@ -36,6 +36,7 @@ from stable_baselines3.common.vec_env import (
     unwrap_vec_normalize,
 )
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
+from stable_baselines3.common.vec_env.util import check_for_nested_spaces
 
 
 def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymEnv]:
@@ -195,6 +196,14 @@ class BaseAlgorithm(ABC):
                 print("Wrapping the env in a DummyVecEnv.")
             env = DummyVecEnv([lambda: env])
 
+        # Make sure that dict-spaces are not nested (not supported)
+        check_for_nested_spaces(env.observation_space)
+
+        if isinstance(env.observation_space, gym.spaces.dict.Dict):
+            for space in env.observation_space.spaces.values():
+                if isinstance(space, gym.spaces.dict.Dict):
+                    raise ValueError("Nested observation spaces are not supported (Dict spaces inside Dict space).")
+
         if not is_vecenv_wrapped(env, VecTransposeImage):
             wrap_with_vectranspose = False
             if isinstance(env.observation_space, gym.spaces.dict.Dict):
@@ -219,8 +228,6 @@ class BaseAlgorithm(ABC):
             ["observation", "desired_goal", "achieved_goal"]
         ):
             env = ObsDictWrapper(env)
-
-        # TODO(@J-Travnik): check that it is a first-level dict obs space only
 
         return env
 

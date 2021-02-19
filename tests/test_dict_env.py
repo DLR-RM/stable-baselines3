@@ -7,7 +7,7 @@ from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.envs import SimpleMultiObsEnv
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack
 
 
 class DummyDictEnv(gym.Env):
@@ -15,7 +15,7 @@ class DummyDictEnv(gym.Env):
 
     metadata = {"render.modes": ["human"]}
 
-    def __init__(self, use_discrete_actions=False, channel_last=False):
+    def __init__(self, use_discrete_actions=False, channel_last=False, nested_dict_obs=False):
         super().__init__()
         if use_discrete_actions:
             self.action_space = spaces.Discrete(3)
@@ -40,6 +40,10 @@ class DummyDictEnv(gym.Env):
                 "discrete": spaces.Discrete(4),
             }
         )
+
+        if nested_dict_obs:
+            # Add dictionary observation inside observation space
+            self.observation_space.spaces["nested-dict"] = spaces.Dict({"nested-dict-discrete": spaces.Discrete(4)})
 
     def step(self, action):
         reward = 0.0
@@ -98,7 +102,7 @@ def test_multiprocessing(model_class):
         env = gym.wrappers.TimeLimit(env, 100)
         return env
 
-    env = make_vec_env(make_env, n_envs=2)
+    env = make_vec_env(make_env, n_envs=2, vec_env_cls=SubprocVecEnv)
 
     kwargs = {}
     n_steps = 256
@@ -146,3 +150,19 @@ def test_dict_vec_framestack(model_class, channel_last):
     model.learn(total_timesteps=n_steps)
 
     evaluate_policy(model, env, n_eval_episodes=5, warn=False)
+
+
+def test_dict_nested():
+    """
+    Make sure we throw an appropiate error with nested Dict observation spaces
+    """
+    # Test without manual wrapping to vec-env
+    env = DummyDictEnv(nested_dict_obs=True)
+
+    with pytest.raises(NotImplementedError):
+        _ = PPO("MultiInputPolicy", env, seed=1)
+
+    # Test with manual vec-env wrapping
+
+    with pytest.raises(NotImplementedError):
+        env = DummyVecEnv([lambda: DummyDictEnv(nested_dict_obs=True)])

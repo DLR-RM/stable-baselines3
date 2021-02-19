@@ -79,7 +79,7 @@ class VecTransposeImage(VecEnvWrapper):
         observations = self.transpose_observations(observations)
         return observations, rewards, dones, infos
 
-    def reset(self) -> np.ndarray:
+    def reset(self) -> Union[np.ndarray, Dict]:
         """
         Reset all environments
         """

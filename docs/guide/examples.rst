@@ -76,7 +76,7 @@ In the following example, we will train, save and load a DQN model on the Lunar 
   del model  # delete trained model to demonstrate loading
 
   # Load the trained agent
-  model = DQN.load("dqn_lunar")
+  model = DQN.load("dqn_lunar", env=env)
 
   # Evaluate the agent
   # NOTE: If you use wrappers with your environment that modify rewards,
@@ -335,9 +335,6 @@ will compute a running average and standard deviation of input features (it can 
   # To demonstrate loading
   del model, env
 
-  # Load the agent
-  model = PPO.load(log_dir + "ppo_halfcheetah")
-
   # Load the saved statistics
   env = DummyVecEnv([lambda: gym.make("HalfCheetahBulletEnv-v0")])
   env = VecNormalize.load(stats_path, env)
@@ -345,6 +342,9 @@ will compute a running average and standard deviation of input features (it can 
   env.training = False
   # reward normalization is not needed at test time
   env.norm_reward = False
+
+  # Load the agent
+  model = PPO.load(log_dir + "ppo_halfcheetah", env=env)
 
 
 Hindsight Experience Replay (HER)

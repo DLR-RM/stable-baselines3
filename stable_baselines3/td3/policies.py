@@ -49,8 +49,6 @@ class Actor(BasePolicy):
             squash_output=True,
         )
 
-        self.features_extractor = features_extractor
-        self.normalize_images = normalize_images
         self.net_arch = net_arch
         self.features_dim = features_dim
         self.activation_fn = activation_fn
@@ -60,8 +58,8 @@ class Actor(BasePolicy):
         # Deterministic action
         self.mu = nn.Sequential(*actor_net)
 
-    def _get_data(self) -> Dict[str, Any]:
-        data = super()._get_data()
+    def _get_constructor_parameters(self) -> Dict[str, Any]:
+        data = super()._get_constructor_parameters()
 
         data.update(
             dict(
@@ -73,13 +71,15 @@ class Actor(BasePolicy):
         )
         return data
 
-    def forward(self, obs: th.Tensor, deterministic: bool = True) -> th.Tensor:
+    def forward(self, obs: th.Tensor) -> th.Tensor:
         # assert deterministic, 'The TD3 actor only outputs deterministic actions'
         features = self.extract_features(obs)
         return self.mu(features)
 
     def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
-        return self.forward(observation, deterministic=deterministic)
+        # Note: the deterministic deterministic parameter is ignored in the case of TD3.
+        #   Predictions are always deterministic.
+        return self.forward(observation)
 
 
 class TD3Policy(BasePolicy):
@@ -190,8 +190,8 @@ class TD3Policy(BasePolicy):
         self.critic_target.load_state_dict(self.critic.state_dict())
         self.critic.optimizer = self.optimizer_class(self.critic.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
 
-    def _get_data(self) -> Dict[str, Any]:
-        data = super()._get_data()
+    def _get_constructor_parameters(self) -> Dict[str, Any]:
+        data = super()._get_constructor_parameters()
 
         data.update(
             dict(
@@ -220,7 +220,9 @@ class TD3Policy(BasePolicy):
         return self._predict(observation, deterministic=deterministic)
 
     def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
-        return self.actor(observation, deterministic=deterministic)
+        # Note: the deterministic deterministic parameter is ignored in the case of TD3.
+        #   Predictions are always deterministic.
+        return self.actor(observation)
 
 
 MlpPolicy = TD3Policy

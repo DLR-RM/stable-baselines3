@@ -112,8 +112,8 @@ class Actor(BasePolicy):
             self.mu = nn.Linear(last_layer_dim, action_dim)
             self.log_std = nn.Linear(last_layer_dim, action_dim)
 
-    def _get_data(self) -> Dict[str, Any]:
-        data = super()._get_data()
+    def _get_constructor_parameters(self) -> Dict[str, Any]:
+        data = super()._get_constructor_parameters()
 
         data.update(
             dict(
@@ -316,8 +316,8 @@ class SACPolicy(BasePolicy):
 
         self.critic.optimizer = self.optimizer_class(critic_parameters, lr=lr_schedule(1), **self.optimizer_kwargs)
 
-    def _get_data(self) -> Dict[str, Any]:
-        data = super()._get_data()
+    def _get_constructor_parameters(self) -> Dict[str, Any]:
+        data = super()._get_constructor_parameters()
 
         data.update(
             dict(

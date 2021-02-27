@@ -16,7 +16,7 @@ except ImportError:
     SummaryWriter = None
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.type_aliases import GymEnv, Schedule
+from stable_baselines3.common.type_aliases import GymEnv, Schedule, TrainFreq, TrainFrequencyUnit
 
 
 def set_random_seed(seed: int, using_cuda: bool = False) -> None:
@@ -317,3 +317,31 @@ def polyak_update(params: Iterable[th.nn.Parameter], target_params: Iterable[th.
         for param, target_param in zip_strict(params, target_params):
             target_param.data.mul_(1 - tau)
             th.add(target_param.data, param.data, alpha=tau, out=target_param.data)
+
+
+def should_collect_more_steps(
+    train_freq: TrainFreq,
+    num_collected_steps: int,
+    num_collected_episodes: int,
+) -> bool:
+    """
+    Helper used in ``collect_rollouts()`` of off-policy algorithms
+    to determine the termination condition.
+
+    :param train_freq: How much experience should be collected before updating the policy.
+    :param num_collected_steps: The number of already collected steps.
+    :param num_collected_episodes: The number of already collected episodes.
+    :return: Whether to continue or not collecting experience
+        by doing rollouts of the current policy.
+    """
+    if train_freq.unit == TrainFrequencyUnit.STEP:
+        return num_collected_steps < train_freq.frequency
+
+    elif train_freq.unit == TrainFrequencyUnit.EPISODE:
+        return num_collected_episodes < train_freq.frequency
+
+    else:
+        raise ValueError(
+            "The unit of the `train_freq` must be either TrainFrequencyUnit.STEP "
+            f"or TrainFrequencyUnit.EPISODE not '{train_freq.unit}'!"
+        )

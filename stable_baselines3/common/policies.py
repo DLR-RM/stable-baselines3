@@ -82,7 +82,7 @@ class BaseModel(nn.Module, ABC):
 
     @abstractmethod
     def forward(self, *args, **kwargs):
-        del args, kwargs
+        pass
 
     def _update_features_extractor(
         self, net_kwargs: Dict[str, Any], features_extractor: Optional[BaseFeaturesExtractor] = None
@@ -119,12 +119,11 @@ class BaseModel(nn.Module, ABC):
         preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
         return self.features_extractor(preprocessed_obs)
 
-    def _get_data(self) -> Dict[str, Any]:
+    def _get_constructor_parameters(self) -> Dict[str, Any]:
         """
-        Get data that need to be saved in order to re-create the model.
-        This corresponds to the arguments of the constructor.
+        Get data that need to be saved in order to re-create the model when loading it from disk.
 
-        :return:
+        :return: The dictionary to pass to the as kwargs constructor when reconstruction this model.
         """
         return dict(
             observation_space=self.observation_space,
@@ -151,7 +150,7 @@ class BaseModel(nn.Module, ABC):
 
         :param path:
         """
-        th.save({"state_dict": self.state_dict(), "data": self._get_data()}, path)
+        th.save({"state_dict": self.state_dict(), "data": self._get_constructor_parameters()}, path)
 
     @classmethod
     def load(cls, path: str, device: Union[th.device, str] = "auto") -> "BaseModel":
@@ -434,8 +433,8 @@ class ActorCriticPolicy(BasePolicy):
 
         self._build(lr_schedule)
 
-    def _get_data(self) -> Dict[str, Any]:
-        data = super()._get_data()
+    def _get_constructor_parameters(self) -> Dict[str, Any]:
+        data = super()._get_constructor_parameters()
 
         default_none_kwargs = self.dist_kwargs or collections.defaultdict(lambda: None)
 

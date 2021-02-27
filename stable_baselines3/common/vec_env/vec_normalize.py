@@ -106,13 +106,13 @@ class VecNormalize(VecEnvWrapper):
     def step_wait(self) -> VecEnvStepReturn:
         """
         Apply sequence of actions to sequence of environments
-        actions -> (observations, rewards, news)
+        actions -> (observations, rewards, dones)
 
-        where 'news' is a boolean vector indicating whether each element is new.
+        where ``dones`` is a boolean vector indicating whether each element is new.
         """
-        obs, rews, news, infos = self.venv.step_wait()
+        obs, rewards, dones, infos = self.venv.step_wait()
         self.old_obs = obs
-        self.old_reward = rews
+        self.old_reward = rewards
 
         if self.training:
             if isinstance(obs, dict) and isinstance(self.obs_rms, dict):
@@ -124,11 +124,17 @@ class VecNormalize(VecEnvWrapper):
         obs = self.normalize_obs(obs)
 
         if self.training:
-            self._update_reward(rews)
-        rews = self.normalize_reward(rews)
+            self._update_reward(rewards)
+        rewards = self.normalize_reward(rewards)
 
-        self.ret[news] = 0
-        return obs, rews, news, infos
+        # Normalize the terminal observations
+        for idx, done in enumerate(dones):
+            if not done:
+                continue
+            infos[idx]["terminal_observation"] = self.normalize_obs(infos[idx]["terminal_observation"])
+
+        self.ret[dones] = 0
+        return obs, rewards, dones, infos
 
     def _update_reward(self, reward: np.ndarray) -> None:
         """Update reward normalization statistics."""

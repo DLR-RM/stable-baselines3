@@ -14,6 +14,7 @@ Breaking Changes:
   with the new ``is_wrapped()`` helper
 - Renamed ``_get_data()`` to ``_get_constructor_parameters()`` for policies (this affects independent saving/loading of policies)
 - Removed ``n_episodes_rollout`` and merged it with ``train_freq``, which now accepts a tuple ``(frequency, unit)``:
+- ``replay_buffer`` in ``collect_rollout`` is not more optional
 
 .. code-block:: python
 
@@ -52,6 +53,9 @@ Bug Fixes:
 - Fixed discrete observation space support when using multiple envs with A2C/PPO (thanks @ardabbour)
 - Fixed a bug for TD3 delayed update (the update was off-by-one and not delayed when ``train_freq=1``)
 - Fixed numpy warning (replaced ``np.bool`` with ``bool``)
+- Fixed a bug where ``VecNormalize`` was not normalizing the terminal observation
+- Fixed a bug where ``VecTranspose`` was not transposing the terminal observation
+- Fixed a bug where the terminal observation stored in the replay buffer was not the right one for off-policy algorithms
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -397,10 +397,11 @@ class BaseAlgorithm(ABC):
 
     def _update_info_buffer(self, infos: List[Dict[str, Any]], dones: Optional[np.ndarray] = None) -> None:
         """
-        Retrieve reward and episode length and update the buffer
-        if using Monitor wrapper.
+        Retrieve reward, episode length, episode success and update the buffer
+        if using Monitor wrapper or a GoalEnv.
 
-        :param infos:
+        :param infos: List of additional information about the transition.
+        :param dones: Termination signals
         """
         if dones is None:
             dones = np.array([False] * len(infos))

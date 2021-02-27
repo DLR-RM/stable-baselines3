@@ -310,10 +310,10 @@ class HER(BaseAlgorithm):
                 # As the VecEnv resets automatically, new_obs is already the
                 # first observation of the next episode
                 if done and infos[0].get("terminal_observation") is not None:
-                    # The saved terminal_observation is not passed through other
-                    # VecEnvWrapper, so no need to unnormalize
-                    # NOTE: this may be an issue when using other wrappers
                     next_obs = infos[0]["terminal_observation"]
+                    # VecNormalize normalizes the terminal observation
+                    if self._vec_normalize_env is not None:
+                        next_obs = self._vec_normalize_env.unnormalize_obs(next_obs)
                 else:
                     next_obs = new_obs_
 

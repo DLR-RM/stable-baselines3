@@ -14,7 +14,7 @@ Breaking Changes:
   with the new ``is_wrapped()`` helper
 - Renamed ``_get_data()`` to ``_get_constructor_parameters()`` for policies (this affects independent saving/loading of policies)
 - Removed ``n_episodes_rollout`` and merged it with ``train_freq``, which now accepts a tuple ``(frequency, unit)``:
-- ``replay_buffer`` in ``collect_rollout`` is not more optional
+- ``replay_buffer`` in ``collect_rollout`` is no more optional
 
 .. code-block:: python
 

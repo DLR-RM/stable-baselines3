@@ -42,7 +42,7 @@ using ``policy_kwargs`` parameter:
 
   del model
   # the policy_kwargs are automatically loaded
-  model = PPO.load("ppo_cartpole")
+  model = PPO.load("ppo_cartpole", env=env)
 
 
 Custom Feature Extractor

@@ -73,6 +73,7 @@ Documentation:
 - Updated custom policy doc (separate policy architecture recommended)
 - Added a note about OpenCV headless version
 - Corrected typo on documentation (@mschweizer)
+- Provide the environment when loading the model in the examples (@lorepieri8)
 
 
 Pre-Release 0.10.0 (2020-10-28)
@@ -548,4 +549,4 @@ And all the contributors:
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
-@tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h @mschweizer
+@tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8

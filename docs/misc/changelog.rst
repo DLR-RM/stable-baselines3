@@ -3,6 +3,15 @@
 Changelog
 ==========
 
+Pre-Release 0.11.1 (2021-02-27)
+-------------------------------
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed a bug where ``train_freq`` was not properly converted when loading a saved model
+
+
+
 Pre-Release 0.11.0 (2021-02-27)
 -------------------------------
 

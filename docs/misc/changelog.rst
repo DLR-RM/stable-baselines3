@@ -73,7 +73,7 @@ Documentation:
 - Updated custom policy doc (separate policy architecture recommended)
 - Added a note about OpenCV headless version
 - Corrected typo on documentation (@mschweizer)
-- Provide the environment when loading the model (@lorepieri8)
+- Provide the environment when loading the model in the examples (@lorepieri8)
 
 
 Pre-Release 0.10.0 (2020-10-28)

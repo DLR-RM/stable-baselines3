@@ -108,6 +108,7 @@ class HER(BaseAlgorithm):
             **kwargs,  # pytype: disable=wrong-keyword-args
         )
 
+        self.action_noise = self.model.action_noise
         self.verbose = self.model.verbose
         self.tensorboard_log = self.model.tensorboard_log
 

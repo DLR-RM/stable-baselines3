@@ -56,6 +56,7 @@ Bug Fixes:
 - Fixed a bug where ``VecNormalize`` was not normalizing the terminal observation
 - Fixed a bug where ``VecTranspose`` was not transposing the terminal observation
 - Fixed a bug where the terminal observation stored in the replay buffer was not the right one for off-policy algorithms
+- Fixed a bug where ``action_noise`` was not used when using ``HER`` (thanks @ShangqunYu)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -565,3 +566,4 @@ And all the contributors:
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h @mschweizer
+@ShangqunYu

@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.11.0a8 (WIP)
+Pre-Release 0.11.0 (2021-02-27)
 -------------------------------
 
 Breaking Changes:

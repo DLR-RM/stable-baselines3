@@ -108,7 +108,8 @@ class HER(BaseAlgorithm):
             **kwargs,  # pytype: disable=wrong-keyword-args
         )
 
-        self.action_noise = self.model.action_noise
+        # Make HER use self.model.action_noise
+        del self.action_noise
         self.verbose = self.model.verbose
         self.tensorboard_log = self.model.tensorboard_log
 
@@ -133,6 +134,9 @@ class HER(BaseAlgorithm):
         # storage for transitions of current episode for offline sampling
         # for online sampling, it replaces the "classic" replay buffer completely
         her_buffer_size = self.buffer_size if online_sampling else self.max_episode_length
+
+        assert self.env is not None, "Because it needs access to `env.compute_reward()` HER you must provide the env."
+
         self._episode_storage = HerReplayBuffer(
             self.env,
             her_buffer_size,

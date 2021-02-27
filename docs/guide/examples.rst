@@ -405,6 +405,8 @@ The parking env is a goal-conditioned continuous control task, in which the vehi
   model.save("her_sac_highway")
 
   # Load saved model
+  # Because it needs access to `env.compute_reward()`
+  # HER must be loaded with the env
   model = HER.load("her_sac_highway", env=env)
 
   obs = env.reset()

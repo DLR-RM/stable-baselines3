@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Pre-Release 0.11.0a7 (WIP)
+Pre-Release 0.11.0 (2021-02-27)
 -------------------------------
 
 Breaking Changes:
@@ -12,6 +12,18 @@ Breaking Changes:
   this allows to return the unnormalized reward in the case of Atari games for instance.
 - Renamed ``common.vec_env.is_wrapped`` to ``common.vec_env.is_vecenv_wrapped`` to avoid confusion
   with the new ``is_wrapped()`` helper
+- Renamed ``_get_data()`` to ``_get_constructor_parameters()`` for policies (this affects independent saving/loading of policies)
+- Removed ``n_episodes_rollout`` and merged it with ``train_freq``, which now accepts a tuple ``(frequency, unit)``:
+- ``replay_buffer`` in ``collect_rollout`` is no more optional
+
+.. code-block:: python
+
+  # SB3 < 0.11.0
+  # model = SAC("MlpPolicy", env, n_episodes_rollout=1, train_freq=-1)
+  # SB3 >= 0.11.0:
+  model = SAC("MlpPolicy", env, train_freq=(1, "episode"))
+
+
 
 New Features:
 ^^^^^^^^^^^^^
@@ -39,7 +51,12 @@ Bug Fixes:
 - Added informative ``PPO`` construction error in edge-case scenario where ``n_steps * n_envs = 1`` (size of rollout buffer),
   which otherwise causes downstream breaking errors in training (@decodyng)
 - Fixed discrete observation space support when using multiple envs with A2C/PPO (thanks @ardabbour)
+- Fixed a bug for TD3 delayed update (the update was off-by-one and not delayed when ``train_freq=1``)
 - Fixed numpy warning (replaced ``np.bool`` with ``bool``)
+- Fixed a bug where ``VecNormalize`` was not normalizing the terminal observation
+- Fixed a bug where ``VecTranspose`` was not transposing the terminal observation
+- Fixed a bug where the terminal observation stored in the replay buffer was not the right one for off-policy algorithms
+- Fixed a bug where ``action_noise`` was not used when using ``HER`` (thanks @ShangqunYu)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -550,3 +567,4 @@ And all the contributors:
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8
+@ShangqunYu

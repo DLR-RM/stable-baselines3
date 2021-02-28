@@ -321,12 +321,6 @@ def test_zip_strict():
         pass
 
 
-def test_cmd_util_rename():
-    """Test that importing cmd_util still works but raises warning"""
-    with pytest.warns(FutureWarning):
-        from stable_baselines3.common.cmd_util import make_vec_env  # noqa: F401
-
-
 def test_is_wrapped():
     """Test that is_wrapped correctly detects wraps"""
     env = gym.make("Pendulum-v0")

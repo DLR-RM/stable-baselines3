@@ -13,6 +13,7 @@ Breaking Changes:
 Documentation:
 ^^^^^^^^^^^^^^
 - Fixed examples
+- Added new project using SB3: rl_reach (@PierreExeter)
 
 
 Pre-Release 0.11.1 (2021-02-27)
@@ -588,4 +589,4 @@ And all the contributors:
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8
-@ShangqunYu
+@ShangqunYu @PierreExeter

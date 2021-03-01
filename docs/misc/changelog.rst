@@ -3,12 +3,16 @@
 Changelog
 ==========
 
-Release 1.0rc0 (2021-02-28)
+Release 1.0rc1 (WIP)
 -------------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed ``stable_baselines3.common.cmd_util`` (already deprecated), please use ``env_util`` instead
+
+New Features:
+^^^^^^^^^^^^^
+- Added support for ``custom_objects`` when loading models
 
 Documentation:
 ^^^^^^^^^^^^^^

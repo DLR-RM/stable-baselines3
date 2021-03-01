@@ -41,7 +41,7 @@ class Monitor(gym.Wrapper):
     ):
         super(Monitor, self).__init__(env=env)
         self.t_start = time.time()
-        if filename:
+        if filename is not None:
             self.results_writer = ResultsWriter(
                 filename,
                 header={"t_start": self.t_start, "env_id": env.spec and env.spec.id},

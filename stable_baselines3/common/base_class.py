@@ -632,7 +632,7 @@ class BaseAlgorithm(ABC):
                 env = data["env"]
 
         # noinspection PyArgumentList
-        model = cls(
+        model = cls(  # pytype: disable=not-instantiable,wrong-keyword-args
             policy=data["policy_class"],
             env=env,
             device=device,

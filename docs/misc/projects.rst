@@ -15,6 +15,15 @@ Please tell us, if you want your project to appear on this page ;)
 .. | Author: Antonin Raffin  (@araffin)
 .. | Github repo: https://github.com/araffin/RL-Racing-Robot
 
+rl_reach
+--------
+
+A platform for running reproducible reinforcement learning experiments for customisable robotic reaching tasks. This self-contained and straightforward toolbox allows its users to quickly investigate and identify optimal training configurations.
+
+| Authors: Pierre Aumjaud, David McAuliffe, Francisco Javier Rodríguez Lera, Philip Cardiff
+| Github: https://github.com/PierreExeter/rl_reach
+| Paper: https://arxiv.org/abs/2102.04916
+
 
 Generalized State Dependent Exploration for Deep Reinforcement Learning in Robotics
 -----------------------------------------------------------------------------------

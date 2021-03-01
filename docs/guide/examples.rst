@@ -312,6 +312,7 @@ will compute a running average and standard deviation of input features (it can 
 
 .. code-block:: python
 
+  import os
   import gym
   import pybullet_envs
 
@@ -521,7 +522,7 @@ Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
   # Note: if you don't save the complete model with `model.save()`
   # you cannot continue training afterward
   policy = model.policy
-  policy.save("sac_policy_pendulum.pkl")
+  policy.save("sac_policy_pendulum")
 
   # Retrieve the environment
   env = model.get_env()

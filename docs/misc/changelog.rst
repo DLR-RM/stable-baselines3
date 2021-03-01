@@ -14,6 +14,9 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Fixed examples
 - Added new project using SB3: rl_reach (@PierreExeter)
+- Added `VecMonitor <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_monitor.py>`_ and 
+  `VecExtractDictObs <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_extract_dict_obs.py>`_ wrappers 
+  to handle gym3-style vectorized environments (@vwxyzjn)
 
 
 Pre-Release 0.11.1 (2021-02-27)
@@ -589,4 +592,4 @@ And all the contributors:
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8
-@ShangqunYu @PierreExeter
+@ShangqunYu @PierreExeter @vwxyzjn

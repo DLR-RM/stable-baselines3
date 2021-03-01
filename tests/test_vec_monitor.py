@@ -5,6 +5,7 @@ import uuid
 import gym
 import pandas
 
+from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import get_monitor_files, load_results
 from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor
 
@@ -19,8 +20,6 @@ def test_vec_monitor(tmp_path):
     monitor_env = VecMonitor(env, monitor_file)
     monitor_env.reset()
     total_steps = 1000
-    ep_rewards = []
-    ep_lengths = []
     ep_len, ep_reward = 0, 0
     for _ in range(total_steps):
         _, rewards, dones, infos = monitor_env.step([monitor_env.action_space.sample()])
@@ -92,3 +91,14 @@ def test_vec_monitor_load_results(tmp_path):
 
     os.remove(monitor_file1)
     os.remove(monitor_file2)
+
+
+def test_vec_monitor_with_PPO():
+    """
+    Test the `VecMonitor` with PPO
+    """
+    env = DummyVecEnv([lambda: gym.make("CartPole-v1")])
+    env.seed(0)
+    monitor_env = VecMonitor(env)
+    model = PPO("MlpPolicy", monitor_env, verbose=3, n_steps=16, device="cpu")
+    model.learn(total_timesteps=250)

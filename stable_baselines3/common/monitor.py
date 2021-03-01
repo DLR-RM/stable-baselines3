@@ -165,7 +165,7 @@ class ResultsWriter:
     :param filename: the location to save a log file, can be None for no log
     :param header: the header dictionary object of the saved csv
     :param reset_keywords: the extra information to log, typically is composed of
-        `reset_keywords` and `info_keywords`
+        ``reset_keywords`` and ``info_keywords``
     """
 
     def __init__(

@@ -3,6 +3,18 @@
 Changelog
 ==========
 
+Release 1.0rc0 (2021-02-28)
+-------------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+- Removed ``stable_baselines3.common.cmd_util`` (already deprecated), please use ``env_util`` instead
+
+Documentation:
+^^^^^^^^^^^^^^
+- Fixed examples
+
+
 Pre-Release 0.11.1 (2021-02-27)
 -------------------------------
 

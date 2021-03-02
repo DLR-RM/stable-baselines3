@@ -18,6 +18,7 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Fixed examples
 - Added new project using SB3: rl_reach (@PierreExeter)
+- Added note about slow-down when switching to PyTorch
 
 
 Pre-Release 0.11.1 (2021-02-27)

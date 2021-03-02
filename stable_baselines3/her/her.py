@@ -12,8 +12,8 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.save_util import load_from_zip_file, recursive_setattr
-from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn
-from stable_baselines3.common.utils import check_for_correct_spaces
+from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn, TrainFreq
+from stable_baselines3.common.utils import check_for_correct_spaces, should_collect_more_steps
 from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
@@ -108,6 +108,8 @@ class HER(BaseAlgorithm):
             **kwargs,  # pytype: disable=wrong-keyword-args
         )
 
+        # Make HER use self.model.action_noise
+        del self.action_noise
         self.verbose = self.model.verbose
         self.tensorboard_log = self.model.tensorboard_log
 
@@ -132,6 +134,9 @@ class HER(BaseAlgorithm):
         # storage for transitions of current episode for offline sampling
         # for online sampling, it replaces the "classic" replay buffer completely
         her_buffer_size = self.buffer_size if online_sampling else self.max_episode_length
+
+        assert self.env is not None, "Because it needs access to `env.compute_reward()` HER you must provide the env."
+
         self._episode_storage = HerReplayBuffer(
             self.env,
             her_buffer_size,
@@ -193,11 +198,9 @@ class HER(BaseAlgorithm):
         callback.on_training_start(locals(), globals())
 
         while self.num_timesteps < total_timesteps:
-
             rollout = self.collect_rollouts(
                 self.env,
-                n_episodes=self.n_episodes_rollout,
-                n_steps=self.train_freq,
+                train_freq=self.train_freq,
                 action_noise=self.action_noise,
                 callback=callback,
                 learning_starts=self.learning_starts,
@@ -221,8 +224,7 @@ class HER(BaseAlgorithm):
         self,
         env: VecEnv,
         callback: BaseCallback,
-        n_episodes: int = 1,
-        n_steps: int = -1,
+        train_freq: TrainFreq,
         action_noise: Optional[ActionNoise] = None,
         learning_starts: int = 0,
         log_interval: Optional[int] = None,
@@ -233,10 +235,11 @@ class HER(BaseAlgorithm):
         :param env: The training environment
         :param callback: Callback that will be called at each step
             (and at the beginning and end of the rollout)
-        :param n_episodes: Number of episodes to use to collect rollout data
-            You can also specify a ``n_steps`` instead
-        :param n_steps: Number of steps to use to collect rollout data
-            You can also specify a ``n_episodes`` instead.
+        :param train_freq: How much experience to collect
+            by doing rollouts of current policy.
+            Either ``TrainFreq(<n>, TrainFrequencyUnit.STEP)``
+            or ``TrainFreq(<n>, TrainFrequencyUnit.EPISODE)``
+            with ``<n>`` being an integer greater than 0.
         :param action_noise: Action noise that will be used for exploration
             Required for deterministic policy (e.g. TD3). This can also be used
             in addition to the stochastic policy for SAC.
@@ -246,10 +249,11 @@ class HER(BaseAlgorithm):
         """
 
         episode_rewards, total_timesteps = [], []
-        total_steps, total_episodes = 0, 0
+        num_collected_steps, num_collected_episodes = 0, 0
 
         assert isinstance(env, VecEnv), "You must pass a VecEnv"
         assert env.num_envs == 1, "OffPolicyAlgorithm only support single environment"
+        assert train_freq.frequency > 0, "Should at least collect one step or episode."
 
         if self.model.use_sde:
             self.actor.reset_noise()
@@ -257,7 +261,7 @@ class HER(BaseAlgorithm):
         callback.on_rollout_start()
         continue_training = True
 
-        while total_steps < n_steps or total_episodes < n_episodes:
+        while should_collect_more_steps(train_freq, num_collected_steps, num_collected_episodes):
             done = False
             episode_reward, episode_timesteps = 0.0, 0
 
@@ -266,7 +270,11 @@ class HER(BaseAlgorithm):
                 observation = self._last_obs
                 self._last_obs = ObsDictWrapper.convert_dict(observation)
 
-                if self.model.use_sde and self.model.sde_sample_freq > 0 and total_steps % self.model.sde_sample_freq == 0:
+                if (
+                    self.model.use_sde
+                    and self.model.sde_sample_freq > 0
+                    and num_collected_steps % self.model.sde_sample_freq == 0
+                ):
                     # Sample a new noise matrix
                     self.actor.reset_noise()
 
@@ -280,11 +288,11 @@ class HER(BaseAlgorithm):
                 self.num_timesteps += 1
                 self.model.num_timesteps = self.num_timesteps
                 episode_timesteps += 1
-                total_steps += 1
+                num_collected_steps += 1
 
                 # Only stop training if return value is False, not when it is None.
                 if callback.on_step() is False:
-                    return RolloutReturn(0.0, total_steps, total_episodes, continue_training=False)
+                    return RolloutReturn(0.0, num_collected_steps, num_collected_episodes, continue_training=False)
 
                 episode_reward += reward
 
@@ -307,10 +315,10 @@ class HER(BaseAlgorithm):
                 # As the VecEnv resets automatically, new_obs is already the
                 # first observation of the next episode
                 if done and infos[0].get("terminal_observation") is not None:
-                    # The saved terminal_observation is not passed through other
-                    # VecEnvWrapper, so no need to unnormalize
-                    # NOTE: this may be an issue when using other wrappers
                     next_obs = infos[0]["terminal_observation"]
+                    # VecNormalize normalizes the terminal observation
+                    if self._vec_normalize_env is not None:
+                        next_obs = self._vec_normalize_env.unnormalize_obs(next_obs)
                 else:
                     next_obs = new_obs_
 
@@ -343,7 +351,7 @@ class HER(BaseAlgorithm):
 
                 self.episode_steps += 1
 
-                if 0 < n_steps <= total_steps:
+                if not should_collect_more_steps(train_freq, num_collected_steps, num_collected_episodes):
                     break
 
             if done or self.episode_steps >= self.max_episode_length:
@@ -356,7 +364,7 @@ class HER(BaseAlgorithm):
                     # clear storage for current episode
                     self._episode_storage.reset()
 
-                total_episodes += 1
+                num_collected_episodes += 1
                 self._episode_num += 1
                 self.model._episode_num = self._episode_num
                 episode_rewards.append(episode_reward)
@@ -371,11 +379,11 @@ class HER(BaseAlgorithm):
 
                 self.episode_steps = 0
 
-        mean_reward = np.mean(episode_rewards) if total_episodes > 0 else 0.0
+        mean_reward = np.mean(episode_rewards) if num_collected_episodes > 0 else 0.0
 
         callback.on_rollout_end()
 
-        return RolloutReturn(mean_reward, total_steps, total_episodes, continue_training)
+        return RolloutReturn(mean_reward, num_collected_steps, num_collected_episodes, continue_training)
 
     def _sample_her_transitions(self) -> None:
         """

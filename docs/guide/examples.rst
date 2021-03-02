@@ -76,7 +76,7 @@ In the following example, we will train, save and load a DQN model on the Lunar 
   del model  # delete trained model to demonstrate loading
 
   # Load the trained agent
-  model = DQN.load("dqn_lunar")
+  model = DQN.load("dqn_lunar", env=env)
 
   # Evaluate the agent
   # NOTE: If you use wrappers with your environment that modify rewards,
@@ -333,6 +333,7 @@ will compute a running average and standard deviation of input features (it can 
 
 .. code-block:: python
 
+  import os
   import gym
   import pybullet_envs
 
@@ -356,9 +357,6 @@ will compute a running average and standard deviation of input features (it can 
   # To demonstrate loading
   del model, env
 
-  # Load the agent
-  model = PPO.load(log_dir + "ppo_halfcheetah")
-
   # Load the saved statistics
   env = DummyVecEnv([lambda: gym.make("HalfCheetahBulletEnv-v0")])
   env = VecNormalize.load(stats_path, env)
@@ -366,6 +364,9 @@ will compute a running average and standard deviation of input features (it can 
   env.training = False
   # reward normalization is not needed at test time
   env.norm_reward = False
+
+  # Load the agent
+  model = PPO.load(log_dir + "ppo_halfcheetah", env=env)
 
 
 Hindsight Experience Replay (HER)
@@ -426,6 +427,8 @@ The parking env is a goal-conditioned continuous control task, in which the vehi
   model.save("her_sac_highway")
 
   # Load saved model
+  # Because it needs access to `env.compute_reward()`
+  # HER must be loaded with the env
   model = HER.load("her_sac_highway", env=env)
 
   obs = env.reset()
@@ -540,7 +543,7 @@ Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
   # Note: if you don't save the complete model with `model.save()`
   # you cannot continue training afterward
   policy = model.policy
-  policy.save("sac_policy_pendulum.pkl")
+  policy.save("sac_policy_pendulum")
 
   # Retrieve the environment
   env = model.get_env()

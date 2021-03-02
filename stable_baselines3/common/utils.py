@@ -16,7 +16,7 @@ except ImportError:
     SummaryWriter = None
 
 from stable_baselines3.common import logger
-from stable_baselines3.common.type_aliases import GymEnv, Schedule, TensorDict
+from stable_baselines3.common.type_aliases import GymEnv, Schedule, TensorDict, TrainFreq, TrainFrequencyUnit
 
 
 def set_random_seed(seed: int, using_cuda: bool = False) -> None:
@@ -421,3 +421,31 @@ def obs_as_tensor(
         return {key: th.as_tensor(_obs).to(device) for (key, _obs) in obs.items()}
     else:
         raise Exception(f"Unrecognized type of observation {type(obs)}")
+
+
+def should_collect_more_steps(
+    train_freq: TrainFreq,
+    num_collected_steps: int,
+    num_collected_episodes: int,
+) -> bool:
+    """
+    Helper used in ``collect_rollouts()`` of off-policy algorithms
+    to determine the termination condition.
+
+    :param train_freq: How much experience should be collected before updating the policy.
+    :param num_collected_steps: The number of already collected steps.
+    :param num_collected_episodes: The number of already collected episodes.
+    :return: Whether to continue or not collecting experience
+        by doing rollouts of the current policy.
+    """
+    if train_freq.unit == TrainFrequencyUnit.STEP:
+        return num_collected_steps < train_freq.frequency
+
+    elif train_freq.unit == TrainFrequencyUnit.EPISODE:
+        return num_collected_episodes < train_freq.frequency
+
+    else:
+        raise ValueError(
+            "The unit of the `train_freq` must be either TrainFrequencyUnit.STEP "
+            f"or TrainFrequencyUnit.EPISODE not '{train_freq.unit}'!"
+        )

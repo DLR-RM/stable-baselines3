@@ -32,6 +32,13 @@ It creates "virtual" transitions by relabeling transitions (changing the desired
 	``HER`` supports ``VecNormalize`` wrapper but only when ``online_sampling=True``
 
 
+.. warning::
+
+  Because it needs access to ``env.compute_reward()``
+  ``HER`` must be loaded with the env. If you just want to use the trained policy
+  without instantiating the environment, we recommend saving the policy only.
+
+
 Notes
 -----
 
@@ -78,11 +85,13 @@ Example
     model.learn(1000)
 
     model.save("./her_bit_env")
+    # Because it needs access to `env.compute_reward()`
+    # HER must be loaded with the env
     model = HER.load('./her_bit_env', env=env)
 
     obs = env.reset()
     for _ in range(100):
-        action, _ = model.model.predict(obs, deterministic=True)
+        action, _ = model.predict(obs, deterministic=True)
         obs, reward, done, _ = env.step(action)
 
         if done:

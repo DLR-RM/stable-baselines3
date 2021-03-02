@@ -76,8 +76,14 @@ class VecTransposeImage(VecEnvWrapper):
 
     def step_wait(self) -> VecEnvStepReturn:
         observations, rewards, dones, infos = self.venv.step_wait()
-        observations = self.transpose_observations(observations)
-        return observations, rewards, dones, infos
+
+        # Transpose the terminal observations
+        for idx, done in enumerate(dones):
+            if not done:
+                continue
+            infos[idx]["terminal_observation"] = self.transpose_image(infos[idx]["terminal_observation"])
+
+        return self.transpose_image(observations), rewards, dones, infos
 
     def reset(self) -> Union[np.ndarray, Dict]:
         """

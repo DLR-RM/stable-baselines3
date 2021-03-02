@@ -133,10 +133,10 @@ class TD3Policy(BasePolicy):
 
         # Default network architecture, from the original paper
         if net_arch is None:
-            if features_extractor_class == FlattenExtractor:
-                net_arch = [400, 300]
-            else:
+            if features_extractor_class == NatureCNN:
                 net_arch = []
+            else:
+                net_arch = [400, 300]
 
         actor_arch, critic_arch = get_actor_critic_arch(net_arch)
 

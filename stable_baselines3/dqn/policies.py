@@ -128,10 +128,10 @@ class DQNPolicy(BasePolicy):
         )
 
         if net_arch is None:
-            if features_extractor_class == FlattenExtractor:
-                net_arch = [64, 64]
-            else:
+            if features_extractor_class == NatureCNN:
                 net_arch = []
+            else:
+                net_arch = [64, 64]
 
         self.net_arch = net_arch
         self.activation_fn = activation_fn

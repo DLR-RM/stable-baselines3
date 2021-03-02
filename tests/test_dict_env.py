@@ -75,16 +75,24 @@ def test_dict_spaces(model_class, channel_last):
     n_steps = 256
 
     if model_class in {A2C, PPO}:
-        kwargs = dict(n_steps=128, policy_kwargs=dict(features_extractor_kwargs=dict(cnn_output_dim=32)))
+        kwargs = dict(
+            n_steps=128,
+            policy_kwargs=dict(
+                net_arch=[32],
+                features_extractor_kwargs=dict(cnn_output_dim=32),
+            ),
+        )
     else:
         # Avoid memory error when using replay buffer
         # Reduce the size of the features and make learning faster
         kwargs = dict(
             buffer_size=250,
-            policy_kwargs=dict(features_extractor_kwargs=dict(cnn_output_dim=32)),
+            policy_kwargs=dict(
+                net_arch=[32],
+                features_extractor_kwargs=dict(cnn_output_dim=32),
+            ),
             train_freq=8,
             gradient_steps=1,
-            n_episodes_rollout=-1,
         )
         if model_class == DQN:
             kwargs["learning_starts"] = 0
@@ -111,7 +119,13 @@ def test_multiprocessing(model_class):
     n_steps = 256
 
     if model_class in {A2C, PPO}:
-        kwargs = dict(n_steps=128, policy_kwargs=dict(features_extractor_kwargs=dict(cnn_output_dim=32)))
+        kwargs = dict(
+            n_steps=128,
+            policy_kwargs=dict(
+                net_arch=[32],
+                features_extractor_kwargs=dict(cnn_output_dim=32),
+            ),
+        )
 
     model = model_class("MultiInputPolicy", env, gamma=0.5, seed=1, **kwargs)
 
@@ -137,16 +151,24 @@ def test_dict_vec_framestack(model_class, channel_last):
     n_steps = 256
 
     if model_class in {A2C, PPO}:
-        kwargs = dict(n_steps=128, policy_kwargs=dict(features_extractor_kwargs=dict(cnn_output_dim=32)))
+        kwargs = dict(
+            n_steps=128,
+            policy_kwargs=dict(
+                net_arch=[32],
+                features_extractor_kwargs=dict(cnn_output_dim=32),
+            ),
+        )
     else:
         # Avoid memory error when using replay buffer
         # Reduce the size of the features and make learning faster
         kwargs = dict(
             buffer_size=250,
-            policy_kwargs=dict(features_extractor_kwargs=dict(cnn_output_dim=32)),
+            policy_kwargs=dict(
+                net_arch=[32],
+                features_extractor_kwargs=dict(cnn_output_dim=32),
+            ),
             train_freq=8,
             gradient_steps=1,
-            n_episodes_rollout=-1,
         )
         if model_class == DQN:
             kwargs["learning_starts"] = 0

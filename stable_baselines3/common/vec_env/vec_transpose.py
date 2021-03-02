@@ -81,9 +81,9 @@ class VecTransposeImage(VecEnvWrapper):
         for idx, done in enumerate(dones):
             if not done:
                 continue
-            infos[idx]["terminal_observation"] = self.transpose_image(infos[idx]["terminal_observation"])
+            infos[idx]["terminal_observation"] = self.transpose_observations(infos[idx]["terminal_observation"])
 
-        return self.transpose_image(observations), rewards, dones, infos
+        return self.transpose_observations(observations), rewards, dones, infos
 
     def reset(self) -> Union[np.ndarray, Dict]:
         """

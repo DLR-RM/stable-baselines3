@@ -14,6 +14,12 @@ New Features:
 ^^^^^^^^^^^^^
 - Added support for ``custom_objects`` when loading models
 
+Bug Fixes:
+^^^^^^^^^^
+- Fixed a bug with ``DQN`` predict method when using ``deterministic=False`` with image space
+
+
+
 Documentation:
 ^^^^^^^^^^^^^^
 - Fixed examples

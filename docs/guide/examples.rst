@@ -485,9 +485,9 @@ For that, you only need to specify ``create_eval_env=True`` when passing the Gym
 Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
 
 
-.. note:
+.. note::
 
-  For the training model after loading it we recommend loading the replay buffer to ensure stable learning.
+	For the training model after loading it we recommend loading the replay buffer to ensure stable learning.
 	You also need to pass ``reset_num_timesteps=True`` to ``learn`` function which initializes the environment
 	and agent for training if a new environment is created since saving the model.
 

@@ -480,12 +480,21 @@ By default, the replay buffer is not saved when calling ``model.save()``, in ord
 However, SB3 provides a ``save_replay_buffer()`` and ``load_replay_buffer()`` method to save it separately.
 
 
-.. image:: ../_static/img/colab-badge.svg
-   :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/advanced_saving_loading.ipynb
-
 Stable-Baselines3 automatic creation of an environment for evaluation.
 For that, you only need to specify ``create_eval_env=True`` when passing the Gym ID of the environment while creating the agent.
 Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
+
+
+.. note::
+
+	For training model after loading it, we recommend loading the replay buffer to ensure stable learning (for off-policy algorithms).
+	You also need to pass ``reset_num_timesteps=True`` to ``learn`` function which initializes the environment
+	and agent for training if a new environment was created since saving the model.
+
+
+.. image:: ../_static/img/colab-badge.svg
+   :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/advanced_saving_loading.ipynb
+
 
 .. code-block:: python
 

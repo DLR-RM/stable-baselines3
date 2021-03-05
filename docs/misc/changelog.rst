@@ -10,13 +10,17 @@ Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed ``stable_baselines3.common.cmd_util`` (already deprecated), please use ``env_util`` instead
 
+New Features:
+^^^^^^^^^^^^^
+- Added `VecMonitor <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_monitor.py>`_ and 
+  `VecExtractDictObs <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_extract_dict_obs.py>`_ wrappers 
+  to handle gym3-style vectorized environments (@vwxyzjn)
+  
 Documentation:
 ^^^^^^^^^^^^^^
 - Fixed examples
 - Added new project using SB3: rl_reach (@PierreExeter)
-- Added `VecMonitor <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_monitor.py>`_ and 
-  `VecExtractDictObs <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_extract_dict_obs.py>`_ wrappers 
-  to handle gym3-style vectorized environments (@vwxyzjn)
+- Add a note on continual learning and resetting environment
 
 
 Pre-Release 0.11.1 (2021-02-27)

@@ -487,9 +487,9 @@ Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
 
 .. note::
 
-	For the training model after loading it we recommend loading the replay buffer to ensure stable learning.
+	For training model after loading it, we recommend loading the replay buffer to ensure stable learning (for off-policy algorithms).
 	You also need to pass ``reset_num_timesteps=True`` to ``learn`` function which initializes the environment
-	and agent for training if a new environment is created since saving the model.
+	and agent for training if a new environment was created since saving the model.
 
 
 .. image:: ../_static/img/colab-badge.svg

@@ -14,6 +14,7 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Fixed examples
 - Added new project using SB3: rl_reach (@PierreExeter)
+- Add a note on continual learning and resetting environment
 
 
 Pre-Release 0.11.1 (2021-02-27)

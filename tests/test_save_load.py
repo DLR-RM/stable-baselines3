@@ -183,17 +183,17 @@ def test_set_env(model_class):
     # create model
     model = model_class("MlpPolicy", env, policy_kwargs=dict(net_arch=[16]), **kwargs)
     # learn
-    model.learn(total_timesteps=300)
+    model.learn(total_timesteps=128)
 
     # change env
     model.set_env(env2)
     # learn again
-    model.learn(total_timesteps=300)
+    model.learn(total_timesteps=128)
 
     # change env test wrapping
     model.set_env(env3)
     # learn again
-    model.learn(total_timesteps=300)
+    model.learn(total_timesteps=128)
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
@@ -220,8 +220,14 @@ def test_exclude_include_saved_params(tmp_path, model_class):
     # Check if include works
     model.save(tmp_path / "test_save", exclude=["verbose"], include=["verbose"])
     del model
-    model = model_class.load(str(tmp_path / "test_save.zip"))
+    # Load with custom objects
+    custom_objects = dict(learning_rate=2e-5, dummy=1.0)
+    model = model_class.load(str(tmp_path / "test_save.zip"), custom_objects=custom_objects)
     assert model.verbose == 2
+    # Check that the custom object was taken into account
+    assert model.learning_rate == custom_objects["learning_rate"]
+    # Check that only parameters that are here already are replaced
+    assert not hasattr(model, "dummy")
 
     # clear file from os
     os.remove(tmp_path / "test_save.zip")

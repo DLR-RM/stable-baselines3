@@ -21,7 +21,8 @@ from stable_baselines3.common.type_aliases import GymEnv, Schedule, TrainFreq, T
 
 def set_random_seed(seed: int, using_cuda: bool = False) -> None:
     """
-    Seed the different random generators
+    Seed the different random generators.
+
     :param seed:
     :param using_cuda:
     """

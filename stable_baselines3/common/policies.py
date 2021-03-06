@@ -19,11 +19,10 @@ from stable_baselines3.common.distributions import (
     StateDependentNoiseDistribution,
     make_proba_distribution,
 )
-from stable_baselines3.common.preprocessing import get_action_dim, is_image_space, preprocess_obs
+from stable_baselines3.common.preprocessing import get_action_dim, maybe_transpose, preprocess_obs
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor, FlattenExtractor, MlpExtractor, NatureCNN, create_mlp
 from stable_baselines3.common.type_aliases import Schedule
 from stable_baselines3.common.utils import get_device, is_vectorized_observation
-from stable_baselines3.common.vec_env import VecTransposeImage
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 
 
@@ -266,17 +265,7 @@ class BasePolicy(BaseModel):
 
         # Handle the different cases for images
         # as PyTorch use channel first format
-        if is_image_space(self.observation_space):
-            if not (
-                observation.shape == self.observation_space.shape or observation.shape[1:] == self.observation_space.shape
-            ):
-                # Try to re-order the channels
-                transpose_obs = VecTransposeImage.transpose_image(observation)
-                if (
-                    transpose_obs.shape == self.observation_space.shape
-                    or transpose_obs.shape[1:] == self.observation_space.shape
-                ):
-                    observation = transpose_obs
+        observation = maybe_transpose(observation, self.observation_space)
 
         vectorized_env = is_vectorized_observation(observation, self.observation_space)
 

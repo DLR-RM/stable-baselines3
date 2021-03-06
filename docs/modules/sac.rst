@@ -68,11 +68,10 @@ Example
   import numpy as np
 
   from stable_baselines3 import SAC
-  from stable_baselines3.sac import MlpPolicy
 
-  env = gym.make('Pendulum-v0')
+  env = gym.make("Pendulum-v0")
 
-  model = SAC(MlpPolicy, env, verbose=1)
+  model = SAC("MlpPolicy", env, verbose=1)
   model.learn(total_timesteps=10000, log_interval=4)
   model.save("sac_pendulum")
 

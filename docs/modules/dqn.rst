@@ -56,11 +56,10 @@ Example
   import numpy as np
 
   from stable_baselines3 import DQN
-  from stable_baselines3.dqn import MlpPolicy
 
-  env = gym.make('CartPole-v0')
+  env = gym.make("CartPole-v0")
 
-  model = DQN(MlpPolicy, env, verbose=1)
+  model = DQN("MlpPolicy", env, verbose=1)
   model.learn(total_timesteps=10000, log_interval=4)
   model.save("dqn_pendulum")
 

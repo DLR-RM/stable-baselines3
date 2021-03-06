@@ -586,6 +586,7 @@ class BaseAlgorithm(ABC):
         path: Union[str, pathlib.Path, io.BufferedIOBase],
         env: Optional[GymEnv] = None,
         device: Union[th.device, str] = "auto",
+        custom_objects: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> "BaseAlgorithm":
         """
@@ -596,9 +597,15 @@ class BaseAlgorithm(ABC):
         :param env: the new environment to run the loaded model on
             (can be None if you only need prediction from a trained model) has priority over any saved environment
         :param device: Device on which the code should run.
+        :param custom_objects: Dictionary of objects to replace
+            upon loading. If a variable is present in this dictionary as a
+            key, it will not be deserialized and the corresponding item
+            will be used instead. Similar to custom_objects in
+            ``keras.models.load_model``. Useful when you have an object in
+            file that can not be deserialized.
         :param kwargs: extra arguments to change the model when loading
         """
-        data, params, pytorch_variables = load_from_zip_file(path, device=device)
+        data, params, pytorch_variables = load_from_zip_file(path, device=device, custom_objects=custom_objects)
 
         # Remove stored device information and replace with ours
         if "policy_kwargs" in data:
@@ -625,7 +632,7 @@ class BaseAlgorithm(ABC):
                 env = data["env"]
 
         # noinspection PyArgumentList
-        model = cls(
+        model = cls(  # pytype: disable=not-instantiable,wrong-keyword-args
             policy=data["policy_class"],
             env=env,
             device=device,

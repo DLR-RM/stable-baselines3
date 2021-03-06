@@ -33,6 +33,13 @@ You can also take a look at the `rl-zoo3 <https://github.com/DLR-RM/rl-baselines
 to the `rl-zoo <https://github.com/araffin/rl-baselines-zoo>`_ of SB2 to have a concrete example of successful migration.
 
 
+.. note::
+
+  If you experience massive slow-down switching to PyTorch, you may need to play with the number of threads used,
+  using ``torch.set_num_threads(1)`` or ``OMP_NUM_THREADS=1``, see `issue #122 <https://github.com/DLR-RM/stable-baselines3/issues/122>`_
+  and `issue #90 <https://github.com/DLR-RM/stable-baselines3/issues/90>`_.
+
+
 Breaking Changes
 ================
 

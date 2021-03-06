@@ -25,13 +25,24 @@ def test_cnn(tmp_path, model_class):
     else:
         # Avoid memory error when using replay buffer
         # Reduce the size of the features
-        kwargs = dict(buffer_size=250, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)))
+        kwargs = dict(
+            buffer_size=250,
+            policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)),
+            seed=1,
+        )
     model = model_class("CnnPolicy", env, **kwargs).learn(250)
 
     # FakeImageEnv is channel last by default and should be wrapped
     assert is_vecenv_wrapped(model.get_env(), VecTransposeImage)
 
     obs = env.reset()
+
+    # Test stochastic predict with channel last input
+    if model_class == DQN:
+        model.exploration_rate = 0.9
+
+    for _ in range(10):
+        model.predict(obs, deterministic=False)
 
     action, _ = model.predict(obs, deterministic=True)
 

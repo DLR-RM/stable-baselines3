@@ -52,7 +52,7 @@ Notes
 Can I use?
 ----------
 
-Please refer to the used model (DQN, SAC, TD3 or DDPG) for that section.
+Please refer to the used model (DQN, QR-DQN, SAC, TQC, TD3, or DDPG) for that section.
 
 Example
 -------

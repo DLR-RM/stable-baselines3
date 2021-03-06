@@ -20,7 +20,7 @@ from stable_baselines3.common.distributions import (
     StateDependentNoiseDistribution,
     make_proba_distribution,
 )
-from stable_baselines3.common.preprocessing import get_action_dim, is_image_space, preprocess_obs
+from stable_baselines3.common.preprocessing import get_action_dim, is_image_space, maybe_transpose, preprocess_obs
 from stable_baselines3.common.torch_layers import (
     BaseFeaturesExtractor,
     CombinedExtractor,
@@ -31,7 +31,6 @@ from stable_baselines3.common.torch_layers import (
 )
 from stable_baselines3.common.type_aliases import Schedule
 from stable_baselines3.common.utils import get_device, is_vectorized_observation, obs_as_tensor
-from stable_baselines3.common.vec_env import VecTransposeImage
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 
 
@@ -246,23 +245,6 @@ class BasePolicy(BaseModel):
         :return: Taken action according to the policy
         """
 
-    @staticmethod
-    def try_transpose_img_observation(obs: np.ndarray, observation_space: gym.spaces.Space) -> np.ndarray:
-        """
-        Try to transpose an observation such that it matches the shape of the observation_space
-
-        :param obs:
-        :param observation_space:
-        :return: (potentially transposed) observation
-        """
-        obs = np.array(obs)
-        if not (obs.shape == observation_space.shape or obs.shape[1:] == observation_space.shape):
-            # Try to re-order the channels
-            transpose_obs = VecTransposeImage.transpose_image(obs)
-            if transpose_obs.shape == observation_space.shape or transpose_obs.shape[1:] == observation_space.shape:
-                obs = transpose_obs
-        return obs
-
     def predict(
         self,
         observation: Union[np.ndarray, Dict[str, np.ndarray]],
@@ -297,7 +279,7 @@ class BasePolicy(BaseModel):
             for key, obs in observation.items():
                 obs_space = self.observation_space.spaces[key]
                 if is_image_space(obs_space):
-                    obs_ = BasePolicy.try_transpose_img_observation(obs, obs_space)
+                    obs_ = maybe_transpose(obs, obs_space)
                 else:
                     obs_ = np.array(obs)
                 # Add batch dimension if needed
@@ -306,7 +288,7 @@ class BasePolicy(BaseModel):
         elif is_image_space(self.observation_space):
             # Handle the different cases for images
             # as PyTorch use channel first format
-            observation = BasePolicy.try_transpose_img_observation(observation, self.observation_space)
+            observation = maybe_transpose(observation, self.observation_space)
         else:
             observation = np.array(observation)
 

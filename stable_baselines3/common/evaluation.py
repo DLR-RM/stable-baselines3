@@ -41,7 +41,7 @@ def evaluate_policy(
         called after each step. Gets locals() and globals() passed as parameters.
     :param reward_threshold: Minimum expected reward per episode,
         this will raise an error if the performance is not met
-    :param return_episode_rewards: If True, a list of rewards and episde lengths
+    :param return_episode_rewards: If True, a list of rewards and episode lengths
         per episode will be returned instead of the mean.
     :param warn: If True (default), warns user about lack of a Monitor wrapper in the
         evaluation environment.

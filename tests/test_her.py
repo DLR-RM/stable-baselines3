@@ -149,6 +149,17 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     # Check
     model.save(tmp_path / "test_save.zip")
     del model
+
+    # test custom_objects
+    # Load with custom objects
+    custom_objects = dict(learning_rate=2e-5, dummy=1.0)
+    model_ = HER.load(str(tmp_path / "test_save.zip"), env=env, custom_objects=custom_objects, verbose=2)
+    assert model_.verbose == 2
+    # Check that the custom object was taken into account
+    assert model_.learning_rate == custom_objects["learning_rate"]
+    # Check that only parameters that are here already are replaced
+    assert not hasattr(model_, "dummy")
+
     model = HER.load(str(tmp_path / "test_save.zip"), env=env)
 
     # check if params are still the same after load

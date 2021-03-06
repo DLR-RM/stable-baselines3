@@ -65,8 +65,30 @@ def is_image_space(
     return False
 
 
+def maybe_transpose(observation: np.ndarray, observation_space: spaces.Space) -> np.ndarray:
+    """
+    Handle the different cases for images as PyTorch use channel first format.
+
+    :param observation:
+    :param observation_space:
+    :return: channel first observation if observation is an image
+    """
+    # Avoid circular import
+    from stable_baselines3.common.vec_env import VecTransposeImage
+
+    if is_image_space(observation_space):
+        if not (observation.shape == observation_space.shape or observation.shape[1:] == observation_space.shape):
+            # Try to re-order the channels
+            transpose_obs = VecTransposeImage.transpose_image(observation)
+            if transpose_obs.shape == observation_space.shape or transpose_obs.shape[1:] == observation_space.shape:
+                observation = transpose_obs
+    return observation
+
+
 def preprocess_obs(
-    obs: th.Tensor, observation_space: spaces.Space, normalize_images: bool = True
+    obs: th.Tensor,
+    observation_space: spaces.Space,
+    normalize_images: bool = True,
 ) -> Union[th.Tensor, Dict[str, th.Tensor]]:
     """
     Preprocess observation to be to a neural network.

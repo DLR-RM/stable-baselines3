@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
          libglib2.0-0 && \
      rm -rf /var/lib/apt/lists/*
 
-# Install anaconda abd dependencies
+# Install Anaconda and dependencies
 RUN curl -o ~/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
      chmod +x ~/miniconda.sh && \
      ~/miniconda.sh -b -p /opt/conda && \

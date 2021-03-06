@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 1.0rc0 (2021-02-28)
+Release 1.0rc2 (WIP)
 -------------------------------
 
 Breaking Changes:
@@ -12,10 +12,20 @@ Breaking Changes:
 - All customs environments (e.g. the ``BitFlippingEnv`` or ``IdentityEnv``) were moved to ``stable_baselines3.common.envs`` folder
 
 
+New Features:
+^^^^^^^^^^^^^
+- Added support for ``custom_objects`` when loading models
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed a bug with ``DQN`` predict method when using ``deterministic=False`` with image space
+
 Documentation:
 ^^^^^^^^^^^^^^
 - Fixed examples
 - Added new project using SB3: rl_reach (@PierreExeter)
+- Added note about slow-down when switching to PyTorch
+- Add a note on continual learning and resetting environment
 
 
 Pre-Release 0.11.1 (2021-02-27)

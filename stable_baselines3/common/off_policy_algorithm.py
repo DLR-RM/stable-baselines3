@@ -174,7 +174,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             self.device,
             optimize_memory_usage=self.optimize_memory_usage,
         )
-        self.policy = self.policy_class(
+        self.policy = self.policy_class(  # pytype:disable=not-instantiable
             self.observation_space,
             self.action_space,
             self.lr_schedule,

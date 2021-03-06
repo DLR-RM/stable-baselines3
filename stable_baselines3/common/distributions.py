@@ -623,7 +623,7 @@ class TanhBijector(object):
         """
         Inverse of Tanh
 
-        Taken from pyro: https://github.com/pyro-ppl/pyro
+        Taken from Pyro: https://github.com/pyro-ppl/pyro
         0.5 * torch.log((1 + x ) / (1 - x))
         """
         return 0.5 * (x.log1p() - (-x).log1p())

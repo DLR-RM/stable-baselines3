@@ -1,7 +1,7 @@
 import io
 import pathlib
 import warnings
-from typing import Any, Iterable, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 import numpy as np
 import torch as th
@@ -443,6 +443,7 @@ class HER(BaseAlgorithm):
         path: Union[str, pathlib.Path, io.BufferedIOBase],
         env: Optional[GymEnv] = None,
         device: Union[th.device, str] = "auto",
+        custom_objects: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> "BaseAlgorithm":
         """
@@ -453,9 +454,15 @@ class HER(BaseAlgorithm):
         :param env: the new environment to run the loaded model on
             (can be None if you only need prediction from a trained model) has priority over any saved environment
         :param device: Device on which the code should run.
+        :param custom_objects: Dictionary of objects to replace
+            upon loading. If a variable is present in this dictionary as a
+            key, it will not be deserialized and the corresponding item
+            will be used instead. Similar to custom_objects in
+            ``keras.models.load_model``. Useful when you have an object in
+            file that can not be deserialized.
         :param kwargs: extra arguments to change the model when loading
         """
-        data, params, pytorch_variables = load_from_zip_file(path, device=device)
+        data, params, pytorch_variables = load_from_zip_file(path, device=device, custom_objects=custom_objects)
 
         # Remove stored device information and replace with ours
         if "policy_kwargs" in data:

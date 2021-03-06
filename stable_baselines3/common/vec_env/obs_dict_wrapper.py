@@ -61,8 +61,8 @@ class ObsDictWrapper(VecEnvWrapper):
         Concatenate observation and (desired) goal of observation dict.
 
         :param observation_dict: Dictionary with observation.
-        :param observation_key: Key of observation in dicitonary.
-        :param goal_key: Key of (desired) goal in dicitonary.
+        :param observation_key: Key of observation in dictionary.
+        :param goal_key: Key of (desired) goal in dictionary.
         :return: Concatenated observation.
         """
         return np.concatenate([observation_dict[observation_key], observation_dict[goal_key]], axis=-1)

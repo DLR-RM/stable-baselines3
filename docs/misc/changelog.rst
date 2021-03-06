@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 1.0rc0 (2021-02-28)
+Release 1.0rc2 (WIP)
 -------------------------------
 
 Breaking Changes:
@@ -15,11 +15,17 @@ New Features:
 - Added `VecMonitor <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_monitor.py>`_ and 
   `VecExtractDictObs <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_extract_dict_obs.py>`_ wrappers 
   to handle gym3-style vectorized environments (@vwxyzjn)
-  
+- Added support for ``custom_objects`` when loading models
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed a bug with ``DQN`` predict method when using ``deterministic=False`` with image space
+
 Documentation:
 ^^^^^^^^^^^^^^
 - Fixed examples
 - Added new project using SB3: rl_reach (@PierreExeter)
+- Added note about slow-down when switching to PyTorch
 - Add a note on continual learning and resetting environment
 
 

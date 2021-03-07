@@ -172,12 +172,10 @@ class ResultsWriter:
         self,
         filename: str = "",
         header: Dict[str, Union[float, str]] = None,
-        extra_keys: Tuple[str, ...] = None,
+        extra_keys: Tuple[str, ...] = (),
     ):
         if header is None:
             header = {}
-        if extra_keys is None:
-            extra_keys = ()
         if not filename.endswith(Monitor.EXT):
             if os.path.isdir(filename):
                 filename = os.path.join(filename, Monitor.EXT)
@@ -189,12 +187,20 @@ class ResultsWriter:
         self.logger.writeheader()
         self.file_handler.flush()
 
-    def write_row(self, epinfo):
+    def write_row(self, epinfo: Dict[str, Union[float, int]]):
+        """
+        Close the file handler
+
+        :param epinfo: the information on episodic return, length, and time
+        """
         if self.logger:
             self.logger.writerow(epinfo)
             self.file_handler.flush()
 
     def close(self):
+        """
+        Close the file handler
+        """
         self.file_handler.close()
 
 

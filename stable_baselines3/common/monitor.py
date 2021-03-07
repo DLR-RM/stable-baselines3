@@ -171,9 +171,13 @@ class ResultsWriter:
     def __init__(
         self,
         filename: str = "",
-        header: Dict[str, Union[float, str]] = {},
-        extra_keys: Tuple[str, ...] = (),
+        header: Dict[str, Union[float, str]] = None,
+        extra_keys: Tuple[str, ...] = None,
     ):
+        if header is None:
+            header = {}
+        if extra_keys is None:
+            extra_keys = ()
         if not filename.endswith(Monitor.EXT):
             if os.path.isdir(filename):
                 filename = os.path.join(filename, Monitor.EXT)

@@ -187,7 +187,7 @@ class ResultsWriter:
         self.logger.writeheader()
         self.file_handler.flush()
 
-    def write_row(self, epinfo: Dict[str, Union[float, int]]):
+    def write_row(self, epinfo: Dict[str, Union[float, int]]) -> None:
         """
         Close the file handler
 
@@ -197,7 +197,7 @@ class ResultsWriter:
             self.logger.writerow(epinfo)
             self.file_handler.flush()
 
-    def close(self):
+    def close(self) -> None:
         """
         Close the file handler
         """

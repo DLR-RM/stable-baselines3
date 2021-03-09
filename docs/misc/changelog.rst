@@ -15,6 +15,10 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added support for ``custom_objects`` when loading models
+- Added support for single-level ``Dict`` observation space (@JadenTravnik)
+- Added ``DictRolloutBuffer`` ``DictReplayBuffer`` to support dictionary observations (@JadenTravnik)
+- Added ``StackedObservations`` and ``StackedDictObservations`` that are used within ``VecFrameStack``
+- Added simple 4x4 room Dict test environments
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -27,6 +31,9 @@ Documentation:
 - Added note about slow-down when switching to PyTorch
 - Add a note on continual learning and resetting environment
 
+Others:
+^^^^^^^
+- Updated ``env_checker`` to reflect support of dict observation spaces
 
 Pre-Release 0.11.1 (2021-02-27)
 -------------------------------
@@ -65,9 +72,6 @@ New Features:
   automatic check for image spaces.
 - ``VecFrameStack`` now has a ``channels_order`` argument to tell if observations should be stacked
   on the first or last observation dimension (originally always stacked on last).
-- Add ``DictRolloutBuffer`` to support dictionary observations (need to be tested in ReplayBuffer) (@JadenTravnik)
-- Add ``StackedObservations`` and ``StackedDictObservations`` that are used within ``VecFrameStack``
-- Added simple 4x4 and 9room test environments
 - Added ``common.env_util.is_wrapped`` and ``common.env_util.unwrap_wrapper`` functions for checking/unwrapping
   an environment for specific wrapper.
 - Added ``env_is_wrapped()`` method for ``VecEnv`` to check if its environments are wrapped

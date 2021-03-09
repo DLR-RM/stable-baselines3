@@ -198,14 +198,14 @@ class BaseAlgorithm(ABC):
         # Make sure that dict-spaces are not nested (not supported)
         check_for_nested_spaces(env.observation_space)
 
-        if isinstance(env.observation_space, gym.spaces.dict.Dict):
+        if isinstance(env.observation_space, gym.spaces.Dict):
             for space in env.observation_space.spaces.values():
-                if isinstance(space, gym.spaces.dict.Dict):
+                if isinstance(space, gym.spaces.Dict):
                     raise ValueError("Nested observation spaces are not supported (Dict spaces inside Dict space).")
 
         if not is_vecenv_wrapped(env, VecTransposeImage):
             wrap_with_vectranspose = False
-            if isinstance(env.observation_space, gym.spaces.dict.Dict):
+            if isinstance(env.observation_space, gym.spaces.Dict):
                 # If even one of the keys is a image-space in need of transpose, apply transpose
                 for space in env.observation_space.spaces.values():
                     wrap_with_vectranspose = wrap_with_vectranspose or (
@@ -223,7 +223,7 @@ class BaseAlgorithm(ABC):
 
         # check if wrapper for dict support is needed when using HER
         # TODO(antonin): remove this with the new version of HER
-        if isinstance(env.observation_space, gym.spaces.dict.Dict) and set(env.observation_space.spaces.keys()) == set(
+        if isinstance(env.observation_space, gym.spaces.Dict) and set(env.observation_space.spaces.keys()) == set(
             ["observation", "desired_goal", "achieved_goal"]
         ):
             env = ObsDictWrapper(env)

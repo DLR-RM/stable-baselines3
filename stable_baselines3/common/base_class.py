@@ -35,7 +35,6 @@ from stable_baselines3.common.vec_env import (
     is_vecenv_wrapped,
     unwrap_vec_normalize,
 )
-from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 
 
 def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymEnv]:
@@ -220,13 +219,6 @@ class BaseAlgorithm(ABC):
                 if verbose >= 1:
                     print("Wrapping the env in a VecTransposeImage.")
                 env = VecTransposeImage(env)
-
-        # check if wrapper for dict support is needed when using HER
-        # TODO(antonin): remove this with the new version of HER
-        if isinstance(env.observation_space, gym.spaces.Dict) and set(env.observation_space.spaces.keys()) == set(
-            ["observation", "desired_goal", "achieved_goal"]
-        ):
-            env = ObsDictWrapper(env)
 
         return env
 

@@ -5,14 +5,13 @@ import numpy as np
 import torch as th
 from gym import spaces
 
-from stable_baselines3.common.buffers import ReplayBuffer
-from stable_baselines3.common.type_aliases import ReplayBufferSamples, RolloutBufferSamples
-from stable_baselines3.common.vec_env import VecNormalize
-from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
+from stable_baselines3.common.buffers import DictReplayBuffer
+from stable_baselines3.common.type_aliases import DictReplayBufferSamples
+from stable_baselines3.common.vec_env import VecEnv, VecNormalize
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 
 
-class HerReplayBuffer(ReplayBuffer):
+class HerReplayBuffer(DictReplayBuffer):
     """
     Replay buffer for sampling HER (Hindsight Experience Replay) transitions.
     In the online sampling case, these new transitions will not be saved in the replay buffer
@@ -35,7 +34,7 @@ class HerReplayBuffer(ReplayBuffer):
 
     def __init__(
         self,
-        env: ObsDictWrapper,
+        env: VecEnv,
         buffer_size: int,
         max_episode_length: int,
         goal_selection_strategy: GoalSelectionStrategy,
@@ -57,18 +56,27 @@ class HerReplayBuffer(ReplayBuffer):
         self.max_episode_stored = self.buffer_size // self.max_episode_length
         self.current_idx = 0
 
+        # get dimensions of observation and goal
+        if isinstance(self.env.observation_space.spaces["observation"], spaces.Discrete):
+            self.obs_dim = 1
+            self.goal_dim = 1
+        else:
+            self.obs_dim = self.env.observation_space.spaces["observation"].shape[0]
+            self.goal_dim = self.env.observation_space.spaces["achieved_goal"].shape[0]
+
         # input dimensions for buffer initialization
         input_shape = {
-            "observation": (self.env.num_envs, self.env.obs_dim),
-            "achieved_goal": (self.env.num_envs, self.env.goal_dim),
-            "desired_goal": (self.env.num_envs, self.env.goal_dim),
+            "observation": (self.env.num_envs, self.obs_dim),
+            "achieved_goal": (self.env.num_envs, self.goal_dim),
+            "desired_goal": (self.env.num_envs, self.goal_dim),
             "action": (self.action_dim,),
             "reward": (1,),
-            "next_obs": (self.env.num_envs, self.env.obs_dim),
-            "next_achieved_goal": (self.env.num_envs, self.env.goal_dim),
-            "next_desired_goal": (self.env.num_envs, self.env.goal_dim),
+            "next_obs": (self.env.num_envs, self.obs_dim),
+            "next_achieved_goal": (self.env.num_envs, self.goal_dim),
+            "next_desired_goal": (self.env.num_envs, self.goal_dim),
             "done": (1,),
         }
+        self._observation_keys = ["observation", "achieved_goal", "desired_goal"]
         self.buffer = {
             key: np.zeros((self.max_episode_stored, self.max_episode_length, *dim), dtype=np.float32)
             for key, dim in input_shape.items()
@@ -104,7 +112,7 @@ class HerReplayBuffer(ReplayBuffer):
         assert "env" not in state
         self.env = None
 
-    def set_env(self, env: ObsDictWrapper) -> None:
+    def set_env(self, env: VecEnv) -> None:
         """
         Sets the environment.
 
@@ -115,9 +123,7 @@ class HerReplayBuffer(ReplayBuffer):
 
         self.env = env
 
-    def _get_samples(
-        self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None
-    ) -> Union[ReplayBufferSamples, RolloutBufferSamples]:
+    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> DictReplayBufferSamples:
         """
         Abstract method from base class.
         """
@@ -127,7 +133,7 @@ class HerReplayBuffer(ReplayBuffer):
         self,
         batch_size: int,
         env: Optional[VecNormalize],
-    ) -> Union[ReplayBufferSamples, Tuple[np.ndarray, ...]]:
+    ) -> DictReplayBufferSamples:
         """
         Sample function for online sampling of HER transition,
         this replaces the "regular" replay buffer ``sample()``
@@ -143,7 +149,7 @@ class HerReplayBuffer(ReplayBuffer):
     def sample_offline(
         self,
         n_sampled_goal: Optional[int] = None,
-    ) -> Union[ReplayBufferSamples, Tuple[np.ndarray, ...]]:
+    ) -> Union[DictReplayBufferSamples, Tuple[Dict[str, np.ndarray], ...]]:
         """
         Sample function for offline sampling of HER transition,
         in that case, only one episode is used and transitions
@@ -154,7 +160,10 @@ class HerReplayBuffer(ReplayBuffer):
         """
         # env=None as we should store unnormalized transitions, they will be normalized at sampling time
         return self._sample_transitions(
-            batch_size=None, maybe_vec_env=None, online_sampling=False, n_sampled_goal=n_sampled_goal
+            batch_size=None,
+            maybe_vec_env=None,
+            online_sampling=False,
+            n_sampled_goal=n_sampled_goal,
         )
 
     def sample_goals(
@@ -199,7 +208,7 @@ class HerReplayBuffer(ReplayBuffer):
         maybe_vec_env: Optional[VecNormalize],
         online_sampling: bool,
         n_sampled_goal: Optional[int] = None,
-    ) -> Union[ReplayBufferSamples, Tuple[np.ndarray, ...]]:
+    ) -> Union[DictReplayBufferSamples, Tuple[Dict[str, np.ndarray], ...]]:
         """
         :param batch_size: Number of element to sample (only used for online sampling)
         :param env: associated gym VecEnv to normalize the observations/rewards
@@ -248,7 +257,7 @@ class HerReplayBuffer(ReplayBuffer):
             if her_indices.size == 0:
                 # Episode of one timestep, not enough for using the "future" strategy
                 # no virtual transitions are created in that case
-                return np.zeros(0), np.zeros(0), np.zeros(0), np.zeros(0)
+                return {}, {}, np.zeros(0), np.zeros(0)
             else:
                 # Repeat every transition index n_sampled_goals times
                 # to sample n_sampled_goal per timestep in the episode (only one is stored).
@@ -288,21 +297,27 @@ class HerReplayBuffer(ReplayBuffer):
         )
 
         # concatenate observation with (desired) goal
-        observations = ObsDictWrapper.convert_dict(self._normalize_obs(transitions, maybe_vec_env))
-        # HACK to make normalize obs work with the next observation
+        observations = self._normalize_obs(transitions, maybe_vec_env)
+        # Flatten if needed
+        # observations = {key: observations[key][:, 0, :] for key in self._observation_keys}
+        # HACK to make normalize obs and `add()` work with the next observation
         transitions["observation"] = transitions["next_obs"]
-        next_observations = ObsDictWrapper.convert_dict(self._normalize_obs(transitions, maybe_vec_env))
+        transitions["achieved_goal"] = transitions["next_achieved_goal"]
+        transitions["desired_goal"] = transitions["next_desired_goal"]
+        next_observations = self._normalize_obs(transitions, maybe_vec_env)
 
         if online_sampling:
-            data = (
-                observations[:, 0],
-                transitions["action"],
-                next_observations[:, 0],
-                transitions["done"],
-                self._normalize_reward(transitions["reward"], maybe_vec_env),
-            )
+            next_obs = {key: self.to_torch(next_observations[key][:, 0, :]) for key in self._observation_keys}
 
-            return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
+            normalized_obs = {key: self.to_torch(observations[key][:, 0, :]) for key in self._observation_keys}
+
+            return DictReplayBufferSamples(
+                observations=normalized_obs,
+                actions=self.to_torch(transitions["action"]),
+                next_observations=next_obs,
+                dones=self.to_torch(transitions["done"]),
+                rewards=self.to_torch(self._normalize_reward(transitions["reward"], maybe_vec_env)),
+            )
         else:
             return observations, next_observations, transitions["action"], transitions["reward"]
 
@@ -313,7 +328,7 @@ class HerReplayBuffer(ReplayBuffer):
         action: np.ndarray,
         reward: np.ndarray,
         done: np.ndarray,
-        infos: List[dict],
+        infos: List[Dict[str, Any]],
     ) -> None:
 
         if self.current_idx == 0 and self.full:

@@ -1,12 +1,15 @@
 import io
 import pathlib
+import types
 import warnings
+from functools import partial
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 import numpy as np
 import torch as th
 
 from stable_baselines3.common.base_class import BaseAlgorithm
+from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
@@ -15,7 +18,6 @@ from stable_baselines3.common.save_util import load_from_zip_file, recursive_set
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn, TrainFreq
 from stable_baselines3.common.utils import check_for_correct_spaces, should_collect_more_steps
 from stable_baselines3.common.vec_env import VecEnv
-from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
 from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
 
@@ -44,6 +46,67 @@ def get_time_limit(env: VecEnv, current_max_episode_length: Optional[int]) -> in
                 "or pass `max_episode_length` to the model constructor"
             )
     return current_max_episode_length
+
+
+def _store_transition(
+    self,
+    replay_buffer: ReplayBuffer,
+    buffer_action: np.ndarray,
+    new_obs: np.ndarray,
+    reward: np.ndarray,
+    done: np.ndarray,
+    infos: List[Dict[str, Any]],
+    her_model: "HER",
+) -> None:
+    """
+    Store transition in the replay buffer(s) when using HER.
+    This function is a hack that will replace the default ``_store_transition``
+    of the off-policy algorithm.
+
+    We store the normalized action and the unnormalized observation.
+    It also handles terminal observations (because VecEnv resets automatically).
+
+    :param replay_buffer: Replay buffer object where to store the transition.
+    :param buffer_action: normalized action
+    :param new_obs: next observation in the current episode
+        or first observation of the episode (when done is True)
+    :param reward: reward for the current transition
+    :param done: Termination signal
+    :param infos: List of additional information about the transition.
+        It contains the terminal observations.
+    :param her_model: The ``HER`` object.
+    """
+    # Store data in replay buffer (normalized action and unnormalized observation)
+    if her_model.online_sampling:
+        replay_buffers = [her_model._episode_storage]
+    else:
+        # Add normal transition to replay buffer
+        # and to episode storage in order to sample virtual transitions
+        # at the end of an episode
+        replay_buffers = [her_model.model.replay_buffer, her_model._episode_storage]
+
+    # Call parent method (from off-policy algorithm)
+    super(self.__class__, self)._store_transition(
+        replay_buffers,
+        buffer_action,
+        new_obs,
+        reward,
+        done,
+        infos,
+    )
+    her_model.episode_steps += 1
+
+    if done or her_model.episode_steps >= her_model.max_episode_length:
+        if her_model.online_sampling:
+            her_model.replay_buffer.store_episode()
+        else:
+            her_model._episode_storage.store_episode()
+            # sample virtual transitions and store them in replay buffer
+            her_model._sample_her_transitions()
+            # clear storage for current episode
+            her_model._episode_storage.reset()
+
+        her_model.episode_steps = 0
 
 
 # TODO: rewrite HER class as soon as dict obs are supported
@@ -135,6 +198,7 @@ class HER(BaseAlgorithm):
         # for online sampling, it replaces the "classic" replay buffer completely
         her_buffer_size = self.buffer_size if online_sampling else self.max_episode_length
 
+        # TODO: check if that can be done during `_setup_learn()`
         assert self.env is not None, "Because it needs access to `env.compute_reward()` HER you must provide the env."
 
         self._episode_storage = HerReplayBuffer(
@@ -157,6 +221,12 @@ class HER(BaseAlgorithm):
 
     def _setup_model(self) -> None:
         self.model._setup_model()
+
+        # Save reference to her model
+        new_store_method = partial(_store_transition, her_model=self)
+        # Overwrite default store transition
+        self.model._store_transition = types.MethodType(new_store_method, self.model)
+
         # assign episode storage to replay buffer when using online HER sampling
         if self.online_sampling:
             self.model.replay_buffer = self._episode_storage
@@ -184,206 +254,19 @@ class HER(BaseAlgorithm):
         reset_num_timesteps: bool = True,
     ) -> BaseAlgorithm:
 
-        total_timesteps, callback = self._setup_learn(
-            total_timesteps, eval_env, callback, eval_freq, n_eval_episodes, eval_log_path, reset_num_timesteps, tb_log_name
+        self.model.learn(
+            total_timesteps,
+            callback,
+            log_interval,
+            eval_env,
+            eval_freq,
+            n_eval_episodes,
+            tb_log_name,
+            eval_log_path,
+            reset_num_timesteps,
         )
-        self.model.start_time = self.start_time
-        self.model.ep_info_buffer = self.ep_info_buffer
-        self.model.ep_success_buffer = self.ep_success_buffer
-        self.model.num_timesteps = self.num_timesteps
-        self.model._episode_num = self._episode_num
-        self.model._last_obs = self._last_obs
-        self.model._total_timesteps = self._total_timesteps
-
-        callback.on_training_start(locals(), globals())
-
-        while self.num_timesteps < total_timesteps:
-            rollout = self.collect_rollouts(
-                self.env,
-                train_freq=self.train_freq,
-                action_noise=self.action_noise,
-                callback=callback,
-                learning_starts=self.learning_starts,
-                log_interval=log_interval,
-            )
-
-            if rollout.continue_training is False:
-                break
-
-            if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts and self.replay_buffer.size() > 0:
-                # If no `gradient_steps` is specified,
-                # do as many gradients steps as steps performed during the rollout
-                gradient_steps = self.gradient_steps if self.gradient_steps > 0 else rollout.episode_timesteps
-                self.train(batch_size=self.batch_size, gradient_steps=gradient_steps)
-
-        callback.on_training_end()
 
         return self
-
-    def collect_rollouts(
-        self,
-        env: VecEnv,
-        callback: BaseCallback,
-        train_freq: TrainFreq,
-        action_noise: Optional[ActionNoise] = None,
-        learning_starts: int = 0,
-        log_interval: Optional[int] = None,
-    ) -> RolloutReturn:
-        """
-        Collect experiences and store them into a ReplayBuffer.
-
-        :param env: The training environment
-        :param callback: Callback that will be called at each step
-            (and at the beginning and end of the rollout)
-        :param train_freq: How much experience to collect
-            by doing rollouts of current policy.
-            Either ``TrainFreq(<n>, TrainFrequencyUnit.STEP)``
-            or ``TrainFreq(<n>, TrainFrequencyUnit.EPISODE)``
-            with ``<n>`` being an integer greater than 0.
-        :param action_noise: Action noise that will be used for exploration
-            Required for deterministic policy (e.g. TD3). This can also be used
-            in addition to the stochastic policy for SAC.
-        :param learning_starts: Number of steps before learning for the warm-up phase.
-        :param log_interval: Log data every ``log_interval`` episodes
-        :return:
-        """
-
-        episode_rewards, total_timesteps = [], []
-        num_collected_steps, num_collected_episodes = 0, 0
-
-        assert isinstance(env, VecEnv), "You must pass a VecEnv"
-        assert env.num_envs == 1, "OffPolicyAlgorithm only support single environment"
-        assert train_freq.frequency > 0, "Should at least collect one step or episode."
-
-        if self.model.use_sde:
-            self.actor.reset_noise()
-
-        callback.on_rollout_start()
-        continue_training = True
-
-        while should_collect_more_steps(train_freq, num_collected_steps, num_collected_episodes):
-            done = False
-            episode_reward, episode_timesteps = 0.0, 0
-
-            while not done:
-                # concatenate observation and (desired) goal
-                observation = self._last_obs
-                self._last_obs = ObsDictWrapper.convert_dict(observation)
-
-                if (
-                    self.model.use_sde
-                    and self.model.sde_sample_freq > 0
-                    and num_collected_steps % self.model.sde_sample_freq == 0
-                ):
-                    # Sample a new noise matrix
-                    self.actor.reset_noise()
-
-                # Select action randomly or according to policy
-                self.model._last_obs = self._last_obs
-                action, buffer_action = self._sample_action(learning_starts, action_noise)
-
-                # Perform action
-                new_obs, reward, done, infos = env.step(action)
-
-                self.num_timesteps += 1
-                self.model.num_timesteps = self.num_timesteps
-                episode_timesteps += 1
-                num_collected_steps += 1
-
-                # Only stop training if return value is False, not when it is None.
-                if callback.on_step() is False:
-                    return RolloutReturn(0.0, num_collected_steps, num_collected_episodes, continue_training=False)
-
-                episode_reward += reward
-
-                # Retrieve reward and episode length if using Monitor wrapper
-                self._update_info_buffer(infos, done)
-                self.model.ep_info_buffer = self.ep_info_buffer
-                self.model.ep_success_buffer = self.ep_success_buffer
-
-                # == Store transition in the replay buffer and/or in the episode storage ==
-
-                if self._vec_normalize_env is not None:
-                    # Store only the unnormalized version
-                    new_obs_ = self._vec_normalize_env.get_original_obs()
-                    reward_ = self._vec_normalize_env.get_original_reward()
-                else:
-                    # Avoid changing the original ones
-                    self._last_original_obs, new_obs_, reward_ = observation, new_obs, reward
-                    self.model._last_original_obs = self._last_original_obs
-
-                # As the VecEnv resets automatically, new_obs is already the
-                # first observation of the next episode
-                if done and infos[0].get("terminal_observation") is not None:
-                    next_obs = infos[0]["terminal_observation"]
-                    # VecNormalize normalizes the terminal observation
-                    if self._vec_normalize_env is not None:
-                        next_obs = self._vec_normalize_env.unnormalize_obs(next_obs)
-                else:
-                    next_obs = new_obs_
-
-                if self.online_sampling:
-                    self.replay_buffer.add(self._last_original_obs, next_obs, buffer_action, reward_, done, infos)
-                else:
-                    # concatenate observation with (desired) goal
-                    flattened_obs = ObsDictWrapper.convert_dict(self._last_original_obs)
-                    flattened_next_obs = ObsDictWrapper.convert_dict(next_obs)
-                    # add to replay buffer
-                    self.replay_buffer.add(flattened_obs, flattened_next_obs, buffer_action, reward_, done)
-                    # add current transition to episode storage
-                    self._episode_storage.add(self._last_original_obs, next_obs, buffer_action, reward_, done, infos)
-
-                self._last_obs = new_obs
-                self.model._last_obs = self._last_obs
-
-                # Save the unnormalized new observation
-                if self._vec_normalize_env is not None:
-                    self._last_original_obs = new_obs_
-                    self.model._last_original_obs = self._last_original_obs
-
-                self.model._update_current_progress_remaining(self.num_timesteps, self._total_timesteps)
-
-                # For DQN, check if the target network should be updated
-                # and update the exploration schedule
-                # For SAC/TD3, the update is done as the same time as the gradient update
-                # see https://github.com/hill-a/stable-baselines/issues/900
-                self.model._on_step()
-
-                self.episode_steps += 1
-
-                if not should_collect_more_steps(train_freq, num_collected_steps, num_collected_episodes):
-                    break
-
-            if done or self.episode_steps >= self.max_episode_length:
-                if self.online_sampling:
-                    self.replay_buffer.store_episode()
-                else:
-                    self._episode_storage.store_episode()
-                    # sample virtual transitions and store them in replay buffer
-                    self._sample_her_transitions()
-                    # clear storage for current episode
-                    self._episode_storage.reset()
-
-                num_collected_episodes += 1
-                self._episode_num += 1
-                self.model._episode_num = self._episode_num
-                episode_rewards.append(episode_reward)
-                total_timesteps.append(episode_timesteps)
-
-                if action_noise is not None:
-                    action_noise.reset()
-
-                # Log training infos
-                if log_interval is not None and self._episode_num % log_interval == 0:
-                    self._dump_logs()
-
-                self.episode_steps = 0
-
-        mean_reward = np.mean(episode_rewards) if num_collected_episodes > 0 else 0.0
-
-        callback.on_rollout_end()
-
-        return RolloutReturn(mean_reward, num_collected_steps, num_collected_episodes, continue_training)
 
     def _sample_her_transitions(self) -> None:
         """
@@ -398,9 +281,16 @@ class HER(BaseAlgorithm):
             n_sampled_goal=self.n_sampled_goal
         )
 
-        # store data in replay buffer
-        dones = np.zeros((len(observations)), dtype=bool)
-        self.replay_buffer.extend(observations, next_observations, actions, rewards, dones)
+        # Store virtual transitions in the replay buffer, if available
+        if len(observations) > 0:
+            for i in range(len(observations["observation"])):
+                self.replay_buffer.add(
+                    {key: obs[i] for key, obs in observations.items()},
+                    {key: next_obs[i] for key, next_obs in next_observations.items()},
+                    actions[i],
+                    rewards[i],
+                    done=[False],
+                )
 
     def __getattr__(self, item: str) -> Any:
         """
@@ -434,6 +324,8 @@ class HER(BaseAlgorithm):
         self.model.online_sampling = self.online_sampling
         self.model.model_class = self.model_class
         self.model.max_episode_length = self.max_episode_length
+        if exclude is None:
+            exclude = ["_episode_storage"]
 
         self.model.save(path, exclude, include)
 

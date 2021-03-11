@@ -386,7 +386,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
     def _store_transition(
         self,
-        replay_buffer: ReplayBuffer,
+        replay_buffers: Union[ReplayBuffer, List[ReplayBuffer]],
         buffer_action: np.ndarray,
         new_obs: np.ndarray,
         reward: np.ndarray,
@@ -399,6 +399,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         It also handles terminal observations (because VecEnv resets automatically).
 
         :param replay_buffer: Replay buffer object where to store the transition.
+            If a list (when using HER), each transition will be stored in each object.
         :param buffer_action: normalized action
         :param new_obs: next observation in the current episode
             or first observation of the episode (when done is True)
@@ -425,7 +426,18 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         else:
             next_obs = new_obs_
 
-        replay_buffer.add(self._last_original_obs, next_obs, buffer_action, reward_, done)
+        if not isinstance(replay_buffers, list):
+            replay_buffers = [replay_buffers]
+
+        for replay_buffer in replay_buffers:
+            replay_buffer.add(
+                self._last_original_obs,
+                next_obs,
+                buffer_action,
+                reward_,
+                done,
+                infos,
+            )
 
         self._last_obs = new_obs
         # Save the unnormalized observation

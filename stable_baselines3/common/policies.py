@@ -268,12 +268,8 @@ class BasePolicy(BaseModel):
         #     state = self.initial_state
         # if mask is None:
         #     mask = [False for _ in range(self.n_envs)]
-        # Need to check the observation if its a ObsDictWrapper
 
-        # Special Case for GoalEnv (using HER normally)
-        if isinstance(observation, dict) and set(observation.keys()) == set(["observation", "desired_goal", "achieved_goal"]):
-            observation = ObsDictWrapper.convert_dict(observation)
-        elif isinstance(observation, dict):
+        if isinstance(observation, dict):
             # need to copy the dict as the dict in VecFrameStack will become a torch tensor
             observation = copy.deepcopy(observation)
             for key, obs in observation.items():

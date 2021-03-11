@@ -1,6 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import Dict, Generator, Optional, Union
+from typing import Any, Dict, Generator, List, Optional, Union
 
 import numpy as np
 import torch as th
@@ -213,7 +213,18 @@ class ReplayBuffer(BaseBuffer):
                     f"replay buffer {total_memory_usage:.2f}GB > {mem_available:.2f}GB"
                 )
 
-    def add(self, obs: np.ndarray, next_obs: np.ndarray, action: np.ndarray, reward: np.ndarray, done: np.ndarray) -> None:
+    def add(
+        self,
+        obs: np.ndarray,
+        next_obs: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        done: np.ndarray,
+        infos: Optional[List[Dict[str, Any]]] = None,
+    ) -> None:
+        # Used by HerReplayBuffer only for now
+        del infos
+
         # Copy to avoid modification by reference
         self.observations[self.pos] = np.array(obs).copy()
 
@@ -511,9 +522,12 @@ class DictReplayBuffer(ReplayBuffer):
         action: np.ndarray,
         reward: np.ndarray,
         done: np.ndarray,
+        infos: Optional[List[Dict[str, Any]]] = None,
     ) -> None:
-        # Copy to avoid modification by reference
+        # Used by HerReplayBuffer buffer only for now
+        del infos
 
+        # Copy to avoid modification by reference
         for key in self.observations.keys():
             self.observations[key][self.pos] = np.array(obs[key]).copy()
 

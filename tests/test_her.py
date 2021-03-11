@@ -38,7 +38,7 @@ def test_her(model_class, online_sampling):
         learning_starts=100,
     )
 
-    model.learn(total_timesteps=300)
+    model.learn(total_timesteps=150)
 
 
 @pytest.mark.parametrize(
@@ -75,7 +75,7 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
         action_noise=normal_action_noise,
     )
     assert model.action_noise is not None
-    model.learn(total_timesteps=300)
+    model.learn(total_timesteps=150)
 
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
@@ -115,7 +115,7 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
         **kwargs
     )
 
-    model.learn(total_timesteps=300)
+    model.learn(total_timesteps=150)
 
     obs = env.reset()
 
@@ -173,7 +173,7 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     assert np.allclose(selected_actions, new_selected_actions, 1e-4)
 
     # check if learn still works
-    model.learn(total_timesteps=300)
+    model.learn(total_timesteps=150)
 
     # Test that the change of parameters works
     model = HER.load(str(tmp_path / "test_save.zip"), env=env, verbose=3, learning_rate=2.0)
@@ -207,7 +207,7 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
         max_episode_length=4,
         buffer_size=int(2e4),
         policy_kwargs=dict(net_arch=[64]),
-        seed=0,
+        seed=1,
     )
     model.learn(200)
     old_replay_buffer = deepcopy(model.replay_buffer)
@@ -253,7 +253,8 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
             model.replay_buffer.buffer["done"][: n_episodes_stored - 1],
         )
     else:
-        assert np.allclose(old_replay_buffer.observations, model.replay_buffer.observations)
+        assert np.allclose(old_replay_buffer.observations["observation"], model.replay_buffer.observations["observation"])
+        assert np.allclose(old_replay_buffer.observations["desired_goal"], model.replay_buffer.observations["desired_goal"])
         assert np.allclose(old_replay_buffer.actions, model.replay_buffer.actions)
         assert np.allclose(old_replay_buffer.rewards, model.replay_buffer.rewards)
         assert np.allclose(old_replay_buffer.dones, model.replay_buffer.dones)

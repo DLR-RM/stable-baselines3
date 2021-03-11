@@ -325,7 +325,7 @@ class HER(BaseAlgorithm):
         self.model.model_class = self.model_class
         self.model.max_episode_length = self.max_episode_length
         if exclude is None:
-            exclude = ["_episode_storage"]
+            exclude = ["_episode_storage", "_store_transition"]
 
         self.model.save(path, exclude, include)
 

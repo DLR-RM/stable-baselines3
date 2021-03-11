@@ -12,7 +12,6 @@ from stable_baselines3 import DDPG, DQN, HER, SAC, TD3
 from stable_baselines3.common.envs import BitFlippingEnv
 from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.vec_env import DummyVecEnv
-from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 from stable_baselines3.her.her import get_time_limit
 
@@ -118,14 +117,14 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
 
     model.learn(total_timesteps=300)
 
-    env.reset()
+    obs = env.reset()
 
-    observations_list = []
+    observations = {key: [] for key in obs.keys()}
     for _ in range(10):
         obs = env.step(env.action_space.sample())[0]
-        observation = ObsDictWrapper.convert_dict(obs)
-        observations_list.append(observation)
-    observations = np.array(observations_list)
+        for key in obs.keys():
+            observations[key].append(obs[key])
+    observations = {key: np.array(obs) for key, obs in observations.items()}
 
     # Get dictionary of current parameters
     params = deepcopy(model.policy.state_dict())

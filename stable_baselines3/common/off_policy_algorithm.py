@@ -84,6 +84,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         train_freq: Union[int, Tuple[int, str]] = (1, "step"),
         gradient_steps: int = 1,
         action_noise: Optional[ActionNoise] = None,
+        replay_buffer_class: Optional[ReplayBuffer] = None,
+        replay_buffer_kwargs: Optional[Dict[str, Any]] = None,
         optimize_memory_usage: bool = False,
         policy_kwargs: Dict[str, Any] = None,
         tensorboard_log: Optional[str] = None,
@@ -126,6 +128,11 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.gradient_steps = gradient_steps
         self.action_noise = action_noise
         self.optimize_memory_usage = optimize_memory_usage
+        self.replay_buffer_class = replay_buffer_class
+        if replay_buffer_kwargs is None:
+            replay_buffer_kwargs = {}
+        self.replay_buffer_kwargs = {}
+        self._episode_storage = None
 
         # Remove terminations (dones) that are due to time limit
         # see https://github.com/hill-a/stable-baselines/issues/863
@@ -168,15 +175,29 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
 
+        replay_buffer_kwargs = self.replay_buffer_kwargs
         # Use DictReplayBuffer if needed
-        buffer_cls = DictReplayBuffer if isinstance(self.observation_space, gym.spaces.Dict) else ReplayBuffer
+        if self.replay_buffer_class is None:
+            if isinstance(self.observation_space, gym.spaces.Dict):
+                self.replay_buffer_class = DictReplayBuffer
+            else:
+                self.replay_buffer_class = ReplayBuffer
+        elif self.replay_buffer_class == HerReplayBuffer:
+            assert self.env is not None
+            self._episode_storage = None
+            # TODO: pop HER specific kwargs, for now, just delete
+            # TODO: self.replay_buffer = None or = _episode_storage for online sampling
+            # + second method for saving replay buffer
+            # idea: only one buffer and episode storage take charge of the second buffer
+            replay_buffer_kwargs = {}
 
-        self.replay_buffer = buffer_cls(
+        self.replay_buffer = self.replay_buffer_class(
             self.buffer_size,
             self.observation_space,
             self.action_space,
             self.device,
             optimize_memory_usage=self.optimize_memory_usage,
+            **replay_buffer_kwargs,
         )
         self.policy = self.policy_class(  # pytype:disable=not-instantiable
             self.observation_space,

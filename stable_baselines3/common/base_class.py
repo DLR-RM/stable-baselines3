@@ -279,7 +279,16 @@ class BaseAlgorithm(ABC):
 
         :return: List of parameters that should be excluded from being saved with pickle.
         """
-        return ["policy", "device", "env", "eval_env", "replay_buffer", "rollout_buffer", "_vec_normalize_env"]
+        return [
+            "policy",
+            "device",
+            "env",
+            "eval_env",
+            "replay_buffer",
+            "rollout_buffer",
+            "_vec_normalize_env",
+            "_episode_storage",
+        ]
 
     def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
         """

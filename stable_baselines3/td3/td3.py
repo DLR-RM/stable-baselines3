@@ -96,6 +96,8 @@ class TD3(OffPolicyAlgorithm):
             train_freq,
             gradient_steps,
             action_noise=action_noise,
+            replay_buffer_class=None,
+            replay_buffer_kwargs=None,
             policy_kwargs=policy_kwargs,
             tensorboard_log=tensorboard_log,
             verbose=verbose,

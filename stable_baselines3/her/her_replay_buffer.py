@@ -1,5 +1,3 @@
-import io
-import pathlib
 import warnings
 from collections import deque
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -168,7 +166,7 @@ class HerReplayBuffer(DictReplayBuffer):
             "done": (1,),
         }
         self._observation_keys = ["observation", "achieved_goal", "desired_goal"]
-        self.buffer = {
+        self._buffer = {
             key: np.zeros((self.max_episode_stored, self.max_episode_length, *dim), dtype=np.float32)
             for key, dim in input_shape.items()
         }
@@ -222,7 +220,7 @@ class HerReplayBuffer(DictReplayBuffer):
         self,
         batch_size: int,
         env: Optional[VecNormalize],
-    ) -> DictReplayBufferSamples:  # pytype: disable=bad-return-type
+    ) -> DictReplayBufferSamples:
         """
         Sample function for online sampling of HER transition,
         this replaces the "regular" replay buffer ``sample()``
@@ -235,12 +233,12 @@ class HerReplayBuffer(DictReplayBuffer):
         """
         if self.replay_buffer is not None:
             return self.replay_buffer.sample(batch_size, env)
-        return self._sample_transitions(batch_size, maybe_vec_env=env, online_sampling=True)
+        return self._sample_transitions(batch_size, maybe_vec_env=env, online_sampling=True)  # pytype: disable=bad-return-type
 
-    def sample_offline(
+    def _sample_offline(
         self,
         n_sampled_goal: Optional[int] = None,
-    ) -> Union[DictReplayBufferSamples, Tuple[Dict[str, np.ndarray], ...]]:
+    ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray], np.ndarray, np.ndarray]:
         """
         Sample function for offline sampling of HER transition,
         in that case, only one episode is used and transitions
@@ -291,7 +289,7 @@ class HerReplayBuffer(DictReplayBuffer):
         else:
             raise ValueError(f"Strategy {self.goal_selection_strategy} for sampling goals not supported!")
 
-        return self.buffer["achieved_goal"][her_episode_indices, transitions_indices]
+        return self._buffer["achieved_goal"][her_episode_indices, transitions_indices]
 
     def _sample_transitions(
         self,
@@ -299,7 +297,7 @@ class HerReplayBuffer(DictReplayBuffer):
         maybe_vec_env: Optional[VecNormalize],
         online_sampling: bool,
         n_sampled_goal: Optional[int] = None,
-    ) -> Union[DictReplayBufferSamples, Tuple[Dict[str, np.ndarray], ...]]:
+    ) -> Union[DictReplayBufferSamples, Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray], np.ndarray, np.ndarray]]:
         """
         :param batch_size: Number of element to sample (only used for online sampling)
         :param env: associated gym VecEnv to normalize the observations/rewards
@@ -358,7 +356,7 @@ class HerReplayBuffer(DictReplayBuffer):
                 her_indices = np.arange(len(episode_indices))
 
         # get selected transitions
-        transitions = {key: self.buffer[key][episode_indices, transitions_indices].copy() for key in self.buffer.keys()}
+        transitions = {key: self._buffer[key][episode_indices, transitions_indices].copy() for key in self._buffer.keys()}
 
         # sample new desired goals and relabel the transitions
         new_goals = self.sample_goals(episode_indices, her_indices, transitions_indices)
@@ -427,15 +425,15 @@ class HerReplayBuffer(DictReplayBuffer):
             # Clear info buffer
             self.info_buffer[self.pos] = deque(maxlen=self.max_episode_length)
 
-        self.buffer["observation"][self.pos][self.current_idx] = obs["observation"]
-        self.buffer["achieved_goal"][self.pos][self.current_idx] = obs["achieved_goal"]
-        self.buffer["desired_goal"][self.pos][self.current_idx] = obs["desired_goal"]
-        self.buffer["action"][self.pos][self.current_idx] = action
-        self.buffer["done"][self.pos][self.current_idx] = done
-        self.buffer["reward"][self.pos][self.current_idx] = reward
-        self.buffer["next_obs"][self.pos][self.current_idx] = next_obs["observation"]
-        self.buffer["next_achieved_goal"][self.pos][self.current_idx] = next_obs["achieved_goal"]
-        self.buffer["next_desired_goal"][self.pos][self.current_idx] = next_obs["desired_goal"]
+        self._buffer["observation"][self.pos][self.current_idx] = obs["observation"]
+        self._buffer["achieved_goal"][self.pos][self.current_idx] = obs["achieved_goal"]
+        self._buffer["desired_goal"][self.pos][self.current_idx] = obs["desired_goal"]
+        self._buffer["action"][self.pos][self.current_idx] = action
+        self._buffer["done"][self.pos][self.current_idx] = done
+        self._buffer["reward"][self.pos][self.current_idx] = reward
+        self._buffer["next_obs"][self.pos][self.current_idx] = next_obs["observation"]
+        self._buffer["next_achieved_goal"][self.pos][self.current_idx] = next_obs["achieved_goal"]
+        self._buffer["next_desired_goal"][self.pos][self.current_idx] = next_obs["desired_goal"]
 
         # When doing offline sampling
         # Add real transition to normal replay buffer
@@ -494,7 +492,7 @@ class HerReplayBuffer(DictReplayBuffer):
         # Sample goals and get new observations
         # maybe_vec_env=None as we should store unnormalized transitions,
         # they will be normalized at sampling time
-        observations, next_observations, actions, rewards = self.sample_offline(n_sampled_goal=self.n_sampled_goal)
+        observations, next_observations, actions, rewards = self._sample_offline(n_sampled_goal=self.n_sampled_goal)
 
         # Store virtual transitions in the replay buffer, if available
         if len(observations) > 0:
@@ -528,40 +526,37 @@ class HerReplayBuffer(DictReplayBuffer):
         self.full = False
         self.episode_lengths = np.zeros(self.max_episode_stored, dtype=np.int64)
 
-    def load_replay_buffer(
-        self, path: Union[str, pathlib.Path, io.BufferedIOBase], truncate_last_trajectory: bool = True
-    ) -> None:
+    def update_replay_buffer_after_loading(self, env: VecEnv, truncate_last_trajectory: bool = True) -> None:
         """
         Load a replay buffer from a pickle file and set environment for replay buffer (only online sampling).
 
-        :param path: Path to the pickled replay buffer.
+        :param env:
         :param truncate_last_trajectory: Only for online sampling.
             If set to ``True`` we assume that the last trajectory in the replay buffer was finished.
             If it is set to ``False`` we assume that we continue the same trajectory (same episode).
         """
-        if self.online_sampling:
-            # set environment
-            self.set_env(self.env)
-            # If we are at the start of an episode, no need to truncate
-            current_idx = self.current_idx
+        # set environment
+        self.set_env(env)
+        # If we are at the start of an episode, no need to truncate
+        current_idx = self.current_idx
 
-            # truncate interrupted episode
-            if truncate_last_trajectory and current_idx > 0:
-                warnings.warn(
-                    "The last trajectory in the replay buffer will be truncated.\n"
-                    "If you are in the same episode as when the replay buffer was saved,\n"
-                    "you should use `truncate_last_trajectory=False` to avoid that issue."
-                )
-                # get current episode and transition index
-                pos = self.pos
-                # set episode length for current episode
-                self.episode_lengths[pos] = current_idx
-                # set done = True for current episode
-                # current_idx was already incremented
-                self.buffer["done"][pos][current_idx - 1] = np.array([True], dtype=np.float32)
-                # reset current transition index
-                self.current_idx = 0
-                # increment episode counter
-                self.pos = (self.pos + 1) % self.max_episode_stored
-                # update "full" indicator
-                self.full = self.full or self.pos == 0
+        # truncate interrupted episode
+        if truncate_last_trajectory and current_idx > 0:
+            warnings.warn(
+                "The last trajectory in the replay buffer will be truncated.\n"
+                "If you are in the same episode as when the replay buffer was saved,\n"
+                "you should use `truncate_last_trajectory=False` to avoid that issue."
+            )
+            # get current episode and transition index
+            pos = self.pos
+            # set episode length for current episode
+            self.episode_lengths[pos] = current_idx
+            # set done = True for current episode
+            # current_idx was already incremented
+            self._buffer["done"][pos][current_idx - 1] = np.array([True], dtype=np.float32)
+            # reset current transition index
+            self.current_idx = 0
+            # increment episode counter
+            self.pos = (self.pos + 1) % self.max_episode_stored
+            # update "full" indicator
+            self.full = self.full or self.pos == 0

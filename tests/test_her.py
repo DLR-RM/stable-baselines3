@@ -16,6 +16,9 @@ from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 from stable_baselines3.her.her_replay_buffer import get_time_limit
 
 
+# TODO: add check with env images
+# + add test with PPO/A2C for GoalEnv
+# + add check VecNormalize with offline sampling
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
 @pytest.mark.parametrize("online_sampling", [True, False])
 def test_her(model_class, online_sampling):
@@ -30,6 +33,7 @@ def test_her(model_class, online_sampling):
         env,
         replay_buffer_class=HerReplayBuffer,
         replay_buffer_kwargs=dict(
+            n_sampled_goal=2,
             goal_selection_strategy="future",
             online_sampling=online_sampling,
             max_episode_length=n_bits,
@@ -71,6 +75,7 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
             goal_selection_strategy=goal_selection_strategy,
             online_sampling=online_sampling,
             max_episode_length=10,
+            n_sampled_goal=2,
         ),
         train_freq=4,
         gradient_steps=1,
@@ -103,7 +108,7 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
         env,
         replay_buffer_class=HerReplayBuffer,
         replay_buffer_kwargs=dict(
-            n_sampled_goal=5,
+            n_sampled_goal=2,
             goal_selection_strategy="future",
             online_sampling=online_sampling,
             max_episode_length=n_bits,
@@ -190,7 +195,8 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     os.remove(tmp_path / "test_save.zip")
 
 
-@pytest.mark.parametrize("online_sampling, truncate_last_trajectory", [(False, False), (True, True), (True, False)])
+@pytest.mark.parametrize("online_sampling", [False, True])
+@pytest.mark.parametrize("truncate_last_trajectory", [False, True])
 def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_last_trajectory):
     """
     Test if 'save_replay_buffer' and 'load_replay_buffer' works correctly
@@ -199,7 +205,7 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
     warnings.filterwarnings(action="ignore", category=DeprecationWarning)
     warnings.filterwarnings(action="ignore", category=UserWarning, module="gym")
 
-    path = pathlib.Path(tmp_path / "logs/replay_buffer.pkl")
+    path = pathlib.Path(tmp_path / "replay_buffer.pkl")
     path.parent.mkdir(exist_ok=True, parents=True)  # to not raise a warning
     env = BitFlippingEnv(n_bits=4, continuous=True)
     model = SAC(
@@ -219,7 +225,10 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
         seed=1,
     )
     model.learn(200)
-    old_replay_buffer = deepcopy(model.replay_buffer)
+    if online_sampling:
+        old_replay_buffer = deepcopy(model.replay_buffer)
+    else:
+        old_replay_buffer = deepcopy(model.replay_buffer.replay_buffer)
     model.save_replay_buffer(path)
     del model.replay_buffer
 
@@ -229,7 +238,8 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
     # Check that there is no warning
     assert len(recwarn) == 0
 
-    model.load_replay_buffer(path, truncate_last_trajectory)
+    model.load_replay_buffer(path)
+    model.replay_buffer.update_replay_buffer_after_loading(model.get_env(), truncate_last_trajectory)
 
     if truncate_last_trajectory:
         assert len(recwarn) == 1
@@ -241,32 +251,33 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
     if online_sampling:
         n_episodes_stored = model.replay_buffer.n_episodes_stored
         assert np.allclose(
-            old_replay_buffer.buffer["observation"][:n_episodes_stored],
-            model.replay_buffer.buffer["observation"][:n_episodes_stored],
+            old_replay_buffer._buffer["observation"][:n_episodes_stored],
+            model.replay_buffer._buffer["observation"][:n_episodes_stored],
         )
         assert np.allclose(
-            old_replay_buffer.buffer["next_obs"][:n_episodes_stored],
-            model.replay_buffer.buffer["next_obs"][:n_episodes_stored],
+            old_replay_buffer._buffer["next_obs"][:n_episodes_stored],
+            model.replay_buffer._buffer["next_obs"][:n_episodes_stored],
         )
         assert np.allclose(
-            old_replay_buffer.buffer["action"][:n_episodes_stored],
-            model.replay_buffer.buffer["action"][:n_episodes_stored],
+            old_replay_buffer._buffer["action"][:n_episodes_stored],
+            model.replay_buffer._buffer["action"][:n_episodes_stored],
         )
         assert np.allclose(
-            old_replay_buffer.buffer["reward"][:n_episodes_stored],
-            model.replay_buffer.buffer["reward"][:n_episodes_stored],
+            old_replay_buffer._buffer["reward"][:n_episodes_stored],
+            model.replay_buffer._buffer["reward"][:n_episodes_stored],
         )
         # we might change the last done of the last trajectory so we don't compare it
         assert np.allclose(
-            old_replay_buffer.buffer["done"][: n_episodes_stored - 1],
-            model.replay_buffer.buffer["done"][: n_episodes_stored - 1],
+            old_replay_buffer._buffer["done"][: n_episodes_stored - 1],
+            model.replay_buffer._buffer["done"][: n_episodes_stored - 1],
         )
     else:
-        assert np.allclose(old_replay_buffer.observations["observation"], model.replay_buffer.observations["observation"])
-        assert np.allclose(old_replay_buffer.observations["desired_goal"], model.replay_buffer.observations["desired_goal"])
-        assert np.allclose(old_replay_buffer.actions, model.replay_buffer.actions)
-        assert np.allclose(old_replay_buffer.rewards, model.replay_buffer.rewards)
-        assert np.allclose(old_replay_buffer.dones, model.replay_buffer.dones)
+        replay_buffer = model.replay_buffer.replay_buffer
+        assert np.allclose(old_replay_buffer.observations["observation"], replay_buffer.observations["observation"])
+        assert np.allclose(old_replay_buffer.observations["desired_goal"], replay_buffer.observations["desired_goal"])
+        assert np.allclose(old_replay_buffer.actions, replay_buffer.actions)
+        assert np.allclose(old_replay_buffer.rewards, replay_buffer.rewards)
+        assert np.allclose(old_replay_buffer.dones, replay_buffer.dones)
 
     # test if continuing training works properly
     reset_num_timesteps = False if truncate_last_trajectory is False else True

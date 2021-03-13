@@ -113,7 +113,7 @@ def test_eval_success_logging(tmp_path):
         warn=False,
     )
     model = DQN(
-        "MlpPolicy",
+        "MultiInputPolicy",
         env,
         replay_buffer_class=HerReplayBuffer,
         learning_starts=100,

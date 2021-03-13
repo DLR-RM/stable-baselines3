@@ -263,11 +263,19 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # Prevent continuity issue by truncating trajectory
         # when using memory efficient replay buffer
         # see https://github.com/DLR-RM/stable-baselines3/issues/46
+
+        # Special case when using HerReplayBuffer,
+        # the classic replay buffer is inside it when using offline sampling
+        if isinstance(self.replay_buffer, HerReplayBuffer):
+            replay_buffer = self.replay_buffer.replay_buffer
+        else:
+            replay_buffer = self.replay_buffer
+
         truncate_last_traj = (
             self.optimize_memory_usage
             and reset_num_timesteps
-            and self.replay_buffer is not None
-            and (self.replay_buffer.full or self.replay_buffer.pos > 0)
+            and replay_buffer is not None
+            and (replay_buffer.full or replay_buffer.pos > 0)
         )
 
         if truncate_last_traj:
@@ -278,8 +286,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 "to avoid that issue."
             )
             # Go to the previous index
-            pos = (self.replay_buffer.pos - 1) % self.replay_buffer.buffer_size
-            self.replay_buffer.dones[pos] = True
+            pos = (replay_buffer.pos - 1) % replay_buffer.buffer_size
+            replay_buffer.dones[pos] = True
 
         return super()._setup_learn(
             total_timesteps,

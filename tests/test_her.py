@@ -32,10 +32,10 @@ def test_her(model_class, online_sampling):
         replay_buffer_kwargs=dict(
             goal_selection_strategy="future",
             online_sampling=online_sampling,
-            gradient_steps=1,
-            train_freq=4,
             max_episode_length=n_bits,
         ),
+        train_freq=4,
+        gradient_steps=1,
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=100,
     )
@@ -70,10 +70,10 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
         replay_buffer_kwargs=dict(
             goal_selection_strategy=goal_selection_strategy,
             online_sampling=online_sampling,
-            gradient_steps=1,
-            train_freq=4,
             max_episode_length=10,
         ),
+        train_freq=4,
+        gradient_steps=1,
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=100,
         action_noise=normal_action_noise,
@@ -330,7 +330,7 @@ def test_get_max_episode_length():
     DQN("MultiInputPolicy", dict_env, replay_buffer_class=HerReplayBuffer, replay_buffer_kwargs=dict(max_episode_length=5))
 
     with pytest.raises(ValueError):
-        DQN("MultiInputPolicy", dict_env, replay_buffer_class=HerReplayBuffer, replay_buffer_kwargs=dict(max_episode_length=5))
+        DQN("MultiInputPolicy", dict_env, replay_buffer_class=HerReplayBuffer)
 
     # Wrapped in a timelimit, should be fine
     # Note: it requires env.spec to be defined

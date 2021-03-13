@@ -8,12 +8,12 @@ import numpy as np
 import pytest
 import torch as th
 
-from stable_baselines3 import DDPG, DQN, HER, SAC, TD3
+from stable_baselines3 import DDPG, DQN, SAC, TD3, HerReplayBuffer
 from stable_baselines3.common.envs import BitFlippingEnv
 from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
-from stable_baselines3.her.her import get_time_limit
+from stable_baselines3.her.her_replay_buffer import get_time_limit
 
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
@@ -25,15 +25,17 @@ def test_her(model_class, online_sampling):
     n_bits = 4
     env = BitFlippingEnv(n_bits=n_bits, continuous=not (model_class == DQN))
 
-    model = HER(
+    model = model_class(
         "MultiInputPolicy",
         env,
-        model_class,
-        goal_selection_strategy="future",
-        online_sampling=online_sampling,
-        gradient_steps=1,
-        train_freq=4,
-        max_episode_length=n_bits,
+        replay_buffer_class=HerReplayBuffer,
+        replay_buffer_kwargs=dict(
+            goal_selection_strategy="future",
+            online_sampling=online_sampling,
+            gradient_steps=1,
+            train_freq=4,
+            max_episode_length=n_bits,
+        ),
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=100,
     )
@@ -61,15 +63,17 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
 
     normal_action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
 
-    model = HER(
+    model = SAC(
         "MultiInputPolicy",
         env,
-        SAC,
-        goal_selection_strategy=goal_selection_strategy,
-        online_sampling=online_sampling,
-        gradient_steps=1,
-        train_freq=4,
-        max_episode_length=10,
+        replay_buffer_class=HerReplayBuffer,
+        replay_buffer_kwargs=dict(
+            goal_selection_strategy=goal_selection_strategy,
+            online_sampling=online_sampling,
+            gradient_steps=1,
+            train_freq=4,
+            max_episode_length=10,
+        ),
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=100,
         action_noise=normal_action_noise,
@@ -94,13 +98,16 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     kwargs = dict(use_sde=True) if use_sde else {}
 
     # create model
-    model = HER(
+    model = model_class(
         "MultiInputPolicy",
         env,
-        model_class,
-        n_sampled_goal=5,
-        goal_selection_strategy="future",
-        online_sampling=online_sampling,
+        replay_buffer_class=HerReplayBuffer,
+        replay_buffer_kwargs=dict(
+            n_sampled_goal=5,
+            goal_selection_strategy="future",
+            online_sampling=online_sampling,
+            max_episode_length=n_bits,
+        ),
         verbose=0,
         tau=0.05,
         batch_size=128,
@@ -111,7 +118,6 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
         gradient_steps=1,
         train_freq=4,
         learning_starts=100,
-        max_episode_length=n_bits,
         **kwargs
     )
 
@@ -152,14 +158,14 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     # test custom_objects
     # Load with custom objects
     custom_objects = dict(learning_rate=2e-5, dummy=1.0)
-    model_ = HER.load(str(tmp_path / "test_save.zip"), env=env, custom_objects=custom_objects, verbose=2)
+    model_ = model_class.load(str(tmp_path / "test_save.zip"), env=env, custom_objects=custom_objects, verbose=2)
     assert model_.verbose == 2
     # Check that the custom object was taken into account
     assert model_.learning_rate == custom_objects["learning_rate"]
     # Check that only parameters that are here already are replaced
     assert not hasattr(model_, "dummy")
 
-    model = HER.load(str(tmp_path / "test_save.zip"), env=env)
+    model = model_class.load(str(tmp_path / "test_save.zip"), env=env)
 
     # check if params are still the same after load
     new_params = model.policy.state_dict()
@@ -176,8 +182,8 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     model.learn(total_timesteps=150)
 
     # Test that the change of parameters works
-    model = HER.load(str(tmp_path / "test_save.zip"), env=env, verbose=3, learning_rate=2.0)
-    assert model.model.learning_rate == 2.0
+    model = model_class.load(str(tmp_path / "test_save.zip"), env=env, verbose=3, learning_rate=2.0)
+    assert model.learning_rate == 2.0
     assert model.verbose == 3
 
     # clear file from os
@@ -196,15 +202,18 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
     path = pathlib.Path(tmp_path / "logs/replay_buffer.pkl")
     path.parent.mkdir(exist_ok=True, parents=True)  # to not raise a warning
     env = BitFlippingEnv(n_bits=4, continuous=True)
-    model = HER(
+    model = SAC(
         "MultiInputPolicy",
         env,
-        SAC,
-        goal_selection_strategy="future",
-        online_sampling=online_sampling,
+        replay_buffer_class=HerReplayBuffer,
+        replay_buffer_kwargs=dict(
+            n_sampled_goal=2,
+            goal_selection_strategy="future",
+            online_sampling=online_sampling,
+            max_episode_length=4,
+        ),
         gradient_steps=1,
         train_freq=4,
-        max_episode_length=4,
         buffer_size=int(2e4),
         policy_kwargs=dict(net_arch=[64]),
         seed=1,
@@ -212,7 +221,7 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
     model.learn(200)
     old_replay_buffer = deepcopy(model.replay_buffer)
     model.save_replay_buffer(path)
-    del model.model.replay_buffer
+    del model.replay_buffer
 
     with pytest.raises(AttributeError):
         model.replay_buffer
@@ -273,15 +282,18 @@ def test_full_replay_buffer():
     env = BitFlippingEnv(n_bits=n_bits, continuous=True)
 
     # use small buffer size to get the buffer full
-    model = HER(
+    model = SAC(
         "MultiInputPolicy",
         env,
-        SAC,
-        goal_selection_strategy="future",
-        online_sampling=True,
+        replay_buffer_class=HerReplayBuffer,
+        replay_buffer_kwargs=dict(
+            n_sampled_goal=2,
+            goal_selection_strategy="future",
+            online_sampling=True,
+            max_episode_length=n_bits,
+        ),
         gradient_steps=1,
         train_freq=4,
-        max_episode_length=n_bits,
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=1,
         buffer_size=20,
@@ -315,15 +327,15 @@ def test_get_max_episode_length():
         get_time_limit(vec_env, current_max_episode_length=None)
 
     # Initialize HER and specify max_episode_length, should not raise an issue
-    HER("MultiInputPolicy", dict_env, DQN, max_episode_length=5)
+    DQN("MultiInputPolicy", dict_env, replay_buffer_class=HerReplayBuffer, replay_buffer_kwargs=dict(max_episode_length=5))
 
     with pytest.raises(ValueError):
-        HER("MultiInputPolicy", dict_env, DQN)
+        DQN("MultiInputPolicy", dict_env, replay_buffer_class=HerReplayBuffer, replay_buffer_kwargs=dict(max_episode_length=5))
 
     # Wrapped in a timelimit, should be fine
     # Note: it requires env.spec to be defined
     env = DummyVecEnv([lambda: gym.wrappers.TimeLimit(BitFlippingEnv(), 10)])
-    HER("MultiInputPolicy", env, DQN)
+    DQN("MultiInputPolicy", env, replay_buffer_class=HerReplayBuffer, replay_buffer_kwargs=dict(max_episode_length=5))
 
 
 @pytest.mark.parametrize("online_sampling", [False, True])
@@ -335,16 +347,18 @@ def test_performance_her(online_sampling, n_bits):
     """
     env = BitFlippingEnv(n_bits=n_bits, continuous=False)
 
-    model = HER(
+    model = DQN(
         "MultiInputPolicy",
         env,
-        DQN,
-        n_sampled_goal=5,
-        goal_selection_strategy="future",
-        online_sampling=online_sampling,
+        replay_buffer_class=HerReplayBuffer,
+        replay_buffer_kwargs=dict(
+            n_sampled_goal=5,
+            goal_selection_strategy="future",
+            online_sampling=online_sampling,
+            max_episode_length=n_bits,
+        ),
         verbose=1,
         learning_rate=5e-4,
-        max_episode_length=n_bits,
         train_freq=1,
         learning_starts=100,
         exploration_final_eps=0.02,
@@ -356,4 +370,4 @@ def test_performance_her(online_sampling, n_bits):
     model.learn(total_timesteps=5000, log_interval=50)
 
     # 90% training success
-    assert np.mean(model.model.ep_success_buffer) > 0.90
+    assert np.mean(model.ep_success_buffer) > 0.90

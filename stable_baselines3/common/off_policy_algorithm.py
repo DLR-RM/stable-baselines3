@@ -18,6 +18,7 @@ from stable_baselines3.common.save_util import load_from_pkl, save_to_pkl
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn, Schedule, TrainFreq, TrainFrequencyUnit
 from stable_baselines3.common.utils import safe_mean, should_collect_more_steps
 from stable_baselines3.common.vec_env import VecEnv
+from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
 
 
 class OffPolicyAlgorithm(BaseAlgorithm):
@@ -131,7 +132,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.replay_buffer_class = replay_buffer_class
         if replay_buffer_kwargs is None:
             replay_buffer_kwargs = {}
-        self.replay_buffer_kwargs = {}
+        self.replay_buffer_kwargs = replay_buffer_kwargs
         self._episode_storage = None
 
         # Remove terminations (dones) that are due to time limit
@@ -175,30 +176,46 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
 
-        replay_buffer_kwargs = self.replay_buffer_kwargs
         # Use DictReplayBuffer if needed
         if self.replay_buffer_class is None:
             if isinstance(self.observation_space, gym.spaces.Dict):
                 self.replay_buffer_class = DictReplayBuffer
             else:
                 self.replay_buffer_class = ReplayBuffer
+
         elif self.replay_buffer_class == HerReplayBuffer:
             assert self.env is not None
-            self._episode_storage = None
-            # TODO: pop HER specific kwargs, for now, just delete
-            # TODO: self.replay_buffer = None or = _episode_storage for online sampling
-            # + second method for saving replay buffer
-            # idea: only one buffer and episode storage take charge of the second buffer
-            replay_buffer_kwargs = {}
 
-        self.replay_buffer = self.replay_buffer_class(
-            self.buffer_size,
-            self.observation_space,
-            self.action_space,
-            self.device,
-            optimize_memory_usage=self.optimize_memory_usage,
-            **replay_buffer_kwargs,
-        )
+            # If using offline sampling, we need a classic replay buffer too
+            if self.replay_buffer_kwargs.get("online_sampling", True):
+                replay_buffer = None
+            else:
+                replay_buffer = DictReplayBuffer(
+                    self.buffer_size,
+                    self.observation_space,
+                    self.action_space,
+                    self.device,
+                    optimize_memory_usage=self.optimize_memory_usage,
+                )
+
+            self.replay_buffer = HerReplayBuffer(
+                self.env,
+                self.buffer_size,
+                self.device,
+                replay_buffer=replay_buffer,
+                **self.replay_buffer_kwargs,
+            )
+
+        if self.replay_buffer is None:
+            self.replay_buffer = self.replay_buffer_class(
+                self.buffer_size,
+                self.observation_space,
+                self.action_space,
+                self.device,
+                optimize_memory_usage=self.optimize_memory_usage,
+                **self.replay_buffer_kwargs,
+            )
+
         self.policy = self.policy_class(  # pytype:disable=not-instantiable
             self.observation_space,
             self.action_space,
@@ -407,7 +424,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
     def _store_transition(
         self,
-        replay_buffers: Union[ReplayBuffer, List[ReplayBuffer]],
+        replay_buffer: ReplayBuffer,
         buffer_action: np.ndarray,
         new_obs: np.ndarray,
         reward: np.ndarray,
@@ -420,7 +437,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         It also handles terminal observations (because VecEnv resets automatically).
 
         :param replay_buffer: Replay buffer object where to store the transition.
-            If a list (when using HER), each transition will be stored in each object.
         :param buffer_action: normalized action
         :param new_obs: next observation in the current episode
             or first observation of the episode (when done is True)
@@ -447,10 +463,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         else:
             next_obs = new_obs_
 
-        if not isinstance(replay_buffers, list):
-            replay_buffers = [replay_buffers]
-
-        for replay_buffer in replay_buffers:
+        if isinstance(replay_buffer, HerReplayBuffer):
             replay_buffer.add(
                 self._last_original_obs,
                 next_obs,
@@ -458,6 +471,15 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 reward_,
                 done,
                 infos,
+            )
+        else:
+            # Do not include info
+            replay_buffer.add(
+                self._last_original_obs,
+                next_obs,
+                buffer_action,
+                reward_,
+                done,
             )
 
         self._last_obs = new_obs

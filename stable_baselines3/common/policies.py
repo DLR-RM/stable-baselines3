@@ -31,7 +31,6 @@ from stable_baselines3.common.torch_layers import (
 )
 from stable_baselines3.common.type_aliases import Schedule
 from stable_baselines3.common.utils import get_device, is_vectorized_observation, obs_as_tensor
-from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 
 
 class BaseModel(nn.Module, ABC):

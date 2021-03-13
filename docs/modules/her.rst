@@ -59,7 +59,7 @@ Example
 
 .. code-block:: python
 
-    from stable_baselines3 import HER, DDPG, DQN, SAC, TD3
+    from stable_baselines3 import HerReplayBuffer, DDPG, DQN, SAC, TD3
     from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
     from stable_baselines3.common.envs import BitFlippingEnv
     from stable_baselines3.common.vec_env import DummyVecEnv
@@ -79,15 +79,26 @@ Example
     max_episode_length = N_BITS
 
     # Initialize the model
-    model = HER('MlpPolicy', env, model_class, n_sampled_goal=4, goal_selection_strategy=goal_selection_strategy, online_sampling=online_sampling,
-                            verbose=1, max_episode_length=max_episode_length)
+    model = model_class(
+        "MlpPolicy",
+        env,
+        replay_buffer_class=HerReplayBuffer,
+        replay_buffer_kwargs=dict(
+            n_sampled_goal=4,
+            goal_selection_strategy=goal_selection_strategy,
+            online_sampling=online_sampling,
+            max_episode_length=max_episode_length,
+        ),
+        verbose=1,
+    )
+
     # Train the model
     model.learn(1000)
 
     model.save("./her_bit_env")
     # Because it needs access to `env.compute_reward()`
     # HER must be loaded with the env
-    model = HER.load('./her_bit_env', env=env)
+    model = DQN.load('./her_bit_env', env=env)
 
     obs = env.reset()
     for _ in range(100):
@@ -136,8 +147,15 @@ Plot the results:
 Parameters
 ----------
 
-.. autoclass:: HER
+HER Replay Buffer
+-----------------
+
+.. autoclass:: HerReplayBuffer
   :members:
+  :inherited-members:
+
+.. .. autoclass:: HER
+..   :members:
 
 Goal Selection Strategies
 -------------------------
@@ -148,18 +166,10 @@ Goal Selection Strategies
     :undoc-members:
 
 
-Obs Dict Wrapper
-----------------
-
-.. autoclass:: ObsDictWrapper
-  :members:
-  :inherited-members:
-    :undoc-members:
-
-
-HER Replay Buffer
------------------
-
-.. autoclass:: HerReplayBuffer
-  :members:
-  :inherited-members:
+.. Obs Dict Wrapper
+.. ----------------
+..
+.. .. autoclass:: ObsDictWrapper
+..   :members:
+..   :inherited-members:
+..     :undoc-members:

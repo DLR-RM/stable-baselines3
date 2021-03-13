@@ -1,3 +1,6 @@
+import io
+import pathlib
+import warnings
 from collections import deque
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -8,7 +11,61 @@ from gym import spaces
 from stable_baselines3.common.buffers import DictReplayBuffer
 from stable_baselines3.common.type_aliases import DictReplayBufferSamples
 from stable_baselines3.common.vec_env import VecEnv, VecNormalize
-from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
+from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
+
+
+def get_time_limit(env: VecEnv, current_max_episode_length: Optional[int]) -> int:
+    """
+    Get time limit from environment.
+
+    :param env: Environment from which we want to get the time limit.
+    :param current_max_episode_length: Current value for max_episode_length.
+    :return: max episode length
+    """
+    # try to get the attribute from environment
+    if current_max_episode_length is None:
+        try:
+            current_max_episode_length = env.get_attr("spec")[0].max_episode_steps
+            # Raise the error because the attribute is present but is None
+            if current_max_episode_length is None:
+                raise AttributeError
+        # if not available check if a valid value was passed as an argument
+        except AttributeError:
+            raise ValueError(
+                "The max episode length could not be inferred.\n"
+                "You must specify a `max_episode_steps` when registering the environment,\n"
+                "use a `gym.wrappers.TimeLimit` wrapper "
+                "or pass `max_episode_length` to the model constructor"
+            )
+    return current_max_episode_length
+
+
+"""
+Hindsight Experience Replay (HER)
+Paper: https://arxiv.org/abs/1707.01495
+
+.. warning::
+
+  For performance reasons, the maximum number of steps per episodes must be specified.
+  In most cases, it will be inferred if you specify ``max_episode_steps`` when registering the environment
+  or if you use a ``gym.wrappers.TimeLimit`` (and ``env.spec`` is not None).
+  Otherwise, you can directly pass ``max_episode_length`` to the model constructor
+
+
+For additional offline algorithm specific arguments please have a look at the corresponding documentation.
+
+:param policy: The policy model to use.
+:param env: The environment to learn from (if registered in Gym, can be str)
+:param model_class: Off policy model which will be used with hindsight experience replay. (SAC, TD3, DDPG, DQN)
+:param n_sampled_goal: Number of sampled goals for replay. (offline sampling)
+:param goal_selection_strategy: Strategy for sampling goals for replay.
+    One of ['episode', 'final', 'future', 'random']
+:param online_sampling: Sample HER transitions online.
+:param learning_rate: learning rate for the optimizer,
+    it can be a function of the current progress remaining (from 1 to 0)
+:param max_episode_length: The maximum length of an episode. If not specified,
+    it will be automatically inferred if the environment uses a ``gym.wrappers.TimeLimit`` wrapper.
+"""
 
 
 class HerReplayBuffer(DictReplayBuffer):
@@ -36,25 +93,59 @@ class HerReplayBuffer(DictReplayBuffer):
         self,
         env: VecEnv,
         buffer_size: int,
-        max_episode_length: int,
-        goal_selection_strategy: GoalSelectionStrategy,
-        observation_space: spaces.Space,
-        action_space: spaces.Space,
+        # observation_space: spaces.Space,
+        # action_space: spaces.Space,
         device: Union[th.device, str] = "cpu",
-        n_envs: int = 1,
-        her_ratio: float = 0.8,
+        replay_buffer: Optional[DictReplayBuffer] = None,
+        max_episode_length: Optional[int] = None,
+        n_sampled_goal: int = 4,
+        goal_selection_strategy: Union[GoalSelectionStrategy, str] = "future",
+        online_sampling: bool = True,
     ):
 
-        super(HerReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs)
+        super(HerReplayBuffer, self).__init__(buffer_size, env.observation_space, env.action_space, device, env.num_envs)
+
+        # convert goal_selection_strategy into GoalSelectionStrategy if string
+        if isinstance(goal_selection_strategy, str):
+            self.goal_selection_strategy = KEY_TO_GOAL_STRATEGY[goal_selection_strategy.lower()]
+        else:
+            self.goal_selection_strategy = goal_selection_strategy
+
+        # check if goal_selection_strategy is valid
+        assert isinstance(
+            self.goal_selection_strategy, GoalSelectionStrategy
+        ), f"Invalid goal selection strategy, please use one of {list(GoalSelectionStrategy)}"
+
+        self.n_sampled_goal = n_sampled_goal
+        # if we sample her transitions online use custom replay buffer
+        self.online_sampling = online_sampling
+        # compute ratio between HER replays and regular replays in percent for online HER sampling
+        self.her_ratio = 1 - (1.0 / (self.n_sampled_goal + 1))
+        # maximum steps in episode
+        self.max_episode_length = get_time_limit(env, max_episode_length)
+        # storage for transitions of current episode for offline sampling
+        # for online sampling, it replaces the "classic" replay buffer completely
+        her_buffer_size = buffer_size if online_sampling else self.max_episode_length
 
         self.env = env
-        self.buffer_size = buffer_size
+        self.buffer_size = her_buffer_size
         self.max_episode_length = max_episode_length
+
+        if online_sampling:
+            replay_buffer = None
+        self.replay_buffer = replay_buffer
+        self.online_sampling = online_sampling
+
+        # TODO: this should not be needed anymore
+        # if self.get_vec_normalize_env() is not None:
+        #     assert online_sampling, "You must pass `online_sampling=True` if you want to use `VecNormalize` with `HER`"
 
         # buffer with episodes
         # number of episodes which can be stored until buffer size is reached
         self.max_episode_stored = self.buffer_size // self.max_episode_length
         self.current_idx = 0
+        # Counter to prevent overflow
+        self.episode_steps = 0
 
         # get dimensions of observation and goal
         if isinstance(self.env.observation_space.spaces["observation"], spaces.Discrete):
@@ -86,15 +177,13 @@ class HerReplayBuffer(DictReplayBuffer):
         # episode length storage, needed for episodes which has less steps than the maximum length
         self.episode_lengths = np.zeros(self.max_episode_stored, dtype=np.int64)
 
-        self.goal_selection_strategy = goal_selection_strategy
-        # percentage of her indices
-        self.her_ratio = her_ratio
-
     def __getstate__(self) -> Dict[str, Any]:
         """
         Gets state for pickling.
 
-        Excludes self.env, as in general Env's may not be pickleable."""
+        Excludes self.env, as in general Env's may not be pickleable.
+        Note: when using offline sampling, this will also save the offline replay buffer.
+        """
         state = self.__dict__.copy()
         # these attributes are not pickleable
         del state["env"]
@@ -133,7 +222,7 @@ class HerReplayBuffer(DictReplayBuffer):
         self,
         batch_size: int,
         env: Optional[VecNormalize],
-    ) -> DictReplayBufferSamples:
+    ) -> DictReplayBufferSamples:  # pytype: disable=bad-return-type
         """
         Sample function for online sampling of HER transition,
         this replaces the "regular" replay buffer ``sample()``
@@ -144,6 +233,8 @@ class HerReplayBuffer(DictReplayBuffer):
             to normalize the observations/rewards when sampling
         :return: Samples.
         """
+        if self.replay_buffer is not None:
+            return self.replay_buffer.sample(batch_size, env)
         return self._sample_transitions(batch_size, maybe_vec_env=env, online_sampling=True)
 
     def sample_offline(
@@ -346,10 +437,34 @@ class HerReplayBuffer(DictReplayBuffer):
         self.buffer["next_achieved_goal"][self.pos][self.current_idx] = next_obs["achieved_goal"]
         self.buffer["next_desired_goal"][self.pos][self.current_idx] = next_obs["desired_goal"]
 
+        # When doing offline sampling
+        # Add real transition to normal replay buffer
+        if self.replay_buffer is not None:
+            self.replay_buffer.add(
+                obs,
+                next_obs,
+                action,
+                reward,
+                done,
+                infos,
+            )
+
         self.info_buffer[self.pos].append(infos)
 
         # update current pointer
         self.current_idx += 1
+
+        self.episode_steps += 1
+
+        if done or self.episode_steps >= self.max_episode_length:
+            self.store_episode()
+            if not self.online_sampling:
+                # sample virtual transitions and store them in replay buffer
+                self._sample_her_transitions()
+                # clear storage for current episode
+                self.reset()
+
+            self.episode_steps = 0
 
     def store_episode(self) -> None:
         """
@@ -369,6 +484,28 @@ class HerReplayBuffer(DictReplayBuffer):
             self.pos = 0
         # reset transition pointer
         self.current_idx = 0
+
+    def _sample_her_transitions(self) -> None:
+        """
+        Sample additional goals and store new transitions in replay buffer
+        when using offline sampling.
+        """
+
+        # Sample goals and get new observations
+        # maybe_vec_env=None as we should store unnormalized transitions,
+        # they will be normalized at sampling time
+        observations, next_observations, actions, rewards = self.sample_offline(n_sampled_goal=self.n_sampled_goal)
+
+        # Store virtual transitions in the replay buffer, if available
+        if len(observations) > 0:
+            for i in range(len(observations["observation"])):
+                self.replay_buffer.add(
+                    {key: obs[i] for key, obs in observations.items()},
+                    {key: next_obs[i] for key, next_obs in next_observations.items()},
+                    actions[i],
+                    rewards[i],
+                    done=[False],
+                )
 
     @property
     def n_episodes_stored(self) -> int:
@@ -390,3 +527,41 @@ class HerReplayBuffer(DictReplayBuffer):
         self.current_idx = 0
         self.full = False
         self.episode_lengths = np.zeros(self.max_episode_stored, dtype=np.int64)
+
+    def load_replay_buffer(
+        self, path: Union[str, pathlib.Path, io.BufferedIOBase], truncate_last_trajectory: bool = True
+    ) -> None:
+        """
+        Load a replay buffer from a pickle file and set environment for replay buffer (only online sampling).
+
+        :param path: Path to the pickled replay buffer.
+        :param truncate_last_trajectory: Only for online sampling.
+            If set to ``True`` we assume that the last trajectory in the replay buffer was finished.
+            If it is set to ``False`` we assume that we continue the same trajectory (same episode).
+        """
+        if self.online_sampling:
+            # set environment
+            self.set_env(self.env)
+            # If we are at the start of an episode, no need to truncate
+            current_idx = self.current_idx
+
+            # truncate interrupted episode
+            if truncate_last_trajectory and current_idx > 0:
+                warnings.warn(
+                    "The last trajectory in the replay buffer will be truncated.\n"
+                    "If you are in the same episode as when the replay buffer was saved,\n"
+                    "you should use `truncate_last_trajectory=False` to avoid that issue."
+                )
+                # get current episode and transition index
+                pos = self.pos
+                # set episode length for current episode
+                self.episode_lengths[pos] = current_idx
+                # set done = True for current episode
+                # current_idx was already incremented
+                self.buffer["done"][pos][current_idx - 1] = np.array([True], dtype=np.float32)
+                # reset current transition index
+                self.current_idx = 0
+                # increment episode counter
+                self.pos = (self.pos + 1) % self.max_episode_stored
+                # update "full" indicator
+                self.full = self.full or self.pos == 0

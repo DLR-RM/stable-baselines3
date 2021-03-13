@@ -556,18 +556,21 @@ class DictReplayBuffer(ReplayBuffer):
 
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> DictReplayBufferSamples:
 
-        next_obs = {
-            key: self.to_torch(self._normalize_obs(obs[batch_inds, 0, :], env)) for key, obs in self.next_observations.items()
-        }
+        # Normalize if needed
+        obs_ = self._normalize_obs(self.observations, env).items()
+        next_obs_ = self._normalize_obs(self.next_observations, env).items()
+        # Remove extra dimension (we are using only one env for now)
+        # TODO: check that the normalization work as intended
+        # otherwise we need to remove the extra dimension before
+        # Convert to torch tensor and
+        observations = {key: self.to_torch(obs[batch_inds, 0, :]) for key, obs in obs_}
 
-        normalized_obs = {
-            key: self.to_torch(self._normalize_obs(obs[batch_inds, 0, :], env)) for key, obs in self.observations.items()
-        }
+        next_observations = {key: self.to_torch(obs[batch_inds, 0, :]) for key, obs in next_obs_}
 
         return DictReplayBufferSamples(
-            observations=normalized_obs,
+            observations=observations,
             actions=self.to_torch(self.actions[batch_inds]),
-            next_observations=next_obs,
+            next_observations=next_observations,
             dones=self.to_torch(self.dones[batch_inds]),
             rewards=self.to_torch(self._normalize_reward(self.rewards[batch_inds], env)),
         )

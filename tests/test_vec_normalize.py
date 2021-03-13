@@ -218,7 +218,12 @@ def test_normalize_external():
 
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, HerReplayBuffer])
-def test_offpolicy_normalization(model_class):
+@pytest.mark.parametrize("online_sampling", [False, True])
+def test_offpolicy_normalization(model_class, online_sampling):
+
+    if online_sampling and model_class != HerReplayBuffer:
+        pytest.skip()
+
     make_env_ = make_dict_env if model_class == HerReplayBuffer else make_env
     env = DummyVecEnv([make_env_])
     env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10.0, clip_reward=10.0)
@@ -233,13 +238,18 @@ def test_offpolicy_normalization(model_class):
             verbose=1,
             learning_starts=100,
             policy_kwargs=dict(net_arch=[64]),
-            replay_buffer_kwargs=dict(max_episode_length=200, online_sampling=True),
+            replay_buffer_kwargs=dict(
+                max_episode_length=100,
+                online_sampling=online_sampling,
+                n_sampled_goal=2,
+            ),
             replay_buffer_class=HerReplayBuffer,
+            seed=2,
         )
     else:
         model = model_class("MlpPolicy", env, verbose=1, learning_starts=100, policy_kwargs=dict(net_arch=[64]))
 
-    model.learn(total_timesteps=500, eval_env=eval_env, eval_freq=250)
+    model.learn(total_timesteps=150, eval_env=eval_env, eval_freq=75)
     # Check getter
     assert isinstance(model.get_vec_normalize_env(), VecNormalize)
 

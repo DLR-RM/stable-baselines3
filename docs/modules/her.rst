@@ -29,7 +29,7 @@ It creates "virtual" transitions by relabeling transitions (changing the desired
 
 .. warning::
 
-	``HER`` supports ``VecNormalize`` wrapper but only when ``online_sampling=True``
+	When loading the replay buffer, you need to pass the env and ``truncate_last_traj=True``
 
 
 .. warning::
@@ -63,7 +63,6 @@ Example
     from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
     from stable_baselines3.common.envs import BitFlippingEnv
     from stable_baselines3.common.vec_env import DummyVecEnv
-    from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 
     model_class = DQN  # works also with SAC, DDPG and TD3
     N_BITS = 15
@@ -154,8 +153,6 @@ HER Replay Buffer
   :members:
   :inherited-members:
 
-.. .. autoclass:: HER
-..   :members:
 
 Goal Selection Strategies
 -------------------------
@@ -164,12 +161,3 @@ Goal Selection Strategies
   :members:
   :inherited-members:
     :undoc-members:
-
-
-.. Obs Dict Wrapper
-.. ----------------
-..
-.. .. autoclass:: ObsDictWrapper
-..   :members:
-..   :inherited-members:
-..     :undoc-members:

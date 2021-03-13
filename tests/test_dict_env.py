@@ -5,9 +5,9 @@ from gym import spaces
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.envs import SimpleMultiObsEnv
+from stable_baselines3.common.envs import BitFlippingEnv, SimpleMultiObsEnv
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack, VecNormalize
 
 
 class DummyDictEnv(gym.Env):
@@ -231,6 +231,46 @@ def test_dict_vec_framestack(model_class, channel_last):
             policy_kwargs=dict(
                 net_arch=[32],
                 features_extractor_kwargs=dict(cnn_output_dim=32),
+            ),
+            train_freq=8,
+            gradient_steps=1,
+        )
+        if model_class == DQN:
+            kwargs["learning_starts"] = 0
+
+    model = model_class("MultiInputPolicy", env, gamma=0.5, seed=1, **kwargs)
+
+    model.learn(total_timesteps=n_steps)
+
+    evaluate_policy(model, env, n_eval_episodes=5, warn=False)
+
+
+@pytest.mark.parametrize("model_class", [PPO, A2C, DQN, DDPG, SAC, TD3])
+def test_vec_normalize(model_class):
+    """
+    Additional tests for PPO/A2C/SAC/DDPG/TD3/DQN to check observation space support
+    for GoalEnv and VecNormalize using MultiInputPolicy.
+    """
+    env = DummyVecEnv([lambda: BitFlippingEnv(n_bits=4, continuous=not (model_class == DQN))])
+    env = VecNormalize(env)
+
+    kwargs = {}
+    n_steps = 256
+
+    if model_class in {A2C, PPO}:
+        kwargs = dict(
+            n_steps=128,
+            policy_kwargs=dict(
+                net_arch=[32],
+            ),
+        )
+    else:
+        # Avoid memory error when using replay buffer
+        # Reduce the size of the features and make learning faster
+        kwargs = dict(
+            buffer_size=250,
+            policy_kwargs=dict(
+                net_arch=[32],
             ),
             train_freq=8,
             gradient_steps=1,

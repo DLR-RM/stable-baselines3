@@ -98,7 +98,7 @@ Base-class (all algorithms)
 Policies
 ^^^^^^^^
 
-- ``cnn_extractor`` -> ``feature_extractor``, as ``feature_extractor`` in now used with ``MlpPolicy`` too
+- ``cnn_extractor`` -> ``features_extractor``, as ``features_extractor`` in now used with ``MlpPolicy`` too
 
 A2C
 ^^^

@@ -18,18 +18,18 @@ SB3 Policy
 
 SB3 networks are separated into two mains parts (see figure below):
 
-- a features extractor (usually shared between actor and critic when applicable, to save computation)
-  which role is to extract features (i.e. convert to a features vector) from high-dimensional observation, for instance, a CNN that extracts features from images.
+- A features extractor (usually shared between actor and critic when applicable, to save computation)
+  whose role is to extract features (i.e. convert to a feature vector) from high-dimensional observations, for instance, a CNN that extracts features from images.
   This is the ``features_extractor_class`` parameter. You can change the default parameters of that features extractor
   by passing a ``features_extractor_kwargs`` parameter.
 
-- a (fully-connected) network that maps the features to actions/value. Its architecture is controlled by the ``net_arch`` parameter.
+- A (fully-connected) network that maps the features to actions/value. Its architecture is controlled by the ``net_arch`` parameter.
 
 
 .. note::
 
     All observations are first pre-processed (e.g. images are normalized, discrete obs are converted to one-hot vectors, ...) before being fed to the features extractor.
-    In the case of vector observation, the features extractor is just a ``Flatten`` layer.
+    In the case of vector observations, the features extractor is just a ``Flatten`` layer.
 
 
 .. image:: ../_static/img/net_arch.png

@@ -13,9 +13,49 @@ and other type of input features (MlpPolicies).
   which handles bounds more correctly.
 
 
+SB3 Policy
+^^^^^^^^^^
 
-Custom Policy Architecture
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+SB3 networks are separated into two mains parts (see figure below):
+
+- A features extractor (usually shared between actor and critic when applicable, to save computation)
+  whose role is to extract features (i.e. convert to a feature vector) from high-dimensional observations, for instance, a CNN that extracts features from images.
+  This is the ``features_extractor_class`` parameter. You can change the default parameters of that features extractor
+  by passing a ``features_extractor_kwargs`` parameter.
+
+- A (fully-connected) network that maps the features to actions/value. Its architecture is controlled by the ``net_arch`` parameter.
+
+
+.. note::
+
+    All observations are first pre-processed (e.g. images are normalized, discrete obs are converted to one-hot vectors, ...) before being fed to the features extractor.
+    In the case of vector observations, the features extractor is just a ``Flatten`` layer.
+
+
+.. image:: ../_static/img/net_arch.png
+
+
+SB3 policies are usually composed of several networks (actor/critic networks + target networks when applicable) together
+with the associated optimizers.
+
+Each of these network have a features extractor followed by a fully-connected network.
+
+.. note::
+
+  When we refer to "policy" in Stable-Baselines3, this is usually an abuse of language compared to RL terminology.
+  In SB3, "policy" refers to the class that handles all the networks useful for training,
+  so not only the network used to predict actions (the "learned controller").
+
+
+
+.. image:: ../_static/img/sb3_policy.png
+
+
+.. .. figure:: https://cdn-images-1.medium.com/max/960/1*h4WTQNVIsvMXJTCpXm_TAw.gif
+
+
+Custom Network Architecture
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 One way of customising the policy network architecture is to pass arguments when creating the model,
 using ``policy_kwargs`` parameter:

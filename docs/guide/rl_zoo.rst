@@ -4,9 +4,11 @@
 RL Baselines3 Zoo
 ==================
 
-`RL Baselines3 Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_. is a collection of pre-trained Reinforcement Learning agents using
-Stable-Baselines3.
-It also provides basic scripts for training, evaluating agents, tuning hyperparameters and recording videos.
+`RL Baselines3 Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_ is a training framework for Reinforcement Learning (RL).
+
+It provides scripts for training, evaluating agents, tuning hyperparameters, plotting results and recording videos.
+
+In addition, it includes a collection of tuned hyperparameters for common environments and RL algorithms, and agents trained with those settings.
 
 Goals of this repository:
 

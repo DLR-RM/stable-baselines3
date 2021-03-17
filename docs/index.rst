@@ -12,9 +12,9 @@ It is the next major version of `Stable Baselines <https://github.com/hill-a/sta
 
 Github repository: https://github.com/DLR-RM/stable-baselines3
 
-RL Baselines3 Zoo (collection of pre-trained agents): https://github.com/DLR-RM/rl-baselines3-zoo
+RL Baselines3 Zoo (training framework for SB3): https://github.com/DLR-RM/rl-baselines3-zoo
 
-RL Baselines3 Zoo also offers a simple interface to train, evaluate agents and do hyperparameter tuning.
+RL Baselines3 Zoo provides a collection of pre-trained agents, scripts for training, evaluating agents, tuning hyperparameters, plotting results and recording videos.
 
 SB3 Contrib (experimental RL code, latest algorithms): https://github.com/Stable-Baselines-Team/stable-baselines3-contrib
 

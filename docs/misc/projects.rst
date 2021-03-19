@@ -7,15 +7,7 @@ This is a list of projects using stable-baselines3.
 Please tell us, if you want your project to appear on this page ;)
 
 
-.. RL Racing Robot
-.. --------------------------
-.. Implementation of reinforcement learning approach to make a donkey car learn to race.
-.. Uses SAC on autoencoder features
-..
-.. | Author: Antonin Raffin  (@araffin)
-.. | Github repo: https://github.com/araffin/RL-Racing-Robot
-
-rl_reach
+RL Reach
 --------
 
 A platform for running reproducible reinforcement learning experiments for customisable robotic reaching tasks. This self-contained and straightforward toolbox allows its users to quickly investigate and identify optimal training configurations.
@@ -57,3 +49,15 @@ A simple interface to instantiate RL environments with SUMO for Traffic Signal C
 
 | Author: Lucas Alegre
 | Github: https://github.com/LucasAlegre/sumo-rl
+
+gym-pybullet-drones
+-------------------
+PyBullet Gym environments for single and multi-agent reinforcement learning of quadcopter control.
+
+- Physics-based simulation for the development and test of quadcopter control.
+- Compatibility with ``gym.Env``, RLlib's MultiAgentEnv.
+- Learning and testing script templates for stable-baselines3 and RLlib.
+
+| Author: Jacopo Panerati
+| Github: https://github.com/utiasDSL/gym-pybullet-drones/
+| Paper: https://arxiv.org/abs/2103.02142

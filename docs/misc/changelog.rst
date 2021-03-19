@@ -3,8 +3,32 @@
 Changelog
 ==========
 
+
+Release 1.1.0a0 (WIP)
+---------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+- Added gym pybullet drones project (@JacopoPan)
+
+
 Release 1.0 (2021-03-15)
--------------------------------
+------------------------
 
 **First Major Version**
 
@@ -610,4 +634,4 @@ And all the contributors:
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8
-@ShangqunYu @PierreExeter
+@ShangqunYu @PierreExeter @JacopoPan

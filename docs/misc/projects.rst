@@ -59,7 +59,7 @@ A simple interface to instantiate RL environments with SUMO for Traffic Signal C
 | Github: https://github.com/LucasAlegre/sumo-rl
 
 gym-pybullet-drones
--------
+-------------------
 PyBullet Gym environments for single and multi-agent reinforcement learning of quadcopter control.
 
 - Physics-based simulation for the development and test of quadcopter control.

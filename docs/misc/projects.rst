@@ -63,7 +63,7 @@ PyBullet Gym environments for single and multi-agent reinforcement learning of q
 | Paper: https://arxiv.org/abs/2103.02142
 
 SuperSuit
-------
+---------
 
 SuperSuit contains easy to use wrappers for Gym (and multi-agent PettingZoo) environments to do all forms of common preprocessing (frame stacking, converting graphical observations to greyscale, max-and-skip for Atari, etc.). It also notably includes:
 

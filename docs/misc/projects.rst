@@ -61,3 +61,16 @@ PyBullet Gym environments for single and multi-agent reinforcement learning of q
 | Author: Jacopo Panerati
 | Github: https://github.com/utiasDSL/gym-pybullet-drones/
 | Paper: https://arxiv.org/abs/2103.02142
+
+SuperSuit
+---------
+
+SuperSuit contains easy to use wrappers for Gym (and multi-agent PettingZoo) environments to do all forms of common preprocessing (frame stacking, converting graphical observations to greyscale, max-and-skip for Atari, etc.). It also notably includes:
+
+-Wrappers that apply lambda functions to observations, actions, or rewards with a single line of code.
+-All wrappers can be used natively on vector environments, wrappers exist to Gym environments to vectorized environments and concatenate multiple vector environments together
+-A wrapper is included that allows for using regular single agent RL libraries (e.g. stable baselines) to learn simple multi-agent PettingZoo environments, explained in this tutorial:
+
+| Author: Justin Terry
+| GitHub: https://github.com/PettingZoo-Team/SuperSuit
+| Tutorial on multi-agent support in stable baselines: https://towardsdatascience.com/multi-agent-deep-reinforcement-learning-in-15-lines-of-code-using-pettingzoo-e0b963c0820b

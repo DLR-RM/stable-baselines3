@@ -25,6 +25,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Added gym pybullet drones project (@JacopoPan)
+- Added link to SuperSuit in projects (@justinkterry)
 
 
 Release 1.0 (2021-03-15)

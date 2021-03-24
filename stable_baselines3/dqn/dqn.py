@@ -147,7 +147,7 @@ class DQN(OffPolicyAlgorithm):
         self._update_learning_rate(self.policy.optimizer)
 
         losses = []
-        for gradient_step in range(gradient_steps):
+        for _ in range(gradient_steps):
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 

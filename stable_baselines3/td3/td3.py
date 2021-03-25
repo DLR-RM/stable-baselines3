@@ -62,7 +62,7 @@ class TD3(OffPolicyAlgorithm):
         policy: Union[str, Type[TD3Policy]],
         env: Union[GymEnv, str],
         learning_rate: Union[float, Schedule] = 1e-3,
-        buffer_size: int = int(1e6),
+        buffer_size: int = 1000000,  # 1e6
         learning_starts: int = 100,
         batch_size: int = 100,
         tau: float = 0.005,
@@ -131,7 +131,7 @@ class TD3(OffPolicyAlgorithm):
 
         actor_losses, critic_losses = [], []
 
-        for gradient_step in range(gradient_steps):
+        for _ in range(gradient_steps):
 
             self._n_updates += 1
             # Sample replay buffer

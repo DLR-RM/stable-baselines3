@@ -170,7 +170,7 @@ class MlpExtractor(nn.Module):
         last_layer_dim_shared = feature_dim
 
         # Iterate through the shared layers and build the shared parts of the network
-        for idx, layer in enumerate(net_arch):
+        for layer in net_arch:
             if isinstance(layer, int):  # Check that this is a shared layer
                 layer_size = layer
                 # TODO: give layer a meaningful name
@@ -192,7 +192,7 @@ class MlpExtractor(nn.Module):
         last_layer_dim_vf = last_layer_dim_shared
 
         # Build the non-shared part of the network
-        for idx, (pi_layer_size, vf_layer_size) in enumerate(zip_longest(policy_only_layers, value_only_layers)):
+        for pi_layer_size, vf_layer_size in zip_longest(policy_only_layers, value_only_layers):
             if pi_layer_size is not None:
                 assert isinstance(pi_layer_size, int), "Error: net_arch[-1]['pi'] must only contain integers."
                 policy_net.append(nn.Linear(last_layer_dim_pi, pi_layer_size))

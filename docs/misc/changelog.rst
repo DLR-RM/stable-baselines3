@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.1.0a0 (WIP)
+Release 1.1.0a1 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -15,12 +15,14 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed potential issue when calling off-policy algorithms with default arguments multiple times (the size of the replay buffer would be the same)
 
 Deprecations:
 ^^^^^^^^^^^^^
 
 Others:
 ^^^^^^^
+- Added ``flake8-bugbear`` to tests dependencies to find likely bugs
 
 Documentation:
 ^^^^^^^^^^^^^^

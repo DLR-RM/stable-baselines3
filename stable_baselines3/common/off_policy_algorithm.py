@@ -76,7 +76,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         env: Union[GymEnv, str],
         policy_base: Type[BasePolicy],
         learning_rate: Union[float, Schedule],
-        buffer_size: int = int(1e6),
+        buffer_size: int = 1000000,
         learning_starts: int = 100,
         batch_size: int = 256,
         tau: float = 0.005,

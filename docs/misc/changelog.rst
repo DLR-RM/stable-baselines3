@@ -23,6 +23,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Added ``flake8-bugbear`` to tests dependencies to find likely bugs
+- Added Code of Conduct
 
 Documentation:
 ^^^^^^^^^^^^^^

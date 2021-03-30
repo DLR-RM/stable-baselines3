@@ -187,7 +187,7 @@ It will save the best model if ``best_model_save_path`` folder is specified and 
 
 .. warning::
 
-  You need to make sure that the ``eval_env`` is wrapped the same way as the the training environment, for instance using ``VecTransposeImage`` wrapper if you have a channel-last image as input.
+  You need to make sure that the ``eval_env`` is wrapped the same way as the the training environment, for instance using the ``VecTransposeImage`` wrapper if you have a channel-last image as input.
   The ``EvalCallback`` outputs a warning if it is not the case.
 
 

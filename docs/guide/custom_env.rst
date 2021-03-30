@@ -15,8 +15,8 @@ That is to say, your environment must implement the following methods (and inher
 
 .. note::
 
-  Although SB3 supports both channel-last and channel-firt images as input, we recommend to use channel-first convention when possible.
-  Under the hood, when channel-last image is passed, SB3 have to use a ``VecTransposeImage`` wrapper to re-order the channels.
+  Although SB3 supports both channel-last and channel-first images as input, we recommend to use channel-first convention when possible.
+  Under the hood, when channel-last image is passed, SB3 has to use a ``VecTransposeImage`` wrapper to re-order the channels.
 
 
 

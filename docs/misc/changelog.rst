@@ -30,6 +30,7 @@ Documentation:
 - Added gym pybullet drones project (@JacopoPan)
 - Added link to SuperSuit in projects (@justinkterry)
 - Fixed DQN example (thanks @ltbd78)
+- Clarify channel-first/channel-last recommandation
 
 
 Release 1.0 (2021-03-15)

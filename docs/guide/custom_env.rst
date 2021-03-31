@@ -13,6 +13,12 @@ That is to say, your environment must implement the following methods (and inher
 	channel-first or channel-last.
 
 
+.. note::
+
+  Although SB3 supports both channel-last and channel-first images as input, we recommend using the channel-first convention when possible.
+  Under the hood, when a channel-last image is passed, SB3 uses a ``VecTransposeImage`` wrapper to re-order the channels.
+
+
 
 .. code-block:: python
 
@@ -29,9 +35,9 @@ That is to say, your environment must implement the following methods (and inher
       # They must be gym.spaces objects
       # Example when using discrete actions:
       self.action_space = spaces.Discrete(N_DISCRETE_ACTIONS)
-      # Example for using image as input (can be channel-first or channel-last):
+      # Example for using image as input (channel-first; channel-last also works):
       self.observation_space = spaces.Box(low=0, high=255,
-                                          shape=(HEIGHT, WIDTH, N_CHANNELS), dtype=np.uint8)
+                                          shape=(N_CHANNELS, HEIGHT, WIDTH), dtype=np.uint8)
 
     def step(self, action):
       ...

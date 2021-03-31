@@ -23,11 +23,14 @@ Deprecations:
 Others:
 ^^^^^^^
 - Added ``flake8-bugbear`` to tests dependencies to find likely bugs
+- Added Code of Conduct
 
 Documentation:
 ^^^^^^^^^^^^^^
 - Added gym pybullet drones project (@JacopoPan)
 - Added link to SuperSuit in projects (@justinkterry)
+- Fixed DQN example (thanks @ltbd78)
+- Clarify channel-first/channel-last recommendation
 
 
 Release 1.0 (2021-03-15)
@@ -637,4 +640,4 @@ And all the contributors:
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8
-@ShangqunYu @PierreExeter @JacopoPan
+@ShangqunYu @PierreExeter @JacopoPan @ltbd78

@@ -294,7 +294,7 @@ class RolloutBuffer(BaseBuffer):
         self.gae_lambda = gae_lambda
         self.gamma = gamma
         self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
-        self.returns, self.dones, self.values, self.log_probs = None, None, None, None
+        self.returns, self.episode_starts, self.values, self.log_probs = None, None, None, None
         self.generator_ready = False
         self.reset()
 
@@ -303,7 +303,7 @@ class RolloutBuffer(BaseBuffer):
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
-        self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
+        self.episode_starts = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.values = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.log_probs = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.advantages = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -321,8 +321,8 @@ class RolloutBuffer(BaseBuffer):
         where R is the discounted reward with value bootstrap,
         set ``gae_lambda=1.0`` during initialization.
 
-        :param last_values:
-        :param dones:
+        :param last_values: state value estimation for the last step (one for each env)
+        :param dones: if the last step was a terminal step (one bool for each env).
 
         """
         # convert to numpy
@@ -335,7 +335,7 @@ class RolloutBuffer(BaseBuffer):
                 next_non_terminal = 1.0 - dones
                 next_values = last_values
             else:
-                next_non_terminal = 1.0 - self.dones[step + 1]
+                next_non_terminal = 1.0 - self.episode_starts[step + 1]
                 next_values = self.values[step + 1]
             delta = self.rewards[step] + self.gamma * next_values * next_non_terminal - self.values[step]
             last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
@@ -344,13 +344,19 @@ class RolloutBuffer(BaseBuffer):
             self.returns[step] = last_return
 
     def add(
-        self, obs: np.ndarray, action: np.ndarray, reward: np.ndarray, done: np.ndarray, value: th.Tensor, log_prob: th.Tensor
+        self,
+        obs: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        episode_start: np.ndarray,
+        value: th.Tensor,
+        log_prob: th.Tensor,
     ) -> None:
         """
         :param obs: Observation
         :param action: Action
         :param reward:
-        :param done: End of episode signal.
+        :param episode_start: Start of episode signal.
         :param value: estimated value of the current state
             following the current policy.
         :param log_prob: log probability of the action
@@ -368,7 +374,7 @@ class RolloutBuffer(BaseBuffer):
         self.observations[self.pos] = np.array(obs).copy()
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
-        self.dones[self.pos] = np.array(done).copy()
+        self.episode_starts[self.pos] = np.array(episode_start).copy()
         self.values[self.pos] = value.clone().cpu().numpy().flatten()
         self.log_probs[self.pos] = log_prob.clone().cpu().numpy()
         self.pos += 1

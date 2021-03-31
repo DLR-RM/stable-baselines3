@@ -9,6 +9,7 @@ Release 1.1.0a2 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- renamed ``_last_dones`` and ``RolloutBuffer`` ``dones`` to ``_episode_starts`` and ``episode_starts``
 
 New Features:
 ^^^^^^^^^^^^^

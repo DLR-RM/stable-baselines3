@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.1.0a1 (WIP)
+Release 1.1.0a2 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -16,6 +16,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed potential issue when calling off-policy algorithms with default arguments multiple times (the size of the replay buffer would be the same)
+- Fixed return computation for on-policy algorithms (now corresponds to classic return)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -24,6 +25,7 @@ Others:
 ^^^^^^^
 - Added ``flake8-bugbear`` to tests dependencies to find likely bugs
 - Added Code of Conduct
+- Added tests for GAE computation
 
 Documentation:
 ^^^^^^^^^^^^^^

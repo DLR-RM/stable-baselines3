@@ -329,6 +329,7 @@ class RolloutBuffer(BaseBuffer):
         last_values = last_values.clone().cpu().numpy().flatten()
 
         last_gae_lam = 0
+        last_return = 0.0
         for step in reversed(range(self.buffer_size)):
             if step == self.buffer_size - 1:
                 next_non_terminal = 1.0 - dones
@@ -338,8 +339,9 @@ class RolloutBuffer(BaseBuffer):
                 next_values = self.values[step + 1]
             delta = self.rewards[step] + self.gamma * next_values * next_non_terminal - self.values[step]
             last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
+            last_return = self.rewards[step] + self.gamma * next_non_terminal * last_return
             self.advantages[step] = last_gae_lam
-        self.returns = self.advantages + self.values
+            self.returns[step] = last_return
 
     def add(
         self, obs: np.ndarray, action: np.ndarray, reward: np.ndarray, done: np.ndarray, value: th.Tensor, log_prob: th.Tensor

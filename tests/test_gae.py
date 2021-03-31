@@ -36,8 +36,6 @@ class CustomEnv(gym.Env):
 
 
 class CheckGAECallback(BaseCallback):
-    """docstring for CheckGAECallback."""
-
     def __init__(self):
         super(CheckGAECallback, self).__init__(verbose=0)
 
@@ -67,12 +65,6 @@ class CheckGAECallback(BaseCallback):
 
         assert np.allclose(buffer.advantages.flatten(), advantages)
         assert np.allclose(buffer.returns.flatten(), returns)
-
-        # Previous implementation
-        # if self.value_is_zero:
-        #     # Constant value function that outputs zeros
-        #     # advantage and return must be the same
-        #     assert np.allclose(buffer.returns, buffer.advantages)
 
     def _on_step(self):
         return True

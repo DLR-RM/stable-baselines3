@@ -51,7 +51,7 @@ class CheckGAECallback(BaseCallback):
         # We know in advance that the agent will get a single
         # reward at the very last timestep of the episode,
         # so we can pre-compute the return
-        returns = np.array([gamma ** n for n in range(max_steps)])[::-1]
+        # returns = np.array([gamma ** n for n in range(max_steps)])[::-1]
 
         # the same goes for the advantage
         deltas = np.zeros((max_steps,))
@@ -62,6 +62,8 @@ class CheckGAECallback(BaseCallback):
         for n in reversed(range(max_steps - 1)):
             deltas[n] = rewards[n] + gamma * value - value
             advantages[n] = deltas[n] + gamma * gae_lambda * advantages[n + 1]
+
+        returns = advantages + value
 
         assert np.allclose(buffer.advantages.flatten(), advantages)
         assert np.allclose(buffer.returns.flatten(), returns)

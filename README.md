@@ -91,7 +91,7 @@ To install stable-baselines on Windows, please look at the [documentation](https
 ### Install using pip
 Install the Stable Baselines3 package:
 ```
-pip install stable-baselines3[extra]
+pip install "stable-baselines3[extra]"
 ```
 
 This includes an optional dependencies like Tensorboard, OpenCV or `atari-py` to train on atari games. If you do not need those, you can use:

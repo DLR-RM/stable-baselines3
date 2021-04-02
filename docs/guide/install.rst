@@ -29,6 +29,10 @@ To install Stable Baselines3 with pip, execute:
 
     pip install stable-baselines3[extra]
 
+.. note::
+        Some shells such as Zsh require quotation marks around brackets, i.e. ``pip install 'stable-baselines3[extra]'`` `More information <https://stackoverflow.com/a/30539963>`_. 
+
+
 This includes an optional dependencies like Tensorboard, OpenCV or ``atari-py`` to train on atari games. If you do not need those, you can use:
 
 .. code-block:: bash

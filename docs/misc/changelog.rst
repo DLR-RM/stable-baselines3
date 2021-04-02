@@ -31,6 +31,7 @@ Documentation:
 - Added link to SuperSuit in projects (@justinkterry)
 - Fixed DQN example (thanks @ltbd78)
 - Clarify channel-first/channel-last recommendation
+- Update sphinx environment installation instructions (@tom-doerr)
 
 
 Release 1.0 (2021-03-15)

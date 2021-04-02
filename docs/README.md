@@ -8,7 +8,7 @@ This folder contains documentation for the RL baselines.
 #### Install Sphinx and Theme
 
 ```
-pip install sphinx sphinx-autobuild sphinx-rtd-theme
+pip install sphinx sphinx-autobuild sphinx-rtd-theme sphinx-autodoc-typehints 
 ```
 
 #### Building the Docs

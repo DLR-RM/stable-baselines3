@@ -3,8 +3,39 @@
 Changelog
 ==========
 
+
+Release 1.1.0a1 (WIP)
+---------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed potential issue when calling off-policy algorithms with default arguments multiple times (the size of the replay buffer would be the same)
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Added ``flake8-bugbear`` to tests dependencies to find likely bugs
+- Added Code of Conduct
+
+Documentation:
+^^^^^^^^^^^^^^
+- Added gym pybullet drones project (@JacopoPan)
+- Added link to SuperSuit in projects (@justinkterry)
+- Fixed DQN example (thanks @ltbd78)
+- Clarify channel-first/channel-last recommendation
+- Clarify pip installation in Zsh (@tom-doerr)
+
+
 Release 1.0 (2021-03-15)
--------------------------------
+------------------------
 
 **First Major Version**
 
@@ -612,5 +643,5 @@ And all the contributors:
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
-@tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8
-@ShangqunYu @PierreExeter @vwxyzjn
+@tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
+@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr

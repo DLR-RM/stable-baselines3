@@ -20,8 +20,8 @@ These algorithms will make it easier for the research community and industry to 
 Repository:
 https://github.com/DLR-RM/stable-baselines3
 
-Medium article:
-https://medium.com/@araffin/df87c4b2fc82
+Blog post:
+https://araffin.github.io/post/sb3/
 
 Documentation:
 https://stable-baselines3.readthedocs.io/en/master/
@@ -94,6 +94,8 @@ setup(
             "pytype",
             # Lint code
             "flake8>=3.8",
+            # Find likely bugs
+            "flake8-bugbear",
             # Sort imports
             "isort>=5.0",
             # Reformat

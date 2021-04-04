@@ -312,20 +312,25 @@ class RolloutBuffer(BaseBuffer):
 
     def compute_returns_and_advantage(self, last_values: th.Tensor, dones: np.ndarray) -> None:
         """
-        Post-processing step: compute the returns (sum of discounted rewards)
-        and GAE advantage.
-        Adapted from Stable-Baselines PPO2.
+        Post-processing step: compute the lambda-return (TD(lambda) estimate)
+        and GAE(lambda) advantage.
 
         Uses Generalized Advantage Estimation (https://arxiv.org/abs/1506.02438)
         to compute the advantage. To obtain vanilla advantage (A(s) = R - V(S))
         where R is the discounted reward with value bootstrap,
         set ``gae_lambda=1.0`` during initialization.
 
+        The TD(lambda) estimator has also two special cases:
+        - TD(1) is Monte-Carlo estimate (sum of discounted rewards)
+        - TD(0) is one-step estimate with bootstrapping (r_t + gamma * v(s_{t+1}))
+
+        For more information, see discussion in https://github.com/DLR-RM/stable-baselines3/pull/375.
+
         :param last_values: state value estimation for the last step (one for each env)
         :param dones: if the last step was a terminal step (one bool for each env).
 
         """
-        # convert to numpy
+        # Convert to numpy
         last_values = last_values.clone().cpu().numpy().flatten()
 
         last_gae_lam = 0
@@ -339,6 +344,8 @@ class RolloutBuffer(BaseBuffer):
             delta = self.rewards[step] + self.gamma * next_values * next_non_terminal - self.values[step]
             last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
             self.advantages[step] = last_gae_lam
+        # TD(lambda) estimator, see GH#375 or "Telescoping in TD(lambda)"
+        # in David Silver Lecture 4
         self.returns = self.advantages + self.values
 
     def add(

@@ -9,7 +9,7 @@ Release 1.1.0a2 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-- renamed ``_last_dones`` and ``RolloutBuffer`` ``dones`` to ``_episode_starts`` and ``episode_starts``
+- Renamed ``_last_dones`` and ``dones`` to ``_last_episode_starts`` and ``episode_starts`` in ``RolloutBuffer``.
 
 New Features:
 ^^^^^^^^^^^^^
@@ -17,7 +17,6 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed potential issue when calling off-policy algorithms with default arguments multiple times (the size of the replay buffer would be the same)
-- Fixed return computation for on-policy algorithms (now corresponds to classic return)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -26,15 +25,16 @@ Others:
 ^^^^^^^
 - Added ``flake8-bugbear`` to tests dependencies to find likely bugs
 - Added Code of Conduct
-- Added tests for GAE computation
+- Added tests for GAE and lambda return computation
 
 Documentation:
 ^^^^^^^^^^^^^^
 - Added gym pybullet drones project (@JacopoPan)
 - Added link to SuperSuit in projects (@justinkterry)
 - Fixed DQN example (thanks @ltbd78)
-- Clarify channel-first/channel-last recommendation
-- Clarify pip installation in Zsh (@tom-doerr)
+- Clarified channel-first/channel-last recommendation
+- Clarified pip installation in Zsh (@tom-doerr)
+- Clarified return computation for on-policy algorithms (TD(lambda) estimate was used)
 
 
 Release 1.0 (2021-03-15)

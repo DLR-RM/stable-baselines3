@@ -48,23 +48,22 @@ class CheckGAECallback(BaseCallback):
         value = self.model.policy.constant_value
         # We know in advance that the agent will get a single
         # reward at the very last timestep of the episode,
-        # so we can pre-compute the return
-        # returns = np.array([gamma ** n for n in range(max_steps)])[::-1]
-
-        # the same goes for the advantage
+        # so we can pre-compute the lambda-return and advantage
         deltas = np.zeros((max_steps,))
         advantages = np.zeros((max_steps,))
         rewards = np.array([0.0] * (max_steps - 1) + [1.0])
         deltas[-1] = rewards[-1] - value
         advantages[-1] = deltas[-1]
         for n in reversed(range(max_steps - 1)):
+            # Here we use a constant value
             deltas[n] = rewards[n] + gamma * value - value
             advantages[n] = deltas[n] + gamma * gae_lambda * advantages[n + 1]
 
-        returns = advantages + value
+        # TD(lambda) estimate, see GH#375
+        lambda_returns = advantages + value
 
         assert np.allclose(buffer.advantages.flatten(), advantages)
-        assert np.allclose(buffer.returns.flatten(), returns)
+        assert np.allclose(buffer.returns.flatten(), lambda_returns)
 
     def _on_step(self):
         return True

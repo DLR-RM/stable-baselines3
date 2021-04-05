@@ -59,7 +59,7 @@ class CheckGAECallback(BaseCallback):
             deltas[n] = rewards[n] + gamma * value - value
             advantages[n] = deltas[n] + gamma * gae_lambda * advantages[n + 1]
 
-        # TD(lambda) estimate, see GH#375
+        # TD(lambda) estimate, see Github PR #375
         lambda_returns = advantages + value
 
         assert np.allclose(buffer.advantages.flatten(), advantages)

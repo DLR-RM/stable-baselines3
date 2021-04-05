@@ -472,7 +472,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         else:
             next_obs = new_obs_
 
-        if "info" not in inspect.signature(replay_buffer.add).parameters:
+        if "infos" not in inspect.signature(replay_buffer.add).parameters:
             # Backward compatibility (SB3 < 2.1.0)
             # Do not include info
             replay_buffer.add(
@@ -480,7 +480,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 next_obs,
                 buffer_action,
                 reward_,
-                done,
+                done,  # pytype: disable=missing-parameter
             )
         else:
             # SB3 >= 2.1.0, new HER replay buffer

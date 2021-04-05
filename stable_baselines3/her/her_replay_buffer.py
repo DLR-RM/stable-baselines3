@@ -511,6 +511,7 @@ class HerReplayBuffer(DictReplayBuffer):
                     rewards[i],
                     # We consider the transition as non-terminal
                     done=[False],
+                    infos=[{}],
                 )
 
     @property

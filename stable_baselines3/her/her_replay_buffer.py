@@ -408,13 +408,15 @@ class HerReplayBuffer(DictReplayBuffer):
 
         # Remove termination signals due to timeout
         if self.handle_timeout_termination:
-            done = done * (1 - np.array([info.get("TimeLimit.truncated", False) for info in infos]))
+            done_ = done * (1 - np.array([info.get("TimeLimit.truncated", False) for info in infos]))
+        else:
+            done_ = done
 
         self._buffer["observation"][self.pos][self.current_idx] = obs["observation"]
         self._buffer["achieved_goal"][self.pos][self.current_idx] = obs["achieved_goal"]
         self._buffer["desired_goal"][self.pos][self.current_idx] = obs["desired_goal"]
         self._buffer["action"][self.pos][self.current_idx] = action
-        self._buffer["done"][self.pos][self.current_idx] = done
+        self._buffer["done"][self.pos][self.current_idx] = done_
         self._buffer["reward"][self.pos][self.current_idx] = reward
         self._buffer["next_obs"][self.pos][self.current_idx] = next_obs["observation"]
         self._buffer["next_achieved_goal"][self.pos][self.current_idx] = next_obs["achieved_goal"]

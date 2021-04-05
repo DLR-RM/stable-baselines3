@@ -42,6 +42,7 @@ def test_her(model_class, online_sampling):
         gradient_steps=1,
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=100,
+        buffer_size=int(1e5),
     )
 
     model.learn(total_timesteps=150)
@@ -81,6 +82,7 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
         gradient_steps=1,
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=100,
+        buffer_size=int(1e5),
         action_noise=normal_action_noise,
     )
     assert model.action_noise is not None
@@ -118,7 +120,7 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
         batch_size=128,
         learning_rate=0.001,
         policy_kwargs=dict(net_arch=[64]),
-        buffer_size=int(1e6),
+        buffer_size=int(1e5),
         gamma=0.98,
         gradient_steps=1,
         train_freq=4,
@@ -376,6 +378,7 @@ def test_performance_her(online_sampling, n_bits):
         target_update_interval=500,
         seed=12,
         batch_size=32,
+        buffer_size=int(1e5),
     )
 
     model.learn(total_timesteps=5000, log_interval=50)

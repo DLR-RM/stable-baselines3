@@ -38,53 +38,32 @@ def get_time_limit(env: VecEnv, current_max_episode_length: Optional[int]) -> in
     return current_max_episode_length
 
 
-"""
-Hindsight Experience Replay (HER)
-Paper: https://arxiv.org/abs/1707.01495
-
-.. warning::
-
-  For performance reasons, the maximum number of steps per episodes must be specified.
-  In most cases, it will be inferred if you specify ``max_episode_steps`` when registering the environment
-  or if you use a ``gym.wrappers.TimeLimit`` (and ``env.spec`` is not None).
-  Otherwise, you can directly pass ``max_episode_length`` to the model constructor
-
-
-For additional offline algorithm specific arguments please have a look at the corresponding documentation.
-
-:param policy: The policy model to use.
-:param env: The environment to learn from (if registered in Gym, can be str)
-:param model_class: Off policy model which will be used with hindsight experience replay. (SAC, TD3, DDPG, DQN)
-:param n_sampled_goal: Number of sampled goals for replay. (offline sampling)
-:param goal_selection_strategy: Strategy for sampling goals for replay.
-    One of ['episode', 'final', 'future', 'random']
-:param online_sampling: Sample HER transitions online.
-:param learning_rate: learning rate for the optimizer,
-    it can be a function of the current progress remaining (from 1 to 0)
-:param max_episode_length: The maximum length of an episode. If not specified,
-    it will be automatically inferred if the environment uses a ``gym.wrappers.TimeLimit`` wrapper.
-"""
-
-
 class HerReplayBuffer(DictReplayBuffer):
     """
+    Hindsight Experience Replay (HER) buffer.
+    Paper: https://arxiv.org/abs/1707.01495
+
+    .. warning::
+
+      For performance reasons, the maximum number of steps per episodes must be specified.
+      In most cases, it will be inferred if you specify ``max_episode_steps`` when registering the environment
+      or if you use a ``gym.wrappers.TimeLimit`` (and ``env.spec`` is not None).
+      Otherwise, you can directly pass ``max_episode_length`` to the replay buffer constructor.
+
+
     Replay buffer for sampling HER (Hindsight Experience Replay) transitions.
     In the online sampling case, these new transitions will not be saved in the replay buffer
     and will only be created at sampling time.
 
     :param env: The training environment
     :param buffer_size: The size of the buffer measured in transitions.
-    :param max_episode_length: The length of an episode. (time horizon)
+    :param max_episode_length: The maximum length of an episode. If not specified,
+        it will be automatically inferred if the environment uses a ``gym.wrappers.TimeLimit`` wrapper.
     :param goal_selection_strategy: Strategy for sampling goals for replay.
         One of ['episode', 'final', 'future']
-    :param observation_space: Observation space
-    :param action_space: Action space
     :param device: PyTorch device
-    :param n_envs: Number of parallel environments
-    :param her_ratio: The ratio between HER transitions and regular transitions in percent
-        (between 0 and 1, for online sampling)
-        The default value ``her_ratio=0.8`` corresponds to 4 virtual transitions
-        for one real transition (4 / (4 + 1) = 0.8)
+    :param n_sampled_goal: Number of virtual transitions to create per real transition,
+        by sampling new goals.
     :param handle_timeout_termination: Handle timeout termination (due to timelimit)
         separately and treat the task as infinite horizon task.
         https://github.com/DLR-RM/stable-baselines3/issues/284
@@ -94,8 +73,6 @@ class HerReplayBuffer(DictReplayBuffer):
         self,
         env: VecEnv,
         buffer_size: int,
-        # observation_space: spaces.Space,
-        # action_space: spaces.Space,
         device: Union[th.device, str] = "cpu",
         replay_buffer: Optional[DictReplayBuffer] = None,
         max_episode_length: Optional[int] = None,

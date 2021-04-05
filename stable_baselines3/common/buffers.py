@@ -228,7 +228,7 @@ class ReplayBuffer(BaseBuffer):
         action: np.ndarray,
         reward: np.ndarray,
         done: np.ndarray,
-        infos: Optional[List[Dict[str, Any]]],
+        infos: List[Dict[str, Any]],
     ) -> None:
         # Copy to avoid modification by reference
         self.observations[self.pos] = np.array(obs).copy()
@@ -541,7 +541,7 @@ class DictReplayBuffer(ReplayBuffer):
         action: np.ndarray,
         reward: np.ndarray,
         done: np.ndarray,
-        infos: Optional[List[Dict[str, Any]]],
+        infos: List[Dict[str, Any]],
     ) -> None:
         # Copy to avoid modification by reference
         for key in self.observations.keys():

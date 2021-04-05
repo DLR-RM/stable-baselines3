@@ -108,7 +108,6 @@ class HerReplayBuffer(DictReplayBuffer):
 
         self.env = env
         self.buffer_size = her_buffer_size
-        self.max_episode_length = max_episode_length
 
         if online_sampling:
             replay_buffer = None

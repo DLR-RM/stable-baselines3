@@ -1,3 +1,4 @@
+import inspect
 import io
 import pathlib
 import time
@@ -451,7 +452,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         :param reward: reward for the current transition
         :param done: Termination signal
         :param infos: List of additional information about the transition.
-            It contains the terminal observations.
+            It may contain the terminal observations and information about timeout.
         """
         # Store only the unnormalized version
         if self._vec_normalize_env is not None:
@@ -471,16 +472,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         else:
             next_obs = new_obs_
 
-        if isinstance(replay_buffer, HerReplayBuffer):
-            replay_buffer.add(
-                self._last_original_obs,
-                next_obs,
-                buffer_action,
-                reward_,
-                done,
-                infos,
-            )
-        else:
+        if "info" not in inspect.signature(replay_buffer.add).parameters:
+            # Backward compatibility (SB3 < 2.1.0)
             # Do not include info
             replay_buffer.add(
                 self._last_original_obs,
@@ -488,6 +481,17 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 buffer_action,
                 reward_,
                 done,
+            )
+        else:
+            # SB3 >= 2.1.0, new HER replay buffer
+            # and proper handling of timeouts
+            replay_buffer.add(
+                self._last_original_obs,
+                next_obs,
+                buffer_action,
+                reward_,
+                done,
+                infos,
             )
 
         self._last_obs = new_obs

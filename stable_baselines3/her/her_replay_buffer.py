@@ -81,10 +81,13 @@ class HerReplayBuffer(DictReplayBuffer):
     :param action_space: Action space
     :param device: PyTorch device
     :param n_envs: Number of parallel environments
-    :her_ratio: The ratio between HER transitions and regular transitions in percent
+    :param her_ratio: The ratio between HER transitions and regular transitions in percent
         (between 0 and 1, for online sampling)
         The default value ``her_ratio=0.8`` corresponds to 4 virtual transitions
         for one real transition (4 / (4 + 1) = 0.8)
+    :param handle_timeout_termination: Handle timeout termination (due to timelimit)
+        separately and treat the task as infinite horizon task.
+        https://github.com/DLR-RM/stable-baselines3/issues/284
     """
 
     def __init__(
@@ -99,6 +102,7 @@ class HerReplayBuffer(DictReplayBuffer):
         n_sampled_goal: int = 4,
         goal_selection_strategy: Union[GoalSelectionStrategy, str] = "future",
         online_sampling: bool = True,
+        handle_timeout_termination: bool = True,
     ):
 
         super(HerReplayBuffer, self).__init__(buffer_size, env.observation_space, env.action_space, device, env.num_envs)
@@ -134,9 +138,9 @@ class HerReplayBuffer(DictReplayBuffer):
         self.replay_buffer = replay_buffer
         self.online_sampling = online_sampling
 
-        # TODO: this should not be needed anymore
-        # if self.get_vec_normalize_env() is not None:
-        #     assert online_sampling, "You must pass `online_sampling=True` if you want to use `VecNormalize` with `HER`"
+        # Handle timeouts termination properly if needed
+        # see https://github.com/DLR-RM/stable-baselines3/issues/284
+        self.handle_timeout_termination = handle_timeout_termination
 
         # buffer with episodes
         # number of episodes which can be stored until buffer size is reached
@@ -247,7 +251,8 @@ class HerReplayBuffer(DictReplayBuffer):
         :param n_sampled_goal: Number of sampled goals for replay
         :return: at most(n_sampled_goal * episode_length) HER transitions.
         """
-        # env=None as we should store unnormalized transitions, they will be normalized at sampling time
+        # `maybe_vec_env=None` as we should store unnormalized transitions,
+        # they will be normalized at sampling time
         return self._sample_transitions(
             batch_size=None,
             maybe_vec_env=None,
@@ -425,6 +430,10 @@ class HerReplayBuffer(DictReplayBuffer):
             # Clear info buffer
             self.info_buffer[self.pos] = deque(maxlen=self.max_episode_length)
 
+        # Remove termination signals due to timeout
+        if self.handle_timeout_termination:
+            done = done * (1 - np.array([info.get("TimeLimit.truncated", False) for info in infos]))
+
         self._buffer["observation"][self.pos][self.current_idx] = obs["observation"]
         self._buffer["achieved_goal"][self.pos][self.current_idx] = obs["achieved_goal"]
         self._buffer["desired_goal"][self.pos][self.current_idx] = obs["desired_goal"]
@@ -489,9 +498,7 @@ class HerReplayBuffer(DictReplayBuffer):
         when using offline sampling.
         """
 
-        # Sample goals and get new observations
-        # maybe_vec_env=None as we should store unnormalized transitions,
-        # they will be normalized at sampling time
+        # Sample goals to create virtual transitions for the last episode.
         observations, next_observations, actions, rewards = self._sample_offline(n_sampled_goal=self.n_sampled_goal)
 
         # Store virtual transitions in the replay buffer, if available
@@ -502,6 +509,7 @@ class HerReplayBuffer(DictReplayBuffer):
                     {key: next_obs[i] for key, next_obs in next_observations.items()},
                     actions[i],
                     rewards[i],
+                    # We consider the transition as non-terminal
                     done=[False],
                 )
 

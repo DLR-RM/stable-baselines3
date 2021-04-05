@@ -3,13 +3,49 @@
 Changelog
 ==========
 
-Release 1.0rc2 (WIP)
--------------------------------
+
+Release 1.1.0a1 (WIP)
+---------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed potential issue when calling off-policy algorithms with default arguments multiple times (the size of the replay buffer would be the same)
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Added ``flake8-bugbear`` to tests dependencies to find likely bugs
+
+Documentation:
+^^^^^^^^^^^^^^
+- Added gym pybullet drones project (@JacopoPan)
+- Added link to SuperSuit in projects (@justinkterry)
+
+
+Release 1.0 (2021-03-15)
+------------------------
+
+**First Major Version**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed ``stable_baselines3.common.cmd_util`` (already deprecated), please use ``env_util`` instead
 - All customs environments (e.g. the ``BitFlippingEnv`` or ``IdentityEnv``) were moved to ``stable_baselines3.common.envs`` folder
+
+
+.. warning::
+
+    A refactoring of the ``HER`` algorithm is planned together with support for dictionary observations
+    (see `PR #243 <https://github.com/DLR-RM/stable-baselines3/pull/243>`_ and `#351 <https://github.com/DLR-RM/stable-baselines3/pull/351>`_)
+    This will be a backward incompatible change (model trained with previous version of ``HER`` won't work with the new version).
 
 
 New Features:
@@ -34,6 +70,10 @@ Documentation:
 Others:
 ^^^^^^^
 - Updated ``env_checker`` to reflect support of dict observation spaces
+- Updated RL-Zoo to reflect the fact that is it more than a collection of trained agents
+- Added images to illustrate the training loop and custom policies (created with https://excalidraw.com/)
+- Updated the custom policy section
+
 
 Pre-Release 0.11.1 (2021-02-27)
 -------------------------------
@@ -609,4 +649,4 @@ And all the contributors:
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8
-@ShangqunYu @PierreExeter @JadenTravnik
+@ShangqunYu @PierreExeter @JacopoPan @JadenTravnik

@@ -56,6 +56,8 @@ New Features:
   `VecExtractDictObs <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_extract_dict_obs.py>`_ wrappers 
   to handle gym3-style vectorized environments (@vwxyzjn)
 - Added support for ``custom_objects`` when loading models
+- Ignored the terminal observation if the it is not provided by the environment
+  such as the gym3-style vectorized environemtns.
 
 Bug Fixes:
 ^^^^^^^^^^

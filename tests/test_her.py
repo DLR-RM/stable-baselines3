@@ -376,7 +376,7 @@ def test_performance_her(online_sampling, n_bits):
         learning_starts=100,
         exploration_final_eps=0.02,
         target_update_interval=500,
-        seed=12,
+        seed=0,
         batch_size=32,
         buffer_size=int(1e5),
     )

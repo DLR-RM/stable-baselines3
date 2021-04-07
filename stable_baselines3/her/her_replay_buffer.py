@@ -373,7 +373,8 @@ class HerReplayBuffer(DictReplayBuffer):
         next_observations = {
             "observation": transitions["next_obs"],
             "achieved_goal": transitions["next_achieved_goal"],
-            "desired_goal": transitions["next_desired_goal"],
+            # The desired goal for the next observation must be the same as the previous one
+            "desired_goal": transitions["desired_goal"],
         }
         next_observations = self._normalize_obs(next_observations, maybe_vec_env)
 

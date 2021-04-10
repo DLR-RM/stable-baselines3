@@ -35,7 +35,7 @@ Documentation:
 - Clarified channel-first/channel-last recommendation
 - Clarified pip installation in Zsh (@tom-doerr)
 - Clarified return computation for on-policy algorithms (TD(lambda) estimate was used)
-
+- Update sphinx environment installation instructions (@tom-doerr)
 
 Release 1.0 (2021-03-15)
 ------------------------

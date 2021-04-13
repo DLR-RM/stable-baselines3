@@ -57,7 +57,7 @@ class Monitor(gym.Wrapper):
         self.total_steps = 0
         self.current_reset_info = {}  # extra info about the current episode, that was passed in during reset()
 
-    def reset(self, **kwargs) -> "GymObs":
+    def reset(self, **kwargs) -> GymObs:
         """
         Calls the Gym environment reset. Can only be called if the environment is over, or if allow_early_resets is True
 
@@ -78,7 +78,7 @@ class Monitor(gym.Wrapper):
             self.current_reset_info[key] = value
         return self.env.reset(**kwargs)
 
-    def step(self, action: Union[np.ndarray, int]) -> "GymStepReturn":
+    def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:
         """
         Step the environment with the given action
 

@@ -11,6 +11,7 @@ import torch as th
 from stable_baselines3 import DDPG, DQN, SAC, TD3, HerReplayBuffer
 from stable_baselines3.common.envs import BitFlippingEnv
 from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
@@ -45,9 +46,7 @@ def test_her(model_class, online_sampling):
     )
 
     model.learn(total_timesteps=150)
-    # TODO: fix this: (model.get_env() works but not passing env)
-    # evaluate_policy(model, env)
-    evaluate_policy(model, model.get_env())
+    evaluate_policy(model, Monitor(env))
 
 
 @pytest.mark.parametrize(

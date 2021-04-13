@@ -268,6 +268,8 @@ class BasePolicy(BaseModel):
         # if mask is None:
         #     mask = [False for _ in range(self.n_envs)]
 
+        vectorized_env = is_vectorized_observation(observation, self.observation_space)
+
         if isinstance(observation, dict):
             # need to copy the dict as the dict in VecFrameStack will become a torch tensor
             observation = copy.deepcopy(observation)
@@ -286,8 +288,6 @@ class BasePolicy(BaseModel):
             observation = maybe_transpose(observation, self.observation_space)
         else:
             observation = np.array(observation)
-
-        vectorized_env = is_vectorized_observation(observation, self.observation_space)
 
         if not isinstance(observation, dict):
             # Add batch dimension if needed

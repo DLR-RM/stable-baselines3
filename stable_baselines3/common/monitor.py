@@ -1,12 +1,9 @@
-# flake8: noqa F401
-
 __all__ = ["Monitor", "ResultsWriter", "get_monitor_files", "load_results"]
 
 import csv
 import json
 import os
 import time
-import typing
 from glob import glob
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -60,7 +57,7 @@ class Monitor(gym.Wrapper):
         self.total_steps = 0
         self.current_reset_info = {}  # extra info about the current episode, that was passed in during reset()
 
-    def reset(self, **kwargs) -> "GymObs":
+    def reset(self, **kwargs) -> GymObs:
         """
         Calls the Gym environment reset. Can only be called if the environment is over, or if allow_early_resets is True
 
@@ -77,11 +74,11 @@ class Monitor(gym.Wrapper):
         for key in self.reset_keywords:
             value = kwargs.get(key)
             if value is None:
-                raise ValueError("Expected you to pass kwarg {} into reset".format(key))
+                raise ValueError(f"Expected you to pass keyword argument {key} into reset")
             self.current_reset_info[key] = value
         return self.env.reset(**kwargs)
 
-    def step(self, action: Union[np.ndarray, int]) -> "GymStepReturn":
+    def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:
         """
         Step the environment with the given action
 

@@ -1,4 +1,5 @@
 import time
+import warnings
 from typing import Optional, Tuple
 
 import numpy as np
@@ -29,15 +30,30 @@ class VecMonitor(VecEnvWrapper):
         info_keywords: Tuple[str, ...] = (),
     ):
         # Avoid circular import
-        from stable_baselines3.common.monitor import ResultsWriter
+        from stable_baselines3.common.monitor import Monitor, ResultsWriter
+
+        if venv.env_is_wrapped(Monitor)[0]:
+            warnings.warn(
+                "The environment is already wrapped with a `Monitor` wrapper"
+                "but you are wrapping it with a `VecMonitor` wrapper, the `Monitor` statistics will be"
+                "overwritten by the `VecMonitor` ones.",
+                UserWarning,
+            )
 
         VecEnvWrapper.__init__(self, venv)
         self.episode_returns = None
         self.episode_lengths = None
         self.episode_count = 0
         self.t_start = time.time()
+
+        env_id = None
+        if hasattr(venv, "spec") and venv.spec is not None:
+            env_id = venv.spec.id
+
         if filename:
-            self.results_writer = ResultsWriter(filename, header={"t_start": self.t_start}, extra_keys=info_keywords)
+            self.results_writer = ResultsWriter(
+                filename, header={"t_start": self.t_start, "env_id": env_id}, extra_keys=info_keywords
+            )
         else:
             self.results_writer = None
         self.info_keywords = info_keywords
@@ -52,7 +68,7 @@ class VecMonitor(VecEnvWrapper):
         obs, rewards, dones, infos = self.venv.step_wait()
         self.episode_returns += rewards
         self.episode_lengths += 1
-        newinfos = list(infos[:])
+        new_infos = list(infos[:])
         for i in range(len(dones)):
             if dones[i]:
                 info = infos[i].copy()
@@ -65,8 +81,8 @@ class VecMonitor(VecEnvWrapper):
                 self.episode_lengths[i] = 0
                 if self.results_writer:
                     self.results_writer.write_row(episode_info)
-                newinfos[i] = info
-        return obs, rewards, dones, newinfos
+                new_infos[i] = info
+        return obs, rewards, dones, new_infos
 
     def close(self) -> None:
         if self.results_writer:

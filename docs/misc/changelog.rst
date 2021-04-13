@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.1.0a1 (WIP)
+Release 1.1.0a2 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -12,6 +12,11 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Added `VecMonitor <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_monitor.py>`_ and
+  `VecExtractDictObs <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_extract_dict_obs.py>`_ wrappers
+  to handle gym3-style vectorized environments (@vwxyzjn)
+- Ignored the terminal observation if the it is not provided by the environment
+  such as the gym3-style vectorized environments. (@vwxyzjn)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -33,6 +38,8 @@ Documentation:
 - Clarify channel-first/channel-last recommendation
 - Update sphinx environment installation instructions (@tom-doerr)
 - Clarify pip installation in Zsh (@tom-doerr)
+- Added example for using ``ProcgenEnv``
+
 
 Release 1.0 (2021-03-15)
 ------------------------
@@ -52,12 +59,8 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-- Added `VecMonitor <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_monitor.py>`_ and 
-  `VecExtractDictObs <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_extract_dict_obs.py>`_ wrappers 
-  to handle gym3-style vectorized environments (@vwxyzjn)
 - Added support for ``custom_objects`` when loading models
-- Ignored the terminal observation if the it is not provided by the environment
-  such as the gym3-style vectorized environemtns.
+
 
 Bug Fixes:
 ^^^^^^^^^^

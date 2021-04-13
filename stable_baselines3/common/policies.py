@@ -286,6 +286,7 @@ class BasePolicy(BaseModel):
             # Handle the different cases for images
             # as PyTorch use channel first format
             observation = maybe_transpose(observation, self.observation_space)
+
         else:
             observation = np.array(observation)
 

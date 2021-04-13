@@ -9,9 +9,17 @@ Release 1.1.0a1 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- All customs environments (e.g. the ``BitFlippingEnv`` or ``IdentityEnv``) were moved to ``stable_baselines3.common.envs`` folder
+- Refactored ``HER`` which is now ``HerReplayBuffer`` class that can be passed to any off-policy algorithm
+- Handle timeout termination properly for off-policy algorithms (when using ``TimeLimit``)
 
 New Features:
 ^^^^^^^^^^^^^
+- Added support for single-level ``Dict`` observation space (@JadenTravnik)
+- Added ``DictRolloutBuffer`` ``DictReplayBuffer`` to support dictionary observations (@JadenTravnik)
+- Added ``StackedObservations`` and ``StackedDictObservations`` that are used within ``VecFrameStack``
+- Added simple 4x4 room Dict test environments
+- ``HerReplayBuffer`` now supports ``VecNormalize`` when ``online_sampling=False``
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -23,6 +31,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Added ``flake8-bugbear`` to tests dependencies to find likely bugs
+- Updated ``env_checker`` to reflect support of dict observation spaces
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -38,8 +47,6 @@ Release 1.0 (2021-03-15)
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed ``stable_baselines3.common.cmd_util`` (already deprecated), please use ``env_util`` instead
-- All customs environments (e.g. the ``BitFlippingEnv`` or ``IdentityEnv``) were moved to ``stable_baselines3.common.envs`` folder
-
 
 .. warning::
 
@@ -51,10 +58,6 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added support for ``custom_objects`` when loading models
-- Added support for single-level ``Dict`` observation space (@JadenTravnik)
-- Added ``DictRolloutBuffer`` ``DictReplayBuffer`` to support dictionary observations (@JadenTravnik)
-- Added ``StackedObservations`` and ``StackedDictObservations`` that are used within ``VecFrameStack``
-- Added simple 4x4 room Dict test environments
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -69,7 +72,6 @@ Documentation:
 
 Others:
 ^^^^^^^
-- Updated ``env_checker`` to reflect support of dict observation spaces
 - Updated RL-Zoo to reflect the fact that is it more than a collection of trained agents
 - Added images to illustrate the training loop and custom policies (created with https://excalidraw.com/)
 - Updated the custom policy section

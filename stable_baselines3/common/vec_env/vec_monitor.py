@@ -13,9 +13,9 @@ class VecMonitor(VecEnvWrapper):
     it is used to record the episode reward, length, time and other data.
 
     Some environments like `openai/procgen <https://github.com/openai/procgen>`_
-    or `gym3 <https://github.com/openai/gym3>` directly initialize the
-    vectorized environments, without giving us a chance to use the `Monitor`
-    wrapper. So this class simply does the job of the `Monitor` wrapper on
+    or `gym3 <https://github.com/openai/gym3>`_ directly initialize the
+    vectorized environments, without giving us a chance to use the ``Monitor``
+    wrapper. So this class simply does the job of the ``Monitor`` wrapper on
     a vectorized level.
 
     :param venv: The vectorized environment
@@ -32,7 +32,15 @@ class VecMonitor(VecEnvWrapper):
         # Avoid circular import
         from stable_baselines3.common.monitor import Monitor, ResultsWriter
 
-        if venv.env_is_wrapped(Monitor)[0]:
+        # This check is not valid for special `VecEnv`
+        # like the ones created by Procgen, that does follow completely
+        # the `VecEnv` interface
+        try:
+            is_wrapped_with_monitor = venv.env_is_wrapped(Monitor)[0]
+        except AttributeError:
+            is_wrapped_with_monitor = False
+
+        if is_wrapped_with_monitor:
             warnings.warn(
                 "The environment is already wrapped with a `Monitor` wrapper"
                 "but you are wrapping it with a `VecMonitor` wrapper, the `Monitor` statistics will be"

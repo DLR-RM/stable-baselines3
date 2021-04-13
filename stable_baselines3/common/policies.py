@@ -290,7 +290,6 @@ class BasePolicy(BaseModel):
         else:
             observation = np.array(observation)
 
-
         if not isinstance(observation, dict):
             # Dict obs need to be handled separately
             vectorized_env = is_vectorized_observation(observation, self.observation_space)

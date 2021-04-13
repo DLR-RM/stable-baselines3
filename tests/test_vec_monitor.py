@@ -9,7 +9,7 @@ import pytest
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor, get_monitor_files, load_results
-from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor
+from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor, VecNormalize
 
 
 def test_vec_monitor(tmp_path):
@@ -95,7 +95,7 @@ def test_vec_monitor_load_results(tmp_path):
     os.remove(monitor_file2)
 
 
-def test_vec_monitor_with_PPO(recwarn):
+def test_vec_monitor_ppo(recwarn):
     """
     Test the `VecMonitor` with PPO
     """
@@ -114,4 +114,7 @@ def test_vec_monitor_warn():
     env = DummyVecEnv([lambda: Monitor(gym.make("CartPole-v1"))])
     # We should warn the user when the env is already wrapped with a Monitor wrapper
     with pytest.warns(UserWarning):
-        env = VecMonitor(env)
+        VecMonitor(env)
+
+    with pytest.warns(UserWarning):
+        VecMonitor(VecNormalize(env))

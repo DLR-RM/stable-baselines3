@@ -41,12 +41,12 @@ def test_extract_dict_obs():
     assert env.reset().shape == (4, 86, 86)
 
 
-def test_vec_monitor_with_PPO():
+def test_vec_with_ppo():
     """
     Test the `VecExtractDictObs` with PPO
     """
     env = DictObsVecEnv()
     env = VecExtractDictObs(env, "rgb")
     monitor_env = VecMonitor(env)
-    model = PPO("MlpPolicy", monitor_env, verbose=3, n_steps=16, device="cpu")
+    model = PPO("MlpPolicy", monitor_env, verbose=1, n_steps=64, device="cpu")
     model.learn(total_timesteps=250)

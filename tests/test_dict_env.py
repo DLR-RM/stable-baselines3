@@ -79,6 +79,14 @@ class DummyDictEnv(gym.Env):
         pass
 
 
+@pytest.mark.parametrize("model_class", [PPO, A2C])
+def test_goal_env(model_class):
+    env = BitFlippingEnv(n_bits=4)
+    # check that goal env works for PPO/A2C that cannot use HER replay buffer
+    model = model_class("MultiInputPolicy", env, n_steps=64).learn(250)
+    evaluate_policy(model, model.get_env())
+
+
 @pytest.mark.parametrize("model_class", [PPO, A2C, DQN, DDPG, SAC, TD3])
 def test_consistency(model_class):
     """

@@ -10,6 +10,7 @@ import torch as th
 
 from stable_baselines3 import DDPG, DQN, SAC, TD3, HerReplayBuffer
 from stable_baselines3.common.envs import BitFlippingEnv
+from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
@@ -17,8 +18,6 @@ from stable_baselines3.her.her_replay_buffer import get_time_limit
 
 
 # TODO: add check with env images
-# + add test with PPO/A2C for GoalEnv
-# + add check VecNormalize with offline sampling
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
 @pytest.mark.parametrize("online_sampling", [True, False])
 def test_her(model_class, online_sampling):
@@ -46,6 +45,9 @@ def test_her(model_class, online_sampling):
     )
 
     model.learn(total_timesteps=150)
+    # TODO: fix this: (model.get_env() works but not passing env)
+    # evaluate_policy(model, env)
+    evaluate_policy(model, model.get_env())
 
 
 @pytest.mark.parametrize(

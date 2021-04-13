@@ -1,4 +1,3 @@
-import inspect
 import io
 import pathlib
 import time
@@ -247,6 +246,12 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.replay_buffer = load_from_pkl(path, self.verbose)
         assert isinstance(self.replay_buffer, ReplayBuffer), "The replay buffer must inherit from ReplayBuffer class"
 
+        # Backward compatibility with SB3 < 2.1.0 replay buffer
+        # Keep old behavior: do not handle timeout termination separately
+        if not hasattr(self.replay_buffer, "handle_timeout_termination"):  # pragma: no cover
+            self.replay_buffer.handle_timeout_termination = False
+            self.replay_buffer.timeouts = np.zeros_like(self.replay_buffer.dones)
+
     def _setup_learn(
         self,
         total_timesteps: int,
@@ -472,27 +477,14 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         else:
             next_obs = new_obs_
 
-        if "infos" not in inspect.signature(replay_buffer.add).parameters:
-            # Backward compatibility (SB3 < 2.1.0)
-            # Do not include info
-            replay_buffer.add(
-                self._last_original_obs,
-                next_obs,
-                buffer_action,
-                reward_,
-                done,  # pytype: disable=missing-parameter
-            )
-        else:
-            # SB3 >= 2.1.0, new HER replay buffer
-            # and proper handling of timeouts
-            replay_buffer.add(
-                self._last_original_obs,
-                next_obs,
-                buffer_action,
-                reward_,
-                done,
-                infos,
-            )
+        replay_buffer.add(
+            self._last_original_obs,
+            next_obs,
+            buffer_action,
+            reward_,
+            done,
+            infos,
+        )
 
         self._last_obs = new_obs
         # Save the unnormalized observation

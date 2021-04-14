@@ -243,8 +243,10 @@ def test_save_load_pytorch_var(tmp_path):
     del model
 
     model = SAC.load(str(tmp_path / "sac_pendulum"), env=env)
+    assert th.allclose(ent_coef_before, model.log_ent_coef)
     model.learn(200)
     ent_coef_after = model.log_ent_coef
+    # Check that the entropy coefficient is still optimized
     assert not th.allclose(ent_coef_before, ent_coef_after)
 
 

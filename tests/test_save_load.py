@@ -236,13 +236,14 @@ def test_exclude_include_saved_params(tmp_path, model_class):
 def test_save_load_pytorch_var(tmp_path):
     model = SAC("MlpPolicy", "Pendulum-v0", seed=3, policy_kwargs=dict(net_arch=[64], n_critics=1))
     model.learn(200)
-    model.save(str(tmp_path / "sac_pendulum"))
+    save_path = str(tmp_path / "sac_pendulum")
+    model.save(save_path)
     env = model.get_env()
     ent_coef_before = model.log_ent_coef
 
     del model
 
-    model = SAC.load(str(tmp_path / "sac_pendulum"), env=env)
+    model = SAC.load(save_path, env=env)
     assert th.allclose(ent_coef_before, model.log_ent_coef)
     model.learn(200)
     ent_coef_after = model.log_ent_coef

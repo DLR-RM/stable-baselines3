@@ -41,6 +41,7 @@ class CheckGAECallback(BaseCallback):
 
     def _on_rollout_end(self):
         buffer = self.model.rollout_buffer
+        rollout_size = buffer.size()
 
         max_steps = self.training_env.envs[0].max_steps
         gamma = self.model.gamma
@@ -49,15 +50,23 @@ class CheckGAECallback(BaseCallback):
         # We know in advance that the agent will get a single
         # reward at the very last timestep of the episode,
         # so we can pre-compute the lambda-return and advantage
-        deltas = np.zeros((max_steps,))
-        advantages = np.zeros((max_steps,))
-        rewards = np.array([0.0] * (max_steps - 1) + [1.0])
+        deltas = np.zeros((rollout_size,))
+        advantages = np.zeros((rollout_size,))
+        # Reward should be 1.0 on final timestep of episode
+        rewards = np.zeros((rollout_size,))
+        rewards[max_steps - 1::max_steps] = 1.0
+        # Note that these are episode starts (+1 timestep from done)
+        episode_starts = np.zeros((rollout_size,))
+        episode_starts[::max_steps] = 1.0
+
+        # Final step is always terminal (next would episode_start = 1)
         deltas[-1] = rewards[-1] - value
         advantages[-1] = deltas[-1]
-        for n in reversed(range(max_steps - 1)):
-            # Here we use a constant value
-            deltas[n] = rewards[n] + gamma * value - value
-            advantages[n] = deltas[n] + gamma * gae_lambda * advantages[n + 1]
+        for n in reversed(range(rollout_size - 1)):
+            # Values are constants
+            episode_start_mask = 1.0 - episode_starts[n + 1]
+            deltas[n] = rewards[n] + gamma * value * episode_start_mask - value
+            advantages[n] = deltas[n] + gamma * gae_lambda * advantages[n + 1] * episode_start_mask
 
         # TD(lambda) estimate, see Github PR #375
         lambda_returns = advantages + value
@@ -86,18 +95,20 @@ class CustomPolicy(ActorCriticPolicy):
 @pytest.mark.parametrize("model_class", [A2C, PPO])
 @pytest.mark.parametrize("gae_lambda", [1.0, 0.9])
 @pytest.mark.parametrize("gamma", [1.0, 0.99])
-def test_gae_computation(model_class, gae_lambda, gamma):
+@pytest.mark.parametrize("num_episodes", [1, 3])
+def test_gae_computation(model_class, gae_lambda, gamma, num_episodes):
     env = CustomEnv(max_steps=64)
+    rollout_size = 64 * num_episodes
     model = model_class(
         CustomPolicy,
         env,
         seed=1,
         gamma=gamma,
-        n_steps=env.max_steps,
+        n_steps=rollout_size,
         gae_lambda=gae_lambda,
     )
-    model.learn(env.max_steps, callback=CheckGAECallback())
+    model.learn(rollout_size, callback=CheckGAECallback())
 
     # Change constant value so advantage != returns
     model.policy.constant_value = 1.0
-    model.learn(env.max_steps, callback=CheckGAECallback())
+    model.learn(rollout_size, callback=CheckGAECallback())

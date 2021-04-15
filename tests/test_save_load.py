@@ -233,6 +233,24 @@ def test_exclude_include_saved_params(tmp_path, model_class):
     os.remove(tmp_path / "test_save.zip")
 
 
+def test_save_load_pytorch_var(tmp_path):
+    model = SAC("MlpPolicy", "Pendulum-v0", seed=3, policy_kwargs=dict(net_arch=[64], n_critics=1))
+    model.learn(200)
+    save_path = str(tmp_path / "sac_pendulum")
+    model.save(save_path)
+    env = model.get_env()
+    ent_coef_before = model.log_ent_coef
+
+    del model
+
+    model = SAC.load(save_path, env=env)
+    assert th.allclose(ent_coef_before, model.log_ent_coef)
+    model.learn(200)
+    ent_coef_after = model.log_ent_coef
+    # Check that the entropy coefficient is still optimized
+    assert not th.allclose(ent_coef_before, ent_coef_after)
+
+
 @pytest.mark.parametrize("model_class", [A2C, TD3])
 def test_save_load_env_cnn(tmp_path, model_class):
     """

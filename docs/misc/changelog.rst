@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.1.0a2 (WIP)
+Release 1.1.0a3 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -21,6 +21,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed potential issue when calling off-policy algorithms with default arguments multiple times (the size of the replay buffer would be the same)
+- Fixed loading of ``ent_coef`` for ``SAC`` and ``TQC``, it was not optimized anymore (thanks @Atlis)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -649,4 +650,4 @@ And all the contributors:
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
-@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr
+@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis

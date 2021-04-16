@@ -344,8 +344,8 @@ class RolloutBuffer(BaseBuffer):
             delta = self.rewards[step] + self.gamma * next_values * next_non_terminal - self.values[step]
             last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
             self.advantages[step] = last_gae_lam
-        # TD(lambda) estimator, see GH#375 or "Telescoping in TD(lambda)"
-        # in David Silver Lecture 4
+        # TD(lambda) estimator, see Github PR #375 or "Telescoping in TD(lambda)"
+        # in David Silver Lecture 4: https://www.youtube.com/watch?v=PnHCvfgC_ZA
         self.returns = self.advantages + self.values
 
     def add(

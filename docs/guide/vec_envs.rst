@@ -27,14 +27,22 @@ SubprocVecEnv ✔️       ✔️           ✔️        ✔️         ✔️
 
 	When using vectorized environments, the environments are automatically reset at the end of each episode.
 	Thus, the observation returned for the i-th environment when ``done[i]`` is true will in fact be the first observation of the next episode, not the last observation of the episode that has just terminated.
-	You can access the "real" final observation of the terminated episode—that is, the one that accompanied the ``done`` event provided by the underlying environment—using the ``terminal_observation`` keys in the info dicts returned by the vecenv.
+	You can access the "real" final observation of the terminated episode—that is, the one that accompanied the ``done`` event provided by the underlying environment—using the ``terminal_observation`` keys in the info dicts returned by the ``VecEnv``.
+
 
 .. warning::
 
-				When using ``SubprocVecEnv``, users must wrap the code in an ``if __name__ == "__main__":`` if using the ``forkserver`` or ``spawn`` start method (default on Windows).
-				On Linux, the default start method is ``fork`` which is not thread safe and can create deadlocks.
+  When defining a custom ``VecEnv`` (for instance, using gym3 ``ProcgenEnv``), you should provide ``terminal_observation`` keys in the info dicts returned by the ``VecEnv``
+  (cf. note above).
 
-				For more information, see Python's `multiprocessing guidelines <https://docs.python.org/3/library/multiprocessing.html#the-spawn-and-forkserver-start-methods>`_.
+
+.. warning::
+
+    When using ``SubprocVecEnv``, users must wrap the code in an ``if __name__ == "__main__":`` if using the ``forkserver`` or ``spawn`` start method (default on Windows).
+    On Linux, the default start method is ``fork`` which is not thread safe and can create deadlocks.
+
+    For more information, see Python's `multiprocessing guidelines <https://docs.python.org/3/library/multiprocessing.html#the-spawn-and-forkserver-start-methods>`_.
+
 
 VecEnv
 ------
@@ -89,4 +97,16 @@ VecTransposeImage
 ~~~~~~~~~~~~~~~~~
 
 .. autoclass:: VecTransposeImage
+  :members:
+
+VecMonitor
+~~~~~~~~~~~~~~~~~
+
+.. autoclass:: VecMonitor
+  :members:
+
+VecExtractDictObs
+~~~~~~~~~~~~~~~~~
+
+.. autoclass:: VecExtractDictObs
   :members:

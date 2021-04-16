@@ -650,7 +650,9 @@ class BaseAlgorithm(ABC):
         # put other pytorch variables back in place
         if pytorch_variables is not None:
             for name in pytorch_variables:
-                recursive_setattr(model, name, pytorch_variables[name])
+                # Set the data attribute directly to avoid issue when using optimizers
+                # See https://github.com/DLR-RM/stable-baselines3/issues/391
+                recursive_setattr(model, name + ".data", pytorch_variables[name].data)
 
         # Sample gSDE exploration matrix, so it uses the right device
         # see issue #44

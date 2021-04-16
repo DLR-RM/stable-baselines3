@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.1.0a2 (WIP)
+Release 1.1.0a4 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -13,10 +13,16 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Added `VecMonitor <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_monitor.py>`_ and
+  `VecExtractDictObs <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_extract_dict_obs.py>`_ wrappers
+  to handle gym3-style vectorized environments (@vwxyzjn)
+- Ignored the terminal observation if the it is not provided by the environment
+  such as the gym3-style vectorized environments. (@vwxyzjn)
 
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed potential issue when calling off-policy algorithms with default arguments multiple times (the size of the replay buffer would be the same)
+- Fixed loading of ``ent_coef`` for ``SAC`` and ``TQC``, it was not optimized anymore (thanks @Atlis)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -33,8 +39,10 @@ Documentation:
 - Added link to SuperSuit in projects (@justinkterry)
 - Fixed DQN example (thanks @ltbd78)
 - Clarified channel-first/channel-last recommendation
+- Update sphinx environment installation instructions (@tom-doerr)
 - Clarified pip installation in Zsh (@tom-doerr)
 - Clarified return computation for on-policy algorithms (TD(lambda) estimate was used)
+- Added example for using ``ProcgenEnv``
 
 
 Release 1.0 (2021-03-15)
@@ -56,6 +64,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added support for ``custom_objects`` when loading models
+
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -643,5 +652,5 @@ And all the contributors:
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
-@tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8
-@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr
+@tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
+@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis

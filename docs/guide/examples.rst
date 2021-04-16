@@ -642,6 +642,30 @@ A2C policy gradient updates on the model.
       print(f"Best fitness: {top_candidates[0][1]:.2f}")
 
 
+SB3 and ProcgenEnv
+------------------
+
+Some environments like `Procgen <https://github.com/openai/procgen>`_ already produce a vectorized
+environment (see discussion in `issue #314 <https://github.com/DLR-RM/stable-baselines3/issues/314>`_). In order to use it with SB3, you must wrap it in a ``VecMonitor`` wrapper which will also allow
+to keep track of the agent progress.
+
+.. code-block:: python
+
+  from procgen import ProcgenEnv
+
+  from stable_baselines3 import PPO
+  from stable_baselines3.common.vec_env import VecExtractDictObs, VecMonitor
+
+  # ProcgenEnv is already vectorized
+  venv = ProcgenEnv(num_envs=2, env_name='starpilot')
+  # PPO does not currently support Dict observations
+  # this will be solved in https://github.com/DLR-RM/stable-baselines3/pull/243
+  venv = VecExtractDictObs(venv, "rgb")
+  venv = VecMonitor(venv=venv)
+
+  model = PPO("MlpPolicy", venv, verbose=1)
+  model.learn(10000)
+
 
 Record a Video
 --------------

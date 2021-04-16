@@ -4,11 +4,12 @@ Changelog
 ==========
 
 
-Release 1.1.0a3 (WIP)
+Release 1.1.0a4 (WIP)
 ---------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Renamed ``_last_dones`` and ``dones`` to ``_last_episode_starts`` and ``episode_starts`` in ``RolloutBuffer``.
 
 New Features:
 ^^^^^^^^^^^^^
@@ -30,15 +31,17 @@ Others:
 ^^^^^^^
 - Added ``flake8-bugbear`` to tests dependencies to find likely bugs
 - Added Code of Conduct
+- Added tests for GAE and lambda return computation
 
 Documentation:
 ^^^^^^^^^^^^^^
 - Added gym pybullet drones project (@JacopoPan)
 - Added link to SuperSuit in projects (@justinkterry)
 - Fixed DQN example (thanks @ltbd78)
-- Clarify channel-first/channel-last recommendation
+- Clarified channel-first/channel-last recommendation
 - Update sphinx environment installation instructions (@tom-doerr)
-- Clarify pip installation in Zsh (@tom-doerr)
+- Clarified pip installation in Zsh (@tom-doerr)
+- Clarified return computation for on-policy algorithms (TD(lambda) estimate was used)
 - Added example for using ``ProcgenEnv``
 
 

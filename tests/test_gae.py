@@ -54,7 +54,7 @@ class CheckGAECallback(BaseCallback):
         advantages = np.zeros((rollout_size,))
         # Reward should be 1.0 on final timestep of episode
         rewards = np.zeros((rollout_size,))
-        rewards[max_steps - 1::max_steps] = 1.0
+        rewards[max_steps - 1 :: max_steps] = 1.0
         # Note that these are episode starts (+1 timestep from done)
         episode_starts = np.zeros((rollout_size,))
         episode_starts[::max_steps] = 1.0

@@ -56,7 +56,8 @@ def evaluate_policy(
     from stable_baselines3.common.monitor import Monitor
 
     if isinstance(env, VecEnv):
-        assert env.num_envs == 1, "You must pass only one environment when using this function"
+        if env.num_envs == 1:
+            warnings.warn("You are passing more than one environment for evaluation")
         is_monitor_wrapped = is_vecenv_wrapped(env, VecMonitor) or env.env_is_wrapped(Monitor)[0]
     else:
         is_monitor_wrapped = is_wrapped(env, Monitor)
@@ -71,7 +72,7 @@ def evaluate_policy(
 
     episode_rewards, episode_lengths = [], []
     not_reseted = True
-    while len(episode_rewards) < n_eval_episodes:
+    while len(episode_rewards) < n_eval_episodes:  # * env.num_envs
         # Number of loops here might differ from true episodes
         # played, if underlying wrappers modify episode lengths.
         # Avoid double reset, as VecEnv are reset automatically.
@@ -81,6 +82,7 @@ def evaluate_policy(
         done, state = False, None
         episode_reward = 0.0
         episode_length = 0
+
         while not done:
             action, state = model.predict(obs, state=state, deterministic=deterministic)
             obs, reward, done, info = env.step(action)

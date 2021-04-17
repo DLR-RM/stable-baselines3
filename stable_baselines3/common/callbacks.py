@@ -306,7 +306,8 @@ class EvalCallback(EventCallback):
             eval_env = DummyVecEnv([lambda: eval_env])
 
         if isinstance(eval_env, VecEnv):
-            assert eval_env.num_envs == 1, "You must pass only one environment for evaluation"
+            if eval_env.num_envs > 1:
+                warnings.warn("You are passing more than one environment for evaluation")
 
         self.eval_env = eval_env
         self.best_model_save_path = best_model_save_path

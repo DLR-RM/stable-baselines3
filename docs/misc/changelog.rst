@@ -18,6 +18,7 @@ New Features:
   to handle gym3-style vectorized environments (@vwxyzjn)
 - Ignored the terminal observation if the it is not provided by the environment
   such as the gym3-style vectorized environments. (@vwxyzjn)
+- Added support for evaluating vector environments with more than 1 env in callbacks (@justinkterry)
 
 Bug Fixes:
 ^^^^^^^^^^

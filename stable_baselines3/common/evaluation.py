@@ -72,7 +72,7 @@ def evaluate_policy(
 
     episode_rewards, episode_lengths = [], []
     not_reseted = True
-    while len(episode_rewards) < n_eval_episodes:  # * env.num_envs
+    while len(episode_rewards) < n_eval_episodes:
         # Number of loops here might differ from true episodes
         # played, if underlying wrappers modify episode lengths.
         # Avoid double reset, as VecEnv are reset automatically.

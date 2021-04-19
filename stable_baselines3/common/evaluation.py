@@ -82,7 +82,6 @@ def evaluate_policy(
         done, state = False, None
         episode_reward = 0.0
         episode_length = 0
-
         while not done:
             action, state = model.predict(obs, state=state, deterministic=deterministic)
             obs, reward, done, info = env.step(action)

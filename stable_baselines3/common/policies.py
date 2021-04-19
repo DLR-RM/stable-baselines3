@@ -435,7 +435,7 @@ class ActorCriticPolicy(BasePolicy):
                 log_std_init=self.log_std_init,
                 squash_output=default_none_kwargs["squash_output"],
                 full_std=default_none_kwargs["full_std"],
-                sde_net_arch=default_none_kwargs["sde_net_arch"],
+                sde_net_arch=self.sde_net_arch,
                 use_expln=default_none_kwargs["use_expln"],
                 lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
                 ortho_init=self.ortho_init,

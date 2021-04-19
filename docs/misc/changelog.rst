@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.1.0a4 (WIP)
+Release 1.1.0a5 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -23,6 +23,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fixed potential issue when calling off-policy algorithms with default arguments multiple times (the size of the replay buffer would be the same)
 - Fixed loading of ``ent_coef`` for ``SAC`` and ``TQC``, it was not optimized anymore (thanks @Atlis)
+- Fixed saving of ``A2C`` and ``PPO`` policy when using gSDE (thanks @liusida)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -653,4 +654,4 @@ And all the contributors:
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
-@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis
+@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida

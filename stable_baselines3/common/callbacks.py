@@ -343,7 +343,7 @@ class EvalCallback(EventCallback):
         if not isinstance(info, dict):
             info = info[0]
 
-        if locals_["done"]:
+        if locals_["done"].all():
             maybe_is_success = info.get("is_success")
             if maybe_is_success is not None:
                 self._is_success_buffer.append(maybe_is_success)

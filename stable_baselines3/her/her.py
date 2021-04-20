@@ -110,7 +110,6 @@ class HER(BaseAlgorithm):
 
         # Make HER use self.model.action_noise
         del self.action_noise
-        self.verbose = self.model.verbose
         self.tensorboard_log = self.model.tensorboard_log
 
         # convert goal_selection_strategy into GoalSelectionStrategy if string
@@ -482,7 +481,7 @@ class HER(BaseAlgorithm):
         # check if given env is valid
         if env is not None:
             # Wrap first if needed
-            env = cls._wrap_env(env, data["verbose"])
+            env = cls._wrap_env(env)
             # Check if given env is valid
             check_for_correct_spaces(env, data["observation_space"], data["action_space"])
         else:

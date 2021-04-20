@@ -1,3 +1,4 @@
+import logging
 import os
 import warnings
 from abc import ABC, abstractmethod
@@ -11,14 +12,15 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, sync_envs_normalization
 
 
+_logger = logging.getLogger(__name__)
+
+
 class BaseCallback(ABC):
     """
     Base class for callback.
-
-    :param verbose:
     """
 
-    def __init__(self, verbose: int = 0):
+    def __init__(self):
         super(BaseCallback, self).__init__()
         # The RL model
         self.model = None  # type: Optional[base_class.BaseAlgorithm]
@@ -28,7 +30,6 @@ class BaseCallback(ABC):
         self.n_calls = 0  # type: int
         # n_envs * n times env.step() was called
         self.num_timesteps = 0  # type: int
-        self.verbose = verbose
         self.locals: Dict[str, Any] = {}
         self.globals: Dict[str, Any] = {}
         self.logger = None
@@ -123,11 +124,10 @@ class EventCallback(BaseCallback):
 
     :param callback: Callback that will be called
         when an event is triggered.
-    :param verbose:
     """
 
-    def __init__(self, callback: Optional[BaseCallback] = None, verbose: int = 0):
-        super(EventCallback, self).__init__(verbose=verbose)
+    def __init__(self, callback: Optional[BaseCallback] = None):
+        super(EventCallback, self).__init__()
         self.callback = callback
         # Give access to the parent
         if callback is not None:
@@ -217,11 +217,10 @@ class CheckpointCallback(BaseCallback):
     :param save_freq:
     :param save_path: Path to the folder where the model will be saved.
     :param name_prefix: Common prefix to the saved models
-    :param verbose:
     """
 
-    def __init__(self, save_freq: int, save_path: str, name_prefix: str = "rl_model", verbose: int = 0):
-        super(CheckpointCallback, self).__init__(verbose)
+    def __init__(self, save_freq: int, save_path: str, name_prefix: str = "rl_model"):
+        super(CheckpointCallback, self).__init__()
         self.save_freq = save_freq
         self.save_path = save_path
         self.name_prefix = name_prefix
@@ -235,8 +234,7 @@ class CheckpointCallback(BaseCallback):
         if self.n_calls % self.save_freq == 0:
             path = os.path.join(self.save_path, f"{self.name_prefix}_{self.num_timesteps}_steps")
             self.model.save(path)
-            if self.verbose > 1:
-                print(f"Saving model checkpoint to {path}")
+            _logger.info(f"Saving model checkpoint to {path}")
         return True
 
 
@@ -245,11 +243,10 @@ class ConvertCallback(BaseCallback):
     Convert functional callback (old-style) to object.
 
     :param callback:
-    :param verbose:
     """
 
-    def __init__(self, callback: Callable[[Dict[str, Any], Dict[str, Any]], bool], verbose: int = 0):
-        super(ConvertCallback, self).__init__(verbose)
+    def __init__(self, callback: Callable[[Dict[str, Any], Dict[str, Any]], bool]):
+        super(ConvertCallback, self).__init__()
         self.callback = callback
 
     def _on_step(self) -> bool:
@@ -274,7 +271,6 @@ class EvalCallback(EventCallback):
     :param deterministic: Whether the evaluation should
         use a stochastic or deterministic actions.
     :param render: Whether to render or not the environment during evaluation
-    :param verbose:
     :param warn: Passed to ``evaluate_policy`` (warns if ``eval_env`` has not been
         wrapped with a Monitor wrapper)
     """
@@ -289,10 +285,9 @@ class EvalCallback(EventCallback):
         best_model_save_path: str = None,
         deterministic: bool = True,
         render: bool = False,
-        verbose: int = 1,
         warn: bool = True,
     ):
-        super(EvalCallback, self).__init__(callback_on_new_best, verbose=verbose)
+        super(EvalCallback, self).__init__(callback_on_new_best)
         self.n_eval_episodes = n_eval_episodes
         self.eval_freq = eval_freq
         self.best_mean_reward = -np.inf
@@ -394,22 +389,19 @@ class EvalCallback(EventCallback):
             mean_ep_length, std_ep_length = np.mean(episode_lengths), np.std(episode_lengths)
             self.last_mean_reward = mean_reward
 
-            if self.verbose > 0:
-                print(f"Eval num_timesteps={self.num_timesteps}, " f"episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
-                print(f"Episode length: {mean_ep_length:.2f} +/- {std_ep_length:.2f}")
+            _logger.info(f"Eval num_timesteps={self.num_timesteps}, " f"episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
+            _logger.info(f"Episode length: {mean_ep_length:.2f} +/- {std_ep_length:.2f}")
             # Add to current Logger
             self.logger.record("eval/mean_reward", float(mean_reward))
             self.logger.record("eval/mean_ep_length", mean_ep_length)
 
             if len(self._is_success_buffer) > 0:
                 success_rate = np.mean(self._is_success_buffer)
-                if self.verbose > 0:
-                    print(f"Success rate: {100 * success_rate:.2f}%")
+                _logger.info(f"Success rate: {100 * success_rate:.2f}%")
                 self.logger.record("eval/success_rate", success_rate)
 
             if mean_reward > self.best_mean_reward:
-                if self.verbose > 0:
-                    print("New best mean reward!")
+                _logger.info("New best mean reward!")
                 if self.best_model_save_path is not None:
                     self.model.save(os.path.join(self.best_model_save_path, "best_model"))
                 self.best_mean_reward = mean_reward
@@ -438,22 +430,20 @@ class StopTrainingOnRewardThreshold(BaseCallback):
 
     :param reward_threshold:  Minimum expected reward per episode
         to stop training.
-    :param verbose:
     """
 
-    def __init__(self, reward_threshold: float, verbose: int = 0):
-        super(StopTrainingOnRewardThreshold, self).__init__(verbose=verbose)
+    def __init__(self, reward_threshold: float):
+        super(StopTrainingOnRewardThreshold, self).__init__()
         self.reward_threshold = reward_threshold
 
     def _on_step(self) -> bool:
         assert self.parent is not None, "``StopTrainingOnMinimumReward`` callback must be used " "with an ``EvalCallback``"
         # Convert np.bool_ to bool, otherwise callback() is False won't work
         continue_training = bool(self.parent.best_mean_reward < self.reward_threshold)
-        if self.verbose > 0 and not continue_training:
-            print(
+        if not continue_training:
+            _logger.info(
                 f"Stopping training because the mean reward {self.parent.best_mean_reward:.2f} "
-                f" is above the threshold {self.reward_threshold}"
-            )
+                f" is above the threshold {self.reward_threshold}")
         return continue_training
 
 
@@ -486,11 +476,10 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
     and in total for ``max_episodes * n_envs`` episodes.
 
     :param max_episodes: Maximum number of episodes to stop training.
-    :param verbose: Select whether to print information about when training ended by reaching ``max_episodes``
     """
 
-    def __init__(self, max_episodes: int, verbose: int = 0):
-        super(StopTrainingOnMaxEpisodes, self).__init__(verbose=verbose)
+    def __init__(self, max_episodes: int):
+        super(StopTrainingOnMaxEpisodes, self).__init__()
         self.max_episodes = max_episodes
         self._total_max_episodes = max_episodes
         self.n_episodes = 0
@@ -508,13 +497,13 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
 
         continue_training = self.n_episodes < self._total_max_episodes
 
-        if self.verbose > 0 and not continue_training:
+        if not continue_training:
             mean_episodes_per_env = self.n_episodes / self.training_env.num_envs
             mean_ep_str = (
                 f"with an average of {mean_episodes_per_env:.2f} episodes per env" if self.training_env.num_envs > 1 else ""
             )
 
-            print(
+            _logger.info(
                 f"Stopping training with a total of {self.num_timesteps} steps because the "
                 f"{self.locals.get('tb_log_name')} model reached max_episodes={self.max_episodes}, "
                 f"by playing for {self.n_episodes} episodes "

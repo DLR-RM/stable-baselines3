@@ -41,7 +41,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     :param monitor_wrapper: When creating an environment, whether to wrap it
         or not in a Monitor wrapper.
     :param policy_kwargs: additional arguments to be passed to the policy on creation
-    :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
     :param seed: Seed for the pseudo random generators
     :param device: Device (cpu, cuda, ...) on which the code should be run.
         Setting it to auto, the code will be run on the GPU if possible.
@@ -66,7 +65,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         create_eval_env: bool = False,
         monitor_wrapper: bool = True,
         policy_kwargs: Optional[Dict[str, Any]] = None,
-        verbose: int = 0,
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
@@ -79,7 +77,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             policy_base=ActorCriticPolicy,
             learning_rate=learning_rate,
             policy_kwargs=policy_kwargs,
-            verbose=verbose,
             device=device,
             use_sde=use_sde,
             sde_sample_freq=sde_sample_freq,

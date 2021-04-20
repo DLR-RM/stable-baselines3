@@ -1,3 +1,4 @@
+import logging
 import warnings
 from typing import Any, Dict, Optional, Type, Union
 
@@ -11,6 +12,9 @@ from stable_baselines3.common.on_policy_algorithm import OnPolicyAlgorithm
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import explained_variance, get_schedule_fn
+
+
+_logger = logging.getLogger(__name__)
 
 
 class PPO(OnPolicyAlgorithm):
@@ -58,7 +62,6 @@ class PPO(OnPolicyAlgorithm):
     :param create_eval_env: Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: additional arguments to be passed to the policy on creation
-    :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
     :param seed: Seed for the pseudo random generators
     :param device: Device (cpu, cuda, ...) on which the code should be run.
         Setting it to auto, the code will be run on the GPU if possible.
@@ -86,7 +89,6 @@ class PPO(OnPolicyAlgorithm):
         tensorboard_log: Optional[str] = None,
         create_eval_env: bool = False,
         policy_kwargs: Optional[Dict[str, Any]] = None,
-        verbose: int = 0,
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
@@ -106,7 +108,6 @@ class PPO(OnPolicyAlgorithm):
             sde_sample_freq=sde_sample_freq,
             tensorboard_log=tensorboard_log,
             policy_kwargs=policy_kwargs,
-            verbose=verbose,
             device=device,
             create_eval_env=create_eval_env,
             seed=seed,
@@ -242,7 +243,7 @@ class PPO(OnPolicyAlgorithm):
             all_kl_divs.append(np.mean(approx_kl_divs))
 
             if self.target_kl is not None and np.mean(approx_kl_divs) > 1.5 * self.target_kl:
-                print(f"Early stopping at step {epoch} due to reaching max kl: {np.mean(approx_kl_divs):.2f}")
+                _logger.info(f"Early stopping at step {epoch} due to reaching max kl: {np.mean(approx_kl_divs):.2f}")
                 break
 
         self._n_updates += self.n_epochs

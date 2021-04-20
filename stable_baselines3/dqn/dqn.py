@@ -48,7 +48,6 @@ class DQN(OffPolicyAlgorithm):
     :param create_eval_env: Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: additional arguments to be passed to the policy on creation
-    :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
     :param seed: Seed for the pseudo random generators
     :param device: Device (cpu, cuda, ...) on which the code should be run.
         Setting it to auto, the code will be run on the GPU if possible.
@@ -76,7 +75,6 @@ class DQN(OffPolicyAlgorithm):
         tensorboard_log: Optional[str] = None,
         create_eval_env: bool = False,
         policy_kwargs: Optional[Dict[str, Any]] = None,
-        verbose: int = 0,
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
@@ -97,7 +95,6 @@ class DQN(OffPolicyAlgorithm):
             action_noise=None,  # No action noise
             policy_kwargs=policy_kwargs,
             tensorboard_log=tensorboard_log,
-            verbose=verbose,
             device=device,
             create_eval_env=create_eval_env,
             seed=seed,

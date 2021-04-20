@@ -168,12 +168,11 @@ def get_latest_run_id(log_path: Optional[str] = None, log_name: str = "") -> int
 
 
 def configure_logger(
-    verbose: int = 0, tensorboard_log: Optional[str] = None, tb_log_name: str = "", reset_num_timesteps: bool = True
+    tensorboard_log: Optional[str] = None, tb_log_name: str = "", reset_num_timesteps: bool = True
 ) -> None:
     """
     Configure the logger's outputs.
 
-    :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
     :param tensorboard_log: the log location for tensorboard (if None, no logging)
     :param tb_log_name: tensorboard log
     """

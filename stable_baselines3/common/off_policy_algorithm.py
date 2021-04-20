@@ -47,7 +47,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param policy_kwargs: Additional arguments to be passed to the policy on creation
     :param tensorboard_log: the log location for tensorboard (if None, no logging)
-    :param verbose: The verbosity level: 0 none, 1 training information, 2 debug
     :param device: Device on which the code should run.
         By default, it will try to use a Cuda compatible device and fallback to cpu
         if it is not possible.
@@ -87,7 +86,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         optimize_memory_usage: bool = False,
         policy_kwargs: Dict[str, Any] = None,
         tensorboard_log: Optional[str] = None,
-        verbose: int = 0,
         device: Union[th.device, str] = "auto",
         support_multi_env: bool = False,
         create_eval_env: bool = False,
@@ -108,7 +106,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             learning_rate=learning_rate,
             policy_kwargs=policy_kwargs,
             tensorboard_log=tensorboard_log,
-            verbose=verbose,
             device=device,
             support_multi_env=support_multi_env,
             create_eval_env=create_eval_env,
@@ -193,7 +190,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             if path is a str or pathlib.Path, the path is automatically created if necessary.
         """
         assert self.replay_buffer is not None, "The replay buffer is not defined"
-        save_to_pkl(path, self.replay_buffer, self.verbose)
+        save_to_pkl(path, self.replay_buffer)
 
     def load_replay_buffer(self, path: Union[str, pathlib.Path, io.BufferedIOBase]) -> None:
         """
@@ -201,7 +198,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         :param path: Path to the pickled replay buffer.
         """
-        self.replay_buffer = load_from_pkl(path, self.verbose)
+        self.replay_buffer = load_from_pkl(path)
         assert isinstance(self.replay_buffer, ReplayBuffer), "The replay buffer must inherit from ReplayBuffer class"
 
     def _setup_learn(

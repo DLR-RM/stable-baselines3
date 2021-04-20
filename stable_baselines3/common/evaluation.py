@@ -56,7 +56,7 @@ def evaluate_policy(
     from stable_baselines3.common.monitor import Monitor
 
     if isinstance(env, VecEnv):
-        if env.num_envs == 1:
+        if env.num_envs > 1:
             warnings.warn("You are passing more than one environment for evaluation")
         is_monitor_wrapped = is_vecenv_wrapped(env, VecMonitor) or env.env_is_wrapped(Monitor)[0]
     else:

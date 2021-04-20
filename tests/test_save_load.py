@@ -341,7 +341,8 @@ def test_warn_buffer(recwarn, model_class, optimize_memory_usage):
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 @pytest.mark.parametrize("policy_str", ["MlpPolicy", "CnnPolicy"])
-def test_save_load_policy(tmp_path, model_class, policy_str):
+@pytest.mark.parametrize("use_sde", [False, True])
+def test_save_load_policy(tmp_path, model_class, policy_str, use_sde):
     """
     Test saving and loading policy only.
 
@@ -349,6 +350,11 @@ def test_save_load_policy(tmp_path, model_class, policy_str):
     :param policy_str: (str) Name of the policy.
     """
     kwargs = dict(policy_kwargs=dict(net_arch=[16]))
+
+    # gSDE is only applicable for A2C, PPO and SAC
+    if use_sde and model_class not in [A2C, PPO, SAC]:
+        pytest.skip()
+
     if policy_str == "MlpPolicy":
         env = select_env(model_class)
     else:
@@ -359,6 +365,9 @@ def test_save_load_policy(tmp_path, model_class, policy_str):
                 buffer_size=250, learning_starts=100, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32))
             )
         env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=2, discrete=model_class == DQN)
+
+    if use_sde:
+        kwargs["use_sde"] = True
 
     env = DummyVecEnv([lambda: env])
 

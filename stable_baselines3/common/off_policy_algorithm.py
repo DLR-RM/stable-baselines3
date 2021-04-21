@@ -237,11 +237,19 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         assert self.replay_buffer is not None, "The replay buffer is not defined"
         save_to_pkl(path, self.replay_buffer, self.verbose)
 
-    def load_replay_buffer(self, path: Union[str, pathlib.Path, io.BufferedIOBase]) -> None:
+    def load_replay_buffer(
+        self,
+        path: Union[str, pathlib.Path, io.BufferedIOBase],
+        truncate_last_traj: bool = True,
+    ) -> None:
         """
         Load a replay buffer from a pickle file.
 
         :param path: Path to the pickled replay buffer.
+        :param truncate_last_traj: When using ``HerReplayBuffer`` with online sampling:
+            If set to ``True``, we assume that the last trajectory in the replay buffer was finished
+            (and truncate it).
+            If set to ``False``, we assume that we continue the same trajectory (same episode).
         """
         self.replay_buffer = load_from_pkl(path, self.verbose)
         assert isinstance(self.replay_buffer, ReplayBuffer), "The replay buffer must inherit from ReplayBuffer class"
@@ -251,6 +259,12 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         if not hasattr(self.replay_buffer, "handle_timeout_termination"):  # pragma: no cover
             self.replay_buffer.handle_timeout_termination = False
             self.replay_buffer.timeouts = np.zeros_like(self.replay_buffer.dones)
+
+        if isinstance(self.replay_buffer, HerReplayBuffer):
+            assert self.env is not None, "You must pass an environment at load time when using `HerReplayBuffer`"
+            self.replay_buffer.set_env(self.get_env())
+            if truncate_last_traj:
+                self.replay_buffer.truncate_last_trajectory()
 
     def _setup_learn(
         self,

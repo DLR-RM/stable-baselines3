@@ -514,22 +514,18 @@ class HerReplayBuffer(DictReplayBuffer):
         self.full = False
         self.episode_lengths = np.zeros(self.max_episode_stored, dtype=np.int64)
 
-    def update_replay_buffer_after_loading(self, env: VecEnv, truncate_last_trajectory: bool = True) -> None:
+    def truncate_last_trajectory(self) -> None:
         """
-        Load a replay buffer from a pickle file and set environment for replay buffer (only online sampling).
-
-        :param env:
-        :param truncate_last_trajectory: Only for online sampling.
-            If set to ``True`` we assume that the last trajectory in the replay buffer was finished.
-            If it is set to ``False`` we assume that we continue the same trajectory (same episode).
+        Only for online sampling, called when loading the replay buffer.
+        If called, we assume that the last trajectory in the replay buffer was finished
+        (and truncate it).
+        If not called, we assume that we continue the same trajectory (same episode).
         """
-        # set environment
-        self.set_env(env)
         # If we are at the start of an episode, no need to truncate
         current_idx = self.current_idx
 
         # truncate interrupted episode
-        if truncate_last_trajectory and current_idx > 0:
+        if current_idx > 0:
             warnings.warn(
                 "The last trajectory in the replay buffer will be truncated.\n"
                 "If you are in the same episode as when the replay buffer was saved,\n"

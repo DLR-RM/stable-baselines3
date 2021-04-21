@@ -241,8 +241,7 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
     # Check that there is no warning
     assert len(recwarn) == 0
 
-    model.load_replay_buffer(path)
-    model.replay_buffer.update_replay_buffer_after_loading(model.get_env(), truncate_last_trajectory)
+    model.load_replay_buffer(path, truncate_last_traj=truncate_last_trajectory)
 
     if truncate_last_trajectory:
         assert len(recwarn) == 1

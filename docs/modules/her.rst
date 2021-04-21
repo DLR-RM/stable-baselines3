@@ -13,6 +13,11 @@ HER uses the fact that even if a desired goal was not achieved, other goal may h
 It creates "virtual" transitions by relabeling transitions (changing the desired goal) from past episodes.
 
 
+.. warning::
+
+	Starting from Stable Baselines3 v1.1.0, ``HER`` is no longer a separate algorithm
+  but a replay buffer class ``HerReplayBuffer`` that must be passed to an off-policy algorithm.
+
 
 .. warning::
 
@@ -25,11 +30,6 @@ It creates "virtual" transitions by relabeling transitions (changing the desired
   In most cases, it will be inferred if you specify ``max_episode_steps`` when registering the environment
   or if you use a ``gym.wrappers.TimeLimit`` (and ``env.spec`` is not None).
   Otherwise, you can directly pass ``max_episode_length`` to the model constructor
-
-
-.. warning::
-
-	When loading the replay buffer, you need to pass the env and ``truncate_last_traj=True``
 
 
 .. warning::
@@ -82,6 +82,7 @@ Example
         "MlpPolicy",
         env,
         replay_buffer_class=HerReplayBuffer,
+        # Parameters for HER
         replay_buffer_kwargs=dict(
             n_sampled_goal=4,
             goal_selection_strategy=goal_selection_strategy,
@@ -97,7 +98,7 @@ Example
     model.save("./her_bit_env")
     # Because it needs access to `env.compute_reward()`
     # HER must be loaded with the env
-    model = DQN.load('./her_bit_env', env=env)
+    model = model_class.load('./her_bit_env', env=env)
 
     obs = env.reset()
     for _ in range(100):
@@ -133,14 +134,14 @@ Run the benchmark:
 
 .. code-block:: bash
 
-  python train.py --algo her --env parking-v0 --eval-episodes 10 --eval-freq 10000
+  python train.py --algo tqc --env parking-v0 --eval-episodes 10 --eval-freq 10000
 
 
 Plot the results:
 
 .. code-block:: bash
 
-  python scripts/all_plots.py -a her -e parking-v0 -f logs/ --no-million
+  python scripts/all_plots.py -a tqc -e parking-v0 -f logs/ --no-million
 
 
 Parameters

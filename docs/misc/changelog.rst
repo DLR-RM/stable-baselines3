@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.1.0a5 (WIP)
+Release 1.1.0a6 (WIP)
 ---------------------------
 
 **Dict observation support and refactored HER**

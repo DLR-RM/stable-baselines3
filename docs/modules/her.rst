@@ -15,7 +15,7 @@ It creates "virtual" transitions by relabeling transitions (changing the desired
 
 .. warning::
 
-	Starting from Stable Baselines3 v1.1.0, ``HER`` is no longer a separate algorithm
+  Starting from Stable Baselines3 v1.1.0, ``HER`` is no longer a separate algorithm
   but a replay buffer class ``HerReplayBuffer`` that must be passed to an off-policy algorithm
   when using ``MultiInputPolicy`` (to have Dict observation support).
 

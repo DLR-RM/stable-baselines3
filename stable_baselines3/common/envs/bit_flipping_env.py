@@ -21,7 +21,8 @@ class BitFlippingEnv(GoalEnv):
     :param max_steps: Max number of steps, by default, equal to n_bits
     :param discrete_obs_space: Whether to use the discrete observation
         version or not, by default, it uses the ``MultiBinary`` one
-    :param image_obs_space: Use image as input instead of the ``MultiBinary` one.
+    :param image_obs_space: Use image as input instead of the ``MultiBinary`` one.
+    :param channel_first: Whether to use channel-first or last image.
     """
 
     spec = EnvSpec("BitFlippingEnv-v0")

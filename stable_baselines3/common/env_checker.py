@@ -5,6 +5,7 @@ import gym
 import numpy as np
 from gym import spaces
 
+from stable_baselines3.common.preprocessing import is_image_space_channels_first
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
 
 
@@ -37,7 +38,12 @@ def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
             "you may encounter issue if the values are not in that range."
         )
 
-    if observation_space.shape[0] < 36 or observation_space.shape[1] < 36:
+    non_channel_idx = 0
+    # Check only if width/height of the image is big enough
+    if is_image_space_channels_first(observation_space):
+        non_channel_idx = -1
+
+    if observation_space.shape[non_channel_idx] < 36 or observation_space.shape[1] < 36:
         warnings.warn(
             "The minimal resolution for an image is 36x36 for the default `CnnPolicy`. "
             "You might need to use a custom feature extractor "

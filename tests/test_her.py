@@ -18,15 +18,27 @@ from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 from stable_baselines3.her.her_replay_buffer import get_time_limit
 
 
-# TODO: add check with env images
+def test_import_error():
+    with pytest.raises(ImportError) as excinfo:
+        from stable_baselines3 import HER
+
+        HER("MlpPolicy")
+    assert "documentation" in str(excinfo.value)
+
+
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
 @pytest.mark.parametrize("online_sampling", [True, False])
-def test_her(model_class, online_sampling):
+@pytest.mark.parametrize("image_obs_space", [True, False])
+def test_her(model_class, online_sampling, image_obs_space):
     """
     Test Hindsight Experience Replay.
     """
     n_bits = 4
-    env = BitFlippingEnv(n_bits=n_bits, continuous=not (model_class == DQN))
+    env = BitFlippingEnv(
+        n_bits=n_bits,
+        continuous=not (model_class == DQN),
+        image_obs_space=image_obs_space,
+    )
 
     model = model_class(
         "MultiInputPolicy",
@@ -42,7 +54,7 @@ def test_her(model_class, online_sampling):
         gradient_steps=1,
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=100,
-        buffer_size=int(1e5),
+        buffer_size=int(2e4),
     )
 
     model.learn(total_timesteps=150)

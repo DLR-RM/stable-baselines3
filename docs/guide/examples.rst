@@ -406,7 +406,7 @@ The parking env is a goal-conditioned continuous control task, in which the vehi
 
   # SAC hyperparams:
   model = SAC(
-      "MlpPolicy",
+      "MultiInputPolicy",
       env,
       replay_buffer_class=HerReplayBuffer,
       replay_buffer_kwargs=dict(

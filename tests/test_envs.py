@@ -56,6 +56,25 @@ def test_custom_envs(env_class):
     assert len(record) == 0
 
 
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        dict(continuous=True),
+        dict(discrete_obs_space=True),
+        dict(image_obs_space=True, channel_first=True),
+        dict(image_obs_space=True, channel_first=False),
+    ],
+)
+def test_bit_flipping(kwargs):
+    # Additional tests for BitFlippingEnv
+    env = BitFlippingEnv(**kwargs)
+    with pytest.warns(None) as record:
+        check_env(env)
+
+    # No warnings for custom envs
+    assert len(record) == 0
+
+
 def test_high_dimension_action_space():
     """
     Test for continuous action space

@@ -4,9 +4,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch as th
-from gym import spaces
 
 from stable_baselines3.common.buffers import DictReplayBuffer
+from stable_baselines3.common.preprocessing import get_obs_shape
 from stable_baselines3.common.type_aliases import DictReplayBufferSamples
 from stable_baselines3.common.vec_env import VecEnv, VecNormalize
 from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
@@ -125,24 +125,20 @@ class HerReplayBuffer(DictReplayBuffer):
         # Counter to prevent overflow
         self.episode_steps = 0
 
-        # get dimensions of observation and goal
-        if isinstance(self.env.observation_space.spaces["observation"], spaces.Discrete):
-            self.obs_dim = 1
-            self.goal_dim = 1
-        else:
-            self.obs_dim = self.env.observation_space.spaces["observation"].shape[0]
-            self.goal_dim = self.env.observation_space.spaces["achieved_goal"].shape[0]
+        # Get shape of observation and goal (usually the same)
+        self.obs_shape = get_obs_shape(self.env.observation_space.spaces["observation"])
+        self.goal_shape = get_obs_shape(self.env.observation_space.spaces["achieved_goal"])
 
         # input dimensions for buffer initialization
         input_shape = {
-            "observation": (self.env.num_envs, self.obs_dim),
-            "achieved_goal": (self.env.num_envs, self.goal_dim),
-            "desired_goal": (self.env.num_envs, self.goal_dim),
+            "observation": (self.env.num_envs,) + self.obs_shape,
+            "achieved_goal": (self.env.num_envs,) + self.goal_shape,
+            "desired_goal": (self.env.num_envs,) + self.goal_shape,
             "action": (self.action_dim,),
             "reward": (1,),
-            "next_obs": (self.env.num_envs, self.obs_dim),
-            "next_achieved_goal": (self.env.num_envs, self.goal_dim),
-            "next_desired_goal": (self.env.num_envs, self.goal_dim),
+            "next_obs": (self.env.num_envs,) + self.obs_shape,
+            "next_achieved_goal": (self.env.num_envs,) + self.goal_shape,
+            "next_desired_goal": (self.env.num_envs,) + self.goal_shape,
             "done": (1,),
         }
         self._observation_keys = ["observation", "achieved_goal", "desired_goal"]

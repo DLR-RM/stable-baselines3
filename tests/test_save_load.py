@@ -233,6 +233,24 @@ def test_exclude_include_saved_params(tmp_path, model_class):
     os.remove(tmp_path / "test_save.zip")
 
 
+def test_save_load_pytorch_var(tmp_path):
+    model = SAC("MlpPolicy", "Pendulum-v0", seed=3, policy_kwargs=dict(net_arch=[64], n_critics=1))
+    model.learn(200)
+    save_path = str(tmp_path / "sac_pendulum")
+    model.save(save_path)
+    env = model.get_env()
+    ent_coef_before = model.log_ent_coef
+
+    del model
+
+    model = SAC.load(save_path, env=env)
+    assert th.allclose(ent_coef_before, model.log_ent_coef)
+    model.learn(200)
+    ent_coef_after = model.log_ent_coef
+    # Check that the entropy coefficient is still optimized
+    assert not th.allclose(ent_coef_before, ent_coef_after)
+
+
 @pytest.mark.parametrize("model_class", [A2C, TD3])
 def test_save_load_env_cnn(tmp_path, model_class):
     """
@@ -326,7 +344,8 @@ def test_warn_buffer(recwarn, model_class, optimize_memory_usage):
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 @pytest.mark.parametrize("policy_str", ["MlpPolicy", "CnnPolicy"])
-def test_save_load_policy(tmp_path, model_class, policy_str):
+@pytest.mark.parametrize("use_sde", [False, True])
+def test_save_load_policy(tmp_path, model_class, policy_str, use_sde):
     """
     Test saving and loading policy only.
 
@@ -334,6 +353,11 @@ def test_save_load_policy(tmp_path, model_class, policy_str):
     :param policy_str: (str) Name of the policy.
     """
     kwargs = dict(policy_kwargs=dict(net_arch=[16]))
+
+    # gSDE is only applicable for A2C, PPO and SAC
+    if use_sde and model_class not in [A2C, PPO, SAC]:
+        pytest.skip()
+
     if policy_str == "MlpPolicy":
         env = select_env(model_class)
     else:
@@ -344,6 +368,9 @@ def test_save_load_policy(tmp_path, model_class, policy_str):
                 buffer_size=250, learning_starts=100, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32))
             )
         env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=2, discrete=model_class == DQN)
+
+    if use_sde:
+        kwargs["use_sde"] = True
 
     env = DummyVecEnv([lambda: env])
 

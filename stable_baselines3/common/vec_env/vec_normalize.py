@@ -131,7 +131,8 @@ class VecNormalize(VecEnvWrapper):
         for idx, done in enumerate(dones):
             if not done:
                 continue
-            infos[idx]["terminal_observation"] = self.normalize_obs(infos[idx]["terminal_observation"])
+            if "terminal_observation" in infos[idx]:
+                infos[idx]["terminal_observation"] = self.normalize_obs(infos[idx]["terminal_observation"])
 
         self.ret[dones] = 0
         return obs, rewards, dones, infos

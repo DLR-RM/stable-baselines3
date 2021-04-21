@@ -5,7 +5,7 @@ import gym
 import numpy as np
 
 from stable_baselines3.common import base_class
-from stable_baselines3.common.vec_env import VecEnv
+from stable_baselines3.common.vec_env import VecEnv, VecMonitor, is_vecenv_wrapped
 
 
 def evaluate_policy(
@@ -57,7 +57,7 @@ def evaluate_policy(
 
     if isinstance(env, VecEnv):
         assert env.num_envs == 1, "You must pass only one environment when using this function"
-        is_monitor_wrapped = env.env_is_wrapped(Monitor)[0]
+        is_monitor_wrapped = is_vecenv_wrapped(env, VecMonitor) or env.env_is_wrapped(Monitor)[0]
     else:
         is_monitor_wrapped = is_wrapped(env, Monitor)
 

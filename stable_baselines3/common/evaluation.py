@@ -79,7 +79,7 @@ def evaluate_policy(
         if not isinstance(env, VecEnv) or not_reseted:
             obs = env.reset()
             not_reseted = False
-        dones, state = [False], None
+        dones, state = np.array([False]), None
         episode_reward = 0.0
         episode_length = 0
         while not dones.all():

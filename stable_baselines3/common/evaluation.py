@@ -79,12 +79,12 @@ def evaluate_policy(
         if not isinstance(env, VecEnv) or not_reseted:
             obs = env.reset()
             not_reseted = False
-        done, state = False, None
+        dones, state = [False], None
         episode_reward = 0.0
         episode_length = 0
-        while not done:
-            action, state = model.predict(obs, state=state, deterministic=deterministic)
-            obs, reward, done, info = env.step(action)
+        while not dones.all():
+            actions, states = model.predict(obs, state=state, deterministic=deterministic)
+            obs, reward, done, info = env.step(actions)
             episode_reward += reward
             if callback is not None:
                 callback(locals(), globals())

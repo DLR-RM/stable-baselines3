@@ -38,7 +38,6 @@ from stable_baselines3.common.vec_env import (
 )
 from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 
-
 _logger = logging.getLogger(__name__)
 
 

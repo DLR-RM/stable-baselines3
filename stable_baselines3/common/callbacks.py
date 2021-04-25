@@ -11,7 +11,6 @@ from stable_baselines3.common import base_class, logger  # pytype: disable=pyi-e
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, sync_envs_normalization
 
-
 _logger = logging.getLogger(__name__)
 
 
@@ -443,7 +442,8 @@ class StopTrainingOnRewardThreshold(BaseCallback):
         if not continue_training:
             _logger.info(
                 f"Stopping training because the mean reward {self.parent.best_mean_reward:.2f} "
-                f" is above the threshold {self.reward_threshold}")
+                f" is above the threshold {self.reward_threshold}"
+            )
         return continue_training
 
 

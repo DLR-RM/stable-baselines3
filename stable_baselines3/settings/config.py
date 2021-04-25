@@ -1,7 +1,7 @@
 import environ
 
 
-@environ.config(prefix='SB3')
+@environ.config(prefix="SB3")
 class Config:
     """Configuration class.
 
@@ -15,36 +15,36 @@ class Config:
 
     # Add validators
     LOG_DIR = environ.var(default=None)
-    LOG_FORMAT = environ.var(default='stdout,log,csv', converter=lambda x: x.split(','))
+    LOG_FORMAT = environ.var(default="stdout,log,csv", converter=lambda x: x.split(","))
     LOG_LEVEL = environ.var(default=0)
 
     # -- LOGGING --
 
-    LOGGING_LEVEL = environ.var(default='INFO')
+    LOGGING_LEVEL = environ.var(default="INFO")
 
     @property
     def LOGGING(self):
         return {
-            'version': 1,
-            'disable_existing_loggers': False,
-            'formatters': {
-                'default': {
-                    'format': '[%(asctime)s][%(name)s][%(levelname)s]: %(message)s',
-                    'datefmt': '%Y-%m-%d %H:%M:%S',
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                "default": {
+                    "format": "[%(asctime)s][%(name)s][%(levelname)s]: %(message)s",
+                    "datefmt": "%Y-%m-%d %H:%M:%S",
                 },
             },
-            'handlers': {
-                'default': {
-                    'class': 'logging.StreamHandler',
-                    'level': self.LOGGING_LEVEL,
-                    'formatter': 'default',
+            "handlers": {
+                "default": {
+                    "class": "logging.StreamHandler",
+                    "level": self.LOGGING_LEVEL,
+                    "formatter": "default",
                 },
             },
-            'loggers': {
-                '': {
-                    'handlers': ['default'],
-                    'level': self.LOGGING_LEVEL,
-                    'propagate': True,
+            "loggers": {
+                "": {
+                    "handlers": ["default"],
+                    "level": self.LOGGING_LEVEL,
+                    "propagate": True,
                 },
             },
         }

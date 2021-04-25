@@ -21,7 +21,6 @@ import stable_baselines3
 from stable_baselines3.common.type_aliases import TensorDict
 from stable_baselines3.common.utils import get_device
 
-
 _logger = logging.getLogger(__name__)
 
 

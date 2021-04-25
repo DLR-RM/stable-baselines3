@@ -21,7 +21,7 @@ def test_tensorboard(tmp_path, model_name):
 
     logname = model_name.upper()
     algo, env_id = MODEL_DICT[model_name]
-    model = algo("MlpPolicy", env_id, verbose=1, tensorboard_log=tmp_path)
+    model = algo("MlpPolicy", env_id, tensorboard_log=tmp_path)
     model.learn(N_STEPS)
     model.learn(N_STEPS, reset_num_timesteps=False)
 

@@ -102,7 +102,6 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
         n_sampled_goal=5,
         goal_selection_strategy="future",
         online_sampling=online_sampling,
-        verbose=0,
         tau=0.05,
         batch_size=128,
         learning_rate=0.001,
@@ -153,8 +152,7 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     # test custom_objects
     # Load with custom objects
     custom_objects = dict(learning_rate=2e-5, dummy=1.0)
-    model_ = HER.load(str(tmp_path / "test_save.zip"), env=env, custom_objects=custom_objects, verbose=2)
-    assert model_.verbose == 2
+    model_ = HER.load(str(tmp_path / "test_save.zip"), env=env, custom_objects=custom_objects)
     # Check that the custom object was taken into account
     assert model_.learning_rate == custom_objects["learning_rate"]
     # Check that only parameters that are here already are replaced
@@ -177,9 +175,8 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     model.learn(total_timesteps=300)
 
     # Test that the change of parameters works
-    model = HER.load(str(tmp_path / "test_save.zip"), env=env, verbose=3, learning_rate=2.0)
+    model = HER.load(str(tmp_path / "test_save.zip"), env=env, learning_rate=2.0)
     assert model.model.learning_rate == 2.0
-    assert model.verbose == 3
 
     # clear file from os
     os.remove(tmp_path / "test_save.zip")
@@ -283,7 +280,6 @@ def test_full_replay_buffer():
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=1,
         buffer_size=20,
-        verbose=1,
     )
 
     model.learn(total_timesteps=100)
@@ -340,7 +336,6 @@ def test_performance_her(online_sampling, n_bits):
         n_sampled_goal=5,
         goal_selection_strategy="future",
         online_sampling=online_sampling,
-        verbose=1,
         learning_rate=5e-4,
         max_episode_length=n_bits,
         train_freq=1,

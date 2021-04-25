@@ -18,7 +18,6 @@ def test_deterministic_pg(model_class, action_noise):
         "Pendulum-v0",
         policy_kwargs=dict(net_arch=[64, 64]),
         learning_starts=100,
-        verbose=1,
         create_eval_env=True,
         buffer_size=250,
         action_noise=action_noise,
@@ -28,7 +27,7 @@ def test_deterministic_pg(model_class, action_noise):
 
 @pytest.mark.parametrize("env_id", ["CartPole-v1", "Pendulum-v0"])
 def test_a2c(env_id):
-    model = A2C("MlpPolicy", env_id, seed=0, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
+    model = A2C("MlpPolicy", env_id, seed=0, policy_kwargs=dict(net_arch=[16]), create_eval_env=True)
     model.learn(total_timesteps=1000, eval_freq=500)
 
 
@@ -43,7 +42,6 @@ def test_ppo(env_id, clip_range_vf):
                 env_id,
                 seed=0,
                 policy_kwargs=dict(net_arch=[16]),
-                verbose=1,
                 create_eval_env=True,
                 clip_range_vf=clip_range_vf,
             )
@@ -54,7 +52,6 @@ def test_ppo(env_id, clip_range_vf):
             n_steps=512,
             seed=0,
             policy_kwargs=dict(net_arch=[16]),
-            verbose=1,
             create_eval_env=True,
             clip_range_vf=clip_range_vf,
         )
@@ -68,7 +65,6 @@ def test_sac(ent_coef):
         "Pendulum-v0",
         policy_kwargs=dict(net_arch=[64, 64]),
         learning_starts=100,
-        verbose=1,
         create_eval_env=True,
         buffer_size=250,
         ent_coef=ent_coef,
@@ -86,7 +82,6 @@ def test_n_critics(n_critics):
         policy_kwargs=dict(net_arch=[64, 64], n_critics=n_critics),
         learning_starts=100,
         buffer_size=10000,
-        verbose=1,
     )
     model.learn(total_timesteps=300)
 
@@ -99,7 +94,6 @@ def test_dqn():
         learning_starts=100,
         buffer_size=500,
         learning_rate=3e-4,
-        verbose=1,
         create_eval_env=True,
     )
     model.learn(total_timesteps=500, eval_freq=250)
@@ -114,7 +108,6 @@ def test_train_freq(tmp_path, train_freq):
         policy_kwargs=dict(net_arch=[64, 64], n_critics=1),
         learning_starts=100,
         buffer_size=10000,
-        verbose=1,
         train_freq=train_freq,
     )
     model.learn(total_timesteps=150)
@@ -135,7 +128,6 @@ def test_train_freq_fail(train_freq):
             policy_kwargs=dict(net_arch=[64, 64], n_critics=1),
             learning_starts=100,
             buffer_size=10000,
-            verbose=1,
             train_freq=train_freq,
         )
         model.learn(total_timesteps=250)

@@ -48,5 +48,5 @@ def test_vec_with_ppo():
     env = DictObsVecEnv()
     env = VecExtractDictObs(env, "rgb")
     monitor_env = VecMonitor(env)
-    model = PPO("MlpPolicy", monitor_env, verbose=1, n_steps=64, device="cpu")
+    model = PPO("MlpPolicy", monitor_env, n_steps=64, device="cpu")
     model.learn(total_timesteps=250)

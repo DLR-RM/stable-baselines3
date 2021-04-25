@@ -82,6 +82,7 @@ setup(
         "pandas",
         # Plotting learning curves
         "matplotlib",
+        "environ-config>=~20.1",
     ],
     extras_require={
         "tests": [

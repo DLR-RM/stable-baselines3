@@ -37,7 +37,7 @@ class CustomEnv(gym.Env):
 
 class CheckGAECallback(BaseCallback):
     def __init__(self):
-        super(CheckGAECallback, self).__init__(verbose=0)
+        super(CheckGAECallback, self).__init__()
 
     def _on_rollout_end(self):
         buffer = self.model.rollout_buffer

@@ -12,6 +12,8 @@ import pandas
 import torch as th
 from matplotlib import pyplot as plt
 
+from stable_baselines3.settings import settings
+
 try:
     from torch.utils.tensorboard import SummaryWriter
 except ImportError:
@@ -679,7 +681,7 @@ def configure(folder: Optional[str] = None, format_strings: Optional[List[str]] 
         (if None, $SB3_LOG_FORMAT, if still None, ['stdout', 'log', 'csv'])
     """
     if folder is None:
-        folder = os.getenv("SB3_LOGDIR")
+        folder = settings.LOG_DIR
     if folder is None:
         folder = os.path.join(tempfile.gettempdir(), datetime.datetime.now().strftime("SB3-%Y-%m-%d-%H-%M-%S-%f"))
     assert isinstance(folder, str)
@@ -687,7 +689,7 @@ def configure(folder: Optional[str] = None, format_strings: Optional[List[str]] 
 
     log_suffix = ""
     if format_strings is None:
-        format_strings = os.getenv("SB3_LOG_FORMAT", "stdout,log,csv").split(",")
+        format_strings = settings.LOG_FORMAT
 
     format_strings = filter(None, format_strings)
     output_formats = [make_output_format(f, folder, log_suffix) for f in format_strings]

@@ -33,6 +33,7 @@ Others:
 - Added ``flake8-bugbear`` to tests dependencies to find likely bugs
 - Added Code of Conduct
 - Added tests for GAE and lambda return computation
+- Updated docker image with newest black version
 
 Documentation:
 ^^^^^^^^^^^^^^

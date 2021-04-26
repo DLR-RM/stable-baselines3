@@ -104,7 +104,7 @@ class BaseModel(nn.Module, ABC):
         return net_kwargs
 
     def make_features_extractor(self) -> BaseFeaturesExtractor:
-        """ Helper method to create a features extractor."""
+        """Helper method to create a features extractor."""
         return self.features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
 
     def extract_features(self, obs: th.Tensor) -> th.Tensor:
@@ -203,7 +203,7 @@ class BasePolicy(BaseModel):
 
     @staticmethod
     def _dummy_schedule(progress_remaining: float) -> float:
-        """ (float) Useful for pickling policy."""
+        """(float) Useful for pickling policy."""
         del progress_remaining
         return 0.0
 

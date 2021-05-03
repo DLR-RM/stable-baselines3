@@ -18,6 +18,7 @@ New Features:
   to handle gym3-style vectorized environments (@vwxyzjn)
 - Ignored the terminal observation if the it is not provided by the environment
   such as the gym3-style vectorized environments. (@vwxyzjn)
+- Add policy_base as input to the OnPolicyAlgorithm for more flexibility (@09tangriro)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -655,4 +656,4 @@ And all the contributors:
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
-@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida
+@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro

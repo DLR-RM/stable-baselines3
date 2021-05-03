@@ -31,6 +31,9 @@ Each algorithm has two main methods:
 - ``.train()`` which updates the parameters using samples from the buffer
 
 
+.. image:: ../_static/img/sb3_loop.png
+
+
 Where to start?
 ===============
 

@@ -31,7 +31,6 @@ from stable_baselines3.common.torch_layers import (
 )
 from stable_baselines3.common.type_aliases import Schedule
 from stable_baselines3.common.utils import get_device, is_vectorized_observation, obs_as_tensor
-from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 
 
 class BaseModel(nn.Module, ABC):
@@ -114,7 +113,7 @@ class BaseModel(nn.Module, ABC):
         return net_kwargs
 
     def make_features_extractor(self) -> BaseFeaturesExtractor:
-        """ Helper method to create a features extractor."""
+        """Helper method to create a features extractor."""
         return self.features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
 
     def extract_features(self, obs: th.Tensor) -> th.Tensor:
@@ -213,7 +212,7 @@ class BasePolicy(BaseModel):
 
     @staticmethod
     def _dummy_schedule(progress_remaining: float) -> float:
-        """ (float) Useful for pickling policy."""
+        """(float) Useful for pickling policy."""
         del progress_remaining
         return 0.0
 
@@ -268,12 +267,9 @@ class BasePolicy(BaseModel):
         #     state = self.initial_state
         # if mask is None:
         #     mask = [False for _ in range(self.n_envs)]
-        # Need to check the observation if its a ObsDictWrapper
 
-        # Special Case for GoalEnv (using HER normally)
-        if isinstance(observation, dict) and set(observation.keys()) == set(["observation", "desired_goal", "achieved_goal"]):
-            observation = ObsDictWrapper.convert_dict(observation)
-        elif isinstance(observation, dict):
+        vectorized_env = False
+        if isinstance(observation, dict):
             # need to copy the dict as the dict in VecFrameStack will become a torch tensor
             observation = copy.deepcopy(observation)
             for key, obs in observation.items():
@@ -282,6 +278,7 @@ class BasePolicy(BaseModel):
                     obs_ = maybe_transpose(obs, obs_space)
                 else:
                     obs_ = np.array(obs)
+                vectorized_env = vectorized_env or is_vectorized_observation(obs_, obs_space)
                 # Add batch dimension if needed
                 observation[key] = obs_.reshape((-1,) + self.observation_space[key].shape)
 
@@ -289,12 +286,13 @@ class BasePolicy(BaseModel):
             # Handle the different cases for images
             # as PyTorch use channel first format
             observation = maybe_transpose(observation, self.observation_space)
+
         else:
             observation = np.array(observation)
 
-        vectorized_env = is_vectorized_observation(observation, self.observation_space)
-
         if not isinstance(observation, dict):
+            # Dict obs need to be handled separately
+            vectorized_env = is_vectorized_observation(observation, self.observation_space)
             # Add batch dimension if needed
             observation = observation.reshape((-1,) + self.observation_space.shape)
 
@@ -463,7 +461,7 @@ class ActorCriticPolicy(BasePolicy):
                 log_std_init=self.log_std_init,
                 squash_output=default_none_kwargs["squash_output"],
                 full_std=default_none_kwargs["full_std"],
-                sde_net_arch=default_none_kwargs["sde_net_arch"],
+                sde_net_arch=self.sde_net_arch,
                 use_expln=default_none_kwargs["use_expln"],
                 lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
                 ortho_init=self.ortho_init,

@@ -6,9 +6,9 @@ This folder contains documentation for the RL baselines.
 ### Build the Documentation
 
 #### Install Sphinx and Theme
-
+Execute this command in the project root:
 ```
-pip install sphinx sphinx-autobuild sphinx-rtd-theme
+pip install -e .[docs]
 ```
 
 #### Building the Docs

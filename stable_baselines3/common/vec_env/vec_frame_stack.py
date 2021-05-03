@@ -1,96 +1,64 @@
-import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from gym import spaces
 
-from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvWrapper
+from stable_baselines3.common.vec_env.stacked_observations import StackedDictObservations, StackedObservations
 
 
 class VecFrameStack(VecEnvWrapper):
     """
     Frame stacking wrapper for vectorized environment. Designed for image observations.
 
-    Dimension to stack over is either first (channels-first) or
-    last (channels-last), which is detected automatically using
-    ``common.preprocessing.is_image_space_channels_first`` if
-    observation is an image space.
+    Uses the StackedObservations class, or StackedDictObservations depending on the observations space
 
     :param venv: the vectorized environment to wrap
     :param n_stack: Number of frames to stack
     :param channels_order: If "first", stack on first image dimension. If "last", stack on last dimension.
         If None, automatically detect channel to stack over in case of image observation or default to "last" (default).
+        Alternatively channels_order can be a dictionary which can be used with environments with Dict observation spaces
     """
 
-    def __init__(self, venv: VecEnv, n_stack: int, channels_order: Optional[str] = None):
+    def __init__(self, venv: VecEnv, n_stack: int, channels_order: Optional[Union[str, Dict[str, str]]] = None):
         self.venv = venv
         self.n_stack = n_stack
 
         wrapped_obs_space = venv.observation_space
-        assert isinstance(wrapped_obs_space, spaces.Box), "VecFrameStack only work with gym.spaces.Box observation space"
 
-        if channels_order is None:
-            # Detect channel location automatically for images
-            if is_image_space(wrapped_obs_space):
-                self.channels_first = is_image_space_channels_first(wrapped_obs_space)
-            else:
-                # Default behavior for non-image space, stack on the last axis
-                self.channels_first = False
+        if isinstance(wrapped_obs_space, spaces.Box):
+            assert not isinstance(
+                channels_order, dict
+            ), f"Expected None or string for channels_order but received {channels_order}"
+            self.stackedobs = StackedObservations(venv.num_envs, n_stack, wrapped_obs_space, channels_order)
+
+        elif isinstance(wrapped_obs_space, spaces.Dict):
+            self.stackedobs = StackedDictObservations(venv.num_envs, n_stack, wrapped_obs_space, channels_order)
+
         else:
-            assert channels_order in {"last", "first"}, "`channels_order` must be one of following: 'last', 'first'"
+            raise Exception("VecFrameStack only works with gym.spaces.Box and gym.spaces.Dict observation spaces")
 
-            self.channels_first = channels_order == "first"
-
-        # This includes the vec-env dimension (first)
-        self.stack_dimension = 1 if self.channels_first else -1
-        repeat_axis = 0 if self.channels_first else -1
-        low = np.repeat(wrapped_obs_space.low, self.n_stack, axis=repeat_axis)
-        high = np.repeat(wrapped_obs_space.high, self.n_stack, axis=repeat_axis)
-        self.stackedobs = np.zeros((venv.num_envs,) + low.shape, low.dtype)
-        observation_space = spaces.Box(low=low, high=high, dtype=venv.observation_space.dtype)
+        observation_space = self.stackedobs.stack_observation_space(wrapped_obs_space)
         VecEnvWrapper.__init__(self, venv, observation_space=observation_space)
 
-    def step_wait(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[Dict[str, Any]]]:
+    def step_wait(
+        self,
+    ) -> Tuple[Union[np.ndarray, Dict[str, np.ndarray]], np.ndarray, np.ndarray, List[Dict[str, Any]],]:
+
         observations, rewards, dones, infos = self.venv.step_wait()
-        # Let pytype know that observation is not a dict
-        assert isinstance(observations, np.ndarray)
-        stack_ax_size = observations.shape[self.stack_dimension]
-        self.stackedobs = np.roll(self.stackedobs, shift=-stack_ax_size, axis=self.stack_dimension)
-        for i, done in enumerate(dones):
-            if done:
-                if "terminal_observation" in infos[i]:
-                    old_terminal = infos[i]["terminal_observation"]
-                    if self.channels_first:
-                        new_terminal = np.concatenate(
-                            (self.stackedobs[i, :-stack_ax_size, ...], old_terminal), axis=self.stack_dimension
-                        )
-                    else:
-                        new_terminal = np.concatenate(
-                            (self.stackedobs[i, ..., :-stack_ax_size], old_terminal), axis=self.stack_dimension
-                        )
-                    infos[i]["terminal_observation"] = new_terminal
-                else:
-                    warnings.warn("VecFrameStack wrapping a VecEnv without terminal_observation info")
-                self.stackedobs[i] = 0
-        if self.channels_first:
-            self.stackedobs[:, -observations.shape[self.stack_dimension] :, ...] = observations
-        else:
-            self.stackedobs[..., -observations.shape[self.stack_dimension] :] = observations
 
-        return self.stackedobs, rewards, dones, infos
+        observations, infos = self.stackedobs.update(observations, dones, infos)
 
-    def reset(self) -> np.ndarray:
+        return observations, rewards, dones, infos
+
+    def reset(self) -> Union[np.ndarray, Dict[str, np.ndarray]]:
         """
         Reset all environments
         """
-        obs: np.ndarray = self.venv.reset()  # pytype:disable=annotation-type-mismatch
-        self.stackedobs[...] = 0
-        if self.channels_first:
-            self.stackedobs[:, -obs.shape[self.stack_dimension] :, ...] = obs
-        else:
-            self.stackedobs[..., -obs.shape[self.stack_dimension] :] = obs
-        return self.stackedobs
+        observation = self.venv.reset()  # pytype:disable=annotation-type-mismatch
+
+        observation = self.stackedobs.reset(observation)
+        return observation
 
     def close(self) -> None:
         self.venv.close()

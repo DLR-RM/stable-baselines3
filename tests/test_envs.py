@@ -1,19 +1,30 @@
+import types
+
 import gym
 import numpy as np
 import pytest
 from gym import spaces
 
-from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
 from stable_baselines3.common.env_checker import check_env
-from stable_baselines3.common.identity_env import (
+from stable_baselines3.common.envs import (
+    BitFlippingEnv,
     FakeImageEnv,
     IdentityEnv,
     IdentityEnvBox,
     IdentityEnvMultiBinary,
     IdentityEnvMultiDiscrete,
+    SimpleMultiObsEnv,
 )
 
-ENV_CLASSES = [BitFlippingEnv, IdentityEnv, IdentityEnvBox, IdentityEnvMultiBinary, IdentityEnvMultiDiscrete, FakeImageEnv]
+ENV_CLASSES = [
+    BitFlippingEnv,
+    IdentityEnv,
+    IdentityEnvBox,
+    IdentityEnvMultiBinary,
+    IdentityEnvMultiDiscrete,
+    FakeImageEnv,
+    SimpleMultiObsEnv,
+]
 
 
 @pytest.mark.parametrize("env_id", ["CartPole-v0", "Pendulum-v0"])
@@ -39,7 +50,29 @@ def test_env(env_id):
 @pytest.mark.parametrize("env_class", ENV_CLASSES)
 def test_custom_envs(env_class):
     env = env_class()
-    check_env(env)
+    with pytest.warns(None) as record:
+        check_env(env)
+    # No warnings for custom envs
+    assert len(record) == 0
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        dict(continuous=True),
+        dict(discrete_obs_space=True),
+        dict(image_obs_space=True, channel_first=True),
+        dict(image_obs_space=True, channel_first=False),
+    ],
+)
+def test_bit_flipping(kwargs):
+    # Additional tests for BitFlippingEnv
+    env = BitFlippingEnv(**kwargs)
+    with pytest.warns(None) as record:
+        check_env(env)
+
+    # No warnings for custom envs
+    assert len(record) == 0
 
 
 def test_high_dimension_action_space():
@@ -72,8 +105,10 @@ def test_high_dimension_action_space():
         spaces.Box(low=-1, high=1, shape=(64, 3), dtype=np.float32),
         # Tuple space is not supported by SB
         spaces.Tuple([spaces.Discrete(5), spaces.Discrete(10)]),
-        # Dict space is not supported by SB when env is not a GoalEnv
-        spaces.Dict({"position": spaces.Discrete(5)}),
+        # Nested dict space is not supported by SB3
+        spaces.Dict({"position": spaces.Dict({"abs": spaces.Discrete(5), "rel": spaces.Discrete(2)})}),
+        # Small image inside a dict
+        spaces.Dict({"img": spaces.Box(low=0, high=255, shape=(32, 32, 3), dtype=np.uint8)}),
     ],
 )
 def test_non_default_spaces(new_obs_space):
@@ -119,6 +154,19 @@ def test_common_failures_reset():
     # Return not only the observation
     check_reset_assert_error(env, (env.observation_space.sample(), False))
 
+    env = SimpleMultiObsEnv()
+    obs = env.reset()
+
+    def wrong_reset(self):
+        return {"img": obs["img"], "vec": obs["img"]}
+
+    env.reset = types.MethodType(wrong_reset, env)
+    with pytest.raises(AssertionError) as excinfo:
+        check_env(env)
+
+    # Check that the key is explicitly mentioned
+    assert "vec" in str(excinfo.value)
+
 
 def check_step_assert_error(env, new_step_return=()):
     """
@@ -156,3 +204,16 @@ def test_common_failures_step():
     # Done is not a boolean
     check_step_assert_error(env, (env.observation_space.sample(), 0.0, 3.0, {}))
     check_step_assert_error(env, (env.observation_space.sample(), 0.0, 1, {}))
+
+    env = SimpleMultiObsEnv()
+    obs = env.reset()
+
+    def wrong_step(self, action):
+        return {"img": obs["vec"], "vec": obs["vec"]}, 0.0, False, {}
+
+    env.step = types.MethodType(wrong_step, env)
+    with pytest.raises(AssertionError) as excinfo:
+        check_env(env)
+
+    # Check that the key is explicitly mentioned
+    assert "img" in str(excinfo.value)

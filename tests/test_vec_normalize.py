@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 from gym import spaces
 
-from stable_baselines3 import HER, SAC, TD3
+from stable_baselines3 import SAC, TD3, HerReplayBuffer
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 from stable_baselines3.common.vec_env import (
@@ -217,18 +217,39 @@ def test_normalize_external():
     assert np.all(norm_rewards < 1)
 
 
-@pytest.mark.parametrize("model_class", [SAC, TD3, HER])
-def test_offpolicy_normalization(model_class):
-    make_env_ = make_dict_env if model_class == HER else make_env
+@pytest.mark.parametrize("model_class", [SAC, TD3, HerReplayBuffer])
+@pytest.mark.parametrize("online_sampling", [False, True])
+def test_offpolicy_normalization(model_class, online_sampling):
+
+    if online_sampling and model_class != HerReplayBuffer:
+        pytest.skip()
+
+    make_env_ = make_dict_env if model_class == HerReplayBuffer else make_env
     env = DummyVecEnv([make_env_])
     env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10.0, clip_reward=10.0)
 
     eval_env = DummyVecEnv([make_env_])
     eval_env = VecNormalize(eval_env, training=False, norm_obs=True, norm_reward=False, clip_obs=10.0, clip_reward=10.0)
 
-    kwargs = dict(model_class=SAC, max_episode_length=200, online_sampling=True) if model_class == HER else {}
-    model = model_class("MlpPolicy", env, verbose=1, learning_starts=100, policy_kwargs=dict(net_arch=[64]), **kwargs)
-    model.learn(total_timesteps=500, eval_env=eval_env, eval_freq=250)
+    if model_class == HerReplayBuffer:
+        model = SAC(
+            "MultiInputPolicy",
+            env,
+            verbose=1,
+            learning_starts=100,
+            policy_kwargs=dict(net_arch=[64]),
+            replay_buffer_kwargs=dict(
+                max_episode_length=100,
+                online_sampling=online_sampling,
+                n_sampled_goal=2,
+            ),
+            replay_buffer_class=HerReplayBuffer,
+            seed=2,
+        )
+    else:
+        model = model_class("MlpPolicy", env, verbose=1, learning_starts=100, policy_kwargs=dict(net_arch=[64]))
+
+    model.learn(total_timesteps=150, eval_env=eval_env, eval_freq=75)
     # Check getter
     assert isinstance(model.get_vec_normalize_env(), VecNormalize)
 

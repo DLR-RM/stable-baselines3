@@ -2,6 +2,7 @@
 #
 
 # You can set these variables from the command line.
+# For debug: SPHINXOPTS = -nWT --keep-going -vvv
 SPHINXOPTS    = -W  # make warnings fatal
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = StableBaselines

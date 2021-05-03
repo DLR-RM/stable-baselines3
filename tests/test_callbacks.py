@@ -5,8 +5,7 @@ import gym
 import numpy as np
 import pytest
 
-from stable_baselines3 import A2C, DDPG, DQN, HER, PPO, SAC, TD3
-from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
+from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3, HerReplayBuffer
 from stable_baselines3.common.callbacks import (
     CallbackList,
     CheckpointCallback,
@@ -16,8 +15,8 @@ from stable_baselines3.common.callbacks import (
     StopTrainingOnRewardThreshold,
 )
 from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.envs import BitFlippingEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
-from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN, DDPG])
@@ -108,12 +107,19 @@ def test_eval_success_logging(tmp_path):
     env = BitFlippingEnv(n_bits=n_bits)
     eval_env = DummyVecEnv([lambda: BitFlippingEnv(n_bits=n_bits)])
     eval_callback = EvalCallback(
-        ObsDictWrapper(eval_env),
+        eval_env,
         eval_freq=250,
         log_path=tmp_path,
         warn=False,
     )
-    model = HER("MlpPolicy", env, DQN, learning_starts=100, seed=0, max_episode_length=n_bits)
+    model = DQN(
+        "MultiInputPolicy",
+        env,
+        replay_buffer_class=HerReplayBuffer,
+        learning_starts=100,
+        seed=0,
+        replay_buffer_kwargs=dict(max_episode_length=n_bits),
+    )
     model.learn(500, callback=eval_callback)
     assert len(eval_callback._is_success_buffer) > 0
     # More than 50% success rate

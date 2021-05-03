@@ -85,5 +85,5 @@ that will allow you to create the RL agent in one line (and use ``gym.make()`` t
 
 
 In the project, for testing purposes, we use a custom environment named ``IdentityEnv``
-defined `in this file <https://github.com/hill-a/stable-baselines/blob/master/stable_baselines/common/identity_env.py>`_.
-An example of how to use it can be found `here <https://github.com/hill-a/stable-baselines/blob/master/tests/test_identity.py>`_.
+defined `in this file <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/envs/identity_env.py>`_.
+An example of how to use it can be found `here <https://github.com/DLR-RM/stable-baselines3/blob/master/tests/test_identity.py>`_.

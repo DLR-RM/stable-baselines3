@@ -28,6 +28,7 @@ you can take a look at the issues [#48](https://github.com/DLR-RM/stable-baselin
 | Custom environments         | :heavy_check_mark: |
 | Custom policies             | :heavy_check_mark: |
 | Common interface            | :heavy_check_mark: |
+| `Dict` observation space support  | :heavy_check_mark: |
 | Ipython / Notebook friendly | :heavy_check_mark: |
 | Tensorboard support         | :heavy_check_mark: |
 | PEP8 code style             | :heavy_check_mark: |

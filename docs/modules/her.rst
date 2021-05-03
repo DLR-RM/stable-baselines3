@@ -13,6 +13,12 @@ HER uses the fact that even if a desired goal was not achieved, other goal may h
 It creates "virtual" transitions by relabeling transitions (changing the desired goal) from past episodes.
 
 
+.. warning::
+
+  Starting from Stable Baselines3 v1.1.0, ``HER`` is no longer a separate algorithm
+  but a replay buffer class ``HerReplayBuffer`` that must be passed to an off-policy algorithm
+  when using ``MultiInputPolicy`` (to have Dict observation support).
+
 
 .. warning::
 
@@ -25,11 +31,6 @@ It creates "virtual" transitions by relabeling transitions (changing the desired
   In most cases, it will be inferred if you specify ``max_episode_steps`` when registering the environment
   or if you use a ``gym.wrappers.TimeLimit`` (and ``env.spec`` is not None).
   Otherwise, you can directly pass ``max_episode_length`` to the model constructor
-
-
-.. warning::
-
-	``HER`` supports ``VecNormalize`` wrapper but only when ``online_sampling=True``
 
 
 .. warning::
@@ -59,11 +60,10 @@ Example
 
 .. code-block:: python
 
-    from stable_baselines3 import HER, DDPG, DQN, SAC, TD3
+    from stable_baselines3 import HerReplayBuffer, DDPG, DQN, SAC, TD3
     from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
-    from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
+    from stable_baselines3.common.envs import BitFlippingEnv
     from stable_baselines3.common.vec_env import DummyVecEnv
-    from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 
     model_class = DQN  # works also with SAC, DDPG and TD3
     N_BITS = 15
@@ -79,15 +79,27 @@ Example
     max_episode_length = N_BITS
 
     # Initialize the model
-    model = HER('MlpPolicy', env, model_class, n_sampled_goal=4, goal_selection_strategy=goal_selection_strategy, online_sampling=online_sampling,
-                            verbose=1, max_episode_length=max_episode_length)
+    model = model_class(
+        "MultiInputPolicy",
+        env,
+        replay_buffer_class=HerReplayBuffer,
+        # Parameters for HER
+        replay_buffer_kwargs=dict(
+            n_sampled_goal=4,
+            goal_selection_strategy=goal_selection_strategy,
+            online_sampling=online_sampling,
+            max_episode_length=max_episode_length,
+        ),
+        verbose=1,
+    )
+
     # Train the model
     model.learn(1000)
 
     model.save("./her_bit_env")
     # Because it needs access to `env.compute_reward()`
     # HER must be loaded with the env
-    model = HER.load('./her_bit_env', env=env)
+    model = model_class.load('./her_bit_env', env=env)
 
     obs = env.reset()
     for _ in range(100):
@@ -123,21 +135,26 @@ Run the benchmark:
 
 .. code-block:: bash
 
-  python train.py --algo her --env parking-v0 --eval-episodes 10 --eval-freq 10000
+  python train.py --algo tqc --env parking-v0 --eval-episodes 10 --eval-freq 10000
 
 
 Plot the results:
 
 .. code-block:: bash
 
-  python scripts/all_plots.py -a her -e parking-v0 -f logs/ --no-million
+  python scripts/all_plots.py -a tqc -e parking-v0 -f logs/ --no-million
 
 
 Parameters
 ----------
 
-.. autoclass:: HER
+HER Replay Buffer
+-----------------
+
+.. autoclass:: HerReplayBuffer
   :members:
+  :inherited-members:
+
 
 Goal Selection Strategies
 -------------------------
@@ -146,20 +163,3 @@ Goal Selection Strategies
   :members:
   :inherited-members:
     :undoc-members:
-
-
-Obs Dict Wrapper
-----------------
-
-.. autoclass:: ObsDictWrapper
-  :members:
-  :inherited-members:
-    :undoc-members:
-
-
-HER Replay Buffer
------------------
-
-.. autoclass:: HerReplayBuffer
-  :members:
-  :inherited-members:

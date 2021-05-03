@@ -149,6 +149,27 @@ Multiprocessing: Unleashing the Power of Vectorized Environments
           env.render()
 
 
+Dict Observations
+-----------------
+
+You can use environments with dictionary observation spaces. This is useful in the case where one can't directly
+concatenate observations such as an image from a camera combined with a vector of servo sensor data (e.g., rotation angles).
+Stable Baselines3 provides ``SimpleMultiObsEnv`` as an example of this kind of of setting.
+The environment is a simple grid world but the observations for each cell come in the form of dictionaries.
+These dictionaries are randomly initilaized on the creation of the environment and contain a vector observation and an image observation.
+
+.. code-block:: python
+
+  from stable_baselines3 import PPO
+  from stable_baselines3.common.envs import SimpleMultiObsEnv
+
+
+  # Stable Baselines provides SimpleMultiObsEnv as an example environment with Dict observations
+  env = SimpleMultiObsEnv(random_start=False)
+
+  model = PPO("MultiInputPolicy", env, verbose=1)
+  model.learn(total_timesteps=1e5)
+
 
 Using Callback: Monitoring Training
 -----------------------------------
@@ -375,7 +396,7 @@ The parking env is a goal-conditioned continuous control task, in which the vehi
   import highway_env
   import numpy as np
 
-  from stable_baselines3 import HER, SAC, DDPG, TD3
+  from stable_baselines3 import HerReplayBuffer, SAC, DDPG, TD3
   from stable_baselines3.common.noise import NormalActionNoise
 
   env = gym.make("parking-v0")
@@ -384,21 +405,23 @@ The parking env is a goal-conditioned continuous control task, in which the vehi
   n_sampled_goal = 4
 
   # SAC hyperparams:
-  model = HER(
-      "MlpPolicy",
+  model = SAC(
+      "MultiInputPolicy",
       env,
-      SAC,
-      n_sampled_goal=n_sampled_goal,
-      goal_selection_strategy="future",
-      # IMPORTANT: because the env is not wrapped with a TimeLimit wrapper
-      # we have to manually specify the max number of steps per episode
-      max_episode_length=100,
+      replay_buffer_class=HerReplayBuffer,
+      replay_buffer_kwargs=dict(
+        n_sampled_goal=n_sampled_goal,
+        goal_selection_strategy="future",
+        # IMPORTANT: because the env is not wrapped with a TimeLimit wrapper
+        # we have to manually specify the max number of steps per episode
+        max_episode_length=100,
+        online_sampling=True,
+      )
       verbose=1,
       buffer_size=int(1e6),
       learning_rate=1e-3,
       gamma=0.95,
       batch_size=256,
-      online_sampling=True,
       policy_kwargs=dict(net_arch=[256, 256, 256]),
   )
 
@@ -408,7 +431,7 @@ The parking env is a goal-conditioned continuous control task, in which the vehi
   # Load saved model
   # Because it needs access to `env.compute_reward()`
   # HER must be loaded with the env
-  model = HER.load("her_sac_highway", env=env)
+  model = SAC.load("her_sac_highway", env=env)
 
   obs = env.reset()
 
@@ -658,12 +681,14 @@ to keep track of the agent progress.
 
   # ProcgenEnv is already vectorized
   venv = ProcgenEnv(num_envs=2, env_name='starpilot')
-  # PPO does not currently support Dict observations
-  # this will be solved in https://github.com/DLR-RM/stable-baselines3/pull/243
-  venv = VecExtractDictObs(venv, "rgb")
+
+  # To use only part of the observation:
+  # venv = VecExtractDictObs(venv, "rgb")
+
+  # Wrap with a VecMonitor to collect stats and avoid errors
   venv = VecMonitor(venv=venv)
 
-  model = PPO("MlpPolicy", venv, verbose=1)
+  model = PPO("MultiInputPolicy", venv, verbose=1)
   model.learn(10000)
 
 

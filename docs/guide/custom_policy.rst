@@ -3,8 +3,8 @@
 Custom Policy Network
 =====================
 
-Stable Baselines3 provides policy networks for images (CnnPolicies)
-and other type of input features (MlpPolicies).
+Stable Baselines3 provides policy networks for images (CnnPolicies),
+other type of input features (MlpPolicies) and multiple different inputs (MultiInputPolicies).
 
 
 .. warning::
@@ -147,6 +147,70 @@ that derives from ``BaseFeaturesExtractor`` and then pass it to the model when t
   )
   model = PPO("CnnPolicy", "BreakoutNoFrameskip-v4", policy_kwargs=policy_kwargs, verbose=1)
   model.learn(1000)
+
+
+Multiple Inputs and Dictionary Observations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Stable Baselines3 supports handling of multiple inputs by using ``Dict`` Gym space. This can be done using
+``MultiInputPolicy``, which by default uses the ``CombinedExtractor`` feature extractor to turn multiple
+inputs into a single vector, handled by the ``net_arch`` network.
+
+By default, ``CombinedExtractor`` processes multiple inputs as follows:
+
+1. If input is an image (automatically detected, see ``common.preprocessing.is_image_space``), process image with Nature Atari CNN network and
+   output a latent vector of size ``256``.
+2. If input is not an image, flatten it (no layers).
+3. Concatenate all previous vectors into one long vector and pass it to policy.
+
+Much like above, you can define custom feature extractors. The following example assumes the environment has two keys in the
+observation space dictionary: "image" is a (1,H,W) image (channel first), and "vector" is a (D,) dimensional vector. We process "image" with a simple
+downsampling and "vector" with a single linear layer.
+
+.. code-block:: python
+
+  import gym
+  import torch as th
+  from torch import nn
+
+  from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+
+  class CustomCombinedExtractor(BaseFeaturesExtractor):
+      def __init__(self, observation_space: gym.spaces.Dict):
+          # We do not know features-dim here before going over all the items,
+          # so put something dummy for now. PyTorch requires calling
+          # nn.Module.__init__ before adding modules
+          super(CustomCombinedExtractor, self).__init__(observation_space, features_dim=1)
+
+          extractors = {}
+
+          total_concat_size = 0
+          # We need to know size of the output of this extractor,
+          # so go over all the spaces and compute output feature sizes
+          for key, subspace in observation_space.spaces.items():
+              if key == "image":
+                  # We will just downsample one channel of the image by 4x4 and flatten.
+                  # Assume the image is single-channel (subspace.shape[0] == 0)
+                  extractors[key] = nn.Sequential(nn.MaxPool2d(4), nn.Flatten())
+                  total_concat_size += subspace.shape[1] // 4 * subspace.shape[2] // 4
+              elif key == "vector":
+                  # Run through a simple MLP
+                  extractors[key] = nn.Linear(subspace.shape[0], 16)
+                  total_concat_size += 16
+
+          self.extractors = nn.ModuleDict(extractors)
+
+          # Update the features dim manually
+          self._features_dim = total_concat_size
+
+      def forward(self, observations) -> th.Tensor:
+          encoded_tensor_list = []
+
+          # self.extractors contain nn.Modules that do all the processing.
+          for key, extractor in self.extractors.items():
+              encoded_tensor_list.append(extractor(observations[key]))
+          # Return a (B, self._features_dim) PyTorch tensor, where B is batch dimension.
+          return th.cat(encoded_tensor_list, dim=1)
 
 
 

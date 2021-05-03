@@ -158,17 +158,17 @@ inputs into a single vector, handled by the ``net_arch`` network.
 
 By default, ``CombinedExtractor`` processes multiple inputs as follows:
 
-1. If input is an image (automatically detected, see ``common.preprocessing.is_image_space``), process image with Nature Atari CNN network and 
-   output a latent vector of size ``64``.
+1. If input is an image (automatically detected, see ``common.preprocessing.is_image_space``), process image with Nature Atari CNN network and
+   output a latent vector of size ``256``.
 2. If input is not an image, flatten it (no layers).
 3. Concatenate all previous vectors into one long vector and pass it to policy.
 
-Much like above, you can define custom feature extractors as above. The following example assumes the environment has two keys in the
-observation space dictionary: "image" is a (1,H,W) image, and "vector" is a (D,) dimensional vector. We process "image" with a simple
+Much like above, you can define custom feature extractors. The following example assumes the environment has two keys in the
+observation space dictionary: "image" is a (1,H,W) image (channel first), and "vector" is a (D,) dimensional vector. We process "image" with a simple
 downsampling and "vector" with a single linear layer.
 
 .. code-block:: python
-  
+
   import gym
   import torch as th
   from torch import nn

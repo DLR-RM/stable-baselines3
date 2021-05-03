@@ -411,10 +411,11 @@ def obs_as_tensor(
     obs: Union[np.ndarray, Dict[Union[str, int], np.ndarray]], device: th.device
 ) -> Union[th.Tensor, TensorDict]:
     """
-    Moves the observeration to the given device
+    Moves the observation to the given device.
+
     :param obs:
-    :param device:
-    :return:
+    :param device: PyTorch device
+    :return: PyTorch tensor of the observation on a desired device.
     """
     if isinstance(obs, np.ndarray):
         return th.as_tensor(obs).to(device)

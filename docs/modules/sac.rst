@@ -19,6 +19,7 @@ A key feature of SAC, and a major difference with common RL algorithms, is that 
 
     MlpPolicy
     CnnPolicy
+    MultiInputPolicy
 
 
 Notes

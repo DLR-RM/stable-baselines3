@@ -26,13 +26,6 @@ Breaking Changes:
   model = SAC("MultiInputPolicy", env, replay_buffer_class=HerReplayBuffer, replay_buffer_kwargs=her_kwargs)
 
 
-.. warning::
-
-    A refactoring of the ``HER`` algorithm is planned together with support for dictionary observations
-    (see `PR #243 <https://github.com/DLR-RM/stable-baselines3/pull/243>`_ and `#351 <https://github.com/DLR-RM/stable-baselines3/pull/351>`_)
-    This will be a backward incompatible change (model trained with previous version of ``HER`` won't work with the new version).
-
-
 New Features:
 ^^^^^^^^^^^^^
 - Added support for single-level ``Dict`` observation space (@JadenTravnik)

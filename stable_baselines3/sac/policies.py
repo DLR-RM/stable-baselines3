@@ -94,10 +94,9 @@ class Actor(BasePolicy):
             latent_sde_dim = last_layer_dim
             # Separate features extractor for gSDE
             if sde_net_arch is not None:
-                (
-                    self.sde_features_extractor,
-                    latent_sde_dim,
-                ) = create_sde_features_extractor(features_dim, sde_net_arch, activation_fn)
+                self.sde_features_extractor, latent_sde_dim = create_sde_features_extractor(
+                    features_dim, sde_net_arch, activation_fn
+                )
 
             self.action_dist = StateDependentNoiseDistribution(
                 action_dim, full_std=full_std, use_expln=use_expln, learn_features=True, squash_output=True
@@ -284,7 +283,11 @@ class SACPolicy(BasePolicy):
         self.actor_kwargs.update(sde_kwargs)
         self.critic_kwargs = self.net_args.copy()
         self.critic_kwargs.update(
-            {"n_critics": n_critics, "net_arch": critic_arch, "share_features_extractor": share_features_extractor}
+            {
+                "n_critics": n_critics,
+                "net_arch": critic_arch,
+                "share_features_extractor": share_features_extractor,
+            }
         )
 
         self.actor, self.actor_target = None, None

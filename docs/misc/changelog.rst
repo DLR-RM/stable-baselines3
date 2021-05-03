@@ -15,6 +15,16 @@ Breaking Changes:
 - Refactored ``HER`` which is now the ``HerReplayBuffer`` class that can be passed to any off-policy algorithm
 - Handle timeout termination properly for off-policy algorithms (when using ``TimeLimit``)
 - Renamed ``_last_dones`` and ``dones`` to ``_last_episode_starts`` and ``episode_starts`` in ``RolloutBuffer``.
+- Removed ``ObsDictWrapper`` as ``Dict`` observation spaces are now supported
+
+.. code-block:: python
+
+  her_kwargs = dict(n_sampled_goal=2, goal_selection_strategy="future", online_sampling=True)
+  # SB3 < 1.1.0
+  # model = HER("MlpPolicy", env, model_class=SAC, **her_kwargs)
+  # SB3 >= 1.1.0:
+  model = SAC("MultiInputPolicy", env, replay_buffer_class=HerReplayBuffer, replay_buffer_kwargs=her_kwargs)
+
 
 New Features:
 ^^^^^^^^^^^^^
@@ -29,6 +39,7 @@ New Features:
 - Ignored the terminal observation if the it is not provided by the environment
   such as the gym3-style vectorized environments. (@vwxyzjn)
 - Added support for image observation when using ``HER``
+- Added ``replay_buffer_class`` and ``replay_buffer_kwargs`` arguments to off-policy algorithms
 
 Bug Fixes:
 ^^^^^^^^^^

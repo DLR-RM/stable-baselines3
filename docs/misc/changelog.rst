@@ -4,20 +4,49 @@ Changelog
 ==========
 
 
-Release 1.1.0a5 (WIP)
+Release 1.1.0a6 (WIP)
 ---------------------------
+
+**Dict observation support, timeout handling and refactored HER**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- All customs environments (e.g. the ``BitFlippingEnv`` or ``IdentityEnv``) were moved to ``stable_baselines3.common.envs`` folder
+- Refactored ``HER`` which is now the ``HerReplayBuffer`` class that can be passed to any off-policy algorithm
+- Handle timeout termination properly for off-policy algorithms (when using ``TimeLimit``)
 - Renamed ``_last_dones`` and ``dones`` to ``_last_episode_starts`` and ``episode_starts`` in ``RolloutBuffer``.
+- Removed ``ObsDictWrapper`` as ``Dict`` observation spaces are now supported
+
+.. code-block:: python
+
+  her_kwargs = dict(n_sampled_goal=2, goal_selection_strategy="future", online_sampling=True)
+  # SB3 < 1.1.0
+  # model = HER("MlpPolicy", env, model_class=SAC, **her_kwargs)
+  # SB3 >= 1.1.0:
+  model = SAC("MultiInputPolicy", env, replay_buffer_class=HerReplayBuffer, replay_buffer_kwargs=her_kwargs)
+
+
+.. warning::
+
+    A refactoring of the ``HER`` algorithm is planned together with support for dictionary observations
+    (see `PR #243 <https://github.com/DLR-RM/stable-baselines3/pull/243>`_ and `#351 <https://github.com/DLR-RM/stable-baselines3/pull/351>`_)
+    This will be a backward incompatible change (model trained with previous version of ``HER`` won't work with the new version).
+
 
 New Features:
 ^^^^^^^^^^^^^
+- Added support for single-level ``Dict`` observation space (@JadenTravnik)
+- Added ``DictRolloutBuffer`` ``DictReplayBuffer`` to support dictionary observations (@JadenTravnik)
+- Added ``StackedObservations`` and ``StackedDictObservations`` that are used within ``VecFrameStack``
+- Added simple 4x4 room Dict test environments
+- ``HerReplayBuffer`` now supports ``VecNormalize`` when ``online_sampling=False``
 - Added `VecMonitor <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_monitor.py>`_ and
   `VecExtractDictObs <https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/vec_extract_dict_obs.py>`_ wrappers
   to handle gym3-style vectorized environments (@vwxyzjn)
 - Ignored the terminal observation if the it is not provided by the environment
   such as the gym3-style vectorized environments. (@vwxyzjn)
+- Added support for image observation when using ``HER``
+- Added ``replay_buffer_class`` and ``replay_buffer_kwargs`` arguments to off-policy algorithms
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -31,9 +60,9 @@ Deprecations:
 Others:
 ^^^^^^^
 - Added ``flake8-bugbear`` to tests dependencies to find likely bugs
+- Updated ``env_checker`` to reflect support of dict observation spaces
 - Added Code of Conduct
 - Added tests for GAE and lambda return computation
-- Updated docker image with newest black version
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -55,8 +84,6 @@ Release 1.0 (2021-03-15)
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed ``stable_baselines3.common.cmd_util`` (already deprecated), please use ``env_util`` instead
-- All customs environments (e.g. the ``BitFlippingEnv`` or ``IdentityEnv``) were moved to ``stable_baselines3.common.envs`` folder
-
 
 .. warning::
 
@@ -68,10 +95,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added support for ``custom_objects`` when loading models
-- Added support for single-level ``Dict`` observation space (@JadenTravnik)
-- Added ``DictRolloutBuffer`` ``DictReplayBuffer`` to support dictionary observations (@JadenTravnik)
-- Added ``StackedObservations`` and ``StackedDictObservations`` that are used within ``VecFrameStack``
-- Added simple 4x4 room Dict test environments
+
 
 
 Bug Fixes:
@@ -87,7 +111,6 @@ Documentation:
 
 Others:
 ^^^^^^^
-- Updated ``env_checker`` to reflect support of dict observation spaces
 - Updated RL-Zoo to reflect the fact that is it more than a collection of trained agents
 - Added images to illustrate the training loop and custom policies (created with https://excalidraw.com/)
 - Updated the custom policy section

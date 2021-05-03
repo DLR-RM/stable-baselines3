@@ -35,7 +35,6 @@ from stable_baselines3.common.vec_env import (
     is_vecenv_wrapped,
     unwrap_vec_normalize,
 )
-from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 
 
 def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymEnv]:
@@ -221,13 +220,6 @@ class BaseAlgorithm(ABC):
                     print("Wrapping the env in a VecTransposeImage.")
                 env = VecTransposeImage(env)
 
-        # check if wrapper for dict support is needed when using HER
-        # TODO(antonin): remove this with the new version of HER
-        if isinstance(env.observation_space, gym.spaces.Dict) and set(env.observation_space.spaces.keys()) == set(
-            ["observation", "desired_goal", "achieved_goal"]
-        ):
-            env = ObsDictWrapper(env)
-
         return env
 
     @abstractmethod
@@ -287,7 +279,16 @@ class BaseAlgorithm(ABC):
 
         :return: List of parameters that should be excluded from being saved with pickle.
         """
-        return ["policy", "device", "env", "eval_env", "replay_buffer", "rollout_buffer", "_vec_normalize_env"]
+        return [
+            "policy",
+            "device",
+            "env",
+            "eval_env",
+            "replay_buffer",
+            "rollout_buffer",
+            "_vec_normalize_env",
+            "_episode_storage",
+        ]
 
     def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
         """

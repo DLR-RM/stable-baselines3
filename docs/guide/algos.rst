@@ -19,8 +19,9 @@ TD3          ✔️          ❌            ❌                ❌              
 
 
 .. note::
-   ``Tuple`` spaces are not supported by any environment however ``Dict`` spaces of ``Box`` spaces are.
-   ``Dict`` spaces of containing other kinds of spaces (e.g., ``Discrete``) have not yet been explored.
+  ``Tuple`` observation spaces are not supported by any environment
+  however single-level ``Dict`` spaces are (cf. :ref:`Examples <examples>`).
+
 
 Actions ``gym.spaces``:
 

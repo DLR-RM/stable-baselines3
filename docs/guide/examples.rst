@@ -681,12 +681,14 @@ to keep track of the agent progress.
 
   # ProcgenEnv is already vectorized
   venv = ProcgenEnv(num_envs=2, env_name='starpilot')
-  # PPO does not currently support Dict observations
-  # this will be solved in https://github.com/DLR-RM/stable-baselines3/pull/243
-  venv = VecExtractDictObs(venv, "rgb")
+
+  # To use only part of the observation:
+  # venv = VecExtractDictObs(venv, "rgb")
+
+  # Wrap with a VecMonitor to collect stats and avoid errors
   venv = VecMonitor(venv=venv)
 
-  model = PPO("MlpPolicy", venv, verbose=1)
+  model = PPO("MultiInputPolicy", venv, verbose=1)
   model.learn(10000)
 
 

@@ -7,7 +7,7 @@ Changelog
 Release 1.1.0a6 (WIP)
 ---------------------------
 
-**Dict observation support and refactored HER**
+**Dict observation support, timeout handling and refactored HER**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^

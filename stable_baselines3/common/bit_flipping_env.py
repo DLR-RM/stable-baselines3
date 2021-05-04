@@ -125,7 +125,6 @@ class BitFlippingEnv(GoalEnv):
     def render(self, mode: str = "human") -> Optional[np.ndarray]:
         if mode == "rgb_array":
             return self.state.copy()
-        print(self.state)
 
     def close(self) -> None:
         pass

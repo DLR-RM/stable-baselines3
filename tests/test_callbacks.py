@@ -34,7 +34,7 @@ def test_callbacks(tmp_path, model_class):
 
     eval_env = gym.make(env_name)
     # Stop training if the performance is good enough
-    callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=-1200, verbose=1)
+    callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=-1200)
 
     eval_callback = EvalCallback(
         eval_env,
@@ -51,7 +51,7 @@ def test_callbacks(tmp_path, model_class):
     event_callback = EveryNTimesteps(n_steps=500, callback=checkpoint_on_event)
 
     # Stop training if max number of episodes is reached
-    callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=100, verbose=1)
+    callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=100)
 
     callback = CallbackList([checkpoint_callback, eval_callback, event_callback, callback_max_episodes])
     model.learn(500, callback=callback)
@@ -82,7 +82,7 @@ def test_callbacks(tmp_path, model_class):
 
         model = model_class("MlpPolicy", envs, policy_kwargs=dict(net_arch=[32]))
 
-        callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=max_episodes, verbose=1)
+        callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=max_episodes)
         callback = CallbackList([callback_max_episodes])
         model.learn(1000, callback=callback)
 

@@ -227,7 +227,7 @@ def test_offpolicy_normalization(model_class):
     eval_env = VecNormalize(eval_env, training=False, norm_obs=True, norm_reward=False, clip_obs=10.0, clip_reward=10.0)
 
     kwargs = dict(model_class=SAC, max_episode_length=200, online_sampling=True) if model_class == HER else {}
-    model = model_class("MlpPolicy", env, verbose=1, learning_starts=100, policy_kwargs=dict(net_arch=[64]), **kwargs)
+    model = model_class("MlpPolicy", env, learning_starts=100, policy_kwargs=dict(net_arch=[64]), **kwargs)
     model.learn(total_timesteps=500, eval_env=eval_env, eval_freq=250)
     # Check getter
     assert isinstance(model.get_vec_normalize_env(), VecNormalize)

@@ -10,6 +10,8 @@ import numpy as np
 import torch as th
 
 # Check if tensorboard is available for pytorch
+from stable_baselines3.settings import settings
+
 try:
     from torch.utils.tensorboard import SummaryWriter
 except ImportError:
@@ -167,13 +169,10 @@ def get_latest_run_id(log_path: Optional[str] = None, log_name: str = "") -> int
     return max_run_id
 
 
-def configure_logger(
-    verbose: int = 0, tensorboard_log: Optional[str] = None, tb_log_name: str = "", reset_num_timesteps: bool = True
-) -> None:
+def configure_logger(tensorboard_log: Optional[str] = None, tb_log_name: str = "", reset_num_timesteps: bool = True) -> None:
     """
     Configure the logger's outputs.
 
-    :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
     :param tensorboard_log: the log location for tensorboard (if None, no logging)
     :param tb_log_name: tensorboard log
     """
@@ -183,11 +182,11 @@ def configure_logger(
             # Continue training in the same directory
             latest_run_id -= 1
         save_path = os.path.join(tensorboard_log, f"{tb_log_name}_{latest_run_id + 1}")
-        if verbose >= 1:
+        if settings.LOG_LEVEL >= 1:
             logger.configure(save_path, ["stdout", "tensorboard"])
         else:
             logger.configure(save_path, ["tensorboard"])
-    elif verbose == 0:
+    elif settings.LOG_LEVEL == 0:
         logger.configure(format_strings=[""])
 
 

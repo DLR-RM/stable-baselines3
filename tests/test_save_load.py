@@ -44,7 +44,7 @@ def test_save_load(tmp_path, model_class):
     env = DummyVecEnv([lambda: select_env(model_class)])
 
     # create model
-    model = model_class("MlpPolicy", env, policy_kwargs=dict(net_arch=[16]), verbose=1)
+    model = model_class("MlpPolicy", env, policy_kwargs=dict(net_arch=[16]))
     model.learn(total_timesteps=500)
 
     env.reset()
@@ -205,25 +205,19 @@ def test_exclude_include_saved_params(tmp_path, model_class):
     """
     env = DummyVecEnv([lambda: select_env(model_class)])
 
-    # create model, set verbose as 2, which is not standard
-    model = model_class("MlpPolicy", env, policy_kwargs=dict(net_arch=[16]), verbose=2)
+    # create model
+    model = model_class("MlpPolicy", env, policy_kwargs=dict(net_arch=[16]))
 
     # Check if exclude works
-    model.save(tmp_path / "test_save", exclude=["verbose"])
+    model.save(tmp_path / "test_save")
     del model
     model = model_class.load(str(tmp_path / "test_save.zip"))
-    # check if verbose was not saved
-    assert model.verbose != 2
 
-    # set verbose as something different then standard settings
-    model.verbose = 2
-    # Check if include works
-    model.save(tmp_path / "test_save", exclude=["verbose"], include=["verbose"])
+    model.save(tmp_path / "test_save")
     del model
     # Load with custom objects
     custom_objects = dict(learning_rate=2e-5, dummy=1.0)
     model = model_class.load(str(tmp_path / "test_save.zip"), custom_objects=custom_objects)
-    assert model.verbose == 2
     # Check that the custom object was taken into account
     assert model.learning_rate == custom_objects["learning_rate"]
     # Check that only parameters that are here already are replaced
@@ -372,7 +366,7 @@ def test_save_load_policy(tmp_path, model_class, policy_str, use_sde):
     env = DummyVecEnv([lambda: env])
 
     # create model
-    model = model_class(policy_str, env, verbose=1, **kwargs)
+    model = model_class(policy_str, env, **kwargs)
     model.learn(total_timesteps=300)
 
     env.reset()
@@ -467,7 +461,7 @@ def test_save_load_q_net(tmp_path, model_class, policy_str):
     env = DummyVecEnv([lambda: env])
 
     # create model
-    model = model_class(policy_str, env, verbose=1, **kwargs)
+    model = model_class(policy_str, env, **kwargs)
     model.learn(total_timesteps=300)
 
     env.reset()
@@ -542,28 +536,6 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     with pytest.warns(None) as record:
         assert load_from_pkl(pathtype(f"{tmp_path}/t1.pkl")) == "foo"
     assert not record
-
-    # test that a warning is raised when the path doesn't exist
-    with open_path(pathtype(f"{tmp_path}/t2.pkl"), "w") as fp1:
-        save_to_pkl(fp1, "foo")
-    assert fp1.closed
-    with pytest.warns(None) as record:
-        assert load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl")) == "foo"
-    assert len(record) == 0
-
-    with pytest.warns(None) as record:
-        assert load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl", verbose=2)) == "foo"
-    assert len(record) == 1
-
-    fp = pathlib.Path(f"{tmp_path}/t2").open("w")
-    fp.write("rubbish")
-    fp.close()
-    # test that a warning is only raised when verbose = 0
-    with pytest.warns(None) as record:
-        open_path(pathtype(f"{tmp_path}/t2"), "w", suffix="pkl", verbose=0).close()
-        open_path(pathtype(f"{tmp_path}/t2"), "w", suffix="pkl", verbose=1).close()
-        open_path(pathtype(f"{tmp_path}/t2"), "w", suffix="pkl", verbose=2).close()
-    assert len(record) == 1
 
 
 def test_open_file(tmp_path):

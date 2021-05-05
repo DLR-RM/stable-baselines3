@@ -243,7 +243,8 @@ class PPO(OnPolicyAlgorithm):
 
                 if self.target_kl is not None and approx_kl_div > 1.5 * self.target_kl:
                     continue_training = False
-                    print(f"Early stopping at step {epoch} due to reaching max kl: {approx_kl_div:.2f}")
+                    if self.verbose >= 1:
+                        print(f"Early stopping at step {epoch} due to reaching max kl: {approx_kl_div:.2f}")
                     break
 
                 # Optimization step

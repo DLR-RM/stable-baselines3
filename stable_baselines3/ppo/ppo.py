@@ -231,13 +231,20 @@ class PPO(OnPolicyAlgorithm):
 
                 loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
 
+                # Calculate approximate form of reverse KL Divergence for early stopping
+                # see issue #417: https://github.com/DLR-RM/stable-baselines3/issues/417
+                # and Schulman blog: http://joschu.net/blog/kl-approx.html 
+                with th.no_grad():
+                    r = rollout_data.old_log_prob - log_prob
+                    approx_kl_div = th.mean((th.exp(r) - 1) - r).cpu().numpy()
+                    approx_kl_divs.append(approx_kl_div)
+
                 # Optimization step
                 self.policy.optimizer.zero_grad()
                 loss.backward()
                 # Clip grad norm
                 th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                 self.policy.optimizer.step()
-                approx_kl_divs.append(th.mean(rollout_data.old_log_prob - log_prob).detach().cpu().numpy())
 
 
             if self.target_kl is not None and np.mean(approx_kl_divs) > 1.5 * self.target_kl:

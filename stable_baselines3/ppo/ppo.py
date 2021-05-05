@@ -235,7 +235,7 @@ class PPO(OnPolicyAlgorithm):
 
                 # Calculate approximate form of reverse KL Divergence for early stopping
                 # see issue #417: https://github.com/DLR-RM/stable-baselines3/issues/417
-                # and Schulman blog: http://joschu.net/blog/kl-approx.html 
+                # and Schulman blog: http://joschu.net/blog/kl-approx.html
                 with th.no_grad():
                     r = rollout_data.old_log_prob - log_prob
                     approx_kl_div = th.mean((th.exp(r) - 1) - r).cpu().numpy()

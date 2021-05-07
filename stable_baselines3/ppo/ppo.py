@@ -172,6 +172,8 @@ class PPO(OnPolicyAlgorithm):
         pg_losses, value_losses = [], []
         clip_fractions = []
 
+        continue_training = True
+
         # train for n_epochs epochs
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
@@ -239,6 +241,12 @@ class PPO(OnPolicyAlgorithm):
                     approx_kl_div = th.mean((th.exp(r) - 1) - r).cpu().numpy()
                     approx_kl_divs.append(approx_kl_div)
 
+                if self.target_kl is not None and approx_kl_div > 1.5 * self.target_kl:
+                    continue_training = False
+                    if self.verbose >= 1:
+                        print(f"Early stopping at step {epoch} due to reaching max kl: {approx_kl_div:.2f}")
+                    break
+
                 # Optimization step
                 self.policy.optimizer.zero_grad()
                 loss.backward()
@@ -246,8 +254,7 @@ class PPO(OnPolicyAlgorithm):
                 th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                 self.policy.optimizer.step()
 
-            if self.target_kl is not None and np.mean(approx_kl_divs) > 1.5 * self.target_kl:
-                print(f"Early stopping at step {epoch} due to reaching max kl: {np.mean(approx_kl_divs):.2f}")
+            if not continue_training:
                 break
 
         self._n_updates += self.n_epochs

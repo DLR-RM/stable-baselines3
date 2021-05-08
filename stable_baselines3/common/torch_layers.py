@@ -67,7 +67,7 @@ class NatureCNN(BaseFeaturesExtractor):
         assert is_image_space(observation_space), (
             "You should use NatureCNN "
             f"only with images not with {observation_space}\n"
-            "(you are probably using `CnnPolicy` instead of `MlpPolicy`)\n"
+            "(you are probably using `CnnPolicy` instead of `MlpPolicy` or `MultiInputPolicy`)\n"
             "If you are using a custom environment,\n"
             "please check it using our env checker:\n"
             "https://stable-baselines3.readthedocs.io/en/master/common/env_checker.html"

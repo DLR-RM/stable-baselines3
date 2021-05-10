@@ -119,7 +119,7 @@ def _check_box_obs(observation_space: spaces.Box, key: str = "") -> None:
     Check that the observation space is correctly formatted
     when dealing with a ``Box()`` space. In particular, it checks:
     - that the dimensions are big enough when it is an image, and that the type matches
-    - that the observation has an expected shape (warn the use if not)
+    - that the observation has an expected shape (warn the user if not)
     """
     # If image, check the low and high values, the type and the number of channels
     # and the shape (minimal value)

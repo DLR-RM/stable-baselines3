@@ -167,3 +167,4 @@ DDPG Policies
 
 .. autoclass:: CnnPolicy
   :members:
+  :noindex:

@@ -170,10 +170,7 @@ DDPG Policies
 .. autoclass:: CnnPolicy
   :members:
   :noindex:
-<<<<<<< HEAD
 
 .. autoclass:: MultiInputPolicy
   :members:
   :noindex:
-=======
->>>>>>> master

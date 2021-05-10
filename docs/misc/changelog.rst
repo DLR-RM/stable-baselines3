@@ -10,6 +10,8 @@ Release 1.1.0a5 (WIP)
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Renamed ``_last_dones`` and ``dones`` to ``_last_episode_starts`` and ``episode_starts`` in ``RolloutBuffer``.
+- Updated the KL Divergence estimator in the PPO algorithm to be positive definite and have lower variance (@09tangriro)
+- Updated the KL Divergence check in the PPO algorithm to be before the gradient update step rather than after end of epoch (@09tangriro)
 
 New Features:
 ^^^^^^^^^^^^^

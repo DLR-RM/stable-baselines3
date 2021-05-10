@@ -169,6 +169,8 @@ DDPG Policies
 
 .. autoclass:: CnnPolicy
   :members:
+  :noindex:
 
 .. autoclass:: MultiInputPolicy
   :members:
+  :noindex:

@@ -42,8 +42,8 @@ class VecTransposeImage(VecEnvWrapper):
         :return:
         """
         assert is_image_space(observation_space), "The observation space must be an image"
-        width, height, channels = observation_space.shape
-        new_shape = (channels, width, height)
+        height, width, channels = observation_space.shape
+        new_shape = (channels, height, width)
         return spaces.Box(low=0, high=255, shape=new_shape, dtype=observation_space.dtype)
 
     @staticmethod

@@ -134,3 +134,6 @@ DQN Policies
 
 .. autoclass:: CnnPolicy
   :members:
+
+.. autoclass:: MultiInputPolicy
+  :members:

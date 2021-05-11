@@ -347,20 +347,23 @@ class HerReplayBuffer(DictReplayBuffer):
             ]
         )
 
-        # Vectorized computation of the new reward
-        transitions["reward"][her_indices, 0] = self.env.env_method(
-            "compute_reward",
-            # the new state depends on the previous state and action
-            # s_{t+1} = f(s_t, a_t)
-            # so the next_achieved_goal depends also on the previous state and action
-            # because we are in a GoalEnv:
-            # r_t = reward(s_t, a_t) = reward(next_achieved_goal, desired_goal)
-            # therefore we have to use "next_achieved_goal" and not "achieved_goal"
-            transitions["next_achieved_goal"][her_indices, 0],
-            # here we use the new desired goal
-            transitions["desired_goal"][her_indices, 0],
-            transitions["info"][her_indices, 0],
-        )
+        # Edge case: episode of one timesteps with the future strategy
+        # no virtual transition can be created
+        if len(her_indices) > 0:
+            # Vectorized computation of the new reward
+            transitions["reward"][her_indices, 0] = self.env.env_method(
+                "compute_reward",
+                # the new state depends on the previous state and action
+                # s_{t+1} = f(s_t, a_t)
+                # so the next_achieved_goal depends also on the previous state and action
+                # because we are in a GoalEnv:
+                # r_t = reward(s_t, a_t) = reward(next_achieved_goal, desired_goal)
+                # therefore we have to use "next_achieved_goal" and not "achieved_goal"
+                transitions["next_achieved_goal"][her_indices, 0],
+                # here we use the new desired goal
+                transitions["desired_goal"][her_indices, 0],
+                transitions["info"][her_indices, 0],
+            )
 
         # concatenate observation with (desired) goal
         observations = self._normalize_obs(transitions, maybe_vec_env)

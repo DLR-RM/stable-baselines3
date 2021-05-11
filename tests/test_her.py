@@ -323,6 +323,7 @@ def test_full_replay_buffer():
         learning_starts=1,
         buffer_size=20,
         verbose=1,
+        seed=757,
     )
 
     model.learn(total_timesteps=100)

@@ -8,6 +8,7 @@ import torch as th
 from gym import spaces
 from torch import nn
 from torch.distributions import Bernoulli, Categorical, Normal
+from torch.distributions.kl import register_kl
 
 from stable_baselines3.common.preprocessing import get_action_dim
 
@@ -676,3 +677,47 @@ def make_proba_distribution(
             f"of type {type(action_space)}."
             " Must be of type Gym Spaces: Box, Discrete, MultiDiscrete or MultiBinary."
         )
+
+def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> th.Tensor:
+    """
+    Wrapper for the PyTorch implementation of the full form KL Divergence
+
+    :param dist_true: the p distribution
+    :param dist_pred: the q distribution
+    :return: KL(dist_true||dist_pred)
+    """
+    # KL Divergence for different distribution types is out of scope
+    assert dist_true.__class__ == dist_pred.__class__
+
+    # MultiCategoricalDistribution is not a PyTorch Distribution subclass
+    # so we need to implement it ourselves!
+    if isinstance(dist_pred, MultiCategoricalDistribution):
+        assert dist_pred.action_dims == dist_true.action_dims, "Error: distributions must have the same input space"
+        dim = len(dist_pred.action_dims)
+        num_coordinates = th.prod(th.tensor(dist_pred.action_dims))
+        limits = th.tensor([x - 1 for x in dist_pred.action_dims], dtype=th.float32)
+        grid = th.zeros([num_coordinates, dim])
+
+        # Fill grid of discrete coordinates
+        mutable_coordinate = th.zeros(dim)
+        for i in range(1, num_coordinates):
+            for j in range(dim):
+                # Increment the coordinate by 1 (binary style)
+                if j == dim - 1 or th.equal(grid[i - 1, j + 1 :], limits[j + 1 :]):
+                    if mutable_coordinate[j] == limits[j]:
+                        mutable_coordinate[j] = 0
+                    else:
+                        mutable_coordinate[j] += 1         
+            grid[i] = mutable_coordinate
+
+        # Calculate KL Divergence
+        kl_div = 0
+        for coordinate in grid[:, None, :]:
+            kl_div += th.exp(dist_true.log_prob(coordinate)) * (dist_true.log_prob(coordinate) - dist_pred.log_prob(coordinate))
+
+        return kl_div
+
+    # Use the PyTorch kl_divergence implementation
+    else:
+        # KL Divergence should not be a vector
+        return th.sum(th.distributions.kl_divergence(dist_true.distribution, dist_pred.distribution))

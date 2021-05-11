@@ -10,6 +10,7 @@ from stable_baselines3.common.distributions import (
     SquashedDiagGaussianDistribution,
     StateDependentNoiseDistribution,
     TanhBijector,
+    kl_divergence,
 )
 from stable_baselines3.common.utils import set_random_seed
 

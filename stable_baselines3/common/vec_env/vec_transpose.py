@@ -4,7 +4,7 @@ from typing import Dict, Union
 import numpy as np
 from gym import spaces
 
-from stable_baselines3.common.preprocessing import is_image_space
+from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvStepReturn, VecEnvWrapper
 
 
@@ -28,20 +28,25 @@ class VecTransposeImage(VecEnvWrapper):
                 if is_image_space(space):
                     # Keep track of which keys should be transposed later
                     self.image_space_keys.append(key)
-                    observation_space.spaces[key] = self.transpose_space(space)
+                    observation_space.spaces[key] = self.transpose_space(space, key)
         else:
             observation_space = self.transpose_space(venv.observation_space)
         super(VecTransposeImage, self).__init__(venv, observation_space=observation_space)
 
     @staticmethod
-    def transpose_space(observation_space: spaces.Box) -> spaces.Box:
+    def transpose_space(observation_space: spaces.Box, key: str = "") -> spaces.Box:
         """
         Transpose an observation space (re-order channels).
 
         :param observation_space:
+        :param key: In case of dictionary space, the key of the observation space.
         :return:
         """
+        # Sanity checks
         assert is_image_space(observation_space), "The observation space must be an image"
+        assert not is_image_space_channels_first(
+            observation_space
+        ), f"The observation space {key} must follow the channel last convention"
         height, width, channels = observation_space.shape
         new_shape = (channels, height, width)
         return spaces.Box(low=0, high=255, shape=new_shape, dtype=observation_space.dtype)

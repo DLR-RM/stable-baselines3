@@ -206,6 +206,8 @@ class BaseAlgorithm(ABC):
             wrap_with_vectranspose = False
             if isinstance(env.observation_space, gym.spaces.Dict):
                 # If even one of the keys is a image-space in need of transpose, apply transpose
+                # If the image spaces are not consistent (for instance one is channel first,
+                # the other channel last), VecTransposeImage will throw an error
                 for space in env.observation_space.spaces.values():
                     wrap_with_vectranspose = wrap_with_vectranspose or (
                         is_image_space(space) and not is_image_space_channels_first(space)

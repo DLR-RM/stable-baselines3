@@ -8,38 +8,57 @@ import numpy as np
 import pytest
 import torch as th
 
-from stable_baselines3 import DDPG, DQN, HER, SAC, TD3
-from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
+from stable_baselines3 import DDPG, DQN, SAC, TD3, HerReplayBuffer
+from stable_baselines3.common.envs import BitFlippingEnv
+from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.vec_env import DummyVecEnv
-from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
-from stable_baselines3.her.her import get_time_limit
+from stable_baselines3.her.her_replay_buffer import get_time_limit
+
+
+def test_import_error():
+    with pytest.raises(ImportError) as excinfo:
+        from stable_baselines3 import HER
+
+        HER("MlpPolicy")
+    assert "documentation" in str(excinfo.value)
 
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
 @pytest.mark.parametrize("online_sampling", [True, False])
-def test_her(model_class, online_sampling):
+@pytest.mark.parametrize("image_obs_space", [True, False])
+def test_her(model_class, online_sampling, image_obs_space):
     """
     Test Hindsight Experience Replay.
     """
     n_bits = 4
-    env = BitFlippingEnv(n_bits=n_bits, continuous=not (model_class == DQN))
-
-    model = HER(
-        "MlpPolicy",
-        env,
-        model_class,
-        goal_selection_strategy="future",
-        online_sampling=online_sampling,
-        gradient_steps=1,
-        train_freq=4,
-        max_episode_length=n_bits,
-        policy_kwargs=dict(net_arch=[64]),
-        learning_starts=100,
+    env = BitFlippingEnv(
+        n_bits=n_bits,
+        continuous=not (model_class == DQN),
+        image_obs_space=image_obs_space,
     )
 
-    model.learn(total_timesteps=300)
+    model = model_class(
+        "MultiInputPolicy",
+        env,
+        replay_buffer_class=HerReplayBuffer,
+        replay_buffer_kwargs=dict(
+            n_sampled_goal=2,
+            goal_selection_strategy="future",
+            online_sampling=online_sampling,
+            max_episode_length=n_bits,
+        ),
+        train_freq=4,
+        gradient_steps=1,
+        policy_kwargs=dict(net_arch=[64]),
+        learning_starts=100,
+        buffer_size=int(2e4),
+    )
+
+    model.learn(total_timesteps=150)
+    evaluate_policy(model, Monitor(env))
 
 
 @pytest.mark.parametrize(
@@ -62,21 +81,25 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
 
     normal_action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
 
-    model = HER(
-        "MlpPolicy",
+    model = SAC(
+        "MultiInputPolicy",
         env,
-        SAC,
-        goal_selection_strategy=goal_selection_strategy,
-        online_sampling=online_sampling,
-        gradient_steps=1,
+        replay_buffer_class=HerReplayBuffer,
+        replay_buffer_kwargs=dict(
+            goal_selection_strategy=goal_selection_strategy,
+            online_sampling=online_sampling,
+            max_episode_length=10,
+            n_sampled_goal=2,
+        ),
         train_freq=4,
-        max_episode_length=10,
+        gradient_steps=1,
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=100,
+        buffer_size=int(1e5),
         action_noise=normal_action_noise,
     )
     assert model.action_noise is not None
-    model.learn(total_timesteps=300)
+    model.learn(total_timesteps=150)
 
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
@@ -95,37 +118,39 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     kwargs = dict(use_sde=True) if use_sde else {}
 
     # create model
-    model = HER(
-        "MlpPolicy",
+    model = model_class(
+        "MultiInputPolicy",
         env,
-        model_class,
-        n_sampled_goal=5,
-        goal_selection_strategy="future",
-        online_sampling=online_sampling,
+        replay_buffer_class=HerReplayBuffer,
+        replay_buffer_kwargs=dict(
+            n_sampled_goal=2,
+            goal_selection_strategy="future",
+            online_sampling=online_sampling,
+            max_episode_length=n_bits,
+        ),
         verbose=0,
         tau=0.05,
         batch_size=128,
         learning_rate=0.001,
         policy_kwargs=dict(net_arch=[64]),
-        buffer_size=int(1e6),
+        buffer_size=int(1e5),
         gamma=0.98,
         gradient_steps=1,
         train_freq=4,
         learning_starts=100,
-        max_episode_length=n_bits,
         **kwargs
     )
 
-    model.learn(total_timesteps=300)
+    model.learn(total_timesteps=150)
 
-    env.reset()
+    obs = env.reset()
 
-    observations_list = []
+    observations = {key: [] for key in obs.keys()}
     for _ in range(10):
         obs = env.step(env.action_space.sample())[0]
-        observation = ObsDictWrapper.convert_dict(obs)
-        observations_list.append(observation)
-    observations = np.array(observations_list)
+        for key in obs.keys():
+            observations[key].append(obs[key])
+    observations = {key: np.array(obs) for key, obs in observations.items()}
 
     # Get dictionary of current parameters
     params = deepcopy(model.policy.state_dict())
@@ -153,14 +178,14 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     # test custom_objects
     # Load with custom objects
     custom_objects = dict(learning_rate=2e-5, dummy=1.0)
-    model_ = HER.load(str(tmp_path / "test_save.zip"), env=env, custom_objects=custom_objects, verbose=2)
+    model_ = model_class.load(str(tmp_path / "test_save.zip"), env=env, custom_objects=custom_objects, verbose=2)
     assert model_.verbose == 2
     # Check that the custom object was taken into account
     assert model_.learning_rate == custom_objects["learning_rate"]
     # Check that only parameters that are here already are replaced
     assert not hasattr(model_, "dummy")
 
-    model = HER.load(str(tmp_path / "test_save.zip"), env=env)
+    model = model_class.load(str(tmp_path / "test_save.zip"), env=env)
 
     # check if params are still the same after load
     new_params = model.policy.state_dict()
@@ -174,18 +199,19 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     assert np.allclose(selected_actions, new_selected_actions, 1e-4)
 
     # check if learn still works
-    model.learn(total_timesteps=300)
+    model.learn(total_timesteps=150)
 
     # Test that the change of parameters works
-    model = HER.load(str(tmp_path / "test_save.zip"), env=env, verbose=3, learning_rate=2.0)
-    assert model.model.learning_rate == 2.0
+    model = model_class.load(str(tmp_path / "test_save.zip"), env=env, verbose=3, learning_rate=2.0)
+    assert model.learning_rate == 2.0
     assert model.verbose == 3
 
     # clear file from os
     os.remove(tmp_path / "test_save.zip")
 
 
-@pytest.mark.parametrize("online_sampling, truncate_last_trajectory", [(False, False), (True, True), (True, False)])
+@pytest.mark.parametrize("online_sampling", [False, True])
+@pytest.mark.parametrize("truncate_last_trajectory", [False, True])
 def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_last_trajectory):
     """
     Test if 'save_replay_buffer' and 'load_replay_buffer' works correctly
@@ -194,26 +220,32 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
     warnings.filterwarnings(action="ignore", category=DeprecationWarning)
     warnings.filterwarnings(action="ignore", category=UserWarning, module="gym")
 
-    path = pathlib.Path(tmp_path / "logs/replay_buffer.pkl")
+    path = pathlib.Path(tmp_path / "replay_buffer.pkl")
     path.parent.mkdir(exist_ok=True, parents=True)  # to not raise a warning
     env = BitFlippingEnv(n_bits=4, continuous=True)
-    model = HER(
-        "MlpPolicy",
+    model = SAC(
+        "MultiInputPolicy",
         env,
-        SAC,
-        goal_selection_strategy="future",
-        online_sampling=online_sampling,
+        replay_buffer_class=HerReplayBuffer,
+        replay_buffer_kwargs=dict(
+            n_sampled_goal=2,
+            goal_selection_strategy="future",
+            online_sampling=online_sampling,
+            max_episode_length=4,
+        ),
         gradient_steps=1,
         train_freq=4,
-        max_episode_length=4,
         buffer_size=int(2e4),
         policy_kwargs=dict(net_arch=[64]),
-        seed=0,
+        seed=1,
     )
     model.learn(200)
-    old_replay_buffer = deepcopy(model.replay_buffer)
+    if online_sampling:
+        old_replay_buffer = deepcopy(model.replay_buffer)
+    else:
+        old_replay_buffer = deepcopy(model.replay_buffer.replay_buffer)
     model.save_replay_buffer(path)
-    del model.model.replay_buffer
+    del model.replay_buffer
 
     with pytest.raises(AttributeError):
         model.replay_buffer
@@ -221,7 +253,7 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
     # Check that there is no warning
     assert len(recwarn) == 0
 
-    model.load_replay_buffer(path, truncate_last_trajectory)
+    model.load_replay_buffer(path, truncate_last_traj=truncate_last_trajectory)
 
     if truncate_last_trajectory:
         assert len(recwarn) == 1
@@ -233,29 +265,33 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
     if online_sampling:
         n_episodes_stored = model.replay_buffer.n_episodes_stored
         assert np.allclose(
-            old_replay_buffer.buffer["observation"][:n_episodes_stored],
-            model.replay_buffer.buffer["observation"][:n_episodes_stored],
+            old_replay_buffer._buffer["observation"][:n_episodes_stored],
+            model.replay_buffer._buffer["observation"][:n_episodes_stored],
         )
         assert np.allclose(
-            old_replay_buffer.buffer["next_obs"][:n_episodes_stored],
-            model.replay_buffer.buffer["next_obs"][:n_episodes_stored],
+            old_replay_buffer._buffer["next_obs"][:n_episodes_stored],
+            model.replay_buffer._buffer["next_obs"][:n_episodes_stored],
         )
         assert np.allclose(
-            old_replay_buffer.buffer["action"][:n_episodes_stored], model.replay_buffer.buffer["action"][:n_episodes_stored]
+            old_replay_buffer._buffer["action"][:n_episodes_stored],
+            model.replay_buffer._buffer["action"][:n_episodes_stored],
         )
         assert np.allclose(
-            old_replay_buffer.buffer["reward"][:n_episodes_stored], model.replay_buffer.buffer["reward"][:n_episodes_stored]
+            old_replay_buffer._buffer["reward"][:n_episodes_stored],
+            model.replay_buffer._buffer["reward"][:n_episodes_stored],
         )
         # we might change the last done of the last trajectory so we don't compare it
         assert np.allclose(
-            old_replay_buffer.buffer["done"][: n_episodes_stored - 1],
-            model.replay_buffer.buffer["done"][: n_episodes_stored - 1],
+            old_replay_buffer._buffer["done"][: n_episodes_stored - 1],
+            model.replay_buffer._buffer["done"][: n_episodes_stored - 1],
         )
     else:
-        assert np.allclose(old_replay_buffer.observations, model.replay_buffer.observations)
-        assert np.allclose(old_replay_buffer.actions, model.replay_buffer.actions)
-        assert np.allclose(old_replay_buffer.rewards, model.replay_buffer.rewards)
-        assert np.allclose(old_replay_buffer.dones, model.replay_buffer.dones)
+        replay_buffer = model.replay_buffer.replay_buffer
+        assert np.allclose(old_replay_buffer.observations["observation"], replay_buffer.observations["observation"])
+        assert np.allclose(old_replay_buffer.observations["desired_goal"], replay_buffer.observations["desired_goal"])
+        assert np.allclose(old_replay_buffer.actions, replay_buffer.actions)
+        assert np.allclose(old_replay_buffer.rewards, replay_buffer.rewards)
+        assert np.allclose(old_replay_buffer.dones, replay_buffer.dones)
 
     # test if continuing training works properly
     reset_num_timesteps = False if truncate_last_trajectory is False else True
@@ -271,19 +307,23 @@ def test_full_replay_buffer():
     env = BitFlippingEnv(n_bits=n_bits, continuous=True)
 
     # use small buffer size to get the buffer full
-    model = HER(
-        "MlpPolicy",
+    model = SAC(
+        "MultiInputPolicy",
         env,
-        SAC,
-        goal_selection_strategy="future",
-        online_sampling=True,
+        replay_buffer_class=HerReplayBuffer,
+        replay_buffer_kwargs=dict(
+            n_sampled_goal=2,
+            goal_selection_strategy="future",
+            online_sampling=True,
+            max_episode_length=n_bits,
+        ),
         gradient_steps=1,
         train_freq=4,
-        max_episode_length=n_bits,
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=1,
         buffer_size=20,
         verbose=1,
+        seed=757,
     )
 
     model.learn(total_timesteps=100)
@@ -313,15 +353,15 @@ def test_get_max_episode_length():
         get_time_limit(vec_env, current_max_episode_length=None)
 
     # Initialize HER and specify max_episode_length, should not raise an issue
-    HER("MlpPolicy", dict_env, DQN, max_episode_length=5)
+    DQN("MultiInputPolicy", dict_env, replay_buffer_class=HerReplayBuffer, replay_buffer_kwargs=dict(max_episode_length=5))
 
     with pytest.raises(ValueError):
-        HER("MlpPolicy", dict_env, DQN)
+        DQN("MultiInputPolicy", dict_env, replay_buffer_class=HerReplayBuffer)
 
     # Wrapped in a timelimit, should be fine
     # Note: it requires env.spec to be defined
     env = DummyVecEnv([lambda: gym.wrappers.TimeLimit(BitFlippingEnv(), 10)])
-    HER("MlpPolicy", env, DQN)
+    DQN("MultiInputPolicy", env, replay_buffer_class=HerReplayBuffer, replay_buffer_kwargs=dict(max_episode_length=5))
 
 
 @pytest.mark.parametrize("online_sampling", [False, True])
@@ -333,22 +373,25 @@ def test_performance_her(online_sampling, n_bits):
     """
     env = BitFlippingEnv(n_bits=n_bits, continuous=False)
 
-    model = HER(
-        "MlpPolicy",
+    model = DQN(
+        "MultiInputPolicy",
         env,
-        DQN,
-        n_sampled_goal=5,
-        goal_selection_strategy="future",
-        online_sampling=online_sampling,
+        replay_buffer_class=HerReplayBuffer,
+        replay_buffer_kwargs=dict(
+            n_sampled_goal=5,
+            goal_selection_strategy="future",
+            online_sampling=online_sampling,
+            max_episode_length=n_bits,
+        ),
         verbose=1,
         learning_rate=5e-4,
-        max_episode_length=n_bits,
         train_freq=1,
         learning_starts=100,
         exploration_final_eps=0.02,
         target_update_interval=500,
         seed=0,
         batch_size=32,
+        buffer_size=int(1e5),
     )
 
     model.learn(total_timesteps=5000, log_interval=50)

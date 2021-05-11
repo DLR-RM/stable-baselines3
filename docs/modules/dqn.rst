@@ -17,6 +17,7 @@ and make use of different tricks to stabilize the learning with neural networks:
 
     MlpPolicy
     CnnPolicy
+    MultiInputPolicy
 
 
 Notes
@@ -44,6 +45,7 @@ Discrete      ✔      ✔
 Box           ❌      ✔
 MultiDiscrete ❌      ✔
 MultiBinary   ❌      ✔
+Dict          ❌     ✔️
 ============= ====== ===========
 
 
@@ -53,7 +55,6 @@ Example
 .. code-block:: python
 
   import gym
-  import numpy as np
 
   from stable_baselines3 import DQN
 

@@ -19,6 +19,7 @@ A key feature of SAC, and a major difference with common RL algorithms, is that 
 
     MlpPolicy
     CnnPolicy
+    MultiInputPolicy
 
 
 Notes
@@ -56,6 +57,7 @@ Discrete      ❌      ✔️
 Box           ✔️       ✔️
 MultiDiscrete ❌      ✔️
 MultiBinary   ❌      ✔️
+Dict          ❌     ✔️
 ============= ====== ===========
 
 
@@ -168,4 +170,7 @@ SAC Policies
   :noindex:
 
 .. autoclass:: CnnPolicy
+  :members:
+
+.. autoclass:: MultiInputPolicy
   :members:

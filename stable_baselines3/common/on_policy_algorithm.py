@@ -7,11 +7,11 @@ import torch as th
 
 from stable_baselines3.common import logger
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.buffers import RolloutBuffer
+from stable_baselines3.common.buffers import DictRolloutBuffer, RolloutBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.policies import ActorCriticPolicy, BasePolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
-from stable_baselines3.common.utils import safe_mean
+from stable_baselines3.common.utils import obs_as_tensor, safe_mean
 from stable_baselines3.common.vec_env import VecEnv
 
 
@@ -107,7 +107,9 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
 
-        self.rollout_buffer = RolloutBuffer(
+        buffer_cls = DictRolloutBuffer if isinstance(self.observation_space, gym.spaces.Dict) else RolloutBuffer
+
+        self.rollout_buffer = buffer_cls(
             self.n_steps,
             self.observation_space,
             self.action_space,
@@ -126,7 +128,11 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         self.policy = self.policy.to(self.device)
 
     def collect_rollouts(
-        self, env: VecEnv, callback: BaseCallback, rollout_buffer: RolloutBuffer, n_rollout_steps: int
+        self,
+        env: VecEnv,
+        callback: BaseCallback,
+        rollout_buffer: RolloutBuffer,
+        n_rollout_steps: int,
     ) -> bool:
         """
         Collect experiences using the current policy and fill a ``RolloutBuffer``.
@@ -156,8 +162,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 self.policy.reset_noise(env.num_envs)
 
             with th.no_grad():
-                # Convert to pytorch tensor
-                obs_tensor = th.as_tensor(self._last_obs).to(self.device)
+                # Convert to pytorch tensor or to TensorDict
+                obs_tensor = obs_as_tensor(self._last_obs, self.device)
                 actions, values, log_probs = self.policy.forward(obs_tensor)
             actions = actions.cpu().numpy()
 
@@ -188,7 +194,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         with th.no_grad():
             # Compute value for the last timestep
-            obs_tensor = th.as_tensor(new_obs).to(self.device)
+            obs_tensor = obs_as_tensor(new_obs, self.device)
             _, values, _ = self.policy.forward(obs_tensor)
 
         rollout_buffer.compute_returns_and_advantage(last_values=values, dones=dones)

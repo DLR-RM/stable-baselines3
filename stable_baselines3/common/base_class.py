@@ -17,7 +17,7 @@ from stable_baselines3.common.env_util import is_wrapped
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.policies import BasePolicy, get_policy_from_name
-from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
+from stable_baselines3.common.preprocessing import check_for_nested_spaces, is_image_space, is_image_space_channels_first
 from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr, save_to_zip_file
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import (
@@ -35,7 +35,6 @@ from stable_baselines3.common.vec_env import (
     is_vecenv_wrapped,
     unwrap_vec_normalize,
 )
-from stable_baselines3.common.vec_env.obs_dict_wrapper import ObsDictWrapper
 
 
 def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymEnv]:
@@ -129,10 +128,10 @@ class BaseAlgorithm(ABC):
         self.learning_rate = learning_rate
         self.tensorboard_log = tensorboard_log
         self.lr_schedule = None  # type: Optional[Schedule]
-        self._last_obs = None  # type: Optional[np.ndarray]
+        self._last_obs = None  # type: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
         self._last_episode_starts = None  # type: Optional[np.ndarray]
         # When using VecNormalize:
-        self._last_original_obs = None  # type: Optional[np.ndarray]
+        self._last_original_obs = None  # type: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
         self._episode_num = 0
         # Used for gSDE only
         self.use_sde = use_sde
@@ -195,18 +194,33 @@ class BaseAlgorithm(ABC):
                 print("Wrapping the env in a DummyVecEnv.")
             env = DummyVecEnv([lambda: env])
 
-        if (
-            is_image_space(env.observation_space)
-            and not is_vecenv_wrapped(env, VecTransposeImage)
-            and not is_image_space_channels_first(env.observation_space)
-        ):
-            if verbose >= 1:
-                print("Wrapping the env in a VecTransposeImage.")
-            env = VecTransposeImage(env)
+        # Make sure that dict-spaces are not nested (not supported)
+        check_for_nested_spaces(env.observation_space)
 
-        # check if wrapper for dict support is needed when using HER
-        if isinstance(env.observation_space, gym.spaces.dict.Dict):
-            env = ObsDictWrapper(env)
+        if isinstance(env.observation_space, gym.spaces.Dict):
+            for space in env.observation_space.spaces.values():
+                if isinstance(space, gym.spaces.Dict):
+                    raise ValueError("Nested observation spaces are not supported (Dict spaces inside Dict space).")
+
+        if not is_vecenv_wrapped(env, VecTransposeImage):
+            wrap_with_vectranspose = False
+            if isinstance(env.observation_space, gym.spaces.Dict):
+                # If even one of the keys is a image-space in need of transpose, apply transpose
+                # If the image spaces are not consistent (for instance one is channel first,
+                # the other channel last), VecTransposeImage will throw an error
+                for space in env.observation_space.spaces.values():
+                    wrap_with_vectranspose = wrap_with_vectranspose or (
+                        is_image_space(space) and not is_image_space_channels_first(space)
+                    )
+            else:
+                wrap_with_vectranspose = is_image_space(env.observation_space) and not is_image_space_channels_first(
+                    env.observation_space
+                )
+
+            if wrap_with_vectranspose:
+                if verbose >= 1:
+                    print("Wrapping the env in a VecTransposeImage.")
+                env = VecTransposeImage(env)
 
         return env
 
@@ -275,6 +289,7 @@ class BaseAlgorithm(ABC):
             "replay_buffer",
             "rollout_buffer",
             "_vec_normalize_env",
+            "_episode_storage",
         ]
 
     def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:

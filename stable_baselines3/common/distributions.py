@@ -678,6 +678,7 @@ def make_proba_distribution(
             " Must be of type Gym Spaces: Box, Discrete, MultiDiscrete or MultiBinary."
         )
 
+
 def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> th.Tensor:
     """
     Wrapper for the PyTorch implementation of the full form KL Divergence
@@ -707,13 +708,15 @@ def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> th.Tensor
                     if mutable_coordinate[j] == limits[j]:
                         mutable_coordinate[j] = 0
                     else:
-                        mutable_coordinate[j] += 1         
+                        mutable_coordinate[j] += 1
             grid[i] = mutable_coordinate
 
         # Calculate KL Divergence
         kl_div = 0
         for coordinate in grid[:, None, :]:
-            kl_div += th.exp(dist_true.log_prob(coordinate)) * (dist_true.log_prob(coordinate) - dist_pred.log_prob(coordinate))
+            kl_div += th.exp(dist_true.log_prob(coordinate)) * (
+                dist_true.log_prob(coordinate) - dist_pred.log_prob(coordinate)
+            )
 
         return kl_div
 

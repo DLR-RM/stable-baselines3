@@ -8,7 +8,6 @@ import torch as th
 from gym import spaces
 from torch import nn
 from torch.distributions import Bernoulli, Categorical, Normal
-from torch.distributions.kl import register_kl
 
 from stable_baselines3.common.preprocessing import get_action_dim
 

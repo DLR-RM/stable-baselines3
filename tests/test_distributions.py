@@ -112,3 +112,20 @@ def test_categorical(dist, CAT_ACTIONS):
     entropy = dist.entropy()
     log_prob = dist.log_prob(actions)
     assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=5e-3)
+
+@pytest.mark.parametrize(
+    "dist_type",
+    [
+        BernoulliDistribution(N_ACTIONS).proba_distribution(th.rand(N_ACTIONS)),
+        CategoricalDistribution(N_ACTIONS).proba_distribution(th.rand(N_ACTIONS)),
+        DiagGaussianDistribution(N_ACTIONS).proba_distribution(th.rand(N_ACTIONS), th.rand(N_ACTIONS)),
+        MultiCategoricalDistribution([N_ACTIONS, N_ACTIONS]).proba_distribution(th.rand(1, sum([N_ACTIONS, N_ACTIONS]))),
+        SquashedDiagGaussianDistribution(N_ACTIONS).proba_distribution(th.rand(N_ACTIONS), th.rand(N_ACTIONS)),
+        StateDependentNoiseDistribution(N_ACTIONS).proba_distribution(th.rand(N_ACTIONS), th.rand([N_ACTIONS, N_ACTIONS]), th.rand([N_ACTIONS, N_ACTIONS])),
+    ]
+)
+def test_kl_divergence(dist_type):
+    dist1 = dist_type
+    dist2 = dist_type
+
+    assert kl_divergence(dist1, dist2) == 0

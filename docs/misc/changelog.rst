@@ -43,7 +43,7 @@ New Features:
 - Added policy_base as input to the OnPolicyAlgorithm for more flexibility (@09tangriro)
 - Added support for image observation when using ``HER``
 - Added ``replay_buffer_class`` and ``replay_buffer_kwargs`` arguments to off-policy algorithms
-- Added ``kl_divergence`` wrapper for ``Distribution`` classes (@09tangriro)
+- Added ``kl_divergence`` helper for ``Distribution`` classes (@09tangriro)
 
 Bug Fixes:
 ^^^^^^^^^^

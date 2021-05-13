@@ -40,9 +40,10 @@ New Features:
   to handle gym3-style vectorized environments (@vwxyzjn)
 - Ignored the terminal observation if the it is not provided by the environment
   such as the gym3-style vectorized environments. (@vwxyzjn)
-- Add policy_base as input to the OnPolicyAlgorithm for more flexibility (@09tangriro)
+- Added policy_base as input to the OnPolicyAlgorithm for more flexibility (@09tangriro)
 - Added support for image observation when using ``HER``
 - Added ``replay_buffer_class`` and ``replay_buffer_kwargs`` arguments to off-policy algorithms
+- Added ``kl_divergence`` wrapper for ``Distribution`` classes (@09tangriro)
 
 Bug Fixes:
 ^^^^^^^^^^

@@ -687,7 +687,7 @@ def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> th.Tensor
     :return: KL(dist_true||dist_pred)
     """
     # KL Divergence for different distribution types is out of scope
-    assert dist_true.__class__ == dist_pred.__class__
+    assert dist_true.__class__ == dist_pred.__class__, "Error: input distributions should be the same type"
 
     # MultiCategoricalDistribution is not a PyTorch Distribution subclass
     # so we need to implement it ourselves!

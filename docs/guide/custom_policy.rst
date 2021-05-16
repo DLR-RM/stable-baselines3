@@ -388,6 +388,11 @@ you only need to specify ``net_arch=[256, 256]`` (here, two hidden layers of 256
     between the actor and the critic are allowed (to prevent issues with target networks).
 
 
+.. note::
+    For advanced customization of off-policy algorithms policies, please take a look at the code.
+    A good understanding of the algorithm used is required, see discussion in `issue #425 <https://github.com/DLR-RM/stable-baselines3/issues/425>`_
+
+
 .. code-block:: python
 
   from stable_baselines3 import SAC

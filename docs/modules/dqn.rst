@@ -41,11 +41,11 @@ Can I use?
 ============= ====== ===========
 Space         Action Observation
 ============= ====== ===========
-Discrete      ✔      ✔
-Box           ❌      ✔
-MultiDiscrete ❌      ✔
-MultiBinary   ❌      ✔
-Dict          ❌     ✔️
+Discrete      ✔️      ✔️
+Box           ❌      ✔️
+MultiDiscrete ❌      ✔️
+MultiBinary   ❌      ✔️
+Dict          ❌      ✔️️
 ============= ====== ===========
 
 

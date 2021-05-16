@@ -70,7 +70,8 @@ Documentation:
 - Clarified pip installation in Zsh (@tom-doerr)
 - Clarified return computation for on-policy algorithms (TD(lambda) estimate was used)
 - Added example for using ``ProcgenEnv``
-
+- Added note about advanced custom policy example for off-policy algorithms
+- Fixed DQN unicode checkmarks
 
 Release 1.0 (2021-03-15)
 ------------------------

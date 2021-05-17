@@ -1,6 +1,7 @@
+from copy import deepcopy
+
 import pytest
 import torch as th
-from copy import deepcopy
 
 from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.distributions import (

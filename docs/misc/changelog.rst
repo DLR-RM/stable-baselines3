@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.1.0a7 (WIP)
+Release 1.1.0a8 (WIP)
 ---------------------------
 
 **Dict observation support, timeout handling and refactored HER**
@@ -43,6 +43,7 @@ New Features:
 - Add policy_base as input to the OnPolicyAlgorithm for more flexibility (@09tangriro)
 - Added support for image observation when using ``HER``
 - Added ``replay_buffer_class`` and ``replay_buffer_kwargs`` arguments to off-policy algorithms
+- Added experimental support to train off-policy algorithms with multiple envs (only SAC supported for now)
 
 Bug Fixes:
 ^^^^^^^^^^

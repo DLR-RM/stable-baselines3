@@ -1,5 +1,6 @@
 import pytest
 import torch as th
+from copy import deepcopy
 
 from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.distributions import (
@@ -128,7 +129,46 @@ def test_categorical(dist, CAT_ACTIONS):
     ],
 )
 def test_kl_divergence(dist_type):
+    # Test 1: same distribution should have KL Div = 0
     dist1 = dist_type
     dist2 = dist_type
+    # PyTorch implementation of kl_divergence doesn't sum across dimensions
+    # so we need to check each one
+    assert th.all(kl_divergence(dist1, dist2)) == 0
 
-    assert kl_divergence(dist1, dist2) == 0
+    #Test 2: KL Div = E(Unbiased approx KL Div)
+    if isinstance(dist_type, CategoricalDistribution):
+        dist1 = dist_type.proba_distribution(th.tile(th.rand(N_ACTIONS), (N_SAMPLES, 1)))
+        # deepcopy needed to assign new memory to new distribution instance
+        dist2 = deepcopy(dist_type).proba_distribution(th.tile(th.rand(N_ACTIONS), (N_SAMPLES, 1)))
+    elif isinstance(dist_type, DiagGaussianDistribution) or isinstance(dist_type, SquashedDiagGaussianDistribution):
+        mean_actions1 = th.tile(th.rand(1), (N_SAMPLES, 1))
+        log_std1 = th.tile(th.rand(1), (N_SAMPLES, 1))
+        mean_actions2 = th.tile(th.rand(1), (N_SAMPLES, 1))
+        log_std2 = th.tile(th.rand(1), (N_SAMPLES, 1))
+        dist1 = dist_type.proba_distribution(mean_actions1, log_std1)
+        dist2 = deepcopy(dist_type).proba_distribution(mean_actions2, log_std2)
+    elif isinstance(dist_type, BernoulliDistribution):
+        dist1 = dist_type.proba_distribution(th.tile(th.rand(1), (N_SAMPLES, 1)))
+        dist2 = deepcopy(dist_type).proba_distribution(th.tile(th.rand(1), (N_SAMPLES, 1)))
+    elif isinstance(dist_type, MultiCategoricalDistribution):
+        dist1 = dist_type.proba_distribution(th.tile(th.rand(1, sum([N_ACTIONS, N_ACTIONS])), (N_SAMPLES, 1)))
+        dist2 = deepcopy(dist_type).proba_distribution(th.tile(th.rand(1, sum([N_ACTIONS, N_ACTIONS])), (N_SAMPLES, 1)))
+    elif isinstance(dist_type, StateDependentNoiseDistribution):
+        dist1 = StateDependentNoiseDistribution(1)
+        dist2 = deepcopy(dist1)
+        state = th.rand(N_SAMPLES, N_FEATURES)
+        mean_actions1 = th.tile(th.rand(1), (N_SAMPLES, 1))
+        mean_actions2 = th.tile(th.rand(1), (N_SAMPLES, 1))
+        _, log_std = dist1.proba_distribution_net(N_FEATURES, log_std_init=th.log(th.tensor(0.2)))
+        dist1.sample_weights(log_std, batch_size=N_SAMPLES)
+        dist2.sample_weights(log_std, batch_size=N_SAMPLES)
+        dist1 = dist1.proba_distribution(mean_actions1, log_std, state)
+        dist2 = dist2.proba_distribution(mean_actions2, log_std, state)
+
+
+    full_kl_div = kl_divergence(dist1, dist2).mean(dim=0)
+    actions = dist1.get_actions()
+    approx_kl_div = (dist1.log_prob(actions) - dist2.log_prob(actions)).mean(dim=0)
+
+    assert th.allclose(full_kl_div, approx_kl_div, rtol=5e-2)

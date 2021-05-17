@@ -718,4 +718,4 @@ def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> th.Tensor
     # Use the PyTorch kl_divergence implementation
     else:
         # KL Divergence should not be a vector
-        return th.sum(th.distributions.kl_divergence(dist_true.distribution, dist_pred.distribution))
+        return th.distributions.kl_divergence(dist_true.distribution, dist_pred.distribution)

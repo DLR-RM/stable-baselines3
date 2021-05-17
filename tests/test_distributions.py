@@ -136,7 +136,7 @@ def test_kl_divergence(dist_type):
     # so we need to check each one
     assert th.all(kl_divergence(dist1, dist2)) == 0
 
-    #Test 2: KL Div = E(Unbiased approx KL Div)
+    # Test 2: KL Div = E(Unbiased approx KL Div)
     if isinstance(dist_type, CategoricalDistribution):
         dist1 = dist_type.proba_distribution(th.tile(th.rand(N_ACTIONS), (N_SAMPLES, 1)))
         # deepcopy needed to assign new memory to new distribution instance
@@ -165,7 +165,6 @@ def test_kl_divergence(dist_type):
         dist2.sample_weights(log_std, batch_size=N_SAMPLES)
         dist1 = dist1.proba_distribution(mean_actions1, log_std, state)
         dist2 = dist2.proba_distribution(mean_actions2, log_std, state)
-
 
     full_kl_div = kl_divergence(dist1, dist2).mean(dim=0)
     actions = dist1.get_actions()

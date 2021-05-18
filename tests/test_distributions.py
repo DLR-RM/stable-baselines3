@@ -172,3 +172,18 @@ def test_kl_divergence(dist_type):
     approx_kl_div = (dist1.log_prob(actions) - dist2.log_prob(actions)).mean(dim=0)
 
     assert th.allclose(full_kl_div, approx_kl_div, rtol=5e-2)
+
+    # Test 3 Sanity test with easy Bernoulli distribution
+    if isinstance(dist_type, BernoulliDistribution):
+        dist1 = BernoulliDistribution(1).proba_distribution(th.tensor([0.3]))
+        dist2 = BernoulliDistribution(1).proba_distribution(th.tensor([0.65]))
+
+        full_kl_div = kl_divergence(dist1, dist2)
+
+        actions = th.range(0, 1)
+        ad_hoc_kl = th.sum(
+            th.exp(dist1.distribution.log_prob(actions))
+            * (dist1.distribution.log_prob(actions) - dist2.distribution.log_prob(actions))
+        )
+
+        assert th.allclose(full_kl_div, ad_hoc_kl)

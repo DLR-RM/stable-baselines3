@@ -689,31 +689,10 @@ def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> th.Tensor
     # so we need to implement it ourselves!
     if isinstance(dist_pred, MultiCategoricalDistribution):
         assert dist_pred.action_dims == dist_true.action_dims, "Error: distributions must have the same input space"
-        dim = len(dist_pred.action_dims)
-        num_coordinates = th.prod(th.tensor(dist_pred.action_dims))
-        limits = th.tensor([x - 1 for x in dist_pred.action_dims], dtype=th.float32)
-        grid = th.zeros([num_coordinates, dim])
-
-        # Fill grid of discrete coordinates
-        mutable_coordinate = th.zeros(dim)
-        for i in range(1, num_coordinates):
-            for j in range(dim):
-                # Increment the coordinate by 1 (binary style)
-                if j == dim - 1 or th.equal(grid[i - 1, j + 1 :], limits[j + 1 :]):
-                    if mutable_coordinate[j] == limits[j]:
-                        mutable_coordinate[j] = 0
-                    else:
-                        mutable_coordinate[j] += 1
-            grid[i] = mutable_coordinate
-
-        # Calculate KL Divergence
-        kl_div = 0
-        for coordinate in grid[:, None, :]:
-            kl_div += th.exp(dist_true.log_prob(coordinate)) * (
-                dist_true.log_prob(coordinate) - dist_pred.log_prob(coordinate)
-            )
-
-        return kl_div
+        return th.stack(
+            [th.distributions.kl_divergence(p, q) for p, q in zip(dist_true.distribution, dist_pred.distribution)],
+            dim=1,
+        ).sum(dim=1)
 
     # Use the PyTorch kl_divergence implementation
     else:

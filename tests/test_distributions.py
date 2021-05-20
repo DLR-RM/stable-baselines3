@@ -180,7 +180,7 @@ def test_kl_divergence(dist_type):
 
         full_kl_div = kl_divergence(dist1, dist2)
 
-        actions = th.range(0, 1)
+        actions = th.tensor([0.0, 1.0])
         ad_hoc_kl = th.sum(
             th.exp(dist1.distribution.log_prob(actions))
             * (dist1.distribution.log_prob(actions) - dist2.distribution.log_prob(actions))

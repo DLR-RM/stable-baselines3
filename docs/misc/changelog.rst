@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.1.0a7 (WIP)
+Release 1.1.0a8 (WIP)
 ---------------------------
 
 **Dict observation support, timeout handling and refactored HER**
@@ -40,9 +40,10 @@ New Features:
   to handle gym3-style vectorized environments (@vwxyzjn)
 - Ignored the terminal observation if the it is not provided by the environment
   such as the gym3-style vectorized environments. (@vwxyzjn)
-- Add policy_base as input to the OnPolicyAlgorithm for more flexibility (@09tangriro)
+- Added policy_base as input to the OnPolicyAlgorithm for more flexibility (@09tangriro)
 - Added support for image observation when using ``HER``
 - Added ``replay_buffer_class`` and ``replay_buffer_kwargs`` arguments to off-policy algorithms
+- Added ``kl_divergence`` helper for ``Distribution`` classes (@09tangriro)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -59,6 +60,7 @@ Others:
 - Updated ``env_checker`` to reflect support of dict observation spaces
 - Added Code of Conduct
 - Added tests for GAE and lambda return computation
+- Updated distribution entropy test (thanks @09tangriro)
 
 Documentation:
 ^^^^^^^^^^^^^^

@@ -80,13 +80,13 @@ def test_entropy(dist):
     # The entropy can be approximated by averaging the negative log likelihood
     # mean negative log likelihood == differential entropy
     set_random_seed(1)
-    state = th.rand(N_SAMPLES, N_FEATURES)
     deterministic_actions = th.rand(N_SAMPLES, N_ACTIONS)
     _, log_std = dist.proba_distribution_net(N_FEATURES, log_std_init=th.log(th.tensor(0.2)))
 
     if isinstance(dist, DiagGaussianDistribution):
         dist = dist.proba_distribution(deterministic_actions, log_std)
     else:
+        state = th.rand(1, N_FEATURES).repeat(N_SAMPLES, 1)
         dist.sample_weights(log_std, batch_size=N_SAMPLES)
         dist = dist.proba_distribution(deterministic_actions, log_std, state)
 
@@ -130,11 +130,11 @@ def test_categorical(dist, CAT_ACTIONS):
     ],
 )
 def test_kl_divergence(dist_type):
+    set_random_seed(8)
     # Test 1: same distribution should have KL Div = 0
     dist1 = dist_type
     dist2 = dist_type
     # PyTorch implementation of kl_divergence doesn't sum across dimensions
-    # so we need to check each one
     assert th.allclose(kl_divergence(dist1, dist2).sum(), th.tensor(0.0))
 
     # Test 2: KL Div = E(Unbiased approx KL Div)
@@ -158,7 +158,7 @@ def test_kl_divergence(dist_type):
     elif isinstance(dist_type, StateDependentNoiseDistribution):
         dist1 = StateDependentNoiseDistribution(1)
         dist2 = deepcopy(dist1)
-        state = th.rand(N_SAMPLES, N_FEATURES)
+        state = th.rand(1, N_FEATURES).repeat(N_SAMPLES, 1)
         mean_actions1 = th.rand(1).repeat(N_SAMPLES, 1)
         mean_actions2 = th.rand(1).repeat(N_SAMPLES, 1)
         _, log_std = dist1.proba_distribution_net(N_FEATURES, log_std_init=th.log(th.tensor(0.2)))

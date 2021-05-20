@@ -2,6 +2,7 @@ import io
 import pathlib
 import time
 import warnings
+from copy import deepcopy
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import gym
@@ -461,7 +462,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self,
         replay_buffer: ReplayBuffer,
         buffer_action: np.ndarray,
-        new_obs: np.ndarray,
+        new_obs: Union[np.ndarray, Dict[str, np.ndarray]],
         reward: np.ndarray,
         dones: np.ndarray,
         infos: List[Dict[str, Any]],
@@ -490,23 +491,41 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         # As the VecEnv resets automatically, new_obs is already the
         # first observation of the next episode
-        next_obs = new_obs_.copy()
+        next_obs = deepcopy(new_obs_)  # use deepcopy for dict observations
         for i, done in enumerate(dones):
             if done and infos[i].get("terminal_observation") is not None:
-                next_obs[i, :] = infos[i]["terminal_observation"]
-                # VecNormalize normalizes the terminal observation
-                if self._vec_normalize_env is not None:
-                    next_obs[i, :] = self._vec_normalize_env.unnormalize_obs(next_obs[i, :])
+                if isinstance(next_obs, dict):
+                    assert len(dones) == 1, "Dict obs does not support multi env yet"
+                    # MultiEnv not supported for dict obs yet
+                    next_obs = infos[i]["terminal_observation"]
+                    # VecNormalize normalizes the terminal observation
+                    if self._vec_normalize_env is not None:
+                        next_obs = self._vec_normalize_env.unnormalize_obs(next_obs)
+                else:
+                    next_obs[i, :] = infos[i]["terminal_observation"]
+                    # VecNormalize normalizes the terminal observation
+                    if self._vec_normalize_env is not None:
+                        next_obs[i, :] = self._vec_normalize_env.unnormalize_obs(next_obs[i, :])
 
         for i in range(len(dones)):
-            replay_buffer.add(
-                self._last_original_obs[i],
-                next_obs[i],
-                buffer_action[i],
-                reward_[i],
-                dones[i],
-                [infos[i]],
-            )
+            if isinstance(next_obs, dict):
+                replay_buffer.add(
+                    {key: obs[i] for key, obs in self._last_original_obs.items()},
+                    {key: next_obs_[i] for key, next_obs_ in next_obs.items()},
+                    buffer_action[i],
+                    reward_[i],
+                    dones[i],
+                    [infos[i]],  # pytype: disable=wrong-arg-types
+                )
+            else:
+                replay_buffer.add(
+                    self._last_original_obs[i],
+                    next_obs[i],
+                    buffer_action[i],
+                    reward_[i],
+                    dones[i],
+                    [infos[i]],
+                )
 
         self._last_obs = new_obs
         # Save the unnormalized observation

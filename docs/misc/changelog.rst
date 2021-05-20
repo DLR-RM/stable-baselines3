@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.1.0a7 (WIP)
+Release 1.1.0a8 (WIP)
 ---------------------------
 
 **Dict observation support, timeout handling and refactored HER**
@@ -60,6 +60,7 @@ Others:
 - Updated ``env_checker`` to reflect support of dict observation spaces
 - Added Code of Conduct
 - Added tests for GAE and lambda return computation
+- Updated distribution entropy test (thanks @09tangriro)
 
 Documentation:
 ^^^^^^^^^^^^^^

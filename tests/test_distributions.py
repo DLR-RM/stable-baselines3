@@ -80,7 +80,7 @@ def test_entropy(dist):
     # The entropy can be approximated by averaging the negative log likelihood
     # mean negative log likelihood == differential entropy
     set_random_seed(1)
-    deterministic_actions = th.rand(N_SAMPLES, N_ACTIONS)
+    deterministic_actions = th.rand(1, N_ACTIONS).repeat(N_SAMPLES, 1)
     _, log_std = dist.proba_distribution_net(N_FEATURES, log_std_init=th.log(th.tensor(0.2)))
 
     if isinstance(dist, DiagGaussianDistribution):

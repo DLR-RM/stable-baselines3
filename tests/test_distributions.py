@@ -135,7 +135,7 @@ def test_kl_divergence(dist_type):
     dist2 = dist_type
     # PyTorch implementation of kl_divergence doesn't sum across dimensions
     # so we need to check each one
-    assert th.all(kl_divergence(dist1, dist2).bool()) == False
+    assert th.allclose(kl_divergence(dist1, dist2).sum(), th.tensor(0.0))
 
     # Test 2: KL Div = E(Unbiased approx KL Div)
     if isinstance(dist_type, CategoricalDistribution):

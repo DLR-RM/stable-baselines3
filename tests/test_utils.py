@@ -71,7 +71,7 @@ def test_vec_env_kwargs():
 
 
 def test_vec_env_wrapper_kwargs():
-    env = make_vec_env("MountainCarContinuous-v0", n_envs=1, seed=0, wrapper_class=MaxAndSkipEnv, wrapper_kwargs={'skip': 3})
+    env = make_vec_env("MountainCarContinuous-v0", n_envs=1, seed=0, wrapper_class=MaxAndSkipEnv, wrapper_kwargs={"skip": 3})
     assert env.get_attr("_skip")[0] == 3
 
 

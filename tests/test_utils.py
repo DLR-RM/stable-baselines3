@@ -196,7 +196,8 @@ class AlwaysDoneWrapper(gym.Wrapper):
 def test_evaluate_policy_monitors(vec_env_class):
     # Test that results are correct with monitor environments.
     # Also test VecEnvs
-    n_eval_episodes = 2
+    n_eval_episodes = 3
+    n_envs = 2
     env_id = "CartPole-v0"
     model = A2C("MlpPolicy", env_id, seed=0)
 
@@ -212,9 +213,9 @@ def test_evaluate_policy_monitors(vec_env_class):
             env = wrapper_class(env)
         else:
             if with_monitor:
-                env = vec_env_class([lambda: wrapper_class(Monitor(gym.make(env_id)))])
+                env = vec_env_class([lambda: wrapper_class(Monitor(gym.make(env_id)))] * n_envs)
             else:
-                env = vec_env_class([lambda: wrapper_class(gym.make(env_id))])
+                env = vec_env_class([lambda: wrapper_class(gym.make(env_id))] * n_envs)
         return env
 
     # Test that evaluation with VecEnvs works as expected

@@ -5,7 +5,7 @@ import gym
 import numpy as np
 
 from stable_baselines3.common import base_class
-from stable_baselines3.common.vec_env import VecEnv, VecMonitor, is_vecenv_wrapped
+from stable_baselines3.common.vec_env import VecEnv, VecMonitor, is_vecenv_wrapped, DummyVecEnv
 
 
 def evaluate_policy(
@@ -55,11 +55,11 @@ def evaluate_policy(
     from stable_baselines3.common.env_util import is_wrapped
     from stable_baselines3.common.monitor import Monitor
 
-    if isinstance(env, VecEnv):
-        assert env.num_envs == 1, "You must pass only one environment when using this function"
-        is_monitor_wrapped = is_vecenv_wrapped(env, VecMonitor) or env.env_is_wrapped(Monitor)[0]
-    else:
-        is_monitor_wrapped = is_wrapped(env, Monitor)
+    if not isinstance(env, VecEnv):
+        gym_env = env
+        env = DummyVecEnv([lambda: gym_env])
+
+    is_monitor_wrapped = is_vecenv_wrapped(env, VecMonitor) or env.env_is_wrapped(Monitor)[0]
 
     if not is_monitor_wrapped and warn:
         warnings.warn(
@@ -69,41 +69,52 @@ def evaluate_policy(
             UserWarning,
         )
 
-    episode_rewards, episode_lengths = [], []
-    not_reseted = True
-    while len(episode_rewards) < n_eval_episodes:
-        # Number of loops here might differ from true episodes
-        # played, if underlying wrappers modify episode lengths.
-        # Avoid double reset, as VecEnv are reset automatically.
-        if not isinstance(env, VecEnv) or not_reseted:
-            obs = env.reset()
-            not_reseted = False
-        done, state = False, None
-        episode_reward = 0.0
-        episode_length = 0
-        while not done:
-            action, state = model.predict(obs, state=state, deterministic=deterministic)
-            obs, reward, done, info = env.step(action)
-            episode_reward += reward
-            if callback is not None:
-                callback(locals(), globals())
-            episode_length += 1
-            if render:
-                env.render()
+    n_envs = env.num_envs
+    episode_rewards = []
+    episode_lengths = []
 
-        if is_monitor_wrapped:
-            # Do not trust "done" with episode endings.
-            # Remove vecenv stacking (if any)
-            if isinstance(env, VecEnv):
-                info = info[0]
-            if "episode" in info.keys():
-                # Monitor wrapper includes "episode" key in info if environment
-                # has been wrapped with it. Use those rewards instead.
-                episode_rewards.append(info["episode"]["r"])
-                episode_lengths.append(info["episode"]["l"])
-        else:
-            episode_rewards.append(episode_reward)
-            episode_lengths.append(episode_length)
+    episode_counts = np.zeros(n_envs,dtype="int")
+    episode_count_targets = np.array([(n_eval_episodes+i)//n_envs for i in range(n_envs)],dtype="int")
+
+    current_rewards = np.zeros(n_envs)
+    current_lengths = np.zeros(n_envs, dtype="int")
+    obss = env.reset()
+    states = None
+    while (episode_counts < episode_count_targets).any():
+        actions, states = model.predict(obss, state=states, deterministic=deterministic)
+        obss, rewards, dones, infos = env.step(actions)
+        current_rewards += rewards
+        current_lengths += 1
+        for i in range(n_envs):
+            if episode_counts[i] < episode_count_targets[i]:
+                reward = rewards[i]
+                done = dones[i]
+                # obs, reward, done = obss[i], rewards[i], dones[i]
+                # print(infos)
+                # print(env)
+                info = infos[i]
+                # info = {k:v[i] for k, v in infos.items()}
+                if callback is not None:
+                    callback(locals(), globals())
+                if dones[i]:
+                    if is_monitor_wrapped:
+                        if "episode" in info.keys():
+                            # Do not trust "done" with episode endings.
+                            # Monitor wrapper includes "episode" key in info if environment
+                            # has been wrapped with it. Use those rewards instead.
+                            episode_rewards.append(info["episode"]["r"])
+                            episode_lengths.append(info["episode"]["l"])
+                    else:
+                        episode_rewards.append(current_rewards[i])
+                        episode_lengths.append(current_lengths[i])
+                    current_rewards[i] = 0
+                    current_lengths[i] = 0
+                    episode_counts[i] += 1
+                    if states is not None:
+                        states[i] *= 0
+
+        if render:
+            env.render()
 
     mean_reward = np.mean(episode_rewards)
     std_reward = np.std(episode_rewards)

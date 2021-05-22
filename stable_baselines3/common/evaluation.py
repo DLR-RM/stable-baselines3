@@ -21,7 +21,8 @@ def evaluate_policy(
 ) -> Union[Tuple[float, float], Tuple[List[float], List[int]]]:
     """
     Runs policy for ``n_eval_episodes`` episodes and returns average reward.
-    This is made to work only with one env.
+    If a vector env is passed in, this divides the episodes to evaluate onto the
+    different elements of the vector env.
 
     .. note::
         If environment has not been wrapped with ``Monitor`` wrapper, reward and
@@ -32,8 +33,7 @@ def evaluate_policy(
         wrapper before anything else.
 
     :param model: The RL agent you want to evaluate.
-    :param env: The gym environment. In the case of a ``VecEnv``
-        this must contain only one environment.
+    :param env: The gym environment or ``VecEnv`` environment.
     :param n_eval_episodes: Number of episode to evaluate the agent
     :param deterministic: Whether to use deterministic or stochastic actions
     :param render: Whether to render the environment or not
@@ -52,7 +52,6 @@ def evaluate_policy(
     """
     is_monitor_wrapped = False
     # Avoid circular import
-    from stable_baselines3.common.env_util import is_wrapped
     from stable_baselines3.common.monitor import Monitor
 
     if not isinstance(env, VecEnv):
@@ -73,8 +72,8 @@ def evaluate_policy(
     episode_rewards = []
     episode_lengths = []
 
-    episode_counts = np.zeros(n_envs,dtype="int")
-    episode_count_targets = np.array([(n_eval_episodes+i)//n_envs for i in range(n_envs)],dtype="int")
+    episode_counts = np.zeros(n_envs, dtype="int")
+    episode_count_targets = np.array([(n_eval_episodes + i) // n_envs for i in range(n_envs)], dtype="int")
 
     current_rewards = np.zeros(n_envs)
     current_lengths = np.zeros(n_envs, dtype="int")

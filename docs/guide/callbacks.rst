@@ -185,6 +185,11 @@ It will save the best model if ``best_model_save_path`` folder is specified and 
 	You can pass a child callback via the ``callback_on_new_best`` argument. It will be triggered each time there is a new best model.
 
 
+.. warning::
+
+  You need to make sure that ``eval_env`` is wrapped the same way as the training environment, for instance using the ``VecTransposeImage`` wrapper if you have a channel-last image as input.
+  The ``EvalCallback`` class outputs a warning if it is not the case.
+
 
 .. code-block:: python
 

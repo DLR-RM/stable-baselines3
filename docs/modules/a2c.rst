@@ -40,6 +40,7 @@ Discrete      ✔️      ✔️
 Box           ✔️      ✔️
 MultiDiscrete ✔️      ✔️
 MultiBinary   ✔️      ✔️
+Dict          ❌     ✔️
 ============= ====== ===========
 
 
@@ -53,13 +54,12 @@ Train a A2C agent on ``CartPole-v1`` using 4 environments.
   import gym
 
   from stable_baselines3 import A2C
-  from stable_baselines3.a2c import MlpPolicy
   from stable_baselines3.common.env_util import make_vec_env
 
   # Parallel environments
-  env = make_vec_env('CartPole-v1', n_envs=4)
+  env = make_vec_env("CartPole-v1", n_envs=4)
 
-  model = A2C(MlpPolicy, env, verbose=1)
+  model = A2C("MlpPolicy", env, verbose=1)
   model.learn(total_timesteps=25000)
   model.save("a2c_cartpole")
 
@@ -162,5 +162,12 @@ A2C Policies
   :members:
 
 .. autoclass:: stable_baselines3.common.policies.ActorCriticCnnPolicy
+  :members:
+  :noindex:
+
+.. autoclass:: MultiInputPolicy
+  :members:
+
+.. autoclass:: stable_baselines3.common.policies.MultiInputActorCriticPolicy
   :members:
   :noindex:

@@ -3,8 +3,8 @@
 Custom Policy Network
 =====================
 
-Stable Baselines3 provides policy networks for images (CnnPolicies)
-and other type of input features (MlpPolicies).
+Stable Baselines3 provides policy networks for images (CnnPolicies),
+other type of input features (MlpPolicies) and multiple different inputs (MultiInputPolicies).
 
 
 .. warning::
@@ -13,9 +13,49 @@ and other type of input features (MlpPolicies).
   which handles bounds more correctly.
 
 
+SB3 Policy
+^^^^^^^^^^
 
-Custom Policy Architecture
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+SB3 networks are separated into two mains parts (see figure below):
+
+- A features extractor (usually shared between actor and critic when applicable, to save computation)
+  whose role is to extract features (i.e. convert to a feature vector) from high-dimensional observations, for instance, a CNN that extracts features from images.
+  This is the ``features_extractor_class`` parameter. You can change the default parameters of that features extractor
+  by passing a ``features_extractor_kwargs`` parameter.
+
+- A (fully-connected) network that maps the features to actions/value. Its architecture is controlled by the ``net_arch`` parameter.
+
+
+.. note::
+
+    All observations are first pre-processed (e.g. images are normalized, discrete obs are converted to one-hot vectors, ...) before being fed to the features extractor.
+    In the case of vector observations, the features extractor is just a ``Flatten`` layer.
+
+
+.. image:: ../_static/img/net_arch.png
+
+
+SB3 policies are usually composed of several networks (actor/critic networks + target networks when applicable) together
+with the associated optimizers.
+
+Each of these network have a features extractor followed by a fully-connected network.
+
+.. note::
+
+  When we refer to "policy" in Stable-Baselines3, this is usually an abuse of language compared to RL terminology.
+  In SB3, "policy" refers to the class that handles all the networks useful for training,
+  so not only the network used to predict actions (the "learned controller").
+
+
+
+.. image:: ../_static/img/sb3_policy.png
+
+
+.. .. figure:: https://cdn-images-1.medium.com/max/960/1*h4WTQNVIsvMXJTCpXm_TAw.gif
+
+
+Custom Network Architecture
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 One way of customising the policy network architecture is to pass arguments when creating the model,
 using ``policy_kwargs`` parameter:
@@ -107,6 +147,70 @@ that derives from ``BaseFeaturesExtractor`` and then pass it to the model when t
   )
   model = PPO("CnnPolicy", "BreakoutNoFrameskip-v4", policy_kwargs=policy_kwargs, verbose=1)
   model.learn(1000)
+
+
+Multiple Inputs and Dictionary Observations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Stable Baselines3 supports handling of multiple inputs by using ``Dict`` Gym space. This can be done using
+``MultiInputPolicy``, which by default uses the ``CombinedExtractor`` feature extractor to turn multiple
+inputs into a single vector, handled by the ``net_arch`` network.
+
+By default, ``CombinedExtractor`` processes multiple inputs as follows:
+
+1. If input is an image (automatically detected, see ``common.preprocessing.is_image_space``), process image with Nature Atari CNN network and
+   output a latent vector of size ``256``.
+2. If input is not an image, flatten it (no layers).
+3. Concatenate all previous vectors into one long vector and pass it to policy.
+
+Much like above, you can define custom feature extractors. The following example assumes the environment has two keys in the
+observation space dictionary: "image" is a (1,H,W) image (channel first), and "vector" is a (D,) dimensional vector. We process "image" with a simple
+downsampling and "vector" with a single linear layer.
+
+.. code-block:: python
+
+  import gym
+  import torch as th
+  from torch import nn
+
+  from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+
+  class CustomCombinedExtractor(BaseFeaturesExtractor):
+      def __init__(self, observation_space: gym.spaces.Dict):
+          # We do not know features-dim here before going over all the items,
+          # so put something dummy for now. PyTorch requires calling
+          # nn.Module.__init__ before adding modules
+          super(CustomCombinedExtractor, self).__init__(observation_space, features_dim=1)
+
+          extractors = {}
+
+          total_concat_size = 0
+          # We need to know size of the output of this extractor,
+          # so go over all the spaces and compute output feature sizes
+          for key, subspace in observation_space.spaces.items():
+              if key == "image":
+                  # We will just downsample one channel of the image by 4x4 and flatten.
+                  # Assume the image is single-channel (subspace.shape[0] == 0)
+                  extractors[key] = nn.Sequential(nn.MaxPool2d(4), nn.Flatten())
+                  total_concat_size += subspace.shape[1] // 4 * subspace.shape[2] // 4
+              elif key == "vector":
+                  # Run through a simple MLP
+                  extractors[key] = nn.Linear(subspace.shape[0], 16)
+                  total_concat_size += 16
+
+          self.extractors = nn.ModuleDict(extractors)
+
+          # Update the features dim manually
+          self._features_dim = total_concat_size
+
+      def forward(self, observations) -> th.Tensor:
+          encoded_tensor_list = []
+
+          # self.extractors contain nn.Modules that do all the processing.
+          for key, extractor in self.extractors.items():
+              encoded_tensor_list.append(extractor(observations[key]))
+          # Return a (B, self._features_dim) PyTorch tensor, where B is batch dimension.
+          return th.cat(encoded_tensor_list, dim=1)
 
 
 
@@ -282,6 +386,11 @@ you only need to specify ``net_arch=[256, 256]`` (here, two hidden layers of 256
 .. note::
     Compared to their on-policy counterparts, no shared layers (other than the feature extractor)
     between the actor and the critic are allowed (to prevent issues with target networks).
+
+
+.. note::
+    For advanced customization of off-policy algorithms policies, please take a look at the code.
+    A good understanding of the algorithm used is required, see discussion in `issue #425 <https://github.com/DLR-RM/stable-baselines3/issues/425>`_
 
 
 .. code-block:: python

@@ -28,6 +28,7 @@ you can take a look at the issues [#48](https://github.com/DLR-RM/stable-baselin
 | Custom environments         | :heavy_check_mark: |
 | Custom policies             | :heavy_check_mark: |
 | Common interface            | :heavy_check_mark: |
+| `Dict` observation space support  | :heavy_check_mark: |
 | Ipython / Notebook friendly | :heavy_check_mark: |
 | Tensorboard support         | :heavy_check_mark: |
 | PEP8 code style             | :heavy_check_mark: |
@@ -36,7 +37,7 @@ you can take a look at the issues [#48](https://github.com/DLR-RM/stable-baselin
 | Type hints                  | :heavy_check_mark: |
 
 
-### Planned features (v1.1+)
+### Planned features
 
 Please take a look at the [Roadmap](https://github.com/DLR-RM/stable-baselines3/issues/1) and [Milestones](https://github.com/DLR-RM/stable-baselines3/milestones).
 
@@ -48,11 +49,13 @@ A migration guide from SB2 to SB3 can be found in the [documentation](https://st
 
 Documentation is available online: [https://stable-baselines3.readthedocs.io/](https://stable-baselines3.readthedocs.io/)
 
-## RL Baselines3 Zoo: A Collection of Trained RL Agents
+## RL Baselines3 Zoo: A Training Framework for Stable Baselines3 Reinforcement Learning Agents
 
-[RL Baselines3 Zoo](https://github.com/DLR-RM/rl-baselines3-zoo). is a collection of pre-trained Reinforcement Learning agents using Stable-Baselines3.
+[RL Baselines3 Zoo](https://github.com/DLR-RM/rl-baselines3-zoo) is a training framework for Reinforcement Learning (RL).
 
-It also provides basic scripts for training, evaluating agents, tuning hyperparameters, plotting results and recording videos.
+It provides scripts for training, evaluating agents, tuning hyperparameters, plotting results and recording videos.
+
+In addition, it includes a collection of tuned hyperparameters for common environments and RL algorithms, and agents trained with those settings.
 
 Goals of this repository:
 
@@ -91,6 +94,7 @@ Install the Stable Baselines3 package:
 ```
 pip install stable-baselines3[extra]
 ```
+**Note:** Some shells such as Zsh require quotation marks around brackets, i.e. `pip install 'stable-baselines3[extra]'` ([More Info](https://stackoverflow.com/a/30539963)).
 
 This includes an optional dependencies like Tensorboard, OpenCV or `atari-py` to train on atari games. If you do not need those, you can use:
 ```
@@ -110,9 +114,9 @@ import gym
 
 from stable_baselines3 import PPO
 
-env = gym.make('CartPole-v1')
+env = gym.make("CartPole-v1")
 
-model = PPO('MlpPolicy', env, verbose=1)
+model = PPO("MlpPolicy", env, verbose=1)
 model.learn(total_timesteps=10000)
 
 obs = env.reset()

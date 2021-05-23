@@ -79,6 +79,8 @@ Documentation:
 - Fixed DQN unicode checkmarks
 - Updated migration guide (@juancroldan)
 - Pinned ``docutils==0.16`` to avoid issue with rtd theme
+- Clarified callback ``save_freq`` definition
+
 
 Release 1.0 (2021-03-15)
 ------------------------

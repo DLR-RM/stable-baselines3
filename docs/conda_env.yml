@@ -15,3 +15,6 @@ dependencies:
     - numpy
     - matplotlib
     - sphinx_autodoc_typehints
+    # Tmp fix, docutils==0.17 breaks rtd theme
+    # See https://github.com/readthedocs/sphinx_rtd_theme/issues/1115
+    - docutils==0.16

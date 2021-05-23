@@ -155,8 +155,15 @@ Stable Baselines provides you with a set of common callbacks for:
 CheckpointCallback
 ^^^^^^^^^^^^^^^^^^
 
-Callback for saving a model every ``save_freq`` steps, you must specify a log folder (``save_path``)
+Callback for saving a model every ``save_freq`` calls to ``env.step()``, you must specify a log folder (``save_path``)
 and optionally a prefix for the checkpoints (``rl_model`` by default).
+
+.. warning::
+
+  When using multiple environments, each call to  ``env.step()`` will effectively correspond to ``n_envs`` steps.
+  If you want the ``save_freq`` to be similar when using different number of environments,
+  you need to account for it using ``save_freq = max(save_freq // n_envs, 1)``.
+  The same goes for the other callbacks.
 
 
 .. code-block:: python

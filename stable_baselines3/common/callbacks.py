@@ -212,7 +212,14 @@ class CallbackList(BaseCallback):
 
 class CheckpointCallback(BaseCallback):
     """
-    Callback for saving a model every ``save_freq`` steps
+    Callback for saving a model every ``save_freq`` calls
+    to ``env.step()``.
+
+    .. warning::
+
+      When using multiple environments, each call to  ``env.step()``
+      will effectively correspond to ``n_envs`` steps.
+      To account for that, you can use ``save_freq = max(save_freq // n_envs, 1)``
 
     :param save_freq:
     :param save_path: Path to the folder where the model will be saved.
@@ -262,11 +269,17 @@ class EvalCallback(EventCallback):
     """
     Callback for evaluating an agent.
 
+    .. warning::
+
+      When using multiple environments, each call to  ``env.step()``
+      will effectively correspond to ``n_envs`` steps.
+      To account for that, you can use ``eval_freq = max(eval_freq // n_envs, 1)``
+
     :param eval_env: The environment used for initialization
     :param callback_on_new_best: Callback to trigger
         when there is a new best model according to the ``mean_reward``
     :param n_eval_episodes: The number of episodes to test the agent
-    :param eval_freq: Evaluate the agent every eval_freq call of the callback.
+    :param eval_freq: Evaluate the agent every ``eval_freq`` call of the callback.
     :param log_path: Path to a folder where the evaluations (``evaluations.npz``)
         will be saved. It will be updated at each evaluation.
     :param best_model_save_path: Path to a folder where the best model

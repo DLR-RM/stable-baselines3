@@ -27,6 +27,7 @@ Breaking Changes:
 
 - Updated the KL Divergence estimator in the PPO algorithm to be positive definite and have lower variance (@09tangriro)
 - Updated the KL Divergence check in the PPO algorithm to be before the gradient update step rather than after end of epoch (@09tangriro)
+- Removed parameter ``channels_last`` from ``is_image_space`` as it can be inferred.
 
 New Features:
 ^^^^^^^^^^^^^
@@ -62,6 +63,7 @@ Others:
 - Added Code of Conduct
 - Added tests for GAE and lambda return computation
 - Updated distribution entropy test (thanks @09tangriro)
+- Added sanity check ``batch_size > 1`` in PPO to avoid NaN in advantage normalization
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -75,6 +77,10 @@ Documentation:
 - Added example for using ``ProcgenEnv``
 - Added note about advanced custom policy example for off-policy algorithms
 - Fixed DQN unicode checkmarks
+- Updated migration guide (@juancroldan)
+- Pinned ``docutils==0.16`` to avoid issue with rtd theme
+- Clarified callback ``save_freq`` definition
+
 
 Release 1.0 (2021-03-15)
 ------------------------
@@ -690,4 +696,4 @@ And all the contributors:
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @JadenTravnik @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
-@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx
+@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan

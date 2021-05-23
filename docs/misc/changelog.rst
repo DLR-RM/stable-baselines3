@@ -63,7 +63,7 @@ Others:
 - Added Code of Conduct
 - Added tests for GAE and lambda return computation
 - Updated distribution entropy test (thanks @09tangriro)
-- Added sanity check ``batch_size > 1`` in PPO to avoid NaN
+- Added sanity check ``batch_size > 1`` in PPO to avoid NaN in advantage normalization
 
 Documentation:
 ^^^^^^^^^^^^^^

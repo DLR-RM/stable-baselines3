@@ -218,7 +218,7 @@ class CheckpointCallback(BaseCallback):
     .. warning::
 
       When using multiple environments, each call to  ``env.step()``
-      will effectively corresponds to ``n_envs`` steps.
+      will effectively correspond to ``n_envs`` steps.
       To account for that, you can use ``save_freq = max(save_freq // n_envs, 1)``
 
     :param save_freq:
@@ -272,7 +272,7 @@ class EvalCallback(EventCallback):
     .. warning::
 
       When using multiple environments, each call to  ``env.step()``
-      will effectively corresponds to ``n_envs`` steps.
+      will effectively correspond to ``n_envs`` steps.
       To account for that, you can use ``eval_freq = max(eval_freq // n_envs, 1)``
 
     :param eval_env: The environment used for initialization

@@ -78,6 +78,7 @@ Documentation:
 - Added note about advanced custom policy example for off-policy algorithms
 - Fixed DQN unicode checkmarks
 - Updated migration guide (@juancroldan)
+- Pinned ``docutils==0.16`` to avoid issue with rtd theme
 
 Release 1.0 (2021-03-15)
 ------------------------

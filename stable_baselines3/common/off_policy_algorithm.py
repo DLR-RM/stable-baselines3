@@ -509,7 +509,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         for i in range(len(dones)):
             if isinstance(next_obs, dict):
-                replay_buffer.add(
+                replay_buffer.add(  # pytype: disable=wrong-arg-types
                     {key: obs[i] for key, obs in self._last_original_obs.items()},
                     {key: next_obs_[i] for key, next_obs_ in next_obs.items()},
                     buffer_action[i],

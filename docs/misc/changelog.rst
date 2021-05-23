@@ -27,6 +27,7 @@ Breaking Changes:
 
 - Updated the KL Divergence estimator in the PPO algorithm to be positive definite and have lower variance (@09tangriro)
 - Updated the KL Divergence check in the PPO algorithm to be before the gradient update step rather than after end of epoch (@09tangriro)
+- Removed parameter ``channels_last`` from ``is_image_space`` as it can be infered.
 
 New Features:
 ^^^^^^^^^^^^^

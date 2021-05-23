@@ -7,7 +7,7 @@ import pytest
 import torch as th
 
 from stable_baselines3 import A2C, PPO
-from stable_baselines3.common.atari_wrappers import ClipRewardEnv
+from stable_baselines3.common.atari_wrappers import ClipRewardEnv, MaxAndSkipEnv
 from stable_baselines3.common.env_util import is_wrapped, make_atari_env, make_vec_env, unwrap_wrapper
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
@@ -68,6 +68,11 @@ def test_make_atari_env(env_id, n_envs, wrapper_kwargs):
 def test_vec_env_kwargs():
     env = make_vec_env("MountainCarContinuous-v0", n_envs=1, seed=0, env_kwargs={"goal_velocity": 0.11})
     assert env.get_attr("goal_velocity")[0] == 0.11
+
+
+def test_vec_env_wrapper_kwargs():
+    env = make_vec_env("MountainCarContinuous-v0", n_envs=1, seed=0, wrapper_class=MaxAndSkipEnv, wrapper_kwargs={"skip": 3})
+    assert env.get_attr("_skip")[0] == 3
 
 
 def test_vec_env_monitor_kwargs():

@@ -17,6 +17,7 @@ class Distribution(ABC):
 
     def __init__(self):
         super(Distribution, self).__init__()
+        self.distribution = None
 
     @abstractmethod
     def proba_distribution_net(self, *args, **kwargs) -> Union[nn.Module, Tuple[nn.Module, nn.Parameter]]:
@@ -120,7 +121,6 @@ class DiagGaussianDistribution(Distribution):
 
     def __init__(self, action_dim: int):
         super(DiagGaussianDistribution, self).__init__()
-        self.distribution = None
         self.action_dim = action_dim
         self.mean_actions = None
         self.log_std = None
@@ -255,7 +255,6 @@ class CategoricalDistribution(Distribution):
 
     def __init__(self, action_dim: int):
         super(CategoricalDistribution, self).__init__()
-        self.distribution = None
         self.action_dim = action_dim
 
     def proba_distribution_net(self, latent_dim: int) -> nn.Module:
@@ -308,7 +307,6 @@ class MultiCategoricalDistribution(Distribution):
     def __init__(self, action_dims: List[int]):
         super(MultiCategoricalDistribution, self).__init__()
         self.action_dims = action_dims
-        self.distributions = None
 
     def proba_distribution_net(self, latent_dim: int) -> nn.Module:
         """
@@ -325,23 +323,23 @@ class MultiCategoricalDistribution(Distribution):
         return action_logits
 
     def proba_distribution(self, action_logits: th.Tensor) -> "MultiCategoricalDistribution":
-        self.distributions = [Categorical(logits=split) for split in th.split(action_logits, tuple(self.action_dims), dim=1)]
+        self.distribution = [Categorical(logits=split) for split in th.split(action_logits, tuple(self.action_dims), dim=1)]
         return self
 
     def log_prob(self, actions: th.Tensor) -> th.Tensor:
         # Extract each discrete action and compute log prob for their respective distributions
         return th.stack(
-            [dist.log_prob(action) for dist, action in zip(self.distributions, th.unbind(actions, dim=1))], dim=1
+            [dist.log_prob(action) for dist, action in zip(self.distribution, th.unbind(actions, dim=1))], dim=1
         ).sum(dim=1)
 
     def entropy(self) -> th.Tensor:
-        return th.stack([dist.entropy() for dist in self.distributions], dim=1).sum(dim=1)
+        return th.stack([dist.entropy() for dist in self.distribution], dim=1).sum(dim=1)
 
     def sample(self) -> th.Tensor:
-        return th.stack([dist.sample() for dist in self.distributions], dim=1)
+        return th.stack([dist.sample() for dist in self.distribution], dim=1)
 
     def mode(self) -> th.Tensor:
-        return th.stack([th.argmax(dist.probs, dim=1) for dist in self.distributions], dim=1)
+        return th.stack([th.argmax(dist.probs, dim=1) for dist in self.distribution], dim=1)
 
     def actions_from_params(self, action_logits: th.Tensor, deterministic: bool = False) -> th.Tensor:
         # Update the proba distribution
@@ -363,7 +361,6 @@ class BernoulliDistribution(Distribution):
 
     def __init__(self, action_dims: int):
         super(BernoulliDistribution, self).__init__()
-        self.distribution = None
         self.action_dims = action_dims
 
     def proba_distribution_net(self, latent_dim: int) -> nn.Module:
@@ -437,7 +434,6 @@ class StateDependentNoiseDistribution(Distribution):
         epsilon: float = 1e-6,
     ):
         super(StateDependentNoiseDistribution, self).__init__()
-        self.distribution = None
         self.action_dim = action_dim
         self.latent_sde_dim = None
         self.mean_actions = None
@@ -676,3 +672,28 @@ def make_proba_distribution(
             f"of type {type(action_space)}."
             " Must be of type Gym Spaces: Box, Discrete, MultiDiscrete or MultiBinary."
         )
+
+
+def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> th.Tensor:
+    """
+    Wrapper for the PyTorch implementation of the full form KL Divergence
+
+    :param dist_true: the p distribution
+    :param dist_pred: the q distribution
+    :return: KL(dist_true||dist_pred)
+    """
+    # KL Divergence for different distribution types is out of scope
+    assert dist_true.__class__ == dist_pred.__class__, "Error: input distributions should be the same type"
+
+    # MultiCategoricalDistribution is not a PyTorch Distribution subclass
+    # so we need to implement it ourselves!
+    if isinstance(dist_pred, MultiCategoricalDistribution):
+        assert dist_pred.action_dims == dist_true.action_dims, "Error: distributions must have the same input space"
+        return th.stack(
+            [th.distributions.kl_divergence(p, q) for p, q in zip(dist_true.distribution, dist_pred.distribution)],
+            dim=1,
+        ).sum(dim=1)
+
+    # Use the PyTorch kl_divergence implementation
+    else:
+        return th.distributions.kl_divergence(dist_true.distribution, dist_pred.distribution)

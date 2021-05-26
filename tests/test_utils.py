@@ -212,7 +212,7 @@ def test_evaluate_vector_env(n_envs):
             self.count = 0
 
         def __call__(self, locals_, globals_):
-            if locals_['done']:
+            if locals_["done"]:
                 self.count += 1
 
     count_callback = CountCallback()

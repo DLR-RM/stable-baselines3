@@ -22,7 +22,9 @@ def evaluate_policy(
     """
     Runs policy for ``n_eval_episodes`` episodes and returns average reward.
     If a vector env is passed in, this divides the episodes to evaluate onto the
-    different elements of the vector env.
+    different elements of the vector env. This static division of work is done to
+    remove bias. See https://github.com/DLR-RM/stable-baselines3/issues/402 for more
+    details and discussion.
 
     .. note::
         If environment has not been wrapped with ``Monitor`` wrapper, reward and
@@ -72,6 +74,7 @@ def evaluate_policy(
     episode_lengths = []
 
     episode_counts = np.zeros(n_envs, dtype="int")
+    # Divides episodes among different sub environments in the vector as evenly as possible
     episode_count_targets = np.array([(n_eval_episodes + i) // n_envs for i in range(n_envs)], dtype="int")
 
     current_rewards = np.zeros(n_envs)

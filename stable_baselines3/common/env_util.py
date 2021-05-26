@@ -46,6 +46,7 @@ def make_vec_env(
     vec_env_cls: Optional[Type[Union[DummyVecEnv, SubprocVecEnv]]] = None,
     vec_env_kwargs: Optional[Dict[str, Any]] = None,
     monitor_kwargs: Optional[Dict[str, Any]] = None,
+    wrapper_kwargs: Optional[Dict[str, Any]] = None,
 ) -> VecEnv:
     """
     Create a wrapped, monitored ``VecEnv``.
@@ -65,11 +66,13 @@ def make_vec_env(
     :param vec_env_cls: A custom ``VecEnv`` class constructor. Default: None.
     :param vec_env_kwargs: Keyword arguments to pass to the ``VecEnv`` class constructor.
     :param monitor_kwargs: Keyword arguments to pass to the ``Monitor`` class constructor.
+    :param wrapper_kwargs: Keyword arguments to pass to the ``Wrapper`` class constructor.
     :return: The wrapped environment
     """
     env_kwargs = {} if env_kwargs is None else env_kwargs
     vec_env_kwargs = {} if vec_env_kwargs is None else vec_env_kwargs
     monitor_kwargs = {} if monitor_kwargs is None else monitor_kwargs
+    wrapper_kwargs = {} if wrapper_kwargs is None else wrapper_kwargs
 
     def make_env(rank):
         def _init():
@@ -89,7 +92,7 @@ def make_vec_env(
             env = Monitor(env, filename=monitor_path, **monitor_kwargs)
             # Optionally, wrap the environment with the provided wrapper
             if wrapper_class is not None:
-                env = wrapper_class(env)
+                env = wrapper_class(env, **wrapper_kwargs)
             return env
 
         return _init

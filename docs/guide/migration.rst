@@ -46,7 +46,8 @@ Breaking Changes
 
 - SB3 requires python 3.6+ (instead of python 3.5+ for SB2)
 - Dropped MPI support
-- Dropped layer normalized policies (e.g. ``LnMlpPolicy``)
+- Dropped layer normalized policies (``MlpLnLstmPolicy``, ``CnnLnLstmPolicy``)
+- LSTM policies (```MlpLstmPolicy```, ```CnnLstmPolicy```) are not supported for the time being
 - Dropped parameter noise for DDPG and DQN
 - PPO is now closer to the original implementation (no clipping of the value function by default), cf PPO section below
 - Orthogonal initialization is only used by A2C/PPO

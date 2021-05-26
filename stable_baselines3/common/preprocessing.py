@@ -26,19 +26,16 @@ def is_image_space_channels_first(observation_space: spaces.Box) -> bool:
 
 def is_image_space(
     observation_space: spaces.Space,
-    channels_last: bool = True,
     check_channels: bool = False,
 ) -> bool:
     """
     Check if a observation space has the shape, limits and dtype
     of a valid image.
-    The check is conservative, so that it returns False
-    if there is a doubt.
+    The check is conservative, so that it returns False if there is a doubt.
 
     Valid images: RGB, RGBD, GrayScale with values in [0, 255]
 
     :param observation_space:
-    :param channels_last:
     :param check_channels: Whether to do or not the check for the number of channels.
         e.g., with frame-stacking, the observation space may have more channels than expected.
     :return:
@@ -56,10 +53,10 @@ def is_image_space(
         if not check_channels:
             return True
         # Check the number of channels
-        if channels_last:
-            n_channels = observation_space.shape[-1]
-        else:
+        if is_image_space_channels_first(observation_space):
             n_channels = observation_space.shape[0]
+        else:
+            n_channels = observation_space.shape[-1]
         # RGB, RGBD, GrayScale
         return n_channels in [1, 3, 4]
     return False

@@ -55,8 +55,7 @@ def evaluate_policy(
     from stable_baselines3.common.monitor import Monitor
 
     if not isinstance(env, VecEnv):
-        gym_env = env
-        env = DummyVecEnv([lambda: gym_env])
+        env = DummyVecEnv([lambda: env])
 
     is_monitor_wrapped = is_vecenv_wrapped(env, VecMonitor) or env.env_is_wrapped(Monitor)[0]
 
@@ -86,15 +85,15 @@ def evaluate_policy(
         current_lengths += 1
         for i in range(n_envs):
             if episode_counts[i] < episode_count_targets[i]:
+
+                # unpack values so that the callback can access the local variables
                 reward = rewards[i]
                 done = dones[i]
-                # obs, reward, done = obss[i], rewards[i], dones[i]
-                # print(infos)
-                # print(env)
                 info = infos[i]
-                # info = {k:v[i] for k, v in infos.items()}
+
                 if callback is not None:
                     callback(locals(), globals())
+
                 if dones[i]:
                     if is_monitor_wrapped:
                         if "episode" in info.keys():

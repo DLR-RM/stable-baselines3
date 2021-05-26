@@ -192,6 +192,31 @@ class AlwaysDoneWrapper(gym.Wrapper):
         return self.last_obs
 
 
+@pytest.mark.parametrize("n_envs", [1, 2, 5, 7])
+def test_evaluate_vector_env(n_envs):
+    # Tests that the number of episodes evaluated is correct
+    n_eval_episodes = 6
+
+    env_id = "CartPole-v0"
+    env = gym.make(env_id)
+    model = A2C("MlpPolicy", env_id, seed=0)
+    # model.learn(100000)
+
+    class CountCallback:
+        def __init__(self):
+            self.count = 0
+
+        def __call__(self, locals_, globals_):
+            if locals_['done']:
+                self.count += 1
+
+    count_callback = CountCallback()
+
+    evaluate_policy(model, env, n_eval_episodes, callback=count_callback)
+
+    assert count_callback.count == n_eval_episodes
+
+
 @pytest.mark.parametrize("vec_env_class", [None, DummyVecEnv, SubprocVecEnv])
 def test_evaluate_policy_monitors(vec_env_class):
     # Test that results are correct with monitor environments.

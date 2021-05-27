@@ -203,9 +203,8 @@ def test_evaluate_vector_env(n_envs):
     n_eval_episodes = 6
 
     env_id = "CartPole-v0"
-    env = gym.make(env_id)
+    env = DummyVecEnv([lambda: gym.make(env_id)] * n_envs)
     model = A2C("MlpPolicy", env_id, seed=0)
-    # model.learn(100000)
 
     class CountCallback:
         def __init__(self):

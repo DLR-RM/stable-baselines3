@@ -222,6 +222,8 @@ def test_evaluate_vector_env(n_envs):
 
 @pytest.mark.parametrize("vec_env_class", [None, DummyVecEnv, SubprocVecEnv])
 def test_evaluate_policy_monitors(vec_env_class):
+    # Make numpy warnings throw exception
+    np.seterr(all="raise")
     # Test that results are correct with monitor environments.
     # Also test VecEnvs
     n_eval_episodes = 3

@@ -108,12 +108,14 @@ def evaluate_policy(
                             # has been wrapped with it. Use those rewards instead.
                             episode_rewards.append(info["episode"]["r"])
                             episode_lengths.append(info["episode"]["l"])
+                            # Only increment at the real end of an episode
+                            episode_counts[i] += 1
                     else:
                         episode_rewards.append(current_rewards[i])
                         episode_lengths.append(current_lengths[i])
+                        episode_counts[i] += 1
                     current_rewards[i] = 0
                     current_lengths[i] = 0
-                    episode_counts[i] += 1
                     if states is not None:
                         states[i] *= 0
 

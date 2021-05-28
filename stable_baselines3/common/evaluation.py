@@ -98,12 +98,16 @@ def evaluate_policy(
                     callback(locals(), globals())
 
                 if dones[i]:
-                    if is_monitor_wrapped and "episode" in info.keys():
-                        # Do not trust "done" with episode endings.
-                        # Monitor wrapper includes "episode" key in info if environment
-                        # has been wrapped with it. Use those rewards instead.
-                        episode_rewards.append(info["episode"]["r"])
-                        episode_lengths.append(info["episode"]["l"])
+                    if is_monitor_wrapped:
+                        # Atari wrapper can send a "done" signal when
+                        # the agent loses a life, but it does not correspond
+                        # to the true end of episode
+                        if "episode" in info.keys():
+                            # Do not trust "done" with episode endings.
+                            # Monitor wrapper includes "episode" key in info if environment
+                            # has been wrapped with it. Use those rewards instead.
+                            episode_rewards.append(info["episode"]["r"])
+                            episode_lengths.append(info["episode"]["l"])
                     else:
                         episode_rewards.append(current_rewards[i])
                         episode_lengths.append(current_lengths[i])

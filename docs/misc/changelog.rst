@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.1.0a9 (WIP)
+Release 1.1.0a10 (WIP)
 ---------------------------
 
 **Dict observation support, timeout handling and refactored HER**
@@ -45,6 +45,7 @@ New Features:
 - Added support for image observation when using ``HER``
 - Added ``replay_buffer_class`` and ``replay_buffer_kwargs`` arguments to off-policy algorithms
 - Added ``kl_divergence`` helper for ``Distribution`` classes (@09tangriro)
+- Added support for vector environments with ``num_envs > 1`` (@benblack769)
 - Added ``wrapper_kwargs`` argument to ``make_vec_env`` (@amy12xx)
 
 Bug Fixes:
@@ -696,4 +697,4 @@ And all the contributors:
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @JadenTravnik @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
-@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan
+@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan @benblack769

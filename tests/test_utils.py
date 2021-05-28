@@ -197,11 +197,37 @@ class AlwaysDoneWrapper(gym.Wrapper):
         return self.last_obs
 
 
+@pytest.mark.parametrize("n_envs", [1, 2, 5, 7])
+def test_evaluate_vector_env(n_envs):
+    # Tests that the number of episodes evaluated is correct
+    n_eval_episodes = 6
+
+    env = make_vec_env("CartPole-v1", n_envs)
+    model = A2C("MlpPolicy", "CartPole-v1", seed=0)
+
+    class CountCallback:
+        def __init__(self):
+            self.count = 0
+
+        def __call__(self, locals_, globals_):
+            if locals_["done"]:
+                self.count += 1
+
+    count_callback = CountCallback()
+
+    evaluate_policy(model, env, n_eval_episodes, callback=count_callback)
+
+    assert count_callback.count == n_eval_episodes
+
+
 @pytest.mark.parametrize("vec_env_class", [None, DummyVecEnv, SubprocVecEnv])
 def test_evaluate_policy_monitors(vec_env_class):
+    # Make numpy warnings throw exception
+    np.seterr(all="raise")
     # Test that results are correct with monitor environments.
     # Also test VecEnvs
-    n_eval_episodes = 2
+    n_eval_episodes = 3
+    n_envs = 2
     env_id = "CartPole-v0"
     model = A2C("MlpPolicy", env_id, seed=0)
 
@@ -217,9 +243,9 @@ def test_evaluate_policy_monitors(vec_env_class):
             env = wrapper_class(env)
         else:
             if with_monitor:
-                env = vec_env_class([lambda: wrapper_class(Monitor(gym.make(env_id)))])
+                env = vec_env_class([lambda: wrapper_class(Monitor(gym.make(env_id)))] * n_envs)
             else:
-                env = vec_env_class([lambda: wrapper_class(gym.make(env_id))])
+                env = vec_env_class([lambda: wrapper_class(gym.make(env_id))] * n_envs)
         return env
 
     # Test that evaluation with VecEnvs works as expected

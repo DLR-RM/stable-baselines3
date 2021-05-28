@@ -15,7 +15,7 @@ from stable_baselines3.common.callbacks import (
     StopTrainingOnRewardThreshold,
 )
 from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.envs import BitFlippingEnv
+from stable_baselines3.common.envs import BitFlippingEnv, IdentityEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 
@@ -102,10 +102,27 @@ def select_env(model_class) -> str:
         return "Pendulum-v0"
 
 
+def test_eval_callback_vec_env():
+    # tests that eval callback does not crash when given a vector
+    n_eval_envs = 3
+    train_env = IdentityEnv()
+    eval_env = DummyVecEnv([lambda: IdentityEnv()] * n_eval_envs)
+    model = A2C("MlpPolicy", train_env, seed=0)
+
+    eval_callback = EvalCallback(
+        eval_env,
+        eval_freq=100,
+        warn=False,
+    )
+    model.learn(300, callback=eval_callback)
+    assert eval_callback.last_mean_reward == 100.0
+
+
 def test_eval_success_logging(tmp_path):
     n_bits = 2
+    n_envs = 2
     env = BitFlippingEnv(n_bits=n_bits)
-    eval_env = DummyVecEnv([lambda: BitFlippingEnv(n_bits=n_bits)])
+    eval_env = DummyVecEnv([lambda: BitFlippingEnv(n_bits=n_bits)] * n_envs)
     eval_callback = EvalCallback(
         eval_env,
         eval_freq=250,

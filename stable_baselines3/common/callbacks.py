@@ -318,9 +318,6 @@ class EvalCallback(EventCallback):
         if not isinstance(eval_env, VecEnv):
             eval_env = DummyVecEnv([lambda: eval_env])
 
-        if isinstance(eval_env, VecEnv):
-            assert eval_env.num_envs == 1, "You must pass only one environment for evaluation"
-
         self.eval_env = eval_env
         self.best_model_save_path = best_model_save_path
         # Logs will be written in ``evaluations.npz``
@@ -355,9 +352,6 @@ class EvalCallback(EventCallback):
         :param globals_:
         """
         info = locals_["info"]
-        # VecEnv: unpack
-        if not isinstance(info, dict):
-            info = info[0]
 
         if locals_["done"]:
             maybe_is_success = info.get("is_success")

@@ -184,7 +184,7 @@ EvalCallback
 ^^^^^^^^^^^^
 
 Evaluate periodically the performance of an agent, using a separate test environment.
-It will save the best model if ``best_model_save_path`` folder is specified and save the evaluations results in a numpy archive (`evaluations.npz`) if ``log_path`` folder is specified.
+It will save the best model if ``best_model_save_path`` folder is specified and save the evaluations results in a numpy archive (``evaluations.npz``) if ``log_path`` folder is specified.
 
 
 .. note::
@@ -222,7 +222,7 @@ CallbackList
 ^^^^^^^^^^^^
 
 Class for chaining callbacks, they will be called sequentially.
-Alternatively, you can pass directly a list of callbacks to the `learn()` method, it will be converted automatically to a ``CallbackList``.
+Alternatively, you can pass directly a list of callbacks to the ``learn()`` method, it will be converted automatically to a ``CallbackList``.
 
 
 .. code-block:: python

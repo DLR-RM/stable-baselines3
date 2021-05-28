@@ -202,9 +202,8 @@ def test_evaluate_vector_env(n_envs):
     # Tests that the number of episodes evaluated is correct
     n_eval_episodes = 6
 
-    env_id = "CartPole-v0"
-    env = DummyVecEnv([lambda: gym.make(env_id)] * n_envs)
-    model = A2C("MlpPolicy", env_id, seed=0)
+    env = make_vec_env("CartPole-v1", n_envs)
+    model = A2C("MlpPolicy", "CartPole-v1", seed=0)
 
     class CountCallback:
         def __init__(self):

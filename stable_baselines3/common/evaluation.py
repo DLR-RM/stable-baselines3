@@ -98,13 +98,12 @@ def evaluate_policy(
                     callback(locals(), globals())
 
                 if dones[i]:
-                    if is_monitor_wrapped:
-                        if "episode" in info.keys():
-                            # Do not trust "done" with episode endings.
-                            # Monitor wrapper includes "episode" key in info if environment
-                            # has been wrapped with it. Use those rewards instead.
-                            episode_rewards.append(info["episode"]["r"])
-                            episode_lengths.append(info["episode"]["l"])
+                    if is_monitor_wrapped and "episode" in info.keys():
+                        # Do not trust "done" with episode endings.
+                        # Monitor wrapper includes "episode" key in info if environment
+                        # has been wrapped with it. Use those rewards instead.
+                        episode_rewards.append(info["episode"]["r"])
+                        episode_lengths.append(info["episode"]["l"])
                     else:
                         episode_rewards.append(current_rewards[i])
                         episode_lengths.append(current_lengths[i])

@@ -84,6 +84,7 @@ Documentation:
 - Updated migration guide (@juancroldan)
 - Pinned ``docutils==0.16`` to avoid issue with rtd theme
 - Clarified callback ``save_freq`` definition
+- Added doc on how to pass a custom logger
 
 
 Release 1.0 (2021-03-15)

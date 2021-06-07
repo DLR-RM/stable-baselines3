@@ -415,8 +415,9 @@ class BaseAlgorithm(ABC):
 
         eval_env = self._get_eval_env(eval_env)
 
-        # Configure logger's outputs
-        self._logger = utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
+        # Configure logger's outputs if no logger was passed
+        if self.logger is None:
+            self.set_logger(utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps))
 
         # Create eval callback if needed
         callback = self._init_callback(callback, eval_env, eval_freq, n_eval_episodes, log_path)

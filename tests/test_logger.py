@@ -141,6 +141,14 @@ def test_set_logger(tmp_path):
     assert isinstance(model.logger.output_formats[2], TensorBoardOutputFormat)
     model.learn(32)
 
+    model = A2C("MlpPolicy", "CartPole-v1", verbose=1)
+    model.set_logger(new_logger)
+    model.learn(32)
+    # Check that the new logger is not overwritten
+    assert isinstance(model.logger.output_formats[0], HumanOutputFormat)
+    assert isinstance(model.logger.output_formats[1], CSVOutputFormat)
+    assert isinstance(model.logger.output_formats[2], TensorBoardOutputFormat)
+
 
 def test_main(tmp_path):
     """

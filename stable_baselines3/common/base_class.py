@@ -11,9 +11,10 @@ import gym
 import numpy as np
 import torch as th
 
-from stable_baselines3.common import logger, utils
+from stable_baselines3.common import utils
 from stable_baselines3.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
 from stable_baselines3.common.env_util import is_wrapped
+from stable_baselines3.common.logger import Logger
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.policies import BasePolicy, get_policy_from_name
@@ -144,6 +145,8 @@ class BaseAlgorithm(ABC):
         self.ep_success_buffer = None  # type: Optional[deque]
         # For logging (and TD3 delayed updates)
         self._n_updates = 0  # type: int
+        # The logger object
+        self._logger = None  # type: Logger
 
         # Create and wrap the env if needed
         if env is not None:
@@ -228,6 +231,15 @@ class BaseAlgorithm(ABC):
     def _setup_model(self) -> None:
         """Create networks, buffer and optimizers."""
 
+    def set_logger(self, logger: Logger) -> None:
+        """Setter for for logger object."""
+        self._logger = logger
+
+    @property
+    def logger(self) -> Logger:
+        """Getter for the logger object."""
+        return self._logger
+
     def _get_eval_env(self, eval_env: Optional[GymEnv]) -> Optional[GymEnv]:
         """
         Return the environment that will be used for evaluation.
@@ -265,7 +277,7 @@ class BaseAlgorithm(ABC):
             An optimizer or a list of optimizers.
         """
         # Log the current learning rate
-        logger.record("train/learning_rate", self.lr_schedule(self._current_progress_remaining))
+        self.logger.record("train/learning_rate", self.lr_schedule(self._current_progress_remaining))
 
         if not isinstance(optimizers, list):
             optimizers = [optimizers]
@@ -290,6 +302,7 @@ class BaseAlgorithm(ABC):
             "rollout_buffer",
             "_vec_normalize_env",
             "_episode_storage",
+            "_logger",
         ]
 
     def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
@@ -403,7 +416,7 @@ class BaseAlgorithm(ABC):
         eval_env = self._get_eval_env(eval_env)
 
         # Configure logger's outputs
-        utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
+        self._logger = utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
 
         # Create eval callback if needed
         callback = self._init_callback(callback, eval_env, eval_freq, n_eval_episodes, log_path)

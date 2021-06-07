@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.1.0a10 (WIP)
+Release 1.1.0a11 (WIP)
 ---------------------------
 
 **Dict observation support, timeout handling and refactored HER**
@@ -28,6 +28,8 @@ Breaking Changes:
 - Updated the KL Divergence estimator in the PPO algorithm to be positive definite and have lower variance (@09tangriro)
 - Updated the KL Divergence check in the PPO algorithm to be before the gradient update step rather than after end of epoch (@09tangriro)
 - Removed parameter ``channels_last`` from ``is_image_space`` as it can be inferred.
+- The logger object is now an attribute ``model.logger`` that be set by the user using ``model.set_logger()``
+
 
 New Features:
 ^^^^^^^^^^^^^
@@ -53,6 +55,7 @@ Bug Fixes:
 - Fixed potential issue when calling off-policy algorithms with default arguments multiple times (the size of the replay buffer would be the same)
 - Fixed loading of ``ent_coef`` for ``SAC`` and ``TQC``, it was not optimized anymore (thanks @Atlis)
 - Fixed saving of ``A2C`` and ``PPO`` policy when using gSDE (thanks @liusida)
+- Fixed a bug where no output would be shown even if ``verbose>=1`` after passing ``verbose=0`` once
 
 Deprecations:
 ^^^^^^^^^^^^^

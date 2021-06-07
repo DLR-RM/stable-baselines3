@@ -1,3 +1,4 @@
+import os
 from typing import Sequence
 
 import numpy as np
@@ -6,13 +7,17 @@ import torch as th
 from matplotlib import pyplot as plt
 from pandas.errors import EmptyDataError
 
+from stable_baselines3 import A2C
 from stable_baselines3.common.logger import (
     DEBUG,
     INFO,
+    CSVOutputFormat,
     Figure,
     FormatUnsupportedError,
+    HumanOutputFormat,
     Image,
     ScopedConfigure,
+    TensorBoardOutputFormat,
     Video,
     configure,
     debug,
@@ -101,6 +106,40 @@ def read_log(tmp_path, capsys):
             return content
 
     return read_fn
+
+
+def test_set_logger(tmp_path):
+    # set up logger
+    new_logger = configure(str(tmp_path), ["stdout", "csv", "tensorboard"])
+    # Default outputs with verbose=0
+    model = A2C("MlpPolicy", "CartPole-v1", verbose=0).learn(4)
+    assert model.logger.output_formats == []
+
+    model = A2C("MlpPolicy", "CartPole-v1", verbose=0, tensorboard_log=str(tmp_path)).learn(4)
+    assert str(tmp_path) in model.logger.dir
+    assert isinstance(model.logger.output_formats[0], TensorBoardOutputFormat)
+
+    # Check that env variable work
+    new_tmp_path = str(tmp_path / "new_tmp")
+    os.environ["SB3_LOGDIR"] = new_tmp_path
+    model = A2C("MlpPolicy", "CartPole-v1", verbose=0).learn(4)
+    assert model.logger.dir == new_tmp_path
+
+    # Default outputs with verbose=1
+    model = A2C("MlpPolicy", "CartPole-v1", verbose=1).learn(4)
+    assert isinstance(model.logger.output_formats[0], HumanOutputFormat)
+    # with tensorboard
+    model = A2C("MlpPolicy", "CartPole-v1", verbose=1, tensorboard_log=str(tmp_path)).learn(4)
+    assert isinstance(model.logger.output_formats[0], HumanOutputFormat)
+    assert isinstance(model.logger.output_formats[1], TensorBoardOutputFormat)
+    model.learn(32)
+    # set new logger
+    model.set_logger(new_logger)
+    # Check that the new logger is correctly setup
+    assert isinstance(model.logger.output_formats[0], HumanOutputFormat)
+    assert isinstance(model.logger.output_formats[1], CSVOutputFormat)
+    assert isinstance(model.logger.output_formats[2], TensorBoardOutputFormat)
+    model.learn(32)
 
 
 def test_main(tmp_path):

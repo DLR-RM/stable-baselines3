@@ -669,14 +669,15 @@ class Logger(object):
 Logger.DEFAULT = Logger.CURRENT = Logger(folder=None, output_formats=[HumanOutputFormat(sys.stdout)])
 
 
-def configure(folder: Optional[str] = None, format_strings: Optional[List[str]] = None) -> None:
+def configure(folder: Optional[str] = None, format_strings: Optional[List[str]] = None) -> Logger:
     """
-    configure the current logger
+    Configure the current logger.
 
     :param folder: the save location
-        (if None, $SB3_LOGDIR, if still None, tempdir/baselines-[date & time])
+        (if None, $SB3_LOGDIR, if still None, tempdir/SB3-[date & time])
     :param format_strings: the output logging format
         (if None, $SB3_LOG_FORMAT, if still None, ['stdout', 'log', 'csv'])
+    :return: The logger object.
     """
     if folder is None:
         folder = os.getenv("SB3_LOGDIR")
@@ -689,11 +690,14 @@ def configure(folder: Optional[str] = None, format_strings: Optional[List[str]] 
     if format_strings is None:
         format_strings = os.getenv("SB3_LOG_FORMAT", "stdout,log,csv").split(",")
 
-    format_strings = filter(None, format_strings)
+    format_strings = list(filter(None, format_strings))
     output_formats = [make_output_format(f, folder, log_suffix) for f in format_strings]
 
     Logger.CURRENT = Logger(folder=folder, output_formats=output_formats)
-    log(f"Logging to {folder}")
+    # Only print when some files will be saved
+    if len(format_strings) > 0 and format_strings != ["stdout"]:
+        log(f"Logging to {folder}")
+    return Logger.CURRENT
 
 
 def reset() -> None:

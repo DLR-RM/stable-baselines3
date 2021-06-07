@@ -147,6 +147,8 @@ class BaseAlgorithm(ABC):
         self._n_updates = 0  # type: int
         # The logger object
         self._logger = None  # type: Logger
+        # Whether the user passed a custom logger or not
+        self._custom_logger = False
 
         # Create and wrap the env if needed
         if env is not None:
@@ -234,6 +236,8 @@ class BaseAlgorithm(ABC):
     def set_logger(self, logger: Logger) -> None:
         """Setter for for logger object."""
         self._logger = logger
+        # User defined logger
+        self._custom_logger = True
 
     @property
     def logger(self) -> Logger:
@@ -303,6 +307,7 @@ class BaseAlgorithm(ABC):
             "_vec_normalize_env",
             "_episode_storage",
             "_logger",
+            "_custom_logger",
         ]
 
     def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
@@ -416,8 +421,8 @@ class BaseAlgorithm(ABC):
         eval_env = self._get_eval_env(eval_env)
 
         # Configure logger's outputs if no logger was passed
-        if self.logger is None:
-            self.set_logger(utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps))
+        if not self._custom_logger:
+            self._logger = utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
 
         # Create eval callback if needed
         callback = self._init_callback(callback, eval_env, eval_freq, n_eval_episodes, log_path)

@@ -29,7 +29,7 @@ Breaking Changes:
 - Updated the KL Divergence check in the PPO algorithm to be before the gradient update step rather than after end of epoch (@09tangriro)
 - Removed parameter ``channels_last`` from ``is_image_space`` as it can be inferred.
 - The logger object is now an attribute ``model.logger`` that be set by the user using ``model.set_logger()``
-
+- Changed the signature of ``logger.configure`` and ``utils.configure_logger``, they now return a ``Logger`` object
 
 New Features:
 ^^^^^^^^^^^^^

@@ -30,6 +30,8 @@ Breaking Changes:
 - Removed parameter ``channels_last`` from ``is_image_space`` as it can be inferred.
 - The logger object is now an attribute ``model.logger`` that be set by the user using ``model.set_logger()``
 - Changed the signature of ``logger.configure`` and ``utils.configure_logger``, they now return a ``Logger`` object
+- Removed ``Logger.CURRENT`` and ``Logger.DEFAULT``
+- Moved ``warn(), debug(), log(), info(), dump()`` methods to the ``Logger`` class
 
 New Features:
 ^^^^^^^^^^^^^

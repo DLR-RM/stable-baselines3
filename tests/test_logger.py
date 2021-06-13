@@ -16,26 +16,12 @@ from stable_baselines3.common.logger import (
     FormatUnsupportedError,
     HumanOutputFormat,
     Image,
-    ScopedConfigure,
     TensorBoardOutputFormat,
     Video,
     configure,
-    debug,
-    dump,
-    error,
-    get_dir,
-    get_level,
-    get_log_dict,
-    info,
     make_output_format,
     read_csv,
     read_json,
-    record,
-    record_dict,
-    record_mean,
-    reset,
-    set_level,
-    warn,
 )
 
 KEY_VALUES = {
@@ -154,42 +140,34 @@ def test_main(tmp_path):
     """
     tests for the logger module
     """
-    info("hi")
-    debug("shouldn't appear")
-    assert get_level() == INFO
-    set_level(DEBUG)
-    assert get_level() == DEBUG
-    debug("should appear")
-    configure(folder=str(tmp_path))
-    assert get_dir() == str(tmp_path)
-    record("a", 3)
-    record("b", 2.5)
-    dump()
-    record("b", -2.5)
-    record("a", 5.5)
-    dump()
-    info("^^^ should see a = 5.5")
-    record("f", "this text \n \r should appear in one line")
-    dump()
-    info('^^^ should see f = "this text \n \r should appear in one line"')
-    record_mean("b", -22.5)
-    record_mean("b", -44.4)
-    record("a", 5.5)
-    dump()
-    with ScopedConfigure(None, None):
-        info("^^^ should see b = 33.3")
+    logger = configure(None, ["stdout"])
+    logger.info("hi")
+    logger.debug("shouldn't appear")
+    assert logger.level == INFO
+    logger.set_level(DEBUG)
+    assert logger.level == DEBUG
+    logger.debug("should appear")
+    logger = configure(folder=str(tmp_path))
+    assert logger.dir == str(tmp_path)
+    logger.record("a", 3)
+    logger.record("b", 2.5)
+    logger.dump()
+    logger.record("b", -2.5)
+    logger.record("a", 5.5)
+    logger.dump()
+    logger.info("^^^ should see a = 5.5")
+    logger.record("f", "this text \n \r should appear in one line")
+    logger.dump()
+    logger.info('^^^ should see f = "this text \n \r should appear in one line"')
+    logger.record_mean("b", -22.5)
+    logger.record_mean("b", -44.4)
+    logger.record("a", 5.5)
+    logger.dump()
 
-    with ScopedConfigure(str(tmp_path / "test-logger"), ["json"]):
-        record("b", -2.5)
-        dump()
-
-    reset()
-    record("a", "longasslongasslongasslongasslongasslongassvalue")
-    dump()
-    warn("hey")
-    error("oh")
-    record_dict({"test": 1})
-    assert isinstance(get_log_dict(), dict) and set(get_log_dict().keys()) == {"test"}
+    logger.record("a", "longasslongasslongasslongasslongasslongassvalue")
+    logger.dump()
+    logger.warn("hey")
+    logger.error("oh")
 
 
 @pytest.mark.parametrize("_format", ["stdout", "log", "json", "csv", "tensorboard"])

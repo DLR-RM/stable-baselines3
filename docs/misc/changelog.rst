@@ -32,6 +32,7 @@ Breaking Changes:
 - Changed the signature of ``logger.configure`` and ``utils.configure_logger``, they now return a ``Logger`` object
 - Removed ``Logger.CURRENT`` and ``Logger.DEFAULT``
 - Moved ``warn(), debug(), log(), info(), dump()`` methods to the ``Logger`` class
+- ``.learn()`` now throws an import error when the user tries to log to tensorboard but the package is not installed
 
 New Features:
 ^^^^^^^^^^^^^

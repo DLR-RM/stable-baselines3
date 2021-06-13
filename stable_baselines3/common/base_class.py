@@ -234,7 +234,15 @@ class BaseAlgorithm(ABC):
         """Create networks, buffer and optimizers."""
 
     def set_logger(self, logger: Logger) -> None:
-        """Setter for for logger object."""
+        """
+        Setter for for logger object.
+
+        .. warning::
+
+          When passing a custom logger object,
+          this will overwrite ``tensorboard_log`` and ``verbose`` settings
+          passed to the constructor.
+        """
         self._logger = logger
         # User defined logger
         self._custom_logger = True

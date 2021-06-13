@@ -6,6 +6,14 @@ Logger
 To overwrite the default logger, you can pass one to the algorithm.
 Available formats are ``["stdout", "csv", "log", "tensorboard", "json"]``.
 
+
+.. warning::
+
+  When passing a custom logger object,
+  this will overwrite ``tensorboard_log`` and ``verbose`` settings
+  passed to the constructor.
+
+
 .. code-block:: python
 
   from stable_baselines3 import A2C

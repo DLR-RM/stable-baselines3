@@ -179,6 +179,9 @@ def configure_logger(
     :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
     :param tensorboard_log: the log location for tensorboard (if None, no logging)
     :param tb_log_name: tensorboard log
+    :param reset_num_timesteps:  Whether the ``num_timesteps`` attribute is reset or not.
+        It allows to continue a previous learning curve (``reset_num_timesteps=False``)
+        or start from t=0 (``reset_num_timesteps=True``, the default).
     :return: The logger object
     """
     save_path, format_strings = None, ["stdout"]

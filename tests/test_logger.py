@@ -118,6 +118,7 @@ def test_set_logger(tmp_path):
     model = A2C("MlpPolicy", "CartPole-v1", verbose=1, tensorboard_log=str(tmp_path)).learn(4)
     assert isinstance(model.logger.output_formats[0], HumanOutputFormat)
     assert isinstance(model.logger.output_formats[1], TensorBoardOutputFormat)
+    assert len(model.logger.output_formats) == 2
     model.learn(32)
     # set new logger
     model.set_logger(new_logger)
@@ -125,6 +126,7 @@ def test_set_logger(tmp_path):
     assert isinstance(model.logger.output_formats[0], HumanOutputFormat)
     assert isinstance(model.logger.output_formats[1], CSVOutputFormat)
     assert isinstance(model.logger.output_formats[2], TensorBoardOutputFormat)
+    assert len(model.logger.output_formats) == 3
     model.learn(32)
 
     model = A2C("MlpPolicy", "CartPole-v1", verbose=1)
@@ -134,6 +136,7 @@ def test_set_logger(tmp_path):
     assert isinstance(model.logger.output_formats[0], HumanOutputFormat)
     assert isinstance(model.logger.output_formats[1], CSVOutputFormat)
     assert isinstance(model.logger.output_formats[2], TensorBoardOutputFormat)
+    assert len(model.logger.output_formats) == 3
 
 
 def test_main(tmp_path):

@@ -8,7 +8,6 @@ import gym
 import numpy as np
 import torch as th
 
-from stable_baselines3.common import logger
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.buffers import DictReplayBuffer, ReplayBuffer
 from stable_baselines3.common.callbacks import BaseCallback
@@ -430,20 +429,20 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         """
         time_elapsed = time.time() - self.start_time
         fps = int(self.num_timesteps / (time_elapsed + 1e-8))
-        logger.record("time/episodes", self._episode_num, exclude="tensorboard")
+        self.logger.record("time/episodes", self._episode_num, exclude="tensorboard")
         if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
-            logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
-            logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
-        logger.record("time/fps", fps)
-        logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
-        logger.record("time/total timesteps", self.num_timesteps, exclude="tensorboard")
+            self.logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
+            self.logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
+        self.logger.record("time/fps", fps)
+        self.logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
+        self.logger.record("time/total timesteps", self.num_timesteps, exclude="tensorboard")
         if self.use_sde:
-            logger.record("train/std", (self.actor.get_std()).mean().item())
+            self.logger.record("train/std", (self.actor.get_std()).mean().item())
 
         if len(self.ep_success_buffer) > 0:
-            logger.record("rollout/success rate", safe_mean(self.ep_success_buffer))
+            self.logger.record("rollout/success rate", safe_mean(self.ep_success_buffer))
         # Pass the number of timesteps for tensorboard
-        logger.dump(step=self.num_timesteps)
+        self.logger.dump(step=self.num_timesteps)
 
     def _on_step(self) -> None:
         """

@@ -15,7 +15,7 @@ try:
 except ImportError:
     SummaryWriter = None
 
-from stable_baselines3.common import logger
+from stable_baselines3.common.logger import Logger, configure
 from stable_baselines3.common.type_aliases import GymEnv, Schedule, TensorDict, TrainFreq, TrainFrequencyUnit
 
 
@@ -172,14 +172,23 @@ def configure_logger(
     tensorboard_log: Optional[str] = None,
     tb_log_name: str = "",
     reset_num_timesteps: bool = True,
-) -> None:
+) -> Logger:
     """
     Configure the logger's outputs.
 
     :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
     :param tensorboard_log: the log location for tensorboard (if None, no logging)
     :param tb_log_name: tensorboard log
+    :param reset_num_timesteps:  Whether the ``num_timesteps`` attribute is reset or not.
+        It allows to continue a previous learning curve (``reset_num_timesteps=False``)
+        or start from t=0 (``reset_num_timesteps=True``, the default).
+    :return: The logger object
     """
+    save_path, format_strings = None, ["stdout"]
+
+    if tensorboard_log is not None and SummaryWriter is None:
+        raise ImportError("Trying to log data to tensorboard but tensorboard is not installed.")
+
     if tensorboard_log is not None and SummaryWriter is not None:
         latest_run_id = get_latest_run_id(tensorboard_log, tb_log_name)
         if not reset_num_timesteps:
@@ -187,11 +196,12 @@ def configure_logger(
             latest_run_id -= 1
         save_path = os.path.join(tensorboard_log, f"{tb_log_name}_{latest_run_id + 1}")
         if verbose >= 1:
-            logger.configure(save_path, ["stdout", "tensorboard"])
+            format_strings = ["stdout", "tensorboard"]
         else:
-            logger.configure(save_path, ["tensorboard"])
+            format_strings = ["tensorboard"]
     elif verbose == 0:
-        logger.configure(format_strings=[""])
+        format_strings = [""]
+    return configure(save_path, format_strings=format_strings)
 
 
 def check_for_correct_spaces(env: GymEnv, observation_space: gym.spaces.Space, action_space: gym.spaces.Space) -> None:

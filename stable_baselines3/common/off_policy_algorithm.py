@@ -566,7 +566,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         assert isinstance(env, VecEnv), "You must pass a VecEnv"
         assert train_freq.frequency > 0, "Should at least collect one step or episode."
 
-        if env.num_envs > 0:
+        if env.num_envs > 1:
             assert train_freq.unit == TrainFrequencyUnit.STEP, "You must use only one env when doing episodic training."
 
         if self.use_sde:

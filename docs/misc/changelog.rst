@@ -59,6 +59,7 @@ Bug Fixes:
 - Fixed loading of ``ent_coef`` for ``SAC`` and ``TQC``, it was not optimized anymore (thanks @Atlis)
 - Fixed saving of ``A2C`` and ``PPO`` policy when using gSDE (thanks @liusida)
 - Fixed a bug where no output would be shown even if ``verbose>=1`` after passing ``verbose=0`` once
+- Fixed observation buffers dtype in DictReplayBuffer (@c-rizz)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -706,3 +707,4 @@ And all the contributors:
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @JadenTravnik @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
 @ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan @benblack769 @bstee615
+@c-rizz

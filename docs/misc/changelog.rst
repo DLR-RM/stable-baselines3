@@ -4,10 +4,10 @@ Changelog
 ==========
 
 
-Release 1.1.0a11 (WIP)
+Release 1.1.0 (2021-07-01)
 ---------------------------
 
-**Dict observation support, timeout handling and refactored HER**
+**Dict observation support, timeout handling and refactored HER buffer**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^

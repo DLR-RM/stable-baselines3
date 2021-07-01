@@ -1,5 +1,4 @@
 import os
-import random
 import shutil
 
 import gym
@@ -150,10 +149,17 @@ def test_eval_callback_logs_are_written_with_the_correct_timestep(tmp_path):
     from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
     env_name = select_env(DQN)
-    model = DQN("MlpPolicy", env_name, policy_kwargs=dict(net_arch=[32]), tensorboard_log=tmp_path)
+    model = DQN(
+        "MlpPolicy",
+        env_name,
+        policy_kwargs=dict(net_arch=[32]),
+        tensorboard_log=tmp_path,
+        verbose=1,
+        seed=1,
+    )
 
     eval_env = gym.make(env_name)
-    eval_freq = random.randint(100, 200)
+    eval_freq = 101
     eval_callback = EvalCallback(eval_env, eval_freq=eval_freq, warn=False)
     model.learn(500, callback=eval_callback)
 

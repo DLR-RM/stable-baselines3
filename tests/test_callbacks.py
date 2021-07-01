@@ -141,3 +141,29 @@ def test_eval_success_logging(tmp_path):
     assert len(eval_callback._is_success_buffer) > 0
     # More than 50% success rate
     assert np.mean(eval_callback._is_success_buffer) > 0.5
+
+
+def test_eval_callback_logs_are_written_with_the_correct_timestep(tmp_path):
+    # Skip if no tensorboard installed
+    pytest.importorskip("tensorboard")
+    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+
+    env_name = select_env(DQN)
+    model = DQN(
+        "MlpPolicy",
+        env_name,
+        policy_kwargs=dict(net_arch=[32]),
+        tensorboard_log=tmp_path,
+        verbose=1,
+        seed=1,
+    )
+
+    eval_env = gym.make(env_name)
+    eval_freq = 101
+    eval_callback = EvalCallback(eval_env, eval_freq=eval_freq, warn=False)
+    model.learn(500, callback=eval_callback)
+
+    acc = EventAccumulator(str(tmp_path / "DQN_1"))
+    acc.Reload()
+    for event in acc.scalars.Items("eval/mean_reward"):
+        assert event.step % eval_freq == 0

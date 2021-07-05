@@ -9,7 +9,7 @@ Release 1.2.0a0 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-- SB3 now requires PyTorch >= 1.7.1
+- SB3 now requires PyTorch >= 1.8.1
 
 New Features:
 ^^^^^^^^^^^^^

@@ -4,6 +4,30 @@ Changelog
 ==========
 
 
+Release 1.2.0a0 (WIP)
+---------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+- SB3 now requires PyTorch >= 1.8.1
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Enabled Python 3.9 in GitHub CI
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
 Release 1.1.0 (2021-07-01)
 ---------------------------
 

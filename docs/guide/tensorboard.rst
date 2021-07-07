@@ -270,6 +270,8 @@ Dumping DQN stats for TensorBoard
 
 If you would like to log the reward for DQN every N steps, follow the following formula. You will need to check the self.num_timesteps val and change the 10000 for how many steps you would like an update for. This is needed if "done" in step() does not return True when you are training the model. 
 
+If you want to track the reward, you will pass this from "info" as a dict in the step return. 
+
 .. code-block:: python
     class TensorboardCallback(BaseCallback):
         """
@@ -280,9 +282,24 @@ If you would like to log the reward for DQN every N steps, follow the following 
             super(TensorboardCallback, self).__init__(verbose)
 
         def _on_step(self) -> bool:
-            # Change value of 10000 for how many steps you want to log
+            # Log scalar value (here a random variable)
+            # print(self.locals["rewards"])
+            # print(self.locals)
+            global top_profit
+            profit = self.locals["infos"][0]["profit"]
+            self.logger.record('a_profit', profit)
+            max_net = self.locals["infos"][0]["max_net_worth"]
+            self.logger.record('a_maxnext', max_net)
             if (self.num_timesteps % 10000 == 0):
                 self.logger.dump(self.num_timesteps)
+            # profit = self.locals["infos"]["profit"]
+            # rewards = self.locals["rewards"][0]
+            if (top_profit == None):
+                top_profit = profit
+                model.save("./stocks_DQN")
+            elif (profit > top_profit):
+                top_profit = profit
+                model.save("./stocks_DQN")
 
     model = DQN("MlpPolicy", env, verbose=1, tensorboard_log="./DQN_MODEL/", device="cpu")
     model.learn(total_timesteps=int(1e10), callback=TensorboardCallback())

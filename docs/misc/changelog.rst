@@ -26,6 +26,7 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
+- updated multiprocessing example
 
 
 Release 1.1.0 (2021-07-01)

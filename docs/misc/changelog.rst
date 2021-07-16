@@ -26,7 +26,8 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
-- updated multiprocessing example
+- Updated multiprocessing example
+- Added example of ``VecEnvWrapper``
 
 
 Release 1.1.0 (2021-07-01)

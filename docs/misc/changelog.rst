@@ -4,10 +4,34 @@ Changelog
 ==========
 
 
-Release 1.1.0a11 (WIP)
+Release 1.2.0a0 (WIP)
 ---------------------------
 
-**Dict observation support, timeout handling and refactored HER**
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+- SB3 now requires PyTorch >= 1.8.1
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Enabled Python 3.9 in GitHub CI
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
+Release 1.1.0 (2021-07-01)
+---------------------------
+
+**Dict observation support, timeout handling and refactored HER buffer**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -61,6 +85,7 @@ Bug Fixes:
 - Fixed saving of ``A2C`` and ``PPO`` policy when using gSDE (thanks @liusida)
 - Fixed a bug where no output would be shown even if ``verbose>=1`` after passing ``verbose=0`` once
 - Fixed observation buffers dtype in DictReplayBuffer (@c-rizz)
+- Fixed EvalCallback tensorboard logs being logged with the incorrect timestep. They are now written with the timestep at which they were recorded. (@skandermoalla)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -708,4 +733,4 @@ And all the contributors:
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @JadenTravnik @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
 @ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan @benblack769 @bstee615
-@c-rizz
+@c-rizz @skandermoalla

@@ -61,7 +61,9 @@ You can find below an example for extracting one key from the observation:
 
 	class VecExtractDictObs(VecEnvWrapper):
 	    """
-	    A vectorized wrapper for extracting dictionary observations.
+	    A vectorized wrapper for filtering a specific key from dictionary observations.
+	    Similar to Gym's FilterObservation wrapper:
+	        https://github.com/openai/gym/blob/master/gym/wrappers/filter_observation.py
 
 	    :param venv: The vectorized environment
 	    :param key: The key of the dictionary observation

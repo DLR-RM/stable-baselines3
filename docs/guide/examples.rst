@@ -109,7 +109,7 @@ Multiprocessing: Unleashing the Power of Vectorized Environments
   import numpy as np
 
   from stable_baselines3 import PPO
-  from stable_baselines3.common.vec_env import SubprocVecEnv
+  from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
   from stable_baselines3.common.env_util import make_vec_env
   from stable_baselines3.common.utils import set_random_seed
 
@@ -136,8 +136,9 @@ Multiprocessing: Unleashing the Power of Vectorized Environments
       env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
 
       # Stable Baselines provides you with make_vec_env() helper
-      # which does exactly the previous steps for you:
-      # env = make_vec_env(env_id, n_envs=num_cpu, seed=0)
+      # which does exactly the previous steps for you.
+      # You can choose between `DummyVecEnv` (usually faster) and `SubprocVecEnv`
+      # env = make_vec_env(env_id, n_envs=num_cpu, seed=0, vec_env_cls=SubprocVecEnv)
 
       model = PPO('MlpPolicy', env, verbose=1)
       model.learn(total_timesteps=25000)

@@ -4,7 +4,7 @@ import collections
 import copy
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import gym
 import numpy as np
@@ -755,7 +755,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         self,
         observation_space: gym.spaces.Dict,
         action_space: gym.spaces.Space,
-        lr_schedule: Callable,
+        lr_schedule: Schedule,
         net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,

@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.2.0a0 (WIP)
+Release 1.2.0a1 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -23,6 +23,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Enabled Python 3.9 in GitHub CI
+- Fixed type annotations
 
 Documentation:
 ^^^^^^^^^^^^^^

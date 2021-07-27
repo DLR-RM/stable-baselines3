@@ -90,7 +90,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         replay_buffer_class: Optional[ReplayBuffer] = None,
         replay_buffer_kwargs: Optional[Dict[str, Any]] = None,
         optimize_memory_usage: bool = False,
-        policy_kwargs: Dict[str, Any] = None,
+        policy_kwargs: Optional[Dict[str, Any]] = None,
         tensorboard_log: Optional[str] = None,
         verbose: int = 0,
         device: Union[th.device, str] = "auto",

@@ -1,12 +1,11 @@
 import inspect
+import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union
 
 import cloudpickle
 import gym
 import numpy as np
-
-from stable_baselines3.common import logger
 
 # Define type aliases here to avoid circular import
 # Used when we want to access one or more VecEnv
@@ -177,7 +176,7 @@ class VecEnv(ABC):
         try:
             imgs = self.get_images()
         except NotImplementedError:
-            logger.warn(f"Render not defined for {self}")
+            warnings.warn(f"Render not defined for {self}")
             return
 
         # Create a big image by tiling images from subprocesses

@@ -3,7 +3,6 @@ from typing import Callable
 
 from gym.wrappers.monitoring import video_recorder
 
-from stable_baselines3.common import logger
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvObs, VecEnvStepReturn, VecEnvWrapper
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
@@ -93,7 +92,7 @@ class VecVideoRecorder(VecEnvWrapper):
             self.video_recorder.capture_frame()
             self.recorded_frames += 1
             if self.recorded_frames > self.video_length:
-                logger.info("Saving video to ", self.video_recorder.path)
+                print(f"Saving video to {self.video_recorder.path}")
                 self.close_video_recorder()
         elif self._video_enabled():
             self.start_video_recorder()

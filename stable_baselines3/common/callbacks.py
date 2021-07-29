@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import gym
 import numpy as np
 
-from stable_baselines3.common import base_class, logger  # pytype: disable=pyi-error
+from stable_baselines3.common import base_class  # pytype: disable=pyi-error
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, sync_envs_normalization
 
@@ -44,7 +44,7 @@ class BaseCallback(ABC):
         """
         self.model = model
         self.training_env = model.get_env()
-        self.logger = logger
+        self.logger = model.logger
         self._init_callback()
 
     def _init_callback(self) -> None:
@@ -298,8 +298,8 @@ class EvalCallback(EventCallback):
         callback_on_new_best: Optional[BaseCallback] = None,
         n_eval_episodes: int = 5,
         eval_freq: int = 10000,
-        log_path: str = None,
-        best_model_save_path: str = None,
+        log_path: Optional[str] = None,
+        best_model_save_path: Optional[str] = None,
         deterministic: bool = True,
         render: bool = False,
         verbose: int = 1,
@@ -413,6 +413,10 @@ class EvalCallback(EventCallback):
                 if self.verbose > 0:
                     print(f"Success rate: {100 * success_rate:.2f}%")
                 self.logger.record("eval/success_rate", success_rate)
+
+            # Dump log so the evaluation results are printed with the correct timestep
+            self.logger.record("time/total timesteps", self.num_timesteps, exclude="tensorboard")
+            self.logger.dump(self.num_timesteps)
 
             if mean_reward > self.best_mean_reward:
                 if self.verbose > 0:

@@ -28,7 +28,7 @@ Notes
 Can I use?
 ----------
 
--  Recurrent policies: ✔️
+-  Recurrent policies: ❌
 -  Multi processing: ✔️
 -  Gym spaces:
 

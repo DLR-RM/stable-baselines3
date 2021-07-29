@@ -504,10 +504,12 @@ class DictReplayBuffer(ReplayBuffer):
         self.optimize_memory_usage = optimize_memory_usage
 
         self.observations = {
-            key: np.zeros((self.buffer_size, self.n_envs) + _obs_shape) for key, _obs_shape in self.obs_shape.items()
+            key: np.zeros((self.buffer_size, self.n_envs) + _obs_shape, dtype=observation_space[key].dtype)
+            for key, _obs_shape in self.obs_shape.items()
         }
         self.next_observations = {
-            key: np.zeros((self.buffer_size, self.n_envs) + _obs_shape) for key, _obs_shape in self.obs_shape.items()
+            key: np.zeros((self.buffer_size, self.n_envs) + _obs_shape, dtype=observation_space[key].dtype)
+            for key, _obs_shape in self.obs_shape.items()
         }
 
         # only 1 env is supported

@@ -4,10 +4,38 @@ Changelog
 ==========
 
 
-Release 1.1.0a10 (WIP)
+Release 1.2.0a1 (WIP)
 ---------------------------
 
-**Dict observation support, timeout handling and refactored HER**
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+- SB3 now requires PyTorch >= 1.8.1
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Enabled Python 3.9 in GitHub CI
+- Fixed type annotations
+
+Documentation:
+^^^^^^^^^^^^^^
+- Updated multiprocessing example
+- Added example of ``VecEnvWrapper``
+- Added a note about logging to tensorboard more often
+
+
+Release 1.1.0 (2021-07-01)
+---------------------------
+
+**Dict observation support, timeout handling and refactored HER buffer**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -28,6 +56,11 @@ Breaking Changes:
 - Updated the KL Divergence estimator in the PPO algorithm to be positive definite and have lower variance (@09tangriro)
 - Updated the KL Divergence check in the PPO algorithm to be before the gradient update step rather than after end of epoch (@09tangriro)
 - Removed parameter ``channels_last`` from ``is_image_space`` as it can be inferred.
+- The logger object is now an attribute ``model.logger`` that be set by the user using ``model.set_logger()``
+- Changed the signature of ``logger.configure`` and ``utils.configure_logger``, they now return a ``Logger`` object
+- Removed ``Logger.CURRENT`` and ``Logger.DEFAULT``
+- Moved ``warn(), debug(), log(), info(), dump()`` methods to the ``Logger`` class
+- ``.learn()`` now throws an import error when the user tries to log to tensorboard but the package is not installed
 
 New Features:
 ^^^^^^^^^^^^^
@@ -53,6 +86,9 @@ Bug Fixes:
 - Fixed potential issue when calling off-policy algorithms with default arguments multiple times (the size of the replay buffer would be the same)
 - Fixed loading of ``ent_coef`` for ``SAC`` and ``TQC``, it was not optimized anymore (thanks @Atlis)
 - Fixed saving of ``A2C`` and ``PPO`` policy when using gSDE (thanks @liusida)
+- Fixed a bug where no output would be shown even if ``verbose>=1`` after passing ``verbose=0`` once
+- Fixed observation buffers dtype in DictReplayBuffer (@c-rizz)
+- Fixed EvalCallback tensorboard logs being logged with the incorrect timestep. They are now written with the timestep at which they were recorded. (@skandermoalla)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -82,6 +118,8 @@ Documentation:
 - Updated migration guide (@juancroldan)
 - Pinned ``docutils==0.16`` to avoid issue with rtd theme
 - Clarified callback ``save_freq`` definition
+- Added doc on how to pass a custom logger
+- Remove recurrent policies from ``A2C`` docs (@bstee615)
 
 
 Release 1.0 (2021-03-15)
@@ -698,4 +736,5 @@ And all the contributors:
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @JadenTravnik @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
-@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan @benblack769 @batu
+@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan @benblack769 @bstee615
+@c-rizz @skandermoalla @batu

@@ -168,7 +168,7 @@ class ResultsWriter:
     def __init__(
         self,
         filename: str = "",
-        header: Dict[str, Union[float, str]] = None,
+        header: Optional[Dict[str, Union[float, str]]] = None,
         extra_keys: Tuple[str, ...] = (),
     ):
         if header is None:

@@ -286,9 +286,9 @@ def open_path_pathlib(path: pathlib.Path, mode: str, verbose: int = 0, suffix: O
 
 def save_to_zip_file(
     save_path: Union[str, pathlib.Path, io.BufferedIOBase],
-    data: Dict[str, Any] = None,
-    params: Dict[str, Any] = None,
-    pytorch_variables: Dict[str, Any] = None,
+    data: Optional[Dict[str, Any]] = None,
+    params: Optional[Dict[str, Any]] = None,
+    pytorch_variables: Optional[Dict[str, Any]] = None,
     verbose: int = 0,
 ) -> None:
     """

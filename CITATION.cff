@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  -
+    family-names: Raffin
+    given-names: Antonin
+    orcid: "https://orcid.org/0000-0001-6036-6950"
+  -
+    family-names: Hill
+    given-names: Ashley
+  -
+    family-names: Enerstus
+    given-names: Maximilian
+  -
+    family-names: Gleave
+    given-names: Adam
+    orcid: "https://orcid.org/0000-0002-3467-528X"
+  -
+    family-names: Kanervisto
+    given-names: Anssi
+    orcid: "https://orcid.org/0000-0002-7479-4574"
+  -
+    family-names: Dormann
+    given-names: Noah
+
+title: "Stable Baselines3"
+abbreviation: SB3
+url: "https://github.com/DLR-RM/stable-baselines3"
+repository-code: "https://github.com/DLR-RM/stable-baselines3"
+version: 1.1.0
+date-released: 2020-05-05
+license: MIT
+# doi: # TODO when paper is released

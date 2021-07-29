@@ -81,6 +81,13 @@ Here is a simple example on how to log both additional tensor or arbitrary scala
 
     model.learn(50000, callback=TensorboardCallback())
 
+
+.. note::
+
+  If you want to log values more often than the default to tensorboard, you manually call ``self.logger.dump(self.num_timesteps)`` in a callback
+  (see `issue #506 <https://github.com/DLR-RM/stable-baselines3/issues/506>`_).
+
+
 Logging Images
 --------------
 
@@ -230,7 +237,7 @@ Here is an example of how to render an episode and log the resulting video to Te
 Directly Accessing The Summary Writer
 -------------------------------------
 
-If you would like to log arbitrary data (in one of the formats supported by `pytorch <https://pytorch.org/docs/stable/tensorboard.html>`_), you 
+If you would like to log arbitrary data (in one of the formats supported by `pytorch <https://pytorch.org/docs/stable/tensorboard.html>`_), you
 can get direct access to the underlying SummaryWriter in a callback:
 
 .. warning::

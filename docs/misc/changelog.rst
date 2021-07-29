@@ -29,6 +29,7 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Updated multiprocessing example
 - Added example of ``VecEnvWrapper``
+- Added a note about logging to tensorboard more often
 
 
 Release 1.1.0 (2021-07-01)

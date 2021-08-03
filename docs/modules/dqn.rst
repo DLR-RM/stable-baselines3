@@ -52,6 +52,8 @@ Dict          ❌      ✔️️
 Example
 -------
 
+Examples are here only to show how to quickly run something. Optimized hyperparameters and proper training are done in the RL Zoo repository found `here <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
+
 .. code-block:: python
 
   import gym

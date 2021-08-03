@@ -47,6 +47,8 @@ Dict          ❌     ✔️
 Example
 -------
 
+Examples are here only to show how to quickly run something. Optimized hyperparameters and proper training are done in the RL Zoo repository found `here <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
+
 Train a A2C agent on ``CartPole-v1`` using 4 environments.
 
 .. code-block:: python

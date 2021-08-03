@@ -58,6 +58,8 @@ Please refer to the used model (DQN, QR-DQN, SAC, TQC, TD3, or DDPG) for that se
 Example
 -------
 
+Examples are here only to show how to quickly run something. Optimized hyperparameters and proper training are done in the RL Zoo repository found `here <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
+
 .. code-block:: python
 
     from stable_baselines3 import HerReplayBuffer, DDPG, DQN, SAC, TD3

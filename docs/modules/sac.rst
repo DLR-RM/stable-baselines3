@@ -64,7 +64,7 @@ Dict          ❌     ✔️
 Example
 -------
 
-Examples are here only to show how to quickly run something. Optimized hyperparameters and proper training are done in the RL Zoo repository found `here <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
+This example is only to demonstrate the use of the library and its functions, and the trained agents may not solve the environments. Optimized hyperparameters can be found in RL Zoo `repository <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
 
 .. code-block:: python
 

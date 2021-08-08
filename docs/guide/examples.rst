@@ -36,6 +36,8 @@ notebooks:
 Basic Usage: Training, Saving, Loading
 --------------------------------------
 
+These examples are only to demonstrate the use of the library and its functions, and the trained agents may not solve the environments. Optimized hyperparameters can be found in RL Zoo `repository <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
+
 In the following example, we will train, save and load a DQN model on the Lunar Lander environment.
 
 .. image:: ../_static/img/colab-badge.svg

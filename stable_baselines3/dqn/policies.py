@@ -70,6 +70,12 @@ class QNetwork(BasePolicy):
         # Greedy action
         action = q_values.argmax(dim=1).reshape(-1)
         return action
+    
+    def enable_training(self) -> None:
+        self.q_net.train()
+    
+    def disable_training(self) -> None:
+        self.q_net.eval()
 
     def _get_constructor_parameters(self) -> Dict[str, Any]:
         data = super()._get_constructor_parameters()
@@ -189,6 +195,12 @@ class DQNPolicy(BasePolicy):
             )
         )
         return data
+    
+    def enable_training(self) -> None:
+        self.q_net.train()
+    
+    def disable_training(self) -> None:
+        self.q_net.eval()
 
 
 MlpPolicy = DQNPolicy

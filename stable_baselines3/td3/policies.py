@@ -81,6 +81,12 @@ class Actor(BasePolicy):
         # Note: the deterministic deterministic parameter is ignored in the case of TD3.
         #   Predictions are always deterministic.
         return self.forward(observation)
+    
+    def enable_training(self) -> None:
+        self.mu.train()
+    
+    def disable_training(self) -> None:
+        self.mu.eval()
 
 
 class TD3Policy(BasePolicy):
@@ -224,7 +230,12 @@ class TD3Policy(BasePolicy):
         # Note: the deterministic deterministic parameter is ignored in the case of TD3.
         #   Predictions are always deterministic.
         return self.actor(observation)
+    
+    def enable_training(self) -> None:
+        self.actor.train()
 
+    def disable_training(self) -> None:
+        self.actor.eval()
 
 MlpPolicy = TD3Policy
 

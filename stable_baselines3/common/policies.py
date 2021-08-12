@@ -638,10 +638,16 @@ class ActorCriticPolicy(BasePolicy):
         return distribution.get_actions(deterministic=deterministic)
     
     def enable_training(self) -> None:
+        """
+        Enable training by calling model.train() enabling dropout and batch normalization layers.
+        """
         self.action_net.train()
         self.value_net.train()
     
     def disable_training(self) -> None:
+        """
+        Disable training by calling model.eval() disabling dropout and batch normalization layers.
+        """
         self.action_net.eval()
         self.value_net.eval()
 

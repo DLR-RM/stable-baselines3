@@ -197,7 +197,7 @@ class Actor(BasePolicy):
         Enable training by calling model.train() enabling dropout and batch normalization layers.
         """
         self.mu.train()
-        self.action_dist.train()
+        self.log_std.train()
         self.latent_pi.train()
 
     def disable_training(self) -> None:
@@ -205,7 +205,7 @@ class Actor(BasePolicy):
         Disable training by calling model.eval() disabling dropout and batch normalization layers.
         """
         self.mu.eval()
-        self.action_dist.eval()
+        self.log_std.eval()
         self.latent_pi.eval()
 
 

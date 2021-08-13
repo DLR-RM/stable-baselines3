@@ -1,4 +1,5 @@
 import gym
+import numpy as np
 import pytest
 import torch as th
 import torch.nn as nn
@@ -86,9 +87,13 @@ class FlattenBatchNormExtractor(BaseFeaturesExtractor):
         super(FlattenBatchNormExtractor, self).__init__(observation_space, get_flattened_obs_dim(observation_space))
         self.flatten = nn.Flatten()
         self.batch_norm = nn.BatchNorm1d(batch_norm_elements)
+        self.dropout = nn.Dropout(1.0)
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
-        return self.batch_norm(self.flatten(observations))
+        result = self.flatten(observations)
+        result = self.batch_norm(result)
+        result = self.dropout(result)
+        return result
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
@@ -116,4 +121,9 @@ def test_batch_norm_dqn(model_class, env_id, device):
     model.learn(5)
     env = model.get_env()
     observation = env.reset()
-    model.predict(observation)
+
+    # Run twice on the same observation to test if it is deterministic
+    first_prediction = model.predict(observation, deterministic=True)
+    second_prediction = model.predict(observation, deterministic=True)
+
+    np.testing.assert_allclose(first_prediction[0], second_prediction[0])

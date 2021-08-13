@@ -16,6 +16,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed model predictions when using batch normization and dropout layers by calling model.train() and model.eval().
 
 Deprecations:
 ^^^^^^^^^^^^^

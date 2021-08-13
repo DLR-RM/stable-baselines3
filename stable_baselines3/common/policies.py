@@ -643,6 +643,7 @@ class ActorCriticPolicy(BasePolicy):
         """
         self.action_net.train()
         self.value_net.train()
+        self.features_extractor.train()
 
     def disable_training(self) -> None:
         """
@@ -650,6 +651,7 @@ class ActorCriticPolicy(BasePolicy):
         """
         self.action_net.eval()
         self.value_net.eval()
+        self.features_extractor.eval()
 
     def evaluate_actions(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """

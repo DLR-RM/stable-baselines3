@@ -1,10 +1,13 @@
 import gym
 import pytest
 import torch as th
+import torch.nn as nn
 
 from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+from stable_baselines3.common.preprocessing import get_flattened_obs_dim
 
 MODEL_LIST = [
     PPO,
@@ -69,3 +72,42 @@ def test_predict(model_class, env_id, device):
 
         action, _ = model.predict(vec_env_obs, deterministic=False)
         assert action.shape[0] == vec_env_obs.shape[0]
+
+
+class FlattenBatchNormExtractor(BaseFeaturesExtractor):
+    """
+    Feature extract that flatten the input and uses batch normalization.
+    Used as a placeholder when feature extraction is not needed.
+
+    :param observation_space:
+    """
+
+    def __init__(self, observation_space: gym.Space):
+        super(FlattenBatchNormExtractor, self).__init__(observation_space, get_flattened_obs_dim(observation_space))
+        self.flatten = nn.Flatten()
+        self.batch_norm = nn.BatchNorm1d(4)
+
+    def forward(self, observations: th.Tensor) -> th.Tensor:
+        return self.batch_norm(self.flatten(observations))
+
+
+def test_batch_norm_dqn():
+    policy_kwargs = dict(
+        features_extractor_class=FlattenBatchNormExtractor,
+    )
+    model = DQN("MlpPolicy", "CartPole-v1", policy_kwargs=policy_kwargs, verbose=1)
+    model.learn(5)
+    env = model.get_env()
+    observation = env.reset()
+    model.predict(observation)
+
+
+def test_batch_norm_ppo():
+    policy_kwargs = dict(
+        features_extractor_class=FlattenBatchNormExtractor,
+    )
+    model = PPO("MlpPolicy", "CartPole-v1", policy_kwargs=policy_kwargs, verbose=1)
+    model.learn(5)
+    env = model.get_env()
+    observation = env.reset()
+    model.predict(observation)

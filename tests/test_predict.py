@@ -113,12 +113,18 @@ def test_batch_norm_dqn(model_class, env_id, device):
     elif model_class in [DQN]:
         return
 
+    model_kwargs = dict()
+
+    if model_class in [DQN, TD3, SAC]:
+        model_kwargs["learning_starts"] = 0
+
     policy_kwargs = dict(
         features_extractor_class=FlattenBatchNormExtractor,
         features_extractor_kwargs=features_extractor_kwargs,
+        net_arch=[4, 4],
     )
-    model = model_class("MlpPolicy", env_id, policy_kwargs=policy_kwargs, verbose=1)
-    model.learn(5)
+    model = model_class("MlpPolicy", env_id, policy_kwargs=policy_kwargs, verbose=1, **model_kwargs)
+    model.learn(100)
     env = model.get_env()
     observation = env.reset()
 

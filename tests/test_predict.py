@@ -87,7 +87,7 @@ class FlattenBatchNormExtractor(BaseFeaturesExtractor):
         super(FlattenBatchNormExtractor, self).__init__(observation_space, get_flattened_obs_dim(observation_space))
         self.flatten = nn.Flatten()
         self.batch_norm = nn.BatchNorm1d(batch_norm_elements)
-        self.dropout = nn.Dropout(1.0)
+        self.dropout = nn.Dropout(0.5)
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
         result = self.flatten(observations)

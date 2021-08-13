@@ -4,10 +4,10 @@ import torch as th
 import torch.nn as nn
 
 from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
+from stable_baselines3.common.preprocessing import get_flattened_obs_dim
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import DummyVecEnv
-from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
-from stable_baselines3.common.preprocessing import get_flattened_obs_dim
 
 MODEL_LIST = [
     PPO,
@@ -82,31 +82,39 @@ class FlattenBatchNormExtractor(BaseFeaturesExtractor):
     :param observation_space:
     """
 
-    def __init__(self, observation_space: gym.Space):
-        super(FlattenBatchNormExtractor, self).__init__(observation_space, get_flattened_obs_dim(observation_space))
+    def __init__(self, observation_space: gym.Space, batch_norm_elements=4):
+        super(FlattenBatchNormExtractor, self).__init__(
+            observation_space, get_flattened_obs_dim(observation_space)
+        )
         self.flatten = nn.Flatten()
-        self.batch_norm = nn.BatchNorm1d(4)
+        self.batch_norm = nn.BatchNorm1d(batch_norm_elements)
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
         return self.batch_norm(self.flatten(observations))
 
 
-def test_batch_norm_dqn():
+@pytest.mark.parametrize("model_class", MODEL_LIST)
+@pytest.mark.parametrize("env_id", ["Pendulum-v0", "CartPole-v1"])
+@pytest.mark.parametrize("device", ["cpu", "cuda", "auto"])
+def test_batch_norm_dqn(model_class, env_id, device):
+    if device == "cuda" and not th.cuda.is_available():
+        pytest.skip("CUDA not available")
+
+    features_extractor_kwargs = dict(batch_norm_elements=3)
+
+    if env_id == "CartPole-v1":
+        features_extractor_kwargs = dict(batch_norm_elements=4)
+
+        if model_class in [SAC, TD3]:
+            return
+    elif model_class in [DQN]:
+        return
+
     policy_kwargs = dict(
         features_extractor_class=FlattenBatchNormExtractor,
+        features_extractor_kwargs=features_extractor_kwargs,
     )
-    model = DQN("MlpPolicy", "CartPole-v1", policy_kwargs=policy_kwargs, verbose=1)
-    model.learn(5)
-    env = model.get_env()
-    observation = env.reset()
-    model.predict(observation)
-
-
-def test_batch_norm_ppo():
-    policy_kwargs = dict(
-        features_extractor_class=FlattenBatchNormExtractor,
-    )
-    model = PPO("MlpPolicy", "CartPole-v1", policy_kwargs=policy_kwargs, verbose=1)
+    model = model_class("MlpPolicy", env_id, policy_kwargs=policy_kwargs, verbose=1)
     model.learn(5)
     env = model.get_env()
     observation = env.reset()

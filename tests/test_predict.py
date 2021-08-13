@@ -99,7 +99,7 @@ class FlattenBatchNormExtractor(BaseFeaturesExtractor):
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 @pytest.mark.parametrize("env_id", ["Pendulum-v0", "CartPole-v1"])
 @pytest.mark.parametrize("device", ["cpu", "cuda", "auto"])
-def test_batch_norm_dqn(model_class, env_id, device):
+def test_batch_norm_dropout(model_class, env_id, device):
     if device == "cuda" and not th.cuda.is_available():
         pytest.skip("CUDA not available")
 

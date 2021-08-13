@@ -192,22 +192,6 @@ class Actor(BasePolicy):
     def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         return self.forward(observation, deterministic)
 
-    def enable_training(self) -> None:
-        """
-        Enable training by calling model.train() enabling dropout and batch normalization layers.
-        """
-        self.mu.train()
-        self.log_std.train()
-        self.latent_pi.train()
-
-    def disable_training(self) -> None:
-        """
-        Disable training by calling model.eval() disabling dropout and batch normalization layers.
-        """
-        self.mu.eval()
-        self.log_std.eval()
-        self.latent_pi.eval()
-
 
 class SACPolicy(BasePolicy):
     """
@@ -376,12 +360,6 @@ class SACPolicy(BasePolicy):
 
     def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         return self.actor(observation, deterministic)
-
-    def enable_training(self) -> None:
-        self.actor.train()
-
-    def disable_training(self) -> None:
-        self.actor.eval()
 
 
 MlpPolicy = SACPolicy

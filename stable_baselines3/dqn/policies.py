@@ -71,12 +71,6 @@ class QNetwork(BasePolicy):
         action = q_values.argmax(dim=1).reshape(-1)
         return action
 
-    def enable_training(self) -> None:
-        self.q_net.train()
-
-    def disable_training(self) -> None:
-        self.q_net.eval()
-
     def _get_constructor_parameters(self) -> Dict[str, Any]:
         data = super()._get_constructor_parameters()
 
@@ -178,7 +172,7 @@ class DQNPolicy(BasePolicy):
         return self._predict(obs, deterministic=deterministic)
 
     def _predict(self, obs: th.Tensor, deterministic: bool = True) -> th.Tensor:
-        self.disable_training()
+        self.eval()
         return self.q_net._predict(obs, deterministic=deterministic)
 
     def _get_constructor_parameters(self) -> Dict[str, Any]:
@@ -196,12 +190,6 @@ class DQNPolicy(BasePolicy):
             )
         )
         return data
-
-    def enable_training(self) -> None:
-        self.q_net.train()
-
-    def disable_training(self) -> None:
-        self.q_net.eval()
 
 
 MlpPolicy = DQNPolicy

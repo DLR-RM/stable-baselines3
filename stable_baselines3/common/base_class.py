@@ -400,7 +400,7 @@ class BaseAlgorithm(ABC):
         """
         self.start_time = time.time()
 
-        self.policy.enable_training()
+        self.policy.train()
 
         if self.ep_info_buffer is None or reset_num_timesteps:
             # Initialize buffers if they don't exist, or reinitialize if resetting counters
@@ -539,7 +539,7 @@ class BaseAlgorithm(ABC):
         :return: the model's action and the next state
             (used in recurrent policies)
         """
-        self.policy.disable_training()
+        self.policy.eval()
         return self.policy.predict(observation, state, mask, deterministic)
 
     def set_random_seed(self, seed: Optional[int] = None) -> None:

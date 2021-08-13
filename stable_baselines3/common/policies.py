@@ -244,18 +244,6 @@ class BasePolicy(BaseModel):
         :return: Taken action according to the policy
         """
 
-    @abstractmethod
-    def enable_training(self) -> None:
-        """
-        Enable training by calling model.train() enabling dropout and batch normalization layers.
-        """
-
-    @abstractmethod
-    def disable_training(self) -> None:
-        """
-        Disable training by calling model.eval() disabling dropout and batch normalization layers.
-        """
-
     def predict(
         self,
         observation: Union[np.ndarray, Dict[str, np.ndarray]],
@@ -636,22 +624,6 @@ class ActorCriticPolicy(BasePolicy):
         latent_pi, _, latent_sde = self._get_latent(observation)
         distribution = self._get_action_dist_from_latent(latent_pi, latent_sde)
         return distribution.get_actions(deterministic=deterministic)
-
-    def enable_training(self) -> None:
-        """
-        Enable training by calling model.train() enabling dropout and batch normalization layers.
-        """
-        self.action_net.train()
-        self.value_net.train()
-        self.features_extractor.train()
-
-    def disable_training(self) -> None:
-        """
-        Disable training by calling model.eval() disabling dropout and batch normalization layers.
-        """
-        self.action_net.eval()
-        self.value_net.eval()
-        self.features_extractor.eval()
 
     def evaluate_actions(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """

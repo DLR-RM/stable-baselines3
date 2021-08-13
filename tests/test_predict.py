@@ -83,9 +83,7 @@ class FlattenBatchNormExtractor(BaseFeaturesExtractor):
     """
 
     def __init__(self, observation_space: gym.Space, batch_norm_elements=4):
-        super(FlattenBatchNormExtractor, self).__init__(
-            observation_space, get_flattened_obs_dim(observation_space)
-        )
+        super(FlattenBatchNormExtractor, self).__init__(observation_space, get_flattened_obs_dim(observation_space))
         self.flatten = nn.Flatten()
         self.batch_norm = nn.BatchNorm1d(batch_norm_elements)
 

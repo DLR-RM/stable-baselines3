@@ -267,6 +267,8 @@ class BasePolicy(BaseModel):
         #     state = self.initial_state
         # if mask is None:
         #     mask = [False for _ in range(self.n_envs)]
+        # Switch to eval mode (this affects batch norm / dropout)
+        self.eval()
 
         vectorized_env = False
         if isinstance(observation, dict):

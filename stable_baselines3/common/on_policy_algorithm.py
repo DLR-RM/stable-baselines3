@@ -147,6 +147,9 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             collected, False if callback terminated rollout prematurely.
         """
         assert self._last_obs is not None, "No previous observation was provided"
+        # Switch to eval mode (this affects batch norm / dropout)
+        self.policy.eval()
+
         n_steps = 0
         rollout_buffer.reset()
         # Sample new weights for the state dependent exploration

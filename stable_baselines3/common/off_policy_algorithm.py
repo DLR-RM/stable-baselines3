@@ -536,6 +536,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         :param log_interval: Log data every ``log_interval`` episodes
         :return:
         """
+        # Switch to eval mode (this affects batch norm / dropout)
+        self.policy.eval()
+
         episode_rewards, total_timesteps = [], []
         num_collected_steps, num_collected_episodes = 0, 0
 

@@ -83,10 +83,10 @@ class FlattenBatchNormExtractor(BaseFeaturesExtractor):
     :param observation_space:
     """
 
-    def __init__(self, observation_space: gym.Space, batch_norm_elements=4):
+    def __init__(self, observation_space: gym.Space):
         super(FlattenBatchNormExtractor, self).__init__(observation_space, get_flattened_obs_dim(observation_space))
         self.flatten = nn.Flatten()
-        self.batch_norm = nn.BatchNorm1d(batch_norm_elements)
+        self.batch_norm = nn.BatchNorm1d(self._features_dim)
         self.dropout = nn.Dropout(0.5)
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
@@ -98,38 +98,49 @@ class FlattenBatchNormExtractor(BaseFeaturesExtractor):
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 @pytest.mark.parametrize("env_id", ["Pendulum-v0", "CartPole-v1"])
-@pytest.mark.parametrize("device", ["cpu", "cuda", "auto"])
-def test_batch_norm_dropout(model_class, env_id, device):
-    if device == "cuda" and not th.cuda.is_available():
-        pytest.skip("CUDA not available")
-
-    features_extractor_kwargs = dict(batch_norm_elements=3)
+def test_batch_norm_dropout(model_class, env_id):
 
     if env_id == "CartPole-v1":
-        features_extractor_kwargs = dict(batch_norm_elements=4)
-
         if model_class in [SAC, TD3]:
             return
     elif model_class in [DQN]:
         return
 
-    model_kwargs = dict()
+    model_kwargs = dict(seed=1)
 
     if model_class in [DQN, TD3, SAC]:
         model_kwargs["learning_starts"] = 0
+    else:
+        model_kwargs["n_steps"] = 64
 
     policy_kwargs = dict(
         features_extractor_class=FlattenBatchNormExtractor,
-        features_extractor_kwargs=features_extractor_kwargs,
-        net_arch=[4, 4],
+        net_arch=[16, 16],
     )
     model = model_class("MlpPolicy", env_id, policy_kwargs=policy_kwargs, verbose=1, **model_kwargs)
+
+    if model_class in [SAC, TD3]:
+        batch_norm = model.policy.actor.features_extractor.batch_norm
+    elif model_class in [PPO, A2C]:
+        batch_norm = model.policy.features_extractor.batch_norm
+    else:
+        # DQN
+        batch_norm = model.policy.q_net.features_extractor.batch_norm
+
+    # batch norm param before training
+    bias_before_learn = batch_norm.bias.detach().cpu().numpy().copy()
+    running_mean_before_learn = batch_norm.running_mean.detach().cpu().numpy().copy()
     model.learn(100)
     env = model.get_env()
     observation = env.reset()
 
-    # Run twice on the same observation to test if it is deterministic
-    first_prediction = model.predict(observation, deterministic=True)
-    second_prediction = model.predict(observation, deterministic=True)
+    bias_after_learn = batch_norm.bias.detach().cpu().numpy()
+    running_mean_after_learn = batch_norm.running_mean.detach().cpu().numpy().copy()
 
-    np.testing.assert_allclose(first_prediction[0], second_prediction[0])
+    # Run twice on the same observation to test if it is deterministic
+    first_prediction, _ = model.predict(observation, deterministic=True)
+    second_prediction, _ = model.predict(observation, deterministic=True)
+
+    np.testing.assert_allclose(first_prediction, second_prediction)
+    assert not np.allclose(bias_before_learn, bias_after_learn)
+    assert not np.allclose(running_mean_before_learn, running_mean_after_learn)

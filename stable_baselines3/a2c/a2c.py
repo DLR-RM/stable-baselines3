@@ -119,6 +119,9 @@ class A2C(OnPolicyAlgorithm):
         Update policy using the currently gathered
         rollout buffer (one gradient step over whole data).
         """
+        # Switch to train mode (this affects batch norm / dropout)
+        self.policy.train()
+
         # Update optimizer learning rate
         self._update_learning_rate(self.policy.optimizer)
 

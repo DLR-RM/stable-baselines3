@@ -147,6 +147,9 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             collected, False if callback terminated rollout prematurely.
         """
         assert self._last_obs is not None, "No previous observation was provided"
+        # Switch to eval mode (this affects batch norm / dropout)
+        self.policy.eval()
+
         n_steps = 0
         rollout_buffer.reset()
         # Sample new weights for the state dependent exploration
@@ -163,9 +166,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             with th.no_grad():
                 # Convert to pytorch tensor or to TensorDict
                 obs_tensor = obs_as_tensor(self._last_obs, self.device)
-                self.policy.eval()
                 actions, values, log_probs = self.policy.forward(obs_tensor)
-                self.policy.train()
             actions = actions.cpu().numpy()
 
             # Rescale and perform action
@@ -196,9 +197,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         with th.no_grad():
             # Compute value for the last timestep
             obs_tensor = obs_as_tensor(new_obs, self.device)
-            self.policy.eval()
             _, values, _ = self.policy.forward(obs_tensor)
-            self.policy.train()
 
         rollout_buffer.compute_returns_and_advantage(last_values=values, dones=dones)
 

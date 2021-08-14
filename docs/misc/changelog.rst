@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.2.0a1 (WIP)
+Release 1.2.0a2 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -16,7 +16,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
-- Fixed model predictions when using batch normization and dropout layers by calling model.train() and model.eval().
+- Fixed model predictions when using batch normalization and dropout layers by calling ``train()`` and ``eval()`` (@davidblom603)
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.2.0a1 (WIP)
+Release 1.2.0a2 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -16,6 +16,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed model predictions when using batch normalization and dropout layers by calling ``train()`` and ``eval()`` (@davidblom603)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -30,6 +31,7 @@ Documentation:
 - Updated multiprocessing example
 - Added example of ``VecEnvWrapper``
 - Added a note about logging to tensorboard more often
+- Added warning about simplicity of examples and link to RL zoo (@MihaiAnca13)
 
 
 Release 1.1.0 (2021-07-01)
@@ -737,4 +739,4 @@ And all the contributors:
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @JadenTravnik @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
 @ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan @benblack769 @bstee615
-@c-rizz @skandermoalla
+@c-rizz @skandermoalla @MihaiAnca13 @davidblom603

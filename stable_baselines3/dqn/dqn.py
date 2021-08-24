@@ -152,6 +152,8 @@ class DQN(OffPolicyAlgorithm):
         self.logger.record("rollout/exploration rate", self.exploration_rate)
 
     def train(self, gradient_steps: int, batch_size: int = 100) -> None:
+        # Switch to train mode (this affects batch norm / dropout)
+        self.policy.train()
         # Update learning rate according to schedule
         self._update_learning_rate(self.policy.optimizer)
 

@@ -1,8 +1,10 @@
 import numpy as np
 import pytest
+import torch as th
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
+from tests.test_predict import FlattenBatchNormDropoutExtractor
 
 normal_action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
 
@@ -139,3 +141,49 @@ def test_train_freq_fail(train_freq):
             train_freq=train_freq,
         )
         model.learn(total_timesteps=250)
+
+
+def test_dqn_train_with_batch_norm():
+    model = DQN(
+        "MlpPolicy",
+        "CartPole-v1",
+        policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
+        learning_starts=0,
+        seed=1,
+    )
+
+    q_net_batch_norm = model.policy.q_net.features_extractor.batch_norm
+    q_net_bias_before = q_net_batch_norm.bias.clone()
+    q_net_running_mean_before = q_net_batch_norm.running_mean.clone()
+
+    q_net_target_batch_norm = model.policy.q_net_target.features_extractor.batch_norm
+    q_net_target_bias_before = q_net_target_batch_norm.bias.clone()
+    q_net_target_running_mean_before = q_net_target_batch_norm.running_mean.clone()
+
+    model.learn(total_timesteps=100)
+
+    assert ~th.isclose(q_net_bias_before, q_net_batch_norm.bias).all()
+    assert ~th.isclose(q_net_running_mean_before, q_net_batch_norm.running_mean).all()
+
+    assert th.isclose(q_net_target_bias_before, q_net_target_batch_norm.bias).all()
+    assert th.isclose(q_net_target_running_mean_before, q_net_target_batch_norm.running_mean).all()
+
+
+def test_dqn_rollouts_with_batch_norm():
+    learning_starts = 100
+    model = DQN(
+        "MlpPolicy",
+        "CartPole-v1",
+        policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
+        learning_starts=learning_starts,
+        seed=1,
+    )
+
+    q_net_batch_norm = model.policy.q_net.features_extractor.batch_norm
+    q_net_bias_before = q_net_batch_norm.bias.clone()
+    q_net_running_mean_before = q_net_batch_norm.running_mean.clone()
+
+    model.learn(total_timesteps=learning_starts)
+
+    assert th.isclose(q_net_bias_before, q_net_batch_norm.bias).all()
+    assert th.isclose(q_net_running_mean_before, q_net_batch_norm.running_mean).all()

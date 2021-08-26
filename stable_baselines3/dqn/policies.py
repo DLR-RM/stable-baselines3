@@ -159,6 +159,7 @@ class DQNPolicy(BasePolicy):
         self.q_net = self.make_q_net()
         self.q_net_target = self.make_q_net()
         self.q_net_target.load_state_dict(self.q_net.state_dict())
+        self.q_net_target.eval()
 
         # Setup optimizer with initial learning rate
         self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
@@ -189,6 +190,16 @@ class DQNPolicy(BasePolicy):
             )
         )
         return data
+
+    def _set_child_training_mode(self, mode: bool) -> None:
+        """
+        Override the base class function so that only the training mode of the Q-Network in changed.
+
+        This affects certain modules, such as batch normalisation and dropout.
+
+        :param mode: if true, set Q-Network to training mode, else set to evaluation mode
+        """
+        self.q_net.train(mode)
 
 
 MlpPolicy = DQNPolicy

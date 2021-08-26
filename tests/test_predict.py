@@ -75,16 +75,17 @@ def test_predict(model_class, env_id, device):
         assert action.shape[0] == vec_env_obs.shape[0]
 
 
-class FlattenBatchNormExtractor(BaseFeaturesExtractor):
+class FlattenBatchNormDropoutExtractor(BaseFeaturesExtractor):
     """
-    Feature extract that flatten the input and uses batch normalization.
+    Feature extract that flatten the input and applies batch normalization and dropout.
     Used as a placeholder when feature extraction is not needed.
 
     :param observation_space:
     """
 
     def __init__(self, observation_space: gym.Space):
-        super(FlattenBatchNormExtractor, self).__init__(observation_space, get_flattened_obs_dim(observation_space))
+        super(FlattenBatchNormDropoutExtractor, self).__init__(observation_space,
+                                                               get_flattened_obs_dim(observation_space))
         self.flatten = nn.Flatten()
         self.batch_norm = nn.BatchNorm1d(self._features_dim)
         self.dropout = nn.Dropout(0.5)
@@ -98,8 +99,7 @@ class FlattenBatchNormExtractor(BaseFeaturesExtractor):
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 @pytest.mark.parametrize("env_id", ["Pendulum-v0", "CartPole-v1"])
-def test_batch_norm_dropout(model_class, env_id):
-
+def test_predict_with_dropout(model_class, env_id):
     if env_id == "CartPole-v1":
         if model_class in [SAC, TD3]:
             return
@@ -114,33 +114,42 @@ def test_batch_norm_dropout(model_class, env_id):
         model_kwargs["n_steps"] = 64
 
     policy_kwargs = dict(
-        features_extractor_class=FlattenBatchNormExtractor,
+        features_extractor_class=FlattenBatchNormDropoutExtractor,
         net_arch=[16, 16],
     )
     model = model_class("MlpPolicy", env_id, policy_kwargs=policy_kwargs, verbose=1, **model_kwargs)
 
-    if model_class in [SAC, TD3]:
-        batch_norm = model.policy.actor.features_extractor.batch_norm
-    elif model_class in [PPO, A2C]:
-        batch_norm = model.policy.features_extractor.batch_norm
-    else:
-        # DQN
-        batch_norm = model.policy.q_net.features_extractor.batch_norm
-
-    # batch norm param before training
-    bias_before_learn = batch_norm.bias.detach().cpu().numpy().copy()
-    running_mean_before_learn = batch_norm.running_mean.detach().cpu().numpy().copy()
-    model.learn(100)
     env = model.get_env()
     observation = env.reset()
-
-    bias_after_learn = batch_norm.bias.detach().cpu().numpy()
-    running_mean_after_learn = batch_norm.running_mean.detach().cpu().numpy().copy()
-
-    # Run twice on the same observation to test if it is deterministic
     first_prediction, _ = model.predict(observation, deterministic=True)
-    second_prediction, _ = model.predict(observation, deterministic=True)
+    for _ in range(10):
+        prediction, _ = model.predict(observation, deterministic=True)
+        np.testing.assert_allclose(first_prediction, prediction)
 
-    np.testing.assert_allclose(first_prediction, second_prediction)
-    assert not np.allclose(bias_before_learn, bias_after_learn)
-    assert not np.allclose(running_mean_before_learn, running_mean_after_learn)
+
+def test_dqn_predict_with_batch_norm():
+    model = DQN(
+        "MlpPolicy",
+        "CartPole-v1",
+        policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
+        seed=1,
+    )
+
+    q_net_batch_norm = model.policy.q_net.features_extractor.batch_norm
+    q_net_bias_before = q_net_batch_norm.bias.clone()
+    q_net_running_mean_before = q_net_batch_norm.running_mean.clone()
+
+    q_net_target_batch_norm = model.policy.q_net_target.features_extractor.batch_norm
+    q_net_target_bias_before = q_net_target_batch_norm.bias.clone()
+    q_net_target_running_mean_before = q_net_target_batch_norm.running_mean.clone()
+
+    env = model.get_env()
+    observation = env.reset()
+    for _ in range(10):
+        model.predict(observation, deterministic=True)
+
+    assert th.isclose(q_net_bias_before, q_net_batch_norm.bias).all()
+    assert th.isclose(q_net_running_mean_before, q_net_batch_norm.running_mean).all()
+
+    assert th.isclose(q_net_target_bias_before, q_net_target_batch_norm.bias).all()
+    assert th.isclose(q_net_target_running_mean_before, q_net_target_batch_norm.running_mean).all()

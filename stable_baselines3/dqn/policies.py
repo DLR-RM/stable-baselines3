@@ -84,6 +84,16 @@ class QNetwork(BasePolicy):
         )
         return data
 
+    def set_training_mode(self, mode: bool) -> None:
+        """
+        Put the policy in either training or evaluation mode.
+
+        This affects certain modules, such as batch normalisation and dropout.
+
+        :param mode: if true, set to training mode, else set to evaluation mode
+        """
+        self.train(mode)
+
 
 class DQNPolicy(BasePolicy):
     """
@@ -191,15 +201,16 @@ class DQNPolicy(BasePolicy):
         )
         return data
 
-    def _set_child_training_mode(self, mode: bool) -> None:
+    def set_training_mode(self, mode: bool) -> None:
         """
-        Override the base class function so that only the training mode of the Q-Network in changed.
+        Put the policy in either training or evaluation mode.
 
         This affects certain modules, such as batch normalisation and dropout.
 
-        :param mode: if true, set Q-Network to training mode, else set to evaluation mode
+        :param mode: if true, set to training mode, else set to evaluation mode
         """
         self.q_net.train(mode)
+        self.training = mode
 
 
 MlpPolicy = DQNPolicy

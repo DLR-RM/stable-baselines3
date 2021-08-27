@@ -342,31 +342,15 @@ class BasePolicy(BaseModel):
         low, high = self.action_space.low, self.action_space.high
         return low + (0.5 * (scaled_action + 1.0) * (high - low))
 
-    def set_training_mode(self, mode: bool) -> "BasePolicy":
+    @abstractmethod
+    def set_training_mode(self, mode: bool) -> None:
         """
         Put the policy in either training or evaluation mode.
 
         This affects certain modules, such as batch normalisation and dropout.
 
         :param mode: if true, set to training mode, else set to evaluation mode
-        :return: the policy
         """
-        if not isinstance(mode, bool):
-            raise ValueError(f"mode is expected to be boolean, not {mode}")
-        self.training = mode
-        self._set_child_training_mode(mode)
-        return self
-
-    def _set_child_training_mode(self, mode: bool) -> None:
-        """
-        Put the child modules in either training or evaluation mode.
-
-        This affects certain modules, such as batch normalisation and dropout.
-
-        :param mode: if true, set child modules to training mode, else set to evaluation mode
-        """
-        for module in self.children():
-            module.train(mode)
 
 
 class ActorCriticPolicy(BasePolicy):

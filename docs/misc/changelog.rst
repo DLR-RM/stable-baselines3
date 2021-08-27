@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.2.0a2 (WIP)
+Release 1.2.0a3 (WIP)
 ---------------------------
 
 Breaking Changes:

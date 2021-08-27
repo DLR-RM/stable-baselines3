@@ -5,9 +5,9 @@ import torch as th
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 from tests.test_predict import (
-    clone_batch_norm_stats,
     clone_dqn_batch_norm_stats,
     clone_td3_batch_norm_stats,
+    clone_sac_batch_norm_stats,
     FlattenBatchNormDropoutExtractor,
 )
 
@@ -303,6 +303,86 @@ def test_td3_rollouts_with_batch_norm():
 
     assert th.isclose(actor_target_bias_before, actor_target_bias_after).all()
     assert th.isclose(actor_target_running_mean_before, actor_target_running_mean_after).all()
+
+    assert th.isclose(critic_target_bias_before, critic_target_bias_after).all()
+    assert th.isclose(critic_target_running_mean_before, critic_target_running_mean_after).all()
+
+
+def test_sac_train_with_batch_norm():
+    model = SAC(
+        "MlpPolicy",
+        "Pendulum-v0",
+        policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
+        learning_starts=0,
+        tau=0,
+        seed=1,
+    )
+
+    (
+        actor_bias_before,
+        actor_running_mean_before,
+        critic_bias_before,
+        critic_running_mean_before,
+        critic_target_bias_before,
+        critic_target_running_mean_before,
+    ) = clone_sac_batch_norm_stats(model)
+
+    model.learn(total_timesteps=200)
+
+    (
+        actor_bias_after,
+        actor_running_mean_after,
+        critic_bias_after,
+        critic_running_mean_after,
+        critic_target_bias_after,
+        critic_target_running_mean_after,
+    ) = clone_sac_batch_norm_stats(model)
+
+    assert ~th.isclose(actor_bias_before, actor_bias_after).all()
+    assert ~th.isclose(actor_running_mean_before, actor_running_mean_after).all()
+
+    assert ~th.isclose(critic_bias_before, critic_bias_after).all()
+    assert ~th.isclose(critic_running_mean_before, critic_running_mean_after).all()
+
+    assert th.isclose(critic_target_bias_before, critic_target_bias_after).all()
+    assert th.isclose(critic_target_running_mean_before, critic_target_running_mean_after).all()
+
+
+def test_sac_rollouts_with_batch_norm():
+    learning_starts = 200
+    model = SAC(
+        "MlpPolicy",
+        "Pendulum-v0",
+        policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
+        learning_starts=learning_starts,
+        seed=1,
+    )
+
+    (
+        actor_bias_before,
+        actor_running_mean_before,
+        critic_bias_before,
+        critic_running_mean_before,
+        critic_target_bias_before,
+        critic_target_running_mean_before,
+    ) = clone_sac_batch_norm_stats(model)
+
+    model.learn(total_timesteps=learning_starts)
+
+    (
+        actor_bias_after,
+        actor_running_mean_after,
+        critic_bias_after,
+        critic_running_mean_after,
+        critic_target_bias_after,
+        critic_target_running_mean_after,
+    ) = clone_sac_batch_norm_stats(model)
+
+    assert th.isclose(actor_bias_before, actor_bias_after).all()
+    assert th.isclose(actor_running_mean_before, actor_running_mean_after).all()
+
+    assert th.isclose(critic_bias_before, critic_bias_after).all()
+    assert th.isclose(critic_running_mean_before, critic_running_mean_after).all()
 
     assert th.isclose(critic_target_bias_before, critic_target_bias_after).all()
     assert th.isclose(critic_target_running_mean_before, critic_target_running_mean_after).all()

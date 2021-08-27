@@ -1,3 +1,5 @@
+from typing import Union
+
 import gym
 import numpy as np
 import pytest
@@ -148,6 +150,28 @@ def clone_td3_batch_norm_stats(
             actor_target_bias, actor_target_running_mean, critic_target_bias, critic_target_running_mean)
 
 
+def clone_sac_batch_norm_stats(
+        model: SAC,
+) -> (th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor):
+    """
+    Clone the bias and running mean from the actor and critic networks and critic-target networks.
+
+    :param model:
+    :return: the bias and running mean from the actor and critic networks and critic-target networks
+    """
+    actor_batch_norm = model.policy.actor.features_extractor.batch_norm
+    actor_bias, actor_running_mean = clone_batch_norm_stats(actor_batch_norm)
+
+    critic_batch_norm = model.policy.critic.features_extractor.batch_norm
+    critic_bias, critic_running_mean = clone_batch_norm_stats(critic_batch_norm)
+
+    critic_target_batch_norm = model.policy.critic_target.features_extractor.batch_norm
+    critic_target_bias, critic_target_running_mean = clone_batch_norm_stats(critic_target_batch_norm)
+
+    return (actor_bias, actor_running_mean, critic_bias, critic_running_mean,
+            critic_target_bias, critic_target_running_mean)
+
+
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 @pytest.mark.parametrize("env_id", ["Pendulum-v0", "CartPole-v1"])
 def test_predict_with_dropout(model_class, env_id):
@@ -255,6 +279,47 @@ def test_td3_predict_with_batch_norm():
 
     assert th.isclose(actor_target_bias_before, actor_target_bias_after).all()
     assert th.isclose(actor_target_running_mean_before, actor_target_running_mean_after).all()
+
+    assert th.isclose(critic_target_bias_before, critic_target_bias_after).all()
+    assert th.isclose(critic_target_running_mean_before, critic_target_running_mean_after).all()
+
+
+def test_sac_predict_with_batch_norm():
+    model = SAC(
+        "MlpPolicy",
+        "Pendulum-v0",
+        policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
+        seed=1,
+    )
+
+    (
+        actor_bias_before,
+        actor_running_mean_before,
+        critic_bias_before,
+        critic_running_mean_before,
+        critic_target_bias_before,
+        critic_target_running_mean_before,
+    ) = clone_sac_batch_norm_stats(model)
+
+    env = model.get_env()
+    observation = env.reset()
+    for _ in range(10):
+        model.predict(observation, deterministic=True)
+
+    (
+        actor_bias_after,
+        actor_running_mean_after,
+        critic_bias_after,
+        critic_running_mean_after,
+        critic_target_bias_after,
+        critic_target_running_mean_after,
+    ) = clone_sac_batch_norm_stats(model)
+
+    assert th.isclose(actor_bias_before, actor_bias_after).all()
+    assert th.isclose(actor_running_mean_before, actor_running_mean_after).all()
+
+    assert th.isclose(critic_bias_before, critic_bias_after).all()
+    assert th.isclose(critic_running_mean_before, critic_running_mean_after).all()
 
     assert th.isclose(critic_target_bias_before, critic_target_bias_after).all()
     assert th.isclose(critic_target_running_mean_before, critic_target_running_mean_after).all()

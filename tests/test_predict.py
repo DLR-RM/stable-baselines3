@@ -86,8 +86,9 @@ class FlattenBatchNormDropoutExtractor(BaseFeaturesExtractor):
     """
 
     def __init__(self, observation_space: gym.Space):
-        super(FlattenBatchNormDropoutExtractor, self).__init__(observation_space,
-                                                               get_flattened_obs_dim(observation_space))
+        super(FlattenBatchNormDropoutExtractor, self).__init__(
+            observation_space, get_flattened_obs_dim(observation_space),
+        )
         self.flatten = nn.Flatten()
         self.batch_norm = nn.BatchNorm1d(self._features_dim)
         self.dropout = nn.Dropout(0.5)
@@ -323,3 +324,27 @@ def test_sac_predict_with_batch_norm():
 
     assert th.isclose(critic_target_bias_before, critic_target_bias_after).all()
     assert th.isclose(critic_target_running_mean_before, critic_target_running_mean_after).all()
+
+
+@pytest.mark.parametrize("model_class", [A2C, PPO])
+@pytest.mark.parametrize("env_id", ["Pendulum-v0", "CartPole-v1"])
+def test_a2c_ppo_predict_with_batch_norm(model_class, env_id):
+    model = model_class(
+        "MlpPolicy",
+        env_id,
+        policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
+        seed=1,
+    )
+
+    batch_norm = model.policy.features_extractor.batch_norm
+    bias_before, running_mean_before = clone_batch_norm_stats(batch_norm)
+
+    env = model.get_env()
+    observation = env.reset()
+    for _ in range(10):
+        model.predict(observation, deterministic=True)
+
+    bias_after, running_mean_after = clone_batch_norm_stats(batch_norm)
+
+    assert th.isclose(bias_before, bias_after).all()
+    assert th.isclose(running_mean_before, running_mean_after).all()

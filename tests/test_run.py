@@ -8,6 +8,7 @@ from tests.test_predict import (
     clone_dqn_batch_norm_stats,
     clone_td3_batch_norm_stats,
     clone_sac_batch_norm_stats,
+    clone_batch_norm_stats,
     FlattenBatchNormDropoutExtractor,
 )
 
@@ -386,3 +387,24 @@ def test_sac_rollouts_with_batch_norm():
 
     assert th.isclose(critic_target_bias_before, critic_target_bias_after).all()
     assert th.isclose(critic_target_running_mean_before, critic_target_running_mean_after).all()
+
+
+@pytest.mark.parametrize("model_class", [A2C, PPO])
+@pytest.mark.parametrize("env_id", ["Pendulum-v0", "CartPole-v1"])
+def test_a2c_ppo_train_with_batch_norm(model_class, env_id):
+    model = model_class(
+        "MlpPolicy",
+        env_id,
+        policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
+        seed=1,
+    )
+
+    batch_norm = model.policy.features_extractor.batch_norm
+    bias_before, running_mean_before = clone_batch_norm_stats(batch_norm)
+
+    model.learn(total_timesteps=200)
+
+    bias_after, running_mean_after = clone_batch_norm_stats(batch_norm)
+
+    assert ~th.isclose(bias_before, bias_after).all()
+    assert ~th.isclose(running_mean_before, running_mean_after).all()

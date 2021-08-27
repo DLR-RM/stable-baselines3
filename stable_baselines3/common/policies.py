@@ -653,6 +653,16 @@ class ActorCriticPolicy(BasePolicy):
         values = self.value_net(latent_vf)
         return values, log_prob, distribution.entropy()
 
+    def set_training_mode(self, mode: bool) -> None:
+        """
+        Put the policy in either training or evaluation mode.
+
+        This affects certain modules, such as batch normalisation and dropout.
+
+        :param mode: if true, set to training mode, else set to evaluation mode
+        """
+        self.train(mode)
+
 
 class ActorCriticCnnPolicy(ActorCriticPolicy):
     """

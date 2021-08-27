@@ -182,13 +182,11 @@ def test_dqn_train_with_batch_norm():
     assert th.isclose(q_net_target_running_mean_before, q_net_target_running_mean_after).all()
 
 
-def test_dqn_rollouts_with_batch_norm():
-    learning_starts = 200
+def test_dqn_collect_rollouts_with_batch_norm():
     model = DQN(
         "MlpPolicy",
         "CartPole-v1",
         policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
-        learning_starts=learning_starts,
         seed=1,
     )
 
@@ -199,7 +197,17 @@ def test_dqn_rollouts_with_batch_norm():
         q_net_target_running_mean_before,
     ) = clone_dqn_batch_norm_stats(model)
 
-    model.learn(total_timesteps=learning_starts)
+    total_timesteps, callback = model._setup_learn(total_timesteps=100, eval_env=model.get_env())
+
+    for _ in range(10):
+        model.collect_rollouts(
+            model.get_env(),
+            train_freq=model.train_freq,
+            action_noise=model.action_noise,
+            callback=callback,
+            learning_starts=model.learning_starts,
+            replay_buffer=model.replay_buffer,
+        )
 
     (
         q_net_bias_after,
@@ -262,13 +270,11 @@ def test_td3_train_with_batch_norm():
     assert th.isclose(critic_target_running_mean_before, critic_target_running_mean_after).all()
 
 
-def test_td3_rollouts_with_batch_norm():
-    learning_starts = 200
+def test_td3_collect_rollouts_with_batch_norm():
     model = TD3(
         "MlpPolicy",
         "Pendulum-v0",
         policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
-        learning_starts=learning_starts,
         seed=1,
     )
 
@@ -283,7 +289,17 @@ def test_td3_rollouts_with_batch_norm():
         critic_target_running_mean_before,
     ) = clone_td3_batch_norm_stats(model)
 
-    model.learn(total_timesteps=learning_starts)
+    total_timesteps, callback = model._setup_learn(total_timesteps=100, eval_env=model.get_env())
+
+    for _ in range(10):
+        model.collect_rollouts(
+            model.get_env(),
+            train_freq=model.train_freq,
+            action_noise=model.action_noise,
+            callback=callback,
+            learning_starts=model.learning_starts,
+            replay_buffer=model.replay_buffer,
+        )
 
     (
         actor_bias_after,
@@ -349,13 +365,11 @@ def test_sac_train_with_batch_norm():
     assert th.isclose(critic_target_running_mean_before, critic_target_running_mean_after).all()
 
 
-def test_sac_rollouts_with_batch_norm():
-    learning_starts = 200
+def test_sac_collect_rollouts_with_batch_norm():
     model = SAC(
         "MlpPolicy",
         "Pendulum-v0",
         policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
-        learning_starts=learning_starts,
         seed=1,
     )
 
@@ -368,7 +382,17 @@ def test_sac_rollouts_with_batch_norm():
         critic_target_running_mean_before,
     ) = clone_sac_batch_norm_stats(model)
 
-    model.learn(total_timesteps=learning_starts)
+    total_timesteps, callback = model._setup_learn(total_timesteps=100, eval_env=model.get_env())
+
+    for _ in range(10):
+        model.collect_rollouts(
+            model.get_env(),
+            train_freq=model.train_freq,
+            action_noise=model.action_noise,
+            callback=callback,
+            learning_starts=model.learning_starts,
+            replay_buffer=model.replay_buffer,
+        )
 
     (
         actor_bias_after,
@@ -408,3 +432,27 @@ def test_a2c_ppo_train_with_batch_norm(model_class, env_id):
 
     assert ~th.isclose(bias_before, bias_after).all()
     assert ~th.isclose(running_mean_before, running_mean_after).all()
+
+
+@pytest.mark.parametrize("model_class", [A2C, PPO])
+@pytest.mark.parametrize("env_id", ["Pendulum-v0", "CartPole-v1"])
+def test_a2c_ppo_collect_rollouts_with_batch_norm(model_class, env_id):
+    model = model_class(
+        "MlpPolicy",
+        env_id,
+        policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
+        seed=1,
+    )
+
+    batch_norm = model.policy.features_extractor.batch_norm
+    bias_before, running_mean_before = clone_batch_norm_stats(batch_norm)
+
+    total_timesteps, callback = model._setup_learn(total_timesteps=100, eval_env=model.get_env())
+
+    for _ in range(10):
+        model.collect_rollouts(model.get_env(), callback, model.rollout_buffer, n_rollout_steps=model.n_steps)
+
+    bias_after, running_mean_after = clone_batch_norm_stats(batch_norm)
+
+    assert th.isclose(bias_before, bias_after).all()
+    assert th.isclose(running_mean_before, running_mean_after).all()

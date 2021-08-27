@@ -171,7 +171,7 @@ class DQNPolicy(BasePolicy):
         self.q_net = self.make_q_net()
         self.q_net_target = self.make_q_net()
         self.q_net_target.load_state_dict(self.q_net.state_dict())
-        self.q_net_target.eval()
+        self.q_net_target.set_training_mode(False)
 
         # Setup optimizer with initial learning rate
         self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)

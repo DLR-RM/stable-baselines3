@@ -1,16 +1,16 @@
 import numpy as np
 import pytest
 import torch as th
+from tests.test_predict import (
+    FlattenBatchNormDropoutExtractor,
+    clone_batch_norm_stats,
+    clone_dqn_batch_norm_stats,
+    clone_sac_batch_norm_stats,
+    clone_td3_batch_norm_stats,
+)
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
-from tests.test_predict import (
-    clone_dqn_batch_norm_stats,
-    clone_td3_batch_norm_stats,
-    clone_sac_batch_norm_stats,
-    clone_batch_norm_stats,
-    FlattenBatchNormDropoutExtractor,
-)
 
 normal_action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
 

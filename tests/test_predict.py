@@ -1,5 +1,3 @@
-from typing import Union
-
 import gym
 import numpy as np
 import pytest
@@ -87,7 +85,8 @@ class FlattenBatchNormDropoutExtractor(BaseFeaturesExtractor):
 
     def __init__(self, observation_space: gym.Space):
         super(FlattenBatchNormDropoutExtractor, self).__init__(
-            observation_space, get_flattened_obs_dim(observation_space),
+            observation_space,
+            get_flattened_obs_dim(observation_space),
         )
         self.flatten = nn.Flatten()
         self.batch_norm = nn.BatchNorm1d(self._features_dim)
@@ -127,7 +126,7 @@ def clone_dqn_batch_norm_stats(model: DQN) -> (th.Tensor, th.Tensor, th.Tensor, 
 
 
 def clone_td3_batch_norm_stats(
-        model: TD3,
+    model: TD3,
 ) -> (th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor):
     """
     Clone the bias and running mean from the actor and critic networks and actor-target and critic-target networks.
@@ -147,12 +146,20 @@ def clone_td3_batch_norm_stats(
     critic_target_batch_norm = model.policy.critic_target.features_extractor.batch_norm
     critic_target_bias, critic_target_running_mean = clone_batch_norm_stats(critic_target_batch_norm)
 
-    return (actor_bias, actor_running_mean, critic_bias, critic_running_mean,
-            actor_target_bias, actor_target_running_mean, critic_target_bias, critic_target_running_mean)
+    return (
+        actor_bias,
+        actor_running_mean,
+        critic_bias,
+        critic_running_mean,
+        actor_target_bias,
+        actor_target_running_mean,
+        critic_target_bias,
+        critic_target_running_mean,
+    )
 
 
 def clone_sac_batch_norm_stats(
-        model: SAC,
+    model: SAC,
 ) -> (th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor):
     """
     Clone the bias and running mean from the actor and critic networks and critic-target networks.
@@ -169,8 +176,7 @@ def clone_sac_batch_norm_stats(
     critic_target_batch_norm = model.policy.critic_target.features_extractor.batch_norm
     critic_target_bias, critic_target_running_mean = clone_batch_norm_stats(critic_target_batch_norm)
 
-    return (actor_bias, actor_running_mean, critic_bias, critic_running_mean,
-            critic_target_bias, critic_target_running_mean)
+    return (actor_bias, actor_running_mean, critic_bias, critic_running_mean, critic_target_bias, critic_target_running_mean)
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)

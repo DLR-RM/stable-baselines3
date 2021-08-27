@@ -194,6 +194,16 @@ class BaseModel(nn.Module, ABC):
         """
         return th.nn.utils.parameters_to_vector(self.parameters()).detach().cpu().numpy()
 
+    @abstractmethod
+    def set_training_mode(self, mode: bool) -> None:
+        """
+        Put the policy in either training or evaluation mode.
+
+        This affects certain modules, such as batch normalisation and dropout.
+
+        :param mode: if true, set to training mode, else set to evaluation mode
+        """
+
 
 class BasePolicy(BaseModel):
     """The base policy object.
@@ -341,16 +351,6 @@ class BasePolicy(BaseModel):
         """
         low, high = self.action_space.low, self.action_space.high
         return low + (0.5 * (scaled_action + 1.0) * (high - low))
-
-    @abstractmethod
-    def set_training_mode(self, mode: bool) -> None:
-        """
-        Put the policy in either training or evaluation mode.
-
-        This affects certain modules, such as batch normalisation and dropout.
-
-        :param mode: if true, set to training mode, else set to evaluation mode
-        """
 
 
 class ActorCriticPolicy(BasePolicy):

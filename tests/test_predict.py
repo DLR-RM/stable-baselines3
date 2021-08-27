@@ -97,6 +97,57 @@ class FlattenBatchNormDropoutExtractor(BaseFeaturesExtractor):
         return result
 
 
+def clone_batch_norm_stats(batch_norm: nn.BatchNorm1d) -> (th.Tensor, th.Tensor):
+    """
+    Clone the bias and running mean from the given batch norm layer.
+
+    :param batch_norm:
+    :return: the bias and running mean
+    """
+    return batch_norm.bias.clone(), batch_norm.running_mean.clone()
+
+
+def clone_dqn_batch_norm_stats(model: DQN) -> (th.Tensor, th.Tensor, th.Tensor, th.Tensor):
+    """
+    Clone the bias and running mean from the Q-network and target network.
+
+    :param model:
+    :return: the bias and running mean from the Q-network and target network
+    """
+    q_net_batch_norm = model.policy.q_net.features_extractor.batch_norm
+    q_net_bias, q_net_running_mean = clone_batch_norm_stats(q_net_batch_norm)
+
+    q_net_target_batch_norm = model.policy.q_net_target.features_extractor.batch_norm
+    q_net_target_bias, q_net_target_running_mean = clone_batch_norm_stats(q_net_target_batch_norm)
+
+    return q_net_bias, q_net_running_mean, q_net_target_bias, q_net_target_running_mean
+
+
+def clone_td3_batch_norm_stats(
+        model: TD3,
+) -> (th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor):
+    """
+    Clone the bias and running mean from the actor and critic networks and actor-target and critic-target networks.
+
+    :param model:
+    :return: the bias and running mean from the actor and critic networks and actor-target and critic-target networks
+    """
+    actor_batch_norm = model.policy.actor.features_extractor.batch_norm
+    actor_bias, actor_running_mean = clone_batch_norm_stats(actor_batch_norm)
+
+    critic_batch_norm = model.policy.critic.features_extractor.batch_norm
+    critic_bias, critic_running_mean = clone_batch_norm_stats(critic_batch_norm)
+
+    actor_target_batch_norm = model.policy.actor_target.features_extractor.batch_norm
+    actor_target_bias, actor_target_running_mean = clone_batch_norm_stats(actor_target_batch_norm)
+
+    critic_target_batch_norm = model.policy.critic_target.features_extractor.batch_norm
+    critic_target_bias, critic_target_running_mean = clone_batch_norm_stats(critic_target_batch_norm)
+
+    return (actor_bias, actor_running_mean, critic_bias, critic_running_mean,
+            actor_target_bias, actor_target_running_mean, critic_target_bias, critic_target_running_mean)
+
+
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 @pytest.mark.parametrize("env_id", ["Pendulum-v0", "CartPole-v1"])
 def test_predict_with_dropout(model_class, env_id):
@@ -135,21 +186,75 @@ def test_dqn_predict_with_batch_norm():
         seed=1,
     )
 
-    q_net_batch_norm = model.policy.q_net.features_extractor.batch_norm
-    q_net_bias_before = q_net_batch_norm.bias.clone()
-    q_net_running_mean_before = q_net_batch_norm.running_mean.clone()
-
-    q_net_target_batch_norm = model.policy.q_net_target.features_extractor.batch_norm
-    q_net_target_bias_before = q_net_target_batch_norm.bias.clone()
-    q_net_target_running_mean_before = q_net_target_batch_norm.running_mean.clone()
+    (
+        q_net_bias_before,
+        q_net_running_mean_before,
+        q_net_target_bias_before,
+        q_net_target_running_mean_before,
+    ) = clone_dqn_batch_norm_stats(model)
 
     env = model.get_env()
     observation = env.reset()
     for _ in range(10):
         model.predict(observation, deterministic=True)
 
-    assert th.isclose(q_net_bias_before, q_net_batch_norm.bias).all()
-    assert th.isclose(q_net_running_mean_before, q_net_batch_norm.running_mean).all()
+    (
+        q_net_bias_after,
+        q_net_running_mean_after,
+        q_net_target_bias_after,
+        q_net_target_running_mean_after,
+    ) = clone_dqn_batch_norm_stats(model)
 
-    assert th.isclose(q_net_target_bias_before, q_net_target_batch_norm.bias).all()
-    assert th.isclose(q_net_target_running_mean_before, q_net_target_batch_norm.running_mean).all()
+    assert th.isclose(q_net_bias_before, q_net_bias_after).all()
+    assert th.isclose(q_net_running_mean_before, q_net_running_mean_after).all()
+
+    assert th.isclose(q_net_target_bias_before, q_net_target_bias_after).all()
+    assert th.isclose(q_net_target_running_mean_before, q_net_target_running_mean_after).all()
+
+
+def test_td3_predict_with_batch_norm():
+    model = TD3(
+        "MlpPolicy",
+        "Pendulum-v0",
+        policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
+        seed=1,
+    )
+
+    (
+        actor_bias_before,
+        actor_running_mean_before,
+        critic_bias_before,
+        critic_running_mean_before,
+        actor_target_bias_before,
+        actor_target_running_mean_before,
+        critic_target_bias_before,
+        critic_target_running_mean_before,
+    ) = clone_td3_batch_norm_stats(model)
+
+    env = model.get_env()
+    observation = env.reset()
+    for _ in range(10):
+        model.predict(observation, deterministic=True)
+
+    (
+        actor_bias_after,
+        actor_running_mean_after,
+        critic_bias_after,
+        critic_running_mean_after,
+        actor_target_bias_after,
+        actor_target_running_mean_after,
+        critic_target_bias_after,
+        critic_target_running_mean_after,
+    ) = clone_td3_batch_norm_stats(model)
+
+    assert th.isclose(actor_bias_before, actor_bias_after).all()
+    assert th.isclose(actor_running_mean_before, actor_running_mean_after).all()
+
+    assert th.isclose(critic_bias_before, critic_bias_after).all()
+    assert th.isclose(critic_running_mean_before, critic_running_mean_after).all()
+
+    assert th.isclose(actor_target_bias_before, actor_target_bias_after).all()
+    assert th.isclose(actor_target_running_mean_before, actor_target_running_mean_after).all()
+
+    assert th.isclose(critic_target_bias_before, critic_target_bias_after).all()
+    assert th.isclose(critic_target_running_mean_before, critic_target_running_mean_after).all()

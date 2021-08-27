@@ -879,6 +879,16 @@ class ContinuousCritic(BaseModel):
             features = self.extract_features(obs)
         return self.q_networks[0](th.cat([features, actions], dim=1))
 
+    def set_training_mode(self, mode: bool) -> None:
+        """
+        Put the policy in either training or evaluation mode.
+
+        This affects certain modules, such as batch normalisation and dropout.
+
+        :param mode: if true, set to training mode, else set to evaluation mode
+        """
+        self.train(mode)
+
 
 def create_sde_features_extractor(
     features_dim: int, sde_net_arch: List[int], activation_fn: Type[nn.Module]

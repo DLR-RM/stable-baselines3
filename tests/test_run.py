@@ -4,7 +4,12 @@ import torch as th
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
-from tests.test_predict import FlattenBatchNormDropoutExtractor
+from tests.test_predict import (
+    clone_batch_norm_stats,
+    clone_dqn_batch_norm_stats,
+    clone_td3_batch_norm_stats,
+    FlattenBatchNormDropoutExtractor,
+)
 
 normal_action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
 
@@ -149,28 +154,35 @@ def test_dqn_train_with_batch_norm():
         "CartPole-v1",
         policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
         learning_starts=0,
+        tau=0,
         seed=1,
     )
 
-    q_net_batch_norm = model.policy.q_net.features_extractor.batch_norm
-    q_net_bias_before = q_net_batch_norm.bias.clone()
-    q_net_running_mean_before = q_net_batch_norm.running_mean.clone()
+    (
+        q_net_bias_before,
+        q_net_running_mean_before,
+        q_net_target_bias_before,
+        q_net_target_running_mean_before,
+    ) = clone_dqn_batch_norm_stats(model)
 
-    q_net_target_batch_norm = model.policy.q_net_target.features_extractor.batch_norm
-    q_net_target_bias_before = q_net_target_batch_norm.bias.clone()
-    q_net_target_running_mean_before = q_net_target_batch_norm.running_mean.clone()
+    model.learn(total_timesteps=200)
 
-    model.learn(total_timesteps=100)
+    (
+        q_net_bias_after,
+        q_net_running_mean_after,
+        q_net_target_bias_after,
+        q_net_target_running_mean_after,
+    ) = clone_dqn_batch_norm_stats(model)
 
-    assert ~th.isclose(q_net_bias_before, q_net_batch_norm.bias).all()
-    assert ~th.isclose(q_net_running_mean_before, q_net_batch_norm.running_mean).all()
+    assert ~th.isclose(q_net_bias_before, q_net_bias_after).all()
+    assert ~th.isclose(q_net_running_mean_before, q_net_running_mean_after).all()
 
-    assert th.isclose(q_net_target_bias_before, q_net_target_batch_norm.bias).all()
-    assert th.isclose(q_net_target_running_mean_before, q_net_target_batch_norm.running_mean).all()
+    assert th.isclose(q_net_target_bias_before, q_net_target_bias_after).all()
+    assert th.isclose(q_net_target_running_mean_before, q_net_target_running_mean_after).all()
 
 
 def test_dqn_rollouts_with_batch_norm():
-    learning_starts = 100
+    learning_starts = 200
     model = DQN(
         "MlpPolicy",
         "CartPole-v1",
@@ -179,11 +191,118 @@ def test_dqn_rollouts_with_batch_norm():
         seed=1,
     )
 
-    q_net_batch_norm = model.policy.q_net.features_extractor.batch_norm
-    q_net_bias_before = q_net_batch_norm.bias.clone()
-    q_net_running_mean_before = q_net_batch_norm.running_mean.clone()
+    (
+        q_net_bias_before,
+        q_net_running_mean_before,
+        q_net_target_bias_before,
+        q_net_target_running_mean_before,
+    ) = clone_dqn_batch_norm_stats(model)
 
     model.learn(total_timesteps=learning_starts)
 
-    assert th.isclose(q_net_bias_before, q_net_batch_norm.bias).all()
-    assert th.isclose(q_net_running_mean_before, q_net_batch_norm.running_mean).all()
+    (
+        q_net_bias_after,
+        q_net_running_mean_after,
+        q_net_target_bias_after,
+        q_net_target_running_mean_after,
+    ) = clone_dqn_batch_norm_stats(model)
+
+    assert th.isclose(q_net_bias_before, q_net_bias_after).all()
+    assert th.isclose(q_net_running_mean_before, q_net_running_mean_after).all()
+
+    assert th.isclose(q_net_target_bias_before, q_net_target_bias_after).all()
+    assert th.isclose(q_net_target_running_mean_before, q_net_target_running_mean_after).all()
+
+
+def test_td3_train_with_batch_norm():
+    model = TD3(
+        "MlpPolicy",
+        "Pendulum-v0",
+        policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
+        learning_starts=0,
+        tau=0,
+        seed=1,
+    )
+
+    (
+        actor_bias_before,
+        actor_running_mean_before,
+        critic_bias_before,
+        critic_running_mean_before,
+        actor_target_bias_before,
+        actor_target_running_mean_before,
+        critic_target_bias_before,
+        critic_target_running_mean_before,
+    ) = clone_td3_batch_norm_stats(model)
+
+    model.learn(total_timesteps=200)
+
+    (
+        actor_bias_after,
+        actor_running_mean_after,
+        critic_bias_after,
+        critic_running_mean_after,
+        actor_target_bias_after,
+        actor_target_running_mean_after,
+        critic_target_bias_after,
+        critic_target_running_mean_after,
+    ) = clone_td3_batch_norm_stats(model)
+
+    assert ~th.isclose(actor_bias_before, actor_bias_after).all()
+    assert ~th.isclose(actor_running_mean_before, actor_running_mean_after).all()
+
+    assert ~th.isclose(critic_bias_before, critic_bias_after).all()
+    assert ~th.isclose(critic_running_mean_before, critic_running_mean_after).all()
+
+    assert th.isclose(actor_target_bias_before, actor_target_bias_after).all()
+    assert th.isclose(actor_target_running_mean_before, actor_target_running_mean_after).all()
+
+    assert th.isclose(critic_target_bias_before, critic_target_bias_after).all()
+    assert th.isclose(critic_target_running_mean_before, critic_target_running_mean_after).all()
+
+
+def test_td3_rollouts_with_batch_norm():
+    learning_starts = 200
+    model = TD3(
+        "MlpPolicy",
+        "Pendulum-v0",
+        policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
+        learning_starts=learning_starts,
+        seed=1,
+    )
+
+    (
+        actor_bias_before,
+        actor_running_mean_before,
+        critic_bias_before,
+        critic_running_mean_before,
+        actor_target_bias_before,
+        actor_target_running_mean_before,
+        critic_target_bias_before,
+        critic_target_running_mean_before,
+    ) = clone_td3_batch_norm_stats(model)
+
+    model.learn(total_timesteps=learning_starts)
+
+    (
+        actor_bias_after,
+        actor_running_mean_after,
+        critic_bias_after,
+        critic_running_mean_after,
+        actor_target_bias_after,
+        actor_target_running_mean_after,
+        critic_target_bias_after,
+        critic_target_running_mean_after,
+    ) = clone_td3_batch_norm_stats(model)
+
+    assert th.isclose(actor_bias_before, actor_bias_after).all()
+    assert th.isclose(actor_running_mean_before, actor_running_mean_after).all()
+
+    assert th.isclose(critic_bias_before, critic_bias_after).all()
+    assert th.isclose(critic_running_mean_before, critic_running_mean_after).all()
+
+    assert th.isclose(actor_target_bias_before, actor_target_bias_after).all()
+    assert th.isclose(actor_target_running_mean_before, actor_target_running_mean_after).all()
+
+    assert th.isclose(critic_target_bias_before, critic_target_bias_after).all()
+    assert th.isclose(critic_target_running_mean_before, critic_target_running_mean_after).all()

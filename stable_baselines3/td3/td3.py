@@ -158,6 +158,7 @@ class TD3(OffPolicyAlgorithm):
                 target_q_values = replay_data.rewards + (1 - replay_data.dones) * self.gamma * next_q_values
 
             # Get current Q-values estimates for each critic network
+            self.critic.set_training_mode(True)
             current_q_values = self.critic(replay_data.observations, replay_data.actions)
 
             # Compute critic loss
@@ -171,10 +172,8 @@ class TD3(OffPolicyAlgorithm):
 
             # Delayed policy updates
             if self._n_updates % self.policy_delay == 0:
-                # Switch the actor to eval mode (this affects batch norm / dropout)
-                self.critic.set_training_mode(False)
-
                 # Compute actor loss
+                self.critic.set_training_mode(False)
                 actor_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
                 actor_losses.append(actor_loss.item())
 

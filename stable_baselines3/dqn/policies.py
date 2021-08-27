@@ -211,7 +211,7 @@ class DQNPolicy(BasePolicy):
 
         :param mode: if true, set to training mode, else set to evaluation mode
         """
-        self.q_net.train(mode)
+        self.q_net.set_training_mode(mode)
         self.training = mode
 
 

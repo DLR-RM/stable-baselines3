@@ -162,6 +162,8 @@ class DQNPolicy(BasePolicy):
         """
         Create the network and the optimizer.
 
+        Put the target network into evaluation mode.
+
         :param lr_schedule: Learning rate schedule
             lr_schedule(1) is the initial learning rate
         """

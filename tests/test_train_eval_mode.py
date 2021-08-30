@@ -78,16 +78,16 @@ def clone_td3_batch_norm_stats(
     :param model:
     :return: the bias and running mean from the actor and critic networks and actor-target and critic-target networks
     """
-    actor_batch_norm = model.policy.actor.features_extractor.batch_norm
+    actor_batch_norm = model.actor.features_extractor.batch_norm
     actor_bias, actor_running_mean = clone_batch_norm_stats(actor_batch_norm)
 
-    critic_batch_norm = model.policy.critic.features_extractor.batch_norm
+    critic_batch_norm = model.critic.features_extractor.batch_norm
     critic_bias, critic_running_mean = clone_batch_norm_stats(critic_batch_norm)
 
-    actor_target_batch_norm = model.policy.actor_target.features_extractor.batch_norm
+    actor_target_batch_norm = model.actor_target.features_extractor.batch_norm
     actor_target_bias, actor_target_running_mean = clone_batch_norm_stats(actor_target_batch_norm)
 
-    critic_target_batch_norm = model.policy.critic_target.features_extractor.batch_norm
+    critic_target_batch_norm = model.critic_target.features_extractor.batch_norm
     critic_target_bias, critic_target_running_mean = clone_batch_norm_stats(critic_target_batch_norm)
 
     return (
@@ -111,13 +111,13 @@ def clone_sac_batch_norm_stats(
     :param model:
     :return: the bias and running mean from the actor and critic networks and critic-target networks
     """
-    actor_batch_norm = model.policy.actor.features_extractor.batch_norm
+    actor_batch_norm = model.actor.features_extractor.batch_norm
     actor_bias, actor_running_mean = clone_batch_norm_stats(actor_batch_norm)
 
-    critic_batch_norm = model.policy.critic.features_extractor.batch_norm
+    critic_batch_norm = model.critic.features_extractor.batch_norm
     critic_bias, critic_running_mean = clone_batch_norm_stats(critic_batch_norm)
 
-    critic_target_batch_norm = model.policy.critic_target.features_extractor.batch_norm
+    critic_target_batch_norm = model.critic_target.features_extractor.batch_norm
     critic_target_bias, critic_target_running_mean = clone_batch_norm_stats(critic_target_batch_norm)
 
     return (actor_bias, actor_running_mean, critic_bias, critic_running_mean, critic_target_bias, critic_target_running_mean)
@@ -142,8 +142,8 @@ def test_dqn_train_with_batch_norm():
         "CartPole-v1",
         policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
         learning_starts=0,
-        tau=0,
         seed=1,
+        tau=0,  # do not clone the target
     )
 
     (
@@ -175,7 +175,7 @@ def test_td3_train_with_batch_norm():
         "Pendulum-v0",
         policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
         learning_starts=0,
-        tau=0,
+        tau=0,  # do not copy the target
         seed=1,
     )
 
@@ -222,7 +222,7 @@ def test_sac_train_with_batch_norm():
         "Pendulum-v0",
         policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
         learning_starts=0,
-        tau=0,
+        tau=0,  # do not copy the target
         seed=1,
     )
 
@@ -324,29 +324,6 @@ def test_a2c_ppo_collect_rollouts_with_batch_norm(model_class, env_id):
 
     for _ in range(2):
         model.collect_rollouts(model.get_env(), callback, model.rollout_buffer, n_rollout_steps=model.n_steps)
-
-    bias_after, running_mean_after = clone_on_policy_batch_norm(model)
-
-    assert th.isclose(bias_before, bias_after).all()
-    assert th.isclose(running_mean_before, running_mean_after).all()
-
-
-@pytest.mark.parametrize("model_class", [A2C, PPO])
-@pytest.mark.parametrize("env_id", ["Pendulum-v0", "CartPole-v1"])
-def test_a2c_ppo_predict_with_batch_norm(model_class, env_id):
-    model = model_class(
-        "MlpPolicy",
-        env_id,
-        policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
-        seed=1,
-    )
-
-    bias_before, running_mean_before = clone_on_policy_batch_norm(model)
-
-    env = model.get_env()
-    observation = env.reset()
-    for _ in range(5):
-        model.predict(observation, deterministic=True)
 
     bias_after, running_mean_after = clone_on_policy_batch_norm(model)
 

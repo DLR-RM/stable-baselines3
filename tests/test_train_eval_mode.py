@@ -263,10 +263,12 @@ def test_a2c_ppo_train_with_batch_norm(model_class, env_id):
 
 
 def test_dqn_collect_rollouts_with_batch_norm():
+    learning_starts = 200
     model = DQN(
         "MlpPolicy",
         "CartPole-v1",
         policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
+        learning_starts=learning_starts,
         seed=1,
     )
 
@@ -277,17 +279,7 @@ def test_dqn_collect_rollouts_with_batch_norm():
         q_net_target_running_mean_before,
     ) = clone_dqn_batch_norm_stats(model)
 
-    total_timesteps, callback = model._setup_learn(total_timesteps=100, eval_env=model.get_env())
-
-    for _ in range(10):
-        model.collect_rollouts(
-            model.get_env(),
-            train_freq=model.train_freq,
-            action_noise=model.action_noise,
-            callback=callback,
-            learning_starts=model.learning_starts,
-            replay_buffer=model.replay_buffer,
-        )
+    model.learn(total_timesteps=learning_starts)
 
     (
         q_net_bias_after,
@@ -304,10 +296,12 @@ def test_dqn_collect_rollouts_with_batch_norm():
 
 
 def test_td3_collect_rollouts_with_batch_norm():
+    learning_starts = 200
     model = TD3(
         "MlpPolicy",
         "Pendulum-v0",
         policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
+        learning_starts=learning_starts,
         seed=1,
     )
 
@@ -322,17 +316,7 @@ def test_td3_collect_rollouts_with_batch_norm():
         critic_target_running_mean_before,
     ) = clone_td3_batch_norm_stats(model)
 
-    total_timesteps, callback = model._setup_learn(total_timesteps=100, eval_env=model.get_env())
-
-    for _ in range(10):
-        model.collect_rollouts(
-            model.get_env(),
-            train_freq=model.train_freq,
-            action_noise=model.action_noise,
-            callback=callback,
-            learning_starts=model.learning_starts,
-            replay_buffer=model.replay_buffer,
-        )
+    model.learn(total_timesteps=learning_starts)
 
     (
         actor_bias_after,
@@ -359,10 +343,12 @@ def test_td3_collect_rollouts_with_batch_norm():
 
 
 def test_sac_collect_rollouts_with_batch_norm():
+    learning_starts = 200
     model = SAC(
         "MlpPolicy",
         "Pendulum-v0",
         policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
+        learning_starts=learning_starts,
         seed=1,
     )
 
@@ -375,17 +361,7 @@ def test_sac_collect_rollouts_with_batch_norm():
         critic_target_running_mean_before,
     ) = clone_sac_batch_norm_stats(model)
 
-    total_timesteps, callback = model._setup_learn(total_timesteps=100, eval_env=model.get_env())
-
-    for _ in range(10):
-        model.collect_rollouts(
-            model.get_env(),
-            train_freq=model.train_freq,
-            action_noise=model.action_noise,
-            callback=callback,
-            learning_starts=model.learning_starts,
-            replay_buffer=model.replay_buffer,
-        )
+    model.learn(total_timesteps=learning_starts)
 
     (
         actor_bias_after,

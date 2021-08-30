@@ -194,7 +194,6 @@ class BaseModel(nn.Module, ABC):
         """
         return th.nn.utils.parameters_to_vector(self.parameters()).detach().cpu().numpy()
 
-    @abstractmethod
     def set_training_mode(self, mode: bool) -> None:
         """
         Put the policy in either training or evaluation mode.
@@ -203,6 +202,7 @@ class BaseModel(nn.Module, ABC):
 
         :param mode: if true, set to training mode, else set to evaluation mode
         """
+        self.train(mode)
 
 
 class BasePolicy(BaseModel):
@@ -653,16 +653,6 @@ class ActorCriticPolicy(BasePolicy):
         values = self.value_net(latent_vf)
         return values, log_prob, distribution.entropy()
 
-    def set_training_mode(self, mode: bool) -> None:
-        """
-        Put the policy in either training or evaluation mode.
-
-        This affects certain modules, such as batch normalisation and dropout.
-
-        :param mode: if true, set to training mode, else set to evaluation mode
-        """
-        self.train(mode)
-
 
 class ActorCriticCnnPolicy(ActorCriticPolicy):
     """
@@ -888,16 +878,6 @@ class ContinuousCritic(BaseModel):
         with th.no_grad():
             features = self.extract_features(obs)
         return self.q_networks[0](th.cat([features, actions], dim=1))
-
-    def set_training_mode(self, mode: bool) -> None:
-        """
-        Put the policy in either training or evaluation mode.
-
-        This affects certain modules, such as batch normalisation and dropout.
-
-        :param mode: if true, set to training mode, else set to evaluation mode
-        """
-        self.train(mode)
 
 
 def create_sde_features_extractor(

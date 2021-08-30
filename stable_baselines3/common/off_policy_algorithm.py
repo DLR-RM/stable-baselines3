@@ -366,7 +366,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 # If no `gradient_steps` is specified,
                 # do as many gradients steps as steps performed during the rollout
                 gradient_steps = self.gradient_steps if self.gradient_steps >= 0 else rollout.episode_timesteps
-                # Special case when the uses passes `gradientç_steps=0`
+                # Special case when the user passes `gradient_steps=0`
                 if gradient_steps > 0:
                     self.train(batch_size=self.batch_size, gradient_steps=gradient_steps)
 

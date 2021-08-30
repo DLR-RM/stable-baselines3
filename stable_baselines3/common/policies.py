@@ -194,6 +194,16 @@ class BaseModel(nn.Module, ABC):
         """
         return th.nn.utils.parameters_to_vector(self.parameters()).detach().cpu().numpy()
 
+    def set_training_mode(self, mode: bool) -> None:
+        """
+        Put the policy in either training or evaluation mode.
+
+        This affects certain modules, such as batch normalisation and dropout.
+
+        :param mode: if true, set to training mode, else set to evaluation mode
+        """
+        self.train(mode)
+
 
 class BasePolicy(BaseModel):
     """The base policy object.
@@ -268,7 +278,7 @@ class BasePolicy(BaseModel):
         # if mask is None:
         #     mask = [False for _ in range(self.n_envs)]
         # Switch to eval mode (this affects batch norm / dropout)
-        self.eval()
+        self.set_training_mode(False)
 
         vectorized_env = False
         if isinstance(observation, dict):

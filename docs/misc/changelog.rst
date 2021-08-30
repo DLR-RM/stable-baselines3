@@ -18,6 +18,8 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fixed model predictions when using batch normalization and dropout layers by calling ``train()`` and ``eval()`` (@davidblom603)
 - Fixed model training for DQN, TD3 and SAC so that their target nets always remain in evaluation mode (@ayeright)
+- Passing ``gradient_steps=0`` to an off-policy algorithm will results in no gradient steps being taken (vs as many gradient steps as steps done in the environment
+  during the rollout in previous versions)
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -222,7 +222,11 @@ class VecNormalize(VecEnvWrapper):
         self.old_obs = obs
         self.ret = np.zeros(self.num_envs)
         if self.training:
-            self._update_reward(self.ret)
+            if isinstance(obs, dict) and isinstance(self.obs_rms, dict):
+                for key in self.obs_rms.keys():
+                    self.obs_rms[key].update(obs[key])
+            else:
+                self.obs_rms.update(obs)
         return self.normalize_obs(obs)
 
     @staticmethod

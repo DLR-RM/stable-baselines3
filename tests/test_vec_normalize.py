@@ -17,6 +17,27 @@ from stable_baselines3.common.vec_env import (
 ENV_ID = "Pendulum-v0"
 
 
+class DummyRewardEnv(gym.Env):
+    metadata = {}
+
+    def __init__(self, return_reward_idx=0):
+        self.action_space = gym.spaces.Discrete(2)
+        self.observation_space = gym.spaces.Box(low=np.array([-1.0]), high=np.array([1.0]))
+        self.returned_rewards = [0, 1, 3, 4]
+        self.return_reward_idx = return_reward_idx
+        self.t = self.return_reward_idx
+
+    def step(self, action):
+        self.t += 1
+        index = (self.t + self.return_reward_idx) % len(self.returned_rewards)
+        returned_value = self.returned_rewards[index]
+        return np.array([returned_value]), returned_value, self.t == len(self.returned_rewards), {}
+
+    def reset(self):
+        self.t = 0
+        return np.array([self.returned_rewards[self.return_reward_idx]])
+
+
 class DummyDictEnv(gym.GoalEnv):
     """
     Dummy gym goal env for testing purposes
@@ -141,6 +162,24 @@ def test_runningmeanstd():
         moments_2 = [rms.mean, rms.var]
 
         assert np.allclose(moments_1, moments_2)
+
+
+def test_obs_rms_vec_normalize():
+    env_fns = [lambda: DummyRewardEnv(0), lambda: DummyRewardEnv(1)]
+    env = DummyVecEnv(env_fns)
+    env = VecNormalize(env)
+    env.reset()
+    assert np.allclose(env.obs_rms.mean, 0.5, atol=1e-4)
+    assert np.allclose(env.ret_rms.mean, 0.0, atol=1e-4)
+    env.step([env.action_space.sample() for _ in range(len(env_fns))])
+    assert np.allclose(env.obs_rms.mean, 1.25, atol=1e-4)
+    assert np.allclose(env.ret_rms.mean, 2, atol=1e-4)
+
+    # Check convergence to true mean
+    for _ in range(3000):
+        env.step([env.action_space.sample() for _ in range(len(env_fns))])
+    assert np.allclose(env.obs_rms.mean, 2.0, atol=1e-3)
+    assert np.allclose(env.ret_rms.mean, 5.688, atol=1e-3)
 
 
 @pytest.mark.parametrize("make_env", [make_env, make_dict_env])

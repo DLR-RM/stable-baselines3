@@ -31,6 +31,7 @@ Others:
 ^^^^^^^
 - Enabled Python 3.9 in GitHub CI
 - Fixed type annotations
+- Refactored ``predict()`` by moving the preprocessing to ``obs_to_tensor()`` method
 
 Documentation:
 ^^^^^^^^^^^^^^

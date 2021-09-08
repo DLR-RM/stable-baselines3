@@ -4,18 +4,22 @@ Changelog
 ==========
 
 
-Release 1.2.0a3 (WIP)
+Release 1.2.0 (2021-09-03)
 ---------------------------
+
+**Hotfix for VecNormalize, training/eval mode support**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - SB3 now requires PyTorch >= 1.8.1
+- ``VecNormalize`` ``ret`` attribute was renamed to ``returns``
 
 New Features:
 ^^^^^^^^^^^^^
 
 Bug Fixes:
 ^^^^^^^^^^
+- Hotfix for ``VecNormalize`` where the observation filter was not updated at reset (thanks @vwxyzjn)
 - Fixed model predictions when using batch normalization and dropout layers by calling ``train()`` and ``eval()`` (@davidblom603)
 - Fixed model training for DQN, TD3 and SAC so that their target nets always remain in evaluation mode (@ayeright)
 - Passing ``gradient_steps=0`` to an off-policy algorithm will result in no gradient steps being taken (vs as many gradient steps as steps done in the environment

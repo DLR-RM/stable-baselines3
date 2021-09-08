@@ -12,6 +12,7 @@ Release 1.2.0 (2021-09-03)
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - SB3 now requires PyTorch >= 1.8.1
+- ``VecNormalize`` ``ret`` attribute was renamed to ``returns``
 
 New Features:
 ^^^^^^^^^^^^^

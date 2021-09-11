@@ -667,7 +667,7 @@ class ActorCriticPolicy(BasePolicy):
     def get_distribution(self, obs: th.Tensor) -> Distribution:
         """
         Get the current policy distribution given the observations.
-        
+
         :param obs:
         :return: the action distribution.
         """

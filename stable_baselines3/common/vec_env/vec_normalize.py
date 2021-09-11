@@ -1,4 +1,5 @@
 import pickle
+import warnings
 from copy import deepcopy
 from typing import Any, Dict, Union
 
@@ -54,7 +55,7 @@ class VecNormalize(VecEnvWrapper):
         self.clip_obs = clip_obs
         self.clip_reward = clip_reward
         # Returns: discounted rewards
-        self.ret = np.zeros(self.num_envs)
+        self.returns = np.zeros(self.num_envs)
         self.gamma = gamma
         self.epsilon = epsilon
         self.training = training
@@ -73,7 +74,7 @@ class VecNormalize(VecEnvWrapper):
         del state["venv"]
         del state["class_attributes"]
         # these attributes depend on the above and so we would prefer not to pickle
-        del state["ret"]
+        del state["returns"]
         return state
 
     def __setstate__(self, state: Dict[str, Any]) -> None:
@@ -101,7 +102,7 @@ class VecNormalize(VecEnvWrapper):
 
         # Check only that the observation_space match
         utils.check_for_correct_spaces(venv, self.observation_space, venv.action_space)
-        self.ret = np.zeros(self.num_envs)
+        self.returns = np.zeros(self.num_envs)
 
     def step_wait(self) -> VecEnvStepReturn:
         """
@@ -134,13 +135,13 @@ class VecNormalize(VecEnvWrapper):
             if "terminal_observation" in infos[idx]:
                 infos[idx]["terminal_observation"] = self.normalize_obs(infos[idx]["terminal_observation"])
 
-        self.ret[dones] = 0
+        self.returns[dones] = 0
         return obs, rewards, dones, infos
 
     def _update_reward(self, reward: np.ndarray) -> None:
         """Update reward normalization statistics."""
-        self.ret = self.ret * self.gamma + reward
-        self.ret_rms.update(self.ret)
+        self.returns = self.returns * self.gamma + reward
+        self.ret_rms.update(self.returns)
 
     def _normalize_obs(self, obs: np.ndarray, obs_rms: RunningMeanStd) -> np.ndarray:
         """
@@ -220,9 +221,13 @@ class VecNormalize(VecEnvWrapper):
         """
         obs = self.venv.reset()
         self.old_obs = obs
-        self.ret = np.zeros(self.num_envs)
+        self.returns = np.zeros(self.num_envs)
         if self.training:
-            self._update_reward(self.ret)
+            if isinstance(obs, dict) and isinstance(self.obs_rms, dict):
+                for key in self.obs_rms.keys():
+                    self.obs_rms[key].update(obs[key])
+            else:
+                self.obs_rms.update(obs)
         return self.normalize_obs(obs)
 
     @staticmethod
@@ -248,3 +253,8 @@ class VecNormalize(VecEnvWrapper):
         """
         with open(save_path, "wb") as file_handler:
             pickle.dump(self, file_handler)
+
+    @property
+    def ret(self) -> np.ndarray:
+        warnings.warn("`VecNormalize` `ret` attribute is deprecated. Please use `returns` instead.", DeprecationWarning)
+        return self.returns

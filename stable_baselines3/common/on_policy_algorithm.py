@@ -148,7 +148,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         """
         assert self._last_obs is not None, "No previous observation was provided"
         # Switch to eval mode (this affects batch norm / dropout)
-        self.policy.eval()
+        self.policy.set_training_mode(False)
 
         n_steps = 0
         rollout_buffer.reset()

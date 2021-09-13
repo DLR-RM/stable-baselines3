@@ -1,5 +1,7 @@
 from copy import deepcopy
 
+import gym
+import numpy as np
 import pytest
 import torch as th
 
@@ -49,6 +51,23 @@ def test_squashed_gaussian(model_class):
     dist = dist.proba_distribution(gaussian_mean, log_std)
     actions = dist.get_actions()
     assert th.max(th.abs(actions)) <= 1.0
+
+
+def test_get_distribution():
+    env = gym.make("Pendulum-v0")
+    model = A2C("MlpPolicy", env, seed=23)
+    random_obs = np.array([env.observation_space.sample() for _ in range(10)])
+    random_actions = np.array([env.action_space.sample() for _ in range(10)])
+    # Check that evaluate actions return the same thing as get_distribution
+    with th.no_grad():
+        observations, _ = model.policy.obs_to_tensor(random_obs)
+        actions = th.tensor(random_actions, device=observations.device).float()
+        _, log_prob_1, entropy_1 = model.policy.evaluate_actions(observations, actions)
+        distribution = model.policy.get_distribution(observations)
+        log_prob_2 = distribution.log_prob(actions)
+        entropy_2 = distribution.entropy()
+        assert th.allclose(log_prob_1, log_prob_2)
+        assert th.allclose(entropy_1, entropy_2)
 
 
 def test_sde_distribution():

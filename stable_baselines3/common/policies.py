@@ -664,6 +664,16 @@ class ActorCriticPolicy(BasePolicy):
         values = self.value_net(latent_vf)
         return values, log_prob, distribution.entropy()
 
+    def get_distribution(self, obs: th.Tensor) -> Distribution:
+        """
+        Get the current policy distribution given the observations.
+
+        :param obs:
+        :return: the action distribution.
+        """
+        latent_pi, _, latent_sde = self._get_latent(obs)
+        return self._get_action_dist_from_latent(latent_pi, latent_sde)
+
 
 class ActorCriticCnnPolicy(ActorCriticPolicy):
     """

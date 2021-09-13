@@ -13,7 +13,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-- Added method `get_distribution` for `ActorCriticPolicy` (@cyprienc)
+- Added method ``get_distribution`` for ``ActorCriticPolicy`` for A2C/PPO/TRPO (@cyprienc)
 
 Bug Fixes:
 ^^^^^^^^^^

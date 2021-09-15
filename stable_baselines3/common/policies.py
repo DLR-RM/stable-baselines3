@@ -674,6 +674,16 @@ class ActorCriticPolicy(BasePolicy):
         latent_pi, _, latent_sde = self._get_latent(obs)
         return self._get_action_dist_from_latent(latent_pi, latent_sde)
 
+    def predict_values(self, obs: th.Tensor) -> th.Tensor:
+        """
+        Get the estimated values according to the current policy given the observations.
+
+        :param obs:
+        :return: the estimated values.
+        """
+        _, latent_vf, _ = self._get_latent(obs)
+        return self.value_net(latent_vf)
+
 
 class ActorCriticCnnPolicy(ActorCriticPolicy):
     """

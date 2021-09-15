@@ -17,12 +17,14 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed ``dtype`` of observations for ``SimpleMultiObsEnv``
 
 Deprecations:
 ^^^^^^^^^^^^^
 
 Others:
 ^^^^^^^
+- Cap gym max version to 0.19 to avoid issues with atari-py and other breaking changes
 
 Documentation:
 ^^^^^^^^^^^^^^

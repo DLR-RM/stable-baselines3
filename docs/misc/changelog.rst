@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.2.1a0 (WIP)
+Release 1.2.1a1 (WIP)
 ---------------------------
 
 
@@ -13,16 +13,18 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-- Added method ``get_distribution`` for ``ActorCriticPolicy`` for A2C/PPO/TRPO (@cyprienc)
+- Added methods ``get_distribution`` and ``predict_values`` for ``ActorCriticPolicy`` for A2C/PPO/TRPO (@cyprienc)
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed ``dtype`` of observations for ``SimpleMultiObsEnv``
 
 Deprecations:
 ^^^^^^^^^^^^^
 
 Others:
 ^^^^^^^
+- Cap gym max version to 0.19 to avoid issues with atari-py and other breaking changes
 
 Documentation:
 ^^^^^^^^^^^^^^

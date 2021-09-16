@@ -116,7 +116,7 @@ setup(
             # For render
             "opencv-python",
             # For atari games,
-            "gym[atari]>=0.20.0",
+            "ale-py~=0.7",
             "pillow",
             # Tensorboard support
             "tensorboard>=2.2.0",

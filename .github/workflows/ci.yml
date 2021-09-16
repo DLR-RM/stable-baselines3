@@ -32,8 +32,9 @@ jobs:
         pip install .[extra,tests,docs]
         # Use headless version
         pip install opencv-python-headless
-        # Tmp fix: ROM missing in the newest atari-py version
-        pip install atari-py==0.2.5
+        # Add Atari ROMs
+        pip install AutoROM
+        AutoROM -v
     - name: Build the doc
       run: |
         make doc

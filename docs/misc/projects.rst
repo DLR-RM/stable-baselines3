@@ -76,7 +76,7 @@ SuperSuit contains easy to use wrappers for Gym (and multi-agent PettingZoo) env
 | Tutorial on multi-agent support in stable baselines: https://towardsdatascience.com/multi-agent-deep-reinforcement-learning-in-15-lines-of-code-using-pettingzoo-e0b963c0820b
 
 gym-electric-motor
-----
+-------------------
 
 An OpenAI gym environment for the simulation and control of electric drive trains. 
 Think of Matlab/Simulink for electric motors, inverters, and load profiles, but non-graphical and open-source in Python.

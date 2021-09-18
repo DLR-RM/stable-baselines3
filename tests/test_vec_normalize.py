@@ -142,7 +142,7 @@ def _make_warmstart(env_fn, **kwargs):
     return venv
 
 
-def _make_warmstart_frozenlake(**kwargs):
+def _make_warmstart_cliffwalking(**kwargs):
     """Warm-start VecNormalize by stepping through CliffWalking"""
     return _make_warmstart(lambda: gym.make("CliffWalking-v0"), **kwargs)
 
@@ -354,7 +354,7 @@ def test_sync_vec_normalize(make_env):
 
 def test_discrete_obs():
     with pytest.raises(ValueError, match=".*only supports.*"):
-        _make_warmstart_frozenlake()
+        _make_warmstart_cliffwalking()
 
     # Smoke test that it runs with norm_obs False
-    _make_warmstart_frozenlake(norm_obs=False)
+    _make_warmstart_cliffwalking(norm_obs=False)

@@ -18,6 +18,8 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed ``dtype`` of observations for ``SimpleMultiObsEnv``
+- Allow `VecNormalize` to wrap discrete-observation environments to normalize reward
+  when observation normalization is disabled.
 
 Deprecations:
 ^^^^^^^^^^^^^

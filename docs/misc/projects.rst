@@ -83,7 +83,7 @@ A fully custom python API and C++ DLL to treat the popular game Rocket League li
 - Supports full configuration of initial states, observations, rewards, and terminal states.
 - Supports multiple simultaneous game clients.
 - Supports multi-agent training and self-play.
-- Provides custom wrappers for easy use with stable-baslines3.
+- Provides custom wrappers for easy use with stable-baselines3.
 
 | Authors: Lucas Emery, Matthew Allen
 | GitHub: https://github.com/lucas-emery/rocket-league-gym

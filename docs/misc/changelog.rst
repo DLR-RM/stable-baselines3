@@ -28,7 +28,7 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
-
+- Add Rocket League Gym to list of supported projects
 
 
 Release 1.2.0 (2021-09-03)

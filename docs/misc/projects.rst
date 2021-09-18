@@ -75,6 +75,21 @@ SuperSuit contains easy to use wrappers for Gym (and multi-agent PettingZoo) env
 | GitHub: https://github.com/PettingZoo-Team/SuperSuit
 | Tutorial on multi-agent support in stable baselines: https://towardsdatascience.com/multi-agent-deep-reinforcement-learning-in-15-lines-of-code-using-pettingzoo-e0b963c0820b
 
+Rocket League Gym
+-----------------
+
+A fully custom python API and C++ DLL to treat the popular game Rocket League like an OpenAI Gym environment.
+
+- Dramatically increases the rate at which the game runs.
+- Supports full configuration of initial states, observations, rewards, and terminal states.
+- Supports multiple simultaneous game clients.
+- Supports multi-agent training and self-play.
+- Provides custom wrappers for easy use with stable-baselines3.
+
+| Authors: Lucas Emery, Matthew Allen
+| GitHub: https://github.com/lucas-emery/rocket-league-gym
+| Website: https://rlgym.github.io
+
 gym-electric-motor
 -------------------
 

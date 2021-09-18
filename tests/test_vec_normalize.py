@@ -143,8 +143,8 @@ def _make_warmstart(env_fn, **kwargs):
 
 
 def _make_warmstart_frozenlake(**kwargs):
-    """Warm-start VecNormalize by stepping through FrozenLake"""
-    return _make_warmstart(lambda: gym.make("FrozenLake-v1"), **kwargs)
+    """Warm-start VecNormalize by stepping through CliffWalking"""
+    return _make_warmstart(lambda: gym.make("CliffWalking-v0"), **kwargs)
 
 
 def _make_warmstart_cartpole():

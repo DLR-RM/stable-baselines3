@@ -356,4 +356,5 @@ def test_discrete_obs():
     with pytest.raises(ValueError, match=".*only supports.*"):
         _make_warmstart_frozenlake()
 
-    venv = _make_warmstart_frozenlake(norm_obs=False)
+    # Smoke test that it runs with norm_obs False
+    _make_warmstart_frozenlake(norm_obs=False)

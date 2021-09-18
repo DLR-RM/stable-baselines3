@@ -41,8 +41,7 @@ class VecNormalize(VecEnvWrapper):
 
         if norm_obs:
             if not isinstance(self.observation_space, (gym.spaces.Box, gym.spaces.Dict)):
-                raise ValueError("VecNormalize only supports `gym.spaces.Box` and "
-                                 "`gym.spaces.Dict` observation spaces")
+                raise ValueError("VecNormalize only supports `gym.spaces.Box` and `gym.spaces.Dict` observation spaces")
 
         if isinstance(self.observation_space, gym.spaces.Dict):
             self.obs_keys = set(self.observation_space.spaces.keys())

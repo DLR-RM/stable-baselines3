@@ -74,3 +74,23 @@ SuperSuit contains easy to use wrappers for Gym (and multi-agent PettingZoo) env
 | Author: Justin Terry
 | GitHub: https://github.com/PettingZoo-Team/SuperSuit
 | Tutorial on multi-agent support in stable baselines: https://towardsdatascience.com/multi-agent-deep-reinforcement-learning-in-15-lines-of-code-using-pettingzoo-e0b963c0820b
+
+gym-electric-motor
+-------------------
+
+An OpenAI gym environment for the simulation and control of electric drive trains. 
+Think of Matlab/Simulink for electric motors, inverters, and load profiles, but non-graphical and open-source in Python.
+
+`gym-electric-motor` offers a rich interface for customization, including 
+- plug-and-play of different control algorithms ranging from classical controllers (like field-oriented control) up to any RL agent you can find,
+- reward shaping,
+- load profiling,
+- finite-set or continuous-set control,
+- one-phase and three-phase motors such as induction machines and permanent magnet synchronous motors, among others.
+
+SB3 is used as an example in one of many tutorials showcasing the easy usage of `gym-electric-motor`.
+
+| Author: `Paderborn University, LEA department <https://github.com/upb-lea>`_
+| GitHub: https://github.com/upb-lea/gym-electric-motor
+| SB3 Tutorial: `Colab Link <https://colab.research.google.com/github/upb-lea/gym-electric-motor/blob/master/examples/reinforcement_learning_controllers/stable_baselines3_dqn_disc_pmsm_example.ipynb>`_
+| Paper: `JOSS <https://joss.theoj.org/papers/10.21105/joss.02498>`_, `TNNLS <https://ieeexplore.ieee.org/document/9241851>`_, `ArXiv <https://arxiv.org/abs/1910.09434>`_

@@ -109,3 +109,14 @@ SB3 is used as an example in one of many tutorials showcasing the easy usage of 
 | GitHub: https://github.com/upb-lea/gym-electric-motor
 | SB3 Tutorial: `Colab Link <https://colab.research.google.com/github/upb-lea/gym-electric-motor/blob/master/examples/reinforcement_learning_controllers/stable_baselines3_dqn_disc_pmsm_example.ipynb>`_
 | Paper: `JOSS <https://joss.theoj.org/papers/10.21105/joss.02498>`_, `TNNLS <https://ieeexplore.ieee.org/document/9241851>`_, `ArXiv <https://arxiv.org/abs/1910.09434>`_
+
+policy-distillation-baselines
+------------------------------
+A PyTorch implementation of Policy Distillation for control, which has well-trained teachers via Stable Baselines3.
+
+- `policy-distillation-baselines` provides some good examples for policy distillation in various environment and using reliable algorithms.
+- All well-trained models and algorithms are compatible with Stable Baselines3.
+
+| Authors: Junyeob Baek
+| GitHub: https://github.com/CUN-bjy/policy-distillation-baselines
+| Demo: `link <https://github.com/CUN-bjy/policy-distillation-baselines/issues/3#issuecomment-817730173>`_

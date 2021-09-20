@@ -111,7 +111,7 @@ SB3 is used as an example in one of many tutorials showcasing the easy usage of 
 | Paper: `JOSS <https://joss.theoj.org/papers/10.21105/joss.02498>`_, `TNNLS <https://ieeexplore.ieee.org/document/9241851>`_, `ArXiv <https://arxiv.org/abs/1910.09434>`_
 
 policy-distillation-baselines
--------------------
+------------------------------
 A pytorch Implementation of Policy Distillation for control, which has well-trained teachers via stable_baselines3.
 
 - `policy-distillation-baselines` provides some good examples for policy distillation in various environment and using reliable algorithms.

@@ -112,10 +112,10 @@ SB3 is used as an example in one of many tutorials showcasing the easy usage of 
 
 policy-distillation-baselines
 ------------------------------
-A pytorch Implementation of Policy Distillation for control, which has well-trained teachers via stable_baselines3.
+A PyTorch implementation of Policy Distillation for control, which has well-trained teachers via Stable Baselines3.
 
 - `policy-distillation-baselines` provides some good examples for policy distillation in various environment and using reliable algorithms.
-- All well-trained models and algorithms are compatible with stable_baselines3.(just tested on deterministic algorithm, welcome to PR for stochastic!)
+- All well-trained models and algorithms are compatible with Stable Baselines3.
 
 | Authors: Junyeob Baek
 | GitHub: https://github.com/CUN-bjy/policy-distillation-baselines

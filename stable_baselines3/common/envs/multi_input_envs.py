@@ -59,7 +59,7 @@ class SimpleMultiObsEnv(gym.Env):
 
         self.observation_space = gym.spaces.Dict(
             spaces={
-                "vec": gym.spaces.Box(0, 1, (self.vector_size,)),
+                "vec": gym.spaces.Box(0, 1, (self.vector_size,), dtype=np.float64),
                 "img": gym.spaces.Box(0, 255, self.img_size, dtype=np.uint8),
             }
         )
@@ -87,7 +87,7 @@ class SimpleMultiObsEnv(gym.Env):
         # Each column is represented by a random vector
         col_vecs = np.random.random((num_col, self.vector_size))
         # Each row is represented by a random image
-        row_imgs = np.random.randint(0, 255, (num_row, 64, 64), dtype=np.int32)
+        row_imgs = np.random.randint(0, 255, (num_row, 64, 64), dtype=np.uint8)
 
         for i in range(num_col):
             for j in range(num_row):

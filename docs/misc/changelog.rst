@@ -4,19 +4,57 @@ Changelog
 ==========
 
 
-Release 1.2.0a2 (WIP)
+Release 1.2.1a1 (WIP)
 ---------------------------
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+- Added methods ``get_distribution`` and ``predict_values`` for ``ActorCriticPolicy`` for A2C/PPO/TRPO (@cyprienc)
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed ``dtype`` of observations for ``SimpleMultiObsEnv``
+- Allow `VecNormalize` to wrap discrete-observation environments to normalize reward
+  when observation normalization is disabled.
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Cap gym max version to 0.19 to avoid issues with atari-py and other breaking changes
+
+Documentation:
+^^^^^^^^^^^^^^
+- Add Rocket League Gym to list of supported projects (@AechPro)
+- Added gym-electric-motor to project page (@wkirgsn)
+- Added policy-distillation-baselines to project page (@CUN-bjy)
+
+
+Release 1.2.0 (2021-09-03)
+---------------------------
+
+**Hotfix for VecNormalize, training/eval mode support**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - SB3 now requires PyTorch >= 1.8.1
+- ``VecNormalize`` ``ret`` attribute was renamed to ``returns``
 
 New Features:
 ^^^^^^^^^^^^^
 
 Bug Fixes:
 ^^^^^^^^^^
+- Hotfix for ``VecNormalize`` where the observation filter was not updated at reset (thanks @vwxyzjn)
 - Fixed model predictions when using batch normalization and dropout layers by calling ``train()`` and ``eval()`` (@davidblom603)
+- Fixed model training for DQN, TD3 and SAC so that their target nets always remain in evaluation mode (@ayeright)
+- Passing ``gradient_steps=0`` to an off-policy algorithm will result in no gradient steps being taken (vs as many gradient steps as steps done in the environment
+  during the rollout in previous versions)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -25,6 +63,7 @@ Others:
 ^^^^^^^
 - Enabled Python 3.9 in GitHub CI
 - Fixed type annotations
+- Refactored ``predict()`` by moving the preprocessing to ``obs_to_tensor()`` method
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -739,4 +778,4 @@ And all the contributors:
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @JadenTravnik @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
 @ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan @benblack769 @bstee615
-@c-rizz @skandermoalla @MihaiAnca13 @davidblom603
+@c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc @wkirgsn @AechPro @CUN-bjy

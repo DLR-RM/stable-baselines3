@@ -35,6 +35,7 @@ Documentation:
 - Added policy-distillation-baselines to project page (@CUN-bjy)
 - Added ONNX export instructions (@batu)
 
+
 Release 1.2.0 (2021-09-03)
 ---------------------------
 

@@ -33,7 +33,7 @@ Export to ONNX
 
 As of June 2021, ONNX format  `doesn't support <https://github.com/onnx/onnx/issues/3033>`_ exporting models that use the ``broadcast_tensors`` functionality of pytorch. So in order to export the trained stable-baseline3 models in the ONNX format, we need to first remove the layers that use broadcasting. This can be done by creating a class that removes the unsupported layers.
 
-For PPO, assuming a shared feature extactor is used:
+For PPO, assuming a shared feature extactor is used with ``MlpPolicy``.:
 
 .. code-block:: python
 
@@ -47,11 +47,11 @@ For PPO, assuming a shared feature extactor is used:
         self.action_net = action_net
         self.value_net = value_net
 
-    def forward(self, input):
-        action_hidden, value_hidden = self.extractor(input)
+    def forward(self, observation):
+        action_hidden, value_hidden = self.extractor(observation)
         return (self.action_net(action_hidden), self.value_net(value_hidden))
 
-  model = PPO.load("PathToTrainedModel\MyModel.zip")
+  model = PPO.load("PathToTrainedModel.zip")
   onnxable_model = OnnxablePolicy(model.policy.mlp_extractor, model.policy.action_net, model.policy.value_net)
 
   dummy_input = torch.randn(1, observation_size)
@@ -73,10 +73,10 @@ For SAC the procedure is similar. The example shown only exports the actor netwo
         # Removing the flatten layer because it can't be onnxed
         self.actor = torch.nn.Sequential(actor.latent_pi, actor.mu)
 
-    def forward(self, input):
-        return self.actor(input)
+    def forward(self, observation):
+        return self.actor(observation)
 
-  model = SAC.load("PathToTrainedModel\MyModel.zip")
+  model = SAC.load("PathToTrainedModel.zip")
   onnxable_model = OnnxablePolicy(model.policy.actor)
 
   dummy_input = torch.randn(1, observation_size)

@@ -399,6 +399,7 @@ class BaseAlgorithm(ABC):
         :return:
         """
         self.start_time = time.time()
+
         if self.ep_info_buffer is None or reset_num_timesteps:
             # Initialize buffers if they don't exist, or reinitialize if resetting counters
             self.ep_info_buffer = deque(maxlen=100)

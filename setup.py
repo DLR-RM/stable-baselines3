@@ -73,7 +73,7 @@ setup(
     packages=[package for package in find_packages() if package.startswith("stable_baselines3")],
     package_data={"stable_baselines3": ["py.typed", "version.txt"]},
     install_requires=[
-        "gym>=0.17",
+        "gym>=0.17,<0.20",  # gym 0.20 breaks atari-py behavior
         "numpy",
         "torch>=1.8.1",
         # For saving models
@@ -100,6 +100,8 @@ setup(
             "isort>=5.0",
             # Reformat
             "black",
+            # For toy text Gym envs
+            "scipy>=1.4.1",
         ],
         "docs": [
             "sphinx",

@@ -17,6 +17,27 @@ from stable_baselines3.common.vec_env import (
 ENV_ID = "Pendulum-v0"
 
 
+class DummyRewardEnv(gym.Env):
+    metadata = {}
+
+    def __init__(self, return_reward_idx=0):
+        self.action_space = gym.spaces.Discrete(2)
+        self.observation_space = gym.spaces.Box(low=np.array([-1.0]), high=np.array([1.0]))
+        self.returned_rewards = [0, 1, 3, 4]
+        self.return_reward_idx = return_reward_idx
+        self.t = self.return_reward_idx
+
+    def step(self, action):
+        self.t += 1
+        index = (self.t + self.return_reward_idx) % len(self.returned_rewards)
+        returned_value = self.returned_rewards[index]
+        return np.array([returned_value]), returned_value, self.t == len(self.returned_rewards), {}
+
+    def reset(self):
+        self.t = 0
+        return np.array([self.returned_rewards[self.return_reward_idx]])
+
+
 class DummyDictEnv(gym.GoalEnv):
     """
     Dummy gym goal env for testing purposes
@@ -69,6 +90,15 @@ def make_dict_env():
     return Monitor(DummyDictEnv())
 
 
+def test_deprecation():
+    venv = DummyVecEnv([lambda: gym.make("CartPole-v1")])
+    venv = VecNormalize(venv)
+    with pytest.warns(None) as record:
+        assert np.allclose(venv.ret, venv.returns)
+    # Deprecation warning when using .ret
+    assert len(record) == 1
+
+
 def check_rms_equal(rmsa, rmsb):
     if isinstance(rmsa, dict):
         for key in rmsa.keys():
@@ -93,16 +123,16 @@ def check_vec_norm_equal(norma, normb):
     assert norma.norm_obs == normb.norm_obs
     assert norma.norm_reward == normb.norm_reward
 
-    assert np.all(norma.ret == normb.ret)
+    assert np.all(norma.returns == normb.returns)
     assert norma.gamma == normb.gamma
     assert norma.epsilon == normb.epsilon
     assert norma.training == normb.training
 
 
-def _make_warmstart_cartpole():
-    """Warm-start VecNormalize by stepping through CartPole"""
-    venv = DummyVecEnv([lambda: gym.make("CartPole-v1")])
-    venv = VecNormalize(venv)
+def _make_warmstart(env_fn, **kwargs):
+    """Warm-start VecNormalize by stepping through 100 actions."""
+    venv = DummyVecEnv([env_fn])
+    venv = VecNormalize(venv, **kwargs)
     venv.reset()
     venv.get_original_obs()
 
@@ -110,19 +140,21 @@ def _make_warmstart_cartpole():
         actions = [venv.action_space.sample()]
         venv.step(actions)
     return venv
+
+
+def _make_warmstart_cliffwalking(**kwargs):
+    """Warm-start VecNormalize by stepping through CliffWalking"""
+    return _make_warmstart(lambda: gym.make("CliffWalking-v0"), **kwargs)
+
+
+def _make_warmstart_cartpole():
+    """Warm-start VecNormalize by stepping through CartPole"""
+    return _make_warmstart(lambda: gym.make("CartPole-v1"))
 
 
 def _make_warmstart_dict_env():
     """Warm-start VecNormalize by stepping through BitFlippingEnv"""
-    venv = DummyVecEnv([make_dict_env])
-    venv = VecNormalize(venv)
-    venv.reset()
-    venv.get_original_obs()
-
-    for _ in range(100):
-        actions = [venv.action_space.sample()]
-        venv.step(actions)
-    return venv
+    return _make_warmstart(make_dict_env)
 
 
 def test_runningmeanstd():
@@ -141,6 +173,24 @@ def test_runningmeanstd():
         moments_2 = [rms.mean, rms.var]
 
         assert np.allclose(moments_1, moments_2)
+
+
+def test_obs_rms_vec_normalize():
+    env_fns = [lambda: DummyRewardEnv(0), lambda: DummyRewardEnv(1)]
+    env = DummyVecEnv(env_fns)
+    env = VecNormalize(env)
+    env.reset()
+    assert np.allclose(env.obs_rms.mean, 0.5, atol=1e-4)
+    assert np.allclose(env.ret_rms.mean, 0.0, atol=1e-4)
+    env.step([env.action_space.sample() for _ in range(len(env_fns))])
+    assert np.allclose(env.obs_rms.mean, 1.25, atol=1e-4)
+    assert np.allclose(env.ret_rms.mean, 2, atol=1e-4)
+
+    # Check convergence to true mean
+    for _ in range(3000):
+        env.step([env.action_space.sample() for _ in range(len(env_fns))])
+    assert np.allclose(env.obs_rms.mean, 2.0, atol=1e-3)
+    assert np.allclose(env.ret_rms.mean, 5.688, atol=1e-3)
 
 
 @pytest.mark.parametrize("make_env", [make_env, make_dict_env])
@@ -300,3 +350,11 @@ def test_sync_vec_normalize(make_env):
     # Now they must be synced
     assert allclose(obs, eval_env.normalize_obs(original_obs))
     assert allclose(env.normalize_reward(dummy_rewards), eval_env.normalize_reward(dummy_rewards))
+
+
+def test_discrete_obs():
+    with pytest.raises(ValueError, match=".*only supports.*"):
+        _make_warmstart_cliffwalking()
+
+    # Smoke test that it runs with norm_obs False
+    _make_warmstart_cliffwalking(norm_obs=False)

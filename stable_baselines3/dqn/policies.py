@@ -152,6 +152,8 @@ class DQNPolicy(BasePolicy):
         """
         Create the network and the optimizer.
 
+        Put the target network into evaluation mode.
+
         :param lr_schedule: Learning rate schedule
             lr_schedule(1) is the initial learning rate
         """
@@ -159,6 +161,7 @@ class DQNPolicy(BasePolicy):
         self.q_net = self.make_q_net()
         self.q_net_target = self.make_q_net()
         self.q_net_target.load_state_dict(self.q_net.state_dict())
+        self.q_net_target.set_training_mode(False)
 
         # Setup optimizer with initial learning rate
         self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
@@ -189,6 +192,17 @@ class DQNPolicy(BasePolicy):
             )
         )
         return data
+
+    def set_training_mode(self, mode: bool) -> None:
+        """
+        Put the policy in either training or evaluation mode.
+
+        This affects certain modules, such as batch normalisation and dropout.
+
+        :param mode: if true, set to training mode, else set to evaluation mode
+        """
+        self.q_net.set_training_mode(mode)
+        self.training = mode
 
 
 MlpPolicy = DQNPolicy

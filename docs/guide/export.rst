@@ -33,7 +33,9 @@ Export to ONNX
 
 As of June 2021, ONNX format  `doesn't support <https://github.com/onnx/onnx/issues/3033>`_ exporting models that use the ``broadcast_tensors`` functionality of pytorch. So in order to export the trained stable-baseline3 models in the ONNX format, we need to first remove the layers that use broadcasting. This can be done by creating a class that removes the unsupported layers.
 
-For PPO, assuming a shared feature extactor is used with ``MlpPolicy``.:
+The following examples are for ``MlpPolicy`` only, and are general examples. Note that you have to preprocess the observation the same way stable-baselines3 agent does (see ``common.preprocessing.preprocess_obs``)
+
+For PPO, assuming a shared feature extactor.
 
 .. code-block:: python
 
@@ -48,6 +50,8 @@ For PPO, assuming a shared feature extactor is used with ``MlpPolicy``.:
         self.value_net = value_net
 
     def forward(self, observation):
+        # NOTE: You have to process (normalize) observation in the correct
+        #       way before using this. See `common.preprocessing.preprocess_obs`
         action_hidden, value_hidden = self.extractor(observation)
         return (self.action_net(action_hidden), self.value_net(value_hidden))
 
@@ -74,6 +78,8 @@ For SAC the procedure is similar. The example shown only exports the actor netwo
         self.actor = torch.nn.Sequential(actor.latent_pi, actor.mu)
 
     def forward(self, observation):
+        # NOTE: You have to process (normalize) observation in the correct
+        #       way before using this. See `common.preprocessing.preprocess_obs`
         return self.actor(observation)
 
   model = SAC.load("PathToTrainedModel.zip")

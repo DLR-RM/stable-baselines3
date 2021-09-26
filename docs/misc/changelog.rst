@@ -34,6 +34,7 @@ Documentation:
 - Added gym-electric-motor to project page (@wkirgsn)
 - Added policy-distillation-baselines to project page (@CUN-bjy)
 - Added ONNX export instructions (@batu)
+- Update read the doc env (fixed ``docutils`` issue)
 
 
 Release 1.2.0 (2021-09-03)

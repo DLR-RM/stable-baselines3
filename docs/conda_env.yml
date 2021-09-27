@@ -6,7 +6,7 @@ dependencies:
   - cpuonly=1.0=0
   - pip=20.2
   - python=3.6
-  - pytorch=1.5.0=py3.6_cpu_0
+  - pytorch=1.8.1=py3.6_cpu_0
   - pip:
     - gym>=0.17.2
     - cloudpickle
@@ -15,6 +15,6 @@ dependencies:
     - numpy
     - matplotlib
     - sphinx_autodoc_typehints
-    # Tmp fix, docutils==0.17 breaks rtd theme
+    - sphinx>=4.2
     # See https://github.com/readthedocs/sphinx_rtd_theme/issues/1115
-    - docutils==0.16
+    - sphinx_rtd_theme>=1.0

@@ -129,10 +129,10 @@ def check_vec_norm_equal(norma, normb):
     assert norma.training == normb.training
 
 
-def _make_warmstart_cartpole():
-    """Warm-start VecNormalize by stepping through CartPole"""
-    venv = DummyVecEnv([lambda: gym.make("CartPole-v1")])
-    venv = VecNormalize(venv)
+def _make_warmstart(env_fn, **kwargs):
+    """Warm-start VecNormalize by stepping through 100 actions."""
+    venv = DummyVecEnv([env_fn])
+    venv = VecNormalize(venv, **kwargs)
     venv.reset()
     venv.get_original_obs()
 
@@ -140,19 +140,21 @@ def _make_warmstart_cartpole():
         actions = [venv.action_space.sample()]
         venv.step(actions)
     return venv
+
+
+def _make_warmstart_cliffwalking(**kwargs):
+    """Warm-start VecNormalize by stepping through CliffWalking"""
+    return _make_warmstart(lambda: gym.make("CliffWalking-v0"), **kwargs)
+
+
+def _make_warmstart_cartpole():
+    """Warm-start VecNormalize by stepping through CartPole"""
+    return _make_warmstart(lambda: gym.make("CartPole-v1"))
 
 
 def _make_warmstart_dict_env():
     """Warm-start VecNormalize by stepping through BitFlippingEnv"""
-    venv = DummyVecEnv([make_dict_env])
-    venv = VecNormalize(venv)
-    venv.reset()
-    venv.get_original_obs()
-
-    for _ in range(100):
-        actions = [venv.action_space.sample()]
-        venv.step(actions)
-    return venv
+    return _make_warmstart(make_dict_env)
 
 
 def test_runningmeanstd():
@@ -348,3 +350,11 @@ def test_sync_vec_normalize(make_env):
     # Now they must be synced
     assert allclose(obs, eval_env.normalize_obs(original_obs))
     assert allclose(env.normalize_reward(dummy_rewards), eval_env.normalize_reward(dummy_rewards))
+
+
+def test_discrete_obs():
+    with pytest.raises(ValueError, match=".*only supports.*"):
+        _make_warmstart_cliffwalking()
+
+    # Smoke test that it runs with norm_obs False
+    _make_warmstart_cliffwalking(norm_obs=False)

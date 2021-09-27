@@ -590,11 +590,15 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 # Select action randomly or according to policy
                 if imitation:
                     action, buffer_action = self.scale_action(env.expert())
+                    new_obs, reward, done, infos = env.step(action)
+                    reward = 1
                 else:
                     action, buffer_action = self._sample_action(learning_starts, action_noise)
+                    new_obs, reward, done, infos = env.step(action)
+                    reward = 0
 
                 # Rescale and perform action
-                new_obs, reward, done, infos = env.step(action)
+
 
                 self.num_timesteps += 1
                 episode_timesteps += 1

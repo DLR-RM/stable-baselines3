@@ -173,7 +173,12 @@ class BaseModel(nn.Module, ABC):
         device = get_device(device)
         saved_variables = th.load(path, map_location=device)
 
+        # Allow to load policy saved with older version of SB3
         if "sde_net_arch" in saved_variables["data"]:
+            warnings.warn(
+                "sde_net_arch is deprecated, please downgrade to SB3 v1.2.0 if you need such parameter.",
+                DeprecationWarning,
+            )
             del saved_variables["data"]["sde_net_arch"]
 
         # Create policy object

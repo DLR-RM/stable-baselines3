@@ -21,6 +21,7 @@ Bug Fixes:
 - Allow `VecNormalize` to wrap discrete-observation environments to normalize reward
   when observation normalization is disabled.
 - Fixed a bug where ``DQN`` would throw an error when using ``Discrete`` observation and stochastic actions
+- Fixed a bug where sub-classed observation spaces could not be used
 
 Deprecations:
 ^^^^^^^^^^^^^

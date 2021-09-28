@@ -352,10 +352,11 @@ def is_vectorized_observation(observation: Union[int, np.ndarray], observation_s
         gym.spaces.Dict: is_vectorized_dict_observation,
     }
 
-    try:
-        is_vec_obs_func = is_vec_obs_func_dict[type(observation_space)]
-        return is_vec_obs_func(observation, observation_space)
-    except KeyError:
+    for space_type, is_vec_obs_func in is_vec_obs_func_dict.items():
+        if isinstance(observation_space, space_type):
+            return is_vec_obs_func(observation, observation_space)
+    else:
+        # for-else happens if no break is called
         raise ValueError(f"Error: Cannot determine if the observation is vectorized with the space type {observation_space}.")
 
 

@@ -3,6 +3,7 @@ import pytest
 import torch as th
 
 from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
+from stable_baselines3.common.envs import IdentityEnv
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import DummyVecEnv
 
@@ -69,3 +70,13 @@ def test_predict(model_class, env_id, device):
 
         action, _ = model.predict(vec_env_obs, deterministic=False)
         assert action.shape[0] == vec_env_obs.shape[0]
+
+
+def test_dqn_epsilon_greedy():
+    env = IdentityEnv(2)
+    model = DQN("MlpPolicy", env)
+    model.exploration_rate = 1.0
+    obs = env.reset()
+    # is vectorized should not crash with discrete obs
+    action, _ = model.predict(obs, deterministic=False)
+    assert env.action_space.contains(action)

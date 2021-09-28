@@ -20,6 +20,7 @@ Bug Fixes:
 - Fixed ``dtype`` of observations for ``SimpleMultiObsEnv``
 - Allow `VecNormalize` to wrap discrete-observation environments to normalize reward
   when observation normalization is disabled.
+- Fixed a bug where ``DQN`` would throw an error when using ``Discrete`` observation and stochastic actions
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -243,7 +243,7 @@ def is_vectorized_box_observation(observation: np.ndarray, observation_space: gy
         )
 
 
-def is_vectorized_discrete_observation(observation: np.ndarray, observation_space: gym.spaces.Discrete) -> bool:
+def is_vectorized_discrete_observation(observation: Union[int, np.ndarray], observation_space: gym.spaces.Discrete) -> bool:
     """
     For discrete observation type, detects and validates the shape,
     then returns whether or not the observation is vectorized.
@@ -252,7 +252,7 @@ def is_vectorized_discrete_observation(observation: np.ndarray, observation_spac
     :param observation_space: the observation space
     :return: whether the given observation is vectorized or not
     """
-    if observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
+    if isinstance(observation, int) or observation.shape == ():  # A numpy array of a number, has shape empty tuple '()'
         return False
     elif len(observation.shape) == 1:
         return True
@@ -334,7 +334,7 @@ def is_vectorized_dict_observation(observation: np.ndarray, observation_space: g
         )
 
 
-def is_vectorized_observation(observation: np.ndarray, observation_space: gym.spaces.Space) -> bool:
+def is_vectorized_observation(observation: Union[int, np.ndarray], observation_space: gym.spaces.Space) -> bool:
     """
     For every observation type, detects and validates the shape,
     then returns whether or not the observation is vectorized.
@@ -352,13 +352,12 @@ def is_vectorized_observation(observation: np.ndarray, observation_space: gym.sp
         gym.spaces.Dict: is_vectorized_dict_observation,
     }
 
-    try:
-        is_vec_obs_func = is_vec_obs_func_dict[type(observation_space)]
-        return is_vec_obs_func(observation, observation_space)
-    except KeyError:
-        raise ValueError(
-            "Error: Cannot determine if the observation is vectorized " + f" with the space type {observation_space}."
-        )
+    for space_type, is_vec_obs_func in is_vec_obs_func_dict.items():
+        if isinstance(observation_space, space_type):
+            return is_vec_obs_func(observation, observation_space)
+    else:
+        # for-else happens if no break is called
+        raise ValueError(f"Error: Cannot determine if the observation is vectorized with the space type {observation_space}.")
 
 
 def safe_mean(arr: Union[np.ndarray, list, deque]) -> np.ndarray:

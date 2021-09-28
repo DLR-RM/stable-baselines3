@@ -4,22 +4,27 @@ Changelog
 ==========
 
 
-Release 1.2.1a1 (WIP)
+Release 1.2.1a2 (WIP)
 ---------------------------
 
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- ``sde_net_arch`` argument in policies is deprecated and will be removed in a future version.
+- ``_get_latent`` (``ActorCriticPolicy``) was removed
 
 New Features:
 ^^^^^^^^^^^^^
 - Added methods ``get_distribution`` and ``predict_values`` for ``ActorCriticPolicy`` for A2C/PPO/TRPO (@cyprienc)
+- Added methods ``forward_actor`` and ``forward_critic`` for ``MlpExtractor``
 
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed ``dtype`` of observations for ``SimpleMultiObsEnv``
 - Allow `VecNormalize` to wrap discrete-observation environments to normalize reward
   when observation normalization is disabled.
+- Fixed a bug where ``DQN`` would throw an error when using ``Discrete`` observation and stochastic actions
+- Fixed a bug where sub-classed observation spaces could not be used
 
 Deprecations:
 ^^^^^^^^^^^^^

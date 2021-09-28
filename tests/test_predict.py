@@ -1,8 +1,10 @@
 import gym
+import numpy as np
 import pytest
 import torch as th
 
 from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
+from stable_baselines3.common.envs import IdentityEnv
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import DummyVecEnv
 
@@ -13,6 +15,24 @@ MODEL_LIST = [
     SAC,
     DQN,
 ]
+
+
+class SubClassedBox(gym.spaces.Box):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class CustomSubClassedSpaceEnv(gym.Env):
+    def __init__(self):
+        super().__init__()
+        self.observation_space = SubClassedBox(-1, 1, shape=(2,), dtype=np.float32)
+        self.action_space = SubClassedBox(-1, 1, shape=(2,), dtype=np.float32)
+
+    def reset(self):
+        return self.observation_space.sample()
+
+    def step(self, action):
+        return self.observation_space.sample(), 0.0, np.random.rand() > 0.5, {}
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
@@ -69,3 +89,22 @@ def test_predict(model_class, env_id, device):
 
         action, _ = model.predict(vec_env_obs, deterministic=False)
         assert action.shape[0] == vec_env_obs.shape[0]
+
+
+def test_dqn_epsilon_greedy():
+    env = IdentityEnv(2)
+    model = DQN("MlpPolicy", env)
+    model.exploration_rate = 1.0
+    obs = env.reset()
+    # is vectorized should not crash with discrete obs
+    action, _ = model.predict(obs, deterministic=False)
+    assert env.action_space.contains(action)
+
+
+@pytest.mark.parametrize("model_class", [A2C, SAC, PPO, TD3])
+def test_subclassed_space_env(model_class):
+    env = CustomSubClassedSpaceEnv()
+    model = model_class("MlpPolicy", env, policy_kwargs=dict(net_arch=[32]))
+    model.learn(300)
+    obs = env.reset()
+    env.step(model.predict(obs))

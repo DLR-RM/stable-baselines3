@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import gym
@@ -5,7 +6,7 @@ import torch as th
 from torch import nn
 
 from stable_baselines3.common.distributions import SquashedDiagGaussianDistribution, StateDependentNoiseDistribution
-from stable_baselines3.common.policies import BasePolicy, ContinuousCritic, create_sde_features_extractor, register_policy
+from stable_baselines3.common.policies import BasePolicy, ContinuousCritic, register_policy
 from stable_baselines3.common.preprocessing import get_action_dim
 from stable_baselines3.common.torch_layers import (
     BaseFeaturesExtractor,
@@ -75,7 +76,6 @@ class Actor(BasePolicy):
         # Save arguments to re-create object at loading
         self.use_sde = use_sde
         self.sde_features_extractor = None
-        self.sde_net_arch = sde_net_arch
         self.net_arch = net_arch
         self.features_dim = features_dim
         self.activation_fn = activation_fn
@@ -85,24 +85,20 @@ class Actor(BasePolicy):
         self.full_std = full_std
         self.clip_mean = clip_mean
 
+        if sde_net_arch is not None:
+            warnings.warn("sde_net_arch is deprecated and will be removed in SB3 v2.4.0.", DeprecationWarning)
+
         action_dim = get_action_dim(self.action_space)
         latent_pi_net = create_mlp(features_dim, -1, net_arch, activation_fn)
         self.latent_pi = nn.Sequential(*latent_pi_net)
         last_layer_dim = net_arch[-1] if len(net_arch) > 0 else features_dim
 
         if self.use_sde:
-            latent_sde_dim = last_layer_dim
-            # Separate features extractor for gSDE
-            if sde_net_arch is not None:
-                self.sde_features_extractor, latent_sde_dim = create_sde_features_extractor(
-                    features_dim, sde_net_arch, activation_fn
-                )
-
             self.action_dist = StateDependentNoiseDistribution(
                 action_dim, full_std=full_std, use_expln=use_expln, learn_features=True, squash_output=True
             )
             self.mu, self.log_std = self.action_dist.proba_distribution_net(
-                latent_dim=last_layer_dim, latent_sde_dim=latent_sde_dim, log_std_init=log_std_init
+                latent_dim=last_layer_dim, latent_sde_dim=last_layer_dim, log_std_init=log_std_init
             )
             # Avoid numerical issues by limiting the mean of the Gaussian
             # to be in [-clip_mean, clip_mean]
@@ -124,7 +120,6 @@ class Actor(BasePolicy):
                 use_sde=self.use_sde,
                 log_std_init=self.log_std_init,
                 full_std=self.full_std,
-                sde_net_arch=self.sde_net_arch,
                 use_expln=self.use_expln,
                 features_extractor=self.features_extractor,
                 clip_mean=self.clip_mean,
@@ -169,10 +164,7 @@ class Actor(BasePolicy):
         mean_actions = self.mu(latent_pi)
 
         if self.use_sde:
-            latent_sde = latent_pi
-            if self.sde_features_extractor is not None:
-                latent_sde = self.sde_features_extractor(features)
-            return mean_actions, self.log_std, dict(latent_sde=latent_sde)
+            return mean_actions, self.log_std, dict(latent_sde=latent_pi)
         # Unstructured exploration (Original implementation)
         log_std = self.log_std(latent_pi)
         # Original Implementation to cap the standard deviation
@@ -273,10 +265,13 @@ class SACPolicy(BasePolicy):
             "normalize_images": normalize_images,
         }
         self.actor_kwargs = self.net_args.copy()
+
+        if sde_net_arch is not None:
+            warnings.warn("sde_net_arch is deprecated and will be removed in SB3 v2.4.0.", DeprecationWarning)
+
         sde_kwargs = {
             "use_sde": use_sde,
             "log_std_init": log_std_init,
-            "sde_net_arch": sde_net_arch,
             "use_expln": use_expln,
             "clip_mean": clip_mean,
         }
@@ -329,7 +324,6 @@ class SACPolicy(BasePolicy):
                 activation_fn=self.net_args["activation_fn"],
                 use_sde=self.actor_kwargs["use_sde"],
                 log_std_init=self.actor_kwargs["log_std_init"],
-                sde_net_arch=self.actor_kwargs["sde_net_arch"],
                 use_expln=self.actor_kwargs["use_expln"],
                 clip_mean=self.actor_kwargs["clip_mean"],
                 n_critics=self.critic_kwargs["n_critics"],

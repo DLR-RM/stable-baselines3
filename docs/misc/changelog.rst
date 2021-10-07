@@ -32,6 +32,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Cap gym max version to 0.19 to avoid issues with atari-py and other breaking changes
+- Improve error message when using dict observation with the wrong policy
 
 Documentation:
 ^^^^^^^^^^^^^^

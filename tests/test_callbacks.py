@@ -174,7 +174,7 @@ def test_eval_friendly_error():
     train_env = VecNormalize(DummyVecEnv([lambda: gym.make("CartPole-v1")]))
     eval_env = DummyVecEnv([lambda: gym.make("CartPole-v1")])
     eval_env = VecNormalize(eval_env, training=False, norm_reward=False)
-    obs = train_env.reset()
+    _ = train_env.reset()
     original_obs = train_env.get_original_obs()
     model = A2C("MlpPolicy", train_env, n_steps=50, seed=0)
 

@@ -41,6 +41,7 @@ Documentation:
 - Added ONNX export instructions (@batu)
 - Update read the doc env (fixed ``docutils`` issue)
 - Fix PPO environment name (@IljaAvadiev)
+- Fix custom env doc and add env registration example
 
 
 Release 1.2.0 (2021-09-03)

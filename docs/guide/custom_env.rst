@@ -8,7 +8,7 @@ That is to say, your environment must implement the following methods (and inher
 
 
 .. note::
-	If you are using images as input, the input values must be in [0, 255] and ``np.uint8`` as the observation
+	If you are using images as input, the observation must be of type ``np.uint8`` and be contained in [0, 255]
 	is normalized (dividing by 255 to have values in [0, 1]) when using CNN policies. Images can be either
 	channel-first or channel-last.
 

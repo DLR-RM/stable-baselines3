@@ -123,9 +123,8 @@ class StackedObservations(object):
                 if "terminal_observation" in infos[i]:
                     old_terminal = infos[i]["terminal_observation"]
                     if self.channels_first:
-                        new_terminal = np.concatenate(
+                        new_terminal = np.vstack(
                             (self.stackedobs[i, :-stack_ax_size, ...], old_terminal),
-                            axis=self.stack_dimension,
                         )
                     else:
                         new_terminal = np.concatenate(

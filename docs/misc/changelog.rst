@@ -32,6 +32,8 @@ Deprecations:
 Others:
 ^^^^^^^
 - Cap gym max version to 0.19 to avoid issues with atari-py and other breaking changes
+- Improved error message when using dict observation with the wrong policy
+- Improved error message when using ``EvalCallback`` with two envs not wrapped the same way.
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -41,6 +43,7 @@ Documentation:
 - Added ONNX export instructions (@batu)
 - Update read the doc env (fixed ``docutils`` issue)
 - Fix PPO environment name (@IljaAvadiev)
+- Fix custom env doc and add env registration example
 
 
 Release 1.2.0 (2021-09-03)

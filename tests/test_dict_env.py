@@ -79,6 +79,13 @@ class DummyDictEnv(gym.Env):
         pass
 
 
+@pytest.mark.parametrize("policy", ["MlpPolicy", "CnnPolicy"])
+def test_policy_hint(policy):
+    # Common mistake: using the wrong policy
+    with pytest.raises(ValueError):
+        PPO(policy, BitFlippingEnv(n_bits=4))
+
+
 @pytest.mark.parametrize("model_class", [PPO, A2C])
 def test_goal_env(model_class):
     env = BitFlippingEnv(n_bits=4)

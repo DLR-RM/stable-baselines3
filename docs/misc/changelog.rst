@@ -44,6 +44,7 @@ Documentation:
 - Update read the doc env (fixed ``docutils`` issue)
 - Fix PPO environment name (@IljaAvadiev)
 - Fix custom env doc and add env registration example
+- Update algorithms from SB3 Contrib
 
 
 Release 1.2.0 (2021-09-03)

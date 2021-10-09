@@ -38,6 +38,7 @@ See documentation for the full list of included features.
 
 - `Truncated Quantile Critics (TQC)`_
 - `Quantile Regression DQN (QR-DQN)`_
+- `PPO with invalid action masking (Maskable PPO) <https://arxiv.org/abs/2006.14171>`_
 
 **Gym Wrappers**:
 

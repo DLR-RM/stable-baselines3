@@ -442,7 +442,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             self.logger.record("train/std", (self.actor.get_std()).mean().item())
 
         if len(self.ep_success_buffer) > 0:
-            self.logger.record("rollout/success rate", safe_mean(self.ep_success_buffer))
+            self.logger.record("rollout/success_rate", safe_mean(self.ep_success_buffer))
         # Pass the number of timesteps for tensorboard
         self.logger.dump(step=self.num_timesteps)
 

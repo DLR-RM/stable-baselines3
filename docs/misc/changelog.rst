@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.2.1a2 (WIP)
+Release 1.2.1a3 (WIP)
 ---------------------------
 
 
@@ -12,10 +12,11 @@ Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - ``sde_net_arch`` argument in policies is deprecated and will be removed in a future version.
 - ``_get_latent`` (``ActorCriticPolicy``) was removed
-- All logging keys now use underscores instead of spaces (@timokau). Concretely this changes
-    - `time/total timesteps` to `time/total_timesteps` for off-policy algorithms (PPO and A2C) and the eval callback (on-policy algorithms already used the underscored version),
-    - `rollout/exploration rate` to `rollout/exploration_rate` and
-    - `rollout/success rate` to `rollout/success_rate`.
+- All logging keys now use underscores instead of spaces (@timokau). Concretely this changes:
+
+    - ``time/total timesteps`` to ``time/total_timesteps`` for off-policy algorithms (PPO and A2C) and the eval callback (on-policy algorithms already used the underscored version),
+    - ``rollout/exploration rate`` to ``rollout/exploration_rate`` and
+    - ``rollout/success rate`` to ``rollout/success_rate``.
 
 New Features:
 ^^^^^^^^^^^^^

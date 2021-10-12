@@ -149,7 +149,7 @@ class DQN(OffPolicyAlgorithm):
             polyak_update(self.q_net.parameters(), self.q_net_target.parameters(), self.tau)
 
         self.exploration_rate = self.exploration_schedule(self._current_progress_remaining)
-        self.logger.record("rollout/exploration rate", self.exploration_rate)
+        self.logger.record("rollout/exploration_rate", self.exploration_rate)
 
     def train(self, gradient_steps: int, batch_size: int = 100) -> None:
         # Switch to train mode (this affects batch norm / dropout)

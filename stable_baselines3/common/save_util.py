@@ -18,7 +18,7 @@ import torch as th
 
 import stable_baselines3
 from stable_baselines3.common.type_aliases import TensorDict
-from stable_baselines3.common.utils import get_device
+from stable_baselines3.common.utils import get_device, system_info
 
 
 def recursive_getattr(obj: Any, attr: str, *args) -> Any:
@@ -322,6 +322,8 @@ def save_to_zip_file(
                     th.save(dict_, param_file)
         # Save metadata: library version when file was saved
         archive.writestr("_stable_baselines3_version", stable_baselines3.__version__)
+        # Save system info about the current python env
+        archive.writestr("system_info.txt", system_info(print_info=False)[1])
 
 
 def save_to_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], obj: Any, verbose: int = 0) -> None:
@@ -362,6 +364,7 @@ def load_from_zip_file(
     custom_objects: Optional[Dict[str, Any]] = None,
     device: Union[th.device, str] = "auto",
     verbose: int = 0,
+    print_system_info: bool = False,
 ) -> (Tuple[Optional[Dict[str, Any]], Optional[TensorDict], Optional[TensorDict]]):
     """
     Load model data from a .zip archive
@@ -376,6 +379,9 @@ def load_from_zip_file(
         ``keras.models.load_model``. Useful when you have an object in
         file that can not be deserialized.
     :param device: Device on which the code should run.
+    :param verbose: Verbosity level, 0 means only warnings, 2 means debug information.
+    :param print_system_info: Whether to print or not the system info
+        about the saved model.
     :return: Class parameters, model state_dicts (aka "params", dict of state_dict)
         and dict of pytorch variables
     """
@@ -394,6 +400,11 @@ def load_from_zip_file(
             data = None
             pytorch_variables = None
             params = {}
+
+            # Debug system info first
+            if print_system_info and "system_info.txt" in namelist:
+                print("== SAVED MODEL SYSTEM INFO ==")
+                print(archive.read("system_info.txt").decode())
 
             if "data" in namelist and load_data:
                 # Load class parameters that are stored

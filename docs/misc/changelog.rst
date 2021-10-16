@@ -21,6 +21,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Added methods ``get_distribution`` and ``predict_values`` for ``ActorCriticPolicy`` for A2C/PPO/TRPO (@cyprienc)
 - Added methods ``forward_actor`` and ``forward_critic`` for ``MlpExtractor``
+- Added ``print_system_info`` to ``load()`` method to help debugging loading issues (e.g., different python version)
 
 Bug Fixes:
 ^^^^^^^^^^

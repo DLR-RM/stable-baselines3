@@ -16,7 +16,7 @@ from typing import Any, Dict, Optional, Tuple, Union
 import cloudpickle
 import torch as th
 
-import stable_baselines3
+import stable_baselines3 as sb3
 from stable_baselines3.common.type_aliases import TensorDict
 from stable_baselines3.common.utils import get_device, get_system_info
 
@@ -321,7 +321,7 @@ def save_to_zip_file(
                 with archive.open(file_name + ".pth", mode="w") as param_file:
                     th.save(dict_, param_file)
         # Save metadata: library version when file was saved
-        archive.writestr("_stable_baselines3_version", stable_baselines3.__version__)
+        archive.writestr("_stable_baselines3_version", sb3.__version__)
         # Save system info about the current python env
         archive.writestr("system_info.txt", get_system_info(print_info=False)[1])
 

@@ -10,7 +10,7 @@ import gym
 import numpy as np
 import torch as th
 
-import stable_baselines3
+import stable_baselines3 as sb3
 
 # Check if tensorboard is available for pytorch
 try:
@@ -476,7 +476,7 @@ def get_system_info(print_info: bool = True) -> Tuple[Dict[str, str], str]:
     env_info = {
         "OS": f"{platform.platform()} {platform.version()}",
         "Python": platform.python_version(),
-        "Stable-Baselines3": stable_baselines3.__version__,
+        "Stable-Baselines3": sb3.__version__,
         "PyTorch": th.__version__,
         "GPU Enabled": str(th.cuda.is_available()),
         "Numpy": np.__version__,

@@ -63,7 +63,7 @@ class DQN(OffPolicyAlgorithm):
         policy: Union[str, Type[DQNPolicy]],
         env: Union[GymEnv, str],
         learning_rate: Union[float, Schedule] = 1e-4,
-        buffer_size: int = 1000000,  # 1e6
+        buffer_size: int = 1_000_000,  # 1e6
         learning_starts: int = 50000,
         batch_size: Optional[int] = 32,
         tau: float = 1.0,

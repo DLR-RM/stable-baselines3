@@ -402,9 +402,15 @@ def load_from_zip_file(
             params = {}
 
             # Debug system info first
-            if print_system_info and "system_info.txt" in namelist:
-                print("== SAVED MODEL SYSTEM INFO ==")
-                print(archive.read("system_info.txt").decode())
+            if print_system_info:
+                if "system_info.txt" in namelist:
+                    print("== SAVED MODEL SYSTEM INFO ==")
+                    print(archive.read("system_info.txt").decode())
+                else:
+                    warnings.warn(
+                        "The model was saved with SB3 <= 1.2.0 and thus cannot print system information.",
+                        UserWarning,
+                    )
 
             if "data" in namelist and load_data:
                 # Load class parameters that are stored

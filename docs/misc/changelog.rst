@@ -21,7 +21,8 @@ New Features:
 ^^^^^^^^^^^^^
 - Added methods ``get_distribution`` and ``predict_values`` for ``ActorCriticPolicy`` for A2C/PPO/TRPO (@cyprienc)
 - Added methods ``forward_actor`` and ``forward_critic`` for ``MlpExtractor``
-- Added ``print_system_info`` to ``load()`` method to help debugging loading issues (e.g., different python version)
+- Added ``sb3.get_system_info()`` helper function to gather version information relevant to SB3 (e.g., Python and PyTorch version)
+- Saved models now store system information where agent was trained, and load functions have ``print_system_info`` parameter to help debugging load issues.
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -39,7 +40,6 @@ Others:
 - Cap gym max version to 0.19 to avoid issues with atari-py and other breaking changes
 - Improved error message when using dict observation with the wrong policy
 - Improved error message when using ``EvalCallback`` with two envs not wrapped the same way.
-- Added ``sb3.get_system_info()`` helper and save those info in the model zip archive to help debug issues
 
 Documentation:
 ^^^^^^^^^^^^^^

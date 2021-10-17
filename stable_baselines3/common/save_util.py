@@ -18,7 +18,7 @@ import torch as th
 
 import stable_baselines3
 from stable_baselines3.common.type_aliases import TensorDict
-from stable_baselines3.common.utils import get_device, system_info
+from stable_baselines3.common.utils import get_device, get_system_info
 
 
 def recursive_getattr(obj: Any, attr: str, *args) -> Any:
@@ -323,7 +323,7 @@ def save_to_zip_file(
         # Save metadata: library version when file was saved
         archive.writestr("_stable_baselines3_version", stable_baselines3.__version__)
         # Save system info about the current python env
-        archive.writestr("system_info.txt", system_info(print_info=False)[1])
+        archive.writestr("system_info.txt", get_system_info(print_info=False)[1])
 
 
 def save_to_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], obj: Any, verbose: int = 0) -> None:

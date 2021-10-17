@@ -78,10 +78,10 @@ Describe the characteristic of your environment:
  * Gym version
  * Versions of any other relevant libraries
 
-You can use `sb3.system_info()` to print relevant packages info:
+You can use `sb3.get_system_info()` to print relevant packages info:
 ```python
 import stable_baselines3 as sb3
-sb3.system_info()
+sb3.get_system_info()
 ```
 
 ### Additional context

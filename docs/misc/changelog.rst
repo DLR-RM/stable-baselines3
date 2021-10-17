@@ -39,7 +39,7 @@ Others:
 - Cap gym max version to 0.19 to avoid issues with atari-py and other breaking changes
 - Improved error message when using dict observation with the wrong policy
 - Improved error message when using ``EvalCallback`` with two envs not wrapped the same way.
-- Added ``sb3.system_info()`` helper and save those info in the model zip archive to help debug issues
+- Added ``sb3.get_system_info()`` helper and save those info in the model zip archive to help debug issues
 
 Documentation:
 ^^^^^^^^^^^^^^

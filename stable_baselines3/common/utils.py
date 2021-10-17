@@ -465,7 +465,7 @@ def should_collect_more_steps(
         )
 
 
-def system_info(print_info: bool = True) -> Tuple[Dict[str, str], str]:
+def get_system_info(print_info: bool = True) -> Tuple[Dict[str, str], str]:
     """
     Retrieve system and python env info for the current system.
 

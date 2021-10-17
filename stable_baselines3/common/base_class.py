@@ -25,8 +25,8 @@ from stable_baselines3.common.utils import (
     check_for_correct_spaces,
     get_device,
     get_schedule_fn,
+    get_system_info,
     set_random_seed,
-    system_info,
     update_learning_rate,
 )
 from stable_baselines3.common.vec_env import (
@@ -658,7 +658,7 @@ class BaseAlgorithm(ABC):
         """
         if print_system_info:
             print("== CURRENT SYSTEM INFO ==")
-            system_info()
+            get_system_info()
 
         data, params, pytorch_variables = load_from_zip_file(
             path, device=device, custom_objects=custom_objects, print_system_info=print_system_info

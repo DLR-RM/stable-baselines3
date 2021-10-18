@@ -25,6 +25,7 @@ from stable_baselines3.common.utils import (
     check_for_correct_spaces,
     get_device,
     get_schedule_fn,
+    get_system_info,
     set_random_seed,
     update_learning_rate,
 )
@@ -634,6 +635,7 @@ class BaseAlgorithm(ABC):
         env: Optional[GymEnv] = None,
         device: Union[th.device, str] = "auto",
         custom_objects: Optional[Dict[str, Any]] = None,
+        print_system_info: bool = False,
         **kwargs,
     ) -> "BaseAlgorithm":
         """
@@ -650,9 +652,17 @@ class BaseAlgorithm(ABC):
             will be used instead. Similar to custom_objects in
             ``keras.models.load_model``. Useful when you have an object in
             file that can not be deserialized.
+        :param print_system_info: Whether to print system info from the saved model
+            and the current system info (useful to debug loading issues)
         :param kwargs: extra arguments to change the model when loading
         """
-        data, params, pytorch_variables = load_from_zip_file(path, device=device, custom_objects=custom_objects)
+        if print_system_info:
+            print("== CURRENT SYSTEM INFO ==")
+            get_system_info()
+
+        data, params, pytorch_variables = load_from_zip_file(
+            path, device=device, custom_objects=custom_objects, print_system_info=print_system_info
+        )
 
         # Remove stored device information and replace with ours
         if "policy_kwargs" in data:

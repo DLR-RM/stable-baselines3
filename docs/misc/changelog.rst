@@ -4,9 +4,8 @@ Changelog
 ==========
 
 
-Release 1.2.1a3 (WIP)
+Release 1.2.1a4 (WIP)
 ---------------------------
-
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -22,6 +21,8 @@ New Features:
 ^^^^^^^^^^^^^
 - Added methods ``get_distribution`` and ``predict_values`` for ``ActorCriticPolicy`` for A2C/PPO/TRPO (@cyprienc)
 - Added methods ``forward_actor`` and ``forward_critic`` for ``MlpExtractor``
+- Added ``sb3.get_system_info()`` helper function to gather version information relevant to SB3 (e.g., Python and PyTorch version)
+- Saved models now store system information where agent was trained, and load functions have ``print_system_info`` parameter to help debugging load issues.
 
 Bug Fixes:
 ^^^^^^^^^^

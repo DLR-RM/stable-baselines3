@@ -163,9 +163,10 @@ def test_save_load(tmp_path, model_class):
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
-def test_set_env(model_class):
+def test_set_env(tmp_path, model_class):
     """
     Test if set_env function does work correct
+
     :param model_class: (BaseAlgorithm) A RL model
     """
 
@@ -176,24 +177,54 @@ def test_set_env(model_class):
 
     kwargs = {}
     if model_class in {DQN, DDPG, SAC, TD3}:
-        kwargs = dict(learning_starts=100, train_freq=4)
+        kwargs = dict(learning_starts=50, train_freq=4)
     elif model_class in {A2C, PPO}:
         kwargs = dict(n_steps=64)
 
     # create model
     model = model_class("MlpPolicy", env, policy_kwargs=dict(net_arch=[16]), **kwargs)
     # learn
-    model.learn(total_timesteps=128)
+    model.learn(total_timesteps=64)
 
     # change env
-    model.set_env(env2)
+    model.set_env(env2, force_reset=True)
+    # Check that last obs was discarded
+    assert model._last_obs is None
     # learn again
-    model.learn(total_timesteps=128)
+    model.learn(total_timesteps=64, reset_num_timesteps=True)
+    assert model.num_timesteps == 64
 
     # change env test wrapping
     model.set_env(env3)
     # learn again
-    model.learn(total_timesteps=128)
+    model.learn(total_timesteps=64)
+
+    # Keep the same env, disable reset
+    model.set_env(model.get_env(), force_reset=False)
+    assert model._last_obs is not None
+    # learn again
+    model.learn(total_timesteps=64, reset_num_timesteps=False)
+    assert model.num_timesteps == 2 * 64
+
+    current_env = model.get_env()
+    model.save(tmp_path / "test_save.zip")
+    del model
+    # Check that we can keep the number of timesteps after loading
+    # Here the env kept its state so we don't have to reset
+    model = model_class.load(tmp_path / "test_save.zip", env=current_env, force_reset=False)
+    assert model._last_obs is not None
+    model.learn(total_timesteps=64, reset_num_timesteps=False)
+    assert model.num_timesteps == 3 * 64
+
+    del model
+    # We are changing the env, the env must reset but we should keep the number of timesteps
+    model = model_class.load(tmp_path / "test_save.zip", env=env3, force_reset=True)
+    assert model._last_obs is None
+    model.learn(total_timesteps=64, reset_num_timesteps=False)
+    assert model.num_timesteps == 3 * 64
+
+    # Clear saved file
+    os.remove(tmp_path / "test_save.zip")
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)

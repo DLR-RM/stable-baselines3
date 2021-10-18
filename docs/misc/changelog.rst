@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.2.1a4 (WIP)
+Release 1.2.1a5 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -31,6 +31,7 @@ Bug Fixes:
   when observation normalization is disabled.
 - Fixed a bug where ``DQN`` would throw an error when using ``Discrete`` observation and stochastic actions
 - Fixed a bug where sub-classed observation spaces could not be used
+- Added ``force_reset`` argument to ``load()`` and ``set_env()`` in order to be able to call ``learn(reset_num_timesteps=False)`` with a new environment
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -81,6 +81,9 @@ In the following example, we will train, save and load a DQN model on the Lunar 
   del model  # delete trained model to demonstrate loading
 
   # Load the trained agent
+  # NOTE: if you have loading issue, you can pass `print_system_info=True`
+  # to compare the system on which the model was trained vs the current one
+  # model = DQN.load("dqn_lunar", env=env, print_system_info=True)
   model = DQN.load("dqn_lunar", env=env)
 
   # Evaluate the agent

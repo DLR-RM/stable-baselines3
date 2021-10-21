@@ -222,7 +222,11 @@ def test_exclude_include_saved_params(tmp_path, model_class):
     del model
     # Load with custom objects
     custom_objects = dict(learning_rate=2e-5, dummy=1.0)
-    model = model_class.load(str(tmp_path / "test_save.zip"), custom_objects=custom_objects)
+    model = model_class.load(
+        str(tmp_path / "test_save.zip"),
+        custom_objects=custom_objects,
+        print_system_info=True,
+    )
     assert model.verbose == 2
     # Check that the custom object was taken into account
     assert model.learning_rate == custom_objects["learning_rate"]

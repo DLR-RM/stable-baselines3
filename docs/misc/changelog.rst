@@ -4,20 +4,26 @@ Changelog
 ==========
 
 
-Release 1.2.1a2 (WIP)
+Release 1.2.1a4 (WIP)
 ---------------------------
-
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - ``sde_net_arch`` argument in policies is deprecated and will be removed in a future version.
 - ``_get_latent`` (``ActorCriticPolicy``) was removed
+- All logging keys now use underscores instead of spaces (@timokau). Concretely this changes:
+
+    - ``time/total timesteps`` to ``time/total_timesteps`` for off-policy algorithms (PPO and A2C) and the eval callback (on-policy algorithms already used the underscored version),
+    - ``rollout/exploration rate`` to ``rollout/exploration_rate`` and
+    - ``rollout/success rate`` to ``rollout/success_rate``.
 
 
 New Features:
 ^^^^^^^^^^^^^
 - Added methods ``get_distribution`` and ``predict_values`` for ``ActorCriticPolicy`` for A2C/PPO/TRPO (@cyprienc)
 - Added methods ``forward_actor`` and ``forward_critic`` for ``MlpExtractor``
+- Added ``sb3.get_system_info()`` helper function to gather version information relevant to SB3 (e.g., Python and PyTorch version)
+- Saved models now store system information where agent was trained, and load functions have ``print_system_info`` parameter to help debugging load issues.
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -35,6 +41,8 @@ Deprecations:
 Others:
 ^^^^^^^
 - Cap gym max version to 0.19 to avoid issues with atari-py and other breaking changes
+- Improved error message when using dict observation with the wrong policy
+- Improved error message when using ``EvalCallback`` with two envs not wrapped the same way.
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -43,6 +51,9 @@ Documentation:
 - Added policy-distillation-baselines to project page (@CUN-bjy)
 - Added ONNX export instructions (@batu)
 - Update read the doc env (fixed ``docutils`` issue)
+- Fix PPO environment name (@IljaAvadiev)
+- Fix custom env doc and add env registration example
+- Update algorithms from SB3 Contrib
 
 
 Release 1.2.0 (2021-09-03)
@@ -786,4 +797,4 @@ And all the contributors:
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @JadenTravnik @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
-@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc @wkirgsn @AechPro @CUN-bjy @batu
+@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau

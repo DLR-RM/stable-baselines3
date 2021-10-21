@@ -96,7 +96,7 @@ def test_vec_env_monitor_kwargs():
 
 
 def test_env_auto_monitor_wrap():
-    env = gym.make("pendulum-v1")
+    env = gym.make("Pendulum-v1")
     model = A2C("MlpPolicy", env)
     assert model.env.env_is_wrapped(Monitor)[0] is True
 
@@ -104,7 +104,7 @@ def test_env_auto_monitor_wrap():
     model = A2C("MlpPolicy", env)
     assert model.env.env_is_wrapped(Monitor)[0] is True
 
-    model = A2C("MlpPolicy", "pendulum-v1")
+    model = A2C("MlpPolicy", "Pendulum-v1")
     assert model.env.env_is_wrapped(Monitor)[0] is True
 
 
@@ -136,7 +136,7 @@ def test_custom_vec_env(tmp_path):
 
 
 def test_evaluate_policy():
-    model = A2C("MlpPolicy", "pendulum-v1", seed=0)
+    model = A2C("MlpPolicy", "Pendulum-v1", seed=0)
     n_steps_per_episode, n_eval_episodes = 200, 2
     model.n_callback_calls = 0
 
@@ -166,7 +166,7 @@ def test_evaluate_policy():
     assert len(episode_rewards) == n_eval_episodes
 
     # Test that warning is given about no monitor
-    eval_env = gym.make("pendulum-v1")
+    eval_env = gym.make("Pendulum-v1")
     with pytest.warns(UserWarning):
         _ = evaluate_policy(model, eval_env, n_eval_episodes)
 
@@ -355,7 +355,7 @@ def test_zip_strict():
 
 def test_is_wrapped():
     """Test that is_wrapped correctly detects wraps"""
-    env = gym.make("pendulum-v1")
+    env = gym.make("Pendulum-v1")
     env = gym.Wrapper(env)
     assert not is_wrapped(env, Monitor)
     monitor_env = Monitor(env)
@@ -372,11 +372,11 @@ def test_ppo_warnings():
 
     # Only 1 step: advantage normalization will return NaN
     with pytest.raises(AssertionError):
-        PPO("MlpPolicy", "pendulum-v1", n_steps=1)
+        PPO("MlpPolicy", "Pendulum-v1", n_steps=1)
 
     # Truncated mini-batch
     with pytest.warns(UserWarning):
-        PPO("MlpPolicy", "pendulum-v1", n_steps=6, batch_size=8)
+        PPO("MlpPolicy", "Pendulum-v1", n_steps=6, batch_size=8)
 
 
 def test_get_system_info():

@@ -536,7 +536,7 @@ Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
 
   # Create the model, the training environment
   # and the test environment (for evaluation)
-  model = SAC('MlpPolicy', 'pendulum-v1', verbose=1,
+  model = SAC('MlpPolicy', 'Pendulum-v1', verbose=1,
               learning_rate=1e-3, create_eval_env=True)
 
   # Evaluate the model every 1000 steps on 5 test episodes

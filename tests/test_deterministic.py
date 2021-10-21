@@ -14,7 +14,7 @@ def test_deterministic_training_common(algo):
     # Smaller network
     kwargs = {"policy_kwargs": dict(net_arch=[64])}
     if algo in [TD3, SAC]:
-        env_id = "pendulum-v1"
+        env_id = "Pendulum-v1"
         kwargs.update({"action_noise": NormalActionNoise(0.0, 0.1), "learning_starts": 100})
     else:
         env_id = "CartPole-v1"

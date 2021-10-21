@@ -378,6 +378,7 @@ def test_ppo_warnings():
     with pytest.warns(UserWarning):
         PPO("MlpPolicy", "pendulum-v1", n_steps=6, batch_size=8)
 
+
 def test_get_system_info():
     info, info_str = get_system_info(print_info=True)
     assert info["Stable-Baselines3"] == str(sb3.__version__)

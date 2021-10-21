@@ -6,13 +6,14 @@ import numpy as np
 import pytest
 import torch as th
 
+import stable_baselines3 as sb3
 from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.atari_wrappers import ClipRewardEnv, MaxAndSkipEnv
 from stable_baselines3.common.env_util import is_wrapped, make_atari_env, make_vec_env, unwrap_wrapper
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise, OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
-from stable_baselines3.common.utils import polyak_update, zip_strict
+from stable_baselines3.common.utils import get_system_info, polyak_update, zip_strict
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 
@@ -376,3 +377,13 @@ def test_ppo_warnings():
     # Truncated mini-batch
     with pytest.warns(UserWarning):
         PPO("MlpPolicy", "Pendulum-v0", n_steps=6, batch_size=8)
+
+
+def test_get_system_info():
+    info, info_str = get_system_info(print_info=True)
+    assert info["Stable-Baselines3"] == str(sb3.__version__)
+    assert "Python" in info_str
+    assert "PyTorch" in info_str
+    assert "GPU Enabled" in info_str
+    assert "Numpy" in info_str
+    assert "Gym" in info_str

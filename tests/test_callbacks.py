@@ -16,7 +16,7 @@ from stable_baselines3.common.callbacks import (
 )
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.envs import BitFlippingEnv, IdentityEnv
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN, DDPG])
@@ -167,3 +167,34 @@ def test_eval_callback_logs_are_written_with_the_correct_timestep(tmp_path):
     acc.Reload()
     for event in acc.scalars.Items("eval/mean_reward"):
         assert event.step % eval_freq == 0
+
+
+def test_eval_friendly_error():
+    # tests that eval callback does not crash when given a vector
+    train_env = VecNormalize(DummyVecEnv([lambda: gym.make("CartPole-v1")]))
+    eval_env = DummyVecEnv([lambda: gym.make("CartPole-v1")])
+    eval_env = VecNormalize(eval_env, training=False, norm_reward=False)
+    _ = train_env.reset()
+    original_obs = train_env.get_original_obs()
+    model = A2C("MlpPolicy", train_env, n_steps=50, seed=0)
+
+    eval_callback = EvalCallback(
+        eval_env,
+        eval_freq=100,
+        warn=False,
+    )
+    model.learn(100, callback=eval_callback)
+
+    # Check synchronization
+    assert np.allclose(train_env.normalize_obs(original_obs), eval_env.normalize_obs(original_obs))
+
+    wrong_eval_env = gym.make("CartPole-v1")
+    eval_callback = EvalCallback(
+        wrong_eval_env,
+        eval_freq=100,
+        warn=False,
+    )
+
+    with pytest.warns(Warning):
+        with pytest.raises(AssertionError):
+            model.learn(100, callback=eval_callback)

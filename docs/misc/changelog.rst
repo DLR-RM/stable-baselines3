@@ -9,6 +9,7 @@ Release 1.2.1a4 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Support for Python 3.6 was removed
 - ``sde_net_arch`` argument in policies is deprecated and will be removed in a future version.
 - ``_get_latent`` (``ActorCriticPolicy``) was removed
 - All logging keys now use underscores instead of spaces (@timokau). Concretely this changes:
@@ -35,7 +36,6 @@ Bug Fixes:
 
 Deprecations:
 ^^^^^^^^^^^^^
-- Support for Python 3.6 was removed
 - Switched minimum Gym version to 0.21.0
 
 Others:

@@ -4,8 +4,14 @@ Changelog
 ==========
 
 
-Release 1.2.1a4 (WIP)
+Release 1.2.1a5 (WIP)
 ---------------------------
+
+.. warning::
+
+  This version will be the last one supporting Python 3.6 (end of life in Dec 2021).
+  We highly recommended you to upgrade to Python >= 3.7.
+
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -31,6 +37,7 @@ Bug Fixes:
   when observation normalization is disabled.
 - Fixed a bug where ``DQN`` would throw an error when using ``Discrete`` observation and stochastic actions
 - Fixed a bug where sub-classed observation spaces could not be used
+- Added ``force_reset`` argument to ``load()`` and ``set_env()`` in order to be able to call ``learn(reset_num_timesteps=False)`` with a new environment
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -40,6 +47,7 @@ Others:
 - Cap gym max version to 0.19 to avoid issues with atari-py and other breaking changes
 - Improved error message when using dict observation with the wrong policy
 - Improved error message when using ``EvalCallback`` with two envs not wrapped the same way.
+- Added additional infos about supported python version for PyPi in ``setup.py``
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -51,7 +59,7 @@ Documentation:
 - Fix PPO environment name (@IljaAvadiev)
 - Fix custom env doc and add env registration example
 - Update algorithms from SB3 Contrib
-
+- Use underscores for numeric literals in examples to improve clarity
 
 Release 1.2.0 (2021-09-03)
 ---------------------------

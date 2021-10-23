@@ -4,8 +4,10 @@ Changelog
 ==========
 
 
-Release 1.2.1a5 (WIP)
+Release 1.3.0 (2021-10-23)
 ---------------------------
+
+*Bug fixes and improvements for the user*
 
 .. warning::
 

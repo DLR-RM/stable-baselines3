@@ -135,6 +135,7 @@ setup(
     long_description_content_type="text/markdown",
     version=__version__,
     python_requires=">=3.7",
+    # PyPI package information.
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",

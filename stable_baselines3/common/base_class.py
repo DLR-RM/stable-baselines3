@@ -489,13 +489,14 @@ class BaseAlgorithm(ABC):
         :param env: The environment for learning a policy
         :param force_reset: Force call to ``reset()`` before training
             to avoid unexpected behavior.
+            See issue https://github.com/DLR-RM/stable-baselines3/issues/597
         """
         # if it is not a VecEnv, make it a VecEnv
         # and do other transformations (dict obs, image transpose) if needed
         env = self._wrap_env(env, self.verbose)
         # Check that the observation spaces match
         check_for_correct_spaces(env, self.observation_space, self.action_space)
-        # Discard `_last_obs`
+        # Discard `_last_obs`, this will force the env to reset before training
         # See issue https://github.com/DLR-RM/stable-baselines3/issues/597
         if force_reset:
             self._last_obs = None
@@ -663,6 +664,7 @@ class BaseAlgorithm(ABC):
             and the current system info (useful to debug loading issues)
         :param force_reset: Force call to ``reset()`` before training
             to avoid unexpected behavior.
+            See https://github.com/DLR-RM/stable-baselines3/issues/597
         :param kwargs: extra arguments to change the model when loading
         """
         if print_system_info:
@@ -692,6 +694,7 @@ class BaseAlgorithm(ABC):
             env = cls._wrap_env(env, data["verbose"])
             # Check if given env is valid
             check_for_correct_spaces(env, data["observation_space"], data["action_space"])
+            # Discard `_last_obs`, this will force the env to reset before training
             # See issue https://github.com/DLR-RM/stable-baselines3/issues/597
             if force_reset and data is not None:
                 data["_last_obs"] = None

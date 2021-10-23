@@ -7,6 +7,12 @@ Changelog
 Release 1.2.1a5 (WIP)
 ---------------------------
 
+.. warning::
+
+  This version will be the last one supporting Python 3.6 (end of life in Dec 2021).
+  We highly recommended you to upgrade to Python >= 3.7.
+
+
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - ``sde_net_arch`` argument in policies is deprecated and will be removed in a future version.
@@ -41,6 +47,7 @@ Others:
 - Cap gym max version to 0.19 to avoid issues with atari-py and other breaking changes
 - Improved error message when using dict observation with the wrong policy
 - Improved error message when using ``EvalCallback`` with two envs not wrapped the same way.
+- Added additional infos about supported python version for PyPi in ``setup.py``
 
 Documentation:
 ^^^^^^^^^^^^^^

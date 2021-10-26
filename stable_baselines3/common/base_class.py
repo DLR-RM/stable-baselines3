@@ -478,7 +478,7 @@ class BaseAlgorithm(ABC):
         """
         return self._vec_normalize_env
 
-    def set_env(self, env: GymEnv) -> None:
+    def set_env(self, env: GymEnv, force_reset: bool = True) -> None:
         """
         Checks the validity of the environment, and if it is coherent, set it as the current environment.
         Furthermore wrap any non vectorized env into a vectorized
@@ -487,12 +487,19 @@ class BaseAlgorithm(ABC):
         - action_space
 
         :param env: The environment for learning a policy
+        :param force_reset: Force call to ``reset()`` before training
+            to avoid unexpected behavior.
+            See issue https://github.com/DLR-RM/stable-baselines3/issues/597
         """
         # if it is not a VecEnv, make it a VecEnv
         # and do other transformations (dict obs, image transpose) if needed
         env = self._wrap_env(env, self.verbose)
         # Check that the observation spaces match
         check_for_correct_spaces(env, self.observation_space, self.action_space)
+        # Discard `_last_obs`, this will force the env to reset before training
+        # See issue https://github.com/DLR-RM/stable-baselines3/issues/597
+        if force_reset:
+            self._last_obs = None
 
         self.n_envs = env.num_envs
         self.env = env
@@ -636,6 +643,7 @@ class BaseAlgorithm(ABC):
         device: Union[th.device, str] = "auto",
         custom_objects: Optional[Dict[str, Any]] = None,
         print_system_info: bool = False,
+        force_reset: bool = True,
         **kwargs,
     ) -> "BaseAlgorithm":
         """
@@ -654,6 +662,9 @@ class BaseAlgorithm(ABC):
             file that can not be deserialized.
         :param print_system_info: Whether to print system info from the saved model
             and the current system info (useful to debug loading issues)
+        :param force_reset: Force call to ``reset()`` before training
+            to avoid unexpected behavior.
+            See https://github.com/DLR-RM/stable-baselines3/issues/597
         :param kwargs: extra arguments to change the model when loading
         """
         if print_system_info:
@@ -683,6 +694,10 @@ class BaseAlgorithm(ABC):
             env = cls._wrap_env(env, data["verbose"])
             # Check if given env is valid
             check_for_correct_spaces(env, data["observation_space"], data["action_space"])
+            # Discard `_last_obs`, this will force the env to reset before training
+            # See issue https://github.com/DLR-RM/stable-baselines3/issues/597
+            if force_reset and data is not None:
+                data["_last_obs"] = None
         else:
             # Use stored env, if one exists. If not, continue as is (can be used for predict)
             if "env" in data:

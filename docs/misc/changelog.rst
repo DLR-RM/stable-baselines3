@@ -31,6 +31,7 @@ New Features:
 - Added methods ``forward_actor`` and ``forward_critic`` for ``MlpExtractor``
 - Added ``sb3.get_system_info()`` helper function to gather version information relevant to SB3 (e.g., Python and PyTorch version)
 - Saved models now store system information where agent was trained, and load functions have ``print_system_info`` parameter to help debugging load issues.
+- Added `norm_obs_keys` param for `VecNormalize` wrapper to configure which observation keys to normalize.
 
 Bug Fixes:
 ^^^^^^^^^^

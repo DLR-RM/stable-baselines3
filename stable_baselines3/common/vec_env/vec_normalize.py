@@ -1,7 +1,7 @@
 import pickle
 import warnings
 from copy import deepcopy
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Optional, Union
 
 import gym
 import numpy as np
@@ -24,6 +24,7 @@ class VecNormalize(VecEnvWrapper):
     :param clip_reward: Max value absolute for discounted reward
     :param gamma: discount factor
     :param epsilon: To avoid division by zero
+    :param norm_obs_keys: Which keys from observation dict to normalize, applicable for gym.spaces.Dict observation spaces only (default: True)
     """
 
     def __init__(
@@ -36,6 +37,7 @@ class VecNormalize(VecEnvWrapper):
         clip_reward: float = 10.0,
         gamma: float = 0.99,
         epsilon: float = 1e-8,
+        norm_obs_keys: Optional[List[str]] = None,
     ):
         VecEnvWrapper.__init__(self, venv)
 
@@ -46,8 +48,15 @@ class VecNormalize(VecEnvWrapper):
         if isinstance(self.observation_space, gym.spaces.Dict):
             self.obs_keys = set(self.observation_space.spaces.keys())
             self.obs_spaces = self.observation_space.spaces
-            self.obs_rms = {key: RunningMeanStd(shape=space.shape) for key, space in self.obs_spaces.items()}
+            self.obs_rms = {
+                key: RunningMeanStd(shape=space.shape)
+                for key, space in self.obs_spaces.items()
+                if norm_obs_keys is None or key in norm_obs_keys
+            }
         else:
+            if norm_obs_keys:
+                raise ValueError("`norm_obs_keys` param is applicable only with `gym.spaces.Dict` observation spaces")
+
             self.obs_keys, self.obs_spaces = None, None
             self.obs_rms = RunningMeanStd(shape=self.observation_space.shape)
 
@@ -170,8 +179,9 @@ class VecNormalize(VecEnvWrapper):
         obs_ = deepcopy(obs)
         if self.norm_obs:
             if isinstance(obs, dict) and isinstance(self.obs_rms, dict):
-                for key in self.obs_rms.keys():
-                    obs_[key] = self._normalize_obs(obs[key], self.obs_rms[key]).astype(np.float32)
+                obs_rms_keys = self.obs_rms.keys()
+                for key, val in obs.items():
+                    obs_[key] = self._normalize_obs(val, self.obs_rms[key]).astype(np.float32) if key in obs_rms_keys else val
             else:
                 obs_ = self._normalize_obs(obs, self.obs_rms).astype(np.float32)
         return obs_
@@ -190,8 +200,9 @@ class VecNormalize(VecEnvWrapper):
         obs_ = deepcopy(obs)
         if self.norm_obs:
             if isinstance(obs, dict) and isinstance(self.obs_rms, dict):
-                for key in self.obs_rms.keys():
-                    obs_[key] = self._unnormalize_obs(obs[key], self.obs_rms[key])
+                obs_rms_keys = self.obs_rms.keys()
+                for key, val in obs.items():
+                    obs_[key] = self._unnormalize_obs(val, self.obs_rms[key]) if key in obs_rms_keys else val
             else:
                 obs_ = self._unnormalize_obs(obs, self.obs_rms)
         return obs_

@@ -1,5 +1,6 @@
 import gym
 import numpy as np
+import operator
 import pytest
 from gym import spaces
 
@@ -152,9 +153,9 @@ def _make_warmstart_cartpole():
     return _make_warmstart(lambda: gym.make("CartPole-v1"))
 
 
-def _make_warmstart_dict_env():
-    """Warm-start VecNormalize by stepping through BitFlippingEnv"""
-    return _make_warmstart(make_dict_env)
+def _make_warmstart_dict_env(**kwargs):
+    """Warm-start VecNormalize by stepping through DummyDictEnv"""
+    return _make_warmstart(make_dict_env, **kwargs)
 
 
 def test_runningmeanstd():
@@ -267,6 +268,21 @@ def test_normalize_external():
     assert np.all(norm_rewards < 1)
 
 
+def test_normalize_dict_selected_keys():
+    venv = _make_warmstart_dict_env(norm_obs=True, norm_obs_keys=["observation"])
+    for _ in range(3):
+        actions = [venv.action_space.sample()]
+        obs, rewards, _, _ = venv.step(actions)
+        orig_obs = venv.get_original_obs()
+
+        # "observation" is expected to be normalized
+        np.testing.assert_array_compare(operator.__ne__, obs["observation"], orig_obs["observation"])
+        assert allclose(venv.normalize_obs(orig_obs), obs)
+
+        # other keys are expected to be presented "as is"
+        np.testing.assert_array_equal(obs["achieved_goal"], orig_obs["achieved_goal"])
+
+
 @pytest.mark.parametrize("model_class", [SAC, TD3, HerReplayBuffer])
 @pytest.mark.parametrize("online_sampling", [False, True])
 def test_offpolicy_normalization(model_class, online_sampling):
@@ -358,3 +374,8 @@ def test_discrete_obs():
 
     # Smoke test that it runs with norm_obs False
     _make_warmstart_cliffwalking(norm_obs=False)
+
+
+def test_non_dict_obs_keys():
+    with pytest.raises(ValueError, match=".*is applicable only.*"):
+        _make_warmstart(lambda: DummyRewardEnv(), norm_obs_keys=["key"])

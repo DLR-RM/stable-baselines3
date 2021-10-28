@@ -56,7 +56,7 @@ class VecNormalize(VecEnvWrapper):
             self.obs_spaces = self.observation_space.spaces
             self.obs_rms = {key: RunningMeanStd(shape=self.obs_spaces[key].shape) for key in self.norm_obs_keys}
         else:
-            self.obs_spaces = None, None
+            self.obs_spaces = None
             self.obs_rms = RunningMeanStd(shape=self.observation_space.shape)
 
         self.ret_rms = RunningMeanStd(shape=())

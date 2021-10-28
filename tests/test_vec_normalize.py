@@ -1,6 +1,7 @@
+import operator
+
 import gym
 import numpy as np
-import operator
 import pytest
 from gym import spaces
 

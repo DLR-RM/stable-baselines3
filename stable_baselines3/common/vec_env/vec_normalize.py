@@ -117,6 +117,9 @@ class VecNormalize(VecEnvWrapper):
         User must call set_venv() after unpickling before using.
 
         :param state:"""
+        # Backward compatibility
+        if "norm_obs_keys" not in state:
+            state["norm_obs_keys"] = list(state["observation_space"].spaces.keys())
         self.__dict__.update(state)
         assert "venv" not in state
         self.venv = None

@@ -70,6 +70,31 @@ class DummyDictEnv(gym.GoalEnv):
         return -(distance > 0).astype(np.float32)
 
 
+class DummyMixedDictEnv(gym.Env):
+    """
+    Dummy mixed gym env for testing purposes
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.observation_space = spaces.Dict(
+            {
+                "obs1": spaces.Box(low=-20.0, high=20.0, shape=(4,), dtype=np.float32),
+                "obs2": spaces.Discrete(1),
+                "obs3": spaces.Box(low=-20.0, high=20.0, shape=(4,), dtype=np.float32),
+            }
+        )
+        self.action_space = spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
+
+    def reset(self):
+        return self.observation_space.sample()
+
+    def step(self, action):
+        obs = self.observation_space.sample()
+        done = np.random.rand() > 0.8
+        return obs, 0.0, done, {}
+
+
 def allclose(obs_1, obs_2):
     """
     Generalized np.allclose() to work with dict spaces.
@@ -380,3 +405,9 @@ def test_discrete_obs():
 def test_non_dict_obs_keys():
     with pytest.raises(ValueError, match=".*is applicable only.*"):
         _make_warmstart(lambda: DummyRewardEnv(), norm_obs_keys=["key"])
+
+    with pytest.raises(ValueError, match=".* explicitely pass the observation keys.*"):
+        _make_warmstart(lambda: DummyMixedDictEnv())
+
+    # Ignore Discrete observation key
+    _make_warmstart(lambda: DummyMixedDictEnv(), norm_obs_keys=["obs1", "obs3"])

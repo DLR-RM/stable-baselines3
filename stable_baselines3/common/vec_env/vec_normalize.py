@@ -45,19 +45,17 @@ class VecNormalize(VecEnvWrapper):
             if not isinstance(self.observation_space, (gym.spaces.Box, gym.spaces.Dict)):
                 raise ValueError("VecNormalize only supports `gym.spaces.Box` and `gym.spaces.Dict` observation spaces")
 
-        if isinstance(self.observation_space, gym.spaces.Dict):
-            self.obs_keys = set(self.observation_space.spaces.keys())
-            self.obs_spaces = self.observation_space.spaces
-            self.obs_rms = {
-                key: RunningMeanStd(shape=space.shape)
-                for key, space in self.obs_spaces.items()
-                if norm_obs_keys is None or key in norm_obs_keys
-            }
-        else:
-            if norm_obs_keys:
-                raise ValueError("`norm_obs_keys` param is applicable only with `gym.spaces.Dict` observation spaces")
+        self.norm_obs = norm_obs
+        self.norm_obs_keys = norm_obs_keys
+        # Check observation spaces
+        if self.norm_obs:
+            self._sanity_checks()
 
-            self.obs_keys, self.obs_spaces = None, None
+        if isinstance(self.observation_space, gym.spaces.Dict):
+            self.obs_spaces = self.observation_space.spaces
+            self.obs_rms = {key: RunningMeanStd(shape=self.obs_spaces[key].shape) for key in self.norm_obs_keys}
+        else:
+            self.obs_spaces = None, None
             self.obs_rms = RunningMeanStd(shape=self.observation_space.shape)
 
         self.ret_rms = RunningMeanStd(shape=())
@@ -72,6 +70,32 @@ class VecNormalize(VecEnvWrapper):
         self.norm_reward = norm_reward
         self.old_obs = np.array([])
         self.old_reward = np.array([])
+
+    def _sanity_checks(self) -> None:
+        """
+        Check the observations that are going to be normalized are of the correct type (spaces.Box).
+        """
+        if isinstance(self.observation_space, gym.spaces.Dict):
+            # By default, we normalize all keys
+            if self.norm_obs_keys is None:
+                self.norm_obs_keys = list(self.observation_space.spaces.keys())
+            # Check that all keys are of type Box
+            for obs_key in self.norm_obs_keys:
+                if not isinstance(self.observation_space.spaces[obs_key], gym.spaces.Box):
+                    raise ValueError(
+                        f"VecNormalize only supports `gym.spaces.Box` observation spaces but {obs_key} "
+                        f"is of type {self.observation_space.spaces[obs_key]}. "
+                        "You should probably explicitely pass the observation keys that should be normalized via the `norm_obs_keys` parameter."
+                    )
+
+        elif isinstance(self.observation_space, gym.spaces.Box):
+            if self.norm_obs_keys is not None:
+                raise ValueError("`norm_obs_keys` param is applicable only with `gym.spaces.Dict` observation spaces")
+
+        else:
+            raise ValueError(
+                f"VecNormalize only supports `gym.spaces.Box` and `gym.spaces.Dict` observation spaces, not {self.observation_space}"
+            )
 
     def __getstate__(self) -> Dict[str, Any]:
         """
@@ -179,9 +203,9 @@ class VecNormalize(VecEnvWrapper):
         obs_ = deepcopy(obs)
         if self.norm_obs:
             if isinstance(obs, dict) and isinstance(self.obs_rms, dict):
-                obs_rms_keys = self.obs_rms.keys()
-                for key, val in obs.items():
-                    obs_[key] = self._normalize_obs(val, self.obs_rms[key]).astype(np.float32) if key in obs_rms_keys else val
+                # Only normalize the specified keys
+                for key in self.norm_obs_keys:
+                    obs_[key] = self._normalize_obs(obs[key], self.obs_rms[key]).astype(np.float32)
             else:
                 obs_ = self._normalize_obs(obs, self.obs_rms).astype(np.float32)
         return obs_
@@ -200,9 +224,8 @@ class VecNormalize(VecEnvWrapper):
         obs_ = deepcopy(obs)
         if self.norm_obs:
             if isinstance(obs, dict) and isinstance(self.obs_rms, dict):
-                obs_rms_keys = self.obs_rms.keys()
-                for key, val in obs.items():
-                    obs_[key] = self._unnormalize_obs(val, self.obs_rms[key]) if key in obs_rms_keys else val
+                for key in self.norm_obs_keys:
+                    obs_[key] = self._unnormalize_obs(obs[key], self.obs_rms[key])
             else:
                 obs_ = self._unnormalize_obs(obs, self.obs_rms)
         return obs_

@@ -1,3 +1,5 @@
+import operator
+
 import gym
 import numpy as np
 import pytest
@@ -66,6 +68,31 @@ class DummyDictEnv(gym.GoalEnv):
     def compute_reward(self, achieved_goal: np.ndarray, desired_goal: np.ndarray, _info) -> np.float32:
         distance = np.linalg.norm(achieved_goal - desired_goal, axis=-1)
         return -(distance > 0).astype(np.float32)
+
+
+class DummyMixedDictEnv(gym.Env):
+    """
+    Dummy mixed gym env for testing purposes
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.observation_space = spaces.Dict(
+            {
+                "obs1": spaces.Box(low=-20.0, high=20.0, shape=(4,), dtype=np.float32),
+                "obs2": spaces.Discrete(1),
+                "obs3": spaces.Box(low=-20.0, high=20.0, shape=(4,), dtype=np.float32),
+            }
+        )
+        self.action_space = spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
+
+    def reset(self):
+        return self.observation_space.sample()
+
+    def step(self, action):
+        obs = self.observation_space.sample()
+        done = np.random.rand() > 0.8
+        return obs, 0.0, done, {}
 
 
 def allclose(obs_1, obs_2):
@@ -152,9 +179,9 @@ def _make_warmstart_cartpole():
     return _make_warmstart(lambda: gym.make("CartPole-v1"))
 
 
-def _make_warmstart_dict_env():
-    """Warm-start VecNormalize by stepping through BitFlippingEnv"""
-    return _make_warmstart(make_dict_env)
+def _make_warmstart_dict_env(**kwargs):
+    """Warm-start VecNormalize by stepping through DummyDictEnv"""
+    return _make_warmstart(make_dict_env, **kwargs)
 
 
 def test_runningmeanstd():
@@ -267,6 +294,21 @@ def test_normalize_external():
     assert np.all(norm_rewards < 1)
 
 
+def test_normalize_dict_selected_keys():
+    venv = _make_warmstart_dict_env(norm_obs=True, norm_obs_keys=["observation"])
+    for _ in range(3):
+        actions = [venv.action_space.sample()]
+        obs, rewards, _, _ = venv.step(actions)
+        orig_obs = venv.get_original_obs()
+
+        # "observation" is expected to be normalized
+        np.testing.assert_array_compare(operator.__ne__, obs["observation"], orig_obs["observation"])
+        assert allclose(venv.normalize_obs(orig_obs), obs)
+
+        # other keys are expected to be presented "as is"
+        np.testing.assert_array_equal(obs["achieved_goal"], orig_obs["achieved_goal"])
+
+
 @pytest.mark.parametrize("model_class", [SAC, TD3, HerReplayBuffer])
 @pytest.mark.parametrize("online_sampling", [False, True])
 def test_offpolicy_normalization(model_class, online_sampling):
@@ -358,3 +400,14 @@ def test_discrete_obs():
 
     # Smoke test that it runs with norm_obs False
     _make_warmstart_cliffwalking(norm_obs=False)
+
+
+def test_non_dict_obs_keys():
+    with pytest.raises(ValueError, match=".*is applicable only.*"):
+        _make_warmstart(lambda: DummyRewardEnv(), norm_obs_keys=["key"])
+
+    with pytest.raises(ValueError, match=".* explicitely pass the observation keys.*"):
+        _make_warmstart(lambda: DummyMixedDictEnv())
+
+    # Ignore Discrete observation key
+    _make_warmstart(lambda: DummyMixedDictEnv(), norm_obs_keys=["obs1", "obs3"])

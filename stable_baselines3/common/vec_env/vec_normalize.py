@@ -24,7 +24,8 @@ class VecNormalize(VecEnvWrapper):
     :param clip_reward: Max value absolute for discounted reward
     :param gamma: discount factor
     :param epsilon: To avoid division by zero
-    :param norm_obs_keys: Which keys from observation dict to normalize (default: True)
+    :param norm_obs_keys: Which keys from observation dict to normalize.
+        If not specified, all keys will be normalized.
     """
 
     def __init__(

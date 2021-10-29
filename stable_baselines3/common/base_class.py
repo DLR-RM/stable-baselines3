@@ -122,6 +122,7 @@ class BaseAlgorithm(ABC):
         self.num_timesteps = 0
         # Used for updating schedules
         self._total_timesteps = 0
+        self._num_timesteps_at_start = 0
         self.eval_env = None
         self.seed = seed
         self.action_noise = None  # type: Optional[ActionNoise]

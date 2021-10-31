@@ -337,11 +337,11 @@ def test_fps_logger(tmp_path, algo):
 
     # fps should be at most max_fps
     model.learn(100, log_interval=1)
-    assert max_fps / 4 <= logger.name_to_value["time/fps"] <= max_fps
+    assert max_fps / 10 <= logger.name_to_value["time/fps"] <= max_fps
 
     # second time, FPS should be the same
     model.learn(100, log_interval=1)
-    assert max_fps / 4 <= logger.name_to_value["time/fps"] <= max_fps
+    assert max_fps / 10 <= logger.name_to_value["time/fps"] <= max_fps
 
     # Artificially increase num_timesteps to check
     # that fps computation is reset at each call to learn()
@@ -349,4 +349,4 @@ def test_fps_logger(tmp_path, algo):
 
     # third time, FPS should be the same
     model.learn(100, log_interval=1, reset_num_timesteps=False)
-    assert max_fps / 4 <= logger.name_to_value["time/fps"] <= max_fps
+    assert max_fps / 10 <= logger.name_to_value["time/fps"] <= max_fps

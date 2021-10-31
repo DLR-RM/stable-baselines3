@@ -9,7 +9,7 @@ import torch as th
 from matplotlib import pyplot as plt
 from pandas.errors import EmptyDataError
 
-from stable_baselines3 import A2C
+from stable_baselines3 import A2C, DQN
 from stable_baselines3.common.logger import (
     DEBUG,
     INFO,
@@ -304,7 +304,7 @@ class TimeDelayEnv(gym.Env):
         super().__init__()
         self.delay = delay
         self.observation_space = gym.spaces.Box(low=-20.0, high=20.0, shape=(4,), dtype=np.float32)
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
+        self.action_space = gym.spaces.Discrete(2)
 
     def reset(self):
         return self.observation_space.sample()
@@ -312,7 +312,7 @@ class TimeDelayEnv(gym.Env):
     def step(self, action):
         time.sleep(self.delay)
         obs = self.observation_space.sample()
-        return obs, 0.0, False, {}
+        return obs, 0.0, True, {}
 
 
 class InMemoryLogger(Logger):
@@ -327,13 +327,14 @@ class InMemoryLogger(Logger):
         pass
 
 
-def test_fps_logger(tmp_path):
+@pytest.mark.parametrize("algo", [A2C, DQN])
+def test_fps_logger(tmp_path, algo):
     logger = InMemoryLogger()
     env = TimeDelayEnv(0.01)
-    model = A2C("MlpPolicy", env, verbose=1)
+    model = algo("MlpPolicy", env, verbose=1)
     model.set_logger(logger)
 
-    # first time, FPS should be around 78
+    # first time, FPS should be around 80
     model.learn(100, log_interval=1)
     assert 75 <= logger.name_to_value["time/fps"] <= 100
 

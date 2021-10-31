@@ -141,5 +141,3 @@ Suite of RL environments focussed on using a simulated tactile sensor as the pri
 | GitHub: https://github.com/ac-93/tactile_gym
 | Paper: https://arxiv.org/abs/2106.08796
 | Website: `Link <https://sites.google.com/my.bristol.ac.uk/tactile-gym-sim2real/home>`_
-
-

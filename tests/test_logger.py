@@ -330,7 +330,7 @@ class InMemoryLogger(Logger):
 @pytest.mark.parametrize("algo", [A2C, DQN])
 def test_fps_logger(tmp_path, algo):
     logger = InMemoryLogger()
-    max_fps = 2000
+    max_fps = 1000
     env = TimeDelayEnv(1 / max_fps)
     model = algo("MlpPolicy", env, verbose=1)
     model.set_logger(logger)

@@ -330,18 +330,23 @@ class InMemoryLogger(Logger):
 @pytest.mark.parametrize("algo", [A2C, DQN])
 def test_fps_logger(tmp_path, algo):
     logger = InMemoryLogger()
-    env = TimeDelayEnv(0.01)
+    max_fps = 2000
+    env = TimeDelayEnv(1 / max_fps)
     model = algo("MlpPolicy", env, verbose=1)
     model.set_logger(logger)
 
-    # first time, FPS should be around 80
+    # fps should be at most max_fps
     model.learn(100, log_interval=1)
-    assert 75 <= logger.name_to_value["time/fps"] <= 100
+    assert max_fps / 4 <= logger.name_to_value["time/fps"] <= max_fps
 
     # second time, FPS should be the same
     model.learn(100, log_interval=1)
-    assert 75 <= logger.name_to_value["time/fps"] <= 100
+    assert max_fps / 4 <= logger.name_to_value["time/fps"] <= max_fps
 
-    # second time, FPS should be the same
+    # Artificially increase num_timesteps to check
+    # that fps computation is reset at each call to learn()
+    model.num_timesteps = 20_000
+
+    # third time, FPS should be the same
     model.learn(100, log_interval=1, reset_num_timesteps=False)
-    assert 75 <= logger.name_to_value["time/fps"] <= 100
+    assert max_fps / 4 <= logger.name_to_value["time/fps"] <= max_fps

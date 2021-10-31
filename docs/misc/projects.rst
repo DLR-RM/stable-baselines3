@@ -132,3 +132,14 @@ Driving policies can be trained in different scenarios, and several notebooks us
 | GitHub: https://github.com/eleurent/highway-env
 | Examples: `Colab Links <https://github.com/eleurent/highway-env/tree/master/scripts#using-stable-baselines3>`_
 
+tactile-gym
+-------------------
+
+Suite of RL environments focussed on using a simulated tactile sensor as the primary source of observations. Sim-to-Real results across 4 out of 5 proposed envs.
+
+| Author: Alex Church 
+| GitHub: https://github.com/ac-93/tactile_gym
+| Paper: https://arxiv.org/abs/2106.08796
+| Website: `Link <https://sites.google.com/my.bristol.ac.uk/tactile-gym-sim2real/home>`_
+
+

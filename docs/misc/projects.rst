@@ -120,3 +120,15 @@ A PyTorch implementation of Policy Distillation for control, which has well-trai
 | Authors: Junyeob Baek
 | GitHub: https://github.com/CUN-bjy/policy-distillation-baselines
 | Demo: `link <https://github.com/CUN-bjy/policy-distillation-baselines/issues/3#issuecomment-817730173>`_
+
+highway-env
+-------------------
+
+A minimalist environment for decision-making in Autonomous Driving.
+
+Driving policies can be trained in different scenarios, and several notebooks using SB3 are provided as examples.
+
+| Author: `Edouard Leurent <https://edouardleurent.com>`_
+| GitHub: https://github.com/eleurent/highway-env
+| Examples: `Colab Links <https://github.com/eleurent/highway-env/tree/master/scripts#using-stable-baselines3>`_
+

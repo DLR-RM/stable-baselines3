@@ -17,6 +17,8 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed a bug where ``set_env()`` with ``VecNormalize`` would result in an error with off-policy algorithms (thanks @cleversonahum)
+- FPS calculation is now performed based on number of steps performed during last ``learn`` call, even when ``reset_num_timesteps`` is set to ``False`` (@kachayev)
+
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -27,6 +29,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Add highway-env to projects page (@eleurent)
+- Add tactile-gym to projects page (@ac-93)
 
 
 Release 1.3.0 (2021-10-23)
@@ -832,4 +835,4 @@ And all the contributors:
 @ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan
 @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
-@eleurent
+@eleurent @ac-93

@@ -93,10 +93,10 @@ A fully custom python API and C++ DLL to treat the popular game Rocket League li
 gym-electric-motor
 -------------------
 
-An OpenAI gym environment for the simulation and control of electric drive trains. 
+An OpenAI gym environment for the simulation and control of electric drive trains.
 Think of Matlab/Simulink for electric motors, inverters, and load profiles, but non-graphical and open-source in Python.
 
-`gym-electric-motor` offers a rich interface for customization, including 
+`gym-electric-motor` offers a rich interface for customization, including
 - plug-and-play of different control algorithms ranging from classical controllers (like field-oriented control) up to any RL agent you can find,
 - reward shaping,
 - load profiling,
@@ -132,3 +132,12 @@ Driving policies can be trained in different scenarios, and several notebooks us
 | GitHub: https://github.com/eleurent/highway-env
 | Examples: `Colab Links <https://github.com/eleurent/highway-env/tree/master/scripts#using-stable-baselines3>`_
 
+tactile-gym
+-------------------
+
+Suite of RL environments focussed on using a simulated tactile sensor as the primary source of observations. Sim-to-Real results across 4 out of 5 proposed envs.
+
+| Author: Alex Church
+| GitHub: https://github.com/ac-93/tactile_gym
+| Paper: https://arxiv.org/abs/2106.08796
+| Website: `tactile-gym website <https://sites.google.com/my.bristol.ac.uk/tactile-gym-sim2real/home>`_

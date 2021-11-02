@@ -499,6 +499,10 @@ class BaseAlgorithm(ABC):
         env = self._wrap_env(env, self.verbose)
         # Check that the observation spaces match
         check_for_correct_spaces(env, self.observation_space, self.action_space)
+        # Update VecNormalize object
+        # otherwise the wrong env may be used, see https://github.com/DLR-RM/stable-baselines3/issues/637
+        self._vec_normalize_env = unwrap_vec_normalize(env)
+
         # Discard `_last_obs`, this will force the env to reset before training
         # See issue https://github.com/DLR-RM/stable-baselines3/issues/597
         if force_reset:

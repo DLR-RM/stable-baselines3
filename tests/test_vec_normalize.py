@@ -341,6 +341,13 @@ def test_offpolicy_normalization(model_class, online_sampling):
     else:
         model = model_class("MlpPolicy", env, verbose=1, learning_starts=100, policy_kwargs=dict(net_arch=[64]))
 
+    # Check that VecNormalize object is correctly updated
+    assert model.get_vec_normalize_env() is env
+    model.set_env(eval_env)
+    assert model.get_vec_normalize_env() is eval_env
+    model.learn(total_timesteps=10)
+    model.set_env(env)
+
     model.learn(total_timesteps=150, eval_env=eval_env, eval_freq=75)
     # Check getter
     assert isinstance(model.get_vec_normalize_env(), VecNormalize)

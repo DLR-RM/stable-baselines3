@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
+from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 
 normal_action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
@@ -139,3 +140,24 @@ def test_train_freq_fail(train_freq):
             train_freq=train_freq,
         )
         model.learn(total_timesteps=250)
+
+
+@pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
+def test_offpolicy_multi_env(model_class):
+    if model_class in [SAC, TD3, DDPG]:
+        env_id = "Pendulum-v0"
+        policy_kwargs = dict(net_arch=[64], n_critics=1)
+    else:
+        env_id = "CartPole-v1"
+        policy_kwargs = dict(net_arch=[64])
+    env = make_vec_env(env_id, n_envs=2)
+    model = model_class(
+        "MlpPolicy",
+        env,
+        policy_kwargs=policy_kwargs,
+        learning_starts=100,
+        buffer_size=10000,
+        verbose=0,
+        train_freq=5,
+    )
+    model.learn(total_timesteps=150)

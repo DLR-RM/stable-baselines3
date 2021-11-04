@@ -215,6 +215,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 self.observation_space,
                 self.action_space,
                 self.device,
+                n_envs=self.env.num_envs,
                 optimize_memory_usage=self.optimize_memory_usage,
                 **self.replay_buffer_kwargs,
             )
@@ -496,7 +497,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         for i, done in enumerate(dones):
             if done and infos[i].get("terminal_observation") is not None:
                 if isinstance(next_obs, dict):
-                    assert len(dones) == 1, "Dict obs does not support multi env yet"
+                    # assert len(dones) == 1, "Dict obs does not support multi env yet"
                     # MultiEnv not supported for dict obs yet
                     next_obs = infos[i]["terminal_observation"]
                     # VecNormalize normalizes the terminal observation
@@ -518,15 +519,14 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                     dones[i],
                     [infos[i]],  # pytype: disable=wrong-arg-types
                 )
-            else:
-                replay_buffer.add(
-                    self._last_original_obs[i],
-                    next_obs[i],
-                    buffer_action[i],
-                    reward_[i],
-                    dones[i],
-                    [infos[i]],
-                )
+        replay_buffer.add(
+            self._last_original_obs,
+            next_obs,
+            buffer_action,
+            reward_,
+            dones,
+            infos,
+        )
 
         self._last_obs = new_obs
         # Save the unnormalized observation

@@ -158,6 +158,22 @@ Multiprocessing: Unleashing the Power of Vectorized Environments
           env.render()
 
 
+Multiprocessing with off-policy algorithms
+------------------------------------------
+
+.. code-block:: python
+
+  import gym
+
+  from stable_baselines3 import SAC
+  from stable_baselines3.common.env_util import make_vec_env
+
+  env = make_vec_env("Pendulum-v0", n_envs=2, seed=0)
+
+  model = SAC('MlpPolicy', env, verbose=1)
+  model.learn(total_timesteps=10_000)
+
+
 Dict Observations
 -----------------
 

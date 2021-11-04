@@ -12,7 +12,7 @@ import torch as th
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.buffers import DictReplayBuffer, ReplayBuffer
 from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.noise import ActionNoise
+from stable_baselines3.common.noise import ActionNoise, VectorizedActionNoise
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.save_util import load_from_pkl, save_to_pkl
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn, Schedule, TrainFreq, TrainFrequencyUnit
@@ -556,7 +556,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # Switch to eval mode (this affects batch norm / dropout)
         self.policy.set_training_mode(False)
 
-        episode_rewards, total_timesteps = [], []
         num_collected_steps, num_collected_episodes = 0, 0
 
         assert isinstance(env, VecEnv), "You must pass a VecEnv"
@@ -565,18 +564,20 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         if env.num_envs > 1:
             assert train_freq.unit == TrainFrequencyUnit.STEP, "You must use only one env when doing episodic training."
 
+        # Vectorize action noise if needed
+        if action_noise is not None and env.num_envs > 1 and not isinstance(action_noise, VectorizedActionNoise):
+            action_noise = VectorizedActionNoise(action_noise, env.num_envs)
+
         if self.use_sde:
-            self.actor.reset_noise()
+            self.actor.reset_noise(env.num_envs)
 
         callback.on_rollout_start()
         continue_training = True
 
         while should_collect_more_steps(train_freq, num_collected_steps, num_collected_episodes):
-            episode_reward, episode_timesteps = 0.0, 0
-
             if self.use_sde and self.sde_sample_freq > 0 and num_collected_steps % self.sde_sample_freq == 0:
                 # Sample a new noise matrix
-                self.actor.reset_noise()
+                self.actor.reset_noise(env.num_envs)
 
             # Select action randomly or according to policy
             action, buffer_action = self._sample_action(learning_starts, action_noise, env.num_envs)
@@ -585,7 +586,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             new_obs, reward, dones, infos = env.step(action)
 
             self.num_timesteps += env.num_envs
-            episode_timesteps += env.num_envs
             num_collected_steps += 1
 
             # Give access to local variables
@@ -593,8 +593,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             # Only stop training if return value is False, not when it is None.
             if callback.on_step() is False:
                 return RolloutReturn(0.0, num_collected_steps, num_collected_episodes, continue_training=False)
-
-            episode_reward += reward
 
             # Retrieve reward and episode length if using Monitor wrapper
             self._update_info_buffer(infos, dones)
@@ -610,22 +608,19 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             # see https://github.com/hill-a/stable-baselines/issues/900
             self._on_step()
 
-            for done in dones:
+            for idx, done in enumerate(dones):
                 if done:
+                    # Update stats
                     num_collected_episodes += 1
                     self._episode_num += 1
-                    # episode_rewards.append(episode_reward)
-                    # total_timesteps.append(episode_timesteps)
 
-                    # TODO(toni): handle action properly for VecEnv
                     if action_noise is not None:
-                        action_noise.reset()
+                        kwargs = dict(indices=[idx]) if env.num_envs > 1 else {}
+                        action_noise.reset(**kwargs)
 
                     # Log training infos
                     if log_interval is not None and self._episode_num % log_interval == 0:
                         self._dump_logs()
-
-        # mean_reward = np.mean(episode_rewards) if num_collected_episodes > 0 else 0.0
 
         callback.on_rollout_end()
 

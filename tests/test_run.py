@@ -145,9 +145,15 @@ def test_train_freq_fail(train_freq):
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
 def test_offpolicy_multi_env(model_class):
+    kwargs = {}
     if model_class in [SAC, TD3, DDPG]:
         env_id = "Pendulum-v0"
         policy_kwargs = dict(net_arch=[64], n_critics=1)
+        # Check auto-conversion to VectorizedActionNoise
+        kwargs = dict(action_noise=NormalActionNoise(np.zeros(1), 0.1 * np.ones(1)))
+        if model_class == SAC:
+            kwargs["use_sde"] = True
+            kwargs["sde_sample_freq"] = 4
     else:
         env_id = "CartPole-v1"
         policy_kwargs = dict(net_arch=[64])
@@ -167,5 +173,6 @@ def test_offpolicy_multi_env(model_class):
         buffer_size=10000,
         verbose=0,
         train_freq=5,
+        **kwargs,
     )
     model.learn(total_timesteps=150)

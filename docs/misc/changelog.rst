@@ -4,11 +4,12 @@ Changelog
 ==========
 
 
-Release 1.3.1a1 (WIP)
+Release 1.3.1a2 (WIP)
 ---------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- ``collect_rollout()`` of off-policy algorithms no longer update ``episode_reward`` field of ``RolloutReturn``
 
 New Features:
 ^^^^^^^^^^^^^

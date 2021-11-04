@@ -4,27 +4,70 @@ Changelog
 ==========
 
 
-Release 1.2.1a2 (WIP)
+Release 1.3.1a1 (WIP)
 ---------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+- Added ``norm_obs_keys`` param for ``VecNormalize`` wrapper to configure which observation keys to normalize (@kachayev)
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed a bug where ``set_env()`` with ``VecNormalize`` would result in an error with off-policy algorithms (thanks @cleversonahum)
+- FPS calculation is now performed based on number of steps performed during last ``learn`` call, even when ``reset_num_timesteps`` is set to ``False`` (@kachayev)
+
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+- Add highway-env to projects page (@eleurent)
+- Add tactile-gym to projects page (@ac-93)
+
+
+Release 1.3.0 (2021-10-23)
+---------------------------
+
+*Bug fixes and improvements for the user*
+
+.. warning::
+
+  This version will be the last one supporting Python 3.6 (end of life in Dec 2021).
+  We highly recommended you to upgrade to Python >= 3.7.
 
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - ``sde_net_arch`` argument in policies is deprecated and will be removed in a future version.
 - ``_get_latent`` (``ActorCriticPolicy``) was removed
+- All logging keys now use underscores instead of spaces (@timokau). Concretely this changes:
+
+    - ``time/total timesteps`` to ``time/total_timesteps`` for off-policy algorithms (PPO and A2C) and the eval callback (on-policy algorithms already used the underscored version),
+    - ``rollout/exploration rate`` to ``rollout/exploration_rate`` and
+    - ``rollout/success rate`` to ``rollout/success_rate``.
 
 New Features:
 ^^^^^^^^^^^^^
 - Added methods ``get_distribution`` and ``predict_values`` for ``ActorCriticPolicy`` for A2C/PPO/TRPO (@cyprienc)
 - Added methods ``forward_actor`` and ``forward_critic`` for ``MlpExtractor``
+- Added ``sb3.get_system_info()`` helper function to gather version information relevant to SB3 (e.g., Python and PyTorch version)
+- Saved models now store system information where agent was trained, and load functions have ``print_system_info`` parameter to help debugging load issues
 
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed ``dtype`` of observations for ``SimpleMultiObsEnv``
 - Allow `VecNormalize` to wrap discrete-observation environments to normalize reward
-  when observation normalization is disabled.
+  when observation normalization is disabled
 - Fixed a bug where ``DQN`` would throw an error when using ``Discrete`` observation and stochastic actions
 - Fixed a bug where sub-classed observation spaces could not be used
+- Added ``force_reset`` argument to ``load()`` and ``set_env()`` in order to be able to call ``learn(reset_num_timesteps=False)`` with a new environment
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -32,6 +75,9 @@ Deprecations:
 Others:
 ^^^^^^^
 - Cap gym max version to 0.19 to avoid issues with atari-py and other breaking changes
+- Improved error message when using dict observation with the wrong policy
+- Improved error message when using ``EvalCallback`` with two envs not wrapped the same way.
+- Added additional infos about supported python version for PyPi in ``setup.py``
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -41,7 +87,9 @@ Documentation:
 - Added ONNX export instructions (@batu)
 - Update read the doc env (fixed ``docutils`` issue)
 - Fix PPO environment name (@IljaAvadiev)
-
+- Fix custom env doc and add env registration example
+- Update algorithms from SB3 Contrib
+- Use underscores for numeric literals in examples to improve clarity
 
 Release 1.2.0 (2021-09-03)
 ---------------------------
@@ -785,4 +833,7 @@ And all the contributors:
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
 @tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @JadenTravnik @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
-@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev
+@ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan
+@benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
+@wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
+@eleurent @ac-93

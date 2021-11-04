@@ -1,13 +1,16 @@
 import glob
 import os
+import platform
 import random
 from collections import deque
 from itertools import zip_longest
-from typing import Dict, Iterable, Optional, Union
+from typing import Dict, Iterable, Optional, Tuple, Union
 
 import gym
 import numpy as np
 import torch as th
+
+import stable_baselines3 as sb3
 
 # Check if tensorboard is available for pytorch
 try:
@@ -460,3 +463,28 @@ def should_collect_more_steps(
             "The unit of the `train_freq` must be either TrainFrequencyUnit.STEP "
             f"or TrainFrequencyUnit.EPISODE not '{train_freq.unit}'!"
         )
+
+
+def get_system_info(print_info: bool = True) -> Tuple[Dict[str, str], str]:
+    """
+    Retrieve system and python env info for the current system.
+
+    :param print_info: Whether to print or not those infos
+    :return: Dictionary summing up the version for each relevant package
+        and a formatted string.
+    """
+    env_info = {
+        "OS": f"{platform.platform()} {platform.version()}",
+        "Python": platform.python_version(),
+        "Stable-Baselines3": sb3.__version__,
+        "PyTorch": th.__version__,
+        "GPU Enabled": str(th.cuda.is_available()),
+        "Numpy": np.__version__,
+        "Gym": gym.__version__,
+    }
+    env_info_str = ""
+    for key, value in env_info.items():
+        env_info_str += f"{key}: {value}\n"
+    if print_info:
+        print(env_info_str)
+    return env_info, env_info_str

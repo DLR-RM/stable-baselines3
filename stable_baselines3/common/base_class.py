@@ -25,6 +25,7 @@ from stable_baselines3.common.utils import (
     check_for_correct_spaces,
     get_device,
     get_schedule_fn,
+    get_system_info,
     set_random_seed,
     update_learning_rate,
 )
@@ -121,6 +122,8 @@ class BaseAlgorithm(ABC):
         self.num_timesteps = 0
         # Used for updating schedules
         self._total_timesteps = 0
+        # Used for computing fps, it is updated at each call of learn()
+        self._num_timesteps_at_start = 0
         self.eval_env = None
         self.seed = seed
         self.action_noise = None  # type: Optional[ActionNoise]
@@ -174,6 +177,10 @@ class BaseAlgorithm(ABC):
                 raise ValueError(
                     "Error: the model does not support multiple envs; it requires " "a single vectorized environment."
                 )
+
+            # Catch common mistake: using MlpPolicy/CnnPolicy instead of MultiInputPolicy
+            if policy in ["MlpPolicy", "CnnPolicy"] and isinstance(self.observation_space, gym.spaces.Dict):
+                raise ValueError(f"You must use `MultiInputPolicy` when working with dict observation space, not {policy}")
 
             if self.use_sde and not isinstance(self.action_space, gym.spaces.Box):
                 raise ValueError("generalized State-Dependent Exploration (gSDE) can only be used with continuous actions.")
@@ -415,6 +422,7 @@ class BaseAlgorithm(ABC):
             # Make sure training timesteps are ahead of the internal counter
             total_timesteps += self.num_timesteps
         self._total_timesteps = total_timesteps
+        self._num_timesteps_at_start = self.num_timesteps
 
         # Avoid resetting the environment when calling ``.learn()`` consecutive times
         if reset_num_timesteps or self._last_obs is None:
@@ -473,7 +481,7 @@ class BaseAlgorithm(ABC):
         """
         return self._vec_normalize_env
 
-    def set_env(self, env: GymEnv) -> None:
+    def set_env(self, env: GymEnv, force_reset: bool = True) -> None:
         """
         Checks the validity of the environment, and if it is coherent, set it as the current environment.
         Furthermore wrap any non vectorized env into a vectorized
@@ -482,12 +490,23 @@ class BaseAlgorithm(ABC):
         - action_space
 
         :param env: The environment for learning a policy
+        :param force_reset: Force call to ``reset()`` before training
+            to avoid unexpected behavior.
+            See issue https://github.com/DLR-RM/stable-baselines3/issues/597
         """
         # if it is not a VecEnv, make it a VecEnv
         # and do other transformations (dict obs, image transpose) if needed
         env = self._wrap_env(env, self.verbose)
         # Check that the observation spaces match
         check_for_correct_spaces(env, self.observation_space, self.action_space)
+        # Update VecNormalize object
+        # otherwise the wrong env may be used, see https://github.com/DLR-RM/stable-baselines3/issues/637
+        self._vec_normalize_env = unwrap_vec_normalize(env)
+
+        # Discard `_last_obs`, this will force the env to reset before training
+        # See issue https://github.com/DLR-RM/stable-baselines3/issues/597
+        if force_reset:
+            self._last_obs = None
 
         self.n_envs = env.num_envs
         self.env = env
@@ -630,6 +649,8 @@ class BaseAlgorithm(ABC):
         env: Optional[GymEnv] = None,
         device: Union[th.device, str] = "auto",
         custom_objects: Optional[Dict[str, Any]] = None,
+        print_system_info: bool = False,
+        force_reset: bool = True,
         **kwargs,
     ) -> "BaseAlgorithm":
         """
@@ -646,9 +667,20 @@ class BaseAlgorithm(ABC):
             will be used instead. Similar to custom_objects in
             ``keras.models.load_model``. Useful when you have an object in
             file that can not be deserialized.
+        :param print_system_info: Whether to print system info from the saved model
+            and the current system info (useful to debug loading issues)
+        :param force_reset: Force call to ``reset()`` before training
+            to avoid unexpected behavior.
+            See https://github.com/DLR-RM/stable-baselines3/issues/597
         :param kwargs: extra arguments to change the model when loading
         """
-        data, params, pytorch_variables = load_from_zip_file(path, device=device, custom_objects=custom_objects)
+        if print_system_info:
+            print("== CURRENT SYSTEM INFO ==")
+            get_system_info()
+
+        data, params, pytorch_variables = load_from_zip_file(
+            path, device=device, custom_objects=custom_objects, print_system_info=print_system_info
+        )
 
         # Remove stored device information and replace with ours
         if "policy_kwargs" in data:
@@ -669,6 +701,10 @@ class BaseAlgorithm(ABC):
             env = cls._wrap_env(env, data["verbose"])
             # Check if given env is valid
             check_for_correct_spaces(env, data["observation_space"], data["action_space"])
+            # Discard `_last_obs`, this will force the env to reset before training
+            # See issue https://github.com/DLR-RM/stable-baselines3/issues/597
+            if force_reset and data is not None:
+                data["_last_obs"] = None
         else:
             # Use stored env, if one exists. If not, continue as is (can be used for predict)
             if "env" in data:

@@ -34,7 +34,7 @@ Can I use?
 ----------
 
 -  Recurrent policies: ❌
--  Multi processing: ❌
+-  Multi processing: ✔️
 -  Gym spaces:
 
 

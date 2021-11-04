@@ -215,7 +215,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 self.observation_space,
                 self.action_space,
                 self.device,
-                n_envs=self.env.num_envs,
+                n_envs=self.n_envs,
                 optimize_memory_usage=self.optimize_memory_usage,
                 **self.replay_buffer_kwargs,
             )

@@ -13,6 +13,8 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added ``norm_obs_keys`` param for ``VecNormalize`` wrapper to configure which observation keys to normalize (@kachayev)
+- Added experimental support to train off-policy algorithms with multiple envs (note: ``HerReplayBuffer`` currently not supported)
+
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -174,7 +176,6 @@ New Features:
 - Added policy_base as input to the OnPolicyAlgorithm for more flexibility (@09tangriro)
 - Added support for image observation when using ``HER``
 - Added ``replay_buffer_class`` and ``replay_buffer_kwargs`` arguments to off-policy algorithms
-- Added experimental support to train off-policy algorithms with multiple envs (only SAC supported for now)
 - Added ``kl_divergence`` helper for ``Distribution`` classes (@09tangriro)
 - Added support for vector environments with ``num_envs > 1`` (@benblack769)
 - Added ``wrapper_kwargs`` argument to ``make_vec_env`` (@amy12xx)

@@ -181,7 +181,6 @@ class ReplayBuffer(BaseBuffer):
     ):
         super(ReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
 
-        # assert n_envs == 1, "Replay buffer only support single environment for now"
         # Adjust buffer size
         self.buffer_size = max(buffer_size // n_envs, 1)
 
@@ -507,7 +506,6 @@ class DictReplayBuffer(ReplayBuffer):
         super(ReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
 
         assert isinstance(self.obs_shape, dict), "DictReplayBuffer must be used with Dict obs space only"
-        # assert n_envs == 1, "Replay buffer only support single environment for now"
         self.buffer_size = max(buffer_size // n_envs, 1)
 
         # Check that the replay buffer can fit into the memory

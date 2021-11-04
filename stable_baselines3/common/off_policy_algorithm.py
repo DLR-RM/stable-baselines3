@@ -497,28 +497,19 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         for i, done in enumerate(dones):
             if done and infos[i].get("terminal_observation") is not None:
                 if isinstance(next_obs, dict):
-                    # assert len(dones) == 1, "Dict obs does not support multi env yet"
-                    # MultiEnv not supported for dict obs yet
-                    next_obs = infos[i]["terminal_observation"]
+                    next_obs_ = infos[i]["terminal_observation"]
                     # VecNormalize normalizes the terminal observation
                     if self._vec_normalize_env is not None:
-                        next_obs = self._vec_normalize_env.unnormalize_obs(next_obs)
+                        next_obs_ = self._vec_normalize_env.unnormalize_obs(next_obs)
+                    # Replace next obs for the correct envs
+                    for key in next_obs.keys():
+                        next_obs[key][i] = next_obs_[key]
                 else:
-                    next_obs[i, :] = infos[i]["terminal_observation"]
+                    next_obs[i] = infos[i]["terminal_observation"]
                     # VecNormalize normalizes the terminal observation
                     if self._vec_normalize_env is not None:
-                        next_obs[i, :] = self._vec_normalize_env.unnormalize_obs(next_obs[i, :])
+                        next_obs[i] = self._vec_normalize_env.unnormalize_obs(next_obs[i, :])
 
-        for i in range(len(dones)):
-            if isinstance(next_obs, dict):
-                replay_buffer.add(  # pytype: disable=wrong-arg-types
-                    {key: obs[i] for key, obs in self._last_original_obs.items()},
-                    {key: next_obs_[i] for key, next_obs_ in next_obs.items()},
-                    buffer_action[i],
-                    reward_[i],
-                    dones[i],
-                    [infos[i]],  # pytype: disable=wrong-arg-types
-                )
         replay_buffer.add(
             self._last_original_obs,
             next_obs,

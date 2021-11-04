@@ -1,3 +1,4 @@
+import gym
 import numpy as np
 import pytest
 
@@ -150,7 +151,14 @@ def test_offpolicy_multi_env(model_class):
     else:
         env_id = "CartPole-v1"
         policy_kwargs = dict(net_arch=[64])
-    env = make_vec_env(env_id, n_envs=2)
+
+    def make_env():
+        env = gym.make(env_id)
+        # to check that the code handling timeouts runs
+        env = gym.wrappers.TimeLimit(env, 50)
+        return env
+
+    env = make_vec_env(make_env, n_envs=2)
     model = model_class(
         "MlpPolicy",
         env,

@@ -363,8 +363,8 @@ class HerReplayBuffer(DictReplayBuffer):
                 # here we use the new desired goal
                 transitions["desired_goal"][her_indices, 0],
                 transitions["info"][her_indices, 0],
-            )
-
+                indices=0,  # only call method for one env
+            )[0]
         # concatenate observation with (desired) goal
         observations = self._normalize_obs(transitions, maybe_vec_env)
 

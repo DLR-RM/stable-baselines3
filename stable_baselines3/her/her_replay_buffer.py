@@ -625,7 +625,7 @@ class VecHerReplayBuffer(DictReplayBuffer):
                 {key: next_obs_[i] for key, next_obs_ in next_obs.items()},
                 action[i],
                 reward[i],
-                done=[done[i]],
+                done=np.array([done[i]]),
                 infos=[infos[i]],
             )
 

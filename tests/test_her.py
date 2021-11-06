@@ -8,7 +8,8 @@ import numpy as np
 import pytest
 import torch as th
 
-from stable_baselines3 import DDPG, DQN, SAC, TD3, HerReplayBuffer
+from stable_baselines3 import DDPG, DQN, SAC, TD3, HerReplayBuffer, VecHerReplayBuffer
+from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.envs import BitFlippingEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
@@ -24,6 +25,39 @@ def test_import_error():
 
         HER("MlpPolicy")
     assert "documentation" in str(excinfo.value)
+
+
+def test_multi_env():
+    def make_env():
+        env = BitFlippingEnv(
+            n_bits=4,
+            continuous=True,
+            image_obs_space=False,
+        )
+        # to check that the code handling timeouts runs
+        env = gym.wrappers.TimeLimit(env, 50)
+        return env
+
+    env = make_vec_env(make_env, n_envs=2)
+    model = SAC(
+        "MultiInputPolicy",
+        env,
+        replay_buffer_class=VecHerReplayBuffer,
+        replay_buffer_kwargs=dict(
+            n_sampled_goal=2,
+            goal_selection_strategy="future",
+            online_sampling=True,
+            # max_episode_length=n_bits,
+        ),
+        train_freq=4,
+        gradient_steps=1,
+        policy_kwargs=dict(net_arch=[64]),
+        learning_starts=100,
+        buffer_size=int(2e4),
+    )
+
+    model.learn(total_timesteps=150)
+    evaluate_policy(model, env)
 
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])

@@ -18,7 +18,7 @@ from stable_baselines3.common.save_util import load_from_pkl, save_to_pkl
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn, Schedule, TrainFreq, TrainFrequencyUnit
 from stable_baselines3.common.utils import safe_mean, should_collect_more_steps
 from stable_baselines3.common.vec_env import VecEnv
-from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
+from stable_baselines3.her.her_replay_buffer import HerReplayBuffer, VecHerReplayBuffer
 
 
 class OffPolicyAlgorithm(BaseAlgorithm):
@@ -186,7 +186,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             else:
                 self.replay_buffer_class = ReplayBuffer
 
-        elif self.replay_buffer_class == HerReplayBuffer:
+        elif self.replay_buffer_class in {HerReplayBuffer, VecHerReplayBuffer}:
             assert self.env is not None, "You must pass an environment when using `HerReplayBuffer`"
 
             # If using offline sampling, we need a classic replay buffer too
@@ -201,7 +201,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                     optimize_memory_usage=self.optimize_memory_usage,
                 )
 
-            self.replay_buffer = HerReplayBuffer(
+            her_buffer_class = HerReplayBuffer if self.env.num_envs == 1 else VecHerReplayBuffer
+
+            self.replay_buffer = her_buffer_class(
                 self.env,
                 self.buffer_size,
                 self.device,

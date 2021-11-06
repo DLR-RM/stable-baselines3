@@ -120,7 +120,7 @@ class HerReplayBuffer(DictReplayBuffer):
 
         # buffer with episodes
         # number of episodes which can be stored until buffer size is reached
-        self.max_episode_stored = self.buffer_size // self.max_episode_length
+        self.max_episode_stored = max(self.buffer_size // self.max_episode_length, 1)
         self.current_idx = 0
         # Counter to prevent overflow
         self.episode_steps = 0
@@ -131,14 +131,14 @@ class HerReplayBuffer(DictReplayBuffer):
 
         # input dimensions for buffer initialization
         input_shape = {
-            "observation": (self.env.num_envs,) + self.obs_shape,
-            "achieved_goal": (self.env.num_envs,) + self.goal_shape,
-            "desired_goal": (self.env.num_envs,) + self.goal_shape,
+            "observation": (1,) + self.obs_shape,
+            "achieved_goal": (1,) + self.goal_shape,
+            "desired_goal": (1,) + self.goal_shape,
             "action": (self.action_dim,),
             "reward": (1,),
-            "next_obs": (self.env.num_envs,) + self.obs_shape,
-            "next_achieved_goal": (self.env.num_envs,) + self.goal_shape,
-            "next_desired_goal": (self.env.num_envs,) + self.goal_shape,
+            "next_obs": (1,) + self.obs_shape,
+            "next_achieved_goal": (1,) + self.goal_shape,
+            "next_desired_goal": (1,) + self.goal_shape,
             "done": (1,),
         }
         self._observation_keys = ["observation", "achieved_goal", "desired_goal"]
@@ -543,3 +543,120 @@ class HerReplayBuffer(DictReplayBuffer):
             self.pos = (self.pos + 1) % self.max_episode_stored
             # update "full" indicator
             self.full = self.full or self.pos == 0
+
+
+class VecHerReplayBuffer(DictReplayBuffer):
+    """
+    Hindsight Experience Replay (HER) buffer.
+    Paper: https://arxiv.org/abs/1707.01495
+
+    .. warning::
+
+      For performance reasons, the maximum number of steps per episodes must be specified.
+      In most cases, it will be inferred if you specify ``max_episode_steps`` when registering the environment
+      or if you use a ``gym.wrappers.TimeLimit`` (and ``env.spec`` is not None).
+      Otherwise, you can directly pass ``max_episode_length`` to the replay buffer constructor.
+
+
+    Replay buffer for sampling HER (Hindsight Experience Replay) transitions.
+    In the online sampling case, these new transitions will not be saved in the replay buffer
+    and will only be created at sampling time.
+
+    :param env: The training environment
+    :param buffer_size: The size of the buffer measured in transitions.
+    :param max_episode_length: The maximum length of an episode. If not specified,
+        it will be automatically inferred if the environment uses a ``gym.wrappers.TimeLimit`` wrapper.
+    :param goal_selection_strategy: Strategy for sampling goals for replay.
+        One of ['episode', 'final', 'future']
+    :param device: PyTorch device
+    :param n_sampled_goal: Number of virtual transitions to create per real transition,
+        by sampling new goals.
+    :param handle_timeout_termination: Handle timeout termination (due to timelimit)
+        separately and treat the task as infinite horizon task.
+        https://github.com/DLR-RM/stable-baselines3/issues/284
+    """
+
+    def __init__(
+        self,
+        env: VecEnv,
+        buffer_size: int,
+        device: Union[th.device, str] = "cpu",
+        replay_buffer: Optional[DictReplayBuffer] = None,
+        max_episode_length: Optional[int] = None,
+        n_sampled_goal: int = 4,
+        goal_selection_strategy: Union[GoalSelectionStrategy, str] = "future",
+        online_sampling: bool = True,
+        handle_timeout_termination: bool = True,
+    ):
+        # TODO: check buffer_size // env.num_envs
+        super().__init__(buffer_size, env.observation_space, env.action_space, device, env.num_envs)
+
+        self.n_envs = env.num_envs
+        self.buffers = []
+        for _ in range(env.num_envs):
+            # TODO: check buffer size
+            self.buffers.append(
+                HerReplayBuffer(
+                    env,
+                    buffer_size,
+                    device,
+                    replay_buffer,
+                    max_episode_length,
+                    n_sampled_goal,
+                    goal_selection_strategy,
+                    online_sampling,
+                    handle_timeout_termination,
+                )
+            )
+
+    def add(
+        self,
+        obs: Dict[str, np.ndarray],
+        next_obs: Dict[str, np.ndarray],
+        action: np.ndarray,
+        reward: np.ndarray,
+        done: np.ndarray,
+        infos: List[Dict[str, Any]],
+    ) -> None:
+
+        for i in range(len(obs["observation"])):
+            self.buffers[i].add(
+                {key: obs_[i] for key, obs_ in obs.items()},
+                {key: next_obs_[i] for key, next_obs_ in next_obs.items()},
+                action[i],
+                reward[i],
+                done=[done[i]],
+                infos=[infos[i]],
+            )
+
+    def sample(
+        self,
+        batch_size: int,
+        env: Optional[VecNormalize],
+    ) -> DictReplayBufferSamples:
+        """
+        Sample function for online sampling of HER transition,
+        this replaces the "regular" replay buffer ``sample()``
+        method in the ``train()`` function.
+
+        :param batch_size: Number of element to sample
+        :param env: Associated gym VecEnv
+            to normalize the observations/rewards when sampling
+        :return: Samples.
+        """
+        samples = []
+        # Divides samples as evenly as possible
+        batch_sizes = np.array([(batch_size + i) // self.n_envs for i in range(self.n_envs)], np.uint64)
+        for i in range(self.n_envs):
+            # TODO: check batch_size
+            samples.append(self.buffers[i].sample(int(batch_sizes[i]), env))
+
+        keys = list(samples[0].observations.keys())
+
+        return DictReplayBufferSamples(
+            observations={key: th.cat([sample.observations[key] for sample in samples]) for key in keys},
+            actions=th.cat([sample.actions for sample in samples]),
+            next_observations={key: th.cat([sample.next_observations[key] for sample in samples]) for key in keys},
+            dones=th.cat([sample.dones for sample in samples]),
+            rewards=th.cat([sample.rewards for sample in samples]),
+        )

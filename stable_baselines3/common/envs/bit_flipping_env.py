@@ -25,8 +25,6 @@ class BitFlippingEnv(GoalEnv):
     :param channel_first: Whether to use channel-first or last image.
     """
 
-    spec = EnvSpec("BitFlippingEnv-v0")
-
     def __init__(
         self,
         n_bits: int = 10,
@@ -37,6 +35,7 @@ class BitFlippingEnv(GoalEnv):
         channel_first: bool = True,
     ):
         super(BitFlippingEnv, self).__init__()
+        self.spec = EnvSpec("BitFlippingEnv-v0")
         # Shape of the observation when using image space
         self.image_shape = (1, 36, 36) if channel_first else (36, 36, 1)
         # The achieved goal is determined by the current state

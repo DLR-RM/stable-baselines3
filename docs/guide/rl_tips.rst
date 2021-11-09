@@ -198,11 +198,11 @@ If you want to quickly try a random agent on your environment, you can also do:
 	obs = env.reset()
 	n_steps = 10
 	for _ in range(n_steps):
-	    # Random action
-	    action = env.action_space.sample()
-	    obs, reward, done, info = env.step(action)
-			if done:
-				obs = env.reset()
+		# Random action
+		action = env.action_space.sample()
+		obs, reward, done, info = env.step(action)
+		if done:
+			obs = env.reset()
 
 
 **Why should I normalize the action space?**

@@ -72,6 +72,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
         supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
+        adv = None
     ):
 
         super(OnPolicyAlgorithm, self).__init__(
@@ -98,6 +99,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         self.vf_coef = vf_coef
         self.max_grad_norm = max_grad_norm
         self.rollout_buffer = None
+        self.adv = adv
 
         if _init_setup_model:
             self._setup_model()
@@ -116,6 +118,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             gamma=self.gamma,
             gae_lambda=self.gae_lambda,
             n_envs=self.n_envs,
+            adv = self.adv,
         )
         self.policy = self.policy_class(  # pytype:disable=not-instantiable
             self.observation_space,

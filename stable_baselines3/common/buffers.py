@@ -323,6 +323,7 @@ class RolloutBuffer(BaseBuffer):
         gae_lambda: float = 1,
         gamma: float = 0.99,
         n_envs: int = 1,
+        adv = None
     ):
 
         super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
@@ -331,6 +332,7 @@ class RolloutBuffer(BaseBuffer):
         self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
         self.returns, self.episode_starts, self.values, self.log_probs = None, None, None, None
         self.generator_ready = False
+        self.adv = adv
         self.reset()
 
     def reset(self) -> None:
@@ -346,7 +348,7 @@ class RolloutBuffer(BaseBuffer):
         self.generator_ready = False
         super(RolloutBuffer, self).reset()
 
-    def compute_returns_and_advantage(self, last_values: th.Tensor, dones: np.ndarray) -> None:
+    def compute_returns_and_advantage(self, last_values: th.Tensor, dones: np.ndarray, adv = None) -> None:
         """
         Post-processing step: compute the lambda-return (TD(lambda) estimate)
         and GAE(lambda) advantage.
@@ -369,17 +371,25 @@ class RolloutBuffer(BaseBuffer):
         # Convert to numpy
         last_values = last_values.clone().cpu().numpy().flatten()
 
-        last_gae_lam = 0
+        advantage = 0
         for step in reversed(range(self.buffer_size)):
             if step == self.buffer_size - 1:
                 next_non_terminal = 1.0 - dones
                 next_values = last_values
+                delta = self.rewards[step] + self.gamma * next_values * next_non_terminal - self.values[step]
             else:
                 next_non_terminal = 1.0 - self.episode_starts[step + 1]
                 next_values = self.values[step + 1]
-            delta = self.rewards[step] + self.gamma * next_values * next_non_terminal - self.values[step]
-            last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
-            self.advantages[step] = last_gae_lam
+            
+            if self.adv == "n":
+                delta = self.rewards[step] + self.gamma * delta * next_non_terminal 
+                advantage = delta - self.values[step] + self.gamma**(self.buffer_size - 1 - step) * self.values[self.buffer_size - 1]
+            elif self.adv == "v":
+                advantage = self.rewards[step] + self.gamma * next_values * next_non_terminal - self.values[step]
+            else:
+                delta = self.rewards[step] + self.gamma * next_values * next_non_terminal - self.values[step]
+                advantage = delta + self.gamma * self.gae_lambda * next_non_terminal * advantage
+            self.advantages[step] = advantage 
         # TD(lambda) estimator, see Github PR #375 or "Telescoping in TD(lambda)"
         # in David Silver Lecture 4: https://www.youtube.com/watch?v=PnHCvfgC_ZA
         self.returns = self.advantages + self.values

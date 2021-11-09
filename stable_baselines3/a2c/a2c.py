@@ -74,6 +74,7 @@ class A2C(OnPolicyAlgorithm):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
+        adv: str = None
     ):
 
         super(A2C, self).__init__(
@@ -94,6 +95,7 @@ class A2C(OnPolicyAlgorithm):
             device=device,
             create_eval_env=create_eval_env,
             seed=seed,
+            adv = adv,
             _init_setup_model=False,
             supported_action_spaces=(
                 spaces.Box,
@@ -139,6 +141,7 @@ class A2C(OnPolicyAlgorithm):
 
             # Normalize advantage (not present in the original implementation)
             advantages = rollout_data.advantages
+            
             if self.normalize_advantage:
                 advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 

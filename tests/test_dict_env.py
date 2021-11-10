@@ -266,7 +266,7 @@ def test_vec_normalize(model_class):
     Additional tests for PPO/A2C/SAC/DDPG/TD3/DQN to check observation space support
     for GoalEnv and VecNormalize using MultiInputPolicy.
     """
-    env = DummyVecEnv([lambda: DummyDictEnv(use_discrete_actions=model_class == DQN)])
+    env = DummyVecEnv([lambda: gym.wrappers.TimeLimit(DummyDictEnv(use_discrete_actions=model_class == DQN), 100)])
     env = VecNormalize(env, norm_obs_keys=["vec"])
 
     kwargs = {}

@@ -66,7 +66,7 @@ class DummyDictEnv(gym.Env):
 
     def step(self, action):
         reward = 0.0
-        done = False
+        done = np.random.rand() > 0.8
         return self.observation_space.sample(), reward, done, {}
 
     def compute_reward(self, achieved_goal, desired_goal, info):
@@ -77,6 +77,13 @@ class DummyDictEnv(gym.Env):
 
     def render(self, mode="human"):
         pass
+
+
+@pytest.mark.parametrize("policy", ["MlpPolicy", "CnnPolicy"])
+def test_policy_hint(policy):
+    # Common mistake: using the wrong policy
+    with pytest.raises(ValueError):
+        PPO(policy, BitFlippingEnv(n_bits=4))
 
 
 @pytest.mark.parametrize("model_class", [PPO, A2C])
@@ -259,8 +266,8 @@ def test_vec_normalize(model_class):
     Additional tests for PPO/A2C/SAC/DDPG/TD3/DQN to check observation space support
     for GoalEnv and VecNormalize using MultiInputPolicy.
     """
-    env = DummyVecEnv([lambda: BitFlippingEnv(n_bits=4, continuous=not (model_class == DQN))])
-    env = VecNormalize(env)
+    env = DummyVecEnv([lambda: DummyDictEnv(use_discrete_actions=model_class == DQN)])
+    env = VecNormalize(env, norm_obs_keys=["vec"])
 
     kwargs = {}
     n_steps = 256

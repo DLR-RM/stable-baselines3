@@ -5,18 +5,23 @@ This table displays the rl algorithms that are implemented in the Stable Baselin
 along with some useful characteristics: support for discrete/continuous actions, multiprocessing.
 
 
-============ =========== ============ ================= =============== ================
-Name         ``Box``     ``Discrete`` ``MultiDiscrete`` ``MultiBinary`` Multi Processing
-============ =========== ============ ================= =============== ================
-A2C          ✔️           ✔️            ✔️                 ✔️               ✔️
-DDPG         ✔️          ❌            ❌                ❌              ❌
-DQN          ❌           ✔️           ❌                ❌              ❌
-HER          ✔️            ✔️           ❌                ❌              ❌
-PPO          ✔️           ✔️            ✔️                 ✔️               ✔️
-SAC          ✔️          ❌            ❌                ❌              ❌
-TD3          ✔️          ❌            ❌                ❌              ❌
-============ =========== ============ ================= =============== ================
+===================  =========== ============ ================= =============== ================
+Name                 ``Box``     ``Discrete`` ``MultiDiscrete`` ``MultiBinary`` Multi Processing
+===================  =========== ============ ================= =============== ================
+A2C                  ✔️           ✔️            ✔️                 ✔️               ✔️
+DDPG                 ✔️           ❌            ❌                ❌              ❌
+DQN                  ❌           ✔️            ❌                ❌              ❌
+HER                  ✔️           ✔️            ❌                ❌              ❌
+PPO                  ✔️           ✔️            ✔️                 ✔️               ✔️
+SAC                  ✔️           ❌            ❌                ❌              ❌
+TD3                  ✔️           ❌            ❌                ❌              ❌
+QR-DQN [#f1]_        ❌          ️ ✔️            ❌                ❌              ❌
+TQC [#f1]_           ✔️           ❌            ❌                ❌              ❌
+Maskable PPO [#f1]_  ❌           ✔️            ✔️                 ✔️               ✔️
+===================  =========== ============ ================= =============== ================
 
+
+.. [#f1] Implemented in `SB3 Contrib <https://github.com/Stable-Baselines-Team/stable-baselines3-contrib>`_
 
 .. note::
   ``Tuple`` observation spaces are not supported by any environment

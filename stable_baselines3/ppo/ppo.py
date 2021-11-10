@@ -193,8 +193,6 @@ class PPO(OnPolicyAlgorithm):
                     actions = rollout_data.actions.long().flatten()
 
                 # Re-sample the noise matrix because the log_std has changed
-                # TODO: investigate why there is no issue with the gradient
-                # if that line is commented (as in SAC)
                 if self.use_sde:
                     self.policy.reset_noise(self.batch_size)
 

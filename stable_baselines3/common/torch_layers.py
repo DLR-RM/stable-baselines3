@@ -227,6 +227,12 @@ class MlpExtractor(nn.Module):
         shared_latent = self.shared_net(features)
         return self.policy_net(shared_latent), self.value_net(shared_latent)
 
+    def forward_actor(self, features: th.Tensor) -> th.Tensor:
+        return self.policy_net(self.shared_net(features))
+
+    def forward_critic(self, features: th.Tensor) -> th.Tensor:
+        return self.value_net(self.shared_net(features))
+
 
 class CombinedExtractor(BaseFeaturesExtractor):
     """

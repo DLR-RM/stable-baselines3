@@ -66,7 +66,7 @@ class DummyDictEnv(gym.Env):
 
     def step(self, action):
         reward = 0.0
-        done = np.random.rand() > 0.8
+        done = False
         return self.observation_space.sample(), reward, done, {}
 
     def compute_reward(self, achieved_goal, desired_goal, info):

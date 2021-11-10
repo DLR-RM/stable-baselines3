@@ -10,7 +10,7 @@ from stable_baselines3.common.buffers import DictRolloutBuffer, RolloutBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.policies import ActorCriticPolicy, BasePolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
-from stable_baselines3.common.utils import obs_as_tensor, safe_mean
+from stable_baselines3.common.utils import add_batch_dim, obs_as_tensor, safe_mean
 from stable_baselines3.common.vec_env import VecEnv
 
 
@@ -193,10 +193,13 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             # Handle timeout by bootstraping with value function
             # see GitHub issue #633
-            for idx, done in enumerate(dones):
-                if done and infos[0].get("terminal_observation") is not None:
-                    terminal_obs = infos[0]["terminal_observation"].reshape(1, -1)
-                    terminal_obs = obs_as_tensor(terminal_obs, self.device)
+            for idx, done_ in enumerate(dones):
+                if (
+                    done_
+                    and infos[idx].get("terminal_observation") is not None
+                    and infos[idx].get("TimeLimit.truncated", False)
+                ):
+                    terminal_obs = obs_as_tensor(add_batch_dim(infos[idx]["terminal_observation"]), self.device)
                     with th.no_grad():
                         terminal_value = self.policy.predict_values(terminal_obs)[0]
                     rewards[idx] += self.gamma * terminal_value

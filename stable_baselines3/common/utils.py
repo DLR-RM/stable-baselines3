@@ -437,6 +437,17 @@ def obs_as_tensor(
         raise Exception(f"Unrecognized type of observation {type(obs)}")
 
 
+def add_batch_dim(
+    obs: Union[np.ndarray, Dict[Union[str, int], np.ndarray]]
+) -> Union[np.ndarray, Dict[Union[str, int], np.ndarray]]:
+    if isinstance(obs, np.ndarray):
+        return np.expand_dims(obs, axis=0)
+    elif isinstance(obs, dict):
+        return {key: np.expand_dims(_obs, axis=0) for (key, _obs) in obs.items()}
+    else:
+        raise Exception(f"Unrecognized type of observation {type(obs)}")
+
+
 def should_collect_more_steps(
     train_freq: TrainFreq,
     num_collected_steps: int,

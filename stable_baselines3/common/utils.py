@@ -438,9 +438,18 @@ def obs_as_tensor(
 
 
 def add_batch_dim(
-    obs: Union[np.ndarray, Dict[Union[str, int], np.ndarray]]
+    obs: Union[int, np.ndarray, Dict[Union[str, int], np.ndarray]]
 ) -> Union[np.ndarray, Dict[Union[str, int], np.ndarray]]:
-    if isinstance(obs, np.ndarray):
+    """
+    Add batch dimension to observation so it can be used
+    for prediction.
+    :param obs: observation
+    :return: Same observation but with an additional batch dimension
+    """
+    if isinstance(obs, int):
+        # discrete observation
+        return np.expand_dims(np.array([obs]), axis=0)
+    elif isinstance(obs, np.ndarray):
         return np.expand_dims(obs, axis=0)
     elif isinstance(obs, dict):
         return {key: np.expand_dims(_obs, axis=0) for (key, _obs) in obs.items()}

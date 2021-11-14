@@ -122,6 +122,8 @@ class BaseAlgorithm(ABC):
         self.num_timesteps = 0
         # Used for updating schedules
         self._total_timesteps = 0
+        # Used for computing fps, it is updated at each call of learn()
+        self._num_timesteps_at_start = 0
         self.eval_env = None
         self.seed = seed
         self.action_noise = None  # type: Optional[ActionNoise]
@@ -420,6 +422,7 @@ class BaseAlgorithm(ABC):
             # Make sure training timesteps are ahead of the internal counter
             total_timesteps += self.num_timesteps
         self._total_timesteps = total_timesteps
+        self._num_timesteps_at_start = self.num_timesteps
 
         # Avoid resetting the environment when calling ``.learn()`` consecutive times
         if reset_num_timesteps or self._last_obs is None:
@@ -496,6 +499,10 @@ class BaseAlgorithm(ABC):
         env = self._wrap_env(env, self.verbose)
         # Check that the observation spaces match
         check_for_correct_spaces(env, self.observation_space, self.action_space)
+        # Update VecNormalize object
+        # otherwise the wrong env may be used, see https://github.com/DLR-RM/stable-baselines3/issues/637
+        self._vec_normalize_env = unwrap_vec_normalize(env)
+
         # Discard `_last_obs`, this will force the env to reset before training
         # See issue https://github.com/DLR-RM/stable-baselines3/issues/597
         if force_reset:

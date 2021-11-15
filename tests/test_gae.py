@@ -160,7 +160,7 @@ def test_infinite_horizon(model_class, handle_timeout_termination):
         value = model.policy.predict_values(obs_tensor).item()
     else:
         value = model.critic(obs_tensor, model.actor(obs_tensor))[0].item()
-    # True value (geometric serie with a reward of one at each step)
+    # True value (geometric series with a reward of one at each step)
     infinite_horizon_value = 1 / (1 - gamma)
 
     if handle_timeout_termination:

@@ -22,6 +22,9 @@ def test_discrete(model_class, env):
         # DQN only support discrete actions
         if isinstance(env, (IdentityEnvMultiDiscrete, IdentityEnvMultiBinary)):
             return
+    elif model_class == A2C:
+        # slightly higher budget
+        n_steps = 3500
 
     model = model_class("MlpPolicy", env_, gamma=0.4, seed=1, **kwargs).learn(n_steps)
 

@@ -40,8 +40,6 @@ jobs:
     - name: Type check
       run: |
         make type
-      # Skip Type Check for python 3.9, see https://github.com/python/typed_ast/issues/169
-      if: ${{ matrix.python-version != 3.9 }}
     - name: Check codestyle
       run: |
         make check-codestyle

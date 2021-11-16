@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 import torch as th
 
-from stable_baselines3 import A2C, PPO
+from stable_baselines3 import A2C, PPO, SAC
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.policies import ActorCriticPolicy
 
@@ -33,6 +33,23 @@ class CustomEnv(gym.Env):
             done = True
 
         return self.observation_space.sample(), reward, done, {}
+
+
+class InfiniteHorizonEnv(gym.Env):
+    def __init__(self, n_states=4):
+        super().__init__()
+        self.n_states = n_states
+        self.observation_space = gym.spaces.Discrete(n_states)
+        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+        self.current_state = 0
+
+    def reset(self):
+        self.current_state = 0
+        return self.current_state
+
+    def step(self, action):
+        self.current_state = (self.current_state + 1) % self.n_states
+        return self.current_state, 1.0, False, {}
 
 
 class CheckGAECallback(BaseCallback):
@@ -112,3 +129,43 @@ def test_gae_computation(model_class, gae_lambda, gamma, num_episodes):
     # Change constant value so advantage != returns
     model.policy.constant_value = 1.0
     model.learn(rollout_size, callback=CheckGAECallback())
+
+
+@pytest.mark.parametrize("model_class", [A2C, SAC])
+@pytest.mark.parametrize("handle_timeout_termination", [False, True])
+def test_infinite_horizon(model_class, handle_timeout_termination):
+    max_steps = 8
+    gamma = 0.98
+    env = gym.wrappers.TimeLimit(InfiniteHorizonEnv(n_states=4), max_steps)
+    kwargs = {}
+    if model_class == SAC:
+        policy_kwargs = dict(net_arch=[64], n_critics=1)
+        kwargs = dict(
+            replay_buffer_kwargs=dict(handle_timeout_termination=handle_timeout_termination),
+            tau=0.5,
+            learning_rate=0.005,
+        )
+    else:
+        policy_kwargs = dict(net_arch=[64])
+        kwargs = dict(learning_rate=0.002)
+        # A2C always handle timeouts
+        if not handle_timeout_termination:
+            return
+
+    model = model_class("MlpPolicy", env, gamma=gamma, seed=1, policy_kwargs=policy_kwargs, **kwargs)
+    model.learn(1500)
+    # Value of the initial state
+    obs_tensor = model.policy.obs_to_tensor(0)[0]
+    if model_class == A2C:
+        value = model.policy.predict_values(obs_tensor).item()
+    else:
+        value = model.critic(obs_tensor, model.actor(obs_tensor))[0].item()
+    # True value (geometric series with a reward of one at each step)
+    infinite_horizon_value = 1 / (1 - gamma)
+
+    if handle_timeout_termination:
+        # true value +/- 1
+        assert abs(infinite_horizon_value - value) < 1.0
+    else:
+        # wrong estimation
+        assert abs(infinite_horizon_value - value) > 1.0

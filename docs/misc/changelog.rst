@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.3.1a1 (WIP)
+Release 1.3.1a2 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -13,6 +13,8 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added ``norm_obs_keys`` param for ``VecNormalize`` wrapper to configure which observation keys to normalize (@kachayev)
+- Handle timeout termination properly for on-policy algorithms (when using ``TimeLimit``)
+
 
 Bug Fixes:
 ^^^^^^^^^^

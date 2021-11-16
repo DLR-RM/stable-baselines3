@@ -11,7 +11,7 @@ Name                 ``Box``     ``Discrete`` ``MultiDiscrete`` ``MultiBinary`` 
 A2C                  ✔️           ✔️            ✔️                 ✔️               ✔️
 DDPG                 ✔️           ❌            ❌                ❌               ✔️
 DQN                  ❌           ✔️            ❌                ❌               ✔️
-HER                  ✔️           ✔️            ❌                ❌               ❌
+HER                  ✔️           ✔️            ❌                ❌               ✔️
 PPO                  ✔️           ✔️            ✔️                 ✔️               ✔️
 SAC                  ✔️           ❌            ❌                ❌               ✔️
 TD3                  ✔️           ❌            ❌                ❌               ✔️

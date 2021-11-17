@@ -30,6 +30,7 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Add drivergym to projects page (@theDebugger811)
 - Add highway-env to projects page (@eleurent)
 - Add tactile-gym to projects page (@ac-93)
 - Fix indentation in the RL tips page (@cove9988)

@@ -6,6 +6,15 @@ Projects
 This is a list of projects using stable-baselines3.
 Please tell us, if you want your project to appear on this page ;)
 
+DriverGym
+---------
+
+An open-source Gym-compatible environment specifically tailored for developing RL algorithms for autonomous driving. DriverGym provides access to more than 1000 hours of expert logged data and also supports reactive and data-driven agent behavior. The performance of an RL policy can be easily validated using an extensive and flexible closed-loop evaluation protocol. We also provide behavior cloning baselines using supervised learning and RL, trained in DriverGym.
+
+| Authors: Parth Kothari, Christian Perone, Peter Ondruska
+| Github: https://github.com/lyft/l5kit
+| Paper: https://arxiv.org/abs/2111.06889 
+
 
 RL Reach
 --------

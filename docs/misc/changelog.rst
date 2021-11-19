@@ -4,12 +4,14 @@ Changelog
 ==========
 
 
-Release 1.3.1a2 (WIP)
+Release 1.3.1a3 (WIP)
 ---------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - ``collect_rollout()`` of off-policy algorithms no longer update ``episode_reward`` field of ``RolloutReturn``
+- local variables ``action``, ``done`` and ``reward`` were renamed to their plural form for offpolicy algorithms (``actions``, ``dones``, ``rewards``),
+  this may affect custom callbacks.
 
 New Features:
 ^^^^^^^^^^^^^

@@ -592,7 +592,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             callback.update_locals(locals())
             # Only stop training if return value is False, not when it is None.
             if callback.on_step() is False:
-                return RolloutReturn(0.0, num_collected_steps, num_collected_episodes, continue_training=False)
+                return RolloutReturn(0.0, num_collected_steps * env.num_envs, num_collected_episodes, continue_training=False)
 
             # Retrieve reward and episode length if using Monitor wrapper
             self._update_info_buffer(infos, dones)
@@ -624,4 +624,4 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_rollout_end()
 
-        return RolloutReturn(0.0, num_collected_steps, num_collected_episodes, continue_training)
+        return RolloutReturn(0.0, num_collected_steps * env.num_envs, num_collected_episodes, continue_training)

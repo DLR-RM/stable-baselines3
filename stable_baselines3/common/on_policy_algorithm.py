@@ -193,9 +193,9 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             # Handle timeout by bootstraping with value function
             # see GitHub issue #633
-            for idx, done_ in enumerate(dones):
+            for idx, done in enumerate(dones):
                 if (
-                    done_
+                    done
                     and infos[idx].get("terminal_observation") is not None
                     and infos[idx].get("TimeLimit.truncated", False)
                 ):

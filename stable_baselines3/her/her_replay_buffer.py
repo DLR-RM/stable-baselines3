@@ -547,20 +547,9 @@ class HerReplayBuffer(DictReplayBuffer):
 
 class VecHerReplayBuffer(DictReplayBuffer):
     """
-    Hindsight Experience Replay (HER) buffer.
-    Paper: https://arxiv.org/abs/1707.01495
-
-    .. warning::
-
-      For performance reasons, the maximum number of steps per episodes must be specified.
-      In most cases, it will be inferred if you specify ``max_episode_steps`` when registering the environment
-      or if you use a ``gym.wrappers.TimeLimit`` (and ``env.spec`` is not None).
-      Otherwise, you can directly pass ``max_episode_length`` to the replay buffer constructor.
-
-
-    Replay buffer for sampling HER (Hindsight Experience Replay) transitions.
-    In the online sampling case, these new transitions will not be saved in the replay buffer
-    and will only be created at sampling time.
+    A Vectorized version of the Hindsight Experience Replay (HER) buffer.
+    It is made to handle multiple environments at the same time
+    and keep different ``HerReplayBuffer`` to do so.
 
     :param env: The training environment
     :param buffer_size: The size of the buffer measured in transitions.
@@ -588,17 +577,18 @@ class VecHerReplayBuffer(DictReplayBuffer):
         online_sampling: bool = True,
         handle_timeout_termination: bool = True,
     ):
-        # TODO: check buffer_size // env.num_envs
         super().__init__(buffer_size, env.observation_space, env.action_space, device, env.num_envs)
 
         self.n_envs = env.num_envs
         self.buffers = []
-        for _ in range(env.num_envs):
-            # TODO: check buffer size
+        # Divides buffer size as evenly as possible
+        # Each HerReplayBuffer will store at least one episode anyway
+        buffer_sizes = [(buffer_size + i) // self.n_envs for i in range(self.n_envs)]
+        for i in range(env.num_envs):
             self.buffers.append(
                 HerReplayBuffer(
                     env,
-                    buffer_size,
+                    buffer_sizes[i],
                     device,
                     replay_buffer,
                     max_episode_length,
@@ -646,10 +636,10 @@ class VecHerReplayBuffer(DictReplayBuffer):
         """
         samples = []
         # Divides samples as evenly as possible
-        batch_sizes = np.array([(batch_size + i) // self.n_envs for i in range(self.n_envs)], np.uint64)
+        batch_sizes = [(batch_size + i) // self.n_envs for i in range(self.n_envs)]
         for i in range(self.n_envs):
-            # TODO: check batch_size
-            samples.append(self.buffers[i].sample(int(batch_sizes[i]), env))
+            if batch_sizes[i] > 0:
+                samples.append(self.buffers[i].sample(batch_sizes[i], env))
 
         keys = list(samples[0].observations.keys())
 
@@ -660,3 +650,19 @@ class VecHerReplayBuffer(DictReplayBuffer):
             dones=th.cat([sample.dones for sample in samples]),
             rewards=th.cat([sample.rewards for sample in samples]),
         )
+
+        def truncate_last_trajectory(self) -> None:
+            """
+            See ``HerReplayBuffer`` doc.
+            """
+            for buffer in self.buffers:
+                self.buffers.truncate_last_trajectory()
+
+        def set_env(self, env: VecEnv) -> None:
+            """
+            See ``HerReplayBuffer`` doc.
+
+            :param env:
+            """
+            for buffer in self.buffers:
+                self.buffers.set_env(env)

@@ -47,7 +47,6 @@ def test_multi_env():
             n_sampled_goal=2,
             goal_selection_strategy="future",
             online_sampling=True,
-            # max_episode_length=n_bits,
         ),
         train_freq=4,
         gradient_steps=1,

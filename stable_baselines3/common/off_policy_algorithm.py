@@ -266,7 +266,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             self.replay_buffer.handle_timeout_termination = False
             self.replay_buffer.timeouts = np.zeros_like(self.replay_buffer.dones)
 
-        if isinstance(self.replay_buffer, HerReplayBuffer):
+        if isinstance(self.replay_buffer, (HerReplayBuffer, VecHerReplayBuffer)):
             assert self.env is not None, "You must pass an environment at load time when using `HerReplayBuffer`"
             self.replay_buffer.set_env(self.get_env())
             if truncate_last_traj:

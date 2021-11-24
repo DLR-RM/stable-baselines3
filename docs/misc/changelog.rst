@@ -34,6 +34,7 @@ Documentation:
 - Add highway-env to projects page (@eleurent)
 - Add tactile-gym to projects page (@ac-93)
 - Fix indentation in the RL tips page (@cove9988)
+- Update GAE computation docstring
 
 
 Release 1.3.0 (2021-10-23)

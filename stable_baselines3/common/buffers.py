@@ -354,7 +354,7 @@ class RolloutBuffer(BaseBuffer):
         Uses Generalized Advantage Estimation (https://arxiv.org/abs/1506.02438)
         to compute the advantage. To obtain vanilla advantage (A(s) = R - V(S))
         where R is the discounted reward with value bootstrap,
-        set ``gae_lambda=0`` during initialization.
+        set ``gae_lambda=1.0`` during initialization.
 
         The TD(lambda) estimator has also two special cases:
         - TD(1) is Monte-Carlo estimate (sum of discounted rewards)

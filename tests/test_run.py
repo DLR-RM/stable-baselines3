@@ -193,3 +193,13 @@ def test_offpolicy_multi_env(model_class):
     )
     model.learn(total_timesteps=train_freq)
     assert model.logger.name_to_value["train/n_updates"] == train_freq * env.num_envs
+
+
+def test_warn_dqn_multi_env():
+    with pytest.warns(UserWarning, match="The number of environments used is greater"):
+        DQN(
+            "MlpPolicy",
+            make_vec_env("CartPole-v1", n_envs=2),
+            buffer_size=100,
+            target_update_interval=1,
+        )

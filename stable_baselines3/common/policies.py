@@ -352,7 +352,7 @@ class BasePolicy(BaseModel):
         if not vectorized_env:
             actions = actions[0]
 
-        return actions, state
+        return actions, None
 
     def scale_action(self, action: np.ndarray) -> np.ndarray:
         """

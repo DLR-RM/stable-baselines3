@@ -324,14 +324,11 @@ class BasePolicy(BaseModel):
         :return: the model's action and the next hidden state
             (used in recurrent policies)
         """
-        # Support for recurrent policies will be done in SB3 Contrib
-        # See https://github.com/DLR-RM/stable-baselines3/issues/18
-        if state is not None or mask is not None:
-            raise ValueError(
-                "You have passed a `state` or a `mask` argument to the predict() method "
-                "but recurrent policies aren't supported in SB3 yet (take a look at SB3 contrib for that). "
-                "You should probably explicitely pass `deterministic=True|False`."
-            )
+        # TODO (GH/1): add support for RNN policies
+        # if state is None:
+        #     state = self.initial_state
+        # if mask is None:
+        #     mask = [False for _ in range(self.n_envs)]
         # Switch to eval mode (this affects batch norm / dropout)
         self.set_training_mode(False)
 
@@ -355,7 +352,7 @@ class BasePolicy(BaseModel):
         if not vectorized_env:
             actions = actions[0]
 
-        return actions, None
+        return actions, state
 
     def scale_action(self, action: np.ndarray) -> np.ndarray:
         """

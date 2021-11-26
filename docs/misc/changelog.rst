@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.3.1a2 (WIP)
+Release 1.3.1a3 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -20,7 +20,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fixed a bug where ``set_env()`` with ``VecNormalize`` would result in an error with off-policy algorithms (thanks @cleversonahum)
 - FPS calculation is now performed based on number of steps performed during last ``learn`` call, even when ``reset_num_timesteps`` is set to ``False`` (@kachayev)
-
+- Fixed evaluation script for recurrent policies (experimental feature in SB3 contrib)
 
 Deprecations:
 ^^^^^^^^^^^^^

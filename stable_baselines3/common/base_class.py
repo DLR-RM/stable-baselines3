@@ -545,15 +545,18 @@ class BaseAlgorithm(ABC):
         state: Optional[np.ndarray] = None,
         mask: Optional[np.ndarray] = None,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    ) -> Tuple[np.ndarray, Optional[Tuple[np.ndarray, ...]]]:
         """
-        Get the model's action(s) from an observation
+        Get the policy action and state from an observation (and optional state).
+        Includes sugar-coating to handle different observations (e.g. normalizing images).
 
         :param observation: the input observation
-        :param state: The last states (can be None, used in recurrent policies)
+        :param state: The last hidden states (can be None, used in recurrent policies)
         :param mask: The last masks (can be None, used in recurrent policies)
+            this correspond to beginning of episodes,
+            where the hidden states of the RNN must be reset.
         :param deterministic: Whether or not to return deterministic actions.
-        :return: the model's action and the next state
+        :return: the model's action and the next hidden state
             (used in recurrent policies)
         """
         return self.policy.predict(observation, state, mask, deterministic)

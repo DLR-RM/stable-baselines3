@@ -127,6 +127,25 @@ TODO: contributors help is welcomed!
 Probably a good starting point: https://github.com/elliotwaite/pytorch-to-javascript-with-onnx-js
 
 
+Export to ONNX / TF / TFLite / Edge TPU
+--------------------------------
+
+https://github.com/chunky/sb3_to_coral
+
+This is a complete, minimal, example that:
+
+1. Creates a model using SB3
+2. Follows the path of exports all the way to TFLite and Google Coral ( https://coral.ai )
+3. Demonstrates the forward pass for most exported variants
+
+There are a number of pitfalls along the way to the complete conversation
+that this effort covers, including:
+
+- Making the Gym's observation work with ONNX properly
+- Quantising the TFLite model appropriately to align with Gym
+  while still taking advantage of Coral
+- Using OnnxablePolicy described above
+
 
 Manual export
 -------------

@@ -144,7 +144,7 @@ that this effort covers, including:
 - Making the Gym's observation work with ONNX properly
 - Quantising the TFLite model appropriately to align with Gym
   while still taking advantage of Coral
-- Using OnnxablePolicy described above
+- Using OnnxablePolicy described as described in the above example
 
 
 Manual export

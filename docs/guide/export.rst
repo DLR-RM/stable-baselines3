@@ -127,15 +127,27 @@ TODO: contributors help is welcomed!
 Probably a good starting point: https://github.com/elliotwaite/pytorch-to-javascript-with-onnx-js
 
 
-Export to ONNX / TF / TFLite / Edge TPU
+Export to TFLite / Coral (Edge TPU)
 --------------------------------
 
-https://github.com/chunky/sb3_to_coral
+Full example code: https://github.com/chunky/sb3_to_coral
 
-This is a complete, minimal, example that:
+Google created a chip called the "Coral" for deploying AI to the
+edge. It's available in a variety of form factors, including USB (which
+this author is using on a Raspberry pi)
+
+The Coral is fast, with very low power consumption, but only has limited
+on-device training abilities. More information is on the webpage here:
+https://coral.ai
+
+To deploy to a Coral, one must work via TFLite, and quantise the
+network to reflect the Coral's capabilities. The full chain to go from
+SB3 to Coral is: SB3 (Torch) => ONNX => TensorFlow => TFLite => Coral
+
+The code linked above is a complete, minimal, example that:
 
 1. Creates a model using SB3
-2. Follows the path of exports all the way to TFLite and Google Coral ( https://coral.ai )
+2. Follows the path of exports all the way to TFLite and Google Coral
 3. Demonstrates the forward pass for most exported variants
 
 There are a number of pitfalls along the way to the complete conversion

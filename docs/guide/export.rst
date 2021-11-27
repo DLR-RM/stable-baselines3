@@ -138,7 +138,7 @@ This is a complete, minimal, example that:
 2. Follows the path of exports all the way to TFLite and Google Coral ( https://coral.ai )
 3. Demonstrates the forward pass for most exported variants
 
-There are a number of pitfalls along the way to the complete conversation
+There are a number of pitfalls along the way to the complete conversion
 that this effort covers, including:
 
 - Making the Gym's observation work with ONNX properly

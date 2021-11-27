@@ -133,8 +133,9 @@ Export to TFLite / Coral (Edge TPU)
 Full example code: https://github.com/chunky/sb3_to_coral
 
 Google created a chip called the "Coral" for deploying AI to the
-edge. It's available in a variety of form factors, including USB (which
-this author is using on a Raspberry pi)
+edge. It's available in a variety of form factors, including USB (using
+the Coral on a Rasbperry pi, with a SB3-developed model, was the original
+motivation for the code example above)
 
 The Coral is fast, with very low power consumption, but only has limited
 on-device training abilities. More information is on the webpage here:

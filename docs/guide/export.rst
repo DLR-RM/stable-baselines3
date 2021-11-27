@@ -128,7 +128,7 @@ Probably a good starting point: https://github.com/elliotwaite/pytorch-to-javasc
 
 
 Export to TFLite / Coral (Edge TPU)
---------------------------------
+-----------------------------------
 
 Full example code: https://github.com/chunky/sb3_to_coral
 

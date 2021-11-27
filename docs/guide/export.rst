@@ -139,7 +139,7 @@ This is a complete, minimal, example that:
 3. Demonstrates the forward pass for most exported variants
 
 There are a number of pitfalls along the way to the complete conversion
-that this effort covers, including:
+that this example covers, including:
 
 - Making the Gym's observation work with ONNX properly
 - Quantising the TFLite model appropriately to align with Gym

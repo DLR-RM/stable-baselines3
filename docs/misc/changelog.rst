@@ -9,6 +9,7 @@ Release 1.3.1a3 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Renamed ``mask`` argument of the ``predict()`` method to ``episode_start`` (used with RNN policies only)
 
 New Features:
 ^^^^^^^^^^^^^

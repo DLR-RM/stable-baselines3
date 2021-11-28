@@ -543,23 +543,23 @@ class BaseAlgorithm(ABC):
         self,
         observation: np.ndarray,
         state: Optional[np.ndarray] = None,
-        mask: Optional[np.ndarray] = None,
+        episode_start: Optional[np.ndarray] = None,
         deterministic: bool = False,
     ) -> Tuple[np.ndarray, Optional[Tuple[np.ndarray, ...]]]:
         """
-        Get the policy action and state from an observation (and optional state).
+        Get the policy action and state from an observation (and optional hidden state).
         Includes sugar-coating to handle different observations (e.g. normalizing images).
 
         :param observation: the input observation
         :param state: The last hidden states (can be None, used in recurrent policies)
-        :param mask: The last masks (can be None, used in recurrent policies)
+        :param episode_start: The last masks (can be None, used in recurrent policies)
             this correspond to beginning of episodes,
             where the hidden states of the RNN must be reset.
         :param deterministic: Whether or not to return deterministic actions.
         :return: the model's action and the next hidden state
             (used in recurrent policies)
         """
-        return self.policy.predict(observation, state, mask, deterministic)
+        return self.policy.predict(observation, state, episode_start, deterministic)
 
     def set_random_seed(self, seed: Optional[int] = None) -> None:
         """

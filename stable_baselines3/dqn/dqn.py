@@ -198,7 +198,7 @@ class DQN(OffPolicyAlgorithm):
     def predict(
         self,
         observation: np.ndarray,
-        state: Optional[np.ndarray] = None,
+        state: Optional[Tuple[np.ndarray, ...]] = None,
         episode_start: Optional[np.ndarray] = None,
         deterministic: bool = False,
     ) -> Tuple[np.ndarray, Optional[Tuple[np.ndarray, ...]]]:

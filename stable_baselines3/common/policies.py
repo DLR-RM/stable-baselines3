@@ -307,7 +307,7 @@ class BasePolicy(BaseModel):
     def predict(
         self,
         observation: Union[np.ndarray, Dict[str, np.ndarray]],
-        state: Optional[np.ndarray] = None,
+        state: Optional[Tuple[np.ndarray, ...]] = None,
         episode_start: Optional[np.ndarray] = None,
         deterministic: bool = False,
     ) -> Tuple[np.ndarray, Optional[Tuple[np.ndarray, ...]]]:
@@ -352,7 +352,7 @@ class BasePolicy(BaseModel):
         if not vectorized_env:
             actions = actions[0]
 
-        return actions, None
+        return actions, state
 
     def scale_action(self, action: np.ndarray) -> np.ndarray:
         """

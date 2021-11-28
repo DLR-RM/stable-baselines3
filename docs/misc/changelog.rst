@@ -35,6 +35,7 @@ Documentation:
 - Add tactile-gym to projects page (@ac-93)
 - Fix indentation in the RL tips page (@cove9988)
 - Update GAE computation docstring
+- Add documentation on exporting to TFLite/Coral
 
 
 Release 1.3.0 (2021-10-23)

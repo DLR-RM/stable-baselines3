@@ -33,7 +33,7 @@ Export to ONNX
 
 As of June 2021, ONNX format  `doesn't support <https://github.com/onnx/onnx/issues/3033>`_ exporting models that use the ``broadcast_tensors`` functionality of pytorch. So in order to export the trained stable-baseline3 models in the ONNX format, we need to first remove the layers that use broadcasting. This can be done by creating a class that removes the unsupported layers.
 
-The following examples are for ``MlpPolicy`` only, and are general examples. Note that you have to preprocess the observation the same way stable-baselines3 agent does (see ``common.preprocessing.preprocess_obs``)
+The following examples are for ``MlpPolicy`` only, and are general examples. Note that you have to preprocess the observation the same way stable-baselines3 agent does (see ``common.preprocessing.preprocess_obs``).
 
 For PPO, assuming a shared feature extactor.
 
@@ -135,15 +135,15 @@ Full example code: https://github.com/chunky/sb3_to_coral
 Google created a chip called the "Coral" for deploying AI to the
 edge. It's available in a variety of form factors, including USB (using
 the Coral on a Rasbperry pi, with a SB3-developed model, was the original
-motivation for the code example above)
+motivation for the code example above).
 
-The Coral is fast, with very low power consumption, but only has limited
+The Coral chip is fast, with very low power consumption, but only has limited
 on-device training abilities. More information is on the webpage here:
-https://coral.ai
+https://coral.ai.
 
 To deploy to a Coral, one must work via TFLite, and quantise the
 network to reflect the Coral's capabilities. The full chain to go from
-SB3 to Coral is: SB3 (Torch) => ONNX => TensorFlow => TFLite => Coral
+SB3 to Coral is: SB3 (Torch) => ONNX => TensorFlow => TFLite => Coral.
 
 The code linked above is a complete, minimal, example that:
 

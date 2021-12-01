@@ -4,15 +4,15 @@ Changelog
 ==========
 
 
-Release 1.3.1a3 (WIP)
+Release 1.3.1a4 (WIP)
 ---------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Renamed ``mask`` argument of the ``predict()`` method to ``episode_start`` (used with RNN policies only)
-- ``collect_rollout()`` of off-policy algorithms no longer update ``episode_reward`` field of ``RolloutReturn``
 - local variables ``action``, ``done`` and ``reward`` were renamed to their plural form for offpolicy algorithms (``actions``, ``dones``, ``rewards``),
   this may affect custom callbacks.
+- Removed ``episode_reward`` field from ``RolloutReturn()`` type
 
 New Features:
 ^^^^^^^^^^^^^

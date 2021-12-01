@@ -332,8 +332,8 @@ def is_vectorized_dict_observation(observation: np.ndarray, observation_space: g
         return True
     else:
         raise ValueError(
-            f"Error: Unexpected observation shape {observation.shape} for "
-            + f"Tuple environment, please use {(obs.shape for obs in observation_space.spaces)} "
+            f"Error: Unexpected observation shape {observation[key].shape} for key {key}, "
+            + f"please use {observation_space.spaces[key]} "
         )
 
 

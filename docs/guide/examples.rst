@@ -158,6 +158,33 @@ Multiprocessing: Unleashing the Power of Vectorized Environments
           env.render()
 
 
+Multiprocessing with off-policy algorithms
+------------------------------------------
+
+.. warning::
+  
+  When using multiple environments with off-policy algorithms, you should update the ``gradient_steps``
+  parameter too. Set it to ``gradient_steps=-1`` to perform as many gradient steps as transitions collected.
+  There is usually a compromise between wall-clock time and sample efficiency,
+  see this `example in PR #439 <https://github.com/DLR-RM/stable-baselines3/pull/439#issuecomment-961796799>`_
+
+
+.. code-block:: python
+
+  import gym
+
+  from stable_baselines3 import SAC
+  from stable_baselines3.common.env_util import make_vec_env
+
+  env = make_vec_env("Pendulum-v0", n_envs=4, seed=0)
+
+  # We collect 4 transitions per call to `ènv.step()`
+  # and performs 2 gradient steps per call to `ènv.step()`
+  # if gradient_steps=-1, then we would do 4 gradients steps per call to `ènv.step()`
+  model = SAC('MlpPolicy', env, train_freq=1, gradient_steps=2, verbose=1)
+  model.learn(total_timesteps=10_000)
+
+
 Dict Observations
 -----------------
 

@@ -9,14 +9,14 @@ along with some useful characteristics: support for discrete/continuous actions,
 Name                 ``Box``     ``Discrete`` ``MultiDiscrete`` ``MultiBinary`` Multi Processing
 ===================  =========== ============ ================= =============== ================
 A2C                  ✔️           ✔️            ✔️                 ✔️               ✔️
-DDPG                 ✔️           ❌            ❌                ❌              ❌
-DQN                  ❌           ✔️            ❌                ❌              ❌
-HER                  ✔️           ✔️            ❌                ❌              ❌
+DDPG                 ✔️           ❌            ❌                ❌               ✔️
+DQN                  ❌           ✔️            ❌                ❌               ✔️
+HER                  ✔️           ✔️            ❌                ❌               ❌
 PPO                  ✔️           ✔️            ✔️                 ✔️               ✔️
-SAC                  ✔️           ❌            ❌                ❌              ❌
-TD3                  ✔️           ❌            ❌                ❌              ❌
-QR-DQN [#f1]_        ❌          ️ ✔️            ❌                ❌              ❌
-TQC [#f1]_           ✔️           ❌            ❌                ❌              ❌
+SAC                  ✔️           ❌            ❌                ❌               ✔️
+TD3                  ✔️           ❌            ❌                ❌               ✔️
+QR-DQN [#f1]_        ❌          ️ ✔️            ❌                ❌               ✔️
+TQC [#f1]_           ✔️           ❌            ❌                ❌               ✔️
 Maskable PPO [#f1]_  ❌           ✔️            ✔️                 ✔️               ✔️
 ===================  =========== ============ ================= =============== ================
 

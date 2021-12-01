@@ -37,6 +37,7 @@ Documentation:
 - Fix indentation in the RL tips page (@cove9988)
 - Update GAE computation docstring
 - Add documentation on exporting to TFLite/Coral
+- Added JMLR paper and updated citation
 
 
 Release 1.3.0 (2021-10-23)

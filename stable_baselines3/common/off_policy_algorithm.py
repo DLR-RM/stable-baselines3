@@ -492,10 +492,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             self._last_original_obs, new_obs_, reward_ = self._last_obs, new_obs, reward
 
         # Avoid modification by reference
-        if self._vec_normalize_env is not None:
-            next_obs = deepcopy(new_obs_)
-        else:
-            next_obs = new_obs_
+        next_obs = deepcopy(new_obs_)
         # As the VecEnv resets automatically, new_obs is already the
         # first observation of the next episode
         for i, done in enumerate(dones):

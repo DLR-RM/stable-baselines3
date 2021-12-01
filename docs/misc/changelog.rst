@@ -9,6 +9,7 @@ Release 1.3.1a3 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Renamed ``mask`` argument of the ``predict()`` method to ``episode_start`` (used with RNN policies only)
 - ``collect_rollout()`` of off-policy algorithms no longer update ``episode_reward`` field of ``RolloutReturn``
 - local variables ``action``, ``done`` and ``reward`` were renamed to their plural form for offpolicy algorithms (``actions``, ``dones``, ``rewards``),
   this may affect custom callbacks.
@@ -24,7 +25,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fixed a bug where ``set_env()`` with ``VecNormalize`` would result in an error with off-policy algorithms (thanks @cleversonahum)
 - FPS calculation is now performed based on number of steps performed during last ``learn`` call, even when ``reset_num_timesteps`` is set to ``False`` (@kachayev)
-
+- Fixed evaluation script for recurrent policies (experimental feature in SB3 contrib)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -40,6 +41,7 @@ Documentation:
 - Fix indentation in the RL tips page (@cove9988)
 - Update GAE computation docstring
 - Add documentation on exporting to TFLite/Coral
+- Added JMLR paper and updated citation
 
 
 Release 1.3.0 (2021-10-23)

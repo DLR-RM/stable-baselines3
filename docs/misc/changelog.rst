@@ -4,11 +4,12 @@ Changelog
 ==========
 
 
-Release 1.3.1a4 (WIP)
+Release 1.3.1a5 (WIP)
 ---------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Dropped python 3.6 support (as announced in previous release)
 - Renamed ``mask`` argument of the ``predict()`` method to ``episode_start`` (used with RNN policies only)
 - local variables ``action``, ``done`` and ``reward`` were renamed to their plural form for offpolicy algorithms (``actions``, ``dones``, ``rewards``),
   this may affect custom callbacks.

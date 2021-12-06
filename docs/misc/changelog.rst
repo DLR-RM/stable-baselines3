@@ -32,6 +32,8 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Added a warning in the env checker when not using ``np.float32``
+- Improved test coverage and error message when checking shape of observation
 
 Documentation:
 ^^^^^^^^^^^^^^

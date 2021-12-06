@@ -34,7 +34,7 @@ Deprecations:
 
 Others:
 ^^^^^^^
-- Added a warning in the env checker when not using ``np.float32``
+- Added a warning in the env checker when not using ``np.float32`` for continuous actions
 - Improved test coverage and error message when checking shape of observation
 
 Documentation:
@@ -46,7 +46,7 @@ Documentation:
 - Update GAE computation docstring
 - Add documentation on exporting to TFLite/Coral
 - Added JMLR paper and updated citation
-
+- Added link to RL Tips and Tricks video
 
 Release 1.3.0 (2021-10-23)
 ---------------------------

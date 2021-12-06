@@ -136,6 +136,12 @@ def test_non_default_spaces(new_obs_space):
         spaces.Box(low=-1000, high=1000, shape=(3,), dtype=np.float32),
         # Too small range
         spaces.Box(low=-0.1, high=0.1, shape=(2,), dtype=np.float32),
+        # Inverted boundaries
+        spaces.Box(low=1, high=-1, shape=(2,), dtype=np.float32),
+        # Same boundaries
+        spaces.Box(low=1, high=1, shape=(2,), dtype=np.float32),
+        # Almost good, except for one dim
+        spaces.Box(low=np.array([-1, -1, -1]), high=np.array([1, 1, 0.99]), dtype=np.float32),
     ],
 )
 def test_non_default_action_spaces(new_action_space):

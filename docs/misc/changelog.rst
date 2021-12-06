@@ -28,6 +28,7 @@ Bug Fixes:
 - FPS calculation is now performed based on number of steps performed during last ``learn`` call, even when ``reset_num_timesteps`` is set to ``False`` (@kachayev)
 - Fixed evaluation script for recurrent policies (experimental feature in SB3 contrib)
 - Fixed a bug where the observation would be incorrectly detected as non-vectorized instead of throwing an error
+- The env checker now properly checks and warns about potential issues for continuous action spaces when the boundaries are too small or when the dtype is not float32
 
 Deprecations:
 ^^^^^^^^^^^^^

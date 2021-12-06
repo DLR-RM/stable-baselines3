@@ -103,8 +103,6 @@ def test_high_dimension_action_space():
         spaces.Box(low=0, high=255, shape=(64, 64, 3), dtype=np.float32),
         # Not an image, it should be a 1D vector
         spaces.Box(low=-1, high=1, shape=(64, 3), dtype=np.float32),
-        # Wrong dtype, should be float32
-        spaces.Box(low=-1, high=1, shape=(64,), dtype=np.float64),
         # Tuple space is not supported by SB
         spaces.Tuple([spaces.Discrete(5), spaces.Discrete(10)]),
         # Nested dict space is not supported by SB3
@@ -123,6 +121,34 @@ def test_non_default_spaces(new_obs_space):
         return new_obs_space.sample(), 0.0, False, {}
 
     env.step = patched_step
+    with pytest.warns(UserWarning):
+        check_env(env)
+
+
+@pytest.mark.parametrize(
+    "new_action_space",
+    [
+        # Not symmetric
+        spaces.Box(low=0, high=1, shape=(3,), dtype=np.float32),
+        # Wrong dtype
+        spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float64),
+        # Too big range
+        spaces.Box(low=-1000, high=1000, shape=(3,), dtype=np.float32),
+        # Too small range
+        spaces.Box(low=-0.1, high=0.1, shape=(2,), dtype=np.float32),
+    ],
+)
+def test_non_default_action_spaces(new_action_space):
+    env = FakeImageEnv(discrete=False)
+    # Default, should pass the test
+    with pytest.warns(None) as record:
+        check_env(env)
+
+    # No warnings for custom envs
+    assert len(record) == 0
+    # Change the action space
+    env.action_space = new_action_space
+
     with pytest.warns(UserWarning):
         check_env(env)
 

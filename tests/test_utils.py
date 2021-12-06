@@ -398,12 +398,69 @@ def test_is_vectorized_observation():
     box_obs = np.ones((1,) + box_space.shape)
     assert is_vectorized_observation(box_obs, box_space)
 
+    discrete_space = spaces.Discrete(2)
+    discrete_obs = np.ones((3,), dtype=np.int8)
+    assert is_vectorized_observation(discrete_obs, discrete_space)
+
+    multidiscrete_space = spaces.MultiDiscrete([2, 3])
+    multidiscrete_obs = np.ones((1, 2), dtype=np.int8)
+    assert is_vectorized_observation(multidiscrete_obs, multidiscrete_space)
+
+    multibinary_space = spaces.MultiBinary(3)
+    multibinary_obs = np.ones((1, 3), dtype=np.int8)
+    assert is_vectorized_observation(multibinary_obs, multibinary_space)
+
+    dict_space = spaces.Dict({"box": box_space, "discrete": discrete_space})
+    dict_obs = {"box": box_obs, "discrete": discrete_obs}
+    assert is_vectorized_observation(dict_obs, dict_space)
+
     # All not vectorized
+    box_obs = np.ones(box_space.shape)
+    assert not is_vectorized_observation(box_obs, box_space)
+
+    discrete_obs = np.ones((), dtype=np.int8)
+    assert not is_vectorized_observation(discrete_obs, discrete_space)
+
+    multidiscrete_obs = np.ones((2,), dtype=np.int8)
+    assert not is_vectorized_observation(multidiscrete_obs, multidiscrete_space)
+
+    multibinary_obs = np.ones((3,), dtype=np.int8)
+    assert not is_vectorized_observation(multibinary_obs, multibinary_space)
+
+    dict_obs = {"box": box_obs, "discrete": discrete_obs}
+    assert not is_vectorized_observation(dict_obs, dict_space)
+
+    # A mix of vectorized and non-vectorized things
+    with pytest.raises(ValueError):
+        discrete_obs = np.ones((1,), dtype=np.int8)
+        dict_obs = {"box": box_obs, "discrete": discrete_obs}
+        is_vectorized_observation(dict_obs, dict_space)
+
+    # Vectorized with the wrong shape
+    with pytest.raises(ValueError):
+        discrete_obs = np.ones((1,), dtype=np.int8)
+        box_obs = np.ones((1, 2) + box_space.shape)
+        dict_obs = {"box": box_obs, "discrete": discrete_obs}
+        is_vectorized_observation(dict_obs, dict_space)
 
     # Weird shape: error
+    with pytest.raises(ValueError):
+        discrete_obs = np.ones((1,) + box_space.shape, dtype=np.int8)
+        is_vectorized_observation(discrete_obs, discrete_space)
 
-    # spaces.Box: is_vectorized_box_observation,
-    # spaces.Discrete: is_vectorized_discrete_observation,
-    # spaces.MultiDiscrete: is_vectorized_multidiscrete_observation,
-    # spaces.MultiBinary: is_vectorized_multibinary_observation,
-    # spaces.Dict: is_vectorized_dict_observation,
+    # wrong shape
+    with pytest.raises(ValueError):
+        multidiscrete_obs = np.ones((2, 1), dtype=np.int8)
+        is_vectorized_observation(multidiscrete_obs, multidiscrete_space)
+
+    # wrong shape
+    with pytest.raises(ValueError):
+        multibinary_obs = np.ones((2, 1), dtype=np.int8)
+        is_vectorized_observation(multidiscrete_obs, multibinary_space)
+
+    # Almost good shape: one dimension too much for Discrete obs
+    with pytest.raises(ValueError):
+        box_obs = np.ones((1,) + box_space.shape)
+        discrete_obs = np.ones((1, 1), dtype=np.int8)
+        dict_obs = {"box": box_obs, "discrete": discrete_obs}
+        is_vectorized_observation(dict_obs, dict_space)

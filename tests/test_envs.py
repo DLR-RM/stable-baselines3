@@ -103,6 +103,8 @@ def test_high_dimension_action_space():
         spaces.Box(low=0, high=255, shape=(64, 64, 3), dtype=np.float32),
         # Not an image, it should be a 1D vector
         spaces.Box(low=-1, high=1, shape=(64, 3), dtype=np.float32),
+        # Wrong dtype, should be float32
+        spaces.Box(low=-1, high=1, shape=(64,), dtype=np.float64),
         # Tuple space is not supported by SB
         spaces.Tuple([spaces.Discrete(5), spaces.Discrete(10)]),
         # Nested dict space is not supported by SB3

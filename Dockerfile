@@ -1,7 +1,7 @@
 ARG PARENT_IMAGE
 FROM $PARENT_IMAGE
 ARG PYTORCH_DEPS=cpuonly
-ARG PYTHON_VERSION=3.6
+ARG PYTHON_VERSION=3.7
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
          build-essential \

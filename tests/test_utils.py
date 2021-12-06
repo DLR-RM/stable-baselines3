@@ -5,6 +5,7 @@ import gym
 import numpy as np
 import pytest
 import torch as th
+from gym import spaces
 
 import stable_baselines3 as sb3
 from stable_baselines3 import A2C, PPO
@@ -13,7 +14,7 @@ from stable_baselines3.common.env_util import is_wrapped, make_atari_env, make_v
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise, OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
-from stable_baselines3.common.utils import get_system_info, polyak_update, zip_strict
+from stable_baselines3.common.utils import get_system_info, is_vectorized_observation, polyak_update, zip_strict
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 
@@ -387,3 +388,22 @@ def test_get_system_info():
     assert "GPU Enabled" in info_str
     assert "Numpy" in info_str
     assert "Gym" in info_str
+
+
+def test_is_vectorized_observation():
+    # with pytest.raises("ValueError"):
+    #     pass
+    # All vectorized
+    box_space = spaces.Box(-1, 1, shape=(2,))
+    box_obs = np.ones((1,) + box_space.shape)
+    assert is_vectorized_observation(box_obs, box_space)
+
+    # All not vectorized
+
+    # Weird shape: error
+
+    # spaces.Box: is_vectorized_box_observation,
+    # spaces.Discrete: is_vectorized_discrete_observation,
+    # spaces.MultiDiscrete: is_vectorized_multidiscrete_observation,
+    # spaces.MultiBinary: is_vectorized_multibinary_observation,
+    # spaces.Dict: is_vectorized_dict_observation,

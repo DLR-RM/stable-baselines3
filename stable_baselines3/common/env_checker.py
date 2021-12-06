@@ -125,6 +125,12 @@ def _check_box_obs(observation_space: spaces.Box, key: str = "") -> None:
     # and the shape (minimal value)
     if len(observation_space.shape) == 3:
         _check_image_input(observation_space)
+    else:
+        if not isinstance(observation_space.dtype, np.float32):
+            warnings.warn(
+                f"Your observation {key} has dtype {observation_space.dtype}, "
+                "we recommend using np.float32 to avoid cast errors."
+            )
 
     if len(observation_space.shape) not in [1, 3]:
         warnings.warn(

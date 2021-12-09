@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.3.1a5 (WIP)
+Release 1.3.1a6 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -27,12 +27,16 @@ Bug Fixes:
 - Fixed a bug where ``set_env()`` with ``VecNormalize`` would result in an error with off-policy algorithms (thanks @cleversonahum)
 - FPS calculation is now performed based on number of steps performed during last ``learn`` call, even when ``reset_num_timesteps`` is set to ``False`` (@kachayev)
 - Fixed evaluation script for recurrent policies (experimental feature in SB3 contrib)
+- Fixed a bug where the observation would be incorrectly detected as non-vectorized instead of throwing an error
+- The env checker now properly checks and warns about potential issues for continuous action spaces when the boundaries are too small or when the dtype is not float32
 
 Deprecations:
 ^^^^^^^^^^^^^
 
 Others:
 ^^^^^^^
+- Added a warning in the env checker when not using ``np.float32`` for continuous actions
+- Improved test coverage and error message when checking shape of observation
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -43,7 +47,7 @@ Documentation:
 - Update GAE computation docstring
 - Add documentation on exporting to TFLite/Coral
 - Added JMLR paper and updated citation
-
+- Added link to RL Tips and Tricks video
 
 Release 1.3.0 (2021-10-23)
 ---------------------------

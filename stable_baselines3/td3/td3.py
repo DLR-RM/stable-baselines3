@@ -112,6 +112,7 @@ class TD3(OffPolicyAlgorithm):
             sde_support=False,
             optimize_memory_usage=optimize_memory_usage,
             supported_action_spaces=(gym.spaces.Box),
+            support_multi_env=True,
         )
 
         self.policy_delay = policy_delay

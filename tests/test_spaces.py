@@ -69,8 +69,13 @@ def test_action_spaces(model_class, env):
             model_class("MlpPolicy", env)
 
 
-@pytest.mark.parametrize("model_class", [A2C, PPO])
+@pytest.mark.parametrize("model_class", [A2C, PPO, DQN])
 @pytest.mark.parametrize("env", ["Taxi-v3"])
 def test_discrete_obs_space(model_class, env):
     env = make_vec_env(env, n_envs=2, seed=0)
-    model_class("MlpPolicy", env, n_steps=256).learn(500)
+    kwargs = {}
+    if model_class == DQN:
+        kwargs = dict(buffer_size=1000, learning_starts=100)
+    else:
+        kwargs = dict(n_steps=256)
+    model_class("MlpPolicy", env, **kwargs).learn(256)

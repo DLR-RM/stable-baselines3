@@ -125,6 +125,40 @@ def test_non_default_spaces(new_obs_space):
         check_env(env)
 
 
+@pytest.mark.parametrize(
+    "new_action_space",
+    [
+        # Not symmetric
+        spaces.Box(low=0, high=1, shape=(3,), dtype=np.float32),
+        # Wrong dtype
+        spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float64),
+        # Too big range
+        spaces.Box(low=-1000, high=1000, shape=(3,), dtype=np.float32),
+        # Too small range
+        spaces.Box(low=-0.1, high=0.1, shape=(2,), dtype=np.float32),
+        # Inverted boundaries
+        spaces.Box(low=1, high=-1, shape=(2,), dtype=np.float32),
+        # Same boundaries
+        spaces.Box(low=1, high=1, shape=(2,), dtype=np.float32),
+        # Almost good, except for one dim
+        spaces.Box(low=np.array([-1, -1, -1]), high=np.array([1, 1, 0.99]), dtype=np.float32),
+    ],
+)
+def test_non_default_action_spaces(new_action_space):
+    env = FakeImageEnv(discrete=False)
+    # Default, should pass the test
+    with pytest.warns(None) as record:
+        check_env(env)
+
+    # No warnings for custom envs
+    assert len(record) == 0
+    # Change the action space
+    env.action_space = new_action_space
+
+    with pytest.warns(UserWarning):
+        check_env(env)
+
+
 def check_reset_assert_error(env, new_reset_return):
     """
     Helper to check that the error is caught.

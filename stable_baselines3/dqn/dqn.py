@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import gym
@@ -111,12 +112,15 @@ class DQN(OffPolicyAlgorithm):
             sde_support=False,
             optimize_memory_usage=optimize_memory_usage,
             supported_action_spaces=(gym.spaces.Discrete,),
+            support_multi_env=True,
         )
 
         self.exploration_initial_eps = exploration_initial_eps
         self.exploration_final_eps = exploration_final_eps
         self.exploration_fraction = exploration_fraction
         self.target_update_interval = target_update_interval
+        # For updating the target network with multiple envs:
+        self._n_calls = 0
         self.max_grad_norm = max_grad_norm
         # "epsilon" for the epsilon-greedy exploration
         self.exploration_rate = 0.0
@@ -135,6 +139,18 @@ class DQN(OffPolicyAlgorithm):
             self.exploration_final_eps,
             self.exploration_fraction,
         )
+        # Account for multiple environments
+        # each call to step() corresponds to n_envs transitions
+        if self.n_envs > 1:
+            if self.n_envs > self.target_update_interval:
+                warnings.warn(
+                    "The number of environments used is greater than the target network "
+                    f"update interval ({self.n_envs} > {self.target_update_interval}), "
+                    "therefore the target network will be updated after each call to env.step() "
+                    f"which corresponds to {self.n_envs} steps."
+                )
+
+            self.target_update_interval = max(self.target_update_interval // self.n_envs, 1)
 
     def _create_aliases(self) -> None:
         self.q_net = self.policy.q_net
@@ -145,7 +161,8 @@ class DQN(OffPolicyAlgorithm):
         Update the exploration rate and target network if needed.
         This method is called in ``collect_rollouts()`` after each step in the environment.
         """
-        if self.num_timesteps % self.target_update_interval == 0:
+        self._n_calls += 1
+        if self._n_calls % self.target_update_interval == 0:
             polyak_update(self.q_net.parameters(), self.q_net_target.parameters(), self.tau)
 
         self.exploration_rate = self.exploration_schedule(self._current_progress_remaining)
@@ -198,16 +215,16 @@ class DQN(OffPolicyAlgorithm):
     def predict(
         self,
         observation: np.ndarray,
-        state: Optional[np.ndarray] = None,
-        mask: Optional[np.ndarray] = None,
+        state: Optional[Tuple[np.ndarray, ...]] = None,
+        episode_start: Optional[np.ndarray] = None,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
+    ) -> Tuple[np.ndarray, Optional[Tuple[np.ndarray, ...]]]:
         """
         Overrides the base_class predict function to include epsilon-greedy exploration.
 
         :param observation: the input observation
         :param state: The last states (can be None, used in recurrent policies)
-        :param mask: The last masks (can be None, used in recurrent policies)
+        :param episode_start: The last masks (can be None, used in recurrent policies)
         :param deterministic: Whether or not to return deterministic actions.
         :return: the model's action and the next state
             (used in recurrent policies)
@@ -222,7 +239,7 @@ class DQN(OffPolicyAlgorithm):
             else:
                 action = np.array(self.action_space.sample())
         else:
-            action, state = self.policy.predict(observation, state, mask, deterministic)
+            action, state = self.policy.predict(observation, state, episode_start, deterministic)
         return action, state
 
     def learn(

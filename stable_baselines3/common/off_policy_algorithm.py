@@ -2,6 +2,7 @@ import io
 import pathlib
 import time
 import warnings
+from copy import deepcopy
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import gym
@@ -11,7 +12,7 @@ import torch as th
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.buffers import DictReplayBuffer, ReplayBuffer
 from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.noise import ActionNoise
+from stable_baselines3.common.noise import ActionNoise, VectorizedActionNoise
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.save_util import load_from_pkl, save_to_pkl
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn, Schedule, TrainFreq, TrainFrequencyUnit
@@ -214,6 +215,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 self.observation_space,
                 self.action_space,
                 self.device,
+                n_envs=self.n_envs,
                 optimize_memory_usage=self.optimize_memory_usage,
                 **self.replay_buffer_kwargs,
             )
@@ -382,7 +384,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         raise NotImplementedError()
 
     def _sample_action(
-        self, learning_starts: int, action_noise: Optional[ActionNoise] = None
+        self,
+        learning_starts: int,
+        action_noise: Optional[ActionNoise] = None,
+        n_envs: int = 1,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Sample an action according to the exploration policy.
@@ -394,6 +399,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             Required for deterministic policy (e.g. TD3). This can also be used
             in addition to the stochastic policy for SAC.
         :param learning_starts: Number of steps before learning for the warm-up phase.
+        :param n_envs:
         :return: action to take in the environment
             and scaled action that will be stored in the replay buffer.
             The two differs when the action space is not normalized (bounds are not [-1, 1]).
@@ -401,7 +407,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # Select action randomly or according to policy
         if self.num_timesteps < learning_starts and not (self.use_sde and self.use_sde_at_warmup):
             # Warmup phase
-            unscaled_action = np.array([self.action_space.sample()])
+            unscaled_action = np.array([self.action_space.sample() for _ in range(n_envs)])
         else:
             # Note: when using continuous actions,
             # we assume that the policy uses tanh to scale the action
@@ -458,9 +464,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self,
         replay_buffer: ReplayBuffer,
         buffer_action: np.ndarray,
-        new_obs: np.ndarray,
+        new_obs: Union[np.ndarray, Dict[str, np.ndarray]],
         reward: np.ndarray,
-        done: np.ndarray,
+        dones: np.ndarray,
         infos: List[Dict[str, Any]],
     ) -> None:
         """
@@ -471,9 +477,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         :param replay_buffer: Replay buffer object where to store the transition.
         :param buffer_action: normalized action
         :param new_obs: next observation in the current episode
-            or first observation of the episode (when done is True)
+            or first observation of the episode (when dones is True)
         :param reward: reward for the current transition
-        :param done: Termination signal
+        :param dones: Termination signal
         :param infos: List of additional information about the transition.
             It may contain the terminal observations and information about timeout.
         """
@@ -485,22 +491,32 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             # Avoid changing the original ones
             self._last_original_obs, new_obs_, reward_ = self._last_obs, new_obs, reward
 
+        # Avoid modification by reference
+        next_obs = deepcopy(new_obs_)
         # As the VecEnv resets automatically, new_obs is already the
         # first observation of the next episode
-        if done and infos[0].get("terminal_observation") is not None:
-            next_obs = infos[0]["terminal_observation"]
-            # VecNormalize normalizes the terminal observation
-            if self._vec_normalize_env is not None:
-                next_obs = self._vec_normalize_env.unnormalize_obs(next_obs)
-        else:
-            next_obs = new_obs_
+        for i, done in enumerate(dones):
+            if done and infos[i].get("terminal_observation") is not None:
+                if isinstance(next_obs, dict):
+                    next_obs_ = infos[i]["terminal_observation"]
+                    # VecNormalize normalizes the terminal observation
+                    if self._vec_normalize_env is not None:
+                        next_obs_ = self._vec_normalize_env.unnormalize_obs(next_obs_)
+                    # Replace next obs for the correct envs
+                    for key in next_obs.keys():
+                        next_obs[key][i] = next_obs_[key]
+                else:
+                    next_obs[i] = infos[i]["terminal_observation"]
+                    # VecNormalize normalizes the terminal observation
+                    if self._vec_normalize_env is not None:
+                        next_obs[i] = self._vec_normalize_env.unnormalize_obs(next_obs[i, :])
 
         replay_buffer.add(
             self._last_original_obs,
             next_obs,
             buffer_action,
             reward_,
-            done,
+            dones,
             infos,
         )
 
@@ -541,79 +557,72 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # Switch to eval mode (this affects batch norm / dropout)
         self.policy.set_training_mode(False)
 
-        episode_rewards, total_timesteps = [], []
         num_collected_steps, num_collected_episodes = 0, 0
 
         assert isinstance(env, VecEnv), "You must pass a VecEnv"
-        assert env.num_envs == 1, "OffPolicyAlgorithm only support single environment"
         assert train_freq.frequency > 0, "Should at least collect one step or episode."
 
+        if env.num_envs > 1:
+            assert train_freq.unit == TrainFrequencyUnit.STEP, "You must use only one env when doing episodic training."
+
+        # Vectorize action noise if needed
+        if action_noise is not None and env.num_envs > 1 and not isinstance(action_noise, VectorizedActionNoise):
+            action_noise = VectorizedActionNoise(action_noise, env.num_envs)
+
         if self.use_sde:
-            self.actor.reset_noise()
+            self.actor.reset_noise(env.num_envs)
 
         callback.on_rollout_start()
         continue_training = True
 
         while should_collect_more_steps(train_freq, num_collected_steps, num_collected_episodes):
-            done = False
-            episode_reward, episode_timesteps = 0.0, 0
+            if self.use_sde and self.sde_sample_freq > 0 and num_collected_steps % self.sde_sample_freq == 0:
+                # Sample a new noise matrix
+                self.actor.reset_noise(env.num_envs)
 
-            while not done:
+            # Select action randomly or according to policy
+            actions, buffer_actions = self._sample_action(learning_starts, action_noise, env.num_envs)
 
-                if self.use_sde and self.sde_sample_freq > 0 and num_collected_steps % self.sde_sample_freq == 0:
-                    # Sample a new noise matrix
-                    self.actor.reset_noise()
+            # Rescale and perform action
+            new_obs, rewards, dones, infos = env.step(actions)
 
-                # Select action randomly or according to policy
-                action, buffer_action = self._sample_action(learning_starts, action_noise)
+            self.num_timesteps += env.num_envs
+            num_collected_steps += 1
 
-                # Rescale and perform action
-                new_obs, reward, done, infos = env.step(action)
+            # Give access to local variables
+            callback.update_locals(locals())
+            # Only stop training if return value is False, not when it is None.
+            if callback.on_step() is False:
+                return RolloutReturn(num_collected_steps * env.num_envs, num_collected_episodes, continue_training=False)
 
-                self.num_timesteps += 1
-                episode_timesteps += 1
-                num_collected_steps += 1
+            # Retrieve reward and episode length if using Monitor wrapper
+            self._update_info_buffer(infos, dones)
 
-                # Give access to local variables
-                callback.update_locals(locals())
-                # Only stop training if return value is False, not when it is None.
-                if callback.on_step() is False:
-                    return RolloutReturn(0.0, num_collected_steps, num_collected_episodes, continue_training=False)
+            # Store data in replay buffer (normalized action and unnormalized observation)
+            self._store_transition(replay_buffer, buffer_actions, new_obs, rewards, dones, infos)
 
-                episode_reward += reward
+            self._update_current_progress_remaining(self.num_timesteps, self._total_timesteps)
 
-                # Retrieve reward and episode length if using Monitor wrapper
-                self._update_info_buffer(infos, done)
+            # For DQN, check if the target network should be updated
+            # and update the exploration schedule
+            # For SAC/TD3, the update is dones as the same time as the gradient update
+            # see https://github.com/hill-a/stable-baselines/issues/900
+            self._on_step()
 
-                # Store data in replay buffer (normalized action and unnormalized observation)
-                self._store_transition(replay_buffer, buffer_action, new_obs, reward, done, infos)
+            for idx, done in enumerate(dones):
+                if done:
+                    # Update stats
+                    num_collected_episodes += 1
+                    self._episode_num += 1
 
-                self._update_current_progress_remaining(self.num_timesteps, self._total_timesteps)
+                    if action_noise is not None:
+                        kwargs = dict(indices=[idx]) if env.num_envs > 1 else {}
+                        action_noise.reset(**kwargs)
 
-                # For DQN, check if the target network should be updated
-                # and update the exploration schedule
-                # For SAC/TD3, the update is done as the same time as the gradient update
-                # see https://github.com/hill-a/stable-baselines/issues/900
-                self._on_step()
-
-                if not should_collect_more_steps(train_freq, num_collected_steps, num_collected_episodes):
-                    break
-
-            if done:
-                num_collected_episodes += 1
-                self._episode_num += 1
-                episode_rewards.append(episode_reward)
-                total_timesteps.append(episode_timesteps)
-
-                if action_noise is not None:
-                    action_noise.reset()
-
-                # Log training infos
-                if log_interval is not None and self._episode_num % log_interval == 0:
-                    self._dump_logs()
-
-        mean_reward = np.mean(episode_rewards) if num_collected_episodes > 0 else 0.0
+                    # Log training infos
+                    if log_interval is not None and self._episode_num % log_interval == 0:
+                        self._dump_logs()
 
         callback.on_rollout_end()
 
-        return RolloutReturn(mean_reward, num_collected_steps, num_collected_episodes, continue_training)
+        return RolloutReturn(num_collected_steps * env.num_envs, num_collected_episodes, continue_training)

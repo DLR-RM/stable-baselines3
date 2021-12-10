@@ -181,7 +181,8 @@ class ReplayBuffer(BaseBuffer):
     ):
         super(ReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
 
-        assert n_envs == 1, "Replay buffer only support single environment for now"
+        # Adjust buffer size
+        self.buffer_size = max(buffer_size // n_envs, 1)
 
         # Check that the replay buffer can fit into the memory
         if psutil is not None:
@@ -230,6 +231,17 @@ class ReplayBuffer(BaseBuffer):
         done: np.ndarray,
         infos: List[Dict[str, Any]],
     ) -> None:
+
+        # Reshape needed when using multiple envs with discrete observations
+        # as numpy cannot broadcast (n_discrete,) to (n_discrete, 1)
+        if isinstance(self.observation_space, spaces.Discrete):
+            obs = obs.reshape((self.n_envs,) + self.obs_shape)
+            next_obs = next_obs.reshape((self.n_envs,) + self.obs_shape)
+
+        # Same, for actions
+        if isinstance(self.action_space, spaces.Discrete):
+            action = action.reshape((self.n_envs, self.action_dim))
+
         # Copy to avoid modification by reference
         self.observations[self.pos] = np.array(obs).copy()
 
@@ -273,20 +285,22 @@ class ReplayBuffer(BaseBuffer):
         return self._get_samples(batch_inds, env=env)
 
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
+        # Sample randomly the env idx
+        env_indices = np.random.randint(0, high=self.n_envs, size=(len(batch_inds),))
 
         if self.optimize_memory_usage:
-            next_obs = self._normalize_obs(self.observations[(batch_inds + 1) % self.buffer_size, 0, :], env)
+            next_obs = self._normalize_obs(self.observations[(batch_inds + 1) % self.buffer_size, env_indices, :], env)
         else:
-            next_obs = self._normalize_obs(self.next_observations[batch_inds, 0, :], env)
+            next_obs = self._normalize_obs(self.next_observations[batch_inds, env_indices, :], env)
 
         data = (
-            self._normalize_obs(self.observations[batch_inds, 0, :], env),
-            self.actions[batch_inds, 0, :],
+            self._normalize_obs(self.observations[batch_inds, env_indices, :], env),
+            self.actions[batch_inds, env_indices, :],
             next_obs,
             # Only use dones that are not due to timeouts
             # deactivated by default (timeouts is initialized as an array of False)
-            self.dones[batch_inds] * (1 - self.timeouts[batch_inds]),
-            self._normalize_reward(self.rewards[batch_inds], env),
+            (self.dones[batch_inds, env_indices] * (1 - self.timeouts[batch_inds, env_indices])).reshape(-1, 1),
+            self._normalize_reward(self.rewards[batch_inds, env_indices].reshape(-1, 1), env),
         )
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
 
@@ -352,9 +366,9 @@ class RolloutBuffer(BaseBuffer):
         and GAE(lambda) advantage.
 
         Uses Generalized Advantage Estimation (https://arxiv.org/abs/1506.02438)
-        to compute the advantage. To obtain vanilla advantage (A(s) = R - V(S))
-        where R is the discounted reward with value bootstrap,
-        set ``gae_lambda=1.0`` during initialization.
+        to compute the advantage. To obtain Monte-Carlo advantage estimate (A(s) = R - V(S))
+        where R is the sum of discounted reward with value bootstrap
+        (because we don't always have full episode), set ``gae_lambda=1.0`` during initialization.
 
         The TD(lambda) estimator has also two special cases:
         - TD(1) is Monte-Carlo estimate (sum of discounted rewards)
@@ -364,7 +378,6 @@ class RolloutBuffer(BaseBuffer):
 
         :param last_values: state value estimation for the last step (one for each env)
         :param dones: if the last step was a terminal step (one bool for each env).
-
         """
         # Convert to numpy
         last_values = last_values.clone().cpu().numpy().flatten()
@@ -492,7 +505,7 @@ class DictReplayBuffer(ReplayBuffer):
         super(ReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
 
         assert isinstance(self.obs_shape, dict), "DictReplayBuffer must be used with Dict obs space only"
-        assert n_envs == 1, "Replay buffer only support single environment for now"
+        self.buffer_size = max(buffer_size // n_envs, 1)
 
         # Check that the replay buffer can fit into the memory
         if psutil is not None:
@@ -512,8 +525,7 @@ class DictReplayBuffer(ReplayBuffer):
             for key, _obs_shape in self.obs_shape.items()
         }
 
-        # only 1 env is supported
-        self.actions = np.zeros((self.buffer_size, self.action_dim), dtype=action_space.dtype)
+        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
 
@@ -554,10 +566,20 @@ class DictReplayBuffer(ReplayBuffer):
     ) -> None:
         # Copy to avoid modification by reference
         for key in self.observations.keys():
-            self.observations[key][self.pos] = np.array(obs[key]).copy()
+            # Reshape needed when using multiple envs with discrete observations
+            # as numpy cannot broadcast (n_discrete,) to (n_discrete, 1)
+            if isinstance(self.observation_space.spaces[key], spaces.Discrete):
+                obs[key] = obs[key].reshape((self.n_envs,) + self.obs_shape[key])
+            self.observations[key][self.pos] = np.array(obs[key])
 
         for key in self.next_observations.keys():
+            if isinstance(self.observation_space.spaces[key], spaces.Discrete):
+                next_obs[key] = next_obs[key].reshape((self.n_envs,) + self.obs_shape[key])
             self.next_observations[key][self.pos] = np.array(next_obs[key]).copy()
+
+        # Same reshape, for actions
+        if isinstance(self.action_space, spaces.Discrete):
+            action = action.reshape((self.n_envs, self.action_dim))
 
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
@@ -583,10 +605,12 @@ class DictReplayBuffer(ReplayBuffer):
         return super(ReplayBuffer, self).sample(batch_size=batch_size, env=env)
 
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> DictReplayBufferSamples:
+        # Sample randomly the env idx
+        env_indices = np.random.randint(0, high=self.n_envs, size=(len(batch_inds),))
 
         # Normalize if needed and remove extra dimension (we are using only one env for now)
-        obs_ = self._normalize_obs({key: obs[batch_inds, 0, :] for key, obs in self.observations.items()})
-        next_obs_ = self._normalize_obs({key: obs[batch_inds, 0, :] for key, obs in self.next_observations.items()})
+        obs_ = self._normalize_obs({key: obs[batch_inds, env_indices, :] for key, obs in self.observations.items()})
+        next_obs_ = self._normalize_obs({key: obs[batch_inds, env_indices, :] for key, obs in self.next_observations.items()})
 
         # Convert to torch tensor
         observations = {key: self.to_torch(obs) for key, obs in obs_.items()}
@@ -594,12 +618,14 @@ class DictReplayBuffer(ReplayBuffer):
 
         return DictReplayBufferSamples(
             observations=observations,
-            actions=self.to_torch(self.actions[batch_inds]),
+            actions=self.to_torch(self.actions[batch_inds, env_indices]),
             next_observations=next_observations,
             # Only use dones that are not due to timeouts
             # deactivated by default (timeouts is initialized as an array of False)
-            dones=self.to_torch(self.dones[batch_inds] * (1 - self.timeouts[batch_inds])),
-            rewards=self.to_torch(self._normalize_reward(self.rewards[batch_inds], env)),
+            dones=self.to_torch(self.dones[batch_inds, env_indices] * (1 - self.timeouts[batch_inds, env_indices])).reshape(
+                -1, 1
+            ),
+            rewards=self.to_torch(self._normalize_reward(self.rewards[batch_inds, env_indices].reshape(-1, 1), env)),
         )
 
 
@@ -623,7 +649,7 @@ class DictRolloutBuffer(RolloutBuffer):
     :param action_space: Action space
     :param device:
     :param gae_lambda: Factor for trade-off of bias vs variance for Generalized Advantage Estimator
-        Equivalent to classic advantage when set to 1.
+        Equivalent to Monte-Carlo advantage estimate when set to 1.
     :param gamma: Discount factor
     :param n_envs: Number of parallel environments
     """

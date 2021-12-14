@@ -176,3 +176,30 @@ def test_offpolicy_multi_env(model_class):
         **kwargs,
     )
     model.learn(total_timesteps=150)
+
+    # Check that gradient_steps=-1 works as expected:
+    # perform as many gradient_steps as transitions collected
+    train_freq = 3
+    model = model_class(
+        "MlpPolicy",
+        env,
+        policy_kwargs=policy_kwargs,
+        learning_starts=0,
+        buffer_size=10000,
+        verbose=0,
+        train_freq=train_freq,
+        gradient_steps=-1,
+        **kwargs,
+    )
+    model.learn(total_timesteps=train_freq)
+    assert model.logger.name_to_value["train/n_updates"] == train_freq * env.num_envs
+
+
+def test_warn_dqn_multi_env():
+    with pytest.warns(UserWarning, match="The number of environments used is greater"):
+        DQN(
+            "MlpPolicy",
+            make_vec_env("CartPole-v1", n_envs=2),
+            buffer_size=100,
+            target_update_interval=1,
+        )

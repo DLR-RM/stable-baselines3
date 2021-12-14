@@ -285,7 +285,7 @@ class ReplayBuffer(BaseBuffer):
         return self._get_samples(batch_inds, env=env)
 
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
-        # Hack: sample randomly the env idx
+        # Sample randomly the env idx
         env_indices = np.random.randint(0, high=self.n_envs, size=(len(batch_inds),))
 
         if self.optimize_memory_usage:
@@ -366,9 +366,9 @@ class RolloutBuffer(BaseBuffer):
         and GAE(lambda) advantage.
 
         Uses Generalized Advantage Estimation (https://arxiv.org/abs/1506.02438)
-        to compute the advantage. To obtain vanilla advantage (A(s) = R - V(S))
-        where R is the discounted reward with value bootstrap,
-        set ``gae_lambda=1.0`` during initialization.
+        to compute the advantage. To obtain Monte-Carlo advantage estimate (A(s) = R - V(S))
+        where R is the sum of discounted reward with value bootstrap
+        (because we don't always have full episode), set ``gae_lambda=1.0`` during initialization.
 
         The TD(lambda) estimator has also two special cases:
         - TD(1) is Monte-Carlo estimate (sum of discounted rewards)
@@ -378,7 +378,6 @@ class RolloutBuffer(BaseBuffer):
 
         :param last_values: state value estimation for the last step (one for each env)
         :param dones: if the last step was a terminal step (one bool for each env).
-
         """
         # Convert to numpy
         last_values = last_values.clone().cpu().numpy().flatten()
@@ -606,7 +605,7 @@ class DictReplayBuffer(ReplayBuffer):
         return super(ReplayBuffer, self).sample(batch_size=batch_size, env=env)
 
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> DictReplayBufferSamples:
-        # Hack: sample randomly the env idx
+        # Sample randomly the env idx
         env_indices = np.random.randint(0, high=self.n_envs, size=(len(batch_inds),))
 
         # Normalize if needed and remove extra dimension (we are using only one env for now)
@@ -650,7 +649,7 @@ class DictRolloutBuffer(RolloutBuffer):
     :param action_space: Action space
     :param device:
     :param gae_lambda: Factor for trade-off of bias vs variance for Generalized Advantage Estimator
-        Equivalent to classic advantage when set to 1.
+        Equivalent to Monte-Carlo advantage estimate when set to 1.
     :param gamma: Discount factor
     :param n_envs: Number of parallel environments
     """

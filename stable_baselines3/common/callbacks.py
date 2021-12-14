@@ -519,11 +519,9 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
         self._total_max_episodes = self.max_episodes * self.training_env.num_envs
 
     def _on_step(self) -> bool:
-        # Checking for both 'done' and 'dones' keywords because:
-        # Some models use keyword 'done' (e.g.,: SAC, TD3, DQN, DDPG)
-        # While some models use keyword 'dones' (e.g.,: A2C, PPO)
-        done_array = np.array(self.locals.get("done") if self.locals.get("done") is not None else self.locals.get("dones"))
-        self.n_episodes += np.sum(done_array).item()
+        # Check that the `dones` local variable is defined
+        assert "dones" in self.locals, "`dones` variable is not defined, please check your code next to `callback.on_step()`"
+        self.n_episodes += np.sum(self.locals["dones"]).item()
 
         continue_training = self.n_episodes < self._total_max_episodes
 

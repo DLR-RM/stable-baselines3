@@ -18,6 +18,7 @@ class StackedObservations(object):
 
     :param num_envs: number of environments
     :param n_stack: Number of frames to stack
+    :param observation_space: Environment observation space.
     :param channels_order: If "first", stack on first image dimension. If "last", stack on last dimension.
         If None, automatically detect channel to stack over in case of image observation or default to "last" (default).
     """

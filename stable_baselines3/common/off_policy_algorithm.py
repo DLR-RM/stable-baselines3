@@ -493,9 +493,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             # Avoid changing the original ones
             self._last_original_obs, new_obs_, reward_ = self._last_obs, new_obs, reward
 
+        # Avoid modification by reference
+        next_obs = deepcopy(new_obs_)
         # As the VecEnv resets automatically, new_obs is already the
         # first observation of the next episode
-        next_obs = deepcopy(new_obs_)  # use deepcopy for dict observations
         for i, done in enumerate(dones):
             if done and infos[i].get("terminal_observation") is not None:
                 if isinstance(next_obs, dict):
@@ -582,10 +583,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 self.actor.reset_noise(env.num_envs)
 
             # Select action randomly or according to policy
-            action, buffer_action = self._sample_action(learning_starts, action_noise, env.num_envs)
+            actions, buffer_actions = self._sample_action(learning_starts, action_noise, env.num_envs)
 
             # Rescale and perform action
-            new_obs, reward, dones, infos = env.step(action)
+            new_obs, rewards, dones, infos = env.step(actions)
 
             self.num_timesteps += env.num_envs
             num_collected_steps += 1
@@ -594,13 +595,13 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             callback.update_locals(locals())
             # Only stop training if return value is False, not when it is None.
             if callback.on_step() is False:
-                return RolloutReturn(0.0, num_collected_steps, num_collected_episodes, continue_training=False)
+                return RolloutReturn(num_collected_steps * env.num_envs, num_collected_episodes, continue_training=False)
 
             # Retrieve reward and episode length if using Monitor wrapper
             self._update_info_buffer(infos, dones)
 
             # Store data in replay buffer (normalized action and unnormalized observation)
-            self._store_transition(replay_buffer, buffer_action, new_obs, reward, dones, infos)
+            self._store_transition(replay_buffer, buffer_actions, new_obs, rewards, dones, infos)
 
             self._update_current_progress_remaining(self.num_timesteps, self._total_timesteps)
 
@@ -626,4 +627,4 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_rollout_end()
 
-        return RolloutReturn(0.0, num_collected_steps, num_collected_episodes, continue_training)
+        return RolloutReturn(num_collected_steps * env.num_envs, num_collected_episodes, continue_training)

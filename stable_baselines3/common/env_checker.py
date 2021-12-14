@@ -266,12 +266,17 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
         # Check for the action space, it may lead to hard-to-debug issues
         if isinstance(action_space, spaces.Box) and (
             np.any(np.abs(action_space.low) != np.abs(action_space.high))
-            or np.any(np.abs(action_space.low) > 1)
-            or np.any(np.abs(action_space.high) > 1)
+            or np.any(action_space.low != -1)
+            or np.any(action_space.high != 1)
         ):
             warnings.warn(
                 "We recommend you to use a symmetric and normalized Box action space (range=[-1, 1]) "
                 "cf https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html"
+            )
+
+        if isinstance(action_space, spaces.Box) and action_space.dtype != np.dtype(np.float32):
+            warnings.warn(
+                f"Your action space has dtype {action_space.dtype}, we recommend using np.float32 to avoid cast errors."
             )
 
     # ============ Check the returned values ===============

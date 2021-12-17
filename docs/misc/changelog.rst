@@ -48,6 +48,7 @@ Documentation:
 - Add documentation on exporting to TFLite/Coral
 - Added JMLR paper and updated citation
 - Added link to RL Tips and Tricks video
+- Update BaseAlgorithm.load docstring
 
 Release 1.3.0 (2021-10-23)
 ---------------------------

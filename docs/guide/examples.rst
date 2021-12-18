@@ -59,8 +59,8 @@ In the following example, we will train, save and load a DQN model on the Lunar 
 .. note::
   ``load`` method re-creates the model from scratch and should be called on the Algorithm without instantiating it first,
   e.g. ``model = DQN.load("dqn_lunar", env=env)`` instead of ``model = DQN(env=env)`` followed by  ``model.load("dqn_lunar")``. The latter **will not work** as ``load`` does not work by reference.
-  If you want to load parameters without re-creating the model, e.g. to evaluate same model 
-  with multiple different sets of parameters, consider using ``load_parameters`` instead.
+  If you want to load parameters without re-creating the model, e.g. to evaluate the same model 
+  with multiple different sets of parameters, consider using ``set_parameters`` instead.
 
 .. code-block:: python
 

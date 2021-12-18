@@ -56,10 +56,11 @@ In the following example, we will train, save and load a DQN model on the Lunar 
   LunarLander requires the python package ``box2d``.
   You can install it using ``apt install swig`` and then ``pip install box2d box2d-kengz``
 
-.. .. note::
-..   ``load`` function re-creates model from scratch on each call, which can be slow.
-..   If you need to e.g. evaluate same model with multiple different sets of parameters, consider
-..   using ``load_parameters`` instead.
+.. note::
+  ``load`` method re-creates the model from scratch and should be called on the Algorithm without instantiating it first,
+  e.g. ``model = DQN.load("dqn_lunar", env=env)`` instead of ``model = DQN(env=env)`` followed by  ``model.load("dqn_lunar")``. The latter **will not work** as ``load`` does not work by reference.
+  If you want to load parameters without re-creating the model, e.g. to evaluate the same model 
+  with multiple different sets of parameters, consider using ``set_parameters`` instead.
 
 .. code-block:: python
 

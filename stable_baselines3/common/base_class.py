@@ -657,7 +657,9 @@ class BaseAlgorithm(ABC):
         **kwargs,
     ) -> "BaseAlgorithm":
         """
-        Load the model from a zip-file
+        Load the model from a zip-file.
+        Note: `load` re-creates the model from scratch, it does not update it in-place!
+        For an in-place load use `set_parameters` instead.
 
         :param path: path to the file (or a file-like) where to
             load the agent from
@@ -676,6 +678,7 @@ class BaseAlgorithm(ABC):
             to avoid unexpected behavior.
             See https://github.com/DLR-RM/stable-baselines3/issues/597
         :param kwargs: extra arguments to change the model when loading
+        :return: new model instance with loaded parameters
         """
         if print_system_info:
             print("== CURRENT SYSTEM INFO ==")

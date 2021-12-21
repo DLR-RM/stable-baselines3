@@ -8,6 +8,7 @@ from torch.nn import functional as F
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
+from stable_baselines3.common.surgeon import ActorLossModifier, RewardModifier
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import polyak_update
 from stable_baselines3.sac.policies import SACPolicy
@@ -65,6 +66,7 @@ class SAC(OffPolicyAlgorithm):
     :param create_eval_env: Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: additional arguments to be passed to the policy on creation
+    :param actor_loss_modifier: an object than can modify actor loss, just before being backwarded
     :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
     :param seed: Seed for the pseudo random generators
     :param device: Device (cpu, cuda, ...) on which the code should be run.
@@ -97,6 +99,7 @@ class SAC(OffPolicyAlgorithm):
         tensorboard_log: Optional[str] = None,
         create_eval_env: bool = False,
         policy_kwargs: Optional[Dict[str, Any]] = None,
+        actor_loss_modifier: Optional[ActorLossModifier] = None,
         verbose: int = 0,
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
@@ -180,14 +183,13 @@ class SAC(OffPolicyAlgorithm):
         self.critic = self.policy.critic
         self.critic_target = self.policy.critic_target
 
-    def train(self, gradient_steps: int, batch_size: int = 64) -> None:
+    def train(self, gradient_steps: int, batch_size: int = 64, reward_modifier: Optional[RewardModifier] = None) -> None:
         # Switch to train mode (this affects batch norm / dropout)
         self.policy.set_training_mode(True)
         # Update optimizers learning rate
         optimizers = [self.actor.optimizer, self.critic.optimizer]
         if self.ent_coef_optimizer is not None:
             optimizers += [self.ent_coef_optimizer]
-
         # Update learning rate according to lr schedule
         self._update_learning_rate(optimizers)
 
@@ -197,6 +199,8 @@ class SAC(OffPolicyAlgorithm):
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
+            if reward_modifier is not None:
+                replay_data = reward_modifier.modify_reward(replay_data)
 
             # We need to sample because `log_std` may have changed between two gradient steps
             if self.use_sde:
@@ -287,6 +291,8 @@ class SAC(OffPolicyAlgorithm):
         tb_log_name: str = "SAC",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
+        use_random_action: bool = False,
+        reward_modifier: Optional[RewardModifier] = None,
     ) -> OffPolicyAlgorithm:
 
         return super(SAC, self).learn(
@@ -299,6 +305,8 @@ class SAC(OffPolicyAlgorithm):
             tb_log_name=tb_log_name,
             eval_log_path=eval_log_path,
             reset_num_timesteps=reset_num_timesteps,
+            use_random_action=use_random_action,
+            reward_modifier=reward_modifier,
         )
 
     def _excluded_save_params(self) -> List[str]:

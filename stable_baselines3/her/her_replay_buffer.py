@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch as th
 
-from stable_baselines3.common.buffers import DictReplayBuffer
+from stable_baselines3.common.buffers import DictReplayBuffer, ReplayBuffer
 from stable_baselines3.common.preprocessing import get_obs_shape
 from stable_baselines3.common.type_aliases import DictReplayBufferSamples
 from stable_baselines3.common.vec_env import VecEnv, VecNormalize
@@ -150,6 +150,7 @@ class HerReplayBuffer(DictReplayBuffer):
         self.info_buffer = [deque(maxlen=self.max_episode_length) for _ in range(self.max_episode_stored)]
         # episode length storage, needed for episodes which has less steps than the maximum length
         self.episode_lengths = np.zeros(self.max_episode_stored, dtype=np.int64)
+        self.child_buffer: ReplayBuffer = None  # when specifed, also store obs in this buffer
 
     def __getstate__(self) -> Dict[str, Any]:
         """
@@ -428,6 +429,15 @@ class HerReplayBuffer(DictReplayBuffer):
             self.replay_buffer.add(
                 obs,
                 next_obs,
+                action,
+                reward,
+                done,
+                infos,
+            )
+        if self.child_buffer is not None:
+            self.child_buffer.add(
+                obs["observation"],
+                next_obs["observation"],
                 action,
                 reward,
                 done,

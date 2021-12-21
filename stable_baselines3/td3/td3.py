@@ -8,6 +8,7 @@ from torch.nn import functional as F
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
+from stable_baselines3.common.surgeon import RewardModifier
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import polyak_update
 from stable_baselines3.td3.policies import TD3Policy
@@ -132,7 +133,7 @@ class TD3(OffPolicyAlgorithm):
         self.critic = self.policy.critic
         self.critic_target = self.policy.critic_target
 
-    def train(self, gradient_steps: int, batch_size: int = 100) -> None:
+    def train(self, gradient_steps: int, batch_size: int = 64, reward_modifier: Optional[RewardModifier] = None) -> None:
         # Switch to train mode (this affects batch norm / dropout)
         self.policy.set_training_mode(True)
 
@@ -146,6 +147,8 @@ class TD3(OffPolicyAlgorithm):
             self._n_updates += 1
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
+            if reward_modifier is not None:
+                replay_data = reward_modifier.modify_reward(replay_data)
 
             with th.no_grad():
                 # Select action according to policy and add clipped noise
@@ -200,6 +203,8 @@ class TD3(OffPolicyAlgorithm):
         tb_log_name: str = "TD3",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
+        use_random_action: bool = False,
+        reward_modifier: Optional[RewardModifier] = None,
     ) -> OffPolicyAlgorithm:
 
         return super(TD3, self).learn(
@@ -212,6 +217,8 @@ class TD3(OffPolicyAlgorithm):
             tb_log_name=tb_log_name,
             eval_log_path=eval_log_path,
             reset_num_timesteps=reset_num_timesteps,
+            use_random_action=use_random_action,
+            reward_modifier=reward_modifier,
         )
 
     def _excluded_save_params(self) -> List[str]:

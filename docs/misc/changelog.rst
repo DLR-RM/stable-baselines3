@@ -37,6 +37,7 @@ Others:
 ^^^^^^^
 - Added a warning in the env checker when not using ``np.float32`` for continuous actions
 - Improved test coverage and error message when checking shape of observation
+- Added ``newline="\n"`` when opening CSV monitor files so that each line ends with ``\r\n`` instead of ``\r\r\n`` on Windows while Linux environments are not affected (@hsuehch)
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -48,6 +49,9 @@ Documentation:
 - Add documentation on exporting to TFLite/Coral
 - Added JMLR paper and updated citation
 - Added link to RL Tips and Tricks video
+- Update ``BaseAlgorithm.load`` docstring
+- Add a Note on ``load`` behavior in the examples
+
 
 Release 1.3.0 (2021-10-23)
 ---------------------------
@@ -855,4 +859,4 @@ And all the contributors:
 @ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan
 @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
-@eleurent @ac-93 @cove9988 @theDebugger811
+@eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch

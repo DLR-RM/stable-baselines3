@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.3.1a6 (WIP)
+Release 1.3.1a7 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -20,7 +20,7 @@ New Features:
 - Added ``norm_obs_keys`` param for ``VecNormalize`` wrapper to configure which observation keys to normalize (@kachayev)
 - Added experimental support to train off-policy algorithms with multiple envs (note: ``HerReplayBuffer`` currently not supported)
 - Handle timeout termination properly for on-policy algorithms (when using ``TimeLimit``)
-
+- Added ``skip`` option to ``VecTransposeImage`` to skip transforming the channel order when the heuristic is wrong
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -29,6 +29,7 @@ Bug Fixes:
 - Fixed evaluation script for recurrent policies (experimental feature in SB3 contrib)
 - Fixed a bug where the observation would be incorrectly detected as non-vectorized instead of throwing an error
 - The env checker now properly checks and warns about potential issues for continuous action spaces when the boundaries are too small or when the dtype is not float32
+- Fixed a bug in ``VecFrameStack`` with channel first image envs, where the terminal observation would be wrongly created.
 
 Deprecations:
 ^^^^^^^^^^^^^

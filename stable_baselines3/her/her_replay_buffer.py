@@ -84,6 +84,10 @@ class HerReplayBuffer(DictReplayBuffer):
 
         super(HerReplayBuffer, self).__init__(buffer_size, env.observation_space, env.action_space, device, env.num_envs)
 
+        self.ep_idxs = np.arange(env.num_envs)
+        self.trans_idxs = np.zeros(env.num_envs).astype(np.int64)
+        self.pos = env.num_envs - 1
+
         # convert goal_selection_strategy into GoalSelectionStrategy if string
         if isinstance(goal_selection_strategy, str):
             self.goal_selection_strategy = KEY_TO_GOAL_STRATEGY[goal_selection_strategy.lower()]
@@ -104,7 +108,7 @@ class HerReplayBuffer(DictReplayBuffer):
         self.max_episode_length = get_time_limit(env, max_episode_length)
         # storage for transitions of current episode for offline sampling
         # for online sampling, it replaces the "classic" replay buffer completely
-        her_buffer_size = buffer_size if online_sampling else self.max_episode_length
+        her_buffer_size = buffer_size if online_sampling else self.max_episode_length * env.num_envs
 
         self.env = env
         self.buffer_size = her_buffer_size
@@ -131,15 +135,15 @@ class HerReplayBuffer(DictReplayBuffer):
 
         # input dimensions for buffer initialization
         input_shape = {
-            "observation": (self.env.num_envs,) + self.obs_shape,
-            "achieved_goal": (self.env.num_envs,) + self.goal_shape,
-            "desired_goal": (self.env.num_envs,) + self.goal_shape,
+            "observation": self.obs_shape,
+            "achieved_goal": self.goal_shape,
+            "desired_goal": self.goal_shape,
             "action": (self.action_dim,),
-            "reward": (1,),
-            "next_obs": (self.env.num_envs,) + self.obs_shape,
-            "next_achieved_goal": (self.env.num_envs,) + self.goal_shape,
-            "next_desired_goal": (self.env.num_envs,) + self.goal_shape,
-            "done": (1,),
+            "reward": (),
+            "next_obs": self.obs_shape,
+            "next_achieved_goal": self.goal_shape,
+            "next_desired_goal": self.goal_shape,
+            "done": (),
         }
         self._observation_keys = ["observation", "achieved_goal", "desired_goal"]
         self._buffer = {
@@ -287,18 +291,15 @@ class HerReplayBuffer(DictReplayBuffer):
         if online_sampling:
             assert batch_size is not None, "No batch_size specified for online sampling of HER transitions"
             # Do not sample the episode with index `self.pos` as the episode is invalid
-            if self.full:
-                episode_indices = (
-                    np.random.randint(1, self.n_episodes_stored, batch_size) + self.pos
-                ) % self.n_episodes_stored
-            else:
-                episode_indices = np.random.randint(0, self.n_episodes_stored, batch_size)
+            all_ep_indices = np.arange(self.max_episode_stored)[self.episode_lengths > 0]
+            episode_indices = np.random.choice(all_ep_indices, batch_size)
             # A subset of the transitions will be relabeled using HER algorithm
             her_indices = np.arange(batch_size)[: int(self.her_ratio * batch_size)]
         else:
             assert maybe_vec_env is None, "Transitions must be stored unnormalized in the replay buffer"
             assert n_sampled_goal is not None, "No n_sampled_goal specified for offline sampling of HER transitions"
             # Offline sampling: there is only one episode stored
+            # TODO: fix this
             episode_length = self.episode_lengths[0]
             # we sample n_sampled_goal per timestep in the episode (only one is stored).
             episode_indices = np.tile(0, (episode_length * n_sampled_goal))
@@ -351,7 +352,7 @@ class HerReplayBuffer(DictReplayBuffer):
         # no virtual transition can be created
         if len(her_indices) > 0:
             # Vectorized computation of the new reward
-            transitions["reward"][her_indices, 0] = self.env.env_method(
+            transitions["reward"][her_indices] = self.env.env_method(
                 "compute_reward",
                 # the new state depends on the previous state and action
                 # s_{t+1} = f(s_t, a_t)
@@ -359,11 +360,13 @@ class HerReplayBuffer(DictReplayBuffer):
                 # because we are in a GoalEnv:
                 # r_t = reward(s_t, a_t) = reward(next_achieved_goal, desired_goal)
                 # therefore we have to use "next_achieved_goal" and not "achieved_goal"
-                transitions["next_achieved_goal"][her_indices, 0],
+                transitions["next_achieved_goal"][her_indices],
                 # here we use the new desired goal
-                transitions["desired_goal"][her_indices, 0],
-                transitions["info"][her_indices, 0],
-            )
+                transitions["desired_goal"][her_indices],
+                transitions["info"][her_indices],
+            )[
+                0
+            ]  # since env is vectorized, it will return n_envs times the same result; taking the first
 
         # concatenate observation with (desired) goal
         observations = self._normalize_obs(transitions, maybe_vec_env)
@@ -377,10 +380,14 @@ class HerReplayBuffer(DictReplayBuffer):
         }
         next_observations = self._normalize_obs(next_observations, maybe_vec_env)
 
-        if online_sampling:
-            next_obs = {key: self.to_torch(next_observations[key][:, 0, :]) for key in self._observation_keys}
+        # to match the correct shape
+        transitions["reward"] = transitions["reward"].reshape(-1, 1)
+        transitions["done"] = transitions["done"].reshape(-1, 1)
 
-            normalized_obs = {key: self.to_torch(observations[key][:, 0, :]) for key in self._observation_keys}
+        if online_sampling:
+            next_obs = {key: self.to_torch(next_observations[key]) for key in self._observation_keys}
+
+            normalized_obs = {key: self.to_torch(observations[key]) for key in self._observation_keys}
 
             return DictReplayBufferSamples(
                 observations=normalized_obs,
@@ -404,7 +411,7 @@ class HerReplayBuffer(DictReplayBuffer):
 
         if self.current_idx == 0 and self.full:
             # Clear info buffer
-            self.info_buffer[self.pos] = deque(maxlen=self.max_episode_length)
+            self.info_buffer[self.ep_idxs] = deque(maxlen=self.max_episode_length)
 
         # Remove termination signals due to timeout
         if self.handle_timeout_termination:
@@ -412,15 +419,15 @@ class HerReplayBuffer(DictReplayBuffer):
         else:
             done_ = done
 
-        self._buffer["observation"][self.pos][self.current_idx] = obs["observation"]
-        self._buffer["achieved_goal"][self.pos][self.current_idx] = obs["achieved_goal"]
-        self._buffer["desired_goal"][self.pos][self.current_idx] = obs["desired_goal"]
-        self._buffer["action"][self.pos][self.current_idx] = action
-        self._buffer["done"][self.pos][self.current_idx] = done_
-        self._buffer["reward"][self.pos][self.current_idx] = reward
-        self._buffer["next_obs"][self.pos][self.current_idx] = next_obs["observation"]
-        self._buffer["next_achieved_goal"][self.pos][self.current_idx] = next_obs["achieved_goal"]
-        self._buffer["next_desired_goal"][self.pos][self.current_idx] = next_obs["desired_goal"]
+        self._buffer["observation"][self.ep_idxs, self.trans_idxs] = obs["observation"]
+        self._buffer["achieved_goal"][self.ep_idxs, self.trans_idxs] = obs["achieved_goal"]
+        self._buffer["desired_goal"][self.ep_idxs, self.trans_idxs] = obs["desired_goal"]
+        self._buffer["action"][self.ep_idxs, self.trans_idxs] = action
+        self._buffer["done"][self.ep_idxs, self.trans_idxs] = done_
+        self._buffer["reward"][self.ep_idxs, self.trans_idxs] = reward
+        self._buffer["next_obs"][self.ep_idxs, self.trans_idxs] = next_obs["observation"]
+        self._buffer["next_achieved_goal"][self.ep_idxs, self.trans_idxs] = next_obs["achieved_goal"]
+        self._buffer["next_desired_goal"][self.ep_idxs, self.trans_idxs] = next_obs["desired_goal"]
 
         # When doing offline sampling
         # Add real transition to normal replay buffer
@@ -434,41 +441,41 @@ class HerReplayBuffer(DictReplayBuffer):
                 infos,
             )
 
-        self.info_buffer[self.pos].append(infos)
+        for env_idx, ep_idx in enumerate(self.ep_idxs):
+            self.info_buffer[ep_idx].append(infos[env_idx])
 
         # update current pointer
-        self.current_idx += 1
+        self.trans_idxs += 1
 
-        self.episode_steps += 1
+        for env_idx in range(self.n_envs):
+            if done[env_idx] or self.trans_idxs[env_idx] >= self.max_episode_length:
+                self.store_episode(env_idx)
+                if not self.online_sampling:
+                    # sample virtual transitions and store them in replay buffer
+                    self._sample_her_transitions()
 
-        if done or self.episode_steps >= self.max_episode_length:
-            self.store_episode()
-            if not self.online_sampling:
-                # sample virtual transitions and store them in replay buffer
-                self._sample_her_transitions()
-                # clear storage for current episode
-                self.reset()
-
-            self.episode_steps = 0
-
-    def store_episode(self) -> None:
+    def store_episode(self, env_idx) -> None:
         """
         Increment episode counter
         and reset transition pointer.
         """
+        ep_idx, trans_idx = self.ep_idxs[env_idx], self.trans_idxs[env_idx]
+
         # add episode length to length storage
-        self.episode_lengths[self.pos] = self.current_idx
+        self.episode_lengths[ep_idx] = trans_idx
+
+        # reset transition pointer
+        self.trans_idxs[env_idx] = 0
 
         # update current episode pointer
         # Note: in the OpenAI implementation
         # when the buffer is full, the episode replaced
         # is randomly chosen
         self.pos += 1
-        if self.pos == self.max_episode_stored:
+        self.ep_idxs[env_idx] = self.pos % self.max_episode_stored
+        if self.ep_idxs[env_idx] >= self.max_episode_stored:
             self.full = True
-            self.pos = 0
-        # reset transition pointer
-        self.current_idx = 0
+            self.episode_lengths[self.ep_idxs[env_idx]] = 0
 
     def _sample_her_transitions(self) -> None:
         """
@@ -496,7 +503,7 @@ class HerReplayBuffer(DictReplayBuffer):
     def n_episodes_stored(self) -> int:
         if self.full:
             return self.max_episode_stored
-        return self.pos
+        return np.max(self.ep_idxs) - 1
 
     def size(self) -> int:
         """

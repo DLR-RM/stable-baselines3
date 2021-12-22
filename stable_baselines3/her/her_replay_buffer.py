@@ -85,9 +85,12 @@ class HerReplayBuffer(DictReplayBuffer):
 
         super(HerReplayBuffer, self).__init__(buffer_size, env.observation_space, env.action_space, device, env.num_envs)
 
+        # One writing head per environment. Each writing head is described by its
+        # episode index (the index of the episode of the buffer being written)
+        # and its transition index (index of the transition within the episode).
         self.ep_idxs = np.arange(env.num_envs)
         self.trans_idxs = np.zeros(env.num_envs).astype(np.int64)
-        self.pos = env.num_envs - 1
+        self.pos = env.num_envs - 1  # position of the most advanced writing head.
 
         # convert goal_selection_strategy into GoalSelectionStrategy if string
         if isinstance(goal_selection_strategy, str):
@@ -126,9 +129,6 @@ class HerReplayBuffer(DictReplayBuffer):
         # buffer with episodes
         # number of episodes which can be stored until buffer size is reached
         self.max_episode_stored = self.buffer_size // self.max_episode_length
-        self.current_idx = 0
-        # Counter to prevent overflow
-        self.episode_steps = 0
 
         # Get shape of observation and goal (usually the same)
         self.obs_shape = get_obs_shape(self.env.observation_space.spaces["observation"])
@@ -218,6 +218,7 @@ class HerReplayBuffer(DictReplayBuffer):
 
     def _sample_offline(
         self,
+        env_idx: int,
         n_sampled_goal: Optional[int] = None,
     ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray], np.ndarray, np.ndarray]:
         """
@@ -225,6 +226,7 @@ class HerReplayBuffer(DictReplayBuffer):
         in that case, only one episode is used and transitions
         are added to the regular replay buffer.
 
+        :param env_idx: Env index to sample from.
         :param n_sampled_goal: Number of sampled goals for replay
         :return: at most(n_sampled_goal * episode_length) HER transitions.
         """
@@ -235,6 +237,7 @@ class HerReplayBuffer(DictReplayBuffer):
             maybe_vec_env=None,
             online_sampling=False,
             n_sampled_goal=n_sampled_goal,
+            env_idx=env_idx,
         )
 
     def sample_goals(
@@ -279,6 +282,7 @@ class HerReplayBuffer(DictReplayBuffer):
         maybe_vec_env: Optional[VecNormalize],
         online_sampling: bool,
         n_sampled_goal: Optional[int] = None,
+        env_idx: Optional[int] = None,
     ) -> Union[DictReplayBufferSamples, Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray], np.ndarray, np.ndarray]]:
         """
         :param batch_size: Number of element to sample (only used for online sampling)
@@ -286,24 +290,27 @@ class HerReplayBuffer(DictReplayBuffer):
             Only valid when using online sampling
         :param online_sampling: Using online_sampling for HER or not.
         :param n_sampled_goal: Number of sampled goals for replay. (offline sampling)
+        :param env_idx: Env index to sample from. (offline sampling)
         :return: Samples.
         """
         # Select which episodes to use
         if online_sampling:
             assert batch_size is not None, "No batch_size specified for online sampling of HER transitions"
-            # Do not sample the episode with index `self.pos` as the episode is invalid
-            all_ep_indices = np.arange(self.max_episode_stored)[self.episode_lengths > 0]
-            episode_indices = np.random.choice(all_ep_indices, batch_size)
+            # Sample from episode that are
+            # (1) not running
+            all_episode_indices = np.delete(np.arange(self.max_episode_stored), self.ep_idxs)
+            # (2) not empty
+            all_episode_indices = all_episode_indices[self.episode_lengths[all_episode_indices] > 0]
+            episode_indices = np.random.choice(all_episode_indices, batch_size)
             # A subset of the transitions will be relabeled using HER algorithm
             her_indices = np.arange(batch_size)[: int(self.her_ratio * batch_size)]
         else:
             assert maybe_vec_env is None, "Transitions must be stored unnormalized in the replay buffer"
             assert n_sampled_goal is not None, "No n_sampled_goal specified for offline sampling of HER transitions"
             # Offline sampling: there is only one episode stored
-            # TODO: fix this
-            episode_length = self.episode_lengths[0]
+            episode_length = self.episode_lengths[self.ep_idxs[env_idx]]
             # we sample n_sampled_goal per timestep in the episode (only one is stored).
-            episode_indices = np.tile(0, (episode_length * n_sampled_goal))
+            episode_indices = np.tile(env_idx, (episode_length * n_sampled_goal))
             # we only sample virtual transitions
             # as real transitions are already stored in the replay buffer
             her_indices = np.arange(len(episode_indices))
@@ -328,7 +335,7 @@ class HerReplayBuffer(DictReplayBuffer):
                 return {}, {}, np.zeros(0), np.zeros(0)
             else:
                 # Repeat every transition index n_sampled_goals times
-                # to sample n_sampled_goal per timestep in the episode (only one is stored).
+                # to sample n_sampled_goal per timestep in the episode.
                 # Now with the corrected episode length when using "future" strategy
                 transitions_indices = np.tile(np.arange(ep_lengths[0]), n_sampled_goal)
                 episode_indices = episode_indices[transitions_indices]
@@ -419,9 +426,10 @@ class HerReplayBuffer(DictReplayBuffer):
         if isinstance(self.action_space, spaces.Discrete):
             action = action.reshape((self.n_envs, self.action_dim))
 
-        if self.current_idx == 0 and self.full:
-            # Clear info buffer
-            self.info_buffer[self.ep_idxs] = deque(maxlen=self.max_episode_length)
+        # Clear info deque when rewriting on old episodes
+        for env_idx, ep_idx in enumerate(self.ep_idxs):
+            if self.trans_idxs[env_idx] == 0 and self.full:
+                self.info_buffer[ep_idx] = deque(maxlen=self.max_episode_length)
 
         # Remove termination signals due to timeout
         if self.handle_timeout_termination:
@@ -457,23 +465,21 @@ class HerReplayBuffer(DictReplayBuffer):
         # update current pointer
         self.trans_idxs += 1
 
+        # add episode length to length storage
+        self.episode_lengths[self.ep_idxs] = self.trans_idxs
+
         for env_idx in range(self.n_envs):
             if done[env_idx] or self.trans_idxs[env_idx] >= self.max_episode_length:
-                self.store_episode(env_idx)
                 if not self.online_sampling:
                     # sample virtual transitions and store them in replay buffer
-                    self._sample_her_transitions()
+                    self._sample_her_transitions(env_idx)
+                self.store_episode(env_idx)
 
     def store_episode(self, env_idx) -> None:
         """
         Increment episode counter
         and reset transition pointer.
         """
-        ep_idx, trans_idx = self.ep_idxs[env_idx], self.trans_idxs[env_idx]
-
-        # add episode length to length storage
-        self.episode_lengths[ep_idx] = trans_idx
-
         # reset transition pointer
         self.trans_idxs[env_idx] = 0
 
@@ -482,19 +488,22 @@ class HerReplayBuffer(DictReplayBuffer):
         # when the buffer is full, the episode replaced
         # is randomly chosen
         self.pos += 1
-        self.ep_idxs[env_idx] = self.pos % self.max_episode_stored
-        if self.ep_idxs[env_idx] >= self.max_episode_stored:
+        if self.online_sampling:  # no need to change episode index when online_sampling
+            self.ep_idxs[env_idx] = self.pos % self.max_episode_stored
+        if self.pos >= self.max_episode_stored:
             self.full = True
             self.episode_lengths[self.ep_idxs[env_idx]] = 0
 
-    def _sample_her_transitions(self) -> None:
+    def _sample_her_transitions(self, env_idx: int) -> None:
         """
         Sample additional goals and store new transitions in replay buffer
         when using offline sampling.
+
+        :param env_idx: Env index to sample from. (offline sampling)
         """
 
         # Sample goals to create virtual transitions for the last episode.
-        observations, next_observations, actions, rewards = self._sample_offline(n_sampled_goal=self.n_sampled_goal)
+        observations, next_observations, actions, rewards = self._sample_offline(env_idx, n_sampled_goal=self.n_sampled_goal)
 
         # Store virtual transitions in the replay buffer, if available
         if len(observations) > 0:
@@ -513,7 +522,7 @@ class HerReplayBuffer(DictReplayBuffer):
     def n_episodes_stored(self) -> int:
         if self.full:
             return self.max_episode_stored
-        return np.max(self.ep_idxs) - 1
+        return np.min(self.ep_idxs)
 
     def size(self) -> int:
         """
@@ -525,8 +534,10 @@ class HerReplayBuffer(DictReplayBuffer):
         """
         Reset the buffer.
         """
+        self.ep_idxs = np.arange(self.env.num_envs)
+        self.trans_idxs = np.zeros(self.env.num_envs).astype(np.int64)
+        self.pos = self.env.num_envs - 1
         self.pos = 0
-        self.current_idx = 0
         self.full = False
         self.episode_lengths = np.zeros(self.max_episode_stored, dtype=np.int64)
 
@@ -537,26 +548,19 @@ class HerReplayBuffer(DictReplayBuffer):
         (and truncate it).
         If not called, we assume that we continue the same trajectory (same episode).
         """
-        # If we are at the start of an episode, no need to truncate
-        current_idx = self.current_idx
-
-        # truncate interrupted episode
-        if current_idx > 0:
-            warnings.warn(
-                "The last trajectory in the replay buffer will be truncated.\n"
-                "If you are in the same episode as when the replay buffer was saved,\n"
-                "you should use `truncate_last_trajectory=False` to avoid that issue."
-            )
-            # get current episode and transition index
-            pos = self.pos
-            # set episode length for current episode
-            self.episode_lengths[pos] = current_idx
-            # set done = True for current episode
-            # current_idx was already incremented
-            self._buffer["done"][pos][current_idx - 1] = np.array([True], dtype=np.float32)
-            # reset current transition index
-            self.current_idx = 0
-            # increment episode counter
-            self.pos = (self.pos + 1) % self.max_episode_stored
-            # update "full" indicator
-            self.full = self.full or self.pos == 0
+        for env_idx, trans_idx in enumerate(self.trans_idxs):
+            # If we are at the start of an episode, no need to truncate
+            # truncate interrupted episode
+            if trans_idx > 0:
+                warnings.warn(
+                    "The last trajectory in the replay buffer will be truncated.\n"
+                    "If you are in the same episode as when the replay buffer was saved,\n"
+                    "you should use `truncate_last_trajectory=False` to avoid that issue."
+                )
+                # get current episode and transition index
+                ep_idx = self.ep_idxs[env_idx]
+                # set done = True for current episode
+                # trans_idx was already incremented
+                self._buffer["done"][ep_idx][trans_idx - 1] = np.array([True], dtype=np.float32)
+                # reset current transition index
+                self.store_episode(env_idx)

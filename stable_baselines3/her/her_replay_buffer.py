@@ -475,10 +475,12 @@ class HerReplayBuffer(DictReplayBuffer):
                     self._sample_her_transitions(env_idx)
                 self.store_episode(env_idx)
 
-    def store_episode(self, env_idx) -> None:
+    def store_episode(self, env_idx: int) -> None:
         """
         Increment episode counter
         and reset transition pointer.
+
+        :param env_idx: The index of the environment for which the episode is finished.
         """
         # reset transition pointer
         self.trans_idxs[env_idx] = 0

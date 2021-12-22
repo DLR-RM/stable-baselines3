@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch as th
+from gym import spaces
 
 from stable_baselines3.common.buffers import DictReplayBuffer
 from stable_baselines3.common.preprocessing import get_obs_shape
@@ -364,9 +365,9 @@ class HerReplayBuffer(DictReplayBuffer):
                 # here we use the new desired goal
                 transitions["desired_goal"][her_indices],
                 transitions["info"][her_indices],
-            )[
-                0
-            ]  # since env is vectorized, it will return n_envs times the same result; taking the first
+                indices=0,  # only call method for one env
+            )[0]
+            # env is vectorized, so it returns a list; we have to take the first (and unique) element of this list
 
         # concatenate observation with (desired) goal
         observations = self._normalize_obs(transitions, maybe_vec_env)
@@ -408,6 +409,15 @@ class HerReplayBuffer(DictReplayBuffer):
         done: np.ndarray,
         infos: List[Dict[str, Any]],
     ) -> None:
+        # Reshape needed when using multiple envs with discrete observations
+        # as numpy cannot broadcast (n_discrete,) to (n_discrete, 1)
+        if isinstance(self.observation_space, spaces.Discrete):
+            obs = obs.reshape((self.n_envs,) + self.obs_shape)
+            next_obs = next_obs.reshape((self.n_envs,) + self.obs_shape)
+
+        # Same, for actions
+        if isinstance(self.action_space, spaces.Discrete):
+            action = action.reshape((self.n_envs, self.action_dim))
 
         if self.current_idx == 0 and self.full:
             # Clear info buffer

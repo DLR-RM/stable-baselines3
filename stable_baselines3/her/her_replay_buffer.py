@@ -418,9 +418,13 @@ class HerReplayBuffer(DictReplayBuffer):
     ) -> None:
         # Reshape needed when using multiple envs with discrete observations
         # as numpy cannot broadcast (n_discrete,) to (n_discrete, 1)
-        if isinstance(self.observation_space, spaces.Discrete):
-            obs = obs.reshape((self.n_envs,) + self.obs_shape)
-            next_obs = next_obs.reshape((self.n_envs,) + self.obs_shape)
+        if isinstance(self.observation_space["observation"], spaces.Discrete):
+            obs["observation"] = obs["observation"].reshape((self.n_envs,) + self.obs_shape)
+            next_obs["observation"] = next_obs["observation"].reshape((self.n_envs,) + self.obs_shape)
+
+        for key in ["desired_goal", "achieved_goal"]:
+            obs[key] = obs[key].reshape((self.n_envs,) + self.goal_shape)
+            next_obs[key] = next_obs[key].reshape((self.n_envs,) + self.goal_shape)
 
         # Same, for actions
         if isinstance(self.action_space, spaces.Discrete):

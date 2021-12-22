@@ -38,6 +38,7 @@ Others:
 - Added a warning in the env checker when not using ``np.float32`` for continuous actions
 - Improved test coverage and error message when checking shape of observation
 - Added ``newline="\n"`` when opening CSV monitor files so that each line ends with ``\r\n`` instead of ``\r\r\n`` on Windows while Linux environments are not affected (@hsuehch)
+- Fixed ``device`` argument inconsistency (@qgallouedec)
 
 Documentation:
 ^^^^^^^^^^^^^^

@@ -488,11 +488,12 @@ class HerReplayBuffer(DictReplayBuffer):
         # when the buffer is full, the episode replaced
         # is randomly chosen
         self.pos += 1
-        if self.online_sampling:  # no need to change episode index when online_sampling
-            self.ep_idxs[env_idx] = self.pos % self.max_episode_stored
-        if self.pos >= self.max_episode_stored:
+        if self.pos == self.max_episode_stored:
             self.full = True
-            self.episode_lengths[self.ep_idxs[env_idx]] = 0
+            self.pos = 0
+        if self.online_sampling:  # no need to change episode index when online_sampling
+            self.ep_idxs[env_idx] = self.pos
+        self.episode_lengths[self.ep_idxs[env_idx]] = 0
 
     def _sample_her_transitions(self, env_idx: int) -> None:
         """

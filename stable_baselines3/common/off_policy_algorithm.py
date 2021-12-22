@@ -197,7 +197,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                     self.buffer_size,
                     self.observation_space,
                     self.action_space,
-                    self.device,
+                    device=self.device,
                     optimize_memory_usage=self.optimize_memory_usage,
                 )
 
@@ -206,7 +206,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             self.replay_buffer = her_buffer_class(
                 self.env,
                 self.buffer_size,
-                self.device,
+                device=self.device,
                 replay_buffer=replay_buffer,
                 **self.replay_buffer_kwargs,
             )
@@ -216,7 +216,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 self.buffer_size,
                 self.observation_space,
                 self.action_space,
-                self.device,
+                device=self.device,
                 n_envs=self.n_envs,
                 optimize_memory_usage=self.optimize_memory_usage,
                 **self.replay_buffer_kwargs,

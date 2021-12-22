@@ -112,7 +112,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             self.n_steps,
             self.observation_space,
             self.action_space,
-            self.device,
+            device=self.device,
             gamma=self.gamma,
             gae_lambda=self.gae_lambda,
             n_envs=self.n_envs,

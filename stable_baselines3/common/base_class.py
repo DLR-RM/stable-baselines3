@@ -658,8 +658,8 @@ class BaseAlgorithm(ABC):
     ) -> "BaseAlgorithm":
         """
         Load the model from a zip-file.
-        Note: `load` re-creates the model from scratch, it does not update it in-place!
-        For an in-place load use `set_parameters` instead.
+        Warning: ``load`` re-creates the model from scratch, it does not update it in-place!
+        For an in-place load use ``set_parameters`` instead.
 
         :param path: path to the file (or a file-like) where to
             load the agent from

@@ -10,7 +10,7 @@ from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.envs import FakeImageEnv
 from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
 from stable_baselines3.common.utils import zip_strict
-from stable_baselines3.common.vec_env import VecTransposeImage, is_vecenv_wrapped
+from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack, VecTransposeImage, is_vecenv_wrapped
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN])
@@ -55,6 +55,33 @@ def test_cnn(tmp_path, model_class):
     assert np.allclose(action, model.predict(obs, deterministic=True)[0])
 
     os.remove(str(tmp_path / SAVE_NAME))
+
+
+@pytest.mark.parametrize("model_class", [A2C])
+def test_vec_transpose_skip(tmp_path, model_class):
+    # Fake grayscale with frameskip
+    env = FakeImageEnv(
+        screen_height=41, screen_width=40, n_channels=10, discrete=model_class not in {SAC, TD3}, channel_first=True
+    )
+    env = DummyVecEnv([lambda: env])
+    # Stack 5 frames so the observation is now (50, 40, 40) but the env is still channel first
+    env = VecFrameStack(env, 5, channels_order="first")
+    obs_shape_before = env.reset().shape
+    # The observation space should be different as the heuristic thinks it is channel last
+    assert not np.allclose(obs_shape_before, VecTransposeImage(env).reset().shape)
+    env = VecTransposeImage(env, skip=True)
+    # The observation space should be the same as we skip the VecTransposeImage
+    assert np.allclose(obs_shape_before, env.reset().shape)
+
+    kwargs = dict(
+        n_steps=64,
+        policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)),
+        seed=1,
+    )
+    model = model_class("CnnPolicy", env, **kwargs).learn(250)
+
+    obs = env.reset()
+    action, _ = model.predict(obs, deterministic=True)
 
 
 def patch_dqn_names_(model):

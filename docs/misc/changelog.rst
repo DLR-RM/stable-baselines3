@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.3.1a6 (WIP)
+Release 1.3.1a7 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -20,7 +20,7 @@ New Features:
 - Added ``norm_obs_keys`` param for ``VecNormalize`` wrapper to configure which observation keys to normalize (@kachayev)
 - Added experimental support to train off-policy algorithms with multiple envs (note: ``HerReplayBuffer`` currently not supported)
 - Handle timeout termination properly for on-policy algorithms (when using ``TimeLimit``)
-
+- Added ``skip`` option to ``VecTransposeImage`` to skip transforming the channel order when the heuristic is wrong
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -29,6 +29,7 @@ Bug Fixes:
 - Fixed evaluation script for recurrent policies (experimental feature in SB3 contrib)
 - Fixed a bug where the observation would be incorrectly detected as non-vectorized instead of throwing an error
 - The env checker now properly checks and warns about potential issues for continuous action spaces when the boundaries are too small or when the dtype is not float32
+- Fixed a bug in ``VecFrameStack`` with channel first image envs, where the terminal observation would be wrongly created.
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -50,8 +51,8 @@ Documentation:
 - Add documentation on exporting to TFLite/Coral
 - Added JMLR paper and updated citation
 - Added link to RL Tips and Tricks video
-- Update ``BaseAlgorithm.load`` docstring
-- Add a Note on ``load`` behavior in the examples
+- Updated ``BaseAlgorithm.load`` docstring (@Demetrio92)
+- Added a note on ``load`` behavior in the examples (@Demetrio92)
 
 
 Release 1.3.0 (2021-10-23)
@@ -857,4 +858,4 @@ And all the contributors:
 @ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan
 @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
-@eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch
+@eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92

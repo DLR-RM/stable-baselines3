@@ -147,7 +147,7 @@ def test_train_freq_fail(train_freq):
 def test_offpolicy_multi_env(model_class):
     kwargs = {}
     if model_class in [SAC, TD3, DDPG]:
-        env_id = "Pendulum-v0"
+        env_id = "Pendulum-v1"
         policy_kwargs = dict(net_arch=[64], n_critics=1)
         # Check auto-conversion to VectorizedActionNoise
         kwargs = dict(action_noise=NormalActionNoise(np.zeros(1), 0.1 * np.ones(1)))

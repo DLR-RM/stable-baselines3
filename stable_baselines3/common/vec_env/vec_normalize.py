@@ -117,7 +117,7 @@ class VecNormalize(VecEnvWrapper):
 
         :param state:"""
         # Backward compatibility
-        if "norm_obs_keys" not in state:
+        if "norm_obs_keys" not in state and isinstance(state["observation_space"], gym.spaces.Dict):
             state["norm_obs_keys"] = list(state["observation_space"].spaces.keys())
         self.__dict__.update(state)
         assert "venv" not in state

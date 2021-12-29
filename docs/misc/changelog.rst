@@ -54,6 +54,7 @@ Documentation:
 - Updated ``BaseAlgorithm.load`` docstring (@Demetrio92)
 - Added a note on ``load`` behavior in the examples (@Demetrio92)
 - Updated SB3 Contrib doc
+- Fixed A2C and migration guide guidance on how to set epsilon with RMSpropTFLike
 
 Release 1.3.0 (2021-10-23)
 ---------------------------

@@ -53,7 +53,7 @@ Documentation:
 - Added link to RL Tips and Tricks video
 - Updated ``BaseAlgorithm.load`` docstring (@Demetrio92)
 - Added a note on ``load`` behavior in the examples (@Demetrio92)
-
+- Updated SB3 Contrib doc
 
 Release 1.3.0 (2021-10-23)
 ---------------------------

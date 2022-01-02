@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.3.1a8 (WIP)
+Release 1.3.1a9 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -21,6 +21,7 @@ New Features:
 - Added experimental support to train off-policy algorithms with multiple envs (note: ``HerReplayBuffer`` currently not supported)
 - Handle timeout termination properly for on-policy algorithms (when using ``TimeLimit``)
 - Added ``skip`` option to ``VecTransposeImage`` to skip transforming the channel order when the heuristic is wrong
+- Added ``copy()`` and ``combine()`` methods to ``RunningMeanStd``
 
 Bug Fixes:
 ^^^^^^^^^^

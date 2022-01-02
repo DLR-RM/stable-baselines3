@@ -202,6 +202,33 @@ def test_runningmeanstd():
         assert np.allclose(moments_1, moments_2)
 
 
+def test_combining_stats():
+    np.random.seed(4)
+    for shape in [(3,), (3, 4)]:
+        values = []
+        rms_1 = RunningMeanStd(shape=shape)
+        rms_2 = RunningMeanStd(shape=shape)
+        rms_3 = RunningMeanStd(shape=shape)
+        for _ in range(5):
+            value = np.random.randn(*shape)
+            rms_1.update(value)
+            rms_3.update(value)
+            values.append(value)
+        for _ in range(9):
+            rms_2.update(value)
+            rms_3.update(value)
+            values.append(value)
+        rms_1.combine(rms_2)
+        assert np.allclose(rms_3.mean, rms_1.mean)
+        assert np.allclose(rms_3.var, rms_1.var)
+        rms_4 = rms_3.copy()
+        assert np.allclose(rms_4.mean, rms_3.mean)
+        assert np.allclose(rms_4.var, rms_3.var)
+        assert np.allclose(rms_4.count, rms_3.count)
+        assert id(rms_4.mean) != id(rms_3.mean)
+        assert id(rms_4.var) != id(rms_3.var)
+
+
 def test_obs_rms_vec_normalize():
     env_fns = [lambda: DummyRewardEnv(0), lambda: DummyRewardEnv(1)]
     env = DummyVecEnv(env_fns)

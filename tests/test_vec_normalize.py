@@ -204,17 +204,17 @@ def test_runningmeanstd():
 
 def test_combining_stats():
     np.random.seed(4)
-    for shape in [(3,), (3, 4)]:
+    for shape in [(1,), (3,), (3, 4)]:
         values = []
         rms_1 = RunningMeanStd(shape=shape)
         rms_2 = RunningMeanStd(shape=shape)
         rms_3 = RunningMeanStd(shape=shape)
-        for _ in range(5):
+        for _ in range(15):
             value = np.random.randn(*shape)
             rms_1.update(value)
             rms_3.update(value)
             values.append(value)
-        for _ in range(9):
+        for _ in range(19):
             rms_2.update(value)
             rms_3.update(value)
             values.append(value)

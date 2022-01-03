@@ -55,6 +55,7 @@ Documentation:
 - Added a note on ``load`` behavior in the examples (@Demetrio92)
 - Updated SB3 Contrib doc
 - Fixed A2C and migration guide guidance on how to set epsilon with RMSpropTFLike (@thomasgubler)
+- Fixed custom policy documentation (@IperGiove)
 
 Release 1.3.0 (2021-10-23)
 ---------------------------
@@ -859,4 +860,4 @@ And all the contributors:
 @ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan
 @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
-@eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler
+@eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove

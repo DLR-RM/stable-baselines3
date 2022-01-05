@@ -215,7 +215,8 @@ def test_combining_stats():
             rms_3.update(value)
             values.append(value)
         for _ in range(19):
-            value = np.random.randn(*shape)
+            # Shift the values
+            value = np.random.randn(*shape) + 1.0
             rms_2.update(value)
             rms_3.update(value)
             values.append(value)

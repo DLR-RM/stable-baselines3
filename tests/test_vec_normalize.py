@@ -227,6 +227,9 @@ def test_combining_stats():
         assert np.allclose(rms_4.count, rms_3.count)
         assert id(rms_4.mean) != id(rms_3.mean)
         assert id(rms_4.var) != id(rms_3.var)
+        x_cat = np.concatenate(values, axis=0)
+        assert np.allclose(x_cat.mean(axis=0), rms_4.mean)
+        assert np.allclose(x_cat.var(axis=0), rms_4.var)
 
 
 def test_obs_rms_vec_normalize():

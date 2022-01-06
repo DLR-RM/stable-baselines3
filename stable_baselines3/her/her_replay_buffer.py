@@ -1,42 +1,13 @@
-import warnings
-from collections import deque
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import torch as th
 from gym import spaces
 
 from stable_baselines3.common.buffers import DictReplayBuffer
-from stable_baselines3.common.preprocessing import get_obs_shape
 from stable_baselines3.common.type_aliases import DictReplayBufferSamples
 from stable_baselines3.common.vec_env import VecEnv, VecNormalize
 from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
-
-
-def get_time_limit(env: VecEnv, current_max_episode_length: Optional[int]) -> int:
-    """
-    Get time limit from environment.
-
-    :param env: Environment from which we want to get the time limit.
-    :param current_max_episode_length: Current value for max_episode_length.
-    :return: max episode length
-    """
-    # try to get the attribute from environment
-    if current_max_episode_length is None:
-        try:
-            current_max_episode_length = env.get_attr("spec")[0].max_episode_steps
-            # Raise the error because the attribute is present but is None
-            if current_max_episode_length is None:
-                raise AttributeError
-        # if not available check if a valid value was passed as an argument
-        except AttributeError:
-            raise ValueError(
-                "The max episode length could not be inferred.\n"
-                "You must specify a `max_episode_steps` when registering the environment,\n"
-                "use a `gym.wrappers.TimeLimit` wrapper "
-                "or pass `max_episode_length` to the model constructor"
-            )
-    return current_max_episode_length
 
 
 class HerReplayBuffer(DictReplayBuffer):
@@ -104,8 +75,13 @@ class HerReplayBuffer(DictReplayBuffer):
         self.online_sampling = online_sampling
 
         # Assigns a unique identifier to each episode.
-        self.episode_uid = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
+        self.episode_uids = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
         self._current_episode_uid = np.arange(self.n_envs)
+        # When the buffer is full, we rewrite on old episodes. When we start to rewrite on an old
+        # episodes, we want the whole old episode to be deleted (and not only the transition on
+        # which we rewrite). To do this we use a validity mask. When we start to rewrite on an
+        # episode, all the transitions of the episode become invalid.
+        self.is_episode_valid = np.zeros((self.buffer_size, self.n_envs), dtype=bool)
 
     def add(
         self,
@@ -116,7 +92,11 @@ class HerReplayBuffer(DictReplayBuffer):
         done: np.ndarray,
         infos: List[Dict[str, Any]],
     ) -> None:
-        self.episode_uid[self.pos] = self._current_episode_uid.copy()
+        if self.full:
+            old_episode_uid = self.episode_uids[self.pos]
+            self.is_episode_valid[self.episode_uids == old_episode_uid] = False
+        self.episode_uids[self.pos] = self._current_episode_uid.copy()
+        self.is_episode_valid[self.pos] = True
         super().add(obs, next_obs, action, reward, done, infos)
 
         # When done, start a new episode by assigning a new episode uid.
@@ -133,20 +113,21 @@ class HerReplayBuffer(DictReplayBuffer):
             to normalize the observations/rewards when sampling
         :return:
         """
-        upper_bound = self.buffer_size if self.full else self.pos
-        all_trans_coord = np.mgrid[0:upper_bound, 0 : self.n_envs].transpose(1, 2, 0)
+        all_trans_coord = np.mgrid[0 : self.buffer_size, 0 : self.n_envs].transpose(1, 2, 0)
 
         # Special case when using the "future" goal sampling strategy
         # we cannot sample all transitions, we have to remove the last timestep
         if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
-            episode_uid = self.episode_uid[:upper_bound]
-            is_last = np.zeros((upper_bound, self.n_envs)).astype(bool)
+            episode_uid = self.episode_uids
+            is_last = np.zeros((self.buffer_size, self.n_envs), dtype=bool)
             # if a transition is the last one of the episode, then, the next transition has a different episode uid
             is_last[:-1] = episode_uid[:-1] != episode_uid[1:]
             # the last transition stored is always the last within its episode (truncate last trajectory)
-            is_last[-1][:] = True
-            # remove all last transitions
-            all_trans_coord = all_trans_coord[np.logical_not(is_last)]
+            is_last[self.pos - 1] = True
+            # remove all last transitions and invalid
+            all_trans_coord = all_trans_coord[np.logical_and(np.logical_not(is_last), self.is_episode_valid)]
+        else:
+            all_trans_coord = all_trans_coord[self.is_episode_valid]
 
         # Uniform sampling on all transitions.
         sampled_indices = np.random.randint(all_trans_coord.shape[0], size=batch_size)
@@ -215,7 +196,7 @@ class HerReplayBuffer(DictReplayBuffer):
         :return: Return sampled goals.
         """
         goals_coord = np.zeros_like(trans_coord)
-        episode_uids = self.episode_uid[trans_coord[:, 0], trans_coord[:, 1]]
+        episode_uids = self.episode_uids[trans_coord[:, 0], trans_coord[:, 1]]
         episodes = [self.get_episode_from_uid(episode_uid) for episode_uid in episode_uids]
         for i, (trans_idx, episode) in enumerate(zip(trans_coord, episodes)):
             if self.goal_selection_strategy == GoalSelectionStrategy.FINAL:
@@ -238,7 +219,17 @@ class HerReplayBuffer(DictReplayBuffer):
         return self.observations["achieved_goal"][goals_coord[:, 0], goals_coord[:, 1]]
 
     def get_episode_from_uid(self, uid):
-        upper_bound = self.buffer_size if self.full else self.pos
-        all_trans_indices = np.mgrid[0:upper_bound, 0 : self.n_envs].transpose(1, 2, 0)
-        episode = all_trans_indices[self.episode_uid[:upper_bound] == uid]
+        # upper_bound = self.buffer_size if self.full else self.pos
+        all_trans_indices = np.mgrid[0 : self.buffer_size, 0 : self.n_envs].transpose(1, 2, 0)
+        all_trans_indices = all_trans_indices[self.is_episode_valid]
+        episode_uids = self.episode_uids[self.is_episode_valid]
+        episode = all_trans_indices[episode_uids == uid]
+        # When the buffer is full, an episode is stored in such a way that
+        # the beginning of the episode is at the end of the buffer and the
+        # end of the episode is at the beginning of the buffer. When this
+        # episode is sampled, the transitions must be put back in order.
+        gap = episode[1:, 0] - episode[:-1, 0]
+        split = np.where(gap != 1)[0]
+        if split:
+            episode = np.roll(episode, shift=-(split[0] + 1), axis=0)
         return episode

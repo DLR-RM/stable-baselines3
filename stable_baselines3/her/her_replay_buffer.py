@@ -102,6 +102,8 @@ class HerReplayBuffer(DictReplayBuffer):
         # When done, start a new episode by assigning a new episode uid.
         for env_idx in range(self.n_envs):
             if done[env_idx]:
+                if not self.online_sampling:
+                    self.sample_offline(env_idx, self._current_episode_uid[env_idx])
                 self._current_episode_uid[env_idx] = np.max(self._current_episode_uid) + 1
 
     def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> DictReplayBufferSamples:
@@ -233,3 +235,58 @@ class HerReplayBuffer(DictReplayBuffer):
         if split:
             episode = np.roll(episode, shift=-(split[0] + 1), axis=0)
         return episode
+
+    def sample_offline(self, env_idx, episode_uid, env: Optional[VecNormalize] = None) -> None:
+        """
+        Sample offline from the replay buffer.
+
+        :param env: associated gym VecEnv
+            to normalize the observations/rewards when sampling
+        :return:
+        """
+        raise NotImplementedError("Offline sampling not implemented yet.")
+
+        # Convenient aliases
+        ep_lenght = np.sum(self.episode_uids[self.is_episode_valid] == episode_uid)
+        trans_indices = np.tile(np.arange(ep_lenght), self.n_sampled_goal)
+        env_indices = np.tile(env_idx, self.n_sampled_goal * ep_lenght)
+        trans_coord = np.stack((trans_indices, env_indices), axis=1)
+
+        obs = {key: obs[trans_indices, env_indices] for key, obs in self.observations.items()}
+        next_obs = {key: obs[trans_indices, env_indices] for key, obs in self.next_observations.items()}
+
+        # HER
+        new_goals = self.sample_goals(trans_coord)
+        obs["desired_goal"] = new_goals
+        # Vectorized computation of the new reward
+        rewards = self.env.env_method(
+            "compute_reward",
+            # the new state depends on the previous state and action
+            # s_{t+1} = f(s_t, a_t)
+            # so the next_achieved_goal depends also on the previous state and action
+            # because we are in a GoalEnv:
+            # r_t = reward(s_t, a_t) = reward(next_achieved_goal, desired_goal)
+            # therefore we have to use "next_achieved_goal" and not "achieved_goal"
+            next_obs["achieved_goal"],
+            # here we use the new desired goal
+            obs["desired_goal"],
+            # infos[her_indices],
+            [{}, {}],
+            indices=0,  # only call method for one env
+        )[0]
+        # env is vectorized, so it returns a list; we have to take the first (and unique) element of this list
+
+        # Normalize if needed and remove extra dimension (we are using only one env for now)
+        obs_ = self._normalize_obs(obs)
+        next_obs_ = self._normalize_obs(next_obs)
+
+        # Convert to torch tensor
+        observations = {key: self.to_torch(obs) for key, obs in obs_.items()}
+        actions = self.to_torch(self.actions[trans_indices, env_indices])
+        next_observations = {key: self.to_torch(obs) for key, obs in next_obs_.items()}
+        # Only use dones that are not due to timeouts
+        # deactivated by default (timeouts is initialized as an array of False)
+        dones = self.to_torch(
+            self.dones[trans_indices, env_indices] * (1 - self.timeouts[trans_indices, env_indices])
+        ).reshape(-1, 1)
+        rewards = self.to_torch(self._normalize_reward(rewards.reshape(-1, 1), env))

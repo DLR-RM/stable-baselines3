@@ -15,7 +15,6 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
-from stable_baselines3.her.her_replay_buffer import get_time_limit
 
 
 def test_import_error():
@@ -48,7 +47,6 @@ def test_her(model_class, online_sampling, image_obs_space):
             n_sampled_goal=2,
             goal_selection_strategy="future",
             online_sampling=online_sampling,
-            max_episode_length=n_bits,
         ),
         train_freq=4,
         gradient_steps=1,
@@ -88,7 +86,6 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
         replay_buffer_kwargs=dict(
             goal_selection_strategy=goal_selection_strategy,
             online_sampling=online_sampling,
-            max_episode_length=10,
             n_sampled_goal=2,
         ),
         train_freq=4,
@@ -126,7 +123,6 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
             n_sampled_goal=2,
             goal_selection_strategy="future",
             online_sampling=online_sampling,
-            max_episode_length=n_bits,
         ),
         verbose=0,
         tau=0.05,
@@ -231,7 +227,6 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
             n_sampled_goal=2,
             goal_selection_strategy="future",
             online_sampling=online_sampling,
-            max_episode_length=4,
         ),
         gradient_steps=1,
         train_freq=4,
@@ -315,7 +310,6 @@ def test_full_replay_buffer():
             n_sampled_goal=2,
             goal_selection_strategy="future",
             online_sampling=True,
-            max_episode_length=n_bits,
         ),
         gradient_steps=1,
         train_freq=4,
@@ -327,41 +321,6 @@ def test_full_replay_buffer():
     )
 
     model.learn(total_timesteps=100)
-
-
-def test_get_max_episode_length():
-    dict_env = DummyVecEnv([lambda: BitFlippingEnv()])
-
-    # Cannot infer max epsiode length
-    with pytest.raises(ValueError):
-        get_time_limit(dict_env, current_max_episode_length=None)
-
-    default_length = 10
-    assert get_time_limit(dict_env, current_max_episode_length=default_length) == default_length
-
-    env = gym.make("CartPole-v1")
-    vec_env = DummyVecEnv([lambda: env])
-
-    assert get_time_limit(vec_env, current_max_episode_length=None) == 500
-    # Overwrite max_episode_steps
-    assert get_time_limit(vec_env, current_max_episode_length=default_length) == default_length
-
-    # Set max_episode_steps to None
-    env.spec.max_episode_steps = None
-    vec_env = DummyVecEnv([lambda: env])
-    with pytest.raises(ValueError):
-        get_time_limit(vec_env, current_max_episode_length=None)
-
-    # Initialize HER and specify max_episode_length, should not raise an issue
-    DQN("MultiInputPolicy", dict_env, replay_buffer_class=HerReplayBuffer, replay_buffer_kwargs=dict(max_episode_length=5))
-
-    with pytest.raises(ValueError):
-        DQN("MultiInputPolicy", dict_env, replay_buffer_class=HerReplayBuffer)
-
-    # Wrapped in a timelimit, should be fine
-    # Note: it requires env.spec to be defined
-    env = DummyVecEnv([lambda: gym.wrappers.TimeLimit(BitFlippingEnv(), 10)])
-    DQN("MultiInputPolicy", env, replay_buffer_class=HerReplayBuffer, replay_buffer_kwargs=dict(max_episode_length=5))
 
 
 @pytest.mark.parametrize("online_sampling", [False, True])
@@ -381,7 +340,6 @@ def test_performance_her(online_sampling, n_bits):
             n_sampled_goal=5,
             goal_selection_strategy="future",
             online_sampling=online_sampling,
-            max_episode_length=n_bits,
         ),
         verbose=1,
         learning_rate=5e-4,

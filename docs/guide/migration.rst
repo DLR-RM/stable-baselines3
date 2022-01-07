@@ -44,10 +44,11 @@ Breaking Changes
 ================
 
 
-- SB3 requires python 3.6+ (instead of python 3.5+ for SB2)
+- SB3 requires python 3.7+ (instead of python 3.5+ for SB2)
 - Dropped MPI support
 - Dropped layer normalized policies (``MlpLnLstmPolicy``, ``CnnLnLstmPolicy``)
 - LSTM policies (```MlpLstmPolicy```, ```CnnLstmPolicy```) are not supported for the time being
+  (see `PR #53 <https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/pull/53>`_ for a recurrent PPO implementation)
 - Dropped parameter noise for DDPG and DQN
 - PPO is now closer to the original implementation (no clipping of the value function by default), cf PPO section below
 - Orthogonal initialization is only used by A2C/PPO
@@ -113,7 +114,7 @@ A2C
 	PyTorch implementation of RMSprop `differs from Tensorflow's <https://github.com/pytorch/pytorch/issues/23796>`_,
 	which leads to `different and potentially more unstable results <https://github.com/DLR-RM/stable-baselines3/pull/110#issuecomment-663255241>`_.
 	Use ``stable_baselines3.common.sb2_compat.rmsprop_tf_like.RMSpropTFLike`` optimizer to match the results
-	with TensorFlow's implementation. This can be done through ``policy_kwargs``: ``A2C(policy_kwargs=dict(optimizer_class=RMSpropTFLike, eps=1e-5))``
+	with TensorFlow's implementation. This can be done through ``policy_kwargs``: ``A2C(policy_kwargs=dict(optimizer_class=RMSpropTFLike, optimizer_kwargs=dict(eps=1e-5)))``
 
 
 PPO

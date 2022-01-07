@@ -189,7 +189,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         if self.replay_buffer is None:
             if issubclass(self.replay_buffer_class, HerReplayBuffer):
                 assert self.env is not None, "You must pass an environment when using `HerReplayBuffer`"
-                self.replay_buffer_kwargs["env"] = self.env  # needed to cumpute reward
+                # HerReplayBuffer needs a function to compute the new rewards. We use the ``compute_reward``
+                # method of the first environment assuming that all environments are identical.
+                compute_reward = self.env.get_attr("compute_reward", indices=[0])[0]
+                self.replay_buffer_kwargs["compute_reward"] = compute_reward
             self.replay_buffer = self.replay_buffer_class(
                 self.buffer_size,
                 self.observation_space,

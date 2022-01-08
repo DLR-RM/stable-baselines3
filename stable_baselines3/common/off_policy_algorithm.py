@@ -249,7 +249,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         if isinstance(self.replay_buffer, HerReplayBuffer):
             assert self.env is not None, "You must pass an environment at load time when using `HerReplayBuffer`"
-            self.replay_buffer.set_env(self.get_env())
+            compute_reward = self.env.get_attr("compute_reward", indices=[0])[0]
+            self.replay_buffer.compute_reward = compute_reward
             if truncate_last_traj:
                 self.replay_buffer.truncate_last_trajectory()
 

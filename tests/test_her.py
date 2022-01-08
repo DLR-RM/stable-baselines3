@@ -235,10 +235,8 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
         seed=1,
     )
     model.learn(200)
-    if online_sampling:
-        old_replay_buffer = deepcopy(model.replay_buffer)
-    else:
-        old_replay_buffer = deepcopy(model.replay_buffer.replay_buffer)
+    old_replay_buffer = deepcopy(model.replay_buffer)
+
     model.save_replay_buffer(path)
     del model.replay_buffer
 
@@ -257,36 +255,15 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
     else:
         assert len(recwarn) == 0
 
-    if online_sampling:
-        n_episodes_stored = model.replay_buffer.n_episodes_stored
-        assert np.allclose(
-            old_replay_buffer._buffer["observation"][:n_episodes_stored],
-            model.replay_buffer._buffer["observation"][:n_episodes_stored],
-        )
-        assert np.allclose(
-            old_replay_buffer._buffer["next_obs"][:n_episodes_stored],
-            model.replay_buffer._buffer["next_obs"][:n_episodes_stored],
-        )
-        assert np.allclose(
-            old_replay_buffer._buffer["action"][:n_episodes_stored],
-            model.replay_buffer._buffer["action"][:n_episodes_stored],
-        )
-        assert np.allclose(
-            old_replay_buffer._buffer["reward"][:n_episodes_stored],
-            model.replay_buffer._buffer["reward"][:n_episodes_stored],
-        )
-        # we might change the last done of the last trajectory so we don't compare it
-        assert np.allclose(
-            old_replay_buffer._buffer["done"][: n_episodes_stored - 1],
-            model.replay_buffer._buffer["done"][: n_episodes_stored - 1],
-        )
-    else:
-        replay_buffer = model.replay_buffer.replay_buffer
-        assert np.allclose(old_replay_buffer.observations["observation"], replay_buffer.observations["observation"])
-        assert np.allclose(old_replay_buffer.observations["desired_goal"], replay_buffer.observations["desired_goal"])
-        assert np.allclose(old_replay_buffer.actions, replay_buffer.actions)
-        assert np.allclose(old_replay_buffer.rewards, replay_buffer.rewards)
-        assert np.allclose(old_replay_buffer.dones, replay_buffer.dones)
+    replay_buffer = model.replay_buffer
+    pos = replay_buffer.pos
+    for key in ["observation", "desired_goal", "achieved_goal"]:
+        assert np.allclose(old_replay_buffer.observations[key][:pos], replay_buffer.observations[key][:pos])
+        assert np.allclose(old_replay_buffer.next_observations[key][:pos], replay_buffer.next_observations[key][:pos])
+    assert np.allclose(old_replay_buffer.actions[:pos], replay_buffer.actions[:pos])
+    assert np.allclose(old_replay_buffer.rewards[:pos], replay_buffer.rewards[:pos])
+    # we might change the last done of the last trajectory so we don't compare it
+    assert np.allclose(old_replay_buffer.dones[:pos-1], replay_buffer.dones[:pos-1])
 
     # test if continuing training works properly
     reset_num_timesteps = False if truncate_last_trajectory is False else True

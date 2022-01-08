@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -286,3 +287,25 @@ class HerReplayBuffer(DictReplayBuffer):
             infos[her_indices],
         )
         return obs, next_obs, actions, rewards, dones, infos
+
+    def truncate_last_trajectory(self) -> None:
+        """
+        Only for online sampling, called when loading the replay buffer.
+        If called, we assume that the last trajectory in the replay buffer was finished
+        (and truncate it).
+        If not called, we assume that we continue the same trajectory (same episode).
+        """
+        # If we are at the start of an episode, no need to truncate
+        last_episode_uids = np.max(self.episode_uids, axis=0)
+        current_episode_uids = self._current_episode_uid
+
+        # truncate interrupted episode
+        for env_idx in range(self.n_envs):
+            if last_episode_uids[env_idx] == current_episode_uids[env_idx]:
+                warnings.warn(
+                    "The last trajectory in the replay buffer will be truncated.\n"
+                    "If you are in the same episode as when the replay buffer was saved,\n"
+                    "you should use `truncate_last_trajectory=False` to avoid that issue."
+                )
+                self._current_episode_uid[env_idx] = np.max(self._current_episode_uid) + 1
+                self.dones[self.pos - 1][env_idx] = True

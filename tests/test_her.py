@@ -25,19 +25,24 @@ def test_import_error():
     assert "documentation" in str(excinfo.value)
 
 
+@pytest.mark.parametrize("n_envs", [1, 2, 4])
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
 @pytest.mark.parametrize("online_sampling", [True, False])
 @pytest.mark.parametrize("image_obs_space", [True, False])
-def test_her(model_class, online_sampling, image_obs_space):
+def test_her(n_envs, model_class, online_sampling, image_obs_space):
     """
     Test Hindsight Experience Replay.
     """
+    if n_envs > 1 and not online_sampling:
+        pytest.skip("Offline sampling is not compatible with multiprocessing")
+
     n_bits = 4
-    env = BitFlippingEnv(
+    env_fn = lambda: BitFlippingEnv(
         n_bits=n_bits,
         continuous=not (model_class == DQN),
         image_obs_space=image_obs_space,
     )
+    env = DummyVecEnv(n_envs * [env_fn])
 
     model = model_class(
         "MultiInputPolicy",
@@ -49,16 +54,17 @@ def test_her(model_class, online_sampling, image_obs_space):
             online_sampling=online_sampling,
         ),
         train_freq=4,
-        gradient_steps=1,
+        gradient_steps=n_envs,
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=100,
         buffer_size=int(2e4),
     )
 
     model.learn(total_timesteps=150)
-    evaluate_policy(model, Monitor(env))
+    evaluate_policy(model, Monitor(env_fn()))
 
 
+@pytest.mark.parametrize("n_envs", [1, 2, 4])
 @pytest.mark.parametrize(
     "goal_selection_strategy",
     [
@@ -71,11 +77,15 @@ def test_her(model_class, online_sampling, image_obs_space):
     ],
 )
 @pytest.mark.parametrize("online_sampling", [True, False])
-def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
+def test_goal_selection_strategy(n_envs, goal_selection_strategy, online_sampling):
     """
     Test different goal strategies.
     """
-    env = BitFlippingEnv(continuous=True)
+    if n_envs > 1 and not online_sampling:
+        pytest.skip("Offline sampling is not compatible with multiprocessing")
+
+    env_fn = lambda: BitFlippingEnv(continuous=True)
+    env = DummyVecEnv(n_envs * [env_fn])
 
     normal_action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
 
@@ -89,7 +99,7 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
             n_sampled_goal=2,
         ),
         train_freq=4,
-        gradient_steps=1,
+        gradient_steps=n_envs,
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=100,
         buffer_size=int(1e5),
@@ -99,18 +109,22 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
     model.learn(total_timesteps=150)
 
 
+@pytest.mark.parametrize("n_envs", [1, 2, 4])
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
 @pytest.mark.parametrize("use_sde", [False, True])
 @pytest.mark.parametrize("online_sampling", [False, True])
-def test_save_load(tmp_path, model_class, use_sde, online_sampling):
+def test_save_load(n_envs, tmp_path, model_class, use_sde, online_sampling):
     """
     Test if 'save' and 'load' saves and loads model correctly
     """
     if use_sde and model_class != SAC:
         pytest.skip("Only SAC has gSDE support")
+    if n_envs > 1 and not online_sampling:
+        pytest.skip("Offline sampling is not compatible with multiprocessing")
 
     n_bits = 4
-    env = BitFlippingEnv(n_bits=n_bits, continuous=not (model_class == DQN))
+    env_fn = lambda: BitFlippingEnv(n_bits=n_bits, continuous=not (model_class == DQN))
+    env = DummyVecEnv(n_envs * [env_fn])
 
     kwargs = dict(use_sde=True) if use_sde else {}
 
@@ -131,7 +145,7 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
         policy_kwargs=dict(net_arch=[64]),
         buffer_size=int(1e5),
         gamma=0.98,
-        gradient_steps=1,
+        gradient_steps=n_envs,
         train_freq=4,
         learning_starts=100,
         **kwargs
@@ -139,14 +153,9 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
 
     model.learn(total_timesteps=150)
 
-    obs = env.reset()
-
-    observations = {key: [] for key in obs.keys()}
-    for _ in range(10):
-        obs = env.step(env.action_space.sample())[0]
-        for key in obs.keys():
-            observations[key].append(obs[key])
-    observations = {key: np.array(obs) for key, obs in observations.items()}
+    env.reset()
+    action = np.array([env.action_space.sample() for _ in range(n_envs)])
+    observations = env.step(action)[0]
 
     # Get dictionary of current parameters
     params = deepcopy(model.policy.state_dict())
@@ -206,19 +215,24 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     os.remove(tmp_path / "test_save.zip")
 
 
+@pytest.mark.parametrize("n_envs", [1, 2, 4])
 @pytest.mark.parametrize("online_sampling", [False, True])
 @pytest.mark.parametrize("truncate_last_trajectory", [False, True])
-def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_last_trajectory):
+def test_save_load_replay_buffer(n_envs, tmp_path, recwarn, online_sampling, truncate_last_trajectory):
     """
     Test if 'save_replay_buffer' and 'load_replay_buffer' works correctly
     """
+    if n_envs > 1 and not online_sampling:
+        pytest.skip("Offline sampling is not compatible with multiprocessing")
+
     # remove gym warnings
     warnings.filterwarnings(action="ignore", category=DeprecationWarning)
     warnings.filterwarnings(action="ignore", category=UserWarning, module="gym")
 
     path = pathlib.Path(tmp_path / "replay_buffer.pkl")
     path.parent.mkdir(exist_ok=True, parents=True)  # to not raise a warning
-    env = BitFlippingEnv(n_bits=4, continuous=True)
+    env_fn = lambda: BitFlippingEnv(n_bits=4, continuous=True)
+    env = DummyVecEnv(n_envs * [env_fn])
     model = SAC(
         "MultiInputPolicy",
         env,
@@ -228,7 +242,7 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
             goal_selection_strategy="future",
             online_sampling=online_sampling,
         ),
-        gradient_steps=1,
+        gradient_steps=n_envs,
         train_freq=4,
         buffer_size=int(2e4),
         policy_kwargs=dict(net_arch=[64]),
@@ -270,13 +284,15 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
     model.learn(200, reset_num_timesteps=reset_num_timesteps)
 
 
-def test_full_replay_buffer():
+@pytest.mark.parametrize("n_envs", [1, 2, 4])
+def test_full_replay_buffer(n_envs):
     """
     Test if HER works correctly with a full replay buffer when using online sampling.
     It should not sample the current episode which is not finished.
     """
     n_bits = 4
-    env = BitFlippingEnv(n_bits=n_bits, continuous=True)
+    env_fn = lambda: BitFlippingEnv(n_bits=n_bits, continuous=True)
+    env = DummyVecEnv(n_envs * [env_fn])
 
     # use small buffer size to get the buffer full
     model = SAC(
@@ -291,7 +307,7 @@ def test_full_replay_buffer():
         gradient_steps=1,
         train_freq=4,
         policy_kwargs=dict(net_arch=[64]),
-        learning_starts=1,
+        learning_starts=n_bits * n_envs,
         buffer_size=20,
         verbose=1,
         seed=757,
@@ -300,14 +316,19 @@ def test_full_replay_buffer():
     model.learn(total_timesteps=100)
 
 
+@pytest.mark.parametrize("n_envs", [1, 2, 4])
 @pytest.mark.parametrize("online_sampling", [False, True])
 @pytest.mark.parametrize("n_bits", [10])
-def test_performance_her(online_sampling, n_bits):
+def test_performance_her(n_envs, online_sampling, n_bits):
     """
     That DQN+HER can solve BitFlippingEnv.
     It should not work when n_sampled_goal=0 (DQN alone).
     """
-    env = BitFlippingEnv(n_bits=n_bits, continuous=False)
+    if n_envs > 1 and not online_sampling:
+        pytest.skip("Offline sampling is not compatible with multiprocessing")
+
+    env_fn = lambda: BitFlippingEnv(n_bits=n_bits, continuous=False)
+    env = DummyVecEnv(n_envs * [env_fn])
 
     model = DQN(
         "MultiInputPolicy",
@@ -321,10 +342,11 @@ def test_performance_her(online_sampling, n_bits):
         verbose=1,
         learning_rate=5e-4,
         train_freq=1,
+        gradient_steps=n_envs,
         learning_starts=100,
         exploration_final_eps=0.02,
         target_update_interval=500,
-        seed=0,
+        seed=1,
         batch_size=32,
         buffer_size=int(1e5),
     )

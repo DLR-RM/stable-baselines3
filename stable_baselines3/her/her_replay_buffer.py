@@ -202,7 +202,8 @@ class HerReplayBuffer(DictReplayBuffer):
 
             elif self.goal_selection_strategy == GoalSelectionStrategy.EPISODE:
                 # replay with random state which comes from the same episode as current transition
-                goals_coord[i] = np.random.choice(episode)
+                sampled_idx = np.random.randint(0, episode.shape[0])
+                goals_coord[i] = episode[sampled_idx]
 
             else:
                 raise ValueError(f"Strategy {self.goal_selection_strategy} for sampling goals not supported!")
@@ -226,7 +227,7 @@ class HerReplayBuffer(DictReplayBuffer):
         # episode is sampled, the transitions must be put back in order.
         gap = episode[1:, 0] - episode[:-1, 0]
         split = np.where(gap != 1)[0]
-        if split:
+        if split.shape[0] > 0: # if there is a split
             episode = np.roll(episode, shift=-(split[0] + 1), axis=0)
         return episode
 

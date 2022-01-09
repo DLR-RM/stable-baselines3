@@ -139,14 +139,16 @@ class HerReplayBuffer(DictReplayBuffer):
             to normalize the observations/rewards when sampling
         :return:
         """
-        all_trans_coord = np.mgrid[0 : self.buffer_size, 0 : self.n_envs].transpose(1, 2, 0)
+        upper_bound = self.buffer_size if self.full else self.pos
+        all_trans_coord = np.mgrid[0:upper_bound, 0 : self.n_envs].transpose(1, 2, 0)
 
-        valid = self.is_episode_valid
+        valid = self.is_episode_valid[:upper_bound]
         # Special case when using the "future" goal sampling strategy
         # we cannot sample all transitions, we have to remove the last timestep
         if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
+            episode_uids = self.episode_uids[:upper_bound]
             # if a transition is the last one of the episode, then, the next transition has a different episode uid
-            is_last = self.episode_uids != np.roll(self.episode_uids, shift=-1, axis=0)
+            is_last = episode_uids != np.roll(episode_uids, shift=-1, axis=0)
             # remove all last transitions
             valid = np.logical_and(valid, np.logical_not(is_last))
 
@@ -221,16 +223,19 @@ class HerReplayBuffer(DictReplayBuffer):
         :param uid: The unique identifier of the episode
         :return: Coordinates of the transition of the episode
         """
-        all_trans_indices = np.mgrid[0 : self.buffer_size, 0 : self.n_envs].transpose(1, 2, 0)
-        all_trans_indices = all_trans_indices[self.is_episode_valid]
-        episode_uids = self.episode_uids[self.is_episode_valid]
+        upper_bound = self.buffer_size if self.full else self.pos
+        all_trans_indices = np.mgrid[0:upper_bound, 0 : self.n_envs].transpose(1, 2, 0)
+        is_episode_valid = self.is_episode_valid[:upper_bound]
+        episode_uids = self.episode_uids[:upper_bound]
+        all_trans_indices = all_trans_indices[is_episode_valid]
+        episode_uids = episode_uids[is_episode_valid]
         episode = all_trans_indices[episode_uids == uid]
         # When the buffer is full, an episode is stored in such a way that
         # the beginning of the episode is at the end of the buffer and the
         # end of the episode is at the beginning of the buffer. When this
         # episode is sampled, the transitions must be put back in order.
         gap = episode[1:, 0] - episode[:-1, 0]
-        split = np.where(gap != 1)[0]
+        split = np.asarray(gap != 1).nonzero()[0]
         if split.shape[0] > 0:  # if there is a split
             episode = np.roll(episode, shift=-(split[0] + 1), axis=0)
         return episode

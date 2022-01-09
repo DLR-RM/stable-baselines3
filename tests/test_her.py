@@ -263,7 +263,7 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
     assert np.allclose(old_replay_buffer.actions[:pos], replay_buffer.actions[:pos])
     assert np.allclose(old_replay_buffer.rewards[:pos], replay_buffer.rewards[:pos])
     # we might change the last done of the last trajectory so we don't compare it
-    assert np.allclose(old_replay_buffer.dones[:pos-1], replay_buffer.dones[:pos-1])
+    assert np.allclose(old_replay_buffer.dones[: pos - 1], replay_buffer.dones[: pos - 1])
 
     # test if continuing training works properly
     reset_num_timesteps = False if truncate_last_trajectory is False else True

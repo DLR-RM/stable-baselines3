@@ -1,3 +1,4 @@
+import copy
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -145,9 +146,7 @@ class HerReplayBuffer(DictReplayBuffer):
         # we cannot sample all transitions, we have to remove the last timestep
         if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
             # if a transition is the last one of the episode, then, the next transition has a different episode uid
-            is_last = self.episode_uids != np.roll(self.episode_uids, shift=1, axis=0)
-            # the last transition stored is always the last within its episode (truncate last trajectory)
-            is_last[self.pos - 1] = True
+            is_last = self.episode_uids != np.roll(self.episode_uids, shift=-1, axis=0)
             # remove all last transitions
             valid = np.logical_and(valid, np.logical_not(is_last))
 
@@ -156,13 +155,16 @@ class HerReplayBuffer(DictReplayBuffer):
         # Uniform sampling on all transitions.
         sampled_indices = np.random.randint(all_trans_coord.shape[0], size=batch_size)
         trans_coord = all_trans_coord[sampled_indices]
-        her_indices = np.arange(batch_size)[: int(self.her_ratio * batch_size)]
 
+        if self.online_sampling:
+            her_indices = np.arange(batch_size)[: int(self.her_ratio * batch_size)]
+        else:
+            her_indices = np.array([], dtype=int)
         obs, next_obs, actions, rewards, dones, infos = self._create_virual_trans(trans_coord, her_indices)
 
         # Normalize if needed and remove extra dimension
-        obs = self._normalize_obs(obs)
-        next_obs = self._normalize_obs(next_obs)
+        obs = self._normalize_obs(obs, env)
+        next_obs = self._normalize_obs(next_obs, env)
         rewards = self._normalize_reward(rewards.reshape(-1, 1), env)
         dones = dones.reshape(-1, 1)
 
@@ -266,29 +268,32 @@ class HerReplayBuffer(DictReplayBuffer):
         if self.handle_timeout_termination:
             timeout = self.timeouts[trans_indices, env_indices]
             dones = dones + timeout  # logical OR
-        infos = self.infos[trans_indices, env_indices]
+        infos = copy.deepcopy(self.infos[trans_indices, env_indices])
 
-        new_goals = self.sample_goals(trans_coord[her_indices])
+        if her_indices.shape[0] > 0:
+            # Sample and set new goals
+            new_goals = self.sample_goals(trans_coord[her_indices])
+            obs["desired_goal"][her_indices] = new_goals
+            # The desired goal for the next observation must be the same as the previous one
+            next_obs["desired_goal"][her_indices] = new_goals
+            # The goal has changed, there is no longer a guarantee that the transition is
+            # successful. Since it is not possible to easily get this information, we prefer
+            # to remove it. The success information is not used in the learning algorithm anyway.
+            for info in infos[her_indices]:
+                info.pop("is_success", None)
 
-        obs["desired_goal"][her_indices] = new_goals
-        # The goal has changed, there is no longer a guarantee that the transition is
-        # successful. Since it is not possible to easily get this information, we prefer
-        # to remove it. The success information is not used in the learning algorithm anyway.
-        for info in infos[her_indices]:
-            info.pop("is_success", None)
-
-        rewards[her_indices] = self.compute_reward(
-            # here we use the new desired goal
-            obs["desired_goal"][her_indices],
-            # the new state depends on the previous state and action
-            # s_{t+1} = f(s_t, a_t)
-            # so the next achieved_goal depends also on the previous state and action
-            # because we are in a GoalEnv:
-            # r_t = reward(s_t, a_t) = reward(next_achieved_goal, desired_goal)
-            # therefore we have to use next_obs["achived_goal"] and not obs["achived_goal"]
-            next_obs["achieved_goal"][her_indices],
-            infos[her_indices],
-        )
+            rewards[her_indices] = self.compute_reward(
+                # here we use the new desired goal
+                obs["desired_goal"][her_indices],
+                # the new state depends on the previous state and action
+                # s_{t+1} = f(s_t, a_t)
+                # so the next achieved_goal depends also on the previous state and action
+                # because we are in a GoalEnv:
+                # r_t = reward(s_t, a_t) = reward(next_achieved_goal, desired_goal)
+                # therefore we have to use next_obs["achived_goal"] and not obs["achived_goal"]
+                next_obs["achieved_goal"][her_indices],
+                infos[her_indices],
+            )
         return obs, next_obs, actions, rewards, dones, infos
 
     def truncate_last_trajectory(self) -> None:

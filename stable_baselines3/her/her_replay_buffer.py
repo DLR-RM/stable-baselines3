@@ -84,7 +84,7 @@ class HerReplayBuffer(DictReplayBuffer):
             assert n_envs == 1, "Offline sampling is not compatible with multiprocessing."
 
         # Assigns a unique identifier to each episode.
-        self.episode_uids = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
+        self.episode_uids = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64) - 1
         self._current_episode_uid = np.arange(self.n_envs)
         self.is_episode_valid = np.zeros((self.buffer_size, self.n_envs), dtype=bool)
 
@@ -106,7 +106,6 @@ class HerReplayBuffer(DictReplayBuffer):
             old_episode_uid = self.episode_uids[self.pos]
             self.is_episode_valid[self.episode_uids == old_episode_uid] = False
         self.episode_uids[self.pos] = self._current_episode_uid.copy()
-        self.is_episode_valid[self.pos] = True
 
         # Remove termination signals due to timeout
         if self.handle_timeout_termination:
@@ -118,12 +117,15 @@ class HerReplayBuffer(DictReplayBuffer):
         self.infos[self.pos] = infos
         super().add(obs, next_obs, action, reward, done_, infos)
 
-        # When done, start a new episode by assigning a new episode uid.
+        # When done, validate the episode and start a new episode by assigning a new episode uid.
         for env_idx in range(self.n_envs):
             if done[env_idx]:
-                # When offline sampling, samples virtual transitions
+                # Validate the episode
+                self.is_episode_valid[self.episode_uids == self._current_episode_uid] = True
+                # Increment epsiode uid
                 last_episode_uid = self._current_episode_uid[env_idx]
                 self._current_episode_uid[env_idx] = np.max(self._current_episode_uid) + 1
+                # When offline sampling, samples virtual transitions
                 if not self.online_sampling and not is_virtual:
                     self._sample_offline(last_episode_uid)
 
@@ -227,7 +229,7 @@ class HerReplayBuffer(DictReplayBuffer):
         # episode is sampled, the transitions must be put back in order.
         gap = episode[1:, 0] - episode[:-1, 0]
         split = np.where(gap != 1)[0]
-        if split.shape[0] > 0: # if there is a split
+        if split.shape[0] > 0:  # if there is a split
             episode = np.roll(episode, shift=-(split[0] + 1), axis=0)
         return episode
 

@@ -108,15 +108,9 @@ class HerReplayBuffer(DictReplayBuffer):
             self.is_episode_valid[self.episode_uids == old_episode_uid] = False
         self.episode_uids[self.pos] = self._current_episode_uid.copy()
 
-        # Remove termination signals due to timeout
-        if self.handle_timeout_termination:
-            timeout = np.array([info.get("TimeLimit.truncated", False) for info in infos])
-            done_ = done * (1 - timeout)
-        else:
-            done_ = done
         # Store the transition
         self.infos[self.pos] = infos
-        super().add(obs, next_obs, action, reward, done_, infos)
+        super().add(obs, next_obs, action, reward, done, infos)
 
         # When done, validate the episode and start a new episode by assigning a new episode uid.
         for env_idx in range(self.n_envs):
@@ -270,9 +264,10 @@ class HerReplayBuffer(DictReplayBuffer):
         actions = self.actions[trans_indices, env_indices]
         rewards = self.rewards[trans_indices, env_indices]
         dones = self.dones[trans_indices, env_indices]
-        if self.handle_timeout_termination:
-            timeout = self.timeouts[trans_indices, env_indices]
-            dones = dones + timeout  # logical OR
+        # Only use dones that are not due to timeouts
+        # deactivated by default (timeouts is initialized as an array of False)
+        timeout = self.timeouts[trans_indices, env_indices]
+        dones = dones * (1 - timeout)
         infos = copy.deepcopy(self.infos[trans_indices, env_indices])
 
         if her_indices.shape[0] > 0:

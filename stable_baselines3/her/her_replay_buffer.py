@@ -153,9 +153,10 @@ class HerReplayBuffer(DictReplayBuffer):
         batch_inds = np.empty_like(env_indices)
         # When the buffer is full, we rewrite on old episodes. We don't want to
         # sample incomplete episode transitions, so we have to eliminate some indexes.
+        is_valid = self.ep_lenght > 0
+        valid_inds = [np.arange(self.buffer_size)[is_valid[:, env_idx]] for env_idx in range(self.n_envs)]
         for i, env_idx in enumerate(env_indices):
-            valid_inds = np.arange(self.buffer_size)[self.ep_lenght[:, env_idx] > 0]
-            batch_inds[i] = np.random.choice(valid_inds)
+            batch_inds[i] = np.random.choice(valid_inds[env_idx])
 
         # Split the indexes between real and virtual transitions.
         nb_virtual = int(self.her_ratio * batch_size)
@@ -179,13 +180,16 @@ class HerReplayBuffer(DictReplayBuffer):
         dones = th.cat((real_data.dones, virtual_data.dones))
         rewards = th.cat((real_data.rewards, virtual_data.rewards))
 
-        return DictReplayBufferSamples(
+        c = DictReplayBufferSamples(
             observations=observations,
             actions=actions,
             next_observations=next_observations,
             dones=dones,
             rewards=rewards,
         )
+        # a = time.time()
+        # print(13, a-b)
+        return c
 
     def _sample_offline(self, env_idx: int) -> None:
         pos = self.pos - 1  # pos has already been incremented

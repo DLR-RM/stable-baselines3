@@ -308,7 +308,7 @@ def test_full_replay_buffer(n_envs):
         train_freq=4,
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=n_bits * n_envs,
-        buffer_size=20,
+        buffer_size=20 * n_envs,
         verbose=1,
         seed=757,
     )
@@ -346,12 +346,12 @@ def test_performance_her(n_envs, online_sampling, n_bits):
         learning_starts=100,
         exploration_final_eps=0.02,
         target_update_interval=500,
-        seed=1,
+        seed=0,
         batch_size=32,
         buffer_size=int(1e5),
     )
 
-    model.learn(total_timesteps=5000, log_interval=50)
+    model.learn(total_timesteps=8000, log_interval=50)
 
     # 90% training success
     assert np.mean(model.ep_success_buffer) > 0.90

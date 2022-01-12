@@ -25,7 +25,7 @@ class HerReplayBuffer(DictReplayBuffer):
     In the online sampling case, these new transitions will not be saved in the replay buffer
     and will only be created at sampling time.
 
-    :param buffer_size: The size of the buffer measured in transitions.
+    :param buffer_size: Max number of element in the buffer
     :param observation_space: Observation space
     :param action_space: Action space
     :param compute_reward: Function used to compute new rewards
@@ -147,7 +147,7 @@ class HerReplayBuffer(DictReplayBuffer):
         :param batch_size: Number of element to sample
         :param env: associated gym VecEnv
             to normalize the observations/rewards when sampling
-        :return:
+        :return: Samples
         """
         env_indices = np.random.randint(self.n_envs, size=batch_size)
         batch_inds = np.empty_like(env_indices)
@@ -180,18 +180,20 @@ class HerReplayBuffer(DictReplayBuffer):
         dones = th.cat((real_data.dones, virtual_data.dones))
         rewards = th.cat((real_data.rewards, virtual_data.rewards))
 
-        c = DictReplayBufferSamples(
+        return DictReplayBufferSamples(
             observations=observations,
             actions=actions,
             next_observations=next_observations,
             dones=dones,
             rewards=rewards,
         )
-        # a = time.time()
-        # print(13, a-b)
-        return c
 
     def _sample_offline(self, env_idx: int) -> None:
+        """
+        Samples virtual transitions from the last episode, and stores them in the buffer.
+
+        :param env_idx: Environment index
+        """
         pos = self.pos - 1  # pos has already been incremented
         ep_lenght = self.ep_lenght[pos][env_idx]
         start = self.ep_start[pos][env_idx]
@@ -223,6 +225,15 @@ class HerReplayBuffer(DictReplayBuffer):
     def _get_real_samples(
         self, batch_inds: np.ndarray, env_indices: np.ndarray, env: Optional[VecNormalize] = None
     ) -> DictReplayBufferSamples:
+        """
+        Get the samples corresponding to the batch and environment indices.
+
+        :param batch_inds: Indices of the transitions
+        :param env_indices: Indices of the envrionments
+        :param env: associated gym VecEnv to normalize the
+            observations/rewards when sampling, defaults to None
+        :return: Samples
+        """
         # Normalize if needed and remove extra dimension (we are using only one env for now)
         obs_ = self._normalize_obs({key: obs[batch_inds, env_indices, :] for key, obs in self.observations.items()})
         next_obs_ = self._normalize_obs({key: obs[batch_inds, env_indices, :] for key, obs in self.next_observations.items()})
@@ -246,6 +257,15 @@ class HerReplayBuffer(DictReplayBuffer):
     def _get_virtual_samples(
         self, batch_inds: np.ndarray, env_indices: np.ndarray, env: Optional[VecNormalize] = None
     ) -> DictReplayBufferSamples:
+        """
+        Get the samples, sample new desired goals and compute new rewards.
+
+        :param batch_inds: Indices of the transitions
+        :param env_indices: Indices of the envrionments
+        :param env: associated gym VecEnv to normalize the
+            observations/rewards when sampling, defaults to None
+        :return: Samples, with new desired goals and new rewards
+        """
         # Get infos and obs
         obs = {key: obs[batch_inds, env_indices, :] for key, obs in self.observations.items()}
         next_obs = {key: obs[batch_inds, env_indices, :] for key, obs in self.next_observations.items()}
@@ -293,12 +313,12 @@ class HerReplayBuffer(DictReplayBuffer):
             rewards=self.to_torch(self._normalize_reward(rewards.reshape(-1, 1), env)),
         )
 
-    def _sample_goals(self, batch_inds, env_indices) -> np.ndarray:
+    def _sample_goals(self, batch_inds: np.ndarray, env_indices: np.ndarray) -> np.ndarray:
         """
         Sample goals based on goal_selection_strategy.
 
         :param trans_coord: Coordinates of the transistions within the buffer
-        :return: Return sampled goals.
+        :return: Return sampled goals
         """
         batch_ep_start = self.ep_start[batch_inds, env_indices]
         batch_ep_lenght = self.ep_lenght[batch_inds, env_indices]

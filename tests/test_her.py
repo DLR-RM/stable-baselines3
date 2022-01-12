@@ -9,6 +9,7 @@ import pytest
 import torch as th
 
 from stable_baselines3 import DDPG, DQN, SAC, TD3, HerReplayBuffer
+from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.envs import BitFlippingEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
@@ -37,12 +38,15 @@ def test_her(n_envs, model_class, online_sampling, image_obs_space):
         pytest.skip("Offline sampling is not compatible with multiprocessing")
 
     n_bits = 4
-    env_fn = lambda: BitFlippingEnv(
-        n_bits=n_bits,
-        continuous=not (model_class == DQN),
-        image_obs_space=image_obs_space,
-    )
-    env = DummyVecEnv(n_envs * [env_fn])
+
+    def env_fn():
+        return BitFlippingEnv(
+            n_bits=n_bits,
+            continuous=not (model_class == DQN),
+            image_obs_space=image_obs_space,
+        )
+
+    env = make_vec_env(env_fn, n_envs)
 
     model = model_class(
         "MultiInputPolicy",
@@ -84,8 +88,10 @@ def test_goal_selection_strategy(n_envs, goal_selection_strategy, online_samplin
     if n_envs > 1 and not online_sampling:
         pytest.skip("Offline sampling is not compatible with multiprocessing")
 
-    env_fn = lambda: BitFlippingEnv(continuous=True)
-    env = DummyVecEnv(n_envs * [env_fn])
+    def env_fn():
+        return BitFlippingEnv(continuous=True)
+
+    env = make_vec_env(env_fn, n_envs)
 
     normal_action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
 
@@ -123,8 +129,11 @@ def test_save_load(n_envs, tmp_path, model_class, use_sde, online_sampling):
         pytest.skip("Offline sampling is not compatible with multiprocessing")
 
     n_bits = 4
-    env_fn = lambda: BitFlippingEnv(n_bits=n_bits, continuous=not (model_class == DQN))
-    env = DummyVecEnv(n_envs * [env_fn])
+
+    def env_fn():
+        return BitFlippingEnv(n_bits=n_bits, continuous=not (model_class == DQN))
+
+    env = make_vec_env(env_fn, n_envs)
 
     kwargs = dict(use_sde=True) if use_sde else {}
 
@@ -231,8 +240,11 @@ def test_save_load_replay_buffer(n_envs, tmp_path, recwarn, online_sampling, tru
 
     path = pathlib.Path(tmp_path / "replay_buffer.pkl")
     path.parent.mkdir(exist_ok=True, parents=True)  # to not raise a warning
-    env_fn = lambda: BitFlippingEnv(n_bits=4, continuous=True)
-    env = DummyVecEnv(n_envs * [env_fn])
+
+    def env_fn():
+        return BitFlippingEnv(n_bits=4, continuous=True)
+
+    env = make_vec_env(env_fn, n_envs)
     model = SAC(
         "MultiInputPolicy",
         env,
@@ -291,8 +303,11 @@ def test_full_replay_buffer(n_envs):
     It should not sample the current episode which is not finished.
     """
     n_bits = 4
-    env_fn = lambda: BitFlippingEnv(n_bits=n_bits, continuous=True)
-    env = DummyVecEnv(n_envs * [env_fn])
+
+    def env_fn():
+        BitFlippingEnv(n_bits=n_bits, continuous=True)
+
+    env = make_vec_env(env_fn, n_envs)
 
     # use small buffer size to get the buffer full
     model = SAC(
@@ -327,8 +342,10 @@ def test_performance_her(n_envs, online_sampling, n_bits):
     if n_envs > 1 and not online_sampling:
         pytest.skip("Offline sampling is not compatible with multiprocessing")
 
-    env_fn = lambda: BitFlippingEnv(n_bits=n_bits, continuous=False)
-    env = DummyVecEnv(n_envs * [env_fn])
+    def env_fn():
+        return BitFlippingEnv(n_bits=n_bits, continuous=False)
+
+    env = make_vec_env(env_fn, n_envs)
 
     model = DQN(
         "MultiInputPolicy",

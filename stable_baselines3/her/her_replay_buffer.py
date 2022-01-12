@@ -325,22 +325,24 @@ class HerReplayBuffer(DictReplayBuffer):
 
         if self.goal_selection_strategy == GoalSelectionStrategy.FINAL:
             # replay with final state of current episode
-            goal_ep_inds = batch_ep_length - 1
+            transition_indices_in_episode = batch_ep_length - 1
 
         elif self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
             # replay with random state which comes from the same episode and was observed after current transition
-            batch_idx_within_ep = batch_inds - batch_ep_start
-            goal_ep_inds = np.random.randint(batch_idx_within_ep, batch_ep_length)
+            current_indices_in_episode = batch_inds - batch_ep_start
+            # Note(antonin): current implementation does not seem correct, a +1
+            # and special treatment is missing apparently
+            transition_indices_in_episode = np.random.randint(current_indices_in_episode, batch_ep_length)
 
         elif self.goal_selection_strategy == GoalSelectionStrategy.EPISODE:
             # replay with random state which comes from the same episode as current transition
-            goal_ep_inds = np.random.randint(0, batch_ep_length)
+            transition_indices_in_episode = np.random.randint(0, batch_ep_length)
 
         else:
             raise ValueError(f"Strategy {self.goal_selection_strategy} for sampling goals not supported!")
 
-        goal_inds = (goal_ep_inds + batch_ep_start) % self.buffer_size
-        return self.observations["achieved_goal"][goal_inds, env_indices]
+        transition_indices = (transition_indices_in_episode + batch_ep_start) % self.buffer_size
+        return self.observations["achieved_goal"][transition_indices, env_indices]
 
     def truncate_last_trajectory(self) -> None:
         """

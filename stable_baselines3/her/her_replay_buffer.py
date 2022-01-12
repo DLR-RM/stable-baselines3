@@ -86,7 +86,7 @@ class HerReplayBuffer(DictReplayBuffer):
 
         self.ep_start = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
         self._current_ep_start = np.zeros(self.n_envs, dtype=np.int64)
-        self.ep_lenght = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
+        self.ep_length = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
 
     def add(
         self,
@@ -103,12 +103,12 @@ class HerReplayBuffer(DictReplayBuffer):
         # (and not only the transition on which we rewrite). To do this, we set
         # the length of the old episode to 0, so it can't be sampled anymore.
         for env_idx in range(self.n_envs):
-            start = self.ep_start[self.pos][env_idx]
-            lenght = self.ep_lenght[self.pos][env_idx]
-            if lenght > 0:
-                stop = start + lenght
-                episode = np.arange(self.pos, stop) % self.buffer_size
-                self.ep_lenght[episode, env_idx] = 0
+            episode_start = self.ep_start[self.pos][env_idx]
+            episode_length = self.ep_length[self.pos][env_idx]
+            if episode_length > 0:
+                episode_end = episode_start + episode_length
+                episode_indices = np.arange(self.pos, episode_end) % self.buffer_size
+                self.ep_length[episode_indices, env_idx] = 0
 
         # Update episode start
         self.ep_start[self.pos] = self._current_ep_start.copy()
@@ -117,17 +117,17 @@ class HerReplayBuffer(DictReplayBuffer):
         self.infos[self.pos] = infos
         super().add(obs, next_obs, action, reward, done, infos)
 
-        # When episode ends, compute and store the episode lenght
+        # When episode ends, compute and store the episode length
         for env_idx in range(self.n_envs):
             if done[env_idx]:
-                start = self._current_ep_start[env_idx]
-                stop = self.pos
-                if stop < start:
+                episode_start = self._current_ep_start[env_idx]
+                episode_end = self.pos
+                if episode_end < episode_start:
                     # Occurs when the buffer becomes full, the storage resumes at the
                     # beginning of the buffer. This can happen in the middle of an episode.
-                    stop += self.buffer_size
-                episode = np.arange(start, stop) % self.buffer_size
-                self.ep_lenght[episode, env_idx] = stop - start
+                    episode_end += self.buffer_size
+                episode = np.arange(episode_start, episode_end) % self.buffer_size
+                self.ep_length[episode, env_idx] = episode_end - episode_start
                 # Update the current episode start
                 self._current_ep_start[env_idx] = self.pos
                 if not self.online_sampling and not is_virtual:
@@ -150,10 +150,10 @@ class HerReplayBuffer(DictReplayBuffer):
         :return: Samples
         """
         env_indices = np.random.randint(self.n_envs, size=batch_size)
-        batch_inds = np.empty_like(env_indices)
+        batch_inds = np.zeros_like(env_indices)
         # When the buffer is full, we rewrite on old episodes. We don't want to
         # sample incomplete episode transitions, so we have to eliminate some indexes.
-        is_valid = self.ep_lenght > 0
+        is_valid = self.ep_length > 0
         valid_inds = [np.arange(self.buffer_size)[is_valid[:, env_idx]] for env_idx in range(self.n_envs)]
         for i, env_idx in enumerate(env_indices):
             batch_inds[i] = np.random.choice(valid_inds[env_idx])
@@ -195,23 +195,23 @@ class HerReplayBuffer(DictReplayBuffer):
         :param env_idx: Environment index
         """
         pos = self.pos - 1  # pos has already been incremented
-        ep_lenght = self.ep_lenght[pos][env_idx]
-        start = self.ep_start[pos][env_idx]
-        stop = start + ep_lenght
-        if stop < start:
+        ep_length = self.ep_length[pos, env_idx]
+        episode_start = self.ep_start[pos, env_idx]
+        episode_end = episode_start + ep_length
+        if episode_end < episode_start:
             # Occurs when the buffer becomes full, the storage resumes at the
             # beginning of the buffer. This can happen in the middle of an episode.
-            stop += self.buffer_size
-        batch_inds = np.tile(np.arange(start, stop) % self.buffer_size, self.n_sampled_goal)
-        env_indices = np.repeat(env_idx, self.n_sampled_goal * ep_lenght)
+            episode_end += self.buffer_size
+        batch_inds = np.tile(np.arange(episode_start, episode_end) % self.buffer_size, self.n_sampled_goal)
+        env_indices = np.repeat(env_idx, self.n_sampled_goal * ep_length)
 
-        # All transions are virtual
+        # All transitions are virtual
         data = self._get_virtual_samples(batch_inds, env_indices)
         # _get_virtual_samples returns done that are not due to timeout. We also want done due to timeout here.
         dones = self.dones[batch_inds, env_indices]
         infos = self.infos[batch_inds, env_indices]
 
-        for i in range(ep_lenght):
+        for i in range(ep_length):
             self.add(
                 {key: value[i].numpy() for key, value in data.observations.items()},
                 {key: value[i].numpy() for key, value in data.next_observations.items()},
@@ -321,20 +321,20 @@ class HerReplayBuffer(DictReplayBuffer):
         :return: Return sampled goals
         """
         batch_ep_start = self.ep_start[batch_inds, env_indices]
-        batch_ep_lenght = self.ep_lenght[batch_inds, env_indices]
+        batch_ep_length = self.ep_length[batch_inds, env_indices]
 
         if self.goal_selection_strategy == GoalSelectionStrategy.FINAL:
             # replay with final state of current episode
-            goal_ep_inds = batch_ep_lenght - 1
+            goal_ep_inds = batch_ep_length - 1
 
         elif self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
             # replay with random state which comes from the same episode and was observed after current transition
             batch_idx_within_ep = batch_inds - batch_ep_start
-            goal_ep_inds = np.random.randint(batch_idx_within_ep, batch_ep_lenght)
+            goal_ep_inds = np.random.randint(batch_idx_within_ep, batch_ep_length)
 
         elif self.goal_selection_strategy == GoalSelectionStrategy.EPISODE:
             # replay with random state which comes from the same episode as current transition
-            goal_ep_inds = np.random.randint(0, batch_ep_lenght)
+            goal_ep_inds = np.random.randint(0, batch_ep_length)
 
         else:
             raise ValueError(f"Strategy {self.goal_selection_strategy} for sampling goals not supported!")

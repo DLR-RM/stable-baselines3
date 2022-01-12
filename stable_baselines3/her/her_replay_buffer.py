@@ -292,7 +292,7 @@ class HerReplayBuffer(DictReplayBuffer):
             # therefore we have to use next_obs["achived_goal"] and not obs["achived_goal"]
             next_obs["achieved_goal"],
             infos,
-        )
+        ).astype(np.float32)
         # Normalize if needed and remove extra dimension (we are using only one env for now)
         obs = self._normalize_obs(obs)
         next_obs = self._normalize_obs(next_obs)

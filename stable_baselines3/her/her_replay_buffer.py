@@ -153,7 +153,7 @@ class HerReplayBuffer(DictReplayBuffer):
         batch_inds = np.zeros_like(env_indices)
         # When the buffer is full, we rewrite on old episodes. We don't want to
         # sample incomplete episode transitions, so we have to eliminate some indexes.
-        all_inds = np.tile(np.arange(self.buffer_size), (2, 1)).T
+        all_inds = np.tile(np.arange(self.buffer_size), (self.n_envs, 1)).T
         is_valid = self.ep_length > 0
         # Special case when using the "future" goal sampling strategy, we cannot
         # sample all transitions, we restrict the sampling domain to non-final transitions
@@ -212,22 +212,32 @@ class HerReplayBuffer(DictReplayBuffer):
         batch_inds = np.tile(np.arange(episode_start, episode_end) % self.buffer_size, self.n_sampled_goal)
         env_indices = np.repeat(env_idx, self.n_sampled_goal * ep_length)
 
-        # All transitions are virtual
-        data = self._get_virtual_samples(batch_inds, env_indices)
-        # _get_virtual_samples returns done that are not due to timeout. We also want done due to timeout here.
-        dones = self.dones[batch_inds, env_indices]
-        infos = self.infos[batch_inds, env_indices]
+        # Special case when using the "future" goal sampling strategy, we cannot
+        # sample all transitions, we restrict the sampling domain to non-final transitions
+        if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
+            is_valid = batch_inds != self.ep_start[batch_inds, env_indices] + self.ep_length[batch_inds, env_indices] - 1
+            batch_inds = batch_inds[is_valid]
+            env_indices = env_indices[is_valid]
 
-        for i in range(ep_length):
-            self.add(
-                {key: value[i].numpy() for key, value in data.observations.items()},
-                {key: value[i].numpy() for key, value in data.next_observations.items()},
-                data.actions[i].numpy(),
-                data.rewards[i].numpy(),
-                [dones[i]],
-                [infos[i]],
-                is_virtual=True,
-            )
+        # Edge case: episode of one timesteps with the future strategy
+        # no virtual transition can be created
+        if batch_inds.shape[0] > 0:
+            # All transitions are virtual
+            data = self._get_virtual_samples(batch_inds, env_indices)
+            # _get_virtual_samples returns done that are not due to timeout. We also want done due to timeout here.
+            dones = self.dones[batch_inds, env_indices]
+            infos = self.infos[batch_inds, env_indices]
+
+            for i in range(ep_length):
+                self.add(
+                    {key: value[i].numpy() for key, value in data.observations.items()},
+                    {key: value[i].numpy() for key, value in data.next_observations.items()},
+                    data.actions[i].numpy(),
+                    data.rewards[i].numpy(),
+                    [dones[i]],
+                    [infos[i]],
+                    is_virtual=True,
+                )
 
     def _get_real_samples(
         self, batch_inds: np.ndarray, env_indices: np.ndarray, env: Optional[VecNormalize] = None

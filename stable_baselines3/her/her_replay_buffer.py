@@ -153,7 +153,14 @@ class HerReplayBuffer(DictReplayBuffer):
         batch_inds = np.zeros_like(env_indices)
         # When the buffer is full, we rewrite on old episodes. We don't want to
         # sample incomplete episode transitions, so we have to eliminate some indexes.
+        all_inds = np.tile(np.arange(self.buffer_size), (2, 1)).T
         is_valid = self.ep_length > 0
+        # Special case when using the "future" goal sampling strategy, we cannot
+        # sample all transitions, we restrict the sampling domain to non-final transitions
+        if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
+            is_last = all_inds == self.ep_start + self.ep_length - 1
+            is_valid = np.logical_and(np.logical_not(is_last), is_valid)
+
         valid_inds = [np.arange(self.buffer_size)[is_valid[:, env_idx]] for env_idx in range(self.n_envs)]
         for i, env_idx in enumerate(env_indices):
             batch_inds[i] = np.random.choice(valid_inds[env_idx])
@@ -330,9 +337,7 @@ class HerReplayBuffer(DictReplayBuffer):
         elif self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
             # replay with random state which comes from the same episode and was observed after current transition
             current_indices_in_episode = batch_inds - batch_ep_start
-            # Note(antonin): current implementation does not seem correct, a +1
-            # and special treatment is missing apparently
-            transition_indices_in_episode = np.random.randint(current_indices_in_episode, batch_ep_length)
+            transition_indices_in_episode = np.random.randint(current_indices_in_episode + 1, batch_ep_length)
 
         elif self.goal_selection_strategy == GoalSelectionStrategy.EPISODE:
             # replay with random state which comes from the same episode as current transition

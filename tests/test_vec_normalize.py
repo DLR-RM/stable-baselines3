@@ -363,7 +363,6 @@ def test_offpolicy_normalization(model_class, online_sampling):
             learning_starts=100,
             policy_kwargs=dict(net_arch=[64]),
             replay_buffer_kwargs=dict(
-                max_episode_length=100,
                 online_sampling=online_sampling,
                 n_sampled_goal=2,
             ),

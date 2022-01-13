@@ -41,10 +41,10 @@ def test_her(n_envs, model_class, online_sampling, image_obs_space):
 
     def env_fn():
         return BitFlippingEnv(
-        n_bits=n_bits,
-        continuous=not (model_class == DQN),
-        image_obs_space=image_obs_space,
-    )
+            n_bits=n_bits,
+            continuous=not (model_class == DQN),
+            image_obs_space=image_obs_space,
+        )
 
     env = make_vec_env(env_fn, n_envs)
 

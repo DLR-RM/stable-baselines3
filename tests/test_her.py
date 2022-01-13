@@ -39,12 +39,11 @@ def test_her(n_envs, model_class, online_sampling, image_obs_space):
 
     n_bits = 4
 
-    def env_fn():
-        return BitFlippingEnv(
-            n_bits=n_bits,
-            continuous=not (model_class == DQN),
-            image_obs_space=image_obs_space,
-        )
+    env_fn = lambda: BitFlippingEnv(
+        n_bits=n_bits,
+        continuous=not (model_class == DQN),
+        image_obs_space=image_obs_space,
+    )
 
     env = make_vec_env(env_fn, n_envs)
 
@@ -88,8 +87,7 @@ def test_goal_selection_strategy(n_envs, goal_selection_strategy, online_samplin
     if n_envs > 1 and not online_sampling:
         pytest.skip("Offline sampling is not compatible with multiprocessing")
 
-    def env_fn():
-        return BitFlippingEnv(continuous=True)
+    env_fn = lambda: BitFlippingEnv(continuous=True)
 
     env = make_vec_env(env_fn, n_envs)
 
@@ -130,8 +128,7 @@ def test_save_load(n_envs, tmp_path, model_class, use_sde, online_sampling):
 
     n_bits = 4
 
-    def env_fn():
-        return BitFlippingEnv(n_bits=n_bits, continuous=not (model_class == DQN))
+    env_fn = lambda: BitFlippingEnv(n_bits=n_bits, continuous=not (model_class == DQN))
 
     env = make_vec_env(env_fn, n_envs)
 
@@ -241,8 +238,7 @@ def test_save_load_replay_buffer(n_envs, tmp_path, recwarn, online_sampling, tru
     path = pathlib.Path(tmp_path / "replay_buffer.pkl")
     path.parent.mkdir(exist_ok=True, parents=True)  # to not raise a warning
 
-    def env_fn():
-        return BitFlippingEnv(n_bits=4, continuous=True)
+    env_fn = lambda: BitFlippingEnv(n_bits=4, continuous=True)
 
     env = make_vec_env(env_fn, n_envs)
     model = SAC(
@@ -304,8 +300,7 @@ def test_full_replay_buffer(n_envs):
     """
     n_bits = 4
 
-    def env_fn():
-        BitFlippingEnv(n_bits=n_bits, continuous=True)
+    env_fn = lambda: BitFlippingEnv(n_bits=n_bits, continuous=True)
 
     env = make_vec_env(env_fn, n_envs)
 
@@ -342,8 +337,7 @@ def test_performance_her(n_envs, online_sampling, n_bits):
     if n_envs > 1 and not online_sampling:
         pytest.skip("Offline sampling is not compatible with multiprocessing")
 
-    def env_fn():
-        return BitFlippingEnv(n_bits=n_bits, continuous=False)
+    env_fn = lambda: BitFlippingEnv(n_bits=n_bits, continuous=False)
 
     env = make_vec_env(env_fn, n_envs)
 

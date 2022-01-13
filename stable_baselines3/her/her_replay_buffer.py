@@ -158,7 +158,7 @@ class HerReplayBuffer(DictReplayBuffer):
         # Special case when using the "future" goal sampling strategy, we cannot
         # sample all transitions, we restrict the sampling domain to non-final transitions
         if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
-            is_last = all_inds == self.ep_start + self.ep_length - 1
+            is_last = all_inds == (self.ep_start + self.ep_length - 1) % self.buffer_size
             is_valid = np.logical_and(np.logical_not(is_last), is_valid)
 
         valid_inds = [np.arange(self.buffer_size)[is_valid[:, env_idx]] for env_idx in range(self.n_envs)]
@@ -215,20 +215,24 @@ class HerReplayBuffer(DictReplayBuffer):
         # Special case when using the "future" goal sampling strategy, we cannot
         # sample all transitions, we restrict the sampling domain to non-final transitions
         if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
-            is_valid = batch_inds != self.ep_start[batch_inds, env_indices] + self.ep_length[batch_inds, env_indices] - 1
-            batch_inds = batch_inds[is_valid]
-            env_indices = env_indices[is_valid]
+            is_last = batch_inds == (episode_start + ep_length - 1) % self.buffer_size
+            batch_inds = batch_inds[np.logical_not(is_last)]
+            env_indices = env_indices[np.logical_not(is_last)]
+            ep_length -= 1
 
         # Edge case: episode of one timesteps with the future strategy
         # no virtual transition can be created
         if batch_inds.shape[0] > 0:
             # All transitions are virtual
             data = self._get_virtual_samples(batch_inds, env_indices)
-            # _get_virtual_samples returns done that are not due to timeout. We also want done due to timeout here.
-            dones = self.dones[batch_inds, env_indices]
+            # _get_virtual_samples returns done that are not due to timeout. Moreover,
+            # the last transition may have been deleted if the goal selection strategy
+            # is "future". Therefore, we impose here done=True for the last transition.
+            is_last = batch_inds == (episode_start + ep_length - 1) % self.buffer_size
+            dones = is_last.astype(np.float32)
             infos = self.infos[batch_inds, env_indices]
 
-            for i in range(ep_length):
+            for i in range(batch_inds.shape[0]):
                 self.add(
                     {key: value[i].numpy() for key, value in data.observations.items()},
                     {key: value[i].numpy() for key, value in data.next_observations.items()},

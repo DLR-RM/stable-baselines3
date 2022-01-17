@@ -3,7 +3,6 @@ import pathlib
 import warnings
 from copy import deepcopy
 
-import gym
 import numpy as np
 import pytest
 import torch as th
@@ -14,7 +13,7 @@ from stable_baselines3.common.envs import BitFlippingEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import NormalActionNoise
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 
 

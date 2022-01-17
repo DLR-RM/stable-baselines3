@@ -28,7 +28,7 @@ class HerReplayBuffer(DictReplayBuffer):
     :param buffer_size: Max number of element in the buffer
     :param observation_space: Observation space
     :param action_space: Action space
-    :param compute_reward: Function used to compute new rewards
+    :param env: The training environment
     :param device: PyTorch device
     :param n_envs: Number of parallel environments
     :param optimize_memory_usage: Enable a memory efficient variant

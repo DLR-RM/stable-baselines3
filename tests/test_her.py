@@ -14,7 +14,7 @@ from stable_baselines3.common.envs import BitFlippingEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import NormalActionNoise
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 
 
@@ -30,7 +30,8 @@ def test_import_error():
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
 @pytest.mark.parametrize("online_sampling", [True, False])
 @pytest.mark.parametrize("image_obs_space", [True, False])
-def test_her(n_envs, model_class, online_sampling, image_obs_space):
+@pytest.mark.parametrize("vec_env_cls", [DummyVecEnv, SubprocVecEnv])
+def test_her(n_envs, model_class, online_sampling, image_obs_space, vec_env_cls):
     """
     Test Hindsight Experience Replay.
     """
@@ -46,7 +47,7 @@ def test_her(n_envs, model_class, online_sampling, image_obs_space):
             image_obs_space=image_obs_space,
         )
 
-    env = make_vec_env(env_fn, n_envs)
+    env = make_vec_env(env_fn, n_envs, vec_env_cls=vec_env_cls)
 
     model = model_class(
         "MultiInputPolicy",

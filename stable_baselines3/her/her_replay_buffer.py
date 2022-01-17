@@ -9,6 +9,7 @@ from gym import spaces
 from stable_baselines3.common.buffers import DictReplayBuffer
 from stable_baselines3.common.type_aliases import DictReplayBufferSamples
 from stable_baselines3.common.vec_env import VecNormalize
+from stable_baselines3.common.vec_env.base_vec_env import VecEnv
 from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
 
 
@@ -49,7 +50,7 @@ class HerReplayBuffer(DictReplayBuffer):
         buffer_size: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        compute_reward: Callable,
+        env: VecEnv,
         device: Union[th.device, str] = "cpu",
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
@@ -67,7 +68,7 @@ class HerReplayBuffer(DictReplayBuffer):
             optimize_memory_usage=optimize_memory_usage,
             handle_timeout_termination=handle_timeout_termination,
         )
-        self.compute_reward = compute_reward
+        self.env = env
         self.n_sampled_goal = n_sampled_goal
         # compute ratio between HER replays and regular replays in percent for online HER sampling
         self.her_ratio = 1 - (1.0 / (self.n_sampled_goal + 1))
@@ -87,6 +88,37 @@ class HerReplayBuffer(DictReplayBuffer):
         self.ep_start = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
         self._current_ep_start = np.zeros(self.n_envs, dtype=np.int64)
         self.ep_length = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
+
+    def __getstate__(self) -> Dict[str, Any]:
+        """
+        Gets state for pickling.
+        Excludes self.env, as in general Env's may not be pickleable.
+        Note: when using offline sampling, this will also save the offline replay buffer.
+        """
+        state = self.__dict__.copy()
+        # these attributes are not pickleable
+        del state["env"]
+        return state
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        """
+        Restores pickled state.
+        User must call ``set_env()`` after unpickling before using.
+        :param state:
+        """
+        self.__dict__.update(state)
+        assert "env" not in state
+        self.env = None
+
+    def set_env(self, env: VecEnv) -> None:
+        """
+        Sets the environment.
+        :param env:
+        """
+        if self.env is not None:
+            raise ValueError("Trying to set env of already initialized environment.")
+
+        self.env = env
 
     def add(
         self,
@@ -302,7 +334,8 @@ class HerReplayBuffer(DictReplayBuffer):
         for info in infos:
             info.pop("is_success", None)
         # Compute new reward
-        rewards = self.compute_reward(
+        rewards = self.env.env_method(
+            "compute_reward",
             # here we use the new desired goal
             obs["desired_goal"],
             # the new state depends on the previous state and action
@@ -313,8 +346,10 @@ class HerReplayBuffer(DictReplayBuffer):
             # therefore we have to use next_obs["achived_goal"] and not obs["achived_goal"]
             next_obs["achieved_goal"],
             infos,
-        ).astype(np.float32)
-        # Normalize if needed and remove extra dimension (we are using only one env for now)
+            # we use the method of the first environment assuming that all environments are identical.
+            indices=[0],
+        )
+        rewards = rewards[0].astype(np.float32)  # env_method returns a list containing one element
         obs = self._normalize_obs(obs)
         next_obs = self._normalize_obs(next_obs)
 

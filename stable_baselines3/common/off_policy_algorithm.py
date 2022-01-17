@@ -190,10 +190,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             args = ()
             if issubclass(self.replay_buffer_class, HerReplayBuffer):
                 assert self.env is not None, "You must pass an environment when using `HerReplayBuffer`"
-                # HerReplayBuffer needs a function to compute the new rewards. We use the ``compute_reward``
-                # method of the first environment assuming that all environments are identical.
-                compute_reward = self.env.get_attr("compute_reward", indices=[0])[0]
-                args = (compute_reward,)
+                args = (self.env,)
             self.replay_buffer = self.replay_buffer_class(
                 self.buffer_size,
                 self.observation_space,
@@ -202,7 +199,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 device=self.device,
                 n_envs=self.n_envs,
                 optimize_memory_usage=self.optimize_memory_usage,
-                **self.replay_buffer_kwargs,  # pytype:disable=wrong-keyword-args
+                **self.replay_buffer_kwargs,
             )
 
         self.policy = self.policy_class(  # pytype:disable=not-instantiable
@@ -251,8 +248,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         if isinstance(self.replay_buffer, HerReplayBuffer):
             assert self.env is not None, "You must pass an environment at load time when using `HerReplayBuffer`"
-            compute_reward = self.env.get_attr("compute_reward", indices=[0])[0]
-            self.replay_buffer.compute_reward = compute_reward
+            self.replay_buffer.set_env(self.get_env())
             if truncate_last_traj:
                 self.replay_buffer.truncate_last_trajectory()
 

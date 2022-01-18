@@ -48,6 +48,7 @@ Main Features
    guide/custom_policy
    guide/callbacks
    guide/tensorboard
+   guide/integrations
    guide/rl_zoo
    guide/sb3_contrib
    guide/imitation

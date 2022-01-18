@@ -23,6 +23,11 @@ New Features:
 - Added ``skip`` option to ``VecTransposeImage`` to skip transforming the channel order when the heuristic is wrong
 - Added ``copy()`` and ``combine()`` methods to ``RunningMeanStd``
 
+SB3-Contrib
+^^^^^^^^^^^
+- Added Trust Region Policy Optimization (TRPO) (@cyprienc)
+- Added Augmented Random Search (ARS) (@sgillen)
+
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed a bug where ``set_env()`` with ``VecNormalize`` would result in an error with off-policy algorithms (thanks @cleversonahum)

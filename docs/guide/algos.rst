@@ -8,6 +8,7 @@ along with some useful characteristics: support for discrete/continuous actions,
 ===================  =========== ============ ================= =============== ================
 Name                 ``Box``     ``Discrete`` ``MultiDiscrete`` ``MultiBinary`` Multi Processing
 ===================  =========== ============ ================= =============== ================
+ARS [#f1]_           ✔️           ✔️            ❌                 ❌              ✔️
 A2C                  ✔️           ✔️            ✔️                 ✔️               ✔️
 DDPG                 ✔️           ❌            ❌                ❌               ✔️
 DQN                  ❌           ✔️            ❌                ❌               ✔️

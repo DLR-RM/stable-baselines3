@@ -4,8 +4,10 @@ Changelog
 ==========
 
 
-Release 1.3.1a9 (WIP)
+Release 1.4.0 (2022-01-18)
 ---------------------------
+
+*TRPO, ARS and multi env training for off-policy algorithms*
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -14,6 +16,15 @@ Breaking Changes:
 - local variables ``action``, ``done`` and ``reward`` were renamed to their plural form for offpolicy algorithms (``actions``, ``dones``, ``rewards``),
   this may affect custom callbacks.
 - Removed ``episode_reward`` field from ``RolloutReturn()`` type
+
+
+.. warning::
+
+    An update to the ``HER`` algorithm is planned to support multi-env training and remove the max episode length constrain.
+    (see `PR #704 <https://github.com/DLR-RM/stable-baselines3/pull/704>`_)
+    This will be a backward incompatible change (model trained with previous version of ``HER`` won't work with the new version).
+
+
 
 New Features:
 ^^^^^^^^^^^^^
@@ -27,6 +38,7 @@ SB3-Contrib
 ^^^^^^^^^^^
 - Added Trust Region Policy Optimization (TRPO) (@cyprienc)
 - Added Augmented Random Search (ARS) (@sgillen)
+- Coming soon: PPO LSTM, see https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/pull/53
 
 Bug Fixes:
 ^^^^^^^^^^

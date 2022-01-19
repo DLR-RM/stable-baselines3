@@ -53,7 +53,7 @@ def test_vec_monitor_info_keywords(tmp_path):
     """
     monitor_file = os.path.join(str(tmp_path), f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
 
-    env = DummyVecEnv([lambda : BitFlippingEnv()])
+    env = DummyVecEnv([lambda: BitFlippingEnv()])
 
     monitor_env = VecMonitor(env, info_keywords=("is_success",), filename=monitor_file)
 

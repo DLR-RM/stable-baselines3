@@ -1,19 +1,17 @@
+import csv
 import json
 import os
 import uuid
-import csv
 
 import gym
 import pandas
 import pytest
 
-from gym.envs.registration import register
-
 from stable_baselines3 import PPO
+from stable_baselines3.common.envs.bit_flipping_env import BitFlippingEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor, get_monitor_files, load_results
 from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor, VecNormalize
-from stable_baselines3.common.envs.bit_flipping_env import BitFlippingEnv
 
 
 def test_vec_monitor(tmp_path):
@@ -55,11 +53,7 @@ def test_vec_monitor_info_keywords(tmp_path):
     """
     monitor_file = os.path.join(str(tmp_path), f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
 
-    register(
-        id="BitFlippingEnv-v1",
-        entry_point=BitFlippingEnv,
-    )
-    env = DummyVecEnv([lambda: gym.make("BitFlippingEnv-v1")])
+    env = DummyVecEnv([lambda : BitFlippingEnv()])
 
     monitor_env = VecMonitor(env, info_keywords=("is_success",), filename=monitor_file)
 

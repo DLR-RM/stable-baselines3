@@ -265,10 +265,10 @@ class HerReplayBuffer(DictReplayBuffer):
 
             for i in range(batch_inds.shape[0]):
                 self.add(
-                    {key: value[i].numpy() for key, value in data.observations.items()},
-                    {key: value[i].numpy() for key, value in data.next_observations.items()},
-                    data.actions[i].numpy(),
-                    data.rewards[i].numpy(),
+                    {key: value[i].cpu().numpy() for key, value in data.observations.items()},
+                    {key: value[i].cpu().numpy() for key, value in data.next_observations.items()},
+                    data.actions[i].cpu().numpy(),
+                    data.rewards[i].cpu().numpy(),
                     [dones[i]],
                     [infos[i]],
                     is_virtual=True,

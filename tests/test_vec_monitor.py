@@ -1,15 +1,19 @@
 import json
 import os
 import uuid
+import csv
 
 import gym
 import pandas
 import pytest
 
+from gym.envs.registration import register
+
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor, get_monitor_files, load_results
 from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor, VecNormalize
+from stable_baselines3.common.envs.bit_flipping_env import BitFlippingEnv
 
 
 def test_vec_monitor(tmp_path):
@@ -42,6 +46,41 @@ def test_vec_monitor(tmp_path):
 
         last_logline = pandas.read_csv(file_handler, index_col=None)
         assert set(last_logline.keys()) == {"l", "t", "r"}, "Incorrect keys in monitor logline"
+    os.remove(monitor_file)
+
+
+def test_vec_monitor_info_keywords(tmp_path):
+    """
+    Test loggig `info_keywords` in the `VecMonitor` wrapper
+    """
+    monitor_file = os.path.join(str(tmp_path), f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
+
+    register(
+        id="BitFlippingEnv-v1",
+        entry_point=BitFlippingEnv,
+    )
+    env = DummyVecEnv([lambda: gym.make("BitFlippingEnv-v1")])
+
+    monitor_env = VecMonitor(env, info_keywords=("is_success",), filename=monitor_file)
+
+    monitor_env.reset()
+    total_steps = 1000
+    for _ in range(total_steps):
+        _, _, dones, infos = monitor_env.step([monitor_env.action_space.sample()])
+        if dones[0]:
+            assert "is_success" in infos[0]["episode"]
+
+    monitor_env.close()
+
+    with open(monitor_file, "rt") as f:
+        reader = csv.reader(f)
+        for i, line in enumerate(reader):
+            if i == 0 or i == 1:
+                continue
+            else:
+                assert len(line) == 4, "Incorrect keys in monitor logline"
+                assert line[3] in ["False", "True"], "Incorrect value in monitor logline"
+
     os.remove(monitor_file)
 
 

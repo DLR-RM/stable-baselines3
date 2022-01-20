@@ -20,6 +20,7 @@ SB3-Contrib
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed a bug in ``VecMonitor``. The monitor did not consider the ``info_keywords`` during stepping (@ScheiklP)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -76,7 +77,6 @@ Bug Fixes:
 - Fixed a bug where the observation would be incorrectly detected as non-vectorized instead of throwing an error
 - The env checker now properly checks and warns about potential issues for continuous action spaces when the boundaries are too small or when the dtype is not float32
 - Fixed a bug in ``VecFrameStack`` with channel first image envs, where the terminal observation would be wrongly created.
-- Fixed a bug in ``VecMonitor``. The monitor did not consider the ``info_keywords`` during stepping (@ScheiklP)
 
 Deprecations:
 ^^^^^^^^^^^^^

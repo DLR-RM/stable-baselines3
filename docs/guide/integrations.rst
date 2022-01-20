@@ -112,7 +112,7 @@ First, you need to be logged in to Hugging Face to upload a model:
 
  huggingface-cli login
 
-Then, in this example, I train a PPO agent to play CartPole-v1 and push it to a new repo "ThomasSimonini/test-CartPole-v1"
+Then, in this example, we train a PPO agent to play CartPole-v1 and push it to a new repo ``sb3/demo-hf-CartPole-v1``
 
 .. code-block:: python
 
@@ -131,7 +131,7 @@ Then, in this example, I train a PPO agent to play CartPole-v1 and push it to a 
   # Push this saved model to the hf repo
   # If this repo does not exists it will be created
   ## repo_id = id of the model repository from the Hugging Face Hub (repo_id = {organization}/{repo_name})
-  ## filename: the name of the file == "name" inside model.save("CartPole-v1")
+  ## filename: the name of the file == "name" inside model.save("ppo-CartPole-v1")
   push_to_hub(
       repo_id="sb3/demo-hf-CartPole-v1",
       filename="ppo-CartPole-v1",

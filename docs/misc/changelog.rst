@@ -4,6 +4,35 @@ Changelog
 ==========
 
 
+Release 1.4.1a0 (WIP)
+---------------------------
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+
+New Features:
+^^^^^^^^^^^^^
+
+SB3-Contrib
+^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed a bug in ``VecMonitor``. The monitor did not consider the ``info_keywords`` during stepping (@ScheiklP)
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+- Added doc on Hugging Face integration (@simoninithomas)
+
+
 Release 1.4.0 (2022-01-18)
 ---------------------------
 
@@ -48,7 +77,6 @@ Bug Fixes:
 - Fixed a bug where the observation would be incorrectly detected as non-vectorized instead of throwing an error
 - The env checker now properly checks and warns about potential issues for continuous action spaces when the boundaries are too small or when the dtype is not float32
 - Fixed a bug in ``VecFrameStack`` with channel first image envs, where the terminal observation would be wrongly created.
-- Fixed a bug in ``VecMonitor``. The monitor did not consider the ``info_keywords`` during stepping (@ScheiklP) 
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -881,3 +909,4 @@ And all the contributors:
 @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
+@simoninithomas

@@ -4,6 +4,35 @@ Changelog
 ==========
 
 
+Release 1.4.1a0 (WIP)
+---------------------------
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+
+New Features:
+^^^^^^^^^^^^^
+
+SB3-Contrib
+^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed a bug in ``VecMonitor``. The monitor did not consider the ``info_keywords`` during stepping (@ScheiklP)
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+- Added doc on Hugging Face integration (@simoninithomas)
+
+
 Release 1.4.0 (2022-01-18)
 ---------------------------
 
@@ -879,4 +908,5 @@ And all the contributors:
 @ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan
 @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
-@eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove
+@eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
+@simoninithomas

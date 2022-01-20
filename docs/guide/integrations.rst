@@ -44,7 +44,7 @@ The full documentation is available here: https://docs.wandb.ai/guides/integrati
 
 
 Hugging Face 🤗
-============
+===============
 The Hugging Face Hub 🤗 is a central place where anyone can share and explore models. It allows you to host your saved models 💾.
 
 You can see the list of stable-baselines3 saved models here: https://huggingface.co/models?other=stable-baselines3
@@ -61,9 +61,9 @@ Installation
 
 
 Download a model from the Hub
--------------
+-----------------------------
 You need to copy the repo-id that contains your saved model.
-For instance ThomasSimonini/stable-baselines3-ppo-Cartpole-v1:
+For instance ``ThomasSimonini/stable-baselines3-ppo-Cartpole-v1``:
 
 .. code-block:: python
 
@@ -74,29 +74,20 @@ For instance ThomasSimonini/stable-baselines3-ppo-Cartpole-v1:
  from stable_baselines3.common.evaluation import evaluate_policy
 
  # Retrieve the model from the hub
- ## repo_id =  id of the model repository from the Hugging Face Hub (repo_id = {organization}/{repo_name})
+ ## repo_id = id of the model repository from the Hugging Face Hub (repo_id = {organization}/{repo_name})
  ## filename = name of the model zip file from the repository
  checkpoint = load_from_hub(repo_id="ThomasSimonini/stable-baselines3-ppo-CartPole-v1", filename="CartPole-v1")
  model = PPO.load(checkpoint)
 
- # Evaluate the agent
- eval_env = gym.make('CartPole-v1')
- mean_reward, std_reward = evaluate_policy(model, eval_env, n_eval_episodes=10, deterministic=True)
+ # Evaluate the agent and watch it
+ eval_env = gym.make("CartPole-v1")
+ mean_reward, std_reward = evaluate_policy(model, eval_env, render=True, n_eval_episodes=10, deterministic=True)
  print(f"mean_reward={mean_reward:.2f} +/- {std_reward}")
-
- # Watch the agent play
- obs = eval_env.reset()
- for i in range(1000):
-    action, _state = model.predict(obs)
-    obs, reward, done, info = eval_env.step(action)
-    #eval_env.render()
-    if done:
-        obs = eval_env.reset()
- eval_env.close()
 
 
 Upload a model to the Hub
--------------
+-------------------------
+
 First, you need to be logged in to Hugging Face to upload a model:
 
 - If you're using Colab/Jupyter Notebooks:
@@ -107,7 +98,7 @@ First, you need to be logged in to Hugging Face to upload a model:
  notebook_login()
 
 
-- Else:
+- Otheriwse:
 
 .. code-block:: bash
 
@@ -117,26 +108,22 @@ Then, in this example, I train a PPO agent to play CartPole-v1 and push it to a 
 
 .. code-block:: python
 
- import gym
  from huggingface_sb3 import push_to_hub
  from stable_baselines3 import PPO
 
- # Create the environment
- env = gym.make('CartPole-v1')
-
- # Define a PPO MLpPolicy architecture
- model = PPO('MlpPolicy', env, verbose=1)
+ # Define a PPO model with MLP policy network
+ model = PPO("MlpPolicy", "CartPole-v1", verbose=1)
 
  # Train it for 10000 timesteps
- model.learn(total_timesteps=10000)
+ model.learn(total_timesteps=10_000)
 
  # Save the model
- model.save("CartPole-v1")
+ model.save("ppo-CartPole-v1")
 
  # Push this saved model to the hf repo
  # If this repo does not exists it will be created
- ## repo_id =  id of the model repository from the Hugging Face Hub (repo_id = {organization}/{repo_name})
+ ## repo_id = id of the model repository from the Hugging Face Hub (repo_id = {organization}/{repo_name})
  ## filename: the name of the file == "name" inside model.save("CartPole-v1")
- push_to_hub(repo_id = "ThomasSimonini/test-CartPole-v1",
-           filename = "CartPole-v1",
-           commit_message = "Added Cartpole-v1 trained model")
+ push_to_hub(repo_id="ThomasSimonini/test-CartPole-v1",
+             filename="ppo-CartPole-v1",
+             commit_message="Added Cartpole-v1 model trained with PPO")

@@ -4,8 +4,39 @@ Changelog
 ==========
 
 
-Release 1.3.1a8 (WIP)
+Release 1.4.1a0 (WIP)
 ---------------------------
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+
+New Features:
+^^^^^^^^^^^^^
+
+SB3-Contrib
+^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed a bug in ``VecMonitor``. The monitor did not consider the ``info_keywords`` during stepping (@ScheiklP)
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+- Added doc on Hugging Face integration (@simoninithomas)
+
+
+Release 1.4.0 (2022-01-18)
+---------------------------
+
+*TRPO, ARS and multi env training for off-policy algorithms*
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -15,12 +46,28 @@ Breaking Changes:
   this may affect custom callbacks.
 - Removed ``episode_reward`` field from ``RolloutReturn()`` type
 
+
+.. warning::
+
+    An update to the ``HER`` algorithm is planned to support multi-env training and remove the max episode length constrain.
+    (see `PR #704 <https://github.com/DLR-RM/stable-baselines3/pull/704>`_)
+    This will be a backward incompatible change (model trained with previous version of ``HER`` won't work with the new version).
+
+
+
 New Features:
 ^^^^^^^^^^^^^
 - Added ``norm_obs_keys`` param for ``VecNormalize`` wrapper to configure which observation keys to normalize (@kachayev)
 - Added experimental support to train off-policy algorithms with multiple envs (note: ``HerReplayBuffer`` currently not supported)
 - Handle timeout termination properly for on-policy algorithms (when using ``TimeLimit``)
 - Added ``skip`` option to ``VecTransposeImage`` to skip transforming the channel order when the heuristic is wrong
+- Added ``copy()`` and ``combine()`` methods to ``RunningMeanStd``
+
+SB3-Contrib
+^^^^^^^^^^^
+- Added Trust Region Policy Optimization (TRPO) (@cyprienc)
+- Added Augmented Random Search (ARS) (@sgillen)
+- Coming soon: PPO LSTM, see https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/pull/53
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -55,6 +102,8 @@ Documentation:
 - Added a note on ``load`` behavior in the examples (@Demetrio92)
 - Updated SB3 Contrib doc
 - Fixed A2C and migration guide guidance on how to set epsilon with RMSpropTFLike (@thomasgubler)
+- Fixed custom policy documentation (@IperGiove)
+- Added doc on Weights & Biases integration
 
 Release 1.3.0 (2021-10-23)
 ---------------------------
@@ -862,4 +911,5 @@ And all the contributors:
 @ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan
 @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
-@eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler
+@eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
+@simoninithomas

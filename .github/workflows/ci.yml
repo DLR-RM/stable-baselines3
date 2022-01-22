@@ -32,9 +32,6 @@ jobs:
         pip install .[extra,tests,docs]
         # Use headless version
         pip install opencv-python-headless
-        # Add Atari ROMs
-        pip install AutoROM
-        AutoROM -v
     - name: Build the doc
       run: |
         make doc

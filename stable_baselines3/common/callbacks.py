@@ -311,9 +311,6 @@ class EvalCallback(EventCallback):
 
         self.callback_on_new_best = callback_on_new_best
         if self.callback_on_new_best is not None:
-            # Wrap the callback in an EventCallback if it is needed
-            if not isinstance(self.callback_on_new_best, EventCallback):
-                self.callback_on_new_best = EventCallback(self.callback_on_new_best)
             # Give access to the parent
             self.callback_on_new_best.parent = self
 
@@ -375,9 +372,9 @@ class EvalCallback(EventCallback):
 
     def _on_step(self) -> bool:
 
-        if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
+        continue_training = True
 
-            continue_training = True
+        if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
 
             # Sync training and eval env if there is VecNormalize
             if self.model.get_vec_normalize_env() is not None:
@@ -452,13 +449,13 @@ class EvalCallback(EventCallback):
                 self.best_mean_reward = mean_reward
                 # Trigger callback on new best model, if needed
                 if self.callback_on_new_best is not None:
-                    continue_training = self.callback_on_new_best._on_event()
+                    continue_training = self.callback_on_new_best.on_step()
 
             # Trigger callback after every evaluation, if needed
             if self.callback is not None:
-                return continue_training and self._on_event()
+                continue_training = continue_training and self._on_event()
 
-        return True
+        return continue_training
 
     def update_child_locals(self, locals_: Dict[str, Any]) -> None:
         """

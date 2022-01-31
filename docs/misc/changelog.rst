@@ -29,6 +29,7 @@ Bug Fixes:
 - Fixed evaluation script for recurrent policies (experimental feature in SB3 contrib)
 - Fixed a bug where the observation would be incorrectly detected as non-vectorized instead of throwing an error
 - The env checker now properly checks and warns about potential issues for continuous action spaces when the boundaries are too small or when the dtype is not float32
+- Fixed sample normalization in ``DictReplayBuffer`` (@qgallouedec)
 
 Deprecations:
 ^^^^^^^^^^^^^

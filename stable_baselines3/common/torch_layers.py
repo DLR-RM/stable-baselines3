@@ -246,7 +246,9 @@ class CombinedExtractor(BaseFeaturesExtractor):
         256 to avoid exploding network sizes.
     """
 
-    def __init__(self, observation_space: gym.spaces.Dict, cnn_output_dim: int = 256, image_features_extractor_class=NatureCNN):
+    def __init__(
+        self, observation_space: gym.spaces.Dict, cnn_output_dim: int = 256, image_features_extractor_class=NatureCNN
+    ):
         # TODO we do not know features-dim here before going over all the items, so put something there. This is dirty!
         super(CombinedExtractor, self).__init__(observation_space, features_dim=1)
 

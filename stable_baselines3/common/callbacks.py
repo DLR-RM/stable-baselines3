@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import gym
 import numpy as np
 
+import stable_baselines3 as sb3
 from stable_baselines3.common import base_class  # pytype: disable=pyi-error
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, sync_envs_normalization
@@ -366,11 +367,7 @@ class EvalCallback(EventCallback):
                 try:
                     sync_envs_normalization(self.training_env, self.eval_env)
                 except AttributeError:
-                    raise AssertionError(
-                        "Training and eval env are not wrapped the same way, "
-                        "see https://stable-baselines3.readthedocs.io/en/master/guide/callbacks.html#evalcallback "
-                        "and warning above."
-                    )
+                    raise AssertionError("Training and eval env are not wrapped the same way, " "see https://stable-baselines3.readthedocs.io/en/master/guide/callbacks.html#evalcallback " "and warning above.")
 
             # Reset success rate buffer
             self._is_success_buffer = []
@@ -469,10 +466,7 @@ class StopTrainingOnRewardThreshold(BaseCallback):
         # Convert np.bool_ to bool, otherwise callback() is False won't work
         continue_training = bool(self.parent.best_mean_reward < self.reward_threshold)
         if self.verbose > 0 and not continue_training:
-            print(
-                f"Stopping training because the mean reward {self.parent.best_mean_reward:.2f} "
-                f" is above the threshold {self.reward_threshold}"
-            )
+            print(f"Stopping training because the mean reward {self.parent.best_mean_reward:.2f} " f" is above the threshold {self.reward_threshold}")
         return continue_training
 
 
@@ -527,14 +521,50 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
 
         if self.verbose > 0 and not continue_training:
             mean_episodes_per_env = self.n_episodes / self.training_env.num_envs
-            mean_ep_str = (
-                f"with an average of {mean_episodes_per_env:.2f} episodes per env" if self.training_env.num_envs > 1 else ""
-            )
+            mean_ep_str = f"with an average of {mean_episodes_per_env:.2f} episodes per env" if self.training_env.num_envs > 1 else ""
 
-            print(
-                f"Stopping training with a total of {self.num_timesteps} steps because the "
-                f"{self.locals.get('tb_log_name')} model reached max_episodes={self.max_episodes}, "
-                f"by playing for {self.n_episodes} episodes "
-                f"{mean_ep_str}"
-            )
+            print(f"Stopping training with a total of {self.num_timesteps} steps because the " f"{self.locals.get('tb_log_name')} model reached max_episodes={self.max_episodes}, " f"by playing for {self.n_episodes} episodes " f"{mean_ep_str}")
         return continue_training
+
+
+class EpisodeInfoLoggerCallback(BaseCallback):
+    """
+    Logs additional keys from the episode info buffer.
+
+    OnPolicyAlgorithm's collect_rollouts logs the mean
+    reward and length of finished episodes. This callback
+    tries to log the mean of all the other keys in the
+    episode info dictionaries. This can be useful to log
+    information added through a Monitor environment wrapper.
+
+    :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
+    :param exclude_keys: (List[str]) keys from episode infos to exclude. By default, excludes reward and legth (already logged by OnPolicyAlgorithm) and time
+    """
+
+    def __init__(self, verbose=0, exclude_keys: List[str] = ["r", "l", "t"]):
+        super(EpisodeInfoLoggerCallback, self).__init__(verbose)
+        self.exclude_keys = exclude_keys
+
+    def _on_step(self) -> bool:
+        return True
+
+    def _on_training_start(self) -> None:
+        assert isinstance(self.model, sb3.common.on_policy_algorithm.OnPolicyAlgorithm), f"This callback is currently only implemented for children of OnPolicyAlgorithm. Tried creation for {type(self.model)}."
+
+    def _on_rollout_end(self) -> None:
+        if len(self.model.ep_info_buffer) > 0 and len(self.model.ep_info_buffer[0]) > 0:
+
+            logging_keys = self.model.ep_info_buffer[0].keys()
+
+            for key in logging_keys:
+                if key in self.exclude_keys:
+                    continue
+                else:
+                    try:
+                        self.logger.record(f"rollout/ep_{key}_mean", sb3.common.utils.safe_mean([ep_info[key] for ep_info in self.model.ep_info_buffer]))
+                    except TypeError:
+                        if self.verbose > 0:
+                            print(f"Episode info key {key} can not be averaged by np.mean. Will not try to log the key in the future.")
+                            self.exclude_keys.append(key)
+
+            self.logger.dump()

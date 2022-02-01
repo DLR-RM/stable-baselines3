@@ -4,6 +4,7 @@ import shutil
 import gym
 import numpy as np
 import pytest
+import uuid
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3, HerReplayBuffer
 from stable_baselines3.common.callbacks import (
@@ -13,10 +14,11 @@ from stable_baselines3.common.callbacks import (
     EveryNTimesteps,
     StopTrainingOnMaxEpisodes,
     StopTrainingOnRewardThreshold,
+    EpisodeInfoLoggerCallback,
 )
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.envs import BitFlippingEnv, IdentityEnv
-from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
+from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize, VecMonitor
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN, DDPG])
@@ -198,3 +200,24 @@ def test_eval_friendly_error():
     with pytest.warns(Warning):
         with pytest.raises(AssertionError):
             model.learn(100, callback=eval_callback)
+
+
+def test_episode_info_logging(tmp_path):
+    """
+    Test loggig `info_keywords` in the `VecMonitor` wrapper with the EpisodeInfoLoggerCallback
+    """
+    monitor_file = os.path.join(str(tmp_path), f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
+
+    env = DummyVecEnv([lambda: BitFlippingEnv()])
+
+    monitor_env = VecMonitor(env, info_keywords=("is_success",), filename=monitor_file)
+
+    model = PPO("MlpPolicy", monitor_env)
+
+    total_steps = 1000
+
+    model.learn(total_steps, callback=EpisodeInfoLoggerCallback(verbose=1))
+
+    # TODO need some help on that.
+
+    os.remove(monitor_file)

@@ -246,7 +246,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
         256 to avoid exploding network sizes.
     """
 
-    def __init__(self, observation_space: gym.spaces.Dict, cnn_output_dim: int = 256):
+    def __init__(self, observation_space: gym.spaces.Dict, cnn_output_dim: int = 256, image_features_extractor_class=NatureCNN):
         # TODO we do not know features-dim here before going over all the items, so put something there. This is dirty!
         super(CombinedExtractor, self).__init__(observation_space, features_dim=1)
 
@@ -255,7 +255,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
         total_concat_size = 0
         for key, subspace in observation_space.spaces.items():
             if is_image_space(subspace):
-                extractors[key] = NatureCNN(subspace, features_dim=cnn_output_dim)
+                extractors[key] = image_features_extractor_class(subspace, features_dim=cnn_output_dim)
                 total_concat_size += cnn_output_dim
             else:
                 # The observation key is a vector, flatten it if needed

@@ -21,6 +21,7 @@ SB3-Contrib
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed a bug in ``VecMonitor``. The monitor did not consider the ``info_keywords`` during stepping (@ScheiklP)
+- Routing all the nn.Module calls through implicit rather than explict forward as per pytorch guidelines (@manuel-delverme)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -909,4 +910,4 @@ And all the contributors:
 @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
-@simoninithomas
+@simoninithomas @manuel-delverme

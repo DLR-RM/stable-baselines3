@@ -26,7 +26,7 @@ def test_state_dependent_exploration_grad():
 
     action = mu + noise
 
-    variance = th.mm(state ** 2, sigma_hat ** 2)
+    variance = th.mm(state**2, sigma_hat**2)
     action_dist = Normal(mu, th.sqrt(variance))
 
     # Sum over the action dimension because we assume they are independent
@@ -44,7 +44,7 @@ def test_state_dependent_exploration_grad():
         for i in range(state_dim):
             # Derivative of the log probability of the jth component of the action
             # w.r.t. the standard deviation sigma_j
-            d_log_policy_j = (noise[:, j] ** 2 - sigma_j ** 2) / sigma_j ** 3
+            d_log_policy_j = (noise[:, j] ** 2 - sigma_j**2) / sigma_j**3
             # Derivative of sigma_j w.r.t. sigma_hat_ij
             d_log_sigma_j = (state[:, i] ** 2 * sigma_hat[i, j]) / sigma_j
             # Chain rule, average over the minibatch

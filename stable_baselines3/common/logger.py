@@ -124,8 +124,9 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         :param filename_or_file: the file to write the log to
         :param max_length: the maximum length of keys and values to write to output.
             Outputs longer than this will be truncated. An error will be raised
-            if multiple keys are truncated to the same value. Defaults to 36, which
-            will produce output no larger than 7 + 36 * 2 = 79 characters wide.
+            if multiple keys are truncated to the same value. The maximum output
+            width will be ``2*max_length + 7``. The default of 36 produces output
+            no longer than 79 characters wide.
         """
         self.max_length = max_length
         if isinstance(filename_or_file, str):

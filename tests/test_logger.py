@@ -295,6 +295,37 @@ def test_report_figure_to_unsupported_format_raises_error(tmp_path, unsupported_
     writer.close()
 
 
+def test_key_length(tmp_path):
+    writer = make_output_format("stdout", tmp_path)
+    assert writer.max_length == 36
+    long_prefix = "a" * writer.max_length
+
+    ok_dict = {
+        # keys truncated but not aliased -- OK
+        "a" + long_prefix: 42,
+        "b" + long_prefix: 42,
+        # values truncated and aliased -- also OK
+        "foobar": long_prefix + "a",
+        "fizzbuzz": long_prefix + "b",
+    }
+    ok_excluded = {k: None for k in ok_dict}
+    writer.write(ok_dict, ok_excluded)
+
+    long_key_dict = {
+        long_prefix + "a": 42,
+        "foobar": "sdf",
+        long_prefix + "b": 42,
+    }
+    long_key_excluded = {k: None for k in long_key_dict}
+    # keys truncated and aliased -- not OK
+    with pytest.raises(ValueError, match="Key.*truncated"):
+        writer.write(long_key_dict, long_key_excluded)
+
+    # Just long enough to not be truncated now
+    writer.max_length += 1
+    writer.write(long_key_dict, long_key_excluded)
+
+
 class TimeDelayEnv(gym.Env):
     """
     Gym env for testing FPS logging.

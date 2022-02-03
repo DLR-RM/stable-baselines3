@@ -170,8 +170,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
 
             truncated_key = self._truncate(key)
             if truncated_key in key2str:
-                raise ValueError(f"Key '{key}' truncated to "
-                                 f"'{truncated_key}' that already exists.")
+                raise ValueError(f"Key '{key}' truncated to " f"'{truncated_key}' that already exists.")
             key2str[truncated_key] = self._truncate(value_str)
 
         # Find max widths
@@ -197,7 +196,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
 
     def _truncate(self, string: str) -> str:
         if len(string) > self.max_length:
-            string = string[:self.max_length - 3] + "..."
+            string = string[: self.max_length - 3] + "..."
         return string
 
     def write_sequence(self, sequence: List) -> None:

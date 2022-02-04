@@ -39,11 +39,10 @@ def test_make_vec_env(env_id, n_envs, vec_env_cls, wrapper_class):
     env.close()
 
 
-@pytest.mark.parametrize("env_id", ["ALE/Breakout-v5"])
+@pytest.mark.parametrize("env_id", ["BreakoutNoFrameskip-v4"])
 @pytest.mark.parametrize("n_envs", [1, 2])
 @pytest.mark.parametrize("wrapper_kwargs", [None, dict(clip_reward=False, screen_size=60)])
 def test_make_atari_env(env_id, n_envs, wrapper_kwargs):
-    env_id = "ALE/Breakout-v5"
     env = make_atari_env(env_id, n_envs, wrapper_kwargs=wrapper_kwargs, monitor_dir=None, seed=0)
 
     assert env.num_envs == n_envs

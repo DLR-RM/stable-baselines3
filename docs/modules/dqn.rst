@@ -99,7 +99,7 @@ Clone the `rl-zoo repo <https://github.com/DLR-RM/rl-baselines3-zoo>`_:
   cd rl-baselines3-zoo/
 
 
-Run the benchmark (replace ``$ENV_ID`` by the env id, for instance ``BreakoutNoFrameskip-v5``):
+Run the benchmark (replace ``$ENV_ID`` by the env id, for instance ``BreakoutNoFrameskip-v4``):
 
 .. code-block:: bash
 

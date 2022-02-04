@@ -222,7 +222,7 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         log_prob = super(SquashedDiagGaussianDistribution, self).log_prob(gaussian_actions)
         # Squash correction (from original SAC implementation)
         # this comes from the fact that tanh is bijective and differentiable
-        log_prob -= th.sum(th.log(1 - actions ** 2 + self.epsilon), dim=1)
+        log_prob -= th.sum(th.log(1 - actions**2 + self.epsilon), dim=1)
         return log_prob
 
     def entropy(self) -> Optional[th.Tensor]:
@@ -531,7 +531,7 @@ class StateDependentNoiseDistribution(Distribution):
         """
         # Stop gradient if we don't want to influence the features
         self._latent_sde = latent_sde if self.learn_features else latent_sde.detach()
-        variance = th.mm(self._latent_sde ** 2, self.get_std(log_std) ** 2)
+        variance = th.mm(self._latent_sde**2, self.get_std(log_std) ** 2)
         self.distribution = Normal(mean_actions, th.sqrt(variance + self.epsilon))
         return self
 

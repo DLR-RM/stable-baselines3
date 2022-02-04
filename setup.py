@@ -117,7 +117,6 @@ setup(
             "opencv-python",
             # For atari games,
             "gym[atari,accept-rom-license]>=0.21.0",
-            "autorom[accept-rom-license]~=0.4.2",
             "pillow",
             # Tensorboard support
             "tensorboard>=2.2.0",

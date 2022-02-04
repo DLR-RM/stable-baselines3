@@ -43,7 +43,7 @@ def test_squashed_gaussian(model_class):
     """
     Test run with squashed Gaussian (notably entropy computation)
     """
-    model = model_class("MlpPolicy", "Pendulum-v0", use_sde=True, n_steps=64, policy_kwargs=dict(squash_output=True))
+    model = model_class("MlpPolicy", "Pendulum-v1", use_sde=True, n_steps=64, policy_kwargs=dict(squash_output=True))
     model.learn(500)
 
     gaussian_mean = th.rand(N_SAMPLES, N_ACTIONS)
@@ -57,10 +57,10 @@ def test_squashed_gaussian(model_class):
 @pytest.fixture()
 def dummy_model_distribution_obs_and_actions() -> Tuple[A2C, np.array, np.array]:
     """
-    Fixture creating a Pendulum-v0 gym env, an A2C model and sampling 10 random observations and actions from the env
+    Fixture creating a Pendulum-v1 gym env, an A2C model and sampling 10 random observations and actions from the env
     :return: A2C model, random observations, random actions
     """
-    env = gym.make("Pendulum-v0")
+    env = gym.make("Pendulum-v1")
     model = A2C("MlpPolicy", env, seed=23)
     random_obs = np.array([env.observation_space.sample() for _ in range(10)])
     random_actions = np.array([env.action_space.sample() for _ in range(10)])

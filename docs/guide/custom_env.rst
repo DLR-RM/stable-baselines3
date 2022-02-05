@@ -3,7 +3,7 @@
 Using Custom Environments
 ==========================
 
-To use the rl baselines with custom environments, they just need to follow the *gym* interface.
+To use the RL baselines with custom environments, they just need to follow the *gym* interface.
 That is to say, your environment must implement the following methods (and inherits from OpenAI Gym Class):
 
 
@@ -73,15 +73,11 @@ To check that your environment follows the gym interface, please use:
 
 
 
-We have created a `colab notebook <https://colab.research.google.com/github/araffin/rl-tutorial-jnrr19/blob/master/5_custom_gym_env.ipynb>`_ for
-a concrete example of creating a custom environment.
+We have created a `colab notebook <https://colab.research.google.com/github/araffin/rl-tutorial-jnrr19/blob/master/5_custom_gym_env.ipynb>`_ for a concrete example on creating a custom environment along with an example of using it with Stable-Baselines3 interface.
 
-You can also find a `complete guide online <https://github.com/openai/gym/blob/master/docs/creating_environments.md>`_
-on creating a custom Gym environment.
+Alternatively, you may look at OpenAI Gym `built-in environments <https://gym.openai.com/docs/#available-environments>`_. However, the readers are cautioned as per OpenAI Gym `official wiki <https://github.com/openai/gym/wiki/FAQ>`_, its advised not to customize their built-in environments. It is better to copy and create new ones if you need to modify them.
 
-
-Optionally, you can also register the environment with gym,
-that will allow you to create the RL agent in one line (and use ``gym.make()`` to instantiate the env):
+Optionally, you can also register the environment with gym, that will allow you to create the RL agent in one line (and use ``gym.make()`` to instantiate the env):
 
 .. code-block:: python
 

@@ -43,7 +43,7 @@ def test_auto_wrap(model_class):
     if model_class is DQN:
         env_name = "CartPole-v0"
     else:
-        env_name = "Pendulum-v0"
+        env_name = "Pendulum-v1"
     env = gym.make(env_name)
     eval_env = gym.make(env_name)
     model = model_class("MlpPolicy", env)
@@ -51,7 +51,7 @@ def test_auto_wrap(model_class):
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
-@pytest.mark.parametrize("env_id", ["Pendulum-v0", "CartPole-v1"])
+@pytest.mark.parametrize("env_id", ["Pendulum-v1", "CartPole-v1"])
 @pytest.mark.parametrize("device", ["cpu", "cuda", "auto"])
 def test_predict(model_class, env_id, device):
     if device == "cuda" and not th.cuda.is_available():

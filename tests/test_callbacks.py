@@ -75,7 +75,7 @@ def test_callbacks(tmp_path, model_class):
     if model_class in [A2C, PPO]:
         max_episodes = 1
         n_envs = 2
-        # Pendulum-v0 has a timelimit of 200 timesteps
+        # Pendulum-v1 has a timelimit of 200 timesteps
         max_episode_length = 200
         envs = make_vec_env(env_name, n_envs=n_envs, seed=0)
 
@@ -99,7 +99,7 @@ def select_env(model_class) -> str:
     if model_class is DQN:
         return "CartPole-v0"
     else:
-        return "Pendulum-v0"
+        return "Pendulum-v1"
 
 
 def test_eval_callback_vec_env():

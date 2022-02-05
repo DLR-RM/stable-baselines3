@@ -24,6 +24,7 @@ Bug Fixes:
 
 Deprecations:
 ^^^^^^^^^^^^^
+- Switched minimum Gym version to 0.21.0.
 
 Others:
 ^^^^^^^
@@ -31,6 +32,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Added doc on Hugging Face integration (@simoninithomas)
+- Added furuta pendulum project to project list (@armandpl)
 
 
 Release 1.4.0 (2022-01-18)
@@ -125,6 +127,7 @@ Breaking Changes:
     - ``time/total timesteps`` to ``time/total_timesteps`` for off-policy algorithms (PPO and A2C) and the eval callback (on-policy algorithms already used the underscored version),
     - ``rollout/exploration rate`` to ``rollout/exploration_rate`` and
     - ``rollout/success rate`` to ``rollout/success_rate``.
+
 
 New Features:
 ^^^^^^^^^^^^^
@@ -909,4 +912,4 @@ And all the contributors:
 @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
-@simoninithomas
+@simoninithomas @armandpl

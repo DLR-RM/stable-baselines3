@@ -62,7 +62,7 @@ For PPO, assuming a shared feature extactor.
         action_hidden, value_hidden = self.extractor(observation)
         return self.action_net(action_hidden), self.value_net(value_hidden)
 
-  # Example: model = PPO("MlpPolicy", "Pendulum-v0")
+  # Example: model = PPO("MlpPolicy", "Pendulum-v1")
   model = PPO.load("PathToTrainedModel.zip")
   model.policy.to("cpu")
   onnxable_model = OnnxablePolicy(model.policy.mlp_extractor, model.policy.action_net, model.policy.value_net)

@@ -14,6 +14,8 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Makes the length of keys and values in `HumanOutputFormat` configurable,
+  depending on desired maximum width of output.
 
 SB3-Contrib
 ^^^^^^^^^^^
@@ -21,6 +23,9 @@ SB3-Contrib
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed a bug in ``VecMonitor``. The monitor did not consider the ``info_keywords`` during stepping (@ScheiklP)
+- Fixed a bug in ``HumanOutputFormat``. Distinct keys truncated to the same prefix would overwrite each others value,
+  resulting in only one being output. This now raises an error (this should only affect a small fraction of use cases
+  with very long keys.)
 
 Deprecations:
 ^^^^^^^^^^^^^

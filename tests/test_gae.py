@@ -103,7 +103,7 @@ class CustomPolicy(ActorCriticPolicy):
         self.constant_value = 0.0
 
     def forward(self, obs, deterministic=False):
-        actions, values, log_prob = super()(obs, deterministic)
+        actions, values, log_prob = super().forward(obs, deterministic)
         # Overwrite values with ones
         values = th.ones_like(values) * self.constant_value
         return actions, values, log_prob

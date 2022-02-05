@@ -13,7 +13,7 @@ def test_deterministic_training_common(algo):
     rewards = [[], []]
     # Smaller network
     kwargs = {"policy_kwargs": dict(net_arch=[64])}
-    env_id = "Pendulum-v0"
+    env_id = "Pendulum-v1"
     if algo in [TD3, SAC]:
         kwargs.update({"action_noise": NormalActionNoise(0.0, 0.1), "learning_starts": 100, "train_freq": 4})
     else:

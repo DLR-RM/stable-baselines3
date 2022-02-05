@@ -53,10 +53,10 @@ def test_identity_spaces(model_class, env):
 
 
 @pytest.mark.parametrize("model_class", [A2C, DDPG, DQN, PPO, SAC, TD3])
-@pytest.mark.parametrize("env", ["Pendulum-v0", "CartPole-v1"])
+@pytest.mark.parametrize("env", ["Pendulum-v1", "CartPole-v1"])
 def test_action_spaces(model_class, env):
     if model_class in [SAC, DDPG, TD3]:
-        supported_action_space = env == "Pendulum-v0"
+        supported_action_space = env == "Pendulum-v1"
     elif model_class == DQN:
         supported_action_space = env == "CartPole-v1"
     elif model_class in [A2C, PPO]:

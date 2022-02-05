@@ -16,7 +16,7 @@ from stable_baselines3.common.vec_env import (
     unwrap_vec_normalize,
 )
 
-ENV_ID = "Pendulum-v0"
+ENV_ID = "Pendulum-v1"
 
 
 class DummyRewardEnv(gym.Env):

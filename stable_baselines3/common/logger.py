@@ -114,8 +114,11 @@ class SeqWriter(object):
 
 
 class HumanOutputFormat(KVWriter, SeqWriter):
-    max_length: int
-    """Maximum length of keys and values to write to output."""
+    """A human-readable output format producing ASCII tables of key-value pairs.
+
+    Set attribute `max_length` to change the maximum length of keys and values
+    to write to output (or specify it when calling `__init__`).
+    """
 
     def __init__(self, filename_or_file: Union[str, TextIO], max_length: int = 36):
         """

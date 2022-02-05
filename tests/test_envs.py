@@ -27,7 +27,7 @@ ENV_CLASSES = [
 ]
 
 
-@pytest.mark.parametrize("env_id", ["CartPole-v0", "Pendulum-v0"])
+@pytest.mark.parametrize("env_id", ["CartPole-v0", "Pendulum-v1"])
 def test_env(env_id):
     """
     Check that environmnent integrated in Gym pass the test.
@@ -38,9 +38,9 @@ def test_env(env_id):
     with pytest.warns(None) as record:
         check_env(env)
 
-    # Pendulum-v0 will produce a warning because the action space is
+    # Pendulum-v1 will produce a warning because the action space is
     # in [-2, 2] and not [-1, 1]
-    if env_id == "Pendulum-v0":
+    if env_id == "Pendulum-v1":
         assert len(record) == 1
     else:
         # The other environments must pass without warning

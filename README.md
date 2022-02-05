@@ -87,7 +87,7 @@ Documentation is available online: [https://sb3-contrib.readthedocs.io/](https:/
 **Note:** Stable-Baselines3 supports PyTorch >= 1.8.1.
 
 ### Prerequisites
-Stable Baselines3 requires python 3.7+.
+Stable Baselines3 requires Python 3.7+.
 
 #### Windows 10
 

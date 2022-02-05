@@ -29,6 +29,7 @@ Bug Fixes:
 
 Deprecations:
 ^^^^^^^^^^^^^
+- Switched minimum Gym version to 0.21.0.
 
 Others:
 ^^^^^^^
@@ -131,6 +132,7 @@ Breaking Changes:
     - ``time/total timesteps`` to ``time/total_timesteps`` for off-policy algorithms (PPO and A2C) and the eval callback (on-policy algorithms already used the underscored version),
     - ``rollout/exploration rate`` to ``rollout/exploration_rate`` and
     - ``rollout/success rate`` to ``rollout/success_rate``.
+
 
 New Features:
 ^^^^^^^^^^^^^

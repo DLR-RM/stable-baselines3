@@ -65,7 +65,7 @@ def test_state_dependent_noise(model_class, use_expln):
     kwargs = {"learning_starts": 0} if model_class == SAC else {"n_steps": 64}
     model = model_class(
         "MlpPolicy",
-        "Pendulum-v0",
+        "Pendulum-v1",
         use_sde=True,
         seed=None,
         create_eval_env=True,

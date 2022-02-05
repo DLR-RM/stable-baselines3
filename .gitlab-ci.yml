@@ -7,8 +7,6 @@ type-check:
 pytest:
   script:
   - python --version
-  # Fix to get atari ROMs
-  - pip install atari-py==0.2.5
   # MKL_THREADING_LAYER=GNU to avoid MKL_THREADING_LAYER=INTEL incompatibility error
   - MKL_THREADING_LAYER=GNU make pytest
 

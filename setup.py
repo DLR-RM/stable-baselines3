@@ -73,7 +73,7 @@ setup(
     packages=[package for package in find_packages() if package.startswith("stable_baselines3")],
     package_data={"stable_baselines3": ["py.typed", "version.txt"]},
     install_requires=[
-        "gym>=0.17,<0.20",  # gym 0.20 breaks atari-py behavior
+        "gym>=0.21",  # Remember to also update gym version in "extra" below when this changes
         "numpy",
         "torch>=1.8.1",
         # For saving models
@@ -116,7 +116,7 @@ setup(
             # For render
             "opencv-python",
             # For atari games,
-            "atari_py==0.2.6",
+            "gym[atari,accept-rom-license]>=0.21",
             "pillow",
             # Tensorboard support
             "tensorboard>=2.2.0",

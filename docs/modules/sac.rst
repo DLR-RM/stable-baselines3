@@ -73,7 +73,7 @@ This example is only to demonstrate the use of the library and its functions, an
 
   from stable_baselines3 import SAC
 
-  env = gym.make("Pendulum-v0")
+  env = gym.make("Pendulum-v1")
 
   model = SAC("MlpPolicy", env, verbose=1)
   model.learn(total_timesteps=10000, log_interval=4)

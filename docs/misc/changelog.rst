@@ -39,7 +39,7 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Added doc on Hugging Face integration (@simoninithomas)
 - Added furuta pendulum project to project list (@armandpl)
-- Update doc fix indentation 2 spaces to 4 spaces (@Gautam-J)
+- Fix indentation 2 spaces to 4 spaces in custom env documentation example (@Gautam-J)
 
 
 Release 1.4.0 (2022-01-18)

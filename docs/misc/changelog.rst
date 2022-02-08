@@ -16,6 +16,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Makes the length of keys and values in `HumanOutputFormat` configurable,
   depending on desired maximum width of output.
+- NatureCNN is now the default image extractor rather than hardcoded. (@manuel-delverme)
 
 SB3-Contrib
 ^^^^^^^^^^^

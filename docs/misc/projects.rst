@@ -36,6 +36,17 @@ It was the starting point of Stable-Baselines3.
 | Github: https://github.com/DLR-RM/stable-baselines3/tree/sde
 | Paper: https://arxiv.org/abs/2005.05719
 
+
+Furuta Pendulum Robot
+---------------------
+
+Everything you need to build and train a rotary inverted pendulum, also know as a furuta pendulum! This makes use of gSDE listed above.   
+The Github repository contains code, CAD files and a bill of materials for you to build the robot. You can watch `a video overview of the project here <https://www.youtube.com/watch?v=Y6FVBbqjR40>`_.
+
+| Authors: Armand du Parc Locmaria, Pierre Fabre
+| Github: https://github.com/Armandpl/furuta
+
+
 Reacher
 -------
 A solution to the second project of the Udacity deep reinforcement learning course.

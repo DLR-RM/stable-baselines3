@@ -49,6 +49,11 @@ A migration guide from SB2 to SB3 can be found in the [documentation](https://st
 
 Documentation is available online: [https://stable-baselines3.readthedocs.io/](https://stable-baselines3.readthedocs.io/)
 
+## Integrations
+
+Stable-Baselines3 has some integration with other libraries/services like Weights & Biases for experiment tracking or Hugging Face for storing/sharing trained models. You can find out more in the [dedicated section](https://stable-baselines3.readthedocs.io/en/master/guide/integrations.html) of the documentation. 
+
+
 ## RL Baselines3 Zoo: A Training Framework for Stable Baselines3 Reinforcement Learning Agents
 
 [RL Baselines3 Zoo](https://github.com/DLR-RM/rl-baselines3-zoo) is a training framework for Reinforcement Learning (RL).
@@ -82,7 +87,7 @@ Documentation is available online: [https://sb3-contrib.readthedocs.io/](https:/
 **Note:** Stable-Baselines3 supports PyTorch >= 1.8.1.
 
 ### Prerequisites
-Stable Baselines3 requires python 3.7+.
+Stable Baselines3 requires Python 3.7+.
 
 #### Windows 10
 
@@ -160,6 +165,7 @@ All the following examples can be executed online using Google colab notebooks:
 
 | **Name**         | **Recurrent**      | `Box`          | `Discrete`     | `MultiDiscrete` | `MultiBinary`  | **Multi Processing**              |
 | ------------------- | ------------------ | ------------------ | ------------------ | ------------------- | ------------------ | --------------------------------- |
+| ARS<sup>[1](#f1)</sup>   | :x: | :heavy_check_mark: | :heavy_check_mark: | :x: | :x: | :heavy_check_mark: |
 | A2C   | :x: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | DDPG  | :x: | :heavy_check_mark: | :x:                | :x:                 | :x:                | :heavy_check_mark: |
 | DQN   | :x: | :x: | :heavy_check_mark: | :x:                 | :x:                | :heavy_check_mark: |

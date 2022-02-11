@@ -8,7 +8,7 @@ We implement experimental features in a separate contrib repository:
 `SB3-Contrib`_
 
 This allows Stable-Baselines3 (SB3) to maintain a stable and compact core, while still
-providing the latest features, like Truncated Quantile Critics (TQC), Trust Region Policy Optimization (TRPO) or
+providing the latest features, like Truncated Quantile Critics (TQC), Augmented Random Search (ARS), Trust Region Policy Optimization (TRPO) or
 Quantile Regression DQN (QR-DQN).
 
 Why create this repository?
@@ -36,6 +36,7 @@ See documentation for the full list of included features.
 
 **RL Algorithms**:
 
+- `Augmented Random Search (ARS) <https://arxiv.org/abs/1803.07055>`_
 - `Quantile Regression DQN (QR-DQN)`_
 - `Truncated Quantile Critics (TQC)`_
 - `Trust Region Policy Optimization (TRPO) <https://arxiv.org/abs/1502.05477>`_

@@ -27,6 +27,7 @@ Bug Fixes:
   resulting in only one being output. This now raises an error (this should only affect a small fraction of use cases
   with very long keys.)
 - Routing all the nn.Module calls through implicit rather than explict forward as per pytorch guidelines (@manuel-delverme)
+- Fixed a bug in ``VecNormalize`` where error occurs when ``norm_obs`` is set to True for environment with DictObs
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -919,4 +920,4 @@ And all the contributors:
 @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
-@simoninithomas @armandpl @manuel-delverme @Gautam-J
+@simoninithomas @armandpl @manuel-delverme @Gautam-J @buoyancy99

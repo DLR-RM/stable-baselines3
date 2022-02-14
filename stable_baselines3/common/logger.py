@@ -222,7 +222,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
 
 
 def filter_excluded_keys(
-    key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], _format: str
+        key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], _format: str
 ) -> Dict[str, Any]:
     """
     Filters the keys specified by ``key_exclude`` for the specified format
@@ -381,7 +381,7 @@ class TensorBoardOutputFormat(KVWriter):
                 self.writer.add_image(key, value.image, step, dataformats=value.dataformats)
 
             else:
-                warnings.warn(f"TensorBoard does not know how to log value of type {type(value)}, ignoring it")
+                warnings.warn(f"TensorBoard does not know how to log key {key} of type {type(value)}, ignoring it.")
 
         # Flush the output to the file
         self.writer.flush()

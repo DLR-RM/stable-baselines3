@@ -368,17 +368,20 @@ class TensorBoardOutputFormat(KVWriter):
                 else:
                     self.writer.add_scalar(key, value, step)
 
-            if isinstance(value, th.Tensor):
+            elif isinstance(value, th.Tensor):
                 self.writer.add_histogram(key, value, step)
 
-            if isinstance(value, Video):
+            elif isinstance(value, Video):
                 self.writer.add_video(key, value.frames, step, value.fps)
 
-            if isinstance(value, Figure):
+            elif isinstance(value, Figure):
                 self.writer.add_figure(key, value.figure, step, close=value.close)
 
-            if isinstance(value, Image):
+            elif isinstance(value, Image):
                 self.writer.add_image(key, value.image, step, dataformats=value.dataformats)
+
+            else:
+                warnings.warn(f"TensorBoard does not know how to log value of type {type(value)}, ignoring it")
 
         # Flush the output to the file
         self.writer.flush()

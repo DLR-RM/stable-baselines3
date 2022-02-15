@@ -40,6 +40,7 @@ Documentation:
 - Added doc on Hugging Face integration (@simoninithomas)
 - Added furuta pendulum project to project list (@armandpl)
 - Fix indentation 2 spaces to 4 spaces in custom env documentation example (@Gautam-J)
+- Update MlpExtractor docstring (@gianlucadecola)
 
 
 Release 1.4.0 (2022-01-18)
@@ -919,4 +920,4 @@ And all the contributors:
 @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
-@simoninithomas @armandpl @manuel-delverme @Gautam-J
+@simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola

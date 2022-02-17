@@ -8,7 +8,7 @@ from torch.nn import functional as F
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
-from stable_baselines3.common.surgeon import RewardModifier
+from stable_baselines3.common.surgeon import ActorLossModifier, RewardModifier
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import polyak_update
 from stable_baselines3.td3.policies import TD3Policy
@@ -54,6 +54,7 @@ class TD3(OffPolicyAlgorithm):
     :param create_eval_env: Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: additional arguments to be passed to the policy on creation
+    :param actor_loss_modifier: an object than can modify actor loss, just before being backwarded
     :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
     :param seed: Seed for the pseudo random generators
     :param device: Device (cpu, cuda, ...) on which the code should be run.
@@ -83,6 +84,7 @@ class TD3(OffPolicyAlgorithm):
         tensorboard_log: Optional[str] = None,
         create_eval_env: bool = False,
         policy_kwargs: Optional[Dict[str, Any]] = None,
+        actor_loss_modifier: Optional[ActorLossModifier] = None,
         verbose: int = 0,
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
@@ -119,6 +121,7 @@ class TD3(OffPolicyAlgorithm):
         self.policy_delay = policy_delay
         self.target_noise_clip = target_noise_clip
         self.target_policy_noise = target_policy_noise
+        self.actor_loss_modifier = actor_loss_modifier
 
         if _init_setup_model:
             self._setup_model()
@@ -177,6 +180,8 @@ class TD3(OffPolicyAlgorithm):
             if self._n_updates % self.policy_delay == 0:
                 # Compute actor loss
                 actor_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
+                if self.actor_loss_modifier is not None:
+                    actor_loss = self.actor_loss_modifier.modify_loss(actor_loss, replay_data)
                 actor_losses.append(actor_loss.item())
 
                 # Optimize the actor

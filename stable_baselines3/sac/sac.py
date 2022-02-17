@@ -142,6 +142,7 @@ class SAC(OffPolicyAlgorithm):
         self.ent_coef = ent_coef
         self.target_update_interval = target_update_interval
         self.ent_coef_optimizer = None
+        self.actor_loss_modifier = actor_loss_modifier
 
         if _init_setup_model:
             self._setup_model()
@@ -260,6 +261,8 @@ class SAC(OffPolicyAlgorithm):
             q_values_pi = th.cat(self.critic.forward(replay_data.observations, actions_pi), dim=1)
             min_qf_pi, _ = th.min(q_values_pi, dim=1, keepdim=True)
             actor_loss = (ent_coef * log_prob - min_qf_pi).mean()
+            if self.actor_loss_modifier is not None:
+                actor_loss = self.actor_loss_modifier.modify_loss(actor_loss, replay_data)
             actor_losses.append(actor_loss.item())
 
             # Optimize the actor

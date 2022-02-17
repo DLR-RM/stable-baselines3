@@ -31,5 +31,9 @@ class Surgeon(ABC):
     def parameters(self) -> Iterator[Parameter]:
         return []
 
-    def setup(self, logger):
-        self.logger = logger
+    def setup(self, model):
+        self.logger = model.logger
+        self.model = model
+
+    def on_step(self):
+        return

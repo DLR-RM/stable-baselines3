@@ -176,8 +176,8 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
     assert isinstance(done, bool), "The `done` signal must be a boolean"
     assert isinstance(info, dict), "The `info` returned by `step()` must be a python dictionary"
 
-    if isinstance(env, gym.GoalEnv):
-        # For a GoalEnv, the keys are checked at reset
+    # Goal conditioned env
+    if hasattr(env, "compute_reward"):
         assert reward == env.compute_reward(obs["achieved_goal"], obs["desired_goal"], info)
 
 

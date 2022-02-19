@@ -2,13 +2,13 @@ from collections import OrderedDict
 from typing import Any, Dict, Optional, Union
 
 import numpy as np
-from gym import GoalEnv, spaces
+from gym import Env, spaces
 from gym.envs.registration import EnvSpec
 
 from stable_baselines3.common.type_aliases import GymStepReturn
 
 
-class BitFlippingEnv(GoalEnv):
+class BitFlippingEnv(Env):
     """
     Simple bit flipping env, useful to test HER.
     The goal is to flip all the bits to get a vector of ones.

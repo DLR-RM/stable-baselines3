@@ -580,7 +580,7 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     with open_path(pathtype(f"{tmp_path}/t1"), "w") as fp1:
         save_to_pkl(fp1, "foo")
     assert fp1.closed
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(pathtype(f"{tmp_path}/t1")) == "foo"
     assert not record
 
@@ -588,7 +588,7 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     with open_path(pathtype(f"{tmp_path}/t1.custom_ext"), "w") as fp1:
         save_to_pkl(fp1, "foo")
     assert fp1.closed
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(pathtype(f"{tmp_path}/t1.custom_ext")) == "foo"
     assert not record
 
@@ -596,7 +596,7 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     with open_path(pathtype(f"{tmp_path}/t1"), "w", suffix="pkl") as fp1:
         save_to_pkl(fp1, "foo")
     assert fp1.closed
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(pathtype(f"{tmp_path}/t1.pkl")) == "foo"
     assert not record
 
@@ -604,11 +604,11 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     with open_path(pathtype(f"{tmp_path}/t2.pkl"), "w") as fp1:
         save_to_pkl(fp1, "foo")
     assert fp1.closed
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl")) == "foo"
     assert len(record) == 0
 
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl", verbose=2)) == "foo"
     assert len(record) == 1
 
@@ -616,7 +616,7 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     fp.write("rubbish")
     fp.close()
     # test that a warning is only raised when verbose = 0
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         open_path(pathtype(f"{tmp_path}/t2"), "w", suffix="pkl", verbose=0).close()
         open_path(pathtype(f"{tmp_path}/t2"), "w", suffix="pkl", verbose=1).close()
         open_path(pathtype(f"{tmp_path}/t2"), "w", suffix="pkl", verbose=2).close()

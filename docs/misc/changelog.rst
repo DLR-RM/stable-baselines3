@@ -4,17 +4,17 @@ Changelog
 ==========
 
 
-Release 1.4.1a0 (WIP)
+Release 1.4.1a1 (WIP)
 ---------------------------
 
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-
+- Switched minimum Gym version to 0.21.0.
 
 New Features:
 ^^^^^^^^^^^^^
-- Makes the length of keys and values in `HumanOutputFormat` configurable,
+- Makes the length of keys and values in ``HumanOutputFormat`` configurable,
   depending on desired maximum width of output.
 
 SB3-Contrib
@@ -30,10 +30,10 @@ Bug Fixes:
 
 Deprecations:
 ^^^^^^^^^^^^^
-- Switched minimum Gym version to 0.21.0.
 
 Others:
 ^^^^^^^
+- Fixed pytest warnings
 
 Documentation:
 ^^^^^^^^^^^^^^

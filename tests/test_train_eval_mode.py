@@ -172,7 +172,7 @@ def test_dqn_train_with_batch_norm():
 def test_td3_train_with_batch_norm():
     model = TD3(
         "MlpPolicy",
-        "Pendulum-v0",
+        "Pendulum-v1",
         policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
         learning_starts=0,
         tau=0,  # do not copy the target
@@ -219,7 +219,7 @@ def test_td3_train_with_batch_norm():
 def test_sac_train_with_batch_norm():
     model = SAC(
         "MlpPolicy",
-        "Pendulum-v0",
+        "Pendulum-v1",
         policy_kwargs=dict(net_arch=[16, 16], features_extractor_class=FlattenBatchNormDropoutExtractor),
         learning_starts=0,
         tau=0,  # do not copy the target
@@ -257,7 +257,7 @@ def test_sac_train_with_batch_norm():
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO])
-@pytest.mark.parametrize("env_id", ["Pendulum-v0", "CartPole-v1"])
+@pytest.mark.parametrize("env_id", ["Pendulum-v1", "CartPole-v1"])
 def test_a2c_ppo_train_with_batch_norm(model_class, env_id):
     model = model_class(
         "MlpPolicy",
@@ -281,7 +281,7 @@ def test_offpolicy_collect_rollout_batch_norm(model_class):
     if model_class in [DQN]:
         env_id = "CartPole-v1"
     else:
-        env_id = "Pendulum-v0"
+        env_id = "Pendulum-v1"
 
     clone_helper = CLONE_HELPERS[model_class]
 
@@ -308,7 +308,7 @@ def test_offpolicy_collect_rollout_batch_norm(model_class):
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO])
-@pytest.mark.parametrize("env_id", ["Pendulum-v0", "CartPole-v1"])
+@pytest.mark.parametrize("env_id", ["Pendulum-v1", "CartPole-v1"])
 def test_a2c_ppo_collect_rollouts_with_batch_norm(model_class, env_id):
     model = model_class(
         "MlpPolicy",
@@ -332,7 +332,7 @@ def test_a2c_ppo_collect_rollouts_with_batch_norm(model_class, env_id):
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
-@pytest.mark.parametrize("env_id", ["Pendulum-v0", "CartPole-v1"])
+@pytest.mark.parametrize("env_id", ["Pendulum-v1", "CartPole-v1"])
 def test_predict_with_dropout_batch_norm(model_class, env_id):
     if env_id == "CartPole-v1":
         if model_class in [SAC, TD3]:

@@ -67,7 +67,7 @@ This example is only to demonstrate the use of the library and its functions, an
   from stable_baselines3 import DDPG
   from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 
-  env = gym.make("Pendulum-v0")
+  env = gym.make("Pendulum-v1")
 
   # The noise objects for DDPG
   n_actions = env.action_space.shape[-1]

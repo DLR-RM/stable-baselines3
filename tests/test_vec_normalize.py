@@ -1,10 +1,10 @@
 import operator
+import warnings
 
 import gym
 import numpy as np
 import pytest
 from gym import spaces
-import warnings
 
 from stable_baselines3 import SAC, TD3, HerReplayBuffer
 from stable_baselines3.common.monitor import Monitor

@@ -4,6 +4,7 @@ import gym
 import numpy as np
 import pytest
 from gym import spaces
+import warnings
 
 from stable_baselines3 import SAC, TD3, HerReplayBuffer
 from stable_baselines3.common.monitor import Monitor
@@ -120,7 +121,7 @@ def make_dict_env():
 def test_deprecation():
     venv = DummyVecEnv([lambda: gym.make("CartPole-v1")])
     venv = VecNormalize(venv)
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         assert np.allclose(venv.ret, venv.returns)
     # Deprecation warning when using .ret
     assert len(record) == 1

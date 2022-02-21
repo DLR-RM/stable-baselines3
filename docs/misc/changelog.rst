@@ -33,6 +33,7 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Fixed pytest warnings
 
 Documentation:
 ^^^^^^^^^^^^^^

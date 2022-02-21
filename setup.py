@@ -115,8 +115,8 @@ setup(
         "extra": [
             # For render
             "opencv-python",
-            # For atari games,
-            "gym[atari,accept-rom-license]>=0.21",
+            # For atari games and classic control envs
+            "gym[atari,accept-rom-license,classic_control]>=0.21",
             "pillow",
             # Tensorboard support
             "tensorboard>=2.2.0",

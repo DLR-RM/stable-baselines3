@@ -36,13 +36,15 @@ def test_a2c(env_id):
 
 @pytest.mark.parametrize("env_id", ["CartPole-v1", "Pendulum-v1"])
 @pytest.mark.parametrize("clip_range_vf", [None, 0.2, -0.2])
-def test_ppo(env_id, clip_range_vf):
+@pytest.mark.parametrize("normalize_advantage", [False, True])
+def test_ppo(env_id, clip_range_vf, normalize_advantage):
     if clip_range_vf is not None and clip_range_vf < 0:
         # Should throw an error
         with pytest.raises(AssertionError):
             model = PPO(
                 "MlpPolicy",
                 env_id,
+                normalize_advantage=normalize_advantage,
                 seed=0,
                 policy_kwargs=dict(net_arch=[16]),
                 verbose=1,
@@ -53,6 +55,7 @@ def test_ppo(env_id, clip_range_vf):
         model = PPO(
             "MlpPolicy",
             env_id,
+            normalize_advantage=normalize_advantage,
             n_steps=512,
             seed=0,
             policy_kwargs=dict(net_arch=[16]),

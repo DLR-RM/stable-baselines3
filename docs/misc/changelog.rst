@@ -4,17 +4,17 @@ Changelog
 ==========
 
 
-Release 1.4.1a0 (WIP)
+Release 1.4.1a1 (WIP)
 ---------------------------
 
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-
+- Switched minimum Gym version to 0.21.0.
 
 New Features:
 ^^^^^^^^^^^^^
-- Makes the length of keys and values in `HumanOutputFormat` configurable,
+- Makes the length of keys and values in ``HumanOutputFormat`` configurable,
   depending on desired maximum width of output.
 - Allow PPO to turn of advantage normalization (see `PR #763 <https://github.com/DLR-RM/stable-baselines3/pull/763>`_) @vwxyzjn
 
@@ -31,10 +31,10 @@ Bug Fixes:
 
 Deprecations:
 ^^^^^^^^^^^^^
-- Switched minimum Gym version to 0.21.0.
 
 Others:
 ^^^^^^^
+- Fixed pytest warnings
 
 Documentation:
 ^^^^^^^^^^^^^^

@@ -16,6 +16,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Makes the length of keys and values in ``HumanOutputFormat`` configurable,
   depending on desired maximum width of output.
+- Allow PPO to turn of advantage normalization (see `PR #763 <https://github.com/DLR-RM/stable-baselines3/pull/763>`_) @vwxyzjn
 
 SB3-Contrib
 ^^^^^^^^^^^

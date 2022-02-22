@@ -135,8 +135,10 @@ def create_mlp(
 
 class MlpExtractor(nn.Module):
     """
-    Constructs an MLP that receives observations as an input and outputs a latent representation for the policy and
-    a value network. The ``net_arch`` parameter allows to specify the amount and size of the hidden layers and how many
+    Constructs an MLP that receives the output from a previous feature extractor (i.e. a CNN) or directly
+    the observations (if no feature extractor is applied) as an input and outputs a latent representation
+    for the policy and a value network.
+    The ``net_arch`` parameter allows to specify the amount and size of the hidden layers and how many
     of them are shared between the policy network and the value network. It is assumed to be a list with the following
     structure:
 

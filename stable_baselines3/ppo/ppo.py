@@ -122,9 +122,10 @@ class PPO(OnPolicyAlgorithm):
 
         # Sanity check, otherwise it will lead to noisy gradient and NaN
         # because of the advantage normalization
-        assert (
-            batch_size > 1
-        ), "`batch_size` must be greater than 1. See https://github.com/DLR-RM/stable-baselines3/issues/440"
+        if normalize_advantage:
+            assert (
+                batch_size > 1
+            ), "`batch_size` must be greater than 1. See https://github.com/DLR-RM/stable-baselines3/issues/440"
 
         if self.env is not None:
             # Check that `n_steps * n_envs > 1` to avoid NaN

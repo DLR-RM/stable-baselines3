@@ -34,6 +34,13 @@ def test_a2c(env_id):
     model.learn(total_timesteps=1000, eval_freq=500)
 
 
+@pytest.mark.parametrize("model_class", [A2C, PPO])
+@pytest.mark.parametrize("normalize_advantage", [False, True])
+def test_advantage_normalization(model_class, normalize_advantage):
+    model = model_class("MlpPolicy", "CartPole-v1", n_steps=64, normalize_advantage=normalize_advantage)
+    model.learn(64)
+
+
 @pytest.mark.parametrize("env_id", ["CartPole-v1", "Pendulum-v1"])
 @pytest.mark.parametrize("clip_range_vf", [None, 0.2, -0.2])
 def test_ppo(env_id, clip_range_vf):

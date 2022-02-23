@@ -4,18 +4,19 @@ Changelog
 ==========
 
 
-Release 1.4.1a0 (WIP)
+Release 1.4.1a1 (WIP)
 ---------------------------
 
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-
+- Switched minimum Gym version to 0.21.0.
 
 New Features:
 ^^^^^^^^^^^^^
-- Makes the length of keys and values in `HumanOutputFormat` configurable,
+- Makes the length of keys and values in ``HumanOutputFormat`` configurable,
   depending on desired maximum width of output.
+- Allow PPO to turn of advantage normalization (see `PR #763 <https://github.com/DLR-RM/stable-baselines3/pull/763>`_) @vwxyzjn
 
 SB3-Contrib
 ^^^^^^^^^^^
@@ -31,16 +32,17 @@ Bug Fixes:
 
 Deprecations:
 ^^^^^^^^^^^^^
-- Switched minimum Gym version to 0.21.0.
 
 Others:
 ^^^^^^^
+- Fixed pytest warnings
 
 Documentation:
 ^^^^^^^^^^^^^^
 - Added doc on Hugging Face integration (@simoninithomas)
 - Added furuta pendulum project to project list (@armandpl)
 - Fix indentation 2 spaces to 4 spaces in custom env documentation example (@Gautam-J)
+- Update MlpExtractor docstring (@gianlucadecola)
 
 
 Release 1.4.0 (2022-01-18)
@@ -920,4 +922,4 @@ And all the contributors:
 @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
-@simoninithomas @armandpl @manuel-delverme @Gautam-J @buoyancy99
+@simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99

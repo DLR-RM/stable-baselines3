@@ -48,12 +48,12 @@ class VecNormalize(VecEnvWrapper):
         if self.norm_obs:
             self._sanity_checks()
 
-        if isinstance(self.observation_space, gym.spaces.Dict):
-            self.obs_spaces = self.observation_space.spaces
-            self.obs_rms = {key: RunningMeanStd(shape=self.obs_spaces[key].shape) for key in self.norm_obs_keys}
-        else:
-            self.obs_spaces = None
-            self.obs_rms = RunningMeanStd(shape=self.observation_space.shape)
+            if isinstance(self.observation_space, gym.spaces.Dict):
+                self.obs_spaces = self.observation_space.spaces
+                self.obs_rms = {key: RunningMeanStd(shape=self.obs_spaces[key].shape) for key in self.norm_obs_keys}
+            else:
+                self.obs_spaces = None
+                self.obs_rms = RunningMeanStd(shape=self.observation_space.shape)
 
         self.ret_rms = RunningMeanStd(shape=())
         self.clip_obs = clip_obs
@@ -150,7 +150,7 @@ class VecNormalize(VecEnvWrapper):
         self.old_obs = obs
         self.old_reward = rewards
 
-        if self.training:
+        if self.training and self.norm_obs:
             if isinstance(obs, dict) and isinstance(self.obs_rms, dict):
                 for key in self.obs_rms.keys():
                     self.obs_rms[key].update(obs[key])
@@ -258,7 +258,7 @@ class VecNormalize(VecEnvWrapper):
         obs = self.venv.reset()
         self.old_obs = obs
         self.returns = np.zeros(self.num_envs)
-        if self.training:
+        if self.training and self.norm_obs:
             if isinstance(obs, dict) and isinstance(self.obs_rms, dict):
                 for key in self.obs_rms.keys():
                     self.obs_rms[key].update(obs[key])

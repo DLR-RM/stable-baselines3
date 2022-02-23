@@ -174,7 +174,7 @@ and optionally a prefix for the checkpoints (``rl_model`` by default).
     checkpoint_callback = CheckpointCallback(save_freq=1000, save_path='./logs/',
                                              name_prefix='rl_model')
 
-    model = SAC('MlpPolicy', 'Pendulum-v0')
+    model = SAC('MlpPolicy', 'Pendulum-v1')
     model.learn(2000, callback=checkpoint_callback)
 
 
@@ -206,13 +206,13 @@ It will save the best model if ``best_model_save_path`` folder is specified and 
     from stable_baselines3.common.callbacks import EvalCallback
 
     # Separate evaluation env
-    eval_env = gym.make('Pendulum-v0')
+    eval_env = gym.make('Pendulum-v1')
     # Use deterministic actions for evaluation
     eval_callback = EvalCallback(eval_env, best_model_save_path='./logs/',
                                  log_path='./logs/', eval_freq=500,
                                  deterministic=True, render=False)
 
-    model = SAC('MlpPolicy', 'Pendulum-v0')
+    model = SAC('MlpPolicy', 'Pendulum-v1')
     model.learn(5000, callback=eval_callback)
 
 
@@ -234,13 +234,13 @@ Alternatively, you can pass directly a list of callbacks to the ``learn()`` meth
 
     checkpoint_callback = CheckpointCallback(save_freq=1000, save_path='./logs/')
     # Separate evaluation env
-    eval_env = gym.make('Pendulum-v0')
+    eval_env = gym.make('Pendulum-v1')
     eval_callback = EvalCallback(eval_env, best_model_save_path='./logs/best_model',
                                  log_path='./logs/results', eval_freq=500)
     # Create the callback list
     callback = CallbackList([checkpoint_callback, eval_callback])
 
-    model = SAC('MlpPolicy', 'Pendulum-v0')
+    model = SAC('MlpPolicy', 'Pendulum-v1')
     # Equivalent to:
     # model.learn(5000, callback=[checkpoint_callback, eval_callback])
     model.learn(5000, callback=callback)
@@ -263,12 +263,12 @@ It must be used with the :ref:`EvalCallback` and use the event triggered by a ne
     from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
 
     # Separate evaluation env
-    eval_env = gym.make('Pendulum-v0')
+    eval_env = gym.make('Pendulum-v1')
     # Stop training when the model reaches the reward threshold
     callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=-200, verbose=1)
     eval_callback = EvalCallback(eval_env, callback_on_new_best=callback_on_best, verbose=1)
 
-    model = SAC('MlpPolicy', 'Pendulum-v0', verbose=1)
+    model = SAC('MlpPolicy', 'Pendulum-v1', verbose=1)
     # Almost infinite number of timesteps, but the training will stop
     # early as soon as the reward threshold is reached
     model.learn(int(1e10), callback=eval_callback)
@@ -299,7 +299,7 @@ An :ref:`EventCallback` that will trigger its child callback every ``n_steps`` t
   checkpoint_on_event = CheckpointCallback(save_freq=1, save_path='./logs/')
   event_callback = EveryNTimesteps(n_steps=500, callback=checkpoint_on_event)
 
-  model = PPO('MlpPolicy', 'Pendulum-v0', verbose=1)
+  model = PPO('MlpPolicy', 'Pendulum-v1', verbose=1)
 
   model.learn(int(2e4), callback=event_callback)
 
@@ -328,7 +328,7 @@ and in total for ``max_episodes * n_envs`` episodes.
     # Stops training when the model reaches the maximum number of episodes
     callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=5, verbose=1)
 
-    model = A2C('MlpPolicy', 'Pendulum-v0', verbose=1)
+    model = A2C('MlpPolicy', 'Pendulum-v1', verbose=1)
     # Almost infinite number of timesteps, but the training will stop
     # early as soon as the max number of episodes is reached
     model.learn(int(1e10), callback=callback_max_episodes)

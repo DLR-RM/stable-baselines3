@@ -80,7 +80,7 @@ class Actor(BasePolicy):
     def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         # Note: the deterministic deterministic parameter is ignored in the case of TD3.
         #   Predictions are always deterministic.
-        return self.forward(observation)
+        return self(observation)
 
 
 class TD3Policy(BasePolicy):

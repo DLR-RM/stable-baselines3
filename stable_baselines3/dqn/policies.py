@@ -66,7 +66,7 @@ class QNetwork(BasePolicy):
         return self.q_net(self.extract_features(obs))
 
     def _predict(self, observation: th.Tensor, deterministic: bool = True) -> th.Tensor:
-        q_values = self.forward(observation)
+        q_values = self(observation)
         # Greedy action
         action = q_values.argmax(dim=1).reshape(-1)
         return action

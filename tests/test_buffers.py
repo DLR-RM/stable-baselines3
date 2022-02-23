@@ -67,10 +67,7 @@ class DummyDictEnv(gym.Env):
 
 @pytest.mark.parametrize("replay_buffer_cls", [ReplayBuffer, DictReplayBuffer])
 def test_replay_buffer_normalization(replay_buffer_cls):
-    if replay_buffer_cls is ReplayBuffer:
-        env = DummyEnv
-    elif replay_buffer_cls is DictReplayBuffer:
-        env = DummyDictEnv
+    env = {ReplayBuffer: DummyEnv, DictReplayBuffer: DummyDictEnv}[replay_buffer_cls]
     env = make_vec_env(env)
     env = VecNormalize(env)
 

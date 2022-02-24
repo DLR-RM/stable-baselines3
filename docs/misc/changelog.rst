@@ -29,6 +29,9 @@ Bug Fixes:
   with very long keys.)
 - Routing all the ``nn.Module`` calls through implicit rather than explict forward as per pytorch guidelines (@manuel-delverme)
 - Fixed a bug in ``VecNormalize`` where error occurs when ``norm_obs`` is set to False for environment with dictionary observation  (@buoyancy99)
+- Set default ``env`` argument to ``None`` in ``HerReplayBuffer.sample`` (@qgallouedec)
+- Fix ``batch_size`` typing in ``DQN`` (@qgallouedec)
+- Fixed sample normalization in ``DictReplayBuffer`` (@qgallouedec)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -88,7 +91,6 @@ Bug Fixes:
 - Fixed evaluation script for recurrent policies (experimental feature in SB3 contrib)
 - Fixed a bug where the observation would be incorrectly detected as non-vectorized instead of throwing an error
 - The env checker now properly checks and warns about potential issues for continuous action spaces when the boundaries are too small or when the dtype is not float32
-- Fixed sample normalization in ``DictReplayBuffer`` (@qgallouedec)
 - Fixed a bug in ``VecFrameStack`` with channel first image envs, where the terminal observation would be wrongly created.
 
 Deprecations:

@@ -3,7 +3,7 @@ import pytest
 from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.noise import NormalActionNoise
 
-N_STEPS_TRAINING = 3000
+N_STEPS_TRAINING = 500
 SEED = 0
 
 
@@ -13,13 +13,15 @@ def test_deterministic_training_common(algo):
     rewards = [[], []]
     # Smaller network
     kwargs = {"policy_kwargs": dict(net_arch=[64])}
+    env_id = "Pendulum-v1"
     if algo in [TD3, SAC]:
-        env_id = "Pendulum-v0"
-        kwargs.update({"action_noise": NormalActionNoise(0.0, 0.1), "learning_starts": 100})
+        kwargs.update({"action_noise": NormalActionNoise(0.0, 0.1), "learning_starts": 100, "train_freq": 4})
     else:
-        env_id = "CartPole-v1"
         if algo == DQN:
-            kwargs.update({"learning_starts": 100})
+            env_id = "CartPole-v1"
+            kwargs.update({"learning_starts": 100, "target_update_interval": 100})
+        elif algo == PPO:
+            kwargs.update({"n_steps": 64, "n_epochs": 4})
 
     for i in range(2):
         model = algo("MlpPolicy", env_id, seed=SEED, **kwargs)

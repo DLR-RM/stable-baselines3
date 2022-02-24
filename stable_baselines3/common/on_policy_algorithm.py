@@ -112,7 +112,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             self.n_steps,
             self.observation_space,
             self.action_space,
-            self.device,
+            device=self.device,
             gamma=self.gamma,
             gae_lambda=self.gae_lambda,
             n_envs=self.n_envs,
@@ -166,7 +166,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             with th.no_grad():
                 # Convert to pytorch tensor or to TensorDict
                 obs_tensor = obs_as_tensor(self._last_obs, self.device)
-                actions, values, log_probs = self.policy.forward(obs_tensor)
+                actions, values, log_probs = self.policy(obs_tensor)
             actions = actions.cpu().numpy()
 
             # Rescale and perform action

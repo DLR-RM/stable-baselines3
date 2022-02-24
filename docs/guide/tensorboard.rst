@@ -61,7 +61,7 @@ Here is a simple example on how to log both additional tensor or arbitrary scala
     from stable_baselines3 import SAC
     from stable_baselines3.common.callbacks import BaseCallback
 
-    model = SAC("MlpPolicy", "Pendulum-v0", tensorboard_log="/tmp/sac/", verbose=1)
+    model = SAC("MlpPolicy", "Pendulum-v1", tensorboard_log="/tmp/sac/", verbose=1)
 
 
     class TensorboardCallback(BaseCallback):
@@ -104,7 +104,7 @@ Here is an example of how to render an image to TensorBoard at regular intervals
     from stable_baselines3.common.callbacks import BaseCallback
     from stable_baselines3.common.logger import Image
 
-    model = SAC("MlpPolicy", "Pendulum-v0", tensorboard_log="/tmp/sac/", verbose=1)
+    model = SAC("MlpPolicy", "Pendulum-v1", tensorboard_log="/tmp/sac/", verbose=1)
 
 
     class ImageRecorderCallback(BaseCallback):
@@ -141,7 +141,7 @@ Here is an example of how to store a plot in TensorBoard at regular intervals:
     from stable_baselines3.common.callbacks import BaseCallback
     from stable_baselines3.common.logger import Figure
 
-    model = SAC("MlpPolicy", "Pendulum-v0", tensorboard_log="/tmp/sac/", verbose=1)
+    model = SAC("MlpPolicy", "Pendulum-v1", tensorboard_log="/tmp/sac/", verbose=1)
 
 
     class FigureRecorderCallback(BaseCallback):
@@ -251,7 +251,7 @@ can get direct access to the underlying SummaryWriter in a callback:
 
 
 
-    model = SAC("MlpPolicy", "Pendulum-v0", tensorboard_log="/tmp/sac/", verbose=1)
+    model = SAC("MlpPolicy", "Pendulum-v1", tensorboard_log="/tmp/sac/", verbose=1)
 
 
     class SummaryWriterCallback(BaseCallback):

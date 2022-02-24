@@ -46,9 +46,9 @@ class BitFlippingEnv(GoalEnv):
             # representation of the observation
             self.observation_space = spaces.Dict(
                 {
-                    "observation": spaces.Discrete(2 ** n_bits),
-                    "achieved_goal": spaces.Discrete(2 ** n_bits),
-                    "desired_goal": spaces.Discrete(2 ** n_bits),
+                    "observation": spaces.Discrete(2**n_bits),
+                    "achieved_goal": spaces.Discrete(2**n_bits),
+                    "desired_goal": spaces.Discrete(2**n_bits),
                 }
             )
         elif image_obs_space:
@@ -115,7 +115,7 @@ class BitFlippingEnv(GoalEnv):
         if self.discrete_obs_space:
             # The internal state is the binary representation of the
             # observed one
-            return int(sum([state[i] * 2 ** i for i in range(len(state))]))
+            return int(sum([state[i] * 2**i for i in range(len(state))]))
 
         if self.image_obs_space:
             size = np.prod(self.image_shape)

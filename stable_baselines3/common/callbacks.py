@@ -569,7 +569,7 @@ class StopTrainingOnNoModelImprovement(BaseCallback):
 
     :param max_no_improvement_evals: Maximum number of consecutive evaluations without a new best model.
     :param min_evals: Number of evaluations before start to count evaluations without improvements.
-    :param verbose:
+    :param verbose: Verbosity of the output (set to 1 for info messages)
     """
 
     def __init__(self, max_no_improvement_evals: int, min_evals: int = 0, verbose: int = 0):
@@ -580,9 +580,7 @@ class StopTrainingOnNoModelImprovement(BaseCallback):
         self.no_improvement_evals = 0
 
     def _on_step(self) -> bool:
-        assert self.parent is not None, (
-            "``StopTrainingOnNoModelImprovement`` callback must be used " "with an ``EvalCallback``"
-        )
+        assert self.parent is not None, "``StopTrainingOnNoModelImprovement`` callback must be used with an ``EvalCallback``"
 
         continue_training = True
 

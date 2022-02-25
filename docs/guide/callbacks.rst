@@ -339,7 +339,7 @@ StopTrainingOnNoModelImprovement
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Stop the training if there is no new best model (no new best mean reward) after more than a specific number of consecutive evaluations.
-The idea is to save time in experiments when you know that the learning curves are somehow well behaved and, therefore, 
+The idea is to save time in experiments when you know that the learning curves are somehow well behaved and, therefore,
 after many evaluations without improvement the learning has probably stabilized.
 It must be used with the :ref:`EvalCallback` and use the event triggered after every evaluation.
 
@@ -352,13 +352,13 @@ It must be used with the :ref:`EvalCallback` and use the event triggered after e
     from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnNoModelImprovement
 
     # Separate evaluation env
-    eval_env = gym.make('Pendulum-v0')
+    eval_env = gym.make("Pendulum-v1")
     # Stop training if there is no improvement after more than 3 evaluations
     stop_train_callback = StopTrainingOnNoModelImprovement(max_no_improvement_evals=3, min_evals=5, verbose=1)
-    eval_callback = EvalCallback(eval_env, callback_after_eval=stop_train_callback, verbose=1)
+    eval_callback = EvalCallback(eval_env, eval_freq=1000, callback_after_eval=stop_train_callback, verbose=1)
 
-    model = SAC('MlpPolicy', 'Pendulum-v0', verbose=1)
-    # Almost infinite number of timesteps, but the training will stop early 
+    model = SAC("MlpPolicy", "Pendulum-v1", learning_rate=1e-3, verbose=1)
+    # Almost infinite number of timesteps, but the training will stop early
     # as soon as the the number of consecutive evaluations without model
     # improvement is greater than 3
     model.learn(int(1e10), callback=eval_callback)

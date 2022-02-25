@@ -12,6 +12,7 @@ from stable_baselines3.common.callbacks import (
     EvalCallback,
     EveryNTimesteps,
     StopTrainingOnMaxEpisodes,
+    StopTrainingOnNoModelImprovement,
     StopTrainingOnRewardThreshold,
 )
 from stable_baselines3.common.env_util import make_vec_env
@@ -35,9 +36,13 @@ def test_callbacks(tmp_path, model_class):
     # Stop training if the performance is good enough
     callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=-1200, verbose=1)
 
+    # Stop training if there is no model improvement after 2 evaluations
+    callback_no_model_improvement = StopTrainingOnNoModelImprovement(max_no_improvement_evals=2, min_evals=1, verbose=1)
+
     eval_callback = EvalCallback(
         eval_env,
         callback_on_new_best=callback_on_best,
+        callback_after_eval=callback_no_model_improvement,
         best_model_save_path=log_folder,
         log_path=log_folder,
         eval_freq=100,

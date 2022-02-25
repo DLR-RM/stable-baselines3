@@ -14,6 +14,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Added ``StopTrainingOnNoModelImprovement`` to callback collection (@caburu)
 - Makes the length of keys and values in ``HumanOutputFormat`` configurable,
   depending on desired maximum width of output.
 - Allow PPO to turn of advantage normalization (see `PR #763 <https://github.com/DLR-RM/stable-baselines3/pull/763>`_) @vwxyzjn
@@ -925,4 +926,4 @@ And all the contributors:
 @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
-@simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99
+@simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu

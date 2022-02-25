@@ -192,11 +192,7 @@ class HerReplayBuffer(DictReplayBuffer):
         """
         raise NotImplementedError()
 
-    def sample(
-        self,
-        batch_size: int,
-        env: Optional[VecNormalize],
-    ) -> DictReplayBufferSamples:
+    def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> DictReplayBufferSamples:
         """
         Sample function for online sampling of HER transition,
         this replaces the "regular" replay buffer ``sample()``

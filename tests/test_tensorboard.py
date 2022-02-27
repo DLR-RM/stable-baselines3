@@ -7,8 +7,8 @@ from stable_baselines3 import A2C, PPO, SAC, TD3
 MODEL_DICT = {
     "a2c": (A2C, "CartPole-v1"),
     "ppo": (PPO, "CartPole-v1"),
-    "sac": (SAC, "Pendulum-v0"),
-    "td3": (TD3, "Pendulum-v0"),
+    "sac": (SAC, "Pendulum-v1"),
+    "td3": (TD3, "Pendulum-v1"),
 }
 
 N_STEPS = 100

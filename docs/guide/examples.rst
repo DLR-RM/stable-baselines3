@@ -56,10 +56,10 @@ In the following example, we will train, save and load a DQN model on the Lunar 
   LunarLander requires the python package ``box2d``.
   You can install it using ``apt install swig`` and then ``pip install box2d box2d-kengz``
 
-.. note::
+.. warning::
   ``load`` method re-creates the model from scratch and should be called on the Algorithm without instantiating it first,
-  e.g. ``model = DQN.load("dqn_lunar", env=env)`` instead of ``model = DQN(env=env)`` followed by  ``model.load("dqn_lunar")``. The latter **will not work** as ``load`` does not work by reference.
-  If you want to load parameters without re-creating the model, e.g. to evaluate the same model 
+  e.g. ``model = DQN.load("dqn_lunar", env=env)`` instead of ``model = DQN(env=env)`` followed by  ``model.load("dqn_lunar")``. The latter **will not work** as ``load`` is not an in-place operation.
+  If you want to load parameters without re-creating the model, e.g. to evaluate the same model
   with multiple different sets of parameters, consider using ``set_parameters`` instead.
 
 .. code-block:: python
@@ -163,7 +163,7 @@ Multiprocessing with off-policy algorithms
 ------------------------------------------
 
 .. warning::
-  
+
   When using multiple environments with off-policy algorithms, you should update the ``gradient_steps``
   parameter too. Set it to ``gradient_steps=-1`` to perform as many gradient steps as transitions collected.
   There is usually a compromise between wall-clock time and sample efficiency,
@@ -321,7 +321,7 @@ Atari Games
 
 Training a RL agent on Atari games is straightforward thanks to ``make_atari_env`` helper function.
 It will do `all the preprocessing <https://danieltakeshi.github.io/2016/11/25/frame-skipping-and-preprocessing-for-deep-q-networks-on-atari-2600-games/>`_
-and multiprocessing for you.
+and multiprocessing for you. To install the Atari environments, run the command ``pip install gym[atari, accept-rom-license]`` to install the Atari environments and ROMs, or install Stable Baselines3 with ``pip install stable-baselines3[extra]`` to install this and other optional dependencies.
 
 .. image:: ../_static/img/colab-badge.svg
    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/atari_games.ipynb
@@ -564,7 +564,7 @@ Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
 
   # Create the model, the training environment
   # and the test environment (for evaluation)
-  model = SAC('MlpPolicy', 'Pendulum-v0', verbose=1,
+  model = SAC('MlpPolicy', 'Pendulum-v1', verbose=1,
               learning_rate=1e-3, create_eval_env=True)
 
   # Evaluate the model every 1000 steps on 5 test episodes

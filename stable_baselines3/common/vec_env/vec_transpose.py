@@ -14,12 +14,20 @@ class VecTransposeImage(VecEnvWrapper):
     It is required for PyTorch convolution layers.
 
     :param venv:
+    :param skip: Skip this wrapper if needed as we rely on heuristic to apply it or not,
+        which may result in unwanted behavior, see GH issue #671.
     """
 
-    def __init__(self, venv: VecEnv):
+    def __init__(self, venv: VecEnv, skip: bool = False):
         assert is_image_space(venv.observation_space) or isinstance(
             venv.observation_space, spaces.dict.Dict
         ), "The observation space must be an image or dictionary observation space"
+
+        self.skip = skip
+        # Do nothing
+        if skip:
+            super(VecTransposeImage, self).__init__(venv)
+            return
 
         if isinstance(venv.observation_space, spaces.dict.Dict):
             self.image_space_keys = []
@@ -70,6 +78,10 @@ class VecTransposeImage(VecEnvWrapper):
         :param observations:
         :return: Transposed observations
         """
+        # Do nothing
+        if self.skip:
+            return observations
+
         if isinstance(observations, dict):
             # Avoid modifying the original object in place
             observations = deepcopy(observations)

@@ -83,6 +83,8 @@ class VecMonitor(VecEnvWrapper):
                 episode_return = self.episode_returns[i]
                 episode_length = self.episode_lengths[i]
                 episode_info = {"r": episode_return, "l": episode_length, "t": round(time.time() - self.t_start, 6)}
+                for key in self.info_keywords:
+                    episode_info[key] = info[key]
                 info["episode"] = episode_info
                 self.episode_count += 1
                 self.episode_returns[i] = 0

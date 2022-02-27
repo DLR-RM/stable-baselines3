@@ -66,6 +66,15 @@ class Image(object):
 
 
 class FormatUnsupportedError(NotImplementedError):
+    """
+    Custom error to display informative message when
+    a value is not supported by some formats.
+
+    :param unsupported_formats: A sequence of unsupported formats,
+        for instance ``["stdout"]``.
+    :param value_description: Description of the value that cannot be logged by this format.
+    """
+
     def __init__(self, unsupported_formats: Sequence[str], value_description: str):
         if len(unsupported_formats) > 1:
             format_str = f"formats {', '.join(unsupported_formats)} are"
@@ -114,12 +123,21 @@ class SeqWriter(object):
 
 
 class HumanOutputFormat(KVWriter, SeqWriter):
-    def __init__(self, filename_or_file: Union[str, TextIO]):
-        """
-        log to a file, in a human readable format
+    """A human-readable output format producing ASCII tables of key-value pairs.
 
-        :param filename_or_file: the file to write the log to
-        """
+    Set attribute ``max_length`` to change the maximum length of keys and values
+    to write to output (or specify it when calling ``__init__``).
+
+    :param filename_or_file: the file to write the log to
+    :param max_length: the maximum length of keys and values to write to output.
+        Outputs longer than this will be truncated. An error will be raised
+        if multiple keys are truncated to the same value. The maximum output
+        width will be ``2*max_length + 7``. The default of 36 produces output
+        no longer than 79 characters wide.
+    """
+
+    def __init__(self, filename_or_file: Union[str, TextIO], max_length: int = 36):
+        self.max_length = max_length
         if isinstance(filename_or_file, str):
             self.file = open(filename_or_file, "wt")
             self.own_file = True
@@ -159,7 +177,12 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             if tag is not None and tag in key:
                 key = str("   " + key[len(tag) :])
 
-            key2str[self._truncate(key)] = self._truncate(value_str)
+            truncated_key = self._truncate(key)
+            if truncated_key in key2str:
+                raise ValueError(
+                    f"Key '{key}' truncated to '{truncated_key}' that already exists. Consider increasing `max_length`."
+                )
+            key2str[truncated_key] = self._truncate(value_str)
 
         # Find max widths
         if len(key2str) == 0:
@@ -182,9 +205,10 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         # Flush the output to the file
         self.file.flush()
 
-    @classmethod
-    def _truncate(cls, string: str, max_length: int = 23) -> str:
-        return string[: max_length - 3] + "..." if len(string) > max_length else string
+    def _truncate(self, string: str) -> str:
+        if len(string) > self.max_length:
+            string = string[: self.max_length - 3] + "..."
+        return string
 
     def write_sequence(self, sequence: List) -> None:
         sequence = list(sequence)

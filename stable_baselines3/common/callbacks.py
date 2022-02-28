@@ -278,6 +278,7 @@ class EvalCallback(EventCallback):
     :param eval_env: The environment used for initialization
     :param callback_on_new_best: Callback to trigger
         when there is a new best model according to the ``mean_reward``
+    :param callback_after_eval: Callback to trigger after every evaluation
     :param n_eval_episodes: The number of episodes to test the agent
     :param eval_freq: Evaluate the agent every ``eval_freq`` call of the callback.
     :param log_path: Path to a folder where the evaluations (``evaluations.npz``)
@@ -296,6 +297,7 @@ class EvalCallback(EventCallback):
         self,
         eval_env: Union[gym.Env, VecEnv],
         callback_on_new_best: Optional[BaseCallback] = None,
+        callback_after_eval: Optional[BaseCallback] = None,
         n_eval_episodes: int = 5,
         eval_freq: int = 10000,
         log_path: Optional[str] = None,
@@ -305,7 +307,13 @@ class EvalCallback(EventCallback):
         verbose: int = 1,
         warn: bool = True,
     ):
-        super(EvalCallback, self).__init__(callback_on_new_best, verbose=verbose)
+        super(EvalCallback, self).__init__(callback_after_eval, verbose=verbose)
+
+        self.callback_on_new_best = callback_on_new_best
+        if self.callback_on_new_best is not None:
+            # Give access to the parent
+            self.callback_on_new_best.parent = self
+
         self.n_eval_episodes = n_eval_episodes
         self.eval_freq = eval_freq
         self.best_mean_reward = -np.inf
@@ -342,6 +350,10 @@ class EvalCallback(EventCallback):
         if self.log_path is not None:
             os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
 
+        # Init callback called on new best model
+        if self.callback_on_new_best is not None:
+            self.callback_on_new_best.init_callback(self.model)
+
     def _log_success_callback(self, locals_: Dict[str, Any], globals_: Dict[str, Any]) -> None:
         """
         Callback passed to the  ``evaluate_policy`` function
@@ -360,7 +372,10 @@ class EvalCallback(EventCallback):
 
     def _on_step(self) -> bool:
 
+        continue_training = True
+
         if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
+
             # Sync training and eval env if there is VecNormalize
             if self.model.get_vec_normalize_env() is not None:
                 try:
@@ -432,11 +447,15 @@ class EvalCallback(EventCallback):
                 if self.best_model_save_path is not None:
                     self.model.save(os.path.join(self.best_model_save_path, "best_model"))
                 self.best_mean_reward = mean_reward
-                # Trigger callback if needed
-                if self.callback is not None:
-                    return self._on_event()
+                # Trigger callback on new best model, if needed
+                if self.callback_on_new_best is not None:
+                    continue_training = self.callback_on_new_best.on_step()
 
-        return True
+            # Trigger callback after every evaluation, if needed
+            if self.callback is not None:
+                continue_training = continue_training and self._on_event()
+
+        return continue_training
 
     def update_child_locals(self, locals_: Dict[str, Any]) -> None:
         """
@@ -537,4 +556,47 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
                 f"by playing for {self.n_episodes} episodes "
                 f"{mean_ep_str}"
             )
+        return continue_training
+
+
+class StopTrainingOnNoModelImprovement(BaseCallback):
+    """
+    Stop the training early if there is no new best model (new best mean reward) after more than N consecutive evaluations.
+
+    It is possible to define a minimum number of evaluations before start to count evaluations without improvement.
+
+    It must be used with the ``EvalCallback``.
+
+    :param max_no_improvement_evals: Maximum number of consecutive evaluations without a new best model.
+    :param min_evals: Number of evaluations before start to count evaluations without improvements.
+    :param verbose: Verbosity of the output (set to 1 for info messages)
+    """
+
+    def __init__(self, max_no_improvement_evals: int, min_evals: int = 0, verbose: int = 0):
+        super(StopTrainingOnNoModelImprovement, self).__init__(verbose=verbose)
+        self.max_no_improvement_evals = max_no_improvement_evals
+        self.min_evals = min_evals
+        self.last_best_mean_reward = -np.inf
+        self.no_improvement_evals = 0
+
+    def _on_step(self) -> bool:
+        assert self.parent is not None, "``StopTrainingOnNoModelImprovement`` callback must be used with an ``EvalCallback``"
+
+        continue_training = True
+
+        if self.n_calls > self.min_evals:
+            if self.parent.best_mean_reward > self.last_best_mean_reward:
+                self.no_improvement_evals = 0
+            else:
+                self.no_improvement_evals += 1
+                if self.no_improvement_evals > self.max_no_improvement_evals:
+                    continue_training = False
+
+        self.last_best_mean_reward = self.parent.best_mean_reward
+
+        if self.verbose > 0 and not continue_training:
+            print(
+                f"Stopping training because there was no new best model in the last {self.no_improvement_evals:d} evaluations"
+            )
+
         return continue_training

@@ -451,3 +451,6 @@ def test_non_dict_obs_keys():
 
     # Ignore Discrete observation key
     _make_warmstart(lambda: DummyMixedDictEnv(), norm_obs_keys=["obs1", "obs3"])
+
+    # Test dict obs with norm_obs set to False
+    _make_warmstart(lambda: DummyMixedDictEnv(), norm_obs=False)

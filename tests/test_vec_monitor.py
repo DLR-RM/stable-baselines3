@@ -133,7 +133,7 @@ def test_vec_monitor_ppo(recwarn):
     Test the `VecMonitor` with PPO
     """
     env = DummyVecEnv([lambda: gym.make("CartPole-v1")])
-    env.seed(0)
+    env.reset(seed=0)
     monitor_env = VecMonitor(env)
     model = PPO("MlpPolicy", monitor_env, verbose=1, n_steps=64, device="cpu")
     model.learn(total_timesteps=250)

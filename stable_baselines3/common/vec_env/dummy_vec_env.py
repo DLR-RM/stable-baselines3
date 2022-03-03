@@ -56,9 +56,12 @@ class DummyVecEnv(VecEnv):
             seeds.append(env.seed(seed + idx))
         return seeds
 
-    def reset(self) -> VecEnvObs:
+    def reset(self, seed: Optional[int] = None) -> VecEnvObs:
         for env_idx in range(self.num_envs):
-            obs = self.envs[env_idx].reset()
+            if seed:
+                obs = self.envs[env_idx].reset(seed=seed)
+            else:
+                obs = self.envs[env_idx].reset()
             self._save_obs(env_idx, obs)
         return self._obs_from_buf()
 

@@ -123,6 +123,9 @@ class StackedObservations(object):
             if done:
                 if "terminal_observation" in infos[i]:
                     old_terminal = infos[i]["terminal_observation"]
+                    # Make sure that the terminal observation from the environment
+                    # as array_like so it can be concatenated by numpy.
+                    # If it is not (e.g. a single float) it will be put into a list.
                     if not hasattr(old_terminal, "__len__"):
                         old_terminal = [old_terminal]
                     if self.channels_first:

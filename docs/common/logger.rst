@@ -32,13 +32,46 @@ Available formats are ``["stdout", "csv", "log", "tensorboard", "json"]``.
 Explanation of logger output
 ----------------------------
 
-You can find below short explanations of the value logged in Stable-Baselines3 (SB3).
+You can find below short explanations of the values logged in Stable-Baselines3 (SB3).
 Depending on the algorithm used and of the wrappers/callbacks applied, SB3 only logs a subset of those keys during training.
+
+Below you can find an example of the logger output when training a PPO agent:
+
+.. code-block:: bash
+
+  -----------------------------------------
+  | eval/                   |             |
+  |    mean_ep_length       | 200         |
+  |    mean_reward          | -157        |
+  | rollout/                |             |
+  |    ep_len_mean          | 200         |
+  |    ep_rew_mean          | -227        |
+  | time/                   |             |
+  |    fps                  | 972         |
+  |    iterations           | 19          |
+  |    time_elapsed         | 80          |
+  |    total_timesteps      | 77824       |
+  | train/                  |             |
+  |    approx_kl            | 0.037781604 |
+  |    clip_fraction        | 0.243       |
+  |    clip_range           | 0.2         |
+  |    entropy_loss         | -1.06       |
+  |    explained_variance   | 0.999       |
+  |    learning_rate        | 0.001       |
+  |    loss                 | 0.245       |
+  |    n_updates            | 180         |
+  |    policy_gradient_loss | -0.00398    |
+  |    std                  | 0.205       |
+  |    value_loss           | 0.226       |
+  -----------------------------------------
+
 
 eval/
 ^^^^^
+All ``eval/`` values are computed by the ``EvalCallback``.
+
 - ``mean_ep_length``: Mean episode length
-- ``mean_reward``: Mean episodic reward (during evaluation), an ``EvalCallback`` is required to compute that value
+- ``mean_reward``: Mean episodic reward (during evaluation)
 - ``success_rate``: Mean success rate during evaluation (1.0 means 100% success), the environment info dict must contain an ``is_success`` key to compute that value
 
 rollout/

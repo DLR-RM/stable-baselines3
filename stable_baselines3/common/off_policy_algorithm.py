@@ -202,11 +202,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 )
 
             self.replay_buffer = HerReplayBuffer(
-                self.env,
-                self.buffer_size,
-                device=self.device,
-                replay_buffer=replay_buffer,
-                **self.replay_buffer_kwargs,
+                self.env, self.buffer_size, device=self.device, replay_buffer=replay_buffer, **self.replay_buffer_kwargs
             )
 
         if self.replay_buffer is None:
@@ -241,11 +237,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         assert self.replay_buffer is not None, "The replay buffer is not defined"
         save_to_pkl(path, self.replay_buffer, self.verbose)
 
-    def load_replay_buffer(
-        self,
-        path: Union[str, pathlib.Path, io.BufferedIOBase],
-        truncate_last_traj: bool = True,
-    ) -> None:
+    def load_replay_buffer(self, path: Union[str, pathlib.Path, io.BufferedIOBase], truncate_last_traj: bool = True) -> None:
         """
         Load a replay buffer from a pickle file.
 
@@ -314,14 +306,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             replay_buffer.dones[pos] = True
 
         return super()._setup_learn(
-            total_timesteps,
-            eval_env,
-            callback,
-            eval_freq,
-            n_eval_episodes,
-            log_path,
-            reset_num_timesteps,
-            tb_log_name,
+            total_timesteps, eval_env, callback, eval_freq, n_eval_episodes, log_path, reset_num_timesteps, tb_log_name
         )
 
     def learn(
@@ -338,14 +323,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     ) -> "OffPolicyAlgorithm":
 
         total_timesteps, callback = self._setup_learn(
-            total_timesteps,
-            eval_env,
-            callback,
-            eval_freq,
-            n_eval_episodes,
-            eval_log_path,
-            reset_num_timesteps,
-            tb_log_name,
+            total_timesteps, eval_env, callback, eval_freq, n_eval_episodes, eval_log_path, reset_num_timesteps, tb_log_name
         )
 
         callback.on_training_start(locals(), globals())
@@ -384,10 +362,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         raise NotImplementedError()
 
     def _sample_action(
-        self,
-        learning_starts: int,
-        action_noise: Optional[ActionNoise] = None,
-        n_envs: int = 1,
+        self, learning_starts: int, action_noise: Optional[ActionNoise] = None, n_envs: int = 1
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Sample an action according to the exploration policy.
@@ -511,14 +486,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                     if self._vec_normalize_env is not None:
                         next_obs[i] = self._vec_normalize_env.unnormalize_obs(next_obs[i, :])
 
-        replay_buffer.add(
-            self._last_original_obs,
-            next_obs,
-            buffer_action,
-            reward_,
-            dones,
-            infos,
-        )
+        replay_buffer.add(self._last_original_obs, next_obs, buffer_action, reward_, dones, infos)
 
         self._last_obs = new_obs
         # Save the unnormalized observation

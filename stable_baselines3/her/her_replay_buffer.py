@@ -208,8 +208,7 @@ class HerReplayBuffer(DictReplayBuffer):
         return self._sample_transitions(batch_size, maybe_vec_env=env, online_sampling=True)  # pytype: disable=bad-return-type
 
     def _sample_offline(
-        self,
-        n_sampled_goal: Optional[int] = None,
+        self, n_sampled_goal: Optional[int] = None
     ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray], np.ndarray, np.ndarray]:
         """
         Sample function for offline sampling of HER transition,
@@ -222,17 +221,11 @@ class HerReplayBuffer(DictReplayBuffer):
         # `maybe_vec_env=None` as we should store unnormalized transitions,
         # they will be normalized at sampling time
         return self._sample_transitions(
-            batch_size=None,
-            maybe_vec_env=None,
-            online_sampling=False,
-            n_sampled_goal=n_sampled_goal,
+            batch_size=None, maybe_vec_env=None, online_sampling=False, n_sampled_goal=n_sampled_goal
         )
 
     def sample_goals(
-        self,
-        episode_indices: np.ndarray,
-        her_indices: np.ndarray,
-        transitions_indices: np.ndarray,
+        self, episode_indices: np.ndarray, her_indices: np.ndarray, transitions_indices: np.ndarray
     ) -> np.ndarray:
         """
         Sample goals based on goal_selection_strategy.
@@ -421,14 +414,7 @@ class HerReplayBuffer(DictReplayBuffer):
         # When doing offline sampling
         # Add real transition to normal replay buffer
         if self.replay_buffer is not None:
-            self.replay_buffer.add(
-                obs,
-                next_obs,
-                action,
-                reward,
-                done,
-                infos,
-            )
+            self.replay_buffer.add(obs, next_obs, action, reward, done, infos)
 
         self.info_buffer[self.pos].append(infos)
 

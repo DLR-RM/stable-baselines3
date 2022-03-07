@@ -135,9 +135,7 @@ class DQN(OffPolicyAlgorithm):
         super(DQN, self)._setup_model()
         self._create_aliases()
         self.exploration_schedule = get_linear_fn(
-            self.exploration_initial_eps,
-            self.exploration_final_eps,
-            self.exploration_fraction,
+            self.exploration_initial_eps, self.exploration_final_eps, self.exploration_fraction
         )
         # Account for multiple environments
         # each call to step() corresponds to n_envs transitions

@@ -269,20 +269,11 @@ class SACPolicy(BasePolicy):
         if sde_net_arch is not None:
             warnings.warn("sde_net_arch is deprecated and will be removed in SB3 v2.4.0.", DeprecationWarning)
 
-        sde_kwargs = {
-            "use_sde": use_sde,
-            "log_std_init": log_std_init,
-            "use_expln": use_expln,
-            "clip_mean": clip_mean,
-        }
+        sde_kwargs = {"use_sde": use_sde, "log_std_init": log_std_init, "use_expln": use_expln, "clip_mean": clip_mean}
         self.actor_kwargs.update(sde_kwargs)
         self.critic_kwargs = self.net_args.copy()
         self.critic_kwargs.update(
-            {
-                "n_critics": n_critics,
-                "net_arch": critic_arch,
-                "share_features_extractor": share_features_extractor,
-            }
+            {"n_critics": n_critics, "net_arch": critic_arch, "share_features_extractor": share_features_extractor}
         )
 
         self.actor, self.actor_target = None, None

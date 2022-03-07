@@ -92,9 +92,7 @@ class BaseModel(nn.Module, ABC):
         pass
 
     def _update_features_extractor(
-        self,
-        net_kwargs: Dict[str, Any],
-        features_extractor: Optional[BaseFeaturesExtractor] = None,
+        self, net_kwargs: Dict[str, Any], features_extractor: Optional[BaseFeaturesExtractor] = None
     ) -> Dict[str, Any]:
         """
         Update the network keyword arguments and create a new features extractor object if needed.
@@ -176,8 +174,7 @@ class BaseModel(nn.Module, ABC):
         # Allow to load policy saved with older version of SB3
         if "sde_net_arch" in saved_variables["data"]:
             warnings.warn(
-                "sde_net_arch is deprecated, please downgrade to SB3 v1.2.0 if you need such parameter.",
-                DeprecationWarning,
+                "sde_net_arch is deprecated, please downgrade to SB3 v1.2.0 if you need such parameter.", DeprecationWarning
             )
             del saved_variables["data"]["sde_net_arch"]
 
@@ -526,10 +523,7 @@ class ActorCriticPolicy(BasePolicy):
         #       net_arch here is an empty list and mlp_extractor does not
         #       really contain any layers (acts like an identity module).
         self.mlp_extractor = MlpExtractor(
-            self.features_dim,
-            net_arch=self.net_arch,
-            activation_fn=self.activation_fn,
-            device=self.device,
+            self.features_dim, net_arch=self.net_arch, activation_fn=self.activation_fn, device=self.device
         )
 
     def _build(self, lr_schedule: Schedule) -> None:
@@ -860,10 +854,7 @@ class ContinuousCritic(BaseModel):
         share_features_extractor: bool = True,
     ):
         super().__init__(
-            observation_space,
-            action_space,
-            features_extractor=features_extractor,
-            normalize_images=normalize_images,
+            observation_space, action_space, features_extractor=features_extractor, normalize_images=normalize_images
         )
 
         action_dim = get_action_dim(self.action_space)

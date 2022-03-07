@@ -136,8 +136,7 @@ class BaseBuffer(ABC):
 
     @staticmethod
     def _normalize_obs(
-        obs: Union[np.ndarray, Dict[str, np.ndarray]],
-        env: Optional[VecNormalize] = None,
+        obs: Union[np.ndarray, Dict[str, np.ndarray]], env: Optional[VecNormalize] = None
     ) -> Union[np.ndarray, Dict[str, np.ndarray]]:
         if env is not None:
             return env.normalize_obs(obs)
@@ -441,14 +440,7 @@ class RolloutBuffer(BaseBuffer):
         # Prepare the data
         if not self.generator_ready:
 
-            _tensor_names = [
-                "observations",
-                "actions",
-                "values",
-                "log_probs",
-                "advantages",
-                "returns",
-            ]
+            _tensor_names = ["observations", "actions", "values", "log_probs", "advantages", "returns"]
 
             for tensor in _tensor_names:
                 self.__dict__[tensor] = self.swap_and_flatten(self.__dict__[tensor])

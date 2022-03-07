@@ -127,11 +127,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         self.policy = self.policy.to(self.device)
 
     def collect_rollouts(
-        self,
-        env: VecEnv,
-        callback: BaseCallback,
-        rollout_buffer: RolloutBuffer,
-        n_rollout_steps: int,
+        self, env: VecEnv, callback: BaseCallback, rollout_buffer: RolloutBuffer, n_rollout_steps: int
     ) -> bool:
         """
         Collect experiences using the current policy and fill a ``RolloutBuffer``.

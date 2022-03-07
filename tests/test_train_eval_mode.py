@@ -10,13 +10,7 @@ from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.preprocessing import get_flattened_obs_dim
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
-MODEL_LIST = [
-    PPO,
-    A2C,
-    TD3,
-    SAC,
-    DQN,
-]
+MODEL_LIST = [PPO, A2C, TD3, SAC, DQN]
 
 
 class FlattenBatchNormDropoutExtractor(BaseFeaturesExtractor):
@@ -28,10 +22,7 @@ class FlattenBatchNormDropoutExtractor(BaseFeaturesExtractor):
     """
 
     def __init__(self, observation_space: gym.Space):
-        super(FlattenBatchNormDropoutExtractor, self).__init__(
-            observation_space,
-            get_flattened_obs_dim(observation_space),
-        )
+        super(FlattenBatchNormDropoutExtractor, self).__init__(observation_space, get_flattened_obs_dim(observation_space))
         self.flatten = nn.Flatten()
         self.batch_norm = nn.BatchNorm1d(self._features_dim)
         self.dropout = nn.Dropout(0.5)
@@ -102,9 +93,7 @@ def clone_td3_batch_norm_stats(
     )
 
 
-def clone_sac_batch_norm_stats(
-    model: SAC,
-) -> (th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor):
+def clone_sac_batch_norm_stats(model: SAC,) -> (th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor, th.Tensor):
     """
     Clone the bias and running mean from the actor and critic networks and critic-target networks.
 
@@ -348,10 +337,7 @@ def test_predict_with_dropout_batch_norm(model_class, env_id):
     else:
         model_kwargs["n_steps"] = 64
 
-    policy_kwargs = dict(
-        features_extractor_class=FlattenBatchNormDropoutExtractor,
-        net_arch=[16, 16],
-    )
+    policy_kwargs = dict(features_extractor_class=FlattenBatchNormDropoutExtractor, net_arch=[16, 16])
     model = model_class("MlpPolicy", env_id, policy_kwargs=policy_kwargs, verbose=1, **model_kwargs)
 
     batch_norm_stats_before = clone_helper(model)

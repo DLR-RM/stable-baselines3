@@ -116,14 +116,7 @@ class CustomPolicy(ActorCriticPolicy):
 def test_gae_computation(model_class, gae_lambda, gamma, num_episodes):
     env = CustomEnv(max_steps=64)
     rollout_size = 64 * num_episodes
-    model = model_class(
-        CustomPolicy,
-        env,
-        seed=1,
-        gamma=gamma,
-        n_steps=rollout_size,
-        gae_lambda=gae_lambda,
-    )
+    model = model_class(CustomPolicy, env, seed=1, gamma=gamma, n_steps=rollout_size, gae_lambda=gae_lambda)
     model.learn(rollout_size, callback=CheckGAECallback())
 
     # Change constant value so advantage != returns
@@ -141,9 +134,7 @@ def test_infinite_horizon(model_class, handle_timeout_termination):
     if model_class == SAC:
         policy_kwargs = dict(net_arch=[64], n_critics=1)
         kwargs = dict(
-            replay_buffer_kwargs=dict(handle_timeout_termination=handle_timeout_termination),
-            tau=0.5,
-            learning_rate=0.005,
+            replay_buffer_kwargs=dict(handle_timeout_termination=handle_timeout_termination), tau=0.5, learning_rate=0.005
         )
     else:
         policy_kwargs = dict(net_arch=[64])

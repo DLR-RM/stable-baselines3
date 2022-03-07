@@ -38,10 +38,7 @@ class QNetwork(BasePolicy):
         normalize_images: bool = True,
     ):
         super(QNetwork, self).__init__(
-            observation_space,
-            action_space,
-            features_extractor=features_extractor,
-            normalize_images=normalize_images,
+            observation_space, action_space, features_extractor=features_extractor, normalize_images=normalize_images
         )
 
         if net_arch is None:

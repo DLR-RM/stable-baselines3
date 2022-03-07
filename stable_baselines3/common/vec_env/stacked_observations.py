@@ -23,29 +23,17 @@ class StackedObservations(object):
         If None, automatically detect channel to stack over in case of image observation or default to "last" (default).
     """
 
-    def __init__(
-        self,
-        num_envs: int,
-        n_stack: int,
-        observation_space: spaces.Space,
-        channels_order: Optional[str] = None,
-    ):
+    def __init__(self, num_envs: int, n_stack: int, observation_space: spaces.Space, channels_order: Optional[str] = None):
 
         self.n_stack = n_stack
-        (
-            self.channels_first,
-            self.stack_dimension,
-            self.stackedobs,
-            self.repeat_axis,
-        ) = self.compute_stacking(num_envs, n_stack, observation_space, channels_order)
+        (self.channels_first, self.stack_dimension, self.stackedobs, self.repeat_axis) = self.compute_stacking(
+            num_envs, n_stack, observation_space, channels_order
+        )
         super().__init__()
 
     @staticmethod
     def compute_stacking(
-        num_envs: int,
-        n_stack: int,
-        observation_space: spaces.Box,
-        channels_order: Optional[str] = None,
+        num_envs: int, n_stack: int, observation_space: spaces.Box, channels_order: Optional[str] = None
     ) -> Tuple[bool, int, np.ndarray, int]:
         """
         Calculates the parameters in order to stack observations
@@ -65,10 +53,7 @@ class StackedObservations(object):
                 # Default behavior for non-image space, stack on the last axis
                 channels_first = False
         else:
-            assert channels_order in {
-                "last",
-                "first",
-            }, "`channels_order` must be one of following: 'last', 'first'"
+            assert channels_order in {"last", "first"}, "`channels_order` must be one of following: 'last', 'first'"
 
             channels_first = channels_order == "first"
 
@@ -104,10 +89,7 @@ class StackedObservations(object):
         return self.stackedobs
 
     def update(
-        self,
-        observations: np.ndarray,
-        dones: np.ndarray,
-        infos: List[Dict[str, Any]],
+        self, observations: np.ndarray, dones: np.ndarray, infos: List[Dict[str, Any]]
     ) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
         """
         Adds the observations to the stack and uses the dones to update the infos.
@@ -130,8 +112,7 @@ class StackedObservations(object):
                         )
                     else:
                         new_terminal = np.concatenate(
-                            (self.stackedobs[i, ..., :-stack_ax_size], old_terminal),
-                            axis=self.stack_dimension,
+                            (self.stackedobs[i, ..., :-stack_ax_size], old_terminal), axis=self.stack_dimension
                         )
                     infos[i]["terminal_observation"] = new_terminal
                 else:
@@ -215,10 +196,7 @@ class StackedDictObservations(StackedObservations):
         return self.stackedobs
 
     def update(
-        self,
-        observations: Dict[str, np.ndarray],
-        dones: np.ndarray,
-        infos: List[Dict[str, Any]],
+        self, observations: Dict[str, np.ndarray], dones: np.ndarray, infos: List[Dict[str, Any]]
     ) -> Tuple[Dict[str, np.ndarray], List[Dict[str, Any]]]:
         """
         Adds the observations to the stack and uses the dones to update the infos.
@@ -230,30 +208,17 @@ class StackedDictObservations(StackedObservations):
         """
         for key in self.stackedobs.keys():
             stack_ax_size = observations[key].shape[self.stack_dimension[key]]
-            self.stackedobs[key] = np.roll(
-                self.stackedobs[key],
-                shift=-stack_ax_size,
-                axis=self.stack_dimension[key],
-            )
+            self.stackedobs[key] = np.roll(self.stackedobs[key], shift=-stack_ax_size, axis=self.stack_dimension[key])
 
             for i, done in enumerate(dones):
                 if done:
                     if "terminal_observation" in infos[i]:
                         old_terminal = infos[i]["terminal_observation"][key]
                         if self.channels_first[key]:
-                            new_terminal = np.vstack(
-                                (
-                                    self.stackedobs[key][i, :-stack_ax_size, ...],
-                                    old_terminal,
-                                )
-                            )
+                            new_terminal = np.vstack((self.stackedobs[key][i, :-stack_ax_size, ...], old_terminal))
                         else:
                             new_terminal = np.concatenate(
-                                (
-                                    self.stackedobs[key][i, ..., :-stack_ax_size],
-                                    old_terminal,
-                                ),
-                                axis=self.stack_dimension[key],
+                                (self.stackedobs[key][i, ..., :-stack_ax_size], old_terminal), axis=self.stack_dimension[key]
                             )
                         infos[i]["terminal_observation"][key] = new_terminal
                     else:

@@ -114,11 +114,7 @@ def test_eval_callback_vec_env():
     eval_env = DummyVecEnv([lambda: IdentityEnv()] * n_eval_envs)
     model = A2C("MlpPolicy", train_env, seed=0)
 
-    eval_callback = EvalCallback(
-        eval_env,
-        eval_freq=100,
-        warn=False,
-    )
+    eval_callback = EvalCallback(eval_env, eval_freq=100, warn=False)
     model.learn(300, callback=eval_callback)
     assert eval_callback.last_mean_reward == 100.0
 
@@ -128,12 +124,7 @@ def test_eval_success_logging(tmp_path):
     n_envs = 2
     env = BitFlippingEnv(n_bits=n_bits)
     eval_env = DummyVecEnv([lambda: BitFlippingEnv(n_bits=n_bits)] * n_envs)
-    eval_callback = EvalCallback(
-        eval_env,
-        eval_freq=250,
-        log_path=tmp_path,
-        warn=False,
-    )
+    eval_callback = EvalCallback(eval_env, eval_freq=250, log_path=tmp_path, warn=False)
     model = DQN(
         "MultiInputPolicy",
         env,
@@ -154,14 +145,7 @@ def test_eval_callback_logs_are_written_with_the_correct_timestep(tmp_path):
     from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
     env_name = select_env(DQN)
-    model = DQN(
-        "MlpPolicy",
-        env_name,
-        policy_kwargs=dict(net_arch=[32]),
-        tensorboard_log=tmp_path,
-        verbose=1,
-        seed=1,
-    )
+    model = DQN("MlpPolicy", env_name, policy_kwargs=dict(net_arch=[32]), tensorboard_log=tmp_path, verbose=1, seed=1)
 
     eval_env = gym.make(env_name)
     eval_freq = 101
@@ -183,22 +167,14 @@ def test_eval_friendly_error():
     original_obs = train_env.get_original_obs()
     model = A2C("MlpPolicy", train_env, n_steps=50, seed=0)
 
-    eval_callback = EvalCallback(
-        eval_env,
-        eval_freq=100,
-        warn=False,
-    )
+    eval_callback = EvalCallback(eval_env, eval_freq=100, warn=False)
     model.learn(100, callback=eval_callback)
 
     # Check synchronization
     assert np.allclose(train_env.normalize_obs(original_obs), eval_env.normalize_obs(original_obs))
 
     wrong_eval_env = gym.make("CartPole-v1")
-    eval_callback = EvalCallback(
-        wrong_eval_env,
-        eval_freq=100,
-        warn=False,
-    )
+    eval_callback = EvalCallback(wrong_eval_env, eval_freq=100, warn=False)
 
     with pytest.warns(Warning):
         with pytest.raises(AssertionError):

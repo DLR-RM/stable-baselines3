@@ -578,10 +578,7 @@ class BaseAlgorithm(ABC):
             self.eval_env.seed(seed)
 
     def set_parameters(
-        self,
-        load_path_or_dict: Union[str, Dict[str, Dict]],
-        exact_match: bool = True,
-        device: Union[th.device, str] = "auto",
+        self, load_path_or_dict: Union[str, Dict[str, Dict]], exact_match: bool = True, device: Union[th.device, str] = "auto"
     ) -> None:
         """
         Load parameters from a given zip-file or a nested dictionary containing parameters for

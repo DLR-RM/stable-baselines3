@@ -171,10 +171,7 @@ def get_latest_run_id(log_path: Optional[str] = None, log_name: str = "") -> int
 
 
 def configure_logger(
-    verbose: int = 0,
-    tensorboard_log: Optional[str] = None,
-    tb_log_name: str = "",
-    reset_num_timesteps: bool = True,
+    verbose: int = 0, tensorboard_log: Optional[str] = None, tb_log_name: str = "", reset_num_timesteps: bool = True
 ) -> Logger:
     """
     Configure the logger's outputs.
@@ -407,11 +404,7 @@ def zip_strict(*iterables: Iterable) -> Iterable:
         yield combo
 
 
-def polyak_update(
-    params: Iterable[th.nn.Parameter],
-    target_params: Iterable[th.nn.Parameter],
-    tau: float,
-) -> None:
+def polyak_update(params: Iterable[th.nn.Parameter], target_params: Iterable[th.nn.Parameter], tau: float) -> None:
     """
     Perform a Polyak average update on ``target_params`` using ``params``:
     target parameters are slowly updated towards the main parameters.
@@ -452,11 +445,7 @@ def obs_as_tensor(
         raise Exception(f"Unrecognized type of observation {type(obs)}")
 
 
-def should_collect_more_steps(
-    train_freq: TrainFreq,
-    num_collected_steps: int,
-    num_collected_episodes: int,
-) -> bool:
+def should_collect_more_steps(train_freq: TrainFreq, num_collected_steps: int, num_collected_episodes: int) -> bool:
     """
     Helper used in ``collect_rollouts()`` of off-policy algorithms
     to determine the termination condition.

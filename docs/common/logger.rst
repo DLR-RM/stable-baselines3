@@ -44,9 +44,9 @@ eval/
 rollout/
 ^^^^^^^^
 - ``ep_len_mean``: Mean episode length (averaged over 100 episodes)
-- ``ep_rew_mean``: Mean episodic training reward (averaged over 100 episodes), a ``Monitor`` wrapper is required to compute that value
+- ``ep_rew_mean``: Mean episodic training reward (averaged over 100 episodes), a ``Monitor`` wrapper is required to compute that value (automatically added by `make_vec_env`).
 - ``exploration_rate``: Current value of the exploration rate when using DQN, it corresponds to the fraction of actions taken randomly (epsilon of the "epsilon-greedy" exploration)
-- ``success_rate``: Mean success rate during training (averaged over 100 episodes), you must pass an extra argument to the ``Monitor`` wrapper to log that value (``info_keywords=("is_success",)``)
+- ``success_rate``: Mean success rate during training (averaged over 100 episodes), you must pass an extra argument to the ``Monitor`` wrapper to log that value (``info_keywords=("is_success",)``) and provide ``info["is_success"]=True/False`` on the final step of the episode
 
 time/
 ^^^^^
@@ -65,7 +65,7 @@ train/
 - ``critic_loss``: Current value for the critic function loss for off-policy algorithms, usually error between value function output and TD(0), temporal difference estimate
 - ``ent_coef``: Current value of the entropy coefficient (when using SAC)
 - ``ent_coef_loss``: Current value of the entropy coefficient loss (when using SAC)
-- ``entropy_loss``: Mean value of the entropy loss (inversely proportional to the entropy of the policy)
+- ``entropy_loss``: Mean value of the entropy loss (negative of the average policy entropy)
 - ``explained_variance``: Fraction of the return variance explained by the value function, see https://scikit-learn.org/stable/modules/model_evaluation.html#explained-variance-score
   (ev=0 => might as well have predicted zero, ev=1 => perfect prediction, ev<0 => worse than just predicting zero)
 - ``learning_rate``: Current learning rate value

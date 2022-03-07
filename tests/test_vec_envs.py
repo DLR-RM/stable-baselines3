@@ -440,3 +440,14 @@ def test_vec_env_is_wrapped():
 
     vec_env = VecFrameStack(vec_env, n_stack=2)
     assert vec_env.env_is_wrapped(Monitor) == [False, True]
+
+
+def test_vec_seeding():
+    def make_env():
+        return CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)))
+
+    vec_env = SubprocVecEnv([make_env] * 3)
+
+    vec_env.seed()
+
+    vec_env.close()

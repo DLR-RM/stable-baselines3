@@ -47,7 +47,7 @@ Documentation:
 - Added furuta pendulum project to project list (@armandpl)
 - Fix indentation 2 spaces to 4 spaces in custom env documentation example (@Gautam-J)
 - Update MlpExtractor docstring (@gianlucadecola)
-
+- Added explanation of the logger output
 
 Release 1.4.0 (2022-01-18)
 ---------------------------

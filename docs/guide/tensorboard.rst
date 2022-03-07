@@ -36,6 +36,12 @@ Once the learn function is called, you can monitor the RL agent during or after 
 
   tensorboard --logdir ./a2c_cartpole_tensorboard/
 
+
+.. note::
+
+	You can find explanations about the logger output and names in the :ref:`Logger <logger>` section.
+
+
 you can also add past logging folders:
 
 .. code-block:: bash

@@ -51,6 +51,8 @@ class DummyVecEnv(VecEnv):
         return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones), deepcopy(self.buf_infos))
 
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
+        if seed is None:
+            seed = np.random.randint(0, 2 ** 32 - 1)
         seeds = list()
         for idx, env in enumerate(self.envs):
             seeds.append(env.seed(seed + idx))

@@ -25,7 +25,7 @@ SB3-Contrib
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed a bug in ``VecMonitor``. The monitor did not consider the ``info_keywords`` during stepping (@ScheiklP)
-- Fixed a bug in ``SubprocVecEnv``'s seeding function. None value was unchecked (@ScheiklP)
+- Fixed a bug in ``DummyVecEnv``'s and ``SubprocVecEnv``'s seeding function. None value was unchecked (@ScheiklP)
 - Fixed a bug in ``HumanOutputFormat``. Distinct keys truncated to the same prefix would overwrite each others value,
   resulting in only one being output. This now raises an error (this should only affect a small fraction of use cases
   with very long keys.)

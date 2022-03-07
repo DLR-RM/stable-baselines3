@@ -24,6 +24,7 @@ SB3-Contrib
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed a bug with special characters in the tensorboard log name
 - Fixed a bug in ``VecMonitor``. The monitor did not consider the ``info_keywords`` during stepping (@ScheiklP)
 - Fixed a bug in ``HumanOutputFormat``. Distinct keys truncated to the same prefix would overwrite each others value,
   resulting in only one being output. This now raises an error (this should only affect a small fraction of use cases

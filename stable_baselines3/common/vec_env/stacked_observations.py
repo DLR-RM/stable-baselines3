@@ -123,6 +123,8 @@ class StackedObservations(object):
             if done:
                 if "terminal_observation" in infos[i]:
                     old_terminal = infos[i]["terminal_observation"]
+                    if not hasattr(old_terminal, "__len__"):
+                        old_terminal = [old_terminal]
                     if self.channels_first:
                         new_terminal = np.concatenate(
                             (self.stackedobs[i, :-stack_ax_size, ...], old_terminal),
@@ -240,6 +242,8 @@ class StackedDictObservations(StackedObservations):
                 if done:
                     if "terminal_observation" in infos[i]:
                         old_terminal = infos[i]["terminal_observation"][key]
+                        if not hasattr(old_terminal, "__len__"):
+                            old_terminal = [old_terminal]
                         if self.channels_first[key]:
                             new_terminal = np.vstack(
                                 (

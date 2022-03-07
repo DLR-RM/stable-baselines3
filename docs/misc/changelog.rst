@@ -25,6 +25,7 @@ SB3-Contrib
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed a bug in ``VecMonitor``. The monitor did not consider the ``info_keywords`` during stepping (@ScheiklP)
+- Fixed a bug in ``StackedDictObservations`` and ``StackedObservations``. Scalar box observations led to incorrect identification of ``stack_ax_size``. Previous version led to stack with ``num_envs`` (@ScheiklP)
 - Fixed a bug in ``HumanOutputFormat``. Distinct keys truncated to the same prefix would overwrite each others value,
   resulting in only one being output. This now raises an error (this should only affect a small fraction of use cases
   with very long keys.)

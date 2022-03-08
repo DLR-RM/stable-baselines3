@@ -314,11 +314,11 @@ def save_to_zip_file(
         if data is not None:
             archive.writestr("data", serialized_data)
         if pytorch_variables is not None:
-            with archive.open("pytorch_variables.pth", mode="w") as pytorch_variables_file:
+            with archive.open("pytorch_variables.pth", mode="w", force_zip64=True) as pytorch_variables_file:
                 th.save(pytorch_variables, pytorch_variables_file)
         if params is not None:
             for file_name, dict_ in params.items():
-                with archive.open(file_name + ".pth", mode="w") as param_file:
+                with archive.open(file_name + ".pth", mode="w", force_zip64=True) as param_file:
                     th.save(dict_, param_file)
         # Save metadata: library version when file was saved
         archive.writestr("_stable_baselines3_version", sb3.__version__)

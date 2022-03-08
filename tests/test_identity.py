@@ -26,9 +26,9 @@ def test_discrete(model_class, env):
         # slightly higher budget
         n_steps = 3500
 
-    model = model_class("MlpPolicy", env_, gamma=0.4, seed=1, **kwargs).learn(n_steps)
+    model = model_class("MlpPolicy", env_, gamma=0.4, seed=2, **kwargs).learn(n_steps)
 
-    evaluate_policy(model, env_, n_eval_episodes=20, reward_threshold=86, warn=False)
+    evaluate_policy(model, env_, n_eval_episodes=20, reward_threshold=90, warn=False)
     obs = env.reset()
 
     assert np.shape(model.predict(obs)[0]) == np.shape(obs)

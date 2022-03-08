@@ -117,7 +117,15 @@ class StackedObservations(object):
         :param infos: numpy array of info dicts
         :return: tuple of the stacked observations and the updated infos
         """
-        stack_ax_size = observations.shape[self.stack_dimension]
+        # If the observation shape is just (num_envs,), the value
+        # to be stacked is a scalar -> size 1.
+        if len(observations.shape) == 1:
+            stack_ax_size = 1
+            # We also have to add a dimension to the observation when writing into self.stackedobs
+            expand_dim = True
+        else:
+            stack_ax_size = observations.shape[self.stack_dimension]
+            expand_dim = False
         self.stackedobs = np.roll(self.stackedobs, shift=-stack_ax_size, axis=self.stack_dimension)
         for i, done in enumerate(dones):
             if done:
@@ -145,7 +153,11 @@ class StackedObservations(object):
         if self.channels_first:
             self.stackedobs[:, -observations.shape[self.stack_dimension] :, ...] = observations
         else:
-            self.stackedobs[..., -observations.shape[self.stack_dimension] :] = observations
+            if expand_dim:
+                # Expand observations[key] for (num_envs,) to (num_envs, 1)
+                self.stackedobs[..., -observations.shape[self.stack_dimension] :] = observations[:, None]
+            else:
+                self.stackedobs[..., -observations.shape[self.stack_dimension]:] = observations
         return self.stackedobs, infos
 
 
@@ -234,7 +246,15 @@ class StackedDictObservations(StackedObservations):
         :return: tuple of the stacked observations and the updated infos
         """
         for key in self.stackedobs.keys():
-            stack_ax_size = observations[key].shape[self.stack_dimension[key]]
+            # If the observation shape is just (num_envs,), the value
+            # to be stacked is a scalar -> size 1.
+            if len(observations[key].shape) == 1:
+                stack_ax_size = 1
+                # We also have to add a dimension to the observation when writing into self.stackedobs
+                expand_dim = True
+            else:
+                stack_ax_size = observations[key].shape[self.stack_dimension[key]]
+                expand_dim = False
             self.stackedobs[key] = np.roll(
                 self.stackedobs[key],
                 shift=-stack_ax_size,
@@ -269,5 +289,9 @@ class StackedDictObservations(StackedObservations):
             if self.channels_first[key]:
                 self.stackedobs[key][:, -stack_ax_size:, ...] = observations[key]
             else:
-                self.stackedobs[key][..., -stack_ax_size:] = observations[key]
+                if expand_dim:
+                    # Expand observations[key] for (num_envs,) to (num_envs, 1)
+                    self.stackedobs[key][..., -stack_ax_size:] = observations[key][:, None]
+                else:
+                    self.stackedobs[key][..., -stack_ax_size:] = observations[key]
         return self.stackedobs, infos

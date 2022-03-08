@@ -27,6 +27,10 @@ Here is a quick example of how to train and run A2C on a CartPole environment:
       if done:
         obs = env.reset()
 
+.. note::
+
+	You can find explanations about the logger output and names in the :ref:`Logger <logger>` section.
+
 
 Or just train a model with a one liner if
 `the environment is registered in Gym <https://github.com/openai/gym/wiki/Environments>`_ and if

@@ -157,7 +157,7 @@ class StackedObservations(object):
                 # Expand observations[key] for (num_envs,) to (num_envs, 1)
                 self.stackedobs[..., -observations.shape[self.stack_dimension] :] = observations[:, None]
             else:
-                self.stackedobs[..., -observations.shape[self.stack_dimension]:] = observations
+                self.stackedobs[..., -observations.shape[self.stack_dimension] :] = observations
         return self.stackedobs, infos
 
 

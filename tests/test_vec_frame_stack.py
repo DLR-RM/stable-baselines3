@@ -4,6 +4,36 @@ from gym import spaces
 from stable_baselines3.common.vec_env.vec_frame_stack import VecFrameStack
 
 
+class ScalarObsVecEnv:
+    """Custom Environment that produces box observations"""
+
+    metadata = {"render.modes": ["human"]}
+
+    def __init__(self):
+        self.num_envs = 4
+        self.action_space = spaces.Discrete(2)
+        self.observation_space = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
+
+    def step_async(self, actions):
+        self.actions = actions
+
+    def step_wait(self):
+        obs = np.zeros((self.num_envs,) + self.observation_space.shape)
+        terminal_obs = 0.0
+        return (
+            obs,
+            np.zeros((self.num_envs,)),
+            np.ones((self.num_envs,), dtype=bool),
+            [{"terminal_observation": terminal_obs} for _ in range(self.num_envs)],
+        )
+
+    def reset(self):
+        return np.zeros((self.num_envs,) + self.observation_space.shape)
+
+    def render(self, mode="human", close=False):
+        pass
+
+
 class BoxObsVecEnv:
     """Custom Environment that produces box observations"""
 
@@ -57,7 +87,7 @@ class DictObsVecEnv:
             "rgb": np.zeros((self.num_envs, 86, 86, 3)),
             "scalar": np.zeros((self.num_envs,)),
         }
-        terminal_obs = {"rgb": np.zeros((86, 86, 3)), "scalar": np.zeros((1,))}
+        terminal_obs = {"rgb": np.zeros((86, 86, 3)), "scalar": 0.0}
         return (
             obs,
             np.zeros((self.num_envs,)),
@@ -76,8 +106,7 @@ class DictObsVecEnv:
 
 
 def test_scalar_frame_stack():
-    obs_space = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
-    env = BoxObsVecEnv(obs_space)
+    env = ScalarObsVecEnv()
     env = VecFrameStack(env, n_stack=8)
     obs, _, _, _ = env.step(env.action_space.sample())
 

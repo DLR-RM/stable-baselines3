@@ -100,7 +100,11 @@ class StackedObservations(object):
         if self.channels_first:
             self.stackedobs[:, -observation.shape[self.stack_dimension] :, ...] = observation
         else:
-            self.stackedobs[..., -observation.shape[self.stack_dimension] :] = observation
+            if len(obs.shape) == 1:
+                # Expand observations[key] for (num_envs,) to (num_envs, 1)
+                self.stackedobs[..., -observation[:, None].shape[self.stack_dimension] :] = observation[:, None]
+            else:
+                self.stackedobs[..., -observation.shape[self.stack_dimension] :] = observation
         return self.stackedobs
 
     def update(
@@ -228,7 +232,11 @@ class StackedDictObservations(StackedObservations):
             if self.channels_first[key]:
                 self.stackedobs[key][:, -obs.shape[self.stack_dimension[key]] :, ...] = obs
             else:
-                self.stackedobs[key][..., -obs.shape[self.stack_dimension[key]] :] = obs
+                if len(obs.shape) == 1:
+                    # Expand observations[key] for (num_envs,) to (num_envs, 1)
+                    self.stackedobs[key][..., -obs[:, None].shape[self.stack_dimension[key]] :] = obs[:, None]
+                else:
+                    self.stackedobs[key][..., -obs.shape[self.stack_dimension[key]] :] = obs
         return self.stackedobs
 
     def update(

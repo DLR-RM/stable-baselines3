@@ -311,7 +311,11 @@ def test_key_length(tmp_path):
     ok_excluded = {k: None for k in ok_dict}
     writer.write(ok_dict, ok_excluded)
 
-    long_key_dict = {long_prefix + "a": 42, "foobar": "sdf", long_prefix + "b": 42}
+    long_key_dict = {
+        long_prefix + "a": 42,
+        "foobar": "sdf",
+        long_prefix + "b": 42,
+    }
     long_key_excluded = {k: None for k in long_key_dict}
     # keys truncated and aliased -- not OK
     with pytest.raises(ValueError, match="Key.*truncated"):
@@ -372,7 +376,7 @@ def test_fps_logger(tmp_path, algo):
 
     # Artificially increase num_timesteps to check
     # that fps computation is reset at each call to learn()
-    model.num_timesteps = 20000
+    model.num_timesteps = 20_000
 
     # third time, FPS should be the same
     model.learn(100, log_interval=1, reset_num_timesteps=False)

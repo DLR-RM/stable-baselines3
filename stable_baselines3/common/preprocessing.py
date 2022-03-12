@@ -24,7 +24,10 @@ def is_image_space_channels_first(observation_space: spaces.Box) -> bool:
     return smallest_dimension == 0
 
 
-def is_image_space(observation_space: spaces.Space, check_channels: bool = False) -> bool:
+def is_image_space(
+    observation_space: spaces.Space,
+    check_channels: bool = False,
+) -> bool:
     """
     Check if a observation space has the shape, limits and dtype
     of a valid image.
@@ -80,7 +83,9 @@ def maybe_transpose(observation: np.ndarray, observation_space: spaces.Space) ->
 
 
 def preprocess_obs(
-    obs: th.Tensor, observation_space: spaces.Space, normalize_images: bool = True
+    obs: th.Tensor,
+    observation_space: spaces.Space,
+    normalize_images: bool = True,
 ) -> Union[th.Tensor, Dict[str, th.Tensor]]:
     """
     Preprocess observation to be to a neural network.
@@ -126,7 +131,9 @@ def preprocess_obs(
         raise NotImplementedError(f"Preprocessing not implemented for {observation_space}")
 
 
-def get_obs_shape(observation_space: spaces.Space,) -> Union[Tuple[int, ...], Dict[str, Tuple[int, ...]]]:
+def get_obs_shape(
+    observation_space: spaces.Space,
+) -> Union[Tuple[int, ...], Dict[str, Tuple[int, ...]]]:
     """
     Get the shape of the observation (useful for the buffers).
 

@@ -25,7 +25,11 @@ def test_cnn(tmp_path, model_class):
     else:
         # Avoid memory error when using replay buffer
         # Reduce the size of the features
-        kwargs = dict(buffer_size=250, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)), seed=1)
+        kwargs = dict(
+            buffer_size=250,
+            policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)),
+            seed=1,
+        )
     model = model_class("CnnPolicy", env, **kwargs).learn(250)
 
     # FakeImageEnv is channel last by default and should be wrapped
@@ -69,7 +73,11 @@ def test_vec_transpose_skip(tmp_path, model_class):
     # The observation space should be the same as we skip the VecTransposeImage
     assert np.allclose(obs_shape_before, env.reset().shape)
 
-    kwargs = dict(n_steps=64, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)), seed=1)
+    kwargs = dict(
+        n_steps=64,
+        policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)),
+        seed=1,
+    )
     model = model_class("CnnPolicy", env, **kwargs).learn(250)
 
     obs = env.reset()

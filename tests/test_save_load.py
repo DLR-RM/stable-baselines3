@@ -253,7 +253,11 @@ def test_exclude_include_saved_params(tmp_path, model_class):
     del model
     # Load with custom objects
     custom_objects = dict(learning_rate=2e-5, dummy=1.0)
-    model = model_class.load(str(tmp_path / "test_save.zip"), custom_objects=custom_objects, print_system_info=True)
+    model = model_class.load(
+        str(tmp_path / "test_save.zip"),
+        custom_objects=custom_objects,
+        print_system_info=True,
+    )
     assert model.verbose == 2
     # Check that the custom object was taken into account
     assert model.learning_rate == custom_objects["learning_rate"]
@@ -511,7 +515,9 @@ def test_save_load_q_net(tmp_path, model_class, policy_str):
             # Avoid memory error when using replay buffer
             # Reduce the size of the features
             kwargs = dict(
-                buffer_size=250, learning_starts=100, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32))
+                buffer_size=250,
+                learning_starts=100,
+                policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)),
             )
         env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=2, discrete=model_class == DQN)
 

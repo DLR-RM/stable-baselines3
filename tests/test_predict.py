@@ -8,7 +8,13 @@ from stable_baselines3.common.envs import IdentityEnv
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-MODEL_LIST = [PPO, A2C, TD3, SAC, DQN]
+MODEL_LIST = [
+    PPO,
+    A2C,
+    TD3,
+    SAC,
+    DQN,
+]
 
 
 class SubClassedBox(gym.spaces.Box):

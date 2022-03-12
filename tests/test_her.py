@@ -34,14 +34,21 @@ def test_her(model_class, online_sampling, image_obs_space):
     Test Hindsight Experience Replay.
     """
     n_bits = 4
-    env = BitFlippingEnv(n_bits=n_bits, continuous=not (model_class == DQN), image_obs_space=image_obs_space)
+    env = BitFlippingEnv(
+        n_bits=n_bits,
+        continuous=not (model_class == DQN),
+        image_obs_space=image_obs_space,
+    )
 
     model = model_class(
         "MultiInputPolicy",
         env,
         replay_buffer_class=HerReplayBuffer,
         replay_buffer_kwargs=dict(
-            n_sampled_goal=2, goal_selection_strategy="future", online_sampling=online_sampling, max_episode_length=n_bits
+            n_sampled_goal=2,
+            goal_selection_strategy="future",
+            online_sampling=online_sampling,
+            max_episode_length=n_bits,
         ),
         train_freq=4,
         gradient_steps=1,
@@ -56,7 +63,14 @@ def test_her(model_class, online_sampling, image_obs_space):
 
 @pytest.mark.parametrize(
     "goal_selection_strategy",
-    ["final", "episode", "future", GoalSelectionStrategy.FINAL, GoalSelectionStrategy.EPISODE, GoalSelectionStrategy.FUTURE],
+    [
+        "final",
+        "episode",
+        "future",
+        GoalSelectionStrategy.FINAL,
+        GoalSelectionStrategy.EPISODE,
+        GoalSelectionStrategy.FUTURE,
+    ],
 )
 @pytest.mark.parametrize("online_sampling", [True, False])
 def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
@@ -109,7 +123,10 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
         env,
         replay_buffer_class=HerReplayBuffer,
         replay_buffer_kwargs=dict(
-            n_sampled_goal=2, goal_selection_strategy="future", online_sampling=online_sampling, max_episode_length=n_bits
+            n_sampled_goal=2,
+            goal_selection_strategy="future",
+            online_sampling=online_sampling,
+            max_episode_length=n_bits,
         ),
         verbose=0,
         tau=0.05,
@@ -211,7 +228,10 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
         env,
         replay_buffer_class=HerReplayBuffer,
         replay_buffer_kwargs=dict(
-            n_sampled_goal=2, goal_selection_strategy="future", online_sampling=online_sampling, max_episode_length=4
+            n_sampled_goal=2,
+            goal_selection_strategy="future",
+            online_sampling=online_sampling,
+            max_episode_length=4,
         ),
         gradient_steps=1,
         train_freq=4,
@@ -253,10 +273,12 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
             model.replay_buffer._buffer["next_obs"][:n_episodes_stored],
         )
         assert np.allclose(
-            old_replay_buffer._buffer["action"][:n_episodes_stored], model.replay_buffer._buffer["action"][:n_episodes_stored]
+            old_replay_buffer._buffer["action"][:n_episodes_stored],
+            model.replay_buffer._buffer["action"][:n_episodes_stored],
         )
         assert np.allclose(
-            old_replay_buffer._buffer["reward"][:n_episodes_stored], model.replay_buffer._buffer["reward"][:n_episodes_stored]
+            old_replay_buffer._buffer["reward"][:n_episodes_stored],
+            model.replay_buffer._buffer["reward"][:n_episodes_stored],
         )
         # we might change the last done of the last trajectory so we don't compare it
         assert np.allclose(
@@ -290,7 +312,10 @@ def test_full_replay_buffer():
         env,
         replay_buffer_class=HerReplayBuffer,
         replay_buffer_kwargs=dict(
-            n_sampled_goal=2, goal_selection_strategy="future", online_sampling=True, max_episode_length=n_bits
+            n_sampled_goal=2,
+            goal_selection_strategy="future",
+            online_sampling=True,
+            max_episode_length=n_bits,
         ),
         gradient_steps=1,
         train_freq=4,
@@ -353,7 +378,10 @@ def test_performance_her(online_sampling, n_bits):
         env,
         replay_buffer_class=HerReplayBuffer,
         replay_buffer_kwargs=dict(
-            n_sampled_goal=5, goal_selection_strategy="future", online_sampling=online_sampling, max_episode_length=n_bits
+            n_sampled_goal=5,
+            goal_selection_strategy="future",
+            online_sampling=online_sampling,
+            max_episode_length=n_bits,
         ),
         verbose=1,
         learning_rate=5e-4,

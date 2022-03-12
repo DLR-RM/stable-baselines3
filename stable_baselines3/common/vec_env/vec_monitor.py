@@ -23,7 +23,12 @@ class VecMonitor(VecEnvWrapper):
     :param info_keywords: extra information to log, from the information return of env.step()
     """
 
-    def __init__(self, venv: VecEnv, filename: Optional[str] = None, info_keywords: Tuple[str, ...] = ()):
+    def __init__(
+        self,
+        venv: VecEnv,
+        filename: Optional[str] = None,
+        info_keywords: Tuple[str, ...] = (),
+    ):
         # Avoid circular import
         from stable_baselines3.common.monitor import Monitor, ResultsWriter
 

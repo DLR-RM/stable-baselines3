@@ -101,7 +101,10 @@ def data_to_json(data: Dict[str, Any]) -> str:
             # Use ":" to make sure we do
             # not override these keys
             # when we include variables of the object later
-            cloudpickle_serialization = {":type:": str(type(data_item)), ":serialized:": base64_encoded}
+            cloudpickle_serialization = {
+                ":type:": str(type(data_item)),
+                ":serialized:": base64_encoded,
+            }
 
             # Add first-level JSON-serializable items of the
             # object for further details (but not deeper than this to
@@ -405,7 +408,8 @@ def load_from_zip_file(
                     print(archive.read("system_info.txt").decode())
                 else:
                     warnings.warn(
-                        "The model was saved with SB3 <= 1.2.0 and thus cannot print system information.", UserWarning
+                        "The model was saved with SB3 <= 1.2.0 and thus cannot print system information.",
+                        UserWarning,
                     )
 
             if "data" in namelist and load_data:

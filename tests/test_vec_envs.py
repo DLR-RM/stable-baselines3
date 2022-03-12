@@ -355,13 +355,19 @@ def test_framestack_vecenv():
 
     def make_image_env():
         return CustomGymEnv(
-            gym.spaces.Box(low=np.zeros(image_space_shape), high=np.ones(image_space_shape) * 255, dtype=np.uint8)
+            gym.spaces.Box(
+                low=np.zeros(image_space_shape),
+                high=np.ones(image_space_shape) * 255,
+                dtype=np.uint8,
+            )
         )
 
     def make_transposed_image_env():
         return CustomGymEnv(
             gym.spaces.Box(
-                low=np.zeros(transposed_image_space_shape), high=np.ones(transposed_image_space_shape) * 255, dtype=np.uint8
+                low=np.zeros(transposed_image_space_shape),
+                high=np.ones(transposed_image_space_shape) * 255,
+                dtype=np.uint8,
             )
         )
 

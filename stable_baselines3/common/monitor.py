@@ -166,7 +166,10 @@ class ResultsWriter:
     """
 
     def __init__(
-        self, filename: str = "", header: Optional[Dict[str, Union[float, str]]] = None, extra_keys: Tuple[str, ...] = ()
+        self,
+        filename: str = "",
+        header: Optional[Dict[str, Union[float, str]]] = None,
+        extra_keys: Tuple[str, ...] = (),
     ):
         if header is None:
             header = {}

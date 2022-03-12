@@ -94,7 +94,11 @@ class NatureCNN(BaseFeaturesExtractor):
 
 
 def create_mlp(
-    input_dim: int, output_dim: int, net_arch: List[int], activation_fn: Type[nn.Module] = nn.ReLU, squash_output: bool = False
+    input_dim: int,
+    output_dim: int,
+    net_arch: List[int],
+    activation_fn: Type[nn.Module] = nn.ReLU,
+    squash_output: bool = False,
 ) -> List[nn.Module]:
     """
     Create a multi layer perceptron (MLP), which is

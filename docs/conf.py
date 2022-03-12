@@ -180,7 +180,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, "StableBaselines3.tex", "Stable Baselines3 Documentation", "Stable Baselines3 Contributors", "manual")
+    (master_doc, "StableBaselines3.tex", "Stable Baselines3 Documentation", "Stable Baselines3 Contributors", "manual"),
 ]
 
 
@@ -205,7 +205,7 @@ texinfo_documents = [
         "StableBaselines3",
         "One line description of project.",
         "Miscellaneous",
-    )
+    ),
 ]
 
 

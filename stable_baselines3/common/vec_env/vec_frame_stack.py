@@ -41,7 +41,9 @@ class VecFrameStack(VecEnvWrapper):
         observation_space = self.stackedobs.stack_observation_space(wrapped_obs_space)
         VecEnvWrapper.__init__(self, venv, observation_space=observation_space)
 
-    def step_wait(self,) -> Tuple[Union[np.ndarray, Dict[str, np.ndarray]], np.ndarray, np.ndarray, List[Dict[str, Any]]]:
+    def step_wait(
+        self,
+    ) -> Tuple[Union[np.ndarray, Dict[str, np.ndarray]], np.ndarray, np.ndarray, List[Dict[str, Any]],]:
 
         observations, rewards, dones, infos = self.venv.step_wait()
 

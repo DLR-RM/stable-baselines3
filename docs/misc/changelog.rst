@@ -48,7 +48,7 @@ Documentation:
 - Fix indentation 2 spaces to 4 spaces in custom env documentation example (@Gautam-J)
 - Update MlpExtractor docstring (@gianlucadecola)
 - Added explanation of the logger output
-- Update ``Directly Accessing The Summary Writer`` in tensorboard integration
+- Update ``Directly Accessing The Summary Writer`` in tensorboard integration (@xy9485)
 
 Release 1.4.0 (2022-01-18)
 ---------------------------

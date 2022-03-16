@@ -265,7 +265,7 @@ can get direct access to the underlying SummaryWriter in a callback:
         def _on_training_start(self):
             self._log_freq = 1000  # log every 1000 calls
 
-            output_formats = self.logger.Logger.CURRENT.output_formats
+            output_formats = self.logger.output_formats
             # Save reference to tensorboard formatter object
             # note: the failure case (not formatter found) is not handled here, should be done with try/except.
             self.tb_formatter = next(formatter for formatter in output_formats if isinstance(formatter, TensorBoardOutputFormat))

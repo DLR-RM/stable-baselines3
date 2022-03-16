@@ -1,5 +1,6 @@
 import operator
 import warnings
+from typing import Optional
 
 import gym
 import numpy as np
@@ -36,7 +37,9 @@ class DummyRewardEnv(gym.Env):
         returned_value = self.returned_rewards[index]
         return np.array([returned_value]), returned_value, self.t == len(self.returned_rewards), {}
 
-    def reset(self):
+    def reset(self, seed: Optional[int] = None):
+        if seed is not None:
+            super().reset(seed=seed)
         self.t = 0
         return np.array([self.returned_rewards[self.return_reward_idx]])
 
@@ -57,7 +60,9 @@ class DummyDictEnv(gym.Env):
         )
         self.action_space = spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
 
-    def reset(self):
+    def reset(self, seed: Optional[int] = None):
+        if seed is not None:
+            super().reset(seed=seed)
         return self.observation_space.sample()
 
     def step(self, action):
@@ -87,7 +92,9 @@ class DummyMixedDictEnv(gym.Env):
         )
         self.action_space = spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
 
-    def reset(self):
+    def reset(self, seed: Optional[int] = None):
+        if seed is not None:
+            super().reset(seed=seed)
         return self.observation_space.sample()
 
     def step(self, action):

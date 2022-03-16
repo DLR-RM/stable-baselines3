@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 import gym
 import numpy as np
@@ -166,12 +166,15 @@ class SimpleMultiObsEnv(gym.Env):
         """
         print(self.log)
 
-    def reset(self) -> Dict[str, np.ndarray]:
+    def reset(self, seed: Optional[int] = None) -> Dict[str, np.ndarray]:
         """
         Resets the environment state and step count and returns reset observation.
 
+        :param seed:
         :return: observation dict {'vec': ..., 'img': ...}
         """
+        if seed is not None:
+            super().reset(seed=seed)
         self.count = 0
         if not self.random_start:
             self.state = 0

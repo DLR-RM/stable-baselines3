@@ -157,7 +157,9 @@ class BitFlippingEnv(Env):
             ]
         )
 
-    def reset(self) -> Dict[str, Union[int, np.ndarray]]:
+    def reset(self, seed: Optional[int] = None) -> Dict[str, Union[int, np.ndarray]]:
+        if seed is not None:
+            self.obs_space.seed(seed)
         self.current_step = 0
         self.state = self.obs_space.sample()
         return self._get_obs()

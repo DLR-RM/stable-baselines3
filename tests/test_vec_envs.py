@@ -2,6 +2,7 @@ import collections
 import functools
 import itertools
 import multiprocessing
+from typing import Optional
 
 import gym
 import numpy as np
@@ -25,7 +26,7 @@ class CustomGymEnv(gym.Env):
         self.current_step = 0
         self.ep_length = 4
 
-    def reset(self):
+    def reset(self, seed: Optional[int] = None):
         self.current_step = 0
         self._choose_next_state()
         return self.state

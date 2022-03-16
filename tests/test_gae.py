@@ -1,3 +1,5 @@
+from typing import Optional
+
 import gym
 import numpy as np
 import pytest
@@ -19,7 +21,9 @@ class CustomEnv(gym.Env):
     def seed(self, seed):
         self.observation_space.seed(seed)
 
-    def reset(self):
+    def reset(self, seed: Optional[int] = None):
+        if seed is not None:
+            self.observation_space.seed(seed)
         self.n_steps = 0
         return self.observation_space.sample()
 
@@ -43,7 +47,10 @@ class InfiniteHorizonEnv(gym.Env):
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         self.current_state = 0
 
-    def reset(self):
+    def reset(self, seed: Optional[int] = None):
+        if seed is not None:
+            super().reset(seed=seed)
+
         self.current_state = 0
         return self.current_state
 

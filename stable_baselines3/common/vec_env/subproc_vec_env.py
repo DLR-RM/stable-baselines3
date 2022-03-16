@@ -127,9 +127,12 @@ class SubprocVecEnv(VecEnv):
             remote.send(("seed", seed + idx))
         return [remote.recv() for remote in self.remotes]
 
-    def reset(self) -> VecEnvObs:
-        for remote in self.remotes:
-            remote.send(("reset", None))
+    def reset(self, seed: Optional[int] = None) -> VecEnvObs:
+        for idx, remote in enumerate(self.remotes):
+            if seed is not None:
+                remote.send(("reset", seed + idx))
+            else:
+                remote.send(("reset", None))
         obs = [remote.recv() for remote in self.remotes]
         return _flatten_obs(obs, self.observation_space)
 

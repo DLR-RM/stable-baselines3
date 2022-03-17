@@ -61,7 +61,7 @@ class VecEnv(ABC):
         self.action_space = action_space
 
     @abstractmethod
-    def reset(self, seed: Optional[int] = None) -> VecEnvObs:
+    def reset(self) -> VecEnvObs:
         """
         Reset all the environments and return an array of
         observations, or a tuple of observation arrays.
@@ -70,7 +70,6 @@ class VecEnv(ABC):
         be cancelled and step_wait() should not be called
         until step_async() is invoked again.
 
-        :param seed: The random seed in case we want to set it / change it.
         :return: observation
         """
         raise NotImplementedError()

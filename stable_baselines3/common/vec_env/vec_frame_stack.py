@@ -55,8 +55,7 @@ class VecFrameStack(VecEnvWrapper):
         """
         Reset all environments
         """
-        observation = self.venv.reset()  # pytype:disable=annotation-type-mismatch
-
+        observation = self.venv.reset()
         observation = self.stackedobs.reset(observation)
         return observation
 

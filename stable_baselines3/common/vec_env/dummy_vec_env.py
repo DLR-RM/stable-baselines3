@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from copy import deepcopy
+from inspect import signature
 from typing import Any, Callable, List, Optional, Sequence, Type, Union
 
 import gym
@@ -53,15 +54,17 @@ class DummyVecEnv(VecEnv):
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
         seeds = list()
         for idx, env in enumerate(self.envs):
-            seeds.append(env.reset(seed=seed + idx))
+            if "seed" in signature(env.unwrapped.reset).parameters:
+                # gym >= 0.23.1
+                seeds.append(env.reset(seed=seed + idx))
+            else:
+                # Backward compatibility
+                seeds.append(env.seed(seed=seed + idx))
         return seeds
 
-    def reset(self, seed: Optional[int] = None) -> VecEnvObs:
+    def reset(self) -> VecEnvObs:
         for env_idx in range(self.num_envs):
-            if seed:
-                obs = self.envs[env_idx].reset(seed=seed)
-            else:
-                obs = self.envs[env_idx].reset()
+            obs = self.envs[env_idx].reset()
             self._save_obs(env_idx, obs)
         return self._obs_from_buf()
 

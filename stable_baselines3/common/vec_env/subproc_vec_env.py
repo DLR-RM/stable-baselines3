@@ -1,5 +1,6 @@
 import multiprocessing as mp
 from collections import OrderedDict
+from inspect import signature
 from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
 
 import gym
@@ -14,8 +15,10 @@ from stable_baselines3.common.vec_env.base_vec_env import (
 )
 
 
-def _worker(
-    remote: mp.connection.Connection, parent_remote: mp.connection.Connection, env_fn_wrapper: CloudpickleWrapper
+def _worker(  # noqa: C901
+    remote: mp.connection.Connection,
+    parent_remote: mp.connection.Connection,
+    env_fn_wrapper: CloudpickleWrapper,
 ) -> None:
     # Import here to avoid a circular import
     from stable_baselines3.common.env_util import is_wrapped
@@ -33,7 +36,12 @@ def _worker(
                     observation = env.reset()
                 remote.send((observation, reward, done, info))
             elif cmd == "seed":
-                remote.send(env.reset(seed=data))
+                if "seed" in signature(env.unwrapped.reset).parameters:
+                    # gym >= 0.23.1
+                    remote.send(env.reset(seed=data))
+                else:
+                    # Backward compatibility
+                    remote.send(env.seed(seed=data))
             elif cmd == "reset":
                 observation = env.reset()
                 remote.send(observation)
@@ -127,12 +135,9 @@ class SubprocVecEnv(VecEnv):
             remote.send(("seed", seed + idx))
         return [remote.recv() for remote in self.remotes]
 
-    def reset(self, seed: Optional[int] = None) -> VecEnvObs:
-        for idx, remote in enumerate(self.remotes):
-            if seed is not None:
-                remote.send(("reset", seed + idx))
-            else:
-                remote.send(("reset", None))
+    def reset(self) -> VecEnvObs:
+        for remote in self.remotes:
+            remote.send(("reset", None))
         obs = [remote.recv() for remote in self.remotes]
         return _flatten_obs(obs, self.observation_space)
 

@@ -523,7 +523,6 @@ class BaseAlgorithm(ABC):
         n_eval_episodes: int = 5,
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-        use_random_action: bool = True,
     ) -> "BaseAlgorithm":
         """
         Return a trained model.
@@ -537,7 +536,6 @@ class BaseAlgorithm(ABC):
         :param n_eval_episodes: Number of episode to evaluate the agent
         :param eval_log_path: Path to a folder where the evaluations will be saved
         :param reset_num_timesteps: whether or not to reset the current timestep number (used in logging)
-        :param use_random_action: If True, the actions are random (i.e. not sampled with the actor).
         :return: the trained model
         """
 

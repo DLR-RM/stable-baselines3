@@ -8,7 +8,6 @@ from torch.nn import functional as F
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
-from stable_baselines3.common.surgeon import Surgeon
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import polyak_update
 from stable_baselines3.sac.policies import SACPolicy
@@ -66,7 +65,6 @@ class SAC(OffPolicyAlgorithm):
     :param create_eval_env: Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: additional arguments to be passed to the policy on creation
-    :param surgeon: an object than can modify actor loss, just before being backwarded
     :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
     :param seed: Seed for the pseudo random generators
     :param device: Device (cpu, cuda, ...) on which the code should be run.
@@ -99,7 +97,6 @@ class SAC(OffPolicyAlgorithm):
         tensorboard_log: Optional[str] = None,
         create_eval_env: bool = False,
         policy_kwargs: Optional[Dict[str, Any]] = None,
-        surgeon: Optional[Surgeon] = None,
         verbose: int = 0,
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
@@ -142,7 +139,6 @@ class SAC(OffPolicyAlgorithm):
         self.ent_coef = ent_coef
         self.target_update_interval = target_update_interval
         self.ent_coef_optimizer = None
-        self.surgeon = surgeon
 
         if _init_setup_model:
             self._setup_model()
@@ -178,8 +174,6 @@ class SAC(OffPolicyAlgorithm):
             # this will throw an error if a malformed string (different from 'auto')
             # is passed
             self.ent_coef_tensor = th.tensor(float(self.ent_coef)).to(self.device)
-        if self.surgeon is not None:
-            self.actor.optimizer.add_param_group({"params": self.surgeon.parameters()})
 
     def _create_aliases(self) -> None:
         self.actor = self.policy.actor
@@ -202,8 +196,6 @@ class SAC(OffPolicyAlgorithm):
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
-            if self.surgeon is not None:
-                replay_data = self.surgeon.modify_reward(replay_data)
 
             # We need to sample because `log_std` may have changed between two gradient steps
             if self.use_sde:
@@ -263,8 +255,6 @@ class SAC(OffPolicyAlgorithm):
             q_values_pi = th.cat(self.critic(replay_data.observations, actions_pi), dim=1)
             min_qf_pi, _ = th.min(q_values_pi, dim=1, keepdim=True)
             actor_loss = (ent_coef * log_prob - min_qf_pi).mean()
-            if self.surgeon is not None:
-                actor_loss = self.surgeon.modify_actor_loss(actor_loss, replay_data)
             actor_losses.append(actor_loss.item())
 
             # Optimize the actor
@@ -296,7 +286,6 @@ class SAC(OffPolicyAlgorithm):
         tb_log_name: str = "SAC",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-        use_random_action: bool = False,
     ) -> OffPolicyAlgorithm:
 
         return super(SAC, self).learn(
@@ -309,7 +298,6 @@ class SAC(OffPolicyAlgorithm):
             tb_log_name=tb_log_name,
             eval_log_path=eval_log_path,
             reset_num_timesteps=reset_num_timesteps,
-            use_random_action=use_random_action,
         )
 
     def _excluded_save_params(self) -> List[str]:

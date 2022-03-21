@@ -125,7 +125,6 @@ class DDPG(TD3):
         tb_log_name: str = "DDPG",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-        use_random_action: bool = False,
     ) -> OffPolicyAlgorithm:
 
         return super(DDPG, self).learn(
@@ -138,5 +137,4 @@ class DDPG(TD3):
             tb_log_name=tb_log_name,
             eval_log_path=eval_log_path,
             reset_num_timesteps=reset_num_timesteps,
-            use_random_action=use_random_action,
         )

@@ -8,7 +8,6 @@ from torch.nn import functional as F
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
-from stable_baselines3.common.surgeon import Surgeon
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import polyak_update
 from stable_baselines3.td3.policies import TD3Policy
@@ -54,7 +53,6 @@ class TD3(OffPolicyAlgorithm):
     :param create_eval_env: Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: additional arguments to be passed to the policy on creation
-    :param surgeon: an object than can modify actor loss, just before being backwarded
     :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
     :param seed: Seed for the pseudo random generators
     :param device: Device (cpu, cuda, ...) on which the code should be run.
@@ -84,7 +82,6 @@ class TD3(OffPolicyAlgorithm):
         tensorboard_log: Optional[str] = None,
         create_eval_env: bool = False,
         policy_kwargs: Optional[Dict[str, Any]] = None,
-        surgeon: Optional[Surgeon] = None,
         verbose: int = 0,
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
@@ -121,7 +118,6 @@ class TD3(OffPolicyAlgorithm):
         self.policy_delay = policy_delay
         self.target_noise_clip = target_noise_clip
         self.target_policy_noise = target_policy_noise
-        self.surgeon = surgeon
 
         if _init_setup_model:
             self._setup_model()
@@ -150,8 +146,6 @@ class TD3(OffPolicyAlgorithm):
             self._n_updates += 1
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
-            if self.surgeon is not None:
-                replay_data = self.surgeon.modify_reward(replay_data)
 
             with th.no_grad():
                 # Select action according to policy and add clipped noise
@@ -180,8 +174,6 @@ class TD3(OffPolicyAlgorithm):
             if self._n_updates % self.policy_delay == 0:
                 # Compute actor loss
                 actor_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
-                if self.surgeon is not None:
-                    actor_loss = self.surgeon.modify_loss(actor_loss, replay_data)
                 actor_losses.append(actor_loss.item())
 
                 # Optimize the actor
@@ -208,7 +200,6 @@ class TD3(OffPolicyAlgorithm):
         tb_log_name: str = "TD3",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-        use_random_action: bool = False,
     ) -> OffPolicyAlgorithm:
 
         return super(TD3, self).learn(
@@ -221,7 +212,6 @@ class TD3(OffPolicyAlgorithm):
             tb_log_name=tb_log_name,
             eval_log_path=eval_log_path,
             reset_num_timesteps=reset_num_timesteps,
-            use_random_action=use_random_action,
         )
 
     def _excluded_save_params(self) -> List[str]:

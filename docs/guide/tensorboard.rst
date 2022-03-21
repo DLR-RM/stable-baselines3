@@ -36,6 +36,12 @@ Once the learn function is called, you can monitor the RL agent during or after 
 
   tensorboard --logdir ./a2c_cartpole_tensorboard/
 
+
+.. note::
+
+	You can find explanations about the logger output and names in the :ref:`Logger <logger>` section.
+
+
 you can also add past logging folders:
 
 .. code-block:: bash
@@ -259,7 +265,7 @@ can get direct access to the underlying SummaryWriter in a callback:
         def _on_training_start(self):
             self._log_freq = 1000  # log every 1000 calls
 
-            output_formats = self.logger.Logger.CURRENT.output_formats
+            output_formats = self.logger.output_formats
             # Save reference to tensorboard formatter object
             # note: the failure case (not formatter found) is not handled here, should be done with try/except.
             self.tb_formatter = next(formatter for formatter in output_formats if isinstance(formatter, TensorBoardOutputFormat))

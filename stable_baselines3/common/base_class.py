@@ -678,6 +678,7 @@ class BaseAlgorithm(ABC):
             to avoid unexpected behavior.
             See https://github.com/DLR-RM/stable-baselines3/issues/597
         :param kwargs: extra arguments to change the model when loading
+        :return: new model instance with loaded parameters
         """
         if print_system_info:
             print("== CURRENT SYSTEM INFO ==")

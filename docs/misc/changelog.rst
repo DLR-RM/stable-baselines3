@@ -40,6 +40,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Fixed pytest warnings
+- Removed parameter ``remove_time_limit_termination`` in off policy algorithms since it was dead code (@Gregwar)
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -169,7 +170,6 @@ Others:
 - Improved error message when using dict observation with the wrong policy
 - Improved error message when using ``EvalCallback`` with two envs not wrapped the same way.
 - Added additional infos about supported python version for PyPi in ``setup.py``
-- Removed parameter ``remove_time_limit_termination`` in off policy algorithms since it was dead code
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -929,3 +929,4 @@ And all the contributors:
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
+@Gregwar

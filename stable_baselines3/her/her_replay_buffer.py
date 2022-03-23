@@ -87,7 +87,6 @@ class HerReplayBuffer(DictReplayBuffer):
         self.ep_start = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
         self._current_ep_start = np.zeros(self.n_envs, dtype=np.int64)
         self.ep_length = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
-        self.child_buffer: ReplayBuffer = None  # when specifed, also store obs in this buffer
 
     def __getstate__(self) -> Dict[str, Any]:
         """

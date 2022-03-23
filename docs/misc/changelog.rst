@@ -169,6 +169,7 @@ Others:
 - Improved error message when using dict observation with the wrong policy
 - Improved error message when using ``EvalCallback`` with two envs not wrapped the same way.
 - Added additional infos about supported python version for PyPi in ``setup.py``
+- Removed parameter ``remove_time_limit_termination`` in off policy algorithms since it was dead code
 
 Documentation:
 ^^^^^^^^^^^^^^

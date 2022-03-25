@@ -1,6 +1,5 @@
 from collections import OrderedDict
 from copy import deepcopy
-from inspect import signature
 from typing import Any, Callable, List, Optional, Sequence, Type, Union
 
 import gym
@@ -52,14 +51,12 @@ class DummyVecEnv(VecEnv):
         return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones), deepcopy(self.buf_infos))
 
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
+        # Avoid circular import
+        from stable_baselines3.common.utils import compat_gym_seed
+
         seeds = list()
         for idx, env in enumerate(self.envs):
-            if "seed" in signature(env.unwrapped.reset).parameters:
-                # gym >= 0.23.1
-                seeds.append(env.reset(seed=seed + idx))
-            else:
-                # Backward compatibility
-                seeds.append(env.seed(seed=seed + idx))
+            seeds.append(compat_gym_seed(env, seed=seed + idx))
         return seeds
 
     def reset(self) -> VecEnvObs:

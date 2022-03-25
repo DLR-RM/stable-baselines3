@@ -1,6 +1,5 @@
 import multiprocessing as mp
 from collections import OrderedDict
-from inspect import signature
 from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
 
 import gym
@@ -22,6 +21,7 @@ def _worker(  # noqa: C901
 ) -> None:
     # Import here to avoid a circular import
     from stable_baselines3.common.env_util import is_wrapped
+    from stable_baselines3.common.utils import compat_gym_seed
 
     parent_remote.close()
     env = env_fn_wrapper.var()
@@ -36,12 +36,7 @@ def _worker(  # noqa: C901
                     observation = env.reset()
                 remote.send((observation, reward, done, info))
             elif cmd == "seed":
-                if "seed" in signature(env.unwrapped.reset).parameters:
-                    # gym >= 0.23.1
-                    remote.send(env.reset(seed=data))
-                else:
-                    # Backward compatibility
-                    remote.send(env.seed(seed=data))
+                remote.send(compat_gym_seed(env, seed=data))
             elif cmd == "reset":
                 observation = env.reset()
                 remote.send(observation)

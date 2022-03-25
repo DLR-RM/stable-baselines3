@@ -13,7 +13,7 @@ def test_monitor(tmp_path):
     Test the monitor wrapper
     """
     env = gym.make("CartPole-v1")
-    env.seed(0)
+    env.reset(seed=0)
     monitor_file = os.path.join(str(tmp_path), "stable_baselines-test-{}.monitor.csv".format(uuid.uuid4()))
     monitor_env = Monitor(env, monitor_file)
     monitor_env.reset()
@@ -55,7 +55,7 @@ def test_monitor_load_results(tmp_path):
     """
     tmp_path = str(tmp_path)
     env1 = gym.make("CartPole-v1")
-    env1.seed(0)
+    env1.reset(seed=0)
     monitor_file1 = os.path.join(tmp_path, "stable_baselines-test-{}.monitor.csv".format(uuid.uuid4()))
     monitor_env1 = Monitor(env1, monitor_file1)
 
@@ -75,7 +75,7 @@ def test_monitor_load_results(tmp_path):
     assert results_size1 == episode_count1
 
     env2 = gym.make("CartPole-v1")
-    env2.seed(0)
+    env2.reset(seed=0)
     monitor_file2 = os.path.join(tmp_path, "stable_baselines-test-{}.monitor.csv".format(uuid.uuid4()))
     monitor_env2 = Monitor(env2, monitor_file2)
     monitor_files = get_monitor_files(tmp_path)

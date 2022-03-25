@@ -23,6 +23,7 @@ from stable_baselines3.common.save_util import load_from_zip_file, recursive_get
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import (
     check_for_correct_spaces,
+    compat_gym_seed,
     get_device,
     get_schedule_fn,
     get_system_info,
@@ -572,10 +573,12 @@ class BaseAlgorithm(ABC):
             return
         set_random_seed(seed, using_cuda=self.device.type == th.device("cuda").type)
         self.action_space.seed(seed)
+        # self.env is always a VecEnv
         if self.env is not None:
             self.env.seed(seed)
+        # Eval env may be a gym.Env, hence the call to compat_gym_seed()
         if self.eval_env is not None:
-            self.eval_env.seed(seed)
+            compat_gym_seed(self.eval_env, seed=seed)
 
     def set_parameters(
         self,

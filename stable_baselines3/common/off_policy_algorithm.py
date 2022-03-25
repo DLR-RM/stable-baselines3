@@ -69,8 +69,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param use_sde_at_warmup: Whether to use gSDE instead of uniform sampling
         during the warm up phase (before learning starts)
     :param sde_support: Whether the model support gSDE or not
-    :param remove_time_limit_termination: Remove terminations (dones) that are due to time limit.
-        See https://github.com/hill-a/stable-baselines/issues/863
     :param supported_action_spaces: The action spaces supported by the algorithm.
     """
 
@@ -103,7 +101,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         sde_sample_freq: int = -1,
         use_sde_at_warmup: bool = False,
         sde_support: bool = True,
-        remove_time_limit_termination: bool = False,
         supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
     ):
 
@@ -137,10 +134,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             replay_buffer_kwargs = {}
         self.replay_buffer_kwargs = replay_buffer_kwargs
         self._episode_storage = None
-
-        # Remove terminations (dones) that are due to time limit
-        # see https://github.com/hill-a/stable-baselines/issues/863
-        self.remove_time_limit_termination = remove_time_limit_termination
 
         # Save train freq parameter, will be converted later to TrainFreq object
         self.train_freq = train_freq

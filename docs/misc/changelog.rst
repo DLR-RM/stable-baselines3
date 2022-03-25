@@ -22,7 +22,7 @@ New Features:
 
 SB3-Contrib
 ^^^^^^^^^^^
-- coming soon: Cross Entropy Method, see https://github.com/DLR-RM/stable-baselines3
+- coming soon: Cross Entropy Method, see https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/pull/62
 
 Bug Fixes:
 ^^^^^^^^^^

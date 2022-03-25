@@ -4,9 +4,10 @@ Changelog
 ==========
 
 
-Release 1.4.1a3 (WIP)
+Release 1.5.0 (2022-03-25)
 ---------------------------
 
+**Bug fixes, early stopping callback**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -21,6 +22,7 @@ New Features:
 
 SB3-Contrib
 ^^^^^^^^^^^
+- coming soon: Cross Entropy Method, see https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/pull/62
 
 Bug Fixes:
 ^^^^^^^^^^

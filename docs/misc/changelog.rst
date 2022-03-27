@@ -35,6 +35,7 @@ Bug Fixes:
 - Set default ``env`` argument to ``None`` in ``HerReplayBuffer.sample`` (@qgallouedec)
 - Fix ``batch_size`` typing in ``DQN`` (@qgallouedec)
 - Fixed sample normalization in ``DictReplayBuffer`` (@qgallouedec)
+- Fixed saving and loading large policies greater than 2GB (@jkterry1, @ycheng517)
 
 Deprecations:
 ^^^^^^^^^^^^^

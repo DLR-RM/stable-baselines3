@@ -658,6 +658,7 @@ def test_open_file(tmp_path):
         open_path(buff, "w")
 
 
+@pytest.mark.expensive
 def test_save_load_large_model(tmp_path):
     """
     Test saving and loading a model with a large policy that is greater than 2GB. We

@@ -10,6 +10,7 @@ from stable_baselines3.common.on_policy_algorithm import OnPolicyAlgorithm
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import explained_variance, get_schedule_fn
+from stable_baselines3.ppo.policies import CnnPolicy, MlpPolicy, MultiInputPolicy
 
 
 class PPO(OnPolicyAlgorithm):
@@ -96,6 +97,7 @@ class PPO(OnPolicyAlgorithm):
         super(PPO, self).__init__(
             policy,
             env,
+            policy_aliases={"MlpPolicy": MlpPolicy, "CnnPolicy": CnnPolicy, "MultiInputPolicy": MultiInputPolicy},
             learning_rate=learning_rate,
             n_steps=n_steps,
             gamma=gamma,

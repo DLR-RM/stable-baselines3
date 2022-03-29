@@ -87,7 +87,7 @@ class BaseAlgorithm(ABC):
         policy: Type[BasePolicy],
         env: Union[GymEnv, str, None],
         learning_rate: Union[float, Schedule],
-        policy_aliases: Dict[str, Type[BasePolicy]] = {},
+        policy_aliases: Optional[Dict[str, Type[BasePolicy]]] = None,
         policy_kwargs: Optional[Dict[str, Any]] = None,
         tensorboard_log: Optional[str] = None,
         verbose: int = 0,
@@ -101,7 +101,7 @@ class BaseAlgorithm(ABC):
         supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
     ):
 
-        self.policy_aliases = policy_aliases
+        self.policy_aliases = policy_aliases if policy_aliases is not None else None
 
         if isinstance(policy, str):
             self.policy_class = self._get_policy_from_name(policy)
@@ -341,7 +341,7 @@ class BaseAlgorithm(ABC):
         if policy_name in self.policy_aliases:
             return self.policy_aliases[policy_name]
         else:
-            raise ValueError("Policy %s unknown" % policy_name)
+            raise ValueError(f"Policy {policy_name} unknown")
 
     def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
         """

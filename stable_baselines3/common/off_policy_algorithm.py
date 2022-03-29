@@ -95,7 +95,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         support_multi_env: bool = False,
         create_eval_env: bool = False,
         monitor_wrapper: bool = True,
-        policy_aliases: Dict[str, Type[BasePolicy]] = {},
+        policy_aliases: Optional[Dict[str, Type[BasePolicy]]] = None,
         seed: Optional[int] = None,
         use_sde: bool = False,
         sde_sample_freq: int = -1,

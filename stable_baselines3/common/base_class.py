@@ -101,7 +101,7 @@ class BaseAlgorithm(ABC):
         supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
     ):
 
-        self.policy_aliases = policy_aliases if policy_aliases is not None else None
+        self.policy_aliases = policy_aliases if policy_aliases is not None else {}
 
         if isinstance(policy, str):
             self.policy_class = self._get_policy_from_name(policy)

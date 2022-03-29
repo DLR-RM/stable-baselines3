@@ -28,7 +28,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param policy: Policy object
     :param env: The environment to learn from
                 (if registered in Gym, can be str. Can be None for loading trained models)
-    :param policy_aliases: The policy aliases dict for this method
     :param learning_rate: learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
     :param buffer_size: size of the replay buffer
@@ -61,6 +60,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param monitor_wrapper: When creating an environment, whether to wrap it
         or not in a Monitor wrapper.
+    :param policy_aliases: The policy aliases dict for this method
     :param seed: Seed for the pseudo random generators
     :param use_sde: Whether to use State Dependent Exploration (SDE)
         instead of action noise exploration (default: False)
@@ -86,7 +86,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         gamma: float = 0.99,
         train_freq: Union[int, Tuple[int, str]] = (1, "step"),
         gradient_steps: int = 1,
-        policy_aliases: Dict[str, Type[BasePolicy]] = {},
         action_noise: Optional[ActionNoise] = None,
         replay_buffer_class: Optional[ReplayBuffer] = None,
         replay_buffer_kwargs: Optional[Dict[str, Any]] = None,
@@ -98,6 +97,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         support_multi_env: bool = False,
         create_eval_env: bool = False,
         monitor_wrapper: bool = True,
+        policy_aliases: Dict[str, Type[BasePolicy]] = {},
         seed: Optional[int] = None,
         use_sde: bool = False,
         sde_sample_freq: int = -1,

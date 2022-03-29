@@ -8,7 +8,7 @@ from stable_baselines3.common.on_policy_algorithm import OnPolicyAlgorithm
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import explained_variance
-from stable_baselines3.a2c.policies import CnnPolicy, MlpPolicy, MultiInputPolicy
+from stable_baselines3.a2c.policies import CnnPolicy, MlpPolicy, MultiInputPolicy  # pytype: disable=pyi-error
 
 
 class A2C(OnPolicyAlgorithm):

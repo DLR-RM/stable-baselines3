@@ -10,7 +10,7 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import polyak_update
-from stable_baselines3.sac.policies import SACPolicy
+from stable_baselines3.sac.policies import SACPolicy, MlpPolicy, CnnPolicy, MultiInputPolicy
 
 
 class SAC(OffPolicyAlgorithm):
@@ -106,7 +106,6 @@ class SAC(OffPolicyAlgorithm):
         super(SAC, self).__init__(
             policy,
             env,
-            SACPolicy,
             learning_rate,
             buffer_size,
             learning_starts,
@@ -116,6 +115,7 @@ class SAC(OffPolicyAlgorithm):
             train_freq,
             gradient_steps,
             action_noise,
+            policy_aliases={"MlpPolicy": MlpPolicy, "CnnPolicy": CnnPolicy, "MultiInputPolicy": MultiInputPolicy},
             replay_buffer_class=replay_buffer_class,
             replay_buffer_kwargs=replay_buffer_kwargs,
             policy_kwargs=policy_kwargs,

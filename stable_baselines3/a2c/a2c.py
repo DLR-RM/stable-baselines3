@@ -115,7 +115,7 @@ class A2C(OnPolicyAlgorithm):
             self._setup_model()
 
     policy_aliases: Dict[str, Type[BasePolicy]] = {
-        "MlpPolicy": ActorCriticCnnPolicy,
+        "MlpPolicy": ActorCriticPolicy,
         "CnnPolicy": ActorCriticCnnPolicy,
         "MultiInputPolicy": MultiInputActorCriticPolicy,
     }

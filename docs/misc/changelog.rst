@@ -4,9 +4,36 @@ Changelog
 ==========
 
 
-Release 1.4.1a3 (WIP)
+Release 1.5.1a0 (WIP)
 ---------------------------
 
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+SB3-Contrib
+^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed saving and loading large policies greater than 2GB (@jkterry1, @ycheng517)
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
+Release 1.5.0 (2022-03-25)
+---------------------------
+
+**Bug fixes, early stopping callback**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -21,6 +48,7 @@ New Features:
 
 SB3-Contrib
 ^^^^^^^^^^^
+- coming soon: Cross Entropy Method, see https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/pull/62
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -40,6 +68,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Fixed pytest warnings
+- Removed parameter ``remove_time_limit_termination`` in off policy algorithms since it was dead code (@Gregwar)
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -928,3 +957,4 @@ And all the contributors:
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
+@Gregwar @ycheng517

@@ -656,3 +656,24 @@ def test_open_file(tmp_path):
     with pytest.raises(ValueError):
         buff.close()
         open_path(buff, "w")
+
+
+@pytest.mark.expensive
+def test_save_load_large_model(tmp_path):
+    """
+    Test saving and loading a model with a large policy that is greater than 2GB. We
+    test only one algorithm since all algorithms share the same code for loading and
+    saving the model.
+    """
+    env = select_env(TD3)
+    kwargs = dict(policy_kwargs=dict(net_arch=[8192, 8192, 8192]), device="cpu")
+    model = TD3("MlpPolicy", env, **kwargs)
+
+    # test saving
+    model.save(tmp_path / "test_save")
+
+    # test loading
+    model = TD3.load(str(tmp_path / "test_save.zip"), env=env, **kwargs)
+
+    # clear file from os
+    os.remove(tmp_path / "test_save.zip")

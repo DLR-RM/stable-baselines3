@@ -7,10 +7,9 @@ from gym import spaces
 from torch.nn import functional as F
 
 from stable_baselines3.common.on_policy_algorithm import OnPolicyAlgorithm
-from stable_baselines3.common.policies import ActorCriticPolicy, BasePolicy
+from stable_baselines3.common.policies import BasePolicy, ActorCriticCnnPolicy, ActorCriticPolicy, MultiInputActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import explained_variance, get_schedule_fn
-from stable_baselines3.ppo.policies import CnnPolicy, MlpPolicy, MultiInputPolicy
 
 
 class PPO(OnPolicyAlgorithm):
@@ -157,9 +156,9 @@ class PPO(OnPolicyAlgorithm):
             self._setup_model()
 
     policy_aliases: Dict[str, Type[BasePolicy]] = {
-        "MlpPolicy": MlpPolicy,
-        "CnnPolicy": CnnPolicy,
-        "MultiInputPolicy": MultiInputPolicy,
+        "MlpPolicy": ActorCriticCnnPolicy,
+        "CnnPolicy": ActorCriticCnnPolicy,
+        "MultiInputPolicy": MultiInputActorCriticPolicy,
     }
 
     def _setup_model(self) -> None:

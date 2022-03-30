@@ -87,7 +87,6 @@ class BaseAlgorithm(ABC):
         policy: Type[BasePolicy],
         env: Union[GymEnv, str, None],
         learning_rate: Union[float, Schedule],
-        policy_aliases: Dict[str, Type[BasePolicy]] = {},
         policy_kwargs: Optional[Dict[str, Any]] = None,
         tensorboard_log: Optional[str] = None,
         verbose: int = 0,
@@ -100,9 +99,6 @@ class BaseAlgorithm(ABC):
         sde_sample_freq: int = -1,
         supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
     ):
-
-        self.policy_aliases = policy_aliases
-
         if isinstance(policy, str):
             self.policy_class = self._get_policy_from_name(policy)
         else:
@@ -185,6 +181,11 @@ class BaseAlgorithm(ABC):
 
             if self.use_sde and not isinstance(self.action_space, gym.spaces.Box):
                 raise ValueError("generalized State-Dependent Exploration (gSDE) can only be used with continuous actions.")
+
+    """
+    Policy aliases (see _get_policy_from_name)
+    """
+    policy_aliases: Dict[str, Type[BasePolicy]] = {}
 
     @staticmethod
     def _wrap_env(env: GymEnv, verbose: int = 0, monitor_wrapper: bool = True) -> VecEnv:

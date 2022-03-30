@@ -60,7 +60,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param monitor_wrapper: When creating an environment, whether to wrap it
         or not in a Monitor wrapper.
-    :param policy_aliases: The policy aliases dict for this method
     :param seed: Seed for the pseudo random generators
     :param use_sde: Whether to use State Dependent Exploration (SDE)
         instead of action noise exploration (default: False)
@@ -97,7 +96,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         support_multi_env: bool = False,
         create_eval_env: bool = False,
         monitor_wrapper: bool = True,
-        policy_aliases: Dict[str, Type[BasePolicy]] = {},
         seed: Optional[int] = None,
         use_sde: bool = False,
         sde_sample_freq: int = -1,
@@ -110,7 +108,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         super(OffPolicyAlgorithm, self).__init__(
             policy=policy,
             env=env,
-            policy_aliases=policy_aliases,
             learning_rate=learning_rate,
             policy_kwargs=policy_kwargs,
             tensorboard_log=tensorboard_log,

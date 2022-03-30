@@ -10,6 +10,7 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import polyak_update
+from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.td3.policies import CnnPolicy, MlpPolicy, MultiInputPolicy, TD3Policy
 
 
@@ -99,7 +100,6 @@ class TD3(OffPolicyAlgorithm):
             gamma,
             train_freq,
             gradient_steps,
-            policy_aliases={"MlpPolicy": MlpPolicy, "CnnPolicy": CnnPolicy, "MultiInputPolicy": MultiInputPolicy},
             action_noise=action_noise,
             replay_buffer_class=replay_buffer_class,
             replay_buffer_kwargs=replay_buffer_kwargs,
@@ -121,6 +121,12 @@ class TD3(OffPolicyAlgorithm):
 
         if _init_setup_model:
             self._setup_model()
+
+    policy_aliases: Dict[str, Type[BasePolicy]] = {
+        "MlpPolicy": MlpPolicy,
+        "CnnPolicy": CnnPolicy,
+        "MultiInputPolicy": MultiInputPolicy,
+    }
 
     def _setup_model(self) -> None:
         super(TD3, self)._setup_model()

@@ -342,7 +342,7 @@ class BaseAlgorithm(ABC):
         if policy_name in self.policy_aliases:
             return self.policy_aliases[policy_name]
         else:
-            raise ValueError("Policy %s unknown" % policy_name)
+            raise ValueError(f"Policy {policy_name} unknown")
 
     def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
         """

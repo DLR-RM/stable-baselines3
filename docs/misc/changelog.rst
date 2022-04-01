@@ -25,6 +25,8 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Changing the way policy "aliases" is handled ("MlpPolicy", "CnnPolicy", ...), removing the former
+  `register_policy` and using `policy_aliases` static attributes instead (@Gregwar)
 
 Documentation:
 ^^^^^^^^^^^^^^

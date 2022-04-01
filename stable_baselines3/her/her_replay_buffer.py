@@ -262,7 +262,7 @@ class HerReplayBuffer(DictReplayBuffer):
         else:
             raise ValueError(f"Strategy {self.goal_selection_strategy} for sampling goals not supported!")
 
-        return self._buffer["achieved_goal"][her_episode_indices, transitions_indices]
+        return self._buffer["next_achieved_goal"][her_episode_indices, transitions_indices]
 
     def _sample_transitions(
         self,

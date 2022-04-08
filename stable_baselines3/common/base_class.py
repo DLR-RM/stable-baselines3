@@ -82,6 +82,9 @@ class BaseAlgorithm(ABC):
     :param supported_action_spaces: The action spaces supported by the algorithm.
     """
 
+    # Policy aliases (see _get_policy_from_name())
+    policy_aliases: Dict[str, Type[BasePolicy]] = {}
+
     def __init__(
         self,
         policy: Type[BasePolicy],
@@ -181,11 +184,6 @@ class BaseAlgorithm(ABC):
 
             if self.use_sde and not isinstance(self.action_space, gym.spaces.Box):
                 raise ValueError("generalized State-Dependent Exploration (gSDE) can only be used with continuous actions.")
-
-    """
-    Policy aliases (see _get_policy_from_name)
-    """
-    policy_aliases: Dict[str, Type[BasePolicy]] = {}
 
     @staticmethod
     def _wrap_env(env: GymEnv, verbose: int = 0, monitor_wrapper: bool = True) -> VecEnv:
@@ -335,8 +333,8 @@ class BaseAlgorithm(ABC):
         all algorithms can call upon "MlpPolicy" or "CnnPolicy",
         and they receive respective policies that work for them.
 
-        :return:
-            A policy class (type)
+        :param policy_name: Alias of the policy
+        :return: A policy class (type)
         """
 
         if policy_name in self.policy_aliases:

@@ -93,6 +93,27 @@ def _check_nan(env: gym.Env) -> None:
         _, _, _, _ = vec_env.step(action)
 
 
+def _is_goal_env(env: gym.Env) -> bool:
+    """
+    Check if the env uses the convention for goal-conditioned envs (previously, the gym.GoalEnv interface)
+    """
+    return hasattr(env, "compute_reward")
+
+
+def _check_goal_env_obs(obs: dict, observation_space: spaces.Space, method_name: str) -> None:
+    """
+    Check that an environment implementing the `compute_rewards()` method (previously known as
+    GoalEnv in gym) contains at least three elements, namely `observation`, `desired_goal`, and
+    `achieved_goal`.
+    """
+    for key in ["observation", "achieved_goal", "desired_goal"]:
+        if key not in observation_space.spaces:
+            raise AssertionError(
+                f"The observation returned by the `{method_name}()` method of a goal-conditioned env requires the {key}"
+                "key to be part of the observation dictionary."
+            )
+
+
 def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spaces.Space, method_name: str) -> None:
     """
     Check that the observation returned by the environment
@@ -141,7 +162,9 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
     # because env inherits from gym.Env, we assume that `reset()` and `step()` methods exists
     obs = env.reset()
 
-    if isinstance(observation_space, spaces.Dict):
+    if _is_goal_env(env):
+        _check_goal_env_obs(obs, observation_space, "reset")
+    elif isinstance(observation_space, spaces.Dict):
         assert isinstance(obs, dict), "The observation returned by `reset()` must be a dictionary"
         for key in observation_space.spaces.keys():
             try:
@@ -160,14 +183,15 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
     # Unpack
     obs, reward, done, info = data
 
-    if isinstance(observation_space, spaces.Dict):
+    if _is_goal_env(env):
+        _check_goal_env_obs(obs, observation_space, "step")
+    elif isinstance(observation_space, spaces.Dict):
         assert isinstance(obs, dict), "The observation returned by `step()` must be a dictionary"
         for key in observation_space.spaces.keys():
             try:
                 _check_obs(obs[key], observation_space.spaces[key], "step")
             except AssertionError as e:
                 raise AssertionError(f"Error while checking key={key}: " + str(e))
-
     else:
         _check_obs(obs, observation_space, "step")
 
@@ -183,8 +207,9 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
 
 def _check_spaces(env: gym.Env) -> None:
     """
-    Check that the observation and action spaces are defined
-    and inherit from gym.spaces.Space.
+    Check that the observation and action spaces are defined and inherit from gym.spaces.Space. For
+    envs that follow the goal-conditioned standard (previously, the gym.GoalEnv interface) we check
+    the observation space is gym.spaces.Dict
     """
     # Helper to link to the code, because gym has no proper documentation
     gym_spaces = " cf https://github.com/openai/gym/blob/master/gym/spaces/"
@@ -194,6 +219,11 @@ def _check_spaces(env: gym.Env) -> None:
 
     assert isinstance(env.observation_space, spaces.Space), "The observation space must inherit from gym.spaces" + gym_spaces
     assert isinstance(env.action_space, spaces.Space), "The action space must inherit from gym.spaces" + gym_spaces
+
+    if _is_goal_env(env):
+        assert isinstance(
+            env.observation_space, spaces.Dict
+        ), "Goal conditioned envs (previously gym.GoalEnv) require the observation space to be gym.spaces.Dict"
 
 
 # Check render cannot be covered by CI

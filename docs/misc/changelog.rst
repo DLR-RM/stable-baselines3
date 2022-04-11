@@ -4,13 +4,14 @@ Changelog
 ==========
 
 
-Release 1.5.1a2(WIP)
+Release 1.5.1a3 (WIP)
 ---------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Changed the way policy "aliases" are handled ("MlpPolicy", "CnnPolicy", ...), removing the former
   ``register_policy`` helper, ``policy_base`` parameter and using ``policy_aliases`` static attributes instead (@Gregwar)
+- SB3 now requires PyTorch >= 1.11
 
 New Features:
 ^^^^^^^^^^^^^
@@ -31,6 +32,7 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Added link to gym doc and gym env checker
 
 
 Release 1.5.0 (2022-03-25)

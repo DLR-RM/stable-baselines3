@@ -3,6 +3,7 @@ import os
 import pytest
 
 from stable_baselines3 import A2C, PPO, SAC, TD3
+from stable_baselines3.common.utils import get_latest_run_id
 
 MODEL_DICT = {
     "a2c": (A2C, "CartPole-v1"),
@@ -35,3 +36,13 @@ def test_tensorboard(tmp_path, model_name):
     assert os.path.isdir(tmp_path / str(logname + "_1"))
     # Check that the log dir name increments correctly
     assert os.path.isdir(tmp_path / str(logname + "_2"))
+
+
+def test_escape_log_name(tmp_path):
+    # Log name that must be escaped
+    log_name = "filename[16, 16]"
+    # Create folder
+    os.makedirs(str(tmp_path) + f"/{log_name}_1", exist_ok=True)
+    os.makedirs(str(tmp_path) + f"/{log_name}_2", exist_ok=True)
+    last_run_id = get_latest_run_id(tmp_path, log_name)
+    assert last_run_id == 2

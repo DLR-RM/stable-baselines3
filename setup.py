@@ -75,7 +75,7 @@ setup(
     install_requires=[
         "gym==0.21",  # Fixed version due to breaking changes in 0.22
         "numpy",
-        "torch>=1.8.1",
+        "torch>=1.11",
         # For saving models
         "cloudpickle",
         # For reading logs

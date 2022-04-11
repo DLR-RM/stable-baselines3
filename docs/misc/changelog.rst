@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.5.1a1 (WIP)
+Release 1.5.1a2(WIP)
 ---------------------------
 
 Breaking Changes:
@@ -21,6 +21,7 @@ SB3-Contrib
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed saving and loading large policies greater than 2GB (@jkterry1, @ycheng517)
+- Fixed final goal selection strategy that did not sample the final achieved goal (@qgallouedec)
 
 Deprecations:
 ^^^^^^^^^^^^^

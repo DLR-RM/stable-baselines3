@@ -252,7 +252,7 @@ class HerReplayBuffer(DictReplayBuffer):
         elif self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
             # replay with random state which comes from the same episode and was observed after current transition
             transitions_indices = np.random.randint(
-                transitions_indices[her_indices] + 1, self.episode_lengths[her_episode_indices]
+                transitions_indices[her_indices], self.episode_lengths[her_episode_indices]
             )
 
         elif self.goal_selection_strategy == GoalSelectionStrategy.EPISODE:
@@ -262,7 +262,7 @@ class HerReplayBuffer(DictReplayBuffer):
         else:
             raise ValueError(f"Strategy {self.goal_selection_strategy} for sampling goals not supported!")
 
-        return self._buffer["achieved_goal"][her_episode_indices, transitions_indices]
+        return self._buffer["next_achieved_goal"][her_episode_indices, transitions_indices]
 
     def _sample_transitions(
         self,
@@ -303,14 +303,6 @@ class HerReplayBuffer(DictReplayBuffer):
             her_indices = np.arange(len(episode_indices))
 
         ep_lengths = self.episode_lengths[episode_indices]
-
-        # Special case when using the "future" goal sampling strategy
-        # we cannot sample all transitions, we have to remove the last timestep
-        if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
-            # restrict the sampling domain when ep_lengths > 1
-            # otherwise filter out the indices
-            her_indices = her_indices[ep_lengths[her_indices] > 1]
-            ep_lengths[her_indices] -= 1
 
         if online_sampling:
             # Select which transitions to use

@@ -51,7 +51,7 @@ Documentation is available online: [https://stable-baselines3.readthedocs.io/](h
 
 ## Integrations
 
-Stable-Baselines3 has some integration with other libraries/services like Weights & Biases for experiment tracking or Hugging Face for storing/sharing trained models. You can find out more in the [dedicated section](https://stable-baselines3.readthedocs.io/en/master/guide/integrations.html) of the documentation. 
+Stable-Baselines3 has some integration with other libraries/services like Weights & Biases for experiment tracking or Hugging Face for storing/sharing trained models. You can find out more in the [dedicated section](https://stable-baselines3.readthedocs.io/en/master/guide/integrations.html) of the documentation.
 
 
 ## RL Baselines3 Zoo: A Training Framework for Stable Baselines3 Reinforcement Learning Agents
@@ -84,7 +84,7 @@ Documentation is available online: [https://sb3-contrib.readthedocs.io/](https:/
 
 ## Installation
 
-**Note:** Stable-Baselines3 supports PyTorch >= 1.8.1.
+**Note:** Stable-Baselines3 supports PyTorch >= 1.11
 
 ### Prerequisites
 Stable Baselines3 requires Python 3.7+.

@@ -4,11 +4,13 @@ Changelog
 ==========
 
 
-Release 1.5.1a0 (WIP)
+Release 1.5.1a1 (WIP)
 ---------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Changed the way policy "aliases" are handled ("MlpPolicy", "CnnPolicy", ...), removing the former
+  ``register_policy`` helper, ``policy_base`` parameter and using ``policy_aliases`` static attributes instead (@Gregwar)
 
 New Features:
 ^^^^^^^^^^^^^

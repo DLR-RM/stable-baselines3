@@ -31,7 +31,7 @@ class CustomGymEnv(gym.Env):
         return self.state
 
     def step(self, action):
-        reward = 1
+        reward = float(np.random.rand())
         self._choose_next_state()
         self.current_step += 1
         done = self.current_step >= self.ep_length
@@ -46,6 +46,7 @@ class CustomGymEnv(gym.Env):
 
     def seed(self, seed=None):
         if seed is not None:
+            np.random.seed(seed)
             self.observation_space.seed(seed)
 
     @staticmethod
@@ -459,11 +460,16 @@ def test_vec_seeding(vec_env_class):
         if start_method is not None:
             vec_env_class = functools.partial(SubprocVecEnv, start_method=start_method)
 
-        vec_env = vec_env_class([make_env] * 3)
+        n_envs = 3
+        vec_env = vec_env_class([make_env] * n_envs)
         # Seed with no argument
         vec_env.seed()
         obs = vec_env.reset()
+        _, rewards, _, _ = vec_env.step(np.array([vec_env.action_space.sample() for _ in range(n_envs)]))
         # Seed should be different per process
         assert not np.allclose(obs[0], obs[1])
+        assert not np.allclose(rewards[0], rewards[1])
         assert not np.allclose(obs[1], obs[2])
+        assert not np.allclose(rewards[1], rewards[2])
+
         vec_env.close()

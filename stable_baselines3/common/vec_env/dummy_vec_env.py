@@ -53,7 +53,7 @@ class DummyVecEnv(VecEnv):
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
         if seed is None:
             seed = np.random.randint(0, 2**32 - 1)
-        seeds = list()
+        seeds = []
         for idx, env in enumerate(self.envs):
             seeds.append(env.seed(seed + idx))
         return seeds

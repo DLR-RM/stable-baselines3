@@ -24,6 +24,7 @@ Bug Fixes:
 - Fixed saving and loading large policies greater than 2GB (@jkterry1, @ycheng517)
 - Fixed final goal selection strategy that did not sample the final achieved goal (@qgallouedec)
 - Fixed a bug with special characters in the tensorboard log name (@quantitative-technologies)
+- Fixed a bug in ``DummyVecEnv``'s and ``SubprocVecEnv``'s seeding function. None value was unchecked (@ScheiklP)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -59,7 +60,6 @@ SB3-Contrib
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed a bug in ``VecMonitor``. The monitor did not consider the ``info_keywords`` during stepping (@ScheiklP)
-- Fixed a bug in ``DummyVecEnv``'s and ``SubprocVecEnv``'s seeding function. None value was unchecked (@ScheiklP)
 - Fixed a bug in ``HumanOutputFormat``. Distinct keys truncated to the same prefix would overwrite each others value,
   resulting in only one being output. This now raises an error (this should only affect a small fraction of use cases
   with very long keys.)

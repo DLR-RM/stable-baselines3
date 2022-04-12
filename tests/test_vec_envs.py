@@ -45,7 +45,8 @@ class CustomGymEnv(gym.Env):
             return np.zeros((4, 4, 3))
 
     def seed(self, seed=None):
-        pass
+        if seed is not None:
+            self.observation_space.seed(seed)
 
     @staticmethod
     def custom_method(dim_0=1, dim_1=1):
@@ -442,12 +443,27 @@ def test_vec_env_is_wrapped():
     assert vec_env.env_is_wrapped(Monitor) == [False, True]
 
 
-def test_vec_seeding():
+@pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
+def test_vec_seeding(vec_env_class):
     def make_env():
         return CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)))
 
-    vec_env = SubprocVecEnv([make_env] * 3)
+    # For SubprocVecEnv check for all starting methods
+    start_methods = [None]
+    if vec_env_class != DummyVecEnv:
+        all_methods = {"forkserver", "spawn", "fork"}
+        available_methods = multiprocessing.get_all_start_methods()
+        start_methods = list(all_methods.intersection(available_methods))
 
-    vec_env.seed()
+    for start_method in start_methods:
+        if start_method is not None:
+            vec_env_class = functools.partial(SubprocVecEnv, start_method=start_method)
 
-    vec_env.close()
+        vec_env = vec_env_class([make_env] * 3)
+        # Seed with no argument
+        vec_env.seed()
+        obs = vec_env.reset()
+        # Seed should be different per process
+        assert not np.allclose(obs[0], obs[1])
+        assert not np.allclose(obs[1], obs[2])
+        vec_env.close()

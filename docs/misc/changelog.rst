@@ -24,6 +24,7 @@ Bug Fixes:
 - Fixed saving and loading large policies greater than 2GB (@jkterry1, @ycheng517)
 - Fixed final goal selection strategy that did not sample the final achieved goal (@qgallouedec)
 - Fixed a bug with special characters in the tensorboard log name (@quantitative-technologies)
+- Fixed a bug in ``DummyVecEnv``'s and ``SubprocVecEnv``'s seeding function. None value was unchecked (@ScheiklP)
 
 Deprecations:
 ^^^^^^^^^^^^^

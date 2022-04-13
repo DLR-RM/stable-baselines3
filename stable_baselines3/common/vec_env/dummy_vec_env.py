@@ -54,7 +54,9 @@ class DummyVecEnv(VecEnv):
         # Avoid circular import
         from stable_baselines3.common.utils import compat_gym_seed
 
-        seeds = list()
+        if seed is None:
+            seed = np.random.randint(0, 2**32 - 1)
+        seeds = []
         for idx, env in enumerate(self.envs):
             seeds.append(compat_gym_seed(env, seed=seed + idx))
         return seeds

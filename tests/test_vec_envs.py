@@ -27,12 +27,14 @@ class CustomGymEnv(gym.Env):
         self.ep_length = 4
 
     def reset(self, seed: Optional[int] = None):
+        if seed is not None:
+            self.seed(seed)
         self.current_step = 0
         self._choose_next_state()
         return self.state
 
     def step(self, action):
-        reward = 1
+        reward = float(np.random.rand())
         self._choose_next_state()
         self.current_step += 1
         done = self.current_step >= self.ep_length
@@ -46,7 +48,9 @@ class CustomGymEnv(gym.Env):
             return np.zeros((4, 4, 3))
 
     def seed(self, seed=None):
-        pass
+        if seed is not None:
+            np.random.seed(seed)
+            self.observation_space.seed(seed)
 
     @staticmethod
     def custom_method(dim_0=1, dim_1=1):
@@ -458,3 +462,34 @@ def test_backward_compat_seed(vec_env_class):
     vec_env.seed(3)
     new_obs = vec_env.reset()
     assert np.allclose(new_obs, obs)
+
+
+@pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
+def test_vec_seeding(vec_env_class):
+    def make_env():
+        return CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)))
+
+    # For SubprocVecEnv check for all starting methods
+    start_methods = [None]
+    if vec_env_class != DummyVecEnv:
+        all_methods = {"forkserver", "spawn", "fork"}
+        available_methods = multiprocessing.get_all_start_methods()
+        start_methods = list(all_methods.intersection(available_methods))
+
+    for start_method in start_methods:
+        if start_method is not None:
+            vec_env_class = functools.partial(SubprocVecEnv, start_method=start_method)
+
+        n_envs = 3
+        vec_env = vec_env_class([make_env] * n_envs)
+        # Seed with no argument
+        vec_env.seed()
+        obs = vec_env.reset()
+        _, rewards, _, _ = vec_env.step(np.array([vec_env.action_space.sample() for _ in range(n_envs)]))
+        # Seed should be different per process
+        assert not np.allclose(obs[0], obs[1])
+        assert not np.allclose(rewards[0], rewards[1])
+        assert not np.allclose(obs[1], obs[2])
+        assert not np.allclose(rewards[1], rewards[2])
+
+        vec_env.close()

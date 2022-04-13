@@ -165,7 +165,7 @@ def test_non_default_action_spaces(new_action_space):
 
     # Gym raises error for Boxed spaces if low > high
     if env.action_space.low[0] > env.action_space.high[0]:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError), pytest.warns(UserWarning):
             check_env(env)
     else:
         with pytest.warns(UserWarning):

@@ -31,6 +31,7 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Bumped version of Atari envs to v5 to match Gym's (@carlosluis)
 
 Documentation:
 ^^^^^^^^^^^^^^

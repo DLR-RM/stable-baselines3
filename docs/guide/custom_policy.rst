@@ -145,7 +145,7 @@ that derives from ``BaseFeaturesExtractor`` and then pass it to the model when t
       features_extractor_class=CustomCNN,
       features_extractor_kwargs=dict(features_dim=128),
   )
-  model = PPO("CnnPolicy", "BreakoutNoFrameskip-v4", policy_kwargs=policy_kwargs, verbose=1)
+  model = PPO("CnnPolicy", "ALE/Breakout-v5", policy_kwargs=policy_kwargs, verbose=1)
   model.learn(1000)
 
 

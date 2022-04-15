@@ -39,7 +39,7 @@ def test_make_vec_env(env_id, n_envs, vec_env_cls, wrapper_class):
     env.close()
 
 
-@pytest.mark.parametrize("env_id", ["BreakoutNoFrameskip-v4"])
+@pytest.mark.parametrize("env_id", ["ALE/Breakout-v5"])
 @pytest.mark.parametrize("n_envs", [1, 2])
 @pytest.mark.parametrize("wrapper_kwargs", [None, dict(clip_reward=False, screen_size=60)])
 def test_make_atari_env(env_id, n_envs, wrapper_kwargs):
@@ -80,14 +80,14 @@ def test_vec_env_monitor_kwargs():
     env = make_vec_env("MountainCarContinuous-v0", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": False})
     assert env.get_attr("allow_early_resets")[0] is False
 
-    env = make_atari_env("BreakoutNoFrameskip-v4", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": False})
+    env = make_atari_env("BreakoutNoFrameskip-v5", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": False})
     assert env.get_attr("allow_early_resets")[0] is False
 
     env = make_vec_env("MountainCarContinuous-v0", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": True})
     assert env.get_attr("allow_early_resets")[0] is True
 
     env = make_atari_env(
-        "BreakoutNoFrameskip-v4",
+        "BreakoutNoFrameskip-v5",
         n_envs=1,
         seed=0,
         monitor_kwargs={"allow_early_resets": True},

@@ -80,14 +80,14 @@ def test_vec_env_monitor_kwargs():
     env = make_vec_env("MountainCarContinuous-v0", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": False})
     assert env.get_attr("allow_early_resets")[0] is False
 
-    env = make_atari_env("BreakoutNoFrameskip-v5", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": False})
+    env = make_atari_env("ALE/Breakout-v5", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": False})
     assert env.get_attr("allow_early_resets")[0] is False
 
     env = make_vec_env("MountainCarContinuous-v0", n_envs=1, seed=0, monitor_kwargs={"allow_early_resets": True})
     assert env.get_attr("allow_early_resets")[0] is True
 
     env = make_atari_env(
-        "BreakoutNoFrameskip-v5",
+        "ALE/Breakout-v5",
         n_envs=1,
         seed=0,
         monitor_kwargs={"allow_early_resets": True},

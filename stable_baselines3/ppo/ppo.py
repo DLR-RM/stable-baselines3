@@ -19,7 +19,7 @@ class PPO(OnPolicyAlgorithm):
     Paper: https://arxiv.org/abs/1707.06347
     Code: This implementation borrows code from OpenAI Spinning Up (https://github.com/openai/spinningup/)
     https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail and
-    and Stable Baselines (PPO2 from https://github.com/hill-a/stable-baselines)
+    Stable Baselines (PPO2 from https://github.com/hill-a/stable-baselines)
 
     Introduction to PPO: https://spinningup.openai.com/en/latest/algorithms/ppo.html
 

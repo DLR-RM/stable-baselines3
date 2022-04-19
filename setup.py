@@ -116,7 +116,7 @@ setup(
             # For render
             "opencv-python",
             # For atari games,
-            "ale-py~=0.7.4",
+            "ale-py==0.7.4",
             "autorom[accept-rom-license]~=0.4.2",
             "pillow",
             # Tensorboard support

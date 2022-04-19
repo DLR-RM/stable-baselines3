@@ -235,8 +235,10 @@ class AtariWrapper(gym.Wrapper):
         terminal_on_life_loss: bool = True,
         clip_reward: bool = True,
     ):
-        env = NoopResetEnv(env, noop_max=noop_max)
-        env = MaxAndSkipEnv(env, skip=frame_skip)
+        if noop_max > 0:
+            env = NoopResetEnv(env, noop_max=noop_max)
+        if frame_skip > 0:
+            env = MaxAndSkipEnv(env, skip=frame_skip)
         if terminal_on_life_loss:
             env = EpisodicLifeEnv(env)
         if "FIRE" in env.unwrapped.get_action_meanings():

@@ -35,6 +35,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Added link to gym doc and gym env checker
+- Fix typo in PPO doc (@bcollazo)
 
 
 Release 1.5.0 (2022-03-25)
@@ -964,4 +965,4 @@ And all the contributors:
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
-@Gregwar @ycheng517 @quantitative-technologies
+@Gregwar @ycheng517 @quantitative-technologies @bcollazo

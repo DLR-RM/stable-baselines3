@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.5.1a4 (WIP)
+Release 1.5.1a5 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -31,6 +31,7 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Upgraded to Python 3.7+ syntax using ``pyupgrade``
 
 Documentation:
 ^^^^^^^^^^^^^^

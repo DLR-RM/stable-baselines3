@@ -50,7 +50,7 @@ class DummyDictEnv(gym.Env):
     """
 
     def __init__(self):
-        super(DummyDictEnv, self).__init__()
+        super().__init__()
         self.observation_space = spaces.Dict(
             {
                 "observation": spaces.Box(low=-20.0, high=20.0, shape=(4,), dtype=np.float32),

@@ -95,7 +95,7 @@ class TD3(OffPolicyAlgorithm):
         _init_setup_model: bool = True,
     ):
 
-        super(TD3, self).__init__(
+        super().__init__(
             policy,
             env,
             learning_rate,
@@ -129,7 +129,7 @@ class TD3(OffPolicyAlgorithm):
             self._setup_model()
 
     def _setup_model(self) -> None:
-        super(TD3, self)._setup_model()
+        super()._setup_model()
         self._create_aliases()
 
     def _create_aliases(self) -> None:
@@ -168,7 +168,7 @@ class TD3(OffPolicyAlgorithm):
             current_q_values = self.critic(replay_data.observations, replay_data.actions)
 
             # Compute critic loss
-            critic_loss = sum([F.mse_loss(current_q, target_q_values) for current_q in current_q_values])
+            critic_loss = sum(F.mse_loss(current_q, target_q_values) for current_q in current_q_values)
             critic_losses.append(critic_loss.item())
 
             # Optimize the critics
@@ -208,7 +208,7 @@ class TD3(OffPolicyAlgorithm):
         reset_num_timesteps: bool = True,
     ) -> OffPolicyAlgorithm:
 
-        return super(TD3, self).learn(
+        return super().learn(
             total_timesteps=total_timesteps,
             callback=callback,
             log_interval=log_interval,
@@ -221,7 +221,7 @@ class TD3(OffPolicyAlgorithm):
         )
 
     def _excluded_save_params(self) -> List[str]:
-        return super(TD3, self)._excluded_save_params() + ["actor", "critic", "actor_target", "critic_target"]
+        return super()._excluded_save_params() + ["actor", "critic", "actor_target", "critic_target"]
 
     def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
         state_dicts = ["policy", "actor.optimizer", "critic.optimizer"]

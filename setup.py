@@ -2,7 +2,7 @@ import os
 
 from setuptools import find_packages, setup
 
-with open(os.path.join("stable_baselines3", "version.txt"), "r") as file_handler:
+with open(os.path.join("stable_baselines3", "version.txt")) as file_handler:
     __version__ = file_handler.read().strip()
 
 

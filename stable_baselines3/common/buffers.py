@@ -42,7 +42,7 @@ class BaseBuffer(ABC):
         device: Union[th.device, str] = "cpu",
         n_envs: int = 1,
     ):
-        super(BaseBuffer, self).__init__()
+        super().__init__()
         self.buffer_size = buffer_size
         self.observation_space = observation_space
         self.action_space = action_space
@@ -179,7 +179,7 @@ class ReplayBuffer(BaseBuffer):
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
     ):
-        super(ReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
+        super().__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
 
         # Adjust buffer size
         self.buffer_size = max(buffer_size // n_envs, 1)
@@ -339,7 +339,7 @@ class RolloutBuffer(BaseBuffer):
         n_envs: int = 1,
     ):
 
-        super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
+        super().__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
         self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
@@ -358,7 +358,7 @@ class RolloutBuffer(BaseBuffer):
         self.log_probs = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.advantages = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.generator_ready = False
-        super(RolloutBuffer, self).reset()
+        super().reset()
 
     def compute_returns_and_advantage(self, last_values: th.Tensor, dones: np.ndarray) -> None:
         """

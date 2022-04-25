@@ -24,7 +24,7 @@ ERROR = 40
 DISABLED = 50
 
 
-class Video(object):
+class Video:
     """
     Video data class storing the video frames and the frame per seconds
 
@@ -37,7 +37,7 @@ class Video(object):
         self.fps = fps
 
 
-class Figure(object):
+class Figure:
     """
     Figure data class storing a matplotlib figure and whether to close the figure after logging it
 
@@ -50,7 +50,7 @@ class Figure(object):
         self.close = close
 
 
-class Image(object):
+class Image:
     """
     Image data class storing an image and data format
 
@@ -80,13 +80,13 @@ class FormatUnsupportedError(NotImplementedError):
             format_str = f"formats {', '.join(unsupported_formats)} are"
         else:
             format_str = f"format {unsupported_formats[0]} is"
-        super(FormatUnsupportedError, self).__init__(
+        super().__init__(
             f"The {format_str} not supported for the {value_description} value logged.\n"
             f"You can exclude formats via the `exclude` parameter of the logger's `record` function."
         )
 
 
-class KVWriter(object):
+class KVWriter:
     """
     Key Value writer
     """
@@ -108,7 +108,7 @@ class KVWriter(object):
         raise NotImplementedError
 
 
-class SeqWriter(object):
+class SeqWriter:
     """
     sequence writer
     """
@@ -427,7 +427,7 @@ def make_output_format(_format: str, log_dir: str, log_suffix: str = "") -> KVWr
 # ================================================================
 
 
-class Logger(object):
+class Logger:
     """
     The logger class.
 
@@ -623,7 +623,7 @@ def read_json(filename: str) -> pandas.DataFrame:
     :return: the data in the json
     """
     data = []
-    with open(filename, "rt") as file_handler:
+    with open(filename) as file_handler:
         for line in file_handler:
             data.append(json.loads(line))
     return pandas.DataFrame(data)

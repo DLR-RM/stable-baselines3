@@ -82,7 +82,7 @@ class HerReplayBuffer(DictReplayBuffer):
         handle_timeout_termination: bool = True,
     ):
 
-        super(HerReplayBuffer, self).__init__(buffer_size, env.observation_space, env.action_space, device, env.num_envs)
+        super().__init__(buffer_size, env.observation_space, env.action_space, device, env.num_envs)
 
         # convert goal_selection_strategy into GoalSelectionStrategy if string
         if isinstance(goal_selection_strategy, str):

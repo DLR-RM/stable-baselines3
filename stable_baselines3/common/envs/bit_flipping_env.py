@@ -36,7 +36,7 @@ class BitFlippingEnv(GoalEnv):
         image_obs_space: bool = False,
         channel_first: bool = True,
     ):
-        super(BitFlippingEnv, self).__init__()
+        super().__init__()
         # Shape of the observation when using image space
         self.image_shape = (1, 36, 36) if channel_first else (36, 36, 1)
         # The achieved goal is determined by the current state
@@ -115,7 +115,7 @@ class BitFlippingEnv(GoalEnv):
         if self.discrete_obs_space:
             # The internal state is the binary representation of the
             # observed one
-            return int(sum([state[i] * 2**i for i in range(len(state))]))
+            return int(sum(state[i] * 2**i for i in range(len(state))))
 
         if self.image_obs_space:
             size = np.prod(self.image_shape)
@@ -135,7 +135,7 @@ class BitFlippingEnv(GoalEnv):
         if isinstance(state, int):
             state = np.array(state).reshape(batch_size, -1)
             # Convert to binary representation
-            state = (((state[:, :] & (1 << np.arange(len(self.state))))) > 0).astype(int)
+            state = ((state[:, :] & (1 << np.arange(len(self.state)))) > 0).astype(int)
         elif self.image_obs_space:
             state = state.reshape(batch_size, -1)[:, : len(self.state)] / 255
         else:

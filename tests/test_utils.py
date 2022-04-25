@@ -180,7 +180,7 @@ class AlwaysDoneWrapper(gym.Wrapper):
     # Pretends that environment only has single step for each
     # episode.
     def __init__(self, env):
-        super(AlwaysDoneWrapper, self).__init__(env)
+        super().__init__(env)
         self.last_obs = None
         self.needs_reset = True
 

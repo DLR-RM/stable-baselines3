@@ -82,7 +82,7 @@ class A2C(OnPolicyAlgorithm):
         _init_setup_model: bool = True,
     ):
 
-        super(A2C, self).__init__(
+        super().__init__(
             policy,
             env,
             learning_rate=learning_rate,
@@ -194,7 +194,7 @@ class A2C(OnPolicyAlgorithm):
         reset_num_timesteps: bool = True,
     ) -> "A2C":
 
-        return super(A2C, self).learn(
+        return super().learn(
             total_timesteps=total_timesteps,
             callback=callback,
             log_interval=log_interval,

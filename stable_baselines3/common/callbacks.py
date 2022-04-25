@@ -19,7 +19,7 @@ class BaseCallback(ABC):
     """
 
     def __init__(self, verbose: int = 0):
-        super(BaseCallback, self).__init__()
+        super().__init__()
         # The RL model
         self.model = None  # type: Optional[base_class.BaseAlgorithm]
         # An alias for self.model.get_env(), the environment used for training
@@ -127,14 +127,14 @@ class EventCallback(BaseCallback):
     """
 
     def __init__(self, callback: Optional[BaseCallback] = None, verbose: int = 0):
-        super(EventCallback, self).__init__(verbose=verbose)
+        super().__init__(verbose=verbose)
         self.callback = callback
         # Give access to the parent
         if callback is not None:
             self.callback.parent = self
 
     def init_callback(self, model: "base_class.BaseAlgorithm") -> None:
-        super(EventCallback, self).init_callback(model)
+        super().init_callback(model)
         if self.callback is not None:
             self.callback.init_callback(self.model)
 
@@ -169,7 +169,7 @@ class CallbackList(BaseCallback):
     """
 
     def __init__(self, callbacks: List[BaseCallback]):
-        super(CallbackList, self).__init__()
+        super().__init__()
         assert isinstance(callbacks, list)
         self.callbacks = callbacks
 
@@ -228,7 +228,7 @@ class CheckpointCallback(BaseCallback):
     """
 
     def __init__(self, save_freq: int, save_path: str, name_prefix: str = "rl_model", verbose: int = 0):
-        super(CheckpointCallback, self).__init__(verbose)
+        super().__init__(verbose)
         self.save_freq = save_freq
         self.save_path = save_path
         self.name_prefix = name_prefix
@@ -256,7 +256,7 @@ class ConvertCallback(BaseCallback):
     """
 
     def __init__(self, callback: Callable[[Dict[str, Any], Dict[str, Any]], bool], verbose: int = 0):
-        super(ConvertCallback, self).__init__(verbose)
+        super().__init__(verbose)
         self.callback = callback
 
     def _on_step(self) -> bool:
@@ -307,7 +307,7 @@ class EvalCallback(EventCallback):
         verbose: int = 1,
         warn: bool = True,
     ):
-        super(EvalCallback, self).__init__(callback_after_eval, verbose=verbose)
+        super().__init__(callback_after_eval, verbose=verbose)
 
         self.callback_on_new_best = callback_on_new_best
         if self.callback_on_new_best is not None:
@@ -480,7 +480,7 @@ class StopTrainingOnRewardThreshold(BaseCallback):
     """
 
     def __init__(self, reward_threshold: float, verbose: int = 0):
-        super(StopTrainingOnRewardThreshold, self).__init__(verbose=verbose)
+        super().__init__(verbose=verbose)
         self.reward_threshold = reward_threshold
 
     def _on_step(self) -> bool:
@@ -505,7 +505,7 @@ class EveryNTimesteps(EventCallback):
     """
 
     def __init__(self, n_steps: int, callback: BaseCallback):
-        super(EveryNTimesteps, self).__init__(callback)
+        super().__init__(callback)
         self.n_steps = n_steps
         self.last_time_trigger = 0
 
@@ -528,7 +528,7 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
     """
 
     def __init__(self, max_episodes: int, verbose: int = 0):
-        super(StopTrainingOnMaxEpisodes, self).__init__(verbose=verbose)
+        super().__init__(verbose=verbose)
         self.max_episodes = max_episodes
         self._total_max_episodes = max_episodes
         self.n_episodes = 0
@@ -573,7 +573,7 @@ class StopTrainingOnNoModelImprovement(BaseCallback):
     """
 
     def __init__(self, max_no_improvement_evals: int, min_evals: int = 0, verbose: int = 0):
-        super(StopTrainingOnNoModelImprovement, self).__init__(verbose=verbose)
+        super().__init__(verbose=verbose)
         self.max_no_improvement_evals = max_no_improvement_evals
         self.min_evals = min_evals
         self.last_best_mean_reward = -np.inf

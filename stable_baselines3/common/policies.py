@@ -67,7 +67,7 @@ class BaseModel(nn.Module, ABC):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        super(BaseModel, self).__init__()
+        super().__init__()
 
         if optimizer_kwargs is None:
             optimizer_kwargs = {}
@@ -267,7 +267,7 @@ class BasePolicy(BaseModel):
     """
 
     def __init__(self, *args, squash_output: bool = False, **kwargs):
-        super(BasePolicy, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._squash_output = squash_output
 
     @staticmethod
@@ -437,7 +437,7 @@ class ActorCriticPolicy(BasePolicy):
             if optimizer_class == th.optim.Adam:
                 optimizer_kwargs["eps"] = 1e-5
 
-        super(ActorCriticPolicy, self).__init__(
+        super().__init__(
             observation_space,
             action_space,
             features_extractor_class,
@@ -724,7 +724,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        super(ActorCriticCnnPolicy, self).__init__(
+        super().__init__(
             observation_space,
             action_space,
             lr_schedule,
@@ -799,7 +799,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        super(MultiInputActorCriticPolicy, self).__init__(
+        super().__init__(
             observation_space,
             action_space,
             lr_schedule,

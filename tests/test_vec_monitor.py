@@ -36,7 +36,7 @@ def test_vec_monitor(tmp_path):
 
     monitor_env.close()
 
-    with open(monitor_file, "rt") as file_handler:
+    with open(monitor_file) as file_handler:
         first_line = file_handler.readline()
         assert first_line.startswith("#")
         metadata = json.loads(first_line[1:])
@@ -66,7 +66,7 @@ def test_vec_monitor_info_keywords(tmp_path):
 
     monitor_env.close()
 
-    with open(monitor_file, "rt") as f:
+    with open(monitor_file) as f:
         reader = csv.reader(f)
         for i, line in enumerate(reader):
             if i == 0 or i == 1:

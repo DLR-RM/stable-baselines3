@@ -99,7 +99,7 @@ class PPO(OnPolicyAlgorithm):
         _init_setup_model: bool = True,
     ):
 
-        super(PPO, self).__init__(
+        super().__init__(
             policy,
             env,
             learning_rate=learning_rate,
@@ -162,7 +162,7 @@ class PPO(OnPolicyAlgorithm):
             self._setup_model()
 
     def _setup_model(self) -> None:
-        super(PPO, self)._setup_model()
+        super()._setup_model()
 
         # Initialize schedules for policy/value clipping
         self.clip_range = get_schedule_fn(self.clip_range)
@@ -307,7 +307,7 @@ class PPO(OnPolicyAlgorithm):
         reset_num_timesteps: bool = True,
     ) -> "PPO":
 
-        return super(PPO, self).learn(
+        return super().learn(
             total_timesteps=total_timesteps,
             callback=callback,
             log_interval=log_interval,

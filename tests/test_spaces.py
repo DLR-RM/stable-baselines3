@@ -9,7 +9,7 @@ from stable_baselines3.common.evaluation import evaluate_policy
 
 class DummyMultiDiscreteSpace(gym.Env):
     def __init__(self, nvec):
-        super(DummyMultiDiscreteSpace, self).__init__()
+        super().__init__()
         self.observation_space = gym.spaces.MultiDiscrete(nvec)
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
 
@@ -22,7 +22,7 @@ class DummyMultiDiscreteSpace(gym.Env):
 
 class DummyMultiBinary(gym.Env):
     def __init__(self, n):
-        super(DummyMultiBinary, self).__init__()
+        super().__init__()
         self.observation_space = gym.spaces.MultiBinary(n)
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
 

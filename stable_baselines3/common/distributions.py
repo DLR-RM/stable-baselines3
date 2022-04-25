@@ -16,7 +16,7 @@ class Distribution(ABC):
     """Abstract base class for distributions."""
 
     def __init__(self):
-        super(Distribution, self).__init__()
+        super().__init__()
         self.distribution = None
 
     @abstractmethod
@@ -120,7 +120,7 @@ class DiagGaussianDistribution(Distribution):
     """
 
     def __init__(self, action_dim: int):
-        super(DiagGaussianDistribution, self).__init__()
+        super().__init__()
         self.action_dim = action_dim
         self.mean_actions = None
         self.log_std = None
@@ -201,13 +201,13 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
     """
 
     def __init__(self, action_dim: int, epsilon: float = 1e-6):
-        super(SquashedDiagGaussianDistribution, self).__init__(action_dim)
+        super().__init__(action_dim)
         # Avoid NaN (prevents division by zero or log of zero)
         self.epsilon = epsilon
         self.gaussian_actions = None
 
     def proba_distribution(self, mean_actions: th.Tensor, log_std: th.Tensor) -> "SquashedDiagGaussianDistribution":
-        super(SquashedDiagGaussianDistribution, self).proba_distribution(mean_actions, log_std)
+        super().proba_distribution(mean_actions, log_std)
         return self
 
     def log_prob(self, actions: th.Tensor, gaussian_actions: Optional[th.Tensor] = None) -> th.Tensor:
@@ -219,7 +219,7 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
             gaussian_actions = TanhBijector.inverse(actions)
 
         # Log likelihood for a Gaussian distribution
-        log_prob = super(SquashedDiagGaussianDistribution, self).log_prob(gaussian_actions)
+        log_prob = super().log_prob(gaussian_actions)
         # Squash correction (from original SAC implementation)
         # this comes from the fact that tanh is bijective and differentiable
         log_prob -= th.sum(th.log(1 - actions**2 + self.epsilon), dim=1)
@@ -254,7 +254,7 @@ class CategoricalDistribution(Distribution):
     """
 
     def __init__(self, action_dim: int):
-        super(CategoricalDistribution, self).__init__()
+        super().__init__()
         self.action_dim = action_dim
 
     def proba_distribution_net(self, latent_dim: int) -> nn.Module:
@@ -305,7 +305,7 @@ class MultiCategoricalDistribution(Distribution):
     """
 
     def __init__(self, action_dims: List[int]):
-        super(MultiCategoricalDistribution, self).__init__()
+        super().__init__()
         self.action_dims = action_dims
 
     def proba_distribution_net(self, latent_dim: int) -> nn.Module:
@@ -360,7 +360,7 @@ class BernoulliDistribution(Distribution):
     """
 
     def __init__(self, action_dims: int):
-        super(BernoulliDistribution, self).__init__()
+        super().__init__()
         self.action_dims = action_dims
 
     def proba_distribution_net(self, latent_dim: int) -> nn.Module:
@@ -433,7 +433,7 @@ class StateDependentNoiseDistribution(Distribution):
         learn_features: bool = False,
         epsilon: float = 1e-6,
     ):
-        super(StateDependentNoiseDistribution, self).__init__()
+        super().__init__()
         self.action_dim = action_dim
         self.latent_sde_dim = None
         self.mean_actions = None
@@ -597,7 +597,7 @@ class StateDependentNoiseDistribution(Distribution):
         return actions, log_prob
 
 
-class TanhBijector(object):
+class TanhBijector:
     """
     Bijective transformation of a probability distribution
     using a squashing function (tanh)
@@ -607,7 +607,7 @@ class TanhBijector(object):
     """
 
     def __init__(self, epsilon: float = 1e-6):
-        super(TanhBijector, self).__init__()
+        super().__init__()
         self.epsilon = epsilon
 
     @staticmethod

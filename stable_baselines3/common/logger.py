@@ -17,6 +17,12 @@ try:
 except ImportError:
     SummaryWriter = None
 
+try:
+    import mlflow
+except ImportError:
+    mlflow = None
+
+
 DEBUG = 10
 INFO = 20
 WARN = 30
@@ -398,6 +404,42 @@ class TensorBoardOutputFormat(KVWriter):
             self.writer = None
 
 
+class MLflowOutputFormat(KVWriter):
+    def __init__(self):
+        """
+        Dumps key/value pairs into MLflow's numeric format.
+        """
+        assert mlflow is not None, "mlflow is not installed, you can use " "pip install mlflow to do so"
+
+    def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
+
+        print("Write")
+
+        for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
+
+            if excluded is not None and "mlflow" in excluded:
+                continue
+
+            if isinstance(value, np.ScalarType):
+                if isinstance(value, str):
+                    # str is considered a np.ScalarType
+                    pass
+                else:
+                    mlflow.log_metric(key, value, step)
+
+            if isinstance(value, th.Tensor):
+                pass
+
+            if isinstance(value, Video):
+                pass
+
+            if isinstance(value, Figure):
+                pass
+
+            if isinstance(value, Image):
+                pass
+
+
 def make_output_format(_format: str, log_dir: str, log_suffix: str = "") -> KVWriter:
     """
     return a logger for the requested format
@@ -418,6 +460,8 @@ def make_output_format(_format: str, log_dir: str, log_suffix: str = "") -> KVWr
         return CSVOutputFormat(os.path.join(log_dir, f"progress{log_suffix}.csv"))
     elif _format == "tensorboard":
         return TensorBoardOutputFormat(log_dir)
+    elif _format == "mlflow":
+        return MLflowOutputFormat()
     else:
         raise ValueError(f"Unknown format specified: {_format}")
 

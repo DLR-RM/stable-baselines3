@@ -222,6 +222,24 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         """
         raise NotImplementedError
 
+    def processPerLearningIteration(self, iteration:int, meanReward:float, logger) -> None:
+        """
+        Custom process per learning iteration.
+        Redefine this to let you have your own process per 
+        learning iteration like curriculum learning 
+        or logger something you need.
+        example:
+
+        def processPerLearningIteration(iteration:int, meanReward:float, logger) -> None:
+            print('Testing iteration:%d'%iteration)
+            print('Testing reward:%f'%meanReward)
+
+        model = PPO(...)
+        model.processPerLearningIteration = processPerLearningIteration
+        model.learn(...)
+        """
+        pass
+
     def learn(
         self,
         total_timesteps: int,
@@ -263,6 +281,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 self.logger.record("time/time_elapsed", int(time.time() - self.start_time), exclude="tensorboard")
                 self.logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")
                 self.logger.dump(step=self.num_timesteps)
+
+            self.processPerLearningIteration(iteration, safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]), self.logger)
 
             self.train()
 

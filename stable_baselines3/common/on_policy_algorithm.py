@@ -288,7 +288,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_training_end()
 
-        return self
+        return self6
 
     def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
         state_dicts = ["policy", "policy.optimizer"]

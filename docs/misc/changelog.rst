@@ -37,6 +37,8 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Added link to gym doc and gym env checker
 - Fix typo in PPO doc (@bcollazo)
+- Added link to PPO ICLR blog post
+- Added remark about breaking Markov assumption and timeout handling
 
 
 Release 1.5.0 (2022-03-25)

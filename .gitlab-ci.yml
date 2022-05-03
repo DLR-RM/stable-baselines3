@@ -9,6 +9,7 @@ pytest:
   - python --version
   # MKL_THREADING_LAYER=GNU to avoid MKL_THREADING_LAYER=INTEL incompatibility error
   - MKL_THREADING_LAYER=GNU make pytest
+  coverage: '/^TOTAL.+?(\d+\%)$/'
 
 doc-build:
   script:

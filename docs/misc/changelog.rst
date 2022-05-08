@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.5.1a5 (WIP)
+Release 1.5.1a6 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -25,6 +25,7 @@ Bug Fixes:
 - Fixed final goal selection strategy that did not sample the final achieved goal (@qgallouedec)
 - Fixed a bug with special characters in the tensorboard log name (@quantitative-technologies)
 - Fixed a bug in ``DummyVecEnv``'s and ``SubprocVecEnv``'s seeding function. None value was unchecked (@ScheiklP)
+- Fixed a bug where ``EvalCallback`` would crash when trying to synchronize ``VecNormalize`` stats when observation normalization was disabled
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -209,11 +209,6 @@ class BaseAlgorithm(ABC):
         # Make sure that dict-spaces are not nested (not supported)
         check_for_nested_spaces(env.observation_space)
 
-        if isinstance(env.observation_space, gym.spaces.Dict):
-            for space in env.observation_space.spaces.values():
-                if isinstance(space, gym.spaces.Dict):
-                    raise ValueError("Nested observation spaces are not supported (Dict spaces inside Dict space).")
-
         if not is_vecenv_wrapped(env, VecTransposeImage):
             wrap_with_vectranspose = False
             if isinstance(env.observation_space, gym.spaces.Dict):

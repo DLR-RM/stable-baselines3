@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.5.1a5 (WIP)
+Release 1.5.1a6 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -41,6 +41,8 @@ Documentation:
 - Fix typo in PPO doc (@bcollazo)
 - Added link to PPO ICLR blog post
 - Added remark about breaking Markov assumption and timeout handling
+- Added doc about MLFlow integration via custom logger (@git-thor)
+- Updated tutorials to work with Gym 0.23 (@arjun-kg)
 
 
 Release 1.5.0 (2022-03-25)
@@ -970,4 +972,4 @@ And all the contributors:
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
-@Gregwar @ycheng517 @quantitative-technologies @bcollazo @carlosluis
+@Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @carlosluis @arjun-kg

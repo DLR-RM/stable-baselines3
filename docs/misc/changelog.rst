@@ -27,6 +27,7 @@ Bug Fixes:
 - Fixed final goal selection strategy that did not sample the final achieved goal (@qgallouedec)
 - Fixed a bug with special characters in the tensorboard log name (@quantitative-technologies)
 - Fixed a bug in ``DummyVecEnv``'s and ``SubprocVecEnv``'s seeding function. None value was unchecked (@ScheiklP)
+- Fixed a bug where ``EvalCallback`` would crash when trying to synchronize ``VecNormalize`` stats when observation normalization was disabled
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -35,6 +36,7 @@ Others:
 ^^^^^^^
 - Upgraded to Python 3.7+ syntax using ``pyupgrade``
 - Updated docker base image to Ubuntu 20.04 and cuda 11.3
+- Removed redundant double-check for nested observations from ``BaseAlgorithm._wrap_env`` (@TibiGG)
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -973,4 +975,4 @@ And all the contributors:
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
-@Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @carlosluis @arjun-kg
+@Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @carlosluis @arjun-kg @TibiGG

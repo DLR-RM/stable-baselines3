@@ -3,6 +3,9 @@ FROM $PARENT_IMAGE
 ARG PYTORCH_DEPS=cpuonly
 ARG PYTHON_VERSION=3.7
 
+# for tzdata
+ENV DEBIAN_FRONTEND="noninteractive" TZ="Europe/Paris"
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
          build-essential \
          cmake \

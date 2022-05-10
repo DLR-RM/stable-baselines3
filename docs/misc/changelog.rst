@@ -34,6 +34,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Upgraded to Python 3.7+ syntax using ``pyupgrade``
+- Updated docker base image to Ubuntu 20.04 and cuda 11.3
 
 Documentation:
 ^^^^^^^^^^^^^^

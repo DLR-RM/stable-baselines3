@@ -75,6 +75,17 @@ def test_bit_flipping(kwargs):
     # No warnings for custom envs
     assert len(record) == 0
 
+    # Remove a key, must throw an error
+    obs_space = env.observation_space.spaces["observation"]
+    del env.observation_space.spaces["observation"]
+    with pytest.raises(AssertionError):
+        check_env(env)
+
+    # Rename a key, must throw an error
+    env.observation_space.spaces["obs"] = obs_space
+    with pytest.raises(AssertionError):
+        check_env(env)
+
 
 def test_high_dimension_action_space():
     """

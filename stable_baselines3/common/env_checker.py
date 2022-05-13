@@ -1,5 +1,5 @@
 import warnings
-from typing import Union
+from typing import Any, Dict, Union
 
 import gym
 import numpy as np
@@ -102,19 +102,56 @@ def _is_goal_env(env: gym.Env) -> bool:
 
 def _check_goal_env_obs(obs: dict, observation_space: spaces.Space, method_name: str) -> None:
     """
-    Check that an environment implementing the `compute_rewards()` method (previously known as
-    GoalEnv in gym) contains at least three elements, namely `observation`, `desired_goal`, and
-    `achieved_goal`.
+    Check that an environment implementing the `compute_rewards()` method
+    (previously known as GoalEnv in gym) contains three elements,
+    namely `observation`, `desired_goal`, and `achieved_goal`.
     """
+    assert len(observation_space.spaces) == 3, (
+        "A goal conditioned env must contain 3 observation keys: `observation`, `desired_goal`, and `achieved_goal`."
+        f"The current observation contains {len(observation_space.spaces)} keys: {list(observation_space.spaces.keys())}"
+    )
+
     for key in ["observation", "achieved_goal", "desired_goal"]:
         if key not in observation_space.spaces:
             raise AssertionError(
-                f"The observation returned by the `{method_name}()` method of a goal-conditioned env requires the {key}"
-                "key to be part of the observation dictionary."
+                f"The observation returned by the `{method_name}()` method of a goal-conditioned env requires the '{key}' "
+                "key to be part of the observation dictionary. "
+                f"Current keys are {list(observation_space.spaces.keys())}"
             )
 
 
-def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spaces.Space, method_name: str) -> None:
+def _check_goal_env_compute_reward(
+    obs: Dict[str, Union[np.ndarray, int]],
+    env: gym.Env,
+    reward: float,
+    info: Dict[str, Any],
+):
+    """
+    Check that reward is computed with `compute_reward`
+    and that the implementation is vectorized.
+    """
+    achieved_goal, desired_goal = obs["achieved_goal"], obs["desired_goal"]
+    assert reward == env.compute_reward(
+        achieved_goal, desired_goal, info
+    ), "The reward was not computed with `compute_reward()`"
+
+    achieved_goal, desired_goal = np.array(achieved_goal), np.array(desired_goal)
+    batch_achieved_goals = np.array([achieved_goal, achieved_goal])
+    batch_desired_goals = np.array([desired_goal, desired_goal])
+    if isinstance(achieved_goal, int) or len(achieved_goal.shape) == 0:
+        batch_achieved_goals = batch_achieved_goals.reshape(2, 1)
+        batch_desired_goals = batch_desired_goals.reshape(2, 1)
+    batch_infos = np.array([info, info])
+    rewards = env.compute_reward(batch_achieved_goals, batch_desired_goals, batch_infos)
+    assert rewards.shape == (2,), f"Unexpected shape for vectorized computation of reward: {rewards.shape} != (2,)"
+    assert rewards[0] == reward, f"Vectorized computation of reward differs from single computation: {rewards[0]} != {reward}"
+
+
+def _check_obs(
+    obs: Union[tuple, dict, np.ndarray, int],
+    observation_space: spaces.Space,
+    method_name: str,
+) -> None:
     """
     Check that the observation returned by the environment
     correspond to the declared one.
@@ -185,6 +222,7 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
 
     if _is_goal_env(env):
         _check_goal_env_obs(obs, observation_space, "step")
+        _check_goal_env_compute_reward(obs, env, reward, info)
     elif isinstance(observation_space, spaces.Dict):
         assert isinstance(obs, dict), "The observation returned by `step()` must be a dictionary"
         for key in observation_space.spaces.keys():

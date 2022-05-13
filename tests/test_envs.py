@@ -27,8 +27,6 @@ ENV_CLASSES = [
     SimpleMultiObsEnv,
 ]
 
-GYM_MESSAGE = "Function `rng.randint"
-
 
 @pytest.mark.parametrize("env_id", ["CartPole-v0", "Pendulum-v1"])
 def test_env(env_id):
@@ -159,8 +157,14 @@ def test_non_default_action_spaces(new_action_space):
     # Change the action space
     env.action_space = new_action_space
 
-    with pytest.warns(UserWarning):
-        check_env(env)
+    low, high = new_action_space.low[0], new_action_space.high[0]
+    # numpy >= 1.21 raises a ValueError
+    if int(np.__version__.split(".")[1]) >= 21 and (low > high):
+        with pytest.raises(ValueError), pytest.warns(UserWarning):
+            check_env(env)
+    else:
+        with pytest.warns(UserWarning):
+            check_env(env)
 
 
 def check_reset_assert_error(env, new_reset_return):

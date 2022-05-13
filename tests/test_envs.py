@@ -46,8 +46,8 @@ def test_env(env_id):
     if env_id == "Pendulum-v1":
         assert len(record) == 1
     else:
-        # The other environments are expected to raise warning introduced by Gym.
-        check_rand_warning(record)
+        # The other environments must pass without warning
+        assert len(record) == 0
 
 
 @pytest.mark.parametrize("env_class", ENV_CLASSES)
@@ -55,8 +55,8 @@ def test_custom_envs(env_class):
     env = env_class()
     with warnings.catch_warnings(record=True) as record:
         check_env(env)
-    # Only randint warning coming from gym
-    check_rand_warning(record)
+    # No warnings for custom envs
+    assert len(record) == 0
 
 
 @pytest.mark.parametrize(
@@ -74,12 +74,8 @@ def test_bit_flipping(kwargs):
     with warnings.catch_warnings(record=True) as record:
         check_env(env)
 
-    # Only randint warning coming from gym
-    check_rand_warning(record)
-
-
-def check_rand_warning(record):
-    assert all(GYM_MESSAGE in warning.message.args[0] for warning in record)
+    # No warnings for custom envs
+    assert len(record) == 0
 
 
 def test_high_dimension_action_space():
@@ -157,19 +153,14 @@ def test_non_default_action_spaces(new_action_space):
     with warnings.catch_warnings(record=True) as record:
         check_env(env)
 
-    # Only randint warning coming from gym
-    check_rand_warning(record)
+    # No warnings for custom envs
+    assert len(record) == 0
 
     # Change the action space
     env.action_space = new_action_space
 
-    # Gym raises error for Boxed spaces if low > high
-    if env.action_space.low[0] > env.action_space.high[0]:
-        with pytest.raises(ValueError), pytest.warns(UserWarning):
-            check_env(env)
-    else:
-        with pytest.warns(UserWarning):
-            check_env(env)
+    with pytest.warns(UserWarning):
+        check_env(env)
 
 
 def check_reset_assert_error(env, new_reset_return):

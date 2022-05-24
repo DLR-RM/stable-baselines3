@@ -26,6 +26,7 @@ Bug Fixes:
 - Fixed a bug with special characters in the tensorboard log name (@quantitative-technologies)
 - Fixed a bug in ``DummyVecEnv``'s and ``SubprocVecEnv``'s seeding function. None value was unchecked (@ScheiklP)
 - Fixed a bug where ``EvalCallback`` would crash when trying to synchronize ``VecNormalize`` stats when observation normalization was disabled
+- Added a check for unbounded actions
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -42,6 +43,7 @@ Documentation:
 - Added link to PPO ICLR blog post
 - Added remark about breaking Markov assumption and timeout handling
 - Added doc about MLFlow integration via custom logger (@git-thor)
+- Updated Huggingface integration doc
 
 
 Release 1.5.0 (2022-03-25)

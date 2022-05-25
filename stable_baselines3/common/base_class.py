@@ -185,6 +185,11 @@ class BaseAlgorithm(ABC):
             if self.use_sde and not isinstance(self.action_space, gym.spaces.Box):
                 raise ValueError("generalized State-Dependent Exploration (gSDE) can only be used with continuous actions.")
 
+            if isinstance(self.action_space, gym.spaces.Box):
+                assert np.all(
+                    np.isfinite(np.array([self.action_space.low, self.action_space.high]))
+                ), "Continuous action space must have a finite lower and upper bound"
+
     @staticmethod
     def _wrap_env(env: GymEnv, verbose: int = 0, monitor_wrapper: bool = True) -> VecEnv:
         """ "

@@ -48,10 +48,13 @@ Hugging Face 🤗
 The Hugging Face Hub 🤗 is a central place where anyone can share and explore models. It allows you to host your saved models 💾.
 
 You can see the list of stable-baselines3 saved models here: https://huggingface.co/models?other=stable-baselines3
+Most of them are available via the RL Zoo.
 
 Official pre-trained models are saved in the SB3 organization on the hub: https://huggingface.co/sb3
 
 We wrote a tutorial on how to use 🤗 Hub and Stable-Baselines3 here: https://colab.research.google.com/drive/1GI0WpThwRHbl-Fu2RHfczq6dci5GBDVE#scrollTo=q4cz-w9MdO7T
+
+For up to date instructions (for instance for using ``package_to_hub()``), please take a look at the Huggingface SB3 package README: https://github.com/huggingface/huggingface_sb3
 
 Installation
 -------------

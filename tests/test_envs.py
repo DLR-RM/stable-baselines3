@@ -152,6 +152,8 @@ def test_non_default_spaces(new_obs_space):
         spaces.Box(low=1, high=-1, shape=(2,), dtype=np.float32),
         # Same boundaries
         spaces.Box(low=1, high=1, shape=(2,), dtype=np.float32),
+        # Unbounded action space
+        spaces.Box(low=-np.inf, high=1, shape=(2,), dtype=np.float32),
         # Almost good, except for one dim
         spaces.Box(low=np.array([-1, -1, -1]), high=np.array([1, 1, 0.99]), dtype=np.float32),
     ],
@@ -169,8 +171,12 @@ def test_non_default_action_spaces(new_action_space):
     env.action_space = new_action_space
 
     low, high = new_action_space.low[0], new_action_space.high[0]
+    # Unbounded action space throws an error,
+    # the rest only warning
+    if not np.all(np.isfinite(env.action_space.low)):
+        with pytest.raises(AssertionError), pytest.warns(UserWarning):
     # numpy >= 1.21 raises a ValueError
-    if int(np.__version__.split(".")[1]) >= 21 and (low > high):
+    elif int(np.__version__.split(".")[1]) >= 21 and (low > high):
         with pytest.raises(ValueError), pytest.warns(UserWarning):
             check_env(env)
     else:

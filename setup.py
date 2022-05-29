@@ -122,6 +122,9 @@ setup(
             "pillow",
             # Tensorboard support
             "tensorboard>=2.2.0",
+            # Protobuf >= 4 has breaking changes
+            # which does play well with tensorboard
+            "protobuf~=3.19.0",
             # Checking memory taken by replay buffer
             "psutil",
         ],

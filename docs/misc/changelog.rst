@@ -12,7 +12,7 @@ Breaking Changes:
 - Changed the way policy "aliases" are handled ("MlpPolicy", "CnnPolicy", ...), removing the former
   ``register_policy`` helper, ``policy_base`` parameter and using ``policy_aliases`` static attributes instead (@Gregwar)
 - SB3 now requires PyTorch >= 1.11
-- Switched minimum Gym version to 0.23.1 (@carlosluis)
+- Switched minimum Gym version to 0.24 (@carlosluis)
 
 New Features:
 ^^^^^^^^^^^^^

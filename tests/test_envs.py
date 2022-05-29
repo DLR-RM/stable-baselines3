@@ -175,6 +175,7 @@ def test_non_default_action_spaces(new_action_space):
     # the rest only warning
     if not np.all(np.isfinite(env.action_space.low)):
         with pytest.raises(AssertionError), pytest.warns(UserWarning):
+            check_env(env)
     # numpy >= 1.21 raises a ValueError
     elif int(np.__version__.split(".")[1]) >= 21 and (low > high):
         with pytest.raises(ValueError), pytest.warns(UserWarning):

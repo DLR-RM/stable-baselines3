@@ -111,6 +111,9 @@ setup(
             "sphinxcontrib.spelling",
             # Type hints support
             "sphinx-autodoc-typehints",
+            # weird error with protobuf > 4.0
+            # probably due to tensorboard
+            "protobuf~=3.19.0",
         ],
         "extra": [
             # For render

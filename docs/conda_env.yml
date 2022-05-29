@@ -8,7 +8,7 @@ dependencies:
   - python=3.7
   - pytorch=1.11.0=py3.7_cpu_0
   - pip:
-    - gym>=0.17.2
+    - gym==0.24
     - cloudpickle
     - opencv-python-headless
     - pandas

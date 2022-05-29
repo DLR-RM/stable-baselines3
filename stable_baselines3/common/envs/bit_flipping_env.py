@@ -165,6 +165,12 @@ class BitFlippingEnv(Env):
         return self._get_obs()
 
     def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:
+        """
+        Step into the env.
+
+        :param action:
+        :return:
+        """
         if self.continuous:
             self.state[action > 0] = 1 - self.state[action > 0]
         else:

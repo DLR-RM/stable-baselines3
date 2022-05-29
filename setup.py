@@ -101,19 +101,16 @@ setup(
             # Reformat
             "black",
             # For toy text Gym envs
-            "scipy>=1.4.1",
+            "scipy~=1.4.1",
         ],
         "docs": [
-            "sphinx",
+            "sphinx~=4.5.0",
             "sphinx-autobuild",
             "sphinx-rtd-theme",
             # For spelling
             "sphinxcontrib.spelling",
             # Type hints support
             "sphinx-autodoc-typehints",
-            # weird error with protobuf > 4.0
-            # probably due to tensorboard
-            "protobuf~=3.19.0",
         ],
         "extra": [
             # For render

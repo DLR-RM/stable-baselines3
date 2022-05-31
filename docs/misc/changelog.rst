@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.5.1a7 (WIP)
+Release 1.5.1a8 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -18,6 +18,8 @@ New Features:
 
 SB3-Contrib
 ^^^^^^^^^^^
+- Added Recurrent PPO (PPO LSTM). See https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/pull/53
+
 
 Bug Fixes:
 ^^^^^^^^^^

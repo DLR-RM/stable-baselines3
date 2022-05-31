@@ -15,7 +15,7 @@ For that, ppo uses clipping to avoid too large update.
 .. note::
 
   PPO contains several modifications from the original algorithm not documented
-  by OpenAI: advantages are normalized and value function can be also clipped .
+  by OpenAI: advantages are normalized and value function can be also clipped.
 
 
 Notes
@@ -30,6 +30,16 @@ Notes
 
 Can I use?
 ----------
+
+.. note::
+
+  A recurrent version of PPO is available in our contrib repo: https://sb3-contrib.readthedocs.io/en/master/modules/ppo_recurrent.html
+
+  However we advise users to start with simple frame-stacking as a simpler, faster
+  and usually competitive alternative, more info in our report: https://wandb.ai/sb3/no-vel-envs/reports/PPO-vs-RecurrentPPO-aka-PPO-LSTM-on-environments-with-masked-velocity--VmlldzoxOTI4NjE4
+  See also `Procgen paper appendix Fig 11. <https://arxiv.org/abs/1912.01588>`_.
+  In practice, you can stack multiple observations using ``VecFrameStack``.
+
 
 -  Recurrent policies: ❌
 -  Multi processing: ✔️

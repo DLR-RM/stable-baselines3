@@ -18,7 +18,7 @@ New Features:
 
 SB3-Contrib
 ^^^^^^^^^^^
-- Added Recurrent PPO (PPO LSTM) see https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/pull/53
+- Added Recurrent PPO (PPO LSTM). See https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/pull/53
 
 
 Bug Fixes:

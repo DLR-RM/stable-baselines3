@@ -3,7 +3,7 @@ from typing import Tuple, Union
 import numpy as np
 
 
-class RunningMeanStd(object):
+class RunningMeanStd:
     def __init__(self, epsilon: float = 1e-4, shape: Tuple[int, ...] = ()):
         """
         Calulates the running mean and std of a data stream

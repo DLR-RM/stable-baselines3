@@ -305,7 +305,7 @@ class VecEnvWrapper(VecEnv):
             own_class = f"{type(self).__module__}.{type(self).__name__}"
             error_str = (
                 f"Error: Recursive attribute lookup for {name} from {own_class} is "
-                "ambiguous and hides attribute from {blocked_class}"
+                f"ambiguous and hides attribute from {blocked_class}"
             )
             raise AttributeError(error_str)
 

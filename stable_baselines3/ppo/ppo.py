@@ -7,7 +7,7 @@ from gym import spaces
 from torch.nn import functional as F
 
 from stable_baselines3.common.on_policy_algorithm import OnPolicyAlgorithm
-from stable_baselines3.common.policies import ActorCriticPolicy
+from stable_baselines3.common.policies import ActorCriticCnnPolicy, ActorCriticPolicy, BasePolicy, MultiInputActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import explained_variance, get_schedule_fn
 
@@ -19,7 +19,7 @@ class PPO(OnPolicyAlgorithm):
     Paper: https://arxiv.org/abs/1707.06347
     Code: This implementation borrows code from OpenAI Spinning Up (https://github.com/openai/spinningup/)
     https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail and
-    and Stable Baselines (PPO2 from https://github.com/hill-a/stable-baselines)
+    Stable Baselines (PPO2 from https://github.com/hill-a/stable-baselines)
 
     Introduction to PPO: https://spinningup.openai.com/en/latest/algorithms/ppo.html
 
@@ -65,6 +65,12 @@ class PPO(OnPolicyAlgorithm):
     :param _init_setup_model: Whether or not to build the network at the creation of the instance
     """
 
+    policy_aliases: Dict[str, Type[BasePolicy]] = {
+        "MlpPolicy": ActorCriticPolicy,
+        "CnnPolicy": ActorCriticCnnPolicy,
+        "MultiInputPolicy": MultiInputActorCriticPolicy,
+    }
+
     def __init__(
         self,
         policy: Union[str, Type[ActorCriticPolicy]],
@@ -93,7 +99,7 @@ class PPO(OnPolicyAlgorithm):
         _init_setup_model: bool = True,
     ):
 
-        super(PPO, self).__init__(
+        super().__init__(
             policy,
             env,
             learning_rate=learning_rate,
@@ -156,7 +162,7 @@ class PPO(OnPolicyAlgorithm):
             self._setup_model()
 
     def _setup_model(self) -> None:
-        super(PPO, self)._setup_model()
+        super()._setup_model()
 
         # Initialize schedules for policy/value clipping
         self.clip_range = get_schedule_fn(self.clip_range)
@@ -301,7 +307,7 @@ class PPO(OnPolicyAlgorithm):
         reset_num_timesteps: bool = True,
     ) -> "PPO":
 
-        return super(PPO, self).learn(
+        return super().learn(
             total_timesteps=total_timesteps,
             callback=callback,
             log_interval=log_interval,

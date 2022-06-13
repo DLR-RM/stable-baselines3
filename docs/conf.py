@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.
 #
@@ -46,7 +45,7 @@ sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # Read version from file
 version_file = os.path.join(os.path.dirname(__file__), "../stable_baselines3", "version.txt")
-with open(version_file, "r") as file_handler:
+with open(version_file) as file_handler:
     __version__ = file_handler.read().strip()
 
 # -- Project information -----------------------------------------------------
@@ -101,7 +100,7 @@ master_doc = "index"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

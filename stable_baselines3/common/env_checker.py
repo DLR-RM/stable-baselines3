@@ -274,6 +274,11 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
                 "cf https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html"
             )
 
+        if isinstance(action_space, spaces.Box):
+            assert np.all(
+                np.isfinite(np.array([action_space.low, action_space.high]))
+            ), "Continuous action space must have a finite lower and upper bound"
+
         if isinstance(action_space, spaces.Box) and action_space.dtype != np.dtype(np.float32):
             warnings.warn(
                 f"Your action space has dtype {action_space.dtype}, we recommend using np.float32 to avoid cast errors."

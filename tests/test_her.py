@@ -179,7 +179,7 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
     params = deepcopy(model.policy.state_dict())
 
     # Modify all parameters to be random values
-    random_params = dict((param_name, th.rand_like(param)) for param_name, param in params.items())
+    random_params = {param_name: th.rand_like(param) for param_name, param in params.items()}
 
     # Update model parameters with the new random values
     model.policy.load_state_dict(random_params)

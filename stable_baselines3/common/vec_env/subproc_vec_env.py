@@ -123,6 +123,8 @@ class SubprocVecEnv(VecEnv):
         return _flatten_obs(obs, self.observation_space), np.stack(rews), np.stack(dones), infos
 
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
+        if seed is None:
+            seed = np.random.randint(0, 2**32 - 1)
         for idx, remote in enumerate(self.remotes):
             remote.send(("seed", seed + idx))
         return [remote.recv() for remote in self.remotes]
@@ -215,6 +217,6 @@ def _flatten_obs(obs: Union[List[VecEnvObs], Tuple[VecEnvObs]], space: gym.space
     elif isinstance(space, gym.spaces.Tuple):
         assert isinstance(obs[0], tuple), "non-tuple observation for environment with Tuple observation space"
         obs_len = len(space.spaces)
-        return tuple((np.stack([o[i] for o in obs]) for i in range(obs_len)))
+        return tuple(np.stack([o[i] for o in obs]) for i in range(obs_len))
     else:
         return np.stack(obs)

@@ -7,7 +7,7 @@ from gym import spaces
 from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
 
 
-class StackedObservations(object):
+class StackedObservations:
     """
     Frame stacking wrapper for data.
 

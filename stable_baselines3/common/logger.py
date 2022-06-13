@@ -17,6 +17,7 @@ try:
 except ImportError:
     SummaryWriter = None
 
+
 DEBUG = 10
 INFO = 20
 WARN = 30
@@ -24,7 +25,7 @@ ERROR = 40
 DISABLED = 50
 
 
-class Video(object):
+class Video:
     """
     Video data class storing the video frames and the frame per seconds
 
@@ -37,7 +38,7 @@ class Video(object):
         self.fps = fps
 
 
-class Figure(object):
+class Figure:
     """
     Figure data class storing a matplotlib figure and whether to close the figure after logging it
 
@@ -50,7 +51,7 @@ class Figure(object):
         self.close = close
 
 
-class Image(object):
+class Image:
     """
     Image data class storing an image and data format
 
@@ -80,13 +81,13 @@ class FormatUnsupportedError(NotImplementedError):
             format_str = f"formats {', '.join(unsupported_formats)} are"
         else:
             format_str = f"format {unsupported_formats[0]} is"
-        super(FormatUnsupportedError, self).__init__(
+        super().__init__(
             f"The {format_str} not supported for the {value_description} value logged.\n"
             f"You can exclude formats via the `exclude` parameter of the logger's `record` function."
         )
 
 
-class KVWriter(object):
+class KVWriter:
     """
     Key Value writer
     """
@@ -108,7 +109,7 @@ class KVWriter(object):
         raise NotImplementedError
 
 
-class SeqWriter(object):
+class SeqWriter:
     """
     sequence writer
     """
@@ -246,12 +247,13 @@ def filter_excluded_keys(
 
 
 class JSONOutputFormat(KVWriter):
-    def __init__(self, filename: str):
-        """
-        log to a file, in the JSON format
+    """
+    Log to a file, in the JSON format
 
-        :param filename: the file to write the log to
-        """
+    :param filename: the file to write the log to
+    """
+
+    def __init__(self, filename: str):
         self.file = open(filename, "wt")
 
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
@@ -287,13 +289,13 @@ class JSONOutputFormat(KVWriter):
 
 
 class CSVOutputFormat(KVWriter):
+    """
+    Log to a file, in a CSV format
+
+    :param filename: the file to write the log to
+    """
+
     def __init__(self, filename: str):
-        """
-        log to a file, in a CSV format
-
-        :param filename: the file to write the log to
-        """
-
         self.file = open(filename, "w+t")
         self.keys = []
         self.separator = ","
@@ -351,12 +353,13 @@ class CSVOutputFormat(KVWriter):
 
 
 class TensorBoardOutputFormat(KVWriter):
-    def __init__(self, folder: str):
-        """
-        Dumps key/value pairs into TensorBoard's numeric format.
+    """
+    Dumps key/value pairs into TensorBoard's numeric format.
 
-        :param folder: the folder to write the log to
-        """
+    :param folder: the folder to write the log to
+    """
+
+    def __init__(self, folder: str):
         assert SummaryWriter is not None, "tensorboard is not installed, you can use " "pip install tensorboard to do so"
         self.writer = SummaryWriter(log_dir=folder)
 
@@ -427,7 +430,7 @@ def make_output_format(_format: str, log_dir: str, log_suffix: str = "") -> KVWr
 # ================================================================
 
 
-class Logger(object):
+class Logger:
     """
     The logger class.
 
@@ -623,7 +626,7 @@ def read_json(filename: str) -> pandas.DataFrame:
     :return: the data in the json
     """
     data = []
-    with open(filename, "rt") as file_handler:
+    with open(filename) as file_handler:
         for line in file_handler:
             data.append(json.loads(line))
     return pandas.DataFrame(data)

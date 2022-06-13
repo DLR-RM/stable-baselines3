@@ -28,7 +28,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         # cpu version of pytorch
-        pip install torch==1.8.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install torch==1.11+cpu -f https://download.pytorch.org/whl/torch_stable.html
         pip install .[extra,tests,docs]
         # Use headless version
         pip install opencv-python-headless

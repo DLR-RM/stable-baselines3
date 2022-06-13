@@ -245,4 +245,4 @@ class AtariWrapper(gym.Wrapper):
         if clip_reward:
             env = ClipRewardEnv(env)
 
-        super(AtariWrapper, self).__init__(env)
+        super().__init__(env)

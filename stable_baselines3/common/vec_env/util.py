@@ -37,7 +37,7 @@ def dict_to_obs(obs_space: gym.spaces.Space, obs_dict: Dict[Any, np.ndarray]) ->
         return obs_dict
     elif isinstance(obs_space, gym.spaces.Tuple):
         assert len(obs_dict) == len(obs_space.spaces), "size of observation does not match size of observation space"
-        return tuple((obs_dict[i] for i in range(len(obs_space.spaces))))
+        return tuple(obs_dict[i] for i in range(len(obs_space.spaces)))
     else:
         assert set(obs_dict.keys()) == {None}, "multiple observation keys for unstructured observation space"
         return obs_dict[None]

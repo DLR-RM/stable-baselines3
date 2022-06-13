@@ -67,7 +67,7 @@ class BaseModel(nn.Module, ABC):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        super(BaseModel, self).__init__()
+        super().__init__()
 
         if optimizer_kwargs is None:
             optimizer_kwargs = {}
@@ -267,7 +267,7 @@ class BasePolicy(BaseModel):
     """
 
     def __init__(self, *args, squash_output: bool = False, **kwargs):
-        super(BasePolicy, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._squash_output = squash_output
 
     @staticmethod
@@ -437,7 +437,7 @@ class ActorCriticPolicy(BasePolicy):
             if optimizer_class == th.optim.Adam:
                 optimizer_kwargs["eps"] = 1e-5
 
-        super(ActorCriticPolicy, self).__init__(
+        super().__init__(
             observation_space,
             action_space,
             features_extractor_class,
@@ -724,7 +724,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        super(ActorCriticCnnPolicy, self).__init__(
+        super().__init__(
             observation_space,
             action_space,
             lr_schedule,
@@ -799,7 +799,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        super(MultiInputActorCriticPolicy, self).__init__(
+        super().__init__(
             observation_space,
             action_space,
             lr_schedule,
@@ -894,68 +894,3 @@ class ContinuousCritic(BaseModel):
         with th.no_grad():
             features = self.extract_features(obs)
         return self.q_networks[0](th.cat([features, actions], dim=1))
-
-
-_policy_registry = dict()  # type: Dict[Type[BasePolicy], Dict[str, Type[BasePolicy]]]
-
-
-def get_policy_from_name(base_policy_type: Type[BasePolicy], name: str) -> Type[BasePolicy]:
-    """
-    Returns the registered policy from the base type and name.
-    See `register_policy` for registering policies and explanation.
-
-    :param base_policy_type: the base policy class
-    :param name: the policy name
-    :return: the policy
-    """
-    if base_policy_type not in _policy_registry:
-        raise KeyError(f"Error: the policy type {base_policy_type} is not registered!")
-    if name not in _policy_registry[base_policy_type]:
-        raise KeyError(
-            f"Error: unknown policy type {name},"
-            f"the only registed policy type are: {list(_policy_registry[base_policy_type].keys())}!"
-        )
-    return _policy_registry[base_policy_type][name]
-
-
-def register_policy(name: str, policy: Type[BasePolicy]) -> None:
-    """
-    Register a policy, so it can be called using its name.
-    e.g. SAC('MlpPolicy', ...) instead of SAC(MlpPolicy, ...).
-
-    The goal here is to standardize policy naming, e.g.
-    all algorithms can call upon "MlpPolicy" or "CnnPolicy",
-    and they receive respective policies that work for them.
-    Consider following:
-
-    OnlinePolicy
-    -- OnlineMlpPolicy ("MlpPolicy")
-    -- OnlineCnnPolicy ("CnnPolicy")
-    OfflinePolicy
-    -- OfflineMlpPolicy ("MlpPolicy")
-    -- OfflineCnnPolicy ("CnnPolicy")
-
-    Two policies have name "MlpPolicy" and two have "CnnPolicy".
-    In `get_policy_from_name`, the parent class (e.g. OnlinePolicy)
-    is given and used to select and return the correct policy.
-
-    :param name: the policy name
-    :param policy: the policy class
-    """
-    sub_class = None
-    for cls in BasePolicy.__subclasses__():
-        if issubclass(policy, cls):
-            sub_class = cls
-            break
-    if sub_class is None:
-        raise ValueError(f"Error: the policy {policy} is not of any known subclasses of BasePolicy!")
-
-    if sub_class not in _policy_registry:
-        _policy_registry[sub_class] = {}
-    if name in _policy_registry[sub_class]:
-        # Check if the registered policy is same
-        # we try to register. If not so,
-        # do not override and complain.
-        if _policy_registry[sub_class][name] != policy:
-            raise ValueError(f"Error: the name {name} is already registered for a different policy, will not override.")
-    _policy_registry[sub_class][name] = policy

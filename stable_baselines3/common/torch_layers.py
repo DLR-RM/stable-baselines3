@@ -19,7 +19,7 @@ class BaseFeaturesExtractor(nn.Module):
     """
 
     def __init__(self, observation_space: gym.Space, features_dim: int = 0):
-        super(BaseFeaturesExtractor, self).__init__()
+        super().__init__()
         assert features_dim > 0
         self._observation_space = observation_space
         self._features_dim = features_dim
@@ -41,7 +41,7 @@ class FlattenExtractor(BaseFeaturesExtractor):
     """
 
     def __init__(self, observation_space: gym.Space):
-        super(FlattenExtractor, self).__init__(observation_space, get_flattened_obs_dim(observation_space))
+        super().__init__(observation_space, get_flattened_obs_dim(observation_space))
         self.flatten = nn.Flatten()
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
@@ -61,7 +61,7 @@ class NatureCNN(BaseFeaturesExtractor):
     """
 
     def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512):
-        super(NatureCNN, self).__init__(observation_space, features_dim)
+        super().__init__(observation_space, features_dim)
         # We assume CxHxW images (channels first)
         # Re-ordering will be done by pre-preprocessing or wrapper
         assert is_image_space(observation_space, check_channels=False), (
@@ -169,7 +169,7 @@ class MlpExtractor(nn.Module):
         activation_fn: Type[nn.Module],
         device: Union[th.device, str] = "auto",
     ):
-        super(MlpExtractor, self).__init__()
+        super().__init__()
         device = get_device(device)
         shared_net, policy_net, value_net = [], [], []
         policy_only_layers = []  # Layer sizes of the network that only belongs to the policy network
@@ -250,7 +250,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
 
     def __init__(self, observation_space: gym.spaces.Dict, cnn_output_dim: int = 256):
         # TODO we do not know features-dim here before going over all the items, so put something there. This is dirty!
-        super(CombinedExtractor, self).__init__(observation_space, features_dim=1)
+        super().__init__(observation_space, features_dim=1)
 
         extractors = {}
 

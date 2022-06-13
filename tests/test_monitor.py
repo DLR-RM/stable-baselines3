@@ -14,7 +14,7 @@ def test_monitor(tmp_path):
     """
     env = gym.make("CartPole-v1")
     env.seed(0)
-    monitor_file = os.path.join(str(tmp_path), "stable_baselines-test-{}.monitor.csv".format(uuid.uuid4()))
+    monitor_file = os.path.join(str(tmp_path), f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
     monitor_env = Monitor(env, monitor_file)
     monitor_env.reset()
     total_steps = 1000
@@ -37,7 +37,7 @@ def test_monitor(tmp_path):
     assert sum(monitor_env.get_episode_rewards()) == sum(ep_rewards)
     _ = monitor_env.get_episode_times()
 
-    with open(monitor_file, "rt") as file_handler:
+    with open(monitor_file) as file_handler:
         first_line = file_handler.readline()
         assert first_line.startswith("#")
         metadata = json.loads(first_line[1:])
@@ -56,7 +56,7 @@ def test_monitor_load_results(tmp_path):
     tmp_path = str(tmp_path)
     env1 = gym.make("CartPole-v1")
     env1.seed(0)
-    monitor_file1 = os.path.join(tmp_path, "stable_baselines-test-{}.monitor.csv".format(uuid.uuid4()))
+    monitor_file1 = os.path.join(tmp_path, f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
     monitor_env1 = Monitor(env1, monitor_file1)
 
     monitor_files = get_monitor_files(tmp_path)
@@ -76,7 +76,7 @@ def test_monitor_load_results(tmp_path):
 
     env2 = gym.make("CartPole-v1")
     env2.seed(0)
-    monitor_file2 = os.path.join(tmp_path, "stable_baselines-test-{}.monitor.csv".format(uuid.uuid4()))
+    monitor_file2 = os.path.join(tmp_path, f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
     monitor_env2 = Monitor(env2, monitor_file2)
     monitor_files = get_monitor_files(tmp_path)
     assert len(monitor_files) == 2

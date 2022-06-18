@@ -119,7 +119,7 @@ class TD3Policy(BasePolicy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
         n_critics: int = 2,
-        share_features_extractor: bool = True,
+        share_features_extractor: bool = False,
     ):
         super().__init__(
             observation_space,
@@ -134,7 +134,7 @@ class TD3Policy(BasePolicy):
         # Default network architecture, from the original paper
         if net_arch is None:
             if features_extractor_class == NatureCNN:
-                net_arch = []
+                net_arch = [256, 256]
             else:
                 net_arch = [400, 300]
 
@@ -281,7 +281,7 @@ class CnnPolicy(TD3Policy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
         n_critics: int = 2,
-        share_features_extractor: bool = True,
+        share_features_extractor: bool = False,
     ):
         super().__init__(
             observation_space,
@@ -335,7 +335,7 @@ class MultiInputPolicy(TD3Policy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
         n_critics: int = 2,
-        share_features_extractor: bool = True,
+        share_features_extractor: bool = False,
     ):
         super().__init__(
             observation_space,

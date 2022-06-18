@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.5.1a8 (WIP)
+Release 1.5.1a9 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -12,6 +12,8 @@ Breaking Changes:
 - Changed the way policy "aliases" are handled ("MlpPolicy", "CnnPolicy", ...), removing the former
   ``register_policy`` helper, ``policy_base`` parameter and using ``policy_aliases`` static attributes instead (@Gregwar)
 - SB3 now requires PyTorch >= 1.11
+- Changed the default network architecture when using ``CnnPolicy`` or ``MultiInputPolicy`` with SAC or DDPG/TD3,
+  ``share_features_extractor`` is now set to False by default and the ``net_arch=[256, 256]`` (instead of ``net_arch=[]`` that was before)
 
 New Features:
 ^^^^^^^^^^^^^

@@ -147,7 +147,7 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
             try:
                 _check_obs(obs[key], observation_space.spaces[key], "reset")
             except AssertionError as e:
-                raise AssertionError(f"Error while checking key={key}: " + str(e))
+                raise AssertionError(f"Error while checking key={key}: " + str(e)) from e
     else:
         _check_obs(obs, observation_space, "reset")
 
@@ -166,7 +166,7 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
             try:
                 _check_obs(obs[key], observation_space.spaces[key], "step")
             except AssertionError as e:
-                raise AssertionError(f"Error while checking key={key}: " + str(e))
+                raise AssertionError(f"Error while checking key={key}: " + str(e)) from e
 
     else:
         _check_obs(obs, observation_space, "step")

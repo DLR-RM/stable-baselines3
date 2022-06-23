@@ -28,13 +28,13 @@ def get_time_limit(env: VecEnv, current_max_episode_length: Optional[int]) -> in
             if current_max_episode_length is None:
                 raise AttributeError
         # if not available check if a valid value was passed as an argument
-        except AttributeError:
+        except AttributeError as e:
             raise ValueError(
                 "The max episode length could not be inferred.\n"
                 "You must specify a `max_episode_steps` when registering the environment,\n"
                 "use a `gym.wrappers.TimeLimit` wrapper "
                 "or pass `max_episode_length` to the model constructor"
-            )
+            ) from e
     return current_max_episode_length
 
 

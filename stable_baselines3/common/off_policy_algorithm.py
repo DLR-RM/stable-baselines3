@@ -157,8 +157,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
             try:
                 train_freq = (train_freq[0], TrainFrequencyUnit(train_freq[1]))
-            except ValueError:
-                raise ValueError(f"The unit of the `train_freq` must be either 'step' or 'episode' not '{train_freq[1]}'!")
+            except ValueError as e:
+                raise ValueError(
+                    f"The unit of the `train_freq` must be either 'step' or 'episode' not '{train_freq[1]}'!"
+                ) from e
 
             if not isinstance(train_freq[0], int):
                 raise ValueError(f"The frequency of `train_freq` must be an integer and not {train_freq[0]}")

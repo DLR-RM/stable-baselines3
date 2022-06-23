@@ -235,7 +235,7 @@ class SACPolicy(BasePolicy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
         n_critics: int = 2,
-        share_features_extractor: bool = True,
+        share_features_extractor: bool = False,
     ):
         super().__init__(
             observation_space,
@@ -248,10 +248,7 @@ class SACPolicy(BasePolicy):
         )
 
         if net_arch is None:
-            if features_extractor_class == NatureCNN:
-                net_arch = []
-            else:
-                net_arch = [256, 256]
+            net_arch = [256, 256]
 
         actor_arch, critic_arch = get_actor_critic_arch(net_arch)
 
@@ -422,7 +419,7 @@ class CnnPolicy(SACPolicy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
         n_critics: int = 2,
-        share_features_extractor: bool = True,
+        share_features_extractor: bool = False,
     ):
         super().__init__(
             observation_space,
@@ -493,7 +490,7 @@ class MultiInputPolicy(SACPolicy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
         n_critics: int = 2,
-        share_features_extractor: bool = True,
+        share_features_extractor: bool = False,
     ):
         super().__init__(
             observation_space,

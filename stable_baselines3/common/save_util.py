@@ -206,8 +206,8 @@ def open_path(path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verb
     mode = mode.lower()
     try:
         mode = {"write": "w", "read": "r", "w": "w", "r": "r"}[mode]
-    except KeyError:
-        raise ValueError("Expected mode to be either 'w' or 'r'.")
+    except KeyError as e:
+        raise ValueError("Expected mode to be either 'w' or 'r'.") from e
     if ("w" == mode) and not path.writable() or ("r" == mode) and not path.readable():
         e1 = "writable" if "w" == mode else "readable"
         raise ValueError(f"Expected a {e1} file.")
@@ -441,7 +441,7 @@ def load_from_zip_file(
                         # State dicts. Store into params dictionary
                         # with same name as in .zip file (without .pth)
                         params[os.path.splitext(file_path)[0]] = th_object
-    except zipfile.BadZipFile:
+    except zipfile.BadZipFile as e:
         # load_path wasn't a zip file
-        raise ValueError(f"Error: the file {load_path} wasn't a zip-file")
+        raise ValueError(f"Error: the file {load_path} wasn't a zip-file") from e
     return data, params, pytorch_variables

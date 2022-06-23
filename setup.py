@@ -100,8 +100,6 @@ setup(
             "isort>=5.0",
             # Reformat
             "black",
-            # For toy text Gym envs
-            "scipy>=1.4.1",
         ],
         "docs": [
             "sphinx~=4.5.0",

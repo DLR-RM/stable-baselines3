@@ -8,17 +8,38 @@ from stable_baselines3.common.env_checker import check_env
 
 class ActionDictTestEnv(gym.Env):
     action_space = Dict({"position": Discrete(1), "velocity": Discrete(1)})
-    observation_space = Box(low=-1.0, high=2.0, shape=(3,), dtype=np.float32)
+    observation_space = Dict(
+        {
+            "x": Box(
+                low=np.array([-1, -1]),
+                high=np.array([1, 1]),
+                shape=(2,),
+                dtype=np.float32,
+            ),
+            "y": Box(
+                low=np.array([-1, -1]),
+                high=np.array([1, 1]),
+                shape=(2,),
+                dtype=np.float32,
+            ),
+        }
+    )
 
     def step(self, action):
-        observation = np.array([1.0, 1.5, 0.5], dtype=self.observation_space.dtype)
+        observation = {
+            "x": np.array([0.5, -1.0], dtype=np.float32),
+            "y": np.array([-0.5, 0.8], dtype=np.float32),
+        }
         reward = 1
         done = True
         info = {}
         return observation, reward, done, info
 
     def reset(self):
-        return np.array([1.0, 1.5, 0.5], dtype=self.observation_space.dtype)
+        return {
+            "x": np.array([0.5, -1.0], dtype=np.float32),
+            "y": np.array([-0.5, 0.8], dtype=np.float32),
+        }
 
     def render(self, mode="human"):
         pass

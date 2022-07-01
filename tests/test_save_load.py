@@ -375,6 +375,7 @@ def test_warn_buffer(recwarn, model_class, optimize_memory_usage):
         select_env(model_class),
         buffer_size=100,
         optimize_memory_usage=optimize_memory_usage,
+        replay_buffer_kwargs={"handle_timeout_termination": False},
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=10,
     )

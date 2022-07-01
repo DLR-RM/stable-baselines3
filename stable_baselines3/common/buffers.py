@@ -191,7 +191,7 @@ class ReplayBuffer(BaseBuffer):
 
         # there is a bug if both optimize_memory_usage and handle_timeout_termination are true
         # see https://github.com/DLR-RM/stable-baselines3/issues/934
-        if optimize_memory_usage is True and handle_timeout_termination is True:
+        if optimize_memory_usage and handle_timeout_termination:
             raise ValueError(
                 "ReplayBuffer does not support optimize_memory_usage = True and handle_timeout_termination = True simultaneously."
             )

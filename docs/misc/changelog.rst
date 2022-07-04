@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.5.1a9 (WIP)
+Release 1.5.1a10 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -17,6 +17,8 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Use MacOS Metal "mps" device when available
+- Save cloudpickle version
 
 SB3-Contrib
 ^^^^^^^^^^^

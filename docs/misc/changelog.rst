@@ -15,6 +15,8 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added official support for Python 3.13
+- Use MacOS Metal "mps" device when available
+- Save cloudpickle version
 
 Bug Fixes:
 ^^^^^^^^^^

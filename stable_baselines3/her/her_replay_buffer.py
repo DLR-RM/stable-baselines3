@@ -190,7 +190,6 @@ class HerReplayBuffer(DictReplayBuffer):
         batch_inds = np.zeros_like(env_indices)
         # When the buffer is full, we rewrite on old episodes. We don't want to
         # sample incomplete episode transitions, so we have to eliminate some indexes.
-        all_inds = np.tile(np.arange(self.buffer_size), (self.n_envs, 1)).T
         is_valid = self.ep_length > 0
 
         valid_inds = [np.arange(self.buffer_size)[is_valid[:, env_idx]] for env_idx in range(self.n_envs)]

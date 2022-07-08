@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.5.1a8 (WIP)
+Release 1.5.1a9 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -12,6 +12,8 @@ Breaking Changes:
 - Changed the way policy "aliases" are handled ("MlpPolicy", "CnnPolicy", ...), removing the former
   ``register_policy`` helper, ``policy_base`` parameter and using ``policy_aliases`` static attributes instead (@Gregwar)
 - SB3 now requires PyTorch >= 1.11
+- Changed the default network architecture when using ``CnnPolicy`` or ``MultiInputPolicy`` with SAC or DDPG/TD3,
+  ``share_features_extractor`` is now set to False by default and the ``net_arch=[256, 256]`` (instead of ``net_arch=[]`` that was before)
 
 New Features:
 ^^^^^^^^^^^^^
@@ -30,6 +32,8 @@ Bug Fixes:
 - Fixed a bug where ``EvalCallback`` would crash when trying to synchronize ``VecNormalize`` stats when observation normalization was disabled
 - Added a check for unbounded actions
 - Fixed issues due to newer version of protobuf (tensorboard) and sphinx
+- Fix exception causes all over the codebase (@cool-RR)
+- Prohibit simultaneous use of optimize_memory_usage and handle_timeout_termination due to a bug (@MWeltevrede)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -976,4 +980,4 @@ And all the contributors:
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
-@Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG
+@Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede

@@ -59,7 +59,7 @@ with open(version_file) as file_handler:
 # -- Project information -----------------------------------------------------
 
 project = "Stable Baselines3"
-copyright = "2020, Stable Baselines3"
+copyright = "2022, Stable Baselines3"
 author = "Stable Baselines3 Contributors"
 
 # The short X.Y version

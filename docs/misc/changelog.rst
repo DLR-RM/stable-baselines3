@@ -36,6 +36,7 @@ Bug Fixes:
 - Fixed issues due to newer version of protobuf (tensorboard) and sphinx
 - Fix exception causes all over the codebase (@cool-RR)
 - Prohibit simultaneous use of optimize_memory_usage and handle_timeout_termination due to a bug (@MWeltevrede)
+- Fixed a bug in ``kl_divergence`` check that would fail when using numpy arrays with MultiCategorical distribution
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -4,8 +4,10 @@ Changelog
 ==========
 
 
-Release 1.5.1a9 (WIP)
+Release 1.6.0 (2022-07-11)
 ---------------------------
+
+**Recurrent PPO (PPO LSTM), better defaults for learning from pixels with SAC/TD3**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -51,6 +53,8 @@ Documentation:
 - Added remark about breaking Markov assumption and timeout handling
 - Added doc about MLFlow integration via custom logger (@git-thor)
 - Updated Huggingface integration doc
+- Added copy button for code snippets
+- Added doc about EnvPool and Isaac Gym support
 
 
 Release 1.5.0 (2022-03-25)

@@ -33,6 +33,7 @@ Bug Fixes:
 - Added a check for unbounded actions
 - Fixed issues due to newer version of protobuf (tensorboard) and sphinx
 - Fix exception causes all over the codebase (@cool-RR)
+- Prohibit simultaneous use of optimize_memory_usage and handle_timeout_termination due to a bug (@MWeltevrede)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -979,4 +980,4 @@ And all the contributors:
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
-@Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR
+@Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede

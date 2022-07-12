@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import gym
+import numpy as np
 import torch as th
 from gym import spaces
 from torch import nn
@@ -688,7 +689,7 @@ def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> th.Tensor
     # MultiCategoricalDistribution is not a PyTorch Distribution subclass
     # so we need to implement it ourselves!
     if isinstance(dist_pred, MultiCategoricalDistribution):
-        assert dist_pred.action_dims == dist_true.action_dims, "Error: distributions must have the same input space"
+        assert np.allclose(dist_pred.action_dims, dist_true.action_dims), "Error: distributions must have the same input space"
         return th.stack(
             [th.distributions.kl_divergence(p, q) for p, q in zip(dist_true.distribution, dist_pred.distribution)],
             dim=1,

@@ -4,8 +4,10 @@ Changelog
 ==========
 
 
-Release 1.5.1a9 (WIP)
+Release 1.6.0 (2022-07-11)
 ---------------------------
+
+**Recurrent PPO (PPO LSTM), better defaults for learning from pixels with SAC/TD3**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -34,6 +36,7 @@ Bug Fixes:
 - Fixed issues due to newer version of protobuf (tensorboard) and sphinx
 - Fix exception causes all over the codebase (@cool-RR)
 - Prohibit simultaneous use of optimize_memory_usage and handle_timeout_termination due to a bug (@MWeltevrede)
+- Fixed a bug in ``kl_divergence`` check that would fail when using numpy arrays with MultiCategorical distribution
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -51,6 +54,8 @@ Documentation:
 - Added remark about breaking Markov assumption and timeout handling
 - Added doc about MLFlow integration via custom logger (@git-thor)
 - Updated Huggingface integration doc
+- Added copy button for code snippets
+- Added doc about EnvPool and Isaac Gym support
 
 
 Release 1.5.0 (2022-03-25)

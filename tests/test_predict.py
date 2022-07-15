@@ -73,6 +73,7 @@ def test_predict(model_class, env_id, device):
 
     obs = env.reset()
     action, _ = model.predict(obs)
+    assert isinstance(action, np.ndarray)
     assert action.shape == env.action_space.shape
     assert env.action_space.contains(action)
 

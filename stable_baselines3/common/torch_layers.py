@@ -50,7 +50,7 @@ class FlattenExtractor(BaseFeaturesExtractor):
 
 class NatureCNN(BaseFeaturesExtractor):
     """
-    CNN from DQN nature paper:
+    CNN from DQN Nature paper:
         Mnih, Volodymyr, et al.
         "Human-level control through deep reinforcement learning."
         Nature 518.7540 (2015): 529-533.

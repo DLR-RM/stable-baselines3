@@ -20,7 +20,7 @@ class DQN(OffPolicyAlgorithm):
     Deep Q-Network (DQN)
 
     Paper: https://arxiv.org/abs/1312.5602, https://www.nature.com/articles/nature14236
-    Default hyperparameters are taken from the nature paper,
+    Default hyperparameters are taken from the Nature paper,
     except for the optimizer and learning rate that were taken from Stable Baselines defaults.
 
     :param policy: The policy model to use (MlpPolicy, CnnPolicy, ...)

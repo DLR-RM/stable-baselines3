@@ -350,7 +350,7 @@ class BasePolicy(BaseModel):
 
         # Remove batch dimension if needed
         if not vectorized_env:
-            actions = actions.squeeze(axis=0)
+            actions = actions.squeeze(0)
 
         return actions, state
 

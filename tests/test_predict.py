@@ -78,6 +78,7 @@ def test_predict(model_class, env_id, device):
 
     vec_env_obs = vec_env.reset()
     action, _ = model.predict(vec_env_obs)
+    assert isinstance(action, np.ndarray)
     assert action.shape[0] == vec_env_obs.shape[0]
 
     # Special case for DQN to check the epsilon greedy exploration

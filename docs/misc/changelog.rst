@@ -17,6 +17,7 @@ SB3-Contrib
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed the issue that ``predict`` does not always return action as ``np.ndarray`` (@qgallouedec)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -1011,4 +1012,4 @@ And all the contributors:
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
-@Melanol
+@Melanol @qgallouedec

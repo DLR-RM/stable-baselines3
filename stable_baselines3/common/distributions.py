@@ -578,10 +578,10 @@ class StateDependentNoiseDistribution(Distribution):
             return th.mm(latent_sde, self.exploration_mat)
         # Use batch matrix multiplication for efficient computation
         # (batch_size, n_features) -> (batch_size, 1, n_features)
-        latent_sde = latent_sde.unsqueeze(1)
+        latent_sde = latent_sde.unsqueeze(dim=1)
         # (batch_size, 1, n_actions)
         noise = th.bmm(latent_sde, self.exploration_matrices)
-        return noise.squeeze(1)
+        return noise.squeeze(dim=1)
 
     def actions_from_params(
         self, mean_actions: th.Tensor, log_std: th.Tensor, latent_sde: th.Tensor, deterministic: bool = False

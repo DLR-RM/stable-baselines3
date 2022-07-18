@@ -24,6 +24,14 @@ try:
 except ImportError:
     enable_spell_check = False
 
+# Try to enable copy button
+try:
+    import sphinx_copybutton  # noqa: F401
+
+    enable_copy_button = True
+except ImportError:
+    enable_copy_button = False
+
 # source code directory, relative to this file, for sphinx-autobuild
 sys.path.insert(0, os.path.abspath(".."))
 
@@ -51,7 +59,7 @@ with open(version_file) as file_handler:
 # -- Project information -----------------------------------------------------
 
 project = "Stable Baselines3"
-copyright = "2020, Stable Baselines3"
+copyright = "2022, Stable Baselines3"
 author = "Stable Baselines3 Contributors"
 
 # The short X.Y version
@@ -82,6 +90,9 @@ extensions = [
 
 if enable_spell_check:
     extensions.append("sphinxcontrib.spelling")
+
+if enable_copy_button:
+    extensions.append("sphinx_copybutton")
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

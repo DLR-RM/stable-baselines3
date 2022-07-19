@@ -336,8 +336,8 @@ class BasePolicy(BaseModel):
 
         with th.no_grad():
             actions = self._predict(observation, deterministic=deterministic)
-        # Convert to numpy
-        actions = actions.cpu().numpy()
+        # Convert to numpy, and reshape to the original action shape
+        actions = actions.cpu().numpy().reshape((-1,) + self.action_space.shape)
 
         if isinstance(self.action_space, gym.spaces.Box):
             if self.squash_output:

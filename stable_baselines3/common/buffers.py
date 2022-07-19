@@ -240,15 +240,13 @@ class ReplayBuffer(BaseBuffer):
         infos: List[Dict[str, Any]],
     ) -> None:
 
-        # Reshape needed when using multiple envs with discrete observations
-        # as numpy cannot broadcast (n_discrete,) to (n_discrete, 1)
-        if isinstance(self.observation_space, spaces.Discrete):
-            obs = obs.reshape((self.n_envs,) + self.obs_shape)
-            next_obs = next_obs.reshape((self.n_envs,) + self.obs_shape)
+        # Reshape is sometimes needed: for example when using multiple envs with discrete
+        # observations as numpy cannot broadcast (n_discrete,) to (n_discrete, 1)
+        obs = obs.reshape((self.n_envs,) + self.obs_shape)
+        next_obs = next_obs.reshape((self.n_envs,) + self.obs_shape)
 
         # Same, for actions
-        if isinstance(self.action_space, spaces.Discrete):
-            action = action.reshape((self.n_envs, self.action_dim))
+        action = action.reshape((self.n_envs, self.action_dim))
 
         # Copy to avoid modification by reference
         self.observations[self.pos] = np.array(obs).copy()

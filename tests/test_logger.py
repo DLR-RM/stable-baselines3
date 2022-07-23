@@ -296,21 +296,8 @@ def test_report_figure_to_unsupported_format_raises_error(tmp_path, unsupported_
     writer.close()
 
 
-def test_report_hparam_to_tensorboard(tmp_path, read_log):
-    pytest.importorskip("tensorboard")
-
-    hparam_dict = {"learning rate": np.random.random()}
-    metric_dict = {"train/value_loss": 0}
-    hparam = HParam(hparam_dict=hparam_dict, metric_dict=metric_dict)
-    writer = make_output_format("tensorboard", tmp_path)
-    writer.write({"hparam": hparam}, key_excluded={"hparam": ()})
-
-    assert not read_log("tensorboard").empty
-    writer.close()
-
-
 @pytest.mark.parametrize("unsupported_format", ["stdout", "log", "json", "csv"])
-def test_report_figure_to_unsupported_format_raises_error(tmp_path, unsupported_format):
+def test_report_hparam_to_unsupported_format_raises_error(tmp_path, unsupported_format):
     writer = make_output_format(unsupported_format, tmp_path)
 
     with pytest.raises(FormatUnsupportedError) as exec_info:

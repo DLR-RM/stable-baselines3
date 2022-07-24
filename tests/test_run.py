@@ -1,5 +1,3 @@
-from unittest import mock
-
 import gym
 import numpy as np
 import pytest
@@ -215,16 +213,3 @@ def test_warn_dqn_multi_env():
             buffer_size=100,
             target_update_interval=1,
         )
-
-
-@pytest.mark.parametrize("model_class", [PPO, DQN])
-def test_fps_no_div_zero(model_class):
-    """Set time to constant and train algorithm to check no division by zero error.
-
-    Time can appear to be constant during short runs on platforms with low-precision
-    timers. We should avoid division by zero errors e.g. when computing FPS in
-    this situation."""
-    with mock.patch("time.time", lambda: 42.0):
-        with mock.patch("time.time_ns", lambda: 42.0):
-            model = model_class("MlpPolicy", "CartPole-v1")
-            model.learn(total_timesteps=100)

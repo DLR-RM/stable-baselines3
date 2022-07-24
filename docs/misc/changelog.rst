@@ -11,6 +11,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Support logging hyperparameters to tensorboard (@timothe-chaumont)
 
 SB3-Contrib
 ^^^^^^^^^^^
@@ -28,7 +29,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Fix typo in docstring "nature" -> "Nature" (@Melanol)
-
+- Added an example of callback that logs hyperparameters to tensorboard. (@timothe-chaumont)
 
 Release 1.6.0 (2022-07-11)
 ---------------------------
@@ -1012,4 +1013,4 @@ And all the contributors:
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
-@Melanol @qgallouedec
+@Melanol @qgallouedec @timothe-chaumont

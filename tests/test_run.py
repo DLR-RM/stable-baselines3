@@ -1,16 +1,23 @@
 import gym
 import numpy as np
+from unittest import mock
 import pytest
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
+from stable_baselines3.common.noise import (
+    NormalActionNoise,
+    OrnsteinUhlenbeckActionNoise,
+)
 
 normal_action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
 
 
 @pytest.mark.parametrize("model_class", [TD3, DDPG])
-@pytest.mark.parametrize("action_noise", [normal_action_noise, OrnsteinUhlenbeckActionNoise(np.zeros(1), 0.1 * np.ones(1))])
+@pytest.mark.parametrize(
+    "action_noise",
+    [normal_action_noise, OrnsteinUhlenbeckActionNoise(np.zeros(1), 0.1 * np.ones(1))],
+)
 def test_deterministic_pg(model_class, action_noise):
     """
     Test for DDPG and variants (TD3).
@@ -210,3 +217,16 @@ def test_warn_dqn_multi_env():
             buffer_size=100,
             target_update_interval=1,
         )
+
+
+@pytest.mark.parametrize("model_class", [PPO, DQN])
+def test_fps_no_div_zero(model_class):
+    """Set time to constant and train algorithm to check no division by zero error.
+
+    Time can appear to be constant during short runs on platforms with low-precision
+    timers. We should avoid division by zero errors e.g. when computing FPS in
+    this situation."""
+    with mock.patch("time.time", lambda: 42.0):
+        with mock.patch("time.time_ns", lambda: 42.0):
+            model = model_class("MlpPolicy", "CartPole-v1")
+            model.learn(total_timesteps=100)

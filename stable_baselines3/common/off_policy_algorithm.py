@@ -428,7 +428,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         """
         Write log.
         """
-        time_elapsed = max(time.time() - self.start_time, sys.float_info.epsilon)
+        time_elapsed = max(time.time_ns() - self.start_time, sys.float_info.epsilon)
         fps = int((self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
         self.logger.record("time/episodes", self._episode_num, exclude="tensorboard")
         if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:

@@ -33,6 +33,19 @@ class DummyMultiBinary(gym.Env):
         return self.observation_space.sample(), 0.0, False, {}
 
 
+class DummyMultidimensionalAction(gym.Env):
+    def __init__(self):
+        super().__init__()
+        self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2, 2), dtype=np.float32)
+
+    def reset(self):
+        return self.observation_space.sample()
+
+    def step(self, action):
+        return self.observation_space.sample(), 0.0, False, {}
+
+
 @pytest.mark.parametrize("model_class", [SAC, TD3, DQN])
 @pytest.mark.parametrize("env", [DummyMultiDiscreteSpace([4, 3]), DummyMultiBinary(8)])
 def test_identity_spaces(model_class, env):
@@ -53,10 +66,10 @@ def test_identity_spaces(model_class, env):
 
 
 @pytest.mark.parametrize("model_class", [A2C, DDPG, DQN, PPO, SAC, TD3])
-@pytest.mark.parametrize("env", ["Pendulum-v1", "CartPole-v1"])
+@pytest.mark.parametrize("env", ["Pendulum-v1", "CartPole-v1", DummyMultidimensionalAction()])
 def test_action_spaces(model_class, env):
     if model_class in [SAC, DDPG, TD3]:
-        supported_action_space = env == "Pendulum-v1"
+        supported_action_space = env == "Pendulum-v1" or isinstance(env, DummyMultidimensionalAction)
     elif model_class == DQN:
         supported_action_space = env == "CartPole-v1"
     elif model_class in [A2C, PPO]:

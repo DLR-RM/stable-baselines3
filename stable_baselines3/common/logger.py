@@ -69,11 +69,11 @@ class Image:
 
 class HParam:
     """
-    Hyperparameter data class storing an image and data format
+    Hyperparameter data class storing hyperparameters and metrics in dictionnaries
 
     :param hparam_dict: key-value pairs of hyperparameters to log
     :param metric_dict: key-value pairs of metrics to log
-        A metrics dict is required to display hyperparameters in the corresponding Tensorboard section.
+        A non-empty metrics dict is required to display hyperparameters in the corresponding Tensorboard section.
     """
 
     def __init__(self, hparam_dict: Dict[str, Union[bool, str, float, int, None]], metric_dict: Dict[str, Union[float, int]]):

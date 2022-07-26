@@ -19,6 +19,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fixed the issue that ``predict`` does not always return action as ``np.ndarray`` (@qgallouedec)
 - Fixed division by zero error when computing FPS when a small number of time has elapsed in operating systems with low-precision timers.
+- Added multidimensional action space support (@qgallouedec)
 
 Deprecations:
 ^^^^^^^^^^^^^

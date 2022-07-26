@@ -10,7 +10,10 @@ normal_action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
 
 
 @pytest.mark.parametrize("model_class", [TD3, DDPG])
-@pytest.mark.parametrize("action_noise", [normal_action_noise, OrnsteinUhlenbeckActionNoise(np.zeros(1), 0.1 * np.ones(1))])
+@pytest.mark.parametrize(
+    "action_noise",
+    [normal_action_noise, OrnsteinUhlenbeckActionNoise(np.zeros(1), 0.1 * np.ones(1))],
+)
 def test_deterministic_pg(model_class, action_noise):
     """
     Test for DDPG and variants (TD3).

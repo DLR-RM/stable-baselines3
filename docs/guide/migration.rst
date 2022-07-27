@@ -141,7 +141,7 @@ DQN
 ^^^
 
 Only the vanilla DQN is implemented right now but extensions will follow.
-Default hyperparameters are taken from the nature paper, except for the optimizer and learning rate that were taken from Stable Baselines defaults.
+Default hyperparameters are taken from the Nature paper, except for the optimizer and learning rate that were taken from Stable Baselines defaults.
 
 DDPG
 ^^^^

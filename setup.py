@@ -111,6 +111,8 @@ setup(
             "sphinxcontrib.spelling",
             # Type hints support
             "sphinx-autodoc-typehints",
+            # Copy button for code snippets
+            "sphinx_copybutton",
         ],
         "extra": [
             # For render

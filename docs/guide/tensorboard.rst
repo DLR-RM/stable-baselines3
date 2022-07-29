@@ -31,15 +31,13 @@ You can also define custom logging name when training (by default it is the algo
 
 
 .. note::
-    Know that specifying different ``tb_log_name`` in subsequent runs will result in split graphs, like this:
+    Know that specifying different ``tb_log_name`` in subsequent runs will result in split graphs, like in the figure below.
+    If you want them to be continuous, either don't change ``tb_log_name``, or just don't specify it.
+    And, if you still managed to get your graphs split by other means, just put tensorboard log files into the same folder.
 
     .. image:: ../_static/img/split_graph.png
       :width: 330
       :alt: split_graph
-
-    If you want them to be continuous, either don't change ``tb_log_name``, or just don't specify it.
-    And, if you still managed to get your graphs split by other means, just put the tensorboard log files into the same folder.
-
 
 Once the learn function is called, you can monitor the RL agent during or after the training, with the following bash command:
 

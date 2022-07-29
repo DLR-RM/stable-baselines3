@@ -422,7 +422,7 @@ class BaseAlgorithm(ABC):
         :param tb_log_name: the name of the run for tensorboard log
         :return:
         """
-        self.start_time = time.time()
+        self.start_time = time.time_ns()
 
         if self.ep_info_buffer is None or reset_num_timesteps:
             # Initialize buffers if they don't exist, or reinitialize if resetting counters

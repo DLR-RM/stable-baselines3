@@ -18,6 +18,7 @@ SB3-Contrib
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed the issue that ``predict`` does not always return action as ``np.ndarray`` (@qgallouedec)
+- Fixed division by zero error when computing FPS when a small number of time has elapsed in operating systems with low-precision timers.
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -28,6 +29,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Fix typo in docstring "nature" -> "Nature" (@Melanol)
+- Add info on split tensorboard logs into (@Melanol)
 
 
 Release 1.6.0 (2022-07-11)

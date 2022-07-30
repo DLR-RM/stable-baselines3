@@ -26,13 +26,14 @@ You can also define custom logging name when training (by default it is the algo
     model.learn(total_timesteps=10_000, tb_log_name="first_run")
     # Pass reset_num_timesteps=False to continue the training curve in tensorboard
     # By default, it will create a new curve
+    # Keep tb_log_name constant to have continuous curve (see note below)
     model.learn(total_timesteps=10_000, tb_log_name="second_run", reset_num_timesteps=False)
     model.learn(total_timesteps=10_000, tb_log_name="third_run", reset_num_timesteps=False)
 
 
 .. note::
-    Know that specifying different ``tb_log_name`` in subsequent runs will result in split graphs, like in the figure below.
-    If you want them to be continuous, either don't change ``tb_log_name``, or just don't specify it.
+    If you specify different ``tb_log_name`` in subsequent runs, you will have split graphs, like in the figure below.
+    If you want them to be continuous, you must keep the same ``tb_log_name`` (see `issue #975 <https://github.com/DLR-RM/stable-baselines3/issues/975#issuecomment-1198992211>`_).
     And, if you still managed to get your graphs split by other means, just put tensorboard log files into the same folder.
 
     .. image:: ../_static/img/split_graph.png

@@ -29,6 +29,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Fix typo in docstring "nature" -> "Nature" (@Melanol)
+- Add info on split tensorboard logs into (@Melanol)
 
 
 Release 1.6.0 (2022-07-11)

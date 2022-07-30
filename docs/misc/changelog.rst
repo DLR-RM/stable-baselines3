@@ -28,8 +28,9 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
-- Fix typo in docstring "nature" -> "Nature" (@Melanol)
-- Add info on split tensorboard logs into (@Melanol)
+- Fixed typo in docstring "nature" -> "Nature" (@Melanol)
+- Added info on split tensorboard logs into (@Melanol)
+- Fixed typo in ppo doc (@francescoluciano)
 
 
 Release 1.6.0 (2022-07-11)
@@ -1014,4 +1015,4 @@ And all the contributors:
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
-@Melanol @qgallouedec
+@Melanol @qgallouedec @francescoluciano

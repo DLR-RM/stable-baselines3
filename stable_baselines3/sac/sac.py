@@ -10,7 +10,7 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
-from stable_baselines3.common.utils import polyak_update
+from stable_baselines3.common.utils import get_parameters_by_name, polyak_update
 from stable_baselines3.sac.policies import CnnPolicy, MlpPolicy, MultiInputPolicy, SACPolicy
 
 
@@ -271,7 +271,12 @@ class SAC(OffPolicyAlgorithm):
 
             # Update target networks
             if gradient_step % self.target_update_interval == 0:
-                polyak_update(self.critic.parameters(), self.critic_target.parameters(), self.tau)
+                included_names = ["weight", "bias", "running_"]
+                polyak_update(
+                    get_parameters_by_name(self.critic, included_names),
+                    get_parameters_by_name(self.critic_target, included_names),
+                    self.tau,
+                )
 
         self._n_updates += gradient_steps
 

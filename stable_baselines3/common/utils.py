@@ -392,6 +392,16 @@ def safe_mean(arr: Union[np.ndarray, list, deque]) -> np.ndarray:
     return np.nan if len(arr) == 0 else np.mean(arr)
 
 
+def get_parameters_by_name(model: th.nn.Module, included_names: Iterable[str]) -> Iterable:
+    """
+    Extract parameters from the state dict of ``model`` if the name contains one of the strings in ``included_names``.
+
+    :param model: the model where the parameters come from.
+    :param included_names: substrings of names to include.
+    """
+    return [param for name, param in model.state_dict().items() if any([key in name for key in included_names])]
+
+
 def zip_strict(*iterables: Iterable) -> Iterable:
     r"""
     ``zip()`` function but enforces that iterables are of equal length.

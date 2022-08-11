@@ -14,7 +14,13 @@ from stable_baselines3.common.env_util import is_wrapped, make_atari_env, make_v
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise, OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
-from stable_baselines3.common.utils import get_system_info, is_vectorized_observation, polyak_update, zip_strict
+from stable_baselines3.common.utils import (
+    get_parameters_by_name,
+    get_system_info,
+    is_vectorized_observation,
+    polyak_update,
+    zip_strict,
+)
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 
@@ -320,6 +326,13 @@ def test_vec_noise():
         vec.noises = [base] * (num_envs - 1)
     assert all(isinstance(noise, type(base)) for noise in vec.noises)
     assert len(vec.noises) == num_envs
+
+
+def test_get_parameters_by_name():
+    model = th.nn.Sequential(th.nn.Linear(5, 5), th.nn.BatchNorm1d(5))
+    included_names = ["weight", "bias", "running_"]
+    # 2 x weight, 2 x bias, 1 x running_mean, 1 x running_bias; Ignore num_batches_tracked.
+    assert len(list(get_parameters_by_name(model, included_names))) == 6
 
 
 def test_polyak():

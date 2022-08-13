@@ -164,6 +164,7 @@ class ReplayBuffer(BaseBuffer):
         at a cost of more complexity.
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
         and https://github.com/DLR-RM/stable-baselines3/pull/28#issuecomment-637559274
+        Cannot be used in combination with handle_timeout_termination.
     :param handle_timeout_termination: Handle timeout termination (due to timelimit)
         separately and treat the task as infinite horizon task.
         https://github.com/DLR-RM/stable-baselines3/issues/284
@@ -188,6 +189,13 @@ class ReplayBuffer(BaseBuffer):
         if psutil is not None:
             mem_available = psutil.virtual_memory().available
 
+        # there is a bug if both optimize_memory_usage and handle_timeout_termination are true
+        # see https://github.com/DLR-RM/stable-baselines3/issues/934
+        if optimize_memory_usage and handle_timeout_termination:
+            raise ValueError(
+                "ReplayBuffer does not support optimize_memory_usage = True "
+                "and handle_timeout_termination = True simultaneously."
+            )
         self.optimize_memory_usage = optimize_memory_usage
 
         self.observations = np.zeros((self.buffer_size, self.n_envs) + self.obs_shape, dtype=observation_space.dtype)
@@ -239,8 +247,7 @@ class ReplayBuffer(BaseBuffer):
             next_obs = next_obs.reshape((self.n_envs,) + self.obs_shape)
 
         # Same, for actions
-        if isinstance(self.action_space, spaces.Discrete):
-            action = action.reshape((self.n_envs, self.action_dim))
+        action = action.reshape((self.n_envs, self.action_dim))
 
         # Copy to avoid modification by reference
         self.observations[self.pos] = np.array(obs).copy()
@@ -425,6 +432,9 @@ class RolloutBuffer(BaseBuffer):
         if isinstance(self.observation_space, spaces.Discrete):
             obs = obs.reshape((self.n_envs,) + self.obs_shape)
 
+        # Same reshape, for actions
+        action = action.reshape((self.n_envs, self.action_dim))
+
         self.observations[self.pos] = np.array(obs).copy()
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
@@ -578,8 +588,7 @@ class DictReplayBuffer(ReplayBuffer):
             self.next_observations[key][self.pos] = np.array(next_obs[key]).copy()
 
         # Same reshape, for actions
-        if isinstance(self.action_space, spaces.Discrete):
-            action = action.reshape((self.n_envs, self.action_dim))
+        action = action.reshape((self.n_envs, self.action_dim))
 
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()

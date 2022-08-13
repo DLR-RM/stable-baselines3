@@ -3,9 +3,43 @@
 Changelog
 ==========
 
-
-Release 1.5.1a10 (WIP)
+Release 1.6.1a1 (WIP)
 ---------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+- Use MacOS Metal "mps" device when available
+
+SB3-Contrib
+^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed the issue that ``predict`` does not always return action as ``np.ndarray`` (@qgallouedec)
+- Fixed division by zero error when computing FPS when a small number of time has elapsed in operating systems with low-precision timers.
+- Added multidimensional action space support (@qgallouedec)
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+- Fixed typo in docstring "nature" -> "Nature" (@Melanol)
+- Added info on split tensorboard logs into (@Melanol)
+- Fixed typo in ppo doc (@francescoluciano)
+- Fixed typo in install doc(@jlp-ue)
+
+
+Release 1.6.0 (2022-07-11)
+---------------------------
+
+**Recurrent PPO (PPO LSTM), better defaults for learning from pixels with SAC/TD3**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -17,7 +51,6 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-- Use MacOS Metal "mps" device when available
 - Save cloudpickle version
 
 SB3-Contrib
@@ -35,6 +68,8 @@ Bug Fixes:
 - Added a check for unbounded actions
 - Fixed issues due to newer version of protobuf (tensorboard) and sphinx
 - Fix exception causes all over the codebase (@cool-RR)
+- Prohibit simultaneous use of optimize_memory_usage and handle_timeout_termination due to a bug (@MWeltevrede)
+- Fixed a bug in ``kl_divergence`` check that would fail when using numpy arrays with MultiCategorical distribution
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -52,6 +87,8 @@ Documentation:
 - Added remark about breaking Markov assumption and timeout handling
 - Added doc about MLFlow integration via custom logger (@git-thor)
 - Updated Huggingface integration doc
+- Added copy button for code snippets
+- Added doc about EnvPool and Isaac Gym support
 
 
 Release 1.5.0 (2022-03-25)
@@ -981,4 +1018,5 @@ And all the contributors:
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
-@Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR
+@Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
+@Melanol @qgallouedec @francescoluciano @jlp-ue

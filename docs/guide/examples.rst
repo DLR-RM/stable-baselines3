@@ -729,6 +729,16 @@ to keep track of the agent progress.
   model.learn(10_000)
 
 
+SB3 with EnvPool or Isaac Gym
+-----------------------------
+
+Just like Procgen (see above), `EnvPool <https://github.com/sail-sg/envpool>`_ and `Isaac Gym <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_ accelerate the environment by
+already providing a vectorized implementation.
+
+To use SB3 with those tools, you must wrap the env with tool's specific ``VecEnvWrapper`` that will pre-process the data for SB3,
+you can find links to those wrappers in `issue #772 <https://github.com/DLR-RM/stable-baselines3/issues/772#issuecomment-1048657002>`_.
+
+
 Record a Video
 --------------
 

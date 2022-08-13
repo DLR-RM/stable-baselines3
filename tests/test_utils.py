@@ -384,9 +384,10 @@ def test_get_system_info():
     assert info["Stable-Baselines3"] == str(sb3.__version__)
     assert "Python" in info_str
     assert "PyTorch" in info_str
-    assert "GPU Enabled" in info_str
+    assert "Accelerator" in info_str
     assert "Numpy" in info_str
     assert "Gym" in info_str
+    assert "Cloudpickle" in info_str
 
 
 def test_is_vectorized_observation():

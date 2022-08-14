@@ -1,6 +1,7 @@
 import os
 import time
 from typing import Sequence
+from unittest import mock
 
 import gym
 import numpy as np
@@ -381,3 +382,16 @@ def test_fps_logger(tmp_path, algo):
     # third time, FPS should be the same
     model.learn(100, log_interval=1, reset_num_timesteps=False)
     assert max_fps / 10 <= logger.name_to_value["time/fps"] <= max_fps
+
+
+@pytest.mark.parametrize("algo", [A2C, DQN])
+def test_fps_no_div_zero(algo):
+    """Set time to constant and train algorithm to check no division by zero error.
+
+    Time can appear to be constant during short runs on platforms with low-precision
+    timers. We should avoid division by zero errors e.g. when computing FPS in
+    this situation."""
+    with mock.patch("time.time", lambda: 42.0):
+        with mock.patch("time.time_ns", lambda: 42.0):
+            model = algo("MlpPolicy", "CartPole-v1")
+            model.learn(total_timesteps=100)

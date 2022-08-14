@@ -4,9 +4,10 @@ import pytest
 import torch as th
 from gym import spaces
 
-from stable_baselines3.common.buffers import DictReplayBuffer, ReplayBuffer
+from stable_baselines3.common.buffers import DictReplayBuffer, DictRolloutBuffer, ReplayBuffer, RolloutBuffer
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.type_aliases import DictReplayBufferSamples, ReplayBufferSamples
+from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import VecNormalize
 
 
@@ -94,3 +95,50 @@ def test_replay_buffer_normalization(replay_buffer_cls):
             assert th.allclose(observations.mean(0), th.zeros(1), atol=1)
     # Test reward normalization
     assert np.allclose(sample.rewards.mean(0), np.zeros(1), atol=1)
+
+
+@pytest.mark.parametrize("replay_buffer_cls", [ReplayBuffer, DictReplayBuffer])
+@pytest.mark.parametrize("device", ["cpu", "cuda", "auto"])
+def test_device_replay_buffer(replay_buffer_cls, device):
+    if device == "cuda" and not th.cuda.is_available():
+        pytest.skip("CUDA not available")
+
+    env = {ReplayBuffer: DummyEnv, DictReplayBuffer: DummyDictEnv}[replay_buffer_cls]
+    env = make_vec_env(env)
+
+    buffer = replay_buffer_cls(100, env.observation_space, env.action_space, device=device)
+
+    # Interract and store transitions
+    obs = env.reset()
+    for _ in range(100):
+        action = env.action_space.sample()
+        next_obs, reward, done, info = env.step(action)
+        buffer.add(obs, next_obs, action, reward, done, info)
+        obs = next_obs
+
+    sample = buffer.sample(50)
+    assert sample.actions.device == get_device(device)
+
+
+@pytest.mark.parametrize("replay_buffer_cls", [RolloutBuffer, DictRolloutBuffer])
+@pytest.mark.parametrize("device", ["cpu", "cuda", "auto"])
+def test_device_rollout_buffer(replay_buffer_cls, device):
+    if device == "cuda" and not th.cuda.is_available():
+        pytest.skip("CUDA not available")
+
+    env = {RolloutBuffer: DummyEnv, DictRolloutBuffer: DummyDictEnv}[replay_buffer_cls]
+    env = make_vec_env(env)
+
+    buffer = replay_buffer_cls(100, env.observation_space, env.action_space, device=device)
+
+    # Interract and store transitions
+    obs = env.reset()
+    for _ in range(100):
+        action = env.action_space.sample()
+        next_obs, reward, done, info = env.step(action)
+        episode_start, values, log_prob = np.zeros(1), th.zeros(1), th.ones(1)
+        buffer.add(obs, action, reward, episode_start, values, log_prob)
+        obs = next_obs
+
+    sample = buffer.sample(50)
+    assert sample.actions.device == get_device(device)

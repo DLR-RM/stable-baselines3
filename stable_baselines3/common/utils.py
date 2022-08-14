@@ -392,7 +392,7 @@ def safe_mean(arr: Union[np.ndarray, list, deque]) -> np.ndarray:
     return np.nan if len(arr) == 0 else np.mean(arr)
 
 
-def get_parameters_by_name(model: th.nn.Module, included_names: Iterable[str]) -> Iterable:
+def get_parameters_by_name(model: th.nn.Module, included_names: Iterable[str]) -> List[th.Tensor]:
     """
     Extract parameters from the state dict of ``model`` if the name contains one of the strings in ``included_names``.
 

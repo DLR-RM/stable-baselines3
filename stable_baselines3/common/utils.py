@@ -4,7 +4,7 @@ import platform
 import random
 from collections import deque
 from itertools import zip_longest
-from typing import Dict, Iterable, Optional, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 import gym
 import numpy as np

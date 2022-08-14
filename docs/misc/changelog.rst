@@ -27,6 +27,8 @@ Deprecations:
 Others:
 ^^^^^^^
 
+- Added support for ``device="auto"`` in buffers and made it default (@qgallouedec)
+
 Documentation:
 ^^^^^^^^^^^^^^
 - Fixed typo in docstring "nature" -> "Nature" (@Melanol)

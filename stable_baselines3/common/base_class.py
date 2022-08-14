@@ -392,6 +392,7 @@ class BaseAlgorithm(ABC):
                 log_path=log_path,
                 eval_freq=eval_freq,
                 n_eval_episodes=n_eval_episodes,
+                verbose=self.verbose,
             )
             callback = CallbackList([callback, eval_callback])
 

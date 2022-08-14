@@ -97,13 +97,18 @@ def test_replay_buffer_normalization(replay_buffer_cls):
     assert np.allclose(sample.rewards.mean(0), np.zeros(1), atol=1)
 
 
-@pytest.mark.parametrize("replay_buffer_cls", [ReplayBuffer, DictReplayBuffer])
+@pytest.mark.parametrize("replay_buffer_cls", [DictReplayBuffer, DictRolloutBuffer, ReplayBuffer, RolloutBuffer])
 @pytest.mark.parametrize("device", ["cpu", "cuda", "auto"])
-def test_device_replay_buffer(replay_buffer_cls, device):
+def test_device_buffer(replay_buffer_cls, device):
     if device == "cuda" and not th.cuda.is_available():
         pytest.skip("CUDA not available")
 
-    env = {ReplayBuffer: DummyEnv, DictReplayBuffer: DummyDictEnv}[replay_buffer_cls]
+    env = {
+        RolloutBuffer: DummyEnv,
+        DictRolloutBuffer: DummyDictEnv,
+        ReplayBuffer: DummyEnv,
+        DictReplayBuffer: DummyDictEnv,
+    }[replay_buffer_cls]
     env = make_vec_env(env)
 
     buffer = replay_buffer_cls(100, env.observation_space, env.action_space, device=device)
@@ -113,32 +118,24 @@ def test_device_replay_buffer(replay_buffer_cls, device):
     for _ in range(100):
         action = env.action_space.sample()
         next_obs, reward, done, info = env.step(action)
-        buffer.add(obs, next_obs, action, reward, done, info)
+        if replay_buffer_cls in [RolloutBuffer, DictRolloutBuffer]:
+            episode_start, values, log_prob = np.zeros(1), th.zeros(1), th.ones(1)
+            buffer.add(obs, action, reward, episode_start, values, log_prob)
+        else:
+            buffer.add(obs, next_obs, action, reward, done, info)
         obs = next_obs
 
-    sample = buffer.sample(50)
-    assert sample.actions.device == get_device(device)
+    # Get data from the buffer
+    if replay_buffer_cls in [RolloutBuffer, DictRolloutBuffer]:
+        data = buffer.get(50)
+    elif replay_buffer_cls in [ReplayBuffer, DictReplayBuffer]:
+        data = buffer.sample(50)
 
-
-@pytest.mark.parametrize("replay_buffer_cls", [RolloutBuffer, DictRolloutBuffer])
-@pytest.mark.parametrize("device", ["cpu", "cuda", "auto"])
-def test_device_rollout_buffer(replay_buffer_cls, device):
-    if device == "cuda" and not th.cuda.is_available():
-        pytest.skip("CUDA not available")
-
-    env = {RolloutBuffer: DummyEnv, DictRolloutBuffer: DummyDictEnv}[replay_buffer_cls]
-    env = make_vec_env(env)
-
-    buffer = replay_buffer_cls(100, env.observation_space, env.action_space, device=device)
-
-    # Interract and store transitions
-    obs = env.reset()
-    for _ in range(100):
-        action = env.action_space.sample()
-        next_obs, reward, done, info = env.step(action)
-        episode_start, values, log_prob = np.zeros(1), th.zeros(1), th.ones(1)
-        buffer.add(obs, action, reward, episode_start, values, log_prob)
-        obs = next_obs
-
-    sample = buffer.sample(50)
-    assert sample.actions.device == get_device(device)
+    # Check that all data are on the desired device
+    desired_device = get_device(device)
+    for value in list(data):
+        if isinstance(value, dict):
+            for key in value.keys():
+                assert value[key].device == desired_device
+        elif isinstance(value, th.Tensor):
+            assert value.device == desired_device

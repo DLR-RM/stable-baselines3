@@ -60,7 +60,7 @@ Bleeding-edge version
 
 	.. code-block:: bash
 
-		pip install git+https://github.com/carlosluis/stable-baselines3/tree/fix_tests
+		pip install git+https://github.com/carlosluis/stable-baselines3@fix_tests
 
   See `PR #780 <https://github.com/DLR-RM/stable-baselines3/pull/780>`_ for more information.
 

@@ -24,6 +24,7 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Fixed ``DictReplayBuffer.next_observations`` typing (@qgallouedec)
 
 Documentation:
 ^^^^^^^^^^^^^^

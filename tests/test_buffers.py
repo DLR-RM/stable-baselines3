@@ -72,7 +72,7 @@ def test_replay_buffer_normalization(replay_buffer_cls):
     env = make_vec_env(env)
     env = VecNormalize(env)
 
-    buffer = replay_buffer_cls(100, env.observation_space, env.action_space)
+    buffer = replay_buffer_cls(100, env.observation_space, env.action_space, device="cpu")
 
     # Interract and store transitions
     env.reset()
@@ -132,10 +132,10 @@ def test_device_buffer(replay_buffer_cls, device):
         data = buffer.sample(50)
 
     # Check that all data are on the desired device
-    desired_device = get_device(device)
+    desired_device = get_device(device).type
     for value in list(data):
         if isinstance(value, dict):
             for key in value.keys():
-                assert value[key].device == desired_device
+                assert value[key].device.type == desired_device
         elif isinstance(value, th.Tensor):
-            assert value.device == desired_device
+            assert value.device.type == desired_device

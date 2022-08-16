@@ -29,6 +29,8 @@ Others:
 ^^^^^^^
 - Fixed ``DictReplayBuffer.next_observations`` typing (@qgallouedec)
 
+- Added support for ``device="auto"`` in buffers and made it default (@qgallouedec)
+
 Documentation:
 ^^^^^^^^^^^^^^
 - Fixed typo in docstring "nature" -> "Nature" (@Melanol)

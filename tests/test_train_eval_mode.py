@@ -28,7 +28,7 @@ class FlattenBatchNormDropoutExtractor(BaseFeaturesExtractor):
     """
 
     def __init__(self, observation_space: gym.Space):
-        super(FlattenBatchNormDropoutExtractor, self).__init__(
+        super().__init__(
             observation_space,
             get_flattened_obs_dim(observation_space),
         )

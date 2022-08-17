@@ -28,13 +28,13 @@ def get_time_limit(env: VecEnv, current_max_episode_length: Optional[int]) -> in
             if current_max_episode_length is None:
                 raise AttributeError
         # if not available check if a valid value was passed as an argument
-        except AttributeError:
+        except AttributeError as e:
             raise ValueError(
                 "The max episode length could not be inferred.\n"
                 "You must specify a `max_episode_steps` when registering the environment,\n"
                 "use a `gym.wrappers.TimeLimit` wrapper "
                 "or pass `max_episode_length` to the model constructor"
-            )
+            ) from e
     return current_max_episode_length
 
 
@@ -73,7 +73,7 @@ class HerReplayBuffer(DictReplayBuffer):
         self,
         env: VecEnv,
         buffer_size: int,
-        device: Union[th.device, str] = "cpu",
+        device: Union[th.device, str] = "auto",
         replay_buffer: Optional[DictReplayBuffer] = None,
         max_episode_length: Optional[int] = None,
         n_sampled_goal: int = 4,
@@ -82,7 +82,7 @@ class HerReplayBuffer(DictReplayBuffer):
         handle_timeout_termination: bool = True,
     ):
 
-        super(HerReplayBuffer, self).__init__(buffer_size, env.observation_space, env.action_space, device, env.num_envs)
+        super().__init__(buffer_size, env.observation_space, env.action_space, device, env.num_envs)
 
         # convert goal_selection_strategy into GoalSelectionStrategy if string
         if isinstance(goal_selection_strategy, str):
@@ -252,7 +252,7 @@ class HerReplayBuffer(DictReplayBuffer):
         elif self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
             # replay with random state which comes from the same episode and was observed after current transition
             transitions_indices = np.random.randint(
-                transitions_indices[her_indices] + 1, self.episode_lengths[her_episode_indices]
+                transitions_indices[her_indices], self.episode_lengths[her_episode_indices]
             )
 
         elif self.goal_selection_strategy == GoalSelectionStrategy.EPISODE:
@@ -262,7 +262,7 @@ class HerReplayBuffer(DictReplayBuffer):
         else:
             raise ValueError(f"Strategy {self.goal_selection_strategy} for sampling goals not supported!")
 
-        return self._buffer["achieved_goal"][her_episode_indices, transitions_indices]
+        return self._buffer["next_achieved_goal"][her_episode_indices, transitions_indices]
 
     def _sample_transitions(
         self,
@@ -303,14 +303,6 @@ class HerReplayBuffer(DictReplayBuffer):
             her_indices = np.arange(len(episode_indices))
 
         ep_lengths = self.episode_lengths[episode_indices]
-
-        # Special case when using the "future" goal sampling strategy
-        # we cannot sample all transitions, we have to remove the last timestep
-        if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
-            # restrict the sampling domain when ep_lengths > 1
-            # otherwise filter out the indices
-            her_indices = her_indices[ep_lengths[her_indices] > 1]
-            ep_lengths[her_indices] -= 1
 
         if online_sampling:
             # Select which transitions to use

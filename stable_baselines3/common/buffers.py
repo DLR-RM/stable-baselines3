@@ -13,6 +13,7 @@ from stable_baselines3.common.type_aliases import (
     ReplayBufferSamples,
     RolloutBufferSamples,
 )
+from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import VecNormalize
 
 try:
@@ -39,10 +40,10 @@ class BaseBuffer(ABC):
         buffer_size: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        device: Union[th.device, str] = "cpu",
+        device: Union[th.device, str] = "auto",
         n_envs: int = 1,
     ):
-        super(BaseBuffer, self).__init__()
+        super().__init__()
         self.buffer_size = buffer_size
         self.observation_space = observation_space
         self.action_space = action_space
@@ -51,7 +52,7 @@ class BaseBuffer(ABC):
         self.action_dim = get_action_dim(action_space)
         self.pos = 0
         self.full = False
-        self.device = device
+        self.device = get_device(device)
         self.n_envs = n_envs
 
     @staticmethod
@@ -157,13 +158,14 @@ class ReplayBuffer(BaseBuffer):
     :param buffer_size: Max number of element in the buffer
     :param observation_space: Observation space
     :param action_space: Action space
-    :param device:
+    :param device: PyTorch device
     :param n_envs: Number of parallel environments
     :param optimize_memory_usage: Enable a memory efficient variant
         of the replay buffer which reduces by almost a factor two the memory used,
         at a cost of more complexity.
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
         and https://github.com/DLR-RM/stable-baselines3/pull/28#issuecomment-637559274
+        Cannot be used in combination with handle_timeout_termination.
     :param handle_timeout_termination: Handle timeout termination (due to timelimit)
         separately and treat the task as infinite horizon task.
         https://github.com/DLR-RM/stable-baselines3/issues/284
@@ -174,12 +176,12 @@ class ReplayBuffer(BaseBuffer):
         buffer_size: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        device: Union[th.device, str] = "cpu",
+        device: Union[th.device, str] = "auto",
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
     ):
-        super(ReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
+        super().__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
 
         # Adjust buffer size
         self.buffer_size = max(buffer_size // n_envs, 1)
@@ -188,6 +190,13 @@ class ReplayBuffer(BaseBuffer):
         if psutil is not None:
             mem_available = psutil.virtual_memory().available
 
+        # there is a bug if both optimize_memory_usage and handle_timeout_termination are true
+        # see https://github.com/DLR-RM/stable-baselines3/issues/934
+        if optimize_memory_usage and handle_timeout_termination:
+            raise ValueError(
+                "ReplayBuffer does not support optimize_memory_usage = True "
+                "and handle_timeout_termination = True simultaneously."
+            )
         self.optimize_memory_usage = optimize_memory_usage
 
         self.observations = np.zeros((self.buffer_size, self.n_envs) + self.obs_shape, dtype=observation_space.dtype)
@@ -239,8 +248,7 @@ class ReplayBuffer(BaseBuffer):
             next_obs = next_obs.reshape((self.n_envs,) + self.obs_shape)
 
         # Same, for actions
-        if isinstance(self.action_space, spaces.Discrete):
-            action = action.reshape((self.n_envs, self.action_dim))
+        action = action.reshape((self.n_envs, self.action_dim))
 
         # Copy to avoid modification by reference
         self.observations[self.pos] = np.array(obs).copy()
@@ -321,7 +329,7 @@ class RolloutBuffer(BaseBuffer):
     :param buffer_size: Max number of element in the buffer
     :param observation_space: Observation space
     :param action_space: Action space
-    :param device:
+    :param device: PyTorch device
     :param gae_lambda: Factor for trade-off of bias vs variance for Generalized Advantage Estimator
         Equivalent to classic advantage when set to 1.
     :param gamma: Discount factor
@@ -333,13 +341,13 @@ class RolloutBuffer(BaseBuffer):
         buffer_size: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        device: Union[th.device, str] = "cpu",
+        device: Union[th.device, str] = "auto",
         gae_lambda: float = 1,
         gamma: float = 0.99,
         n_envs: int = 1,
     ):
 
-        super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
+        super().__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
         self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
@@ -358,7 +366,7 @@ class RolloutBuffer(BaseBuffer):
         self.log_probs = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.advantages = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.generator_ready = False
-        super(RolloutBuffer, self).reset()
+        super().reset()
 
     def compute_returns_and_advantage(self, last_values: th.Tensor, dones: np.ndarray) -> None:
         """
@@ -425,6 +433,9 @@ class RolloutBuffer(BaseBuffer):
         if isinstance(self.observation_space, spaces.Discrete):
             obs = obs.reshape((self.n_envs,) + self.obs_shape)
 
+        # Same reshape, for actions
+        action = action.reshape((self.n_envs, self.action_dim))
+
         self.observations[self.pos] = np.array(obs).copy()
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
@@ -483,7 +494,7 @@ class DictReplayBuffer(ReplayBuffer):
     :param buffer_size: Max number of element in the buffer
     :param observation_space: Observation space
     :param action_space: Action space
-    :param device:
+    :param device: PyTorch device
     :param n_envs: Number of parallel environments
     :param optimize_memory_usage: Enable a memory efficient variant
         Disabled for now (see https://github.com/DLR-RM/stable-baselines3/pull/243#discussion_r531535702)
@@ -497,7 +508,7 @@ class DictReplayBuffer(ReplayBuffer):
         buffer_size: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        device: Union[th.device, str] = "cpu",
+        device: Union[th.device, str] = "auto",
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
@@ -578,8 +589,7 @@ class DictReplayBuffer(ReplayBuffer):
             self.next_observations[key][self.pos] = np.array(next_obs[key]).copy()
 
         # Same reshape, for actions
-        if isinstance(self.action_space, spaces.Discrete):
-            action = action.reshape((self.n_envs, self.action_dim))
+        action = action.reshape((self.n_envs, self.action_dim))
 
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
@@ -649,7 +659,7 @@ class DictRolloutBuffer(RolloutBuffer):
     :param buffer_size: Max number of element in the buffer
     :param observation_space: Observation space
     :param action_space: Action space
-    :param device:
+    :param device: PyTorch device
     :param gae_lambda: Factor for trade-off of bias vs variance for Generalized Advantage Estimator
         Equivalent to Monte-Carlo advantage estimate when set to 1.
     :param gamma: Discount factor
@@ -661,7 +671,7 @@ class DictRolloutBuffer(RolloutBuffer):
         buffer_size: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        device: Union[th.device, str] = "cpu",
+        device: Union[th.device, str] = "auto",
         gae_lambda: float = 1,
         gamma: float = 0.99,
         n_envs: int = 1,

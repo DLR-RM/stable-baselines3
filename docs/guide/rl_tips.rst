@@ -183,6 +183,16 @@ Some basic advice:
 - start with shaped reward (i.e. informative reward) and simplified version of your problem
 - debug with random actions to check that your environment works and follows the gym interface:
 
+Two important things to keep in mind when creating a custom environment is to avoid breaking Markov assumption
+and properly handle termination due to a timeout (maximum number of steps in an episode).
+For instance, if there is some time delay between action and observation (e.g. due to wifi communication), you should give an history of observations
+as input.
+
+Termination due to timeout (max number of steps per episode) needs to be handled separately. You should fill the key in the info dict: ``info["TimeLimit.truncated"] = True``.
+If you are using the gym ``TimeLimit`` wrapper, this will be done automatically.
+You can read `Time Limit in RL <https://arxiv.org/abs/1712.00378>`_ or take a look at the `RL Tips and Tricks video <https://www.youtube.com/watch?v=Ikngt0_DXJg>`_
+for more details.
+
 
 We provide a helper to check that your environment runs without error:
 
@@ -241,11 +251,14 @@ We *recommend following those steps to have a working RL algorithm*:
 1. Read the original paper several times
 2. Read existing implementations (if available)
 3. Try to have some "sign of life" on toy problems
-4. Validate the implementation by making it run on harder and harder envs (you can compare results against the RL zoo)
-	You usually need to run hyperparameter optimization for that step.
+4. Validate the implementation by making it run on harder and harder envs (you can compare results against the RL zoo).
+   You usually need to run hyperparameter optimization for that step.
 
-You need to be particularly careful on the shape of the different objects you are manipulating (a broadcast mistake will fail silently cf `issue #75 <https://github.com/hill-a/stable-baselines/pull/76>`_)
+You need to be particularly careful on the shape of the different objects you are manipulating (a broadcast mistake will fail silently cf. `issue #75 <https://github.com/hill-a/stable-baselines/pull/76>`_)
 and when to stop the gradient propagation.
+
+Don't forget to handle termination due to timeout separately (see remark in the custom environment section above),
+you can also take a look at `Issue #284 <https://github.com/DLR-RM/stable-baselines3/issues/284>`_ and `Issue #633 <https://github.com/DLR-RM/stable-baselines3/issues/633>`_.
 
 A personal pick (by @araffin) for environments with gradual difficulty in RL with continuous actions:
 

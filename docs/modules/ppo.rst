@@ -8,14 +8,14 @@ PPO
 The `Proximal Policy Optimization <https://arxiv.org/abs/1707.06347>`_ algorithm combines ideas from A2C (having multiple workers)
 and TRPO (it uses a trust region to improve the actor).
 
-The main idea is that after an update, the new policy should be not too far form the old policy.
+The main idea is that after an update, the new policy should be not too far from the old policy.
 For that, ppo uses clipping to avoid too large update.
 
 
 .. note::
 
   PPO contains several modifications from the original algorithm not documented
-  by OpenAI: advantages are normalized and value function can be also clipped .
+  by OpenAI: advantages are normalized and value function can be also clipped.
 
 
 Notes
@@ -25,10 +25,21 @@ Notes
 - Clear explanation of PPO on Arxiv Insights channel: https://www.youtube.com/watch?v=5P7I-xPq8u8
 - OpenAI blog post: https://blog.openai.com/openai-baselines-ppo/
 - Spinning Up guide: https://spinningup.openai.com/en/latest/algorithms/ppo.html
+- 37 implementation details blog: https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/
 
 
 Can I use?
 ----------
+
+.. note::
+
+  A recurrent version of PPO is available in our contrib repo: https://sb3-contrib.readthedocs.io/en/master/modules/ppo_recurrent.html
+
+  However we advise users to start with simple frame-stacking as a simpler, faster
+  and usually competitive alternative, more info in our report: https://wandb.ai/sb3/no-vel-envs/reports/PPO-vs-RecurrentPPO-aka-PPO-LSTM-on-environments-with-masked-velocity--VmlldzoxOTI4NjE4
+  See also `Procgen paper appendix Fig 11. <https://arxiv.org/abs/1912.01588>`_.
+  In practice, you can stack multiple observations using ``VecFrameStack``.
+
 
 -  Recurrent policies: ❌
 -  Multi processing: ✔️

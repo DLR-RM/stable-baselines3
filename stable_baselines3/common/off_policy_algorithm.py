@@ -1,5 +1,6 @@
 import io
 import pathlib
+import sys
 import time
 import warnings
 from copy import deepcopy
@@ -28,7 +29,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param policy: Policy object
     :param env: The environment to learn from
                 (if registered in Gym, can be str. Can be None for loading trained models)
-    :param policy_base: The base policy used by this method
     :param learning_rate: learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
     :param buffer_size: size of the replay buffer
@@ -76,7 +76,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self,
         policy: Type[BasePolicy],
         env: Union[GymEnv, str],
-        policy_base: Type[BasePolicy],
         learning_rate: Union[float, Schedule],
         buffer_size: int = 1_000_000,  # 1e6
         learning_starts: int = 100,
@@ -104,10 +103,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
     ):
 
-        super(OffPolicyAlgorithm, self).__init__(
+        super().__init__(
             policy=policy,
             env=env,
-            policy_base=policy_base,
             learning_rate=learning_rate,
             policy_kwargs=policy_kwargs,
             tensorboard_log=tensorboard_log,
@@ -160,8 +158,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
             try:
                 train_freq = (train_freq[0], TrainFrequencyUnit(train_freq[1]))
-            except ValueError:
-                raise ValueError(f"The unit of the `train_freq` must be either 'step' or 'episode' not '{train_freq[1]}'!")
+            except ValueError as e:
+                raise ValueError(
+                    f"The unit of the `train_freq` must be either 'step' or 'episode' not '{train_freq[1]}'!"
+                ) from e
 
             if not isinstance(train_freq[0], int):
                 raise ValueError(f"The frequency of `train_freq` must be an integer and not {train_freq[0]}")
@@ -428,8 +428,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         """
         Write log.
         """
-        time_elapsed = time.time() - self.start_time
-        fps = int((self.num_timesteps - self._num_timesteps_at_start) / (time_elapsed + 1e-8))
+        time_elapsed = max((time.time_ns() - self.start_time) / 1e9, sys.float_info.epsilon)
+        fps = int((self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
         self.logger.record("time/episodes", self._episode_num, exclude="tensorboard")
         if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
             self.logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.
 #
@@ -25,6 +24,14 @@ try:
 except ImportError:
     enable_spell_check = False
 
+# Try to enable copy button
+try:
+    import sphinx_copybutton  # noqa: F401
+
+    enable_copy_button = True
+except ImportError:
+    enable_copy_button = False
+
 # source code directory, relative to this file, for sphinx-autobuild
 sys.path.insert(0, os.path.abspath(".."))
 
@@ -46,13 +53,13 @@ sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # Read version from file
 version_file = os.path.join(os.path.dirname(__file__), "../stable_baselines3", "version.txt")
-with open(version_file, "r") as file_handler:
+with open(version_file) as file_handler:
     __version__ = file_handler.read().strip()
 
 # -- Project information -----------------------------------------------------
 
 project = "Stable Baselines3"
-copyright = "2020, Stable Baselines3"
+copyright = "2022, Stable Baselines3"
 author = "Stable Baselines3 Contributors"
 
 # The short X.Y version
@@ -84,6 +91,9 @@ extensions = [
 if enable_spell_check:
     extensions.append("sphinxcontrib.spelling")
 
+if enable_copy_button:
+    extensions.append("sphinx_copybutton")
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
@@ -101,7 +111,7 @@ master_doc = "index"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

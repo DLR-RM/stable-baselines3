@@ -147,7 +147,7 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
             try:
                 _check_obs(obs[key], observation_space.spaces[key], "reset")
             except AssertionError as e:
-                raise AssertionError(f"Error while checking key={key}: " + str(e))
+                raise AssertionError(f"Error while checking key={key}: " + str(e)) from e
     else:
         _check_obs(obs, observation_space, "reset")
 
@@ -166,7 +166,7 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
             try:
                 _check_obs(obs[key], observation_space.spaces[key], "step")
             except AssertionError as e:
-                raise AssertionError(f"Error while checking key={key}: " + str(e))
+                raise AssertionError(f"Error while checking key={key}: " + str(e)) from e
 
     else:
         _check_obs(obs, observation_space, "step")
@@ -273,6 +273,11 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
                 "We recommend you to use a symmetric and normalized Box action space (range=[-1, 1]) "
                 "cf https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html"
             )
+
+        if isinstance(action_space, spaces.Box):
+            assert np.all(
+                np.isfinite(np.array([action_space.low, action_space.high]))
+            ), "Continuous action space must have a finite lower and upper bound"
 
         if isinstance(action_space, spaces.Box) and action_space.dtype != np.dtype(np.float32):
             warnings.warn(

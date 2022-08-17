@@ -11,7 +11,7 @@ class ActionNoise(ABC):
     """
 
     def __init__(self):
-        super(ActionNoise, self).__init__()
+        super().__init__()
 
     def reset(self) -> None:
         """
@@ -35,7 +35,7 @@ class NormalActionNoise(ActionNoise):
     def __init__(self, mean: np.ndarray, sigma: np.ndarray):
         self._mu = mean
         self._sigma = sigma
-        super(NormalActionNoise, self).__init__()
+        super().__init__()
 
     def __call__(self) -> np.ndarray:
         return np.random.normal(self._mu, self._sigma)
@@ -72,7 +72,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         self.initial_noise = initial_noise
         self.noise_prev = np.zeros_like(self._mu)
         self.reset()
-        super(OrnsteinUhlenbeckActionNoise, self).__init__()
+        super().__init__()
 
     def __call__(self) -> np.ndarray:
         noise = (
@@ -105,8 +105,8 @@ class VectorizedActionNoise(ActionNoise):
         try:
             self.n_envs = int(n_envs)
             assert self.n_envs > 0
-        except (TypeError, AssertionError):
-            raise ValueError(f"Expected n_envs={n_envs} to be positive integer greater than 0")
+        except (TypeError, AssertionError) as e:
+            raise ValueError(f"Expected n_envs={n_envs} to be positive integer greater than 0") from e
 
         self.base_noise = base_noise
         self.noises = [copy.deepcopy(self.base_noise) for _ in range(n_envs)]

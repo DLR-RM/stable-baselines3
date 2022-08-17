@@ -17,7 +17,7 @@ from stable_baselines3.common.env_util import is_wrapped
 from stable_baselines3.common.logger import Logger
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise
-from stable_baselines3.common.policies import BasePolicy, get_policy_from_name
+from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.preprocessing import check_for_nested_spaces, is_image_space, is_image_space_channels_first
 from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr, save_to_zip_file
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
@@ -60,7 +60,6 @@ class BaseAlgorithm(ABC):
     :param policy: Policy object
     :param env: The environment to learn from
                 (if registered in Gym, can be str. Can be None for loading trained models)
-    :param policy_base: The base policy used by this method
     :param learning_rate: learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
     :param policy_kwargs: Additional arguments to be passed to the policy on creation
@@ -83,11 +82,13 @@ class BaseAlgorithm(ABC):
     :param supported_action_spaces: The action spaces supported by the algorithm.
     """
 
+    # Policy aliases (see _get_policy_from_name())
+    policy_aliases: Dict[str, Type[BasePolicy]] = {}
+
     def __init__(
         self,
         policy: Type[BasePolicy],
         env: Union[GymEnv, str, None],
-        policy_base: Type[BasePolicy],
         learning_rate: Union[float, Schedule],
         policy_kwargs: Optional[Dict[str, Any]] = None,
         tensorboard_log: Optional[str] = None,
@@ -101,9 +102,8 @@ class BaseAlgorithm(ABC):
         sde_sample_freq: int = -1,
         supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
     ):
-
-        if isinstance(policy, str) and policy_base is not None:
-            self.policy_class = get_policy_from_name(policy_base, policy)
+        if isinstance(policy, str):
+            self.policy_class = self._get_policy_from_name(policy)
         else:
             self.policy_class = policy
 
@@ -185,6 +185,11 @@ class BaseAlgorithm(ABC):
             if self.use_sde and not isinstance(self.action_space, gym.spaces.Box):
                 raise ValueError("generalized State-Dependent Exploration (gSDE) can only be used with continuous actions.")
 
+            if isinstance(self.action_space, gym.spaces.Box):
+                assert np.all(
+                    np.isfinite(np.array([self.action_space.low, self.action_space.high]))
+                ), "Continuous action space must have a finite lower and upper bound"
+
     @staticmethod
     def _wrap_env(env: GymEnv, verbose: int = 0, monitor_wrapper: bool = True) -> VecEnv:
         """ "
@@ -208,11 +213,6 @@ class BaseAlgorithm(ABC):
 
         # Make sure that dict-spaces are not nested (not supported)
         check_for_nested_spaces(env.observation_space)
-
-        if isinstance(env.observation_space, gym.spaces.Dict):
-            for space in env.observation_space.spaces.values():
-                if isinstance(space, gym.spaces.Dict):
-                    raise ValueError("Nested observation spaces are not supported (Dict spaces inside Dict space).")
 
         if not is_vecenv_wrapped(env, VecTransposeImage):
             wrap_with_vectranspose = False
@@ -325,6 +325,23 @@ class BaseAlgorithm(ABC):
             "_custom_logger",
         ]
 
+    def _get_policy_from_name(self, policy_name: str) -> Type[BasePolicy]:
+        """
+        Get a policy class from its name representation.
+
+        The goal here is to standardize policy naming, e.g.
+        all algorithms can call upon "MlpPolicy" or "CnnPolicy",
+        and they receive respective policies that work for them.
+
+        :param policy_name: Alias of the policy
+        :return: A policy class (type)
+        """
+
+        if policy_name in self.policy_aliases:
+            return self.policy_aliases[policy_name]
+        else:
+            raise ValueError(f"Policy {policy_name} unknown")
+
     def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
         """
         Get the name of the torch variables that will be saved with
@@ -375,6 +392,7 @@ class BaseAlgorithm(ABC):
                 log_path=log_path,
                 eval_freq=eval_freq,
                 n_eval_episodes=n_eval_episodes,
+                verbose=self.verbose,
             )
             callback = CallbackList([callback, eval_callback])
 
@@ -405,7 +423,7 @@ class BaseAlgorithm(ABC):
         :param tb_log_name: the name of the run for tensorboard log
         :return:
         """
-        self.start_time = time.time()
+        self.start_time = time.time_ns()
 
         if self.ep_info_buffer is None or reset_num_timesteps:
             # Initialize buffers if they don't exist, or reinitialize if resetting counters
@@ -611,11 +629,11 @@ class BaseAlgorithm(ABC):
             attr = None
             try:
                 attr = recursive_getattr(self, name)
-            except Exception:
+            except Exception as e:
                 # What errors recursive_getattr could throw? KeyError, but
                 # possible something else too (e.g. if key is an int?).
                 # Catch anything for now.
-                raise ValueError(f"Key {name} is an invalid object name.")
+                raise ValueError(f"Key {name} is an invalid object name.") from e
 
             if isinstance(attr, th.optim.Optimizer):
                 # Optimizers do not support "strict" keyword...

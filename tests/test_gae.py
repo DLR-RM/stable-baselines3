@@ -10,7 +10,7 @@ from stable_baselines3.common.policies import ActorCriticPolicy
 
 class CustomEnv(gym.Env):
     def __init__(self, max_steps=8):
-        super(CustomEnv, self).__init__()
+        super().__init__()
         self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         self.max_steps = max_steps
@@ -54,7 +54,7 @@ class InfiniteHorizonEnv(gym.Env):
 
 class CheckGAECallback(BaseCallback):
     def __init__(self):
-        super(CheckGAECallback, self).__init__(verbose=0)
+        super().__init__(verbose=0)
 
     def _on_rollout_end(self):
         buffer = self.model.rollout_buffer
@@ -99,7 +99,7 @@ class CustomPolicy(ActorCriticPolicy):
     """Custom Policy with a constant value function"""
 
     def __init__(self, *args, **kwargs):
-        super(CustomPolicy, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.constant_value = 0.0
 
     def forward(self, obs, deterministic=False):

@@ -8,7 +8,7 @@ We implement experimental features in a separate contrib repository:
 `SB3-Contrib`_
 
 This allows Stable-Baselines3 (SB3) to maintain a stable and compact core, while still
-providing the latest features, like Truncated Quantile Critics (TQC), Augmented Random Search (ARS), Trust Region Policy Optimization (TRPO) or
+providing the latest features, like RecurrentPPO (PPO LSTM), Truncated Quantile Critics (TQC), Augmented Random Search (ARS), Trust Region Policy Optimization (TRPO) or
 Quantile Regression DQN (QR-DQN).
 
 Why create this repository?
@@ -38,9 +38,11 @@ See documentation for the full list of included features.
 
 - `Augmented Random Search (ARS) <https://arxiv.org/abs/1803.07055>`_
 - `Quantile Regression DQN (QR-DQN)`_
+- `PPO with invalid action masking (Maskable PPO) <https://arxiv.org/abs/2006.14171>`_
+- `PPO with recurrent policy (RecurrentPPO aka PPO LSTM) <https://ppo-details.cleanrl.dev//2021/11/05/ppo-implementation-details/>`_
 - `Truncated Quantile Critics (TQC)`_
 - `Trust Region Policy Optimization (TRPO) <https://arxiv.org/abs/1502.05477>`_
-- `PPO with invalid action masking (Maskable PPO) <https://arxiv.org/abs/2006.14171>`_
+
 
 **Gym Wrappers**:
 

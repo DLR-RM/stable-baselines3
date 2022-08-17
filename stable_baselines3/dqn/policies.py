@@ -4,7 +4,7 @@ import gym
 import torch as th
 from torch import nn
 
-from stable_baselines3.common.policies import BasePolicy, register_policy
+from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.torch_layers import (
     BaseFeaturesExtractor,
     CombinedExtractor,
@@ -37,7 +37,7 @@ class QNetwork(BasePolicy):
         activation_fn: Type[nn.Module] = nn.ReLU,
         normalize_images: bool = True,
     ):
-        super(QNetwork, self).__init__(
+        super().__init__(
             observation_space,
             action_space,
             features_extractor=features_extractor,
@@ -118,7 +118,7 @@ class DQNPolicy(BasePolicy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        super(DQNPolicy, self).__init__(
+        super().__init__(
             observation_space,
             action_space,
             features_extractor_class,
@@ -239,7 +239,7 @@ class CnnPolicy(DQNPolicy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        super(CnnPolicy, self).__init__(
+        super().__init__(
             observation_space,
             action_space,
             lr_schedule,
@@ -284,7 +284,7 @@ class MultiInputPolicy(DQNPolicy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
     ):
-        super(MultiInputPolicy, self).__init__(
+        super().__init__(
             observation_space,
             action_space,
             lr_schedule,
@@ -296,8 +296,3 @@ class MultiInputPolicy(DQNPolicy):
             optimizer_class,
             optimizer_kwargs,
         )
-
-
-register_policy("MlpPolicy", MlpPolicy)
-register_policy("CnnPolicy", CnnPolicy)
-register_policy("MultiInputPolicy", MultiInputPolicy)

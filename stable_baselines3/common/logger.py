@@ -79,7 +79,7 @@ class HParam:
     def __init__(self, hparam_dict: Dict[str, Union[bool, str, float, int, None]], metric_dict: Dict[str, Union[float, int]]):
         self.hparam_dict = hparam_dict
         if not metric_dict:
-            warnings.warn("`metric_dict` must not be empty to display hyperparameters to the HPARAMS tensorboard tab.")
+            raise Exception("`metric_dict` must not be empty to display hyperparameters to the HPARAMS tensorboard tab.")
         self.metric_dict = metric_dict
 
 

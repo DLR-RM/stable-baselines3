@@ -99,6 +99,8 @@ def create_mlp(
     net_arch: List[int],
     activation_fn: Type[nn.Module] = nn.ReLU,
     squash_output: bool = False,
+    dropout_rate: float = 0.0,
+    layer_norm: bool = False,
 ) -> List[nn.Module]:
     """
     Create a multi layer perceptron (MLP), which is
@@ -117,12 +119,22 @@ def create_mlp(
     """
 
     if len(net_arch) > 0:
-        modules = [nn.Linear(input_dim, net_arch[0]), activation_fn()]
+        additional_modules = []
+        if dropout_rate > 0.0:
+            additional_modules.append(nn.Dropout(p=dropout_rate))
+        if layer_norm:
+            additional_modules.append(nn.LayerNorm(net_arch[0]))
+        modules = [nn.Linear(input_dim, net_arch[0])] + additional_modules + [activation_fn()]
+
     else:
         modules = []
 
     for idx in range(len(net_arch) - 1):
         modules.append(nn.Linear(net_arch[idx], net_arch[idx + 1]))
+        if dropout_rate > 0.0:
+            modules.append(nn.Dropout(p=dropout_rate))
+        if layer_norm:
+            modules.append(nn.LayerNorm(net_arch[idx + 1]))
         modules.append(activation_fn())
 
     if output_dim > 0:

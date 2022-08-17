@@ -236,6 +236,9 @@ class SACPolicy(BasePolicy):
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
         n_critics: int = 2,
         share_features_extractor: bool = False,
+        # For the critic only
+        dropout_rate: float = 0.0,
+        layer_norm: bool = False,
     ):
         super().__init__(
             observation_space,
@@ -279,6 +282,8 @@ class SACPolicy(BasePolicy):
                 "n_critics": n_critics,
                 "net_arch": critic_arch,
                 "share_features_extractor": share_features_extractor,
+                "dropout_rate": dropout_rate,
+                "layer_norm": layer_norm,
             }
         )
 

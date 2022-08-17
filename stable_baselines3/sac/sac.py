@@ -239,10 +239,11 @@ class SAC(OffPolicyAlgorithm):
             with th.no_grad():
                 # Select action according to policy
                 next_actions, next_log_prob = self.actor.action_log_prob(replay_data.next_observations)
-                q_networks_indices = np.random.permutation(len(self.critic_target.q_networks))[:2]
-                q_networks = [q_net for idx, q_net in enumerate(self.critic_target.q_networks) if idx in q_networks_indices]
+                # For REDQ, sample q networks to be used
+                # q_networks_indices = np.random.permutation(len(self.critic_target.q_networks))[:2]
+                # q_networks = [q_net for idx, q_net in enumerate(self.critic_target.q_networks) if idx in q_networks_indices]
                 # Compute the next Q values: min over all critics targets
-                next_q_values = th.cat(self.critic_target(replay_data.next_observations, next_actions, q_networks), dim=1)
+                next_q_values = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
                 next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
                 # add entropy term
                 next_q_values = next_q_values - ent_coef * next_log_prob.reshape(-1, 1)
@@ -264,12 +265,13 @@ class SAC(OffPolicyAlgorithm):
 
             # Compute actor loss
             # Alternative: actor_loss = th.mean(log_prob - qf1_pi)
-            # Mean over all critic networks
+            # Min over all critic networks
             if update_actor:
                 q_values_pi = th.cat(self.critic(replay_data.observations, actions_pi), dim=1)
-                # Note: REDQ does a mean here
-                min_qf_pi, _ = th.min(q_values_pi, dim=1, keepdim=True)
-                actor_loss = (ent_coef * log_prob - min_qf_pi).mean()
+                # Note: REDQ and DropQ does a mean here
+                # min_qf_pi, _ = th.min(q_values_pi, dim=1, keepdim=True)
+                mean_qf_pi = th.mean(q_values_pi, dim=1, keepdim=True)
+                actor_loss = (ent_coef * log_prob - mean_qf_pi).mean()
                 actor_losses.append(actor_loss.item())
 
                 # Optimize the actor

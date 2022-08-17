@@ -89,6 +89,17 @@ def test_sac(ent_coef):
     model.learn(total_timesteps=300, eval_freq=250)
 
 
+def test_dropq():
+    model = SAC(
+        "MlpPolicy",
+        "Pendulum-v1",
+        policy_kwargs=dict(net_arch=[64, 64], layer_norm=True, dropout_rate=0.005),
+        verbose=1,
+        buffer_size=250,
+    )
+    model.learn(total_timesteps=300)
+
+
 @pytest.mark.parametrize("n_critics", [1, 3])
 def test_n_critics(n_critics):
     # Test SAC with different number of critics, for TD3, n_critics=1 corresponds to DDPG

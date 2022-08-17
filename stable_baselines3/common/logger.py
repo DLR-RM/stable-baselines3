@@ -416,10 +416,10 @@ class TensorBoardOutputFormat(KVWriter):
 
             if isinstance(value, HParam):
                 # we don't use `self.writer.add_hparams` to have control over the log_dir
-                exp, ssi, sei = hparams(value.hparam_dict, metric_dict=value.metric_dict)
-                self.writer.file_writer.add_summary(exp)
-                self.writer.file_writer.add_summary(ssi)
-                self.writer.file_writer.add_summary(sei)
+                experiment, session_start_info, session_end_info = hparams(value.hparam_dict, metric_dict=value.metric_dict)
+                self.writer.file_writer.add_summary(experiment)
+                self.writer.file_writer.add_summary(session_start_info)
+                self.writer.file_writer.add_summary(session_end_info)
 
         # Flush the output to the file
         self.writer.flush()

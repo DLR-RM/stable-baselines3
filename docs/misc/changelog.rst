@@ -21,12 +21,16 @@ Bug Fixes:
 - Fixed the issue that ``predict`` does not always return action as ``np.ndarray`` (@qgallouedec)
 - Fixed division by zero error when computing FPS when a small number of time has elapsed in operating systems with low-precision timers.
 - Added multidimensional action space support (@qgallouedec)
+- Fixed missing verbose parameter passing in the ``EvalCallback`` constructor (@burakdmb)
 
 Deprecations:
 ^^^^^^^^^^^^^
 
 Others:
 ^^^^^^^
+- Fixed ``DictReplayBuffer.next_observations`` typing (@qgallouedec)
+
+- Added support for ``device="auto"`` in buffers and made it default (@qgallouedec)
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -983,7 +987,8 @@ Maintainers
 -----------
 
 Stable-Baselines3 is currently maintained by `Antonin Raffin`_ (aka `@araffin`_), `Ashley Hill`_ (aka @hill-a),
-`Maximilian Ernestus`_ (aka @ernestum), `Adam Gleave`_ (`@AdamGleave`_) and `Anssi Kanervisto`_ (aka `@Miffyli`_).
+`Maximilian Ernestus`_ (aka @ernestum), `Adam Gleave`_ (`@AdamGleave`_), `Anssi Kanervisto`_ (aka `@Miffyli`_)
+and `Quentin Gallouédec`_ (aka @qgallouedec).
 
 .. _Ashley Hill: https://github.com/hill-a
 .. _Antonin Raffin: https://araffin.github.io/
@@ -993,6 +998,8 @@ Stable-Baselines3 is currently maintained by `Antonin Raffin`_ (aka `@araffin`_)
 .. _@AdamGleave: https://github.com/adamgleave
 .. _Anssi Kanervisto: https://github.com/Miffyli
 .. _@Miffyli: https://github.com/Miffyli
+.. _Quentin Gallouédec: https://gallouedec.com/
+.. _@qgallouedec: https://github.com/qgallouedec
 
 
 
@@ -1018,4 +1025,4 @@ And all the contributors:
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
-@Melanol @qgallouedec @francescoluciano @jlp-ue @timothe-chaumont
+@Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont

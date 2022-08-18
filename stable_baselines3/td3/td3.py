@@ -194,7 +194,7 @@ class TD3(OffPolicyAlgorithm):
                 polyak_update(self.critic.parameters(), self.critic_target.parameters(), self.tau)
                 polyak_update(self.actor.parameters(), self.actor_target.parameters(), self.tau)
                 polyak_update(self.critic_batch_norm_param, self.critic_batch_norm_param_target, 1.0)
-                polyak_update(self.actor.batch_norm_param, self.actor_batch_norm_param_target, 1.0)
+                polyak_update(self.actor_batch_norm_param, self.actor_batch_norm_param_target, 1.0)
 
         self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
         if len(actor_losses) > 0:

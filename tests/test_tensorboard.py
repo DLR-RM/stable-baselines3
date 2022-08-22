@@ -3,6 +3,8 @@ import os
 import pytest
 
 from stable_baselines3 import A2C, PPO, SAC, TD3
+from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.logger import HParam
 from stable_baselines3.common.utils import get_latest_run_id
 
 MODEL_DICT = {
@@ -15,6 +17,34 @@ MODEL_DICT = {
 N_STEPS = 100
 
 
+class HParamCallback(BaseCallback):
+    def __init__(self):
+        """
+        Saves the hyperparameters and metrics at the start of the training, and logs them to TensorBoard.
+        """
+        super().__init__()
+
+    def _on_training_start(self) -> None:
+        hparam_dict = {
+            "algorithm": self.model.__class__.__name__,
+            "learning rate": self.model.learning_rate,
+            "gamma": self.model.gamma,
+        }
+        # define the metrics that will appear in the `HPARAMS` Tensorboard tab by referencing their tag
+        # Tensorbaord will find & display metrics from the `SCALARS` tab
+        metric_dict = {
+            "rollout/ep_len_mean": 0,
+        }
+        self.logger.record(
+            "hparams",
+            HParam(hparam_dict, metric_dict),
+            exclude=("stdout", "log", "json", "csv"),
+        )
+
+    def _on_step(self) -> bool:
+        return True
+
+
 @pytest.mark.parametrize("model_name", MODEL_DICT.keys())
 def test_tensorboard(tmp_path, model_name):
     # Skip if no tensorboard installed
@@ -22,8 +52,13 @@ def test_tensorboard(tmp_path, model_name):
 
     logname = model_name.upper()
     algo, env_id = MODEL_DICT[model_name]
-    model = algo("MlpPolicy", env_id, verbose=1, tensorboard_log=tmp_path)
-    model.learn(N_STEPS)
+    kwargs = {}
+    if model_name == "ppo":
+        kwargs["n_steps"] = 64
+    elif model_name in {"sac", "td3"}:
+        kwargs["train_freq"] = 2
+    model = algo("MlpPolicy", env_id, verbose=1, tensorboard_log=tmp_path, **kwargs)
+    model.learn(N_STEPS, callback=HParamCallback())
     model.learn(N_STEPS, reset_num_timesteps=False)
 
     assert os.path.isdir(tmp_path / str(logname + "_1"))

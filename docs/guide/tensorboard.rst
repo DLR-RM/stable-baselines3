@@ -283,7 +283,7 @@ Here is an example of how to save hyperparameters in TensorBoard:
             # define the metrics that will appear in the `HPARAMS` Tensorboard tab by referencing their tag
             # Tensorbaord will find & display metrics from the `SCALARS` tab
             metric_dict = {
-                "rollout/ep_len_mean": 0, 
+                "rollout/ep_len_mean": 0,
                 "train/value_loss": 0,
             }
             self.logger.record(
@@ -293,7 +293,7 @@ Here is an example of how to save hyperparameters in TensorBoard:
             )
 
         def _on_step(self) -> bool:
-            pass
+            return True
 
 
     model = A2C("MlpPolicy", "CartPole-v1", tensorboard_log="runs/", verbose=1)

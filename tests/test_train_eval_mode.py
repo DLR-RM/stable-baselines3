@@ -144,7 +144,7 @@ def test_dqn_train_with_batch_norm():
         learning_starts=0,
         seed=1,
         tau=0.0,  # do not clone the target
-        target_update_interval=100, # Copy the stats to the target
+        target_update_interval=100,  # Copy the stats to the target
     )
 
     (

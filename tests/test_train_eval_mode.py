@@ -210,10 +210,12 @@ def test_td3_train_with_batch_norm():
     assert ~th.isclose(critic_running_mean_before, critic_running_mean_after).all()
 
     assert th.isclose(actor_target_bias_before, actor_target_bias_after).all()
-    assert th.isclose(actor_target_running_mean_before, actor_target_running_mean_after).all()
+    # Running stat should be copied even when tau=0
+    assert th.isclose(actor_running_mean_after, actor_target_running_mean_after).all()
 
     assert th.isclose(critic_target_bias_before, critic_target_bias_after).all()
-    assert th.isclose(critic_target_running_mean_before, critic_target_running_mean_after).all()
+    # Running stat should be copied even when tau=0
+    assert th.isclose(critic_running_mean_after, critic_target_running_mean_after).all()
 
 
 def test_sac_train_with_batch_norm():
@@ -250,10 +252,12 @@ def test_sac_train_with_batch_norm():
     assert ~th.isclose(actor_running_mean_before, actor_running_mean_after).all()
 
     assert ~th.isclose(critic_bias_before, critic_bias_after).all()
-    assert ~th.isclose(critic_running_mean_before, critic_running_mean_after).all()
+    # Running stat should be copied even when tau=0
+    assert th.isclose(critic_running_mean_before, critic_target_running_mean_before).all()
 
     assert th.isclose(critic_target_bias_before, critic_target_bias_after).all()
-    assert th.isclose(critic_target_running_mean_before, critic_target_running_mean_after).all()
+    # Running stat should be copied even when tau=0
+    assert th.isclose(critic_running_mean_after, critic_target_running_mean_after).all()
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO])

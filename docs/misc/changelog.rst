@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 1.6.1a1 (WIP)
+Release 1.6.1a2 (WIP)
 ---------------------------
 
 Breaking Changes:

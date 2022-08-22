@@ -131,10 +131,11 @@ class TD3(OffPolicyAlgorithm):
     def _setup_model(self) -> None:
         super()._setup_model()
         self._create_aliases()
-        self.actor_batch_norm_param = get_parameters_by_name(self.actor, ["running_"])
-        self.critic_batch_norm_param = get_parameters_by_name(self.critic, ["running_"])
-        self.actor_batch_norm_param_target = get_parameters_by_name(self.actor_target, ["running_"])
-        self.critic_batch_norm_param_target = get_parameters_by_name(self.critic_target, ["running_"])
+        # Running mean and running var
+        self.actor_batch_norm_stats = get_parameters_by_name(self.actor, ["running_"])
+        self.critic_batch_norm_stats = get_parameters_by_name(self.critic, ["running_"])
+        self.actor_batch_norm_stats_target = get_parameters_by_name(self.actor_target, ["running_"])
+        self.critic_batch_norm_stats_target = get_parameters_by_name(self.critic_target, ["running_"])
 
     def _create_aliases(self) -> None:
         self.actor = self.policy.actor
@@ -193,8 +194,9 @@ class TD3(OffPolicyAlgorithm):
 
                 polyak_update(self.critic.parameters(), self.critic_target.parameters(), self.tau)
                 polyak_update(self.actor.parameters(), self.actor_target.parameters(), self.tau)
-                polyak_update(self.critic_batch_norm_param, self.critic_batch_norm_param_target, 1.0)
-                polyak_update(self.actor_batch_norm_param, self.actor_batch_norm_param_target, 1.0)
+                # Copy running stats, see GH issue #996
+                polyak_update(self.critic_batch_norm_stats, self.critic_batch_norm_stats_target, 1.0)
+                polyak_update(self.actor_batch_norm_stats, self.actor_batch_norm_stats_target, 1.0)
 
         self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
         if len(actor_losses) > 0:

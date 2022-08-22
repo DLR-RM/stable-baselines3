@@ -330,9 +330,18 @@ def test_vec_noise():
 
 def test_get_parameters_by_name():
     model = th.nn.Sequential(th.nn.Linear(5, 5), th.nn.BatchNorm1d(5))
+    # Initialize stats
+    model(th.ones(3, 5))
     included_names = ["weight", "bias", "running_"]
-    # 2 x weight, 2 x bias, 1 x running_mean, 1 x running_bias; Ignore num_batches_tracked.
-    assert len(list(get_parameters_by_name(model, included_names))) == 6
+    # 2 x weight, 2 x bias, 1 x running_mean, 1 x running_var; Ignore num_batches_tracked.
+    parameters = get_parameters_by_name(model, included_names)
+    assert len(parameters) == 6
+    assert th.allclose(parameters[4], model[1].running_mean)
+    assert th.allclose(parameters[5], model[1].running_var)
+    parameters = get_parameters_by_name(model, ["running_"])
+    assert len(parameters) == 2
+    assert th.allclose(parameters[0], model[1].running_mean)
+    assert th.allclose(parameters[1], model[1].running_var)
 
 
 def test_polyak():

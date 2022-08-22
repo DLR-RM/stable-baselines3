@@ -140,8 +140,9 @@ class DQN(OffPolicyAlgorithm):
     def _setup_model(self) -> None:
         super()._setup_model()
         self._create_aliases()
-        self.batch_norm_param = get_parameters_by_name(self.q_net, ["running_"])
-        self.batch_norm_param_target = get_parameters_by_name(self.q_net_target, ["running_"])
+        # Copy running stats, see GH issue #996
+        self.batch_norm_stats = get_parameters_by_name(self.q_net, ["running_"])
+        self.batch_norm_stats_target = get_parameters_by_name(self.q_net_target, ["running_"])
         self.exploration_schedule = get_linear_fn(
             self.exploration_initial_eps,
             self.exploration_final_eps,
@@ -172,7 +173,8 @@ class DQN(OffPolicyAlgorithm):
         self._n_calls += 1
         if self._n_calls % self.target_update_interval == 0:
             polyak_update(self.q_net.parameters(), self.q_net_target.parameters(), self.tau)
-            polyak_update(self.batch_norm_param, self.batch_norm_param_target, 1.0)
+            # Copy running stats, see GH issue #996
+            polyak_update(self.batch_norm_stats, self.batch_norm_stats_target, 1.0)
 
         self.exploration_rate = self.exploration_schedule(self._current_progress_remaining)
         self.logger.record("rollout/exploration_rate", self.exploration_rate)

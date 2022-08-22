@@ -3,11 +3,12 @@
 Changelog
 ==========
 
-Release 1.6.1a0 (WIP)
+Release 1.6.1a1 (WIP)
 ---------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Switched minimum tensorboard version to 2.9.1
 
 New Features:
 ^^^^^^^^^^^^^

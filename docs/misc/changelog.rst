@@ -17,6 +17,7 @@ SB3-Contrib
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed ``nan`` when rollout buffer yields batch size of 1 to PPO (@hughperkins)
 - Fixed the issue that ``predict`` does not always return action as ``np.ndarray`` (@qgallouedec)
 - Fixed division by zero error when computing FPS when a small number of time has elapsed in operating systems with low-precision timers.
 - Added multidimensional action space support (@qgallouedec)

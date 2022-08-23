@@ -2,9 +2,10 @@ import gym
 import numpy as np
 import pytest
 import torch as th
+from typing import Union, Type
 from gym import spaces
 
-from stable_baselines3.common.buffers import DictReplayBuffer, ReplayBuffer
+from stable_baselines3.common.buffers import DictReplayBuffer, DictRolloutBuffer, ReplayBuffer, RolloutBuffer
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.type_aliases import DictReplayBufferSamples, ReplayBufferSamples
 from stable_baselines3.common.vec_env import VecNormalize
@@ -94,3 +95,43 @@ def test_replay_buffer_normalization(replay_buffer_cls):
             assert th.allclose(observations.mean(0), th.zeros(1), atol=1)
     # Test reward normalization
     assert np.allclose(sample.rewards.mean(0), np.zeros(1), atol=1)
+
+
+@pytest.mark.parametrize("replay_buffer_cls", [RolloutBuffer, DictRolloutBuffer])
+@pytest.mark.parametrize("buffer_size,batch_size,expected_num_batches", [
+    (1, 64, 0),
+    (3, 64, 0),
+    (64, 64, 1),
+    (65, 64, 1),
+    (127, 64, 1),
+    (128, 64, 2),
+    (129, 64, 2),
+])
+def test_rollout_buffers_should_yield_full_batches(replay_buffer_cls: Union[
+        Type[RolloutBuffer], Type[DictRolloutBuffer]
+    ], buffer_size: int, batch_size: int, expected_num_batches: int):
+
+    obs_size = 3
+    action_size = 2
+
+    observation_space = {
+        RolloutBuffer: spaces.Discrete(obs_size),
+        DictRolloutBuffer: spaces.Dict(foo=spaces.Discrete(obs_size))
+    }[replay_buffer_cls]
+    buffer: Union[RolloutBuffer, DictRolloutBuffer] = replay_buffer_cls(
+        buffer_size,
+        observation_space=observation_space,
+        action_space=spaces.Discrete(action_size))
+
+    # fill buffer
+    for _ in range(buffer_size):
+        if replay_buffer_cls == RolloutBuffer:
+            buffer.add(np.zeros(1), np.zeros(1), np.zeros(1), np.zeros(1), th.zeros(1), th.zeros(1))
+        else:
+            buffer.add({'foo': np.zeros(1)}, np.zeros(1), np.zeros(1), np.zeros(1), th.zeros(1), th.zeros(1))
+
+    num_batches = 0
+    for batch in buffer.get(batch_size):
+        assert len(batch.actions) == batch_size
+        num_batches += 1
+    assert num_batches == expected_num_batches

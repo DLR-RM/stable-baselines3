@@ -8,6 +8,7 @@ Release 1.6.1a0 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- rollout buffer no longer yields partial batches (@hughperkins)
 
 New Features:
 ^^^^^^^^^^^^^

@@ -6,9 +6,9 @@ dependencies:
   - cpuonly=1.0=0
   - pip=21.1
   - python=3.7
-  - pytorch=1.8.1=py3.7_cpu_0
+  - pytorch=1.11=py3.7_cpu_0
   - pip:
-    - gym>=0.17.2
+    - gym==0.21
     - cloudpickle
     - opencv-python-headless
     - pandas
@@ -16,5 +16,5 @@ dependencies:
     - matplotlib
     - sphinx_autodoc_typehints
     - sphinx>=4.2
-    # See https://github.com/readthedocs/sphinx_rtd_theme/issues/1115
     - sphinx_rtd_theme>=1.0
+    - sphinx_copybutton

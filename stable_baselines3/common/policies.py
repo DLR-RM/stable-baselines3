@@ -336,8 +336,8 @@ class BasePolicy(BaseModel):
 
         with th.no_grad():
             actions = self._predict(observation, deterministic=deterministic)
-        # Convert to numpy
-        actions = actions.cpu().numpy()
+        # Convert to numpy, and reshape to the original action shape
+        actions = actions.cpu().numpy().reshape((-1,) + self.action_space.shape)
 
         if isinstance(self.action_space, gym.spaces.Box):
             if self.squash_output:
@@ -350,7 +350,7 @@ class BasePolicy(BaseModel):
 
         # Remove batch dimension if needed
         if not vectorized_env:
-            actions = actions[0]
+            actions = actions.squeeze(axis=0)
 
         return actions, state
 
@@ -592,6 +592,7 @@ class ActorCriticPolicy(BasePolicy):
         distribution = self._get_action_dist_from_latent(latent_pi)
         actions = distribution.get_actions(deterministic=deterministic)
         log_prob = distribution.log_prob(actions)
+        actions = actions.reshape((-1,) + self.action_space.shape)
         return actions, values, log_prob
 
     def _get_action_dist_from_latent(self, latent_pi: th.Tensor) -> Distribution:

@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import gym
+import numpy as np
 import torch as th
 from gym import spaces
 from torch import nn
@@ -577,10 +578,10 @@ class StateDependentNoiseDistribution(Distribution):
             return th.mm(latent_sde, self.exploration_mat)
         # Use batch matrix multiplication for efficient computation
         # (batch_size, n_features) -> (batch_size, 1, n_features)
-        latent_sde = latent_sde.unsqueeze(1)
+        latent_sde = latent_sde.unsqueeze(dim=1)
         # (batch_size, 1, n_actions)
         noise = th.bmm(latent_sde, self.exploration_matrices)
-        return noise.squeeze(1)
+        return noise.squeeze(dim=1)
 
     def actions_from_params(
         self, mean_actions: th.Tensor, log_std: th.Tensor, latent_sde: th.Tensor, deterministic: bool = False
@@ -657,7 +658,6 @@ def make_proba_distribution(
         dist_kwargs = {}
 
     if isinstance(action_space, spaces.Box):
-        assert len(action_space.shape) == 1, "Error: the action space must be a vector"
         cls = StateDependentNoiseDistribution if use_sde else DiagGaussianDistribution
         return cls(get_action_dim(action_space), **dist_kwargs)
     elif isinstance(action_space, spaces.Discrete):
@@ -688,7 +688,7 @@ def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> th.Tensor
     # MultiCategoricalDistribution is not a PyTorch Distribution subclass
     # so we need to implement it ourselves!
     if isinstance(dist_pred, MultiCategoricalDistribution):
-        assert dist_pred.action_dims == dist_true.action_dims, "Error: distributions must have the same input space"
+        assert np.allclose(dist_pred.action_dims, dist_true.action_dims), "Error: distributions must have the same input space"
         return th.stack(
             [th.distributions.kl_divergence(p, q) for p, q in zip(dist_true.distribution, dist_pred.distribution)],
             dim=1,

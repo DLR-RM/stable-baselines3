@@ -111,6 +111,8 @@ setup(
             "sphinxcontrib.spelling",
             # Type hints support
             "sphinx-autodoc-typehints",
+            # Copy button for code snippets
+            "sphinx_copybutton",
         ],
         "extra": [
             # For render
@@ -120,10 +122,7 @@ setup(
             "autorom[accept-rom-license]~=0.4.2",
             "pillow",
             # Tensorboard support
-            "tensorboard>=2.2.0",
-            # Protobuf >= 4 has breaking changes
-            # which does play well with tensorboard
-            "protobuf~=3.19.0",
+            "tensorboard>=2.9.1",
             # Checking memory taken by replay buffer
             "psutil",
         ],

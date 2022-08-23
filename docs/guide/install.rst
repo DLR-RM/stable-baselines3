@@ -54,6 +54,17 @@ Bleeding-edge version
 	pip install git+https://github.com/DLR-RM/stable-baselines3
 
 
+.. note::
+
+  If you want to use latest gym version (0.24+), you have to use
+
+	.. code-block:: bash
+
+		pip install git+https://github.com/carlosluis/stable-baselines3@fix_tests
+
+  See `PR #780 <https://github.com/DLR-RM/stable-baselines3/pull/780>`_ for more information.
+
+
 Development version
 -------------------
 

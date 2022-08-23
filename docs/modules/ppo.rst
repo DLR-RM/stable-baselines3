@@ -8,7 +8,7 @@ PPO
 The `Proximal Policy Optimization <https://arxiv.org/abs/1707.06347>`_ algorithm combines ideas from A2C (having multiple workers)
 and TRPO (it uses a trust region to improve the actor).
 
-The main idea is that after an update, the new policy should be not too far form the old policy.
+The main idea is that after an update, the new policy should be not too far from the old policy.
 For that, ppo uses clipping to avoid too large update.
 
 
@@ -25,7 +25,7 @@ Notes
 - Clear explanation of PPO on Arxiv Insights channel: https://www.youtube.com/watch?v=5P7I-xPq8u8
 - OpenAI blog post: https://blog.openai.com/openai-baselines-ppo/
 - Spinning Up guide: https://spinningup.openai.com/en/latest/algorithms/ppo.html
-- 37 implementation details blog: https://ppo-details.cleanrl.dev//2021/11/05/ppo-implementation-details/
+- 37 implementation details blog: https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/
 
 
 Can I use?

@@ -10,7 +10,7 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
-from stable_baselines3.common.utils import polyak_update
+from stable_baselines3.common.utils import get_parameters_by_name, polyak_update
 from stable_baselines3.td3.policies import CnnPolicy, MlpPolicy, MultiInputPolicy, TD3Policy
 
 
@@ -131,6 +131,11 @@ class TD3(OffPolicyAlgorithm):
     def _setup_model(self) -> None:
         super()._setup_model()
         self._create_aliases()
+        # Running mean and running var
+        self.actor_batch_norm_stats = get_parameters_by_name(self.actor, ["running_"])
+        self.critic_batch_norm_stats = get_parameters_by_name(self.critic, ["running_"])
+        self.actor_batch_norm_stats_target = get_parameters_by_name(self.actor_target, ["running_"])
+        self.critic_batch_norm_stats_target = get_parameters_by_name(self.critic_target, ["running_"])
 
     def _create_aliases(self) -> None:
         self.actor = self.policy.actor
@@ -189,6 +194,9 @@ class TD3(OffPolicyAlgorithm):
 
                 polyak_update(self.critic.parameters(), self.critic_target.parameters(), self.tau)
                 polyak_update(self.actor.parameters(), self.actor_target.parameters(), self.tau)
+                # Copy running stats, see GH issue #996
+                polyak_update(self.critic_batch_norm_stats, self.critic_batch_norm_stats_target, 1.0)
+                polyak_update(self.actor_batch_norm_stats, self.actor_batch_norm_stats_target, 1.0)
 
         self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
         if len(actor_losses) > 0:

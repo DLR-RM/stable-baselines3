@@ -13,6 +13,7 @@ from stable_baselines3.common.type_aliases import (
     ReplayBufferSamples,
     RolloutBufferSamples,
 )
+from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import VecNormalize
 
 try:
@@ -39,7 +40,7 @@ class BaseBuffer(ABC):
         buffer_size: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        device: Union[th.device, str] = "cpu",
+        device: Union[th.device, str] = "auto",
         n_envs: int = 1,
     ):
         super().__init__()
@@ -51,7 +52,7 @@ class BaseBuffer(ABC):
         self.action_dim = get_action_dim(action_space)
         self.pos = 0
         self.full = False
-        self.device = device
+        self.device = get_device(device)
         self.n_envs = n_envs
 
     @staticmethod
@@ -157,7 +158,7 @@ class ReplayBuffer(BaseBuffer):
     :param buffer_size: Max number of element in the buffer
     :param observation_space: Observation space
     :param action_space: Action space
-    :param device:
+    :param device: PyTorch device
     :param n_envs: Number of parallel environments
     :param optimize_memory_usage: Enable a memory efficient variant
         of the replay buffer which reduces by almost a factor two the memory used,
@@ -175,7 +176,7 @@ class ReplayBuffer(BaseBuffer):
         buffer_size: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        device: Union[th.device, str] = "cpu",
+        device: Union[th.device, str] = "auto",
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
@@ -331,7 +332,7 @@ class RolloutBuffer(BaseBuffer):
     :param buffer_size: Max number of element in the buffer
     :param observation_space: Observation space
     :param action_space: Action space
-    :param device:
+    :param device: PyTorch device
     :param gae_lambda: Factor for trade-off of bias vs variance for Generalized Advantage Estimator
         Equivalent to classic advantage when set to 1.
     :param gamma: Discount factor
@@ -343,7 +344,7 @@ class RolloutBuffer(BaseBuffer):
         buffer_size: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        device: Union[th.device, str] = "cpu",
+        device: Union[th.device, str] = "auto",
         gae_lambda: float = 1,
         gamma: float = 0.99,
         n_envs: int = 1,
@@ -501,7 +502,7 @@ class DictReplayBuffer(ReplayBuffer):
     :param buffer_size: Max number of element in the buffer
     :param observation_space: Observation space
     :param action_space: Action space
-    :param device:
+    :param device: PyTorch device
     :param n_envs: Number of parallel environments
     :param optimize_memory_usage: Enable a memory efficient variant
         Disabled for now (see https://github.com/DLR-RM/stable-baselines3/pull/243#discussion_r531535702)
@@ -515,7 +516,7 @@ class DictReplayBuffer(ReplayBuffer):
         buffer_size: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        device: Union[th.device, str] = "cpu",
+        device: Union[th.device, str] = "auto",
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
@@ -669,7 +670,7 @@ class DictRolloutBuffer(RolloutBuffer):
     :param buffer_size: Max number of element in the buffer
     :param observation_space: Observation space
     :param action_space: Action space
-    :param device:
+    :param device: PyTorch device
     :param gae_lambda: Factor for trade-off of bias vs variance for Generalized Advantage Estimator
         Equivalent to Monte-Carlo advantage estimate when set to 1.
     :param gamma: Discount factor
@@ -681,7 +682,7 @@ class DictRolloutBuffer(RolloutBuffer):
         buffer_size: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        device: Union[th.device, str] = "cpu",
+        device: Union[th.device, str] = "auto",
         gae_lambda: float = 1,
         gamma: float = 0.99,
         n_envs: int = 1,

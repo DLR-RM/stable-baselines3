@@ -14,7 +14,13 @@ from stable_baselines3.common.env_util import is_wrapped, make_atari_env, make_v
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise, OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
-from stable_baselines3.common.utils import get_system_info, is_vectorized_observation, polyak_update, zip_strict
+from stable_baselines3.common.utils import (
+    get_parameters_by_name,
+    get_system_info,
+    is_vectorized_observation,
+    polyak_update,
+    zip_strict,
+)
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 
@@ -320,6 +326,22 @@ def test_vec_noise():
         vec.noises = [base] * (num_envs - 1)
     assert all(isinstance(noise, type(base)) for noise in vec.noises)
     assert len(vec.noises) == num_envs
+
+
+def test_get_parameters_by_name():
+    model = th.nn.Sequential(th.nn.Linear(5, 5), th.nn.BatchNorm1d(5))
+    # Initialize stats
+    model(th.ones(3, 5))
+    included_names = ["weight", "bias", "running_"]
+    # 2 x weight, 2 x bias, 1 x running_mean, 1 x running_var; Ignore num_batches_tracked.
+    parameters = get_parameters_by_name(model, included_names)
+    assert len(parameters) == 6
+    assert th.allclose(parameters[4], model[1].running_mean)
+    assert th.allclose(parameters[5], model[1].running_var)
+    parameters = get_parameters_by_name(model, ["running_"])
+    assert len(parameters) == 2
+    assert th.allclose(parameters[0], model[1].running_mean)
+    assert th.allclose(parameters[1], model[1].running_var)
 
 
 def test_polyak():

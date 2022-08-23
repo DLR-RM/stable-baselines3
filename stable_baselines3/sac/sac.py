@@ -10,7 +10,7 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
-from stable_baselines3.common.utils import polyak_update
+from stable_baselines3.common.utils import get_parameters_by_name, polyak_update
 from stable_baselines3.sac.policies import CnnPolicy, MlpPolicy, MultiInputPolicy, SACPolicy
 
 
@@ -152,6 +152,9 @@ class SAC(OffPolicyAlgorithm):
     def _setup_model(self) -> None:
         super()._setup_model()
         self._create_aliases()
+        # Running mean and running var
+        self.batch_norm_stats = get_parameters_by_name(self.critic, ["running_"])
+        self.batch_norm_stats_target = get_parameters_by_name(self.critic_target, ["running_"])
         # Target entropy is used when learning the entropy coefficient
         if self.target_entropy == "auto":
             # automatically set target entropy if needed
@@ -272,6 +275,8 @@ class SAC(OffPolicyAlgorithm):
             # Update target networks
             if gradient_step % self.target_update_interval == 0:
                 polyak_update(self.critic.parameters(), self.critic_target.parameters(), self.tau)
+                # Copy running stats, see GH issue #996
+                polyak_update(self.batch_norm_stats, self.batch_norm_stats_target, 1.0)
 
         self._n_updates += gradient_steps
 

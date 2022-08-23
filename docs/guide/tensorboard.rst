@@ -249,6 +249,55 @@ Here is an example of how to render an episode and log the resulting video to Te
     video_recorder = VideoRecorderCallback(gym.make("CartPole-v1"), render_freq=5000)
     model.learn(total_timesteps=int(5e4), callback=video_recorder)
 
+Logging Hyperparameters
+-----------------------
+
+TensorBoard supports logging of hyperparameters in its HPARAMS tab, which helps comparing agents trainings.
+
+.. warning::
+    To display hyperparameters in the HPARAMS section, a ``metric_dict`` must be given (as well as a ``hparam_dict``).
+
+
+Here is an example of how to save hyperparameters in TensorBoard:
+
+.. code-block:: python
+
+    from stable_baselines3 import A2C
+    from stable_baselines3.common.callbacks import BaseCallback
+    from stable_baselines3.common.logger import HParam
+
+
+    class HParamCallback(BaseCallback):
+        def __init__(self):
+            """
+            Saves the hyperparameters and metrics at the start of the training, and logs them to TensorBoard.
+            """
+            super().__init__()
+
+        def _on_training_start(self) -> None:
+            hparam_dict = {
+                "algorithm": self.model.__class__.__name__,
+                "learning rate": self.model.learning_rate,
+                "gamma": self.model.gamma,
+            }
+            # define the metrics that will appear in the `HPARAMS` Tensorboard tab by referencing their tag
+            # Tensorbaord will find & display metrics from the `SCALARS` tab
+            metric_dict = {
+                "rollout/ep_len_mean": 0,
+                "train/value_loss": 0,
+            }
+            self.logger.record(
+                "hparams",
+                HParam(hparam_dict, metric_dict),
+                exclude=("stdout", "log", "json", "csv"),
+            )
+
+        def _on_step(self) -> bool:
+            return True
+
+
+    model = A2C("MlpPolicy", "CartPole-v1", tensorboard_log="runs/", verbose=1)
+    model.learn(total_timesteps=int(5e4), callback=HParamCallback())
 
 Directly Accessing The Summary Writer
 -------------------------------------

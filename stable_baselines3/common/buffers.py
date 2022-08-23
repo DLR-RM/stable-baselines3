@@ -325,6 +325,9 @@ class RolloutBuffer(BaseBuffer):
     be used with the concept of rollout used in model-based RL or planning.
     Hence, it is only involved in policy and value function training but not action selection.
 
+    Note that in the case that buffer_size is not a factor of n_env and n_step,
+    any incomplete batch at the end of get() will be discarded.
+
     :param buffer_size: Max number of element in the buffer
     :param observation_space: Observation space
     :param action_space: Action space
@@ -659,6 +662,9 @@ class DictRolloutBuffer(RolloutBuffer):
     The term rollout here refers to the model-free notion and should not
     be used with the concept of rollout used in model-based RL or planning.
     Hence, it is only involved in policy and value function training but not action selection.
+
+    Note that in the case that buffer_size is not a factor of n_env and n_step,
+    any incomplete batch at the end of get() will be discarded.
 
     :param buffer_size: Max number of element in the buffer
     :param observation_space: Observation space

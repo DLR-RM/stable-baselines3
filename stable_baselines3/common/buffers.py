@@ -767,7 +767,12 @@ class DictRolloutBuffer(RolloutBuffer):
             batch_size = self.buffer_size * self.n_envs
 
         start_idx = 0
-        while start_idx < self.buffer_size * self.n_envs:
+        total_n = self.buffer_size * self.n_envs
+        # we only want to use whole batches, e.g. batch size of 1 gives a nan
+        # for advantage std, so normalized advantages is then nan,
+        # so we avoid training on any batches < batch_size
+        num_batches = total_n // batch_size
+        for _ in range(num_batches):
             yield self._get_samples(indices[start_idx : start_idx + batch_size])
             start_idx += batch_size
 

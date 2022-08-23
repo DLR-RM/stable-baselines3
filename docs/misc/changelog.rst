@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 1.6.1a1 (WIP)
+Release 1.6.1a2 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -23,6 +23,7 @@ Bug Fixes:
 - Fixed division by zero error when computing FPS when a small number of time has elapsed in operating systems with low-precision timers.
 - Added multidimensional action space support (@qgallouedec)
 - Fixed missing verbose parameter passing in the ``EvalCallback`` constructor (@burakdmb)
+- Fixed the issue that when updating the target network in DQN, SAC, TD3, the ``running_mean`` and ``running_var`` properties of batch norm layers are not updated (@honglu2875)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -1026,4 +1027,4 @@ And all the contributors:
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
-@Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont
+@Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875

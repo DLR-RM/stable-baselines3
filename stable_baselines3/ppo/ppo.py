@@ -211,7 +211,8 @@ class PPO(OnPolicyAlgorithm):
                 # Normalize advantage
                 advantages = rollout_data.advantages
                 if self.normalize_advantage:
-                    advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+                    batch_size = len(actions)
+                    advantages = (advantages - advantages.mean()) / (advantages.std(unbiased=batch_size > 1) + 1e-8)
 
                 # ratio between old and new policy, should be one at the first iteration
                 ratio = th.exp(log_prob - rollout_data.old_log_prob)

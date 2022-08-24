@@ -271,7 +271,7 @@ class CheckpointCallback(BaseCallback):
                 # Save the VecNormalize statistics
                 vec_normalize_path = os.path.join(
                     self.save_path,
-                    f"{self.name_prefix}_vecnormalized_{self.num_timesteps}_steps",
+                    f"{self.name_prefix}_vecnormalize_{self.num_timesteps}_steps.pkl",
                 )
                 self.model.get_vec_normalize_env().save(vec_normalize_path)
                 if self.verbose > 1:

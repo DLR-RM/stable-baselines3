@@ -240,10 +240,21 @@ class CheckpointCallback(BaseCallback):
 
     def _on_step(self) -> bool:
         if self.n_calls % self.save_freq == 0:
-            path = os.path.join(self.save_path, f"{self.name_prefix}_{self.num_timesteps}_steps")
-            self.model.save(path)
+            model_path = os.path.join(self.save_path, f"{self.name_prefix}_{self.num_timesteps}_steps")
+            self.model.save(model_path)
             if self.verbose > 1:
-                print(f"Saving model checkpoint to {path}")
+                print(f"Saving model checkpoint to {model_path}")
+
+            if hasattr(self.model, "replay_buffer") and self.model.replay_buffer is not None:
+                # If model has a replay buffer, save it too
+                replay_buffer_path = os.path.join(
+                    self.save_path,
+                    f"{self.name_prefix}_replay_buffer_{self.num_timesteps}_steps",
+                )
+                self.model.save_replay_buffer(replay_buffer_path)
+                if self.verbose > 1:
+                    print(f"Saving model replay buffer checkpoint to {replay_buffer_path}")
+
         return True
 
 

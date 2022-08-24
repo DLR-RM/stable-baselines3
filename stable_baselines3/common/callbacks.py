@@ -224,14 +224,26 @@ class CheckpointCallback(BaseCallback):
     :param save_freq:
     :param save_path: Path to the folder where the model will be saved.
     :param name_prefix: Common prefix to the saved models
+    :param save_replay_buffer: Save the model replay buffer
+    :param save_vecnormalize: Save the `VecNormalize` statistics
     :param verbose:
     """
 
-    def __init__(self, save_freq: int, save_path: str, name_prefix: str = "rl_model", verbose: int = 0):
+    def __init__(
+        self,
+        save_freq: int,
+        save_path: str,
+        name_prefix: str = "rl_model",
+        save_replay_buffer: bool = False,
+        save_vecnormalize: bool = False,
+        verbose: int = 0,
+    ):
         super().__init__(verbose)
         self.save_freq = save_freq
         self.save_path = save_path
         self.name_prefix = name_prefix
+        self.save_replay_buffer = save_replay_buffer
+        self.save_vecnormalize = save_vecnormalize
 
     def _init_callback(self) -> None:
         # Create folder if needed
@@ -245,7 +257,7 @@ class CheckpointCallback(BaseCallback):
             if self.verbose > 1:
                 print(f"Saving model checkpoint to {model_path}")
 
-            if hasattr(self.model, "replay_buffer") and self.model.replay_buffer is not None:
+            if self.save_replay_buffer and hasattr(self.model, "replay_buffer") and self.model.replay_buffer is not None:
                 # If model has a replay buffer, save it too
                 replay_buffer_path = os.path.join(
                     self.save_path,
@@ -255,9 +267,9 @@ class CheckpointCallback(BaseCallback):
                 if self.verbose > 1:
                     print(f"Saving model replay buffer checkpoint to {replay_buffer_path}")
 
-            if self.model.get_vec_normalize_env() is not None:
+            if self.save_vecnormalize and self.model.get_vec_normalize_env() is not None:
                 # Save the VecNormalize statistics
-                vec_normalize_path = os.path(
+                vec_normalize_path = os.path.join(
                     self.save_path,
                     f"{self.name_prefix}_vecnormalized_{self.num_timesteps}_steps",
                 )

@@ -159,13 +159,8 @@ Callback for saving a model every ``save_freq`` calls to ``env.step()``, you mus
 and optionally a prefix for the checkpoints (``rl_model`` by default).
 If you are using this callback to stop and resume training, you may want to optionally save the replay buffer if the
 model has one (``save_replay_buffer``, ``False`` by default).
-<<<<<<< HEAD
-Additionally, if your environment uses :ref:`VecNormalize`, you can save the corresponding statistics using
-``save_vecnormalize`` (``False`` by default).
-=======
-Additionally, if your environment uses :ref:`VecNormalize <vec_env>`, you can save the
+Additionally, if your environment uses a :ref:`VecNormalize <vec_env>` wrapper, you can save the
 corresponding statistics using ``save_vecnormalize`` (``False`` by default).
->>>>>>> b7407039f76f080d8cdd77cb4d249576e0dd38b5
 
 .. warning::
 

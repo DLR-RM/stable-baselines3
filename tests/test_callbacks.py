@@ -205,42 +205,18 @@ def test_eval_friendly_error():
             model.learn(100, callback=eval_callback)
 
 
-def test_checkpoint_replay_buffer(tmp_path):
-    # tests if the replay buffer is saved with every checkpoint
-
-    n_bits = 2
-    env = BitFlippingEnv(n_bits=n_bits)
-
-    checkpoint_dir = tmp_path / "checkpoints"
-    checkpoint_callback = CheckpointCallback(save_freq=500, save_path=checkpoint_dir, save_replay_buffer=True)
-
-    model = DQN(
-        "MultiInputPolicy",
-        env,
-        replay_buffer_class=HerReplayBuffer,
-        learning_starts=100,
-        seed=0,
-        replay_buffer_kwargs=dict(max_episode_length=n_bits),
-    )
-    model.learn(500, callback=checkpoint_callback)
-
-    assert os.path.exists(checkpoint_dir / "rl_model_replay_buffer_500_steps.pkl")
-
-
-def test_checkpoint_vecnormalize(tmp_path):
-    # tests if the VecNormalize stats are saved with every checkpoint
+def test_checkpoint_additional_info(tmp_path):
+    # tests if the replay buffer and the VecNormalize stats are saved with every checkpoint
     n_envs = 2
     env = VecNormalize(DummyVecEnv([lambda: gym.make("CartPole-v1")] * n_envs))
 
     checkpoint_dir = tmp_path / "checkpoints"
-    checkpoint_callback = CheckpointCallback(save_freq=500 // n_envs, save_path=checkpoint_dir, save_vecnormalize=True)
-
-    model = DQN(
-        "MlpPolicy",
-        env,
-        learning_starts=100,
-        seed=0,
+    checkpoint_callback = CheckpointCallback(
+        save_freq=500 // n_envs, save_path=checkpoint_dir, save_replay_buffer=True, save_vecnormalize=True
     )
+
+    model = DQN("MlpPolicy", env, learning_starts=100, seed=0)
     model.learn(500, callback=checkpoint_callback)
 
+    assert os.path.exists(checkpoint_dir / "rl_model_replay_buffer_500_steps.pkl")
     assert os.path.exists(checkpoint_dir / "rl_model_vecnormalize_500_steps.pkl")

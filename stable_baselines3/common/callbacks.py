@@ -255,6 +255,16 @@ class CheckpointCallback(BaseCallback):
                 if self.verbose > 1:
                     print(f"Saving model replay buffer checkpoint to {replay_buffer_path}")
 
+            if self.model.get_vec_normalize_env() is not None:
+                # Save the VecNormalize statistics
+                vec_normalize_path = os.path(
+                    self.save_path,
+                    f"{self.name_prefix}_vecnormalized_{self.num_timesteps}_steps",
+                )
+                self.model.get_vec_normalize_env().save(vec_normalize_path)
+                if self.verbose > 1:
+                    print(f"Saving model VecNormalize to {vec_normalize_path}")
+
         return True
 
 

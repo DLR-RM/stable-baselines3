@@ -13,7 +13,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Support logging hyperparameters to tensorboard (@timothe-chaumont)
-- Added checkpoints for replay buffer and `VecNormalize` statistics (@anand-bala)
+- Added checkpoints for replay buffer and ``VecNormalize`` statistics (@anand-bala)
 
 SB3-Contrib
 ^^^^^^^^^^^

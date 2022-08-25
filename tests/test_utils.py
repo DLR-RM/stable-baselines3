@@ -8,7 +8,7 @@ import torch as th
 from gym import spaces
 
 import stable_baselines3 as sb3
-from stable_baselines3 import A2C, PPO
+from stable_baselines3 import A2C
 from stable_baselines3.common.atari_wrappers import ClipRewardEnv, MaxAndSkipEnv
 from stable_baselines3.common.env_util import is_wrapped, make_atari_env, make_vec_env, unwrap_wrapper
 from stable_baselines3.common.evaluation import evaluate_policy
@@ -386,19 +386,6 @@ def test_is_wrapped():
     assert is_wrapped(env, Monitor)
     # Test that unwrap works as expected
     assert unwrap_wrapper(env, Monitor) == monitor_env
-
-
-def test_ppo_warnings():
-    """Test that PPO warns and errors correctly on
-    problematic rollour buffer sizes"""
-
-    # Only 1 step: advantage normalization will return NaN
-    with pytest.raises(AssertionError):
-        PPO("MlpPolicy", "Pendulum-v1", n_steps=1)
-
-    # Truncated mini-batch
-    with pytest.warns(UserWarning):
-        PPO("MlpPolicy", "Pendulum-v1", n_steps=6, batch_size=8)
 
 
 def test_get_system_info():

@@ -261,7 +261,7 @@ class SAC(OffPolicyAlgorithm):
 
             # Compute actor loss
             # Alternative: actor_loss = th.mean(log_prob - qf1_pi)
-            # Mean over all critic networks
+            # Min over all critic networks
             q_values_pi = th.cat(self.critic(replay_data.observations, actions_pi), dim=1)
             min_qf_pi, _ = th.min(q_values_pi, dim=1, keepdim=True)
             actor_loss = (ent_coef * log_prob - min_qf_pi).mean()

@@ -213,3 +213,29 @@ def test_warn_dqn_multi_env():
             buffer_size=100,
             target_update_interval=1,
         )
+
+
+def test_ppo_warnings():
+    """Test that PPO warns and errors correctly on
+    problematic rollout buffer sizes"""
+
+    # Only 1 step: advantage normalization will return NaN
+    with pytest.raises(AssertionError):
+        PPO("MlpPolicy", "Pendulum-v1", n_steps=1)
+
+    # batch_size of 1 is allowed when normalize_advantage=False
+    model = PPO("MlpPolicy", "Pendulum-v1", n_steps=1, batch_size=1, normalize_advantage=False)
+    model.learn(4)
+
+    # Truncated mini-batch
+    # Batch size 1 yields NaN with normalized advantage because
+    # torch.std(some_length_1_tensor) == NaN
+    # advantage normalization is automatically deactivated
+    # in that case
+    with pytest.warns(UserWarning, match="there will be a truncated mini-batch of size 1"):
+        model = PPO("MlpPolicy", "Pendulum-v1", n_steps=64, batch_size=63, verbose=1)
+        model.learn(64)
+
+    loss = model.logger.name_to_value["train/loss"]
+    assert loss > 0
+    assert not np.isnan(loss)  # check not nan (since nan does not equal nan)

@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 1.6.1a2 (WIP)
+Release 1.6.1a3 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -20,6 +20,7 @@ SB3-Contrib
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed issue where ``PPO`` gives NaN if rollout buffer provides a batch of size 1 (@hughperkins)
 - Fixed the issue that ``predict`` does not always return action as ``np.ndarray`` (@qgallouedec)
 - Fixed division by zero error when computing FPS when a small number of time has elapsed in operating systems with low-precision timers.
 - Added multidimensional action space support (@qgallouedec)
@@ -1029,4 +1030,4 @@ And all the contributors:
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
-@anand-bala
+@anand-bala @hughperkins

@@ -207,16 +207,25 @@ def test_eval_friendly_error():
 
 def test_checkpoint_additional_info(tmp_path):
     # tests if the replay buffer and the VecNormalize stats are saved with every checkpoint
-    n_envs = 2
-    env = VecNormalize(DummyVecEnv([lambda: gym.make("CartPole-v1")] * n_envs))
+    dummy_vec_env = DummyVecEnv([lambda: gym.make("CartPole-v1")])
+    env = VecNormalize(dummy_vec_env)
 
     checkpoint_dir = tmp_path / "checkpoints"
     checkpoint_callback = CheckpointCallback(
-        save_freq=500 // n_envs, save_path=checkpoint_dir, save_replay_buffer=True, save_vecnormalize=True
+        save_freq=200,
+        save_path=checkpoint_dir,
+        save_replay_buffer=True,
+        save_vecnormalize=True,
+        verbose=2,
     )
 
-    model = DQN("MlpPolicy", env, learning_starts=100, seed=0)
-    model.learn(500, callback=checkpoint_callback)
+    model = DQN("MlpPolicy", env, learning_starts=100, buffer_size=500, seed=0)
+    model.learn(200, callback=checkpoint_callback)
 
-    assert os.path.exists(checkpoint_dir / "rl_model_replay_buffer_500_steps.pkl")
-    assert os.path.exists(checkpoint_dir / "rl_model_vecnormalize_500_steps.pkl")
+    assert os.path.exists(checkpoint_dir / "rl_model_200_steps.zip")
+    assert os.path.exists(checkpoint_dir / "rl_model_replay_buffer_200_steps.pkl")
+    assert os.path.exists(checkpoint_dir / "rl_model_vecnormalize_200_steps.pkl")
+    # Check that checkpoints can be properly loaded
+    model = DQN.load(checkpoint_dir / "rl_model_200_steps.zip")
+    model.load_replay_buffer(checkpoint_dir / "rl_model_replay_buffer_200_steps.pkl")
+    VecNormalize.load(checkpoint_dir / "rl_model_vecnormalize_200_steps.pkl", dummy_vec_env)

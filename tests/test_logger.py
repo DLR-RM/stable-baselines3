@@ -17,6 +17,7 @@ from stable_baselines3.common.logger import (
     CSVOutputFormat,
     Figure,
     FormatUnsupportedError,
+    HParam,
     HumanOutputFormat,
     Image,
     Logger,
@@ -292,6 +293,19 @@ def test_report_figure_to_unsupported_format_raises_error(tmp_path, unsupported_
         fig.add_subplot().plot(np.random.random(3))
         figure = Figure(figure=fig, close=True)
         writer.write({"figure": figure}, key_excluded={"figure": ()})
+    assert unsupported_format in str(exec_info.value)
+    writer.close()
+
+
+@pytest.mark.parametrize("unsupported_format", ["stdout", "log", "json", "csv"])
+def test_report_hparam_to_unsupported_format_raises_error(tmp_path, unsupported_format):
+    writer = make_output_format(unsupported_format, tmp_path)
+
+    with pytest.raises(FormatUnsupportedError) as exec_info:
+        hparam_dict = {"learning rate": np.random.random()}
+        metric_dict = {"train/value_loss": 0}
+        hparam = HParam(hparam_dict=hparam_dict, metric_dict=metric_dict)
+        writer.write({"hparam": hparam}, key_excluded={"hparam": ()})
     assert unsupported_format in str(exec_info.value)
     writer.close()
 

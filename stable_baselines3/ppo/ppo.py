@@ -137,8 +137,8 @@ class PPO(OnPolicyAlgorithm):
             # Check that `n_steps * n_envs > 1` to avoid NaN
             # when doing advantage normalization
             buffer_size = self.env.num_envs * self.n_steps
-            assert (
-                buffer_size > 1
+            assert buffer_size > 1 or (
+                not normalize_advantage
             ), f"`n_steps * n_envs` must be greater than 1. Currently n_steps={self.n_steps} and n_envs={self.env.num_envs}"
             # Check that the rollout buffer size is a multiple of the mini-batch size
             untruncated_batches = buffer_size // batch_size
@@ -210,7 +210,8 @@ class PPO(OnPolicyAlgorithm):
                 values = values.flatten()
                 # Normalize advantage
                 advantages = rollout_data.advantages
-                if self.normalize_advantage:
+                # Normalization does not make sense if mini batchsize == 1, see GH issue #325
+                if self.normalize_advantage and len(advantages) > 1:
                     advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
                 # ratio between old and new policy, should be one at the first iteration

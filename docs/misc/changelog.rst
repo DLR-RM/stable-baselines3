@@ -14,6 +14,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Support logging hyperparameters to tensorboard (@timothe-chaumont)
 - Added checkpoints for replay buffer and ``VecNormalize`` statistics (@anand-bala)
+- Added option for ``Monitor`` to append to existing file instead of overriding (@sidney-tio)
 
 SB3-Contrib
 ^^^^^^^^^^^
@@ -1030,4 +1031,4 @@ And all the contributors:
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
-@anand-bala @hughperkins
+@anand-bala @hughperkins @sidney-tio

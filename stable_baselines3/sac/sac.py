@@ -95,6 +95,7 @@ class SAC(OffPolicyAlgorithm):
         replay_buffer_class: Optional[ReplayBuffer] = None,
         replay_buffer_kwargs: Optional[Dict[str, Any]] = None,
         optimize_memory_usage: bool = False,
+        policy_delay: int = 1,
         ent_coef: Union[str, float] = "auto",
         target_update_interval: int = 1,
         target_entropy: Union[str, float] = "auto",
@@ -145,6 +146,7 @@ class SAC(OffPolicyAlgorithm):
         self.ent_coef = ent_coef
         self.target_update_interval = target_update_interval
         self.ent_coef_optimizer = None
+        self.policy_delay = policy_delay
 
         if _init_setup_model:
             self._setup_model()
@@ -202,11 +204,10 @@ class SAC(OffPolicyAlgorithm):
 
         ent_coef_losses, ent_coefs = [], []
         actor_losses, critic_losses = [], []
-        # TODO: properly handle it when train_freq > 1
-        policy_update_delay = gradient_steps
 
         for gradient_step in range(gradient_steps):
-            update_actor = ((gradient_step + 1) % policy_update_delay == 0) or gradient_step == gradient_steps - 1
+            self._n_updates += 1
+            update_actor = self._n_updates % self.policy_delay == 0
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
@@ -287,8 +288,6 @@ class SAC(OffPolicyAlgorithm):
                 polyak_update(self.critic.parameters(), self.critic_target.parameters(), self.tau)
                 # Copy running stats, see GH issue #996
                 polyak_update(self.batch_norm_stats, self.batch_norm_stats_target, 1.0)
-
-        self._n_updates += gradient_steps
 
         self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
         self.logger.record("train/ent_coef", np.mean(ent_coefs))

@@ -37,7 +37,7 @@ class Monitor(gym.Wrapper):
         allow_early_resets: bool = True,
         reset_keywords: Tuple[str, ...] = (),
         info_keywords: Tuple[str, ...] = (),
-        override_existing: bool = False,
+        override_existing: bool = True,
     ):
         super().__init__(env=env)
         self.t_start = time.time()
@@ -176,7 +176,7 @@ class ResultsWriter:
         filename: str = "",
         header: Optional[Dict[str, Union[float, str]]] = None,
         extra_keys: Tuple[str, ...] = (),
-        override_existing: bool = False,
+        override_existing: bool = True,
     ):
         if header is None:
             header = {}

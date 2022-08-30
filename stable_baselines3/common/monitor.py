@@ -25,7 +25,7 @@ class Monitor(gym.Wrapper):
         if extra parameters are needed at reset
     :param info_keywords: extra information to log, from the information return of env.step()
     :param override_existing: appends to file if ``filename`` exists, otherwise
-        override existing files
+        override existing files (default)
     """
 
     EXT = "monitor.csv"
@@ -168,7 +168,7 @@ class ResultsWriter:
     :param reset_keywords: the extra information to log, typically is composed of
         ``reset_keywords`` and ``info_keywords``
     :param override_existing: appends to file if ``filename`` exists, otherwise
-        override existing files
+        override existing files (default)
     """
 
     def __init__(
@@ -185,15 +185,15 @@ class ResultsWriter:
                 filename = os.path.join(filename, Monitor.EXT)
             else:
                 filename = filename + "." + Monitor.EXT
+        # Append mode when not override existing file
+        mode = "w" if override_existing else "a"
         # Prevent newline issue on Windows, see GH issue #692
+        self.file_handler = open(filename, f"{mode}t", newline="\n")
+        self.logger = csv.DictWriter(self.file_handler, fieldnames=("r", "l", "t") + extra_keys)
         if override_existing:
-            self.file_handler = open(filename, "wt", newline="\n")
             self.file_handler.write("#%s\n" % json.dumps(header))
-            self.logger = csv.DictWriter(self.file_handler, fieldnames=("r", "l", "t") + extra_keys)
             self.logger.writeheader()
-        else:
-            self.file_handler = open(filename, "at", newline="\n")
-            self.logger = csv.DictWriter(self.file_handler, fieldnames=("r", "l", "t") + extra_keys)
+
         self.file_handler.flush()
 
     def write_row(self, epinfo: Dict[str, Union[float, int]]) -> None:

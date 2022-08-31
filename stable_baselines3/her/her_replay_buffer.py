@@ -226,7 +226,7 @@ class HerReplayBuffer(DictReplayBuffer):
             maybe_vec_env=None,
             online_sampling=False,
             n_sampled_goal=n_sampled_goal,
-        )
+        )  # pytype: disable=bad-return-type
 
     def sample_goals(
         self,

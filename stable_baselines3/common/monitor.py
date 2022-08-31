@@ -185,13 +185,13 @@ class ResultsWriter:
                 filename = os.path.join(filename, Monitor.EXT)
             else:
                 filename = filename + "." + Monitor.EXT
-        # Append mode when not override existing file
+        # Append mode when not overridding existing file
         mode = "w" if override_existing else "a"
         # Prevent newline issue on Windows, see GH issue #692
         self.file_handler = open(filename, f"{mode}t", newline="\n")
         self.logger = csv.DictWriter(self.file_handler, fieldnames=("r", "l", "t") + extra_keys)
         if override_existing:
-            self.file_handler.write("#%s\n" % json.dumps(header))
+            self.file_handler.write(f"#{json.dumps(header)}\n")
             self.logger.writeheader()
 
         self.file_handler.flush()

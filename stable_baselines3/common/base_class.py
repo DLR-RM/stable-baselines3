@@ -10,6 +10,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
 import gym
 import numpy as np
 import torch as th
+from typing_extensions import Self
 
 from stable_baselines3.common import utils
 from stable_baselines3.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
@@ -541,7 +542,7 @@ class BaseAlgorithm(ABC):
         n_eval_episodes: int = 5,
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-    ) -> "BaseAlgorithm":
+    ) -> Self:
         """
         Return a trained model.
 
@@ -673,7 +674,7 @@ class BaseAlgorithm(ABC):
         print_system_info: bool = False,
         force_reset: bool = True,
         **kwargs,
-    ) -> "BaseAlgorithm":
+    ) -> Self:
         """
         Load the model from a zip-file.
         Warning: ``load`` re-creates the model from scratch, it does not update it in-place!

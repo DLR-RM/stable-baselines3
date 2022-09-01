@@ -165,10 +165,7 @@ class TD3(OffPolicyAlgorithm):
                 next_actions = (self.actor_target(replay_data.next_observations) + noise).clamp(-1, 1)
 
                 # Compute the next Q-values: min over all critics targets
-                next_q_values = th.cat(
-                    self.critic_target(replay_data.next_observations, next_actions),
-                    dim=1,
-                )
+                next_q_values = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
                 next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
                 target_q_values = replay_data.rewards + (1 - replay_data.dones) * self.gamma * next_q_values
 
@@ -198,11 +195,7 @@ class TD3(OffPolicyAlgorithm):
                 polyak_update(self.critic.parameters(), self.critic_target.parameters(), self.tau)
                 polyak_update(self.actor.parameters(), self.actor_target.parameters(), self.tau)
                 # Copy running stats, see GH issue #996
-                polyak_update(
-                    self.critic_batch_norm_stats,
-                    self.critic_batch_norm_stats_target,
-                    1.0,
-                )
+                polyak_update(self.critic_batch_norm_stats, self.critic_batch_norm_stats_target, 1.0)
                 polyak_update(self.actor_batch_norm_stats, self.actor_batch_norm_stats_target, 1.0)
 
         self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
@@ -236,12 +229,7 @@ class TD3(OffPolicyAlgorithm):
         )
 
     def _excluded_save_params(self) -> List[str]:
-        return super()._excluded_save_params() + [
-            "actor",
-            "critic",
-            "actor_target",
-            "critic_target",
-        ]
+        return super()._excluded_save_params() + ["actor", "critic", "actor_target", "critic_target"]
 
     def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
         state_dicts = ["policy", "actor.optimizer", "critic.optimizer"]

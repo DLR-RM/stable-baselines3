@@ -241,10 +241,7 @@ class DQN(OffPolicyAlgorithm):
             (used in recurrent policies)
         """
         if not deterministic and np.random.rand() < self.exploration_rate:
-            if is_vectorized_observation(
-                maybe_transpose(observation, self.observation_space),
-                self.observation_space,
-            ):
+            if is_vectorized_observation(maybe_transpose(observation, self.observation_space), self.observation_space):
                 if isinstance(self.observation_space, gym.spaces.Dict):
                     n_batch = observation[list(observation.keys())[0]].shape[0]
                 else:

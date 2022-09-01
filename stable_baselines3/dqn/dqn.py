@@ -11,18 +11,8 @@ from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.preprocessing import maybe_transpose
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
-from stable_baselines3.common.utils import (
-    get_linear_fn,
-    get_parameters_by_name,
-    is_vectorized_observation,
-    polyak_update,
-)
-from stable_baselines3.dqn.policies import (
-    CnnPolicy,
-    DQNPolicy,
-    MlpPolicy,
-    MultiInputPolicy,
-)
+from stable_baselines3.common.utils import get_linear_fn, get_parameters_by_name, is_vectorized_observation, polyak_update
+from stable_baselines3.dqn.policies import CnnPolicy, DQNPolicy, MlpPolicy, MultiInputPolicy
 
 
 class DQN(OffPolicyAlgorithm):
@@ -152,9 +142,7 @@ class DQN(OffPolicyAlgorithm):
         self._create_aliases()
         # Copy running stats, see GH issue #996
         self.batch_norm_stats = get_parameters_by_name(self.q_net, ["running_"])
-        self.batch_norm_stats_target = get_parameters_by_name(
-            self.q_net_target, ["running_"]
-        )
+        self.batch_norm_stats_target = get_parameters_by_name(self.q_net_target, ["running_"])
         self.exploration_schedule = get_linear_fn(
             self.exploration_initial_eps,
             self.exploration_final_eps,
@@ -171,9 +159,7 @@ class DQN(OffPolicyAlgorithm):
                     f"which corresponds to {self.n_envs} steps."
                 )
 
-            self.target_update_interval = max(
-                self.target_update_interval // self.n_envs, 1
-            )
+            self.target_update_interval = max(self.target_update_interval // self.n_envs, 1)
 
     def _create_aliases(self) -> None:
         self.q_net = self.policy.q_net
@@ -186,15 +172,11 @@ class DQN(OffPolicyAlgorithm):
         """
         self._n_calls += 1
         if self._n_calls % self.target_update_interval == 0:
-            polyak_update(
-                self.q_net.parameters(), self.q_net_target.parameters(), self.tau
-            )
+            polyak_update(self.q_net.parameters(), self.q_net_target.parameters(), self.tau)
             # Copy running stats, see GH issue #996
             polyak_update(self.batch_norm_stats, self.batch_norm_stats_target, 1.0)
 
-        self.exploration_rate = self.exploration_schedule(
-            self._current_progress_remaining
-        )
+        self.exploration_rate = self.exploration_schedule(self._current_progress_remaining)
         self.logger.record("rollout/exploration_rate", self.exploration_rate)
 
     def train(self, gradient_steps: int, batch_size: int = 100) -> None:
@@ -206,9 +188,7 @@ class DQN(OffPolicyAlgorithm):
         losses = []
         for _ in range(gradient_steps):
             # Sample replay buffer
-            replay_data = self.replay_buffer.sample(
-                batch_size, env=self._vec_normalize_env
-            )
+            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
 
             with th.no_grad():
                 # Compute the next Q-values using the target network
@@ -218,18 +198,13 @@ class DQN(OffPolicyAlgorithm):
                 # Avoid potential broadcast issue
                 next_q_values = next_q_values.reshape(-1, 1)
                 # 1-step TD target
-                target_q_values = (
-                    replay_data.rewards
-                    + (1 - replay_data.dones) * self.gamma * next_q_values
-                )
+                target_q_values = replay_data.rewards + (1 - replay_data.dones) * self.gamma * next_q_values
 
             # Get current Q-values estimates
             current_q_values = self.q_net(replay_data.observations)
 
             # Retrieve the q-values for the actions from the replay buffer
-            current_q_values = th.gather(
-                current_q_values, dim=1, index=replay_data.actions.long()
-            )
+            current_q_values = th.gather(current_q_values, dim=1, index=replay_data.actions.long())
 
             # Compute Huber loss (less sensitive to outliers)
             loss = F.smooth_l1_loss(current_q_values, target_q_values)
@@ -278,9 +253,7 @@ class DQN(OffPolicyAlgorithm):
             else:
                 action = np.array(self.action_space.sample())
         else:
-            action, state = self.policy.predict(
-                observation, state, episode_start, deterministic
-            )
+            action, state = self.policy.predict(observation, state, episode_start, deterministic)
         return action, state
 
     def learn(

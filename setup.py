@@ -82,6 +82,8 @@ setup(
         "pandas",
         # Plotting learning curves
         "matplotlib",
+        # for better typing support for users with Python <3.11
+        "typing-extensions",
     ],
     extras_require={
         "tests": [

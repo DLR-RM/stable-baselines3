@@ -198,6 +198,14 @@ def test_common_failures_reset():
     check_reset_assert_error(env, (env.observation_space.sample(), False))
 
     env = SimpleMultiObsEnv()
+
+    # Observation keys and observation space keys must match
+    wrong_obs = env.observation_space.sample()
+    wrong_obs.pop("img")
+    check_reset_assert_error(env, wrong_obs)
+    wrong_obs = {**env.observation_space.sample(), "extra_key": None}
+    check_reset_assert_error(env, wrong_obs)
+
     obs = env.reset()
 
     def wrong_reset(self):
@@ -249,6 +257,14 @@ def test_common_failures_step():
     check_step_assert_error(env, (env.observation_space.sample(), 0.0, 1, {}))
 
     env = SimpleMultiObsEnv()
+
+    # Observation keys and observation space keys must match
+    wrong_obs = env.observation_space.sample()
+    wrong_obs.pop("img")
+    check_step_assert_error(env, (wrong_obs, 0.0, False, {}))
+    wrong_obs = {**env.observation_space.sample(), "extra_key": None}
+    check_step_assert_error(env, (wrong_obs, 0.0, False, {}))
+
     obs = env.reset()
 
     def wrong_step(self, action):

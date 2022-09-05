@@ -145,7 +145,10 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
         assert isinstance(obs, dict), "The observation returned by `reset()` must be a dictionary"
 
         if not obs.keys() == observation_space.spaces.keys():
-            raise AssertionError(f"The observation keys returned by `reset()` must match the observation space keys")
+            raise AssertionError(
+                "The observation keys returned by `reset()` must match the observation "
+                f"space keys: {obs.keys()} != {observation_space.spaces.keys()}"
+            )
 
         for key in observation_space.spaces.keys():
             try:
@@ -168,7 +171,10 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
         assert isinstance(obs, dict), "The observation returned by `step()` must be a dictionary"
 
         if not obs.keys() == observation_space.spaces.keys():
-            raise AssertionError(f"The observation keys returned by `step()` must match the observation space keys")
+            raise AssertionError(
+                "The observation keys returned by `step()` must match the observation "
+                f"space keys: {obs.keys()} != {observation_space.spaces.keys()}"
+            )
 
         for key in observation_space.spaces.keys():
             try:

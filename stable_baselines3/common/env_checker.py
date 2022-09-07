@@ -203,6 +203,13 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
         _check_goal_env_obs(obs, observation_space, "reset")
     elif isinstance(observation_space, spaces.Dict):
         assert isinstance(obs, dict), "The observation returned by `reset()` must be a dictionary"
+
+        if not obs.keys() == observation_space.spaces.keys():
+            raise AssertionError(
+                "The observation keys returned by `reset()` must match the observation "
+                f"space keys: {obs.keys()} != {observation_space.spaces.keys()}"
+            )
+
         for key in observation_space.spaces.keys():
             try:
                 _check_obs(obs[key], observation_space.spaces[key], "reset")
@@ -225,6 +232,13 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
         _check_goal_env_compute_reward(obs, env, reward, info)
     elif isinstance(observation_space, spaces.Dict):
         assert isinstance(obs, dict), "The observation returned by `step()` must be a dictionary"
+
+        if not obs.keys() == observation_space.spaces.keys():
+            raise AssertionError(
+                "The observation keys returned by `step()` must match the observation "
+                f"space keys: {obs.keys()} != {observation_space.spaces.keys()}"
+            )
+
         for key in observation_space.spaces.keys():
             try:
                 _check_obs(obs[key], observation_space.spaces[key], "step")

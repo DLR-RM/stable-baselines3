@@ -185,7 +185,7 @@ Some basic advice:
 
 Two important things to keep in mind when creating a custom environment is to avoid breaking Markov assumption
 and properly handle termination due to a timeout (maximum number of steps in an episode).
-For instance, if there is some time delay between action and observation (e.g. due to wifi communication), you should give an history of observations
+For instance, if there is some time delay between action and observation (e.g. due to wifi communication), you should give a history of observations
 as input.
 
 Termination due to timeout (max number of steps per episode) needs to be handled separately. You should fill the key in the info dict: ``info["TimeLimit.truncated"] = True``.

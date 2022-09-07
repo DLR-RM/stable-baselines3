@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 1.6.1a3 (WIP)
+Release 1.6.1a4 (WIP)
 ---------------------------
 
 Breaking Changes:
@@ -14,6 +14,8 @@ New Features:
 ^^^^^^^^^^^^^
 - Support logging hyperparameters to tensorboard (@timothe-chaumont)
 - Added checkpoints for replay buffer and ``VecNormalize`` statistics (@anand-bala)
+- Added option for ``Monitor`` to append to existing file instead of overriding (@sidney-tio)
+- The env checker now raises an error when using dict observation spaces and observation keys don't match observation space keys
 
 SB3-Contrib
 ^^^^^^^^^^^
@@ -26,6 +28,7 @@ Bug Fixes:
 - Added multidimensional action space support (@qgallouedec)
 - Fixed missing verbose parameter passing in the ``EvalCallback`` constructor (@burakdmb)
 - Fixed the issue that when updating the target network in DQN, SAC, TD3, the ``running_mean`` and ``running_var`` properties of batch norm layers are not updated (@honglu2875)
+- Fixed incorrect type annotation of the replay_buffer_class argument in ``common.OffPolicyAlgorithm`` initializer, where an instance instead of a class was required (@Rocamonde)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -1035,4 +1038,4 @@ And all the contributors:
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @carlosluis @arjun-kg
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
-@anand-bala @hughperkins
+@anand-bala @hughperkins @sidney-tio

@@ -28,6 +28,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Fix typo in docstring "nature" -> "Nature" (@Melanol)
+- Clarified and standardized verbosity documentation
 
 
 Release 1.6.0 (2022-07-11)

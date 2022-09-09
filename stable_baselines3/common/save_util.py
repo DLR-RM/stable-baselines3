@@ -193,7 +193,7 @@ def open_path(path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verb
         if save_path is a str or pathlib.Path and mode is "w", single dispatch ensures that the
         path actually exists. If path is a io.BufferedIOBase the path exists.
     :param mode: how to open the file. "w"|"write" for writing, "r"|"read" for reading.
-    :param verbose: Verbosity level, 0 means only warnings, 2 means debug information.
+    :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     :param suffix: The preferred suffix. If mode is "w" then the opened file has the suffix.
         If mode is "r" then we attempt to open the path. If an error is raised and the suffix
         is not None, we attempt to open the path with the suffix.
@@ -223,7 +223,7 @@ def open_path_str(path: str, mode: str, verbose: int = 0, suffix: Optional[str] 
     :param path: the path to open. If mode is "w" then it ensures that the path exists
         by creating the necessary folders and renaming path if it points to a folder.
     :param mode: how to open the file. "w" for writing, "r" for reading.
-    :param verbose: Verbosity level, 0 means only warnings, 2 means debug information.
+    :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     :param suffix: The preferred suffix. If mode is "w" then the opened file has the suffix.
         If mode is "r" then we attempt to open the path. If an error is raised and the suffix
         is not None, we attempt to open the path with the suffix.
@@ -242,7 +242,7 @@ def open_path_pathlib(path: pathlib.Path, mode: str, verbose: int = 0, suffix: O
         ensures that the path exists by creating the necessary folders and
         renaming path if it points to a folder.
     :param mode: how to open the file. "w" for writing, "r" for reading.
-    :param verbose: Verbosity level, 0 means only warnings, 2 means debug information.
+    :param verbose: Verbosity level: 0 for no output, 2 for indicating if path without suffix is not found when mode is "r"
     :param suffix: The preferred suffix. If mode is "w" then the opened file has the suffix.
         If mode is "r" then we attempt to open the path. If an error is raised and the suffix
         is not None, we attempt to open the path with the suffix.
@@ -300,7 +300,7 @@ def save_to_zip_file(
     :param params: Model parameters being stored expected to contain an entry for every
                    state_dict with its name and the state_dict.
     :param pytorch_variables: Other PyTorch variables expected to contain name and value of the variable.
-    :param verbose: Verbosity level, 0 means only warnings, 2 means debug information
+    :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
     save_path = open_path(save_path, "w", verbose=0, suffix="zip")
     # data/params can be None, so do not
@@ -336,7 +336,7 @@ def save_to_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], obj: Any, ver
         if save_path is a str or pathlib.Path and mode is "w", single dispatch ensures that the
         path actually exists. If path is a io.BufferedIOBase the path exists.
     :param obj: The object to save.
-    :param verbose: Verbosity level, 0 means only warnings, 2 means debug information.
+    :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
     with open_path(path, "w", verbose=verbose, suffix="pkl") as file_handler:
         # Use protocol>=4 to support saving replay buffers >= 4Gb
@@ -352,7 +352,7 @@ def load_from_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], verbose: in
     :param path: the path to open.
         if save_path is a str or pathlib.Path and mode is "w", single dispatch ensures that the
         path actually exists. If path is a io.BufferedIOBase the path exists.
-    :param verbose: Verbosity level, 0 means only warnings, 2 means debug information.
+    :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
     with open_path(path, "r", verbose=verbose, suffix="pkl") as file_handler:
         return pickle.load(file_handler)
@@ -379,7 +379,7 @@ def load_from_zip_file(
         ``keras.models.load_model``. Useful when you have an object in
         file that can not be deserialized.
     :param device: Device on which the code should run.
-    :param verbose: Verbosity level, 0 means only warnings, 2 means debug information.
+    :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     :param print_system_info: Whether to print or not the system info
         about the saved model.
     :return: Class parameters, model state_dicts (aka "params", dict of state_dict)

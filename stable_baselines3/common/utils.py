@@ -182,7 +182,7 @@ def configure_logger(
     """
     Configure the logger's outputs.
 
-    :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
+    :param verbose: Verbosity level: 0 for no output, 1 for the standard output to be part of the logger outputs
     :param tensorboard_log: the log location for tensorboard (if None, no logging)
     :param tb_log_name: tensorboard log
     :param reset_num_timesteps:  Whether the ``num_timesteps`` attribute is reset or not.

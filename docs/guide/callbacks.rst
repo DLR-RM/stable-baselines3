@@ -27,7 +27,7 @@ You can find two examples of custom callbacks in the documentation: one for savi
         """
         A custom callback that derives from ``BaseCallback``.
 
-        :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
+        :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
         """
         def __init__(self, verbose=0):
             super(CustomCallback, self).__init__(verbose)
@@ -121,7 +121,7 @@ A child callback is for instance :ref:`StopTrainingOnRewardThreshold <StopTraini
 
         :param callback: (Optional[BaseCallback]) Callback that will be called
             when an event is triggered.
-        :param verbose: (int)
+        :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
         """
         def __init__(self, callback: Optional[BaseCallback] = None, verbose: int = 0):
             super(EventCallback, self).__init__(verbose=verbose)

@@ -248,7 +248,7 @@ If your callback returns False, training is aborted early.
       :param check_freq:
       :param log_dir: Path to the folder where the model will be saved.
         It must contains the file created by the ``Monitor`` wrapper.
-      :param verbose: Verbosity level.
+      :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
       """
       def __init__(self, check_freq: int, log_dir: str, verbose: int = 1):
           super(SaveOnBestTrainingRewardCallback, self).__init__(verbose)

@@ -15,7 +15,7 @@ class BaseCallback(ABC):
     """
     Base class for callback.
 
-    :param verbose:
+    :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
 
     def __init__(self, verbose: int = 0):
@@ -123,7 +123,7 @@ class EventCallback(BaseCallback):
 
     :param callback: Callback that will be called
         when an event is triggered.
-    :param verbose:
+    :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
 
     def __init__(self, callback: Optional[BaseCallback] = None, verbose: int = 0):
@@ -224,7 +224,7 @@ class CheckpointCallback(BaseCallback):
     :param save_freq:
     :param save_path: Path to the folder where the model will be saved.
     :param name_prefix: Common prefix to the saved models
-    :param verbose:
+    :param verbose: Verbosity level: 0 for no output, 1 for indicating when saving model checkpoint
     """
 
     def __init__(self, save_freq: int, save_path: str, name_prefix: str = "rl_model", verbose: int = 0):
@@ -252,7 +252,7 @@ class ConvertCallback(BaseCallback):
     Convert functional callback (old-style) to object.
 
     :param callback:
-    :param verbose:
+    :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
 
     def __init__(self, callback: Callable[[Dict[str, Any], Dict[str, Any]], bool], verbose: int = 0):
@@ -288,7 +288,7 @@ class EvalCallback(EventCallback):
     :param deterministic: Whether the evaluation should
         use a stochastic or deterministic actions.
     :param render: Whether to render or not the environment during evaluation
-    :param verbose:
+    :param verbose: Verbosity level: 0 for no output, 1 for indicating information about evaluation results
     :param warn: Passed to ``evaluate_policy`` (warns if ``eval_env`` has not been
         wrapped with a Monitor wrapper)
     """
@@ -476,7 +476,8 @@ class StopTrainingOnRewardThreshold(BaseCallback):
 
     :param reward_threshold:  Minimum expected reward per episode
         to stop training.
-    :param verbose:
+    :param verbose: Verbosity level: 0 for no output, 1 for indicating when training ended because episodic reward
+        threshold reached
     """
 
     def __init__(self, reward_threshold: float, verbose: int = 0):
@@ -524,7 +525,8 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
     and in total for ``max_episodes * n_envs`` episodes.
 
     :param max_episodes: Maximum number of episodes to stop training.
-    :param verbose: Select whether to print information about when training ended by reaching ``max_episodes``
+    :param verbose: Verbosity level: 0 for no output, 1 for indicating information about when training ended by
+        reaching ``max_episodes``
     """
 
     def __init__(self, max_episodes: int, verbose: int = 0):
@@ -569,7 +571,7 @@ class StopTrainingOnNoModelImprovement(BaseCallback):
 
     :param max_no_improvement_evals: Maximum number of consecutive evaluations without a new best model.
     :param min_evals: Number of evaluations before start to count evaluations without improvements.
-    :param verbose: Verbosity of the output (set to 1 for info messages)
+    :param verbose: Verbosity level: 0 for no output, 1 for indicating when training ended because no new best model
     """
 
     def __init__(self, max_no_improvement_evals: int, min_evals: int = 0, verbose: int = 0):

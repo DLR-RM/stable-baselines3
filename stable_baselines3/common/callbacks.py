@@ -242,7 +242,7 @@ class CheckpointCallback(BaseCallback):
         if self.n_calls % self.save_freq == 0:
             path = os.path.join(self.save_path, f"{self.name_prefix}_{self.num_timesteps}_steps")
             self.model.save(path)
-            if self.verbose > 1:
+            if self.verbose >= 2:
                 print(f"Saving model checkpoint to {path}")
         return True
 
@@ -424,7 +424,7 @@ class EvalCallback(EventCallback):
             mean_ep_length, std_ep_length = np.mean(episode_lengths), np.std(episode_lengths)
             self.last_mean_reward = mean_reward
 
-            if self.verbose > 0:
+            if self.verbose >= 1:
                 print(f"Eval num_timesteps={self.num_timesteps}, " f"episode_reward={mean_reward:.2f} +/- {std_reward:.2f}")
                 print(f"Episode length: {mean_ep_length:.2f} +/- {std_ep_length:.2f}")
             # Add to current Logger
@@ -433,7 +433,7 @@ class EvalCallback(EventCallback):
 
             if len(self._is_success_buffer) > 0:
                 success_rate = np.mean(self._is_success_buffer)
-                if self.verbose > 0:
+                if self.verbose >= 1:
                     print(f"Success rate: {100 * success_rate:.2f}%")
                 self.logger.record("eval/success_rate", success_rate)
 
@@ -442,7 +442,7 @@ class EvalCallback(EventCallback):
             self.logger.dump(self.num_timesteps)
 
             if mean_reward > self.best_mean_reward:
-                if self.verbose > 0:
+                if self.verbose >= 1:
                     print("New best mean reward!")
                 if self.best_model_save_path is not None:
                     self.model.save(os.path.join(self.best_model_save_path, "best_model"))
@@ -487,7 +487,7 @@ class StopTrainingOnRewardThreshold(BaseCallback):
         assert self.parent is not None, "``StopTrainingOnMinimumReward`` callback must be used " "with an ``EvalCallback``"
         # Convert np.bool_ to bool, otherwise callback() is False won't work
         continue_training = bool(self.parent.best_mean_reward < self.reward_threshold)
-        if self.verbose > 0 and not continue_training:
+        if self.verbose >= 1 and not continue_training:
             print(
                 f"Stopping training because the mean reward {self.parent.best_mean_reward:.2f} "
                 f" is above the threshold {self.reward_threshold}"
@@ -544,7 +544,7 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
 
         continue_training = self.n_episodes < self._total_max_episodes
 
-        if self.verbose > 0 and not continue_training:
+        if self.verbose >= 1 and not continue_training:
             mean_episodes_per_env = self.n_episodes / self.training_env.num_envs
             mean_ep_str = (
                 f"with an average of {mean_episodes_per_env:.2f} episodes per env" if self.training_env.num_envs > 1 else ""
@@ -594,7 +594,7 @@ class StopTrainingOnNoModelImprovement(BaseCallback):
 
         self.last_best_mean_reward = self.parent.best_mean_reward
 
-        if self.verbose > 0 and not continue_training:
+        if self.verbose >= 1 and not continue_training:
             print(
                 f"Stopping training because there was no new best model in the last {self.no_improvement_evals:d} evaluations"
             )

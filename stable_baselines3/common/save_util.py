@@ -186,7 +186,7 @@ def open_path(path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verb
     If the provided path is a string or a pathlib.Path, it ensures that it exists. If the mode is "read"
     it checks that it exists, if it doesn't exist it attempts to read path.suffix if a suffix is provided.
     If the mode is "write" and the path does not exist, it creates all the parent folders. If the path
-    points to a folder, it changes the path to path_2. If the path already exists and verbose == 2,
+    points to a folder, it changes the path to path_2. If the path already exists and verbose >= 2,
     it raises a warning.
 
     :param path: the path to open.
@@ -257,7 +257,7 @@ def open_path_pathlib(path: pathlib.Path, mode: str, verbose: int = 0, suffix: O
         except FileNotFoundError as error:
             if suffix is not None and suffix != "":
                 newpath = pathlib.Path(f"{path}.{suffix}")
-                if verbose == 2:
+                if verbose >= 2:
                     warnings.warn(f"Path '{path}' not found. Attempting {newpath}.")
                 path, suffix = newpath, None
             else:
@@ -266,7 +266,7 @@ def open_path_pathlib(path: pathlib.Path, mode: str, verbose: int = 0, suffix: O
         try:
             if path.suffix == "" and suffix is not None and suffix != "":
                 path = pathlib.Path(f"{path}.{suffix}")
-            if path.exists() and path.is_file() and verbose == 2:
+            if path.exists() and path.is_file() and verbose >= 2:
                 warnings.warn(f"Path '{path}' exists, will overwrite it.")
             path = path.open("wb")
         except IsADirectoryError:

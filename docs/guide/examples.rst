@@ -270,7 +270,7 @@ If your callback returns False, training is aborted early.
             if len(x) > 0:
                 # Mean training reward over the last 100 episodes
                 mean_reward = np.mean(y[-100:])
-                if self.verbose > 0:
+                if self.verbose >= 1:
                   print(f"Num timesteps: {self.num_timesteps}")
                   print(f"Best mean reward: {self.best_mean_reward:.2f} - Last mean reward per episode: {mean_reward:.2f}")
 
@@ -278,7 +278,7 @@ If your callback returns False, training is aborted early.
                 if mean_reward > self.best_mean_reward:
                     self.best_mean_reward = mean_reward
                     # Example for saving best model
-                    if self.verbose > 0:
+                    if self.verbose >= 1:
                       print(f"Saving new best model to {self.save_path}")
                     self.model.save(self.save_path)
 

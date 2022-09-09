@@ -108,7 +108,7 @@ class BaseAlgorithm(ABC):
             self.policy_class = policy
 
         self.device = get_device(device)
-        if verbose > 0:
+        if verbose >= 1:
             print(f"Using {self.device} device")
 
         self.env = None  # type: Optional[GymEnv]

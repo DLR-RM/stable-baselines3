@@ -157,6 +157,10 @@ CheckpointCallback
 
 Callback for saving a model every ``save_freq`` calls to ``env.step()``, you must specify a log folder (``save_path``)
 and optionally a prefix for the checkpoints (``rl_model`` by default).
+If you are using this callback to stop and resume training, you may want to optionally save the replay buffer if the
+model has one (``save_replay_buffer``, ``False`` by default).
+Additionally, if your environment uses a :ref:`VecNormalize <vec_env>` wrapper, you can save the
+corresponding statistics using ``save_vecnormalize`` (``False`` by default).
 
 .. warning::
 
@@ -168,14 +172,20 @@ and optionally a prefix for the checkpoints (``rl_model`` by default).
 
 .. code-block:: python
 
-    from stable_baselines3 import SAC
-    from stable_baselines3.common.callbacks import CheckpointCallback
-    # Save a checkpoint every 1000 steps
-    checkpoint_callback = CheckpointCallback(save_freq=1000, save_path='./logs/',
-                                             name_prefix='rl_model')
+  from stable_baselines3 import SAC
+  from stable_baselines3.common.callbacks import CheckpointCallback
 
-    model = SAC('MlpPolicy', 'Pendulum-v1')
-    model.learn(2000, callback=checkpoint_callback)
+  # Save a checkpoint every 1000 steps
+  checkpoint_callback = CheckpointCallback(
+    save_freq=1000,
+    save_path="./logs/",
+    name_prefix="rl_model",
+    save_replay_buffer=True,
+    save_vecnormalize=True,
+  )
+
+  model = SAC("MlpPolicy", "Pendulum-v1")
+  model.learn(2000, callback=checkpoint_callback)
 
 
 .. _EvalCallback:

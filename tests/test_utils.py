@@ -8,13 +8,19 @@ import torch as th
 from gym import spaces
 
 import stable_baselines3 as sb3
-from stable_baselines3 import A2C, PPO
+from stable_baselines3 import A2C
 from stable_baselines3.common.atari_wrappers import ClipRewardEnv, MaxAndSkipEnv
 from stable_baselines3.common.env_util import is_wrapped, make_atari_env, make_vec_env, unwrap_wrapper
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise, OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
-from stable_baselines3.common.utils import get_system_info, is_vectorized_observation, polyak_update, zip_strict
+from stable_baselines3.common.utils import (
+    get_parameters_by_name,
+    get_system_info,
+    is_vectorized_observation,
+    polyak_update,
+    zip_strict,
+)
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 
@@ -322,6 +328,22 @@ def test_vec_noise():
     assert len(vec.noises) == num_envs
 
 
+def test_get_parameters_by_name():
+    model = th.nn.Sequential(th.nn.Linear(5, 5), th.nn.BatchNorm1d(5))
+    # Initialize stats
+    model(th.ones(3, 5))
+    included_names = ["weight", "bias", "running_"]
+    # 2 x weight, 2 x bias, 1 x running_mean, 1 x running_var; Ignore num_batches_tracked.
+    parameters = get_parameters_by_name(model, included_names)
+    assert len(parameters) == 6
+    assert th.allclose(parameters[4], model[1].running_mean)
+    assert th.allclose(parameters[5], model[1].running_var)
+    parameters = get_parameters_by_name(model, ["running_"])
+    assert len(parameters) == 2
+    assert th.allclose(parameters[0], model[1].running_mean)
+    assert th.allclose(parameters[1], model[1].running_var)
+
+
 def test_polyak():
     param1, param2 = th.nn.Parameter(th.ones((5, 5))), th.nn.Parameter(th.zeros((5, 5)))
     target1, target2 = th.nn.Parameter(th.ones((5, 5))), th.nn.Parameter(th.zeros((5, 5)))
@@ -364,19 +386,6 @@ def test_is_wrapped():
     assert is_wrapped(env, Monitor)
     # Test that unwrap works as expected
     assert unwrap_wrapper(env, Monitor) == monitor_env
-
-
-def test_ppo_warnings():
-    """Test that PPO warns and errors correctly on
-    problematic rollour buffer sizes"""
-
-    # Only 1 step: advantage normalization will return NaN
-    with pytest.raises(AssertionError):
-        PPO("MlpPolicy", "Pendulum-v1", n_steps=1)
-
-    # Truncated mini-batch
-    with pytest.warns(UserWarning):
-        PPO("MlpPolicy", "Pendulum-v1", n_steps=6, batch_size=8)
 
 
 def test_get_system_info():

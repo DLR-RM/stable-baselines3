@@ -1,5 +1,6 @@
 import io
 import pathlib
+import sys
 import time
 import warnings
 from copy import deepcopy
@@ -85,7 +86,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         train_freq: Union[int, Tuple[int, str]] = (1, "step"),
         gradient_steps: int = 1,
         action_noise: Optional[ActionNoise] = None,
-        replay_buffer_class: Optional[ReplayBuffer] = None,
+        replay_buffer_class: Optional[Type[ReplayBuffer]] = None,
         replay_buffer_kwargs: Optional[Dict[str, Any]] = None,
         optimize_memory_usage: bool = False,
         policy_kwargs: Optional[Dict[str, Any]] = None,
@@ -428,8 +429,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         """
         Write log.
         """
-        time_elapsed = time.time() - self.start_time
-        fps = int((self.num_timesteps - self._num_timesteps_at_start) / (time_elapsed + 1e-8))
+        time_elapsed = max((time.time_ns() - self.start_time) / 1e9, sys.float_info.epsilon)
+        fps = int((self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
         self.logger.record("time/episodes", self._episode_num, exclude="tensorboard")
         if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
             self.logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))

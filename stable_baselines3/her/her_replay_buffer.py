@@ -73,7 +73,7 @@ class HerReplayBuffer(DictReplayBuffer):
         self,
         env: VecEnv,
         buffer_size: int,
-        device: Union[th.device, str] = "cpu",
+        device: Union[th.device, str] = "auto",
         replay_buffer: Optional[DictReplayBuffer] = None,
         max_episode_length: Optional[int] = None,
         n_sampled_goal: int = 4,
@@ -226,7 +226,7 @@ class HerReplayBuffer(DictReplayBuffer):
             maybe_vec_env=None,
             online_sampling=False,
             n_sampled_goal=n_sampled_goal,
-        )
+        )  # pytype: disable=bad-return-type
 
     def sample_goals(
         self,

@@ -393,6 +393,7 @@ class BaseAlgorithm(ABC):
                 log_path=log_path,
                 eval_freq=eval_freq,
                 n_eval_episodes=n_eval_episodes,
+                verbose=self.verbose,
             )
             callback = CallbackList([callback, eval_callback])
 
@@ -423,7 +424,7 @@ class BaseAlgorithm(ABC):
         :param tb_log_name: the name of the run for tensorboard log
         :return:
         """
-        self.start_time = time.time()
+        self.start_time = time.time_ns()
 
         if self.ep_info_buffer is None or reset_num_timesteps:
             # Initialize buffers if they don't exist, or reinitialize if resetting counters

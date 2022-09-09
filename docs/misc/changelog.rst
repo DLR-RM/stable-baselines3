@@ -46,6 +46,8 @@ Documentation:
 - Added info on split tensorboard logs into (@Melanol)
 - Fixed typo in ppo doc (@francescoluciano)
 - Fixed typo in install doc(@jlp-ue)
+- Clarified and standardized verbosity documentation
+
 
 Release 1.6.0 (2022-07-11)
 ---------------------------

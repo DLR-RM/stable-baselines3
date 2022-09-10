@@ -528,6 +528,7 @@ class BaseAlgorithm(ABC):
 
         self.n_envs = env.num_envs
         self.env = env
+        self._setup_model()
 
     @abstractmethod
     def learn(
@@ -729,6 +730,7 @@ class BaseAlgorithm(ABC):
             # See issue https://github.com/DLR-RM/stable-baselines3/issues/597
             if force_reset and data is not None:
                 data["_last_obs"] = None
+            data["n_envs"] = env.num_envs
         else:
             # Use stored env, if one exists. If not, continue as is (can be used for predict)
             if "env" in data:

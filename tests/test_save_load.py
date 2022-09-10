@@ -174,6 +174,7 @@ def test_set_env(tmp_path, model_class):
     env = DummyVecEnv([lambda: select_env(model_class)])
     env2 = DummyVecEnv([lambda: select_env(model_class)])
     env3 = select_env(model_class)
+    env4 = DummyVecEnv([lambda: select_env(model_class) for _ in range(2)])
 
     kwargs = {}
     if model_class in {DQN, DDPG, SAC, TD3}:
@@ -222,6 +223,11 @@ def test_set_env(tmp_path, model_class):
     assert model._last_obs is None
     model.learn(total_timesteps=64, reset_num_timesteps=False)
     assert model.num_timesteps == 3 * 64
+
+    del model
+    # Load the model with a different number of environments
+    model = model_class.load(tmp_path / "test_save.zip", env=env4)
+    model.learn(total_timesteps=64)
 
     # Clear saved file
     os.remove(tmp_path / "test_save.zip")

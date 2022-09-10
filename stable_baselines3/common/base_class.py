@@ -730,7 +730,9 @@ class BaseAlgorithm(ABC):
             # See issue https://github.com/DLR-RM/stable-baselines3/issues/597
             if force_reset and data is not None:
                 data["_last_obs"] = None
-            data["n_envs"] = env.num_envs
+            # `n_envs` must be updated. See issue https://github.com/DLR-RM/stable-baselines3/issues/1018
+            if data is not None:
+                data["n_envs"] = env.num_envs
         else:
             # Use stored env, if one exists. If not, continue as is (can be used for predict)
             if "env" in data:

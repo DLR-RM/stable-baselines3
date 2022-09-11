@@ -2,7 +2,6 @@
 
 import io
 import pathlib
-import sys
 import time
 from abc import ABC, abstractmethod
 from collections import deque

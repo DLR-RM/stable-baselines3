@@ -43,7 +43,7 @@ def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymE
     """If env is a string, make the environment; otherwise, return env.
 
     :param env: The environment to learn from.
-    :param verbose: logging verbosity
+    :param verbose: Verbosity level: 0 for no output, 1 for indicating if envrironment is created
     :return A Gym (vector) environment.
     """
     if isinstance(env, str):
@@ -64,7 +64,8 @@ class BaseAlgorithm(ABC):
         it can be a function of the current progress remaining (from 1 to 0)
     :param policy_kwargs: Additional arguments to be passed to the policy on creation
     :param tensorboard_log: the log location for tensorboard (if None, no logging)
-    :param verbose: The verbosity level: 0 none, 1 training information, 2 debug
+    :param verbose: Verbosity level: 0 for no output, 1 for info messages (such as device or wrappers used), 2 for
+        debug messages
     :param device: Device on which the code should run.
         By default, it will try to use a Cuda compatible device and fallback to cpu
         if it is not possible.
@@ -108,7 +109,7 @@ class BaseAlgorithm(ABC):
             self.policy_class = policy
 
         self.device = get_device(device)
-        if verbose > 0:
+        if verbose >= 1:
             print(f"Using {self.device} device")
 
         self.env = None  # type: Optional[GymEnv]
@@ -198,7 +199,7 @@ class BaseAlgorithm(ABC):
         or to re-order the image channels.
 
         :param env:
-        :param verbose:
+        :param verbose: Verbosity level: 0 for no output, 1 for indicating wrappers used
         :param monitor_wrapper: Whether to wrap the env in a ``Monitor`` when possible.
         :return: The wrapped environment.
         """

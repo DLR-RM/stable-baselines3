@@ -87,10 +87,6 @@ class BaseModel(nn.Module, ABC):
         self.features_extractor_class = features_extractor_class
         self.features_extractor_kwargs = features_extractor_kwargs
 
-    @abstractmethod
-    def forward(self, *args, **kwargs):
-        pass
-
     def _update_features_extractor(
         self,
         net_kwargs: Dict[str, Any],

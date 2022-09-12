@@ -529,7 +529,6 @@ class BaseAlgorithm(ABC):
 
         self.n_envs = env.num_envs
         self.env = env
-        self._setup_model()
 
     @abstractmethod
     def learn(

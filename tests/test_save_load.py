@@ -200,6 +200,10 @@ def test_set_env(tmp_path, model_class):
     # learn again
     model.learn(total_timesteps=64)
 
+    # num_env must be the same
+    with pytest.raises(AssertionError):
+        model.set_env(env4)
+
     # Keep the same env, disable reset
     model.set_env(model.get_env(), force_reset=False)
     assert model._last_obs is not None

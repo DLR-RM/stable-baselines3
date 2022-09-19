@@ -34,7 +34,7 @@ from stable_baselines3.common.type_aliases import Schedule
 from stable_baselines3.common.utils import get_device, is_vectorized_observation, obs_as_tensor
 
 
-class BaseModel(nn.Module, ABC):
+class BaseModel(nn.Module):
     """
     The base model object: makes predictions in response to observations.
 
@@ -251,7 +251,7 @@ class BaseModel(nn.Module, ABC):
         return observation, vectorized_env
 
 
-class BasePolicy(BaseModel):
+class BasePolicy(BaseModel, ABC):
     """The base policy object.
 
     Parameters are mostly the same as `BaseModel`; additions are documented below.

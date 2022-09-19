@@ -516,6 +516,11 @@ class BaseAlgorithm(ABC):
         # if it is not a VecEnv, make it a VecEnv
         # and do other transformations (dict obs, image transpose) if needed
         env = self._wrap_env(env, self.verbose)
+        assert env.num_envs == self.n_envs, (
+            "The number of environments to be set is different from the number of environments in the model: "
+            f"({env.num_envs} != {self.n_envs}), whereas `set_env` requires them to be the same. To load a model with "
+            f"a different number of environments, you must use `{self.__class__.__name__}.load(path, env)` instead"
+        )
         # Check that the observation spaces match
         check_for_correct_spaces(env, self.observation_space, self.action_space)
         # Update VecNormalize object
@@ -730,6 +735,9 @@ class BaseAlgorithm(ABC):
             # See issue https://github.com/DLR-RM/stable-baselines3/issues/597
             if force_reset and data is not None:
                 data["_last_obs"] = None
+            # `n_envs` must be updated. See issue https://github.com/DLR-RM/stable-baselines3/issues/1018
+            if data is not None:
+                data["n_envs"] = env.num_envs
         else:
             # Use stored env, if one exists. If not, continue as is (can be used for predict)
             if "env" in data:

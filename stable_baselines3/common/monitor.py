@@ -163,9 +163,10 @@ class ResultsWriter:
     """
     A result writer that saves the data from the `Monitor` class
 
-    :param filename: the location to save a log file, can be None for no log
+    :param filename: the location to save a log file. When it does not end in
+        the string ``"monitor.csv"``, this suffix will be appended to it
     :param header: the header dictionary object of the saved csv
-    :param reset_keywords: the extra information to log, typically is composed of
+    :param extra_keys: the extra information to log, typically is composed of
         ``reset_keywords`` and ``info_keywords``
     :param override_existing: appends to file if ``filename`` exists, otherwise
         override existing files (default)
@@ -185,6 +186,9 @@ class ResultsWriter:
                 filename = os.path.join(filename, Monitor.EXT)
             else:
                 filename = filename + "." + Monitor.EXT
+        filename = os.path.realpath(filename)
+        # Create (if any) missing filename directories
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         # Append mode when not overridding existing file
         mode = "w" if override_existing else "a"
         # Prevent newline issue on Windows, see GH issue #692

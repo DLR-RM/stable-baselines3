@@ -38,8 +38,8 @@ Deprecations:
 Others:
 ^^^^^^^
 - Fixed ``DictReplayBuffer.next_observations`` typing (@qgallouedec)
-
 - Added support for ``device="auto"`` in buffers and made it default (@qgallouedec)
+- Updated ``ResultsWriter` (used internally by ``Monitor`` wrapper) to automatically create missing directories when ``filename`` is a path (@dominicgkerr)
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -1038,4 +1038,4 @@ And all the contributors:
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
-@anand-bala @hughperkins @sidney-tio @AlexPasqua
+@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr

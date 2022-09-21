@@ -1038,4 +1038,4 @@ And all the contributors:
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
-@anand-bala @hughperkins @sidney-tio @AlexPasqua
+@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Optional, Type, TypeVar, Union
 
 import torch as th
 from gym import spaces
@@ -8,6 +8,8 @@ from stable_baselines3.common.on_policy_algorithm import OnPolicyAlgorithm
 from stable_baselines3.common.policies import ActorCriticCnnPolicy, ActorCriticPolicy, BasePolicy, MultiInputActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import explained_variance
+
+A2CSelf = TypeVar("A2CSelf", bound="A2C")
 
 
 class A2C(OnPolicyAlgorithm):
@@ -183,7 +185,7 @@ class A2C(OnPolicyAlgorithm):
             self.logger.record("train/std", th.exp(self.policy.log_std).mean().item())
 
     def learn(
-        self,
+        self: A2CSelf,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 100,
@@ -193,7 +195,7 @@ class A2C(OnPolicyAlgorithm):
         tb_log_name: str = "A2C",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-    ) -> "A2C":
+    ) -> A2CSelf:
 
         return super().learn(
             total_timesteps=total_timesteps,

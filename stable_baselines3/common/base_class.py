@@ -2,7 +2,6 @@
 
 import io
 import pathlib
-import sys
 import time
 from abc import ABC, abstractmethod
 from collections import deque
@@ -54,7 +53,7 @@ def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymE
     return env
 
 
-TBaseAlgorithm = TypeVar("TBaseAlgorithm", bound="BaseAlgorithm")
+BaseAlgorithmSelf = TypeVar("BaseAlgorithmSelf", bound="BaseAlgorithm")
 
 
 class BaseAlgorithm(ABC):
@@ -536,7 +535,7 @@ class BaseAlgorithm(ABC):
 
     @abstractmethod
     def learn(
-        self: TBaseAlgorithm,
+        self: BaseAlgorithmSelf,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 100,
@@ -546,7 +545,7 @@ class BaseAlgorithm(ABC):
         n_eval_episodes: int = 5,
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-    ) -> TBaseAlgorithm:
+    ) -> BaseAlgorithmSelf:
         """
         Return a trained model.
 
@@ -670,7 +669,7 @@ class BaseAlgorithm(ABC):
 
     @classmethod
     def load(
-        cls: Type[TBaseAlgorithm],
+        cls: Type[BaseAlgorithmSelf],
         path: Union[str, pathlib.Path, io.BufferedIOBase],
         env: Optional[GymEnv] = None,
         device: Union[th.device, str] = "auto",
@@ -678,7 +677,7 @@ class BaseAlgorithm(ABC):
         print_system_info: bool = False,
         force_reset: bool = True,
         **kwargs,
-    ) -> TBaseAlgorithm:
+    ) -> BaseAlgorithmSelf:
         """
         Load the model from a zip-file.
         Warning: ``load`` re-creates the model from scratch, it does not update it in-place!

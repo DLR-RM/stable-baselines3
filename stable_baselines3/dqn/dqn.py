@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 import gym
 import numpy as np
@@ -13,6 +13,8 @@ from stable_baselines3.common.preprocessing import maybe_transpose
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import get_linear_fn, get_parameters_by_name, is_vectorized_observation, polyak_update
 from stable_baselines3.dqn.policies import CnnPolicy, DQNPolicy, MlpPolicy, MultiInputPolicy
+
+DQNSelf = TypeVar("DQNSelf", bound="DQN")
 
 
 class DQN(OffPolicyAlgorithm):
@@ -255,7 +257,7 @@ class DQN(OffPolicyAlgorithm):
         return action, state
 
     def learn(
-        self,
+        self: DQNSelf,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
@@ -265,7 +267,7 @@ class DQN(OffPolicyAlgorithm):
         tb_log_name: str = "DQN",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-    ) -> OffPolicyAlgorithm:
+    ) -> DQNSelf:
 
         return super().learn(
             total_timesteps=total_timesteps,

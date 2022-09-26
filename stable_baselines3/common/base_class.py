@@ -5,7 +5,7 @@ import pathlib
 import time
 from abc import ABC, abstractmethod
 from collections import deque
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
 
 import gym
 import numpy as np
@@ -51,6 +51,9 @@ def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymE
             print(f"Creating environment from the given name '{env}'")
         env = gym.make(env)
     return env
+
+
+BaseAlgorithmSelf = TypeVar("BaseAlgorithmSelf", bound="BaseAlgorithm")
 
 
 class BaseAlgorithm(ABC):
@@ -537,7 +540,7 @@ class BaseAlgorithm(ABC):
 
     @abstractmethod
     def learn(
-        self,
+        self: BaseAlgorithmSelf,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 100,
@@ -547,7 +550,7 @@ class BaseAlgorithm(ABC):
         n_eval_episodes: int = 5,
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-    ) -> "BaseAlgorithm":
+    ) -> BaseAlgorithmSelf:
         """
         Return a trained model.
 
@@ -671,7 +674,7 @@ class BaseAlgorithm(ABC):
 
     @classmethod
     def load(
-        cls,
+        cls: Type[BaseAlgorithmSelf],
         path: Union[str, pathlib.Path, io.BufferedIOBase],
         env: Optional[GymEnv] = None,
         device: Union[th.device, str] = "auto",
@@ -679,7 +682,7 @@ class BaseAlgorithm(ABC):
         print_system_info: bool = False,
         force_reset: bool = True,
         **kwargs,
-    ) -> "BaseAlgorithm":
+    ) -> BaseAlgorithmSelf:
         """
         Load the model from a zip-file.
         Warning: ``load`` re-creates the model from scratch, it does not update it in-place!
@@ -709,7 +712,10 @@ class BaseAlgorithm(ABC):
             get_system_info()
 
         data, params, pytorch_variables = load_from_zip_file(
-            path, device=device, custom_objects=custom_objects, print_system_info=print_system_info
+            path,
+            device=device,
+            custom_objects=custom_objects,
+            print_system_info=print_system_info,
         )
 
         # Remove stored device information and replace with ours

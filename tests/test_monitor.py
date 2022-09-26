@@ -48,6 +48,15 @@ def test_monitor(tmp_path):
         assert set(last_logline.keys()) == {"l", "t", "r"}, "Incorrect keys in monitor logline"
     os.remove(monitor_file)
 
+    # Check missing filename directories are created
+    monitor_dir = os.path.join(str(tmp_path), "missing-dir")
+    monitor_file = os.path.join(monitor_dir, f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
+    assert os.path.exists(monitor_dir) is False
+    _ = Monitor(env, monitor_file)
+    assert os.path.exists(monitor_dir) is True
+    os.remove(monitor_file)
+    os.rmdir(monitor_dir)
+
 
 def test_monitor_load_results(tmp_path):
     """

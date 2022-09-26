@@ -52,7 +52,7 @@ Documentation:
 - Fixed typo in install doc(@jlp-ue)
 - Clarified and standardized verbosity documentation
 - Added link to a GitHub issue in the custom policy documentation (@AlexPasqua)
-
+- Update doc on exporting models (fixes and added torch jit)
 
 Release 1.6.0 (2022-07-11)
 ---------------------------

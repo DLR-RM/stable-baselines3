@@ -46,8 +46,9 @@ For PPO, assuming a shared feature extactor.
 
 .. code-block:: python
 
+  import torch as th
+
   from stable_baselines3 import PPO
-  import torch
 
 
   class OnnxablePolicy(torch.nn.Module):
@@ -65,8 +66,7 @@ For PPO, assuming a shared feature extactor.
 
 
   # Example: model = PPO("MlpPolicy", "Pendulum-v1")
-  model = PPO.load("PathToTrainedModel.zip")
-  model.policy.to("cpu")
+  model = PPO.load("PathToTrainedModel.zip", device="cpu")
   onnxable_model = OnnxablePolicy(
       model.policy.mlp_extractor, model.policy.action_net, model.policy.value_net
   )
@@ -161,15 +161,7 @@ There is a draft PR in the RL Zoo about C++ export: https://github.com/DLR-RM/rl
 
 .. code-block:: python
 
-  import torch as th
-  from stable_baselines3 import SAC
-  model = SAC.load("PathToTrainedModel.zip")
-  # model = SAC("MlpPolicy", "Pendulum-v1")
-  onnxable_model = OnnxablePolicy(model.policy.actor).to("cpu")
-
-  observation_size = model.observation_space.shape
-  dummy_input = th.randn(1, *observation_size)
-
+  # See "ONNX export" for imports and OnnxablePolicy
   jit_path = "sac_traced.pt"
 
   # Trace and optimize the module

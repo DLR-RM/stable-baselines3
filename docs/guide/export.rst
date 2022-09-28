@@ -178,7 +178,7 @@ There is a draft PR in the RL Zoo about C++ export: https://github.com/DLR-RM/rl
   frozen_module = th.jit.optimize_for_inference(frozen_module)
   th.jit.save(frozen_module, jit_path)
 
-  ##### Load and test with onnx
+  ##### Load and test with torch
 
   import torch as th
 

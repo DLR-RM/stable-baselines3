@@ -1,13 +1,14 @@
-from typing import Any, Dict, Optional, Tuple, Type, Union
+from typing import Any, Dict, Optional, Tuple, Type, TypeVar, Union
 
 import torch as th
 
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.noise import ActionNoise
-from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.td3.policies import TD3Policy
 from stable_baselines3.td3.td3 import TD3
+
+DDPGSelf = TypeVar("DDPGSelf", bound="DDPG")
 
 
 class DDPG(TD3):
@@ -46,7 +47,8 @@ class DDPG(TD3):
     :param create_eval_env: Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
     :param policy_kwargs: additional arguments to be passed to the policy on creation
-    :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
+    :param verbose: Verbosity level: 0 for no output, 1 for info messages (such as device or wrappers used), 2 for
+        debug messages
     :param seed: Seed for the pseudo random generators
     :param device: Device (cpu, cuda, ...) on which the code should be run.
         Setting it to auto, the code will be run on the GPU if possible.
@@ -66,7 +68,7 @@ class DDPG(TD3):
         train_freq: Union[int, Tuple[int, str]] = (1, "episode"),
         gradient_steps: int = -1,
         action_noise: Optional[ActionNoise] = None,
-        replay_buffer_class: Optional[ReplayBuffer] = None,
+        replay_buffer_class: Optional[Type[ReplayBuffer]] = None,
         replay_buffer_kwargs: Optional[Dict[str, Any]] = None,
         optimize_memory_usage: bool = False,
         tensorboard_log: Optional[str] = None,
@@ -115,7 +117,7 @@ class DDPG(TD3):
             self._setup_model()
 
     def learn(
-        self,
+        self: DDPGSelf,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
@@ -125,7 +127,7 @@ class DDPG(TD3):
         tb_log_name: str = "DDPG",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-    ) -> OffPolicyAlgorithm:
+    ) -> DDPGSelf:
 
         return super().learn(
             total_timesteps=total_timesteps,

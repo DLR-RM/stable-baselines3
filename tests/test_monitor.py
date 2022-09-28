@@ -48,6 +48,15 @@ def test_monitor(tmp_path):
         assert set(last_logline.keys()) == {"l", "t", "r"}, "Incorrect keys in monitor logline"
     os.remove(monitor_file)
 
+    # Check missing filename directories are created
+    monitor_dir = os.path.join(str(tmp_path), "missing-dir")
+    monitor_file = os.path.join(monitor_dir, f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
+    assert os.path.exists(monitor_dir) is False
+    _ = Monitor(env, monitor_file)
+    assert os.path.exists(monitor_dir) is True
+    os.remove(monitor_file)
+    os.rmdir(monitor_dir)
+
 
 def test_monitor_load_results(tmp_path):
     """
@@ -83,13 +92,16 @@ def test_monitor_load_results(tmp_path):
     assert monitor_file1 in monitor_files
     assert monitor_file2 in monitor_files
 
-    monitor_env2.reset()
     episode_count2 = 0
-    for _ in range(1000):
-        _, _, done, _ = monitor_env2.step(monitor_env2.action_space.sample())
-        if done:
-            episode_count2 += 1
-            monitor_env2.reset()
+    for _ in range(2):
+        # Test appending to existing file
+        monitor_env2 = Monitor(env2, monitor_file2, override_existing=False)
+        monitor_env2.reset()
+        for _ in range(1000):
+            _, _, done, _ = monitor_env2.step(monitor_env2.action_space.sample())
+            if done:
+                episode_count2 += 1
+                monitor_env2.reset()
 
     results_size2 = len(load_results(os.path.join(tmp_path)).index)
 

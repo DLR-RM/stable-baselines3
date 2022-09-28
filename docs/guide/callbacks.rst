@@ -27,7 +27,7 @@ You can find two examples of custom callbacks in the documentation: one for savi
         """
         A custom callback that derives from ``BaseCallback``.
 
-        :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
+        :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
         """
         def __init__(self, verbose=0):
             super(CustomCallback, self).__init__(verbose)
@@ -121,7 +121,7 @@ A child callback is for instance :ref:`StopTrainingOnRewardThreshold <StopTraini
 
         :param callback: (Optional[BaseCallback]) Callback that will be called
             when an event is triggered.
-        :param verbose: (int)
+        :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
         """
         def __init__(self, callback: Optional[BaseCallback] = None, verbose: int = 0):
             super(EventCallback, self).__init__(verbose=verbose)
@@ -157,6 +157,10 @@ CheckpointCallback
 
 Callback for saving a model every ``save_freq`` calls to ``env.step()``, you must specify a log folder (``save_path``)
 and optionally a prefix for the checkpoints (``rl_model`` by default).
+If you are using this callback to stop and resume training, you may want to optionally save the replay buffer if the
+model has one (``save_replay_buffer``, ``False`` by default).
+Additionally, if your environment uses a :ref:`VecNormalize <vec_env>` wrapper, you can save the
+corresponding statistics using ``save_vecnormalize`` (``False`` by default).
 
 .. warning::
 
@@ -168,14 +172,20 @@ and optionally a prefix for the checkpoints (``rl_model`` by default).
 
 .. code-block:: python
 
-    from stable_baselines3 import SAC
-    from stable_baselines3.common.callbacks import CheckpointCallback
-    # Save a checkpoint every 1000 steps
-    checkpoint_callback = CheckpointCallback(save_freq=1000, save_path='./logs/',
-                                             name_prefix='rl_model')
+  from stable_baselines3 import SAC
+  from stable_baselines3.common.callbacks import CheckpointCallback
 
-    model = SAC('MlpPolicy', 'Pendulum-v1')
-    model.learn(2000, callback=checkpoint_callback)
+  # Save a checkpoint every 1000 steps
+  checkpoint_callback = CheckpointCallback(
+    save_freq=1000,
+    save_path="./logs/",
+    name_prefix="rl_model",
+    save_replay_buffer=True,
+    save_vecnormalize=True,
+  )
+
+  model = SAC("MlpPolicy", "Pendulum-v1")
+  model.learn(2000, callback=checkpoint_callback)
 
 
 .. _EvalCallback:

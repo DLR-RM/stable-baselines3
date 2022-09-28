@@ -24,6 +24,8 @@ class Monitor(gym.Wrapper):
     :param reset_keywords: extra keywords for the reset call,
         if extra parameters are needed at reset
     :param info_keywords: extra information to log, from the information return of env.step()
+    :param override_existing: appends to file if ``filename`` exists, otherwise
+        override existing files (default)
     """
 
     EXT = "monitor.csv"
@@ -35,6 +37,7 @@ class Monitor(gym.Wrapper):
         allow_early_resets: bool = True,
         reset_keywords: Tuple[str, ...] = (),
         info_keywords: Tuple[str, ...] = (),
+        override_existing: bool = True,
     ):
         super().__init__(env=env)
         self.t_start = time.time()
@@ -43,6 +46,7 @@ class Monitor(gym.Wrapper):
                 filename,
                 header={"t_start": self.t_start, "env_id": env.spec and env.spec.id},
                 extra_keys=reset_keywords + info_keywords,
+                override_existing=override_existing,
             )
         else:
             self.results_writer = None
@@ -159,10 +163,13 @@ class ResultsWriter:
     """
     A result writer that saves the data from the `Monitor` class
 
-    :param filename: the location to save a log file, can be None for no log
+    :param filename: the location to save a log file. When it does not end in
+        the string ``"monitor.csv"``, this suffix will be appended to it
     :param header: the header dictionary object of the saved csv
-    :param reset_keywords: the extra information to log, typically is composed of
+    :param extra_keys: the extra information to log, typically is composed of
         ``reset_keywords`` and ``info_keywords``
+    :param override_existing: appends to file if ``filename`` exists, otherwise
+        override existing files (default)
     """
 
     def __init__(
@@ -170,6 +177,7 @@ class ResultsWriter:
         filename: str = "",
         header: Optional[Dict[str, Union[float, str]]] = None,
         extra_keys: Tuple[str, ...] = (),
+        override_existing: bool = True,
     ):
         if header is None:
             header = {}
@@ -178,11 +186,18 @@ class ResultsWriter:
                 filename = os.path.join(filename, Monitor.EXT)
             else:
                 filename = filename + "." + Monitor.EXT
+        filename = os.path.realpath(filename)
+        # Create (if any) missing filename directories
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        # Append mode when not overridding existing file
+        mode = "w" if override_existing else "a"
         # Prevent newline issue on Windows, see GH issue #692
-        self.file_handler = open(filename, "wt", newline="\n")
-        self.file_handler.write("#%s\n" % json.dumps(header))
+        self.file_handler = open(filename, f"{mode}t", newline="\n")
         self.logger = csv.DictWriter(self.file_handler, fieldnames=("r", "l", "t") + extra_keys)
-        self.logger.writeheader()
+        if override_existing:
+            self.file_handler.write(f"#{json.dumps(header)}\n")
+            self.logger.writeheader()
+
         self.file_handler.flush()
 
     def write_row(self, epinfo: Dict[str, Union[float, int]]) -> None:

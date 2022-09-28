@@ -193,30 +193,31 @@ class HumanOutputFormat(KVWriter, SeqWriter):
 
             if key.find("/") > 0:  # Find tag and add it to the dict
                 tag = key[: key.find("/") + 1]
-                key2str[self._truncate(tag)] = ""
+                key2str[(tag, self._truncate(tag))] = ""
             # Remove tag from key
             if tag is not None and tag in key:
                 key = str("   " + key[len(tag) :])
 
             truncated_key = self._truncate(key)
-            if truncated_key in key2str:
+            if (tag, truncated_key) in key2str:
                 raise ValueError(
                     f"Key '{key}' truncated to '{truncated_key}' that already exists. Consider increasing `max_length`."
                 )
-            key2str[truncated_key] = self._truncate(value_str)
+            key2str[(tag, truncated_key)] = self._truncate(value_str)
 
         # Find max widths
         if len(key2str) == 0:
             warnings.warn("Tried to write empty key-value dict")
             return
         else:
-            key_width = max(map(len, key2str.keys()))
+            tagless_keys = map(lambda x: x[1], key2str.keys())
+            key_width = max(map(len, tagless_keys))
             val_width = max(map(len, key2str.values()))
 
         # Write out the data
         dashes = "-" * (key_width + val_width + 7)
         lines = [dashes]
-        for key, value in key2str.items():
+        for (_, key), value in key2str.items():
             key_space = " " * (key_width - len(key))
             val_space = " " * (val_width - len(value))
             lines.append(f"| {key}{key_space} | {value}{val_space} |")

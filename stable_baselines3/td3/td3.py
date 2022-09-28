@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 import gym
 import numpy as np
@@ -12,6 +12,8 @@ from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import get_parameters_by_name, polyak_update
 from stable_baselines3.td3.policies import CnnPolicy, MlpPolicy, MultiInputPolicy, TD3Policy
+
+TD3Self = TypeVar("TD3Self", bound="TD3")
 
 
 class TD3(OffPolicyAlgorithm):
@@ -205,7 +207,7 @@ class TD3(OffPolicyAlgorithm):
         self.logger.record("train/critic_loss", np.mean(critic_losses))
 
     def learn(
-        self,
+        self: TD3Self,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
@@ -215,7 +217,7 @@ class TD3(OffPolicyAlgorithm):
         tb_log_name: str = "TD3",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-    ) -> OffPolicyAlgorithm:
+    ) -> TD3Self:
 
         return super().learn(
             total_timesteps=total_timesteps,

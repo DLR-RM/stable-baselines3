@@ -234,7 +234,7 @@ class PPO(OnPolicyAlgorithm):
                     # No clipping
                     values_pred = values
                 else:
-                    # Clip the different between old and new value
+                    # Clip the difference between old and new value
                     # NOTE: this depends on the reward scaling
                     values_pred = rollout_data.old_values + th.clamp(
                         values - rollout_data.old_values, -clip_range_vf, clip_range_vf

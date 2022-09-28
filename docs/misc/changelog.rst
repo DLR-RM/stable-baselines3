@@ -52,6 +52,7 @@ Documentation:
 - Fixed typo in install doc(@jlp-ue)
 - Clarified and standardized verbosity documentation
 - Added link to a GitHub issue in the custom policy documentation (@AlexPasqua)
+- Fixed typos (@Akhilez)
 
 
 Release 1.6.0 (2022-07-11)
@@ -1040,4 +1041,4 @@ And all the contributors:
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
-@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr
+@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde

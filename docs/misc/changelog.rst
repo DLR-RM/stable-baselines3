@@ -3,8 +3,10 @@
 Changelog
 ==========
 
-Release 1.6.1a4 (WIP)
+Release 1.6.1 (2022-09-29)
 ---------------------------
+
+**Bug fix release**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -19,6 +21,7 @@ New Features:
 
 SB3-Contrib
 ^^^^^^^^^^^
+- Fixed the issue of wrongly passing policy arguments when using ``CnnLstmPolicy`` or ``MultiInputLstmPolicy`` with ``RecurrentPPO`` (@mlodel)
 
 Bug Fixes:
 ^^^^^^^^^^

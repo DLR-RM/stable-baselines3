@@ -36,6 +36,7 @@ Bug Fixes:
 
 Deprecations:
 ^^^^^^^^^^^^^
+- Added deprecation warning if parameters ``eval_env`` or ``eval_freq`` are used (see #925) (@tobirohrer)
 
 Others:
 ^^^^^^^
@@ -1040,4 +1041,4 @@ And all the contributors:
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
-@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr
+@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @tobirohrer

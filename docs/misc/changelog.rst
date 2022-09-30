@@ -3,8 +3,10 @@
 Changelog
 ==========
 
-Release 1.6.1a4 (WIP)
+Release 1.6.1 (2022-09-29)
 ---------------------------
+
+**Bug fix release**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^

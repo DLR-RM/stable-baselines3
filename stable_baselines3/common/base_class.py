@@ -432,7 +432,7 @@ class BaseAlgorithm(ABC):
         if eval_env is not None or eval_freq != -1:
             warnings.warn(
                 "Parameters `eval_env` and `eval_freq` are deprecated and will be removed in the future."
-                " Please use `EvalCallback or a custom Callback instead.",
+                " Please use `EvalCallback` or a custom Callback instead.",
                 DeprecationWarning,
                 stacklevel=4,
             )

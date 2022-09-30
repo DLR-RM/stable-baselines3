@@ -3,8 +3,10 @@
 Changelog
 ==========
 
-Release 1.6.1a4 (WIP)
+Release 1.6.1 (2022-09-29)
 ---------------------------
+
+**Bug fix release**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -19,6 +21,7 @@ New Features:
 
 SB3-Contrib
 ^^^^^^^^^^^
+- Fixed the issue of wrongly passing policy arguments when using ``CnnLstmPolicy`` or ``MultiInputLstmPolicy`` with ``RecurrentPPO`` (@mlodel)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -52,7 +55,8 @@ Documentation:
 - Fixed typo in install doc(@jlp-ue)
 - Clarified and standardized verbosity documentation
 - Added link to a GitHub issue in the custom policy documentation (@AlexPasqua)
-
+- Update doc on exporting models (fixes and added torch jit)
+- Fixed typos (@Akhilez)
 
 Release 1.6.0 (2022-07-11)
 ---------------------------
@@ -1045,4 +1049,4 @@ And all the contributors:
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @carlosluis @arjun-kg
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
-@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr
+@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde

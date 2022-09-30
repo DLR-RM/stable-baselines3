@@ -51,7 +51,7 @@ For PPO, assuming a shared feature extactor.
   from stable_baselines3 import PPO
 
 
-  class OnnxablePolicy(torch.nn.Module):
+  class OnnxablePolicy(th.nn.Module):
       def __init__(self, extractor, action_net, value_net):
           super().__init__()
           self.extractor = extractor
@@ -72,8 +72,8 @@ For PPO, assuming a shared feature extactor.
   )
 
   observation_size = model.observation_space.shape
-  dummy_input = torch.randn(1, *observation_size)
-  torch.onnx.export(
+  dummy_input = th.randn(1, *observation_size)
+  th.onnx.export(
       onnxable_model,
       dummy_input,
       "my_ppo_model.onnx",
@@ -100,8 +100,9 @@ For SAC the procedure is similar. The example shown only exports the actor netwo
 
 .. code-block:: python
 
-  from stable_baselines3 import SAC
   import torch as th
+
+  from stable_baselines3 import SAC
 
 
   class OnnxablePolicy(th.nn.Module):
@@ -123,9 +124,9 @@ For SAC the procedure is similar. The example shown only exports the actor netwo
           return self.actor(observation)
 
 
-  model = SAC.load("PathToTrainedModel.zip")
-  # model = SAC("MlpPolicy", "Pendulum-v1")
-  onnxable_model = OnnxablePolicy(model.policy.actor).to("cpu")
+  # Example: model = SAC("MlpPolicy", "Pendulum-v1")
+  model = SAC.load("PathToTrainedModel.zip", device="cpu")
+  onnxable_model = OnnxablePolicy(model.policy.actor)
 
   observation_size = model.observation_space.shape
   dummy_input = th.randn(1, *observation_size)

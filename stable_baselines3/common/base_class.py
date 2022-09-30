@@ -3,6 +3,7 @@
 import io
 import pathlib
 import time
+import warnings
 from abc import ABC, abstractmethod
 from collections import deque
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
@@ -427,6 +428,15 @@ class BaseAlgorithm(ABC):
         :param tb_log_name: the name of the run for tensorboard log
         :return:
         """
+
+        if eval_env is not None or eval_freq != -1:
+            warnings.warn(
+                "Parameters `eval_env` and `eval_freq` are deprecated and will be removed in the future."
+                " Please use `EvalCallback or a custom Callback instead.",
+                DeprecationWarning,
+                stacklevel=4,
+            )
+
         self.start_time = time.time_ns()
 
         if self.ep_info_buffer is None or reset_num_timesteps:
@@ -558,8 +568,10 @@ class BaseAlgorithm(ABC):
         :param callback: callback(s) called at every step with state of the algorithm.
         :param log_interval: The number of timesteps before logging.
         :param tb_log_name: the name of the run for TensorBoard logging
-        :param eval_env: Environment that will be used to evaluate the agent
-        :param eval_freq: Evaluate the agent every ``eval_freq`` timesteps (this may vary a little)
+        :param eval_env: Environment that will be used to evaluate the agent. Caution, this parameter
+            is deprecated and will be removed in the future. Please use ``EvalCallback`` instead.
+        :param eval_freq: Evaluate the agent every ``eval_freq`` timesteps (this may vary a little).
+            Caution, this parameter is deprecated and will be removed in the future.
         :param n_eval_episodes: Number of episode to evaluate the agent
         :param eval_log_path: Path to a folder where the evaluations will be saved
         :param reset_num_timesteps: whether or not to reset the current timestep number (used in logging)

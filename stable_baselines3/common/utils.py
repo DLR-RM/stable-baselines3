@@ -2,6 +2,7 @@ import glob
 import os
 import platform
 import random
+import warnings
 from collections import deque
 from inspect import signature
 from itertools import zip_longest
@@ -20,7 +21,16 @@ except ImportError:
     SummaryWriter = None
 
 from stable_baselines3.common.logger import Logger, configure
-from stable_baselines3.common.type_aliases import GymEnv, Schedule, TensorDict, TrainFreq, TrainFrequencyUnit
+from stable_baselines3.common.type_aliases import (
+    Gym26StepReturn,
+    GymEnv,
+    GymObs,
+    GymStepReturn,
+    Schedule,
+    TensorDict,
+    TrainFreq,
+    TrainFrequencyUnit,
+)
 
 
 def set_random_seed(seed: int, using_cuda: bool = False) -> None:
@@ -535,3 +545,66 @@ def compat_gym_seed(env: GymEnv, seed: int) -> None:
     else:
         # VecEnv and backward compatibility
         env.seed(seed)
+
+
+def compat_gym_26_step(
+    step_returns: Union[GymStepReturn, Gym26StepReturn],
+    warn=True,
+) -> Gym26StepReturn:
+    """
+    Transform step returns to old step API irrespective of input API.
+    This makes env written with both gym < 0.26 and gym > 0.26
+    compatible with SB3.
+    This is a simplified version of the helper found in Gym.
+
+    :param step_returns: Items returned by `env.step()`.
+        Can be (obs, reward, done, info) or (obs, reward, terminated, truncated, info)
+    :param warn: Whether to warn or not the user
+    :return: (obs, reward, done, info) with info["TimeLimit.truncated"] = truncated
+    """
+    if len(step_returns) == 4:
+        if warn:
+            warnings.warn(
+                "You are using gym API < 0.26, please upgrade to gym > 0.26 "
+                "step API with 5 values returned (obs, reward, terminated, truncated, info) "
+                "instead of the current 4 values (obs, reward, done, info). "
+                "Please read Gym documentation for more information.",
+                DeprecationWarning,
+            )
+        observations, rewards, done, infos = step_returns
+        truncated = infos.get("TimeLimit.truncated", False) # pytype: disable=attribute-error]
+        return observations, rewards, done, truncated, infos # pytype: disable=bad-return-type
+    else:
+        assert len(step_returns) == 5, f"The step function returned {len(step_returns)} values instead of 5"
+        return step_returns # pytype: disable=bad-return-type
+
+
+def compat_gym_26_reset(
+    reset_return: Union[GymObs, Tuple[GymObs, Dict]],
+    warn: bool = True,
+) -> Tuple[GymObs, Dict]:
+    """
+    Transform gym reset return to new API (gym > 0.26)
+
+    :param reset_return: (obs) or (obs, info)
+    :param warn: Whether to warn or not the user
+    :return: (obs, info)
+    """
+    if isinstance(reset_return, tuple):
+        assert len(reset_return), (
+            "The tuple returned by the reset() function "
+            f"has a length of {len(reset_return)} != 2. "
+            "It should only return (obs, info)"
+        )
+        return reset_return
+    else:
+        if warn:
+            warnings.warn(
+                "You are using gym API < 0.26, please upgrade to gym > 0.26 "
+                "reset API with 2 values returned (obs, info) "
+                "instead of the current single value (obs). "
+                "Please read Gym documentation for more information.",
+                DeprecationWarning,
+            )
+
+        return reset_return, {}

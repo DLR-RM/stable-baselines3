@@ -40,11 +40,9 @@ class DummyVecEnv(VecEnv):
 
     def step_wait(self) -> VecEnvStepReturn:
         # Avoid circular imports
-        from stable_baselines3.common.utils import compat_gym_26_reset, compat_gym_26_step
-
         for env_idx in range(self.num_envs):
-            obs, self.buf_rews[env_idx], done, truncated, self.buf_infos[env_idx] = compat_gym_26_step(
-                self.envs[env_idx].step(self.actions[env_idx])
+            obs, self.buf_rews[env_idx], done, truncated, self.buf_infos[env_idx] = self.envs[env_idx].step(
+                self.actions[env_idx]
             )
             # convert to SB3 VecEnv api
             self.buf_dones[env_idx] = done or truncated
@@ -53,7 +51,7 @@ class DummyVecEnv(VecEnv):
             if self.buf_dones[env_idx]:
                 # save final observation where user can get it, then reset
                 self.buf_infos[env_idx]["terminal_observation"] = obs
-                obs, self.reset_infos[env_idx] = compat_gym_26_reset(self.envs[env_idx].reset())
+                obs, self.reset_infos[env_idx] = self.envs[env_idx].reset()
             self._save_obs(env_idx, obs)
         return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones), deepcopy(self.buf_infos))
 
@@ -69,11 +67,8 @@ class DummyVecEnv(VecEnv):
         return seeds
 
     def reset(self) -> VecEnvObs:
-        # Avoid circular imports
-        from stable_baselines3.common.utils import compat_gym_26_reset
-
         for env_idx in range(self.num_envs):
-            obs, self.reset_infos[env_idx] = compat_gym_26_reset(self.envs[env_idx].reset())
+            obs, self.reset_infos[env_idx] = self.envs[env_idx].reset()
             self._save_obs(env_idx, obs)
         return self._obs_from_buf()
 

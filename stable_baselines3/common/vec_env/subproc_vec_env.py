@@ -21,7 +21,7 @@ def _worker(  # noqa: C901
 ) -> None:
     # Import here to avoid a circular import
     from stable_baselines3.common.env_util import is_wrapped
-    from stable_baselines3.common.utils import compat_gym_26_reset, compat_gym_26_step, compat_gym_seed
+    from stable_baselines3.common.utils import compat_gym_seed
 
     parent_remote.close()
     env = env_fn_wrapper.var()
@@ -30,19 +30,19 @@ def _worker(  # noqa: C901
         try:
             cmd, data = remote.recv()
             if cmd == "step":
-                observation, reward, done, truncated, info = compat_gym_26_step(env.step(data))
+                observation, reward, done, truncated, info = env.step(data)
                 # convert to SB3 VecEnv api
                 done = done or truncated
                 info["TimeLimit.truncated"] = truncated
                 if done:
                     # save final observation where user can get it, then reset
                     info["terminal_observation"] = observation
-                    observation, reset_info = compat_gym_26_reset(env.reset())
+                    observation, reset_info = env.reset()
                 remote.send((observation, reward, done, info, reset_info))
             elif cmd == "seed":
                 remote.send(compat_gym_seed(env, seed=data))
             elif cmd == "reset":
-                observation, reset_info = compat_gym_26_reset(env.reset())
+                observation, reset_info = env.reset()
                 remote.send((observation, reset_info))
             elif cmd == "render":
                 remote.send(env.render(data))

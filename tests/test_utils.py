@@ -191,17 +191,18 @@ class AlwaysDoneWrapper(gym.Wrapper):
         self.needs_reset = True
 
     def step(self, action):
-        obs, reward, done, info = self.env.step(action)
-        self.needs_reset = done
+        obs, reward, done, truncated, info = self.env.step(action)
+        self.needs_reset = done or truncated
         self.last_obs = obs
-        return obs, reward, True, info
+        return obs, reward, True, truncated, info
 
     def reset(self, **kwargs):
+        info = {}
         if self.needs_reset:
-            obs = self.env.reset(**kwargs)
+            obs, info = self.env.reset(**kwargs)
             self.last_obs = obs
             self.needs_reset = False
-        return self.last_obs
+        return self.last_obs, info
 
 
 @pytest.mark.parametrize("n_envs", [1, 2, 5, 7])

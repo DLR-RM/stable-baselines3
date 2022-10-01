@@ -68,8 +68,8 @@ class DummyDictEnv(gym.Env):
 
     def step(self, action):
         reward = 0.0
-        done = False
-        return self.observation_space.sample(), reward, done, {}
+        done = truncated = False
+        return self.observation_space.sample(), reward, done, truncated, {}
 
     def compute_reward(self, achieved_goal, desired_goal, info):
         return np.zeros((len(achieved_goal),))
@@ -77,7 +77,7 @@ class DummyDictEnv(gym.Env):
     def reset(self, seed: Optional[int] = None):
         if seed is not None:
             self.observation_space.seed(seed)
-        return self.observation_space.sample()
+        return self.observation_space.sample(), {}
 
     def render(self, mode="human"):
         pass
@@ -109,7 +109,7 @@ def test_consistency(model_class):
     dict_env = gym.wrappers.TimeLimit(dict_env, 100)
     env = gym.wrappers.FlattenObservation(dict_env)
     dict_env.seed(10)
-    obs = dict_env.reset()
+    obs, _ = dict_env.reset()
 
     kwargs = {}
     n_steps = 256

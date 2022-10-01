@@ -354,12 +354,12 @@ class TimeDelayEnv(gym.Env):
         self.action_space = gym.spaces.Discrete(2)
 
     def reset(self):
-        return self.observation_space.sample()
+        return self.observation_space.sample(), {}
 
     def step(self, action):
         time.sleep(self.delay)
         obs = self.observation_space.sample()
-        return obs, 0.0, True, {}
+        return obs, 0.0, True, False, {}
 
 
 class InMemoryLogger(Logger):

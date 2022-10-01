@@ -1,9 +1,9 @@
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Tuple, Union
 
 import gym
 import numpy as np
 
-from stable_baselines3.common.type_aliases import GymStepReturn
+from stable_baselines3.common.type_aliases import Gym26StepReturn
 
 
 class SimpleMultiObsEnv(gym.Env):
@@ -120,7 +120,7 @@ class SimpleMultiObsEnv(gym.Env):
         self.right_possible = [0, 1, 2, 12, 13, 14]
         self.up_possible = [4, 8, 12, 7, 11, 15]
 
-    def step(self, action: Union[int, float, np.ndarray]) -> GymStepReturn:
+    def step(self, action: Union[int, float, np.ndarray]) -> Gym26StepReturn:
         """
         Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`
@@ -152,11 +152,12 @@ class SimpleMultiObsEnv(gym.Env):
 
         got_to_end = self.state == self.max_state
         reward = 1 if got_to_end else reward
-        done = self.count > self.max_count or got_to_end
+        truncated = self.count > self.max_count
+        done = got_to_end or truncated
 
         self.log = f"Went {self.action2str[action]} in state {prev_state}, got to state {self.state}"
 
-        return self.get_state_mapping(), reward, done, {"got_to_end": got_to_end}
+        return self.get_state_mapping(), reward, done, truncated, {"got_to_end": got_to_end}
 
     def render(self, mode: str = "human") -> None:
         """
@@ -166,7 +167,7 @@ class SimpleMultiObsEnv(gym.Env):
         """
         print(self.log)
 
-    def reset(self, seed: Optional[int] = None) -> Dict[str, np.ndarray]:
+    def reset(self, seed: Optional[int] = None) -> Tuple[Dict[str, np.ndarray], Dict]:
         """
         Resets the environment state and step count and returns reset observation.
 
@@ -180,4 +181,4 @@ class SimpleMultiObsEnv(gym.Env):
             self.state = 0
         else:
             self.state = np.random.randint(0, self.max_state)
-        return self.state_mapping[self.state]
+        return self.state_mapping[self.state], {}

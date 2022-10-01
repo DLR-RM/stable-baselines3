@@ -25,18 +25,22 @@ class CustomEnv(gym.Env):
         if seed is not None:
             self.observation_space.seed(seed)
         self.n_steps = 0
-        return self.observation_space.sample()
+        return self.observation_space.sample(), {}
 
     def step(self, action):
         self.n_steps += 1
 
-        done = False
+        done = truncated = False
         reward = 0.0
         if self.n_steps >= self.max_steps:
             reward = 1.0
             done = True
+            # To simplify GAE computation checks,
+            # we do not consider truncation here.
+            # Truncations are checked in InfiniteHorizonEnv
+            truncated = False
 
-        return self.observation_space.sample(), reward, done, {}
+        return self.observation_space.sample(), reward, done, truncated, {}
 
 
 class InfiniteHorizonEnv(gym.Env):
@@ -52,11 +56,11 @@ class InfiniteHorizonEnv(gym.Env):
             super().reset(seed=seed)
 
         self.current_state = 0
-        return self.current_state
+        return self.current_state, {}
 
     def step(self, action):
         self.current_state = (self.current_state + 1) % self.n_states
-        return self.current_state, 1.0, False, {}
+        return self.current_state, 1.0, False, False, {}
 
 
 class CheckGAECallback(BaseCallback):

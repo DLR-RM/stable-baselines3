@@ -18,10 +18,10 @@ class DummyMultiDiscreteSpace(gym.Env):
     def reset(self, seed: Optional[int] = None):
         if seed is not None:
             super().reset(seed=seed)
-        return self.observation_space.sample()
+        return self.observation_space.sample(), {}
 
     def step(self, action):
-        return self.observation_space.sample(), 0.0, False, {}
+        return self.observation_space.sample(), 0.0, False, False, {}
 
 
 class DummyMultiBinary(gym.Env):
@@ -33,10 +33,10 @@ class DummyMultiBinary(gym.Env):
     def reset(self, seed: Optional[int] = None):
         if seed is not None:
             super().reset(seed=seed)
-        return self.observation_space.sample()
+        return self.observation_space.sample(), {}
 
     def step(self, action):
-        return self.observation_space.sample(), 0.0, False, {}
+        return self.observation_space.sample(), 0.0, False, False, {}
 
 
 class DummyMultidimensionalAction(gym.Env):
@@ -46,10 +46,10 @@ class DummyMultidimensionalAction(gym.Env):
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2, 2), dtype=np.float32)
 
     def reset(self):
-        return self.observation_space.sample()
+        return self.observation_space.sample(), {}
 
     def step(self, action):
-        return self.observation_space.sample(), 0.0, False, {}
+        return self.observation_space.sample(), 0.0, False, False, {}
 
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DQN])

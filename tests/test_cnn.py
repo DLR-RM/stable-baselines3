@@ -35,7 +35,7 @@ def test_cnn(tmp_path, model_class):
     # FakeImageEnv is channel last by default and should be wrapped
     assert is_vecenv_wrapped(model.get_env(), VecTransposeImage)
 
-    obs = env.reset()
+    obs, _ = env.reset()
 
     # Test stochastic predict with channel last input
     if model_class == DQN:
@@ -238,7 +238,7 @@ def test_channel_first_env(tmp_path):
 
     assert not is_vecenv_wrapped(model.get_env(), VecTransposeImage)
 
-    obs = env.reset()
+    obs, _ = env.reset()
 
     action, _ = model.predict(obs, deterministic=True)
 

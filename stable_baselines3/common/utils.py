@@ -572,11 +572,11 @@ def compat_gym_26_step(
                 DeprecationWarning,
             )
         observations, rewards, done, infos = step_returns
-        truncated = infos.get("TimeLimit.truncated", False) # pytype: disable=attribute-error]
-        return observations, rewards, done, truncated, infos # pytype: disable=bad-return-type
+        truncated = infos.get("TimeLimit.truncated", False)  # pytype: disable=attribute-error]
+        return observations, rewards, done, truncated, infos  # pytype: disable=bad-return-type
     else:
         assert len(step_returns) == 5, f"The step function returned {len(step_returns)} values instead of 5"
-        return step_returns # pytype: disable=bad-return-type
+        return step_returns  # pytype: disable=bad-return-type
 
 
 def compat_gym_26_reset(

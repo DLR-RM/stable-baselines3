@@ -1,11 +1,11 @@
 from collections import OrderedDict
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 from gym import Env, spaces
 from gym.envs.registration import EnvSpec
 
-from stable_baselines3.common.type_aliases import GymStepReturn
+from stable_baselines3.common.type_aliases import Gym26StepReturn
 
 
 class BitFlippingEnv(Env):
@@ -25,7 +25,7 @@ class BitFlippingEnv(Env):
     :param channel_first: Whether to use channel-first or last image.
     """
 
-    spec = EnvSpec("BitFlippingEnv-v0")
+    spec = EnvSpec("BitFlippingEnv-v0", "no-entry-point")
 
     def __init__(
         self,
@@ -157,14 +157,14 @@ class BitFlippingEnv(Env):
             ]
         )
 
-    def reset(self, seed: Optional[int] = None) -> Dict[str, Union[int, np.ndarray]]:
+    def reset(self, seed: Optional[int] = None) -> Tuple[Dict[str, Union[int, np.ndarray]], Dict]:
         if seed is not None:
             self.obs_space.seed(seed)
         self.current_step = 0
         self.state = self.obs_space.sample()
-        return self._get_obs()
+        return self._get_obs(), {}
 
-    def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:
+    def step(self, action: Union[np.ndarray, int]) -> Gym26StepReturn:
         """
         Step into the env.
 
@@ -181,8 +181,9 @@ class BitFlippingEnv(Env):
         self.current_step += 1
         # Episode terminate when we reached the goal or the max number of steps
         info = {"is_success": done}
-        done = done or self.current_step >= self.max_steps
-        return obs, reward, done, info
+        truncated = self.current_step >= self.max_steps
+        done = done or truncated
+        return obs, reward, done, truncated, info
 
     def compute_reward(
         self, achieved_goal: Union[int, np.ndarray], desired_goal: Union[int, np.ndarray], _info: Optional[Dict[str, Any]]

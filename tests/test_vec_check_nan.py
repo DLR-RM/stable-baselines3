@@ -24,11 +24,11 @@ class NanAndInfEnv(gym.Env):
             obs = float("inf")
         else:
             obs = 0
-        return [obs], 0.0, False, {}
+        return [obs], 0.0, False, False, {}
 
     @staticmethod
     def reset():
-        return [0.0]
+        return [0.0], {}
 
     def render(self, mode="human", close=False):
         pass

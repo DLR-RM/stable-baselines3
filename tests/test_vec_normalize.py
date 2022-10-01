@@ -35,13 +35,14 @@ class DummyRewardEnv(gym.Env):
         self.t += 1
         index = (self.t + self.return_reward_idx) % len(self.returned_rewards)
         returned_value = self.returned_rewards[index]
-        return np.array([returned_value]), returned_value, self.t == len(self.returned_rewards), {}
+        done = truncated = self.t == len(self.returned_rewards)
+        return np.array([returned_value]), returned_value, done, truncated, {}
 
     def reset(self, seed: Optional[int] = None):
         if seed is not None:
             super().reset(seed=seed)
         self.t = 0
-        return np.array([self.returned_rewards[self.return_reward_idx]])
+        return np.array([self.returned_rewards[self.return_reward_idx]]), {}
 
 
 class DummyDictEnv(gym.Env):
@@ -63,13 +64,13 @@ class DummyDictEnv(gym.Env):
     def reset(self, seed: Optional[int] = None):
         if seed is not None:
             super().reset(seed=seed)
-        return self.observation_space.sample()
+        return self.observation_space.sample(), {}
 
     def step(self, action):
         obs = self.observation_space.sample()
         reward = self.compute_reward(obs["achieved_goal"], obs["desired_goal"], {})
         done = np.random.rand() > 0.8
-        return obs, reward, done, {}
+        return obs, reward, done, False, {}
 
     def compute_reward(self, achieved_goal: np.ndarray, desired_goal: np.ndarray, _info) -> np.float32:
         distance = np.linalg.norm(achieved_goal - desired_goal, axis=-1)
@@ -95,12 +96,12 @@ class DummyMixedDictEnv(gym.Env):
     def reset(self, seed: Optional[int] = None):
         if seed is not None:
             super().reset(seed=seed)
-        return self.observation_space.sample()
+        return self.observation_space.sample(), {}
 
     def step(self, action):
         obs = self.observation_space.sample()
         done = np.random.rand() > 0.8
-        return obs, 0.0, done, {}
+        return obs, 0.0, done, False, {}
 
 
 def allclose(obs_1, obs_2):

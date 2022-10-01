@@ -197,7 +197,11 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
     Check the returned values by the env when calling `.reset()` or `.step()` methods.
     """
     # because env inherits from gym.Env, we assume that `reset()` and `step()` methods exists
-    obs = env.reset()
+    reset_returns = env.reset()
+    assert isinstance(reset_returns, tuple), "`reset()` must return a tuple (obs, info)"
+    assert len(reset_returns) == 2, f"`reset()` must return a tuple of size 2 (obs, info), not {len(reset_returns)}"
+    obs, info = reset_returns
+    assert isinstance(info, dict), "The second element of the tuple return by `reset()` must be a dictionary"
 
     if _is_goal_env(env):
         _check_goal_env_obs(obs, observation_space, "reset")
@@ -222,10 +226,10 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
     action = action_space.sample()
     data = env.step(action)
 
-    assert len(data) == 4, "The `step()` method must return four values: obs, reward, done, info"
+    assert len(data) == 5, "The `step()` method must return four values: obs, reward, terminated, truncated, info"
 
     # Unpack
-    obs, reward, done, info = data
+    obs, reward, terminated, truncated, info = data
 
     if _is_goal_env(env):
         _check_goal_env_obs(obs, observation_space, "step")
@@ -250,7 +254,8 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
 
     # We also allow int because the reward will be cast to float
     assert isinstance(reward, (float, int)), "The reward returned by `step()` must be a float"
-    assert isinstance(done, bool), "The `done` signal must be a boolean"
+    assert isinstance(terminated, bool), "The `terminated` signal must be a boolean"
+    assert isinstance(truncated, bool), "The `truncated` signal must be a boolean"
     assert isinstance(info, dict), "The `info` returned by `step()` must be a python dictionary"
 
     # Goal conditioned env

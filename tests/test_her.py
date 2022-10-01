@@ -143,7 +143,7 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
 
     model.learn(total_timesteps=150)
 
-    obs = env.reset()
+    obs, _ = env.reset()
 
     observations = {key: [] for key in obs.keys()}
     for _ in range(10):

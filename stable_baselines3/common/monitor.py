@@ -11,7 +11,7 @@ import gym
 import numpy as np
 import pandas
 
-from stable_baselines3.common.type_aliases import GymObs, GymStepReturn
+from stable_baselines3.common.type_aliases import Gym26ResetReturn, Gym26StepReturn
 
 
 class Monitor(gym.Wrapper):
@@ -61,7 +61,7 @@ class Monitor(gym.Wrapper):
         self.total_steps = 0
         self.current_reset_info = {}  # extra info about the current episode, that was passed in during reset()
 
-    def reset(self, **kwargs) -> GymObs:
+    def reset(self, **kwargs) -> Gym26ResetReturn:
         """
         Calls the Gym environment reset. Can only be called if the environment is over, or if allow_early_resets is True
 
@@ -82,7 +82,7 @@ class Monitor(gym.Wrapper):
             self.current_reset_info[key] = value
         return self.env.reset(**kwargs)
 
-    def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:
+    def step(self, action: Union[np.ndarray, int]) -> Gym26StepReturn:
         """
         Step the environment with the given action
 
@@ -91,9 +91,9 @@ class Monitor(gym.Wrapper):
         """
         if self.needs_reset:
             raise RuntimeError("Tried to step environment that needs reset")
-        observation, reward, done, info = self.env.step(action)
+        observation, reward, done, truncated, info = self.env.step(action)
         self.rewards.append(reward)
-        if done:
+        if done or truncated:
             self.needs_reset = True
             ep_rew = sum(self.rewards)
             ep_len = len(self.rewards)
@@ -108,7 +108,7 @@ class Monitor(gym.Wrapper):
                 self.results_writer.write_row(ep_info)
             info["episode"] = ep_info
         self.total_steps += 1
-        return observation, reward, done, info
+        return observation, reward, done, truncated, info
 
     def close(self) -> None:
         """

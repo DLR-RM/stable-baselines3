@@ -39,28 +39,36 @@ class DummyVecEnv(VecEnv):
         self.actions = actions
 
     def step_wait(self) -> VecEnvStepReturn:
+        # Avoid circular imports
         for env_idx in range(self.num_envs):
-            obs, self.buf_rews[env_idx], self.buf_dones[env_idx], self.buf_infos[env_idx] = self.envs[env_idx].step(
+            obs, self.buf_rews[env_idx], done, truncated, self.buf_infos[env_idx] = self.envs[env_idx].step(
                 self.actions[env_idx]
             )
+            # convert to SB3 VecEnv api
+            self.buf_dones[env_idx] = done or truncated
+            self.buf_infos[env_idx]["TimeLimit.truncated"] = truncated
+
             if self.buf_dones[env_idx]:
                 # save final observation where user can get it, then reset
                 self.buf_infos[env_idx]["terminal_observation"] = obs
-                obs = self.envs[env_idx].reset()
+                obs, self.reset_infos[env_idx] = self.envs[env_idx].reset()
             self._save_obs(env_idx, obs)
         return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones), deepcopy(self.buf_infos))
 
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
+        # Avoid circular import
+        from stable_baselines3.common.utils import compat_gym_seed
+
         if seed is None:
             seed = np.random.randint(0, 2**32 - 1)
         seeds = []
         for idx, env in enumerate(self.envs):
-            seeds.append(env.seed(seed + idx))
+            seeds.append(compat_gym_seed(env, seed=seed + idx))
         return seeds
 
     def reset(self) -> VecEnvObs:
         for env_idx in range(self.num_envs):
-            obs = self.envs[env_idx].reset()
+            obs, self.reset_infos[env_idx] = self.envs[env_idx].reset()
             self._save_obs(env_idx, obs)
         return self._obs_from_buf()
 

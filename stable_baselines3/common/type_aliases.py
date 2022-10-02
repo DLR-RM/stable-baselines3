@@ -11,7 +11,9 @@ from stable_baselines3.common import callbacks, vec_env
 
 GymEnv = Union[gym.Env, vec_env.VecEnv]
 GymObs = Union[Tuple, Dict[str, Any], np.ndarray, int]
+Gym26ResetReturn = Tuple[GymObs, Dict]
 GymStepReturn = Tuple[GymObs, float, bool, Dict]
+Gym26StepReturn = Tuple[GymObs, float, bool, bool, Dict]
 TensorDict = Dict[Union[str, int], th.Tensor]
 OptimizerStateDict = Dict[str, Any]
 MaybeCallback = Union[None, Callable, List[callbacks.BaseCallback], callbacks.BaseCallback]

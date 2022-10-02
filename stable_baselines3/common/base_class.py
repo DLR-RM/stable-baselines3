@@ -5,7 +5,7 @@ import pathlib
 import time
 from abc import ABC, abstractmethod
 from collections import deque
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
 
 import gym
 import numpy as np
@@ -23,6 +23,7 @@ from stable_baselines3.common.save_util import load_from_zip_file, recursive_get
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import (
     check_for_correct_spaces,
+    compat_gym_seed,
     get_device,
     get_schedule_fn,
     get_system_info,
@@ -51,6 +52,9 @@ def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymE
             print(f"Creating environment from the given name '{env}'")
         env = gym.make(env)
     return env
+
+
+BaseAlgorithmSelf = TypeVar("BaseAlgorithmSelf", bound="BaseAlgorithm")
 
 
 class BaseAlgorithm(ABC):
@@ -516,6 +520,11 @@ class BaseAlgorithm(ABC):
         # if it is not a VecEnv, make it a VecEnv
         # and do other transformations (dict obs, image transpose) if needed
         env = self._wrap_env(env, self.verbose)
+        assert env.num_envs == self.n_envs, (
+            "The number of environments to be set is different from the number of environments in the model: "
+            f"({env.num_envs} != {self.n_envs}), whereas `set_env` requires them to be the same. To load a model with "
+            f"a different number of environments, you must use `{self.__class__.__name__}.load(path, env)` instead"
+        )
         # Check that the observation spaces match
         check_for_correct_spaces(env, self.observation_space, self.action_space)
         # Update VecNormalize object
@@ -532,7 +541,7 @@ class BaseAlgorithm(ABC):
 
     @abstractmethod
     def learn(
-        self,
+        self: BaseAlgorithmSelf,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 100,
@@ -542,7 +551,7 @@ class BaseAlgorithm(ABC):
         n_eval_episodes: int = 5,
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-    ) -> "BaseAlgorithm":
+    ) -> BaseAlgorithmSelf:
         """
         Return a trained model.
 
@@ -591,10 +600,12 @@ class BaseAlgorithm(ABC):
             return
         set_random_seed(seed, using_cuda=self.device.type == th.device("cuda").type)
         self.action_space.seed(seed)
+        # self.env is always a VecEnv
         if self.env is not None:
             self.env.seed(seed)
+        # Eval env may be a gym.Env, hence the call to compat_gym_seed()
         if self.eval_env is not None:
-            self.eval_env.seed(seed)
+            compat_gym_seed(self.eval_env, seed=seed)
 
     def set_parameters(
         self,
@@ -666,7 +677,7 @@ class BaseAlgorithm(ABC):
 
     @classmethod
     def load(
-        cls,
+        cls: Type[BaseAlgorithmSelf],
         path: Union[str, pathlib.Path, io.BufferedIOBase],
         env: Optional[GymEnv] = None,
         device: Union[th.device, str] = "auto",
@@ -674,7 +685,7 @@ class BaseAlgorithm(ABC):
         print_system_info: bool = False,
         force_reset: bool = True,
         **kwargs,
-    ) -> "BaseAlgorithm":
+    ) -> BaseAlgorithmSelf:
         """
         Load the model from a zip-file.
         Warning: ``load`` re-creates the model from scratch, it does not update it in-place!
@@ -704,7 +715,10 @@ class BaseAlgorithm(ABC):
             get_system_info()
 
         data, params, pytorch_variables = load_from_zip_file(
-            path, device=device, custom_objects=custom_objects, print_system_info=print_system_info
+            path,
+            device=device,
+            custom_objects=custom_objects,
+            print_system_info=print_system_info,
         )
 
         # Remove stored device information and replace with ours
@@ -730,6 +744,9 @@ class BaseAlgorithm(ABC):
             # See issue https://github.com/DLR-RM/stable-baselines3/issues/597
             if force_reset and data is not None:
                 data["_last_obs"] = None
+            # `n_envs` must be updated. See issue https://github.com/DLR-RM/stable-baselines3/issues/1018
+            if data is not None:
+                data["n_envs"] = env.num_envs
         else:
             # Use stored env, if one exists. If not, continue as is (can be used for predict)
             if "env" in data:

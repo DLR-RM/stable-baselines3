@@ -2,6 +2,7 @@ import collections
 import functools
 import itertools
 import multiprocessing
+from typing import Optional
 
 import gym
 import numpy as np
@@ -25,17 +26,19 @@ class CustomGymEnv(gym.Env):
         self.current_step = 0
         self.ep_length = 4
 
-    def reset(self):
+    def reset(self, seed: Optional[int] = None):
+        if seed is not None:
+            self.seed(seed)
         self.current_step = 0
         self._choose_next_state()
-        return self.state
+        return self.state, {}
 
     def step(self, action):
         reward = float(np.random.rand())
         self._choose_next_state()
         self.current_step += 1
-        done = self.current_step >= self.ep_length
-        return self.state, reward, done, {}
+        done = truncated = self.current_step >= self.ep_length
+        return self.state, reward, done, truncated, {}
 
     def _choose_next_state(self):
         self.state = self.observation_space.sample()
@@ -144,13 +147,13 @@ class StepEnv(gym.Env):
 
     def reset(self):
         self.current_step = 0
-        return np.array([self.current_step], dtype="int")
+        return np.array([self.current_step], dtype="int"), {}
 
     def step(self, action):
         prev_step = self.current_step
         self.current_step += 1
-        done = self.current_step >= self.max_steps
-        return np.array([prev_step], dtype="int"), 0.0, done, {}
+        done = truncated = self.current_step >= self.max_steps
+        return np.array([prev_step], dtype="int"), 0.0, done, truncated, {}
 
 
 @pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
@@ -442,6 +445,23 @@ def test_vec_env_is_wrapped():
 
     vec_env = VecFrameStack(vec_env, n_stack=2)
     assert vec_env.env_is_wrapped(Monitor) == [False, True]
+
+
+@pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
+def test_backward_compat_seed(vec_env_class):
+    def make_env():
+        env = CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)))
+        # Patch reset function to remove seed param
+        env.reset = lambda: (env.observation_space.sample(), {})
+        env.seed = env.observation_space.seed
+        return env
+
+    vec_env = vec_env_class([make_env for _ in range(N_ENVS)])
+    vec_env.seed(3)
+    obs = vec_env.reset()
+    vec_env.seed(3)
+    new_obs = vec_env.reset()
+    assert np.allclose(new_obs, obs)
 
 
 @pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)

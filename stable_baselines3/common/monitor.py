@@ -11,7 +11,7 @@ import gym
 import numpy as np
 import pandas
 
-from stable_baselines3.common.type_aliases import GymObs, GymStepReturn
+from stable_baselines3.common.type_aliases import Gym26ResetReturn, Gym26StepReturn
 
 
 class Monitor(gym.Wrapper):
@@ -61,7 +61,7 @@ class Monitor(gym.Wrapper):
         self.total_steps = 0
         self.current_reset_info = {}  # extra info about the current episode, that was passed in during reset()
 
-    def reset(self, **kwargs) -> GymObs:
+    def reset(self, **kwargs) -> Gym26ResetReturn:
         """
         Calls the Gym environment reset. Can only be called if the environment is over, or if allow_early_resets is True
 
@@ -82,7 +82,7 @@ class Monitor(gym.Wrapper):
             self.current_reset_info[key] = value
         return self.env.reset(**kwargs)
 
-    def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:
+    def step(self, action: Union[np.ndarray, int]) -> Gym26StepReturn:
         """
         Step the environment with the given action
 
@@ -91,9 +91,9 @@ class Monitor(gym.Wrapper):
         """
         if self.needs_reset:
             raise RuntimeError("Tried to step environment that needs reset")
-        observation, reward, done, info = self.env.step(action)
+        observation, reward, done, truncated, info = self.env.step(action)
         self.rewards.append(reward)
-        if done:
+        if done or truncated:
             self.needs_reset = True
             ep_rew = sum(self.rewards)
             ep_len = len(self.rewards)
@@ -108,7 +108,7 @@ class Monitor(gym.Wrapper):
                 self.results_writer.write_row(ep_info)
             info["episode"] = ep_info
         self.total_steps += 1
-        return observation, reward, done, info
+        return observation, reward, done, truncated, info
 
     def close(self) -> None:
         """
@@ -163,9 +163,10 @@ class ResultsWriter:
     """
     A result writer that saves the data from the `Monitor` class
 
-    :param filename: the location to save a log file, can be None for no log
+    :param filename: the location to save a log file. When it does not end in
+        the string ``"monitor.csv"``, this suffix will be appended to it
     :param header: the header dictionary object of the saved csv
-    :param reset_keywords: the extra information to log, typically is composed of
+    :param extra_keys: the extra information to log, typically is composed of
         ``reset_keywords`` and ``info_keywords``
     :param override_existing: appends to file if ``filename`` exists, otherwise
         override existing files (default)
@@ -185,6 +186,9 @@ class ResultsWriter:
                 filename = os.path.join(filename, Monitor.EXT)
             else:
                 filename = filename + "." + Monitor.EXT
+        filename = os.path.realpath(filename)
+        # Create (if any) missing filename directories
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         # Append mode when not overridding existing file
         mode = "w" if override_existing else "a"
         # Prevent newline issue on Windows, see GH issue #692

@@ -102,7 +102,7 @@ def test_callbacks(tmp_path, model_class):
 
 def select_env(model_class) -> str:
     if model_class is DQN:
-        return "CartPole-v0"
+        return "CartPole-v1"
     else:
         return "Pendulum-v1"
 

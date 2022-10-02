@@ -14,29 +14,36 @@ from stable_baselines3.common.vec_env.base_vec_env import (
 )
 
 
-def _worker(
-    remote: mp.connection.Connection, parent_remote: mp.connection.Connection, env_fn_wrapper: CloudpickleWrapper
+def _worker(  # noqa: C901
+    remote: mp.connection.Connection,
+    parent_remote: mp.connection.Connection,
+    env_fn_wrapper: CloudpickleWrapper,
 ) -> None:
     # Import here to avoid a circular import
     from stable_baselines3.common.env_util import is_wrapped
+    from stable_baselines3.common.utils import compat_gym_seed
 
     parent_remote.close()
     env = env_fn_wrapper.var()
+    reset_info = {}
     while True:
         try:
             cmd, data = remote.recv()
             if cmd == "step":
-                observation, reward, done, info = env.step(data)
+                observation, reward, done, truncated, info = env.step(data)
+                # convert to SB3 VecEnv api
+                done = done or truncated
+                info["TimeLimit.truncated"] = truncated
                 if done:
                     # save final observation where user can get it, then reset
                     info["terminal_observation"] = observation
-                    observation = env.reset()
-                remote.send((observation, reward, done, info))
+                    observation, reset_info = env.reset()
+                remote.send((observation, reward, done, info, reset_info))
             elif cmd == "seed":
-                remote.send(env.seed(data))
+                remote.send(compat_gym_seed(env, seed=data))
             elif cmd == "reset":
-                observation = env.reset()
-                remote.send(observation)
+                observation, reset_info = env.reset()
+                remote.send((observation, reset_info))
             elif cmd == "render":
                 remote.send(env.render(data))
             elif cmd == "close":
@@ -119,7 +126,7 @@ class SubprocVecEnv(VecEnv):
     def step_wait(self) -> VecEnvStepReturn:
         results = [remote.recv() for remote in self.remotes]
         self.waiting = False
-        obs, rews, dones, infos = zip(*results)
+        obs, rews, dones, infos, self.reset_infos = zip(*results)
         return _flatten_obs(obs, self.observation_space), np.stack(rews), np.stack(dones), infos
 
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
@@ -132,7 +139,8 @@ class SubprocVecEnv(VecEnv):
     def reset(self) -> VecEnvObs:
         for remote in self.remotes:
             remote.send(("reset", None))
-        obs = [remote.recv() for remote in self.remotes]
+        results = [remote.recv() for remote in self.remotes]
+        obs, self.reset_infos = zip(*results)
         return _flatten_obs(obs, self.observation_space)
 
     def close(self) -> None:

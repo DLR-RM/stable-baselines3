@@ -94,11 +94,12 @@ In the following example, we will train, save and load a DQN model on the Lunar 
   mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10)
 
   # Enjoy trained agent
-  obs = env.reset()
+  vec_env = model.get_env()
+  obs = vec_env.reset()
   for i in range(1000):
       action, _states = model.predict(obs, deterministic=True)
-      obs, rewards, dones, info = env.step(action)
-      env.render()
+      obs, rewards, dones, info = vec_env.step(action)
+      vec_env.render()
 
 
 Multiprocessing: Unleashing the Power of Vectorized Environments
@@ -470,19 +471,19 @@ The parking env is a goal-conditioned continuous control task, in which the vehi
   # HER must be loaded with the env
   model = SAC.load("her_sac_highway", env=env)
 
-  obs = env.reset()
+  obs, info = env.reset()
 
   # Evaluate the agent
   episode_reward = 0
   for _ in range(100):
       action, _ = model.predict(obs, deterministic=True)
-      obs, reward, done, info = env.step(action)
+      obs, reward, done, truncated, info = env.step(action)
       env.render()
       episode_reward += reward
-      if done or info.get("is_success", False):
+      if done or truncated or info.get("is_success", False):
           print("Reward:", episode_reward, "Success?", info.get("is_success", False))
           episode_reward = 0.0
-          obs = env.reset()
+          obs, info = env.reset()
 
 
 Learning Rate Schedule

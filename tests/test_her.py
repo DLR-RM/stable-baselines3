@@ -143,7 +143,7 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
 
     model.learn(total_timesteps=150)
 
-    obs = env.reset()
+    obs, _ = env.reset()
 
     observations = {key: [] for key in obs.keys()}
     for _ in range(10):
@@ -237,7 +237,7 @@ def test_save_load_replay_buffer(tmp_path, recwarn, online_sampling, truncate_la
         train_freq=4,
         buffer_size=int(2e4),
         policy_kwargs=dict(net_arch=[64]),
-        seed=1,
+        seed=0,
     )
     model.learn(200)
     if online_sampling:

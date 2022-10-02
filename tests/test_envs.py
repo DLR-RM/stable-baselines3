@@ -28,7 +28,7 @@ ENV_CLASSES = [
 ]
 
 
-@pytest.mark.parametrize("env_id", ["CartPole-v0", "Pendulum-v1"])
+@pytest.mark.parametrize("env_id", ["CartPole-v1", "Pendulum-v1"])
 def test_env(env_id):
     """
     Check that environmnent integrated in Gym pass the test.
@@ -75,6 +75,17 @@ def test_bit_flipping(kwargs):
     # No warnings for custom envs
     assert len(record) == 0
 
+    # Remove a key, must throw an error
+    obs_space = env.observation_space.spaces["observation"]
+    del env.observation_space.spaces["observation"]
+    with pytest.raises(AssertionError):
+        check_env(env)
+
+    # Rename a key, must throw an error
+    env.observation_space.spaces["obs"] = obs_space
+    with pytest.raises(AssertionError):
+        check_env(env)
+
 
 def test_high_dimension_action_space():
     """
@@ -87,7 +98,7 @@ def test_high_dimension_action_space():
 
     # Patch to avoid error
     def patched_step(_action):
-        return env.observation_space.sample(), 0.0, False, {}
+        return env.observation_space.sample(), 0.0, False, False, {}
 
     env.step = patched_step
     check_env(env)
@@ -116,10 +127,10 @@ def test_non_default_spaces(new_obs_space):
     env = FakeImageEnv()
     env.observation_space = new_obs_space
     # Patch methods to avoid errors
-    env.reset = new_obs_space.sample
+    env.reset = lambda: (new_obs_space.sample(), {})
 
     def patched_step(_action):
-        return new_obs_space.sample(), 0.0, False, {}
+        return new_obs_space.sample(), 0.0, False, False, {}
 
     env.step = patched_step
     with pytest.warns(UserWarning):
@@ -155,13 +166,19 @@ def test_non_default_action_spaces(new_action_space):
 
     # No warnings for custom envs
     assert len(record) == 0
+
     # Change the action space
     env.action_space = new_action_space
 
+    low, high = new_action_space.low[0], new_action_space.high[0]
     # Unbounded action space throws an error,
     # the rest only warning
     if not np.all(np.isfinite(env.action_space.low)):
         with pytest.raises(AssertionError), pytest.warns(UserWarning):
+            check_env(env)
+    # numpy >= 1.21 raises a ValueError
+    elif int(np.__version__.split(".")[1]) >= 21 and (low > high):
+        with pytest.raises(ValueError), pytest.warns(UserWarning):
             check_env(env)
     else:
         with pytest.warns(UserWarning):
@@ -176,7 +193,7 @@ def check_reset_assert_error(env, new_reset_return):
     """
 
     def wrong_reset():
-        return new_reset_return
+        return new_reset_return, {}
 
     # Patch the reset method with a wrong one
     env.reset = wrong_reset
@@ -194,6 +211,11 @@ def test_common_failures_reset():
     # The observation is not a numpy array
     check_reset_assert_error(env, 1)
 
+    # Return only obs (gym < 0.26)
+    env.reset = env.observation_space.sample
+    with pytest.raises(AssertionError):
+        check_env(env)
+
     # Return not only the observation
     check_reset_assert_error(env, (env.observation_space.sample(), False))
 
@@ -206,10 +228,10 @@ def test_common_failures_reset():
     wrong_obs = {**env.observation_space.sample(), "extra_key": None}
     check_reset_assert_error(env, wrong_obs)
 
-    obs = env.reset()
+    obs, _ = env.reset()
 
     def wrong_reset(self):
-        return {"img": obs["img"], "vec": obs["img"]}
+        return {"img": obs["img"], "vec": obs["img"]}, {}
 
     env.reset = types.MethodType(wrong_reset, env)
     with pytest.raises(AssertionError) as excinfo:
@@ -242,33 +264,38 @@ def test_common_failures_step():
     env = IdentityEnvBox()
 
     # Wrong shape for the observation
-    check_step_assert_error(env, (np.ones((4,)), 1.0, False, {}))
+    check_step_assert_error(env, (np.ones((4,)), 1.0, False, False, {}))
     # Obs is not a numpy array
-    check_step_assert_error(env, (1, 1.0, False, {}))
+    check_step_assert_error(env, (1, 1.0, False, False, {}))
 
     # Return a wrong reward
-    check_step_assert_error(env, (env.observation_space.sample(), np.ones(1), False, {}))
+    check_step_assert_error(env, (env.observation_space.sample(), np.ones(1), False, False, {}))
 
     # Info dict is not returned
-    check_step_assert_error(env, (env.observation_space.sample(), 0.0, False))
+    check_step_assert_error(env, (env.observation_space.sample(), 0.0, False, False))
+
+    # Truncated is not returned (gym < 0.26)
+    check_step_assert_error(env, (env.observation_space.sample(), 0.0, False, {}))
 
     # Done is not a boolean
-    check_step_assert_error(env, (env.observation_space.sample(), 0.0, 3.0, {}))
-    check_step_assert_error(env, (env.observation_space.sample(), 0.0, 1, {}))
+    check_step_assert_error(env, (env.observation_space.sample(), 0.0, 3.0, False, {}))
+    check_step_assert_error(env, (env.observation_space.sample(), 0.0, 1, False, {}))
+    # Truncated is not a boolean
+    check_step_assert_error(env, (env.observation_space.sample(), 0.0, False, 1.0, {}))
 
     env = SimpleMultiObsEnv()
 
     # Observation keys and observation space keys must match
     wrong_obs = env.observation_space.sample()
     wrong_obs.pop("img")
-    check_step_assert_error(env, (wrong_obs, 0.0, False, {}))
+    check_step_assert_error(env, (wrong_obs, 0.0, False, False, {}))
     wrong_obs = {**env.observation_space.sample(), "extra_key": None}
-    check_step_assert_error(env, (wrong_obs, 0.0, False, {}))
+    check_step_assert_error(env, (wrong_obs, 0.0, False, False, {}))
 
-    obs = env.reset()
+    obs, _ = env.reset()
 
     def wrong_step(self, action):
-        return {"img": obs["vec"], "vec": obs["vec"]}, 0.0, False, {}
+        return {"img": obs["vec"], "vec": obs["vec"]}, 0.0, False, False, {}
 
     env.step = types.MethodType(wrong_step, env)
     with pytest.raises(AssertionError) as excinfo:

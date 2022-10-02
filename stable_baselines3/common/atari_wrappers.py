@@ -1,3 +1,5 @@
+from typing import Dict, Tuple
+
 import gym
 import numpy as np
 from gym import spaces
@@ -9,7 +11,7 @@ try:
 except ImportError:
     cv2 = None
 
-from stable_baselines3.common.type_aliases import GymObs, GymStepReturn
+from stable_baselines3.common.type_aliases import Gym26ResetReturn, Gym26StepReturn
 
 
 class NoopResetEnv(gym.Wrapper):
@@ -28,19 +30,20 @@ class NoopResetEnv(gym.Wrapper):
         self.noop_action = 0
         assert env.unwrapped.get_action_meanings()[0] == "NOOP"
 
-    def reset(self, **kwargs) -> np.ndarray:
+    def reset(self, **kwargs) -> Tuple[np.ndarray, Dict]:
         self.env.reset(**kwargs)
         if self.override_num_noops is not None:
             noops = self.override_num_noops
         else:
-            noops = self.unwrapped.np_random.randint(1, self.noop_max + 1)
+            noops = self.unwrapped.np_random.integers(1, self.noop_max + 1)
         assert noops > 0
         obs = np.zeros(0)
+        info = {}
         for _ in range(noops):
-            obs, _, done, _ = self.env.step(self.noop_action)
-            if done:
-                obs = self.env.reset(**kwargs)
-        return obs
+            obs, _, done, truncated, info = self.env.step(self.noop_action)
+            if done or truncated:
+                obs, info = self.env.reset(**kwargs)
+        return obs, info
 
 
 class FireResetEnv(gym.Wrapper):
@@ -55,15 +58,15 @@ class FireResetEnv(gym.Wrapper):
         assert env.unwrapped.get_action_meanings()[1] == "FIRE"
         assert len(env.unwrapped.get_action_meanings()) >= 3
 
-    def reset(self, **kwargs) -> np.ndarray:
+    def reset(self, **kwargs) -> Tuple[np.ndarray, Dict]:
         self.env.reset(**kwargs)
-        obs, _, done, _ = self.env.step(1)
-        if done:
+        obs, _, done, truncated, _ = self.env.step(1)
+        if done or truncated:
             self.env.reset(**kwargs)
-        obs, _, done, _ = self.env.step(2)
-        if done:
+        obs, _, done, truncated, _ = self.env.step(2)
+        if done or truncated:
             self.env.reset(**kwargs)
-        return obs
+        return obs, {}
 
 
 class EpisodicLifeEnv(gym.Wrapper):
@@ -79,21 +82,21 @@ class EpisodicLifeEnv(gym.Wrapper):
         self.lives = 0
         self.was_real_done = True
 
-    def step(self, action: int) -> GymStepReturn:
-        obs, reward, done, info = self.env.step(action)
+    def step(self, action: int) -> Gym26StepReturn:
+        obs, reward, done, truncated, info = self.env.step(action)
         self.was_real_done = done
         # check current lives, make loss of life terminal,
         # then update lives to handle bonus lives
         lives = self.env.unwrapped.ale.lives()
         if 0 < lives < self.lives:
-            # for Qbert sometimes we stay in lives == 0 condtion for a few frames
+            # for Qbert sometimes we stay in lives == 0 condition for a few frames
             # so its important to keep lives > 0, so that we only reset once
             # the environment advertises done.
             done = True
         self.lives = lives
-        return obs, reward, done, info
+        return obs, reward, done, truncated, info
 
-    def reset(self, **kwargs) -> np.ndarray:
+    def reset(self, **kwargs) -> Tuple[np.ndarray, Dict]:
         """
         Calls the Gym environment reset, only when lives are exhausted.
         This way all states are still reachable even though lives are episodic,
@@ -103,12 +106,12 @@ class EpisodicLifeEnv(gym.Wrapper):
         :return: the first observation of the environment
         """
         if self.was_real_done:
-            obs = self.env.reset(**kwargs)
+            obs, info = self.env.reset(**kwargs)
         else:
             # no-op step to advance from terminal/lost life state
-            obs, _, _, _ = self.env.step(0)
+            obs, _, _, info = self.env.step(0)
         self.lives = self.env.unwrapped.ale.lives()
-        return obs
+        return obs, info
 
 
 class MaxAndSkipEnv(gym.Wrapper):
@@ -125,7 +128,7 @@ class MaxAndSkipEnv(gym.Wrapper):
         self._obs_buffer = np.zeros((2,) + env.observation_space.shape, dtype=env.observation_space.dtype)
         self._skip = skip
 
-    def step(self, action: int) -> GymStepReturn:
+    def step(self, action: int) -> Gym26StepReturn:
         """
         Step the environment with the given action
         Repeat action, sum reward, and max over last observations.
@@ -134,9 +137,10 @@ class MaxAndSkipEnv(gym.Wrapper):
         :return: observation, reward, done, information
         """
         total_reward = 0.0
-        done = None
+        terminated = truncated = False
         for i in range(self._skip):
-            obs, reward, done, info = self.env.step(action)
+            obs, reward, terminated, truncated, info = self.env.step(action)
+            done = terminated or truncated
             if i == self._skip - 2:
                 self._obs_buffer[0] = obs
             if i == self._skip - 1:
@@ -148,9 +152,9 @@ class MaxAndSkipEnv(gym.Wrapper):
         # doesn't matter
         max_frame = self._obs_buffer.max(axis=0)
 
-        return max_frame, total_reward, done, info
+        return max_frame, total_reward, terminated, truncated, info
 
-    def reset(self, **kwargs) -> GymObs:
+    def reset(self, **kwargs) -> Gym26ResetReturn:
         return self.env.reset(**kwargs)
 
 
@@ -235,8 +239,10 @@ class AtariWrapper(gym.Wrapper):
         terminal_on_life_loss: bool = True,
         clip_reward: bool = True,
     ):
-        env = NoopResetEnv(env, noop_max=noop_max)
-        env = MaxAndSkipEnv(env, skip=frame_skip)
+        if noop_max > 0:
+            env = NoopResetEnv(env, noop_max=noop_max)
+        if frame_skip > 0:
+            env = MaxAndSkipEnv(env, skip=frame_skip)
         if terminal_on_life_loss:
             env = EpisodicLifeEnv(env)
         if "FIRE" in env.unwrapped.get_action_meanings():

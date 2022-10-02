@@ -22,7 +22,10 @@ It creates "virtual" transitions by relabeling transitions (changing the desired
 
 .. warning::
 
-    HER requires the environment to inherits from `gym.GoalEnv <https://github.com/openai/gym/blob/3394e245727c1ae6851b504a50ba77c73cd4c65b/gym/core.py#L160>`_
+    HER requires the environment to follow the legacy `gym.GoalEnv interface <https://github.com/openai/gym/blob/3394e245727c1ae6851b504a50ba77c73cd4c65b/gym/core.py#L160>`_
+    In short, the ``gym.Env`` must have:
+    - a vectorized implementation of ``compute_reward()``
+    - a dictionary observation space with three keys: ``observation``, ``achieved_goal`` and ``desired_goal``
 
 
 .. warning::

@@ -14,11 +14,12 @@ class ActionDictTestEnv(gym.Env):
         observation = np.array([1.0, 1.5, 0.5], dtype=self.observation_space.dtype)
         reward = 1
         done = True
+        truncated = False
         info = {}
-        return observation, reward, done, info
+        return observation, reward, done, truncated, info
 
     def reset(self):
-        return np.array([1.0, 1.5, 0.5], dtype=self.observation_space.dtype)
+        return np.array([1.0, 1.5, 0.5], dtype=self.observation_space.dtype), {}
 
     def render(self, mode="human"):
         pass

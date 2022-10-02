@@ -48,13 +48,13 @@ env = gym.make("CartPole-v1")
 model = PPO("MlpPolicy", env, verbose=1)
 model.learn(total_timesteps=10_000)
 
-obs = env.reset()
+obs, info = env.reset()
 for i in range(1000):
     action, _states = model.predict(obs, deterministic=True)
-    obs, reward, done, info = env.step(action)
+    obs, reward, done, truncated, info = env.step(action)
     env.render()
-    if done:
-        obs = env.reset()
+    if done or truncated:
+        obs, info = env.reset()
 ```
 
 Or just train a model with a one liner if [the environment is registered in Gym](https://www.gymlibrary.ml/content/environment_creation/) and if [the policy is registered](https://stable-baselines3.readthedocs.io/en/master/guide/custom_policy.html):
@@ -73,7 +73,7 @@ setup(
     packages=[package for package in find_packages() if package.startswith("stable_baselines3")],
     package_data={"stable_baselines3": ["py.typed", "version.txt"]},
     install_requires=[
-        "gym==0.21",  # Fixed version due to breaking changes in 0.22
+        "gym==0.26",
         "numpy",
         "torch>=1.11",
         # For saving models
@@ -100,11 +100,9 @@ setup(
             "isort>=5.0",
             # Reformat
             "black",
-            # For toy text Gym envs
-            "scipy>=1.4.1",
         ],
         "docs": [
-            "sphinx",
+            "sphinx~=4.5.0",
             "sphinx-autobuild",
             "sphinx-rtd-theme",
             # For spelling
@@ -117,8 +115,9 @@ setup(
         "extra": [
             # For render
             "opencv-python",
+            "pygame",
             # For atari games,
-            "ale-py==0.7.4",
+            "ale-py~=0.8.0",
             "autorom[accept-rom-license]~=0.4.2",
             "pillow",
             # Tensorboard support

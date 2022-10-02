@@ -3,8 +3,10 @@
 Changelog
 ==========
 
-Release 1.6.1a4 (WIP)
+Release 1.6.1 (2022-09-29)
 ---------------------------
+
+**Bug fix release**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -19,6 +21,7 @@ New Features:
 
 SB3-Contrib
 ^^^^^^^^^^^
+- Fixed the issue of wrongly passing policy arguments when using ``CnnLstmPolicy`` or ``MultiInputLstmPolicy`` with ``RecurrentPPO`` (@mlodel)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -29,7 +32,10 @@ Bug Fixes:
 - Fixed missing verbose parameter passing in the ``EvalCallback`` constructor (@burakdmb)
 - Fixed the issue that when updating the target network in DQN, SAC, TD3, the ``running_mean`` and ``running_var`` properties of batch norm layers are not updated (@honglu2875)
 - Fixed incorrect type annotation of the replay_buffer_class argument in ``common.OffPolicyAlgorithm`` initializer, where an instance instead of a class was required (@Rocamonde)
+- Fixed loading saved model with different number of envrionments
 - Removed ``forward()`` abstract method declaration from ``common.policies.BaseModel`` (already defined in ``torch.nn.Module``) to fix type errors in subclasses (@Rocamonde)
+- Fixed the return type of ``.load()`` and ``.learn()`` methods in ``BaseAlgorithm`` so that they now use ``TypeVar`` (@Rocamonde)
+- Fixed an issue where keys with different tags but the same key raised an error in ``common.logger.HumanOutputFormat`` (@Rocamonde and @AdamGleave)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -37,8 +43,8 @@ Deprecations:
 Others:
 ^^^^^^^
 - Fixed ``DictReplayBuffer.next_observations`` typing (@qgallouedec)
-
 - Added support for ``device="auto"`` in buffers and made it default (@qgallouedec)
+- Updated ``ResultsWriter` (used internally by ``Monitor`` wrapper) to automatically create missing directories when ``filename`` is a path (@dominicgkerr)
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -48,7 +54,9 @@ Documentation:
 - Fixed typo in ppo doc (@francescoluciano)
 - Fixed typo in install doc(@jlp-ue)
 - Clarified and standardized verbosity documentation
-
+- Added link to a GitHub issue in the custom policy documentation (@AlexPasqua)
+- Update doc on exporting models (fixes and added torch jit)
+- Fixed typos (@Akhilez)
 
 Release 1.6.0 (2022-07-11)
 ---------------------------
@@ -57,6 +65,7 @@ Release 1.6.0 (2022-07-11)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Switched minimum Gym version to 0.24 (@carlosluis)
 - Changed the way policy "aliases" are handled ("MlpPolicy", "CnnPolicy", ...), removing the former
   ``register_policy`` helper, ``policy_base`` parameter and using ``policy_aliases`` static attributes instead (@Gregwar)
 - SB3 now requires PyTorch >= 1.11
@@ -65,6 +74,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- ``noop_max`` and ``frame_skip`` are now allowed to be equal to zero when using ``AtariWrapper``
 
 SB3-Contrib
 ^^^^^^^^^^^
@@ -90,6 +100,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Upgraded to Python 3.7+ syntax using ``pyupgrade``
+- Updated docker base image to Ubuntu 20.04 and cuda 11.3
 - Removed redundant double-check for nested observations from ``BaseAlgorithm._wrap_env`` (@TibiGG)
 
 Documentation:
@@ -99,6 +110,7 @@ Documentation:
 - Added link to PPO ICLR blog post
 - Added remark about breaking Markov assumption and timeout handling
 - Added doc about MLFlow integration via custom logger (@git-thor)
+- Updated tutorials to work with Gym 0.23 (@arjun-kg)
 - Updated Huggingface integration doc
 - Added copy button for code snippets
 - Added doc about EnvPool and Isaac Gym support
@@ -111,7 +123,7 @@ Release 1.5.0 (2022-03-25)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-- Switched minimum Gym version to 0.21.0.
+- Switched minimum Gym version to 0.21.0
 
 New Features:
 ^^^^^^^^^^^^^
@@ -1035,5 +1047,6 @@ And all the contributors:
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
+@carlosluis @arjun-kg @tlpss
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
-@anand-bala @hughperkins @sidney-tio
+@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde

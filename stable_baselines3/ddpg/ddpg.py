@@ -1,13 +1,14 @@
-from typing import Any, Dict, Optional, Tuple, Type, Union
+from typing import Any, Dict, Optional, Tuple, Type, TypeVar, Union
 
 import torch as th
 
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.noise import ActionNoise
-from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.td3.policies import TD3Policy
 from stable_baselines3.td3.td3 import TD3
+
+DDPGSelf = TypeVar("DDPGSelf", bound="DDPG")
 
 
 class DDPG(TD3):
@@ -116,7 +117,7 @@ class DDPG(TD3):
             self._setup_model()
 
     def learn(
-        self,
+        self: DDPGSelf,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
@@ -126,7 +127,7 @@ class DDPG(TD3):
         tb_log_name: str = "DDPG",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-    ) -> OffPolicyAlgorithm:
+    ) -> DDPGSelf:
 
         return super().learn(
             total_timesteps=total_timesteps,

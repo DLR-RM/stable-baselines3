@@ -3,6 +3,9 @@ FROM $PARENT_IMAGE
 ARG PYTORCH_DEPS=cpuonly
 ARG PYTHON_VERSION=3.7
 
+# for tzdata
+ENV DEBIAN_FRONTEND="noninteractive" TZ="Europe/Paris"
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
          build-essential \
          cmake \
@@ -20,7 +23,7 @@ RUN curl -o ~/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest
      ~/miniconda.sh -b -p /opt/conda && \
      rm ~/miniconda.sh && \
      /opt/conda/bin/conda install -y python=$PYTHON_VERSION numpy pyyaml scipy ipython mkl mkl-include && \
-     /opt/conda/bin/conda install -y pytorch $PYTORCH_DEPS -c pytorch && \
+     /opt/conda/bin/conda install -y pytorch=1.11 $PYTORCH_DEPS -c pytorch && \
      /opt/conda/bin/conda clean -ya
 ENV PATH /opt/conda/bin:$PATH
 

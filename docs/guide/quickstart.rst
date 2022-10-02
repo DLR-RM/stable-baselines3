@@ -14,18 +14,24 @@ Here is a quick example of how to train and run A2C on a CartPole environment:
 
   from stable_baselines3 import A2C
 
-  env = gym.make('CartPole-v1')
+  env = gym.make("CartPole-v1")
 
-  model = A2C('MlpPolicy', env, verbose=1)
+  model = A2C("MlpPolicy", env, verbose=1)
   model.learn(total_timesteps=10000)
 
-  obs = env.reset()
+  # Note: Gym 0.26+ reset() returns a tuple
+  # where SB3 VecEnv only return an observation
+  obs, info = env.reset()
   for i in range(1000):
       action, _state = model.predict(obs, deterministic=True)
-      obs, reward, done, info = env.step(action)
+      # Note: Gym 0.26+ step() returns an additional boolean
+      # "truncated" where SB3 store truncation information
+      # in info["TimeLimit.truncated"]
+      obs, reward, done, truncated, info = env.step(action)
       env.render()
-      if done:
-        obs = env.reset()
+      # Note: reset is automated in SB3 VecEnv
+      if done or truncated:
+        obs, info = env.reset()
 
 .. note::
 
@@ -40,4 +46,4 @@ the policy is registered:
 
     from stable_baselines3 import A2C
 
-    model = A2C('MlpPolicy', 'CartPole-v1').learn(10000)
+    model = A2C("MlpPolicy", "CartPole-v1").learn(10000)

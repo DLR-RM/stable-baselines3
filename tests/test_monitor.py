@@ -13,7 +13,7 @@ def test_monitor(tmp_path):
     Test the monitor wrapper
     """
     env = gym.make("CartPole-v1")
-    env.seed(0)
+    env.reset(seed=0)
     monitor_file = os.path.join(str(tmp_path), f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
     monitor_env = Monitor(env, monitor_file)
     monitor_env.reset()
@@ -22,10 +22,10 @@ def test_monitor(tmp_path):
     ep_lengths = []
     ep_len, ep_reward = 0, 0
     for _ in range(total_steps):
-        _, reward, done, _ = monitor_env.step(monitor_env.action_space.sample())
+        _, reward, done, truncated, _ = monitor_env.step(monitor_env.action_space.sample())
         ep_len += 1
         ep_reward += reward
-        if done:
+        if done or truncated:
             ep_rewards.append(ep_reward)
             ep_lengths.append(ep_len)
             monitor_env.reset()
@@ -48,6 +48,15 @@ def test_monitor(tmp_path):
         assert set(last_logline.keys()) == {"l", "t", "r"}, "Incorrect keys in monitor logline"
     os.remove(monitor_file)
 
+    # Check missing filename directories are created
+    monitor_dir = os.path.join(str(tmp_path), "missing-dir")
+    monitor_file = os.path.join(monitor_dir, f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
+    assert os.path.exists(monitor_dir) is False
+    _ = Monitor(env, monitor_file)
+    assert os.path.exists(monitor_dir) is True
+    os.remove(monitor_file)
+    os.rmdir(monitor_dir)
+
 
 def test_monitor_load_results(tmp_path):
     """
@@ -55,7 +64,7 @@ def test_monitor_load_results(tmp_path):
     """
     tmp_path = str(tmp_path)
     env1 = gym.make("CartPole-v1")
-    env1.seed(0)
+    env1.reset(seed=0)
     monitor_file1 = os.path.join(tmp_path, f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
     monitor_env1 = Monitor(env1, monitor_file1)
 
@@ -66,8 +75,8 @@ def test_monitor_load_results(tmp_path):
     monitor_env1.reset()
     episode_count1 = 0
     for _ in range(1000):
-        _, _, done, _ = monitor_env1.step(monitor_env1.action_space.sample())
-        if done:
+        _, _, done, truncated, _ = monitor_env1.step(monitor_env1.action_space.sample())
+        if done or truncated:
             episode_count1 += 1
             monitor_env1.reset()
 
@@ -75,7 +84,7 @@ def test_monitor_load_results(tmp_path):
     assert results_size1 == episode_count1
 
     env2 = gym.make("CartPole-v1")
-    env2.seed(0)
+    env2.reset(seed=0)
     monitor_file2 = os.path.join(tmp_path, f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
     monitor_env2 = Monitor(env2, monitor_file2)
     monitor_files = get_monitor_files(tmp_path)
@@ -89,8 +98,8 @@ def test_monitor_load_results(tmp_path):
         monitor_env2 = Monitor(env2, monitor_file2, override_existing=False)
         monitor_env2.reset()
         for _ in range(1000):
-            _, _, done, _ = monitor_env2.step(monitor_env2.action_space.sample())
-            if done:
+            _, _, done, truncated, _ = monitor_env2.step(monitor_env2.action_space.sample())
+            if done or truncated:
                 episode_count2 += 1
                 monitor_env2.reset()
 

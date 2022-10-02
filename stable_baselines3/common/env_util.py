@@ -5,6 +5,7 @@ import gym
 
 from stable_baselines3.common.atari_wrappers import AtariWrapper
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.utils import compat_gym_seed
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv
 
 
@@ -81,7 +82,7 @@ def make_vec_env(
             else:
                 env = env_id(**env_kwargs)
             if seed is not None:
-                env.seed(seed + rank)
+                compat_gym_seed(env, seed=seed + rank)
                 env.action_space.seed(seed + rank)
             # Wrap the env in a Monitor wrapper
             # to have additional training information

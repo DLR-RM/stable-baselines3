@@ -26,6 +26,7 @@ def test_deterministic_pg(model_class, action_noise):
         verbose=1,
         create_eval_env=True,
         buffer_size=250,
+        gradient_steps=1,
         action_noise=action_noise,
     )
     model.learn(total_timesteps=300, eval_freq=250)

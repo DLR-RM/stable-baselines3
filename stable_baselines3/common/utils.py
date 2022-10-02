@@ -3,6 +3,7 @@ import os
 import platform
 import random
 from collections import deque
+from inspect import signature
 from itertools import zip_longest
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
@@ -19,7 +20,13 @@ except ImportError:
     SummaryWriter = None
 
 from stable_baselines3.common.logger import Logger, configure
-from stable_baselines3.common.type_aliases import GymEnv, Schedule, TensorDict, TrainFreq, TrainFrequencyUnit
+from stable_baselines3.common.type_aliases import (
+    GymEnv,
+    Schedule,
+    TensorDict,
+    TrainFreq,
+    TrainFrequencyUnit,
+)
 
 
 def set_random_seed(seed: int, using_cuda: bool = False) -> None:
@@ -519,3 +526,18 @@ def get_system_info(print_info: bool = True) -> Tuple[Dict[str, str], str]:
     if print_info:
         print(env_info_str)
     return env_info, env_info_str
+
+
+def compat_gym_seed(env: GymEnv, seed: int) -> None:
+    """
+    Compatibility helper to seed Gym envs.
+
+    :param env: The Gym environment.
+    :param seed: The seed for the pseudo random generator
+    """
+    if isinstance(env, gym.Env) and "seed" in signature(env.unwrapped.reset).parameters:
+        # gym >= 0.23.1
+        env.reset(seed=seed)
+    else:
+        # VecEnv and backward compatibility
+        env.seed(seed)

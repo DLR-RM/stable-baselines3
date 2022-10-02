@@ -27,15 +27,15 @@ class DummyEnv(gym.Env):
     def reset(self):
         self._t = 0
         obs = self._observations[0]
-        return obs
+        return obs, {}
 
     def step(self, action):
         self._t += 1
         index = self._t % len(self._observations)
         obs = self._observations[index]
-        done = self._t >= self._ep_length
+        done = truncated = self._t >= self._ep_length
         reward = self._rewards[index]
-        return obs, reward, done, {}
+        return obs, reward, done, truncated, {}
 
 
 class DummyDictEnv(gym.Env):
@@ -55,15 +55,15 @@ class DummyDictEnv(gym.Env):
     def reset(self):
         self._t = 0
         obs = {key: self._observations[0] for key in self.observation_space.spaces.keys()}
-        return obs
+        return obs, {}
 
     def step(self, action):
         self._t += 1
         index = self._t % len(self._observations)
         obs = {key: self._observations[index] for key in self.observation_space.spaces.keys()}
-        done = self._t >= self._ep_length
+        done = truncated = self._t >= self._ep_length
         reward = self._rewards[index]
-        return obs, reward, done, {}
+        return obs, reward, done, truncated, {}
 
 
 @pytest.mark.parametrize("replay_buffer_cls", [ReplayBuffer, DictReplayBuffer])

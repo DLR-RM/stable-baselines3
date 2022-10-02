@@ -2,6 +2,7 @@ import csv
 import json
 import os
 import uuid
+import warnings
 
 import gym
 import pandas
@@ -132,15 +133,18 @@ def test_vec_monitor_ppo(recwarn):
     """
     Test the `VecMonitor` with PPO
     """
-    env = DummyVecEnv([lambda: gym.make("CartPole-v1")])
-    env.seed(0)
+    # Remove Gym Warnings
+    warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="gym")
+
+    env = DummyVecEnv([lambda: gym.make("CartPole-v1", disable_env_checker=True)])
+    env.seed(seed=0)
     monitor_env = VecMonitor(env)
     model = PPO("MlpPolicy", monitor_env, verbose=1, n_steps=64, device="cpu")
     model.learn(total_timesteps=250)
 
     # No warnings because using `VecMonitor`
     evaluate_policy(model, monitor_env)
-    assert len(recwarn) == 0
+    assert len(recwarn) == 0, f"{[str(warning) for warning in recwarn]}"
 
 
 def test_vec_monitor_warn():

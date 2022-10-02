@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 from typing import Sequence
 from unittest import mock
@@ -353,12 +354,12 @@ class TimeDelayEnv(gym.Env):
         self.action_space = gym.spaces.Discrete(2)
 
     def reset(self):
-        return self.observation_space.sample()
+        return self.observation_space.sample(), {}
 
     def step(self, action):
         time.sleep(self.delay)
         obs = self.observation_space.sample()
-        return obs, 0.0, True, {}
+        return obs, 0.0, True, False, {}
 
 
 class InMemoryLogger(Logger):
@@ -409,3 +410,11 @@ def test_fps_no_div_zero(algo):
         with mock.patch("time.time_ns", lambda: 42.0):
             model = algo("MlpPolicy", "CartPole-v1")
             model.learn(total_timesteps=100)
+
+
+def test_human_output_format_no_crash_on_same_keys_different_tags():
+    o = HumanOutputFormat(sys.stdout, max_length=60)
+    o.write(
+        {"key1/foo": "value1", "key1/bar": "value2", "key2/bizz": "value3", "key2/foo": "value4"},
+        {"key1/foo": None, "key2/bizz": None, "key1/bar": None, "key2/foo": None},
+    )

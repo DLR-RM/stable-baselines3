@@ -394,7 +394,7 @@ def test_performance_her(online_sampling, n_bits):
         buffer_size=int(1e5),
     )
 
-    model.learn(total_timesteps=5000, log_interval=50)
+    model.learn(total_timesteps=3500, log_interval=50)
 
     # 90% training success
     assert np.mean(model.ep_success_buffer) > 0.90

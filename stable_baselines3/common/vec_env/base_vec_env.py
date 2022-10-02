@@ -59,7 +59,7 @@ class VecEnv(ABC):
         self.num_envs = num_envs
         self.observation_space = observation_space
         self.action_space = action_space
-        self.reset_infos = [{} for _ in range(num_envs)]  # store info returns by the reset method
+        self.reset_infos = [{} for _ in range(num_envs)]  # store info returned by the reset method
 
     @abstractmethod
     def reset(self) -> VecEnvObs:

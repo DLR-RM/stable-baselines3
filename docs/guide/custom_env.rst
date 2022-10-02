@@ -27,7 +27,7 @@ That is to say, your environment must implement the following methods (and inher
 
   class CustomEnv(gym.Env):
       """Custom Environment that follows gym interface"""
-      metadata = {'render.modes': ['human']}
+      metadata = {"render.modes": ["human"]}
 
       def __init__(self, arg1, arg2, ...):
           super(CustomEnv, self).__init__()
@@ -45,7 +45,7 @@ That is to say, your environment must implement the following methods (and inher
       def reset(self):
           ...
           return observation  # reward, done, info can't be included
-      def render(self, mode='human'):
+      def render(self, mode="human"):
           ...
       def close (self):
           ...
@@ -58,7 +58,7 @@ Then you can define and train a RL agent with:
   # Instantiate the env
   env = CustomEnv(arg1, ...)
   # Define and Train the agent
-  model = A2C('CnnPolicy', env).learn(total_timesteps=1000)
+  model = A2C("CnnPolicy", env).learn(total_timesteps=1000)
 
 
 To check that your environment follows the Gym interface that SB3 supports, please use:

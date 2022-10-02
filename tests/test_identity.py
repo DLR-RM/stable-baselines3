@@ -34,7 +34,7 @@ def test_discrete(model_class, env):
 def test_continuous(model_class):
     env = IdentityEnvBox(eps=0.5)
 
-    n_steps = {A2C: 2000, PPO: 2500, SAC: 700, TD3: 500, DDPG: 500}[model_class]
+    n_steps = {A2C: 2000, PPO: 2000, SAC: 400, TD3: 400, DDPG: 400}[model_class]
 
     kwargs = dict(policy_kwargs=dict(net_arch=[64, 64]), seed=0, gamma=0.95)
 
@@ -42,7 +42,9 @@ def test_continuous(model_class):
         n_actions = 1
         action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
         kwargs["action_noise"] = action_noise
+    elif model_class == PPO:
+        kwargs = dict(n_steps=512, n_epochs=5)
 
-    model = model_class("MlpPolicy", env, **kwargs).learn(n_steps)
+    model = model_class("MlpPolicy", env, learning_rate=1e-3, **kwargs).learn(n_steps)
 
     evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=90, warn=False)

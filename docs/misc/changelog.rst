@@ -24,7 +24,7 @@ Deprecations:
 
 Others:
 ^^^^^^^
-- Fixed type hint of the ``env_id`` parameter in ``make_vec_env`` (@AlexPasqua)
+- Fixed type hint of the ``env_id`` parameter in ``make_vec_env`` and ``make_atari_env`` (@AlexPasqua)
 
 Documentation:
 ^^^^^^^^^^^^^^

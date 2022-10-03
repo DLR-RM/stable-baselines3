@@ -63,6 +63,7 @@ Bug Fixes:
 - Removed ``forward()`` abstract method declaration from ``common.policies.BaseModel`` (already defined in ``torch.nn.Module``) to fix type errors in subclasses (@Rocamonde)
 - Fixed the return type of ``.load()`` and ``.learn()`` methods in ``BaseAlgorithm`` so that they now use ``TypeVar`` (@Rocamonde)
 - Fixed an issue where keys with different tags but the same key raised an error in ``common.logger.HumanOutputFormat`` (@Rocamonde and @AdamGleave)
+- Set importlib-metadata version to `~=4.13`
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -84,6 +85,7 @@ Documentation:
 - Added link to a GitHub issue in the custom policy documentation (@AlexPasqua)
 - Update doc on exporting models (fixes and added torch jit)
 - Fixed typos (@Akhilez)
+- Standardized the use of ``"`` for string representation in documentation
 
 Release 1.6.0 (2022-07-11)
 ---------------------------

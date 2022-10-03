@@ -51,7 +51,7 @@ which defines for the python process, how it should handle floating point error.
 
   import numpy as np
 
-  np.seterr(all='raise')  # define before your code.
+  np.seterr(all="raise")  # define before your code.
 
   print("numpy test:")
 
@@ -66,7 +66,7 @@ but this will also avoid overflow issues on floating point numbers:
 
   import numpy as np
 
-  np.seterr(all='raise')  # define before your code.
+  np.seterr(all="raise")  # define before your code.
 
   print("numpy overflow test:")
 
@@ -81,11 +81,11 @@ but will not avoid the propagation issues:
 
   import numpy as np
 
-  np.seterr(all='raise')  # define before your code.
+  np.seterr(all="raise")  # define before your code.
 
   print("numpy propagation test:")
 
-  a = np.float64('NaN')
+  a = np.float64("NaN")
   b = np.float64(1.0)
   val = a + b  # this will neither warn nor raise anything
   print(val)
@@ -109,7 +109,7 @@ It will monitor the actions, observations, and rewards, indicating what action o
 
   class NanAndInfEnv(gym.Env):
       """Custom Environment that raised NaNs and Infs"""
-      metadata = {'render.modes': ['human']}
+      metadata = {"render.modes": ["human"]}
 
       def __init__(self):
           super(NanAndInfEnv, self).__init__()
@@ -119,9 +119,9 @@ It will monitor the actions, observations, and rewards, indicating what action o
       def step(self, _action):
           randf = np.random.rand()
           if randf > 0.99:
-              obs = float('NaN')
+              obs = float("NaN")
           elif randf > 0.98:
-              obs = float('inf')
+              obs = float("inf")
           else:
               obs = randf
           return [obs], 0.0, False, {}
@@ -129,7 +129,7 @@ It will monitor the actions, observations, and rewards, indicating what action o
       def reset(self):
           return [0.0]
 
-      def render(self, mode='human', close=False):
+      def render(self, mode="human", close=False):
           pass
 
   # Create environment
@@ -137,7 +137,7 @@ It will monitor the actions, observations, and rewards, indicating what action o
   env = VecCheckNan(env, raise_exception=True)
 
   # Instantiate the agent
-  model = PPO('MlpPolicy', env)
+  model = PPO("MlpPolicy", env)
 
   # Train the agent
   model.learn(total_timesteps=int(2e5))  # this will crash explaining that the invalid value originated from the environment.

@@ -58,6 +58,7 @@ Documentation:
 - Added link to a GitHub issue in the custom policy documentation (@AlexPasqua)
 - Update doc on exporting models (fixes and added torch jit)
 - Fixed typos (@Akhilez)
+- Standardized the use of ``"`` for string representation in documentation
 
 Release 1.6.0 (2022-07-11)
 ---------------------------

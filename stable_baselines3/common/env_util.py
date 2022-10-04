@@ -124,7 +124,7 @@ def make_atari_env(
     Create a wrapped, monitored VecEnv for Atari.
     It is a wrapper around ``make_vec_env`` that includes common preprocessing for Atari games.
 
-    :param env_id: the environment ID or the environment class
+    :param env_id: either the env ID, the env class or a callable returning an env
     :param n_envs: the number of environments you wish to have in parallel
     :param seed: the initial seed for the random number generator
     :param start_index: start rank index

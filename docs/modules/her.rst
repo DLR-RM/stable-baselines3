@@ -73,7 +73,7 @@ This example is only to demonstrate the use of the library and its functions, an
     env = BitFlippingEnv(n_bits=N_BITS, continuous=model_class in [DDPG, SAC, TD3], max_steps=N_BITS)
 
     # Available strategies (cf paper): future, final, episode
-    goal_selection_strategy = 'future' # equivalent to GoalSelectionStrategy.FUTURE
+    goal_selection_strategy = "future" # equivalent to GoalSelectionStrategy.FUTURE
 
     # If True the HER transitions will get sampled online
     online_sampling = True
@@ -101,7 +101,7 @@ This example is only to demonstrate the use of the library and its functions, an
     model.save("./her_bit_env")
     # Because it needs access to `env.compute_reward()`
     # HER must be loaded with the env
-    model = model_class.load('./her_bit_env', env=env)
+    model = model_class.load("./her_bit_env", env=env)
 
     obs = env.reset()
     for _ in range(100):

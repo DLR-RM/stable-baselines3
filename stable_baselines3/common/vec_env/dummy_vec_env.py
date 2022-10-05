@@ -41,11 +41,11 @@ class DummyVecEnv(VecEnv):
     def step_wait(self) -> VecEnvStepReturn:
         # Avoid circular imports
         for env_idx in range(self.num_envs):
-            obs, self.buf_rews[env_idx], done, truncated, self.buf_infos[env_idx] = self.envs[env_idx].step(
+            obs, self.buf_rews[env_idx], terminated, truncated, self.buf_infos[env_idx] = self.envs[env_idx].step(
                 self.actions[env_idx]
             )
             # convert to SB3 VecEnv api
-            self.buf_dones[env_idx] = done or truncated
+            self.buf_dones[env_idx] = terminated or truncated
             self.buf_infos[env_idx]["TimeLimit.truncated"] = truncated
 
             if self.buf_dones[env_idx]:

@@ -40,8 +40,8 @@ class NoopResetEnv(gym.Wrapper):
         obs = np.zeros(0)
         info = {}
         for _ in range(noops):
-            obs, _, done, truncated, info = self.env.step(self.noop_action)
-            if done or truncated:
+            obs, _, terminated, truncated, info = self.env.step(self.noop_action)
+            if terminated or truncated:
                 obs, info = self.env.reset(**kwargs)
         return obs, info
 
@@ -60,11 +60,11 @@ class FireResetEnv(gym.Wrapper):
 
     def reset(self, **kwargs) -> Tuple[np.ndarray, Dict]:
         self.env.reset(**kwargs)
-        obs, _, done, truncated, _ = self.env.step(1)
-        if done or truncated:
+        obs, _, terminated, truncated, _ = self.env.step(1)
+        if terminated or truncated:
             self.env.reset(**kwargs)
-        obs, _, done, truncated, _ = self.env.step(2)
-        if done or truncated:
+        obs, _, terminated, truncated, _ = self.env.step(2)
+        if terminated or truncated:
             self.env.reset(**kwargs)
         return obs, {}
 
@@ -83,8 +83,8 @@ class EpisodicLifeEnv(gym.Wrapper):
         self.was_real_done = True
 
     def step(self, action: int) -> Gym26StepReturn:
-        obs, reward, done, truncated, info = self.env.step(action)
-        self.was_real_done = done
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        self.was_real_done = terminated or truncated
         # check current lives, make loss of life terminal,
         # then update lives to handle bonus lives
         lives = self.env.unwrapped.ale.lives()
@@ -92,9 +92,9 @@ class EpisodicLifeEnv(gym.Wrapper):
             # for Qbert sometimes we stay in lives == 0 condition for a few frames
             # so its important to keep lives > 0, so that we only reset once
             # the environment advertises done.
-            done = True
+            terminated = True
         self.lives = lives
-        return obs, reward, done, truncated, info
+        return obs, reward, terminated, truncated, info
 
     def reset(self, **kwargs) -> Tuple[np.ndarray, Dict]:
         """
@@ -109,7 +109,7 @@ class EpisodicLifeEnv(gym.Wrapper):
             obs, info = self.env.reset(**kwargs)
         else:
             # no-op step to advance from terminal/lost life state
-            obs, _, _, info = self.env.step(0)
+            obs, _, _, _, info = self.env.step(0)
         self.lives = self.env.unwrapped.ale.lives()
         return obs, info
 

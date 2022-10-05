@@ -71,8 +71,8 @@ def test_callbacks(tmp_path, model_class):
     assert event_callback.n_calls == model.num_timesteps
 
     model.learn(500, callback=None)
-    # Transform callback into a callback list automatically
-    model.learn(500, callback=[checkpoint_callback, eval_callback])
+    # Transform callback into a callback list automatically and use progress bar
+    model.learn(500, callback=[checkpoint_callback, eval_callback], progress_bar=True)
     # Automatic wrapping, old way of doing callbacks
     model.learn(500, callback=lambda _locals, _globals: True)
 

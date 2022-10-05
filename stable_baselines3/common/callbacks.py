@@ -6,6 +6,17 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import gym
 import numpy as np
 
+try:
+    from tqdm import TqdmExperimentalWarning
+
+    # Remove experimental warning
+    warnings.filterwarnings("ignore", category=TqdmExperimentalWarning)
+    from tqdm.rich import tqdm
+except ImportError:
+    # Rich not installed, we only throw an error
+    # if the progress bar is used
+    tqdm = None
+
 from stable_baselines3.common import base_class  # pytype: disable=pyi-error
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, sync_envs_normalization
@@ -644,3 +655,33 @@ class StopTrainingOnNoModelImprovement(BaseCallback):
             )
 
         return continue_training
+
+
+class ProgressBarCallback(BaseCallback):
+    """
+    Display a progress bar when training SB3 agent
+    using tqdm and rich packages.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        if tqdm is None:
+            raise ImportError(
+                "You must install tqdm and rich in order to use the progress bar callback. "
+                "It is included if you install stable-baselines with the extra packages: "
+                "`pip install stable_baselines3[extra]`"
+            )
+        self.pbar = None
+
+    def _on_training_start(self) -> None:
+        # Initialize progress bar
+        self.pbar = tqdm(total=self.locals["total_timesteps"])
+
+    def _on_step(self) -> bool:
+        # Update progress bar, we do num_envs steps per call to `env.step()`
+        self.pbar.update(self.training_env.num_envs)
+        return True
+
+    def _on_training_end(self) -> None:
+        # Close progress bar
+        self.pbar.close()

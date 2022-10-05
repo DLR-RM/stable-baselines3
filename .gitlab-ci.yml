@@ -6,6 +6,7 @@ type-check:
 
 pytest:
   script:
+  - pip install tqdm rich # for progress bar
   - python --version
   # MKL_THREADING_LAYER=GNU to avoid MKL_THREADING_LAYER=INTEL incompatibility error
   - MKL_THREADING_LAYER=GNU make pytest

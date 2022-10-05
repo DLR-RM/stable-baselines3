@@ -73,10 +73,10 @@ In the following example, we will train, save and load a DQN model on the Lunar 
   # Create environment
   env = gym.make("LunarLander-v2")
 
-  # Instantiate the agent
-  model = DQN("MlpPolicy", env, verbose=1)
-  # Train the agent
-  model.learn(total_timesteps=int(2e5))
+  # Instantiate the agent (set verbose=1 for more outputs)
+  model = DQN("MlpPolicy", env, verbose=0)
+  # Train the agent and display a progress bar
+  model.learn(total_timesteps=int(2e5), progress_bar=True)
   # Save the agent
   model.save("dqn_lunar")
   del model  # delete trained model to demonstrate loading

@@ -8,9 +8,8 @@ Release 1.6.2a0 (WIP)
 
 .. warning::
 
-	This version will be the last one supporting ``gym``,
-  we recommend switching to `gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_.
-  You can find a migration guide here: TODO
+    This version will be the last one supporting ``gym``, we recommend switching to `gymnasium <https://github.com/Farama-Foundation/Gymnasium>`_.
+    You can find a migration guide here: TODO
 
 
 Breaking Changes:

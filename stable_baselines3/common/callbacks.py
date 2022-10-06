@@ -670,15 +670,14 @@ class ProgressBarCallback(BaseCallback):
             raise ImportError(
                 "You must install tqdm and rich in order to use the progress bar callback. "
                 "It is included if you install stable-baselines with the extra packages: "
-                "`pip install stable_baselines3[extra]`"
+                "`pip install stable-baselines3[extra]`"
             )
         self.pbar = None
 
     def _on_training_start(self) -> None:
         # Initialize progress bar
-        self.pbar = tqdm(total=self.locals["total_timesteps"])
-        # Add timesteps that were done in previous training sessions
-        self.pbar.update(self.num_timesteps)
+        # Remove timesteps that were done in previous training sessions
+        self.pbar = tqdm(total=self.locals["total_timesteps"] - self.model.num_timesteps)
 
     def _on_step(self) -> bool:
         # Update progress bar, we do num_envs steps per call to `env.step()`

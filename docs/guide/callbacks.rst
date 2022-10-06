@@ -235,7 +235,7 @@ This callback is integrated inside SB3 via the ``progress_bar`` argument of the 
 
 .. note::
 
-	This callback requires ``tqdm`` and ``rich`` packages to be installed. This is done automatically when using ``pip install stable_baselines3[extra]``
+	This callback requires ``tqdm`` and ``rich`` packages to be installed. This is done automatically when using ``pip install stable-baselines3[extra]``
 
 
 .. code-block:: python

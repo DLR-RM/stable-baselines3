@@ -18,6 +18,7 @@ SB3-Contrib
 
 Bug Fixes:
 ^^^^^^^^^^
+- ``self.num_timesteps`` was initialized properly only after the first call to ``on_step()`` for callbacks
 
 Deprecations:
 ^^^^^^^^^^^^^

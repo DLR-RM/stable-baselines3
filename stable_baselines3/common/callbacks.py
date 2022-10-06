@@ -65,6 +65,8 @@ class BaseCallback(ABC):
         # Those are reference and will be updated automatically
         self.locals = locals_
         self.globals = globals_
+        # Update num_timesteps in case training was done before
+        self.num_timesteps = self.model.num_timesteps
         self._on_training_start()
 
     def _on_training_start(self) -> None:
@@ -93,7 +95,6 @@ class BaseCallback(ABC):
         :return: If the callback returns False, training is aborted early.
         """
         self.n_calls += 1
-        # timesteps start at zero
         self.num_timesteps = self.model.num_timesteps
 
         return self._on_step()
@@ -676,6 +677,8 @@ class ProgressBarCallback(BaseCallback):
     def _on_training_start(self) -> None:
         # Initialize progress bar
         self.pbar = tqdm(total=self.locals["total_timesteps"])
+        # Add timesteps that were done in previous training sessions
+        self.pbar.update(self.num_timesteps)
 
     def _on_step(self) -> bool:
         # Update progress bar, we do num_envs steps per call to `env.step()`

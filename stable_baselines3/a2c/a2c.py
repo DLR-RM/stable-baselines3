@@ -195,6 +195,7 @@ class A2C(OnPolicyAlgorithm):
         tb_log_name: str = "A2C",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
+        progress_bar: bool = False,
     ) -> A2CSelf:
 
         return super().learn(
@@ -207,4 +208,5 @@ class A2C(OnPolicyAlgorithm):
             tb_log_name=tb_log_name,
             eval_log_path=eval_log_path,
             reset_num_timesteps=reset_num_timesteps,
+            progress_bar=progress_bar,
         )

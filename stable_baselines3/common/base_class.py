@@ -12,7 +12,7 @@ import numpy as np
 import torch as th
 
 from stable_baselines3.common import utils
-from stable_baselines3.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
+from stable_baselines3.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback, ProgressBarCallback
 from stable_baselines3.common.env_util import is_wrapped
 from stable_baselines3.common.logger import Logger
 from stable_baselines3.common.monitor import Monitor
@@ -371,6 +371,7 @@ class BaseAlgorithm(ABC):
         eval_freq: int = 10000,
         n_eval_episodes: int = 5,
         log_path: Optional[str] = None,
+        progress_bar: bool = False,
     ) -> BaseCallback:
         """
         :param callback: Callback(s) called at every step with state of the algorithm.
@@ -378,6 +379,7 @@ class BaseAlgorithm(ABC):
         :param n_eval_episodes: How many episodes to play per evaluation
         :param n_eval_episodes: Number of episodes to rollout during evaluation.
         :param log_path: Path to a folder where the evaluations will be saved
+        :param progress_bar: Display a progress bar using tqdm and rich.
         :return: A hybrid callback calling `callback` and performing evaluation.
         """
         # Convert a list of callbacks into a callback
@@ -387,6 +389,10 @@ class BaseAlgorithm(ABC):
         # Convert functional callback to object
         if not isinstance(callback, BaseCallback):
             callback = ConvertCallback(callback)
+
+        # Add progress bar callback
+        if progress_bar:
+            callback = CallbackList([callback, ProgressBarCallback()])
 
         # Create eval callback in charge of the evaluation
         if eval_env is not None:
@@ -413,6 +419,7 @@ class BaseAlgorithm(ABC):
         log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
         tb_log_name: str = "run",
+        progress_bar: bool = False,
     ) -> Tuple[int, BaseCallback]:
         """
         Initialize different variables needed for training.
@@ -425,7 +432,8 @@ class BaseAlgorithm(ABC):
         :param log_path: Path to a folder where the evaluations will be saved
         :param reset_num_timesteps: Whether to reset or not the ``num_timesteps`` attribute
         :param tb_log_name: the name of the run for tensorboard log
-        :return:
+        :param progress_bar: Display a progress bar using tqdm and rich.
+        :return: Total timesteps and callback(s)
         """
         self.start_time = time.time_ns()
 
@@ -464,7 +472,7 @@ class BaseAlgorithm(ABC):
             self._logger = utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
 
         # Create eval callback if needed
-        callback = self._init_callback(callback, eval_env, eval_freq, n_eval_episodes, log_path)
+        callback = self._init_callback(callback, eval_env, eval_freq, n_eval_episodes, log_path, progress_bar)
 
         return total_timesteps, callback
 
@@ -550,6 +558,7 @@ class BaseAlgorithm(ABC):
         n_eval_episodes: int = 5,
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
+        progress_bar: bool = False,
     ) -> BaseAlgorithmSelf:
         """
         Return a trained model.
@@ -563,6 +572,7 @@ class BaseAlgorithm(ABC):
         :param n_eval_episodes: Number of episode to evaluate the agent
         :param eval_log_path: Path to a folder where the evaluations will be saved
         :param reset_num_timesteps: whether or not to reset the current timestep number (used in logging)
+        :param progress_bar: Display a progress bar using tqdm and rich.
         :return: the trained model
         """
 

@@ -276,6 +276,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
         tb_log_name: str = "run",
+        progress_bar: bool = False,
     ) -> Tuple[int, BaseCallback]:
         """
         cf `BaseAlgorithm`.
@@ -318,6 +319,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             log_path,
             reset_num_timesteps,
             tb_log_name,
+            progress_bar,
         )
 
     def learn(
@@ -331,6 +333,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         tb_log_name: str = "run",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
+        progress_bar: bool = False,
     ) -> OffPolicyAlgorithmSelf:
 
         total_timesteps, callback = self._setup_learn(
@@ -342,6 +345,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             eval_log_path,
             reset_num_timesteps,
             tb_log_name,
+            progress_bar,
         )
 
         callback.on_training_start(locals(), globals())

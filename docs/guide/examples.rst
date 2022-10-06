@@ -75,8 +75,8 @@ In the following example, we will train, save and load a DQN model on the Lunar 
 
   # Instantiate the agent
   model = DQN("MlpPolicy", env, verbose=1)
-  # Train the agent
-  model.learn(total_timesteps=int(2e5))
+  # Train the agent and display a progress bar
+  model.learn(total_timesteps=int(2e5), progress_bar=True)
   # Save the agent
   model.save("dqn_lunar")
   del model  # delete trained model to demonstrate loading

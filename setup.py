@@ -127,6 +127,9 @@ setup(
             "tensorboard>=2.9.1",
             # Checking memory taken by replay buffer
             "psutil",
+            # For progress bar callback
+            "tqdm",
+            "rich",
         ],
     },
     description="Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.",

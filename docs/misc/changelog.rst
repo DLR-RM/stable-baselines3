@@ -2,16 +2,16 @@
 
 Changelog
 ==========
-Release 1.6.2 WIP
+Release 1.6.2a0 (WIP)
 ---------------------------
-
-**Bug fix release**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 
 New Features:
 ^^^^^^^^^^^^^
+- Added ``progress_bar`` argument in the ``learn()`` method, displayed using TQDM and rich packages
+- Added progress bar callback
 
 SB3-Contrib
 ^^^^^^^^^^^

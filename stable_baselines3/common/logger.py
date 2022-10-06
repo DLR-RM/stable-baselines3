@@ -227,7 +227,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             lines.append(f"| {key}{key_space} | {value}{val_space} |")
         lines.append(dashes)
 
-        if tqdm is not None and self.file.name == "<stdout>":
+        if tqdm is not None and hasattr(self.file, "name") and self.file.name == "<stdout>":
             # Do not mess up with progress bar
             tqdm.write("\n".join(lines) + "\n", file=sys.stdout, end="")
         else:

@@ -36,7 +36,7 @@ def is_wrapped(env: Type[gym.Env], wrapper_class: Type[gym.Wrapper]) -> bool:
 
 
 def make_vec_env(
-    env_id: Union[str, Type[gym.Env], Callable[..., gym.Env]],
+    env_id: Union[str, Callable[..., gym.Env]],
     n_envs: int = 1,
     seed: Optional[int] = None,
     start_index: int = 0,
@@ -109,7 +109,7 @@ def make_vec_env(
 
 
 def make_atari_env(
-    env_id: Union[str, Type[gym.Env], Callable[..., gym.Env]],
+    env_id: Union[str, Callable[..., gym.Env]],
     n_envs: int = 1,
     seed: Optional[int] = None,
     start_index: int = 0,

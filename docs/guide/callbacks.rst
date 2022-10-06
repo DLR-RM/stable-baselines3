@@ -243,7 +243,7 @@ This callback is integrated inside SB3 via the ``progress_bar`` argument of the 
     from stable_baselines3 import PPO
     from stable_baselines3.common.callbacks import ProgressBarCallback
 
-    model = PPO("MlpPolicy", "Pendulum-v1", gamma=0.98, verbose=0)
+    model = PPO("MlpPolicy", "Pendulum-v1")
     # Display progress bar using the progress bar callback
     # this is equivalent to model.learn(100_000, callback=ProgressBarCallback())
     model.learn(100_000, progress_bar=True)

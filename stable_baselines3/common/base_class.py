@@ -162,6 +162,15 @@ class BaseAlgorithm(ABC):
         if env is not None:
             if isinstance(env, str):
                 if create_eval_env:
+                    warnings.warn(
+                        "The parameter `create_eval_env` is deprecated and will be removed in the future. "
+                        "Please use `EvalCallback` or a custom Callback instead.",
+                        DeprecationWarning,
+                        # By setting the `stacklevel` we refer to the initial caller of the deprecated feature.
+                        # This causes the the `DepricationWarning` to not be ignored and to be shown to the user. See
+                        # https://github.com/DLR-RM/stable-baselines3/pull/1082#discussion_r989842855 for more details.
+                        stacklevel=4,
+                    )
                     self.eval_env = maybe_make_env(env, self.verbose)
 
             env = maybe_make_env(env, self.verbose)
@@ -439,9 +448,12 @@ class BaseAlgorithm(ABC):
 
         if eval_env is not None or eval_freq != -1:
             warnings.warn(
-                "Parameters `eval_env` and `eval_freq` are deprecated and will be removed in the future."
-                " Please use `EvalCallback` or a custom Callback instead.",
+                "Parameters `eval_env` and `eval_freq` are deprecated and will be removed in the future. "
+                "Please use `EvalCallback` or a custom Callback instead.",
                 DeprecationWarning,
+                # By setting the `stacklevel` we refer to the initial caller of the deprecated feature.
+                # This causes the the `DepricationWarning` to not be ignored and to be shown to the user. See
+                # https://github.com/DLR-RM/stable-baselines3/pull/1082#discussion_r989842855 for more details.
                 stacklevel=4,
             )
 

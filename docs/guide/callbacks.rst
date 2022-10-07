@@ -225,6 +225,29 @@ It will save the best model if ``best_model_save_path`` folder is specified and 
     model = SAC("MlpPolicy", "Pendulum-v1")
     model.learn(5000, callback=eval_callback)
 
+.. _ProgressBarCallback:
+
+ProgressBarCallback
+^^^^^^^^^^^^^^^^^^^
+
+Display a progress bar with the current progress, elapsed time and estimated remaining time.
+This callback is integrated inside SB3 via the ``progress_bar`` argument of the ``learn()`` method.
+
+.. note::
+
+	This callback requires ``tqdm`` and ``rich`` packages to be installed. This is done automatically when using ``pip install stable-baselines3[extra]``
+
+
+.. code-block:: python
+
+    from stable_baselines3 import PPO
+    from stable_baselines3.common.callbacks import ProgressBarCallback
+
+    model = PPO("MlpPolicy", "Pendulum-v1")
+    # Display progress bar using the progress bar callback
+    # this is equivalent to model.learn(100_000, callback=ProgressBarCallback())
+    model.learn(100_000, progress_bar=True)
+
 
 .. _Callbacklist:
 

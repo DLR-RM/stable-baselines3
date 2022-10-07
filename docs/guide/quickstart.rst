@@ -17,7 +17,7 @@ Here is a quick example of how to train and run A2C on a CartPole environment:
   env = gym.make("CartPole-v1")
 
   model = A2C("MlpPolicy", env, verbose=1)
-  model.learn(total_timesteps=10000)
+  model.learn(total_timesteps=10_000)
 
   obs = env.reset()
   for i in range(1000):

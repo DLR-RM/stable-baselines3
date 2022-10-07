@@ -2,6 +2,34 @@
 
 Changelog
 ==========
+Release 1.6.2a0 (WIP)
+---------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+- Added ``progress_bar`` argument in the ``learn()`` method, displayed using TQDM and rich packages
+- Added progress bar callback
+
+SB3-Contrib
+^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+- ``self.num_timesteps`` was initialized properly only after the first call to ``on_step()`` for callbacks
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Fixed type hint of the ``env_id`` parameter in ``make_vec_env`` and ``make_atari_env`` (@AlexPasqua)
+
+Documentation:
+^^^^^^^^^^^^^^
+- Extended docstring of the ``wrapper_class`` parameter in ``make_vec_env`` (@AlexPasqua)
 
 Release 1.6.1 (2022-09-29)
 ---------------------------

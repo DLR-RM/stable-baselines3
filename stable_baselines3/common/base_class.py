@@ -78,6 +78,7 @@ class BaseAlgorithm(ABC):
     :param create_eval_env: Whether to create a second environment that will be
         used for evaluating the agent periodically (Only available when passing string for the environment).
         Caution, this parameter is deprecated and will be removed in the future.
+        Please use `EvalCallback` or a custom Callback instead.
     :param monitor_wrapper: When creating an environment, whether to wrap it
         or not in a Monitor wrapper.
     :param seed: Seed for the pseudo random generators
@@ -594,6 +595,7 @@ class BaseAlgorithm(ABC):
             is deprecated and will be removed in the future. Please use ``EvalCallback`` instead.
         :param eval_freq: Evaluate the agent every ``eval_freq`` timesteps (this may vary a little).
             Caution, this parameter is deprecated and will be removed in the future.
+            Please use `EvalCallback` or a custom Callback instead.
         :param n_eval_episodes: Number of episode to evaluate the agent
         :param eval_log_path: Path to a folder where the evaluations will be saved
         :param reset_num_timesteps: whether or not to reset the current timestep number (used in logging)

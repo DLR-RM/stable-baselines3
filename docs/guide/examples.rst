@@ -71,12 +71,12 @@ In the following example, we will train, save and load a DQN model on the Lunar 
 
 
   # Create environment
-  env = gym.make('LunarLander-v2')
+  env = gym.make("LunarLander-v2")
 
   # Instantiate the agent
-  model = DQN('MlpPolicy', env, verbose=1)
-  # Train the agent
-  model.learn(total_timesteps=int(2e5))
+  model = DQN("MlpPolicy", env, verbose=1)
+  # Train the agent and display a progress bar
+  model.learn(total_timesteps=int(2e5), progress_bar=True)
   # Save the agent
   model.save("dqn_lunar")
   del model  # delete trained model to demonstrate loading
@@ -138,7 +138,7 @@ Multiprocessing: Unleashing the Power of Vectorized Environments
       set_random_seed(seed)
       return _init
 
-  if __name__ == '__main__':
+  if __name__ == "__main__":
       env_id = "CartPole-v1"
       num_cpu = 4  # Number of processes to use
       # Create the vectorized environment
@@ -149,7 +149,7 @@ Multiprocessing: Unleashing the Power of Vectorized Environments
       # You can choose between `DummyVecEnv` (usually faster) and `SubprocVecEnv`
       # env = make_vec_env(env_id, n_envs=num_cpu, seed=0, vec_env_cls=SubprocVecEnv)
 
-      model = PPO('MlpPolicy', env, verbose=1)
+      model = PPO("MlpPolicy", env, verbose=1)
       model.learn(total_timesteps=25_000)
 
       obs = env.reset()
@@ -182,7 +182,7 @@ Multiprocessing with off-policy algorithms
   # We collect 4 transitions per call to `ènv.step()`
   # and performs 2 gradient steps per call to `ènv.step()`
   # if gradient_steps=-1, then we would do 4 gradients steps per call to `ènv.step()`
-  model = SAC('MlpPolicy', env, train_freq=1, gradient_steps=2, verbose=1)
+  model = SAC("MlpPolicy", env, train_freq=1, gradient_steps=2, verbose=1)
   model.learn(total_timesteps=10_000)
 
 
@@ -248,13 +248,13 @@ If your callback returns False, training is aborted early.
       :param check_freq:
       :param log_dir: Path to the folder where the model will be saved.
         It must contains the file created by the ``Monitor`` wrapper.
-      :param verbose: Verbosity level.
+      :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
       """
       def __init__(self, check_freq: int, log_dir: str, verbose: int = 1):
           super(SaveOnBestTrainingRewardCallback, self).__init__(verbose)
           self.check_freq = check_freq
           self.log_dir = log_dir
-          self.save_path = os.path.join(log_dir, 'best_model')
+          self.save_path = os.path.join(log_dir, "best_model")
           self.best_mean_reward = -np.inf
 
       def _init_callback(self) -> None:
@@ -266,11 +266,11 @@ If your callback returns False, training is aborted early.
           if self.n_calls % self.check_freq == 0:
 
             # Retrieve training reward
-            x, y = ts2xy(load_results(self.log_dir), 'timesteps')
+            x, y = ts2xy(load_results(self.log_dir), "timesteps")
             if len(x) > 0:
                 # Mean training reward over the last 100 episodes
                 mean_reward = np.mean(y[-100:])
-                if self.verbose > 0:
+                if self.verbose >= 1:
                   print(f"Num timesteps: {self.num_timesteps}")
                   print(f"Best mean reward: {self.best_mean_reward:.2f} - Last mean reward per episode: {mean_reward:.2f}")
 
@@ -278,7 +278,7 @@ If your callback returns False, training is aborted early.
                 if mean_reward > self.best_mean_reward:
                     self.best_mean_reward = mean_reward
                     # Example for saving best model
-                    if self.verbose > 0:
+                    if self.verbose >= 1:
                       print(f"Saving new best model to {self.save_path}")
                     self.model.save(self.save_path)
 
@@ -289,14 +289,14 @@ If your callback returns False, training is aborted early.
   os.makedirs(log_dir, exist_ok=True)
 
   # Create and wrap the environment
-  env = gym.make('LunarLanderContinuous-v2')
+  env = gym.make("LunarLanderContinuous-v2")
   env = Monitor(env, log_dir)
 
   # Add some action noise for exploration
   n_actions = env.action_space.shape[-1]
   action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
   # Because we use parameter noise, we should use a MlpPolicy with layer normalization
-  model = TD3('MlpPolicy', env, action_noise=action_noise, verbose=0)
+  model = TD3("MlpPolicy", env, action_noise=action_noise, verbose=0)
   # Create the callback: check every 1000 steps
   callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir)
   # Train the agent
@@ -336,11 +336,11 @@ and multiprocessing for you. To install the Atari environments, run the command 
   # There already exists an environment generator
   # that will make and wrap atari environments correctly.
   # Here we are also multi-worker training (n_envs=4 => 4 environments)
-  env = make_atari_env('PongNoFrameskip-v4', n_envs=4, seed=0)
+  env = make_atari_env("PongNoFrameskip-v4", n_envs=4, seed=0)
   # Frame-stacking with 4 frames
   env = VecFrameStack(env, n_stack=4)
 
-  model = A2C('CnnPolicy', env, verbose=1)
+  model = A2C("CnnPolicy", env, verbose=1)
   model.learn(total_timesteps=25_000)
 
   obs = env.reset()
@@ -382,7 +382,7 @@ will compute a running average and standard deviation of input features (it can 
   env = VecNormalize(env, norm_obs=True, norm_reward=True,
                      clip_obs=10.)
 
-  model = PPO('MlpPolicy', env)
+  model = PPO("MlpPolicy", env)
   model.learn(total_timesteps=2000)
 
   # Don't forget to save the VecNormalize statistics when saving the agent
@@ -529,17 +529,10 @@ linear and constant schedules.
 Advanced Saving and Loading
 ---------------------------------
 
-In this example, we show how to use some advanced features of Stable-Baselines3 (SB3):
-how to easily create a test environment to evaluate an agent periodically,
-use a policy independently from a model (and how to save it, load it) and save/load a replay buffer.
+In this example, we show how to use a policy independently from a model (and how to save it, load it) and save/load a replay buffer.
 
 By default, the replay buffer is not saved when calling ``model.save()``, in order to save space on the disk (a replay buffer can be up to several GB when using images).
 However, SB3 provides a ``save_replay_buffer()`` and ``load_replay_buffer()`` method to save it separately.
-
-
-Stable-Baselines3 automatic creation of an environment for evaluation.
-For that, you only need to specify ``create_eval_env=True`` when passing the Gym ID of the environment while creating the agent.
-Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
 
 
 .. note::
@@ -559,14 +552,12 @@ Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
   from stable_baselines3.common.evaluation import evaluate_policy
   from stable_baselines3.sac.policies import MlpPolicy
 
-  # Create the model, the training environment
-  # and the test environment (for evaluation)
-  model = SAC('MlpPolicy', 'Pendulum-v1', verbose=1,
-              learning_rate=1e-3, create_eval_env=True)
+  # Create the model and the training environment
+  model = SAC("MlpPolicy", "Pendulum-v1", verbose=1,
+              learning_rate=1e-3)
 
-  # Evaluate the model every 1000 steps on 5 test episodes
-  # and save the evaluation to the "logs/" folder
-  model.learn(6000, eval_freq=1000, n_eval_episodes=5, eval_log_path="./logs/")
+  # train the model
+  model.learn(total_timesteps=6000)
 
   # save the model
   model.save("sac_pendulum")
@@ -714,7 +705,7 @@ to keep track of the agent progress.
   from stable_baselines3.common.vec_env import VecExtractDictObs, VecMonitor
 
   # ProcgenEnv is already vectorized
-  venv = ProcgenEnv(num_envs=2, env_name='starpilot')
+  venv = ProcgenEnv(num_envs=2, env_name="starpilot")
 
   # To use only part of the observation:
   # venv = VecExtractDictObs(venv, "rgb")
@@ -750,8 +741,8 @@ Record a mp4 video (here using a random agent).
   import gym
   from stable_baselines3.common.vec_env import VecVideoRecorder, DummyVecEnv
 
-  env_id = 'CartPole-v1'
-  video_folder = 'logs/videos/'
+  env_id = "CartPole-v1"
+  video_folder = "logs/videos/"
   video_length = 100
 
   env = DummyVecEnv([lambda: gym.make(env_id)])
@@ -789,11 +780,11 @@ Bonus: Make a GIF of a Trained Agent
 
   images = []
   obs = model.env.reset()
-  img = model.env.render(mode='rgb_array')
+  img = model.env.render(mode="rgb_array")
   for i in range(350):
       images.append(img)
       action, _ = model.predict(obs)
       obs, _, _ ,_ = model.env.step(action)
-      img = model.env.render(mode='rgb_array')
+      img = model.env.render(mode="rgb_array")
 
-  imageio.mimsave('lander_a2c.gif', [np.array(img) for i, img in enumerate(images) if i%2 == 0], fps=29)
+  imageio.mimsave("lander_a2c.gif", [np.array(img) for i, img in enumerate(images) if i%2 == 0], fps=29)

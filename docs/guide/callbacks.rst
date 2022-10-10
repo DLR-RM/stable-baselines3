@@ -27,7 +27,7 @@ You can find two examples of custom callbacks in the documentation: one for savi
         """
         A custom callback that derives from ``BaseCallback``.
 
-        :param verbose: (int) Verbosity level 0: not output 1: info 2: debug
+        :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
         """
         def __init__(self, verbose=0):
             super(CustomCallback, self).__init__(verbose)
@@ -121,7 +121,7 @@ A child callback is for instance :ref:`StopTrainingOnRewardThreshold <StopTraini
 
         :param callback: (Optional[BaseCallback]) Callback that will be called
             when an event is triggered.
-        :param verbose: (int)
+        :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
         """
         def __init__(self, callback: Optional[BaseCallback] = None, verbose: int = 0):
             super(EventCallback, self).__init__(verbose=verbose)
@@ -157,6 +157,10 @@ CheckpointCallback
 
 Callback for saving a model every ``save_freq`` calls to ``env.step()``, you must specify a log folder (``save_path``)
 and optionally a prefix for the checkpoints (``rl_model`` by default).
+If you are using this callback to stop and resume training, you may want to optionally save the replay buffer if the
+model has one (``save_replay_buffer``, ``False`` by default).
+Additionally, if your environment uses a :ref:`VecNormalize <vec_env>` wrapper, you can save the
+corresponding statistics using ``save_vecnormalize`` (``False`` by default).
 
 .. warning::
 
@@ -168,14 +172,20 @@ and optionally a prefix for the checkpoints (``rl_model`` by default).
 
 .. code-block:: python
 
-    from stable_baselines3 import SAC
-    from stable_baselines3.common.callbacks import CheckpointCallback
-    # Save a checkpoint every 1000 steps
-    checkpoint_callback = CheckpointCallback(save_freq=1000, save_path='./logs/',
-                                             name_prefix='rl_model')
+  from stable_baselines3 import SAC
+  from stable_baselines3.common.callbacks import CheckpointCallback
 
-    model = SAC('MlpPolicy', 'Pendulum-v1')
-    model.learn(2000, callback=checkpoint_callback)
+  # Save a checkpoint every 1000 steps
+  checkpoint_callback = CheckpointCallback(
+    save_freq=1000,
+    save_path="./logs/",
+    name_prefix="rl_model",
+    save_replay_buffer=True,
+    save_vecnormalize=True,
+  )
+
+  model = SAC("MlpPolicy", "Pendulum-v1")
+  model.learn(2000, callback=checkpoint_callback)
 
 
 .. _EvalCallback:
@@ -206,14 +216,37 @@ It will save the best model if ``best_model_save_path`` folder is specified and 
     from stable_baselines3.common.callbacks import EvalCallback
 
     # Separate evaluation env
-    eval_env = gym.make('Pendulum-v1')
+    eval_env = gym.make("Pendulum-v1")
     # Use deterministic actions for evaluation
-    eval_callback = EvalCallback(eval_env, best_model_save_path='./logs/',
-                                 log_path='./logs/', eval_freq=500,
+    eval_callback = EvalCallback(eval_env, best_model_save_path="./logs/",
+                                 log_path="./logs/", eval_freq=500,
                                  deterministic=True, render=False)
 
-    model = SAC('MlpPolicy', 'Pendulum-v1')
+    model = SAC("MlpPolicy", "Pendulum-v1")
     model.learn(5000, callback=eval_callback)
+
+.. _ProgressBarCallback:
+
+ProgressBarCallback
+^^^^^^^^^^^^^^^^^^^
+
+Display a progress bar with the current progress, elapsed time and estimated remaining time.
+This callback is integrated inside SB3 via the ``progress_bar`` argument of the ``learn()`` method.
+
+.. note::
+
+	This callback requires ``tqdm`` and ``rich`` packages to be installed. This is done automatically when using ``pip install stable-baselines3[extra]``
+
+
+.. code-block:: python
+
+    from stable_baselines3 import PPO
+    from stable_baselines3.common.callbacks import ProgressBarCallback
+
+    model = PPO("MlpPolicy", "Pendulum-v1")
+    # Display progress bar using the progress bar callback
+    # this is equivalent to model.learn(100_000, callback=ProgressBarCallback())
+    model.learn(100_000, progress_bar=True)
 
 
 .. _Callbacklist:
@@ -232,15 +265,15 @@ Alternatively, you can pass directly a list of callbacks to the ``learn()`` meth
     from stable_baselines3 import SAC
     from stable_baselines3.common.callbacks import CallbackList, CheckpointCallback, EvalCallback
 
-    checkpoint_callback = CheckpointCallback(save_freq=1000, save_path='./logs/')
+    checkpoint_callback = CheckpointCallback(save_freq=1000, save_path="./logs/")
     # Separate evaluation env
-    eval_env = gym.make('Pendulum-v1')
-    eval_callback = EvalCallback(eval_env, best_model_save_path='./logs/best_model',
-                                 log_path='./logs/results', eval_freq=500)
+    eval_env = gym.make("Pendulum-v1")
+    eval_callback = EvalCallback(eval_env, best_model_save_path="./logs/best_model",
+                                 log_path="./logs/results", eval_freq=500)
     # Create the callback list
     callback = CallbackList([checkpoint_callback, eval_callback])
 
-    model = SAC('MlpPolicy', 'Pendulum-v1')
+    model = SAC("MlpPolicy", "Pendulum-v1")
     # Equivalent to:
     # model.learn(5000, callback=[checkpoint_callback, eval_callback])
     model.learn(5000, callback=callback)
@@ -263,12 +296,12 @@ It must be used with the :ref:`EvalCallback` and use the event triggered by a ne
     from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
 
     # Separate evaluation env
-    eval_env = gym.make('Pendulum-v1')
+    eval_env = gym.make("Pendulum-v1")
     # Stop training when the model reaches the reward threshold
     callback_on_best = StopTrainingOnRewardThreshold(reward_threshold=-200, verbose=1)
     eval_callback = EvalCallback(eval_env, callback_on_new_best=callback_on_best, verbose=1)
 
-    model = SAC('MlpPolicy', 'Pendulum-v1', verbose=1)
+    model = SAC("MlpPolicy", "Pendulum-v1", verbose=1)
     # Almost infinite number of timesteps, but the training will stop
     # early as soon as the reward threshold is reached
     model.learn(int(1e10), callback=eval_callback)
@@ -296,10 +329,10 @@ An :ref:`EventCallback` that will trigger its child callback every ``n_steps`` t
 
   # this is equivalent to defining CheckpointCallback(save_freq=500)
   # checkpoint_callback will be triggered every 500 steps
-  checkpoint_on_event = CheckpointCallback(save_freq=1, save_path='./logs/')
+  checkpoint_on_event = CheckpointCallback(save_freq=1, save_path="./logs/")
   event_callback = EveryNTimesteps(n_steps=500, callback=checkpoint_on_event)
 
-  model = PPO('MlpPolicy', 'Pendulum-v1', verbose=1)
+  model = PPO("MlpPolicy", "Pendulum-v1", verbose=1)
 
   model.learn(int(2e4), callback=event_callback)
 
@@ -328,7 +361,7 @@ and in total for ``max_episodes * n_envs`` episodes.
     # Stops training when the model reaches the maximum number of episodes
     callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=5, verbose=1)
 
-    model = A2C('MlpPolicy', 'Pendulum-v1', verbose=1)
+    model = A2C("MlpPolicy", "Pendulum-v1", verbose=1)
     # Almost infinite number of timesteps, but the training will stop
     # early as soon as the max number of episodes is reached
     model.learn(int(1e10), callback=callback_max_episodes)

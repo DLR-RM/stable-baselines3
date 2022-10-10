@@ -5,7 +5,7 @@ import copy
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 import gym
 import numpy as np
@@ -33,8 +33,10 @@ from stable_baselines3.common.torch_layers import (
 from stable_baselines3.common.type_aliases import Schedule
 from stable_baselines3.common.utils import get_device, is_vectorized_observation, obs_as_tensor
 
+BaseModelSelf = TypeVar("BaseModelSelf", bound="BaseModel")
 
-class BaseModel(nn.Module, ABC):
+
+class BaseModel(nn.Module):
     """
     The base model object: makes predictions in response to observations.
 
@@ -86,10 +88,6 @@ class BaseModel(nn.Module, ABC):
 
         self.features_extractor_class = features_extractor_class
         self.features_extractor_kwargs = features_extractor_kwargs
-
-    @abstractmethod
-    def forward(self, *args, **kwargs):
-        pass
 
     def _update_features_extractor(
         self,
@@ -162,7 +160,7 @@ class BaseModel(nn.Module, ABC):
         th.save({"state_dict": self.state_dict(), "data": self._get_constructor_parameters()}, path)
 
     @classmethod
-    def load(cls, path: str, device: Union[th.device, str] = "auto") -> "BaseModel":
+    def load(cls: Type[BaseModelSelf], path: str, device: Union[th.device, str] = "auto") -> BaseModelSelf:
         """
         Load model from path.
 
@@ -255,7 +253,7 @@ class BaseModel(nn.Module, ABC):
         return observation, vectorized_env
 
 
-class BasePolicy(BaseModel):
+class BasePolicy(BaseModel, ABC):
     """The base policy object.
 
     Parameters are mostly the same as `BaseModel`; additions are documented below.

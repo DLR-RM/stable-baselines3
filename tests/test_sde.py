@@ -63,7 +63,7 @@ def test_sde_check():
 @pytest.mark.parametrize("use_expln", [False, True])
 def test_state_dependent_noise(model_class, use_expln):
     kwargs = {"learning_starts": 0} if model_class == SAC else {"n_steps": 64}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning):  # `create_eval_env` and `eval_freq` are deprecated
         model = model_class(
             "MlpPolicy",
             "Pendulum-v1",

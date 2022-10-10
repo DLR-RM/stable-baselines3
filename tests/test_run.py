@@ -18,7 +18,7 @@ def test_deterministic_pg(model_class, action_noise):
     """
     Test for DDPG and variants (TD3).
     """
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning):  # `create_eval_env` and `eval_freq` are deprecated
         model = model_class(
             "MlpPolicy",
             "Pendulum-v1",
@@ -34,7 +34,7 @@ def test_deterministic_pg(model_class, action_noise):
 
 @pytest.mark.parametrize("env_id", ["CartPole-v1", "Pendulum-v1"])
 def test_a2c(env_id):
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning):  # `create_eval_env` and `eval_freq` are deprecated
         model = A2C("MlpPolicy", env_id, seed=0, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
         model.learn(total_timesteps=1000, eval_freq=500)
 
@@ -49,7 +49,7 @@ def test_advantage_normalization(model_class, normalize_advantage):
 @pytest.mark.parametrize("env_id", ["CartPole-v1", "Pendulum-v1"])
 @pytest.mark.parametrize("clip_range_vf", [None, 0.2, -0.2])
 def test_ppo(env_id, clip_range_vf):
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning):  # `create_eval_env` and `eval_freq` are deprecated
         if clip_range_vf is not None and clip_range_vf < 0:
             # Should throw an error
             with pytest.raises(AssertionError):
@@ -78,7 +78,7 @@ def test_ppo(env_id, clip_range_vf):
 
 @pytest.mark.parametrize("ent_coef", ["auto", 0.01, "auto_0.01"])
 def test_sac(ent_coef):
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning):  # `create_eval_env` and `eval_freq` are deprecated
         model = SAC(
             "MlpPolicy",
             "Pendulum-v1",
@@ -108,7 +108,7 @@ def test_n_critics(n_critics):
 
 
 def test_dqn():
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning):  # `create_eval_env` and `eval_freq` are deprecated
         model = DQN(
             "MlpPolicy",
             "CartPole-v1",

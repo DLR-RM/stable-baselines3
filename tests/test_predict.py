@@ -49,7 +49,7 @@ def test_auto_wrap(model_class):
     model = model_class("MlpPolicy", env)
 
     # Catch DeprecationWarnings
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning):  # `eval_env` is deprecated
         model.learn(100, eval_env=eval_env)
 
 

@@ -2,8 +2,11 @@
 
 Changelog
 ==========
-Release 1.6.2a0 (WIP)
----------------------------
+
+Release 1.6.2 (2022-10-10)
+--------------------------
+
+**Progress bar in the learn() method, RL Zoo3 is now a package**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -12,6 +15,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Added ``progress_bar`` argument in the ``learn()`` method, displayed using TQDM and rich packages
 - Added progress bar callback
+- The `RL Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_ can now be installed as a package (``pip install rl_zoo3``)
 
 SB3-Contrib
 ^^^^^^^^^^^
@@ -19,9 +23,11 @@ SB3-Contrib
 Bug Fixes:
 ^^^^^^^^^^
 - ``self.num_timesteps`` was initialized properly only after the first call to ``on_step()`` for callbacks
+- Set importlib-metadata version to ``~=4.13`` to be compatible with ``gym=0.21``
 
 Deprecations:
 ^^^^^^^^^^^^^
+- Added deprecation warning if parameters ``eval_env``, ``eval_freq`` or ``create_eval_env`` are used (see #925) (@tobirohrer)
 
 Others:
 ^^^^^^^
@@ -30,6 +36,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Extended docstring of the ``wrapper_class`` parameter in ``make_vec_env`` (@AlexPasqua)
+
 
 Release 1.6.1 (2022-09-29)
 ---------------------------
@@ -1076,4 +1083,4 @@ And all the contributors:
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
-@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde
+@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer

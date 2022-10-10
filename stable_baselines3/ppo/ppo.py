@@ -58,7 +58,9 @@ class PPO(OnPolicyAlgorithm):
         By default, there is no limit on the kl div.
     :param tensorboard_log: the log location for tensorboard (if None, no logging)
     :param create_eval_env: Whether to create a second environment that will be
-        used for evaluating the agent periodically. (Only available when passing string for the environment)
+        used for evaluating the agent periodically (Only available when passing string for the environment).
+        Caution, this parameter is deprecated and will be removed in the future.
+        Please use `EvalCallback` or a custom Callback instead.
     :param policy_kwargs: additional arguments to be passed to the policy on creation
     :param verbose: Verbosity level: 0 for no output, 1 for info messages (such as device or wrappers used), 2 for
         debug messages

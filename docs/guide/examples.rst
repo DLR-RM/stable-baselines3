@@ -532,17 +532,10 @@ linear and constant schedules.
 Advanced Saving and Loading
 ---------------------------------
 
-In this example, we show how to use some advanced features of Stable-Baselines3 (SB3):
-how to easily create a test environment to evaluate an agent periodically,
-use a policy independently from a model (and how to save it, load it) and save/load a replay buffer.
+In this example, we show how to use a policy independently from a model (and how to save it, load it) and save/load a replay buffer.
 
 By default, the replay buffer is not saved when calling ``model.save()``, in order to save space on the disk (a replay buffer can be up to several GB when using images).
 However, SB3 provides a ``save_replay_buffer()`` and ``load_replay_buffer()`` method to save it separately.
-
-
-Stable-Baselines3 automatic creation of an environment for evaluation.
-For that, you only need to specify ``create_eval_env=True`` when passing the Gym ID of the environment while creating the agent.
-Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
 
 
 .. note::
@@ -562,14 +555,12 @@ Behind the scene, SB3 uses an :ref:`EvalCallback <callbacks>`.
   from stable_baselines3.common.evaluation import evaluate_policy
   from stable_baselines3.sac.policies import MlpPolicy
 
-  # Create the model, the training environment
-  # and the test environment (for evaluation)
+  # Create the model and the training environment
   model = SAC("MlpPolicy", "Pendulum-v1", verbose=1,
-              learning_rate=1e-3, create_eval_env=True)
+              learning_rate=1e-3)
 
-  # Evaluate the model every 1000 steps on 5 test episodes
-  # and save the evaluation to the "logs/" folder
-  model.learn(6000, eval_freq=1000, n_eval_episodes=5, eval_log_path="./logs/")
+  # train the model
+  model.learn(total_timesteps=6000)
 
   # save the model
   model.save("sac_pendulum")

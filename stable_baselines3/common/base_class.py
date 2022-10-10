@@ -388,6 +388,8 @@ class BaseAlgorithm(ABC):
         """
         :param callback: Callback(s) called at every step with state of the algorithm.
         :param eval_freq: How many steps between evaluations; if None, do not evaluate.
+            Caution, this parameter is deprecated and will be removed in the future.
+            Please use `EvalCallback` or a custom Callback instead.
         :param n_eval_episodes: How many episodes to play per evaluation
         :param n_eval_episodes: Number of episodes to rollout during evaluation.
         :param log_path: Path to a folder where the evaluations will be saved
@@ -438,10 +440,12 @@ class BaseAlgorithm(ABC):
 
         :param total_timesteps: The total number of samples (env steps) to train on
         :param eval_env: Environment to use for evaluation.
-          Caution, this parameter is deprecated and will be removed in the future.
-          Please use `EvalCallback` or a custom Callback instead.
+            Caution, this parameter is deprecated and will be removed in the future.
+            Please use `EvalCallback` or a custom Callback instead.
         :param callback: Callback(s) called at every step with state of the algorithm.
         :param eval_freq: How many steps between evaluations
+            Caution, this parameter is deprecated and will be removed in the future.
+            Please use `EvalCallback` or a custom Callback instead.
         :param n_eval_episodes: How many episodes to play per evaluation
         :param log_path: Path to a folder where the evaluations will be saved
         :param reset_num_timesteps: Whether to reset or not the ``num_timesteps`` attribute

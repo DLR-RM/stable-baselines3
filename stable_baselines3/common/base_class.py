@@ -438,6 +438,8 @@ class BaseAlgorithm(ABC):
 
         :param total_timesteps: The total number of samples (env steps) to train on
         :param eval_env: Environment to use for evaluation.
+          Caution, this parameter is deprecated and will be removed in the future.
+          Please use `EvalCallback` or a custom Callback instead.
         :param callback: Callback(s) called at every step with state of the algorithm.
         :param eval_freq: How many steps between evaluations
         :param n_eval_episodes: How many episodes to play per evaluation

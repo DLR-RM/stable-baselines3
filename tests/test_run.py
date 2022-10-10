@@ -18,23 +18,25 @@ def test_deterministic_pg(model_class, action_noise):
     """
     Test for DDPG and variants (TD3).
     """
-    model = model_class(
-        "MlpPolicy",
-        "Pendulum-v1",
-        policy_kwargs=dict(net_arch=[64, 64]),
-        learning_starts=100,
-        verbose=1,
-        create_eval_env=True,
-        buffer_size=250,
-        action_noise=action_noise,
-    )
-    model.learn(total_timesteps=300, eval_freq=250)
+    with pytest.warns(DeprecationWarning):  # `create_eval_env` and `eval_freq` are deprecated
+        model = model_class(
+            "MlpPolicy",
+            "Pendulum-v1",
+            policy_kwargs=dict(net_arch=[64, 64]),
+            learning_starts=100,
+            verbose=1,
+            create_eval_env=True,
+            buffer_size=250,
+            action_noise=action_noise,
+        )
+        model.learn(total_timesteps=300, eval_freq=250)
 
 
 @pytest.mark.parametrize("env_id", ["CartPole-v1", "Pendulum-v1"])
 def test_a2c(env_id):
-    model = A2C("MlpPolicy", env_id, seed=0, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
-    model.learn(total_timesteps=1000, eval_freq=500)
+    with pytest.warns(DeprecationWarning):  # `create_eval_env` and `eval_freq` are deprecated
+        model = A2C("MlpPolicy", env_id, seed=0, policy_kwargs=dict(net_arch=[16]), verbose=1, create_eval_env=True)
+        model.learn(total_timesteps=1000, eval_freq=500)
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO])
@@ -47,46 +49,48 @@ def test_advantage_normalization(model_class, normalize_advantage):
 @pytest.mark.parametrize("env_id", ["CartPole-v1", "Pendulum-v1"])
 @pytest.mark.parametrize("clip_range_vf", [None, 0.2, -0.2])
 def test_ppo(env_id, clip_range_vf):
-    if clip_range_vf is not None and clip_range_vf < 0:
-        # Should throw an error
-        with pytest.raises(AssertionError):
+    with pytest.warns(DeprecationWarning):  # `create_eval_env` and `eval_freq` are deprecated
+        if clip_range_vf is not None and clip_range_vf < 0:
+            # Should throw an error
+            with pytest.raises(AssertionError):
+                model = PPO(
+                    "MlpPolicy",
+                    env_id,
+                    seed=0,
+                    policy_kwargs=dict(net_arch=[16]),
+                    verbose=1,
+                    create_eval_env=True,
+                    clip_range_vf=clip_range_vf,
+                )
+        else:
             model = PPO(
                 "MlpPolicy",
                 env_id,
+                n_steps=512,
                 seed=0,
                 policy_kwargs=dict(net_arch=[16]),
                 verbose=1,
                 create_eval_env=True,
                 clip_range_vf=clip_range_vf,
             )
-    else:
-        model = PPO(
-            "MlpPolicy",
-            env_id,
-            n_steps=512,
-            seed=0,
-            policy_kwargs=dict(net_arch=[16]),
-            verbose=1,
-            create_eval_env=True,
-            clip_range_vf=clip_range_vf,
-        )
-        model.learn(total_timesteps=1000, eval_freq=500)
+            model.learn(total_timesteps=1000, eval_freq=500)
 
 
 @pytest.mark.parametrize("ent_coef", ["auto", 0.01, "auto_0.01"])
 def test_sac(ent_coef):
-    model = SAC(
-        "MlpPolicy",
-        "Pendulum-v1",
-        policy_kwargs=dict(net_arch=[64, 64]),
-        learning_starts=100,
-        verbose=1,
-        create_eval_env=True,
-        buffer_size=250,
-        ent_coef=ent_coef,
-        action_noise=NormalActionNoise(np.zeros(1), np.zeros(1)),
-    )
-    model.learn(total_timesteps=300, eval_freq=250)
+    with pytest.warns(DeprecationWarning):  # `create_eval_env` and `eval_freq` are deprecated
+        model = SAC(
+            "MlpPolicy",
+            "Pendulum-v1",
+            policy_kwargs=dict(net_arch=[64, 64]),
+            learning_starts=100,
+            verbose=1,
+            create_eval_env=True,
+            buffer_size=250,
+            ent_coef=ent_coef,
+            action_noise=NormalActionNoise(np.zeros(1), np.zeros(1)),
+        )
+        model.learn(total_timesteps=300, eval_freq=250)
 
 
 @pytest.mark.parametrize("n_critics", [1, 3])
@@ -104,17 +108,18 @@ def test_n_critics(n_critics):
 
 
 def test_dqn():
-    model = DQN(
-        "MlpPolicy",
-        "CartPole-v1",
-        policy_kwargs=dict(net_arch=[64, 64]),
-        learning_starts=100,
-        buffer_size=500,
-        learning_rate=3e-4,
-        verbose=1,
-        create_eval_env=True,
-    )
-    model.learn(total_timesteps=500, eval_freq=250)
+    with pytest.warns(DeprecationWarning):  # `create_eval_env` and `eval_freq` are deprecated
+        model = DQN(
+            "MlpPolicy",
+            "CartPole-v1",
+            policy_kwargs=dict(net_arch=[64, 64]),
+            learning_starts=100,
+            buffer_size=500,
+            learning_rate=3e-4,
+            verbose=1,
+            create_eval_env=True,
+        )
+        model.learn(total_timesteps=500, eval_freq=250)
 
 
 @pytest.mark.parametrize("train_freq", [4, (4, "step"), (1, "episode")])

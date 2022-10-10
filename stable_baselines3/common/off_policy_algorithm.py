@@ -62,6 +62,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         with multiple environments (as in A2C)
     :param create_eval_env: Whether to create a second environment that will be
         used for evaluating the agent periodically. (Only available when passing string for the environment)
+        Caution, this parameter is deprecated and will be removed in the future.
+        Please use `EvalCallback` or a custom Callback instead.
     :param monitor_wrapper: When creating an environment, whether to wrap it
         or not in a Monitor wrapper.
     :param seed: Seed for the pseudo random generators

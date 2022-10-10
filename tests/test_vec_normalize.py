@@ -118,15 +118,6 @@ def make_dict_env():
     return Monitor(DummyDictEnv())
 
 
-def test_deprecation():
-    venv = DummyVecEnv([lambda: gym.make("CartPole-v1")])
-    venv = VecNormalize(venv)
-    with warnings.catch_warnings(record=True) as record:
-        assert np.allclose(venv.ret, venv.returns)
-    # Deprecation warning when using .ret
-    assert len(record) == 1
-
-
 def check_rms_equal(rmsa, rmsb):
     if isinstance(rmsa, dict):
         for key in rmsa.keys():

@@ -125,7 +125,6 @@ class BaseAlgorithm(ABC):
         self._total_timesteps = 0
         # Used for computing fps, it is updated at each call of learn()
         self._num_timesteps_at_start = 0
-        self.eval_env = None
         self.seed = seed
         self.action_noise = None  # type: Optional[ActionNoise]
         self.start_time = None
@@ -547,8 +546,6 @@ class BaseAlgorithm(ABC):
         self.action_space.seed(seed)
         if self.env is not None:
             self.env.seed(seed)
-        if self.eval_env is not None:
-            self.eval_env.seed(seed)
 
     def set_parameters(
         self,

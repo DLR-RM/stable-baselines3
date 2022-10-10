@@ -47,7 +47,10 @@ def test_auto_wrap(model_class):
     env = gym.make(env_name)
     eval_env = gym.make(env_name)
     model = model_class("MlpPolicy", env)
-    model.learn(100, eval_env=eval_env)
+
+    # Catch DeprecationWarnings
+    with pytest.warns(DeprecationWarning):  # `eval_env` is deprecated
+        model.learn(100, eval_env=eval_env)
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)

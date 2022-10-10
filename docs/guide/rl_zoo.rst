@@ -33,6 +33,11 @@ Installation
 	You can remove the ``--recursive`` option if you don't want to download the trained agents
 
 
+.. note::
+
+  If you only need the training/plotting scripts and additional callbacks/wrappers from the RL Zoo, you can also install it via pip: ``pip install rl_zoo3``
+
+
 2. Install dependencies
 ::
 
@@ -57,7 +62,7 @@ For example (with evaluation and checkpoints):
 
 ::
 
- python train.py --algo ppo2 --env CartPole-v1 --eval-freq 10000 --save-freq 50000
+ python train.py --algo ppo --env CartPole-v1 --eval-freq 10000 --save-freq 50000
 
 
 Continue training (here, load pretrained agent for Breakout and continue

@@ -2,10 +2,12 @@ image: stablebaselines/stable-baselines3-cpu:1.4.1a0
 
 type-check:
   script:
+  - pip install pytype --upgrade
   - make type
 
 pytest:
   script:
+  - pip install tqdm rich # for progress bar
   - python --version
   # MKL_THREADING_LAYER=GNU to avoid MKL_THREADING_LAYER=INTEL incompatibility error
   - MKL_THREADING_LAYER=GNU make pytest

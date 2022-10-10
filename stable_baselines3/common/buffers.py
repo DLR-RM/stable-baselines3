@@ -574,7 +574,7 @@ class DictReplayBuffer(ReplayBuffer):
         reward: np.ndarray,
         done: np.ndarray,
         infos: List[Dict[str, Any]],
-    ) -> None:
+    ) -> None:  # pytype: disable=signature-mismatch
         # Copy to avoid modification by reference
         for key in self.observations.keys():
             # Reshape needed when using multiple envs with discrete observations
@@ -711,7 +711,7 @@ class DictRolloutBuffer(RolloutBuffer):
         episode_start: np.ndarray,
         value: th.Tensor,
         log_prob: th.Tensor,
-    ) -> None:
+    ) -> None:  # pytype: disable=signature-mismatch
         """
         :param obs: Observation
         :param action: Action

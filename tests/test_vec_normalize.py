@@ -380,8 +380,8 @@ def test_offpolicy_normalization(model_class, online_sampling):
     assert model.get_vec_normalize_env() is eval_env
     model.learn(total_timesteps=10)
     model.set_env(env)
-
-    model.learn(total_timesteps=150, eval_env=eval_env, eval_freq=75)
+    with pytest.warns(DeprecationWarning):  # `eval_env` and `eval_freq` are deprecated
+        model.learn(total_timesteps=150, eval_env=eval_env, eval_freq=75)
     # Check getter
     assert isinstance(model.get_vec_normalize_env(), VecNormalize)
 

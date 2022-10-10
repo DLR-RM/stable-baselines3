@@ -3,16 +3,17 @@
 import io
 import pathlib
 import time
+import warnings
 from abc import ABC, abstractmethod
 from collections import deque
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
 
 import gym
 import numpy as np
 import torch as th
 
 from stable_baselines3.common import utils
-from stable_baselines3.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback
+from stable_baselines3.common.callbacks import BaseCallback, CallbackList, ConvertCallback, EvalCallback, ProgressBarCallback
 from stable_baselines3.common.env_util import is_wrapped
 from stable_baselines3.common.logger import Logger
 from stable_baselines3.common.monitor import Monitor
@@ -43,7 +44,7 @@ def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymE
     """If env is a string, make the environment; otherwise, return env.
 
     :param env: The environment to learn from.
-    :param verbose: logging verbosity
+    :param verbose: Verbosity level: 0 for no output, 1 for indicating if envrironment is created
     :return A Gym (vector) environment.
     """
     if isinstance(env, str):
@@ -51,6 +52,9 @@ def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymE
             print(f"Creating environment from the given name '{env}'")
         env = gym.make(env)
     return env
+
+
+BaseAlgorithmSelf = TypeVar("BaseAlgorithmSelf", bound="BaseAlgorithm")
 
 
 class BaseAlgorithm(ABC):
@@ -64,14 +68,17 @@ class BaseAlgorithm(ABC):
         it can be a function of the current progress remaining (from 1 to 0)
     :param policy_kwargs: Additional arguments to be passed to the policy on creation
     :param tensorboard_log: the log location for tensorboard (if None, no logging)
-    :param verbose: The verbosity level: 0 none, 1 training information, 2 debug
+    :param verbose: Verbosity level: 0 for no output, 1 for info messages (such as device or wrappers used), 2 for
+        debug messages
     :param device: Device on which the code should run.
         By default, it will try to use a Cuda compatible device and fallback to cpu
         if it is not possible.
     :param support_multi_env: Whether the algorithm supports training
         with multiple environments (as in A2C)
     :param create_eval_env: Whether to create a second environment that will be
-        used for evaluating the agent periodically. (Only available when passing string for the environment)
+        used for evaluating the agent periodically (Only available when passing string for the environment).
+        Caution, this parameter is deprecated and will be removed in the future.
+        Please use `EvalCallback` or a custom Callback instead.
     :param monitor_wrapper: When creating an environment, whether to wrap it
         or not in a Monitor wrapper.
     :param seed: Seed for the pseudo random generators
@@ -108,7 +115,7 @@ class BaseAlgorithm(ABC):
             self.policy_class = policy
 
         self.device = get_device(device)
-        if verbose > 0:
+        if verbose >= 1:
             print(f"Using {self.device} device")
 
         self.env = None  # type: Optional[GymEnv]
@@ -157,6 +164,15 @@ class BaseAlgorithm(ABC):
         if env is not None:
             if isinstance(env, str):
                 if create_eval_env:
+                    warnings.warn(
+                        "The parameter `create_eval_env` is deprecated and will be removed in the future. "
+                        "Please use `EvalCallback` or a custom Callback instead.",
+                        DeprecationWarning,
+                        # By setting the `stacklevel` we refer to the initial caller of the deprecated feature.
+                        # This causes the the `DepricationWarning` to not be ignored and to be shown to the user. See
+                        # https://github.com/DLR-RM/stable-baselines3/pull/1082#discussion_r989842855 for more details.
+                        stacklevel=4,
+                    )
                     self.eval_env = maybe_make_env(env, self.verbose)
 
             env = maybe_make_env(env, self.verbose)
@@ -198,7 +214,7 @@ class BaseAlgorithm(ABC):
         or to re-order the image channels.
 
         :param env:
-        :param verbose:
+        :param verbose: Verbosity level: 0 for no output, 1 for indicating wrappers used
         :param monitor_wrapper: Whether to wrap the env in a ``Monitor`` when possible.
         :return: The wrapped environment.
         """
@@ -367,13 +383,17 @@ class BaseAlgorithm(ABC):
         eval_freq: int = 10000,
         n_eval_episodes: int = 5,
         log_path: Optional[str] = None,
+        progress_bar: bool = False,
     ) -> BaseCallback:
         """
         :param callback: Callback(s) called at every step with state of the algorithm.
         :param eval_freq: How many steps between evaluations; if None, do not evaluate.
+            Caution, this parameter is deprecated and will be removed in the future.
+            Please use `EvalCallback` or a custom Callback instead.
         :param n_eval_episodes: How many episodes to play per evaluation
         :param n_eval_episodes: Number of episodes to rollout during evaluation.
         :param log_path: Path to a folder where the evaluations will be saved
+        :param progress_bar: Display a progress bar using tqdm and rich.
         :return: A hybrid callback calling `callback` and performing evaluation.
         """
         # Convert a list of callbacks into a callback
@@ -383,6 +403,10 @@ class BaseAlgorithm(ABC):
         # Convert functional callback to object
         if not isinstance(callback, BaseCallback):
             callback = ConvertCallback(callback)
+
+        # Add progress bar callback
+        if progress_bar:
+            callback = CallbackList([callback, ProgressBarCallback()])
 
         # Create eval callback in charge of the evaluation
         if eval_env is not None:
@@ -409,20 +433,38 @@ class BaseAlgorithm(ABC):
         log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
         tb_log_name: str = "run",
+        progress_bar: bool = False,
     ) -> Tuple[int, BaseCallback]:
         """
         Initialize different variables needed for training.
 
         :param total_timesteps: The total number of samples (env steps) to train on
         :param eval_env: Environment to use for evaluation.
+            Caution, this parameter is deprecated and will be removed in the future.
+            Please use `EvalCallback` or a custom Callback instead.
         :param callback: Callback(s) called at every step with state of the algorithm.
         :param eval_freq: How many steps between evaluations
+            Caution, this parameter is deprecated and will be removed in the future.
+            Please use `EvalCallback` or a custom Callback instead.
         :param n_eval_episodes: How many episodes to play per evaluation
         :param log_path: Path to a folder where the evaluations will be saved
         :param reset_num_timesteps: Whether to reset or not the ``num_timesteps`` attribute
         :param tb_log_name: the name of the run for tensorboard log
-        :return:
+        :param progress_bar: Display a progress bar using tqdm and rich.
+        :return: Total timesteps and callback(s)
         """
+
+        if eval_env is not None or eval_freq != -1:
+            warnings.warn(
+                "Parameters `eval_env` and `eval_freq` are deprecated and will be removed in the future. "
+                "Please use `EvalCallback` or a custom Callback instead.",
+                DeprecationWarning,
+                # By setting the `stacklevel` we refer to the initial caller of the deprecated feature.
+                # This causes the the `DepricationWarning` to not be ignored and to be shown to the user. See
+                # https://github.com/DLR-RM/stable-baselines3/pull/1082#discussion_r989842855 for more details.
+                stacklevel=4,
+            )
+
         self.start_time = time.time_ns()
 
         if self.ep_info_buffer is None or reset_num_timesteps:
@@ -460,7 +502,7 @@ class BaseAlgorithm(ABC):
             self._logger = utils.configure_logger(self.verbose, self.tensorboard_log, tb_log_name, reset_num_timesteps)
 
         # Create eval callback if needed
-        callback = self._init_callback(callback, eval_env, eval_freq, n_eval_episodes, log_path)
+        callback = self._init_callback(callback, eval_env, eval_freq, n_eval_episodes, log_path, progress_bar)
 
         return total_timesteps, callback
 
@@ -515,6 +557,11 @@ class BaseAlgorithm(ABC):
         # if it is not a VecEnv, make it a VecEnv
         # and do other transformations (dict obs, image transpose) if needed
         env = self._wrap_env(env, self.verbose)
+        assert env.num_envs == self.n_envs, (
+            "The number of environments to be set is different from the number of environments in the model: "
+            f"({env.num_envs} != {self.n_envs}), whereas `set_env` requires them to be the same. To load a model with "
+            f"a different number of environments, you must use `{self.__class__.__name__}.load(path, env)` instead"
+        )
         # Check that the observation spaces match
         check_for_correct_spaces(env, self.observation_space, self.action_space)
         # Update VecNormalize object
@@ -531,7 +578,7 @@ class BaseAlgorithm(ABC):
 
     @abstractmethod
     def learn(
-        self,
+        self: BaseAlgorithmSelf,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 100,
@@ -541,7 +588,8 @@ class BaseAlgorithm(ABC):
         n_eval_episodes: int = 5,
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-    ) -> "BaseAlgorithm":
+        progress_bar: bool = False,
+    ) -> BaseAlgorithmSelf:
         """
         Return a trained model.
 
@@ -549,11 +597,15 @@ class BaseAlgorithm(ABC):
         :param callback: callback(s) called at every step with state of the algorithm.
         :param log_interval: The number of timesteps before logging.
         :param tb_log_name: the name of the run for TensorBoard logging
-        :param eval_env: Environment that will be used to evaluate the agent
-        :param eval_freq: Evaluate the agent every ``eval_freq`` timesteps (this may vary a little)
+        :param eval_env: Environment that will be used to evaluate the agent. Caution, this parameter
+            is deprecated and will be removed in the future. Please use ``EvalCallback`` instead.
+        :param eval_freq: Evaluate the agent every ``eval_freq`` timesteps (this may vary a little).
+            Caution, this parameter is deprecated and will be removed in the future.
+            Please use `EvalCallback` or a custom Callback instead.
         :param n_eval_episodes: Number of episode to evaluate the agent
         :param eval_log_path: Path to a folder where the evaluations will be saved
         :param reset_num_timesteps: whether or not to reset the current timestep number (used in logging)
+        :param progress_bar: Display a progress bar using tqdm and rich.
         :return: the trained model
         """
 
@@ -665,7 +717,7 @@ class BaseAlgorithm(ABC):
 
     @classmethod
     def load(
-        cls,
+        cls: Type[BaseAlgorithmSelf],
         path: Union[str, pathlib.Path, io.BufferedIOBase],
         env: Optional[GymEnv] = None,
         device: Union[th.device, str] = "auto",
@@ -673,7 +725,7 @@ class BaseAlgorithm(ABC):
         print_system_info: bool = False,
         force_reset: bool = True,
         **kwargs,
-    ) -> "BaseAlgorithm":
+    ) -> BaseAlgorithmSelf:
         """
         Load the model from a zip-file.
         Warning: ``load`` re-creates the model from scratch, it does not update it in-place!
@@ -703,7 +755,10 @@ class BaseAlgorithm(ABC):
             get_system_info()
 
         data, params, pytorch_variables = load_from_zip_file(
-            path, device=device, custom_objects=custom_objects, print_system_info=print_system_info
+            path,
+            device=device,
+            custom_objects=custom_objects,
+            print_system_info=print_system_info,
         )
 
         # Remove stored device information and replace with ours
@@ -729,6 +784,9 @@ class BaseAlgorithm(ABC):
             # See issue https://github.com/DLR-RM/stable-baselines3/issues/597
             if force_reset and data is not None:
                 data["_last_obs"] = None
+            # `n_envs` must be updated. See issue https://github.com/DLR-RM/stable-baselines3/issues/1018
+            if data is not None:
+                data["n_envs"] = env.num_envs
         else:
             # Use stored env, if one exists. If not, continue as is (can be used for predict)
             if "env" in data:

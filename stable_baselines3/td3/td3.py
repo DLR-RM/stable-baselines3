@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 import gym
 import numpy as np
@@ -12,6 +12,8 @@ from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import get_parameters_by_name, polyak_update
 from stable_baselines3.td3.policies import CnnPolicy, MlpPolicy, MultiInputPolicy, TD3Policy
+
+TD3Self = TypeVar("TD3Self", bound="TD3")
 
 
 class TD3(OffPolicyAlgorithm):
@@ -52,9 +54,12 @@ class TD3(OffPolicyAlgorithm):
         (smoothing noise)
     :param target_noise_clip: Limit for absolute value of target policy smoothing noise.
     :param create_eval_env: Whether to create a second environment that will be
-        used for evaluating the agent periodically. (Only available when passing string for the environment)
+        used for evaluating the agent periodically (Only available when passing string for the environment).
+        Caution, this parameter is deprecated and will be removed in the future.
+        Please use `EvalCallback` or a custom Callback instead.
     :param policy_kwargs: additional arguments to be passed to the policy on creation
-    :param verbose: the verbosity level: 0 no output, 1 info, 2 debug
+    :param verbose: Verbosity level: 0 for no output, 1 for info messages (such as device or wrappers used), 2 for
+        debug messages
     :param seed: Seed for the pseudo random generators
     :param device: Device (cpu, cuda, ...) on which the code should be run.
         Setting it to auto, the code will be run on the GPU if possible.
@@ -80,7 +85,7 @@ class TD3(OffPolicyAlgorithm):
         train_freq: Union[int, Tuple[int, str]] = (1, "episode"),
         gradient_steps: int = -1,
         action_noise: Optional[ActionNoise] = None,
-        replay_buffer_class: Optional[ReplayBuffer] = None,
+        replay_buffer_class: Optional[Type[ReplayBuffer]] = None,
         replay_buffer_kwargs: Optional[Dict[str, Any]] = None,
         optimize_memory_usage: bool = False,
         policy_delay: int = 2,
@@ -204,7 +209,7 @@ class TD3(OffPolicyAlgorithm):
         self.logger.record("train/critic_loss", np.mean(critic_losses))
 
     def learn(
-        self,
+        self: TD3Self,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
@@ -214,7 +219,8 @@ class TD3(OffPolicyAlgorithm):
         tb_log_name: str = "TD3",
         eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
-    ) -> OffPolicyAlgorithm:
+        progress_bar: bool = False,
+    ) -> TD3Self:
 
         return super().learn(
             total_timesteps=total_timesteps,
@@ -226,6 +232,7 @@ class TD3(OffPolicyAlgorithm):
             tb_log_name=tb_log_name,
             eval_log_path=eval_log_path,
             reset_num_timesteps=reset_num_timesteps,
+            progress_bar=progress_bar,
         )
 
     def _excluded_save_params(self) -> List[str]:

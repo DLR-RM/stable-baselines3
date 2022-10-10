@@ -348,9 +348,6 @@ class BaseAlgorithm(ABC):
     ) -> BaseCallback:
         """
         :param callback: Callback(s) called at every step with state of the algorithm.
-        :param eval_freq: How many steps between evaluations; if None, do not evaluate.
-            Caution, this parameter is deprecated and will be removed in the future.
-            Please use `EvalCallback` or a custom Callback instead.
         :param progress_bar: Display a progress bar using tqdm and rich.
         :return: A hybrid callback calling `callback` and performing evaluation.
         """

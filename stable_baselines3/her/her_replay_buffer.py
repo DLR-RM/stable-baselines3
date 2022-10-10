@@ -97,6 +97,7 @@ class HerReplayBuffer(DictReplayBuffer):
     def __getstate__(self) -> Dict[str, Any]:
         """
         Gets state for pickling.
+
         Excludes self.env, as in general Env's may not be pickleable.
         Note: when using offline sampling, this will also save the offline replay buffer.
         """
@@ -108,7 +109,9 @@ class HerReplayBuffer(DictReplayBuffer):
     def __setstate__(self, state: Dict[str, Any]) -> None:
         """
         Restores pickled state.
+
         User must call ``set_env()`` after unpickling before using.
+
         :param state:
         """
         self.__dict__.update(state)
@@ -118,6 +121,7 @@ class HerReplayBuffer(DictReplayBuffer):
     def set_env(self, env: VecEnv) -> None:
         """
         Sets the environment.
+
         :param env:
         """
         if self.env is not None:
@@ -182,7 +186,7 @@ class HerReplayBuffer(DictReplayBuffer):
         Sample elements from the replay buffer.
 
         :param batch_size: Number of element to sample
-        :param env: associated gym VecEnv
+        :param env: Associated gym VecEnv
             to normalize the observations/rewards when sampling
         :return: Samples
         """

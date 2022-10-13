@@ -44,7 +44,7 @@ body:
         class CustomEnv(gym.Env):
 
           def __init__(self):
-            super(CustomEnv, self).__init__()
+            super().__init__()
             self.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(14,))
             self.action_space = gym.spaces.Box(low=-1, high=1, shape=(6,))
 
@@ -64,10 +64,19 @@ body:
         model = A2C("MlpPolicy", env, verbose=1).learn(1000)
         ```
 
+  - type: textarea
+    id: traceback
+    attributes:
+      label: Traceback
+      description: |
+          Error messages and stack traces.
+          Please use the [markdown code blocks](https://help.github.com/en/articles/creating-and-highlighting-code-blocks) for both code and stack traces.
+      value: |
         ```bash
         Traceback (most recent call last): File ...
 
         ```
+
   - type: textarea
     id: system-info
     attributes:

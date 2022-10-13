@@ -30,10 +30,14 @@ body:
 
         ```
 
-        ```bash
-        Traceback (most recent call last): File ...
+  - type: textarea
+    id: traceback
+    attributes:
+      label: Relevant log output / Error message
+      description: Please copy and paste any relevant log output / error message. This will be automatically formatted into code, so no need for backticks.
+      placeholder: "Traceback (most recent call last): File ..."
+      render: shell
 
-        ```
   - type: textarea
     id: system-info
     attributes:

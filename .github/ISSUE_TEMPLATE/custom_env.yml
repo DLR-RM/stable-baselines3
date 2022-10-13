@@ -44,7 +44,7 @@ body:
         class CustomEnv(gym.Env):
 
           def __init__(self):
-            super(CustomEnv, self).__init__()
+            super().__init__()
             self.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(14,))
             self.action_space = gym.spaces.Box(low=-1, high=1, shape=(6,))
 
@@ -64,10 +64,14 @@ body:
         model = A2C("MlpPolicy", env, verbose=1).learn(1000)
         ```
 
-        ```bash
-        Traceback (most recent call last): File ...
+  - type: textarea
+    id: traceback
+    attributes:
+      label: Relevant log output / Error message
+      description: Please copy and paste any relevant log output / error message. This will be automatically formatted into code, so no need for backticks.
+      placeholder: "Traceback (most recent call last): File ..."
+      render: shell
 
-        ```
   - type: textarea
     id: system-info
     attributes:

@@ -4,8 +4,8 @@ Changelog
 ==========
 
 
-Release 1.6.3a0 (WIP)
----------------------------
+Release 1.7.0a0 (WIP)
+--------------------------
 
 .. warning::
 
@@ -15,6 +15,10 @@ Release 1.6.3a0 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Removed deprecated ``create_eval_env``, ``eval_env``, ``eval_log_path``, ``n_eval_episodes`` and ``eval_freq`` parameters,
+  please use an ``EvalCallback`` instead
+- Removed deprecated ``sde_net_arch`` parameter
+- Removed ``ret`` attributes in ``VecNormalize``, please use ``returns`` instead
 - Switched minimum Gym version to 0.26 (@carlosluis, @arjun-kg, @tlpss)
 
 

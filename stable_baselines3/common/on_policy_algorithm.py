@@ -38,10 +38,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     :param sde_sample_freq: Sample a new noise matrix every n steps when using gSDE
         Default: -1 (only sample at the beginning of the rollout)
     :param tensorboard_log: the log location for tensorboard (if None, no logging)
-    :param create_eval_env: Whether to create a second environment that will be
-        used for evaluating the agent periodically. (Only available when passing string for the environment)
-        Caution, this parameter is deprecated and will be removed in the future.
-        Please use `EvalCallback` or a custom Callback instead.
     :param monitor_wrapper: When creating an environment, whether to wrap it
         or not in a Monitor wrapper.
     :param policy_kwargs: additional arguments to be passed to the policy on creation
@@ -68,7 +64,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         use_sde: bool,
         sde_sample_freq: int,
         tensorboard_log: Optional[str] = None,
-        create_eval_env: bool = False,
         monitor_wrapper: bool = True,
         policy_kwargs: Optional[Dict[str, Any]] = None,
         verbose: int = 0,
@@ -87,7 +82,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             device=device,
             use_sde=use_sde,
             sde_sample_freq=sde_sample_freq,
-            create_eval_env=create_eval_env,
             support_multi_env=True,
             seed=seed,
             tensorboard_log=tensorboard_log,
@@ -233,11 +227,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 1,
-        eval_env: Optional[GymEnv] = None,
-        eval_freq: int = -1,
-        n_eval_episodes: int = 5,
         tb_log_name: str = "OnPolicyAlgorithm",
-        eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
     ) -> OnPolicyAlgorithmSelf:
@@ -245,11 +235,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         total_timesteps, callback = self._setup_learn(
             total_timesteps,
-            eval_env,
             callback,
-            eval_freq,
-            n_eval_episodes,
-            eval_log_path,
             reset_num_timesteps,
             tb_log_name,
             progress_bar,

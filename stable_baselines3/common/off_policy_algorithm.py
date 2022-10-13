@@ -60,10 +60,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         if it is not possible.
     :param support_multi_env: Whether the algorithm supports training
         with multiple environments (as in A2C)
-    :param create_eval_env: Whether to create a second environment that will be
-        used for evaluating the agent periodically. (Only available when passing string for the environment)
-        Caution, this parameter is deprecated and will be removed in the future.
-        Please use `EvalCallback` or a custom Callback instead.
     :param monitor_wrapper: When creating an environment, whether to wrap it
         or not in a Monitor wrapper.
     :param seed: Seed for the pseudo random generators
@@ -98,7 +94,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         verbose: int = 0,
         device: Union[th.device, str] = "auto",
         support_multi_env: bool = False,
-        create_eval_env: bool = False,
         monitor_wrapper: bool = True,
         seed: Optional[int] = None,
         use_sde: bool = False,
@@ -117,7 +112,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             verbose=verbose,
             device=device,
             support_multi_env=support_multi_env,
-            create_eval_env=create_eval_env,
             monitor_wrapper=monitor_wrapper,
             seed=seed,
             use_sde=use_sde,
@@ -271,11 +265,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     def _setup_learn(
         self,
         total_timesteps: int,
-        eval_env: Optional[GymEnv],
         callback: MaybeCallback = None,
-        eval_freq: int = 10000,
-        n_eval_episodes: int = 5,
-        log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
         tb_log_name: str = "run",
         progress_bar: bool = False,
@@ -314,11 +304,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         return super()._setup_learn(
             total_timesteps,
-            eval_env,
             callback,
-            eval_freq,
-            n_eval_episodes,
-            log_path,
             reset_num_timesteps,
             tb_log_name,
             progress_bar,
@@ -329,22 +315,14 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
-        eval_env: Optional[GymEnv] = None,
-        eval_freq: int = -1,
-        n_eval_episodes: int = 5,
         tb_log_name: str = "run",
-        eval_log_path: Optional[str] = None,
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
     ) -> OffPolicyAlgorithmSelf:
 
         total_timesteps, callback = self._setup_learn(
             total_timesteps,
-            eval_env,
             callback,
-            eval_freq,
-            n_eval_episodes,
-            eval_log_path,
             reset_num_timesteps,
             tb_log_name,
             progress_bar,

@@ -67,15 +67,10 @@ body:
   - type: textarea
     id: traceback
     attributes:
-      label: Traceback
-      description: |
-          Error messages and stack traces.
-          Please use the [markdown code blocks](https://help.github.com/en/articles/creating-and-highlighting-code-blocks) for both code and stack traces.
-      value: |
-        ```bash
-        Traceback (most recent call last): File ...
-
-        ```
+      label: Relevant log output / Error message
+      description: Please copy and paste any relevant log output / error message. This will be automatically formatted into code, so no need for backticks.
+      placeholder: "Traceback (most recent call last): File ..."
+      render: shell
 
   - type: textarea
     id: system-info

@@ -28,6 +28,7 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Used issue forms instead of issue templates
 
 Documentation:
 ^^^^^^^^^^^^^^

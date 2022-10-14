@@ -32,14 +32,6 @@ This format allows skipping elements in the file, i.e. we can skip deserializing
 broken/non-serializable.
 This can be done via ``custom_objects`` argument to load functions.
 
-.. note::
-
-  If you encounter loading issue, for instance pickle issues or error after loading
-  (see `#171 <https://github.com/DLR-RM/stable-baselines3/issues/171>`_ or `#573 <https://github.com/DLR-RM/stable-baselines3/issues/573>`_),
-  you can pass ``print_system_info=True``
-  to compare the system on which the model was trained vs the current one
-  ``model = PPO.load("ppo_saved", print_system_info=True)``
-
 
 File structure:
 

@@ -168,7 +168,8 @@ def json_to_data(json_string: str, custom_objects: Optional[Dict[str, Any]] = No
                     + "Consider using `custom_objects` argument to replace "
                     + "this object."
                 )
-            return_data[data_key] = deserialized_object
+            else:
+                return_data[data_key] = deserialized_object
         else:
             # Read as it is
             return_data[data_key] = data_item

@@ -171,14 +171,6 @@ class BaseModel(nn.Module):
         device = get_device(device)
         saved_variables = th.load(path, map_location=device)
 
-        # Allow to load policy saved with older version of SB3
-        if "sde_net_arch" in saved_variables["data"]:
-            warnings.warn(
-                "sde_net_arch is deprecated, please downgrade to SB3 v1.2.0 if you need such parameter.",
-                DeprecationWarning,
-            )
-            del saved_variables["data"]["sde_net_arch"]
-
         # Create policy object
         model = cls(**saved_variables["data"])  # pytype: disable=not-instantiable
         # Load weights
@@ -389,9 +381,6 @@ class ActorCriticPolicy(BasePolicy):
     :param log_std_init: Initial value for the log standard deviation
     :param full_std: Whether to use (n_features x n_actions) parameters
         for the std instead of only (n_features,) when using gSDE
-    :param sde_net_arch: Network architecture for extracting features
-        when using gSDE. If None, the latent features from the policy will be used.
-        Pass an empty list to use the states as features.
     :param use_expln: Use ``expln()`` function instead of ``exp()`` to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
@@ -419,7 +408,6 @@ class ActorCriticPolicy(BasePolicy):
         use_sde: bool = False,
         log_std_init: float = 0.0,
         full_std: bool = True,
-        sde_net_arch: Optional[List[int]] = None,
         use_expln: bool = False,
         squash_output: bool = False,
         features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
@@ -470,9 +458,6 @@ class ActorCriticPolicy(BasePolicy):
                 "use_expln": use_expln,
                 "learn_features": False,
             }
-
-        if sde_net_arch is not None:
-            warnings.warn("sde_net_arch is deprecated and will be removed in SB3 v2.4.0.", DeprecationWarning)
 
         self.use_sde = use_sde
         self.dist_kwargs = dist_kwargs
@@ -684,9 +669,6 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
     :param log_std_init: Initial value for the log standard deviation
     :param full_std: Whether to use (n_features x n_actions) parameters
         for the std instead of only (n_features,) when using gSDE
-    :param sde_net_arch: Network architecture for extracting features
-        when using gSDE. If None, the latent features from the policy will be used.
-        Pass an empty list to use the states as features.
     :param use_expln: Use ``expln()`` function instead of ``exp()`` to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
@@ -714,7 +696,6 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         use_sde: bool = False,
         log_std_init: float = 0.0,
         full_std: bool = True,
-        sde_net_arch: Optional[List[int]] = None,
         use_expln: bool = False,
         squash_output: bool = False,
         features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
@@ -733,7 +714,6 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
             use_sde,
             log_std_init,
             full_std,
-            sde_net_arch,
             use_expln,
             squash_output,
             features_extractor_class,
@@ -759,9 +739,6 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
     :param log_std_init: Initial value for the log standard deviation
     :param full_std: Whether to use (n_features x n_actions) parameters
         for the std instead of only (n_features,) when using gSDE
-    :param sde_net_arch: Network architecture for extracting features
-        when using gSDE. If None, the latent features from the policy will be used.
-        Pass an empty list to use the states as features.
     :param use_expln: Use ``expln()`` function instead of ``exp()`` to ensure
         a positive standard deviation (cf paper). It allows to keep variance
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
@@ -789,7 +766,6 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         use_sde: bool = False,
         log_std_init: float = 0.0,
         full_std: bool = True,
-        sde_net_arch: Optional[List[int]] = None,
         use_expln: bool = False,
         squash_output: bool = False,
         features_extractor_class: Type[BaseFeaturesExtractor] = CombinedExtractor,
@@ -808,7 +784,6 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
             use_sde,
             log_std_init,
             full_std,
-            sde_net_arch,
             use_expln,
             squash_output,
             features_extractor_class,

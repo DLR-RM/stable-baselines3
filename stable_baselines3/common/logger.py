@@ -18,6 +18,10 @@ try:
 except ImportError:
     SummaryWriter = None
 
+try:
+    from tqdm import tqdm
+except ImportError:
+    tqdm = None
 
 DEBUG = 10
 INFO = 20
@@ -222,7 +226,12 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             val_space = " " * (val_width - len(value))
             lines.append(f"| {key}{key_space} | {value}{val_space} |")
         lines.append(dashes)
-        self.file.write("\n".join(lines) + "\n")
+
+        if tqdm is not None and hasattr(self.file, "name") and self.file.name == "<stdout>":
+            # Do not mess up with progress bar
+            tqdm.write("\n".join(lines) + "\n", file=sys.stdout, end="")
+        else:
+            self.file.write("\n".join(lines) + "\n")
 
         # Flush the output to the file
         self.file.flush()

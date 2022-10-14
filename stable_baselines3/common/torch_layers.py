@@ -155,10 +155,16 @@ class MlpExtractor(nn.Module):
 
     Adapted from Stable Baselines.
 
+    The ``activation_fn`` parameter works similarly to ``net_arch``:
+    for example, to specify an activation function for each layer of the ``net_arch``
+    showed in the previous example (with structure ``[55, dict(vf=[255, 255], pi=[128])]``),
+    it is possible to use ``[nn.Tanh, dict(vf=[nn.ReLU, nn.ReLU], pi=[nn.Sigmoid])]``.
+
     :param feature_dim: Dimension of the feature vector (can be the output of a CNN)
     :param net_arch: The specification of the policy and value networks.
         See above for details on its formatting.
-    :param activation_fn: The activation function to use for the networks.
+    :param activation_fn: The activation functions to use for the networks.
+        See above for details on its formatting.
     :param device:
     """
 
@@ -166,7 +172,7 @@ class MlpExtractor(nn.Module):
         self,
         feature_dim: int,
         net_arch: List[Union[int, Dict[str, List[int]]]],
-        activation_fn: Type[nn.Module],
+        activation_fn: List[Union[Type[nn.Module], Dict[str, List[Type[nn.Module]]]]],
         device: Union[th.device, str] = "auto",
     ):
         super().__init__()
@@ -177,38 +183,59 @@ class MlpExtractor(nn.Module):
         last_layer_dim_shared = feature_dim
 
         # Iterate through the shared layers and build the shared parts of the network
-        for layer in net_arch:
-            if isinstance(layer, int):  # Check that this is a shared layer
+        for i, layer in enumerate(net_arch):
+            # Check that this is a shared layer
+            if isinstance(layer, int):
                 # TODO: give layer a meaningful name
                 shared_net.append(nn.Linear(last_layer_dim_shared, layer))  # add linear of size layer
-                shared_net.append(activation_fn())
+                shared_net.append(activation_fn[i]())
                 last_layer_dim_shared = layer
             else:
                 assert isinstance(layer, dict), "Error: the net_arch list can only contain ints and dicts"
-                if "pi" in layer:
-                    assert isinstance(layer["pi"], list), "Error: net_arch[-1]['pi'] must contain a list of integers."
+                assert isinstance(activation_fn[i], dict), "Error: the activation_fn list can only contain nn.Module and dicts"
+                if "pi" in layer and "pi" in activation_fn[i]:
+                    assert isinstance(layer["pi"], list), \
+                        "Error: net_arch[-1]['pi'] must contain a list of integers."
+                    assert isinstance(activation_fn[i]["pi"], list), \
+                        "Error: activation_fn[-1]['pi'] must contain a list of nn.Module."
+                    assert len(layer["pi"]) == len(activation_fn[i]["pi"]), \
+                        "Error: net_arch[-1]['pi'] and activation_fn[-1]['pi'] must have the same length."
                     policy_only_layers = layer["pi"]
+                    policy_only_activs = activation_fn[i]["pi"]
 
-                if "vf" in layer:
-                    assert isinstance(layer["vf"], list), "Error: net_arch[-1]['vf'] must contain a list of integers."
+                if "vf" in layer and "vf" in activation_fn[i]:
+                    assert isinstance(layer["vf"], list), \
+                        "Error: net_arch[-1]['vf'] must contain a list of integers."
+                    assert isinstance(activation_fn[i]["vf"], list), \
+                        "Error: activation_fn[-1]['vf'] must contain a list of nn.Module."
+                    assert len(layer["vf"]) == len(activation_fn[i]["vf"]), \
+                        "Error: net_arch[-1]['vf'] and activation_fn[-1]['vf'] must have the same length."
                     value_only_layers = layer["vf"]
+                    value_only_activs = activation_fn[i]["vf"]
                 break  # From here on the network splits up in policy and value network
 
         last_layer_dim_pi = last_layer_dim_shared
         last_layer_dim_vf = last_layer_dim_shared
 
         # Build the non-shared part of the network
-        for pi_layer_size, vf_layer_size in zip_longest(policy_only_layers, value_only_layers):
+        for pi_layer_size, vf_layer_size, pi_act, vf_act in zip_longest(policy_only_layers,
+                                                                        value_only_layers,
+                                                                        policy_only_activs,
+                                                                        value_only_activs):
+            # note: policy_only_layers and policy_only_activs have the same size.
+            # note: value_only_layers and value_only_activs have the same size.
+            # so, if pi_layer_size is None, then vf_layer_size is also None;
+            # and if pi_act is None, then vf_act is also None.
             if pi_layer_size is not None:
                 assert isinstance(pi_layer_size, int), "Error: net_arch[-1]['pi'] must only contain integers."
                 policy_net.append(nn.Linear(last_layer_dim_pi, pi_layer_size))
-                policy_net.append(activation_fn())
+                policy_net.append(pi_act())
                 last_layer_dim_pi = pi_layer_size
 
             if vf_layer_size is not None:
                 assert isinstance(vf_layer_size, int), "Error: net_arch[-1]['vf'] must only contain integers."
                 value_net.append(nn.Linear(last_layer_dim_vf, vf_layer_size))
-                value_net.append(activation_fn())
+                value_net.append(vf_act())
                 last_layer_dim_vf = vf_layer_size
 
         # Save dim, used to create the distributions

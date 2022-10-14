@@ -383,7 +383,7 @@ class ActorCriticPolicy(BasePolicy):
     :param action_space: Action space
     :param lr_schedule: Learning rate schedule (could be constant)
     :param net_arch: The specification of the policy and value networks.
-    :param activation_fn: Activation function
+    :param activation_fn: Activation functions for the net_arch's layers
     :param ortho_init: Whether to use or not orthogonal initialization
     :param use_sde: Whether to use State Dependent Exploration or not
     :param log_std_init: Initial value for the log standard deviation
@@ -414,7 +414,7 @@ class ActorCriticPolicy(BasePolicy):
         action_space: gym.spaces.Space,
         lr_schedule: Schedule,
         net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
-        activation_fn: Type[nn.Module] = nn.Tanh,
+        activation_fn: Optional[List[Union[Type[nn.Module], Dict[str, List[Type[nn.Module]]]]]] = None,
         ortho_init: bool = True,
         use_sde: bool = False,
         log_std_init: float = 0.0,

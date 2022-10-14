@@ -194,22 +194,24 @@ class MlpExtractor(nn.Module):
                 assert isinstance(layer, dict), "Error: the net_arch list can only contain ints and dicts"
                 assert isinstance(activation_fn[i], dict), "Error: the activation_fn list can only contain nn.Module and dicts"
                 if "pi" in layer and "pi" in activation_fn[i]:
-                    assert isinstance(layer["pi"], list), \
-                        "Error: net_arch[-1]['pi'] must contain a list of integers."
-                    assert isinstance(activation_fn[i]["pi"], list), \
-                        "Error: activation_fn[-1]['pi'] must contain a list of nn.Module."
-                    assert len(layer["pi"]) == len(activation_fn[i]["pi"]), \
-                        "Error: net_arch[-1]['pi'] and activation_fn[-1]['pi'] must have the same length."
+                    assert isinstance(layer["pi"], list), "Error: net_arch[-1]['pi'] must contain a list of integers."
+                    assert isinstance(
+                        activation_fn[i]["pi"], list
+                    ), "Error: activation_fn[-1]['pi'] must contain a list of nn.Module."
+                    assert len(layer["pi"]) == len(
+                        activation_fn[i]["pi"]
+                    ), "Error: net_arch[-1]['pi'] and activation_fn[-1]['pi'] must have the same length."
                     policy_only_layers = layer["pi"]
                     policy_only_activs = activation_fn[i]["pi"]
 
                 if "vf" in layer and "vf" in activation_fn[i]:
-                    assert isinstance(layer["vf"], list), \
-                        "Error: net_arch[-1]['vf'] must contain a list of integers."
-                    assert isinstance(activation_fn[i]["vf"], list), \
-                        "Error: activation_fn[-1]['vf'] must contain a list of nn.Module."
-                    assert len(layer["vf"]) == len(activation_fn[i]["vf"]), \
-                        "Error: net_arch[-1]['vf'] and activation_fn[-1]['vf'] must have the same length."
+                    assert isinstance(layer["vf"], list), "Error: net_arch[-1]['vf'] must contain a list of integers."
+                    assert isinstance(
+                        activation_fn[i]["vf"], list
+                    ), "Error: activation_fn[-1]['vf'] must contain a list of nn.Module."
+                    assert len(layer["vf"]) == len(
+                        activation_fn[i]["vf"]
+                    ), "Error: net_arch[-1]['vf'] and activation_fn[-1]['vf'] must have the same length."
                     value_only_layers = layer["vf"]
                     value_only_activs = activation_fn[i]["vf"]
                 break  # From here on the network splits up in policy and value network
@@ -218,10 +220,9 @@ class MlpExtractor(nn.Module):
         last_layer_dim_vf = last_layer_dim_shared
 
         # Build the non-shared part of the network
-        for pi_layer_size, vf_layer_size, pi_act, vf_act in zip_longest(policy_only_layers,
-                                                                        value_only_layers,
-                                                                        policy_only_activs,
-                                                                        value_only_activs):
+        for pi_layer_size, vf_layer_size, pi_act, vf_act in zip_longest(
+            policy_only_layers, value_only_layers, policy_only_activs, value_only_activs
+        ):
             # note: policy_only_layers and policy_only_activs have the same size.
             # note: value_only_layers and value_only_activs have the same size.
             # so, if pi_layer_size is None, then vf_layer_size is also None;

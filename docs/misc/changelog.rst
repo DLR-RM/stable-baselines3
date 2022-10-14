@@ -16,6 +16,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Possible to specify different activation functions for each layer of the ``MLPExtractor`` when using the policy ``ActorCriticPolicy`` (@AlexPasqua)
 
 SB3-Contrib
 ^^^^^^^^^^^

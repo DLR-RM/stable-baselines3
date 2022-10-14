@@ -37,20 +37,15 @@ class CustomSubClassedSpaceEnv(gym.Env):
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 def test_auto_wrap(model_class):
-    # test auto wrapping of env into a VecEnv
-
+    """Test auto wrapping of env into a VecEnv."""
     # Use different environment for DQN
     if model_class is DQN:
         env_name = "CartPole-v0"
     else:
         env_name = "Pendulum-v1"
     env = gym.make(env_name)
-    eval_env = gym.make(env_name)
     model = model_class("MlpPolicy", env)
-
-    # Catch DeprecationWarnings
-    with pytest.warns(DeprecationWarning):  # `eval_env` is deprecated
-        model.learn(100, eval_env=eval_env)
+    model.learn(100)
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)

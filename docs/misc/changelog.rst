@@ -23,6 +23,7 @@ SB3-Contrib
 Bug Fixes:
 ^^^^^^^^^^
 - Fix return type of ``evaluate_actions`` in ``ActorCritcPolicy`` to reflect that entropy is an optional tensor (@Rocamonde)
+- Fix type annotation of ``policy`` in ``BaseAlgorithm`` and ``OffPolicyAlgorithm``
 
 Deprecations:
 ^^^^^^^^^^^^^

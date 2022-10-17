@@ -7,7 +7,7 @@ import torch as th
 from gym import spaces
 
 from stable_baselines3.common.buffers import DictReplayBuffer
-from stable_baselines3.common.type_aliases import DictReplayBufferSamples
+from stable_baselines3.common.type_aliases import DictReplayBufferSamples, TensorDict
 from stable_baselines3.common.vec_env import VecEnv, VecNormalize
 from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
 
@@ -131,8 +131,8 @@ class HerReplayBuffer(DictReplayBuffer):
 
     def add(
         self,
-        obs: Dict[str, np.ndarray],
-        next_obs: Dict[str, np.ndarray],
+        obs: TensorDict,
+        next_obs: TensorDict,
         action: np.ndarray,
         reward: np.ndarray,
         done: np.ndarray,
@@ -273,7 +273,7 @@ class HerReplayBuffer(DictReplayBuffer):
                     {key: value[i].cpu().numpy() for key, value in data.next_observations.items()},
                     data.actions[i].cpu().numpy(),
                     data.rewards[i].cpu().numpy(),
-                    [dones[i]],
+                    np.expand_dims(dones[i], axis=0),
                     [infos[i]],
                     is_virtual=True,
                 )

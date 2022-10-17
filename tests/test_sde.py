@@ -63,18 +63,16 @@ def test_sde_check():
 @pytest.mark.parametrize("use_expln", [False, True])
 def test_state_dependent_noise(model_class, use_expln):
     kwargs = {"learning_starts": 0} if model_class == SAC else {"n_steps": 64}
-    with pytest.warns(DeprecationWarning):  # `create_eval_env` and `eval_freq` are deprecated
-        model = model_class(
-            "MlpPolicy",
-            "Pendulum-v1",
-            use_sde=True,
-            seed=None,
-            create_eval_env=True,
-            verbose=1,
-            policy_kwargs=dict(log_std_init=-2, use_expln=use_expln, net_arch=[64]),
-            **kwargs,
-        )
-        model.learn(total_timesteps=255, eval_freq=250)
+    model = model_class(
+        "MlpPolicy",
+        "Pendulum-v1",
+        use_sde=True,
+        seed=None,
+        verbose=1,
+        policy_kwargs=dict(log_std_init=-2, use_expln=use_expln, net_arch=[64]),
+        **kwargs,
+    )
+    model.learn(total_timesteps=255)
     model.policy.reset_noise()
     if model_class == SAC:
         model.policy.actor.get_std()

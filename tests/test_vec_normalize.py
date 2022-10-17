@@ -1,5 +1,4 @@
 import operator
-import warnings
 
 import gym
 import numpy as np
@@ -116,15 +115,6 @@ def make_env():
 
 def make_dict_env():
     return Monitor(DummyDictEnv())
-
-
-def test_deprecation():
-    venv = DummyVecEnv([lambda: gym.make("CartPole-v1")])
-    venv = VecNormalize(venv)
-    with warnings.catch_warnings(record=True) as record:
-        assert np.allclose(venv.ret, venv.returns)
-    # Deprecation warning when using .ret
-    assert len(record) == 1
 
 
 def check_rms_equal(rmsa, rmsb):
@@ -379,8 +369,7 @@ def test_offpolicy_normalization(model_class, online_sampling):
     assert model.get_vec_normalize_env() is eval_env
     model.learn(total_timesteps=10)
     model.set_env(env)
-    with pytest.warns(DeprecationWarning):  # `eval_env` and `eval_freq` are deprecated
-        model.learn(total_timesteps=150, eval_env=eval_env, eval_freq=75)
+    model.learn(total_timesteps=150)
     # Check getter
     assert isinstance(model.get_vec_normalize_env(), VecNormalize)
 

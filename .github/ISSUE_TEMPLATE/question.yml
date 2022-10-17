@@ -1,0 +1,30 @@
+name: "❓ Question"
+description: How to ask a question regarding Stable-Baselines3
+title: "[Question] question title"
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Important Note: We do not do technical support, nor consulting** and don't answer personal questions per email.
+        Please post your question on the [RL Discord](https://discord.com/invite/xhfNqQv), [Reddit](https://www.reddit.com/r/reinforcementlearning/) or [Stack Overflow](https://stackoverflow.com/) in that case.
+  - type: textarea
+    id: question
+    attributes:
+      label: ❓ Question
+      description: Your question. This can be e.g. questions regarding confusing or unclear behaviour of functions or a question if X can be done using stable-baselines3. Make sure to check out the documentation first.
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      options:
+        - label: I have checked that there is no similar [issue](https://github.com/DLR-RM/stable-baselines3/issues) in the repo
+          required: true
+        - label: I have read the [documentation](https://stable-baselines3.readthedocs.io/en/master/)
+          required: true
+        - label: If code there is, it is minimal and working
+          required: true
+        - label: If code there is, it is formatted using the [markdown code blocks](https://help.github.com/en/articles/creating-and-highlighting-code-blocks) for both code and stack traces.
+          required: true

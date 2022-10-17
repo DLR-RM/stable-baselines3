@@ -332,7 +332,7 @@ def test_a2c_ppo_collect_rollouts_with_batch_norm(model_class, env_id):
 
     bias_before, running_mean_before = clone_on_policy_batch_norm(model)
 
-    total_timesteps, callback = model._setup_learn(total_timesteps=2 * 64, eval_env=model.get_env())
+    total_timesteps, callback = model._setup_learn(total_timesteps=2 * 64)
 
     for _ in range(2):
         model.collect_rollouts(model.get_env(), callback, model.rollout_buffer, n_rollout_steps=model.n_steps)

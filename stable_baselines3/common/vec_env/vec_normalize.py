@@ -1,5 +1,4 @@
 import pickle
-import warnings
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Union
 
@@ -289,8 +288,3 @@ class VecNormalize(VecEnvWrapper):
         """
         with open(save_path, "wb") as file_handler:
             pickle.dump(self, file_handler)
-
-    @property
-    def ret(self) -> np.ndarray:
-        warnings.warn("`VecNormalize` `ret` attribute is deprecated. Please use `returns` instead.", DeprecationWarning)
-        return self.returns

@@ -1,7 +1,10 @@
+import base64
 import io
+import json
 import os
 import pathlib
 import warnings
+import zipfile
 from collections import OrderedDict
 from copy import deepcopy
 
@@ -690,3 +693,33 @@ def test_save_load_large_model(tmp_path):
 
     # clear file from os
     os.remove(tmp_path / "test_save.zip")
+
+
+def test_load_invalid_object(tmp_path):
+    # See GH Issue #1122 for an example
+    # of invalid object loading
+    path = str(tmp_path / "ppo_pendulum.zip")
+    PPO("MlpPolicy", "Pendulum-v1", learning_rate=lambda _: 1.0).save(path)
+
+    with zipfile.ZipFile(path, mode="r") as archive:
+        json_data = json.loads(archive.read("data").decode())
+
+    # Intentionally corrupt the data
+    serialization = json_data["learning_rate"][":serialized:"]
+    base64_object = base64.b64decode(serialization.encode())
+    new_bytes = base64_object.replace(b"CodeType", b"CodeTyps")
+    base64_encoded = base64.b64encode(new_bytes).decode()
+    json_data["learning_rate"][":serialized:"] = base64_encoded
+    serialized_data = json.dumps(json_data, indent=4)
+
+    with open(tmp_path / "data", "w") as f:
+        f.write(serialized_data)
+    # Replace with the corrupted file
+    # probably doesn't work on windows
+    os.system(f"cd {tmp_path}; zip ppo_pendulum.zip data")
+    with pytest.warns(UserWarning, match=r"custom_objects"):
+        PPO.load(path)
+    # Load with custom object, no warnings
+    with warnings.catch_warnings(record=True) as record:
+        PPO.load(path, custom_objects=dict(learning_rate=lambda _: 1.0))
+    assert len(record) == 0

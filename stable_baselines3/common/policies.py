@@ -2,7 +2,6 @@
 
 import collections
 import copy
-import warnings
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union

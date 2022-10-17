@@ -1,5 +1,4 @@
 import operator
-import warnings
 from typing import Optional
 
 import gym

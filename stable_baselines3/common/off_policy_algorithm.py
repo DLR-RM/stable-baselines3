@@ -28,7 +28,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     """
     The base for Off-Policy algorithms (ex: SAC/TD3)
 
-    :param policy: Policy object
+    :param policy: The policy model to use (MlpPolicy, CnnPolicy, ...)
     :param env: The environment to learn from
                 (if registered in Gym, can be str. Can be None for loading trained models)
     :param learning_rate: learning rate for the optimizer,
@@ -75,7 +75,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
     def __init__(
         self,
-        policy: Type[BasePolicy],
+        policy: Union[str, Type[BasePolicy]],
         env: Union[GymEnv, str],
         learning_rate: Union[float, Schedule],
         buffer_size: int = 1_000_000,  # 1e6

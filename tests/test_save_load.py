@@ -720,7 +720,6 @@ def test_load_invalid_object(tmp_path):
     with pytest.warns(UserWarning, match=r"custom_objects"):
         PPO.load(path)
     # Load with custom object, no warnings
-    PPO.load(path, custom_objects=dict(learning_rate=lambda _: 1.0))
     with warnings.catch_warnings(record=True) as record:
         PPO.load(path, custom_objects=dict(learning_rate=lambda _: 1.0))
     assert len(record) == 0

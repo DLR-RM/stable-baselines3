@@ -52,8 +52,8 @@ Most of them are available via the RL Zoo.
 
 Official pre-trained models are saved in the SB3 organization on the hub: https://huggingface.co/sb3
 
-We wrote a tutorial on how to use 🤗 Hub and Stable-Baselines3 
-`here <https://colab.research.google.com/github/huggingface/huggingface_sb3/blob/main/notebooks/sb3_huggingface.ipynb>`_
+We wrote a tutorial on how to use 🤗 Hub and Stable-Baselines3
+`here <https://colab.research.google.com/github/huggingface/huggingface_sb3/blob/main/notebooks/sb3_huggingface.ipynb>`_.
 
 
 Installation
@@ -62,6 +62,19 @@ Installation
 .. code-block:: bash
 
  pip install huggingface_sb3
+
+ .. note::
+
+   If you use the `RL Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_, pushing/loading models from the hub is integrated in the RL Zoo:
+
+   .. code-block:: bash
+       # Download model and save it into the logs/ folder
+       python -m rl_zoo3.load_from_hub --algo a2c --env LunarLander-v2 -orga sb3 -f logs/
+       # Test the agent
+       python -m rl_zoo3.enjoy --algo a2c --env LunarLander-v2  -f logs/
+       # push model, config and hyperparameters to the hub
+       python -m rl_zoo3.push_to_hub --algo a2c --env LunarLander-v2 -f logs/ -orga sb3 -m "Initial commit"
+
 
 
 Download a model from the Hub
@@ -95,8 +108,8 @@ For instance ``sb3/demo-hf-CartPole-v1``:
 
 You need to define two parameters:
 
-- `repo-id`: the name of the Hugging Face repo you want to download.
-- `filename`: the file you want to download.
+- ``repo-id``: the name of the Hugging Face repo you want to download.
+- ``filename``: the file you want to download.
 
 
 Upload a model to the Hub
@@ -104,9 +117,9 @@ Upload a model to the Hub
 
 You can easily upload your models using two different functions:
 
-1. `package_to_hub()`: save the model, evaluate it, generate a model card and record a replay video of your agent before pushing the complete repo to the Hub.
+1. ``package_to_hub()``: save the model, evaluate it, generate a model card and record a replay video of your agent before pushing the complete repo to the Hub.
 
-2. `push_to_hub()`: simply push a file to the Hub.
+2. ``push_to_hub()``: simply push a file to the Hub.
 
 
 First, you need to be logged in to Hugging Face to upload a model:
@@ -128,13 +141,16 @@ First, you need to be logged in to Hugging Face to upload a model:
 
 Then, in this example, we train a PPO agent to play CartPole-v1 and push it to a new repo ``sb3/demo-hf-CartPole-v1``
 
-With package_to_hub()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+With ``package_to_hub()``
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
+  from stable_baselines3 import PPO
+  from stable_baselines3.common.env_util import make_vec_env
+
   from huggingface_sb3 import package_to_hub
-  
+
   # Create the environment
   env_id = "CartPole-v1"
   env = make_vec_env(env_id, n_envs=1)
@@ -144,12 +160,12 @@ With package_to_hub()
 
   # Instantiate the agent
   model = PPO("MlpPolicy", env, verbose=1)
-  
+
   # Train the agent
   model.learn(total_timesteps=int(5000))
 
   # This method save, evaluate, generate a model card and record a replay video of your agent before pushing the repo to the hub
-  package_to_hub(model=model, 
+  package_to_hub(model=model,
                model_name="ppo-CartPole-v1",
                model_architecture="PPO",
                env_id=env_id,
@@ -159,28 +175,32 @@ With package_to_hub()
 
 You need to define seven parameters:
 
-- `model`: your trained model.
-- `model_architecture`: name of the architecture of your model (DQN, PPO, A2C, SAC…).
-- `env_id`: name of the environment.
-- `eval_env`: environment used to evaluate the agent.
-- `repo-id`: the name of the Hugging Face repo you want to create or update. It’s <your huggingface username>/<the repo name>.
-- `commit-message`.
-- `filename`: the file you want to push to the Hub.
+- ``model``: your trained model.
+- ``model_architecture``: name of the architecture of your model (DQN, PPO, A2C, SAC…).
+- ``env_id``: name of the environment.
+- ``eval_env``: environment used to evaluate the agent.
+- ``repo-id``: the name of the Hugging Face repo you want to create or update. It’s <your huggingface username>/<the repo name>.
+- ``commit-message``.
+- ``filename``: the file you want to push to the Hub.
 
-With push_to_hub()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+With ``push_to_hub()``
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
-  from huggingface_sb3 import package_to_hub
-  
+
+  from stable_baselines3 import PPO
+  from stable_baselines3.common.env_util import make_vec_env
+
+  from huggingface_sb3 import push_to_hub
+
   # Create the environment
   env_id = "CartPole-v1"
   env = make_vec_env(env_id, n_envs=1)
 
   # Instantiate the agent
   model = PPO("MlpPolicy", env, verbose=1)
-  
+
   # Train the agent
   model.learn(total_timesteps=int(5000))
 
@@ -197,20 +217,11 @@ With push_to_hub()
     commit_message="Added CartPole-v1 model trained with PPO",
   )
 
-  # This method save, evaluate, generate a model card and record a replay video of your agent before pushing the repo to the hub
-  package_to_hub(model=model, 
-               model_name="ppo-CartPole-v1",
-               model_architecture="PPO",
-               env_id=env_id,
-               eval_env=eval_env,
-               repo_id="sb3/demo-hf-CartPole-v1",
-               commit_message="Push ppo-CartPole-v1 model to the Hub")
-
 You need to define three parameters:
 
-- `repo-id`: the name of the Hugging Face repo you want to create or update. It’s <your huggingface username>/<the repo name>.
-- `filename`: the file you want to push to the Hub.
-- `commit-message`.
+- ``repo-id``: the name of the Hugging Face repo you want to create or update. It’s <your huggingface username>/<the repo name>.
+- ``filename``: the file you want to push to the Hub.
+- ``commit-message``.
 
 MLFLow
 ======

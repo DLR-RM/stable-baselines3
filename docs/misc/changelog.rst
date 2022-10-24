@@ -35,7 +35,7 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
-
+- Updated Hugging Face Integration page (@simoninithomas)
 
 
 Release 1.6.2 (2022-10-10)

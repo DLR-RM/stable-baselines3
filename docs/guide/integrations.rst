@@ -53,7 +53,7 @@ Most of them are available via the RL Zoo.
 Official pre-trained models are saved in the SB3 organization on the hub: https://huggingface.co/sb3
 
 We wrote a tutorial on how to use 🤗 Hub and Stable-Baselines3 
-here: https://colab.research.google.com/github/huggingface/huggingface_sb3/blob/main/notebooks/sb3_huggingface.ipynb 
+`here <https://colab.research.google.com/github/huggingface/huggingface_sb3/blob/main/notebooks/sb3_huggingface.ipynb>`_
 
 
 Installation

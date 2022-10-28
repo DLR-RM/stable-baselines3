@@ -2,11 +2,11 @@
 
 from enum import Enum
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
-from typing_extensions import Protocol
 
 import gym
 import numpy as np
 import torch as th
+from typing_extensions import Protocol
 
 from stable_baselines3.common import callbacks, vec_env
 

@@ -1,7 +1,8 @@
 """Common aliases for type hints"""
 
 from enum import Enum
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Protocol, Tuple, Union
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing_extensions import Protocol
 
 import gym
 import numpy as np

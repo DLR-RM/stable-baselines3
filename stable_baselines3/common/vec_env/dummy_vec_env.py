@@ -46,7 +46,9 @@ class DummyVecEnv(VecEnv):
             )
             # convert to SB3 VecEnv api
             self.buf_dones[env_idx] = terminated or truncated
-            self.buf_infos[env_idx]["TimeLimit.truncated"] = truncated
+            # See https://github.com/openai/gym/issues/3102
+            # Gym 0.26 introduces a breaking change
+            self.buf_infos[env_idx]["TimeLimit.truncated"] = truncated and not terminated
 
             if self.buf_dones[env_idx]:
                 # save final observation where user can get it, then reset

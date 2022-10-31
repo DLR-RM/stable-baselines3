@@ -87,13 +87,13 @@ class Monitor(gym.Wrapper):
         Step the environment with the given action
 
         :param action: the action
-        :return: observation, reward, done, information
+        :return: observation, reward, terminated, truncated, information
         """
         if self.needs_reset:
             raise RuntimeError("Tried to step environment that needs reset")
-        observation, reward, done, truncated, info = self.env.step(action)
+        observation, reward, terminated, truncated, info = self.env.step(action)
         self.rewards.append(reward)
-        if done or truncated:
+        if terminated or truncated:
             self.needs_reset = True
             ep_rew = sum(self.rewards)
             ep_len = len(self.rewards)
@@ -108,7 +108,7 @@ class Monitor(gym.Wrapper):
                 self.results_writer.write_row(ep_info)
             info["episode"] = ep_info
         self.total_steps += 1
-        return observation, reward, done, truncated, info
+        return observation, reward, terminated, truncated, info
 
     def close(self) -> None:
         """

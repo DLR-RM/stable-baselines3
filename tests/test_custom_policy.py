@@ -22,6 +22,22 @@ def test_flexible_mlp(model_class, net_arch):
     _ = model_class("MlpPolicy", "CartPole-v1", policy_kwargs=dict(net_arch=net_arch), n_steps=64).learn(300)
 
 
+@pytest.mark.parametrize("model_class", [A2C, PPO])
+@pytest.mark.parametrize("net_arch", [[16, dict(vf=[8, 4], pi=[8])]])
+@pytest.mark.parametrize(
+    "activation_fn",
+    [
+        th.nn.Tanh,
+        [th.nn.Tanh, dict(pi=th.nn.ReLU, vf=th.nn.Sigmoid)],
+        [th.nn.Tanh, dict(pi=[th.nn.Sigmoid], vf=[th.nn.Sigmoid, th.nn.ReLU])],
+    ],
+)
+def test_flexible_activation_fn(model_class, net_arch, activation_fn):
+    _ = model_class(
+        "MlpPolicy", "CartPole-v1", policy_kwargs=dict(net_arch=net_arch, activation_fn=activation_fn), n_steps=64
+    ).learn(300)
+
+
 @pytest.mark.parametrize("net_arch", [[], [4], [4, 4], dict(qf=[8], pi=[8, 4])])
 @pytest.mark.parametrize("model_class", [SAC, TD3])
 def test_custom_offpolicy(model_class, net_arch):

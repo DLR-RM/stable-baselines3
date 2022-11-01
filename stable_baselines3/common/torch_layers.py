@@ -155,10 +155,15 @@ class MlpExtractor(nn.Module):
 
     Adapted from Stable Baselines.
 
-    The ``activation_fn`` parameter works similarly to ``net_arch``:
-    for example, to specify an activation function for each layer of the ``net_arch``
-    showed in the previous example (with structure ``[55, dict(vf=[255, 255], pi=[128])]``),
-    it is possible to use ``[nn.Tanh, dict(vf=[nn.ReLU, nn.ReLU], pi=[nn.Sigmoid])]``.
+    Notes on the use of the ``activation_fn`` parameter:
+        - possible to specify the same activation func for all the layers: e.g. ``activation_fn=nn.ReLU``
+        - possible to specify a different activation func for each layer:
+            - it can work like ``net_arch``:
+                e.g. ``net_arch=[55, dict(vf=[255, 255], pi=[128])]``
+                     ``activation_fn=[nn.Tanh, dict(vf=[nn.ReLU, nn.ReLU], pi=[nn.Sigmoid])]``
+            - or you can specify a single func for the pi layers and a single func for the vf ones:
+                e.g. ``net_arch=[55, dict(vf=[255, 255], pi=[128])]``
+                     ``activation_fn=[nn.ReLU, dict(vf=nn.ReLU, pi=nn.Sigmoid)]``
 
     :param feature_dim: Dimension of the feature vector (can be the output of a CNN)
     :param net_arch: The specification of the policy and value networks.
@@ -172,7 +177,7 @@ class MlpExtractor(nn.Module):
         self,
         feature_dim: int,
         net_arch: List[Union[int, Dict[str, List[int]]]],
-        activation_fn: List[Union[Type[nn.Module], Dict[str, List[Type[nn.Module]]]]],
+        activation_fn: Union[Type[nn.Module], List[Union[Type[nn.Module], Dict[str, List[Type[nn.Module]]]]]],
         device: Union[th.device, str] = "auto",
     ):
         super().__init__()
@@ -180,7 +185,20 @@ class MlpExtractor(nn.Module):
         shared_net, policy_net, value_net = [], [], []
         policy_only_layers = []  # Layer sizes of the network that only belongs to the policy network
         value_only_layers = []  # Layer sizes of the network that only belongs to the value network
+        policy_only_activs = []  # Activation functions of the network that only belongs to the policy network
+        value_only_activs = []  # Activation functions of the network that only belongs to the value network
         last_layer_dim_shared = feature_dim
+
+        if not isinstance(activation_fn, list):
+            act_fn_list = []
+            for i in range(len(net_arch)):
+                if isinstance(net_arch[i], int):
+                    act_fn_list.append(activation_fn)
+                elif isinstance(net_arch[i], dict):
+                    act_fn_list.append(dict())
+                    for key, dims in net_arch[i].items():
+                        act_fn_list[-1][key] = [activation_fn] * len(dims)
+            activation_fn = act_fn_list
 
         # Iterate through the shared layers and build the shared parts of the network
         for i, layer in enumerate(net_arch):
@@ -195,9 +213,9 @@ class MlpExtractor(nn.Module):
                 assert isinstance(activation_fn[i], dict), "Error: the activation_fn list can only contain nn.Module and dicts"
                 if "pi" in layer and "pi" in activation_fn[i]:
                     assert isinstance(layer["pi"], list), "Error: net_arch[-1]['pi'] must contain a list of integers."
-                    assert isinstance(
-                        activation_fn[i]["pi"], list
-                    ), "Error: activation_fn[-1]['pi'] must contain a list of nn.Module."
+                    if not isinstance(activation_fn[i]["pi"], list):
+                        # same activation func for all pi layers
+                        activation_fn[i]["pi"] = [activation_fn[i]["pi"]] * len(layer["pi"])
                     assert len(layer["pi"]) == len(
                         activation_fn[i]["pi"]
                     ), "Error: net_arch[-1]['pi'] and activation_fn[-1]['pi'] must have the same length."
@@ -206,9 +224,9 @@ class MlpExtractor(nn.Module):
 
                 if "vf" in layer and "vf" in activation_fn[i]:
                     assert isinstance(layer["vf"], list), "Error: net_arch[-1]['vf'] must contain a list of integers."
-                    assert isinstance(
-                        activation_fn[i]["vf"], list
-                    ), "Error: activation_fn[-1]['vf'] must contain a list of nn.Module."
+                    if not isinstance(activation_fn[i]["vf"], list):
+                        # same activation func for all vf layers
+                        activation_fn[i]["vf"] = [activation_fn[i]["vf"]] * len(layer["vf"])
                     assert len(layer["vf"]) == len(
                         activation_fn[i]["vf"]
                     ), "Error: net_arch[-1]['vf'] and activation_fn[-1]['vf'] must have the same length."

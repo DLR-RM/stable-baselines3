@@ -2,7 +2,6 @@
 
 import collections
 import copy
-import warnings
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
@@ -403,7 +402,9 @@ class ActorCriticPolicy(BasePolicy):
         action_space: gym.spaces.Space,
         lr_schedule: Schedule,
         net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
-        activation_fn: Optional[List[Union[Type[nn.Module], Dict[str, List[Type[nn.Module]]]]]] = None,
+        activation_fn: Optional[
+            Union[Type[nn.Module], List[Union[Type[nn.Module], Dict[str, List[Type[nn.Module]]]]]]
+        ] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
         log_std_init: float = 0.0,

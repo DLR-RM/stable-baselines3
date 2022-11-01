@@ -443,8 +443,17 @@ class ActorCriticPolicy(BasePolicy):
         self.activation_fn = activation_fn
         self.ortho_init = ortho_init
 
+        self.share_features_extractor = self.features_extractor_kwargs.get("shared", True)
+        # remove key-value pair to avoid errors
+        if "shared" in self.features_extractor_kwargs:
+            del self.features_extractor_kwargs["shared"]
+
         self.features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
         self.features_dim = self.features_extractor.features_dim
+        if not self.share_features_extractor:
+            self.pi_features_extractor = self.features_extractor
+            self.vf_features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
+            delattr(self, "features_extractor")
 
         self.normalize_images = normalize_images
         self.log_std_init = log_std_init
@@ -547,11 +556,15 @@ class ActorCriticPolicy(BasePolicy):
             # features_extractor/mlp values are
             # originally from openai/baselines (default gains/init_scales).
             module_gains = {
-                self.features_extractor: np.sqrt(2),
                 self.mlp_extractor: np.sqrt(2),
                 self.action_net: 0.01,
                 self.value_net: 1,
             }
+            if not self.share_features_extractor:
+                module_gains[self.pi_features_extractor] = np.sqrt(2)
+                module_gains[self.vf_features_extractor] = np.sqrt(2)
+            else:
+                module_gains[self.features_extractor] = np.sqrt(2)
             for module, gain in module_gains.items():
                 module.apply(partial(self.init_weights, gain=gain))
 
@@ -568,7 +581,12 @@ class ActorCriticPolicy(BasePolicy):
         """
         # Preprocess the observation if needed
         features = self.extract_features(obs)
-        latent_pi, latent_vf = self.mlp_extractor(features)
+        if not self.share_features_extractor:
+            pi_features, vf_features = features
+            latent_pi = self.mlp_extractor.forward_actor(pi_features)
+            latent_vf = self.mlp_extractor.forward_critic(vf_features)
+        else:
+            latent_pi, latent_vf = self.mlp_extractor(features)
         # Evaluate the values for the given observations
         values = self.value_net(latent_vf)
         distribution = self._get_action_dist_from_latent(latent_pi)
@@ -576,6 +594,31 @@ class ActorCriticPolicy(BasePolicy):
         log_prob = distribution.log_prob(actions)
         actions = actions.reshape((-1,) + self.action_space.shape)
         return actions, values, log_prob
+
+    def extract_features(self, obs: th.Tensor) -> Union[th.Tensor, Tuple[th.Tensor, th.Tensor]]:
+        """
+        Preprocess the observation if needed and extract features.
+
+        :param obs: Observation
+        :return: the output of the feature extractor(s)
+        """
+        if not self.share_features_extractor:
+            return self._extract_features_non_shared(obs)
+        else:
+            return super().extract_features(obs)
+
+    def _extract_features_non_shared(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+        """
+        Preprocess the observation if needed and extract features.
+
+        :param obs: Observation
+        :return: the output of the feature extractors
+        """
+        assert self.pi_features_extractor is not None and self.vf_features_extractor is not None
+        preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
+        pi_features = self.pi_features_extractor(preprocessed_obs)
+        vf_features = self.vf_features_extractor(preprocessed_obs)
+        return pi_features, vf_features
 
     def _get_action_dist_from_latent(self, latent_pi: th.Tensor) -> Distribution:
         """
@@ -617,14 +660,19 @@ class ActorCriticPolicy(BasePolicy):
         Evaluate actions according to the current policy,
         given the observations.
 
-        :param obs:
-        :param actions:
+        :param obs: Observation
+        :param actions: Actions
         :return: estimated value, log likelihood of taking those actions
             and entropy of the action distribution.
         """
         # Preprocess the observation if needed
         features = self.extract_features(obs)
-        latent_pi, latent_vf = self.mlp_extractor(features)
+        if not self.share_features_extractor:
+            pi_features, vf_features = features
+            latent_pi = self.mlp_extractor.forward_actor(pi_features)
+            latent_vf = self.mlp_extractor.forward_critic(vf_features)
+        else:
+            latent_pi, latent_vf = self.mlp_extractor(features)
         distribution = self._get_action_dist_from_latent(latent_pi)
         log_prob = distribution.log_prob(actions)
         values = self.value_net(latent_vf)
@@ -639,6 +687,8 @@ class ActorCriticPolicy(BasePolicy):
         :return: the action distribution.
         """
         features = self.extract_features(obs)
+        if not self.share_features_extractor:
+            features = features[0]  # 0: pi_features, 1: vf_features
         latent_pi = self.mlp_extractor.forward_actor(features)
         return self._get_action_dist_from_latent(latent_pi)
 
@@ -646,10 +696,12 @@ class ActorCriticPolicy(BasePolicy):
         """
         Get the estimated values according to the current policy given the observations.
 
-        :param obs:
+        :param obs: Observation
         :return: the estimated values.
         """
         features = self.extract_features(obs)
+        if not self.share_features_extractor:
+            features = features[1]  # 0: pi_features, 1: vf_features
         latent_vf = self.mlp_extractor.forward_critic(features)
         return self.value_net(latent_vf)
 

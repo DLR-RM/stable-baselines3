@@ -6,7 +6,10 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 import gym
 import numpy as np
 import torch as th
-from typing_extensions import Protocol
+if sys.version_info >= (3, 8):
+    from typing import Protocol
+else:
+    from typing_extensions import Protocol
 
 from stable_baselines3.common import callbacks, vec_env
 

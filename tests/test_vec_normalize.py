@@ -1,5 +1,4 @@
 import operator
-import warnings
 
 import gym
 import numpy as np

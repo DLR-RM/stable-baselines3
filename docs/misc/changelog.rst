@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.7.0a0 (WIP)
+Release 1.7.0a1 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -23,6 +23,9 @@ SB3-Contrib
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fix return type of ``evaluate_actions`` in ``ActorCritcPolicy`` to reflect that entropy is an optional tensor (@Rocamonde)
+- Fix type annotation of ``policy`` in ``BaseAlgorithm`` and ``OffPolicyAlgorithm``
+- Allowed model trained with Python 3.7 to be loaded with Python 3.8+ without the ``custom_objects`` workaround
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -33,7 +36,7 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
-
+- Updated Hugging Face Integration page (@simoninithomas)
 
 
 Release 1.6.2 (2022-10-10)

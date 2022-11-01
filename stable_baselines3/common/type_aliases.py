@@ -1,7 +1,7 @@
 """Common aliases for type hints"""
 
-from enum import Enum
 import sys
+from enum import Enum
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 
 import gym

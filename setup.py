@@ -76,7 +76,7 @@ setup(
         "gym==0.21",  # Fixed version due to breaking changes in 0.22
         "numpy",
         "torch>=1.11",
-        "typing_extensions",
+        "typing_extensions>=4.0,<5",
         # For saving models
         "cloudpickle",
         # For reading logs

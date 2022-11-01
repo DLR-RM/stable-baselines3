@@ -1,11 +1,13 @@
 """Common aliases for type hints"""
 
 from enum import Enum
+import sys
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 
 import gym
 import numpy as np
 import torch as th
+
 if sys.version_info >= (3, 8):
     from typing import Protocol
 else:

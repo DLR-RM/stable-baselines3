@@ -63,17 +63,19 @@ Installation
 
  pip install huggingface_sb3
 
- .. note::
 
-   If you use the `RL Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_, pushing/loading models from the hub is integrated in the RL Zoo:
+.. note::
 
-   .. code-block:: bash
-       # Download model and save it into the logs/ folder
-       python -m rl_zoo3.load_from_hub --algo a2c --env LunarLander-v2 -orga sb3 -f logs/
-       # Test the agent
-       python -m rl_zoo3.enjoy --algo a2c --env LunarLander-v2  -f logs/
-       # push model, config and hyperparameters to the hub
-       python -m rl_zoo3.push_to_hub --algo a2c --env LunarLander-v2 -f logs/ -orga sb3 -m "Initial commit"
+ If you use the `RL Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_, pushing/loading models from the hub are already integrated:
+
+ .. code-block:: bash
+
+     # Download model and save it into the logs/ folder
+     python -m rl_zoo3.load_from_hub --algo a2c --env LunarLander-v2 -orga sb3 -f logs/
+     # Test the agent
+     python -m rl_zoo3.enjoy --algo a2c --env LunarLander-v2  -f logs/
+     # Push model, config and hyperparameters to the hub
+     python -m rl_zoo3.push_to_hub --algo a2c --env LunarLander-v2 -f logs/ -orga sb3 -m "Initial commit"
 
 
 

@@ -48,6 +48,7 @@ class VecVideoRecorder(VecEnvWrapper):
             metadata = temp_env.metadata
 
         self.env.metadata = metadata
+        self.env.render_mode = "rgb_array"
 
         self.record_video_trigger = record_video_trigger
         self.video_recorder = None

@@ -77,6 +77,8 @@ def test_get_distribution(dummy_model_distribution_obs_and_actions):
         distribution = model.policy.get_distribution(observations)
         log_prob_2 = distribution.log_prob(actions)
         entropy_2 = distribution.entropy()
+        assert entropy_1 is not None
+        assert entropy_2 is not None
         assert th.allclose(log_prob_1, log_prob_2)
         assert th.allclose(entropy_1, entropy_2)
 

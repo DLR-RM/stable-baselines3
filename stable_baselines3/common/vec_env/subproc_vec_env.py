@@ -30,10 +30,10 @@ def _worker(  # noqa: C901
         try:
             cmd, data = remote.recv()
             if cmd == "step":
-                observation, reward, done, truncated, info = env.step(data)
+                observation, reward, terminated, truncated, info = env.step(data)
                 # convert to SB3 VecEnv api
-                done = done or truncated
-                info["TimeLimit.truncated"] = truncated
+                done = terminated or truncated
+                info["TimeLimit.truncated"] = truncated and not terminated
                 if done:
                     # save final observation where user can get it, then reset
                     info["terminal_observation"] = observation

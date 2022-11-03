@@ -153,7 +153,7 @@ class SimpleMultiObsEnv(gym.Env):
         got_to_end = self.state == self.max_state
         reward = 1 if got_to_end else reward
         truncated = self.count > self.max_count
-        done = got_to_end or truncated
+        done = got_to_end
 
         self.log = f"Went {self.action2str[action]} in state {prev_state}, got to state {self.state}"
 

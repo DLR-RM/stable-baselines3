@@ -41,12 +41,14 @@ class DummyVecEnv(VecEnv):
     def step_wait(self) -> VecEnvStepReturn:
         # Avoid circular imports
         for env_idx in range(self.num_envs):
-            obs, self.buf_rews[env_idx], done, truncated, self.buf_infos[env_idx] = self.envs[env_idx].step(
+            obs, self.buf_rews[env_idx], terminated, truncated, self.buf_infos[env_idx] = self.envs[env_idx].step(
                 self.actions[env_idx]
             )
             # convert to SB3 VecEnv api
-            self.buf_dones[env_idx] = done or truncated
-            self.buf_infos[env_idx]["TimeLimit.truncated"] = truncated
+            self.buf_dones[env_idx] = terminated or truncated
+            # See https://github.com/openai/gym/issues/3102
+            # Gym 0.26 introduces a breaking change
+            self.buf_infos[env_idx]["TimeLimit.truncated"] = truncated and not terminated
 
             if self.buf_dones[env_idx]:
                 # save final observation where user can get it, then reset
@@ -92,7 +94,7 @@ class DummyVecEnv(VecEnv):
         :param mode: The rendering type.
         """
         if self.num_envs == 1:
-            return self.envs[0].render(mode=mode)
+            return self.envs[0].render()
         else:
             return super().render(mode=mode)
 

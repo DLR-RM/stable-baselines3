@@ -1,5 +1,4 @@
 import os
-import warnings
 
 from stable_baselines3.a2c import A2C
 from stable_baselines3.common.utils import get_system_info
@@ -14,9 +13,6 @@ from stable_baselines3.td3 import TD3
 version_file = os.path.join(os.path.dirname(__file__), "version.txt")
 with open(version_file) as file_handler:
     __version__ = file_handler.read().strip()
-
-# Silence Gym warnings due to new API
-warnings.filterwarnings("ignore", message=r".*step API", module="gym")
 
 
 def HER(*args, **kwargs):

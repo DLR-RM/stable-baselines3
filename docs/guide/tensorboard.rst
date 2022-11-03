@@ -12,7 +12,7 @@ To use Tensorboard with stable baselines3, you simply need to pass the location 
 
     from stable_baselines3 import A2C
 
-    model = A2C('MlpPolicy', 'CartPole-v1', verbose=1, tensorboard_log="./a2c_cartpole_tensorboard/")
+    model = A2C("MlpPolicy", "CartPole-v1", verbose=1, tensorboard_log="./a2c_cartpole_tensorboard/")
     model.learn(total_timesteps=10_000)
 
 
@@ -22,7 +22,7 @@ You can also define custom logging name when training (by default it is the algo
 
     from stable_baselines3 import A2C
 
-    model = A2C('MlpPolicy', 'CartPole-v1', verbose=1, tensorboard_log="./a2c_cartpole_tensorboard/")
+    model = A2C("MlpPolicy", "CartPole-v1", verbose=1, tensorboard_log="./a2c_cartpole_tensorboard/")
     model.learn(total_timesteps=10_000, tb_log_name="first_run")
     # Pass reset_num_timesteps=False to continue the training curve in tensorboard
     # By default, it will create a new curve
@@ -91,7 +91,7 @@ Here is a simple example on how to log both additional tensor or arbitrary scala
         def _on_step(self) -> bool:
             # Log scalar value (here a random variable)
             value = np.random.random()
-            self.logger.record('random_value', value)
+            self.logger.record("random_value", value)
             return True
 
 

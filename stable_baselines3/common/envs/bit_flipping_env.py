@@ -182,7 +182,6 @@ class BitFlippingEnv(Env):
         # Episode terminate when we reached the goal or the max number of steps
         info = {"is_success": done}
         truncated = self.current_step >= self.max_steps
-        done = done or truncated
         return obs, reward, done, truncated, info
 
     def compute_reward(

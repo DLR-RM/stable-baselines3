@@ -68,12 +68,11 @@ def test_state_dependent_noise(model_class, use_expln):
         "Pendulum-v1",
         use_sde=True,
         seed=None,
-        create_eval_env=True,
         verbose=1,
         policy_kwargs=dict(log_std_init=-2, use_expln=use_expln, net_arch=[64]),
         **kwargs,
     )
-    model.learn(total_timesteps=255, eval_freq=250)
+    model.learn(total_timesteps=255)
     model.policy.reset_noise()
     if model_class == SAC:
         model.policy.actor.get_std()

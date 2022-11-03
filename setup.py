@@ -48,13 +48,16 @@ env = gym.make("CartPole-v1")
 model = PPO("MlpPolicy", env, verbose=1)
 model.learn(total_timesteps=10_000)
 
-obs, info = env.reset()
+vec_env = model.get_env()
+obs = vec_env.reset()
 for i in range(1000):
     action, _states = model.predict(obs, deterministic=True)
-    obs, reward, done, truncated, info = env.step(action)
-    env.render()
-    if done or truncated:
-        obs, info = env.reset()
+    obs, reward, done, info = vec_env.step(action)
+    vec_env.render()
+    # VecEnv resets automatically
+    # if done:
+    #   obs = vec_env.reset()
+
 ```
 
 Or just train a model with a one liner if [the environment is registered in Gym](https://www.gymlibrary.ml/content/environment_creation/) and if [the policy is registered](https://stable-baselines3.readthedocs.io/en/master/guide/custom_policy.html):
@@ -73,7 +76,7 @@ setup(
     packages=[package for package in find_packages() if package.startswith("stable_baselines3")],
     package_data={"stable_baselines3": ["py.typed", "version.txt"]},
     install_requires=[
-        "gym==0.26",
+        "gym==0.26.2",
         "numpy",
         "torch>=1.11",
         # For saving models
@@ -82,6 +85,8 @@ setup(
         "pandas",
         # Plotting learning curves
         "matplotlib",
+        # gym and flake8 not compatible with importlib-metadata>5.0
+        "importlib-metadata~=4.13",
     ],
     extras_require={
         "tests": [
@@ -102,7 +107,7 @@ setup(
             "black",
         ],
         "docs": [
-            "sphinx~=4.5.0",
+            "sphinx",
             "sphinx-autobuild",
             "sphinx-rtd-theme",
             # For spelling
@@ -124,6 +129,9 @@ setup(
             "tensorboard>=2.9.1",
             # Checking memory taken by replay buffer
             "psutil",
+            # For progress bar callback
+            "tqdm",
+            "rich",
         ],
     },
     description="Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.",

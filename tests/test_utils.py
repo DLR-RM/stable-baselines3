@@ -141,16 +141,18 @@ def test_custom_vec_env(tmp_path):
         make_vec_env("CartPole-v1", n_envs=1, vec_env_kwargs={"dummy": False})
 
 
-def test_evaluate_policy():
+@pytest.mark.parametrize("direct_policy", [False, True])
+def test_evaluate_policy(direct_policy: bool):
     model = A2C("MlpPolicy", "Pendulum-v1", seed=0)
     n_steps_per_episode, n_eval_episodes = 200, 2
-    model.n_callback_calls = 0
 
     def dummy_callback(locals_, _globals):
         locals_["model"].n_callback_calls += 1
 
+    policy = model.policy if direct_policy else model
+    policy.n_callback_calls = 0
     _, episode_lengths = evaluate_policy(
-        model,
+        policy,
         model.get_env(),
         n_eval_episodes,
         deterministic=True,
@@ -162,19 +164,19 @@ def test_evaluate_policy():
 
     n_steps = sum(episode_lengths)
     assert n_steps == n_steps_per_episode * n_eval_episodes
-    assert n_steps == model.n_callback_calls
+    assert n_steps == policy.n_callback_calls
 
     # Reaching a mean reward of zero is impossible with the Pendulum env
     with pytest.raises(AssertionError):
-        evaluate_policy(model, model.get_env(), n_eval_episodes, reward_threshold=0.0)
+        evaluate_policy(policy, model.get_env(), n_eval_episodes, reward_threshold=0.0)
 
-    episode_rewards, _ = evaluate_policy(model, model.get_env(), n_eval_episodes, return_episode_rewards=True)
+    episode_rewards, _ = evaluate_policy(policy, model.get_env(), n_eval_episodes, return_episode_rewards=True)
     assert len(episode_rewards) == n_eval_episodes
 
     # Test that warning is given about no monitor
     eval_env = gym.make("Pendulum-v1")
     with pytest.warns(UserWarning):
-        _ = evaluate_policy(model, eval_env, n_eval_episodes)
+        _ = evaluate_policy(policy, eval_env, n_eval_episodes)
 
 
 class ZeroRewardWrapper(gym.RewardWrapper):

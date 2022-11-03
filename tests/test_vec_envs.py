@@ -2,6 +2,7 @@ import collections
 import functools
 import itertools
 import multiprocessing
+from multiprocessing.sharedctypes import Value
 from typing import Optional
 
 import gym
@@ -25,6 +26,7 @@ class CustomGymEnv(gym.Env):
         self.observation_space = space
         self.current_step = 0
         self.ep_length = 4
+        self.render_mode = "rgb_array"
 
     def reset(self, seed: Optional[int] = None):
         if seed is not None:
@@ -43,8 +45,8 @@ class CustomGymEnv(gym.Env):
     def _choose_next_state(self):
         self.state = self.observation_space.sample()
 
-    def render(self, mode="human"):
-        if mode == "rgb_array":
+    def render(self):
+        if self.render_mode == "rgb_array":
             return np.zeros((4, 4, 3))
 
     def seed(self, seed=None):
@@ -83,9 +85,18 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
 
     # Test seed method
     vec_env.seed(0)
+
     # Test render method call
     # vec_env.render()  # we need a X server  to test the "human" mode
-    vec_env.render(mode="rgb_array")
+    array_explicit_mode = vec_env.render(mode="rgb_array")
+    # test render withouth argument (new gym API style)
+    array_implicit_mode = vec_env.render()
+    assert np.array_equal(array_implicit_mode, array_explicit_mode)
+
+    # test error if you try different render mode
+    with pytest.raises(ValueError):
+        vec_env.render(mode="human")
+
     env_method_results = vec_env.env_method("custom_method", 1, indices=None, dim_1=2)
     setattr_results = []
     # Set current_step to an arbitrary value

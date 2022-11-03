@@ -1,6 +1,6 @@
 import inspect
-import warnings
 from abc import ABC, abstractmethod
+from multiprocessing.sharedctypes import Value
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union
 
 import cloudpickle
@@ -55,10 +55,17 @@ class VecEnv(ABC):
 
     metadata = {"render.modes": ["human", "rgb_array"]}
 
-    def __init__(self, num_envs: int, observation_space: gym.spaces.Space, action_space: gym.spaces.Space):
+    def __init__(
+        self,
+        num_envs: int,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        render_mode: Optional[str] = None,
+    ):
         self.num_envs = num_envs
         self.observation_space = observation_space
         self.action_space = action_space
+        self.render_mode = render_mode
         self.reset_infos = [{} for _ in range(num_envs)]  # store info returned by the reset method
 
     @abstractmethod
@@ -162,35 +169,45 @@ class VecEnv(ABC):
         self.step_async(actions)
         return self.step_wait()
 
-    def get_images(self) -> Sequence[np.ndarray]:
+    def get_render_output(self) -> Sequence[Optional[np.ndarray]]:
         """
-        Return RGB images from each environment
+        Return Render output from each environment
         """
         raise NotImplementedError
 
-    def render(self, mode: str = "human") -> Optional[np.ndarray]:
+    def render(self, mode: Optional[str] = None) -> Optional[np.ndarray]:
         """
         Gym environment rendering
 
         :param mode: the rendering type
         """
-        try:
-            imgs = self.get_images()
-        except NotImplementedError:
-            warnings.warn(f"Render not defined for {self}")
-            return
 
-        # Create a big image by tiling images from subprocesses
-        bigimg = tile_images(imgs)
-        if mode == "human":
-            import cv2  # pytype:disable=import-error
+        if mode and self.render_mode != mode:
+            raise ValueError(
+                f"""starting from gym v0.26, render modes are determined during the initialization of the environment.
+                We allow to pass a mode argument to maintain a backwards compatible VecEnv API, but the mode ({mode}) 
+                has to be the same as the environment render mode ({self.render_mode}) whichs is not the case."""
+            )
 
-            cv2.imshow("vecenv", bigimg[:, :, ::-1])
-            cv2.waitKey(1)
-        elif mode == "rgb_array":
+        mode = self.render_mode
+
+        # call the render method of the environments
+        render_output = self.get_render_output()
+
+        if mode == "rgb_array":
+
+            # Create a big image by tiling images from subprocesses
+            bigimg = tile_images(render_output)
             return bigimg
+
+        elif mode == "rgb_array_list":
+            # TODO: a new 'rgb_array_list' mode has been defined and should be handled.
+            raise NotImplementedError("This mode has not yet been implemented in Stable Baselines.")
+
         else:
-            raise NotImplementedError(f"Render mode {mode} is not supported by VecEnvs")
+            # other render methods are simply ignored.
+            # for 'human' or None, the render output will be a List of None values
+            return
 
     @abstractmethod
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
@@ -251,6 +268,7 @@ class VecEnvWrapper(VecEnv):
         venv: VecEnv,
         observation_space: Optional[gym.spaces.Space] = None,
         action_space: Optional[gym.spaces.Space] = None,
+        render_mode: Optional[str] = None,
     ):
         self.venv = venv
         VecEnv.__init__(
@@ -258,6 +276,7 @@ class VecEnvWrapper(VecEnv):
             num_envs=venv.num_envs,
             observation_space=observation_space or venv.observation_space,
             action_space=action_space or venv.action_space,
+            render_mode=render_mode,
         )
         self.class_attributes = dict(inspect.getmembers(self.__class__))
 
@@ -278,11 +297,11 @@ class VecEnvWrapper(VecEnv):
     def close(self) -> None:
         return self.venv.close()
 
-    def render(self, mode: str = "human") -> Optional[np.ndarray]:
+    def render(self, mode: Optional[str] = None) -> Optional[np.ndarray]:
         return self.venv.render(mode=mode)
 
-    def get_images(self) -> Sequence[np.ndarray]:
-        return self.venv.get_images()
+    def get_render_output(self) -> Sequence[np.ndarray]:
+        return self.venv.get_render_output()
 
     def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:
         return self.venv.get_attr(attr_name, indices)

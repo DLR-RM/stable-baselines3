@@ -45,13 +45,15 @@ def _worker(  # noqa: C901
                 observation, reset_info = env.reset()
                 remote.send((observation, reset_info))
             elif cmd == "render":
-                remote.send(env.render(data))
+                remote.send(env.render())
             elif cmd == "close":
                 env.close()
                 remote.close()
                 break
             elif cmd == "get_spaces":
                 remote.send((env.observation_space, env.action_space))
+            elif cmd == "get_render_mode":
+                remote.send(env.render_mode)
             elif cmd == "env_method":
                 method = getattr(env, data[0])
                 remote.send(method(*data[1], **data[2]))
@@ -116,7 +118,10 @@ class SubprocVecEnv(VecEnv):
 
         self.remotes[0].send(("get_spaces", None))
         observation_space, action_space = self.remotes[0].recv()
-        VecEnv.__init__(self, len(env_fns), observation_space, action_space)
+
+        self.remotes[0].send(("get_render_mode", None))
+        render_mode = self.remotes[0].recv()
+        VecEnv.__init__(self, len(env_fns), observation_space, action_space, render_mode)
 
     def step_async(self, actions: np.ndarray) -> None:
         for remote, action in zip(self.remotes, actions):
@@ -155,13 +160,12 @@ class SubprocVecEnv(VecEnv):
             process.join()
         self.closed = True
 
-    def get_images(self) -> Sequence[np.ndarray]:
+    def get_render_output(self) -> Sequence[Optional[np.ndarray]]:
         for pipe in self.remotes:
-            # gather images from subprocesses
-            # `mode` will be taken into account later
-            pipe.send(("render", "rgb_array"))
-        imgs = [pipe.recv() for pipe in self.remotes]
-        return imgs
+            # gather render return from subprocesses
+            pipe.send(("render", None))
+        outputs = [pipe.recv() for pipe in self.remotes]
+        return outputs
 
     def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:
         """Return attribute from vectorized environment (see base class)."""

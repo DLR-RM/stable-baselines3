@@ -24,7 +24,7 @@ class DummyVecEnv(VecEnv):
     def __init__(self, env_fns: List[Callable[[], gym.Env]]):
         self.envs = [fn() for fn in env_fns]
         env = self.envs[0]
-        VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space)
+        VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space, env.render_mode)
         obs_space = env.observation_space
         self.keys, shapes, dtypes = obs_space_info(obs_space)
 
@@ -78,10 +78,10 @@ class DummyVecEnv(VecEnv):
         for env in self.envs:
             env.close()
 
-    def get_images(self) -> Sequence[np.ndarray]:
-        return [env.render(mode="rgb_array") for env in self.envs]
+    def get_render_output(self) -> Sequence[Optional[np.ndarray]]:
+        return [env.render() for env in self.envs]
 
-    def render(self, mode: str = "human") -> Optional[np.ndarray]:
+    def render(self, mode: Optional[str] = None) -> Optional[np.ndarray]:
         """
         Gym environment rendering. If there are multiple environments then
         they are tiled together in one image via ``BaseVecEnv.render()``.

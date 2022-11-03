@@ -19,6 +19,7 @@ class DummyVecEnv(VecEnv):
 
     :param env_fns: a list of functions
         that return environments to vectorize
+    :raises ValueError: If the same environment instance is passed as the output of two or more different env_fn.
     """
 
     def __init__(self, env_fns: List[Callable[[], gym.Env]]):

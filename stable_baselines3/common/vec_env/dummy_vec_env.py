@@ -23,6 +23,13 @@ class DummyVecEnv(VecEnv):
 
     def __init__(self, env_fns: List[Callable[[], gym.Env]]):
         self.envs = [fn() for fn in env_fns]
+        if len(set([id(env) for env in self.envs])) != len(self.envs):
+            raise ValueError(
+                "You have tried to pass the same environment instance as the output of two or more different env_fn, likely "
+                "because your functions are returning a same object created outside the function scope. "
+                "Since gym environments are stateful, this is not supported as it would lead to undefined"
+                "behavior. Please create different instances of the environment instead."
+            )
         env = self.envs[0]
         VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space)
         obs_space = env.observation_space

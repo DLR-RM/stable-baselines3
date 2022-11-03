@@ -2,7 +2,6 @@ import collections
 import functools
 import itertools
 import multiprocessing
-from multiprocessing.sharedctypes import Value
 from typing import Optional
 
 import gym

@@ -79,7 +79,7 @@ class DummyDictEnv(gym.Env):
             self.observation_space.seed(seed)
         return self.observation_space.sample(), {}
 
-    def render(self, mode="human"):
+    def render(self):
         pass
 
 

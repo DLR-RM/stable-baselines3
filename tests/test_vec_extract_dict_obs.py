@@ -29,7 +29,7 @@ class DictObsVecEnv:
     def reset(self):
         return {"rgb": np.zeros((self.num_envs, 86, 86))}
 
-    def render(self, mode="human", close=False):
+    def render(self, close=False):
         pass
 
 

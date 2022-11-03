@@ -26,6 +26,7 @@ Bug Fixes:
 - Fix type annotation of ``policy`` in ``BaseAlgorithm`` and ``OffPolicyAlgorithm``
 - Allowed model trained with Python 3.7 to be loaded with Python 3.8+ without the ``custom_objects`` workaround
 - Raise an error when the same gym environment instance is passed as separate environments when creating a vectorized environment with more than one environment. (@Rocamonde)
+- Fix type annotation of ``model`` in ``evaluate_policy``
 
 Deprecations:
 ^^^^^^^^^^^^^

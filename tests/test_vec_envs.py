@@ -69,6 +69,8 @@ def test_vecenv_func_checker():
     with pytest.raises(ValueError):
         DummyVecEnv([lambda: env for _ in range(N_ENVS)])
 
+    env.close()
+
 
 @pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
 @pytest.mark.parametrize("vec_env_wrapper", VEC_ENV_WRAPPERS)

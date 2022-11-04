@@ -45,6 +45,16 @@ def test_make_vec_env(env_id, n_envs, vec_env_cls, wrapper_class):
     env.close()
 
 
+def test_make_vec_env_func_checker():
+    """The functions in ``env_fns'' must return distinct instances since we need distinct environments."""
+    env = gym.make("CartPole-v1")
+
+    with pytest.raises(ValueError):
+        make_vec_env(lambda: env, n_envs=2)
+
+    env.close()
+
+
 @pytest.mark.parametrize("env_id", ["BreakoutNoFrameskip-v4"])
 @pytest.mark.parametrize("n_envs", [1, 2])
 @pytest.mark.parametrize("wrapper_kwargs", [None, dict(clip_reward=False, screen_size=60)])

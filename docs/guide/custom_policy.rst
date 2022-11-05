@@ -101,6 +101,10 @@ that derives from ``BaseFeaturesExtractor`` and then pass it to the model when t
   ``policy_kwargs`` for off-policy algorithms (and when applicable).
 
 
+.. warning::
+  If the features extractor is **non-shared**, it is **not** possible to have shared layers in the ``mlp_extractor``.
+
+
 .. code-block:: python
 
   import gym

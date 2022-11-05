@@ -603,22 +603,31 @@ class ActorCriticPolicy(BasePolicy):
         :return: the output of the feature extractor(s)
         """
         if not self.share_features_extractor:
-            return self._extract_features_non_shared(obs)
+            pi_features = self.extract_actor_features(obs)
+            vf_features = self.extract_critic_features(obs)
+            return pi_features, vf_features
         else:
             return super().extract_features(obs)
 
-    def _extract_features_non_shared(self, obs: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+    def extract_actor_features(self, obs: th.Tensor) -> th.Tensor:
         """
-        Preprocess the observation if needed and extract features.
+        Preprocess the observation if needed and extract features for the actor.
 
         :param obs: Observation
-        :return: the output of the feature extractors
+        :return: the output of the feature extractor
         """
-        assert self.pi_features_extractor is not None and self.vf_features_extractor is not None
         preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
-        pi_features = self.pi_features_extractor(preprocessed_obs)
-        vf_features = self.vf_features_extractor(preprocessed_obs)
-        return pi_features, vf_features
+        return self.pi_features_extractor(preprocessed_obs)
+
+    def extract_critic_features(self, obs: th.Tensor) -> th.Tensor:
+        """
+        Preprocess the observation if needed and extract features for the critic.
+
+        :param obs: Observation
+        :return: the output of the feature extractor
+        """
+        preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
+        return self.vf_features_extractor(preprocessed_obs)
 
     def _get_action_dist_from_latent(self, latent_pi: th.Tensor) -> Distribution:
         """

@@ -74,6 +74,7 @@ def make_vec_env(
     :return: The wrapped environment
     """
     env_kwargs = {} if env_kwargs is None else env_kwargs
+
     vec_env_kwargs = {} if vec_env_kwargs is None else vec_env_kwargs
     monitor_kwargs = {} if monitor_kwargs is None else monitor_kwargs
     wrapper_kwargs = {} if wrapper_kwargs is None else wrapper_kwargs
@@ -81,7 +82,10 @@ def make_vec_env(
     def make_env(rank):
         def _init():
             if isinstance(env_id, str):
-                env = gym.make(env_id, **env_kwargs)
+                # if the render mode was not specified, we set it to `rgb_array` as default.
+                kwargs = {"render_mode": "rgb_array"}
+                kwargs.update(env_kwargs)
+                env = gym.make(env_id, **kwargs)
             else:
                 env = env_id(**env_kwargs)
             if seed is not None:

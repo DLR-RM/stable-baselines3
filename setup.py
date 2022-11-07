@@ -79,6 +79,7 @@ setup(
         "gym==0.26.2",
         "numpy",
         "torch>=1.11",
+        'typing_extensions>=4.0,<5; python_version < "3.8.0"',
         # For saving models
         "cloudpickle",
         # For reading logs

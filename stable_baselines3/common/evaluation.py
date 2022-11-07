@@ -4,12 +4,12 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import gym
 import numpy as np
 
-from stable_baselines3.common import base_class
+from stable_baselines3.common import type_aliases
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, VecMonitor, is_vecenv_wrapped
 
 
 def evaluate_policy(
-    model: "base_class.BaseAlgorithm",
+    model: "type_aliases.PolicyPredictor",
     env: Union[gym.Env, VecEnv],
     n_eval_episodes: int = 10,
     deterministic: bool = True,
@@ -34,7 +34,9 @@ def evaluate_policy(
         results as well. You can avoid this by wrapping environment with ``Monitor``
         wrapper before anything else.
 
-    :param model: The RL agent you want to evaluate.
+    :param model: The RL agent you want to evaluate. This can be any object
+        that implements a `predict` method, such as an RL algorithm (``BaseAlgorithm``)
+        or policy (``BasePolicy``).
     :param env: The gym environment or ``VecEnv`` environment.
     :param n_eval_episodes: Number of episode to evaluate the agent
     :param deterministic: Whether to use deterministic or stochastic actions

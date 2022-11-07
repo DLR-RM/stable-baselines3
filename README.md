@@ -15,7 +15,7 @@ You can read a detailed presentation of Stable Baselines3 in the [v1.0 blog post
 
 These algorithms will make it easier for the research community and industry to replicate, refine, and identify new ideas, and will create good baselines to build projects on top of. We expect these tools will be used as a base around which new ideas can be added, and as a tool for comparing a new approach against existing ones. We also hope that the simplicity of these tools will allow beginners to experiment with a more advanced toolset, without being buried in implementation details.
 
-**Note: despite its simplicity of use, Stable Baselines3 (SB3) assumes you have some knowledge about Reinforcement Learning (RL).** You should not utilize this library without some practice. To that extent, we provide good resources in the [documentation](https://stable-baselines3.readthedocs.io/en/master/guide/rl.html) to get started with RL.
+**Note: Despite its simplicity of use, Stable Baselines3 (SB3) assumes you have some knowledge about Reinforcement Learning (RL).** You should not utilize this library without some practice. To that extent, we provide good resources in the [documentation](https://stable-baselines3.readthedocs.io/en/master/guide/rl.html) to get started with RL.
 
 ## Main Features
 
@@ -113,7 +113,7 @@ Please read the [documentation](https://stable-baselines3.readthedocs.io/) for m
 
 ## Example
 
-Most of the library tries to follow a sklearn-like syntax for the Reinforcement Learning algorithms.
+Most of the code in the library tries to follow a sklearn-like syntax for the Reinforcement Learning algorithms.
 
 Here is a quick example of how to train and run PPO on a cartpole environment:
 ```python
@@ -150,7 +150,7 @@ Please read the [documentation](https://stable-baselines3.readthedocs.io/) for m
 
 ## Try it online with Colab Notebooks !
 
-All the following examples can be executed online using Google colab notebooks:
+All the following examples can be executed online using Google Colab notebooks:
 
 - [Full Tutorial](https://github.com/araffin/rl-tutorial-jnrr19)
 - [All Notebooks](https://github.com/Stable-Baselines-Team/rl-colab-notebooks/tree/sb3)
@@ -212,8 +212,8 @@ make lint
 
 ## Projects Using Stable-Baselines3
 
-We try to maintain a list of project using stable-baselines3 in the [documentation](https://stable-baselines3.readthedocs.io/en/master/misc/projects.html),
-please tell us when if you want your project to appear on this page ;)
+We try to maintain a list of projects using stable-baselines3 in the [documentation](https://stable-baselines3.readthedocs.io/en/master/misc/projects.html),
+please tell us if you want your project to appear on this page ;)
 
 ## Citing the Project
 
@@ -236,8 +236,8 @@ To cite this repository in publications:
 
 Stable-Baselines3 is currently maintained by [Ashley Hill](https://github.com/hill-a) (aka @hill-a), [Antonin Raffin](https://araffin.github.io/) (aka [@araffin](https://github.com/araffin)), [Maximilian Ernestus](https://github.com/ernestum) (aka @ernestum), [Adam Gleave](https://github.com/adamgleave) (@AdamGleave), [Anssi Kanervisto](https://github.com/Miffyli) (@Miffyli) and [Quentin Gallouédec](https://gallouedec.com/) (@qgallouedec).
 
-**Important Note: We do not do technical support, nor consulting** and don't answer personal questions per email.
-Please post your question on the [RL Discord](https://discord.com/invite/xhfNqQv), [Reddit](https://www.reddit.com/r/reinforcementlearning/) or [Stack Overflow](https://stackoverflow.com/) in that case.
+**Important Note: We do not provide technical support, or consulting** and do not answer personal questions via email.
+Please post your question on the [RL Discord](https://discord.com/invite/xhfNqQv), [Reddit](https://www.reddit.com/r/reinforcementlearning/), or [Stack Overflow](https://stackoverflow.com/) in that case.
 
 
 ## How To Contribute

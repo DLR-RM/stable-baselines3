@@ -224,7 +224,7 @@ class DQN(OffPolicyAlgorithm):
 
     def predict(
         self,
-        observation: np.ndarray,
+        observation: Union[np.ndarray, Dict[str, np.ndarray]],
         state: Optional[Tuple[np.ndarray, ...]] = None,
         episode_start: Optional[np.ndarray] = None,
         deterministic: bool = False,
@@ -241,7 +241,7 @@ class DQN(OffPolicyAlgorithm):
         """
         if not deterministic and np.random.rand() < self.exploration_rate:
             if is_vectorized_observation(maybe_transpose(observation, self.observation_space), self.observation_space):
-                if isinstance(self.observation_space, gym.spaces.Dict):
+                if isinstance(observation, dict):
                     n_batch = observation[list(observation.keys())[0]].shape[0]
                 else:
                     n_batch = observation.shape[0]

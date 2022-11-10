@@ -1,6 +1,6 @@
 import pickle
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
 import gym
 import numpy as np
@@ -8,6 +8,8 @@ import numpy as np
 from stable_baselines3.common import utils
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvStepReturn, VecEnvWrapper
+
+SelfVecNormalize = TypeVar("SelfVecNormalize", bound="VecNormalize")
 
 
 class VecNormalize(VecEnvWrapper):
@@ -266,7 +268,7 @@ class VecNormalize(VecEnvWrapper):
         return self.normalize_obs(obs)
 
     @staticmethod
-    def load(load_path: str, venv: VecEnv) -> "VecNormalize":
+    def load(load_path: str, venv: VecEnv) -> SelfVecNormalize:
         """
         Loads a saved VecNormalize object.
 

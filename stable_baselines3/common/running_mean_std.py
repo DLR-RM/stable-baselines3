@@ -1,8 +1,6 @@
-from typing import Tuple, TypeVar, Union
+from typing import Tuple, Union
 
 import numpy as np
-
-SelfRunningMeanStd = TypeVar("SelfRunningMeanStd", bound="RunningMeanStd")
 
 
 class RunningMeanStd:
@@ -18,7 +16,7 @@ class RunningMeanStd:
         self.var = np.ones(shape, np.float64)
         self.count = epsilon
 
-    def copy(self) -> SelfRunningMeanStd:
+    def copy(self) -> "RunningMeanStd":
         """
         :return: Return a copy of the current object.
         """

@@ -38,6 +38,8 @@ from stable_baselines3.common.vec_env import (
     unwrap_vec_normalize,
 )
 
+BaseAlgorithmSelf = TypeVar("BaseAlgorithmSelf", bound="BaseAlgorithm")
+
 
 def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymEnv]:
     """If env is a string, make the environment; otherwise, return env.
@@ -51,9 +53,6 @@ def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymE
             print(f"Creating environment from the given name '{env}'")
         env = gym.make(env)
     return env
-
-
-BaseAlgorithmSelf = TypeVar("BaseAlgorithmSelf", bound="BaseAlgorithm")
 
 
 class BaseAlgorithm(ABC):

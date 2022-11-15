@@ -13,6 +13,14 @@ from torch.distributions import Bernoulli, Categorical, Normal
 from stable_baselines3.common.preprocessing import get_action_dim
 
 SelfDistribution = TypeVar("SelfDistribution", bound="Distribution")
+SelfDiagGaussianDistribution = TypeVar("SelfDiagGaussianDistribution", bound="DiagGaussianDistribution")
+SelfSquashedDiagGaussianDistribution = TypeVar(
+    "SelfSquashedDiagGaussianDistribution", bound="SquashedDiagGaussianDistribution"
+)
+SelfCategoricalDistribution = TypeVar("SelfCategoricalDistribution", bound="CategoricalDistribution")
+SelfMultiCategoricalDistribution = TypeVar("SelfMultiCategoricalDistribution", bound="MultiCategoricalDistribution")
+SelfBernoulliDistribution = TypeVar("SelfBernoulliDistribution", bound="BernoulliDistribution")
+SelfStateDependentNoiseDistribution = TypeVar("SelfStateDependentNoiseDistribution", bound="StateDependentNoiseDistribution")
 
 
 class Distribution(ABC):
@@ -115,9 +123,6 @@ def sum_independent_dims(tensor: th.Tensor) -> th.Tensor:
     return tensor
 
 
-SelfDiagGaussianDistribution = TypeVar("SelfDiagGaussianDistribution", bound="DiagGaussianDistribution")
-
-
 class DiagGaussianDistribution(Distribution):
     """
     Gaussian distribution with diagonal covariance matrix, for continuous actions.
@@ -198,11 +203,6 @@ class DiagGaussianDistribution(Distribution):
         return actions, log_prob
 
 
-SelfSquashedDiagGaussianDistribution = TypeVar(
-    "SelfSquashedDiagGaussianDistribution", bound="SquashedDiagGaussianDistribution"
-)
-
-
 class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
     """
     Gaussian distribution with diagonal covariance matrix, followed by a squashing function (tanh) to ensure bounds.
@@ -257,9 +257,6 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         return action, log_prob
 
 
-SelfCategoricalDistribution = TypeVar("SelfCategoricalDistribution", bound="CategoricalDistribution")
-
-
 class CategoricalDistribution(Distribution):
     """
     Categorical distribution for discrete actions.
@@ -309,9 +306,6 @@ class CategoricalDistribution(Distribution):
         actions = self.actions_from_params(action_logits)
         log_prob = self.log_prob(actions)
         return actions, log_prob
-
-
-SelfMultiCategoricalDistribution = TypeVar("SelfMultiCategoricalDistribution", bound="MultiCategoricalDistribution")
 
 
 class MultiCategoricalDistribution(Distribution):
@@ -369,9 +363,6 @@ class MultiCategoricalDistribution(Distribution):
         return actions, log_prob
 
 
-SelfBernoulliDistribution = TypeVar("SelfBernoulliDistribution", bound="BernoulliDistribution")
-
-
 class BernoulliDistribution(Distribution):
     """
     Bernoulli distribution for MultiBinary action spaces.
@@ -420,9 +411,6 @@ class BernoulliDistribution(Distribution):
         actions = self.actions_from_params(action_logits)
         log_prob = self.log_prob(actions)
         return actions, log_prob
-
-
-SelfStateDependentNoiseDistribution = TypeVar("SelfStateDependentNoiseDistribution", bound="StateDependentNoiseDistribution")
 
 
 class StateDependentNoiseDistribution(Distribution):

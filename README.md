@@ -198,9 +198,9 @@ pip install pytest pytest-cov
 make pytest
 ```
 
-You can also do a static type check using `pytype`:
+You can also do a static type check using `pytype` and `mypy`:
 ```
-pip install pytype
+pip install pytype mypy
 make type
 ```
 

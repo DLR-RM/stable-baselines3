@@ -24,6 +24,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Introduced mypy type checking
 
 SB3-Contrib
 ^^^^^^^^^^^

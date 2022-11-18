@@ -4,6 +4,7 @@
 *.py~
 *.bak
 .pytest_cache
+.mypy_cache
 .DS_Store
 .idea
 .vscode

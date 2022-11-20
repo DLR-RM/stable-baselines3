@@ -160,7 +160,7 @@ class SubprocVecEnv(VecEnv):
             process.join()
         self.closed = True
 
-    def get_render_output(self) -> Sequence[Optional[np.ndarray]]:
+    def get_images(self) -> Sequence[Optional[np.ndarray]]:
         for pipe in self.remotes:
             # gather render return from subprocesses
             pipe.send(("render", None))

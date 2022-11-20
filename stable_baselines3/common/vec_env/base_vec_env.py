@@ -168,7 +168,7 @@ class VecEnv(ABC):
         self.step_async(actions)
         return self.step_wait()
 
-    def get_render_output(self) -> Sequence[Optional[np.ndarray]]:
+    def get_images(self) -> Sequence[Optional[np.ndarray]]:
         """
         Return Render output from each environment
         """
@@ -191,12 +191,11 @@ class VecEnv(ABC):
         mode = self.render_mode
 
         # call the render method of the environments
-        render_output = self.get_render_output()
+        images = self.get_images()
 
         if mode == "rgb_array":
-
             # Create a big image by tiling images from subprocesses
-            bigimg = tile_images(render_output)
+            bigimg = tile_images(images)
             return bigimg
 
         elif mode == "rgb_array_list":
@@ -299,8 +298,8 @@ class VecEnvWrapper(VecEnv):
     def render(self, mode: Optional[str] = None) -> Optional[np.ndarray]:
         return self.venv.render(mode=mode)
 
-    def get_render_output(self) -> Sequence[np.ndarray]:
-        return self.venv.get_render_output()
+    def get_images(self) -> Sequence[np.ndarray]:
+        return self.venv.get_images()
 
     def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:
         return self.venv.get_attr(attr_name, indices)

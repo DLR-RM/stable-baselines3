@@ -19,10 +19,21 @@ class DummyVecEnv(VecEnv):
 
     :param env_fns: a list of functions
         that return environments to vectorize
+    :raises ValueError: If the same environment instance is passed as the output of two or more different env_fn.
     """
 
     def __init__(self, env_fns: List[Callable[[], gym.Env]]):
         self.envs = [fn() for fn in env_fns]
+        if len(set([id(env.unwrapped) for env in self.envs])) != len(self.envs):
+            raise ValueError(
+                "You tried to create multiple environments, but the function to create them returned the same instance "
+                "instead of creating different objects. "
+                "You are probably using `make_vec_env(lambda: env)` or `DummyVecEnv([lambda: env] * n_envs)`. "
+                "You should replace `lambda: env` by a `make_env` function that "
+                "creates a new instance of the environment at every call "
+                "(using `gym.make()` for instance). You can take a look at the documentation for an example. "
+                "Please read https://github.com/DLR-RM/stable-baselines3/issues/1151 for more information."
+            )
         env = self.envs[0]
         VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space)
         obs_space = env.observation_space

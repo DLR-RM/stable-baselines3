@@ -38,6 +38,8 @@ from stable_baselines3.common.vec_env import (
     unwrap_vec_normalize,
 )
 
+SelfBaseAlgorithm = TypeVar("SelfBaseAlgorithm", bound="BaseAlgorithm")
+
 
 def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymEnv]:
     """If env is a string, make the environment; otherwise, return env.
@@ -51,9 +53,6 @@ def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymE
             print(f"Creating environment from the given name '{env}'")
         env = gym.make(env)
     return env
-
-
-BaseAlgorithmSelf = TypeVar("BaseAlgorithmSelf", bound="BaseAlgorithm")
 
 
 class BaseAlgorithm(ABC):
@@ -491,14 +490,14 @@ class BaseAlgorithm(ABC):
 
     @abstractmethod
     def learn(
-        self: BaseAlgorithmSelf,
+        self: SelfBaseAlgorithm,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 100,
         tb_log_name: str = "run",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
-    ) -> BaseAlgorithmSelf:
+    ) -> SelfBaseAlgorithm:
         """
         Return a trained model.
 
@@ -617,7 +616,7 @@ class BaseAlgorithm(ABC):
 
     @classmethod
     def load(
-        cls: Type[BaseAlgorithmSelf],
+        cls: Type[SelfBaseAlgorithm],
         path: Union[str, pathlib.Path, io.BufferedIOBase],
         env: Optional[GymEnv] = None,
         device: Union[th.device, str] = "auto",
@@ -625,7 +624,7 @@ class BaseAlgorithm(ABC):
         print_system_info: bool = False,
         force_reset: bool = True,
         **kwargs,
-    ) -> BaseAlgorithmSelf:
+    ) -> SelfBaseAlgorithm:
         """
         Load the model from a zip-file.
         Warning: ``load`` re-creates the model from scratch, it does not update it in-place!

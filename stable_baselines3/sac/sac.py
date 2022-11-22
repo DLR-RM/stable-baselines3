@@ -13,7 +13,7 @@ from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedul
 from stable_baselines3.common.utils import get_parameters_by_name, polyak_update
 from stable_baselines3.sac.policies import CnnPolicy, MlpPolicy, MultiInputPolicy, SACPolicy
 
-SACSelf = TypeVar("SACSelf", bound="SAC")
+SelfSAC = TypeVar("SelfSAC", bound="SAC")
 
 
 class SAC(OffPolicyAlgorithm):
@@ -287,14 +287,14 @@ class SAC(OffPolicyAlgorithm):
             self.logger.record("train/ent_coef_loss", np.mean(ent_coef_losses))
 
     def learn(
-        self: SACSelf,
+        self: SelfSAC,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
         tb_log_name: str = "SAC",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
-    ) -> SACSelf:
+    ) -> SelfSAC:
 
         return super().learn(
             total_timesteps=total_timesteps,

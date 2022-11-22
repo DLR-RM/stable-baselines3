@@ -24,12 +24,15 @@ class DummyVecEnv(VecEnv):
 
     def __init__(self, env_fns: List[Callable[[], gym.Env]]):
         self.envs = [fn() for fn in env_fns]
-        if len(set([id(env) for env in self.envs])) != len(self.envs):
+        if len(set([id(env.unwrapped) for env in self.envs])) != len(self.envs):
             raise ValueError(
-                "You have tried to pass the same environment instance as the output of two or more different env_fn, likely "
-                "because your functions are returning a same object created outside the function scope. "
-                "Since gym environments are stateful, this is not supported as it would lead to undefined"
-                "behavior. Please create different instances of the environment instead."
+                "You tried to create multiple environments, but the function to create them returned the same instance "
+                "instead of creating different objects. "
+                "You are probably using `make_vec_env(lambda: env)` or `DummyVecEnv([lambda: env] * n_envs)`. "
+                "You should replace `lambda: env` by a `make_env` function that "
+                "creates a new instance of the environment at every call "
+                "(using `gym.make()` for instance). You can take a look at the documentation for an example. "
+                "Please read https://github.com/DLR-RM/stable-baselines3/issues/1151 for more information."
             )
         env = self.envs[0]
         VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space)

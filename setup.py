@@ -95,6 +95,7 @@ setup(
             "pytest-xdist",
             # Type check
             "pytype",
+            "mypy",
             # Lint code
             "flake8>=3.8",
             # Find likely bugs

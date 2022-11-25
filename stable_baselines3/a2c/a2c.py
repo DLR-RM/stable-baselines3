@@ -9,7 +9,7 @@ from stable_baselines3.common.policies import ActorCriticCnnPolicy, ActorCriticP
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import explained_variance
 
-A2CSelf = TypeVar("A2CSelf", bound="A2C")
+SelfA2C = TypeVar("SelfA2C", bound="A2C")
 
 
 class A2C(OnPolicyAlgorithm):
@@ -181,14 +181,14 @@ class A2C(OnPolicyAlgorithm):
             self.logger.record("train/std", th.exp(self.policy.log_std).mean().item())
 
     def learn(
-        self: A2CSelf,
+        self: SelfA2C,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 100,
         tb_log_name: str = "A2C",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
-    ) -> A2CSelf:
+    ) -> SelfA2C:
 
         return super().learn(
             total_timesteps=total_timesteps,

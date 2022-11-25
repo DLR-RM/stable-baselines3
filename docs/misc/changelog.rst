@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.7.0a1 (WIP)
+Release 1.7.0a2 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -16,6 +16,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Introduced mypy type checking
 
 SB3-Contrib
 ^^^^^^^^^^^
@@ -25,7 +26,9 @@ Bug Fixes:
 - Fix return type of ``evaluate_actions`` in ``ActorCritcPolicy`` to reflect that entropy is an optional tensor (@Rocamonde)
 - Fix type annotation of ``policy`` in ``BaseAlgorithm`` and ``OffPolicyAlgorithm``
 - Allowed model trained with Python 3.7 to be loaded with Python 3.8+ without the ``custom_objects`` workaround
+- Raise an error when the same gym environment instance is passed as separate environments when creating a vectorized environment with more than one environment. (@Rocamonde)
 - Fix type annotation of ``model`` in ``evaluate_policy``
+- Fixed ``Self`` return type using ``TypeVar``
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -33,6 +36,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Used issue forms instead of issue templates
+- Fixed flake8 config to be compatible with flake8 6+
 
 Documentation:
 ^^^^^^^^^^^^^^

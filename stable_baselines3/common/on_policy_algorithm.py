@@ -14,7 +14,7 @@ from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedul
 from stable_baselines3.common.utils import obs_as_tensor, safe_mean
 from stable_baselines3.common.vec_env import VecEnv
 
-OnPolicyAlgorithmSelf = TypeVar("OnPolicyAlgorithmSelf", bound="OnPolicyAlgorithm")
+SelfOnPolicyAlgorithm = TypeVar("SelfOnPolicyAlgorithm", bound="OnPolicyAlgorithm")
 
 
 class OnPolicyAlgorithm(BaseAlgorithm):
@@ -223,14 +223,14 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         raise NotImplementedError
 
     def learn(
-        self: OnPolicyAlgorithmSelf,
+        self: SelfOnPolicyAlgorithm,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 1,
         tb_log_name: str = "OnPolicyAlgorithm",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
-    ) -> OnPolicyAlgorithmSelf:
+    ) -> SelfOnPolicyAlgorithm:
         iteration = 0
 
         total_timesteps, callback = self._setup_learn(

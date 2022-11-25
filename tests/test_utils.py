@@ -298,13 +298,13 @@ def test_evaluate_policy_monitors(vec_env_class):
     episode_rewards, episode_lengths = evaluate_policy(
         model, eval_env, n_eval_episodes, return_episode_rewards=True, warn=False
     )
-    assert all(map(lambda l: l == 1, episode_lengths)), "AlwaysDoneWrapper did not fix episode lengths to one"
+    assert all(map(lambda length: length == 1, episode_lengths)), "AlwaysDoneWrapper did not fix episode lengths to one"
     eval_env.close()
 
     # Should get longer episodes with with Monitor (true episodes)
     eval_env = make_eval_env(with_monitor=True, wrapper_class=AlwaysDoneWrapper)
     episode_rewards, episode_lengths = evaluate_policy(model, eval_env, n_eval_episodes, return_episode_rewards=True)
-    assert all(map(lambda l: l > 1, episode_lengths)), "evaluate_policy did not get episode lengths from Monitor"
+    assert all(map(lambda length: length > 1, episode_lengths)), "evaluate_policy did not get episode lengths from Monitor"
     eval_env.close()
 
 

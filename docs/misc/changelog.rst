@@ -36,6 +36,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Used issue forms instead of issue templates
+- Fixed flake8 config to be compatible with flake8 6+
 
 Documentation:
 ^^^^^^^^^^^^^^

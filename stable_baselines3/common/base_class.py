@@ -125,7 +125,7 @@ class BaseAlgorithm(ABC):
         # Used for computing fps, it is updated at each call of learn()
         self._num_timesteps_at_start = 0
         self.seed = seed
-        self.action_noise = None  # type: Optional[ActionNoise]
+        self.action_noise: Optional[ActionNoise] = None
         self.start_time = None
         self.policy = None
         self.learning_rate = learning_rate

@@ -388,6 +388,7 @@ class ActorCriticPolicy(BasePolicy):
     :param features_extractor_class: Features extractor to use.
     :param features_extractor_kwargs: Keyword arguments
         to pass to the features extractor.
+    :param share_features_extractor: If True, features extractor shared between policy and value networks.
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer_class: The optimizer to use,
@@ -411,6 +412,7 @@ class ActorCriticPolicy(BasePolicy):
         squash_output: bool = False,
         features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        share_features_extractor: bool = True,
         normalize_images: bool = True,
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
@@ -443,17 +445,18 @@ class ActorCriticPolicy(BasePolicy):
         self.activation_fn = activation_fn
         self.ortho_init = ortho_init
 
-        self.share_features_extractor = self.features_extractor_kwargs.get("shared", True)
-        # remove key-value pair to avoid errors
-        if "shared" in self.features_extractor_kwargs:
-            del self.features_extractor_kwargs["shared"]
-
+        self.share_features_extractor = share_features_extractor
         self.features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
         self.features_dim = self.features_extractor.features_dim
         if not self.share_features_extractor:
             self.pi_features_extractor = self.features_extractor
             self.vf_features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
             delattr(self, "features_extractor")
+            # if the features extractor is not shared, there cannot be shared layers in the mlp_extractor
+            if not isinstance(net_arch[0], dict):
+                raise ValueError(
+                    "Error: if the features extractor is not shared, there cannot be shared layers in the mlp_extractor"
+                )
 
         self.normalize_images = normalize_images
         self.log_std_init = log_std_init
@@ -738,6 +741,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
     :param features_extractor_class: Features extractor to use.
     :param features_extractor_kwargs: Keyword arguments
         to pass to the features extractor.
+    :param share_features_extractor: If True, features extractor shared between policy and value networks.
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer_class: The optimizer to use,
@@ -761,6 +765,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         squash_output: bool = False,
         features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        share_features_extractor: bool = True,
         normalize_images: bool = True,
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
@@ -779,6 +784,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
             squash_output,
             features_extractor_class,
             features_extractor_kwargs,
+            share_features_extractor,
             normalize_images,
             optimizer_class,
             optimizer_kwargs,
@@ -808,6 +814,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
     :param features_extractor_class: Uses the CombinedExtractor
     :param features_extractor_kwargs: Keyword arguments
         to pass to the feature extractor.
+    :param share_features_extractor: If True, features extractor shared between policy and value networks.
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer_class: The optimizer to use,
@@ -831,6 +838,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         squash_output: bool = False,
         features_extractor_class: Type[BaseFeaturesExtractor] = CombinedExtractor,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        share_features_extractor: bool = True,
         normalize_images: bool = True,
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
@@ -849,6 +857,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
             squash_output,
             features_extractor_class,
             features_extractor_kwargs,
+            share_features_extractor,
             normalize_images,
             optimizer_class,
             optimizer_kwargs,

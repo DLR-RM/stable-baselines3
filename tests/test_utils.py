@@ -45,6 +45,16 @@ def test_make_vec_env(env_id, n_envs, vec_env_cls, wrapper_class):
     env.close()
 
 
+def test_make_vec_env_func_checker():
+    """The functions in ``env_fns'' must return distinct instances since we need distinct environments."""
+    env = gym.make("CartPole-v1")
+
+    with pytest.raises(ValueError):
+        make_vec_env(lambda: env, n_envs=2)
+
+    env.close()
+
+
 @pytest.mark.parametrize("env_id", ["BreakoutNoFrameskip-v4"])
 @pytest.mark.parametrize("n_envs", [1, 2])
 @pytest.mark.parametrize("wrapper_kwargs", [None, dict(clip_reward=False, screen_size=60)])
@@ -149,6 +159,7 @@ def test_evaluate_policy(direct_policy: bool):
     def dummy_callback(locals_, _globals):
         locals_["model"].n_callback_calls += 1
 
+    assert model.policy is not None
     policy = model.policy if direct_policy else model
     policy.n_callback_calls = 0
     _, episode_lengths = evaluate_policy(
@@ -287,13 +298,13 @@ def test_evaluate_policy_monitors(vec_env_class):
     episode_rewards, episode_lengths = evaluate_policy(
         model, eval_env, n_eval_episodes, return_episode_rewards=True, warn=False
     )
-    assert all(map(lambda l: l == 1, episode_lengths)), "AlwaysDoneWrapper did not fix episode lengths to one"
+    assert all(map(lambda length: length == 1, episode_lengths)), "AlwaysDoneWrapper did not fix episode lengths to one"
     eval_env.close()
 
     # Should get longer episodes with with Monitor (true episodes)
     eval_env = make_eval_env(with_monitor=True, wrapper_class=AlwaysDoneWrapper)
     episode_rewards, episode_lengths = evaluate_policy(model, eval_env, n_eval_episodes, return_episode_rewards=True)
-    assert all(map(lambda l: l > 1, episode_lengths)), "evaluate_policy did not get episode lengths from Monitor"
+    assert all(map(lambda length: length > 1, episode_lengths)), "evaluate_policy did not get episode lengths from Monitor"
     eval_env.close()
 
 

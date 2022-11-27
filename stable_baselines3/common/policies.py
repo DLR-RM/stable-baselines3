@@ -32,7 +32,7 @@ from stable_baselines3.common.torch_layers import (
 from stable_baselines3.common.type_aliases import Schedule
 from stable_baselines3.common.utils import get_device, is_vectorized_observation, obs_as_tensor
 
-BaseModelSelf = TypeVar("BaseModelSelf", bound="BaseModel")
+SelfBaseModel = TypeVar("SelfBaseModel", bound="BaseModel")
 
 
 class BaseModel(nn.Module):
@@ -159,7 +159,7 @@ class BaseModel(nn.Module):
         th.save({"state_dict": self.state_dict(), "data": self._get_constructor_parameters()}, path)
 
     @classmethod
-    def load(cls: Type[BaseModelSelf], path: str, device: Union[th.device, str] = "auto") -> BaseModelSelf:
+    def load(cls: Type[SelfBaseModel], path: str, device: Union[th.device, str] = "auto") -> SelfBaseModel:
         """
         Load model from path.
 

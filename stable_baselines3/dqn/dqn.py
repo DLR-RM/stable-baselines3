@@ -14,7 +14,7 @@ from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedul
 from stable_baselines3.common.utils import get_linear_fn, get_parameters_by_name, is_vectorized_observation, polyak_update
 from stable_baselines3.dqn.policies import CnnPolicy, DQNPolicy, MlpPolicy, MultiInputPolicy
 
-DQNSelf = TypeVar("DQNSelf", bound="DQN")
+SelfDQN = TypeVar("SelfDQN", bound="DQN")
 
 
 class DQN(OffPolicyAlgorithm):
@@ -253,14 +253,14 @@ class DQN(OffPolicyAlgorithm):
         return action, state
 
     def learn(
-        self: DQNSelf,
+        self: SelfDQN,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
         tb_log_name: str = "DQN",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
-    ) -> DQNSelf:
+    ) -> SelfDQN:
 
         return super().learn(
             total_timesteps=total_timesteps,

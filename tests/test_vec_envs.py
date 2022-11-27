@@ -62,6 +62,16 @@ class CustomGymEnv(gym.Env):
         return np.ones((dim_0, dim_1))
 
 
+def test_vecenv_func_checker():
+    """The functions in ``env_fns'' must return distinct instances since we need distinct environments."""
+    env = CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)))
+
+    with pytest.raises(ValueError):
+        DummyVecEnv([lambda: env for _ in range(N_ENVS)])
+
+    env.close()
+
+
 @pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
 @pytest.mark.parametrize("vec_env_wrapper", VEC_ENV_WRAPPERS)
 def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):

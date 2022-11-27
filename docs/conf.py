@@ -13,6 +13,7 @@
 #
 import os
 import sys
+from typing import Dict, List
 from unittest.mock import MagicMock
 
 # We CANNOT enable 'sphinxcontrib.spelling' because ReadTheDocs.org does not support
@@ -37,7 +38,7 @@ sys.path.insert(0, os.path.abspath(".."))
 
 
 class Mock(MagicMock):
-    __subclasses__ = []
+    __subclasses__ = []  # type: ignore
 
     @classmethod
     def __getattr__(cls, name):
@@ -48,7 +49,7 @@ class Mock(MagicMock):
 # Note: because of that we cannot test examples using CI
 # 'torch', 'torch.nn', 'torch.nn.functional',
 # DO not mock modules for now, we will need to do that for read the docs later
-MOCK_MODULES = []
+MOCK_MODULES: List[str] = []
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # Read version from file
@@ -171,7 +172,7 @@ htmlhelp_basename = "StableBaselines3doc"
 
 # -- Options for LaTeX output ------------------------------------------------
 
-latex_elements = {
+latex_elements: Dict[str, str] = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',

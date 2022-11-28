@@ -40,7 +40,7 @@ def test_auto_wrap(model_class):
     """Test auto wrapping of env into a VecEnv."""
     # Use different environment for DQN
     if model_class is DQN:
-        env_name = "CartPole-v0"
+        env_name = "CartPole-v1"
     else:
         env_name = "Pendulum-v1"
     env = gym.make(env_name)

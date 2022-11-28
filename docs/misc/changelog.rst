@@ -17,6 +17,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Introduced mypy type checking
+- Added option to have non-shared features extractor between actor and critic in on-policy algorithms (@AlexPasqua)
 
 SB3-Contrib
 ^^^^^^^^^^^

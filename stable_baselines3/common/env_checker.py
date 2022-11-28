@@ -97,9 +97,8 @@ def _is_goal_env(env: gym.Env) -> bool:
     """
     Check if the env uses the convention for goal-conditioned envs (previously, the gym.GoalEnv interface)
     """
-    if isinstance(env, gym.Wrapper):  # We need to unwrap the env since gym.Wrapper has the compute_reward method
-        return _is_goal_env(env.unwrapped)
-    return hasattr(env, "compute_reward")
+    # We need to unwrap the env since gym.Wrapper has the compute_reward method
+    return hasattr(env.unwrapped, "compute_reward")
 
 
 def _check_goal_env_obs(obs: dict, observation_space: spaces.Dict, method_name: str) -> None:
@@ -262,6 +261,8 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
 
     # Goal conditioned env
     if _is_goal_env(env):
+        # for mypy, env.unwrapped was checked by _is_goal_env()
+        assert hasattr(env, "compute_reward")
         assert reward == env.compute_reward(obs["achieved_goal"], obs["desired_goal"], info)
 
 

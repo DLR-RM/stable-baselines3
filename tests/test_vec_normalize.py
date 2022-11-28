@@ -40,7 +40,7 @@ class DummyRewardEnv(gym.Env):
         return np.array([self.returned_rewards[self.return_reward_idx]])
 
 
-class DummyDictEnv(gym.GoalEnv):
+class DummyDictEnv(gym.Env):
     """
     Dummy gym goal env for testing purposes
     """

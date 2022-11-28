@@ -19,10 +19,12 @@ It creates "virtual" transitions by relabeling transitions (changing the desired
   but a replay buffer class ``HerReplayBuffer`` that must be passed to an off-policy algorithm
   when using ``MultiInputPolicy`` (to have Dict observation support).
 
-
 .. warning::
 
-    HER requires the environment to inherits from `gym.GoalEnv <https://github.com/openai/gym/blob/3394e245727c1ae6851b504a50ba77c73cd4c65b/gym/core.py#L160>`_
+    HER requires the environment to follow the legacy `gym_robotics.GoalEnv interface <https://github.com/Farama-Foundation/Gymnasium-Robotics/blob/a35b1c1fa669428bf640a2c7101e66eb1627ac3a/gym_robotics/core.py#L8>`_
+    In short, the ``gym.Env`` must have:
+    - a vectorized implementation of ``compute_reward()``
+    - a dictionary observation space with three keys: ``observation``, ``achieved_goal`` and ``desired_goal``
 
 
 .. warning::

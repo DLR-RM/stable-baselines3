@@ -100,7 +100,7 @@ def _is_goal_env(env: gym.Env) -> bool:
     return hasattr(env, "compute_reward")
 
 
-def _check_goal_env_obs(obs: dict, observation_space: spaces.Space, method_name: str) -> None:
+def _check_goal_env_obs(obs: dict, observation_space: spaces.Dict, method_name: str) -> None:
     """
     Check that an environment implementing the `compute_rewards()` method
     (previously known as GoalEnv in gym) contains three elements,
@@ -131,7 +131,7 @@ def _check_goal_env_compute_reward(
     and that the implementation is vectorized.
     """
     achieved_goal, desired_goal = obs["achieved_goal"], obs["desired_goal"]
-    assert reward == env.compute_reward(
+    assert reward == env.compute_reward(  # type: ignore[attr-defined]
         achieved_goal, desired_goal, info
     ), "The reward was not computed with `compute_reward()`"
 
@@ -142,7 +142,7 @@ def _check_goal_env_compute_reward(
         batch_achieved_goals = batch_achieved_goals.reshape(2, 1)
         batch_desired_goals = batch_desired_goals.reshape(2, 1)
     batch_infos = np.array([info, info])
-    rewards = env.compute_reward(batch_achieved_goals, batch_desired_goals, batch_infos)
+    rewards = env.compute_reward(batch_achieved_goals, batch_desired_goals, batch_infos)  # type: ignore[attr-defined]
     assert rewards.shape == (2,), f"Unexpected shape for vectorized computation of reward: {rewards.shape} != (2,)"
     assert rewards[0] == reward, f"Vectorized computation of reward differs from single computation: {rewards[0]} != {reward}"
 
@@ -204,6 +204,8 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
     assert isinstance(info, dict), "The second element of the tuple return by `reset()` must be a dictionary"
 
     if _is_goal_env(env):
+        # Make mypy happy, already checked
+        assert isinstance(observation_space, spaces.Dict)
         _check_goal_env_obs(obs, observation_space, "reset")
     elif isinstance(observation_space, spaces.Dict):
         assert isinstance(obs, dict), "The observation returned by `reset()` must be a dictionary"
@@ -232,6 +234,8 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
     obs, reward, terminated, truncated, info = data
 
     if _is_goal_env(env):
+        # Make mypy happy, already checked
+        assert isinstance(observation_space, spaces.Dict)
         _check_goal_env_obs(obs, observation_space, "step")
         _check_goal_env_compute_reward(obs, env, reward, info)
     elif isinstance(observation_space, spaces.Dict):
@@ -305,14 +309,16 @@ def _check_render(env: gym.Env, warn: bool = True, headless: bool = False) -> No
             )
 
     else:
-        # Don't check render mode that require a
-        # graphical interface (useful for CI)
-        if headless and "human" in render_modes:
-            render_modes.remove("human")
-        # Check all declared render modes
-        for render_mode in render_modes:
-            env.render(mode=render_mode)
-        env.close()
+        # FIXME: render check need to be updated
+        # # Don't check render mode that require a
+        # # graphical interface (useful for CI)
+        # if headless and "human" in render_modes:
+        #     render_modes.remove("human")
+        # # Check all declared render modes
+        # for render_mode in render_modes:
+        #     env.render(mode=render_mode)
+        # env.close()
+        pass
 
 
 def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -> None:

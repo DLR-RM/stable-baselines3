@@ -32,7 +32,7 @@ class IdentityEnv(Env):
         self.num_resets = -1  # Becomes 0 after __init__ exits.
         self.reset()
 
-    def reset(self, seed: Optional[int] = None) -> Gym26ResetReturn:
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None) -> Gym26ResetReturn:
         if seed is not None:
             super().reset(seed=seed)
         self.current_step = 0
@@ -140,7 +140,7 @@ class FakeImageEnv(Env):
         self.ep_length = 10
         self.current_step = 0
 
-    def reset(self, seed: Optional[int] = None) -> Tuple[np.ndarray, Dict]:
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[np.ndarray, Dict]:
         if seed is not None:
             super().reset(seed=seed)
         self.current_step = 0

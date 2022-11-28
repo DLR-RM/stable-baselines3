@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, Optional
 
 import gym
 import numpy as np
@@ -15,7 +15,7 @@ class DummyMultiDiscreteSpace(gym.Env):
         self.observation_space = gym.spaces.MultiDiscrete(nvec)
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
 
-    def reset(self, seed: Optional[int] = None):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
         if seed is not None:
             super().reset(seed=seed)
         return self.observation_space.sample(), {}
@@ -30,7 +30,7 @@ class DummyMultiBinary(gym.Env):
         self.observation_space = gym.spaces.MultiBinary(n)
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
 
-    def reset(self, seed: Optional[int] = None):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
         if seed is not None:
             super().reset(seed=seed)
         return self.observation_space.sample(), {}

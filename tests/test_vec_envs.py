@@ -2,7 +2,7 @@ import collections
 import functools
 import itertools
 import multiprocessing
-from typing import Optional
+from typing import Dict, Optional
 
 import gym
 import numpy as np
@@ -26,7 +26,7 @@ class CustomGymEnv(gym.Env):
         self.current_step = 0
         self.ep_length = 4
 
-    def reset(self, seed: Optional[int] = None):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
         if seed is not None:
             self.seed(seed)
         self.current_step = 0

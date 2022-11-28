@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, Optional
 
 import gym
 import numpy as np
@@ -21,7 +21,7 @@ class CustomEnv(gym.Env):
     def seed(self, seed):
         self.observation_space.seed(seed)
 
-    def reset(self, seed: Optional[int] = None):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
         if seed is not None:
             self.observation_space.seed(seed)
         self.n_steps = 0
@@ -51,7 +51,7 @@ class InfiniteHorizonEnv(gym.Env):
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         self.current_state = 0
 
-    def reset(self, seed: Optional[int] = None):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
         if seed is not None:
             super().reset(seed=seed)
 

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, Optional
 
 import gym
 import numpy as np
@@ -74,7 +74,7 @@ class DummyDictEnv(gym.Env):
     def compute_reward(self, achieved_goal, desired_goal, info):
         return np.zeros((len(achieved_goal),))
 
-    def reset(self, seed: Optional[int] = None):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
         if seed is not None:
             self.observation_space.seed(seed)
         return self.observation_space.sample(), {}

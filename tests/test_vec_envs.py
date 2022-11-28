@@ -2,7 +2,7 @@ import collections
 import functools
 import itertools
 import multiprocessing
-from typing import Optional
+from typing import Dict, Optional
 
 import gym
 import numpy as np
@@ -27,7 +27,7 @@ class CustomGymEnv(gym.Env):
         self.ep_length = 4
         self.render_mode = "rgb_array"
 
-    def reset(self, seed: Optional[int] = None):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
         if seed is not None:
             self.seed(seed)
         self.current_step = 0
@@ -64,6 +64,16 @@ class CustomGymEnv(gym.Env):
         :return: (np.ndarray)
         """
         return np.ones((dim_0, dim_1))
+
+
+def test_vecenv_func_checker():
+    """The functions in ``env_fns'' must return distinct instances since we need distinct environments."""
+    env = CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)))
+
+    with pytest.raises(ValueError):
+        DummyVecEnv([lambda: env for _ in range(N_ENVS)])
+
+    env.close()
 
 
 @pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)

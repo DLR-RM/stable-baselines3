@@ -4,12 +4,12 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import gym
 import numpy as np
 
-from stable_baselines3.common import base_class
+from stable_baselines3.common import type_aliases
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, VecMonitor, is_vecenv_wrapped
 
 
 def evaluate_policy(
-    model: "base_class.BaseAlgorithm",
+    model: "type_aliases.PolicyPredictor",
     env: Union[gym.Env, VecEnv],
     n_eval_episodes: int = 10,
     deterministic: bool = True,
@@ -34,7 +34,9 @@ def evaluate_policy(
         results as well. You can avoid this by wrapping environment with ``Monitor``
         wrapper before anything else.
 
-    :param model: The RL agent you want to evaluate.
+    :param model: The RL agent you want to evaluate. This can be any object
+        that implements a `predict` method, such as an RL algorithm (``BaseAlgorithm``)
+        or policy (``BasePolicy``).
     :param env: The gym environment or ``VecEnv`` environment.
     :param n_eval_episodes: Number of episode to evaluate the agent
     :param deterministic: Whether to use deterministic or stochastic actions
@@ -57,7 +59,7 @@ def evaluate_policy(
     from stable_baselines3.common.monitor import Monitor
 
     if not isinstance(env, VecEnv):
-        env = DummyVecEnv([lambda: env])
+        env = DummyVecEnv([lambda: env])  # type: ignore[list-item, return-value]
 
     is_monitor_wrapped = is_vecenv_wrapped(env, VecMonitor) or env.env_is_wrapped(Monitor)[0]
 
@@ -83,7 +85,12 @@ def evaluate_policy(
     states = None
     episode_starts = np.ones((env.num_envs,), dtype=bool)
     while (episode_counts < episode_count_targets).any():
-        actions, states = model.predict(observations, state=states, episode_start=episode_starts, deterministic=deterministic)
+        actions, states = model.predict(
+            observations,  # type: ignore[arg-type]
+            state=states,
+            episode_start=episode_starts,
+            deterministic=deterministic,
+        )
         observations, rewards, dones, infos = env.step(actions)
         current_rewards += rewards
         current_lengths += 1

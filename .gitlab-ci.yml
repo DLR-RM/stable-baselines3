@@ -2,7 +2,7 @@ image: stablebaselines/stable-baselines3-cpu:1.5.1a6
 
 type-check:
   script:
-  - pip install pytype --upgrade
+  - pip install pytype mypy --upgrade
   - make type
 
 pytest:

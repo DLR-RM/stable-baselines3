@@ -21,7 +21,7 @@ from stable_baselines3.common.utils import safe_mean, should_collect_more_steps
 from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
 
-OffPolicyAlgorithmSelf = TypeVar("OffPolicyAlgorithmSelf", bound="OffPolicyAlgorithm")
+SelfOffPolicyAlgorithm = TypeVar("SelfOffPolicyAlgorithm", bound="OffPolicyAlgorithm")
 
 
 class OffPolicyAlgorithm(BaseAlgorithm):
@@ -311,14 +311,14 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         )
 
     def learn(
-        self: OffPolicyAlgorithmSelf,
+        self: SelfOffPolicyAlgorithm,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
         tb_log_name: str = "run",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
-    ) -> OffPolicyAlgorithmSelf:
+    ) -> SelfOffPolicyAlgorithm:
 
         total_timesteps, callback = self._setup_learn(
             total_timesteps,

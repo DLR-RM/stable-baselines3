@@ -19,13 +19,15 @@ Here is a quick example of how to train and run A2C on a CartPole environment:
   model = A2C("MlpPolicy", env, verbose=1)
   model.learn(total_timesteps=10_000)
 
-  obs = env.reset()
+  vec_env = model.get_env()
+  obs = vec_env.reset()
   for i in range(1000):
       action, _state = model.predict(obs, deterministic=True)
-      obs, reward, done, info = env.step(action)
-      env.render()
-      if done:
-        obs = env.reset()
+      obs, reward, done, info = vec_env.step(action)
+      vec_env.render()
+      # VecEnv resets automatically
+      # if done:
+      #   obs = vec_env.reset()
 
 .. note::
 

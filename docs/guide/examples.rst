@@ -94,11 +94,12 @@ In the following example, we will train, save and load a DQN model on the Lunar 
   mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10)
 
   # Enjoy trained agent
-  obs = env.reset()
+  vec_env = model.get_env()
+  obs = vec_env.reset()
   for i in range(1000):
       action, _states = model.predict(obs, deterministic=True)
-      obs, rewards, dones, info = env.step(action)
-      env.render()
+      obs, rewards, dones, info = vec_env.step(action)
+      vec_env.render()
 
 
 Multiprocessing: Unleashing the Power of Vectorized Environments

@@ -612,7 +612,7 @@ class ActorCriticPolicy(BasePolicy):
         """
         return self.get_distribution(observation).get_actions(deterministic=deterministic)
 
-    def evaluate_actions(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, Optional[th.Tensor]]:
+    def evaluate_actions(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
         Evaluate actions according to the current policy,
         given the observations.
@@ -631,7 +631,8 @@ class ActorCriticPolicy(BasePolicy):
         try:
             entropy = distribution.entropy()
         except NotImplementedError:
-            entropy = None
+            # When no analytical form, entropy needs to be estimated using -log_prob.mean()
+            entropy = -log_prob.mean(dim=1)
         return values, log_prob, entropy
 
     def get_distribution(self, obs: th.Tensor) -> Distribution:

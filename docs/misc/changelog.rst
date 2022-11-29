@@ -42,6 +42,7 @@ Others:
 - Replaced ``CartPole-v0`` by ``CartPole-v1`` is tests
 - Fixed ``tests/test_distributions.py`` type hint
 - Fixed ``stable_baselines3/common/type_aliases.py`` type hint
+- Fixed ``stable_baselines3/common/env_util.py`` type hint
 
 Documentation:
 ^^^^^^^^^^^^^^

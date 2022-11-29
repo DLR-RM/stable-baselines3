@@ -54,7 +54,7 @@ class Distribution(ABC):
         """
 
     @abstractmethod
-    def entropy(self) -> Optional[th.Tensor]:
+    def entropy(self) -> th.Tensor:
         """
         Returns Shannon's entropy of the probability
 
@@ -240,10 +240,8 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         log_prob -= th.sum(th.log(1 - actions**2 + self.epsilon), dim=1)
         return log_prob
 
-    def entropy(self) -> Optional[th.Tensor]:
-        # No analytical form,
-        # entropy needs to be estimated using -log_prob.mean()
-        return None
+    def entropy(self) -> th.Tensor:
+        raise NotImplementedError("No analytical form, entropy needs to be estimated using -log_prob.mean()")
 
     def sample(self) -> th.Tensor:
         # Reparametrization trick to pass gradients
@@ -567,11 +565,9 @@ class StateDependentNoiseDistribution(Distribution):
             log_prob -= th.sum(self.bijector.log_prob_correction(gaussian_actions), dim=1)
         return log_prob
 
-    def entropy(self) -> Optional[th.Tensor]:
+    def entropy(self) -> th.Tensor:
         if self.bijector is not None:
-            # No analytical form,
-            # entropy needs to be estimated using -log_prob.mean()
-            return None
+            raise NotImplementedError("No analytical form, entropy needs to be estimated using -log_prob.mean()")
         return sum_independent_dims(self.distribution.entropy())
 
     def sample(self) -> th.Tensor:

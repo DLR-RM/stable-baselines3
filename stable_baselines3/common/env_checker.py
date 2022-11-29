@@ -126,7 +126,7 @@ def _check_goal_env_compute_reward(
     env: gym.Env,
     reward: float,
     info: Dict[str, Any],
-):
+) -> None:
     """
     Check that reward is computed with `compute_reward`
     and that the implementation is vectorized.

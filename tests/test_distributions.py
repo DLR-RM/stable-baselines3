@@ -229,6 +229,3 @@ def test_kl_divergence(dist_type):
         )
 
         assert th.allclose(full_kl_div, ad_hoc_kl)
-test_kl_divergence(StateDependentNoiseDistribution(N_ACTIONS).proba_distribution(
-            th.rand(N_ACTIONS), th.rand([N_ACTIONS, N_ACTIONS]), th.rand([N_ACTIONS, N_ACTIONS])
-        ))

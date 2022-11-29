@@ -98,8 +98,8 @@ def create_mlp(
     output_dim: int,
     net_arch: List[int],
     activation_fn: Type[nn.Module] = nn.ReLU,
-    with_bias: bool = True,
     squash_output: bool = False,
+    with_bias: bool = True,
 ) -> List[nn.Module]:
     """
     Create a multi layer perceptron (MLP), which is
@@ -112,9 +112,9 @@ def create_mlp(
         The length of this list is the number of layers.
     :param activation_fn: The activation function
         to use after each layer.
-    :param with_bias: If set to False, the layers will not learn an additive bias
     :param squash_output: Whether to squash the output using a Tanh
         activation function
+    :param with_bias: If set to False, the layers will not learn an additive bias
     :return:
     """
 

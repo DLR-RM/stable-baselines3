@@ -17,6 +17,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Introduced mypy type checking
+- Added ``with_bias`` argument to ``create_mlp``
 
 SB3-Contrib
 ^^^^^^^^^^^

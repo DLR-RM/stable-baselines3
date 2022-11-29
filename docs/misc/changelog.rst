@@ -40,6 +40,7 @@ Others:
 - Goal-conditioned environments are now characterized by the availability of the ``compute_reward`` method, rather than by their inheritance to ``gym.GoalEnv``
 - Replaced ``CartPole-v0`` by ``CartPole-v1`` is tests
 - Fixed ``tests/test_distributions.py`` type hint
+- Fixed ``stable_baselines3/common/type_aliases.py`` type hint
 
 Documentation:
 ^^^^^^^^^^^^^^

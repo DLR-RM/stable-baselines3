@@ -240,11 +240,7 @@ class PPO(OnPolicyAlgorithm):
                 value_losses.append(value_loss.item())
 
                 # Entropy loss favor exploration
-                if entropy is None:
-                    # Approximate entropy when no analytical form
-                    entropy_loss = -th.mean(-log_prob)
-                else:
-                    entropy_loss = -th.mean(entropy)
+                entropy_loss = -th.mean(entropy)
 
                 entropy_losses.append(entropy_loss.item())
 

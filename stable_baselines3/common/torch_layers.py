@@ -173,8 +173,8 @@ class MlpExtractor(nn.Module):
         shared_net: List[nn.Module] = []
         policy_net: List[nn.Module] = []
         value_net: List[nn.Module] = []
-        policy_only_layers = []  # Layer sizes of the network that only belongs to the policy network
-        value_only_layers = []  # Layer sizes of the network that only belongs to the value network
+        policy_only_layers: List[int] = []  # Layer sizes of the network that only belongs to the policy network
+        value_only_layers: List[int] = []  # Layer sizes of the network that only belongs to the value network
         last_layer_dim_shared = feature_dim
 
         # Iterate through the shared layers and build the shared parts of the network

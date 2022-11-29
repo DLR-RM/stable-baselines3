@@ -43,6 +43,7 @@ Others:
 - Fixed ``tests/test_distributions.py`` type hint
 - Fixed ``stable_baselines3/common/type_aliases.py`` type hint
 - Fixed ``stable_baselines3/common/torch_layers.py`` type hint
+- Fixed ``stable_baselines3/common/env_util.py`` type hint
 
 Documentation:
 ^^^^^^^^^^^^^^

@@ -116,7 +116,7 @@ def make_atari_env(
     monitor_dir: Optional[str] = None,
     wrapper_kwargs: Optional[Dict[str, Any]] = None,
     env_kwargs: Optional[Dict[str, Any]] = None,
-    vec_env_cls: Optional[Union[DummyVecEnv, SubprocVecEnv]] = None,
+    vec_env_cls: Optional[Union[Type[DummyVecEnv], Type[SubprocVecEnv]]] = None,
     vec_env_kwargs: Optional[Dict[str, Any]] = None,
     monitor_kwargs: Optional[Dict[str, Any]] = None,
 ) -> VecEnv:
@@ -138,22 +138,16 @@ def make_atari_env(
     :param monitor_kwargs: Keyword arguments to pass to the ``Monitor`` class constructor.
     :return: The wrapped environment
     """
-    if wrapper_kwargs is None:
-        wrapper_kwargs = {}
-
-    def atari_wrapper(env: gym.Env) -> gym.Env:
-        env = AtariWrapper(env, **wrapper_kwargs)
-        return env
-
     return make_vec_env(
         env_id,
         n_envs=n_envs,
         seed=seed,
         start_index=start_index,
         monitor_dir=monitor_dir,
-        wrapper_class=atari_wrapper,
+        wrapper_class=AtariWrapper,
         env_kwargs=env_kwargs,
         vec_env_cls=vec_env_cls,
         vec_env_kwargs=vec_env_kwargs,
         monitor_kwargs=monitor_kwargs,
+        wrapper_kwargs=wrapper_kwargs,
     )

@@ -58,7 +58,8 @@ class Distribution(ABC):
         """
         Returns Shannon's entropy of the probability
 
-        :return: the entropy, or None if no analytical form is known
+        :return: The entropy
+        :raises NotImplementedError: If no analytical form is known
         """
 
     @abstractmethod

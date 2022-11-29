@@ -268,11 +268,9 @@ Here is an example of how to save hyperparameters in TensorBoard:
 
 
     class HParamCallback(BaseCallback):
-        def __init__(self):
-            """
-            Saves the hyperparameters and metrics at the start of the training, and logs them to TensorBoard.
-            """
-            super().__init__()
+        """
+        Saves the hyperparameters and metrics at the start of the training, and logs them to TensorBoard.
+        """
 
         def _on_training_start(self) -> None:
             hparam_dict = {
@@ -284,7 +282,7 @@ Here is an example of how to save hyperparameters in TensorBoard:
             # Tensorbaord will find & display metrics from the `SCALARS` tab
             metric_dict = {
                 "rollout/ep_len_mean": 0,
-                "train/value_loss": 0,
+                "train/value_loss": 0.0,
             }
             self.logger.record(
                 "hparams",

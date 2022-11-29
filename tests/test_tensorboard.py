@@ -18,11 +18,9 @@ N_STEPS = 100
 
 
 class HParamCallback(BaseCallback):
-    def __init__(self):
-        """
-        Saves the hyperparameters and metrics at the start of the training, and logs them to TensorBoard.
-        """
-        super().__init__()
+    """
+    Saves the hyperparameters and metrics at the start of the training, and logs them to TensorBoard.
+    """
 
     def _on_training_start(self) -> None:
         hparam_dict = {

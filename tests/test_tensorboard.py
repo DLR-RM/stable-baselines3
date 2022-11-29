@@ -1,4 +1,5 @@
 import os
+from typing import Dict
 
 import pytest
 
@@ -30,7 +31,7 @@ class HParamCallback(BaseCallback):
         }
         # define the metrics that will appear in the `HPARAMS` Tensorboard tab by referencing their tag
         # Tensorbaord will find & display metrics from the `SCALARS` tab
-        metric_dict = {
+        metric_dict: Dict[str, float] = {
             "rollout/ep_len_mean": 0,
         }
         self.logger.record(

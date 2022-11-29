@@ -628,7 +628,10 @@ class ActorCriticPolicy(BasePolicy):
         distribution = self._get_action_dist_from_latent(latent_pi)
         log_prob = distribution.log_prob(actions)
         values = self.value_net(latent_vf)
-        entropy = distribution.entropy()
+        try:
+            entropy = distribution.entropy()
+        except NotImplementedError:
+            entropy = None
         return values, log_prob, entropy
 
     def get_distribution(self, obs: th.Tensor) -> Distribution:

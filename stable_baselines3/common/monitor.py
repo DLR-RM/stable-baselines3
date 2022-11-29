@@ -200,7 +200,7 @@ class ResultsWriter:
 
         self.file_handler.flush()
 
-    def write_row(self, epinfo: Dict[str, Union[float, int]]) -> None:
+    def write_row(self, epinfo: Dict[str, float]) -> None:
         """
         Close the file handler
 

@@ -38,7 +38,7 @@ class Video:
     :param fps: frames per second
     """
 
-    def __init__(self, frames: th.Tensor, fps: Union[float, int]):
+    def __init__(self, frames: th.Tensor, fps: float):
         self.frames = frames
         self.fps = fps
 
@@ -80,7 +80,7 @@ class HParam:
         A non-empty metrics dict is required to display hyperparameters in the corresponding Tensorboard section.
     """
 
-    def __init__(self, hparam_dict: Dict[str, Union[bool, str, float, int, None]], metric_dict: Dict[str, Union[float, int]]):
+    def __init__(self, hparam_dict: Dict[str, Union[bool, str, float, None]], metric_dict: Dict[str, float]):
         self.hparam_dict = hparam_dict
         if not metric_dict:
             raise Exception("`metric_dict` must not be empty to display hyperparameters to the HPARAMS tensorboard tab.")

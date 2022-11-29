@@ -39,6 +39,7 @@ Others:
 - Fixed flake8 config to be compatible with flake8 6+
 - Goal-conditioned environments are now characterized by the availability of the ``compute_reward`` method, rather than by their inheritance to ``gym.GoalEnv``
 - Replaced ``CartPole-v0`` by ``CartPole-v1`` is tests
+- Fixed ``tests/test_distributions.py`` type hint
 
 Documentation:
 ^^^^^^^^^^^^^^

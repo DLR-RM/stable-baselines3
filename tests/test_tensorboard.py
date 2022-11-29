@@ -1,11 +1,13 @@
 import os
-from typing import Dict
+from typing import Dict, Union
 
 import pytest
 
 from stable_baselines3 import A2C, PPO, SAC, TD3
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.logger import HParam
+from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
+from stable_baselines3.common.on_policy_algorithm import OnPolicyAlgorithm
 from stable_baselines3.common.utils import get_latest_run_id
 
 MODEL_DICT = {
@@ -24,11 +26,11 @@ class HParamCallback(BaseCallback):
     """
 
     def _on_training_start(self) -> None:
-        hparam_dict = {
-            "algorithm": self.model.__class__.__name__,
-            "learning rate": self.model.learning_rate,
-            "gamma": self.model.gamma,
-        }
+        hparam_dict: Dict[str, Union[str, float]] = {"algorithm": self.model.__class__.__name__}
+        if isinstance(self.model.learning_rate, float):  # Can also be Schedule, in that case, we don't report
+            hparam_dict["learning rate"] = self.model.learning_rate
+        if isinstance(self.model, (OnPolicyAlgorithm, OffPolicyAlgorithm)):
+            hparam_dict["gamma"] = self.model.gamma
         # define the metrics that will appear in the `HPARAMS` Tensorboard tab by referencing their tag
         # Tensorbaord will find & display metrics from the `SCALARS` tab
         metric_dict: Dict[str, float] = {

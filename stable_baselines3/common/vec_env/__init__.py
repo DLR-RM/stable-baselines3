@@ -67,7 +67,9 @@ def sync_envs_normalization(env: "GymEnv", eval_env: "GymEnv") -> None:
     """
     env_tmp, eval_env_tmp = env, eval_env
     while isinstance(env_tmp, VecEnvWrapper):
+        assert isinstance(eval_env_tmp, VecEnvWrapper)  # Ensure that env and eval_env are similarly wrapped.
         if isinstance(env_tmp, VecNormalize):
+            assert isinstance(eval_env_tmp, VecNormalize)  # Ensure that env and eval_env are similarly wrapped.
             # Only synchronize if observation normalization exists
             if hasattr(env_tmp, "obs_rms"):
                 eval_env_tmp.obs_rms = deepcopy(env_tmp.obs_rms)

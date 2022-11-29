@@ -563,11 +563,11 @@ class ActorCriticPolicy(BasePolicy):
                 self.action_net: 0.01,
                 self.value_net: 1,
             }
-            if not self.share_features_extractor:
+            if self.share_features_extractor:
+                module_gains[self.features_extractor] = np.sqrt(2)
+            else:
                 module_gains[self.pi_features_extractor] = np.sqrt(2)
                 module_gains[self.vf_features_extractor] = np.sqrt(2)
-            else:
-                module_gains[self.features_extractor] = np.sqrt(2)
             for module, gain in module_gains.items():
                 module.apply(partial(self.init_weights, gain=gain))
 
@@ -584,12 +584,12 @@ class ActorCriticPolicy(BasePolicy):
         """
         # Preprocess the observation if needed
         features = self.extract_features(obs)
-        if not self.share_features_extractor:
+        if self.share_features_extractor:
+            latent_pi, latent_vf = self.mlp_extractor(features)
+        else:
             pi_features, vf_features = features
             latent_pi = self.mlp_extractor.forward_actor(pi_features)
             latent_vf = self.mlp_extractor.forward_critic(vf_features)
-        else:
-            latent_pi, latent_vf = self.mlp_extractor(features)
         # Evaluate the values for the given observations
         values = self.value_net(latent_vf)
         distribution = self._get_action_dist_from_latent(latent_pi)
@@ -605,12 +605,12 @@ class ActorCriticPolicy(BasePolicy):
         :param obs: Observation
         :return: the output of the feature extractor(s)
         """
-        if not self.share_features_extractor:
+        if self.share_features_extractor:
+            return super().extract_features(obs)
+        else:
             pi_features = self.extract_actor_features(obs)
             vf_features = self.extract_critic_features(obs)
             return pi_features, vf_features
-        else:
-            return super().extract_features(obs)
 
     def extract_actor_features(self, obs: th.Tensor) -> th.Tensor:
         """
@@ -679,12 +679,12 @@ class ActorCriticPolicy(BasePolicy):
         """
         # Preprocess the observation if needed
         features = self.extract_features(obs)
-        if not self.share_features_extractor:
+        if self.share_features_extractor:
+            latent_pi, latent_vf = self.mlp_extractor(features)
+        else:
             pi_features, vf_features = features
             latent_pi = self.mlp_extractor.forward_actor(pi_features)
             latent_vf = self.mlp_extractor.forward_critic(vf_features)
-        else:
-            latent_pi, latent_vf = self.mlp_extractor(features)
         distribution = self._get_action_dist_from_latent(latent_pi)
         log_prob = distribution.log_prob(actions)
         values = self.value_net(latent_vf)

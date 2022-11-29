@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.7.0a2 (WIP)
+Release 1.7.0a3 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -37,10 +37,13 @@ Others:
 ^^^^^^^
 - Used issue forms instead of issue templates
 - Fixed flake8 config to be compatible with flake8 6+
+- Goal-conditioned environments are now characterized by the availability of the ``compute_reward`` method, rather than by their inheritance to ``gym.GoalEnv``
+- Replaced ``CartPole-v0`` by ``CartPole-v1`` is tests
 
 Documentation:
 ^^^^^^^^^^^^^^
 - Updated Hugging Face Integration page (@simoninithomas)
+- Changed ``env`` to ``vec_env`` when environment is vectorized
 
 Release 1.6.2 (2022-10-10)
 --------------------------

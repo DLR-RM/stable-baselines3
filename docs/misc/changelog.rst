@@ -43,6 +43,8 @@ Others:
 - Fixed ``tests/test_distributions.py`` type hint
 - Fixed ``stable_baselines3/common/type_aliases.py`` type hint
 - Fixed ``stable_baselines3/common/env_util.py`` type hint
+- Fixed ``tests/test_tensorboard.py`` type hint
+- Fixed ``tests/test_vec_normalize.py`` type hint
 
 Documentation:
 ^^^^^^^^^^^^^^

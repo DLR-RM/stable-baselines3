@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.7.0a3 (WIP)
+Release 1.7.0a4 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -17,6 +17,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Introduced mypy type checking
+- Added ``with_bias`` argument to ``create_mlp``
 
 SB3-Contrib
 ^^^^^^^^^^^

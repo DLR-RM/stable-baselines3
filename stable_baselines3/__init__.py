@@ -22,4 +22,13 @@ def HER(*args, **kwargs):
     )
 
 
-__all__ = ["A2C", "DDPG", "DQN", "PPO", "SAC", "TD3", "HER", "HerReplayBuffer", "get_system_info"]
+__all__ = [
+    "A2C",
+    "DDPG",
+    "DQN",
+    "PPO",
+    "SAC",
+    "TD3",
+    "HerReplayBuffer",
+    "get_system_info",
+]

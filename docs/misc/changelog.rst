@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.7.0a2 (WIP)
+Release 1.7.0a5 (WIP)
 --------------------------
 
 .. warning::
@@ -25,6 +25,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Introduced mypy type checking
+- Added ``with_bias`` argument to ``create_mlp``
 
 SB3-Contrib
 ^^^^^^^^^^^
@@ -45,10 +46,18 @@ Others:
 ^^^^^^^
 - Used issue forms instead of issue templates
 - Fixed flake8 config to be compatible with flake8 6+
+- Goal-conditioned environments are now characterized by the availability of the ``compute_reward`` method, rather than by their inheritance to ``gym.GoalEnv``
+- Replaced ``CartPole-v0`` by ``CartPole-v1`` is tests
+- Fixed ``tests/test_distributions.py`` type hint
+- Fixed ``stable_baselines3/common/type_aliases.py`` type hint
+- Fixed ``stable_baselines3/common/torch_layers.py`` type hint
+- Fixed ``stable_baselines3/common/env_util.py`` type hint
+- Exposed modules in ``__init__.py`` with the ``__all__`` attribute (@ZikangXiong)
 
 Documentation:
 ^^^^^^^^^^^^^^
 - Updated Hugging Face Integration page (@simoninithomas)
+- Changed ``env`` to ``vec_env`` when environment is vectorized
 
 Release 1.6.2 (2022-10-10)
 --------------------------
@@ -1130,4 +1139,4 @@ And all the contributors:
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @carlosluis @arjun-kg @tlpss
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
-@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer
+@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong

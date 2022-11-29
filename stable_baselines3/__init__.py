@@ -20,3 +20,15 @@ def HER(*args, **kwargs):
         "Since Stable Baselines 2.1.0, `HER` is now a replay buffer class `HerReplayBuffer`.\n "
         "Please check the documentation for more information: https://stable-baselines3.readthedocs.io/"
     )
+
+
+__all__ = [
+    "A2C",
+    "DDPG",
+    "DQN",
+    "PPO",
+    "SAC",
+    "TD3",
+    "HerReplayBuffer",
+    "get_system_info",
+]

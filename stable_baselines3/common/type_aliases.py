@@ -36,7 +36,7 @@ class RolloutBufferSamples(NamedTuple):
     returns: th.Tensor
 
 
-class DictRolloutBufferSamples(RolloutBufferSamples):
+class DictRolloutBufferSamples(NamedTuple):
     observations: TensorDict
     actions: th.Tensor
     old_values: th.Tensor
@@ -53,7 +53,7 @@ class ReplayBufferSamples(NamedTuple):
     rewards: th.Tensor
 
 
-class DictReplayBufferSamples(ReplayBufferSamples):
+class DictReplayBufferSamples(NamedTuple):
     observations: TensorDict
     actions: th.Tensor
     next_observations: TensorDict

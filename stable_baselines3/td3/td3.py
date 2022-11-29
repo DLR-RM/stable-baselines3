@@ -150,7 +150,6 @@ class TD3(OffPolicyAlgorithm):
         self._update_learning_rate([self.actor.optimizer, self.critic.optimizer])
 
         actor_losses, critic_losses = [], []
-
         for _ in range(gradient_steps):
 
             self._n_updates += 1

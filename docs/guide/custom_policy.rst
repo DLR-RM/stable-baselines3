@@ -60,6 +60,16 @@ Custom Network Architecture
 One way of customising the policy network architecture is to pass arguments when creating the model,
 using ``policy_kwargs`` parameter:
 
+.. note::
+
+    An action net and a value net will be added **after** the layers specified in ``net_arch``, in order to have the right output dimensions and activation functions (e.g. Softmax for discrete actions).
+    
+    E.g. if you specify ``net_arch = [128, 64]``, ``activation_fn=nnReLU`` and you have an on-policy algorithm and a discrete action space with 10 actions:
+    
+    - the actor will have an architecture of ``[128, 64, 10]`` with a ``nn.ReLU`` activation function in all layers but the last one, which will have a ``nn.Softmax``;
+    - the critic will have an architecture of ``[128, 64, 1]`` with a ``nn.ReLU`` activation function in all layers.
+
+
 .. code-block:: python
 
   import gym

@@ -40,8 +40,7 @@ check-codestyle:
 commit-checks: format type lint
 
 doc:
-	# Prevent weird error due to protobuf
-	cd docs && PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp make html
+	cd docs && make html
 
 spelling:
 	cd docs && make spelling

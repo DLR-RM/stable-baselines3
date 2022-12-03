@@ -28,9 +28,6 @@ class BaseFeaturesExtractor(nn.Module):
     def features_dim(self) -> int:
         return self._features_dim
 
-    def forward(self, observations: th.Tensor) -> th.Tensor:
-        raise NotImplementedError()
-
 
 class FlattenExtractor(BaseFeaturesExtractor):
     """
@@ -60,7 +57,11 @@ class NatureCNN(BaseFeaturesExtractor):
         This corresponds to the number of unit for the last layer.
     """
 
-    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512):
+    def __init__(self, observation_space: gym.Space, features_dim: int = 512):
+        assert isinstance(observation_space, gym.spaces.Box), (
+            "NatureCNN must be used with a gym.spaces.Box ",
+            f"observation space, not {observation_space}",
+        )
         super().__init__(observation_space, features_dim)
         # We assume CxHxW images (channels first)
         # Re-ordering will be done by pre-preprocessing or wrapper
@@ -99,6 +100,7 @@ def create_mlp(
     net_arch: List[int],
     activation_fn: Type[nn.Module] = nn.ReLU,
     squash_output: bool = False,
+    with_bias: bool = True,
 ) -> List[nn.Module]:
     """
     Create a multi layer perceptron (MLP), which is
@@ -113,21 +115,22 @@ def create_mlp(
         to use after each layer.
     :param squash_output: Whether to squash the output using a Tanh
         activation function
+    :param with_bias: If set to False, the layers will not learn an additive bias
     :return:
     """
 
     if len(net_arch) > 0:
-        modules = [nn.Linear(input_dim, net_arch[0]), activation_fn()]
+        modules = [nn.Linear(input_dim, net_arch[0], bias=with_bias), activation_fn()]
     else:
         modules = []
 
     for idx in range(len(net_arch) - 1):
-        modules.append(nn.Linear(net_arch[idx], net_arch[idx + 1]))
+        modules.append(nn.Linear(net_arch[idx], net_arch[idx + 1], bias=with_bias))
         modules.append(activation_fn())
 
     if output_dim > 0:
         last_layer_dim = net_arch[-1] if len(net_arch) > 0 else input_dim
-        modules.append(nn.Linear(last_layer_dim, output_dim))
+        modules.append(nn.Linear(last_layer_dim, output_dim, bias=with_bias))
     if squash_output:
         modules.append(nn.Tanh())
     return modules
@@ -171,9 +174,11 @@ class MlpExtractor(nn.Module):
     ):
         super().__init__()
         device = get_device(device)
-        shared_net, policy_net, value_net = [], [], []
-        policy_only_layers = []  # Layer sizes of the network that only belongs to the policy network
-        value_only_layers = []  # Layer sizes of the network that only belongs to the value network
+        shared_net: List[nn.Module] = []
+        policy_net: List[nn.Module] = []
+        value_net: List[nn.Module] = []
+        policy_only_layers: List[int] = []  # Layer sizes of the network that only belongs to the policy network
+        value_only_layers: List[int] = []  # Layer sizes of the network that only belongs to the value network
         last_layer_dim_shared = feature_dim
 
         # Iterate through the shared layers and build the shared parts of the network
@@ -252,7 +257,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
         # TODO we do not know features-dim here before going over all the items, so put something there. This is dirty!
         super().__init__(observation_space, features_dim=1)
 
-        extractors = {}
+        extractors: Dict[str, nn.Module] = {}
 
         total_concat_size = 0
         for key, subspace in observation_space.spaces.items():

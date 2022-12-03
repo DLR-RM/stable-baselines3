@@ -30,7 +30,7 @@ class NanAndInfEnv(gym.Env):
     def reset():
         return [0.0], {}
 
-    def render(self, close=False):
+    def render(self):
         pass
 
 

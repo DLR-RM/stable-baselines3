@@ -52,8 +52,6 @@ def _worker(  # noqa: C901
                 break
             elif cmd == "get_spaces":
                 remote.send((env.observation_space, env.action_space))
-            elif cmd == "get_render_mode":
-                remote.send(env.render_mode)
             elif cmd == "env_method":
                 method = getattr(env, data[0])
                 remote.send(method(*data[1], **data[2]))
@@ -119,7 +117,7 @@ class SubprocVecEnv(VecEnv):
         self.remotes[0].send(("get_spaces", None))
         observation_space, action_space = self.remotes[0].recv()
 
-        self.remotes[0].send(("get_render_mode", None))
+        self.remotes[0].send(("get_attr", "render_mode"))
         render_mode = self.remotes[0].recv()
         VecEnv.__init__(self, len(env_fns), observation_space, action_space, render_mode)
 
@@ -161,6 +159,10 @@ class SubprocVecEnv(VecEnv):
         self.closed = True
 
     def get_images(self) -> Sequence[Optional[np.ndarray]]:
+        if self.render_mode != "rgb_array":
+            raise RuntimeWarning(
+                "The render mode is {self.envs[0].render_mode}, but this method assumes it is `rgb_array` to obtain images."
+            )
         for pipe in self.remotes:
             # gather render return from subprocesses
             pipe.send(("render", None))

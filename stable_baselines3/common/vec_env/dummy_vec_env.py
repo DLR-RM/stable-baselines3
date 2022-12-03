@@ -90,7 +90,7 @@ class DummyVecEnv(VecEnv):
             env.close()
 
     def get_images(self) -> Sequence[Optional[np.ndarray]]:
-        if self.envs[0].render_mode != "rgb_array":
+        if self.render_mode != "rgb_array":
             raise RuntimeWarning(
                 "The render mode is {self.envs[0].render_mode}, but this method assumes it is `rgb_array` to obtain images."
             )

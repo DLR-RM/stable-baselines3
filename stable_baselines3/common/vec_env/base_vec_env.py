@@ -170,7 +170,7 @@ class VecEnv(ABC):
 
     def get_images(self) -> Sequence[Optional[np.ndarray]]:
         """
-        Return Render output from each environment
+        Return RGB images from each environment when available
         """
         raise NotImplementedError
 
@@ -193,7 +193,7 @@ class VecEnv(ABC):
         # call the render method of the environments
         images = self.get_images()
 
-        if mode == "rgb_array":
+        if mode == "rgb_array" or mode == "human":
             # Create a big image by tiling images from subprocesses
             bigimg = tile_images(images)
             return bigimg
@@ -201,11 +201,6 @@ class VecEnv(ABC):
         elif mode == "rgb_array_list":
             # TODO: a new 'rgb_array_list' mode has been defined and should be handled.
             raise NotImplementedError("This mode has not yet been implemented in Stable Baselines.")
-
-        else:
-            # other render methods are simply ignored.
-            # for 'human' or None, the render output will be a List of None values
-            return
 
     @abstractmethod
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:

@@ -100,25 +100,25 @@ def preprocess_obs(
     """
     if isinstance(observation_space, spaces.Box):
         if is_image_space(observation_space) and normalize_images:
-            return obs.float() / 255.0
-        return obs.float()
+            return obs / 255.0
+        return obs
 
     elif isinstance(observation_space, spaces.Discrete):
         # One hot encoding and convert to float to avoid errors
-        return F.one_hot(obs.long(), num_classes=observation_space.n).float()
+        return F.one_hot(obs.long(), num_classes=observation_space.n)
 
     elif isinstance(observation_space, spaces.MultiDiscrete):
         # Tensor concatenation of one hot encodings of each Categorical sub-space
         return th.cat(
             [
-                F.one_hot(obs_.long(), num_classes=int(observation_space.nvec[idx])).float()
+                F.one_hot(obs_.long(), num_classes=int(observation_space.nvec[idx]))
                 for idx, obs_ in enumerate(th.split(obs.long(), 1, dim=1))
             ],
             dim=-1,
         ).view(obs.shape[0], sum(observation_space.nvec))
 
     elif isinstance(observation_space, spaces.MultiBinary):
-        return obs.float()
+        return obs
 
     elif isinstance(observation_space, spaces.Dict):
         # Do not modify by reference the original observation

@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.7.0a3 (WIP)
+Release 1.7.0a5 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -17,6 +17,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Introduced mypy type checking
+- Added ``with_bias`` argument to ``create_mlp``
 
 SB3-Contrib
 ^^^^^^^^^^^
@@ -39,6 +40,11 @@ Others:
 - Fixed flake8 config to be compatible with flake8 6+
 - Goal-conditioned environments are now characterized by the availability of the ``compute_reward`` method, rather than by their inheritance to ``gym.GoalEnv``
 - Replaced ``CartPole-v0`` by ``CartPole-v1`` is tests
+- Fixed ``tests/test_distributions.py`` type hint
+- Fixed ``stable_baselines3/common/type_aliases.py`` type hint
+- Fixed ``stable_baselines3/common/torch_layers.py`` type hint
+- Fixed ``stable_baselines3/common/env_util.py`` type hint
+- Exposed modules in ``__init__.py`` with the ``__all__`` attribute (@ZikangXiong)
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -1122,4 +1128,4 @@ And all the contributors:
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
-@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer
+@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong

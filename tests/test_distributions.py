@@ -55,7 +55,7 @@ def test_squashed_gaussian(model_class):
 
 
 @pytest.fixture()
-def dummy_model_distribution_obs_and_actions() -> Tuple[A2C, np.array, np.array]:
+def dummy_model_distribution_obs_and_actions() -> Tuple[A2C, np.ndarray, np.ndarray]:
     """
     Fixture creating a Pendulum-v1 gym env, an A2C model and sampling 10 random observations and actions from the env
     :return: A2C model, random observations, random actions
@@ -165,9 +165,7 @@ def test_categorical(dist, CAT_ACTIONS):
         BernoulliDistribution(N_ACTIONS).proba_distribution(th.rand(N_ACTIONS)),
         CategoricalDistribution(N_ACTIONS).proba_distribution(th.rand(N_ACTIONS)),
         DiagGaussianDistribution(N_ACTIONS).proba_distribution(th.rand(N_ACTIONS), th.rand(N_ACTIONS)),
-        MultiCategoricalDistribution(np.array([N_ACTIONS, N_ACTIONS])).proba_distribution(
-            th.rand(1, sum([N_ACTIONS, N_ACTIONS]))
-        ),
+        MultiCategoricalDistribution([N_ACTIONS, N_ACTIONS]).proba_distribution(th.rand(1, sum([N_ACTIONS, N_ACTIONS]))),
         SquashedDiagGaussianDistribution(N_ACTIONS).proba_distribution(th.rand(N_ACTIONS), th.rand(N_ACTIONS)),
         StateDependentNoiseDistribution(N_ACTIONS).proba_distribution(
             th.rand(N_ACTIONS), th.rand([N_ACTIONS, N_ACTIONS]), th.rand([N_ACTIONS, N_ACTIONS])

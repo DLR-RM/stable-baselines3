@@ -8,7 +8,7 @@ pytype:
 	pytype -j auto
 
 mypy:
-	MYPY_FORCE_COLOR=1 mypy ${LINT_PATHS}
+	mypy ${LINT_PATHS}
 
 type: pytype mypy
 

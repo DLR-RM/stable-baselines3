@@ -333,11 +333,11 @@ If your task requires even more granular control over the policy/value architect
           :return: (th.Tensor, th.Tensor) latent_policy, latent_value of the specified network.
               If all layers are shared, then ``latent_policy == latent_value``
           """
-          return self.policy_net(features), self.value_net(features)
-          
+          return self.forward_actor(features), self.forward_critic(features)
+
       def forward_actor(self, features: th.Tensor) -> th.Tensor:
           return self.policy_net(features)
-      
+
       def forward_critic(self, features: th.Tensor) -> th.Tensor:
           return self.value_net(features)
 

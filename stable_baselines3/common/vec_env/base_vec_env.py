@@ -181,26 +181,47 @@ class VecEnv(ABC):
         :param mode: the rendering type
         """
 
-        if mode and self.render_mode != mode:
-            raise ValueError(
-                f"""starting from gym v0.26, render modes are determined during the initialization of the environment.
-                We allow to pass a mode argument to maintain a backwards compatible VecEnv API, but the mode ({mode}) 
-                has to be the same as the environment render mode ({self.render_mode}) whichs is not the case."""
+        if mode == "human" and self.render_mode != mode:
+            # Special case, if the render_mode="rgb_array"
+            # we can still display that image using opencv
+            assert self.render_mode == "rgb_array", (
+                f"You tried to render a VecEnv with mode='{mode}' "
+                "but the render mode defined when initializing the environment must be "
+                f"'human' or 'rgb_array', not '{self.render_mode}'."
             )
 
-        mode = self.render_mode
+        elif mode and self.render_mode != mode:
+            raise ValueError(
+                f"""Starting from gym v0.26, render modes are determined during the initialization of the environment.
+                We allow to pass a mode argument to maintain a backwards compatible VecEnv API, but the mode ({mode})
+                has to be the same as the environment render mode ({self.render_mode}) which is not the case."""
+            )
 
-        # call the render method of the environments
-        images = self.get_images()
+        mode = mode or self.render_mode
+
+        # TODO: handle the case where mode == self.render_mode == "human"
+        # In that case, we can try to call `self.env.render()` but it might
+        # crash for subprocesses (TO BE TESTED)
+        # if self.render_mode == "human"
 
         if mode == "rgb_array" or mode == "human":
+            # call the render method of the environments
+            images = self.get_images()
             # Create a big image by tiling images from subprocesses
             bigimg = tile_images(images)
-            return bigimg
 
-        elif mode == "rgb_array_list":
+            if mode == "human":
+                # Display it using OpenCV
+                import cv2  # pytype:disable=import-error
+
+                cv2.imshow("vecenv", bigimg[:, :, ::-1])
+                cv2.waitKey(1)
+            else:
+                return bigimg
+
+        else:
             # TODO: a new 'rgb_array_list' mode has been defined and should be handled.
-            raise NotImplementedError("This mode has not yet been implemented in Stable Baselines.")
+            raise NotImplementedError(f"The render mode {mode} has not yet been implemented in Stable Baselines.")
 
     @abstractmethod
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:

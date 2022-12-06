@@ -17,7 +17,7 @@ VEC_ENV_WRAPPERS = [None, VecNormalize, VecFrameStack]
 
 
 class CustomGymEnv(gym.Env):
-    def __init__(self, space):
+    def __init__(self, space, render_mode: str = "rgb_array"):
         """
         Custom gym environment for testing purposes
         """
@@ -25,7 +25,7 @@ class CustomGymEnv(gym.Env):
         self.observation_space = space
         self.current_step = 0
         self.ep_length = 4
-        self.render_mode = "rgb_array"
+        self.render_mode = render_mode
 
     def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
         if seed is not None:
@@ -96,15 +96,17 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
     vec_env.seed(0)
 
     # Test render method call
-    # vec_env.render()  # we need a X server  to test the "human" mode
     array_explicit_mode = vec_env.render(mode="rgb_array")
-    # test render withouth argument (new gym API style)
+    # test render without argument (new gym API style)
     array_implicit_mode = vec_env.render()
     assert np.array_equal(array_implicit_mode, array_explicit_mode)
 
     # test error if you try different render mode
     with pytest.raises(ValueError):
-        vec_env.render(mode="human")
+        vec_env.render(mode="something_else")
+
+    # we need a X server to test the "human" mode (uses OpenCV)
+    # vec_env.render(mode="human")
 
     env_method_results = vec_env.env_method("custom_method", 1, indices=None, dim_1=2)
     setattr_results = []

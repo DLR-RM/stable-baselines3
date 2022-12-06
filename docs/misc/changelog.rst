@@ -50,6 +50,7 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Updated Hugging Face Integration page (@simoninithomas)
 - Changed ``env`` to ``vec_env`` when environment is vectorized
+- Update custom policy documentation (@athatheo)
 
 Release 1.6.2 (2022-10-10)
 --------------------------

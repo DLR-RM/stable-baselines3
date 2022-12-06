@@ -161,7 +161,7 @@ class SubprocVecEnv(VecEnv):
     def get_images(self) -> Sequence[Optional[np.ndarray]]:
         if self.render_mode != "rgb_array":
             raise RuntimeWarning(
-                "The render mode is {self.envs[0].render_mode}, but this method assumes it is `rgb_array` to obtain images."
+                f"The render mode is {self.render_mode}, but this method assumes it is `rgb_array` to obtain images."
             )
         for pipe in self.remotes:
             # gather render return from subprocesses

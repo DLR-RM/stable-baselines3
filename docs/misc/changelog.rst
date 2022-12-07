@@ -31,7 +31,6 @@ Bug Fixes:
 - Fix type annotation of ``model`` in ``evaluate_policy``
 - Fixed ``Self`` return type using ``TypeVar``
 - Fixed ``get_obs_shape`` for multidimensional ``spaces.MultiBinary``
-- Fixed ``preprocess_obs`` for ``spaces.MultiDiscrete``
 
 Deprecations:
 ^^^^^^^^^^^^^

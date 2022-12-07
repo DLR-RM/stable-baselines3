@@ -26,11 +26,13 @@ class HParamCallback(BaseCallback):
     """
 
     def _on_training_start(self) -> None:
-        hparam_dict: Dict[str, Union[str, float]] = {"algorithm": self.model.__class__.__name__}
+        hparam_dict: Dict[str, Union[str, float]] = {
+            "algorithm": self.model.__class__.__name__,
+            # Ignore type checking for gamma, see https://github.com/DLR-RM/stable-baselines3/pull/1194/files#r1035006458
+            "gamma": self.model.gamma,  # type: ignore[attr-defined]
+        }
         if isinstance(self.model.learning_rate, float):  # Can also be Schedule, in that case, we don't report
             hparam_dict["learning rate"] = self.model.learning_rate
-        if isinstance(self.model, (OnPolicyAlgorithm, OffPolicyAlgorithm)):
-            hparam_dict["gamma"] = self.model.gamma
         # define the metrics that will appear in the `HPARAMS` Tensorboard tab by referencing their tag
         # Tensorbaord will find & display metrics from the `SCALARS` tab
         metric_dict: Dict[str, float] = {

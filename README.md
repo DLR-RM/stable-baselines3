@@ -126,13 +126,15 @@ env = gym.make("CartPole-v1")
 model = PPO("MlpPolicy", env, verbose=1)
 model.learn(total_timesteps=10_000)
 
-obs = env.reset()
+vec_env = model.get_env()
+obs = vec_env.reset()
 for i in range(1000):
     action, _states = model.predict(obs, deterministic=True)
-    obs, reward, done, info = env.step(action)
-    env.render()
-    if done:
-      obs = env.reset()
+    obs, reward, done, info = vec_env.step(action)
+    vec_env.render()
+    # VecEnv resets automatically
+    # if done:
+    #   obs = env.reset()
 
 env.close()
 ```
@@ -247,7 +249,7 @@ If you want to contribute, please read [**CONTRIBUTING.md**](./CONTRIBUTING.md) 
 
 ## Acknowledgments
 
-The initial work to develop Stable Baselines3 was partially funded by the project *Reduced Complexity Models* from the *Helmholtz-Gemeinschaft Deutscher Forschungszentren*.
+The initial work to develop Stable Baselines3 was partially funded by the project *Reduced Complexity Models* from the *Helmholtz-Gemeinschaft Deutscher Forschungszentren*, and by the EU's Horizon 2020 Research and Innovation Programme under grant number 951992 ([VeriDream](https://www.veridream.eu/)).
 
 The original version, Stable Baselines, was created in the [robotics lab U2IS](http://u2is.ensta-paristech.fr/index.php?lang=en) ([INRIA Flowers](https://flowers.inria.fr/) team) at [ENSTA ParisTech](http://www.ensta-paristech.fr/en).
 

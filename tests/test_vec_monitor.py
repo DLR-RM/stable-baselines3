@@ -140,7 +140,7 @@ def test_vec_monitor_ppo(recwarn):
 
     # No warnings because using `VecMonitor`
     evaluate_policy(model, monitor_env)
-    assert len(recwarn) == 0
+    assert len(recwarn) == 0, f"{[str(warning) for warning in recwarn]}"
 
 
 def test_vec_monitor_warn():

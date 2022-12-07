@@ -30,7 +30,7 @@ def select_env(model_class: BaseAlgorithm) -> gym.Env:
     if model_class == DQN:
         return IdentityEnv(10)
     else:
-        return IdentityEnvBox(10)
+        return IdentityEnvBox(-10, 10)
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)

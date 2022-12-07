@@ -8,7 +8,7 @@ from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedul
 from stable_baselines3.td3.policies import TD3Policy
 from stable_baselines3.td3.td3 import TD3
 
-DDPGSelf = TypeVar("DDPGSelf", bound="DDPG")
+SelfDDPG = TypeVar("SelfDDPG", bound="DDPG")
 
 
 class DDPG(TD3):
@@ -113,14 +113,14 @@ class DDPG(TD3):
             self._setup_model()
 
     def learn(
-        self: DDPGSelf,
+        self: SelfDDPG,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
         tb_log_name: str = "DDPG",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
-    ) -> DDPGSelf:
+    ) -> SelfDDPG:
 
         return super().learn(
             total_timesteps=total_timesteps,

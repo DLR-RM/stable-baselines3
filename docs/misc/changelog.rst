@@ -18,6 +18,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Introduced mypy type checking
 - Added ``with_bias`` argument to ``create_mlp``
+- Added support for multidimensional ``spaces.MultiBinary`` observations
 
 SB3-Contrib
 ^^^^^^^^^^^
@@ -30,7 +31,6 @@ Bug Fixes:
 - Raise an error when the same gym environment instance is passed as separate environments when creating a vectorized environment with more than one environment. (@Rocamonde)
 - Fix type annotation of ``model`` in ``evaluate_policy``
 - Fixed ``Self`` return type using ``TypeVar``
-- Fixed ``get_obs_shape`` for multidimensional ``spaces.MultiBinary``
 
 Deprecations:
 ^^^^^^^^^^^^^

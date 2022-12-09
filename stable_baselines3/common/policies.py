@@ -563,13 +563,15 @@ class ActorCriticPolicy(BasePolicy):
             # features_extractor/mlp values are
             # originally from openai/baselines (default gains/init_scales).
             module_gains = {
+                self.features_extractor: np.sqrt(2),
                 self.mlp_extractor: np.sqrt(2),
                 self.action_net: 0.01,
                 self.value_net: 1,
             }
-            if self.share_features_extractor:
-                module_gains[self.features_extractor] = np.sqrt(2)
-            else:
+            if not self.share_features_extractor:
+                # Note(antonin): this is to keep SB3 results
+                # consistent, see GH#1148
+                del module_gains[self.features_extractor]
                 module_gains[self.pi_features_extractor] = np.sqrt(2)
                 module_gains[self.vf_features_extractor] = np.sqrt(2)
 

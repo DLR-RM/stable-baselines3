@@ -14,15 +14,25 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack, VecTran
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN])
-def test_cnn(tmp_path, model_class):
+@pytest.mark.parametrize("share_features_extractor", [True, False])
+def test_cnn(tmp_path, model_class, share_features_extractor):
     SAVE_NAME = "cnn_model.zip"
     # Fake grayscale with frameskip
     # Atari after preprocessing: 84x84x1, here we are using lower resolution
     # to check that the network handle it automatically
     env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=1, discrete=model_class not in {SAC, TD3})
     if model_class in {A2C, PPO}:
-        kwargs = dict(n_steps=64)
+        kwargs = dict(
+            n_steps=64,
+            policy_kwargs=dict(
+                share_features_extractor=share_features_extractor,
+            ),
+        )
     else:
+        # share_features_extractor is checked later for offpolicy algorithms
+        if share_features_extractor:
+            return
+
         # Avoid memory error when using replay buffer
         # Reduce the size of the features
         kwargs = dict(

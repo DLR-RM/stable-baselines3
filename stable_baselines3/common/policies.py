@@ -114,16 +114,17 @@ class BaseModel(nn.Module):
         """Helper method to create a features extractor."""
         return self.features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
 
-    def extract_features(self, obs: th.Tensor) -> th.Tensor:
+    def extract_features(self, obs: th.Tensor, features_extractor: Optional[BaseFeaturesExtractor] = None) -> th.Tensor:
         """
         Preprocess the observation if needed and extract features.
 
         :param obs:
         :return:
         """
-        assert self.features_extractor is not None, "No features extractor was set"
+        features_extractor = features_extractor or self.features_extractor
+        assert features_extractor is not None, "No features extractor was set"
         preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
-        return self.features_extractor(preprocessed_obs)
+        return features_extractor(preprocessed_obs)
 
     def _get_constructor_parameters(self) -> Dict[str, Any]:
         """
@@ -448,12 +449,15 @@ class ActorCriticPolicy(BasePolicy):
         self.share_features_extractor = share_features_extractor
         self.features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
         self.features_dim = self.features_extractor.features_dim
-        if not self.share_features_extractor:
+        if self.share_features_extractor:
+            self.pi_features_extractor = self.features_extractor
+            self.vf_features_extractor = self.features_extractor
+        else:
             self.pi_features_extractor = self.features_extractor
             self.vf_features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
-            delattr(self, "features_extractor")
+            del self.features_extractor
             # if the features extractor is not shared, there cannot be shared layers in the mlp_extractor
-            if not isinstance(net_arch[0], dict):
+            if len(net_arch) > 0 and not isinstance(net_arch[0], dict):
                 raise ValueError(
                     "Error: if the features extractor is not shared, there cannot be shared layers in the mlp_extractor"
                 )
@@ -568,6 +572,7 @@ class ActorCriticPolicy(BasePolicy):
             else:
                 module_gains[self.pi_features_extractor] = np.sqrt(2)
                 module_gains[self.vf_features_extractor] = np.sqrt(2)
+
             for module, gain in module_gains.items():
                 module.apply(partial(self.init_weights, gain=gain))
 
@@ -608,29 +613,9 @@ class ActorCriticPolicy(BasePolicy):
         if self.share_features_extractor:
             return super().extract_features(obs)
         else:
-            pi_features = self.extract_actor_features(obs)
-            vf_features = self.extract_critic_features(obs)
+            pi_features = super().extract_features(obs, self.pi_features_extractor)
+            vf_features = super().extract_features(obs, self.vf_features_extractor)
             return pi_features, vf_features
-
-    def extract_actor_features(self, obs: th.Tensor) -> th.Tensor:
-        """
-        Preprocess the observation if needed and extract features for the actor.
-
-        :param obs: Observation
-        :return: the output of the feature extractor
-        """
-        preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
-        return self.pi_features_extractor(preprocessed_obs)
-
-    def extract_critic_features(self, obs: th.Tensor) -> th.Tensor:
-        """
-        Preprocess the observation if needed and extract features for the critic.
-
-        :param obs: Observation
-        :return: the output of the feature extractor
-        """
-        preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
-        return self.vf_features_extractor(preprocessed_obs)
 
     def _get_action_dist_from_latent(self, latent_pi: th.Tensor) -> Distribution:
         """
@@ -698,9 +683,7 @@ class ActorCriticPolicy(BasePolicy):
         :param obs:
         :return: the action distribution.
         """
-        features = self.extract_features(obs)
-        if not self.share_features_extractor:
-            features = features[0]  # 0: pi_features, 1: vf_features
+        features = super().extract_features(obs, self.pi_features_extractor)
         latent_pi = self.mlp_extractor.forward_actor(features)
         return self._get_action_dist_from_latent(latent_pi)
 
@@ -711,9 +694,7 @@ class ActorCriticPolicy(BasePolicy):
         :param obs: Observation
         :return: the estimated values.
         """
-        features = self.extract_features(obs)
-        if not self.share_features_extractor:
-            features = features[1]  # 0: pi_features, 1: vf_features
+        features = super().extract_features(obs, self.vf_features_extractor)
         latent_vf = self.mlp_extractor.forward_critic(features)
         return self.value_net(latent_vf)
 

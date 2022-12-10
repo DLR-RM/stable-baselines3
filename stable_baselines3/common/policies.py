@@ -447,15 +447,14 @@ class ActorCriticPolicy(BasePolicy):
         self.ortho_init = ortho_init
 
         self.share_features_extractor = share_features_extractor
-        self.features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
+        self.features_extractor = self.make_features_extractor()
         self.features_dim = self.features_extractor.features_dim
         if self.share_features_extractor:
             self.pi_features_extractor = self.features_extractor
             self.vf_features_extractor = self.features_extractor
         else:
             self.pi_features_extractor = self.features_extractor
-            self.vf_features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
-            del self.features_extractor
+            self.vf_features_extractor = self.make_features_extractor()
             # if the features extractor is not shared, there cannot be shared layers in the mlp_extractor
             if len(net_arch) > 0 and not isinstance(net_arch[0], dict):
                 raise ValueError(

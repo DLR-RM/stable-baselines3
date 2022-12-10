@@ -26,14 +26,15 @@ New Features:
 ^^^^^^^^^^^^^
 - Introduced mypy type checking
 - Added ``with_bias`` argument to ``create_mlp``
+- Added support for multidimensional ``spaces.MultiBinary`` observations
 
 SB3-Contrib
 ^^^^^^^^^^^
 
 Bug Fixes:
 ^^^^^^^^^^
-- Fix return type of ``evaluate_actions`` in ``ActorCritcPolicy`` to reflect that entropy is an optional tensor (@Rocamonde)
-- Fix type annotation of ``policy`` in ``BaseAlgorithm`` and ``OffPolicyAlgorithm``
+- Fixed return type of ``evaluate_actions`` in ``ActorCritcPolicy`` to reflect that entropy is an optional tensor (@Rocamonde)
+- Fixed type annotation of ``policy`` in ``BaseAlgorithm`` and ``OffPolicyAlgorithm``
 - Allowed model trained with Python 3.7 to be loaded with Python 3.8+ without the ``custom_objects`` workaround
 - Raise an error when the same gym environment instance is passed as separate environments when creating a vectorized environment with more than one environment. (@Rocamonde)
 - Fix type annotation of ``model`` in ``evaluate_policy``
@@ -53,11 +54,13 @@ Others:
 - Fixed ``stable_baselines3/common/torch_layers.py`` type hint
 - Fixed ``stable_baselines3/common/env_util.py`` type hint
 - Exposed modules in ``__init__.py`` with the ``__all__`` attribute (@ZikangXiong)
+- Upgraded GitHub CI/setup-python to v4 and checkout to v3
 
 Documentation:
 ^^^^^^^^^^^^^^
 - Updated Hugging Face Integration page (@simoninithomas)
 - Changed ``env`` to ``vec_env`` when environment is vectorized
+- Update custom policy documentation (@athatheo)
 
 Release 1.6.2 (2022-10-10)
 --------------------------

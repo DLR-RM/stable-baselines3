@@ -28,9 +28,6 @@ class BaseFeaturesExtractor(nn.Module):
     def features_dim(self) -> int:
         return self._features_dim
 
-    def forward(self, observations: th.Tensor) -> th.Tensor:
-        raise NotImplementedError()
-
 
 class FlattenExtractor(BaseFeaturesExtractor):
     """
@@ -173,9 +170,11 @@ class MlpExtractor(nn.Module):
     ):
         super().__init__()
         device = get_device(device)
-        shared_net, policy_net, value_net = [], [], []
-        policy_only_layers = []  # Layer sizes of the network that only belongs to the policy network
-        value_only_layers = []  # Layer sizes of the network that only belongs to the value network
+        shared_net: List[nn.Module] = []
+        policy_net: List[nn.Module] = []
+        value_net: List[nn.Module] = []
+        policy_only_layers: List[int] = []  # Layer sizes of the network that only belongs to the policy network
+        value_only_layers: List[int] = []  # Layer sizes of the network that only belongs to the value network
         last_layer_dim_shared = feature_dim
 
         # Iterate through the shared layers and build the shared parts of the network
@@ -254,7 +253,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
         # TODO we do not know features-dim here before going over all the items, so put something there. This is dirty!
         super().__init__(observation_space, features_dim=1)
 
-        extractors = {}
+        extractors: Dict[str, nn.Module] = {}
 
         total_concat_size = 0
         for key, subspace in observation_space.spaces.items():

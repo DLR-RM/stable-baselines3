@@ -47,7 +47,7 @@ class DummyMultidimensionalAction(gym.Env):
 
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DQN])
-@pytest.mark.parametrize("env", [DummyMultiDiscreteSpace([4, 3]), DummyMultiBinary(8)])
+@pytest.mark.parametrize("env", [DummyMultiDiscreteSpace([4, 3]), DummyMultiBinary(8), DummyMultiBinary((3, 2))])
 def test_identity_spaces(model_class, env):
     """
     Additional tests for DQ/SAC/TD3 to check observation space support

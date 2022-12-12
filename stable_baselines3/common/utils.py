@@ -299,14 +299,14 @@ def is_vectorized_multibinary_observation(observation: np.ndarray, observation_s
     :param observation_space: the observation space
     :return: whether the given observation is vectorized or not
     """
-    if observation.shape == (observation_space.n,):
+    if observation.shape == observation_space.shape:
         return False
-    elif len(observation.shape) == 2 and observation.shape[1] == observation_space.n:
+    elif len(observation.shape) == len(observation_space.shape) + 1 and observation.shape[1:] == observation_space.shape:
         return True
     else:
         raise ValueError(
             f"Error: Unexpected observation shape {observation.shape} for MultiBinary "
-            + f"environment, please use ({observation_space.n},) or "
+            + f"environment, please use {observation_space.shape} or "
             + f"(n_env, {observation_space.n}) for the observation shape."
         )
 

@@ -79,6 +79,7 @@ using ``policy_kwargs`` parameter:
 
   # Custom actor (pi) and value function (vf) networks
   # of two layers of size 32 each with Relu activation function
+  # Note: an extra linear layer will be added on top of the pi and the vf nets, respectively
   policy_kwargs = dict(activation_fn=th.nn.ReLU,
                        net_arch=[dict(pi=[32, 32], vf=[32, 32])])
   # Create the agent
@@ -93,6 +94,22 @@ using ``policy_kwargs`` parameter:
   del model
   # the policy_kwargs are automatically loaded
   model = PPO.load("ppo_cartpole", env=env)
+
+
+In the previous example, as CartPole's action space has a dimension of 2, the final dimensions of the ``net_arch``'s layers will be:
+
+
+.. code-block:: none
+
+            obs
+            <4>
+     /                \
+    <32>             <32>
+     |                 |
+    <32>             <32>
+     |                 |
+    <2>               <1>
+   action            value
 
 
 Custom Feature Extractor

@@ -61,13 +61,22 @@ One way of customising the policy network architecture is to pass arguments when
 using ``policy_kwargs`` parameter:
 
 .. note::
+    An extra linear layer will be added on top of the layers specified in ``net_arch``, in order to have the right output dimensions and activation functions (e.g. Softmax for discrete actions).
 
-    An action net and a value net will be added **after** the layers specified in ``net_arch``, in order to have the right output dimensions and activation functions (e.g. Softmax for discrete actions).
-    
-    E.g. if you specify ``net_arch = [128, 64]``, ``activation_fn=nnReLU`` and you have an on-policy algorithm and a discrete action space with 10 actions:
-    
-    - the actor will have an architecture of ``[128, 64, 10]`` with a ``nn.ReLU`` activation function in all layers but the last one, which will have a ``nn.Softmax``;
-    - the critic will have an architecture of ``[128, 64, 1]`` with a ``nn.ReLU`` activation function in all layers.
+    In the following example, as CartPole's action space has a dimension of 2, the final dimensions of the ``net_arch``'s layers will be:
+
+
+    .. code-block:: none
+
+                obs
+                <4>
+          /             \
+         <32>          <32>
+          |              |
+         <32>          <32>
+          |              |
+         <2>            <1>
+        action         value
 
 
 .. code-block:: python
@@ -94,22 +103,6 @@ using ``policy_kwargs`` parameter:
   del model
   # the policy_kwargs are automatically loaded
   model = PPO.load("ppo_cartpole", env=env)
-
-
-In the previous example, as CartPole's action space has a dimension of 2, the final dimensions of the ``net_arch``'s layers will be:
-
-
-.. code-block:: none
-
-            obs
-            <4>
-     /                \
-    <32>             <32>
-     |                 |
-    <32>             <32>
-     |                 |
-    <2>               <1>
-   action            value
 
 
 Custom Feature Extractor

@@ -70,7 +70,7 @@ using ``policy_kwargs`` parameter:
 
                 obs
                 <4>
-          /             \
+           /            \
          <32>          <32>
           |              |
          <32>          <32>

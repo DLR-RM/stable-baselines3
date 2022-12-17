@@ -121,7 +121,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             use_sde=self.use_sde,
             **self.policy_kwargs  # pytype:disable=not-instantiable
         )
-        self.policy = self.policy.to(self.device)
+        self.policy = self.policy.to(self.device, memory_format=th.channels_last, non_blocking=True)
 
     def collect_rollouts(
         self,

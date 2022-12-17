@@ -132,8 +132,8 @@ class BaseBuffer(ABC):
         :return:
         """
         if copy:
-            return th.tensor(array).to(self.device)
-        return th.as_tensor(array).to(self.device)
+            return th.tensor(array).to(self.device, non_blocking=True)
+        return th.as_tensor(array).to(self.device, non_blocking=True)
 
     @staticmethod
     def _normalize_obs(

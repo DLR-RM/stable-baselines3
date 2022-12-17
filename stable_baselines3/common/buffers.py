@@ -121,7 +121,7 @@ class BaseBuffer(ABC):
         """
         raise NotImplementedError()
 
-    def to_torch(self, array: np.ndarray, copy: bool = False) -> th.Tensor:
+    def to_torch(self, array: np.ndarray, copy: bool = True) -> th.Tensor:
         """
         Convert a numpy array to a PyTorch tensor.
         Note: it copies the data by default
@@ -132,8 +132,8 @@ class BaseBuffer(ABC):
         :return:
         """
         if copy:
-            return th.tensor(array).to(self.device, memory_format=th.channels_last, non_blocking=True)
-        return th.as_tensor(array).to(self.device, memory_format=th.channels_last, non_blocking=True)
+            return th.tensor(array).to(self.device, non_blocking=True)
+        return th.as_tensor(array).to(self.device, non_blocking=True)
 
     @staticmethod
     def _normalize_obs(

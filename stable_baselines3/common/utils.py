@@ -460,11 +460,13 @@ def obs_as_tensor(
     :param device: PyTorch device
     :return: PyTorch tensor of the observation on a desired device.
     """
-    kwargs = {"memory_format": th.channels_last} if len(obs.shape) >= 4 else {}
     if isinstance(obs, np.ndarray):
-        return th.as_tensor(obs).to(device, non_blocking=True, **kwargs)
+        return th.as_tensor(obs).to(device, memory_format=th.channels_last, non_blocking=True)
     elif isinstance(obs, dict):
-        return {key: th.as_tensor(_obs).to(device, non_blocking=True, **kwargs) for (key, _obs) in obs.items()}
+        return {
+            key: th.as_tensor(_obs).to(device, memory_format=th.channels_last, non_blocking=True)
+            for (key, _obs) in obs.items()
+        }
     else:
         raise Exception(f"Unrecognized type of observation {type(obs)}")
 

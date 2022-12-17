@@ -131,10 +131,9 @@ class BaseBuffer(ABC):
             (may be useful to avoid changing things be reference)
         :return:
         """
-        kwargs = {"memory_format": th.channels_last} if len(array.shape) >= 4 else {}
         if copy:
-            return th.tensor(array).to(self.device, non_blocking=True, **kwargs)
-        return th.as_tensor(array).to(self.device, non_blocking=True, **kwargs)
+            return th.tensor(array).to(self.device, memory_format=th.channels_last, non_blocking=True)
+        return th.as_tensor(array).to(self.device, memory_format=th.channels_last, non_blocking=True)
 
     @staticmethod
     def _normalize_obs(

@@ -41,11 +41,12 @@ Others:
 - Fixed flake8 config to be compatible with flake8 6+
 - Goal-conditioned environments are now characterized by the availability of the ``compute_reward`` method, rather than by their inheritance to ``gym.GoalEnv``
 - Replaced ``CartPole-v0`` by ``CartPole-v1`` is tests
-- Fixed ``tests/test_distributions.py`` type hint
-- Fixed ``stable_baselines3/common/type_aliases.py`` type hint
-- Fixed ``stable_baselines3/common/torch_layers.py`` type hint
-- Fixed ``stable_baselines3/common/env_util.py`` type hint
+- Fixed ``tests/test_distributions.py`` type hints
+- Fixed ``stable_baselines3/common/type_aliases.py`` type hints
+- Fixed ``stable_baselines3/common/torch_layers.py`` type hints
+- Fixed ``stable_baselines3/common/env_util.py`` type hints
 - Fixed ``stable_baselines3/common/preprocessing.py`` type hints
+- Fixed ``stable_baselines3/common/atari_wrappers.py`` type hints
 - Exposed modules in ``__init__.py`` with the ``__all__`` attribute (@ZikangXiong)
 - Upgraded GitHub CI/setup-python to v4 and checkout to v3
 

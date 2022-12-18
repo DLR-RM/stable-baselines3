@@ -133,6 +133,8 @@ class BaseBuffer(ABC):
         """
         if copy:
             return th.tensor(array, device=self.device)
+        if self.device != th.device("cpu"):
+            warnings.warn("``copy`` is set to False but the device is not cpu. The data is therefore copied anyway.")
         return th.as_tensor(array, device=self.device)
 
     @staticmethod

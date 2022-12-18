@@ -23,12 +23,12 @@ class NoopResetEnv(gym.Wrapper):
     :param noop_max: the maximum value of no-ops to run
     """
 
-    def __init__(self, env: gym.Env, noop_max: int = 30):
-        gym.Wrapper.__init__(self, env)
+    def __init__(self, env: gym.Env, noop_max: int = 30) -> None:
+        super().__init__(env)
         self.noop_max = noop_max
         self.override_num_noops = None
         self.noop_action = 0
-        assert env.unwrapped.get_action_meanings()[0] == "NOOP"
+        assert env.unwrapped.get_action_meanings()[0] == "NOOP"  # type: ignore[attr-defined]
 
     def reset(self, **kwargs) -> Tuple[np.ndarray, Dict]:
         self.env.reset(**kwargs)
@@ -38,7 +38,7 @@ class NoopResetEnv(gym.Wrapper):
             noops = self.unwrapped.np_random.integers(1, self.noop_max + 1)
         assert noops > 0
         obs = np.zeros(0)
-        info = {}
+        info: Dict = {}
         for _ in range(noops):
             obs, _, terminated, truncated, info = self.env.step(self.noop_action)
             if terminated or truncated:
@@ -53,10 +53,10 @@ class FireResetEnv(gym.Wrapper):
     :param env: the environment to wrap
     """
 
-    def __init__(self, env: gym.Env):
-        gym.Wrapper.__init__(self, env)
-        assert env.unwrapped.get_action_meanings()[1] == "FIRE"
-        assert len(env.unwrapped.get_action_meanings()) >= 3
+    def __init__(self, env: gym.Env) -> None:
+        super().__init__(env)
+        assert env.unwrapped.get_action_meanings()[1] == "FIRE"  # type: ignore[attr-defined]
+        assert len(env.unwrapped.get_action_meanings()) >= 3  # type: ignore[attr-defined]
 
     def reset(self, **kwargs) -> Tuple[np.ndarray, Dict]:
         self.env.reset(**kwargs)
@@ -77,8 +77,8 @@ class EpisodicLifeEnv(gym.Wrapper):
     :param env: the environment to wrap
     """
 
-    def __init__(self, env: gym.Env):
-        gym.Wrapper.__init__(self, env)
+    def __init__(self, env: gym.Env) -> None:
+        super().__init__(env)
         self.lives = 0
         self.was_real_done = True
 
@@ -87,7 +87,7 @@ class EpisodicLifeEnv(gym.Wrapper):
         self.was_real_done = terminated or truncated
         # check current lives, make loss of life terminal,
         # then update lives to handle bonus lives
-        lives = self.env.unwrapped.ale.lives()
+        lives = self.env.unwrapped.ale.lives()  # type: ignore[attr-defined]
         if 0 < lives < self.lives:
             # for Qbert sometimes we stay in lives == 0 condition for a few frames
             # so its important to keep lives > 0, so that we only reset once
@@ -110,7 +110,7 @@ class EpisodicLifeEnv(gym.Wrapper):
         else:
             # no-op step to advance from terminal/lost life state
             obs, _, _, _, info = self.env.step(0)
-        self.lives = self.env.unwrapped.ale.lives()
+        self.lives = self.env.unwrapped.ale.lives()  # type: ignore[attr-defined]
         return obs, info
 
 
@@ -122,9 +122,11 @@ class MaxAndSkipEnv(gym.Wrapper):
     :param skip: number of ``skip``-th frame
     """
 
-    def __init__(self, env: gym.Env, skip: int = 4):
-        gym.Wrapper.__init__(self, env)
+    def __init__(self, env: gym.Env, skip: int = 4) -> None:
+        super().__init__(env)
         # most recent raw observations (for max pooling across time steps)
+        assert env.observation_space.dtype is not None, "No dtype specified for the observation space"
+        assert env.observation_space.shape is not None, "No shape defined for the observation space"
         self._obs_buffer = np.zeros((2,) + env.observation_space.shape, dtype=env.observation_space.dtype)
         self._skip = skip
 
@@ -165,8 +167,8 @@ class ClipRewardEnv(gym.RewardWrapper):
     :param env: the environment
     """
 
-    def __init__(self, env: gym.Env):
-        gym.RewardWrapper.__init__(self, env)
+    def __init__(self, env: gym.Env) -> None:
+        super().__init__(env)
 
     def reward(self, reward: float) -> float:
         """
@@ -188,12 +190,17 @@ class WarpFrame(gym.ObservationWrapper):
     :param height:
     """
 
-    def __init__(self, env: gym.Env, width: int = 84, height: int = 84):
-        gym.ObservationWrapper.__init__(self, env)
+    def __init__(self, env: gym.Env, width: int = 84, height: int = 84) -> None:
+        super().__init__(env)
         self.width = width
         self.height = height
+        assert isinstance(env.observation_space, spaces.Box), f"Expected Box space, got {env.observation_space}"
+
         self.observation_space = spaces.Box(
-            low=0, high=255, shape=(self.height, self.width, 1), dtype=env.observation_space.dtype
+            low=0,
+            high=255,
+            shape=(self.height, self.width, 1),
+            dtype=env.observation_space.dtype,  # type: ignore[arg-type]
         )
 
     def observation(self, frame: np.ndarray) -> np.ndarray:
@@ -238,14 +245,14 @@ class AtariWrapper(gym.Wrapper):
         screen_size: int = 84,
         terminal_on_life_loss: bool = True,
         clip_reward: bool = True,
-    ):
+    ) -> None:
         if noop_max > 0:
             env = NoopResetEnv(env, noop_max=noop_max)
         if frame_skip > 0:
             env = MaxAndSkipEnv(env, skip=frame_skip)
         if terminal_on_life_loss:
             env = EpisodicLifeEnv(env)
-        if "FIRE" in env.unwrapped.get_action_meanings():
+        if "FIRE" in env.unwrapped.get_action_meanings():  # type: ignore[attr-defined]
             env = FireResetEnv(env)
         env = WarpFrame(env, width=screen_size, height=screen_size)
         if clip_reward:

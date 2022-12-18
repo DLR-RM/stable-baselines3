@@ -121,6 +121,10 @@ def test_high_dimension_action_space():
         spaces.Dict({"position": spaces.Dict({"abs": spaces.Discrete(5), "rel": spaces.Discrete(2)})}),
         # Small image inside a dict
         spaces.Dict({"img": spaces.Box(low=0, high=255, shape=(32, 32, 3), dtype=np.uint8)}),
+        # Non zero start index
+        spaces.Discrete(3, start=-1),
+        # Non zero start index inside a Dict
+        spaces.Dict({"obs": spaces.Discrete(3, start=1)}),
     ],
 )
 def test_non_default_spaces(new_obs_space):

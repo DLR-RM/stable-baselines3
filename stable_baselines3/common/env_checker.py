@@ -56,9 +56,15 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
 
     if isinstance(observation_space, spaces.Dict):
         nested_dict = False
-        for space in observation_space.spaces.values():
+        for key, space in observation_space.spaces.items():
             if isinstance(space, spaces.Dict):
                 nested_dict = True
+            if isinstance(space, spaces.Discrete) and space.start != 0:
+                warnings.warn(
+                    f"Discrete observation space (key '{key}') with a non-zero start is not supported by Stable-Baselines3. "
+                    "You can use a wrapper or update your observation space."
+                )
+
         if nested_dict:
             warnings.warn(
                 "Nested observation spaces are not supported by Stable Baselines3 "
@@ -75,6 +81,12 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             "However, you can convert it to a Dict observation space "
             "(cf. https://github.com/openai/gym/blob/master/gym/spaces/dict.py). "
             "which is supported by SB3."
+        )
+
+    if isinstance(observation_space, spaces.Discrete) and observation_space.start != 0:
+        warnings.warn(
+            "Discrete observation space with a non-zero start is not supported by Stable-Baselines3. "
+            "You can use a wrapper or update your observation space."
         )
 
     if not _is_numpy_array_space(action_space):

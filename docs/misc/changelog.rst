@@ -26,14 +26,15 @@ New Features:
 ^^^^^^^^^^^^^
 - Introduced mypy type checking
 - Added ``with_bias`` argument to ``create_mlp``
+- Added support for multidimensional ``spaces.MultiBinary`` observations
 
 SB3-Contrib
 ^^^^^^^^^^^
 
 Bug Fixes:
 ^^^^^^^^^^
-- Fix return type of ``evaluate_actions`` in ``ActorCritcPolicy`` to reflect that entropy is an optional tensor (@Rocamonde)
-- Fix type annotation of ``policy`` in ``BaseAlgorithm`` and ``OffPolicyAlgorithm``
+- Fixed return type of ``evaluate_actions`` in ``ActorCritcPolicy`` to reflect that entropy is an optional tensor (@Rocamonde)
+- Fixed type annotation of ``policy`` in ``BaseAlgorithm`` and ``OffPolicyAlgorithm``
 - Allowed model trained with Python 3.7 to be loaded with Python 3.8+ without the ``custom_objects`` workaround
 - Raise an error when the same gym environment instance is passed as separate environments when creating a vectorized environment with more than one environment. (@Rocamonde)
 - Fix type annotation of ``model`` in ``evaluate_policy``
@@ -48,16 +49,21 @@ Others:
 - Fixed flake8 config to be compatible with flake8 6+
 - Goal-conditioned environments are now characterized by the availability of the ``compute_reward`` method, rather than by their inheritance to ``gym.GoalEnv``
 - Replaced ``CartPole-v0`` by ``CartPole-v1`` is tests
-- Fixed ``tests/test_distributions.py`` type hint
-- Fixed ``stable_baselines3/common/type_aliases.py`` type hint
-- Fixed ``stable_baselines3/common/torch_layers.py`` type hint
-- Fixed ``stable_baselines3/common/env_util.py`` type hint
+- Fixed ``tests/test_distributions.py`` type hints
+- Fixed ``stable_baselines3/common/type_aliases.py`` type hints
+- Fixed ``stable_baselines3/common/torch_layers.py`` type hints
+- Fixed ``stable_baselines3/common/env_util.py`` type hints
+- Fixed ``stable_baselines3/common/preprocessing.py`` type hints
+- Fixed ``stable_baselines3/common/atari_wrappers.py`` type hints
 - Exposed modules in ``__init__.py`` with the ``__all__`` attribute (@ZikangXiong)
+- Upgraded GitHub CI/setup-python to v4 and checkout to v3
 
 Documentation:
 ^^^^^^^^^^^^^^
 - Updated Hugging Face Integration page (@simoninithomas)
 - Changed ``env`` to ``vec_env`` when environment is vectorized
+- Updated custom policy docs to better explain the ``mlp_extractor``'s dimensions (@AlexPasqua)
+- Update custom policy documentation (@athatheo)
 
 Release 1.6.2 (2022-10-10)
 --------------------------

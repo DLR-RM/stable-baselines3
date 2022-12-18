@@ -60,6 +60,25 @@ Custom Network Architecture
 One way of customising the policy network architecture is to pass arguments when creating the model,
 using ``policy_kwargs`` parameter:
 
+.. note::
+    An extra linear layer will be added on top of the layers specified in ``net_arch``, in order to have the right output dimensions and activation functions (e.g. Softmax for discrete actions).
+
+    In the following example, as CartPole's action space has a dimension of 2, the final dimensions of the ``net_arch``'s layers will be:
+
+
+    .. code-block:: none
+
+                obs
+                <4>
+           /            \
+         <32>          <32>
+          |              |
+         <32>          <32>
+          |              |
+         <2>            <1>
+        action         value
+
+
 .. code-block:: python
 
   import gym
@@ -69,6 +88,7 @@ using ``policy_kwargs`` parameter:
 
   # Custom actor (pi) and value function (vf) networks
   # of two layers of size 32 each with Relu activation function
+  # Note: an extra linear layer will be added on top of the pi and the vf nets, respectively
   policy_kwargs = dict(activation_fn=th.nn.ReLU,
                        net_arch=[dict(pi=[32, 32], vf=[32, 32])])
   # Create the agent
@@ -333,11 +353,11 @@ If your task requires even more granular control over the policy/value architect
           :return: (th.Tensor, th.Tensor) latent_policy, latent_value of the specified network.
               If all layers are shared, then ``latent_policy == latent_value``
           """
-          return self.policy_net(features), self.value_net(features)
-          
+          return self.forward_actor(features), self.forward_critic(features)
+
       def forward_actor(self, features: th.Tensor) -> th.Tensor:
           return self.policy_net(features)
-      
+
       def forward_critic(self, features: th.Tensor) -> th.Tensor:
           return self.value_net(features)
 

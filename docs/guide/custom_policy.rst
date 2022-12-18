@@ -139,7 +139,7 @@ that derives from ``BaseFeaturesExtractor`` and then pass it to the model when t
       """
 
       def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 256):
-          super(CustomCNN, self).__init__(observation_space, features_dim)
+          super().__init__(observation_space, features_dim)
           # We assume CxHxW images (channels first)
           # Re-ordering will be done by pre-preprocessing or wrapper
           n_input_channels = observation_space.shape[0]
@@ -201,7 +201,7 @@ downsampling and "vector" with a single linear layer.
           # We do not know features-dim here before going over all the items,
           # so put something dummy for now. PyTorch requires calling
           # nn.Module.__init__ before adding modules
-          super(CustomCombinedExtractor, self).__init__(observation_space, features_dim=1)
+          super().__init__(observation_space, features_dim=1)
 
           extractors = {}
 
@@ -374,7 +374,7 @@ If your task requires even more granular control over the policy/value architect
           **kwargs,
       ):
 
-          super(CustomActorCriticPolicy, self).__init__(
+          super().__init__(
               observation_space,
               action_space,
               lr_schedule,

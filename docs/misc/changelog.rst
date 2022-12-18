@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.7.0a5 (WIP)
+Release 1.7.0a6 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -13,12 +13,16 @@ Breaking Changes:
   please use an ``EvalCallback`` instead
 - Removed deprecated ``sde_net_arch`` parameter
 - Removed ``ret`` attributes in ``VecNormalize``, please use ``returns`` instead
+- ``VecNormalize`` now updates the observation space when normalizing images
 
 New Features:
 ^^^^^^^^^^^^^
 - Introduced mypy type checking
 - Added ``with_bias`` argument to ``create_mlp``
 - Added support for multidimensional ``spaces.MultiBinary`` observations
+- Features extractors now properly support unnormalized image-like observations (3D tensor)
+  when passing ``normalize_images=False``
+- Added ``normalized_image`` parameter to ``NatureCNN`` and ``CombinedExtractor``
 
 SB3-Contrib
 ^^^^^^^^^^^
@@ -31,6 +35,7 @@ Bug Fixes:
 - Raise an error when the same gym environment instance is passed as separate environments when creating a vectorized environment with more than one environment. (@Rocamonde)
 - Fix type annotation of ``model`` in ``evaluate_policy``
 - Fixed ``Self`` return type using ``TypeVar``
+- Fix the env checker, the key was not passed when checking images from Dict observation space
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -54,6 +59,7 @@ Documentation:
 - Changed ``env`` to ``vec_env`` when environment is vectorized
 - Updated custom policy docs to better explain the ``mlp_extractor``'s dimensions (@AlexPasqua)
 - Update custom policy documentation (@athatheo)
+- Clarify doc when using image-like input
 
 Release 1.6.2 (2022-10-10)
 --------------------------

@@ -27,6 +27,7 @@ def is_image_space_channels_first(observation_space: spaces.Box) -> bool:
 def is_image_space(
     observation_space: spaces.Space,
     check_channels: bool = False,
+    normalized_image: bool = False,
 ) -> bool:
     """
     Check if a observation space has the shape, limits and dtype
@@ -38,15 +39,21 @@ def is_image_space(
     :param observation_space:
     :param check_channels: Whether to do or not the check for the number of channels.
         e.g., with frame-stacking, the observation space may have more channels than expected.
+    :param normalized_image: Whether to assume that the image is already normalized
+        or not (this disables dtype and bounds checks): when True, it only checks that
+        the space is a Box and has 3 dimensions.
+        Otherwise, it checks that it has expected dtype (uint8) and bounds (values in [0, 255]).
     :return:
     """
+    check_dtype = check_bounds = not normalized_image
     if isinstance(observation_space, spaces.Box) and len(observation_space.shape) == 3:
         # Check the type
-        if observation_space.dtype != np.uint8:
+        if check_dtype and observation_space.dtype != np.uint8:
             return False
 
         # Check the value range
-        if np.any(observation_space.low != 0) or np.any(observation_space.high != 255):
+        incorrect_bounds = np.any(observation_space.low != 0) or np.any(observation_space.high != 255)
+        if check_bounds and incorrect_bounds:
             return False
 
         # Skip channels check

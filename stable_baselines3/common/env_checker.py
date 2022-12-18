@@ -25,7 +25,7 @@ def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
     if observation_space.dtype != np.uint8:
         warnings.warn(
             f"It seems that your observation {key} is an image but the `dtype` "
-            "of your observation_space is not `np.uint8`. "
+            f"of your observation_space ({observation_space.dtype}) is not `np.uint8`. "
             "If your observation is not an image, we recommend you to flatten the observation "
             "to have only a 1D vector"
         )
@@ -180,7 +180,7 @@ def _check_box_obs(observation_space: spaces.Box, key: str = "") -> None:
     # If image, check the low and high values, the type and the number of channels
     # and the shape (minimal value)
     if len(observation_space.shape) == 3:
-        _check_image_input(observation_space)
+        _check_image_input(observation_space, key)
 
     if len(observation_space.shape) not in [1, 3]:
         warnings.warn(

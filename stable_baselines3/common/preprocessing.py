@@ -106,7 +106,7 @@ def preprocess_obs(
     :return:
     """
     if isinstance(observation_space, spaces.Box):
-        if is_image_space(observation_space) and normalize_images:
+        if normalize_images and is_image_space(observation_space):
             return obs.float() / 255.0
         return obs.float()
 

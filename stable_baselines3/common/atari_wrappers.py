@@ -22,7 +22,7 @@ class NoopResetEnv(gym.Wrapper):
     """
 
     def __init__(self, env: gym.Env, noop_max: int = 30) -> None:
-        super().__init__(self, env)
+        super().__init__(env)
         self.noop_max = noop_max
         self.override_num_noops = None
         self.noop_action = 0
@@ -51,7 +51,7 @@ class FireResetEnv(gym.Wrapper):
     """
 
     def __init__(self, env: gym.Env) -> None:
-        super().__init__(self, env)
+        super().__init__(env)
         assert env.unwrapped.get_action_meanings()[1] == "FIRE"
         assert len(env.unwrapped.get_action_meanings()) >= 3
 
@@ -75,7 +75,7 @@ class EpisodicLifeEnv(gym.Wrapper):
     """
 
     def __init__(self, env: gym.Env) -> None:
-        super().__init__(self, env)
+        super().__init__(env)
         self.lives = 0
         self.was_real_done = True
 
@@ -120,7 +120,7 @@ class MaxAndSkipEnv(gym.Wrapper):
     """
 
     def __init__(self, env: gym.Env, skip: int = 4) -> None:
-        super().__init__(self, env)
+        super().__init__(env)
         # most recent raw observations (for max pooling across time steps)
         self._obs_buffer = np.zeros((2,) + env.observation_space.shape, dtype=env.observation_space.dtype)
         self._skip = skip
@@ -162,7 +162,7 @@ class ClipRewardEnv(gym.RewardWrapper):
     """
 
     def __init__(self, env: gym.Env) -> None:
-        super().__init__(self, env)
+        super().__init__(env)
 
     def reward(self, reward: float) -> float:
         """
@@ -185,7 +185,7 @@ class WarpFrame(gym.ObservationWrapper):
     """
 
     def __init__(self, env: gym.Env, width: int = 84, height: int = 84) -> None:
-        super().__init__(self, env)
+        super().__init__(env)
         self.width = width
         self.height = height
         self.observation_space = spaces.Box(

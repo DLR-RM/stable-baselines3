@@ -151,10 +151,7 @@ def get_obs_shape(
         return (int(len(observation_space.nvec)),)
     elif isinstance(observation_space, spaces.MultiBinary):
         # Number of binary features
-        if type(observation_space.n) in [tuple, list, np.ndarray]:
-            return tuple(observation_space.n)
-        else:
-            return (int(observation_space.n),)
+        return observation_space.shape
     elif isinstance(observation_space, spaces.Dict):
         return {key: get_obs_shape(subspace) for (key, subspace) in observation_space.spaces.items()}  # type: ignore[misc]
 
@@ -198,6 +195,9 @@ def get_action_dim(action_space: spaces.Space) -> int:
         return int(len(action_space.nvec))
     elif isinstance(action_space, spaces.MultiBinary):
         # Number of binary actions
+        assert isinstance(action_space.n, int), (
+            "Multi-dimensional MultiBinary action space is not supported. " "You can flatten it instead."
+        )
         return int(action_space.n)
     else:
         raise NotImplementedError(f"{action_space} action space is not supported")

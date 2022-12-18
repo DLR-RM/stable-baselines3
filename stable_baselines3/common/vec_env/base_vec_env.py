@@ -1,4 +1,5 @@
 import inspect
+import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union
 
@@ -184,25 +185,34 @@ class VecEnv(ABC):
         if mode == "human" and self.render_mode != mode:
             # Special case, if the render_mode="rgb_array"
             # we can still display that image using opencv
-            assert self.render_mode == "rgb_array", (
-                f"You tried to render a VecEnv with mode='{mode}' "
-                "but the render mode defined when initializing the environment must be "
-                f"'human' or 'rgb_array', not '{self.render_mode}'."
-            )
+            if self.render_mode != "rgb_array":
+                warnings.warn(
+                    f"You tried to render a VecEnv with mode='{mode}' "
+                    "but the render mode defined when initializing the environment must be "
+                    f"'human' or 'rgb_array', not '{self.render_mode}'."
+                )
+                return
 
         elif mode and self.render_mode != mode:
-            raise ValueError(
+            warnings.warn(
                 f"""Starting from gym v0.26, render modes are determined during the initialization of the environment.
                 We allow to pass a mode argument to maintain a backwards compatible VecEnv API, but the mode ({mode})
                 has to be the same as the environment render mode ({self.render_mode}) which is not the case."""
             )
+            return
 
         mode = mode or self.render_mode
 
-        # TODO: handle the case where mode == self.render_mode == "human"
-        # In that case, we can try to call `self.env.render()` but it might
-        # crash for subprocesses (TO BE TESTED)
-        # if self.render_mode == "human"
+        if mode is None:
+            warnings.warn("You tried to call render() but no `render_mode` was passed to the env constructor.")
+            return
+
+        # mode == self.render_mode == "human"
+        # In that case, we try to call `self.env.render()` but it might
+        # crash for subprocesses
+        if self.render_mode == "human":
+            self.env_method("render")
+            return
 
         if mode == "rgb_array" or mode == "human":
             # call the render method of the environments

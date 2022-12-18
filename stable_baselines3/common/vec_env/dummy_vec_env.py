@@ -100,18 +100,10 @@ class DummyVecEnv(VecEnv):
         """
         Gym environment rendering. If there are multiple environments then
         they are tiled together in one image via ``BaseVecEnv.render()``.
-        Otherwise (if ``self.num_envs == 1``), we pass the render call directly to the
-        underlying environment.
-
-        Therefore, some arguments such as ``mode`` will have values that are valid
-        only when ``num_envs == 1``.
 
         :param mode: The rendering type.
         """
-        if self.num_envs == 1:
-            return self.envs[0].render()
-        else:
-            return super().render(mode=mode)
+        return super().render(mode=mode)
 
     def _save_obs(self, env_idx: int, obs: VecEnvObs) -> None:
         for key in self.keys:

@@ -129,6 +129,7 @@ class TD3Policy(BasePolicy):
             optimizer_class=optimizer_class,
             optimizer_kwargs=optimizer_kwargs,
             squash_output=True,
+            normalize_images=normalize_images,
         )
 
         # Default network architecture, from the original paper

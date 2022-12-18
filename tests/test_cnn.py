@@ -303,7 +303,7 @@ def test_image_space_checks():
         assert not is_image_space_channels_first(channel_mid_space)
 
 
-@pytest.mark.parametrize("model_class", [A2C, SAC])
+@pytest.mark.parametrize("model_class", [A2C, PPO, DQN, SAC, TD3])
 @pytest.mark.parametrize("normalize_images", [True, False])
 def test_image_like_input(model_class, normalize_images):
     """

@@ -35,7 +35,8 @@ Bug Fixes:
 - Raise an error when the same gym environment instance is passed as separate environments when creating a vectorized environment with more than one environment. (@Rocamonde)
 - Fix type annotation of ``model`` in ``evaluate_policy``
 - Fixed ``Self`` return type using ``TypeVar``
-- Fix the env checker, the key was not passed when checking images from Dict observation space
+- Fixed the env checker, the key was not passed when checking images from Dict observation space
+- Fixed ``normalize_images`` which was not passed to parent class in some cases
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -122,6 +122,7 @@ def preprocess_obs(
 
     elif isinstance(observation_space, spaces.Dict):
         # Do not modify by reference the original observation
+        assert isinstance(obs, Dict), f"Expected dict, got {type(obs)}"
         preprocessed_obs = {}
         for key, _obs in obs.items():
             preprocessed_obs[key] = preprocess_obs(_obs, observation_space[key], normalize_images=normalize_images)
@@ -155,7 +156,7 @@ def get_obs_shape(
         else:
             return (int(observation_space.n),)
     elif isinstance(observation_space, spaces.Dict):
-        return {key: get_obs_shape(subspace) for (key, subspace) in observation_space.spaces.items()}
+        return {key: get_obs_shape(subspace) for (key, subspace) in observation_space.spaces.items()}  # type: ignore[misc]
 
     else:
         raise NotImplementedError(f"{observation_space} observation space is not supported")

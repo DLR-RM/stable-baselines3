@@ -45,6 +45,7 @@ Others:
 - Fixed ``stable_baselines3/common/type_aliases.py`` type hint
 - Fixed ``stable_baselines3/common/torch_layers.py`` type hint
 - Fixed ``stable_baselines3/common/env_util.py`` type hint
+- Fixed ``stable_baselines3/common/preprocessing.py`` type hints
 - Exposed modules in ``__init__.py`` with the ``__all__`` attribute (@ZikangXiong)
 - Upgraded GitHub CI/setup-python to v4 and checkout to v3
 

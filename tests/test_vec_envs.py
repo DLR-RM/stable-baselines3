@@ -101,8 +101,8 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
     array_implicit_mode = vec_env.render()
     assert np.array_equal(array_implicit_mode, array_explicit_mode)
 
-    # test error if you try different render mode
-    with pytest.raises(ValueError):
+    # test warning if you try different render mode
+    with pytest.warns(UserWarning):
         vec_env.render(mode="something_else")
 
     # we need a X server to test the "human" mode (uses OpenCV)

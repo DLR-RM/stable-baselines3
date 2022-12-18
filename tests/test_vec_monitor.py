@@ -2,7 +2,6 @@ import csv
 import json
 import os
 import uuid
-import warnings
 
 import gym
 import pandas
@@ -133,7 +132,6 @@ def test_vec_monitor_ppo(recwarn):
     """
     Test the `VecMonitor` with PPO
     """
-    warnings.filterwarnings(action="ignore", category=DeprecationWarning, module=r".*passive_env_checker")
     env = DummyVecEnv([lambda: gym.make("CartPole-v1")])
     env.seed(seed=0)
     monitor_env = VecMonitor(env)

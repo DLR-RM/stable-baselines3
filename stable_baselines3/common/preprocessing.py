@@ -64,7 +64,7 @@ def is_image_space(
             n_channels = observation_space.shape[0]
         else:
             n_channels = observation_space.shape[-1]
-        # RGB, RGBD, GrayScale
+        # GrayScale, RGB, RGBD
         return n_channels in [1, 3, 4]
     return False
 

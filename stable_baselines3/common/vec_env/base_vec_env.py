@@ -53,7 +53,7 @@ class VecEnv(ABC):
     :param action_space: the action space
     """
 
-    metadata = {"render.modes": ["human", "rgb_array"]}
+    metadata = {"render_modes": ["human", "rgb_array"]}
 
     def __init__(
         self,

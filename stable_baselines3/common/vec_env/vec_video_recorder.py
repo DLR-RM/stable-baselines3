@@ -48,7 +48,7 @@ class VecVideoRecorder(VecEnvWrapper):
             metadata = temp_env.metadata
 
         self.env.metadata = metadata
-        self.env.render_mode = "rgb_array"
+        assert self.env.render_mode == "rgb_array", f"The render_mode must be 'rgb_array', not {self.env.render_mode}"
 
         self.record_video_trigger = record_video_trigger
         self.video_recorder = None
@@ -111,4 +111,4 @@ class VecVideoRecorder(VecEnvWrapper):
         self.close_video_recorder()
 
     def __del__(self):
-        self.close()
+        self.close_video_recorder()

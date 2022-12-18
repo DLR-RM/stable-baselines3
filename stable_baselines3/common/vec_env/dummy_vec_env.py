@@ -1,3 +1,4 @@
+import warnings
 from collections import OrderedDict
 from copy import deepcopy
 from typing import Any, Callable, List, Optional, Sequence, Type, Union
@@ -91,9 +92,10 @@ class DummyVecEnv(VecEnv):
 
     def get_images(self) -> Sequence[Optional[np.ndarray]]:
         if self.render_mode != "rgb_array":
-            raise RuntimeWarning(
+            warnings.warn(
                 f"The render mode is {self.render_mode}, but this method assumes it is `rgb_array` to obtain images."
             )
+            return [None for _ in self.envs]
         return [env.render() for env in self.envs]
 
     def render(self, mode: Optional[str] = None) -> Optional[np.ndarray]:

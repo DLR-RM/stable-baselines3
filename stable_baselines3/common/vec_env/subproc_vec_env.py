@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import warnings
 from collections import OrderedDict
 from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
 
@@ -160,9 +161,10 @@ class SubprocVecEnv(VecEnv):
 
     def get_images(self) -> Sequence[Optional[np.ndarray]]:
         if self.render_mode != "rgb_array":
-            raise RuntimeWarning(
+            warnings.warn(
                 f"The render mode is {self.render_mode}, but this method assumes it is `rgb_array` to obtain images."
             )
+            return [None for _ in self.remotes]
         for pipe in self.remotes:
             # gather render return from subprocesses
             pipe.send(("render", None))

@@ -13,7 +13,7 @@ from stable_baselines3.td3 import TD3
 
 # Small monkey patch so gym 0.21 is compatible with numpy >= 1.24
 # TODO: remove when upgrading to gym 0.26
-np.bool = bool
+np.bool = bool  # type: ignore[attr-defined]
 
 # Read version from file
 version_file = os.path.join(os.path.dirname(__file__), "version.txt")

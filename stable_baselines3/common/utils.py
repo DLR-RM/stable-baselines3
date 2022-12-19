@@ -461,9 +461,9 @@ def obs_as_tensor(
     :return: PyTorch tensor of the observation on a desired device.
     """
     if isinstance(obs, np.ndarray):
-        return th.as_tensor(obs).to(device)
+        return th.as_tensor(obs, device=device)
     elif isinstance(obs, dict):
-        return {key: th.as_tensor(_obs).to(device) for (key, _obs) in obs.items()}
+        return {key: th.as_tensor(_obs, device=device) for (key, _obs) in obs.items()}
     else:
         raise Exception(f"Unrecognized type of observation {type(obs)}")
 

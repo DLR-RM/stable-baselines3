@@ -336,11 +336,7 @@ def test_image_like_input(model_class, normalize_images):
     else:
         # Avoid memory error when using replay buffer
         # Reduce the size of the features
-        kwargs.update(
-            dict(
-                buffer_size=250,
-            )
-        )
+        kwargs.update(dict(buffer_size=250))
     if normalize_images:
         with pytest.raises(AssertionError):
             model_class("CnnPolicy", vec_env, **kwargs).learn(128)

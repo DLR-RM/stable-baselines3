@@ -118,8 +118,9 @@ class BaseModel(nn.Module):
         """
         Preprocess the observation if needed and extract features.
 
-        :param obs:
-        :return:
+         :param obs: The observation
+         :param features_extractor: The features extractor to use. If it is set to None, the features extractor of the policy is used.
+         :return: The features
         """
         features_extractor = features_extractor or self.features_extractor
         assert features_extractor is not None, "No features extractor was set"

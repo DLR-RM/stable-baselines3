@@ -52,6 +52,7 @@ class VecNormalize(VecEnvWrapper):
                 self.obs_spaces = self.observation_space.spaces
                 self.obs_rms = {key: RunningMeanStd(shape=self.obs_spaces[key].shape) for key in self.norm_obs_keys}
                 # Update observation space when using image
+                # See explanation below and GH #1214
                 for key in self.obs_rms.keys():
                     if is_image_space(self.obs_spaces[key]):
                         self.observation_space.spaces[key] = gym.spaces.Box(
@@ -65,6 +66,13 @@ class VecNormalize(VecEnvWrapper):
                 self.obs_spaces = None
                 self.obs_rms = RunningMeanStd(shape=self.observation_space.shape)
                 # Update observation space when using image
+                # See GH #1214
+                # This is to raise proper error when
+                # VecNormalize is used with an image-like input and
+                # normalize_images=True.
+                # For correctness, we should also update the bounds
+                # in other cases but this will cause backward-incompatible change
+                # and break already saved policies.
                 if is_image_space(self.observation_space):
                     self.observation_space = gym.spaces.Box(
                         low=-clip_obs,

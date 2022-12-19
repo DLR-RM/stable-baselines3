@@ -127,13 +127,13 @@ class BaseBuffer(ABC):
         Note: it copies the data by default
 
         :param array:
-        :param copy: Whether to copy or not the data
-            (may be useful to avoid changing things be reference)
+        :param copy: Whether to copy or not the data (may be useful to avoid changing things
+            by reference). This argument is inoperative if the device is not the CPU.
         :return:
         """
         if copy:
-            return th.tensor(array).to(self.device)
-        return th.as_tensor(array).to(self.device)
+            return th.tensor(array, device=self.device)
+        return th.as_tensor(array, device=self.device)
 
     @staticmethod
     def _normalize_obs(

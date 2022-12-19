@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.7.0a5 (WIP)
+Release 1.7.0a6 (WIP)
 --------------------------
 
 .. warning::
@@ -57,6 +57,8 @@ Others:
 - Fixed ``stable_baselines3/common/atari_wrappers.py`` type hints
 - Exposed modules in ``__init__.py`` with the ``__all__`` attribute (@ZikangXiong)
 - Upgraded GitHub CI/setup-python to v4 and checkout to v3
+- Set tensors construction directly on the device (~8% speed boost on GPU)
+- Monkey-patched ``np.bool = bool`` so gym 0.21 is compatible with NumPy 1.24+
 
 Documentation:
 ^^^^^^^^^^^^^^

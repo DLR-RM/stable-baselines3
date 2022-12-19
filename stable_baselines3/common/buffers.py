@@ -127,8 +127,8 @@ class BaseBuffer(ABC):
         Note: it copies the data by default
 
         :param array:
-        :param copy: Whether to copy or not the data
-            (may be useful to avoid changing things be reference)
+        :param copy: Whether to copy or not the data (may be useful to avoid changing things
+            by reference). This argument is inoperative if the device is not the CPU.
         :return:
         """
         if copy:

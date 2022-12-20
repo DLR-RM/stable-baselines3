@@ -31,6 +31,12 @@ def test_custom_offpolicy(model_class, net_arch):
 @pytest.mark.parametrize("model_class", [A2C, DQN, PPO, SAC, TD3])
 @pytest.mark.parametrize("optimizer_kwargs", [None, dict(weight_decay=0.0)])
 def test_custom_optimizer(model_class, optimizer_kwargs):
+    # Use different environment for DQN
+    if model_class is DQN:
+        env_id = "CartPole-v1"
+    else:
+        env_id = "Pendulum-v1"
+
     kwargs = {}
     if model_class in {DQN, SAC, TD3}:
         kwargs = dict(learning_starts=100)

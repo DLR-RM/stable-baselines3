@@ -17,7 +17,7 @@ class VecCheckNan(VecEnvWrapper):
     """
 
     def __init__(self, venv: VecEnv, raise_exception: bool = False, warn_once: bool = True, check_inf: bool = True):
-        VecEnvWrapper.__init__(self, venv)
+        super().__init__(venv)
         self.raise_exception = raise_exception
         self.warn_once = warn_once
         self.check_inf = check_inf

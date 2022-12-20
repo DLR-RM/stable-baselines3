@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.7.0a7 (WIP)
+Release 1.7.0a8 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -41,6 +41,7 @@ Bug Fixes:
 
 Deprecations:
 ^^^^^^^^^^^^^
+- You should now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
 
 Others:
 ^^^^^^^

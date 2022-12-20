@@ -2,6 +2,7 @@
 
 import collections
 import copy
+import warnings
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
@@ -122,9 +123,19 @@ class BaseModel(nn.Module):
         Preprocess the observation if needed and extract features.
 
          :param obs: The observation
-         :param features_extractor: The features extractor to use. If it is set to None, the features extractor of the policy is used.
+         :param features_extractor: The features extractor to use. If it is set to None,
+            the features extractor of the policy is used.
          :return: The features
         """
+        if features_extractor is None:
+            warnings.warn(
+                (
+                    "When calling extract_features(), you should explicitely pass a features_extractor as parameter. "
+                    "This will be mandatory in Stable-Baselines v1.8.0"
+                ),
+                DeprecationWarning,
+            )
+
         features_extractor = features_extractor or self.features_extractor
         assert features_extractor is not None, "No features extractor was set"
         preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
@@ -616,7 +627,7 @@ class ActorCriticPolicy(BasePolicy):
         :return: the output of the features extractor(s)
         """
         if self.share_features_extractor:
-            return super().extract_features(obs)
+            return super().extract_features(obs, self.features_extractor)
         else:
             pi_features = super().extract_features(obs, self.pi_features_extractor)
             vf_features = super().extract_features(obs, self.vf_features_extractor)
@@ -911,7 +922,7 @@ class ContinuousCritic(BaseModel):
         # Learn the features extractor using the policy loss only
         # when the features_extractor is shared with the actor
         with th.set_grad_enabled(not self.share_features_extractor):
-            features = self.extract_features(obs)
+            features = self.extract_features(obs, self.features_extractor)
         qvalue_input = th.cat([features, actions], dim=1)
         return tuple(q_net(qvalue_input) for q_net in self.q_networks)
 
@@ -922,5 +933,5 @@ class ContinuousCritic(BaseModel):
         (e.g. when updating the policy in TD3).
         """
         with th.no_grad():
-            features = self.extract_features(obs)
+            features = self.extract_features(obs, self.features_extractor)
         return self.q_networks[0](th.cat([features, actions], dim=1))

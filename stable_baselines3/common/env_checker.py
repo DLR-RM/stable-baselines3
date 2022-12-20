@@ -50,7 +50,7 @@ def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
     if observation_space.shape[non_channel_idx] < 36 or observation_space.shape[1] < 36:
         warnings.warn(
             "The minimal resolution for an image is 36x36 for the default `CnnPolicy`. "
-            "You might need to use a custom feature extractor "
+            "You might need to use a custom features extractor "
             "cf. https://stable-baselines3.readthedocs.io/en/master/guide/custom_policy.html"
         )
 

@@ -108,17 +108,19 @@ using ``policy_kwargs`` parameter:
 Custom Feature Extractor
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you want to have a custom feature extractor (e.g. custom CNN when using images), you can define class
+If you want to have a custom features extractor (e.g. custom CNN when using images), you can define class
 that derives from ``BaseFeaturesExtractor`` and then pass it to the model when training.
 
 
 .. note::
 
-  By default the feature extractor is shared between the actor and the critic to save computation (when applicable).
-  However, this can be changed by defining a custom policy for on-policy algorithms
-  (see `issue #1066 <https://github.com/DLR-RM/stable-baselines3/issues/1066#issuecomment-1246866844>`_
-  for more information) or setting ``share_features_extractor=False`` in the
-  ``policy_kwargs`` for off-policy algorithms (and when applicable).
+  By default the features extractor is shared between the actor and the critic to save computation (when applicable).
+  However, this can be changed setting ``share_features_extractor=False`` in the
+  ``policy_kwargs`` (both for on-policy and off-policy algorithms).
+
+
+.. warning::
+  If the features extractor is **non-shared**, it is **not** possible to have shared layers in the ``mlp_extractor``.
 
 
 .. code-block:: python
@@ -174,7 +176,7 @@ Multiple Inputs and Dictionary Observations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Stable Baselines3 supports handling of multiple inputs by using ``Dict`` Gym space. This can be done using
-``MultiInputPolicy``, which by default uses the ``CombinedExtractor`` feature extractor to turn multiple
+``MultiInputPolicy``, which by default uses the ``CombinedExtractor`` features extractor to turn multiple
 inputs into a single vector, handled by the ``net_arch`` network.
 
 By default, ``CombinedExtractor`` processes multiple inputs as follows:
@@ -184,7 +186,7 @@ By default, ``CombinedExtractor`` processes multiple inputs as follows:
 2. If input is not an image, flatten it (no layers).
 3. Concatenate all previous vectors into one long vector and pass it to policy.
 
-Much like above, you can define custom feature extractors. The following example assumes the environment has two keys in the
+Much like above, you can define custom features extractors. The following example assumes the environment has two keys in the
 observation space dictionary: "image" is a (1,H,W) image (channel first), and "vector" is a (D,) dimensional vector. We process "image" with a simple
 downsampling and "vector" with a single linear layer.
 
@@ -319,7 +321,7 @@ If your task requires even more granular control over the policy/value architect
   class CustomNetwork(nn.Module):
       """
       Custom network for policy and value function.
-      It receives as input the features extracted by the feature extractor.
+      It receives as input the features extracted by the features extractor.
 
       :param feature_dim: dimension of the features extracted with the features_extractor (e.g. features from a CNN)
       :param last_layer_dim_pi: (int) number of units for the last layer of the policy network
@@ -411,7 +413,7 @@ you only need to specify ``net_arch=[256, 256]`` (here, two hidden layers of 256
 
 
 .. note::
-    Compared to their on-policy counterparts, no shared layers (other than the feature extractor)
+    Compared to their on-policy counterparts, no shared layers (other than the features extractor)
     between the actor and the critic are allowed (to prevent issues with target networks).
 
 

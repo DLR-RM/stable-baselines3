@@ -146,8 +146,8 @@ def create_mlp(
 
 class MlpExtractor(nn.Module):
     """
-    Constructs an MLP that receives the output from a previous feature extractor (i.e. a CNN) or directly
-    the observations (if no feature extractor is applied) as an input and outputs a latent representation
+    Constructs an MLP that receives the output from a previous features extractor (i.e. a CNN) or directly
+    the observations (if no features extractor is applied) as an input and outputs a latent representation
     for the policy and a value network.
     The ``net_arch`` parameter allows to specify the amount and size of the hidden layers and how many
     of them are shared between the policy network and the value network. It is assumed to be a list with the following
@@ -251,8 +251,8 @@ class MlpExtractor(nn.Module):
 
 class CombinedExtractor(BaseFeaturesExtractor):
     """
-    Combined feature extractor for Dict observation spaces.
-    Builds a feature extractor for each key of the space. Input from each space
+    Combined features extractor for Dict observation spaces.
+    Builds a features extractor for each key of the space. Input from each space
     is fed through a separate submodule (CNN or MLP, depending on input shape),
     the output features are concatenated and fed through additional MLP network ("combined").
 

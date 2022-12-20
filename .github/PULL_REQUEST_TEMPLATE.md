@@ -16,7 +16,7 @@
 - [ ] Breaking change (fix or feature that would cause existing functionality to change)
 - [ ] Documentation (update in the documentation)
 
-## Checklist:
+## Checklist
 <!--- Go over all the following points, and put an `x` in all the boxes that apply. -->
 <!--- If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
 - [ ] I've read the [CONTRIBUTION](https://github.com/DLR-RM/stable-baselines3/blob/master/CONTRIBUTING.md) guide (**required**)
@@ -24,6 +24,8 @@
 - [ ] My change requires a change to the documentation.
 - [ ] I have updated the tests accordingly (*required for a bug fix or a new feature*).
 - [ ] I have updated the documentation accordingly.
+- [ ] I have opened an associated PR on the [SB3-Contrib repository](https://github.com/Stable-Baselines-Team/stable-baselines3-contrib) (if necessary)
+- [ ] I have opened an associated PR on the [RL-Zoo3 repository](https://github.com/DLR-RM/rl-baselines3-zoo) (if necessary)
 - [ ] I have reformatted the code using `make format` (**required**)
 - [ ] I have checked the codestyle using `make check-codestyle` and `make lint` (**required**)
 - [ ] I have ensured `make pytest` and `make type` both pass. (**required**)

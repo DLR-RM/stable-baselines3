@@ -37,8 +37,9 @@ def test_custom_optimizer(model_class, optimizer_kwargs):
     elif model_class in {A2C, PPO}:
         kwargs = dict(n_steps=64)
 
+    env_id = "CartPole-v1" if model_class == DQN else "Pendulum-v1"
     policy_kwargs = dict(optimizer_class=th.optim.AdamW, optimizer_kwargs=optimizer_kwargs, net_arch=[32])
-    _ = model_class("MlpPolicy", "Pendulum-v1", policy_kwargs=policy_kwargs, **kwargs).learn(300)
+    _ = model_class("MlpPolicy", env_id, policy_kwargs=policy_kwargs, **kwargs).learn(300)
 
 
 def test_tf_like_rmsprop_optimizer():

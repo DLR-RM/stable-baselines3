@@ -10,19 +10,29 @@ from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.envs import FakeImageEnv
 from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
 from stable_baselines3.common.utils import zip_strict
-from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack, VecTransposeImage, is_vecenv_wrapped
+from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack, VecNormalize, VecTransposeImage, is_vecenv_wrapped
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN])
-def test_cnn(tmp_path, model_class):
+@pytest.mark.parametrize("share_features_extractor", [True, False])
+def test_cnn(tmp_path, model_class, share_features_extractor):
     SAVE_NAME = "cnn_model.zip"
     # Fake grayscale with frameskip
     # Atari after preprocessing: 84x84x1, here we are using lower resolution
     # to check that the network handle it automatically
     env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=1, discrete=model_class not in {SAC, TD3})
     if model_class in {A2C, PPO}:
-        kwargs = dict(n_steps=64)
+        kwargs = dict(
+            n_steps=64,
+            policy_kwargs=dict(
+                share_features_extractor=share_features_extractor,
+            ),
+        )
     else:
+        # share_features_extractor is checked later for offpolicy algorithms
+        if share_features_extractor:
+            return
+
         # Avoid memory error when using replay buffer
         # Reduce the size of the features
         kwargs = dict(
@@ -139,10 +149,10 @@ def test_features_extractor_target_net(model_class, share_features_extractor):
         assert id(model.policy.actor.features_extractor) == id(model.policy.critic.features_extractor)
         if model_class == TD3:
             assert id(model.policy.actor_target.features_extractor) == id(model.policy.critic_target.features_extractor)
-        # Actor and critic feature extractor should be the same
+        # Actor and critic features extractor should be the same
         td3_features_extractor_check = check_td3_feature_extractor_match
     else:
-        # Actor and critic feature extractor should differ same
+        # Actor and critic features extractor should differ same
         td3_features_extractor_check = check_td3_feature_extractor_differ
         # Check that the object differ
         if model_class != DQN:
@@ -269,6 +279,10 @@ def test_image_space_checks():
     not_image_space = spaces.Box(0, 10, shape=(10, 10, 3), dtype=np.uint8)
     assert not is_image_space(not_image_space)
 
+    # Deactivate dtype and bound checking
+    normalized_image = spaces.Box(0, 1, shape=(10, 10, 3), dtype=np.float32)
+    assert is_image_space(normalized_image, normalized_image=True)
+
     # Not correct space
     not_image_space = spaces.Discrete(n=10)
     assert not is_image_space(not_image_space)
@@ -297,3 +311,44 @@ def test_image_space_checks():
     # Should raise a warning
     with pytest.warns(Warning):
         assert not is_image_space_channels_first(channel_mid_space)
+
+
+@pytest.mark.parametrize("model_class", [A2C, PPO, DQN, SAC, TD3])
+@pytest.mark.parametrize("normalize_images", [True, False])
+def test_image_like_input(model_class, normalize_images):
+    """
+    Check that we can handle image-like input (3D tensor)
+    when normalize_images=False
+    """
+    # Fake grayscale with frameskip
+    # Atari after preprocessing: 84x84x1, here we are using lower resolution
+    # to check that the network handle it automatically
+    env = FakeImageEnv(
+        screen_height=36,
+        screen_width=36,
+        n_channels=1,
+        channel_first=True,
+        discrete=model_class not in {SAC, TD3},
+    )
+    vec_env = VecNormalize(DummyVecEnv([lambda: env]))
+    # Reduce the size of the features
+    # deactivate normalization
+    kwargs = dict(
+        policy_kwargs=dict(
+            normalize_images=normalize_images,
+            features_extractor_kwargs=dict(features_dim=32),
+        ),
+        seed=1,
+    )
+
+    if model_class in {A2C, PPO}:
+        kwargs.update(dict(n_steps=64))
+    else:
+        # Avoid memory error when using replay buffer
+        # Reduce the size of the features
+        kwargs.update(dict(buffer_size=250))
+    if normalize_images:
+        with pytest.raises(AssertionError):
+            model_class("CnnPolicy", vec_env, **kwargs).learn(128)
+    else:
+        model_class("CnnPolicy", vec_env, **kwargs).learn(128)

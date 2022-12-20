@@ -105,7 +105,7 @@ train/
 - ``loss``: Current total loss value
 - ``n_updates``: Number of gradient updates applied so far
 - ``policy_gradient_loss``: Current value of the policy gradient loss (its value does not have much meaning)
-- ``value_loss``: Current value for the value function loss for on-policy algorithms, usually error between value function output and Monte-Carle estimate (or TD(lambda) estimate)
+- ``value_loss``: Current value for the value function loss for on-policy algorithms, usually error between value function output and Monte-Carlo estimate (or TD(lambda) estimate)
 - ``std``: Current standard deviation of the noise when using generalized State-Dependent Exploration (gSDE)
 
 

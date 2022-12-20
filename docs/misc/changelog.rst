@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.7.0a6 (WIP)
+Release 1.7.0a8 (WIP)
 --------------------------
 
 .. warning::
@@ -20,13 +20,17 @@ Breaking Changes:
 - Removed deprecated ``sde_net_arch`` parameter
 - Removed ``ret`` attributes in ``VecNormalize``, please use ``returns`` instead
 - Switched minimum Gym version to 0.26 (@carlosluis, @arjun-kg, @tlpss)
-
+- ``VecNormalize`` now updates the observation space when normalizing images
 
 New Features:
 ^^^^^^^^^^^^^
 - Introduced mypy type checking
+- Added option to have non-shared features extractor between actor and critic in on-policy algorithms (@AlexPasqua)
 - Added ``with_bias`` argument to ``create_mlp``
 - Added support for multidimensional ``spaces.MultiBinary`` observations
+- Features extractors now properly support unnormalized image-like observations (3D tensor)
+  when passing ``normalize_images=False``
+- Added ``normalized_image`` parameter to ``NatureCNN`` and ``CombinedExtractor``
 
 SB3-Contrib
 ^^^^^^^^^^^
@@ -39,13 +43,17 @@ Bug Fixes:
 - Raise an error when the same gym environment instance is passed as separate environments when creating a vectorized environment with more than one environment. (@Rocamonde)
 - Fix type annotation of ``model`` in ``evaluate_policy``
 - Fixed ``Self`` return type using ``TypeVar``
+- Fixed the env checker, the key was not passed when checking images from Dict observation space
+- Fixed ``normalize_images`` which was not passed to parent class in some cases
 
 Deprecations:
 ^^^^^^^^^^^^^
+- You should now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
 
 Others:
 ^^^^^^^
 - Used issue forms instead of issue templates
+- Updated the PR template to associate each PR with its peer in RL-Zoo3 and SB3-Contrib
 - Fixed flake8 config to be compatible with flake8 6+
 - Goal-conditioned environments are now characterized by the availability of the ``compute_reward`` method, rather than by their inheritance to ``gym.GoalEnv``
 - Replaced ``CartPole-v0`` by ``CartPole-v1`` is tests
@@ -66,6 +74,7 @@ Documentation:
 - Changed ``env`` to ``vec_env`` when environment is vectorized
 - Updated custom policy docs to better explain the ``mlp_extractor``'s dimensions (@AlexPasqua)
 - Update custom policy documentation (@athatheo)
+- Clarify doc when using image-like input
 
 Release 1.6.2 (2022-10-10)
 --------------------------
@@ -688,8 +697,8 @@ Bug Fixes:
 - Fix model creation initializing CUDA even when `device="cpu"` is provided
 - Fix ``check_env`` not checking if the env has a Dict actionspace before calling ``_check_nan`` (@wmmc88)
 - Update the check for spaces unsupported by Stable Baselines 3 to include checks on the action space (@wmmc88)
-- Fixed feature extractor bug for target network where the same net was shared instead
-  of being separate. This bug affects ``SAC``, ``DDPG`` and ``TD3`` when using ``CnnPolicy`` (or custom feature extractor)
+- Fixed features extractor bug for target network where the same net was shared instead
+  of being separate. This bug affects ``SAC``, ``DDPG`` and ``TD3`` when using ``CnnPolicy`` (or custom features extractor)
 - Fixed a bug when passing an environment when loading a saved model with a ``CnnPolicy``, the passed env was not wrapped properly
   (the bug was introduced when implementing ``HER`` so it should not be present in previous versions)
 
@@ -766,7 +775,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Added ``StopTrainingOnMaxEpisodes`` details and example (@xicocaio)
-- Updated custom policy section (added custom feature extractor example)
+- Updated custom policy section (added custom features extractor example)
 - Re-enable ``sphinx_autodoc_typehints``
 - Updated doc style for type hints and remove duplicated type hints
 
@@ -804,7 +813,7 @@ Bug Fixes:
 - Use ``cloudpickle.load`` instead of ``pickle.load`` in ``CloudpickleWrapper``. (@shwang)
 - Fixed a bug with orthogonal initialization when `bias=False` in custom policy (@rk37)
 - Fixed approximate entropy calculation in PPO and A2C. (@andyshih12)
-- Fixed DQN target network sharing feature extractor with the main network.
+- Fixed DQN target network sharing features extractor with the main network.
 - Fixed storing correct ``dones`` in on-policy algorithm rollout collection. (@andyshih12)
 - Fixed number of filters in final convolutional layer in NatureCNN to match original implementation.
 
@@ -844,7 +853,7 @@ Breaking Changes:
 - ``render()`` method of ``VecEnvs`` now only accept one argument: ``mode``
 - Created new file common/torch_layers.py, similar to SB refactoring
 
-  - Contains all PyTorch network layer definitions and feature extractors: ``MlpExtractor``, ``create_mlp``, ``NatureCNN``
+  - Contains all PyTorch network layer definitions and features extractors: ``MlpExtractor``, ``create_mlp``, ``NatureCNN``
 
 - Renamed ``BaseRLModel`` to ``BaseAlgorithm`` (along with offpolicy and onpolicy variants)
 - Moved on-policy and off-policy base algorithms to ``common/on_policy_algorithm.py`` and ``common/off_policy_algorithm.py``, respectively.

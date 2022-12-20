@@ -87,6 +87,9 @@ class BaseModel(nn.Module):
 
         self.features_extractor_class = features_extractor_class
         self.features_extractor_kwargs = features_extractor_kwargs
+        # Automatically deactivate dtype and bounds checks
+        if normalize_images is False and issubclass(features_extractor_class, (NatureCNN, CombinedExtractor)):
+            self.features_extractor_kwargs.update(dict(normalized_image=True))
 
     def _update_features_extractor(
         self,
@@ -430,6 +433,7 @@ class ActorCriticPolicy(BasePolicy):
             optimizer_class=optimizer_class,
             optimizer_kwargs=optimizer_kwargs,
             squash_output=squash_output,
+            normalize_images=normalize_images,
         )
 
         # Default network architecture, from stable-baselines
@@ -446,7 +450,6 @@ class ActorCriticPolicy(BasePolicy):
         self.features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
         self.features_dim = self.features_extractor.features_dim
 
-        self.normalize_images = normalize_images
         self.log_std_init = log_std_init
         dist_kwargs = None
         # Keyword arguments for gSDE distribution

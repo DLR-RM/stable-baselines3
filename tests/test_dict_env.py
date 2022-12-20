@@ -28,8 +28,8 @@ class DummyDictEnv(gym.Env):
         else:
             self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         N_CHANNELS = 1
-        HEIGHT = 64
-        WIDTH = 64
+        HEIGHT = 36
+        WIDTH = 36
 
         if channel_last:
             obs_shape = (HEIGHT, WIDTH, N_CHANNELS)
@@ -323,3 +323,10 @@ def test_dict_nested():
 
     with pytest.raises(NotImplementedError):
         env = DummyVecEnv([lambda: DummyDictEnv(nested_dict_obs=True)])
+
+
+def test_vec_normalize_image():
+    env = VecNormalize(DummyVecEnv([lambda: DummyDictEnv()]), norm_obs_keys=["img"])
+    assert env.observation_space.spaces["img"].dtype == np.float32
+    assert (env.observation_space.spaces["img"].low == -env.clip_obs).all()
+    assert (env.observation_space.spaces["img"].high == env.clip_obs).all()

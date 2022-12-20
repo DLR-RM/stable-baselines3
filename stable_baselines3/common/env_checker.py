@@ -21,11 +21,15 @@ def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
     """
     Check that the input will be compatible with Stable-Baselines
     when the observation is apparently an image.
+
+    :param observation_space: Observation space
+    :key: When the observation space comes from a Dict space, we pass the
+        corresponding key to have more precise warning messages. Defaults to "".
     """
     if observation_space.dtype != np.uint8:
         warnings.warn(
-            f"It seems that your observation {key} is an image but the `dtype` "
-            "of your observation_space is not `np.uint8`. "
+            f"It seems that your observation {key} is an image but its `dtype` "
+            f"is ({observation_space.dtype}) whereas it has to be `np.uint8`. "
             "If your observation is not an image, we recommend you to flatten the observation "
             "to have only a 1D vector"
         )
@@ -180,7 +184,7 @@ def _check_box_obs(observation_space: spaces.Box, key: str = "") -> None:
     # If image, check the low and high values, the type and the number of channels
     # and the shape (minimal value)
     if len(observation_space.shape) == 3:
-        _check_image_input(observation_space)
+        _check_image_input(observation_space, key)
 
     if len(observation_space.shape) not in [1, 3]:
         warnings.warn(

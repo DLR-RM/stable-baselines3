@@ -194,7 +194,7 @@ You can use environments with dictionary observation spaces. This is useful in t
 concatenate observations such as an image from a camera combined with a vector of servo sensor data (e.g., rotation angles).
 Stable Baselines3 provides ``SimpleMultiObsEnv`` as an example of this kind of of setting.
 The environment is a simple grid world but the observations for each cell come in the form of dictionaries.
-These dictionaries are randomly initilaized on the creation of the environment and contain a vector observation and an image observation.
+These dictionaries are randomly initialized on the creation of the environment and contain a vector observation and an image observation.
 
 .. code-block:: python
 

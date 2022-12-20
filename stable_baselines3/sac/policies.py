@@ -150,7 +150,7 @@ class Actor(BasePolicy):
         :return:
             Mean, standard deviation and optional keyword arguments.
         """
-        features = self.extract_features(obs)
+        features = self.extract_features(obs, self.features_extractor)
         latent_pi = self.latent_pi(features)
         mean_actions = self.mu(latent_pi)
 
@@ -232,6 +232,7 @@ class SACPolicy(BasePolicy):
             optimizer_class=optimizer_class,
             optimizer_kwargs=optimizer_kwargs,
             squash_output=True,
+            normalize_images=normalize_images,
         )
 
         if net_arch is None:

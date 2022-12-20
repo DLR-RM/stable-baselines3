@@ -31,6 +31,12 @@ def test_custom_offpolicy(model_class, net_arch):
 @pytest.mark.parametrize("model_class", [A2C, DQN, PPO, SAC, TD3])
 @pytest.mark.parametrize("optimizer_kwargs", [None, dict(weight_decay=0.0)])
 def test_custom_optimizer(model_class, optimizer_kwargs):
+    # Use different environment for DQN
+    if model_class is DQN:
+        env_id = "CartPole-v1"
+    else:
+        env_id = "Pendulum-v1"
+
     kwargs = {}
     if model_class in {DQN, SAC, TD3}:
         kwargs = dict(learning_starts=100)
@@ -38,7 +44,7 @@ def test_custom_optimizer(model_class, optimizer_kwargs):
         kwargs = dict(n_steps=64)
 
     policy_kwargs = dict(optimizer_class=th.optim.AdamW, optimizer_kwargs=optimizer_kwargs, net_arch=[32])
-    _ = model_class("MlpPolicy", "Pendulum-v1", policy_kwargs=policy_kwargs, **kwargs).learn(300)
+    _ = model_class("MlpPolicy", env_id, policy_kwargs=policy_kwargs, **kwargs).learn(300)
 
 
 def test_tf_like_rmsprop_optimizer():

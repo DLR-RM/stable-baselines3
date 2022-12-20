@@ -6,6 +6,7 @@ import gym
 import numpy as np
 
 from stable_baselines3.common import utils
+from stable_baselines3.common.preprocessing import is_image_space
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvStepReturn, VecEnvWrapper
 
@@ -50,9 +51,35 @@ class VecNormalize(VecEnvWrapper):
             if isinstance(self.observation_space, gym.spaces.Dict):
                 self.obs_spaces = self.observation_space.spaces
                 self.obs_rms = {key: RunningMeanStd(shape=self.obs_spaces[key].shape) for key in self.norm_obs_keys}
+                # Update observation space when using image
+                # See explanation below and GH #1214
+                for key in self.obs_rms.keys():
+                    if is_image_space(self.obs_spaces[key]):
+                        self.observation_space.spaces[key] = gym.spaces.Box(
+                            low=-clip_obs,
+                            high=clip_obs,
+                            shape=self.obs_spaces[key].shape,
+                            dtype=np.float32,
+                        )
+
             else:
                 self.obs_spaces = None
                 self.obs_rms = RunningMeanStd(shape=self.observation_space.shape)
+                # Update observation space when using image
+                # See GH #1214
+                # This is to raise proper error when
+                # VecNormalize is used with an image-like input and
+                # normalize_images=True.
+                # For correctness, we should also update the bounds
+                # in other cases but this will cause backward-incompatible change
+                # and break already saved policies.
+                if is_image_space(self.observation_space):
+                    self.observation_space = gym.spaces.Box(
+                        low=-clip_obs,
+                        high=clip_obs,
+                        shape=self.observation_space.shape,
+                        dtype=np.float32,
+                    )
 
         self.ret_rms = RunningMeanStd(shape=())
         self.clip_obs = clip_obs

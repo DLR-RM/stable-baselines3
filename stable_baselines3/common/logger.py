@@ -73,7 +73,7 @@ class Image:
 
 class HParam:
     """
-    Hyperparameter data class storing hyperparameters and metrics in dictionnaries
+    Hyperparameter data class storing hyperparameters and metrics in dictionaries
 
     :param hparam_dict: key-value pairs of hyperparameters to log
     :param metric_dict: key-value pairs of metrics to log

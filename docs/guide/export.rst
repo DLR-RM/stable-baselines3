@@ -35,7 +35,7 @@ As of June 2021, ONNX format  `doesn't support <https://github.com/onnx/onnx/iss
 
 The following examples are for ``MlpPolicy`` only, and are general examples. Note that you have to preprocess the observation the same way stable-baselines3 agent does (see ``common.preprocessing.preprocess_obs``).
 
-For PPO, assuming a shared feature extactor.
+For PPO, assuming a shared feature extractor.
 
 .. warning::
 

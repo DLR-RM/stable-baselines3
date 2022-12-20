@@ -149,10 +149,10 @@ def test_features_extractor_target_net(model_class, share_features_extractor):
         assert id(model.policy.actor.features_extractor) == id(model.policy.critic.features_extractor)
         if model_class == TD3:
             assert id(model.policy.actor_target.features_extractor) == id(model.policy.critic_target.features_extractor)
-        # Actor and critic feature extractor should be the same
+        # Actor and critic features extractor should be the same
         td3_features_extractor_check = check_td3_feature_extractor_match
     else:
-        # Actor and critic feature extractor should differ same
+        # Actor and critic features extractor should differ same
         td3_features_extractor_check = check_td3_feature_extractor_differ
         # Check that the object differ
         if model_class != DQN:

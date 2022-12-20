@@ -679,8 +679,8 @@ Bug Fixes:
 - Fix model creation initializing CUDA even when `device="cpu"` is provided
 - Fix ``check_env`` not checking if the env has a Dict actionspace before calling ``_check_nan`` (@wmmc88)
 - Update the check for spaces unsupported by Stable Baselines 3 to include checks on the action space (@wmmc88)
-- Fixed feature extractor bug for target network where the same net was shared instead
-  of being separate. This bug affects ``SAC``, ``DDPG`` and ``TD3`` when using ``CnnPolicy`` (or custom feature extractor)
+- Fixed features extractor bug for target network where the same net was shared instead
+  of being separate. This bug affects ``SAC``, ``DDPG`` and ``TD3`` when using ``CnnPolicy`` (or custom features extractor)
 - Fixed a bug when passing an environment when loading a saved model with a ``CnnPolicy``, the passed env was not wrapped properly
   (the bug was introduced when implementing ``HER`` so it should not be present in previous versions)
 
@@ -757,7 +757,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Added ``StopTrainingOnMaxEpisodes`` details and example (@xicocaio)
-- Updated custom policy section (added custom feature extractor example)
+- Updated custom policy section (added custom features extractor example)
 - Re-enable ``sphinx_autodoc_typehints``
 - Updated doc style for type hints and remove duplicated type hints
 
@@ -795,7 +795,7 @@ Bug Fixes:
 - Use ``cloudpickle.load`` instead of ``pickle.load`` in ``CloudpickleWrapper``. (@shwang)
 - Fixed a bug with orthogonal initialization when `bias=False` in custom policy (@rk37)
 - Fixed approximate entropy calculation in PPO and A2C. (@andyshih12)
-- Fixed DQN target network sharing feature extractor with the main network.
+- Fixed DQN target network sharing features extractor with the main network.
 - Fixed storing correct ``dones`` in on-policy algorithm rollout collection. (@andyshih12)
 - Fixed number of filters in final convolutional layer in NatureCNN to match original implementation.
 
@@ -835,7 +835,7 @@ Breaking Changes:
 - ``render()`` method of ``VecEnvs`` now only accept one argument: ``mode``
 - Created new file common/torch_layers.py, similar to SB refactoring
 
-  - Contains all PyTorch network layer definitions and feature extractors: ``MlpExtractor``, ``create_mlp``, ``NatureCNN``
+  - Contains all PyTorch network layer definitions and features extractors: ``MlpExtractor``, ``create_mlp``, ``NatureCNN``
 
 - Renamed ``BaseRLModel`` to ``BaseAlgorithm`` (along with offpolicy and onpolicy variants)
 - Moved on-policy and off-policy base algorithms to ``common/on_policy_algorithm.py`` and ``common/off_policy_algorithm.py``, respectively.

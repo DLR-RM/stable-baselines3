@@ -390,7 +390,7 @@ class ActorCriticPolicy(BasePolicy):
     :param features_extractor_class: Features extractor to use.
     :param features_extractor_kwargs: Keyword arguments
         to pass to the features extractor.
-    :param share_features_extractor: If True, features extractor shared between policy and value networks.
+    :param share_features_extractor: If True, the features extractor is shared between the policy and value networks.
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer_class: The optimizer to use,
@@ -610,7 +610,7 @@ class ActorCriticPolicy(BasePolicy):
         Preprocess the observation if needed and extract features.
 
         :param obs: Observation
-        :return: the output of the feature extractor(s)
+        :return: the output of the features extractor(s)
         """
         if self.share_features_extractor:
             return super().extract_features(obs)
@@ -724,7 +724,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
     :param features_extractor_class: Features extractor to use.
     :param features_extractor_kwargs: Keyword arguments
         to pass to the features extractor.
-    :param share_features_extractor: If True, features extractor shared between policy and value networks.
+    :param share_features_extractor: If True, the features extractor is shared between the policy and value networks.
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer_class: The optimizer to use,
@@ -796,8 +796,8 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         this allows to ensure boundaries when using gSDE.
     :param features_extractor_class: Uses the CombinedExtractor
     :param features_extractor_kwargs: Keyword arguments
-        to pass to the feature extractor.
-    :param share_features_extractor: If True, features extractor shared between policy and value networks.
+        to pass to the features extractor.
+    :param share_features_extractor: If True, the features extractor is shared between the policy and value networks.
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer_class: The optimizer to use,

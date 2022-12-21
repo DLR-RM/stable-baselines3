@@ -24,6 +24,7 @@ New Features:
 - Features extractors now properly support unnormalized image-like observations (3D tensor)
   when passing ``normalize_images=False``
 - Added ``normalized_image`` parameter to ``NatureCNN`` and ``CombinedExtractor``
+- Added support for Python 3.10
 
 SB3-Contrib
 ^^^^^^^^^^^

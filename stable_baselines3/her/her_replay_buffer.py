@@ -196,7 +196,7 @@ class HerReplayBuffer(DictReplayBuffer):
         # sample incomplete episode transitions, so we have to eliminate some indexes.
         is_valid = self.ep_length > 0
 
-        valid_inds = [np.arange(self.buffer_size)[is_valid[:, env_idx]] for env_idx in range(self.n_envs)]
+        valid_inds = [np.where(is_valid[:, env_idx])[0] for env_idx in range(self.n_envs)]
         for i, env_idx in enumerate(env_indices):
             batch_inds[i] = np.random.choice(valid_inds[env_idx])
 

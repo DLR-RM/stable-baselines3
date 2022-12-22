@@ -198,7 +198,7 @@ class HerReplayBuffer(DictReplayBuffer):
 
         valid_inds = [np.where(is_valid[:, env_idx])[0] for env_idx in range(self.n_envs)]
         for i, env_idx in enumerate(env_indices):
-            batch_inds[i] = np.random.choice(valid_inds[env_idx])
+            batch_inds[i] = valid_inds[env_idx][np.random.randint(len(valid_inds[env_idx]))]
 
         # Split the indexes between real and virtual transitions.
         nb_virtual = int(self.her_ratio * batch_size)
@@ -325,7 +325,10 @@ class HerReplayBuffer(DictReplayBuffer):
         # Get infos and obs
         obs = {key: obs[batch_inds, env_indices, :] for key, obs in self.observations.items()}
         next_obs = {key: obs[batch_inds, env_indices, :] for key, obs in self.next_observations.items()}
-        infos = copy.deepcopy(self.infos[batch_inds, env_indices])
+        # For speed up we replace this
+        # infos = copy.deepcopy(self.infos[batch_inds, env_indices])
+        # by
+        infos = [{} for _ in range(len(batch_inds))]
         # Sample and set new goals
         new_goals = self._sample_goals(batch_inds, env_indices)
         obs["desired_goal"] = new_goals
@@ -334,8 +337,8 @@ class HerReplayBuffer(DictReplayBuffer):
         # The goal has changed, there is no longer a guarantee that the transition is
         # successful. Since it is not possible to easily get this information, we prefer
         # to remove it. The success information is not used in the learning algorithm anyway.
-        for info in infos:
-            info.pop("is_success", None)
+        # for info in infos:
+        #     info.pop("is_success", None)
         # Compute new reward
         rewards = self.env.env_method(
             "compute_reward",

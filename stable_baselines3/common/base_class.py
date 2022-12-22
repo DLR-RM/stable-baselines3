@@ -705,8 +705,17 @@ class BaseAlgorithm(ABC):
         model.__dict__.update(kwargs)
         model._setup_model()
 
-        # put state_dicts back in place
-        model.set_parameters(params, exact_match=True, device=device)
+        try:
+            # put state_dicts back in place
+            model.set_parameters(params, exact_match=True, device=device)
+        except RuntimeError as e:
+            # Patch to load Policy saved using SB3 < 1.7.0
+            # the error is probably due to old policy being loaded
+            # See https://github.com/DLR-RM/stable-baselines3/issues/1233
+            if "pi_features_extractor" in str(e) and "Missing key(s) in state_dict" in str(e):
+                model.set_parameters(params, exact_match=False, device=device)
+            else:
+                raise e
 
         # put other pytorch variables back in place
         if pytorch_variables is not None:

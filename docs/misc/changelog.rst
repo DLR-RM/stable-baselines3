@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.7.0a8 (WIP)
+Release 1.7.0a9 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -39,6 +39,7 @@ Bug Fixes:
 - Fixed ``Self`` return type using ``TypeVar``
 - Fixed the env checker, the key was not passed when checking images from Dict observation space
 - Fixed ``normalize_images`` which was not passed to parent class in some cases
+- Fixed ``load_from_vector`` that was broken with newer PyTorch version when passing PyTorch tensor
 
 Deprecations:
 ^^^^^^^^^^^^^

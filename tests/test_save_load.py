@@ -338,6 +338,14 @@ def test_save_load_env_cnn(tmp_path, model_class):
     # clear file from os
     os.remove(tmp_path / "test_save.zip")
 
+    # Check we can load models saved with SB3 < 1.7.0
+    if model_class == A2C:
+        del model.policy.pi_features_extractor
+        model.save(tmp_path / "test_save")
+        with pytest.warns(UserWarning):
+            model_class.load(str(tmp_path / "test_save.zip"), env=env, **kwargs).learn(100)
+        os.remove(tmp_path / "test_save.zip")
+
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DQN])
 def test_save_load_replay_buffer(tmp_path, model_class):

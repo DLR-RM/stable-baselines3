@@ -155,7 +155,7 @@ Driving policies can be trained in different scenarios, and several notebooks us
 tactile-gym
 -------------------
 
-Suite of RL environments focussed on using a simulated tactile sensor as the primary source of observations. Sim-to-Real results across 4 out of 5 proposed envs.
+Suite of RL environments focused on using a simulated tactile sensor as the primary source of observations. Sim-to-Real results across 4 out of 5 proposed envs.
 
 | Author: Alex Church
 | GitHub: https://github.com/ac-93/tactile_gym

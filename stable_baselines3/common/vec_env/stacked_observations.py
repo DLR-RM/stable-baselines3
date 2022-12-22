@@ -187,7 +187,7 @@ class StackedDictObservations(StackedObservations):
 
     def stack_observation_space(self, observation_space: spaces.Dict) -> spaces.Dict:
         """
-        Returns the stacked verson of a Dict observation space
+        Returns the stacked version of a Dict observation space
 
         :param observation_space: Dict observation space to stack
         :return: stacked observation space

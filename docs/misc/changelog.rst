@@ -24,6 +24,7 @@ New Features:
 - Features extractors now properly support unnormalized image-like observations (3D tensor)
   when passing ``normalize_images=False``
 - Added ``normalized_image`` parameter to ``NatureCNN`` and ``CombinedExtractor``
+- Added support for Python 3.10
 
 SB3-Contrib
 ^^^^^^^^^^^
@@ -67,8 +68,10 @@ Documentation:
 - Updated Hugging Face Integration page (@simoninithomas)
 - Changed ``env`` to ``vec_env`` when environment is vectorized
 - Updated custom policy docs to better explain the ``mlp_extractor``'s dimensions (@AlexPasqua)
-- Update custom policy documentation (@athatheo)
+- Updated custom policy documentation (@athatheo)
+- Improved tensorboard callback doc
 - Clarify doc when using image-like input
+
 
 Release 1.6.2 (2022-10-10)
 --------------------------

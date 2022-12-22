@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.7.0a8 (WIP)
+Release 1.7.0a9 (WIP)
 --------------------------
 
 .. warning::
@@ -31,6 +31,7 @@ New Features:
 - Features extractors now properly support unnormalized image-like observations (3D tensor)
   when passing ``normalize_images=False``
 - Added ``normalized_image`` parameter to ``NatureCNN`` and ``CombinedExtractor``
+- Added support for Python 3.10
 
 SB3-Contrib
 ^^^^^^^^^^^
@@ -45,6 +46,7 @@ Bug Fixes:
 - Fixed ``Self`` return type using ``TypeVar``
 - Fixed the env checker, the key was not passed when checking images from Dict observation space
 - Fixed ``normalize_images`` which was not passed to parent class in some cases
+- Fixed ``load_from_vector`` that was broken with newer PyTorch version when passing PyTorch tensor
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -63,6 +65,7 @@ Others:
 - Fixed ``stable_baselines3/common/env_util.py`` type hints
 - Fixed ``stable_baselines3/common/preprocessing.py`` type hints
 - Fixed ``stable_baselines3/common/atari_wrappers.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/vec_check_nan.py`` type hints
 - Exposed modules in ``__init__.py`` with the ``__all__`` attribute (@ZikangXiong)
 - Upgraded GitHub CI/setup-python to v4 and checkout to v3
 - Set tensors construction directly on the device (~8% speed boost on GPU)
@@ -73,8 +76,10 @@ Documentation:
 - Updated Hugging Face Integration page (@simoninithomas)
 - Changed ``env`` to ``vec_env`` when environment is vectorized
 - Updated custom policy docs to better explain the ``mlp_extractor``'s dimensions (@AlexPasqua)
-- Update custom policy documentation (@athatheo)
+- Updated custom policy documentation (@athatheo)
+- Improved tensorboard callback doc
 - Clarify doc when using image-like input
+
 
 Release 1.6.2 (2022-10-10)
 --------------------------

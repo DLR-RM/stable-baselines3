@@ -199,7 +199,7 @@ class BaseModel(nn.Module):
 
         :param vector:
         """
-        th.nn.utils.vector_to_parameters(th.FloatTensor(vector, device=self.device), self.parameters())
+        th.nn.utils.vector_to_parameters(th.as_tensor(vector, dtype=th.float, device=self.device), self.parameters())
 
     def parameters_to_vector(self) -> np.ndarray:
         """

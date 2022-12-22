@@ -86,7 +86,7 @@ Here is a simple example on how to log both additional tensor or arbitrary scala
         """
 
         def __init__(self, verbose=0):
-            super(TensorboardCallback, self).__init__(verbose)
+            super().__init__(verbose)
 
         def _on_step(self) -> bool:
             # Log scalar value (here a random variable)
@@ -125,7 +125,7 @@ Here is an example of how to render an image to TensorBoard at regular intervals
 
     class ImageRecorderCallback(BaseCallback):
         def __init__(self, verbose=0):
-            super(ImageRecorderCallback, self).__init__(verbose)
+            super().__init__(verbose)
 
         def _on_step(self):
             image = self.training_env.render(mode="rgb_array")
@@ -162,7 +162,7 @@ Here is an example of how to store a plot in TensorBoard at regular intervals:
 
     class FigureRecorderCallback(BaseCallback):
         def __init__(self, verbose=0):
-            super(FigureRecorderCallback, self).__init__(verbose)
+            super().__init__(verbose)
 
         def _on_step(self):
             # Plot values (here a random variable)
@@ -308,6 +308,13 @@ can get direct access to the underlying SummaryWriter in a callback:
 .. warning::
     This is method is not recommended and should only be used by advanced users.
 
+.. note::
+
+  If you want a concrete example, you can watch `how to log lap time with donkeycar env <https://www.youtube.com/watch?v=v8j2bpcE4Rg&t=4619s>`_,
+  or read the code in the `RL Zoo <https://github.com/DLR-RM/rl-baselines3-zoo/blob/feat/gym-donkeycar/rl_zoo3/callbacks.py#L251-L270>`_.
+  You might also want to take a look at `issue #1160 <https://github.com/DLR-RM/stable-baselines3/issues/1160>`_ and `issue #1219 <https://github.com/DLR-RM/stable-baselines3/issues/1219>`_.
+
+
 .. code-block:: python
 
     from stable_baselines3 import SAC
@@ -331,6 +338,11 @@ can get direct access to the underlying SummaryWriter in a callback:
 
         def _on_step(self) -> bool:
             if self.n_calls % self._log_freq == 0:
+                # You can have access to info from the env using self.locals.
+                # for instance, when using one env (index 0 of locals["infos"]):
+                # lap_count = self.locals["infos"][0]["lap_count"]
+                # self.tb_formatter.writer.add_scalar("train/lap_count", lap_count, self.num_timesteps)
+
                 self.tb_formatter.writer.add_text("direct_access", "this is a value", self.num_timesteps)
                 self.tb_formatter.writer.flush()
 

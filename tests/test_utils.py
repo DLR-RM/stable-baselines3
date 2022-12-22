@@ -45,6 +45,16 @@ def test_make_vec_env(env_id, n_envs, vec_env_cls, wrapper_class):
     env.close()
 
 
+def test_make_vec_env_func_checker():
+    """The functions in ``env_fns'' must return distinct instances since we need distinct environments."""
+    env = gym.make("CartPole-v1")
+
+    with pytest.raises(ValueError):
+        make_vec_env(lambda: env, n_envs=2)
+
+    env.close()
+
+
 @pytest.mark.parametrize("env_id", ["BreakoutNoFrameskip-v4"])
 @pytest.mark.parametrize("n_envs", [1, 2])
 @pytest.mark.parametrize("wrapper_kwargs", [None, dict(clip_reward=False, screen_size=60)])
@@ -141,16 +151,19 @@ def test_custom_vec_env(tmp_path):
         make_vec_env("CartPole-v1", n_envs=1, vec_env_kwargs={"dummy": False})
 
 
-def test_evaluate_policy():
+@pytest.mark.parametrize("direct_policy", [False, True])
+def test_evaluate_policy(direct_policy: bool):
     model = A2C("MlpPolicy", "Pendulum-v1", seed=0)
     n_steps_per_episode, n_eval_episodes = 200, 2
-    model.n_callback_calls = 0
 
     def dummy_callback(locals_, _globals):
         locals_["model"].n_callback_calls += 1
 
+    assert model.policy is not None
+    policy = model.policy if direct_policy else model
+    policy.n_callback_calls = 0
     _, episode_lengths = evaluate_policy(
-        model,
+        policy,
         model.get_env(),
         n_eval_episodes,
         deterministic=True,
@@ -162,19 +175,19 @@ def test_evaluate_policy():
 
     n_steps = sum(episode_lengths)
     assert n_steps == n_steps_per_episode * n_eval_episodes
-    assert n_steps == model.n_callback_calls
+    assert n_steps == policy.n_callback_calls
 
     # Reaching a mean reward of zero is impossible with the Pendulum env
     with pytest.raises(AssertionError):
-        evaluate_policy(model, model.get_env(), n_eval_episodes, reward_threshold=0.0)
+        evaluate_policy(policy, model.get_env(), n_eval_episodes, reward_threshold=0.0)
 
-    episode_rewards, _ = evaluate_policy(model, model.get_env(), n_eval_episodes, return_episode_rewards=True)
+    episode_rewards, _ = evaluate_policy(policy, model.get_env(), n_eval_episodes, return_episode_rewards=True)
     assert len(episode_rewards) == n_eval_episodes
 
     # Test that warning is given about no monitor
     eval_env = gym.make("Pendulum-v1")
     with pytest.warns(UserWarning):
-        _ = evaluate_policy(model, eval_env, n_eval_episodes)
+        _ = evaluate_policy(policy, eval_env, n_eval_episodes)
 
 
 class ZeroRewardWrapper(gym.RewardWrapper):
@@ -235,7 +248,7 @@ def test_evaluate_policy_monitors(vec_env_class):
     # Also test VecEnvs
     n_eval_episodes = 3
     n_envs = 2
-    env_id = "CartPole-v0"
+    env_id = "CartPole-v1"
     model = A2C("MlpPolicy", env_id, seed=0)
 
     def make_eval_env(with_monitor, wrapper_class=gym.Wrapper):
@@ -285,13 +298,13 @@ def test_evaluate_policy_monitors(vec_env_class):
     episode_rewards, episode_lengths = evaluate_policy(
         model, eval_env, n_eval_episodes, return_episode_rewards=True, warn=False
     )
-    assert all(map(lambda l: l == 1, episode_lengths)), "AlwaysDoneWrapper did not fix episode lengths to one"
+    assert all(map(lambda length: length == 1, episode_lengths)), "AlwaysDoneWrapper did not fix episode lengths to one"
     eval_env.close()
 
     # Should get longer episodes with with Monitor (true episodes)
     eval_env = make_eval_env(with_monitor=True, wrapper_class=AlwaysDoneWrapper)
     episode_rewards, episode_lengths = evaluate_policy(model, eval_env, n_eval_episodes, return_episode_rewards=True)
-    assert all(map(lambda l: l > 1, episode_lengths)), "evaluate_policy did not get episode lengths from Monitor"
+    assert all(map(lambda length: length > 1, episode_lengths)), "evaluate_policy did not get episode lengths from Monitor"
     eval_env.close()
 
 

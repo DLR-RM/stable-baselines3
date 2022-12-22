@@ -60,6 +60,25 @@ Custom Network Architecture
 One way of customising the policy network architecture is to pass arguments when creating the model,
 using ``policy_kwargs`` parameter:
 
+.. note::
+    An extra linear layer will be added on top of the layers specified in ``net_arch``, in order to have the right output dimensions and activation functions (e.g. Softmax for discrete actions).
+
+    In the following example, as CartPole's action space has a dimension of 2, the final dimensions of the ``net_arch``'s layers will be:
+
+
+    .. code-block:: none
+
+                obs
+                <4>
+           /            \
+         <32>          <32>
+          |              |
+         <32>          <32>
+          |              |
+         <2>            <1>
+        action         value
+
+
 .. code-block:: python
 
   import gym
@@ -69,6 +88,7 @@ using ``policy_kwargs`` parameter:
 
   # Custom actor (pi) and value function (vf) networks
   # of two layers of size 32 each with Relu activation function
+  # Note: an extra linear layer will be added on top of the pi and the vf nets, respectively
   policy_kwargs = dict(activation_fn=th.nn.ReLU,
                        net_arch=[dict(pi=[32, 32], vf=[32, 32])])
   # Create the agent
@@ -88,17 +108,19 @@ using ``policy_kwargs`` parameter:
 Custom Feature Extractor
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you want to have a custom feature extractor (e.g. custom CNN when using images), you can define class
+If you want to have a custom features extractor (e.g. custom CNN when using images), you can define class
 that derives from ``BaseFeaturesExtractor`` and then pass it to the model when training.
 
 
 .. note::
 
-  By default the feature extractor is shared between the actor and the critic to save computation (when applicable).
-  However, this can be changed by defining a custom policy for on-policy algorithms
-  (see `issue #1066 <https://github.com/DLR-RM/stable-baselines3/issues/1066#issuecomment-1246866844>`_
-  for more information) or setting ``share_features_extractor=False`` in the
-  ``policy_kwargs`` for off-policy algorithms (and when applicable).
+  By default the features extractor is shared between the actor and the critic to save computation (when applicable).
+  However, this can be changed setting ``share_features_extractor=False`` in the
+  ``policy_kwargs`` (both for on-policy and off-policy algorithms).
+
+
+.. warning::
+  If the features extractor is **non-shared**, it is **not** possible to have shared layers in the ``mlp_extractor``.
 
 
 .. code-block:: python
@@ -119,7 +141,7 @@ that derives from ``BaseFeaturesExtractor`` and then pass it to the model when t
       """
 
       def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 256):
-          super(CustomCNN, self).__init__(observation_space, features_dim)
+          super().__init__(observation_space, features_dim)
           # We assume CxHxW images (channels first)
           # Re-ordering will be done by pre-preprocessing or wrapper
           n_input_channels = observation_space.shape[0]
@@ -154,7 +176,7 @@ Multiple Inputs and Dictionary Observations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Stable Baselines3 supports handling of multiple inputs by using ``Dict`` Gym space. This can be done using
-``MultiInputPolicy``, which by default uses the ``CombinedExtractor`` feature extractor to turn multiple
+``MultiInputPolicy``, which by default uses the ``CombinedExtractor`` features extractor to turn multiple
 inputs into a single vector, handled by the ``net_arch`` network.
 
 By default, ``CombinedExtractor`` processes multiple inputs as follows:
@@ -164,7 +186,7 @@ By default, ``CombinedExtractor`` processes multiple inputs as follows:
 2. If input is not an image, flatten it (no layers).
 3. Concatenate all previous vectors into one long vector and pass it to policy.
 
-Much like above, you can define custom feature extractors. The following example assumes the environment has two keys in the
+Much like above, you can define custom features extractors. The following example assumes the environment has two keys in the
 observation space dictionary: "image" is a (1,H,W) image (channel first), and "vector" is a (D,) dimensional vector. We process "image" with a simple
 downsampling and "vector" with a single linear layer.
 
@@ -181,7 +203,7 @@ downsampling and "vector" with a single linear layer.
           # We do not know features-dim here before going over all the items,
           # so put something dummy for now. PyTorch requires calling
           # nn.Module.__init__ before adding modules
-          super(CustomCombinedExtractor, self).__init__(observation_space, features_dim=1)
+          super().__init__(observation_space, features_dim=1)
 
           extractors = {}
 
@@ -299,7 +321,7 @@ If your task requires even more granular control over the policy/value architect
   class CustomNetwork(nn.Module):
       """
       Custom network for policy and value function.
-      It receives as input the features extracted by the feature extractor.
+      It receives as input the features extracted by the features extractor.
 
       :param feature_dim: dimension of the features extracted with the features_extractor (e.g. features from a CNN)
       :param last_layer_dim_pi: (int) number of units for the last layer of the policy network
@@ -333,11 +355,11 @@ If your task requires even more granular control over the policy/value architect
           :return: (th.Tensor, th.Tensor) latent_policy, latent_value of the specified network.
               If all layers are shared, then ``latent_policy == latent_value``
           """
-          return self.policy_net(features), self.value_net(features)
-          
+          return self.forward_actor(features), self.forward_critic(features)
+
       def forward_actor(self, features: th.Tensor) -> th.Tensor:
           return self.policy_net(features)
-      
+
       def forward_critic(self, features: th.Tensor) -> th.Tensor:
           return self.value_net(features)
 
@@ -354,7 +376,7 @@ If your task requires even more granular control over the policy/value architect
           **kwargs,
       ):
 
-          super(CustomActorCriticPolicy, self).__init__(
+          super().__init__(
               observation_space,
               action_space,
               lr_schedule,
@@ -391,7 +413,7 @@ you only need to specify ``net_arch=[256, 256]`` (here, two hidden layers of 256
 
 
 .. note::
-    Compared to their on-policy counterparts, no shared layers (other than the feature extractor)
+    Compared to their on-policy counterparts, no shared layers (other than the features extractor)
     between the actor and the critic are allowed (to prevent issues with target networks).
 
 

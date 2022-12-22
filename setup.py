@@ -48,13 +48,16 @@ env = gym.make("CartPole-v1")
 model = PPO("MlpPolicy", env, verbose=1)
 model.learn(total_timesteps=10_000)
 
-obs = env.reset()
+vec_env = model.get_env()
+obs = vec_env.reset()
 for i in range(1000):
     action, _states = model.predict(obs, deterministic=True)
-    obs, reward, done, info = env.step(action)
-    env.render()
-    if done:
-        obs = env.reset()
+    obs, reward, done, info = vec_env.step(action)
+    vec_env.render()
+    # VecEnv resets automatically
+    # if done:
+    #   obs = vec_env.reset()
+
 ```
 
 Or just train a model with a one liner if [the environment is registered in Gym](https://www.gymlibrary.ml/content/environment_creation/) and if [the policy is registered](https://stable-baselines3.readthedocs.io/en/master/guide/custom_policy.html):
@@ -76,6 +79,7 @@ setup(
         "gym==0.21",  # Fixed version due to breaking changes in 0.22
         "numpy",
         "torch>=1.11",
+        'typing_extensions>=4.0,<5; python_version < "3.8.0"',
         # For saving models
         "cloudpickle",
         # For reading logs
@@ -94,6 +98,7 @@ setup(
             "pytest-xdist",
             # Type check
             "pytype",
+            "mypy",
             # Lint code
             "flake8>=3.8",
             # Find likely bugs
@@ -149,6 +154,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
 )
 

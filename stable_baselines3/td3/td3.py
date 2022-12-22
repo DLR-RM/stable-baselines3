@@ -13,7 +13,7 @@ from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedul
 from stable_baselines3.common.utils import get_parameters_by_name, polyak_update
 from stable_baselines3.td3.policies import CnnPolicy, MlpPolicy, MultiInputPolicy, TD3Policy
 
-TD3Self = TypeVar("TD3Self", bound="TD3")
+SelfTD3 = TypeVar("SelfTD3", bound="TD3")
 
 
 class TD3(OffPolicyAlgorithm):
@@ -150,7 +150,6 @@ class TD3(OffPolicyAlgorithm):
         self._update_learning_rate([self.actor.optimizer, self.critic.optimizer])
 
         actor_losses, critic_losses = [], []
-
         for _ in range(gradient_steps):
 
             self._n_updates += 1
@@ -203,14 +202,14 @@ class TD3(OffPolicyAlgorithm):
         self.logger.record("train/critic_loss", np.mean(critic_losses))
 
     def learn(
-        self: TD3Self,
+        self: SelfTD3,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 4,
         tb_log_name: str = "TD3",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
-    ) -> TD3Self:
+    ) -> SelfTD3:
 
         return super().learn(
             total_timesteps=total_timesteps,

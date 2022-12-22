@@ -94,11 +94,12 @@ In the following example, we will train, save and load a DQN model on the Lunar 
   mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10)
 
   # Enjoy trained agent
-  obs = env.reset()
+  vec_env = model.get_env()
+  obs = vec_env.reset()
   for i in range(1000):
       action, _states = model.predict(obs, deterministic=True)
-      obs, rewards, dones, info = env.step(action)
-      env.render()
+      obs, rewards, dones, info = vec_env.step(action)
+      vec_env.render()
 
 
 Multiprocessing: Unleashing the Power of Vectorized Environments
@@ -193,7 +194,7 @@ You can use environments with dictionary observation spaces. This is useful in t
 concatenate observations such as an image from a camera combined with a vector of servo sensor data (e.g., rotation angles).
 Stable Baselines3 provides ``SimpleMultiObsEnv`` as an example of this kind of of setting.
 The environment is a simple grid world but the observations for each cell come in the form of dictionaries.
-These dictionaries are randomly initilaized on the creation of the environment and contain a vector observation and an image observation.
+These dictionaries are randomly initialized on the creation of the environment and contain a vector observation and an image observation.
 
 .. code-block:: python
 

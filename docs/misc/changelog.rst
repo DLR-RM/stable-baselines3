@@ -4,8 +4,16 @@ Changelog
 ==========
 
 
-Release 1.7.0a9 (WIP)
+Release 1.7.0a10 (WIP)
 --------------------------
+
+.. note::
+
+  A2C and PPO saved with SB3 < 1.7.0 will show a warning about
+  missing keys in the state dict when loaded with SB3 >= 1.7.0.
+  To suppress the warning, simply save the model again.
+  You can find more info in `issue #1233 <https://github.com/DLR-RM/stable-baselines3/issues/1233>`_
+
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^

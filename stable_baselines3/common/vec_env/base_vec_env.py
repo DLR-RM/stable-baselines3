@@ -324,7 +324,7 @@ class VecEnvWrapper(VecEnv):
     def render(self, mode: Optional[str] = None) -> Optional[np.ndarray]:
         return self.venv.render(mode=mode)
 
-    def get_images(self) -> Sequence[np.ndarray]:
+    def get_images(self) -> Sequence[Optional[np.ndarray]]:
         return self.venv.get_images()
 
     def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:

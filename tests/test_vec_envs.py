@@ -2,12 +2,15 @@ import collections
 import functools
 import itertools
 import multiprocessing
+import os
+import warnings
 from typing import Dict, Optional
 
 import gym
 import numpy as np
 import pytest
 
+from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack, VecNormalize
 
@@ -17,7 +20,7 @@ VEC_ENV_WRAPPERS = [None, VecNormalize, VecFrameStack]
 
 
 class CustomGymEnv(gym.Env):
-    def __init__(self, space):
+    def __init__(self, space, render_mode: str = "rgb_array"):
         """
         Custom gym environment for testing purposes
         """
@@ -25,6 +28,7 @@ class CustomGymEnv(gym.Env):
         self.observation_space = space
         self.current_step = 0
         self.ep_length = 4
+        self.render_mode = render_mode
 
     def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
         if seed is not None:
@@ -43,8 +47,8 @@ class CustomGymEnv(gym.Env):
     def _choose_next_state(self):
         self.state = self.observation_space.sample()
 
-    def render(self, mode="human"):
-        if mode == "rgb_array":
+    def render(self):
+        if self.render_mode == "rgb_array":
             return np.zeros((4, 4, 3))
 
     def seed(self, seed=None):
@@ -93,9 +97,20 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
 
     # Test seed method
     vec_env.seed(0)
+
     # Test render method call
-    # vec_env.render()  # we need a X server  to test the "human" mode
-    vec_env.render(mode="rgb_array")
+    array_explicit_mode = vec_env.render(mode="rgb_array")
+    # test render without argument (new gym API style)
+    array_implicit_mode = vec_env.render()
+    assert np.array_equal(array_implicit_mode, array_explicit_mode)
+
+    # test warning if you try different render mode
+    with pytest.warns(UserWarning):
+        vec_env.render(mode="something_else")
+
+    # we need a X server to test the "human" mode (uses OpenCV)
+    # vec_env.render(mode="human")
+
     env_method_results = vec_env.env_method("custom_method", 1, indices=None, dim_1=2)
     setattr_results = []
     # Set current_step to an arbitrary value
@@ -503,3 +518,63 @@ def test_vec_seeding(vec_env_class):
         assert not np.allclose(rewards[1], rewards[2])
 
         vec_env.close()
+
+
+@pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
+def test_render(vec_env_class):
+    # Skip if no X-Server
+    if not os.environ.get("DISPLAY"):
+        pytest.skip("No X-Server")
+
+    env_id = "Pendulum-v1"
+    # DummyVecEnv human render is currently
+    # buggy because of gym:
+    # https://github.com/carlosluis/stable-baselines3/pull/3#issuecomment-1356863808
+    n_envs = 2
+    # Human render
+    vec_env = make_vec_env(
+        env_id,
+        n_envs,
+        vec_env_cls=vec_env_class,
+        env_kwargs=dict(render_mode="human"),
+    )
+
+    vec_env.reset()
+    vec_env.render()
+
+    with pytest.warns(UserWarning):
+        vec_env.render("rgb_array")
+
+    with pytest.warns(UserWarning):
+        vec_env.render(mode="blah")
+
+    for _ in range(10):
+        vec_env.step([vec_env.action_space.sample() for _ in range(n_envs)])
+        vec_env.render()
+
+    vec_env.close()
+    # rgb_array render, which allows human_render
+    # thanks to OpenCV
+    vec_env = make_vec_env(
+        env_id,
+        n_envs,
+        vec_env_cls=vec_env_class,
+        env_kwargs=dict(render_mode="rgb_array"),
+    )
+
+    vec_env.reset()
+    with warnings.catch_warnings(record=True) as record:
+        vec_env.render()
+        vec_env.render("rgb_array")
+        vec_env.render(mode="human")
+
+    # No warnings for using human mode
+    assert len(record) == 0
+
+    with pytest.warns(UserWarning):
+        vec_env.render(mode="blah")
+
+    for _ in range(10):
+        vec_env.step([vec_env.action_space.sample() for _ in range(n_envs)])
+        vec_env.render()
+    vec_env.close()

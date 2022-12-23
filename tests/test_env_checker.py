@@ -21,7 +21,7 @@ class ActionDictTestEnv(gym.Env):
     def reset(self):
         return np.array([1.0, 1.5, 0.5], dtype=self.observation_space.dtype), {}
 
-    def render(self, mode="human"):
+    def render(self):
         pass
 
 

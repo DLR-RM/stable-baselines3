@@ -304,9 +304,9 @@ def _check_spaces(env: gym.Env) -> None:
 
 
 # Check render cannot be covered by CI
-def _check_render(env: gym.Env, warn: bool = True, headless: bool = False) -> None:  # pragma: no cover
+def _check_render(env: gym.Env, warn: bool = False) -> None:  # pragma: no cover
     """
-    Check the declared render modes and the `render()`/`close()`
+    Check the instantiated render mode (if any) by calling the `render()`/`close()`
     method of the environment.
 
     :param env: The environment to check
@@ -314,26 +314,20 @@ def _check_render(env: gym.Env, warn: bool = True, headless: bool = False) -> No
     :param headless: Whether to disable render modes
         that require a graphical interface. False by default.
     """
-    render_modes = env.metadata.get("render.modes")
+    render_modes = env.metadata.get("render_modes")
     if render_modes is None:
         if warn:
             warnings.warn(
                 "No render modes was declared in the environment "
-                " (env.metadata['render.modes'] is None or not defined), "
+                "(env.metadata['render_modes'] is None or not defined), "
                 "you may have trouble when calling `.render()`"
             )
 
-    else:
-        # FIXME: render check need to be updated
-        # # Don't check render mode that require a
-        # # graphical interface (useful for CI)
-        # if headless and "human" in render_modes:
-        #     render_modes.remove("human")
-        # # Check all declared render modes
-        # for render_mode in render_modes:
-        #     env.render(mode=render_mode)
-        # env.close()
-        pass
+    # TODO: if we want to check all declared render modes,
+    # we need to initialize new environments so the class should be passed as argument.
+    if env.render_mode:
+        env.render()
+    env.close()
 
 
 def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -> None:
@@ -398,7 +392,7 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
 
     # ==== Check the render method and the declared render modes ====
     if not skip_render_check:
-        _check_render(env, warn=warn)  # pragma: no cover
+        _check_render(env, warn)  # pragma: no cover
 
     # The check only works with numpy arrays
     if _is_numpy_array_space(observation_space) and _is_numpy_array_space(action_space):

@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import warnings
 from collections import OrderedDict
 from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
 
@@ -45,7 +46,7 @@ def _worker(  # noqa: C901
                 observation, reset_info = env.reset()
                 remote.send((observation, reset_info))
             elif cmd == "render":
-                remote.send(env.render(data))
+                remote.send(env.render())
             elif cmd == "close":
                 env.close()
                 remote.close()
@@ -116,7 +117,10 @@ class SubprocVecEnv(VecEnv):
 
         self.remotes[0].send(("get_spaces", None))
         observation_space, action_space = self.remotes[0].recv()
-        VecEnv.__init__(self, len(env_fns), observation_space, action_space)
+
+        self.remotes[0].send(("get_attr", "render_mode"))
+        render_mode = self.remotes[0].recv()
+        VecEnv.__init__(self, len(env_fns), observation_space, action_space, render_mode)
 
     def step_async(self, actions: np.ndarray) -> None:
         for remote, action in zip(self.remotes, actions):
@@ -155,13 +159,17 @@ class SubprocVecEnv(VecEnv):
             process.join()
         self.closed = True
 
-    def get_images(self) -> Sequence[np.ndarray]:
+    def get_images(self) -> Sequence[Optional[np.ndarray]]:
+        if self.render_mode != "rgb_array":
+            warnings.warn(
+                f"The render mode is {self.render_mode}, but this method assumes it is `rgb_array` to obtain images."
+            )
+            return [None for _ in self.remotes]
         for pipe in self.remotes:
-            # gather images from subprocesses
-            # `mode` will be taken into account later
-            pipe.send(("render", "rgb_array"))
-        imgs = [pipe.recv() for pipe in self.remotes]
-        return imgs
+            # gather render return from subprocesses
+            pipe.send(("render", None))
+        outputs = [pipe.recv() for pipe in self.remotes]
+        return outputs
 
     def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:
         """Return attribute from vectorized environment (see base class)."""

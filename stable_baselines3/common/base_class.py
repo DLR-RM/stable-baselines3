@@ -52,7 +52,11 @@ def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymE
     if isinstance(env, str):
         if verbose >= 1:
             print(f"Creating environment from the given name '{env}'")
-        env = gym.make(env)
+        # Set render_mode to `rgb_array` as default, so we can record video
+        try:
+            env = gym.make(env, render_mode="rgb_array")
+        except TypeError:
+            env = gym.make(env)
     return env
 
 

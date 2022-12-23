@@ -87,7 +87,13 @@ def make_vec_env(
             assert env_kwargs is not None
 
             if isinstance(env_id, str):
-                env = gym.make(env_id, **env_kwargs)
+                # if the render mode was not specified, we set it to `rgb_array` as default.
+                kwargs = {"render_mode": "rgb_array"}
+                kwargs.update(env_kwargs)
+                try:
+                    env = gym.make(env_id, **kwargs)
+                except TypeError:
+                    env = gym.make(env_id, **env_kwargs)
             else:
                 env = env_id(**env_kwargs)
             if seed is not None:

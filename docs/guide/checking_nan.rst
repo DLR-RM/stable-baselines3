@@ -129,7 +129,7 @@ It will monitor the actions, observations, and rewards, indicating what action o
       def reset(self):
           return [0.0]
 
-      def render(self, mode="human", close=False):
+      def render(self, close=False):
           pass
 
   # Create environment

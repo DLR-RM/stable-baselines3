@@ -1,3 +1,4 @@
+import warnings
 from collections import OrderedDict
 from copy import deepcopy
 from typing import Any, Callable, List, Optional, Sequence, Type, Union
@@ -35,7 +36,7 @@ class DummyVecEnv(VecEnv):
                 "Please read https://github.com/DLR-RM/stable-baselines3/issues/1151 for more information."
             )
         env = self.envs[0]
-        VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space)
+        VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space, env.render_mode)
         obs_space = env.observation_space
         self.keys, shapes, dtypes = obs_space_info(obs_space)
 
@@ -89,25 +90,22 @@ class DummyVecEnv(VecEnv):
         for env in self.envs:
             env.close()
 
-    def get_images(self) -> Sequence[np.ndarray]:
-        return [env.render(mode="rgb_array") for env in self.envs]
+    def get_images(self) -> Sequence[Optional[np.ndarray]]:
+        if self.render_mode != "rgb_array":
+            warnings.warn(
+                f"The render mode is {self.render_mode}, but this method assumes it is `rgb_array` to obtain images."
+            )
+            return [None for _ in self.envs]
+        return [env.render() for env in self.envs]
 
-    def render(self, mode: str = "human") -> Optional[np.ndarray]:
+    def render(self, mode: Optional[str] = None) -> Optional[np.ndarray]:
         """
         Gym environment rendering. If there are multiple environments then
         they are tiled together in one image via ``BaseVecEnv.render()``.
-        Otherwise (if ``self.num_envs == 1``), we pass the render call directly to the
-        underlying environment.
-
-        Therefore, some arguments such as ``mode`` will have values that are valid
-        only when ``num_envs == 1``.
 
         :param mode: The rendering type.
         """
-        if self.num_envs == 1:
-            return self.envs[0].render()
-        else:
-            return super().render(mode=mode)
+        return super().render(mode=mode)
 
     def _save_obs(self, env_idx: int, obs: VecEnvObs) -> None:
         for key in self.keys:

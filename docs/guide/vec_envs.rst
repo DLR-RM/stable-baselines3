@@ -44,6 +44,32 @@ SubprocVecEnv ✔️       ✔️           ✔️        ✔️         ✔️
     For more information, see Python's `multiprocessing guidelines <https://docs.python.org/3/library/multiprocessing.html#the-spawn-and-forkserver-start-methods>`_.
 
 
+VecEnv API vs Gym API
+---------------------
+
+For consistency across Stable-Baselines3 (SB3) versions and because of its special requirements and features,
+SB3 VecEnv API is not the same as Gym API.
+SB3 VecEnv API is actually close to Gym 0.21 API but differs to Gym 0.26+ API:
+
+- the ``reset()`` method only returns the observation (``obs = vec_env.reset()``) and not a tuple, the info at reset are stored in ``vec_env.reset_infos``.
+- only the initial call to ``vec_env.reset()`` is required, environments are reset automatically afterward (and ``reset_infos`` is updated automatically).
+- the ``vec_env.step(actions)`` method expects an array as input
+  (with a batch size corresponding to the number of environments) and returns a 4-tuple (and not a 5-tuple): ``obs, rewards, dones, infos`` instead of ``obs, reward, terminated, truncated, info``
+  where ``dones = terminated or truncated`` (for each env).
+  ``obs, rewards, dones`` are numpy arrays with shape ``(n_envs, shape_for_single_env)`` (so with a batch dimension).
+  Additional information is passed via the ``infos`` value which is a list of dictionaries.
+- at the end of an episode, ``infos[env_idx]["TimeLimit.truncated"] = truncated and not terminated``
+  tells the user if an episode was truncated or not:
+  you should bootstrap when ``infos[env_idx]["TimeLimit.truncated"] is True`` or ``dones[env_idx] is False``.
+  Note: compared to Gym 0.26+ ``infos[env_idx]["TimeLimit.truncated"]`` and ``terminated`` `are mutually exclusive <https://github.com/openai/gym/issues/3102>`_.
+- at the end of an episode, because the environment resets automatically,
+  we provide ``infos[env_idx]["terminal_observation"]`` which contains the last observation
+  of an episode (and can be used when bootstrapping, see note in the previous section)
+- if you pass ``render_mode="rgb_array"`` to your Gym env, a corresponding VecEnv can automatically show the rendered image
+  by calling ``vec_env.render(mode="human")``. This is different from Gym which currently `doesn't allow multiple render modes <https://github.com/Farama-Foundation/Gymnasium/issues/100>`_
+  and doesn't allow passing a ``mode`` parameter. Note that if ``render_mode != "rgb_array"``, you can only call ``vec_env.render()`` (without argument or with ``mode=env.render_mode``).
+
+
 Vectorized Environments Wrappers
 --------------------------------
 

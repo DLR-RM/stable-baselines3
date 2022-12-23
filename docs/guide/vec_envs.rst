@@ -68,6 +68,12 @@ SB3 VecEnv API is actually close to Gym 0.21 API but differs to Gym 0.26+ API:
 - if you pass ``render_mode="rgb_array"`` to your Gym env, a corresponding VecEnv can automatically show the rendered image
   by calling ``vec_env.render(mode="human")``. This is different from Gym which currently `doesn't allow multiple render modes <https://github.com/Farama-Foundation/Gymnasium/issues/100>`_
   and doesn't allow passing a ``mode`` parameter. Note that if ``render_mode != "rgb_array"``, you can only call ``vec_env.render()`` (without argument or with ``mode=env.render_mode``).
+- the ``reset()`` method doesn't take any parameter. If you want to seed the pseudo-random generator,
+  you should call ``vec_env.seed(seed=seed)`` and ``obs = vec_env.reset()`` afterward.
+  If your Gym env implements a ``seed()`` method then it will be called,
+  otherwise ``env.reset(seed=seed)`` will be called (in that case, you will need two resets to set the seed).
+- methods and attributes of the underlying Gym envs can be accessed, called and set using ``vec_env.get_attr("attribute_name")``,
+  ``vec_env.env_method("method_name", args1, args2, kwargs1=kwargs1)`` and ``vec_env.set_attr("attribute_name", new_value)``.
 
 
 Vectorized Environments Wrappers

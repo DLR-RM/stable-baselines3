@@ -2,12 +2,15 @@ import collections
 import functools
 import itertools
 import multiprocessing
+import os
+import warnings
 from typing import Dict, Optional
 
 import gym
 import numpy as np
 import pytest
 
+from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack, VecNormalize
 
@@ -515,3 +518,63 @@ def test_vec_seeding(vec_env_class):
         assert not np.allclose(rewards[1], rewards[2])
 
         vec_env.close()
+
+
+@pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
+def test_render(vec_env_class):
+    # Skip if no X-Server
+    if not os.environ.get("DISPLAY"):
+        pytest.skip("No X-Server")
+
+    env_id = "Pendulum-v1"
+    # DummyVecEnv human render is currently
+    # buggy because of gym:
+    # https://github.com/carlosluis/stable-baselines3/pull/3#issuecomment-1356863808
+    n_envs = 2
+    # Human render
+    vec_env = make_vec_env(
+        env_id,
+        n_envs,
+        vec_env_cls=vec_env_class,
+        env_kwargs=dict(render_mode="human"),
+    )
+
+    vec_env.reset()
+    vec_env.render()
+
+    with pytest.warns(UserWarning):
+        vec_env.render("rgb_array")
+
+    with pytest.warns(UserWarning):
+        vec_env.render(mode="blah")
+
+    for _ in range(10):
+        vec_env.step([vec_env.action_space.sample() for _ in range(n_envs)])
+        vec_env.render()
+
+    vec_env.close()
+    # rgb_array render, which allows human_render
+    # thanks to OpenCV
+    vec_env = make_vec_env(
+        env_id,
+        n_envs,
+        vec_env_cls=vec_env_class,
+        env_kwargs=dict(render_mode="rgb_array"),
+    )
+
+    vec_env.reset()
+    with warnings.catch_warnings(record=True) as record:
+        vec_env.render()
+        vec_env.render("rgb_array")
+        vec_env.render(mode="human")
+
+    # No warnings for using human mode
+    assert len(record) == 0
+
+    with pytest.warns(UserWarning):
+        vec_env.render(mode="blah")
+
+    for _ in range(10):
+        vec_env.step([vec_env.action_space.sample() for _ in range(n_envs)])
+        vec_env.render()
+    vec_env.close()

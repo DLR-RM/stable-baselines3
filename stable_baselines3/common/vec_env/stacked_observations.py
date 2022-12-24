@@ -114,7 +114,8 @@ class StackedObservations:
         :return: Tuple of the stacked observations and the updated infos
         """
         if isinstance(observations, dict):
-            stacked_obs = {}
+            # From [{}, {terminal_obs: {key1: ..., key2: ...}}]
+            # to {key1: [{}, {terminal_obs: ...}], key2: [{}, {terminal_obs: ...}]}
             sub_infos = {
                 key: [
                     {"terminal_observation": info["terminal_observation"][key]} if "terminal_observation" in info else {}
@@ -123,14 +124,17 @@ class StackedObservations:
                 for key in observations.keys()
             }
 
+            stacked_obs = {}
             stacked_infos = {}
             for key, obs in observations.items():
                 stacked_obs[key], stacked_infos[key] = self.sub_stacked_observations[key].update(obs, dones, sub_infos[key])
 
-            for key in observations.keys():
+            # From {key1: [{}, {terminal_obs: ...}], key2: [{}, {terminal_obs: ...}]}
+            # to [{}, {terminal_obs: {key1: ..., key2: ...}}]
+            for key in infos.keys():
                 for env_idx in range(len(infos)):
                     if "terminal_observation" in infos[env_idx]:
-                        infos[env_idx]["terminal_observation"][key] = sub_infos[key][env_idx]["terminal_observation"]
+                        infos[env_idx]["terminal_observation"][key] = stacked_infos[key][env_idx]["terminal_observation"]
             return stacked_obs, infos
 
         shift = -observations.shape[self.stack_dimension]

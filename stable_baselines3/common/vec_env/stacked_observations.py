@@ -131,7 +131,7 @@ class StackedObservations:
 
             # From {key1: [{}, {terminal_obs: ...}], key2: [{}, {terminal_obs: ...}]}
             # to [{}, {terminal_obs: {key1: ..., key2: ...}}]
-            for key in infos.keys():
+            for key in stacked_infos.keys():
                 for env_idx in range(len(infos)):
                     if "terminal_observation" in infos[env_idx]:
                         infos[env_idx]["terminal_observation"][key] = stacked_infos[key][env_idx]["terminal_observation"]

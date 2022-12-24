@@ -37,6 +37,9 @@ class StackedObservations:
                 key: StackedObservations(num_envs, n_stack, subspace, channels_order[key])
                 for key, subspace in observation_space.spaces.items()
             }
+            self.stacked_observation_space = spaces.Dict(
+                {key: substack_obs.stacked_observation_space for key, substack_obs in self.sub_stacked_observations.items()}
+            )
         elif isinstance(observation_space, spaces.Box):
             assert channels_order is None or isinstance(channels_order, str), "TODO: write error message"
             self.channels_first, self.stack_dimension, self.stacked_shape, self.repeat_axis = self.compute_stacking(

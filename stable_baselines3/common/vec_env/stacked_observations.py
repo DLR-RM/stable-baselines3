@@ -84,7 +84,7 @@ class StackedObservations:
 
     def reset(self, observation: Union[np.ndarray, Dict[str, np.ndarray]]) -> np.ndarray:
         """
-        Resets the stackedobs, adds the reset observation to the stack, and returns the stack
+        Reset the stacked_obs, add the reset observation to the stack, and return the stack.
 
         :param observation: Reset observation
         :return: The stacked reset observation
@@ -106,12 +106,12 @@ class StackedObservations:
         infos: List[Dict[str, Any]],
     ) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
         """
-        Adds the observations to the stack and uses the dones to update the infos.
+        Add the observations to the stack and use the dones to update the infos.
 
-        :param observations: numpy array of observations
-        :param dones: numpy array of done info
-        :param infos: numpy array of info dicts
-        :return: tuple of the stacked observations and the updated infos
+        :param observations: Observations
+        :param dones: Dones
+        :param infos: Infos
+        :return: Tuple of the stacked observations and the updated infos
         """
         if isinstance(observations, dict):
             stacked_obs = {}

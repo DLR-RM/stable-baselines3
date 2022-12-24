@@ -21,7 +21,7 @@ class VecFrameStack(VecEnvWrapper):
     def __init__(self, venv: VecEnv, n_stack: int, channels_order: Optional[Union[str, Dict[str, str]]] = None):
         self.n_stack = n_stack
         assert isinstance(
-            venv.observation_space, {spaces.Box, spaces.Dict}
+            venv.observation_space, (spaces.Box, spaces.Dict)
         ), "VecFrameStack only works with gym.spaces.Box and gym.spaces.Dict observation spaces"
 
         self.stacked_obs = StackedObservations(venv.num_envs, n_stack, venv.observation_space, channels_order)

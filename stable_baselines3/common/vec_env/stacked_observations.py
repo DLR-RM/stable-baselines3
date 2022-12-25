@@ -1,13 +1,15 @@
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Generic, List, Mapping, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 from gym import spaces
 
 from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
 
+TObs = TypeVar("TObs", np.ndarray, Dict[str, np.ndarray])
 
-class StackedObservations:
+
+class StackedObservations(Generic[TObs]):
     """
     Frame stacking wrapper for data.
 
@@ -26,12 +28,13 @@ class StackedObservations:
         self,
         num_envs: int,
         n_stack: int,
-        observation_space: Union[spaces.Box, spaces.Dict],
-        channels_order: Optional[Union[str, Dict[str, str]]] = None,
-    ):
+        observation_space: Union[spaces.Box, spaces.Dict],  # Replace by Space[TObs] in gym>=0.26
+        channels_order: Optional[Union[str, Mapping[str, Optional[str]]]] = None,
+    ) -> None:
         self.n_stack = n_stack
+        self.observation_space = observation_space
         if isinstance(observation_space, spaces.Dict):
-            if not isinstance(channels_order, dict):
+            if not isinstance(channels_order, Mapping):
                 channels_order = {key: channels_order for key in observation_space.spaces.keys()}
             self.sub_stacked_observations = {
                 key: StackedObservations(num_envs, n_stack, subspace, channels_order[key])
@@ -39,21 +42,27 @@ class StackedObservations:
             }
             self.stacked_observation_space = spaces.Dict(
                 {key: substack_obs.stacked_observation_space for key, substack_obs in self.sub_stacked_observations.items()}
-            )
+            )  # type: spaces.Dict # make mypy happy
         elif isinstance(observation_space, spaces.Box):
-            assert channels_order is None or isinstance(channels_order, str), "TODO: write error message"
+            if isinstance(channels_order, Mapping):
+                raise TypeError("When the observation space is Box, channels_order can't be a dict.")
+
             self.channels_first, self.stack_dimension, self.stacked_shape, self.repeat_axis = self.compute_stacking(
                 n_stack, observation_space, channels_order
             )
-            low = np.repeat(observation_space.low, self.n_stack, axis=self.repeat_axis)
-            high = np.repeat(observation_space.high, self.n_stack, axis=self.repeat_axis)
+            low = np.repeat(observation_space.low, n_stack, axis=self.repeat_axis)
+            high = np.repeat(observation_space.high, n_stack, axis=self.repeat_axis)
             self.stacked_observation_space = spaces.Box(low=low, high=high, dtype=observation_space.dtype)
             self.stacked_obs = np.zeros((num_envs,) + self.stacked_shape, dtype=observation_space.dtype)
+        else:
+            raise TypeError(
+                f"StackedObservations only supports Box and Dict as observation spaces. {observation_space} was provided."
+            )
 
     @staticmethod
     def compute_stacking(
         n_stack: int, observation_space: spaces.Box, channels_order: Optional[str] = None
-    ) -> Tuple[bool, int, Tuple[int], int]:
+    ) -> Tuple[bool, int, Tuple[int, ...], int]:
         """
         Calculates the parameters in order to stack observations
 
@@ -85,7 +94,7 @@ class StackedObservations:
         stacked_shape[repeat_axis] *= n_stack
         return channels_first, stack_dimension, tuple(stacked_shape), repeat_axis
 
-    def stack_observation_space(self, observation_space: spaces.Box) -> spaces.Box:
+    def stack_observation_space(self, observation_space: Union[spaces.Box, spaces.Dict]) -> Union[spaces.Box, spaces.Dict]:
         """
         This function is deprecated.
 
@@ -100,13 +109,20 @@ class StackedObservations:
         :return: New observation space with stacked dimensions
         """
         warnings.warn(
-            "``stack_observation_space`` is deprecated, use the workaround from its docstring instead.", DeprecationWarning
+            "stack_observation_space is deprecated. Please refer to the docstring for a workaround.", DeprecationWarning
         )
+        if isinstance(observation_space, spaces.Dict):
+            return spaces.Dict(
+                {
+                    key: sub_stacked_observation.stack_observation_space(sub_stacked_observation.observation_space)
+                    for key, sub_stacked_observation in self.sub_stacked_observations.items()
+                }
+            )
         low = np.repeat(observation_space.low, self.n_stack, axis=self.repeat_axis)
         high = np.repeat(observation_space.high, self.n_stack, axis=self.repeat_axis)
         return spaces.Box(low=low, high=high, dtype=observation_space.dtype)
 
-    def reset(self, observation: Union[np.ndarray, Dict[str, np.ndarray]]) -> np.ndarray:
+    def reset(self, observation: TObs) -> TObs:
         """
         Reset the stacked_obs, add the reset observation to the stack, and return the stack.
 
@@ -125,10 +141,10 @@ class StackedObservations:
 
     def update(
         self,
-        observations: Union[np.ndarray, Dict[str, np.ndarray]],
+        observations: TObs,
         dones: np.ndarray,
         infos: List[Dict[str, Any]],
-    ) -> Tuple[Union[np.ndarray, Dict[str, np.ndarray]], List[Dict[str, Any]]]:
+    ) -> Tuple[TObs, List[Dict[str, Any]]]:
         """
         Add the observations to the stack and use the dones to update the infos.
 
@@ -191,7 +207,7 @@ class StackedDictObservations(StackedObservations):
         num_envs: int,
         n_stack: int,
         observation_space: Union[spaces.Box, spaces.Dict],
-        channels_order: Optional[Union[str, Dict[str, str]]] = None,
-    ):
+        channels_order: Optional[Union[str, Dict[str, Optional[str]]]] = None,
+    ) -> None:
         warnings.warn("StackedDictObservations is deprecated, use StackedObservations instead.", DeprecationWarning)
         super().__init__(num_envs, n_stack, observation_space, channels_order)

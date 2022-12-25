@@ -85,6 +85,27 @@ class StackedObservations:
         stacked_shape[repeat_axis] *= n_stack
         return channels_first, stack_dimension, tuple(stacked_shape), repeat_axis
 
+    def stack_observation_space(self, observation_space: spaces.Box) -> spaces.Box:
+        """
+        This function is deprecated.
+
+        As an alternative, use
+
+        ```python
+        low = np.repeat(observation_space.low, stacked_observation.n_stack, axis=stacked_observation.repeat_axis)
+        high = np.repeat(observation_space.high, stacked_observation.n_stack, axis=stacked_observation.repeat_axis)
+        stacked_observation_space = spaces.Box(low=low, high=high, dtype=observation_space.dtype)
+        ```
+
+        :return: New observation space with stacked dimensions
+        """
+        warnings.warn(
+            "``stack_observation_space`` is deprecated, use the workaround from its docstring instead.", DeprecationWarning
+        )
+        low = np.repeat(observation_space.low, self.n_stack, axis=self.repeat_axis)
+        high = np.repeat(observation_space.high, self.n_stack, axis=self.repeat_axis)
+        return spaces.Box(low=low, high=high, dtype=observation_space.dtype)
+
     def reset(self, observation: Union[np.ndarray, Dict[str, np.ndarray]]) -> np.ndarray:
         """
         Reset the stacked_obs, add the reset observation to the stack, and return the stack.

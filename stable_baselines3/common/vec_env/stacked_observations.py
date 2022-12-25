@@ -104,10 +104,10 @@ class StackedObservations:
 
     def update(
         self,
-        observations: np.ndarray,
+        observations: Union[np.ndarray, Dict[str, np.ndarray]],
         dones: np.ndarray,
         infos: List[Dict[str, Any]],
-    ) -> Tuple[np.ndarray, List[Dict[str, Any]]]:
+    ) -> Tuple[Union[np.ndarray, Dict[str, np.ndarray]], List[Dict[str, Any]]]:
         """
         Add the observations to the stack and use the dones to update the infos.
 
@@ -162,3 +162,15 @@ class StackedObservations:
         else:
             self.stacked_obs[..., -observations.shape[self.stack_dimension] :] = observations
         return self.stacked_obs, infos
+
+
+class StackedDictObservations(StackedObservations):
+    def __init__(
+        self,
+        num_envs: int,
+        n_stack: int,
+        observation_space: Union[spaces.Box, spaces.Dict],
+        channels_order: Optional[Union[str, Dict[str, str]]] = None,
+    ):
+        warnings.warn("StackedDictObservations is deprecated, use StackedObservations instead.", DeprecationWarning)
+        super().__init__(num_envs, n_stack, observation_space, channels_order)

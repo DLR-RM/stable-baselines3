@@ -2,6 +2,7 @@ import glob
 import os
 import platform
 import random
+import re
 from collections import deque
 from itertools import zip_longest
 from typing import Dict, Iterable, List, Optional, Tuple, Union
@@ -12,8 +13,6 @@ import torch as th
 from gym import spaces
 
 import stable_baselines3 as sb3
-import re
-
 
 # Check if tensorboard is available for pytorch
 try:

@@ -72,6 +72,7 @@ Others:
 - Set tensors construction directly on the device (~8% speed boost on GPU)
 - Monkey-patched ``np.bool = bool`` so gym 0.21 is compatible with NumPy 1.24+
 - Standardized the use of ``from gym import spaces``
+- Modified ``get_system_info`` to avoid issue linked to copy-pasting on GitHub issue
 
 Documentation:
 ^^^^^^^^^^^^^^

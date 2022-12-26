@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Any, Dict, Generic, Optional, Tuple, TypeVar, Union
 
 import gym
 import numpy as np
@@ -6,8 +6,10 @@ from gym import spaces
 
 from stable_baselines3.common.type_aliases import GymObs, GymStepReturn
 
+T = TypeVar("T", int, np.ndarray)
 
-class IdentityEnv(gym.Env):
+
+class IdentityEnv(gym.Env, Generic[T]):
     def __init__(self, dim: Optional[int] = None, space: Optional[spaces.Space] = None, ep_length: int = 100):
         """
         Identity environment for testing purposes
@@ -32,13 +34,13 @@ class IdentityEnv(gym.Env):
         self.num_resets = -1  # Becomes 0 after __init__ exits.
         self.reset()
 
-    def reset(self) -> GymObs:
+    def reset(self) -> T:
         self.current_step = 0
         self.num_resets += 1
         self._choose_next_state()
         return self.state
 
-    def step(self, action: Union[int, np.ndarray]) -> GymStepReturn:
+    def step(self, action: T) -> Tuple[T, float, bool, Dict[str, Any]]:
         reward = self._get_reward(action)
         self._choose_next_state()
         self.current_step += 1
@@ -48,14 +50,14 @@ class IdentityEnv(gym.Env):
     def _choose_next_state(self) -> None:
         self.state = self.action_space.sample()
 
-    def _get_reward(self, action: Union[int, np.ndarray]) -> float:
+    def _get_reward(self, action: T) -> float:
         return 1.0 if np.all(self.state == action) else 0.0
 
     def render(self, mode: str = "human") -> None:
         pass
 
 
-class IdentityEnvBox(IdentityEnv):
+class IdentityEnvBox(IdentityEnv[np.ndarray]):
     def __init__(self, low: float = -1.0, high: float = 1.0, eps: float = 0.05, ep_length: int = 100):
         """
         Identity environment for testing purposes
@@ -80,7 +82,7 @@ class IdentityEnvBox(IdentityEnv):
         return 1.0 if (self.state - self.eps) <= action <= (self.state + self.eps) else 0.0
 
 
-class IdentityEnvMultiDiscrete(IdentityEnv):
+class IdentityEnvMultiDiscrete(IdentityEnv[np.ndarray]):
     def __init__(self, dim: int = 1, ep_length: int = 100):
         """
         Identity environment for testing purposes
@@ -92,7 +94,7 @@ class IdentityEnvMultiDiscrete(IdentityEnv):
         super().__init__(ep_length=ep_length, space=space)
 
 
-class IdentityEnvMultiBinary(IdentityEnv):
+class IdentityEnvMultiBinary(IdentityEnv[np.ndarray]):
     def __init__(self, dim: int = 1, ep_length: int = 100):
         """
         Identity environment for testing purposes

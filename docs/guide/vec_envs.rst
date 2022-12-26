@@ -123,10 +123,10 @@ StackedObservations
   :members:
 
 StackedDictObservations
- ~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
- .. autoclass:: stable_baselines3.common.vec_env.stacked_observations.StackedDictObservations
-   :members:
+.. autoclass:: stable_baselines3.common.vec_env.stacked_observations.StackedDictObservations
+  :members:
 
 VecNormalize
 ~~~~~~~~~~~~

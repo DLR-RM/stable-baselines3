@@ -204,6 +204,10 @@ class StackedObservations(Generic[TObs]):
 
 
 class StackedDictObservations(StackedObservations):
+    """
+    StackedDictObservations is deprecated, use StackedObservations instead.
+    """
+
     def __init__(
         self,
         num_envs: int,

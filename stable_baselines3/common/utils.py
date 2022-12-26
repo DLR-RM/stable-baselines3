@@ -12,6 +12,8 @@ import torch as th
 from gym import spaces
 
 import stable_baselines3 as sb3
+import re
+
 
 # Check if tensorboard is available for pytorch
 try:
@@ -506,13 +508,13 @@ def get_system_info(print_info: bool = True) -> Tuple[Dict[str, str], str]:
         and a formatted string.
     """
     env_info = {
-        "OS": f"{platform.platform()} {platform.version()}",
-        "Python": platform.python_version(),
-        "Stable-Baselines3": sb3.__version__,
-        "PyTorch": th.__version__,
-        "GPU Enabled": str(th.cuda.is_available()),
-        "Numpy": np.__version__,
-        "Gym": gym.__version__,
+        "- OS": re.sub(r"#(\d)", r"# \1", f"{platform.platform()} {platform.version()}"),
+        "- Python": platform.python_version(),
+        "- Stable-Baselines3": sb3.__version__,
+        "- PyTorch": th.__version__,
+        "- GPU Enabled": str(th.cuda.is_available()),
+        "- Numpy": np.__version__,
+        "- Gym": gym.__version__,
     }
     env_info_str = ""
     for key, value in env_info.items():

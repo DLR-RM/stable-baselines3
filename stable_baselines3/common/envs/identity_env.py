@@ -1,14 +1,14 @@
 from typing import Optional, Union
 
+import gym
 import numpy as np
-from gym import Env, Space
-from gym.spaces import Box, Discrete, MultiBinary, MultiDiscrete
+from gym import spaces
 
 from stable_baselines3.common.type_aliases import GymObs, GymStepReturn
 
 
-class IdentityEnv(Env):
-    def __init__(self, dim: Optional[int] = None, space: Optional[Space] = None, ep_length: int = 100):
+class IdentityEnv(gym.Env):
+    def __init__(self, dim: Optional[int] = None, space: Optional[spaces.Space] = None, ep_length: int = 100):
         """
         Identity environment for testing purposes
 
@@ -22,7 +22,7 @@ class IdentityEnv(Env):
         if space is None:
             if dim is None:
                 dim = 1
-            space = Discrete(dim)
+            space = spaces.Discrete(dim)
         else:
             assert dim is None, "arguments for both 'dim' and 'space' provided: at most one allowed"
 
@@ -65,7 +65,7 @@ class IdentityEnvBox(IdentityEnv):
         :param eps: the epsilon bound for correct value
         :param ep_length: the length of each episode in timesteps
         """
-        space = Box(low=low, high=high, shape=(1,), dtype=np.float32)
+        space = spaces.Box(low=low, high=high, shape=(1,), dtype=np.float32)
         super().__init__(ep_length=ep_length, space=space)
         self.eps = eps
 
@@ -88,7 +88,7 @@ class IdentityEnvMultiDiscrete(IdentityEnv):
         :param dim: the size of the dimensions you want to learn
         :param ep_length: the length of each episode in timesteps
         """
-        space = MultiDiscrete([dim, dim])
+        space = spaces.MultiDiscrete([dim, dim])
         super().__init__(ep_length=ep_length, space=space)
 
 
@@ -100,11 +100,11 @@ class IdentityEnvMultiBinary(IdentityEnv):
         :param dim: the size of the dimensions you want to learn
         :param ep_length: the length of each episode in timesteps
         """
-        space = MultiBinary(dim)
+        space = spaces.MultiBinary(dim)
         super().__init__(ep_length=ep_length, space=space)
 
 
-class FakeImageEnv(Env):
+class FakeImageEnv(gym.Env):
     """
     Fake image environment for testing purposes, it mimics Atari games.
 
@@ -128,11 +128,11 @@ class FakeImageEnv(Env):
         self.observation_shape = (screen_height, screen_width, n_channels)
         if channel_first:
             self.observation_shape = (n_channels, screen_height, screen_width)
-        self.observation_space = Box(low=0, high=255, shape=self.observation_shape, dtype=np.uint8)
+        self.observation_space = spaces.Box(low=0, high=255, shape=self.observation_shape, dtype=np.uint8)
         if discrete:
-            self.action_space = Discrete(action_dim)
+            self.action_space = spaces.Discrete(action_dim)
         else:
-            self.action_space = Box(low=-1, high=1, shape=(5,), dtype=np.float32)
+            self.action_space = spaces.Box(low=-1, high=1, shape=(5,), dtype=np.float32)
         self.ep_length = 10
         self.current_step = 0
 

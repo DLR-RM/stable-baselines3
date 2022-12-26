@@ -8,7 +8,9 @@ from stable_baselines3.common.preprocessing import is_image_space, is_image_spac
 
 TObs = TypeVar("TObs", np.ndarray, Dict[str, np.ndarray])
 
-
+# In this codebase, many type checks have been ignored mainly because gym 0.21 does not support typing.
+# However, future versions of gym are expected to support typing, so most of the # type: ignore[attribute-error]
+# statements will be removed once the code is updated to use a newer version of gym.
 class StackedObservations(Generic[TObs]):
     """
     Frame stacking wrapper for data.
@@ -118,8 +120,8 @@ class StackedObservations(Generic[TObs]):
                     for key, sub_stacked_observation in self.sub_stacked_observations.items()
                 }
             )
-        low = np.repeat(observation_space.low, self.n_stack, axis=self.repeat_axis)
-        high = np.repeat(observation_space.high, self.n_stack, axis=self.repeat_axis)
+        low = np.repeat(observation_space.low, self.n_stack, axis=self.repeat_axis)  # type: ignore[attribute-error]
+        high = np.repeat(observation_space.high, self.n_stack, axis=self.repeat_axis)  # type: ignore[attribute-error]
         return spaces.Box(low=low, high=high, dtype=observation_space.dtype)
 
     def reset(self, observation: TObs) -> TObs:
@@ -132,7 +134,7 @@ class StackedObservations(Generic[TObs]):
         if isinstance(observation, dict):
             return {key: self.sub_stacked_observations[key].reset(obs) for key, obs in observation.items()}
 
-        self.stacked_obs[...] = 0
+        self.stacked_obs[...] = 0  # type: ignore[attribute-error]
         if self.channels_first:
             self.stacked_obs[:, -observation.shape[self.stack_dimension] :, ...] = observation
         else:
@@ -177,27 +179,27 @@ class StackedObservations(Generic[TObs]):
                         infos[env_idx]["terminal_observation"][key] = stacked_infos[key][env_idx]["terminal_observation"]
             return stacked_obs, infos
 
-        shift = -observations.shape[self.stack_dimension]
-        self.stacked_obs = np.roll(self.stacked_obs, shift, axis=self.stack_dimension)
+        shift = -observations.shape[self.stack_dimension]  # type: ignore[attribute-error]
+        self.stacked_obs = np.roll(self.stacked_obs, shift, axis=self.stack_dimension)  # type: ignore[attribute-error]
         for env_idx, done in enumerate(dones):
             if done:
                 if "terminal_observation" in infos[env_idx]:
                     old_terminal = infos[env_idx]["terminal_observation"]
-                    if self.channels_first:
+                    if self.channels_first:  # type: ignore[attribute-error]
                         # self.stack_dimension - 1, as there is not batch dim
                         axis = 0
                         new_terminal = np.concatenate((self.stacked_obs[env_idx, :shift, ...], old_terminal), axis)
                     else:
-                        axis = self.stack_dimension
+                        axis = self.stack_dimension  # type: ignore[attribute-error]
                         new_terminal = np.concatenate((self.stacked_obs[env_idx, ..., :shift], old_terminal), axis)
                     infos[env_idx]["terminal_observation"] = new_terminal
                 else:
                     warnings.warn("VecFrameStack wrapping a VecEnv without terminal_observation info")
                 self.stacked_obs[env_idx] = 0
-        if self.channels_first:
-            self.stacked_obs[:, -observations.shape[self.stack_dimension] :, ...] = observations
+        if self.channels_first:  # type: ignore[attribute-error]
+            self.stacked_obs[:, -observations.shape[self.stack_dimension] :, ...] = observations  # type: ignore[attribute-error]
         else:
-            self.stacked_obs[..., -observations.shape[self.stack_dimension] :] = observations
+            self.stacked_obs[..., -observations.shape[self.stack_dimension] :] = observations  # type: ignore[attribute-error]
         return self.stacked_obs, infos
 
 

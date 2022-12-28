@@ -418,7 +418,7 @@ class ActorCriticPolicy(BasePolicy):
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
         lr_schedule: Schedule,
-        net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
+        net_arch: Optional[Dict[str, List[int]]] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
@@ -454,9 +454,9 @@ class ActorCriticPolicy(BasePolicy):
         # Default network architecture, from stable-baselines
         if net_arch is None:
             if features_extractor_class == NatureCNN:
-                net_arch = []
+                net_arch = {}
             else:
-                net_arch = [dict(pi=[64, 64], vf=[64, 64])]
+                net_arch = dict(pi=[64, 64], vf=[64, 64])
 
         self.net_arch = net_arch
         self.activation_fn = activation_fn
@@ -471,11 +471,6 @@ class ActorCriticPolicy(BasePolicy):
         else:
             self.pi_features_extractor = self.features_extractor
             self.vf_features_extractor = self.make_features_extractor()
-            # if the features extractor is not shared, there cannot be shared layers in the mlp_extractor
-            if len(net_arch) > 0 and not isinstance(net_arch[0], dict):
-                raise ValueError(
-                    "Error: if the features extractor is not shared, there cannot be shared layers in the mlp_extractor"
-                )
 
         self.log_std_init = log_std_init
         dist_kwargs = None
@@ -752,7 +747,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
         lr_schedule: Schedule,
-        net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
+        net_arch: Optional[Dict[str, List[int]]] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
@@ -825,7 +820,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         observation_space: gym.spaces.Dict,
         action_space: gym.spaces.Space,
         lr_schedule: Schedule,
-        net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
+        net_arch: Optional[Dict[str, List[int]]] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,

@@ -85,7 +85,7 @@ instantiated by ``make_vec_env()`` such that it creates a ``SubprocVecEnv``.
 
 The default ``DummyVecEnv`` implementation will only run a single thread for processing actions
 and collecting observations / rewards. With ``SubprocVecEnv``, each environment is running in its
-own thread, facilitating parallel processing for superior CPU utilization.
+own thread, facilitating parallel processing for superior CPU utilization (see :ref:`Vectorized Environments <vec_env>`).
 
 .. code-block:: python
 

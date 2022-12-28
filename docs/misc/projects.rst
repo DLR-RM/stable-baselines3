@@ -162,8 +162,8 @@ Suite of RL environments focused on using a simulated tactile sensor as the prim
 | Paper: https://arxiv.org/abs/2106.08796
 | Website: `tactile-gym website <https://sites.google.com/my.bristol.ac.uk/tactile-gym-sim2real/home>`_
 
-rl-exploration-baselines
-------------------------
+RLeXplore
+---------
 
 RLeXplore is a set of implementations of intrinsic reward driven-exploration approaches in reinforcement learning using PyTorch, which can be deployed in arbitrary algorithms in a plug-and-play manner. In particular, RLeXplore is designed to be well compatible with Stable-Baselines3, providing more stable exploration benchmarks.
 

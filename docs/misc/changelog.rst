@@ -80,6 +80,7 @@ Documentation:
 - Updated custom policy documentation (@athatheo)
 - Improved tensorboard callback doc
 - Clarify doc when using image-like input
+- Added a new repo "rl-exploration-baselines" to the project page (@yuanmingqi)
 
 
 Release 1.6.2 (2022-10-10)

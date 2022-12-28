@@ -52,6 +52,7 @@ Bug Fixes:
 Deprecations:
 ^^^^^^^^^^^^^
 - You should now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
+- Deprecated shared layers in ``MlpExtractor`` (@AlexPasqua)
 
 Others:
 ^^^^^^^

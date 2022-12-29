@@ -121,6 +121,7 @@ that derives from ``BaseFeaturesExtractor`` and then pass it to the model when t
 
 .. warning::
   If the features extractor is **non-shared**, it is **not** possible to have shared layers in the ``mlp_extractor``.
+  Please note that this option is **deprecated**, therefore in a future release the layers in the ``mlp_extractor`` will have to be non-shared.
 
 
 .. code-block:: python
@@ -242,6 +243,11 @@ On-Policy Algorithms
 
 Shared Networks
 ---------------
+
+.. warning::
+  Shared layers in the the ``mlp_extractor`` are **deprecated**.
+  In a future release all layers will have to be non-shared.
+  If needed, you can implement a custom policy network (see `advanced example below <#advanced-example>`_).
 
 The ``net_arch`` parameter of ``A2C`` and ``PPO`` policies allows to specify the amount and size of the hidden layers and how many
 of them are shared between the policy network and the value network. It is assumed to be a list with the following

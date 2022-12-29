@@ -1,0 +1,16 @@
+cloudpickle
+glfw
+gym==0.15.3
+matplotlib
+mujoco-py==2.0.2.5
+numpy
+Pillow
+protobuf
+scipy
+six
+tensorboard
+tensorboard-plugin-wit
+torch
+torchvision
+urllib3
+

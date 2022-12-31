@@ -21,8 +21,8 @@ class SpikeActorDeepCritic(nn.Module):
 
 
     def __init__(self, test_env,observation_space, action_space,
-                 encoder_pop_dim, decoder_pop_dim, mean_range, std, spike_ts, device,
-                 hidden_sizes=(256, 256), activation=nn.SELU):
+                 encoder_pop_dim, decoder_pop_dim, mean_range, std, spike_ts, device, num_actor,
+                     num_critic,quantiles,hidden_sizes=(256, 256), activation=nn.SELU):
         super().__init__()
 
         obs_dim = observation_space.shape[0]
@@ -31,24 +31,21 @@ class SpikeActorDeepCritic(nn.Module):
         print("%%%%%%%%%%%%%%%%%",device)
         #self.quantiles = [.1, .5, .9]
         #self.quantiles = [.1, .9]
-        self.quantiles = [.1,.9,.2,.8]
+        self.quantiles = quantiles#[.1,.9,.2,.8]
 
         # build policy and value functions
-        self.popsan1 = SquashedGaussianPopSpikeActor(obs_dim, act_dim, encoder_pop_dim, decoder_pop_dim, hidden_sizes,
-                                                    mean_range, std, spike_ts, act_limit, device)
-        self.popsan2 = SquashedGaussianPopSpikeActor(obs_dim, act_dim, encoder_pop_dim, decoder_pop_dim, hidden_sizes,
-                                                    mean_range, std, spike_ts, act_limit, device)
-        self.popsan3 = SquashedGaussianPopSpikeActor(obs_dim, act_dim, encoder_pop_dim, decoder_pop_dim, hidden_sizes,
-                                                    mean_range, std, spike_ts, act_limit, device)
-        self.popsan4 = SquashedGaussianPopSpikeActor(obs_dim, act_dim, encoder_pop_dim, decoder_pop_dim, hidden_sizes,
-                                                    mean_range, std, spike_ts, act_limit, device)
+        # self.popsan1 = SquashedGaussianPopSpikeActor(obs_dim, act_dim, encoder_pop_dim, decoder_pop_dim, hidden_sizes,
+        #                                             mean_range, std, spike_ts, act_limit, device)
+        for actor_index in range(num_actor):
+            popsan_params_actor_index = """SquashedGaussianPopSpikeActor(obs_dim, act_dim, encoder_pop_dim, decoder_pop_dim, hidden_sizes, mean_range, std, spike_ts, act_limit, device)"""
+
+            exec("self.popsan%d = %s" % (actor_index + 1, popsan_params_actor_index));
 													
-
-        self.popsan=self.popsan1
-
-        
-        self.q1 = MLPQFunction_quantile(obs_dim, act_dim, hidden_sizes, activation,self.quantiles)
-        self.q2 = MLPQFunction_quantile(obs_dim, act_dim, hidden_sizes, activation,self.quantiles)
+        self.popsan = self.popsan1
+        for critic_idx in range(num_critic):
+            exec("self.q%d = %s"%(critic_idx+1, MLPQFunction_quantile(obs_dim, act_dim, hidden_sizes, activation,self.quantiles) ))
+        # self.q1 = MLPQFunction_quantile(obs_dim, act_dim, hidden_sizes, activation,self.quantiles)
+        # self.q2 = MLPQFunction_quantile(obs_dim, act_dim, hidden_sizes, activation,self.quantiles)
 
 
     def act(self, popsan, obs, batch_size, deterministic=False):
@@ -204,20 +201,12 @@ def spike_sac(env_fn, actor_critic=SpikeActorDeepCritic, ac_kwargs=dict(), seed=
     q_params = itertools.chain(ac.q1.parameters(), ac.q2.parameters())
 
     # List of parameters for PopSAN parameters (save this for convenience)
-    popsan_params1 = itertools.chain(ac.popsan1.encoder.parameters(),
-                                    ac.popsan1.snn.parameters(),
-                                    ac.popsan1.decoder.parameters())
-    popsan_params2 = itertools.chain(ac.popsan2.encoder.parameters(),
-                                    ac.popsan2.snn.parameters(),
-                                    ac.popsan2.decoder.parameters())
-    popsan_params3 = itertools.chain(ac.popsan3.encoder.parameters(),
-                                    ac.popsan3.snn.parameters(),
-                                    ac.popsan3.decoder.parameters())
-    popsan_params4 = itertools.chain(ac.popsan4.encoder.parameters(),
-                                    ac.popsan4.snn.parameters(),
-                                    ac.popsan4.decoder.parameters())
+    for actor_index in range(ac_kwargs.num_actor):
+        popsan_params_actor_index = """itertools.chain(eval("ac.popsan%d.encoder.parameters()"%(actor_index+1)),
+                                        eval("ac.popsan%d.snn.parameters()"%(actor_index+1)),
+                                        eval("ac.popsan%d.decoder.parameters()"%(actor_index+1)))"""
+        exec("popsan_params%d = %s" % (actor_index + 1, popsan_params_actor_index));
 									
-
     # Experience buffer
     replay_buffer = ReplayBuffer(obs_dim=obs_dim, act_dim=act_dim, size=replay_size,
                                  clip_limit=norm_clip_limit, norm_update_every=norm_update)
@@ -227,8 +216,10 @@ def spike_sac(env_fn, actor_critic=SpikeActorDeepCritic, ac_kwargs=dict(), seed=
     def compute_loss_q(data):
         o, a, r, o2, d = data['obs'], data['act'], data['rew'], data['obs2'], data['done']
         #print("@",o.shape)
-        q1 = torch.mean(ac.q1(o,a),-1)
-        q2 = torch.mean(ac.q2(o,a),-1)    
+        for critic_idx in range(ac_kwargs.num_critic):
+            exec("q%d = %s"%(critic_idx+1, torch.mean( eval("ac.q%d(o,a)"%(critic_idx+1),-1) ) ))
+        # q1 = torch.mean(ac.q1(o,a),-1)
+        # q2 = torch.mean(ac.q2(o,a),-1)    
         #print("$$$$",torch.mean(q1,-1).shape)
 
         # Bellman backup for Q functions
@@ -237,55 +228,49 @@ def spike_sac(env_fn, actor_critic=SpikeActorDeepCritic, ac_kwargs=dict(), seed=
             a2, logp_a2 = ac.popsan(o2, batch_size)
 
             # Target Q-values
-            q1_pi_targ = torch.mean(ac_targ.q1(o2, a2),-1)
-            q2_pi_targ = torch.mean(ac_targ.q2(o2, a2),-1)
-            q_pi_targ = torch.min(q1_pi_targ, q2_pi_targ)
-
+            q_pi_targ=[]
+            for critic_idx in range(ac_kwargs.num_critic):
+                q_pi_targ.append( torch.mean( eval("ac_targ.q%d(o2, a2)"%(critic_idx+1)) ,-1) )
+            # q_pi_targ = torch.min(q1_pi_targ, q2_pi_targ)
+            q_pi_targ = torch.min(q_pi_targ,axis=0).values
             #r=torch.stack([r,r,r],dim=1)
             #d=torch.stack([d,d,d],dim=1)
             #logp_a2=torch.stack([logp_a2,logp_a2,logp_a2],dim=1)
             #print("SHApe of q1",r.shape,gamma,d.shape,q_pi_targ.shape,alpha,logp_a2.shape) 
             backup = r + gamma * (1 - d) * (q_pi_targ - alpha * logp_a2)
             #print("SHApe of q1",backup.shape)
+        q_info = dict()     # Useful info for logging
+        loss_q=0
+        for critic_idx in range(ac_kwargs.num_critic):
+            exec("qf%d_losses = %s" % (critic_idx + 1, []));  
+                  
+            for i, quantile in enumerate(quantiles):
+                error = backup - eval("q%d"%(critic_idx+1))
+                loss = torch.maximum(quantile*error, (quantile-1)*error)  
+                exec("qf%d_losses.append(%s)" % (critic_idx + 1, loss));
+            
+            loss_q_idx = torch.mean(torch.sum(torch.stack(eval("qf%d_losses" % (critic_idx + 1)),dim=-1),-1))
+            exec("loss_q%d = %s" % (critic_idx + 1, loss_q_idx));  
+            loss_q+=eval("loss_q%d" % (critic_idx + 1)) ##loss_q = loss_q1 + loss_q2
 
-        qf1_losses  = []              
-        for i, quantile in enumerate(quantiles):
-            error = backup - q1
-            loss = torch.maximum(quantile*error, (quantile-1)*error)
-            qf1_losses.append(loss)
-
-        #print("Loss", qf1_losses,torch.sum(torch.stack(qf1_losses,dim=-1),-1).shape)
-        #loss_q1 = torch.mean(torch.sum(torch.cat(qf1_losses, dim=-1), dim=-1))
-        loss_q1 = torch.mean(torch.sum(torch.stack(qf1_losses,dim=-1),-1)) #sum of 3 loss and mean over samples
-        #print(loss_q1)
-        #loss_q1 = np.mean(qf1_losses)
-
-        qf2_losses  = []                    
-        for i, quantile in enumerate(quantiles):
-            error = backup - q2
-            #loss = torch.mean(torch.maximum(quantile*error, (quantile-1)*error), axis=-1)
-            loss = torch.maximum(quantile*error, (quantile-1)*error)
-            qf2_losses.append(loss)
-        loss_q2 = torch.mean(torch.sum(torch.stack(qf2_losses,dim=-1),-1))
-
-        # MSE loss against Bellman backup
-        #loss_q1 = ((q1 - backup)**2).mean()
-        #loss_q2 = ((q2 - backup)**2).mean()
-        loss_q = loss_q1 + loss_q2
-
-        # Useful info for logging
-        q_info = dict(Q1Vals=q1.to('cpu').detach().numpy(),
-                      Q2Vals=q2.to('cpu').detach().numpy())
-
+            exec("q_info['Q%dVals'] = %s" % (critic_idx + 1, eval("q%d.to('cpu').detach().numpy()"%(critic_idx+1))));  
+            # q_info = dict(Q1Vals=q1.to('cpu').detach().numpy(),
+            #             Q2Vals=q2.to('cpu').detach().numpy())
         return loss_q, q_info
 
     # Set up function for computing SAC pi loss
     def all_Actr(popsan,o):
 
         pi, logp_pi = popsan(o, batch_size)
-        q1_pi = torch.mean(ac.q1(o, pi),-1)
-        q2_pi = torch.mean(ac.q2(o, pi),-1)
-        q_pi = torch.min(q1_pi, q2_pi)
+        q_pi=[]
+        for critic_idx in range(ac_kwargs.num_critic):
+            q_pi_targ.append( torch.mean( eval("ac.q%d(o, pi)"%(critic_idx+1)) ,-1) )
+        # q_pi_targ = torch.min(q1_pi_targ, q2_pi_targ)
+        q_pi_targ = torch.min(q_pi,axis=0).values
+        
+        # q1_pi = torch.mean(ac.q1(o, pi),-1)
+        # q2_pi = torch.mean(ac.q2(o, pi),-1)
+        # q_pi = torch.min(q1_pi, q2_pi)
 
         # Entropy-regularized policy loss
         #logp_pi=torch.stack([logp_pi,logp_pi,logp_pi],dim=1)
@@ -297,22 +282,20 @@ def spike_sac(env_fn, actor_critic=SpikeActorDeepCritic, ac_kwargs=dict(), seed=
 		
     def compute_loss_pi(data):
         o = data['obs']
-        loss_pi1,inf1=all_Actr(ac.popsan1,o)
-        loss_pi2,inf2=all_Actr(ac.popsan2,o)
-        loss_pi3,inf3=all_Actr(ac.popsan3,o)
-        loss_pi4,inf4=all_Actr(ac.popsan4,o)
-        pi_info=[inf1,inf2,inf3,inf4]
-        return loss_pi1,loss_pi2, loss_pi3,loss_pi4,pi_info #loss_pi3,
+        pi_info=[]  
+        loss_pi_all=[]    
+        for actor_index in range(ac_kwargs.num_actor):
+            exec("loss_pi%d,inf%d = %s"%(actor_index+1,actor_index+1,all_Actr(ac.popsan1,o)))
+            pi_info.append(eval("inf%d"%(actor_index+1)))
+            loss_pi_all.append(eval("loss_pi%d"%(actor_index+1)))
+        # pi_info=[inf1,inf2,inf3,inf4]
+        return loss_pi_all,pi_info #loss_pi3,
 
     # Set up optimizers for policy and q-function
-    popsan_mean_optimizer1 = Adam(popsan_params1, lr=popsan_lr)
-    pi_std_optimizer1 = Adam(ac.popsan1.log_std_network.parameters(), lr=q_lr)
-    popsan_mean_optimizer2 = Adam(popsan_params2, lr=popsan_lr)
-    pi_std_optimizer2 = Adam(ac.popsan2.log_std_network.parameters(), lr=q_lr)
-    popsan_mean_optimizer3 = Adam(popsan_params3, lr=popsan_lr)
-    pi_std_optimizer3 = Adam(ac.popsan3.log_std_network.parameters(), lr=q_lr)
-    popsan_mean_optimizer4 = Adam(popsan_params4, lr=popsan_lr)
-    pi_std_optimizer4 = Adam(ac.popsan4.log_std_network.parameters(), lr=q_lr)
+    for actor_idx in range(ac_kwargs.num_actor):
+        exec("popsan_mean_optimizer%d = %s" % (actor_idx + 1, """Adam(eval("popsan_params%d"%(actor_idx + 1)), lr=popsan_lr)"""));
+        exec("pi_std_optimizer%d = %s" % (actor_idx + 1, """Adam(eval("ac.popsan%d.log_std_network.parameters()"%(actor_idx + 1)), lr=q_lr)""" ));
+
     q_optimizer = Adam(q_params, lr=q_lr)
 
     def update(data):
@@ -328,28 +311,20 @@ def spike_sac(env_fn, actor_critic=SpikeActorDeepCritic, ac_kwargs=dict(), seed=
             p.requires_grad = False
 
         # Next run one gradient descent step for pi.
-        popsan_mean_optimizer1.zero_grad()
-        pi_std_optimizer1.zero_grad()
-        popsan_mean_optimizer2.zero_grad()
-        pi_std_optimizer2.zero_grad()
-        popsan_mean_optimizer3.zero_grad()
-        pi_std_optimizer3.zero_grad()
-
-        popsan_mean_optimizer4.zero_grad()
-        pi_std_optimizer4.zero_grad()
-        loss_pi1,loss_pi2,loss_pi3,loss_pi4, pi_info = compute_loss_pi(data)##loss_pi1,loss_pi2,loss_pi3, pi_info 
-        loss_pi1.backward()
-        popsan_mean_optimizer1.step()
-        pi_std_optimizer1.step()
-        loss_pi2.backward()
-        popsan_mean_optimizer2.step()
-        pi_std_optimizer2.step()
-        loss_pi3.backward()
-        popsan_mean_optimizer3.step()
-        pi_std_optimizer3.step()
-        loss_pi4.backward()
-        popsan_mean_optimizer4.step()
-        pi_std_optimizer4.step()
+        for actor_idx in range(ac_kwargs.num_actor):
+            eval("popsan_mean_optimizer%d.zero_grad()"%(actor_idx+1))
+            eval("pi_std_optimizer%d.zero_grad()"%(actor_idx+1))
+        
+        
+        loss_pi_all, pi_info = compute_loss_pi(data)##loss_pi1,loss_pi2,loss_pi3, pi_info 
+        
+        for los_pi_idx in range(len(loss_pi_all)):      
+            loss_pi_all[loss_pi_idx].backward()
+            eval("popsan_mean_optimizer%d.step()"%(loss_pi_idx+1))
+            eval("pi_std_optimizer%d.step()"%(loss_pi_idx+1))
+        # loss_pi2.backward()
+        # popsan_mean_optimizer2.step()
+        # pi_std_optimizer2.step()
 
         # Unfreeze Q-networks so you can optimize it at next DDPG step.
         for p in q_params:
@@ -500,21 +475,23 @@ def spike_sac(env_fn, actor_critic=SpikeActorDeepCritic, ac_kwargs=dict(), seed=
 
             # Test the performance of the deterministic version of the agent.
             #test_mean_reward0 = test_agent(ac.popsan)
-            test_mean_reward1 = test_agent(ac.popsan1)
-            test_mean_reward2 = test_agent(ac.popsan2)
-            test_mean_reward3 = test_agent(ac.popsan3)
-            test_mean_reward4 = test_agent(ac.popsan4)
-            test_mean_reward=np.array([test_mean_reward1,test_mean_reward2,test_mean_reward3,test_mean_reward4])#,test_mean_reward3])
+            test_mean_reward = []
+            for actor_idx in range(ac_kwargs.num_actor):
+                # exec("test_mean_reward%d = %s"% (actor_idx+1, test_agent(eval("ac.popsan%d"%(actor_idx+1)) ))
+                test_mean_reward.append(test_agent(eval("ac.popsan%d"%(actor_idx+1)) ))
+            test_mean_reward = np.array(test_mean_reward)
+            # test_mean_reward=np.array([test_mean_reward1,test_mean_reward2,test_mean_reward3,test_mean_reward4])#,test_mean_reward3])
             idx=np.argmax(test_mean_reward)
-            
-            if idx==0:
-                ac.popsan=ac.popsan1
-            elif idx==1:
-                ac.popsan=ac.popsan2
-            elif idx==2:
-                ac.popsan=ac.popsan3	
-            elif idx==3:
-                ac.popsan=ac.popsan4	
+            exec( "selected_actr = %s"%(eval("ac.popsan%d"%(idx+1))) )
+            ac.popsan=selected_actr
+            # if idx==0:
+            #     ac.popsan=ac.popsan1
+            # elif idx==1:
+            #     ac.popsan=ac.popsan2
+            # elif idx==2:
+            #     ac.popsan=ac.popsan3	
+            # elif idx==3:
+            #     ac.popsan=ac.popsan4	
             
             #updt(bst,ac.popsan)		
             save_test_reward.append(test_mean_reward)
@@ -541,6 +518,9 @@ if __name__ == '__main__':
     parser.add_argument('--start_model_idx', type=int, default=0)
     parser.add_argument('--num_model', type=int, default=1)
     parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--num_actor', type=int, default=3)
+    parser.add_argument('--num_critic', type=int, default=2)
+    parser.add_argument('--quantiles', type=int, nargs='+', default=[0.1,0.5,0.9])
     args = parser.parse_args()
 
     START_MODEL = args.start_model_idx
@@ -551,7 +531,10 @@ if __name__ == '__main__':
                      mean_range=(-3, 3),
                      std=math.sqrt(args.encoder_var),
                      spike_ts=5,
-                     device=torch.device('cpu'))
+                     device=torch.device('cpu'),
+                     num_actor=args.num_actor,
+                     num_critic=args.num_critic,
+                     quantiles=args.quantiles)
     COMMENT = "sac-popsan-" + args.env + "-encoder-dim-" + str(AC_KWARGS['encoder_pop_dim']) + \
               "-decoder-dim-" + str(AC_KWARGS['decoder_pop_dim'])
     for num in range(START_MODEL, START_MODEL + NUM_MODEL):

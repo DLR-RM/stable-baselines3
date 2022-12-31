@@ -49,37 +49,3 @@ class MLPQFunction_quantile(nn.Module):
         q = self.q(torch.cat([obs, act], dim=-1))
         #print("#",q.shape)
         return torch.squeeze(q, -1) # Critical to ensure q has right shape.
-###################below not working
-##error: 
-##cat(): functions with out=... arguments don't support automatic differentiation, but one of the arguments requires grad.
-"""
-def mlp_quantile(quantiles):
-    outputs = []
-    for i, quantile in enumerate(quantiles):
-        outputss = nn.Sequential(nn.Linear(1, 1))
-        outputs.append(outputss)
-    qf=outputs
-
-    return qf
-
-class MLPQFunction_quantile(nn.Module):
-
-    def __init__(self, obs_dim, act_dim, hidden_sizes, activation,quantiles):
-        super().__init__()
-        print("create",[obs_dim + act_dim] + list(hidden_sizes) + [1])
-        self.q = mlp([obs_dim + act_dim] + list(hidden_sizes) + [1], activation)
-        self.out=mlp_quantile(quantiles)
-        print(self.q,self.out)
-
-    def forward(self, obs, act):
-        print("pass Q_i/p",torch.cat([obs, act], dim=-1).shape)
-        q = self.q(torch.cat([obs, act], dim=-1))
-        quin=[]
-        print("#",q.shape)
-        for i in range(len(self.out)):
-            torch.cat(quin,out=torch.squeeze(  self.out[i]( q), -1 ) )
-        print("Quin__",quin)
-        return quin # Critical to ensure q has right shape.
-
-"""
-

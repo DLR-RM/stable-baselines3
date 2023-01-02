@@ -507,6 +507,8 @@ def get_system_info(print_info: bool = True) -> Tuple[Dict[str, str], str]:
         and a formatted string.
     """
     env_info = {
+        # In OS, a regex is used to add a space between a "#" and a number to avoid
+        # wrongly linking to another issue on GitHub. Example: turn "#42" to "# 42".
         "OS": re.sub(r"#(\d)", r"# \1", f"{platform.platform()} {platform.version()}"),
         "Python": platform.python_version(),
         "Stable-Baselines3": sb3.__version__,

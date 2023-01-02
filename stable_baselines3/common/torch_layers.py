@@ -3,6 +3,7 @@ from typing import Dict, List, Tuple, Type, Union
 
 import gym
 import torch as th
+from gym import spaces
 from torch import nn
 
 from stable_baselines3.common.preprocessing import get_flattened_obs_dim, is_image_space
@@ -63,7 +64,7 @@ class NatureCNN(BaseFeaturesExtractor):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Box,
+        observation_space: spaces.Box,
         features_dim: int = 512,
         normalized_image: bool = False,
     ) -> None:
@@ -267,7 +268,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Dict,
+        observation_space: spaces.Dict,
         cnn_output_dim: int = 256,
         normalized_image: bool = False,
     ) -> None:

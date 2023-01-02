@@ -4,6 +4,12 @@
 Getting Started
 ===============
 
+.. note::
+
+  Stable-Baselines3 (SB3) uses :ref:`vectorized environments (VecEnv) <vec_env>` internally.
+  Please read the associated section to learn more about its features and differences compared to a single Gym environment.
+
+
 Most of the library tries to follow a sklearn-like syntax for the Reinforcement Learning algorithms.
 
 Here is a quick example of how to train and run A2C on a CartPole environment:

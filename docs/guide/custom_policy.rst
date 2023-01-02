@@ -125,9 +125,9 @@ that derives from ``BaseFeaturesExtractor`` and then pass it to the model when t
 
 .. code-block:: python
 
-  import gym
   import torch as th
   import torch.nn as nn
+  from gym import spaces
 
   from stable_baselines3 import PPO
   from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
@@ -140,7 +140,7 @@ that derives from ``BaseFeaturesExtractor`` and then pass it to the model when t
           This corresponds to the number of unit for the last layer.
       """
 
-      def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 256):
+      def __init__(self, observation_space: spaces.Box, features_dim: int = 256):
           super().__init__(observation_space, features_dim)
           # We assume CxHxW images (channels first)
           # Re-ordering will be done by pre-preprocessing or wrapper
@@ -199,7 +199,7 @@ downsampling and "vector" with a single linear layer.
   from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
   class CustomCombinedExtractor(BaseFeaturesExtractor):
-      def __init__(self, observation_space: gym.spaces.Dict):
+      def __init__(self, observation_space: spaces.Dict):
           # We do not know features-dim here before going over all the items,
           # so put something dummy for now. PyTorch requires calling
           # nn.Module.__init__ before adding modules
@@ -310,7 +310,7 @@ If your task requires even more granular control over the policy/value architect
 
   from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 
-  import gym
+  from gym import spaces
   import torch as th
   from torch import nn
 
@@ -367,8 +367,8 @@ If your task requires even more granular control over the policy/value architect
   class CustomActorCriticPolicy(ActorCriticPolicy):
       def __init__(
           self,
-          observation_space: gym.spaces.Space,
-          action_space: gym.spaces.Space,
+          observation_space: spaces.Space,
+          action_space: spaces.Space,
           lr_schedule: Callable[[float], float],
           net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
           activation_fn: Type[nn.Module] = nn.Tanh,

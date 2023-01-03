@@ -1,8 +1,9 @@
-import numpy as np
-import torch
 import sys
 
-sys.path.append('../../')
+import numpy as np
+import torch
+
+sys.path.append("../../")
 import core_cuda as core
 
 
@@ -30,10 +31,14 @@ class ReplayBuffer:
         # Running z-score normalization parameters
         self.clip_limit = clip_limit
         self.norm_update_every = norm_update_every
-        self.norm_update_batch = np.zeros(core.combined_shape(norm_update_every, obs_dim), dtype=np.float32)
+        self.norm_update_batch = np.zeros(
+            core.combined_shape(norm_update_every, obs_dim), dtype=np.float32
+        )
         self.norm_update_count = 0
         self.norm_total_count = np.finfo(np.float32).eps.item()
-        self.mean, self.var = np.zeros(obs_dim, dtype=np.float32), np.ones(obs_dim, dtype=np.float32)
+        self.mean, self.var = np.zeros(obs_dim, dtype=np.float32), np.ones(
+            obs_dim, dtype=np.float32
+        )
 
     def store(self, obs, act, rew, next_obs, done):
         """
@@ -57,13 +62,22 @@ class ReplayBuffer:
         self.norm_update_count += 1
         if self.norm_update_count == self.norm_update_every:
             self.norm_update_count = 0
-            batch_mean, batch_var = self.norm_update_batch.mean(axis=0), self.norm_update_batch.var(axis=0)
+            batch_mean, batch_var = self.norm_update_batch.mean(
+                axis=0
+            ), self.norm_update_batch.var(axis=0)
             tmp_total_count = self.norm_total_count + self.norm_update_every
             delta_mean = batch_mean - self.mean
             self.mean += delta_mean * (self.norm_update_every / tmp_total_count)
             m_a = self.var * self.norm_total_count
             m_b = batch_var * self.norm_update_every
-            m_2 = m_a + m_b + np.square(delta_mean) * self.norm_total_count * self.norm_update_every / tmp_total_count
+            m_2 = (
+                m_a
+                + m_b
+                + np.square(delta_mean)
+                * self.norm_total_count
+                * self.norm_update_every
+                / tmp_total_count
+            )
             self.var = m_2 / tmp_total_count
             self.norm_total_count = tmp_total_count
 
@@ -75,12 +89,17 @@ class ReplayBuffer:
         :return: batch
         """
         idxs = np.random.randint(0, self.size, size=batch_size)
-        batch = dict(obs=self.normalize_obs(self.obs_buf[idxs]),
-                     obs2=self.normalize_obs(self.obs2_buf[idxs]),
-                     act=self.act_buf[idxs],
-                     rew=self.rew_buf[idxs],
-                     done=self.done_buf[idxs])
-        return {k: torch.as_tensor(v, dtype=torch.float32, device=device) for k, v in batch.items()}
+        batch = dict(
+            obs=self.normalize_obs(self.obs_buf[idxs]),
+            obs2=self.normalize_obs(self.obs2_buf[idxs]),
+            act=self.act_buf[idxs],
+            rew=self.rew_buf[idxs],
+            done=self.done_buf[idxs],
+        )
+        return {
+            k: torch.as_tensor(v, dtype=torch.float32, device=device)
+            for k, v in batch.items()
+        }
 
     def normalize_obs(self, obs):
         """
@@ -89,6 +108,9 @@ class ReplayBuffer:
         :return: norm_obs
         """
         eps = np.finfo(np.float32).eps.item()
-        norm_obs = np.clip((obs - self.mean) / np.sqrt(self.var + eps),
-                           -self.clip_limit, self.clip_limit)
+        norm_obs = np.clip(
+            (obs - self.mean) / np.sqrt(self.var + eps),
+            -self.clip_limit,
+            self.clip_limit,
+        )
         return norm_obs

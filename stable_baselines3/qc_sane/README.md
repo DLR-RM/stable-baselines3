@@ -4,10 +4,12 @@
 * Python_version>3.7
 * gym==0.15.3
 * mujoco-py==2.0.2.5
-
+```bash
+pip install -r qc_sane_requirement.txt
+```
 ## To run
 ```bash
-cd stable-baselines3/stable_baselines3/qc_sane 
+cd stable-baselines3/stable_baselines3/qc_sane
 python qc_sane.py
 ```
 

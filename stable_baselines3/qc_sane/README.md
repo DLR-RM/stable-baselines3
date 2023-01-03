@@ -1,23 +1,23 @@
 ## QC_SANE
 
-* Requirements:
-Python_version>3.7
-gym==0.15.3
-mujoco-py==2.0.2.5
+# Requirements:
+* Python_version>3.7
+* gym==0.15.3
+* mujoco-py==2.0.2.5
 
-* Reference:
-[1] Github Source: https://github.com/combra-lab/pop-spiking-deep-rl
+# Reference:
+- [1] Github Source: https://github.com/combra-lab/pop-spiking-deep-rl
 
-[2] Research Paper: https://arxiv.org/abs/2010.09635
+- [2] Research Paper: https://arxiv.org/abs/2010.09635
 
 
-*To run
+# To run
+```bash
 cd stable-baselines3/stable_baselines3/qc_sane 
-
 python qc_sane.py
+```
 
-
-* To cite QC_SANE in publications:
+# To cite QC_SANE in publications:
 
 ```bibtex
 @article{gupta2021qc_sane,

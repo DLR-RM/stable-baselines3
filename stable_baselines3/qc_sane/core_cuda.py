@@ -42,7 +42,7 @@ class MLPQFunction_quantile(nn.Module):
         #print("create",[obs_dim + act_dim] + list(hidden_sizes) + [len(quantiles)])
         self.q = mlp([obs_dim + act_dim] + list(hidden_sizes) + [len(quantiles)], activation)
         #self.out=mlp_quantile(quantiles)
-        print(self.q)
+        print("*q",self.q)
 
     def forward(self, obs, act):
         #print("pass Q_i/p",torch.cat([obs, act], dim=-1).shape)

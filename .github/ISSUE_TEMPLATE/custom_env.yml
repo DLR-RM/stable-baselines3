@@ -36,6 +36,7 @@ body:
         ```python
         import gym
         import numpy as np
+        from gym import spaces
 
         from stable_baselines3 import A2C
         from stable_baselines3.common.env_checker import check_env
@@ -43,20 +44,20 @@ body:
 
         class CustomEnv(gym.Env):
 
-          def __init__(self):
-            super().__init__()
-            self.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(14,))
-            self.action_space = gym.spaces.Box(low=-1, high=1, shape=(6,))
+            def __init__(self):
+                super().__init__()
+                self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(14,))
+                self.action_space = spaces.Box(low=-1, high=1, shape=(6,))
 
-          def reset(self):
-            return self.observation_space.sample()
+            def reset(self):
+                return self.observation_space.sample()
 
-          def step(self, action):
-            obs = self.observation_space.sample()
-            reward = 1.0
-            done = False
-            info = {}
-            return obs, reward, done, info
+            def step(self, action):
+                obs = self.observation_space.sample()
+                reward = 1.0
+                done = False
+                info = {}
+                return obs, reward, done, info
 
         env = CustomEnv()
         check_env(env)
@@ -86,9 +87,8 @@ body:
          * Versions of any other relevant libraries
 
         You can use `sb3.get_system_info()` to print relevant packages info:
-        ```python
-        import stable_baselines3 as sb3
-        sb3.get_system_info()
+        ```sh
+        python -c 'import stable_baselines3 as sb3; sb3.get_system_info()'
         ```
   - type: checkboxes
     id: terms

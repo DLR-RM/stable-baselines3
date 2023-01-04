@@ -7,9 +7,9 @@ from abc import ABC, abstractmethod
 from functools import partial
 from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
-import gym
 import numpy as np
 import torch as th
+from gym import spaces
 from torch import nn
 
 from stable_baselines3.common.distributions import (
@@ -60,8 +60,8 @@ class BaseModel(nn.Module):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
         features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
         features_extractor: Optional[nn.Module] = None,
@@ -344,7 +344,7 @@ class BasePolicy(BaseModel, ABC):
         # Convert to numpy, and reshape to the original action shape
         actions = actions.cpu().numpy().reshape((-1,) + self.action_space.shape)
 
-        if isinstance(self.action_space, gym.spaces.Box):
+        if isinstance(self.action_space, spaces.Box):
             if self.squash_output:
                 # Rescale to proper domain when using squashing
                 actions = self.unscale_action(actions)
@@ -415,8 +415,8 @@ class ActorCriticPolicy(BasePolicy):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
         lr_schedule: Schedule,
         net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
@@ -749,8 +749,8 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
         lr_schedule: Schedule,
         net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
@@ -822,8 +822,8 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Dict,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Dict,
+        action_space: spaces.Space,
         lr_schedule: Schedule,
         net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
@@ -890,8 +890,8 @@ class ContinuousCritic(BaseModel):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
         net_arch: List[int],
         features_extractor: nn.Module,
         features_dim: int,

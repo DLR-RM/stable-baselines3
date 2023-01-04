@@ -1,14 +1,14 @@
 import gym
 import numpy as np
 import pytest
-from gym.spaces import Box, Dict, Discrete
+from gym import spaces
 
 from stable_baselines3.common.env_checker import check_env
 
 
 class ActionDictTestEnv(gym.Env):
-    action_space = Dict({"position": Discrete(1), "velocity": Discrete(1)})
-    observation_space = Box(low=-1.0, high=2.0, shape=(3,), dtype=np.float32)
+    action_space = spaces.Dict({"position": spaces.Discrete(1), "velocity": spaces.Discrete(1)})
+    observation_space = spaces.Box(low=-1.0, high=2.0, shape=(3,), dtype=np.float32)
 
     def step(self, action):
         observation = np.array([1.0, 1.5, 0.5], dtype=self.observation_space.dtype)

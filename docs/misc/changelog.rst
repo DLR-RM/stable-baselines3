@@ -4,8 +4,16 @@ Changelog
 ==========
 
 
-Release 1.7.0a8 (WIP)
+Release 1.7.0a11 (WIP)
 --------------------------
+
+.. note::
+
+  A2C and PPO saved with SB3 < 1.7.0 will show a warning about
+  missing keys in the state dict when loaded with SB3 >= 1.7.0.
+  To suppress the warning, simply save the model again.
+  You can find more info in `issue #1233 <https://github.com/DLR-RM/stable-baselines3/issues/1233>`_
+
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -39,6 +47,7 @@ Bug Fixes:
 - Fixed ``Self`` return type using ``TypeVar``
 - Fixed the env checker, the key was not passed when checking images from Dict observation space
 - Fixed ``normalize_images`` which was not passed to parent class in some cases
+- Fixed ``load_from_vector`` that was broken with newer PyTorch version when passing PyTorch tensor
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -57,10 +66,13 @@ Others:
 - Fixed ``stable_baselines3/common/env_util.py`` type hints
 - Fixed ``stable_baselines3/common/preprocessing.py`` type hints
 - Fixed ``stable_baselines3/common/atari_wrappers.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/vec_check_nan.py`` type hints
 - Exposed modules in ``__init__.py`` with the ``__all__`` attribute (@ZikangXiong)
 - Upgraded GitHub CI/setup-python to v4 and checkout to v3
 - Set tensors construction directly on the device (~8% speed boost on GPU)
 - Monkey-patched ``np.bool = bool`` so gym 0.21 is compatible with NumPy 1.24+
+- Standardized the use of ``from gym import spaces``
+- Modified ``get_system_info`` to avoid issue linked to copy-pasting on GitHub issue
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -70,6 +82,7 @@ Documentation:
 - Updated custom policy documentation (@athatheo)
 - Improved tensorboard callback doc
 - Clarify doc when using image-like input
+- Added RLeXplore to the project page (@yuanmingqi)
 
 
 Release 1.6.2 (2022-10-10)
@@ -1148,5 +1161,5 @@ And all the contributors:
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
-@Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
+@Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875 @yuanmingqi
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong

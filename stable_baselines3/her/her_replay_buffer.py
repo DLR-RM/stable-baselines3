@@ -202,7 +202,7 @@ class HerReplayBuffer(DictReplayBuffer):
         virtual_batch_inds, real_batch_inds = np.split(batch_inds, [nb_virtual])
         virtual_env_indices, real_env_indices = np.split(env_indices, [nb_virtual])
 
-        # get real and virtual data
+        # Get real and virtual data
         real_data = self._get_real_samples(real_batch_inds, real_env_indices, env)
         virtual_data = self._get_virtual_samples(virtual_batch_inds, virtual_env_indices, env)
 
@@ -348,7 +348,7 @@ class HerReplayBuffer(DictReplayBuffer):
             # so the next achieved_goal depends also on the previous state and action
             # because we are in a GoalEnv:
             # r_t = reward(s_t, a_t) = reward(next_achieved_goal, desired_goal)
-            # therefore we have to use next_obs["achived_goal"] and not obs["achived_goal"]
+            # therefore we have to use next_obs["achieved_goal"] and not obs["achieved_goal"]
             next_obs["achieved_goal"],
             infos,
             # we use the method of the first environment assuming that all environments are identical.

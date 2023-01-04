@@ -289,8 +289,10 @@ class HerReplayBuffer(DictReplayBuffer):
         :return: Samples
         """
         # Normalize if needed and remove extra dimension (we are using only one env for now)
-        obs_ = self._normalize_obs({key: obs[batch_inds, env_indices, :] for key, obs in self.observations.items()})
-        next_obs_ = self._normalize_obs({key: obs[batch_inds, env_indices, :] for key, obs in self.next_observations.items()})
+        obs_ = self._normalize_obs({key: obs[batch_inds, env_indices, :] for key, obs in self.observations.items()}, env)
+        next_obs_ = self._normalize_obs(
+            {key: obs[batch_inds, env_indices, :] for key, obs in self.next_observations.items()}, env
+        )
 
         # Convert to torch tensor
         observations = {key: self.to_torch(obs) for key, obs in obs_.items()}
@@ -354,8 +356,8 @@ class HerReplayBuffer(DictReplayBuffer):
             indices=[0],
         )
         rewards = rewards[0].astype(np.float32)  # env_method returns a list containing one element
-        obs = self._normalize_obs(obs)
-        next_obs = self._normalize_obs(next_obs)
+        obs = self._normalize_obs(obs, env)
+        next_obs = self._normalize_obs(next_obs, env)
 
         # Convert to torch tensor
         observations = {key: self.to_torch(obs) for key, obs in obs.items()}

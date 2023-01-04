@@ -161,8 +161,8 @@ class MlpExtractor(nn.Module):
        It is formatted like ``dict(vf=[<value layer sizes>], pi=[<policy layer sizes>])``.
        If it is missing any of the keys (pi or vf), no non-shared layers (empty list) is assumed.
 
-    Depredcation note: shared layers in ``net_arch`` are deprecated, please use separate
-    pi and vf networks (e.g. net_arch=[dict(pi=[...], vf=[...])])
+    Deprecation note: shared layers in ``net_arch`` are deprecated, please use separate
+    pi and vf networks (e.g. net_arch=dict(pi=[...], vf=[...]))
 
     For example to construct a network with one shared layer of size 55 followed by two non-shared layers for the value
     network of size 255 and a single non-shared layer of size 128 for the policy network, the following layers_spec

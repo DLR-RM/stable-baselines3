@@ -325,7 +325,7 @@ If your task requires even more granular control over the policy/value architect
           last_layer_dim_pi: int = 64,
           last_layer_dim_vf: int = 64,
       ):
-          super(CustomNetwork, self).__init__()
+          super().__init__()
 
           # IMPORTANT:
           # Save output dimensions, used to create the distributions
@@ -361,8 +361,6 @@ If your task requires even more granular control over the policy/value architect
           observation_space: spaces.Space,
           action_space: spaces.Space,
           lr_schedule: Callable[[float], float],
-          net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
-          activation_fn: Type[nn.Module] = nn.Tanh,
           *args,
           **kwargs,
       ):
@@ -371,8 +369,6 @@ If your task requires even more granular control over the policy/value architect
               observation_space,
               action_space,
               lr_schedule,
-              net_arch,
-              activation_fn,
               # Pass remaining arguments to base class
               *args,
               **kwargs,

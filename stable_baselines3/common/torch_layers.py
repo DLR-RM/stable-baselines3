@@ -181,7 +181,7 @@ class MlpExtractor(nn.Module):
     def __init__(
         self,
         feature_dim: int,
-        net_arch: List[Union[int, Dict[str, List[int]]]],
+        net_arch: Union[Dict[str, List[int]], List[Union[int, Dict[str, List[int]]]]],
         activation_fn: Type[nn.Module],
         device: Union[th.device, str] = "auto",
     ) -> None:
@@ -194,32 +194,38 @@ class MlpExtractor(nn.Module):
         value_only_layers: List[int] = []  # Layer sizes of the network that only belongs to the value network
         last_layer_dim_shared = feature_dim
 
-        if len(net_arch) > 0 and isinstance(net_arch[0], int):
+        if isinstance(net_arch, list) and len(net_arch) > 0 and isinstance(net_arch[0], int):
             warnings.warn(
                 (
-                    "Shared layers in the mlp_extractor are deprecated, please use separate pi and vf networks"
-                    "(e.g. net_arch=[dict(pi=[...], vf=[...])])"
+                    "Shared layers in the mlp_extractor are deprecated and will be removed in SB3 v1.8.0, "
+                    "please use separate pi and vf networks "
+                    "(e.g. net_arch=dict(pi=[...], vf=[...]))"
                 ),
                 DeprecationWarning,
             )
 
-        # Iterate through the shared layers and build the shared parts of the network
-        for layer in net_arch:
-            if isinstance(layer, int):  # Check that this is a shared layer
-                # TODO: give layer a meaningful name
-                shared_net.append(nn.Linear(last_layer_dim_shared, layer))  # add linear of size layer
-                shared_net.append(activation_fn())
-                last_layer_dim_shared = layer
-            else:
-                assert isinstance(layer, dict), "Error: the net_arch list can only contain ints and dicts"
-                if "pi" in layer:
-                    assert isinstance(layer["pi"], list), "Error: net_arch[-1]['pi'] must contain a list of integers."
-                    policy_only_layers = layer["pi"]
+        # TODO(antonin): update behavior for net_arch=[64, 64]
+        # once shared networks are removed
+        if isinstance(net_arch, dict):
+            policy_only_layers = net_arch["pi"]
+            value_only_layers = net_arch["vf"]
+        else:
+            # Iterate through the shared layers and build the shared parts of the network
+            for layer in net_arch:
+                if isinstance(layer, int):  # Check that this is a shared layer
+                    shared_net.append(nn.Linear(last_layer_dim_shared, layer))  # add linear of size layer
+                    shared_net.append(activation_fn())
+                    last_layer_dim_shared = layer
+                else:
+                    assert isinstance(layer, dict), "Error: the net_arch list can only contain ints and dicts"
+                    if "pi" in layer:
+                        assert isinstance(layer["pi"], list), "Error: net_arch[-1]['pi'] must contain a list of integers."
+                        policy_only_layers = layer["pi"]
 
-                if "vf" in layer:
-                    assert isinstance(layer["vf"], list), "Error: net_arch[-1]['vf'] must contain a list of integers."
-                    value_only_layers = layer["vf"]
-                break  # From here on the network splits up in policy and value network
+                    if "vf" in layer:
+                        assert isinstance(layer["vf"], list), "Error: net_arch[-1]['vf'] must contain a list of integers."
+                        value_only_layers = layer["vf"]
+                    break  # From here on the network splits up in policy and value network
 
         last_layer_dim_pi = last_layer_dim_shared
         last_layer_dim_vf = last_layer_dim_shared

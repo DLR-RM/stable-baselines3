@@ -231,8 +231,10 @@ class VecEnv(ABC):
                 return bigimg
 
         else:
-            # TODO: a new 'rgb_array_list' mode has been defined and should be handled.
-            raise NotImplementedError(f"The render mode {mode} has not yet been implemented in Stable Baselines.")
+            # Other render modes:
+            # In that case, we try to call `self.env.render()` but it might
+            # crash for subprocesses
+            return self.env_method("render")
 
     @abstractmethod
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:

@@ -8,10 +8,13 @@ from stable_baselines3.common.sb2_compat.rmsprop_tf_like import RMSpropTFLike
 @pytest.mark.parametrize(
     "net_arch",
     [
-        [12, dict(vf=[16], pi=[8])],
-        [4],
         [],
+        dict(vf=[16], pi=[8]),
+        # [<layer_sizes>] behavior will change
+        [4],
         [4, 4],
+        # All values below are deprecated
+        [12, dict(vf=[16], pi=[8])],
         [12, dict(vf=[8, 4], pi=[8])],
         [12, dict(vf=[8], pi=[8, 4])],
         [12, dict(pi=[8])],
@@ -19,7 +22,11 @@ from stable_baselines3.common.sb2_compat.rmsprop_tf_like import RMSpropTFLike
 )
 @pytest.mark.parametrize("model_class", [A2C, PPO])
 def test_flexible_mlp(model_class, net_arch):
-    _ = model_class("MlpPolicy", "CartPole-v1", policy_kwargs=dict(net_arch=net_arch), n_steps=64).learn(300)
+    if isinstance(net_arch, list) and len(net_arch) > 0 and isinstance(net_arch[0], int):
+        with pytest.warns(DeprecationWarning):
+            _ = model_class("MlpPolicy", "CartPole-v1", policy_kwargs=dict(net_arch=net_arch), n_steps=64).learn(300)
+    else:
+        _ = model_class("MlpPolicy", "CartPole-v1", policy_kwargs=dict(net_arch=net_arch), n_steps=64).learn(300)
 
 
 @pytest.mark.parametrize("net_arch", [[], [4], [4, 4], dict(qf=[8], pi=[8, 4])])

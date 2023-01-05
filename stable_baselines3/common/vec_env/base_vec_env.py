@@ -234,7 +234,8 @@ class VecEnv(ABC):
             # Other render modes:
             # In that case, we try to call `self.env.render()` but it might
             # crash for subprocesses
-            return self.env_method("render")
+            # and we don't return the values
+            self.env_method("render")
 
     @abstractmethod
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:

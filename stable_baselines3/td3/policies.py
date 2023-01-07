@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Type, Union
 
-import gym
 import torch as th
+from gym import spaces
 from torch import nn
 
 from stable_baselines3.common.policies import BasePolicy, ContinuousCritic
@@ -34,8 +34,8 @@ class Actor(BasePolicy):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
         net_arch: List[int],
         features_extractor: nn.Module,
         features_dim: int,
@@ -108,8 +108,8 @@ class TD3Policy(BasePolicy):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
         lr_schedule: Schedule,
         net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
@@ -271,8 +271,8 @@ class CnnPolicy(TD3Policy):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
         lr_schedule: Schedule,
         net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
@@ -325,8 +325,8 @@ class MultiInputPolicy(TD3Policy):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Dict,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Dict,
+        action_space: spaces.Space,
         lr_schedule: Schedule,
         net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,

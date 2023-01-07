@@ -8,6 +8,7 @@ import gym
 import numpy as np
 import pytest
 import torch as th
+from gym import spaces
 from matplotlib import pyplot as plt
 from pandas.errors import EmptyDataError
 
@@ -350,8 +351,8 @@ class TimeDelayEnv(gym.Env):
     def __init__(self, delay: float = 0.01):
         super().__init__()
         self.delay = delay
-        self.observation_space = gym.spaces.Box(low=-20.0, high=20.0, shape=(4,), dtype=np.float32)
-        self.action_space = gym.spaces.Discrete(2)
+        self.observation_space = spaces.Box(low=-20.0, high=20.0, shape=(4,), dtype=np.float32)
+        self.action_space = spaces.Discrete(2)
 
     def reset(self):
         return self.observation_space.sample()

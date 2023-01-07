@@ -266,7 +266,7 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
 
 def _check_spaces(env: gym.Env) -> None:
     """
-    Check that the observation and action spaces are defined and inherit from gym.spaces.Space. For
+    Check that the observation and action spaces are defined and inherit from spaces.Space. For
     envs that follow the goal-conditioned standard (previously, the gym.GoalEnv interface) we check
     the observation space is gym.spaces.Dict
     """

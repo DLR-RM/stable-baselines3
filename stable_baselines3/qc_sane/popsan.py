@@ -6,7 +6,7 @@ from torch.distributions.normal import Normal
 import sys
 
 sys.path.append('../../')
-import core_cuda as core
+from stable_baselines3.qc_sane import core_cuda as core
 
 
 """

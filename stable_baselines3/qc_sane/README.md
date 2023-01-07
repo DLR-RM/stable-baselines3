@@ -7,10 +7,10 @@
 ```bash
 pip install -r qc_sane_requirement.txt
 ```
-## To run
+## To train model
 ```bash
-cd stable-baselines3/stable_baselines3/qc_sane
-python qc_sane.py
+cd stable-baselines3
+python tests/test_qc_sane.py
 ```
 
 ## Reference:

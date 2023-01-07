@@ -1,13 +1,13 @@
+import sys
+
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions.normal import Normal
-import sys
 
 sys.path.append('../../')
 from stable_baselines3.qc_sane import core_cuda as core
-
 
 """
 Parameters for SNN
@@ -22,10 +22,12 @@ SPIKE_PSEUDO_GRAD_WINDOW = 0.5
 
 
 class PseudoEncoderSpikeRegular(torch.autograd.Function):
-    """ Pseudo-gradient function for spike - Regular Spike for encoder """
+    """Pseudo-gradient function for spike - Regular Spike for encoder"""
+
     @staticmethod
     def forward(ctx, input):
         return input.gt(ENCODER_REGULAR_VTH).float()
+
     @staticmethod
     def backward(ctx, grad_output):
         grad_input = grad_output.clone()
@@ -33,7 +35,8 @@ class PseudoEncoderSpikeRegular(torch.autograd.Function):
 
 
 class PopSpikeEncoderRegularSpike(nn.Module):
-    """ Learnable Population Coding Spike Encoder with Regular Spike Trains """
+    """Learnable Population Coding Spike Encoder with Regular Spike Trains"""
+
     def __init__(self, obs_dim, pop_dim, spike_ts, mean_range, std, device):
         """
         :param obs_dim: observation dimension
@@ -67,9 +70,13 @@ class PopSpikeEncoderRegularSpike(nn.Module):
         """
         obs = obs.view(-1, self.obs_dim, 1)
         # Receptive Field of encoder population has Gaussian Shape
-        pop_act = torch.exp(-(1. / 2.) * (obs - self.mean).pow(2) / self.std.pow(2)).view(-1, self.encoder_neuron_num)
+        pop_act = torch.exp(
+            -(1.0 / 2.0) * (obs - self.mean).pow(2) / self.std.pow(2)
+        ).view(-1, self.encoder_neuron_num)
         pop_volt = torch.zeros(batch_size, self.encoder_neuron_num, device=self.device)
-        pop_spikes = torch.zeros(batch_size, self.encoder_neuron_num, self.spike_ts, device=self.device)
+        pop_spikes = torch.zeros(
+            batch_size, self.encoder_neuron_num, self.spike_ts, device=self.device
+        )
         # Generate Regular Spike Trains
         for step in range(self.spike_ts):
             pop_volt = pop_volt + pop_act
@@ -79,7 +86,8 @@ class PopSpikeEncoderRegularSpike(nn.Module):
 
 
 class PopSpikeDecoder(nn.Module):
-    """ Population Coding Spike Decoder """
+    """Population Coding Spike Decoder"""
+
     def __init__(self, act_dim, pop_dim, output_activation=nn.Tanh):
         """
         :param act_dim: action dimension
@@ -103,21 +111,24 @@ class PopSpikeDecoder(nn.Module):
 
 
 class PseudoSpikeRect(torch.autograd.Function):
-    """ Pseudo-gradient function for spike - Derivative of Rect Function """
+    """Pseudo-gradient function for spike - Derivative of Rect Function"""
+
     @staticmethod
     def forward(ctx, input):
         ctx.save_for_backward(input)
         return input.gt(NEURON_VTH).float()
+
     @staticmethod
     def backward(ctx, grad_output):
-        input, = ctx.saved_tensors
+        (input,) = ctx.saved_tensors
         grad_input = grad_output.clone()
-        spike_pseudo_grad = (abs(input - NEURON_VTH) < SPIKE_PSEUDO_GRAD_WINDOW)
+        spike_pseudo_grad = abs(input - NEURON_VTH) < SPIKE_PSEUDO_GRAD_WINDOW
         return grad_input * spike_pseudo_grad.float()
 
 
 class SpikeMLP(nn.Module):
-    """ Spike MLP with Input and Output population neurons """
+    """Spike MLP with Input and Output population neurons"""
+
     def __init__(self, in_pop_dim, out_pop_dim, hidden_sizes, spike_ts, device):
         """
         :param in_pop_dim: input population dimension
@@ -138,7 +149,9 @@ class SpikeMLP(nn.Module):
         self.hidden_layers = nn.ModuleList([nn.Linear(in_pop_dim, hidden_sizes[0])])
         if self.hidden_num > 1:
             for layer in range(1, self.hidden_num):
-                self.hidden_layers.extend([nn.Linear(hidden_sizes[layer-1], hidden_sizes[layer])])
+                self.hidden_layers.extend(
+                    [nn.Linear(hidden_sizes[layer - 1], hidden_sizes[layer])]
+                )
         self.out_pop_layer = nn.Linear(hidden_sizes[-1], out_pop_dim)
 
     def neuron_model(self, syn_func, pre_layer_output, current, volt, spike):
@@ -152,7 +165,7 @@ class SpikeMLP(nn.Module):
         :return: current, volt, spike
         """
         current = current * NEURON_CDECAY + syn_func(pre_layer_output)
-        volt = volt * NEURON_VDECAY * (1. - spike) + current
+        volt = volt * NEURON_VDECAY * (1.0 - spike) + current
         spike = self.pseudo_spike(volt)
         return current, volt, spike
 
@@ -166,27 +179,52 @@ class SpikeMLP(nn.Module):
         # Define LIF Neuron states: Current, Voltage, and Spike
         hidden_states = []
         for layer in range(self.hidden_num):
-            hidden_states.append([torch.zeros(batch_size, self.hidden_sizes[layer], device=self.device)
-                                  for _ in range(3)])
-        out_pop_states = [torch.zeros(batch_size, self.out_pop_dim, device=self.device)
-                          for _ in range(3)]
+            hidden_states.append(
+                [
+                    torch.zeros(
+                        batch_size, self.hidden_sizes[layer], device=self.device
+                    )
+                    for _ in range(3)
+                ]
+            )
+        out_pop_states = [
+            torch.zeros(batch_size, self.out_pop_dim, device=self.device)
+            for _ in range(3)
+        ]
         out_pop_act = torch.zeros(batch_size, self.out_pop_dim, device=self.device)
         # Start Spike Timestep Iteration
         for step in range(self.spike_ts):
             in_pop_spike_t = in_pop_spikes[:, :, step]
-            hidden_states[0][0], hidden_states[0][1], hidden_states[0][2] = self.neuron_model(
-                self.hidden_layers[0], in_pop_spike_t,
-                hidden_states[0][0], hidden_states[0][1], hidden_states[0][2]
+            (
+                hidden_states[0][0],
+                hidden_states[0][1],
+                hidden_states[0][2],
+            ) = self.neuron_model(
+                self.hidden_layers[0],
+                in_pop_spike_t,
+                hidden_states[0][0],
+                hidden_states[0][1],
+                hidden_states[0][2],
             )
             if self.hidden_num > 1:
                 for layer in range(1, self.hidden_num):
-                    hidden_states[layer][0], hidden_states[layer][1], hidden_states[layer][2] = self.neuron_model(
-                        self.hidden_layers[layer], hidden_states[layer-1][2],
-                        hidden_states[layer][0], hidden_states[layer][1], hidden_states[layer][2]
+                    (
+                        hidden_states[layer][0],
+                        hidden_states[layer][1],
+                        hidden_states[layer][2],
+                    ) = self.neuron_model(
+                        self.hidden_layers[layer],
+                        hidden_states[layer - 1][2],
+                        hidden_states[layer][0],
+                        hidden_states[layer][1],
+                        hidden_states[layer][2],
                     )
             out_pop_states[0], out_pop_states[1], out_pop_states[2] = self.neuron_model(
-                self.out_pop_layer, hidden_states[-1][2],
-                out_pop_states[0], out_pop_states[1], out_pop_states[2]
+                self.out_pop_layer,
+                hidden_states[-1][2],
+                out_pop_states[0],
+                out_pop_states[1],
+                out_pop_states[2],
             )
             out_pop_act += out_pop_states[2]
         out_pop_act = out_pop_act / self.spike_ts
@@ -198,9 +236,21 @@ LOG_STD_MIN = -20
 
 
 class SquashedGaussianPopSpikeActor(nn.Module):
-    """ Squashed Gaussian Stochastic Population Coding Spike Actor with Fix Encoder """
-    def __init__(self, obs_dim, act_dim, en_pop_dim, de_pop_dim, hidden_sizes,
-                 mean_range, std, spike_ts, act_limit, device):
+    """Squashed Gaussian Stochastic Population Coding Spike Actor with Fix Encoder"""
+
+    def __init__(
+        self,
+        obs_dim,
+        act_dim,
+        en_pop_dim,
+        de_pop_dim,
+        hidden_sizes,
+        mean_range,
+        std,
+        spike_ts,
+        act_limit,
+        device,
+    ):
         """
         :param obs_dim: observation dimension
         :param act_dim: action dimension
@@ -215,16 +265,24 @@ class SquashedGaussianPopSpikeActor(nn.Module):
         """
         super().__init__()
         self.act_limit = act_limit
-        self.encoder = PopSpikeEncoderRegularSpike(obs_dim, en_pop_dim, spike_ts, mean_range, std, device)
-        self.snn = SpikeMLP(obs_dim*en_pop_dim, act_dim*de_pop_dim, hidden_sizes, spike_ts, device)
+        self.encoder = PopSpikeEncoderRegularSpike(
+            obs_dim, en_pop_dim, spike_ts, mean_range, std, device
+        )
+        self.snn = SpikeMLP(
+            obs_dim * en_pop_dim, act_dim * de_pop_dim, hidden_sizes, spike_ts, device
+        )
 
-        self.decoder = PopSpikeDecoder(act_dim, de_pop_dim, output_activation=nn.Identity)
+        self.decoder = PopSpikeDecoder(
+            act_dim, de_pop_dim, output_activation=nn.Identity
+        )
         # Use a complete separate deep MLP to predict log std
-        self.log_std_network = core.mlp([obs_dim] + list(hidden_sizes) + [act_dim], nn.SELU)
-        print("#"*5,"Actor SNN\n\nPoPSpike:\n",self.encoder)
-        print("#"*5,"SNN_o/p_spikeactivity\n",self.snn)
-        print("#"*5,"Actor_mean (mu)\n",self.decoder)
-        print("#"*5,"Actor_std (log_sigma)\n",self.log_std_network)
+        self.log_std_network = core.mlp(
+            [obs_dim] + list(hidden_sizes) + [act_dim], nn.SELU
+        )
+        print("#" * 5, "Actor SNN\n\nPoPSpike:\n", self.encoder)
+        print("#" * 5, "SNN_o/p_spikeactivity\n", self.snn)
+        print("#" * 5, "Actor_mean (mu)\n", self.decoder)
+        print("#" * 5, "Actor_std (log_sigma)\n", self.log_std_network)
 
     def forward(self, obs, batch_size, deterministic=False, with_logprob=True):
         """
@@ -235,7 +293,7 @@ class SquashedGaussianPopSpikeActor(nn.Module):
         :return: action scale with action limit
         """
         in_pop_spikes = self.encoder(obs, batch_size)
-        #print("########",in_pop_spikes.shape)
+        # print("########",in_pop_spikes.shape)
         out_pop_activity = self.snn(in_pop_spikes, batch_size)
         mu = self.decoder(out_pop_activity)
         log_std = self.log_std_network(obs)
@@ -250,7 +308,9 @@ class SquashedGaussianPopSpikeActor(nn.Module):
             pi_action = pi_distribution.rsample()
         if with_logprob:
             logp_pi = pi_distribution.log_prob(pi_action).sum(axis=-1)
-            logp_pi -= (2 * (np.log(2) - pi_action - F.softplus(-2 * pi_action))).sum(axis=1)
+            logp_pi -= (2 * (np.log(2) - pi_action - F.softplus(-2 * pi_action))).sum(
+                axis=1
+            )
         else:
             logp_pi = None
         pi_action = torch.tanh(pi_action)

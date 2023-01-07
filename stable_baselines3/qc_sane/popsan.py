@@ -6,8 +6,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions.normal import Normal
 
-sys.path.append("../../")
-import core_cuda as core
+sys.path.append('../../')
+from stable_baselines3.qc_sane import core_cuda as core
 
 """
 Parameters for SNN

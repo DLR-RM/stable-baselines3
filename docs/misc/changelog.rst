@@ -14,6 +14,7 @@ Release 1.7.0a10 (WIP)
   To suppress the warning, simply save the model again.
   You can find more info in `issue #1233 <https://github.com/DLR-RM/stable-baselines3/issues/1233>`_
 
+  Currently QC_SANE requires followwing: gym==0.15.3, mujoco-py==2.0.2.5 (@surbhigupta1908)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -25,6 +26,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Added implementation of QC_SANE. (@surbhigupta1908)
 - Introduced mypy type checking
 - Added option to have non-shared features extractor between actor and critic in on-policy algorithms (@AlexPasqua)
 - Added ``with_bias`` argument to ``create_mlp``

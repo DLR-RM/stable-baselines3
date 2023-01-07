@@ -3,8 +3,9 @@ import sys
 import numpy as np
 import torch
 
-sys.path.append("../../")
-import core_cuda as core
+
+sys.path.append('../../')
+from stable_baselines3.qc_sane import core_cuda as core
 
 
 class ReplayBuffer:

@@ -39,4 +39,5 @@ __all__ = [
     "HerReplayBuffer",
     "get_system_info",
     "qcsane",
+    "SpikeActorDeepCritic",
 ]

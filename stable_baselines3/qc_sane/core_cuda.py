@@ -39,9 +39,7 @@ class MLPQFunction_quantile(nn.Module):
     def __init__(self, obs_dim, act_dim, hidden_sizes, activation, quantiles):
         super().__init__()
         # print("create",[obs_dim + act_dim] + list(hidden_sizes) + [len(quantiles)])
-        self.q = mlp(
-            [obs_dim + act_dim] + list(hidden_sizes) + [len(quantiles)], activation
-        )
+        self.q = mlp([obs_dim + act_dim] + list(hidden_sizes) + [len(quantiles)], activation)
         # self.out=mlp_quantile(quantiles)
         print("*q", self.q)
 

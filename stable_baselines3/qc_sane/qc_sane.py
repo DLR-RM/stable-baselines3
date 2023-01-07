@@ -6,7 +6,6 @@ import random
 import sys
 from copy import deepcopy
 
-import gym
 import numpy as np
 import torch
 import torch.nn as nn
@@ -52,7 +51,8 @@ class SpikeActorDeepCritic(nn.Module):
         #                                             mean_range, std, spike_ts, act_limit, device)
         for actor_index in range(num_actor):
             print("Creating Actor " + str(actor_index + 1))
-            popsan_params_actor_index = """SquashedGaussianPopSpikeActor(obs_dim, act_dim, encoder_pop_dim, decoder_pop_dim, hidden_sizes, mean_range, std, spike_ts, act_limit, device)"""
+            popsan_params_actor_index = """SquashedGaussianPopSpikeActor(obs_dim, act_dim, encoder_pop_dim, 
+decoder_pop_dim, hidden_sizes, mean_range, std, spike_ts, act_limit, device)"""
 
             exec("self.popsan%d = %s" % (actor_index + 1, popsan_params_actor_index))
 
@@ -293,9 +293,7 @@ def qcsane(
             # Target Q-values
             q_pi_targ = []
             for critic_idx in range(ac_kwargs["num_critic"]):
-                q_pi_targ.append(
-                    torch.mean(eval("ac_targ.q%d(o2, a2)" % (critic_idx + 1)), -1)
-                )
+                q_pi_targ.append(torch.mean(eval("ac_targ.q%d(o2, a2)" % (critic_idx + 1)), -1))
             # q_pi_targ = torch.min(q1_pi_targ, q2_pi_targ)
             q_pi_targ = torch.min(torch.stack(q_pi_targ, axis=-1), axis=-1).values
 
@@ -309,14 +307,15 @@ def qcsane(
         loss_q = 0
         for critic_idx in range(ac_kwargs["num_critic"]):
             exec("qf%d_losses = %s" % (critic_idx + 1, []))
-            for i, quantile in enumerate(quantiles):
+            for _i, quantile in enumerate(quantiles):
                 # error = backup - eval("q%d"%(critic_idx+1))
-                loss = """torch.maximum(quantile*(backup - eval("q%d"%(critic_idx+1))), (quantile-1)*(backup - eval("q%d"%(critic_idx+1))))"""
+                loss = """torch.maximum(quantile*(backup - eval("q%d"%(critic_idx+1))), 
+(quantile-1)*(backup - eval("q%d"%(critic_idx+1))))"""
                 # print("##$$$$",loss)
                 exec("qf%d_losses.append(%s)" % (critic_idx + 1, loss))
             loss_q_idx = """torch.mean(torch.sum(torch.stack(eval("qf%d_losses" % (critic_idx + 1)),dim=-1),-1))"""
             exec("loss_q%d = %s" % (critic_idx + 1, loss_q_idx))
-            loss_q += eval("loss_q%d" % (critic_idx + 1))  ##loss_q = loss_q1 + loss_q2
+            loss_q += eval("loss_q%d" % (critic_idx + 1))    # loss_q = loss_q1 + loss_q2
             exec(
                 "q_info['Q%dVals'] = %s"
                 % (
@@ -414,9 +413,7 @@ def qcsane(
             eval("popsan_mean_optimizer%d.zero_grad()" % (actor_idx + 1))
             eval("pi_std_optimizer%d.zero_grad()" % (actor_idx + 1))
 
-        loss_pi_all, pi_info = compute_loss_pi(
-            data
-        )  ##loss_pi1,loss_pi2,loss_pi3, pi_info
+        loss_pi_all, pi_info = compute_loss_pi(data)  ##loss_pi1,loss_pi2,loss_pi3, pi_info
 
         for loss_pi_idx in range(len(loss_pi_all)):
             loss_pi_all[loss_pi_idx].backward()
@@ -451,13 +448,11 @@ def qcsane(
         # compuate the return mean test reward
         ###
         test_reward_sum = 0
-        for j in range(num_test_episodes):
+        for _j in range(num_test_episodes):
             o, d, ep_ret, ep_len = test_env.reset(), False, 0, 0
             while not (d or (ep_len == max_ep_len)):
                 # Take deterministic actions at test time
-                o, r, d, _ = test_env.step(
-                    get_action(popsan, replay_buffer.normalize_obs(o), True)
-                )
+                o, r, d, _ = test_env.step(get_action(popsan, replay_buffer.normalize_obs(o), True))
                 ep_ret += r
                 ep_len += 1
             test_reward_sum += ep_ret
@@ -493,9 +488,7 @@ def qcsane(
     # Prepare for interaction with environment
     total_steps = steps_per_epoch * epochs
     o, ep_ret, ep_len = env.reset(), 0, 0
-    with open(
-        model_dir + "/" + "data" + str(model_idx) + "_train.csv", "w", newline="\n"
-    ) as csvfile:
+    with open(model_dir + "/" + "data" + str(model_idx) + "_train.csv", "w", newline="\n") as csvfile:
         fieldnames = ["t", "a", "o2", "r", "d", "_"]
 
         writer2 = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -511,9 +504,7 @@ def qcsane(
         "a",
         newline="\n",
     ) as csvfile:
-        fieldnames = ["t"] + [
-            "Actor_" + str(idx + 1) for idx in range(ac_kwargs["num_actor"])
-        ]
+        fieldnames = ["t"] + ["Actor_" + str(idx + 1) for idx in range(ac_kwargs["num_actor"])]
         writer3 = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer3.writeheader()
 
@@ -532,9 +523,7 @@ def qcsane(
         o2, r, d, _ = env.step(a)
         ep_ret += r
         ep_len += 1
-        with open(
-            model_dir + "/" + "data" + str(model_idx) + "_train.csv", "a", newline="\n"
-        ) as csvfile:
+        with open(model_dir + "/" + "data" + str(model_idx) + "_train.csv", "a", newline="\n") as csvfile:
             fieldnames = ["t", "a", "o2", "r", "d", "_"]
             writer2 = csv.DictWriter(csvfile, fieldnames=fieldnames)
             # writer.writeheader()
@@ -574,7 +563,7 @@ def qcsane(
 
         # Update handling
         if t >= update_after and t % update_every == 0:
-            for j in range(update_every):
+            for _j in range(update_every):
                 batch = replay_buffer.sample_batch(device, batch_size)
                 update(data=batch)
 
@@ -587,13 +576,7 @@ def qcsane(
                 ac.popsan.to("cpu")
                 torch.save(
                     ac.popsan.state_dict(),
-                    model_dir
-                    + "/"
-                    + "model"
-                    + str(model_idx)
-                    + "_e"
-                    + str(epoch)
-                    + ".pt",
+                    model_dir + "/" + "model" + str(model_idx) + "_e" + str(epoch) + ".pt",
                 )
                 print("Learned Mean for encoder population: ")
                 print(ac.popsan.encoder.mean.data)
@@ -603,26 +586,14 @@ def qcsane(
                 pickle.dump(
                     [replay_buffer.mean, replay_buffer.var],
                     open(
-                        model_dir
-                        + "/"
-                        + "model"
-                        + str(model_idx)
-                        + "_e"
-                        + str(epoch)
-                        + "_mean_var.p",
+                        model_dir + "/" + "model" + str(model_idx) + "_e" + str(epoch) + "_mean_var.p",
                         "wb+",
                     ),
                 )
                 # print("Weights saved in ", model_dir + '/' + "model" + str(model_idx) + "_e" + str(epoch) + '.pt')
                 print(
                     "Weights saved in ",
-                    model_dir
-                    + "/"
-                    + "model"
-                    + str(model_idx)
-                    + "_e"
-                    + str(epoch)
-                    + ".pt",
+                    model_dir + "/" + "model" + str(model_idx) + "_e" + str(epoch) + ".pt",
                 )
 
             # Test the performance of the deterministic version of the agent.
@@ -630,9 +601,7 @@ def qcsane(
             test_mean_reward = []
             for actor_idx in range(ac_kwargs["num_actor"]):
                 # exec("test_mean_reward%d = %s"% (actor_idx+1, test_agent(eval("ac.popsan%d"%(actor_idx+1)) ))
-                test_mean_reward.append(
-                    test_agent(eval("ac.popsan%d" % (actor_idx + 1)))
-                )
+                test_mean_reward.append(test_agent(eval("ac.popsan%d" % (actor_idx + 1))))
             test_mean_reward = np.array(test_mean_reward)
             # test_mean_reward=np.array([test_mean_reward1,test_mean_reward2,test_mean_reward3,test_mean_reward4])#,test_mean_reward3])
             idx = np.argmax(test_mean_reward)
@@ -645,15 +614,11 @@ def qcsane(
                 "a",
                 newline="\n",
             ) as csvfile:
-                fieldnames = ["t"] + [
-                    "Actor_" + str(idx + 1) for idx in range(ac_kwargs["num_actor"])
-                ]
+                fieldnames = ["t"] + ["Actor_" + str(idx + 1) for idx in range(ac_kwargs["num_actor"])]
                 writer3 = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 actor_test_performnce = {"t": t + 1}
                 for actor_idx in range(ac_kwargs["num_actor"]):
-                    actor_test_performnce[fieldnames[actor_idx + 1]] = test_mean_reward[
-                        actor_idx
-                    ]
+                    actor_test_performnce[fieldnames[actor_idx + 1]] = test_mean_reward[actor_idx]
                 writer3.writerow(actor_test_performnce)
 
             print(

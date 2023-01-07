@@ -1,3 +1,3 @@
-from stable_baselines3.qc_sane.qc_sane import qcsane
-from stable_baselines3.qc_sane.qc_sane import SpikeActorDeepCritic
+from stable_baselines3.qc_sane.qc_sane import SpikeActorDeepCritic, qcsane
+
 __all__ = ["qcsane"]

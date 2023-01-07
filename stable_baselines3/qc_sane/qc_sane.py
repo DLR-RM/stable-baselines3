@@ -14,9 +14,9 @@ from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path.append("../../")
-from stable_baselines3.qc_sane.replay_buffer_norm import ReplayBuffer
-from stable_baselines3.qc_sane.popsan import SquashedGaussianPopSpikeActor
 from stable_baselines3.qc_sane.core_cuda import MLPQFunction_quantile
+from stable_baselines3.qc_sane.popsan import SquashedGaussianPopSpikeActor
+from stable_baselines3.qc_sane.replay_buffer_norm import ReplayBuffer
 
 
 class SpikeActorDeepCritic(nn.Module):
@@ -75,11 +75,33 @@ class SpikeActorDeepCritic(nn.Module):
             a = a.to("cpu")
             return a.numpy()
 
-def qcsane(env_fn, actor_critic=SpikeActorDeepCritic, ac_kwargs=dict(), seed=100,
-              steps_per_epoch=10000, epochs=100, replay_size=int(1e6), gamma=0.99,
-              polyak=0.995, popsan_lr=1e-4, q_lr=3e-4, alpha=0.2, batch_size=256, start_steps=10000,
-              update_after=1000, update_every=50, num_test_episodes=10, max_ep_len=1000,
-              save_freq=5, norm_clip_limit=3, norm_update=50, tb_comment='', model_idx=0, use_cuda=False):
+
+def qcsane(
+    env_fn,
+    actor_critic=SpikeActorDeepCritic,
+    ac_kwargs=dict(),
+    seed=100,
+    steps_per_epoch=10000,
+    epochs=100,
+    replay_size=int(1e6),
+    gamma=0.99,
+    polyak=0.995,
+    popsan_lr=1e-4,
+    q_lr=3e-4,
+    alpha=0.2,
+    batch_size=256,
+    start_steps=10000,
+    update_after=1000,
+    update_every=50,
+    num_test_episodes=10,
+    max_ep_len=1000,
+    save_freq=5,
+    norm_clip_limit=3,
+    norm_update=50,
+    tb_comment="",
+    model_idx=0,
+    use_cuda=False,
+):
 
     """
     QC_SANE: Authors:(Surbhi Gupta, et.al.)
@@ -471,8 +493,10 @@ def qcsane(env_fn, actor_critic=SpikeActorDeepCritic, ac_kwargs=dict(), seed=100
     # Prepare for interaction with environment
     total_steps = steps_per_epoch * epochs
     o, ep_ret, ep_len = env.reset(), 0, 0
-    with open(model_dir + '/' + "data" + str(model_idx) + '_train.csv', 'w', newline='\n') as csvfile:
-        fieldnames = ["t","a","o2", "r", "d", "_"]
+    with open(
+        model_dir + "/" + "data" + str(model_idx) + "_train.csv", "w", newline="\n"
+    ) as csvfile:
+        fieldnames = ["t", "a", "o2", "r", "d", "_"]
 
         writer2 = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer2.writeheader()
@@ -508,8 +532,10 @@ def qcsane(env_fn, actor_critic=SpikeActorDeepCritic, ac_kwargs=dict(), seed=100
         o2, r, d, _ = env.step(a)
         ep_ret += r
         ep_len += 1
-        with open(model_dir + '/' + "data" + str(model_idx) + '_train.csv', 'a', newline='\n') as csvfile:
-            fieldnames = ["t","a","o2", "r", "d", "_"]
+        with open(
+            model_dir + "/" + "data" + str(model_idx) + "_train.csv", "a", newline="\n"
+        ) as csvfile:
+            fieldnames = ["t", "a", "o2", "r", "d", "_"]
             writer2 = csv.DictWriter(csvfile, fieldnames=fieldnames)
             # writer.writeheader()
             writer2.writerow({"t": t, "a": a, "o2": o2, "r": r, "d": d, "_": _})
@@ -646,5 +672,3 @@ def qcsane(env_fn, actor_critic=SpikeActorDeepCritic, ac_kwargs=dict(), seed=100
         [save_test_reward, save_test_reward_steps],
         open(model_dir + "/" + "model" + str(model_idx) + "_test_rewards.p", "wb+"),
     )
-
-

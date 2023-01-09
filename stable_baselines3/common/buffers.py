@@ -696,15 +696,18 @@ class DictRolloutBuffer(RolloutBuffer):
         self.gamma = gamma
         self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
         self.returns, self.episode_starts, self.values, self.log_probs = None, None, None, None
+        self.next_observations, self.dones = None, None
         self.generator_ready = False
         self.reset()
 
     def reset(self) -> None:
         assert isinstance(self.obs_shape, dict), "DictRolloutBuffer must be used with Dict obs space only"
-        self.observations = {}
+        self.observations, self.next_observations = {}, {}
         for key, obs_input_shape in self.obs_shape.items():
             self.observations[key] = np.zeros((self.buffer_size, self.n_envs) + obs_input_shape, dtype=np.float32)
+            self.next_observations[key] = np.zeros((self.buffer_size, self.n_envs) + obs_input_shape, dtype=np.float32)
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
+        self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.episode_starts = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -717,8 +720,10 @@ class DictRolloutBuffer(RolloutBuffer):
     def add(
         self,
         obs: Dict[str, np.ndarray],
+        next_obs: Dict[str, np.ndarray],
         action: np.ndarray,
         reward: np.ndarray,
+        done: np.ndarray,
         episode_start: np.ndarray,
         value: th.Tensor,
         log_prob: th.Tensor,
@@ -745,8 +750,15 @@ class DictRolloutBuffer(RolloutBuffer):
                 obs_ = obs_.reshape((self.n_envs,) + self.obs_shape[key])
             self.observations[key][self.pos] = obs_
 
+        for key in self.next_observations.keys():
+            next_obs_ = np.array(next_obs[key]).copy()
+            if isinstance(self.observation_space.spaces[key], spaces.Discrete):
+                next_obs_ = next_obs_.reshape((self.n_envs,) + self.obs_shape[key])
+            self.next_observations[key][self.pos] = next_obs_
+
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
+        self.dones[self.pos] = np.array(done).copy()
         self.episode_starts[self.pos] = np.array(episode_start).copy()
         self.values[self.pos] = value.clone().cpu().numpy().flatten()
         self.log_probs[self.pos] = log_prob.clone().cpu().numpy()
@@ -763,7 +775,10 @@ class DictRolloutBuffer(RolloutBuffer):
             for key, obs in self.observations.items():
                 self.observations[key] = self.swap_and_flatten(obs)
 
-            _tensor_names = ["actions", "values", "log_probs", "advantages", "returns"]
+            for key, obs in self.next_observations.items():
+                self.next_observations[key] = self.swap_and_flatten(obs)
+
+            _tensor_names = ["actions", "dones", "values", "log_probs", "advantages", "returns"]
 
             for tensor in _tensor_names:
                 self.__dict__[tensor] = self.swap_and_flatten(self.__dict__[tensor])
@@ -782,7 +797,9 @@ class DictRolloutBuffer(RolloutBuffer):
 
         return DictRolloutBufferSamples(
             observations={key: self.to_torch(obs[batch_inds]) for (key, obs) in self.observations.items()},
+            next_observations={key: self.to_torch(obs[batch_inds]) for (key, obs) in self.next_observations.items()},
             actions=self.to_torch(self.actions[batch_inds]),
+            dones=self.to_torch(self.dones[batch_inds]),
             old_values=self.to_torch(self.values[batch_inds].flatten()),
             old_log_prob=self.to_torch(self.log_probs[batch_inds].flatten()),
             advantages=self.to_torch(self.advantages[batch_inds].flatten()),

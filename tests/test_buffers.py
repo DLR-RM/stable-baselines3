@@ -120,7 +120,7 @@ def test_device_buffer(replay_buffer_cls, device):
         next_obs, reward, done, info = env.step(action)
         if replay_buffer_cls in [RolloutBuffer, DictRolloutBuffer]:
             episode_start, values, log_prob = np.zeros(1), th.zeros(1), th.ones(1)
-            buffer.add(obs, action, reward, episode_start, values, log_prob)
+            buffer.add(obs, next_obs, action, reward, done, episode_start, values, log_prob)
         else:
             buffer.add(obs, next_obs, action, reward, done, info)
         obs = next_obs

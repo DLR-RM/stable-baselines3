@@ -4,11 +4,11 @@ Changelog
 ==========
 
 
-Release 1.7.0a12 (WIP)
+Release 1.7.0 (2023-01-10)
 --------------------------
 
 .. warning::
-	
+
   Shared layers in MLP policy (``mlp_extractor``) are now deprecated for PPO, A2C and TRPO.
   This feature will be removed in SB3 v1.8.0 and the behavior of ``net_arch=[64, 64]``
   will create **separate** networks with the same architecture, to be consistent with the off-policy algorithms.
@@ -53,7 +53,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
-- Updated ``ProgressBarCallback`` to more accurately display the proportion of remaining timesteps (@dominicgkerr)
+- Fixed ``ProgressBarCallback`` under-reporting (@dominicgkerr)
 - Fixed return type of ``evaluate_actions`` in ``ActorCritcPolicy`` to reflect that entropy is an optional tensor (@Rocamonde)
 - Fixed type annotation of ``policy`` in ``BaseAlgorithm`` and ``OffPolicyAlgorithm``
 - Allowed model trained with Python 3.7 to be loaded with Python 3.8+ without the ``custom_objects`` workaround

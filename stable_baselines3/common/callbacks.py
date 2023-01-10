@@ -1,7 +1,6 @@
 import os
 import warnings
 from abc import ABC, abstractmethod
-from math import ceil
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import gym
@@ -676,36 +675,9 @@ class ProgressBarCallback(BaseCallback):
         self.pbar = None
 
     def _on_training_start(self) -> None:
-
-        # Get the total number of timesteps to do this training session
-        total = self.locals["total_timesteps"]
-
+        # Initialize progress bar
         # Remove timesteps that were done in previous training sessions
-        total -= self.model.num_timesteps
-
-        # Round timesteps up-to a multiple of the algorithm's batch size
-        # (i.e. the number steps generated when gaining experience or the
-        # interval between training updates, multiplied by the number of
-        # environments)
-        batch_size = self.training_env.num_envs
-        if hasattr(self.model, "n_steps"):
-            batch_size *= self.model.n_steps
-
-        elif hasattr(self.model, "train_freq"):
-            # Avoids circular import
-            from stable_baselines3.common.type_aliases import TrainFrequencyUnit
-
-            if self.model.train_freq.unit == TrainFrequencyUnit.STEP:
-                batch_size *= self.model.train_freq.frequency
-
-            # When unit is TrainFrequencyUnit.EPISODE, there is no guarantee that
-            # a fixed number of steps will be processed (e.g. episodes may
-            # have variable length)
-
-        total = ceil(total / batch_size) * batch_size
-
-        # Finally, initialize progress bar
-        self.pbar = tqdm(total=total)
+        self.pbar = tqdm(total=self.locals["total_timesteps"] - self.model.num_timesteps)
 
     def _on_step(self) -> bool:
         # Update progress bar, we do num_envs steps per call to `env.step()`

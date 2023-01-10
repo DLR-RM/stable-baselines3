@@ -685,5 +685,6 @@ class ProgressBarCallback(BaseCallback):
         return True
 
     def _on_training_end(self) -> None:
-        # Close progress bar
+        # Flush and close progress bar
+        self.pbar.refresh()
         self.pbar.close()

@@ -4,7 +4,37 @@ Changelog
 ==========
 
 
-Release 1.7.0a12 (WIP)
+Release 1.8.0a0 (WIP)
+--------------------------
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+- Renamed ``load_parameters`` to ``set_parameters`` (@DavyMorgan)
+
+
+Release 1.7.0 (2023-01-10)
 --------------------------
 
 .. warning::
@@ -54,6 +84,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed ``ProgressBarCallback`` under-reporting (@dominicgkerr)
 - Fixed return type of ``evaluate_actions`` in ``ActorCritcPolicy`` to reflect that entropy is an optional tensor (@Rocamonde)
 - Fixed type annotation of ``policy`` in ``BaseAlgorithm`` and ``OffPolicyAlgorithm``
 - Allowed model trained with Python 3.7 to be loaded with Python 3.8+ without the ``custom_objects`` workaround
@@ -181,7 +212,7 @@ Others:
 ^^^^^^^
 - Fixed ``DictReplayBuffer.next_observations`` typing (@qgallouedec)
 - Added support for ``device="auto"`` in buffers and made it default (@qgallouedec)
-- Updated ``ResultsWriter` (used internally by ``Monitor`` wrapper) to automatically create missing directories when ``filename`` is a path (@dominicgkerr)
+- Updated ``ResultsWriter`` (used internally by ``Monitor`` wrapper) to automatically create missing directories when ``filename`` is a path (@dominicgkerr)
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -1187,3 +1218,4 @@ And all the contributors:
 @carlosluis @arjun-kg @tlpss
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
+@DavyMorgan

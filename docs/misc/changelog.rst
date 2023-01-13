@@ -4,8 +4,45 @@ Changelog
 ==========
 
 
-Release 1.7.0a11 (WIP)
+Release 1.8.0a0 (WIP)
 --------------------------
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+- Renamed ``load_parameters`` to ``set_parameters`` (@DavyMorgan)
+
+
+Release 1.7.0 (2023-01-10)
+--------------------------
+
+.. warning::
+
+  Shared layers in MLP policy (``mlp_extractor``) are now deprecated for PPO, A2C and TRPO.
+  This feature will be removed in SB3 v1.8.0 and the behavior of ``net_arch=[64, 64]``
+  will create **separate** networks with the same architecture, to be consistent with the off-policy algorithms.
+
 
 .. note::
 
@@ -34,11 +71,19 @@ New Features:
 - Added ``normalized_image`` parameter to ``NatureCNN`` and ``CombinedExtractor``
 - Added support for Python 3.10
 
-SB3-Contrib
-^^^^^^^^^^^
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+- Fixed a bug in ``RecurrentPPO`` where the lstm states where incorrectly reshaped for ``n_lstm_layers > 1`` (thanks @kolbytn)
+- Fixed ``RuntimeError: rnn: hx is not contiguous`` while predicting terminal values for ``RecurrentPPO`` when ``n_lstm_layers > 1``
+
+`RL Zoo`_
+^^^^^^^^^
+- Added support for python file for configuration
+- Added ``monitor_kwargs`` parameter
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed ``ProgressBarCallback`` under-reporting (@dominicgkerr)
 - Fixed return type of ``evaluate_actions`` in ``ActorCritcPolicy`` to reflect that entropy is an optional tensor (@Rocamonde)
 - Fixed type annotation of ``policy`` in ``BaseAlgorithm`` and ``OffPolicyAlgorithm``
 - Allowed model trained with Python 3.7 to be loaded with Python 3.8+ without the ``custom_objects`` workaround
@@ -52,6 +97,7 @@ Bug Fixes:
 Deprecations:
 ^^^^^^^^^^^^^
 - You should now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
+- Deprecated shared layers in ``MlpExtractor`` (@AlexPasqua)
 
 Others:
 ^^^^^^^
@@ -99,8 +145,12 @@ New Features:
 - Added progress bar callback
 - The `RL Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_ can now be installed as a package (``pip install rl_zoo3``)
 
-SB3-Contrib
-^^^^^^^^^^^
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+- RL Zoo is now a python package and can be installed using ``pip install rl_zoo3``
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -135,8 +185,8 @@ New Features:
 - Added option for ``Monitor`` to append to existing file instead of overriding (@sidney-tio)
 - The env checker now raises an error when using dict observation spaces and observation keys don't match observation space keys
 
-SB3-Contrib
-^^^^^^^^^^^
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
 - Fixed the issue of wrongly passing policy arguments when using ``CnnLstmPolicy`` or ``MultiInputLstmPolicy`` with ``RecurrentPPO`` (@mlodel)
 
 Bug Fixes:
@@ -161,7 +211,7 @@ Others:
 ^^^^^^^
 - Fixed ``DictReplayBuffer.next_observations`` typing (@qgallouedec)
 - Added support for ``device="auto"`` in buffers and made it default (@qgallouedec)
-- Updated ``ResultsWriter` (used internally by ``Monitor`` wrapper) to automatically create missing directories when ``filename`` is a path (@dominicgkerr)
+- Updated ``ResultsWriter`` (used internally by ``Monitor`` wrapper) to automatically create missing directories when ``filename`` is a path (@dominicgkerr)
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -192,8 +242,8 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 
-SB3-Contrib
-^^^^^^^^^^^
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
 - Added Recurrent PPO (PPO LSTM). See https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/pull/53
 
 
@@ -246,8 +296,8 @@ New Features:
   depending on desired maximum width of output.
 - Allow PPO to turn of advantage normalization (see `PR #763 <https://github.com/DLR-RM/stable-baselines3/pull/763>`_) @vwxyzjn
 
-SB3-Contrib
-^^^^^^^^^^^
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
 - coming soon: Cross Entropy Method, see https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/pull/62
 
 Bug Fixes:
@@ -309,8 +359,8 @@ New Features:
 - Added ``skip`` option to ``VecTransposeImage`` to skip transforming the channel order when the heuristic is wrong
 - Added ``copy()`` and ``combine()`` methods to ``RunningMeanStd``
 
-SB3-Contrib
-^^^^^^^^^^^
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
 - Added Trust Region Policy Optimization (TRPO) (@cyprienc)
 - Added Augmented Random Search (ARS) (@sgillen)
 - Coming soon: PPO LSTM, see https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/pull/53
@@ -1137,7 +1187,8 @@ and `Quentin Gallouédec`_ (aka @qgallouedec).
 .. _Quentin Gallouédec: https://gallouedec.com/
 .. _@qgallouedec: https://github.com/qgallouedec
 
-
+.. _SB3-Contrib: https://github.com/Stable-Baselines-Team/stable-baselines3-contrib
+.. _RL Zoo: https://github.com/DLR-RM/rl-baselines3-zoo
 
 Contributors:
 -------------
@@ -1163,3 +1214,4 @@ And all the contributors:
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875 @yuanmingqi
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
+@DavyMorgan

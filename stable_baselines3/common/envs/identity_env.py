@@ -4,7 +4,7 @@ import gym
 import numpy as np
 from gym import spaces
 
-from stable_baselines3.common.type_aliases import GymObs, GymStepReturn
+from stable_baselines3.common.type_aliases import GymStepReturn
 
 T = TypeVar("T", int, np.ndarray)
 

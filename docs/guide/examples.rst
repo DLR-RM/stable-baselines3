@@ -603,7 +603,7 @@ However, SB3 provides a ``save_replay_buffer()`` and ``load_replay_buffer()`` me
 Accessing and modifying model parameters
 ----------------------------------------
 
-You can access model's parameters via ``load_parameters`` and ``get_parameters`` functions,
+You can access model's parameters via ``set_parameters`` and ``get_parameters`` functions,
 or via ``model.policy.state_dict()`` (and ``load_state_dict()``),
 which use dictionaries that map variable names to PyTorch tensors.
 

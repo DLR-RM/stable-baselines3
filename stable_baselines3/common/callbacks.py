@@ -31,10 +31,12 @@ class BaseCallback(ABC):
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
 
+    # The RL model
+    model: base_class.BaseAlgorithm
+    logger: Logger
+
     def __init__(self, verbose: int = 0):
         super().__init__()
-        # The RL model
-        self.model: base_class.BaseAlgorithm
         # An alias for self.model.get_env(), the environment used for training
         self.training_env = None  # type: Union[gym.Env, VecEnv, None]
         # Number of time the callback was called
@@ -44,7 +46,6 @@ class BaseCallback(ABC):
         self.verbose = verbose
         self.locals: Dict[str, Any] = {}
         self.globals: Dict[str, Any] = {}
-        self.logger: Logger
         # Sometimes, for event callback, it is useful
         # to have access to the parent object
         self.parent = None  # type: Optional[BaseCallback]

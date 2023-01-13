@@ -32,7 +32,8 @@ class BaseCallback(ABC):
     """
 
     # The RL model
-    model: base_class.BaseAlgorithm
+    # Type hint as string to avoid circular import
+    model: "base_class.BaseAlgorithm"
     logger: Logger
 
     def __init__(self, verbose: int = 0):

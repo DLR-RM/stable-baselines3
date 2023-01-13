@@ -16,7 +16,7 @@ try:
     from torch.utils.tensorboard import SummaryWriter
     from torch.utils.tensorboard.summary import hparams
 except ImportError:
-    SummaryWriter = None
+    SummaryWriter = None  # type: ignore[misc, assignment]
 
 try:
     from tqdm import tqdm
@@ -329,7 +329,7 @@ class CSVOutputFormat(KVWriter):
 
     def __init__(self, filename: str):
         self.file = open(filename, "w+t")
-        self.keys = []
+        self.keys: List[str] = []
         self.separator = ","
         self.quotechar = '"'
 

@@ -22,7 +22,7 @@ The full documentation is available here: https://docs.wandb.ai/guides/integrati
   config = {
       "policy_type": "MlpPolicy",
       "total_timesteps": 25000,
-      "env_name": "CartPole-v1",
+      "env_id": "CartPole-v1",
   }
   run = wandb.init(
       project="sb3",
@@ -32,7 +32,7 @@ The full documentation is available here: https://docs.wandb.ai/guides/integrati
       # save_code=True,  # optional
   )
 
-  model = PPO(config["policy_type"], config["env_name"], verbose=1, tensorboard_log=f"runs/{run.id}")
+  model = PPO(config["policy_type"], config["env_id"], verbose=1, tensorboard_log=f"runs/{run.id}")
   model.learn(
       total_timesteps=config["total_timesteps"],
       callback=WandbCallback(

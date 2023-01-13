@@ -6,6 +6,8 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import gym
 import numpy as np
 
+from stable_baselines3.common.logger import Logger
+
 try:
     from tqdm import TqdmExperimentalWarning
 
@@ -29,10 +31,13 @@ class BaseCallback(ABC):
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
 
+    # The RL model
+    # Type hint as string to avoid circular import
+    model: "base_class.BaseAlgorithm"
+    logger: Logger
+
     def __init__(self, verbose: int = 0):
         super().__init__()
-        # The RL model
-        self.model = None  # type: Optional[base_class.BaseAlgorithm]
         # An alias for self.model.get_env(), the environment used for training
         self.training_env = None  # type: Union[gym.Env, VecEnv, None]
         # Number of time the callback was called
@@ -42,7 +47,6 @@ class BaseCallback(ABC):
         self.verbose = verbose
         self.locals: Dict[str, Any] = {}
         self.globals: Dict[str, Any] = {}
-        self.logger = None
         # Sometimes, for event callback, it is useful
         # to have access to the parent object
         self.parent = None  # type: Optional[BaseCallback]

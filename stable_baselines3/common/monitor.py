@@ -5,7 +5,7 @@ import json
 import os
 import time
 from glob import glob
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import gym
 import numpy as np
@@ -41,6 +41,7 @@ class Monitor(gym.Wrapper):
     ):
         super().__init__(env=env)
         self.t_start = time.time()
+        self.results_writer = None
         if filename is not None:
             self.results_writer = ResultsWriter(
                 filename,
@@ -48,18 +49,18 @@ class Monitor(gym.Wrapper):
                 extra_keys=reset_keywords + info_keywords,
                 override_existing=override_existing,
             )
-        else:
-            self.results_writer = None
+
         self.reset_keywords = reset_keywords
         self.info_keywords = info_keywords
         self.allow_early_resets = allow_early_resets
-        self.rewards = None
+        self.rewards: List[float] = []
         self.needs_reset = True
-        self.episode_returns = []
-        self.episode_lengths = []
-        self.episode_times = []
+        self.episode_returns: List[float] = []
+        self.episode_lengths: List[int] = []
+        self.episode_times: List[float] = []
         self.total_steps = 0
-        self.current_reset_info = {}  # extra info about the current episode, that was passed in during reset()
+        # extra info about the current episode, that was passed in during reset()
+        self.current_reset_info: Dict[str, Any] = {}
 
     def reset(self, **kwargs) -> GymObs:
         """
@@ -200,7 +201,7 @@ class ResultsWriter:
 
         self.file_handler.flush()
 
-    def write_row(self, epinfo: Dict[str, Union[float, int]]) -> None:
+    def write_row(self, epinfo: Dict[str, float]) -> None:
         """
         Close the file handler
 

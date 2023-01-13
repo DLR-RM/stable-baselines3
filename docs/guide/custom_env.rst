@@ -8,9 +8,13 @@ That is to say, your environment must implement the following methods (and inher
 
 
 .. note::
-	If you are using images as input, the observation must be of type ``np.uint8`` and be contained in [0, 255]
-	is normalized (dividing by 255 to have values in [0, 1]) when using CNN policies. Images can be either
-	channel-first or channel-last.
+	If you are using images as input, the observation must be of type ``np.uint8`` and be contained in [0, 255].
+	By default, the observation is normalized by SB3 pre-processing (dividing by 255 to have values in [0, 1]) when using CNN policies.
+	Images can be either channel-first or channel-last.
+
+  If you want to use ``CnnPolicy`` or ``MultiInputPolicy`` with image-like observation (3D tensor) that are already normalized, you must pass ``normalize_images=False``
+	to the policy (using ``policy_kwargs`` parameter, ``policy_kwargs=dict(normalize_images=False)``)
+	and make sure your image is in the **channel-first** format.
 
 
 .. note::
@@ -23,14 +27,17 @@ That is to say, your environment must implement the following methods (and inher
 .. code-block:: python
 
   import gym
+  import numpy as np
   from gym import spaces
 
+
   class CustomEnv(gym.Env):
-      """Custom Environment that follows gym interface"""
+      """Custom Environment that follows gym interface."""
+
       metadata = {"render.modes": ["human"]}
 
       def __init__(self, arg1, arg2, ...):
-          super(CustomEnv, self).__init__()
+          super().__init__()
           # Define action and observation space
           # They must be gym.spaces objects
           # Example when using discrete actions:
@@ -42,12 +49,15 @@ That is to say, your environment must implement the following methods (and inher
       def step(self, action):
           ...
           return observation, reward, done, info
+
       def reset(self):
           ...
           return observation  # reward, done, info can't be included
+
       def render(self, mode="human"):
           ...
-      def close (self):
+
+      def close(self):
           ...
 
 

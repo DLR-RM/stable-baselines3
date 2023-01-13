@@ -27,6 +27,7 @@ def is_image_space_channels_first(observation_space: spaces.Box) -> bool:
 def is_image_space(
     observation_space: spaces.Space,
     check_channels: bool = False,
+    normalized_image: bool = False,
 ) -> bool:
     """
     Check if a observation space has the shape, limits and dtype
@@ -38,15 +39,21 @@ def is_image_space(
     :param observation_space:
     :param check_channels: Whether to do or not the check for the number of channels.
         e.g., with frame-stacking, the observation space may have more channels than expected.
+    :param normalized_image: Whether to assume that the image is already normalized
+        or not (this disables dtype and bounds checks): when True, it only checks that
+        the space is a Box and has 3 dimensions.
+        Otherwise, it checks that it has expected dtype (uint8) and bounds (values in [0, 255]).
     :return:
     """
+    check_dtype = check_bounds = not normalized_image
     if isinstance(observation_space, spaces.Box) and len(observation_space.shape) == 3:
         # Check the type
-        if observation_space.dtype != np.uint8:
+        if check_dtype and observation_space.dtype != np.uint8:
             return False
 
         # Check the value range
-        if np.any(observation_space.low != 0) or np.any(observation_space.high != 255):
+        incorrect_bounds = np.any(observation_space.low != 0) or np.any(observation_space.high != 255)
+        if check_bounds and incorrect_bounds:
             return False
 
         # Skip channels check
@@ -57,7 +64,7 @@ def is_image_space(
             n_channels = observation_space.shape[0]
         else:
             n_channels = observation_space.shape[-1]
-        # RGB, RGBD, GrayScale
+        # GrayScale, RGB, RGBD
         return n_channels in [1, 3, 4]
     return False
 
@@ -99,7 +106,7 @@ def preprocess_obs(
     :return:
     """
     if isinstance(observation_space, spaces.Box):
-        if is_image_space(observation_space) and normalize_images:
+        if normalize_images and is_image_space(observation_space):
             return obs.float() / 255.0
         return obs.float()
 
@@ -122,6 +129,7 @@ def preprocess_obs(
 
     elif isinstance(observation_space, spaces.Dict):
         # Do not modify by reference the original observation
+        assert isinstance(obs, Dict), f"Expected dict, got {type(obs)}"
         preprocessed_obs = {}
         for key, _obs in obs.items():
             preprocessed_obs[key] = preprocess_obs(_obs, observation_space[key], normalize_images=normalize_images)
@@ -150,9 +158,12 @@ def get_obs_shape(
         return (int(len(observation_space.nvec)),)
     elif isinstance(observation_space, spaces.MultiBinary):
         # Number of binary features
-        return (int(observation_space.n),)
+        if type(observation_space.n) in [tuple, list, np.ndarray]:
+            return tuple(observation_space.n)
+        else:
+            return (int(observation_space.n),)
     elif isinstance(observation_space, spaces.Dict):
-        return {key: get_obs_shape(subspace) for (key, subspace) in observation_space.spaces.items()}
+        return {key: get_obs_shape(subspace) for (key, subspace) in observation_space.spaces.items()}  # type: ignore[misc]
 
     else:
         raise NotImplementedError(f"{observation_space} observation space is not supported")

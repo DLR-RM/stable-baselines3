@@ -1,8 +1,10 @@
+import warnings
 from itertools import zip_longest
 from typing import Dict, List, Tuple, Type, Union
 
 import gym
 import torch as th
+from gym import spaces
 from torch import nn
 
 from stable_baselines3.common.preprocessing import get_flattened_obs_dim, is_image_space
@@ -18,7 +20,7 @@ class BaseFeaturesExtractor(nn.Module):
     :param features_dim: Number of features extracted.
     """
 
-    def __init__(self, observation_space: gym.Space, features_dim: int = 0):
+    def __init__(self, observation_space: gym.Space, features_dim: int = 0) -> None:
         super().__init__()
         assert features_dim > 0
         self._observation_space = observation_space
@@ -37,7 +39,7 @@ class FlattenExtractor(BaseFeaturesExtractor):
     :param observation_space:
     """
 
-    def __init__(self, observation_space: gym.Space):
+    def __init__(self, observation_space: gym.Space) -> None:
         super().__init__(observation_space, get_flattened_obs_dim(observation_space))
         self.flatten = nn.Flatten()
 
@@ -55,19 +57,31 @@ class NatureCNN(BaseFeaturesExtractor):
     :param observation_space:
     :param features_dim: Number of features extracted.
         This corresponds to the number of unit for the last layer.
+    :param normalized_image: Whether to assume that the image is already normalized
+        or not (this disables dtype and bounds checks): when True, it only checks that
+        the space is a Box and has 3 dimensions.
+        Otherwise, it checks that it has expected dtype (uint8) and bounds (values in [0, 255]).
     """
 
-    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512):
+    def __init__(
+        self,
+        observation_space: spaces.Box,
+        features_dim: int = 512,
+        normalized_image: bool = False,
+    ) -> None:
         super().__init__(observation_space, features_dim)
         # We assume CxHxW images (channels first)
         # Re-ordering will be done by pre-preprocessing or wrapper
-        assert is_image_space(observation_space, check_channels=False), (
+        assert is_image_space(observation_space, check_channels=False, normalized_image=normalized_image), (
             "You should use NatureCNN "
             f"only with images not with {observation_space}\n"
             "(you are probably using `CnnPolicy` instead of `MlpPolicy` or `MultiInputPolicy`)\n"
             "If you are using a custom environment,\n"
             "please check it using our env checker:\n"
-            "https://stable-baselines3.readthedocs.io/en/master/common/env_checker.html"
+            "https://stable-baselines3.readthedocs.io/en/master/common/env_checker.html.\n"
+            "If you are using `VecNormalize` or already normalized channel-first images "
+            "you should pass `normalize_images=False`: \n"
+            "https://stable-baselines3.readthedocs.io/en/master/guide/custom_env.html"
         )
         n_input_channels = observation_space.shape[0]
         self.cnn = nn.Sequential(
@@ -134,8 +148,8 @@ def create_mlp(
 
 class MlpExtractor(nn.Module):
     """
-    Constructs an MLP that receives the output from a previous feature extractor (i.e. a CNN) or directly
-    the observations (if no feature extractor is applied) as an input and outputs a latent representation
+    Constructs an MLP that receives the output from a previous features extractor (i.e. a CNN) or directly
+    the observations (if no features extractor is applied) as an input and outputs a latent representation
     for the policy and a value network.
     The ``net_arch`` parameter allows to specify the amount and size of the hidden layers and how many
     of them are shared between the policy network and the value network. It is assumed to be a list with the following
@@ -146,6 +160,9 @@ class MlpExtractor(nn.Module):
     2. An optional dict, to specify the following non-shared layers for the value network and the policy network.
        It is formatted like ``dict(vf=[<value layer sizes>], pi=[<policy layer sizes>])``.
        If it is missing any of the keys (pi or vf), no non-shared layers (empty list) is assumed.
+
+    Deprecation note: shared layers in ``net_arch`` are deprecated, please use separate
+    pi and vf networks (e.g. net_arch=dict(pi=[...], vf=[...]))
 
     For example to construct a network with one shared layer of size 55 followed by two non-shared layers for the value
     network of size 255 and a single non-shared layer of size 128 for the policy network, the following layers_spec
@@ -164,10 +181,10 @@ class MlpExtractor(nn.Module):
     def __init__(
         self,
         feature_dim: int,
-        net_arch: List[Union[int, Dict[str, List[int]]]],
+        net_arch: Union[Dict[str, List[int]], List[Union[int, Dict[str, List[int]]]]],
         activation_fn: Type[nn.Module],
         device: Union[th.device, str] = "auto",
-    ):
+    ) -> None:
         super().__init__()
         device = get_device(device)
         shared_net: List[nn.Module] = []
@@ -177,23 +194,38 @@ class MlpExtractor(nn.Module):
         value_only_layers: List[int] = []  # Layer sizes of the network that only belongs to the value network
         last_layer_dim_shared = feature_dim
 
-        # Iterate through the shared layers and build the shared parts of the network
-        for layer in net_arch:
-            if isinstance(layer, int):  # Check that this is a shared layer
-                # TODO: give layer a meaningful name
-                shared_net.append(nn.Linear(last_layer_dim_shared, layer))  # add linear of size layer
-                shared_net.append(activation_fn())
-                last_layer_dim_shared = layer
-            else:
-                assert isinstance(layer, dict), "Error: the net_arch list can only contain ints and dicts"
-                if "pi" in layer:
-                    assert isinstance(layer["pi"], list), "Error: net_arch[-1]['pi'] must contain a list of integers."
-                    policy_only_layers = layer["pi"]
+        if isinstance(net_arch, list) and len(net_arch) > 0 and isinstance(net_arch[0], int):
+            warnings.warn(
+                (
+                    "Shared layers in the mlp_extractor are deprecated and will be removed in SB3 v1.8.0, "
+                    "please use separate pi and vf networks "
+                    "(e.g. net_arch=dict(pi=[...], vf=[...]))"
+                ),
+                DeprecationWarning,
+            )
 
-                if "vf" in layer:
-                    assert isinstance(layer["vf"], list), "Error: net_arch[-1]['vf'] must contain a list of integers."
-                    value_only_layers = layer["vf"]
-                break  # From here on the network splits up in policy and value network
+        # TODO(antonin): update behavior for net_arch=[64, 64]
+        # once shared networks are removed
+        if isinstance(net_arch, dict):
+            policy_only_layers = net_arch["pi"]
+            value_only_layers = net_arch["vf"]
+        else:
+            # Iterate through the shared layers and build the shared parts of the network
+            for layer in net_arch:
+                if isinstance(layer, int):  # Check that this is a shared layer
+                    shared_net.append(nn.Linear(last_layer_dim_shared, layer))  # add linear of size layer
+                    shared_net.append(activation_fn())
+                    last_layer_dim_shared = layer
+                else:
+                    assert isinstance(layer, dict), "Error: the net_arch list can only contain ints and dicts"
+                    if "pi" in layer:
+                        assert isinstance(layer["pi"], list), "Error: net_arch[-1]['pi'] must contain a list of integers."
+                        policy_only_layers = layer["pi"]
+
+                    if "vf" in layer:
+                        assert isinstance(layer["vf"], list), "Error: net_arch[-1]['vf'] must contain a list of integers."
+                        value_only_layers = layer["vf"]
+                    break  # From here on the network splits up in policy and value network
 
         last_layer_dim_pi = last_layer_dim_shared
         last_layer_dim_vf = last_layer_dim_shared
@@ -239,17 +271,26 @@ class MlpExtractor(nn.Module):
 
 class CombinedExtractor(BaseFeaturesExtractor):
     """
-    Combined feature extractor for Dict observation spaces.
-    Builds a feature extractor for each key of the space. Input from each space
+    Combined features extractor for Dict observation spaces.
+    Builds a features extractor for each key of the space. Input from each space
     is fed through a separate submodule (CNN or MLP, depending on input shape),
     the output features are concatenated and fed through additional MLP network ("combined").
 
     :param observation_space:
     :param cnn_output_dim: Number of features to output from each CNN submodule(s). Defaults to
         256 to avoid exploding network sizes.
+    :param normalized_image: Whether to assume that the image is already normalized
+        or not (this disables dtype and bounds checks): when True, it only checks that
+        the space is a Box and has 3 dimensions.
+        Otherwise, it checks that it has expected dtype (uint8) and bounds (values in [0, 255]).
     """
 
-    def __init__(self, observation_space: gym.spaces.Dict, cnn_output_dim: int = 256):
+    def __init__(
+        self,
+        observation_space: spaces.Dict,
+        cnn_output_dim: int = 256,
+        normalized_image: bool = False,
+    ) -> None:
         # TODO we do not know features-dim here before going over all the items, so put something there. This is dirty!
         super().__init__(observation_space, features_dim=1)
 
@@ -257,8 +298,8 @@ class CombinedExtractor(BaseFeaturesExtractor):
 
         total_concat_size = 0
         for key, subspace in observation_space.spaces.items():
-            if is_image_space(subspace):
-                extractors[key] = NatureCNN(subspace, features_dim=cnn_output_dim)
+            if is_image_space(subspace, normalized_image=normalized_image):
+                extractors[key] = NatureCNN(subspace, features_dim=cnn_output_dim, normalized_image=normalized_image)
                 total_concat_size += cnn_output_dim
             else:
                 # The observation key is a vector, flatten it if needed

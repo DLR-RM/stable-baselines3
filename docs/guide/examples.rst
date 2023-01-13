@@ -194,7 +194,7 @@ You can use environments with dictionary observation spaces. This is useful in t
 concatenate observations such as an image from a camera combined with a vector of servo sensor data (e.g., rotation angles).
 Stable Baselines3 provides ``SimpleMultiObsEnv`` as an example of this kind of of setting.
 The environment is a simple grid world but the observations for each cell come in the form of dictionaries.
-These dictionaries are randomly initilaized on the creation of the environment and contain a vector observation and an image observation.
+These dictionaries are randomly initialized on the creation of the environment and contain a vector observation and an image observation.
 
 .. code-block:: python
 
@@ -606,7 +606,7 @@ However, SB3 provides a ``save_replay_buffer()`` and ``load_replay_buffer()`` me
 Accessing and modifying model parameters
 ----------------------------------------
 
-You can access model's parameters via ``load_parameters`` and ``get_parameters`` functions,
+You can access model's parameters via ``set_parameters`` and ``get_parameters`` functions,
 or via ``model.policy.state_dict()`` (and ``load_state_dict()``),
 which use dictionaries that map variable names to PyTorch tensors.
 

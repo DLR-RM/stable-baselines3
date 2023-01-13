@@ -2,6 +2,7 @@ import glob
 import os
 import platform
 import random
+import re
 from collections import deque
 from itertools import zip_longest
 from typing import Dict, Iterable, List, Optional, Tuple, Union
@@ -9,6 +10,7 @@ from typing import Dict, Iterable, List, Optional, Tuple, Union
 import gym
 import numpy as np
 import torch as th
+from gym import spaces
 
 import stable_baselines3 as sb3
 
@@ -210,7 +212,7 @@ def configure_logger(
     return configure(save_path, format_strings=format_strings)
 
 
-def check_for_correct_spaces(env: GymEnv, observation_space: gym.spaces.Space, action_space: gym.spaces.Space) -> None:
+def check_for_correct_spaces(env: GymEnv, observation_space: spaces.Space, action_space: spaces.Space) -> None:
     """
     Checks that the environment has same spaces as provided ones. Used by BaseAlgorithm to check if
     spaces match after loading the model with given env.
@@ -228,7 +230,7 @@ def check_for_correct_spaces(env: GymEnv, observation_space: gym.spaces.Space, a
         raise ValueError(f"Action spaces do not match: {action_space} != {env.action_space}")
 
 
-def is_vectorized_box_observation(observation: np.ndarray, observation_space: gym.spaces.Box) -> bool:
+def is_vectorized_box_observation(observation: np.ndarray, observation_space: spaces.Box) -> bool:
     """
     For box observation type, detects and validates the shape,
     then returns whether or not the observation is vectorized.
@@ -249,7 +251,7 @@ def is_vectorized_box_observation(observation: np.ndarray, observation_space: gy
         )
 
 
-def is_vectorized_discrete_observation(observation: Union[int, np.ndarray], observation_space: gym.spaces.Discrete) -> bool:
+def is_vectorized_discrete_observation(observation: Union[int, np.ndarray], observation_space: spaces.Discrete) -> bool:
     """
     For discrete observation type, detects and validates the shape,
     then returns whether or not the observation is vectorized.
@@ -269,7 +271,7 @@ def is_vectorized_discrete_observation(observation: Union[int, np.ndarray], obse
         )
 
 
-def is_vectorized_multidiscrete_observation(observation: np.ndarray, observation_space: gym.spaces.MultiDiscrete) -> bool:
+def is_vectorized_multidiscrete_observation(observation: np.ndarray, observation_space: spaces.MultiDiscrete) -> bool:
     """
     For multidiscrete observation type, detects and validates the shape,
     then returns whether or not the observation is vectorized.
@@ -290,7 +292,7 @@ def is_vectorized_multidiscrete_observation(observation: np.ndarray, observation
         )
 
 
-def is_vectorized_multibinary_observation(observation: np.ndarray, observation_space: gym.spaces.MultiBinary) -> bool:
+def is_vectorized_multibinary_observation(observation: np.ndarray, observation_space: spaces.MultiBinary) -> bool:
     """
     For multibinary observation type, detects and validates the shape,
     then returns whether or not the observation is vectorized.
@@ -299,19 +301,19 @@ def is_vectorized_multibinary_observation(observation: np.ndarray, observation_s
     :param observation_space: the observation space
     :return: whether the given observation is vectorized or not
     """
-    if observation.shape == (observation_space.n,):
+    if observation.shape == observation_space.shape:
         return False
-    elif len(observation.shape) == 2 and observation.shape[1] == observation_space.n:
+    elif len(observation.shape) == len(observation_space.shape) + 1 and observation.shape[1:] == observation_space.shape:
         return True
     else:
         raise ValueError(
             f"Error: Unexpected observation shape {observation.shape} for MultiBinary "
-            + f"environment, please use ({observation_space.n},) or "
+            + f"environment, please use {observation_space.shape} or "
             + f"(n_env, {observation_space.n}) for the observation shape."
         )
 
 
-def is_vectorized_dict_observation(observation: np.ndarray, observation_space: gym.spaces.Dict) -> bool:
+def is_vectorized_dict_observation(observation: np.ndarray, observation_space: spaces.Dict) -> bool:
     """
     For dict observation type, detects and validates the shape,
     then returns whether or not the observation is vectorized.
@@ -355,7 +357,7 @@ def is_vectorized_dict_observation(observation: np.ndarray, observation_space: g
         )
 
 
-def is_vectorized_observation(observation: Union[int, np.ndarray], observation_space: gym.spaces.Space) -> bool:
+def is_vectorized_observation(observation: Union[int, np.ndarray], observation_space: spaces.Space) -> bool:
     """
     For every observation type, detects and validates the shape,
     then returns whether or not the observation is vectorized.
@@ -366,11 +368,11 @@ def is_vectorized_observation(observation: Union[int, np.ndarray], observation_s
     """
 
     is_vec_obs_func_dict = {
-        gym.spaces.Box: is_vectorized_box_observation,
-        gym.spaces.Discrete: is_vectorized_discrete_observation,
-        gym.spaces.MultiDiscrete: is_vectorized_multidiscrete_observation,
-        gym.spaces.MultiBinary: is_vectorized_multibinary_observation,
-        gym.spaces.Dict: is_vectorized_dict_observation,
+        spaces.Box: is_vectorized_box_observation,
+        spaces.Discrete: is_vectorized_discrete_observation,
+        spaces.MultiDiscrete: is_vectorized_multidiscrete_observation,
+        spaces.MultiBinary: is_vectorized_multibinary_observation,
+        spaces.Dict: is_vectorized_dict_observation,
     }
 
     for space_type, is_vec_obs_func in is_vec_obs_func_dict.items():
@@ -461,9 +463,9 @@ def obs_as_tensor(
     :return: PyTorch tensor of the observation on a desired device.
     """
     if isinstance(obs, np.ndarray):
-        return th.as_tensor(obs).to(device)
+        return th.as_tensor(obs, device=device)
     elif isinstance(obs, dict):
-        return {key: th.as_tensor(_obs).to(device) for (key, _obs) in obs.items()}
+        return {key: th.as_tensor(_obs, device=device) for (key, _obs) in obs.items()}
     else:
         raise Exception(f"Unrecognized type of observation {type(obs)}")
 
@@ -505,7 +507,9 @@ def get_system_info(print_info: bool = True) -> Tuple[Dict[str, str], str]:
         and a formatted string.
     """
     env_info = {
-        "OS": f"{platform.platform()} {platform.version()}",
+        # In OS, a regex is used to add a space between a "#" and a number to avoid
+        # wrongly linking to another issue on GitHub. Example: turn "#42" to "# 42".
+        "OS": re.sub(r"#(\d)", r"# \1", f"{platform.platform()} {platform.version()}"),
         "Python": platform.python_version(),
         "Stable-Baselines3": sb3.__version__,
         "PyTorch": th.__version__,
@@ -515,7 +519,7 @@ def get_system_info(print_info: bool = True) -> Tuple[Dict[str, str], str]:
     }
     env_info_str = ""
     for key, value in env_info.items():
-        env_info_str += f"{key}: {value}\n"
+        env_info_str += f"- {key}: {value}\n"
     if print_info:
         print(env_info_str)
     return env_info, env_info_str

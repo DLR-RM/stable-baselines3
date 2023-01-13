@@ -3,6 +3,7 @@
 import io
 import pathlib
 import time
+import warnings
 from abc import ABC, abstractmethod
 from collections import deque
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
@@ -10,6 +11,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Un
 import gym
 import numpy as np
 import torch as th
+from gym import spaces
 
 from stable_baselines3.common import utils
 from stable_baselines3.common.callbacks import BaseCallback, CallbackList, ConvertCallback, ProgressBarCallback
@@ -100,7 +102,7 @@ class BaseAlgorithm(ABC):
         seed: Optional[int] = None,
         use_sde: bool = False,
         sde_sample_freq: int = -1,
-        supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
+        supported_action_spaces: Optional[Tuple[spaces.Space, ...]] = None,
     ):
         if isinstance(policy, str):
             self.policy_class = self._get_policy_from_name(policy)
@@ -116,8 +118,8 @@ class BaseAlgorithm(ABC):
         self._vec_normalize_env = unwrap_vec_normalize(env)
         self.verbose = verbose
         self.policy_kwargs = {} if policy_kwargs is None else policy_kwargs
-        self.observation_space = None  # type: Optional[gym.spaces.Space]
-        self.action_space = None  # type: Optional[gym.spaces.Space]
+        self.observation_space = None  # type: Optional[spaces.Space]
+        self.action_space = None  # type: Optional[spaces.Space]
         self.n_envs = None
         self.num_timesteps = 0
         # Used for updating schedules
@@ -174,13 +176,13 @@ class BaseAlgorithm(ABC):
                 )
 
             # Catch common mistake: using MlpPolicy/CnnPolicy instead of MultiInputPolicy
-            if policy in ["MlpPolicy", "CnnPolicy"] and isinstance(self.observation_space, gym.spaces.Dict):
+            if policy in ["MlpPolicy", "CnnPolicy"] and isinstance(self.observation_space, spaces.Dict):
                 raise ValueError(f"You must use `MultiInputPolicy` when working with dict observation space, not {policy}")
 
-            if self.use_sde and not isinstance(self.action_space, gym.spaces.Box):
+            if self.use_sde and not isinstance(self.action_space, spaces.Box):
                 raise ValueError("generalized State-Dependent Exploration (gSDE) can only be used with continuous actions.")
 
-            if isinstance(self.action_space, gym.spaces.Box):
+            if isinstance(self.action_space, spaces.Box):
                 assert np.all(
                     np.isfinite(np.array([self.action_space.low, self.action_space.high]))
                 ), "Continuous action space must have a finite lower and upper bound"
@@ -211,7 +213,7 @@ class BaseAlgorithm(ABC):
 
         if not is_vecenv_wrapped(env, VecTransposeImage):
             wrap_with_vectranspose = False
-            if isinstance(env.observation_space, gym.spaces.Dict):
+            if isinstance(env.observation_space, spaces.Dict):
                 # If even one of the keys is a image-space in need of transpose, apply transpose
                 # If the image spaces are not consistent (for instance one is channel first,
                 # the other channel last), VecTransposeImage will throw an error
@@ -615,7 +617,7 @@ class BaseAlgorithm(ABC):
                 f"expected {objects_needing_update}, got {updated_objects}"
             )
 
-    @classmethod
+    @classmethod  # noqa: C901
     def load(
         cls: Type[SelfBaseAlgorithm],
         path: Union[str, pathlib.Path, io.BufferedIOBase],
@@ -705,8 +707,25 @@ class BaseAlgorithm(ABC):
         model.__dict__.update(kwargs)
         model._setup_model()
 
-        # put state_dicts back in place
-        model.set_parameters(params, exact_match=True, device=device)
+        try:
+            # put state_dicts back in place
+            model.set_parameters(params, exact_match=True, device=device)
+        except RuntimeError as e:
+            # Patch to load Policy saved using SB3 < 1.7.0
+            # the error is probably due to old policy being loaded
+            # See https://github.com/DLR-RM/stable-baselines3/issues/1233
+            if "pi_features_extractor" in str(e) and "Missing key(s) in state_dict" in str(e):
+                model.set_parameters(params, exact_match=False, device=device)
+                warnings.warn(
+                    "You are probably loading a model saved with SB3 < 1.7.0, "
+                    "we deactivated exact_match so you can save the model "
+                    "again to avoid issues in the future "
+                    "(see https://github.com/DLR-RM/stable-baselines3/issues/1233 for more info). "
+                    f"Original error: {e} \n"
+                    "Note: the model should still work fine, this only a warning."
+                )
+            else:
+                raise e
 
         # put other pytorch variables back in place
         if pytorch_variables is not None:

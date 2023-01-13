@@ -3,7 +3,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, TypeVar, Union
 
-import gym
 import numpy as np
 import torch as th
 from gym import spaces
@@ -659,7 +658,7 @@ class TanhBijector:
 
 
 def make_proba_distribution(
-    action_space: gym.spaces.Space, use_sde: bool = False, dist_kwargs: Optional[Dict[str, Any]] = None
+    action_space: spaces.Space, use_sde: bool = False, dist_kwargs: Optional[Dict[str, Any]] = None
 ) -> Distribution:
     """
     Return an instance of Distribution for the correct type of action space

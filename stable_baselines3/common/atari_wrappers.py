@@ -21,8 +21,8 @@ class NoopResetEnv(gym.Wrapper):
     :param noop_max: the maximum value of no-ops to run
     """
 
-    def __init__(self, env: gym.Env, noop_max: int = 30):
-        gym.Wrapper.__init__(self, env)
+    def __init__(self, env: gym.Env, noop_max: int = 30) -> None:
+        super().__init__(env)
         self.noop_max = noop_max
         self.override_num_noops = None
         self.noop_action = 0
@@ -50,8 +50,8 @@ class FireResetEnv(gym.Wrapper):
     :param env: the environment to wrap
     """
 
-    def __init__(self, env: gym.Env):
-        gym.Wrapper.__init__(self, env)
+    def __init__(self, env: gym.Env) -> None:
+        super().__init__(env)
         assert env.unwrapped.get_action_meanings()[1] == "FIRE"
         assert len(env.unwrapped.get_action_meanings()) >= 3
 
@@ -74,8 +74,8 @@ class EpisodicLifeEnv(gym.Wrapper):
     :param env: the environment to wrap
     """
 
-    def __init__(self, env: gym.Env):
-        gym.Wrapper.__init__(self, env)
+    def __init__(self, env: gym.Env) -> None:
+        super().__init__(env)
         self.lives = 0
         self.was_real_done = True
 
@@ -119,8 +119,8 @@ class MaxAndSkipEnv(gym.Wrapper):
     :param skip: number of ``skip``-th frame
     """
 
-    def __init__(self, env: gym.Env, skip: int = 4):
-        gym.Wrapper.__init__(self, env)
+    def __init__(self, env: gym.Env, skip: int = 4) -> None:
+        super().__init__(env)
         # most recent raw observations (for max pooling across time steps)
         self._obs_buffer = np.zeros((2,) + env.observation_space.shape, dtype=env.observation_space.dtype)
         self._skip = skip
@@ -134,7 +134,7 @@ class MaxAndSkipEnv(gym.Wrapper):
         :return: observation, reward, done, information
         """
         total_reward = 0.0
-        done = None
+        done = False
         for i in range(self._skip):
             obs, reward, done, info = self.env.step(action)
             if i == self._skip - 2:
@@ -161,8 +161,8 @@ class ClipRewardEnv(gym.RewardWrapper):
     :param env: the environment
     """
 
-    def __init__(self, env: gym.Env):
-        gym.RewardWrapper.__init__(self, env)
+    def __init__(self, env: gym.Env) -> None:
+        super().__init__(env)
 
     def reward(self, reward: float) -> float:
         """
@@ -184,8 +184,8 @@ class WarpFrame(gym.ObservationWrapper):
     :param height:
     """
 
-    def __init__(self, env: gym.Env, width: int = 84, height: int = 84):
-        gym.ObservationWrapper.__init__(self, env)
+    def __init__(self, env: gym.Env, width: int = 84, height: int = 84) -> None:
+        super().__init__(env)
         self.width = width
         self.height = height
         self.observation_space = spaces.Box(
@@ -234,7 +234,7 @@ class AtariWrapper(gym.Wrapper):
         screen_size: int = 84,
         terminal_on_life_loss: bool = True,
         clip_reward: bool = True,
-    ):
+    ) -> None:
         env = NoopResetEnv(env, noop_max=noop_max)
         env = MaxAndSkipEnv(env, skip=frame_skip)
         if terminal_on_life_loss:

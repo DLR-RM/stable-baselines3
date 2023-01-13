@@ -6,6 +6,7 @@ import multiprocessing
 import gym
 import numpy as np
 import pytest
+from gym import spaces
 
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack, VecNormalize
@@ -64,7 +65,7 @@ class CustomGymEnv(gym.Env):
 
 def test_vecenv_func_checker():
     """The functions in ``env_fns'' must return distinct instances since we need distinct environments."""
-    env = CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)))
+    env = CustomGymEnv(spaces.Box(low=np.zeros(2), high=np.ones(2)))
 
     with pytest.raises(ValueError):
         DummyVecEnv([lambda: env for _ in range(N_ENVS)])
@@ -78,7 +79,7 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
     """Test access to methods/attributes of vectorized environments"""
 
     def make_env():
-        return CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)))
+        return CustomGymEnv(spaces.Box(low=np.zeros(2), high=np.ones(2)))
 
     vec_env = vec_env_class([make_env for _ in range(N_ENVS)])
 
@@ -147,8 +148,8 @@ class StepEnv(gym.Env):
     def __init__(self, max_steps):
         """Gym environment for testing that terminal observation is inserted
         correctly."""
-        self.action_space = gym.spaces.Discrete(2)
-        self.observation_space = gym.spaces.Box(np.array([0]), np.array([999]), dtype="int")
+        self.action_space = spaces.Discrete(2)
+        self.observation_space = spaces.Box(np.array([0]), np.array([999]), dtype="int")
         self.max_steps = max_steps
         self.current_step = 0
 
@@ -210,10 +211,10 @@ def test_vecenv_terminal_obs(vec_env_class, vec_env_wrapper):
 
 SPACES = collections.OrderedDict(
     [
-        ("discrete", gym.spaces.Discrete(2)),
-        ("multidiscrete", gym.spaces.MultiDiscrete([2, 3])),
-        ("multibinary", gym.spaces.MultiBinary(3)),
-        ("continuous", gym.spaces.Box(low=np.zeros(2), high=np.ones(2))),
+        ("discrete", spaces.Discrete(2)),
+        ("multidiscrete", spaces.MultiDiscrete([2, 3])),
+        ("multibinary", spaces.MultiBinary(3)),
+        ("continuous", spaces.Box(low=np.zeros(2), high=np.ones(2))),
     ]
 )
 
@@ -252,7 +253,7 @@ def test_vecenv_single_space(vec_env_class, space):
     check_vecenv_spaces(vec_env_class, space, obs_assert)
 
 
-class _UnorderedDictSpace(gym.spaces.Dict):
+class _UnorderedDictSpace(spaces.Dict):
     """Like DictSpace, but returns an unordered dict when sampling."""
 
     def sample(self):
@@ -262,7 +263,7 @@ class _UnorderedDictSpace(gym.spaces.Dict):
 @pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
 def test_vecenv_dict_spaces(vec_env_class):
     """Test dictionary observation spaces with vectorized environments."""
-    space = gym.spaces.Dict(SPACES)
+    space = spaces.Dict(SPACES)
 
     def obs_assert(obs):
         assert isinstance(obs, collections.OrderedDict)
@@ -280,7 +281,7 @@ def test_vecenv_dict_spaces(vec_env_class):
 @pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
 def test_vecenv_tuple_spaces(vec_env_class):
     """Test tuple observation spaces with vectorized environments."""
-    space = gym.spaces.Tuple(tuple(SPACES.values()))
+    space = spaces.Tuple(tuple(SPACES.values()))
 
     def obs_assert(obs):
         assert isinstance(obs, tuple)
@@ -298,7 +299,7 @@ def test_subproc_start_method():
     all_methods = {"forkserver", "spawn", "fork"}
     available_methods = multiprocessing.get_all_start_methods()
     start_methods += list(all_methods.intersection(available_methods))
-    space = gym.spaces.Discrete(2)
+    space = spaces.Discrete(2)
 
     def obs_assert(obs):
         return check_vecenv_obs(obs, space)
@@ -338,7 +339,7 @@ class CustomWrapperBB(CustomWrapperB):
 
 def test_vecenv_wrapper_getattr():
     def make_env():
-        return CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)))
+        return CustomGymEnv(spaces.Box(low=np.zeros(2), high=np.ones(2)))
 
     vec_env = DummyVecEnv([make_env for _ in range(N_ENVS)])
     wrapped = CustomWrapperA(CustomWrapperBB(vec_env))
@@ -367,7 +368,7 @@ def test_framestack_vecenv():
 
     def make_image_env():
         return CustomGymEnv(
-            gym.spaces.Box(
+            spaces.Box(
                 low=np.zeros(image_space_shape),
                 high=np.ones(image_space_shape) * 255,
                 dtype=np.uint8,
@@ -376,7 +377,7 @@ def test_framestack_vecenv():
 
     def make_transposed_image_env():
         return CustomGymEnv(
-            gym.spaces.Box(
+            spaces.Box(
                 low=np.zeros(transposed_image_space_shape),
                 high=np.ones(transposed_image_space_shape) * 255,
                 dtype=np.uint8,
@@ -384,7 +385,7 @@ def test_framestack_vecenv():
         )
 
     def make_non_image_env():
-        return CustomGymEnv(gym.spaces.Box(low=np.zeros((2,)), high=np.ones((2,))))
+        return CustomGymEnv(spaces.Box(low=np.zeros((2,)), high=np.ones((2,))))
 
     vec_env = DummyVecEnv([make_image_env for _ in range(N_ENVS)])
     vec_env = VecFrameStack(vec_env, n_stack=2)
@@ -433,10 +434,10 @@ def test_framestack_vecenv():
 def test_vec_env_is_wrapped():
     # Test is_wrapped call of subproc workers
     def make_env():
-        return CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)))
+        return CustomGymEnv(spaces.Box(low=np.zeros(2), high=np.ones(2)))
 
     def make_monitored_env():
-        return Monitor(CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2))))
+        return Monitor(CustomGymEnv(spaces.Box(low=np.zeros(2), high=np.ones(2))))
 
     # One with monitor, one without
     vec_env = SubprocVecEnv([make_env, make_monitored_env])
@@ -457,7 +458,7 @@ def test_vec_env_is_wrapped():
 @pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
 def test_vec_seeding(vec_env_class):
     def make_env():
-        return CustomGymEnv(gym.spaces.Box(low=np.zeros(2), high=np.ones(2)))
+        return CustomGymEnv(spaces.Box(low=np.zeros(2), high=np.ones(2)))
 
     # For SubprocVecEnv check for all starting methods
     start_methods = [None]

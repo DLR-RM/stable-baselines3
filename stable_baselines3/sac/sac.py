@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
-import gym
 import numpy as np
 import torch as th
+from gym import spaces
 from torch.nn import functional as F
 
 from stable_baselines3.common.buffers import ReplayBuffer
@@ -133,7 +133,7 @@ class SAC(OffPolicyAlgorithm):
             sde_sample_freq=sde_sample_freq,
             use_sde_at_warmup=use_sde_at_warmup,
             optimize_memory_usage=optimize_memory_usage,
-            supported_action_spaces=(gym.spaces.Box),
+            supported_action_spaces=(spaces.Box),
             support_multi_env=True,
         )
 
@@ -181,7 +181,7 @@ class SAC(OffPolicyAlgorithm):
             # Force conversion to float
             # this will throw an error if a malformed string (different from 'auto')
             # is passed
-            self.ent_coef_tensor = th.tensor(float(self.ent_coef)).to(self.device)
+            self.ent_coef_tensor = th.tensor(float(self.ent_coef), device=self.device)
 
     def _create_aliases(self) -> None:
         self.actor = self.policy.actor

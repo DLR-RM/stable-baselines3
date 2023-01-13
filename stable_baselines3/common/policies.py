@@ -2,13 +2,14 @@
 
 import collections
 import copy
+import warnings
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
-import gym
 import numpy as np
 import torch as th
+from gym import spaces
 from torch import nn
 
 from stable_baselines3.common.distributions import (
@@ -59,8 +60,8 @@ class BaseModel(nn.Module):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
         features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
         features_extractor: Optional[nn.Module] = None,
@@ -87,6 +88,9 @@ class BaseModel(nn.Module):
 
         self.features_extractor_class = features_extractor_class
         self.features_extractor_kwargs = features_extractor_kwargs
+        # Automatically deactivate dtype and bounds checks
+        if normalize_images is False and issubclass(features_extractor_class, (NatureCNN, CombinedExtractor)):
+            self.features_extractor_kwargs.update(dict(normalized_image=True))
 
     def _update_features_extractor(
         self,
@@ -114,16 +118,28 @@ class BaseModel(nn.Module):
         """Helper method to create a features extractor."""
         return self.features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
 
-    def extract_features(self, obs: th.Tensor) -> th.Tensor:
+    def extract_features(self, obs: th.Tensor, features_extractor: Optional[BaseFeaturesExtractor] = None) -> th.Tensor:
         """
         Preprocess the observation if needed and extract features.
 
-        :param obs:
-        :return:
+         :param obs: The observation
+         :param features_extractor: The features extractor to use. If it is set to None,
+            the features extractor of the policy is used.
+         :return: The features
         """
-        assert self.features_extractor is not None, "No features extractor was set"
+        if features_extractor is None:
+            warnings.warn(
+                (
+                    "When calling extract_features(), you should explicitely pass a features_extractor as parameter. "
+                    "This will be mandatory in Stable-Baselines v1.8.0"
+                ),
+                DeprecationWarning,
+            )
+
+        features_extractor = features_extractor or self.features_extractor
+        assert features_extractor is not None, "No features extractor was set"
         preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
-        return self.features_extractor(preprocessed_obs)
+        return features_extractor(preprocessed_obs)
 
     def _get_constructor_parameters(self) -> Dict[str, Any]:
         """
@@ -183,7 +199,7 @@ class BaseModel(nn.Module):
 
         :param vector:
         """
-        th.nn.utils.vector_to_parameters(th.FloatTensor(vector).to(self.device), self.parameters())
+        th.nn.utils.vector_to_parameters(th.as_tensor(vector, dtype=th.float, device=self.device), self.parameters())
 
     def parameters_to_vector(self) -> np.ndarray:
         """
@@ -328,7 +344,7 @@ class BasePolicy(BaseModel, ABC):
         # Convert to numpy, and reshape to the original action shape
         actions = actions.cpu().numpy().reshape((-1,) + self.action_space.shape)
 
-        if isinstance(self.action_space, gym.spaces.Box):
+        if isinstance(self.action_space, spaces.Box):
             if self.squash_output:
                 # Rescale to proper domain when using squashing
                 actions = self.unscale_action(actions)
@@ -388,6 +404,7 @@ class ActorCriticPolicy(BasePolicy):
     :param features_extractor_class: Features extractor to use.
     :param features_extractor_kwargs: Keyword arguments
         to pass to the features extractor.
+    :param share_features_extractor: If True, the features extractor is shared between the policy and value networks.
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer_class: The optimizer to use,
@@ -398,10 +415,11 @@ class ActorCriticPolicy(BasePolicy):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
         lr_schedule: Schedule,
-        net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
+        # TODO(antonin): update type annotation when we remove shared network support
+        net_arch: Union[List[int], Dict[str, List[int]], List[Dict[str, List[int]]], None] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
@@ -411,6 +429,7 @@ class ActorCriticPolicy(BasePolicy):
         squash_output: bool = False,
         features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        share_features_extractor: bool = True,
         normalize_images: bool = True,
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
@@ -430,23 +449,52 @@ class ActorCriticPolicy(BasePolicy):
             optimizer_class=optimizer_class,
             optimizer_kwargs=optimizer_kwargs,
             squash_output=squash_output,
+            normalize_images=normalize_images,
         )
+
+        # Convert [dict()] to dict() as shared network are deprecated
+        if isinstance(net_arch, list) and len(net_arch) > 0:
+            if isinstance(net_arch[0], dict):
+                warnings.warn(
+                    (
+                        "As shared layers in the mlp_extractor are deprecated and will be removed in SB3 v1.8.0, "
+                        "you should now pass directly a dictionary and not a list "
+                        "(net_arch=dict(pi=..., vf=...) instead of net_arch=[dict(pi=..., vf=...)])"
+                    ),
+                )
+                net_arch = net_arch[0]
+            else:
+                # Note: deprecation warning will be emitted
+                # by the MlpExtractor constructor
+                pass
 
         # Default network architecture, from stable-baselines
         if net_arch is None:
             if features_extractor_class == NatureCNN:
                 net_arch = []
             else:
-                net_arch = [dict(pi=[64, 64], vf=[64, 64])]
+                net_arch = dict(pi=[64, 64], vf=[64, 64])
 
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.ortho_init = ortho_init
 
-        self.features_extractor = features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
+        self.share_features_extractor = share_features_extractor
+        self.features_extractor = self.make_features_extractor()
         self.features_dim = self.features_extractor.features_dim
+        if self.share_features_extractor:
+            self.pi_features_extractor = self.features_extractor
+            self.vf_features_extractor = self.features_extractor
+        else:
+            self.pi_features_extractor = self.features_extractor
+            self.vf_features_extractor = self.make_features_extractor()
+            # if the features extractor is not shared, there cannot be shared layers in the mlp_extractor
+            # TODO(antonin): update the check once we change net_arch behavior
+            if isinstance(net_arch, list) and len(net_arch) > 0:
+                raise ValueError(
+                    "Error: if the features extractor is not shared, there cannot be shared layers in the mlp_extractor"
+                )
 
-        self.normalize_images = normalize_images
         self.log_std_init = log_std_init
         dist_kwargs = None
         # Keyword arguments for gSDE distribution
@@ -552,6 +600,13 @@ class ActorCriticPolicy(BasePolicy):
                 self.action_net: 0.01,
                 self.value_net: 1,
             }
+            if not self.share_features_extractor:
+                # Note(antonin): this is to keep SB3 results
+                # consistent, see GH#1148
+                del module_gains[self.features_extractor]
+                module_gains[self.pi_features_extractor] = np.sqrt(2)
+                module_gains[self.vf_features_extractor] = np.sqrt(2)
+
             for module, gain in module_gains.items():
                 module.apply(partial(self.init_weights, gain=gain))
 
@@ -568,7 +623,12 @@ class ActorCriticPolicy(BasePolicy):
         """
         # Preprocess the observation if needed
         features = self.extract_features(obs)
-        latent_pi, latent_vf = self.mlp_extractor(features)
+        if self.share_features_extractor:
+            latent_pi, latent_vf = self.mlp_extractor(features)
+        else:
+            pi_features, vf_features = features
+            latent_pi = self.mlp_extractor.forward_actor(pi_features)
+            latent_vf = self.mlp_extractor.forward_critic(vf_features)
         # Evaluate the values for the given observations
         values = self.value_net(latent_vf)
         distribution = self._get_action_dist_from_latent(latent_pi)
@@ -576,6 +636,20 @@ class ActorCriticPolicy(BasePolicy):
         log_prob = distribution.log_prob(actions)
         actions = actions.reshape((-1,) + self.action_space.shape)
         return actions, values, log_prob
+
+    def extract_features(self, obs: th.Tensor) -> Union[th.Tensor, Tuple[th.Tensor, th.Tensor]]:
+        """
+        Preprocess the observation if needed and extract features.
+
+        :param obs: Observation
+        :return: the output of the features extractor(s)
+        """
+        if self.share_features_extractor:
+            return super().extract_features(obs, self.features_extractor)
+        else:
+            pi_features = super().extract_features(obs, self.pi_features_extractor)
+            vf_features = super().extract_features(obs, self.vf_features_extractor)
+            return pi_features, vf_features
 
     def _get_action_dist_from_latent(self, latent_pi: th.Tensor) -> Distribution:
         """
@@ -617,14 +691,19 @@ class ActorCriticPolicy(BasePolicy):
         Evaluate actions according to the current policy,
         given the observations.
 
-        :param obs:
-        :param actions:
+        :param obs: Observation
+        :param actions: Actions
         :return: estimated value, log likelihood of taking those actions
             and entropy of the action distribution.
         """
         # Preprocess the observation if needed
         features = self.extract_features(obs)
-        latent_pi, latent_vf = self.mlp_extractor(features)
+        if self.share_features_extractor:
+            latent_pi, latent_vf = self.mlp_extractor(features)
+        else:
+            pi_features, vf_features = features
+            latent_pi = self.mlp_extractor.forward_actor(pi_features)
+            latent_vf = self.mlp_extractor.forward_critic(vf_features)
         distribution = self._get_action_dist_from_latent(latent_pi)
         log_prob = distribution.log_prob(actions)
         values = self.value_net(latent_vf)
@@ -638,7 +717,7 @@ class ActorCriticPolicy(BasePolicy):
         :param obs:
         :return: the action distribution.
         """
-        features = self.extract_features(obs)
+        features = super().extract_features(obs, self.pi_features_extractor)
         latent_pi = self.mlp_extractor.forward_actor(features)
         return self._get_action_dist_from_latent(latent_pi)
 
@@ -646,10 +725,10 @@ class ActorCriticPolicy(BasePolicy):
         """
         Get the estimated values according to the current policy given the observations.
 
-        :param obs:
+        :param obs: Observation
         :return: the estimated values.
         """
-        features = self.extract_features(obs)
+        features = super().extract_features(obs, self.vf_features_extractor)
         latent_vf = self.mlp_extractor.forward_critic(features)
         return self.value_net(latent_vf)
 
@@ -677,6 +756,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
     :param features_extractor_class: Features extractor to use.
     :param features_extractor_kwargs: Keyword arguments
         to pass to the features extractor.
+    :param share_features_extractor: If True, the features extractor is shared between the policy and value networks.
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer_class: The optimizer to use,
@@ -687,10 +767,10 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
         lr_schedule: Schedule,
-        net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
+        net_arch: Union[List[int], Dict[str, List[int]], List[Dict[str, List[int]]], None] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
@@ -700,6 +780,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         squash_output: bool = False,
         features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        share_features_extractor: bool = True,
         normalize_images: bool = True,
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
@@ -718,6 +799,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
             squash_output,
             features_extractor_class,
             features_extractor_kwargs,
+            share_features_extractor,
             normalize_images,
             optimizer_class,
             optimizer_kwargs,
@@ -746,7 +828,8 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         this allows to ensure boundaries when using gSDE.
     :param features_extractor_class: Uses the CombinedExtractor
     :param features_extractor_kwargs: Keyword arguments
-        to pass to the feature extractor.
+        to pass to the features extractor.
+    :param share_features_extractor: If True, the features extractor is shared between the policy and value networks.
     :param normalize_images: Whether to normalize images or not,
          dividing by 255.0 (True by default)
     :param optimizer_class: The optimizer to use,
@@ -757,10 +840,10 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Dict,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Dict,
+        action_space: spaces.Space,
         lr_schedule: Schedule,
-        net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = None,
+        net_arch: Union[List[int], Dict[str, List[int]], List[Dict[str, List[int]]], None] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
@@ -770,6 +853,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         squash_output: bool = False,
         features_extractor_class: Type[BaseFeaturesExtractor] = CombinedExtractor,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        share_features_extractor: bool = True,
         normalize_images: bool = True,
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
@@ -788,6 +872,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
             squash_output,
             features_extractor_class,
             features_extractor_kwargs,
+            share_features_extractor,
             normalize_images,
             optimizer_class,
             optimizer_kwargs,
@@ -823,8 +908,8 @@ class ContinuousCritic(BaseModel):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
         net_arch: List[int],
         features_extractor: nn.Module,
         features_dim: int,
@@ -855,7 +940,7 @@ class ContinuousCritic(BaseModel):
         # Learn the features extractor using the policy loss only
         # when the features_extractor is shared with the actor
         with th.set_grad_enabled(not self.share_features_extractor):
-            features = self.extract_features(obs)
+            features = self.extract_features(obs, self.features_extractor)
         qvalue_input = th.cat([features, actions], dim=1)
         return tuple(q_net(qvalue_input) for q_net in self.q_networks)
 
@@ -866,5 +951,5 @@ class ContinuousCritic(BaseModel):
         (e.g. when updating the policy in TD3).
         """
         with th.no_grad():
-            features = self.extract_features(obs)
+            features = self.extract_features(obs, self.features_extractor)
         return self.q_networks[0](th.cat([features, actions], dim=1))

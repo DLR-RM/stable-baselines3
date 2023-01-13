@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Type, Union
 
-import gym
 import torch as th
+from gym import spaces
 from torch import nn
 
 from stable_baselines3.common.policies import BasePolicy, ContinuousCritic
@@ -34,8 +34,8 @@ class Actor(BasePolicy):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
         net_arch: List[int],
         features_extractor: nn.Module,
         features_dim: int,
@@ -74,7 +74,7 @@ class Actor(BasePolicy):
 
     def forward(self, obs: th.Tensor) -> th.Tensor:
         # assert deterministic, 'The TD3 actor only outputs deterministic actions'
-        features = self.extract_features(obs)
+        features = self.extract_features(obs, self.features_extractor)
         return self.mu(features)
 
     def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
@@ -108,8 +108,8 @@ class TD3Policy(BasePolicy):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
         lr_schedule: Schedule,
         net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
@@ -129,6 +129,7 @@ class TD3Policy(BasePolicy):
             optimizer_class=optimizer_class,
             optimizer_kwargs=optimizer_kwargs,
             squash_output=True,
+            normalize_images=normalize_images,
         )
 
         # Default network architecture, from the original paper
@@ -177,7 +178,7 @@ class TD3Policy(BasePolicy):
 
         if self.share_features_extractor:
             self.critic = self.make_critic(features_extractor=self.actor.features_extractor)
-            # Critic target should not share the features extactor with critic
+            # Critic target should not share the features extractor with critic
             # but it can share it with the actor target as actor and critic are sharing
             # the same features_extractor too
             # NOTE: as a result the effective poliak (soft-copy) coefficient for the features extractor
@@ -270,8 +271,8 @@ class CnnPolicy(TD3Policy):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Space,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
         lr_schedule: Schedule,
         net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
@@ -324,8 +325,8 @@ class MultiInputPolicy(TD3Policy):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Dict,
-        action_space: gym.spaces.Space,
+        observation_space: spaces.Dict,
+        action_space: spaces.Space,
         lr_schedule: Schedule,
         net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,

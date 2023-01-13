@@ -2,10 +2,11 @@ import pickle
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Union
 
-import gym
 import numpy as np
+from gym import spaces
 
 from stable_baselines3.common import utils
+from stable_baselines3.common.preprocessing import is_image_space
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvStepReturn, VecEnvWrapper
 
@@ -47,12 +48,38 @@ class VecNormalize(VecEnvWrapper):
         if self.norm_obs:
             self._sanity_checks()
 
-            if isinstance(self.observation_space, gym.spaces.Dict):
+            if isinstance(self.observation_space, spaces.Dict):
                 self.obs_spaces = self.observation_space.spaces
                 self.obs_rms = {key: RunningMeanStd(shape=self.obs_spaces[key].shape) for key in self.norm_obs_keys}
+                # Update observation space when using image
+                # See explanation below and GH #1214
+                for key in self.obs_rms.keys():
+                    if is_image_space(self.obs_spaces[key]):
+                        self.observation_space.spaces[key] = spaces.Box(
+                            low=-clip_obs,
+                            high=clip_obs,
+                            shape=self.obs_spaces[key].shape,
+                            dtype=np.float32,
+                        )
+
             else:
                 self.obs_spaces = None
                 self.obs_rms = RunningMeanStd(shape=self.observation_space.shape)
+                # Update observation space when using image
+                # See GH #1214
+                # This is to raise proper error when
+                # VecNormalize is used with an image-like input and
+                # normalize_images=True.
+                # For correctness, we should also update the bounds
+                # in other cases but this will cause backward-incompatible change
+                # and break already saved policies.
+                if is_image_space(self.observation_space):
+                    self.observation_space = spaces.Box(
+                        low=-clip_obs,
+                        high=clip_obs,
+                        shape=self.observation_space.shape,
+                        dtype=np.float32,
+                    )
 
         self.ret_rms = RunningMeanStd(shape=())
         self.clip_obs = clip_obs
@@ -71,13 +98,13 @@ class VecNormalize(VecEnvWrapper):
         """
         Check the observations that are going to be normalized are of the correct type (spaces.Box).
         """
-        if isinstance(self.observation_space, gym.spaces.Dict):
+        if isinstance(self.observation_space, spaces.Dict):
             # By default, we normalize all keys
             if self.norm_obs_keys is None:
                 self.norm_obs_keys = list(self.observation_space.spaces.keys())
             # Check that all keys are of type Box
             for obs_key in self.norm_obs_keys:
-                if not isinstance(self.observation_space.spaces[obs_key], gym.spaces.Box):
+                if not isinstance(self.observation_space.spaces[obs_key], spaces.Box):
                     raise ValueError(
                         f"VecNormalize only supports `gym.spaces.Box` observation spaces but {obs_key} "
                         f"is of type {self.observation_space.spaces[obs_key]}. "
@@ -85,7 +112,7 @@ class VecNormalize(VecEnvWrapper):
                         " that should be normalized via the `norm_obs_keys` parameter."
                     )
 
-        elif isinstance(self.observation_space, gym.spaces.Box):
+        elif isinstance(self.observation_space, spaces.Box):
             if self.norm_obs_keys is not None:
                 raise ValueError("`norm_obs_keys` param is applicable only with `gym.spaces.Dict` observation spaces")
 
@@ -116,7 +143,7 @@ class VecNormalize(VecEnvWrapper):
 
         :param state:"""
         # Backward compatibility
-        if "norm_obs_keys" not in state and isinstance(state["observation_space"], gym.spaces.Dict):
+        if "norm_obs_keys" not in state and isinstance(state["observation_space"], spaces.Dict):
             state["norm_obs_keys"] = list(state["observation_space"].spaces.keys())
         self.__dict__.update(state)
         assert "venv" not in state

@@ -43,9 +43,10 @@ class Monitor(gym.Wrapper):
         self.t_start = time.time()
         self.results_writer = None
         if filename is not None:
+            env_id = env.spec.id if env.spec is not None else None
             self.results_writer = ResultsWriter(
                 filename,
-                header={"t_start": self.t_start, "env_id": env.spec and env.spec.id},
+                header={"t_start": self.t_start, "env_id": env_id},
                 extra_keys=reset_keywords + info_keywords,
                 override_existing=override_existing,
             )

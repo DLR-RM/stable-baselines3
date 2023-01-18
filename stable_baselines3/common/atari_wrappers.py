@@ -218,6 +218,10 @@ class AtariWrapper(gym.Wrapper):
     * Grayscale observation
     * Clip reward to {-1, 0, 1}
 
+    This wrapper does not implement sticky actions (repeat action probability) as this is handled
+    at the simulator level. If you want to change the default value of `repeat_action_probability`
+    please refer to the documentation of `common.env_util.make_atari_env`.
+
     :param env: gym environment
     :param noop_max: max number of no-ops
     :param frame_skip: the frequency at which the agent experiences the game.

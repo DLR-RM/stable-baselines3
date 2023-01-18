@@ -119,6 +119,7 @@ def make_atari_env(
     vec_env_cls: Optional[Union[Type[DummyVecEnv], Type[SubprocVecEnv]]] = None,
     vec_env_kwargs: Optional[Dict[str, Any]] = None,
     monitor_kwargs: Optional[Dict[str, Any]] = None,
+    repeat_action_probability: float = 0.0,
 ) -> VecEnv:
     """
     Create a wrapped, monitored VecEnv for Atari.
@@ -136,8 +137,11 @@ def make_atari_env(
     :param vec_env_cls: A custom ``VecEnv`` class constructor. Default: None.
     :param vec_env_kwargs: Keyword arguments to pass to the ``VecEnv`` class constructor.
     :param monitor_kwargs: Keyword arguments to pass to the ``Monitor`` class constructor.
+    :param repeat_action_probability: Sticky actions, i.e. action repeat probability in ALE configuration
     :return: The wrapped environment
     """
+    env_kwargs = {} if env_kwargs is None else env_kwargs
+    env_kwargs["repeat_action_probability"] = repeat_action_probability
     return make_vec_env(
         env_id,
         n_envs=n_envs,

@@ -13,6 +13,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Added ``repeat_action_probability`` argument in ``make_atari_env``.
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

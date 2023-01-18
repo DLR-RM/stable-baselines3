@@ -58,8 +58,16 @@ def test_make_vec_env_func_checker():
 @pytest.mark.parametrize("env_id", ["BreakoutNoFrameskip-v4"])
 @pytest.mark.parametrize("n_envs", [1, 2])
 @pytest.mark.parametrize("wrapper_kwargs", [None, dict(clip_reward=False, screen_size=60)])
-def test_make_atari_env(env_id, n_envs, wrapper_kwargs):
-    env = make_atari_env(env_id, n_envs, wrapper_kwargs=wrapper_kwargs, monitor_dir=None, seed=0)
+@pytest.mark.parametrize("repeat_action_probability", [0.0, 0.25])
+def test_make_atari_env(env_id, n_envs, wrapper_kwargs, repeat_action_probability):
+    env = make_atari_env(
+        env_id,
+        n_envs,
+        wrapper_kwargs=wrapper_kwargs,
+        monitor_dir=None,
+        seed=0,
+        repeat_action_probability=repeat_action_probability,
+    )
 
     assert env.num_envs == n_envs
 

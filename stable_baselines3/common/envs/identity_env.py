@@ -71,7 +71,7 @@ class IdentityEnvBox(IdentityEnv[np.ndarray]):
         super().__init__(ep_length=ep_length, space=space)
         self.eps = eps
 
-    def step(self, action: np.ndarray) -> GymStepReturn:
+    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, Dict[str, Any]]:
         reward = self._get_reward(action)
         self._choose_next_state()
         self.current_step += 1
@@ -83,7 +83,7 @@ class IdentityEnvBox(IdentityEnv[np.ndarray]):
 
 
 class IdentityEnvMultiDiscrete(IdentityEnv[np.ndarray]):
-    def __init__(self, dim: int = 1, ep_length: int = 100):
+    def __init__(self, dim: int = 1, ep_length: int = 100) -> None:
         """
         Identity environment for testing purposes
 
@@ -95,7 +95,7 @@ class IdentityEnvMultiDiscrete(IdentityEnv[np.ndarray]):
 
 
 class IdentityEnvMultiBinary(IdentityEnv[np.ndarray]):
-    def __init__(self, dim: int = 1, ep_length: int = 100):
+    def __init__(self, dim: int = 1, ep_length: int = 100) -> None:
         """
         Identity environment for testing purposes
 
@@ -126,7 +126,7 @@ class FakeImageEnv(gym.Env):
         n_channels: int = 1,
         discrete: bool = True,
         channel_first: bool = False,
-    ):
+    ) -> None:
         self.observation_shape = (screen_height, screen_width, n_channels)
         if channel_first:
             self.observation_shape = (n_channels, screen_height, screen_width)

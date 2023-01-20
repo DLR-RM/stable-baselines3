@@ -12,6 +12,29 @@ except ImportError:
 from stable_baselines3.common.type_aliases import GymObs, GymStepReturn
 
 
+class StickyActionEnv(gym.Wrapper):
+    """
+    Sticky action.
+
+    :param env: Environment to wrap
+    :action_repeat_probability: Probability of repeating the last action
+    """
+
+    def __init__(self, env: gym.Env, action_repeat_probability: float) -> None:
+        super().__init__(env)
+        self.action_repeat_probability = action_repeat_probability
+        assert env.unwrapped.get_action_meanings()[0] == "NOOP"
+
+    def reset(self, **kwargs) -> GymObs:
+        self._sticky_action = 0  # NOOP
+        return self.env.reset(**kwargs)
+
+    def step(self, action: int) -> GymStepReturn:
+        if self.np_random.random() >= self.action_repeat_probability:
+            self._sticky_action = action
+        return self.env.step(self._sticky_action)
+
+
 class NoopResetEnv(gym.Wrapper):
     """
     Sample initial states by taking random number of no-ops on reset.
@@ -64,30 +87,6 @@ class FireResetEnv(gym.Wrapper):
         if done:
             self.env.reset(**kwargs)
         return obs
-
-
-class StickyActionEnv(gym.Wrapper):
-    """
-    Sticky action.
-
-    :param env: Environment to wrap
-    :action_repeat_probability: Probability of repeating the last action
-    """
-
-    def __init__(self, env: gym.Env, action_repeat_probability: float) -> None:
-        super().__init__(env)
-        self.action_repeat_probability = action_repeat_probability
-
-    def reset(self, **kwargs) -> GymObs:
-        self._last_action = None
-        return self.env.reset(**kwargs)
-
-    def step(self, action: int) -> GymStepReturn:
-        if self._last_action is not None:  # _last_action is set to None when reset
-            if self.np_random.random() < self.action_repeat_probability:
-                action = self._last_action
-        self._last_action = action
-        return self.env.step(action)
 
 
 class EpisodicLifeEnv(gym.Wrapper):
@@ -262,9 +261,9 @@ class AtariWrapper(gym.Wrapper):
         terminal_on_life_loss: bool = True,
         clip_reward: bool = True,
     ) -> None:
+        env = StickyActionEnv(env, action_repeat_probability)
         if noop_max > 0:
             env = NoopResetEnv(env, noop_max=noop_max)
-        env = StickyActionEnv(env, action_repeat_probability)
         env = MaxAndSkipEnv(env, skip=frame_skip)
         if terminal_on_life_loss:
             env = EpisodicLifeEnv(env)

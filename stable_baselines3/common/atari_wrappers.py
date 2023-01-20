@@ -262,7 +262,8 @@ class AtariWrapper(gym.Wrapper):
         terminal_on_life_loss: bool = True,
         clip_reward: bool = True,
     ) -> None:
-        env = NoopResetEnv(env, noop_max=noop_max)
+        if noop_max > 0:
+            env = NoopResetEnv(env, noop_max=noop_max)
         env = StickyActionEnv(env, action_repeat_probability)
         env = MaxAndSkipEnv(env, skip=frame_skip)
         if terminal_on_life_loss:

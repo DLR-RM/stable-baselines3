@@ -233,9 +233,9 @@ class AtariWrapper(gym.Wrapper):
 
     Specifically:
 
+    * Sticky actions: disabled by default
     * Noop reset: obtain initial state by taking random number of no-ops on reset.
     * Frame skipping: 4 by default
-    * Sticky actions: disabled by default
     * Max-pooling: most recent two observations
     * Termination signal when a life is lost.
     * Resize to a square image: 84x84 by default

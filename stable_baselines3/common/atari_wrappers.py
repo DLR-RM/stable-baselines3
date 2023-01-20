@@ -242,6 +242,9 @@ class AtariWrapper(gym.Wrapper):
     * Grayscale observation
     * Clip reward to {-1, 0, 1}
 
+    .. warning::
+        Use this wrapper only with Atari v4 without frame skip: ``env_id = "*NoFrameskip-v4"``.
+
     :param env: Environment to wrap
     :param noop_max: Max number of no-ops
     :param action_repeat_probability:
@@ -261,7 +264,8 @@ class AtariWrapper(gym.Wrapper):
         terminal_on_life_loss: bool = True,
         clip_reward: bool = True,
     ) -> None:
-        env = StickyActionEnv(env, action_repeat_probability)
+        if action_repeat_probability > 0.0:
+            env = StickyActionEnv(env, action_repeat_probability)
         if noop_max > 0:
             env = NoopResetEnv(env, noop_max=noop_max)
         env = MaxAndSkipEnv(env, skip=frame_skip)

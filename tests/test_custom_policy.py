@@ -11,11 +11,7 @@ from stable_baselines3.common.sb2_compat.rmsprop_tf_like import RMSpropTFLike
 )
 @pytest.mark.parametrize("model_class", [A2C, PPO])
 def test_flexible_mlp(model_class, net_arch):
-    if isinstance(net_arch, list) and len(net_arch) > 0 and isinstance(net_arch[0], int):
-        with pytest.warns(DeprecationWarning):
-            _ = model_class("MlpPolicy", "CartPole-v1", policy_kwargs=dict(net_arch=net_arch), n_steps=64).learn(300)
-    else:
-        _ = model_class("MlpPolicy", "CartPole-v1", policy_kwargs=dict(net_arch=net_arch), n_steps=64).learn(300)
+    _ = model_class("MlpPolicy", "CartPole-v1", policy_kwargs=dict(net_arch=net_arch), n_steps=64).learn(300)
 
 
 @pytest.mark.parametrize("net_arch", [[], [4], [4, 4], dict(qf=[8], pi=[8, 4])])

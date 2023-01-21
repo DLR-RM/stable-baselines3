@@ -2,6 +2,7 @@ from typing import Dict, Union
 
 import gym
 import numpy as np
+from gym import spaces
 
 from stable_baselines3.common.type_aliases import GymStepReturn
 
@@ -53,14 +54,14 @@ class SimpleMultiObsEnv(gym.Env):
         self.random_start = random_start
         self.discrete_actions = discrete_actions
         if discrete_actions:
-            self.action_space = gym.spaces.Discrete(4)
+            self.action_space = spaces.Discrete(4)
         else:
-            self.action_space = gym.spaces.Box(0, 1, (4,))
+            self.action_space = spaces.Box(0, 1, (4,))
 
-        self.observation_space = gym.spaces.Dict(
+        self.observation_space = spaces.Dict(
             spaces={
-                "vec": gym.spaces.Box(0, 1, (self.vector_size,), dtype=np.float64),
-                "img": gym.spaces.Box(0, 255, self.img_size, dtype=np.uint8),
+                "vec": spaces.Box(0, 1, (self.vector_size,), dtype=np.float64),
+                "img": spaces.Box(0, 255, self.img_size, dtype=np.uint8),
             }
         )
         self.count = 0
@@ -120,7 +121,7 @@ class SimpleMultiObsEnv(gym.Env):
         self.right_possible = [0, 1, 2, 12, 13, 14]
         self.up_possible = [4, 8, 12, 7, 11, 15]
 
-    def step(self, action: Union[int, float, np.ndarray]) -> GymStepReturn:
+    def step(self, action: Union[float, np.ndarray]) -> GymStepReturn:
         """
         Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`

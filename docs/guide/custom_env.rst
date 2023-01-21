@@ -27,14 +27,17 @@ That is to say, your environment must implement the following methods (and inher
 .. code-block:: python
 
   import gym
+  import numpy as np
   from gym import spaces
 
+
   class CustomEnv(gym.Env):
-      """Custom Environment that follows gym interface"""
+      """Custom Environment that follows gym interface."""
+
       metadata = {"render.modes": ["human"]}
 
       def __init__(self, arg1, arg2, ...):
-          super(CustomEnv, self).__init__()
+          super().__init__()
           # Define action and observation space
           # They must be gym.spaces objects
           # Example when using discrete actions:
@@ -46,12 +49,15 @@ That is to say, your environment must implement the following methods (and inher
       def step(self, action):
           ...
           return observation, reward, done, info
+
       def reset(self):
           ...
           return observation  # reward, done, info can't be included
+
       def render(self, mode="human"):
           ...
-      def close (self):
+
+      def close(self):
           ...
 
 

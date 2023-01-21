@@ -1,8 +1,10 @@
+import warnings
 from itertools import zip_longest
 from typing import Dict, List, Tuple, Type, Union
 
 import gym
 import torch as th
+from gym import spaces
 from torch import nn
 
 from stable_baselines3.common.preprocessing import get_flattened_obs_dim, is_image_space
@@ -63,7 +65,7 @@ class NatureCNN(BaseFeaturesExtractor):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Box,
+        observation_space: spaces.Box,
         features_dim: int = 512,
         normalized_image: bool = False,
     ) -> None:
@@ -149,13 +151,10 @@ class MlpExtractor(nn.Module):
     Constructs an MLP that receives the output from a previous features extractor (i.e. a CNN) or directly
     the observations (if no features extractor is applied) as an input and outputs a latent representation
     for the policy and a value network.
-    The ``net_arch`` parameter allows to specify the amount and size of the hidden layers.
-    It is assumed to be a dict formatted like ``dict(vf=[<value layer sizes>], pi=[<policy layer sizes>])``.
-    If it is missing any of the keys (pi or vf), zero layers will be considered for that key.
-
-    For example to construct a network with two layers for the value network of size 255
-    and a single layer of size 128 for the policy network, the following layers_spec
-    would be used: ``dict(vf=[255, 255], pi=[128])``.
+    
+    The ``net_arch`` parameter allows to specify the amount and size of the hidden layers. It can be in either of the following forms:
+    1. ``dict(vf=[<list of layer sizes>], pi=[<list of layer sizes>])``: to specify the amount and size of the layers in the policy and value nets individually. If it is missing any of the keys (pi or vf), zero layers will be considered for that key.
+    2. ``[<list of layer sizes>]``: "shortcut" in case the amount and size of the layers in the policy and value nets are the same.
 
     Adapted from Stable Baselines.
 
@@ -169,7 +168,7 @@ class MlpExtractor(nn.Module):
     def __init__(
         self,
         feature_dim: int,
-        net_arch: Dict[str, List[int]],
+        net_arch: Union[List[int], Dict[str, List[int]]],
         activation_fn: Type[nn.Module],
         device: Union[th.device, str] = "auto",
     ) -> None:
@@ -177,6 +176,42 @@ class MlpExtractor(nn.Module):
         device = get_device(device)
         policy_net: List[nn.Module] = []
         value_net: List[nn.Module] = []
+        policy_only_layers: List[int] = []  # Layer sizes of the network that only belongs to the policy network
+        value_only_layers: List[int] = []  # Layer sizes of the network that only belongs to the value network
+        last_layer_dim_shared = feature_dim
+
+        if isinstance(net_arch, list) and len(net_arch) > 0 and isinstance(net_arch[0], int):
+            warnings.warn(
+                (
+                    "Shared layers in the mlp_extractor are deprecated and will be removed in SB3 v1.8.0, "
+                    "please use separate pi and vf networks "
+                    "(e.g. net_arch=dict(pi=[...], vf=[...]))"
+                ),
+                DeprecationWarning,
+            )
+
+        # TODO(antonin): update behavior for net_arch=[64, 64]
+        # once shared networks are removed
+        if isinstance(net_arch, dict):
+            policy_only_layers = net_arch["pi"]
+            value_only_layers = net_arch["vf"]
+        else:
+            # Iterate through the shared layers and build the shared parts of the network
+            for layer in net_arch:
+                if isinstance(layer, int):  # Check that this is a shared layer
+                    shared_net.append(nn.Linear(last_layer_dim_shared, layer))  # add linear of size layer
+                    shared_net.append(activation_fn())
+                    last_layer_dim_shared = layer
+                else:
+                    assert isinstance(layer, dict), "Error: the net_arch list can only contain ints and dicts"
+                    if "pi" in layer:
+                        assert isinstance(layer["pi"], list), "Error: net_arch[-1]['pi'] must contain a list of integers."
+                        policy_only_layers = layer["pi"]
+
+                    if "vf" in layer:
+                        assert isinstance(layer["vf"], list), "Error: net_arch[-1]['vf'] must contain a list of integers."
+                        value_only_layers = layer["vf"]
+                    break  # From here on the network splits up in policy and value network
 
         assert isinstance(net_arch, dict)
         assert isinstance(net_arch.get("pi", []), list), "Error: net_arch['pi'] must contain a list of integers."
@@ -241,7 +276,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
 
     def __init__(
         self,
-        observation_space: gym.spaces.Dict,
+        observation_space: spaces.Dict,
         cnn_output_dim: int = 256,
         normalized_image: bool = False,
     ) -> None:

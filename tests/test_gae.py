@@ -2,6 +2,7 @@ import gym
 import numpy as np
 import pytest
 import torch as th
+from gym import spaces
 
 from stable_baselines3 import A2C, PPO, SAC
 from stable_baselines3.common.callbacks import BaseCallback
@@ -11,8 +12,8 @@ from stable_baselines3.common.policies import ActorCriticPolicy
 class CustomEnv(gym.Env):
     def __init__(self, max_steps=8):
         super().__init__()
-        self.observation_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+        self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         self.max_steps = max_steps
         self.n_steps = 0
 
@@ -39,8 +40,8 @@ class InfiniteHorizonEnv(gym.Env):
     def __init__(self, n_states=4):
         super().__init__()
         self.n_states = n_states
-        self.observation_space = gym.spaces.Discrete(n_states)
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
+        self.observation_space = spaces.Discrete(n_states)
+        self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         self.current_state = 0
 
     def reset(self):

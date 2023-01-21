@@ -176,64 +176,25 @@ class MlpExtractor(nn.Module):
         device = get_device(device)
         policy_net: List[nn.Module] = []
         value_net: List[nn.Module] = []
-        policy_only_layers: List[int] = []  # Layer sizes of the network that only belongs to the policy network
-        value_only_layers: List[int] = []  # Layer sizes of the network that only belongs to the value network
-        last_layer_dim_shared = feature_dim
-
-        if isinstance(net_arch, list) and len(net_arch) > 0 and isinstance(net_arch[0], int):
-            warnings.warn(
-                (
-                    "Shared layers in the mlp_extractor are deprecated and will be removed in SB3 v1.8.0, "
-                    "please use separate pi and vf networks "
-                    "(e.g. net_arch=dict(pi=[...], vf=[...]))"
-                ),
-                DeprecationWarning,
-            )
-
-        # TODO(antonin): update behavior for net_arch=[64, 64]
-        # once shared networks are removed
-        if isinstance(net_arch, dict):
-            policy_only_layers = net_arch["pi"]
-            value_only_layers = net_arch["vf"]
-        else:
-            # Iterate through the shared layers and build the shared parts of the network
-            for layer in net_arch:
-                if isinstance(layer, int):  # Check that this is a shared layer
-                    shared_net.append(nn.Linear(last_layer_dim_shared, layer))  # add linear of size layer
-                    shared_net.append(activation_fn())
-                    last_layer_dim_shared = layer
-                else:
-                    assert isinstance(layer, dict), "Error: the net_arch list can only contain ints and dicts"
-                    if "pi" in layer:
-                        assert isinstance(layer["pi"], list), "Error: net_arch[-1]['pi'] must contain a list of integers."
-                        policy_only_layers = layer["pi"]
-
-                    if "vf" in layer:
-                        assert isinstance(layer["vf"], list), "Error: net_arch[-1]['vf'] must contain a list of integers."
-                        value_only_layers = layer["vf"]
-                    break  # From here on the network splits up in policy and value network
-
-        assert isinstance(net_arch, dict)
-        assert isinstance(net_arch.get("pi", []), list), "Error: net_arch['pi'] must contain a list of integers."
-        assert isinstance(net_arch.get("vf", []), list), "Error: net_arch['vf'] must contain a list of integers."
-        policy_layers: List[int] = net_arch.get("pi", [])
-        value_layers: List[int] = net_arch.get("vf", [])
-
-        # Create the lists of layers for the pi and vf networks
         last_layer_dim_pi = feature_dim
         last_layer_dim_vf = feature_dim
-        for pi_layer_size, vf_layer_size in zip_longest(policy_layers, value_layers):
-            if pi_layer_size is not None:
-                assert isinstance(pi_layer_size, int), "Error: net_arch['pi'] must only contain integers."
-                policy_net.append(nn.Linear(last_layer_dim_pi, pi_layer_size))
-                policy_net.append(activation_fn())
-                last_layer_dim_pi = pi_layer_size
 
-            if vf_layer_size is not None:
-                assert isinstance(vf_layer_size, int), "Error: net_arch['vf'] must only contain integers."
-                value_net.append(nn.Linear(last_layer_dim_vf, vf_layer_size))
-                value_net.append(activation_fn())
-                last_layer_dim_vf = vf_layer_size
+        # save dimensions of layers in policy and value nets
+        if isinstance(net_arch, dict):
+            pi_layers_dims = net_arch.get("pi", []) # Layer sizes of the policy network
+            vf_layers_dims = net_arch.get("vf", []) # Layer sizes of the value network
+        else:
+            pi_layers_dims = vf_layers_dims = net_arch
+        # Iterate through the policy layers and build the policy net
+        for curr_layer_dim in pi_layers_dims:
+            policy_net.append(nn.Linear(last_layer_dim_pi, curr_layer_dim))  # add linear of size layer
+            policy_net.append(activation_fn())
+            last_layer_dim_pi = curr_layer_dim
+        # Iterate through the value layers and build the value net
+        for curr_layer_dim in vf_layers_dims:
+            value_net.append(nn.Linear(last_layer_dim_vf, curr_layer_dim))  # add linear of size layer
+            value_net.append(activation_fn())
+            last_layer_dim_vf = curr_layer_dim
 
         # Save dim, used to create the distributions
         self.latent_dim_pi = last_layer_dim_pi

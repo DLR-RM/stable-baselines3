@@ -7,18 +7,7 @@ from stable_baselines3.common.sb2_compat.rmsprop_tf_like import RMSpropTFLike
 
 @pytest.mark.parametrize(
     "net_arch",
-    [
-        [],
-        dict(vf=[16], pi=[8]),
-        # [<layer_sizes>] behavior will change
-        [4],
-        [4, 4],
-        # All values below are deprecated
-        [12, dict(vf=[16], pi=[8])],
-        [12, dict(vf=[8, 4], pi=[8])],
-        [12, dict(vf=[8], pi=[8, 4])],
-        [12, dict(pi=[8])],
-    ],
+    [[], [4], [4, 4], dict(vf=[16], pi=[8]), dict(vf=[8, 4], pi=[8]), dict(vf=[8], pi=[8, 4]), dict(pi=[8])],
 )
 @pytest.mark.parametrize("model_class", [A2C, PPO])
 def test_flexible_mlp(model_class, net_arch):
@@ -66,6 +55,6 @@ def test_dqn_custom_policy():
 
 @pytest.mark.parametrize("model_class", [A2C, PPO])
 def test_not_shared_features_extractor(model_class):
-    policy_kwargs = dict(net_arch=[12, dict(vf=[16], pi=[8])], share_features_extractor=False)
+    policy_kwargs = dict(net_arch=dict(vf=[16], pi=[8]), share_features_extractor=False)
     with pytest.raises(ValueError):
         model_class("MlpPolicy", "Pendulum-v1", policy_kwargs=policy_kwargs)

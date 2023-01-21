@@ -10,6 +10,7 @@ Release 1.8.0a1 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Removed shared layers in ``mlp_extractor`` (@AlexPasqua)
 
 New Features:
 ^^^^^^^^^^^^^

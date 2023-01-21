@@ -1,5 +1,3 @@
-import warnings
-from itertools import zip_longest
 from typing import Dict, List, Tuple, Type, Union
 
 import gym
@@ -151,10 +149,14 @@ class MlpExtractor(nn.Module):
     Constructs an MLP that receives the output from a previous features extractor (i.e. a CNN) or directly
     the observations (if no features extractor is applied) as an input and outputs a latent representation
     for the policy and a value network.
-    
-    The ``net_arch`` parameter allows to specify the amount and size of the hidden layers. It can be in either of the following forms:
-    1. ``dict(vf=[<list of layer sizes>], pi=[<list of layer sizes>])``: to specify the amount and size of the layers in the policy and value nets individually. If it is missing any of the keys (pi or vf), zero layers will be considered for that key.
-    2. ``[<list of layer sizes>]``: "shortcut" in case the amount and size of the layers in the policy and value nets are the same.
+
+    The ``net_arch`` parameter allows to specify the amount and size of the hidden layers.
+    It can be in either of the following forms:
+    1. ``dict(vf=[<list of layer sizes>], pi=[<list of layer sizes>])``: to specify the amount and size of the layers in the
+        policy and value nets individually. If it is missing any of the keys (pi or vf),
+        zero layers will be considered for that key.
+    2. ``[<list of layer sizes>]``: "shortcut" in case the amount and size of the layers
+        in the policy and value nets are the same.
 
     Adapted from Stable Baselines.
 
@@ -181,8 +183,8 @@ class MlpExtractor(nn.Module):
 
         # save dimensions of layers in policy and value nets
         if isinstance(net_arch, dict):
-            pi_layers_dims = net_arch.get("pi", []) # Layer sizes of the policy network
-            vf_layers_dims = net_arch.get("vf", []) # Layer sizes of the value network
+            pi_layers_dims = net_arch.get("pi", [])  # Layer sizes of the policy network
+            vf_layers_dims = net_arch.get("vf", [])  # Layer sizes of the value network
         else:
             pi_layers_dims = vf_layers_dims = net_arch
         # Iterate through the policy layers and build the policy net

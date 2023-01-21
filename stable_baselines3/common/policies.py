@@ -747,7 +747,12 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         observation_space: spaces.Space,
         action_space: spaces.Space,
         lr_schedule: Schedule,
-        net_arch: Optional[Union[List[int], Dict[str, List[int]], ]] = None,
+        net_arch: Optional[
+            Union[
+                List[int],
+                Dict[str, List[int]],
+            ]
+        ] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
@@ -820,7 +825,12 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         observation_space: spaces.Dict,
         action_space: spaces.Space,
         lr_schedule: Schedule,
-        net_arch: Optional[Union[List[int], Dict[str, List[int]], ]] = None,
+        net_arch: Optional[
+            Union[
+                List[int],
+                Dict[str, List[int]],
+            ]
+        ] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,

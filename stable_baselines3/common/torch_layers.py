@@ -159,6 +159,9 @@ class MlpExtractor(nn.Module):
         in the policy and value nets are the same. Same as ``dict(vf=int_list, pi=int_list)``
         where int_list is the same for the actor and critic.
 
+    .. note::
+        If a key is not specified or an empty list is passed ``[]``, a linear network will be used.
+
     :param feature_dim: Dimension of the feature vector (can be the output of a CNN)
     :param net_arch: The specification of the policy and value networks.
         See above for details on its formatting.
@@ -182,6 +185,7 @@ class MlpExtractor(nn.Module):
 
         # save dimensions of layers in policy and value nets
         if isinstance(net_arch, dict):
+            # Note: if key is not specificed, assume linear network
             pi_layers_dims = net_arch.get("pi", [])  # Layer sizes of the policy network
             vf_layers_dims = net_arch.get("vf", [])  # Layer sizes of the value network
         else:

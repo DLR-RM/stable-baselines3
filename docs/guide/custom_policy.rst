@@ -117,11 +117,6 @@ that derives from ``BaseFeaturesExtractor`` and then pass it to the model when t
   ``policy_kwargs`` (both for on-policy and off-policy algorithms).
 
 
-.. warning::
-  If the features extractor is **non-shared**, it is **not** possible to have shared layers in the ``mlp_extractor``.
-  Please note that this option is **deprecated**, therefore in a future release the layers in the ``mlp_extractor`` will have to be non-shared.
-
-
 .. code-block:: python
 
   import torch as th
@@ -242,41 +237,31 @@ On-Policy Algorithms
 Custom Networks
 ---------------
 
-.. warning::
-  Shared layers in the the ``mlp_extractor`` are **deprecated**.
-  In a future release all layers will have to be non-shared.
-  If needed, you can implement a custom policy network (see `advanced example below <#advanced-example>`_).
-
-.. warning::
-  In the next Stable-Baselines3 release, the behavior of ``net_arch=[128, 128]`` will change
-  to match the one of off-policy algorithms: it will create **separate** networks (instead of shared currently)
-  for the actor and the critic, with the same architecture.
-
-
 If you need a network architecture that is different for the actor and the critic when using ``PPO``, ``A2C`` or ``TRPO``,
 you can pass a dictionary of the following structure: ``dict(pi=[<actor network architecture>], vf=[<critic network architecture>])``.
 
 For example, if you want a different architecture for the actor (aka ``pi``) and the critic ( value-function aka ``vf``) networks,
 then you can specify ``net_arch=dict(pi=[32, 32], vf=[64, 64])``.
 
-.. Otherwise, to have actor and critic that share the same network architecture,
-.. you only need to specify ``net_arch=[128, 128]`` (here, two hidden layers of 128 units each).
+Otherwise, to have actor and critic that share the same network architecture,
+you only need to specify ``net_arch=[128, 128]`` (here, two hidden layers of 128 units each, this is equivalent to ``net_arch=dict(pi=[128, 128], vf=[128, 128])``).
+
+If shared layers are needed, you need to implement a custom policy network (see `advanced example below <#advanced-example>`_).
 
 Examples
 ~~~~~~~~
 
-.. TODO(antonin): uncomment when shared network is removed
-.. Same architecture for actor and critic with two layers of size 128: ``net_arch=[128, 128]``
-..
-.. .. code-block:: none
-..
-..             obs
-..        /            \
-..      <128>          <128>
-..       |              |
-..      <128>          <128>
-..       |              |
-..     action         value
+Same architecture for actor and critic with two layers of size 128: ``net_arch=[128, 128]``
+
+.. code-block:: none
+
+            obs
+       /            \
+     <128>          <128>
+      |              |
+     <128>          <128>
+      |              |
+    action         value
 
 Different architectures for actor and critic: ``net_arch=dict(pi=[32, 32], vf=[64, 64])``
 

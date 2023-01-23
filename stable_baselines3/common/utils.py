@@ -76,7 +76,7 @@ def update_learning_rate(optimizer: th.optim.Optimizer, learning_rate: float) ->
         param_group["lr"] = learning_rate
 
 
-def get_schedule_fn(value_schedule: Union[Schedule, float, int]) -> Schedule:
+def get_schedule_fn(value_schedule: Union[Schedule, float]) -> Schedule:
     """
     Transform (if needed) learning rate and clip range (for PPO)
     to callable.

@@ -1,4 +1,5 @@
 import operator
+from typing import Any, Dict
 
 import gym
 import numpy as np
@@ -20,7 +21,7 @@ ENV_ID = "Pendulum-v1"
 
 
 class DummyRewardEnv(gym.Env):
-    metadata = {}
+    metadata: Dict[str, Any] = {}
 
     def __init__(self, return_reward_idx=0):
         self.action_space = spaces.Discrete(2)

@@ -667,6 +667,11 @@ class BaseAlgorithm(ABC):
         if "policy_kwargs" in data:
             if "device" in data["policy_kwargs"]:
                 del data["policy_kwargs"]["device"]
+            # backward compatibility, convert to new format
+            if "net_arch" in data["policy_kwargs"] and len(data["policy_kwargs"]["net_arch"]) > 0:
+                saved_net_arch = data["policy_kwargs"]["net_arch"]
+                if isinstance(saved_net_arch, list) and isinstance(saved_net_arch[0], dict):
+                    data["policy_kwargs"]["net_arch"] = saved_net_arch[0]
 
         if "policy_kwargs" in kwargs and kwargs["policy_kwargs"] != data["policy_kwargs"]:
             raise ValueError(
@@ -726,7 +731,6 @@ class BaseAlgorithm(ABC):
                 )
             else:
                 raise e
-
         # put other pytorch variables back in place
         if pytorch_variables is not None:
             for name in pytorch_variables:

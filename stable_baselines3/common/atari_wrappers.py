@@ -246,23 +246,23 @@ class AtariWrapper(gym.Wrapper):
         Use this wrapper only with Atari v4 without frame skip: ``env_id = "*NoFrameskip-v4"``.
 
     :param env: Environment to wrap
-    :param action_repeat_probability: Probability of repeating the last action
     :param noop_max: Max number of no-ops
     :param frame_skip: Frequency at which the agent experiences the game.
     :param screen_size: Resize Atari frame
     :param terminal_on_life_loss: If True, then step() returns done=True whenever a life is lost.
     :param clip_reward: If True (default), the reward is clip to {-1, 0, 1} depending on its sign.
+    :param action_repeat_probability: Probability of repeating the last action
     """
 
     def __init__(
         self,
         env: gym.Env,
-        action_repeat_probability: float = 0.0,
         noop_max: int = 30,
         frame_skip: int = 4,
         screen_size: int = 84,
         terminal_on_life_loss: bool = True,
         clip_reward: bool = True,
+        action_repeat_probability: float = 0.0,
     ) -> None:
         if action_repeat_probability > 0.0:
             env = StickyActionEnv(env, action_repeat_probability)

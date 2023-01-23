@@ -156,15 +156,14 @@ class MlpExtractor(nn.Module):
         policy and value nets individually. If it is missing any of the keys (pi or vf),
         zero layers will be considered for that key.
     2. ``[<list of layer sizes>]``: "shortcut" in case the amount and size of the layers
-        in the policy and value nets are the same.
-
-    Adapted from Stable Baselines.
+        in the policy and value nets are the same. Same as ``dict(vf=int_list, pi=int_list)``
+        where int_list is the same for the actor and critic.
 
     :param feature_dim: Dimension of the feature vector (can be the output of a CNN)
     :param net_arch: The specification of the policy and value networks.
         See above for details on its formatting.
     :param activation_fn: The activation function to use for the networks.
-    :param device:
+    :param device: PyTorch device.
     """
 
     def __init__(
@@ -189,12 +188,12 @@ class MlpExtractor(nn.Module):
             pi_layers_dims = vf_layers_dims = net_arch
         # Iterate through the policy layers and build the policy net
         for curr_layer_dim in pi_layers_dims:
-            policy_net.append(nn.Linear(last_layer_dim_pi, curr_layer_dim))  # add linear of size layer
+            policy_net.append(nn.Linear(last_layer_dim_pi, curr_layer_dim))
             policy_net.append(activation_fn())
             last_layer_dim_pi = curr_layer_dim
         # Iterate through the value layers and build the value net
         for curr_layer_dim in vf_layers_dims:
-            value_net.append(nn.Linear(last_layer_dim_vf, curr_layer_dim))  # add linear of size layer
+            value_net.append(nn.Linear(last_layer_dim_vf, curr_layer_dim))
             value_net.append(activation_fn())
             last_layer_dim_vf = curr_layer_dim
 
@@ -212,7 +211,7 @@ class MlpExtractor(nn.Module):
         :return: latent_policy, latent_value of the specified network.
             If all layers are shared, then ``latent_policy == latent_value``
         """
-        return self.policy_net(features), self.value_net(features)
+        return self.forward_actor(features), self.forward_critic(features)
 
     def forward_actor(self, features: th.Tensor) -> th.Tensor:
         return self.policy_net(features)

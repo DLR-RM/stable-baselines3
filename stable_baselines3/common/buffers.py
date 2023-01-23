@@ -474,7 +474,11 @@ class RolloutBuffer(BaseBuffer):
             yield self._get_samples(indices[start_idx : start_idx + batch_size])
             start_idx += batch_size
 
-    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> RolloutBufferSamples:  # type: ignore[signature-mismatch] #FIXME
+    def _get_samples(
+        self,
+        batch_inds: np.ndarray,
+        env: Optional[VecNormalize] = None,
+    ) -> RolloutBufferSamples:  # type: ignore[signature-mismatch] #FIXME
         data = (
             self.observations[batch_inds],
             self.actions[batch_inds],
@@ -603,7 +607,11 @@ class DictReplayBuffer(ReplayBuffer):
             self.full = True
             self.pos = 0
 
-    def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> DictReplayBufferSamples:  # type: ignore[signature-mismatch] #FIXME:
+    def sample(
+        self,
+        batch_size: int,
+        env: Optional[VecNormalize] = None,
+    ) -> DictReplayBufferSamples:  # type: ignore[signature-mismatch] #FIXME:
         """
         Sample elements from the replay buffer.
 
@@ -614,7 +622,11 @@ class DictReplayBuffer(ReplayBuffer):
         """
         return super(ReplayBuffer, self).sample(batch_size=batch_size, env=env)
 
-    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> DictReplayBufferSamples:  # type: ignore[signature-mismatch] #FIXME:
+    def _get_samples(
+        self,
+        batch_inds: np.ndarray,
+        env: Optional[VecNormalize] = None,
+    ) -> DictReplayBufferSamples:  # type: ignore[signature-mismatch] #FIXME:
         # Sample randomly the env idx
         env_indices = np.random.randint(0, high=self.n_envs, size=(len(batch_inds),))
 
@@ -743,7 +755,10 @@ class DictRolloutBuffer(RolloutBuffer):
         if self.pos == self.buffer_size:
             self.full = True
 
-    def get(self, batch_size: Optional[int] = None) -> Generator[DictRolloutBufferSamples, None, None]:  # type: ignore[signature-mismatch] #FIXME
+    def get(
+        self,
+        batch_size: Optional[int] = None,
+    ) -> Generator[DictRolloutBufferSamples, None, None]:  # type: ignore[signature-mismatch] #FIXME
         assert self.full, ""
         indices = np.random.permutation(self.buffer_size * self.n_envs)
         # Prepare the data
@@ -767,7 +782,11 @@ class DictRolloutBuffer(RolloutBuffer):
             yield self._get_samples(indices[start_idx : start_idx + batch_size])
             start_idx += batch_size
 
-    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> DictRolloutBufferSamples:  # type: ignore[signature-mismatch] #FIXME
+    def _get_samples(
+        self,
+        batch_inds: np.ndarray,
+        env: Optional[VecNormalize] = None,
+    ) -> DictRolloutBufferSamples:  # type: ignore[signature-mismatch] #FIXME
 
         return DictRolloutBufferSamples(
             observations={key: self.to_torch(obs[batch_inds]) for (key, obs) in self.observations.items()},

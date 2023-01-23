@@ -117,7 +117,7 @@ setup(
             # For spelling
             "sphinxcontrib.spelling",
             # Type hints support
-            "sphinx-autodoc-typehints",
+            "sphinx-autodoc-typehints==1.21.1",  # TODO: remove version constraint, see #1290
             # Copy button for code snippets
             "sphinx_copybutton",
         ],

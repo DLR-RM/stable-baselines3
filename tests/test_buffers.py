@@ -5,6 +5,7 @@ import torch as th
 from gym import spaces
 
 from stable_baselines3.common.buffers import DictReplayBuffer, DictRolloutBuffer, ReplayBuffer, RolloutBuffer
+from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.type_aliases import DictReplayBufferSamples, ReplayBufferSamples
 from stable_baselines3.common.utils import get_device
@@ -16,10 +17,12 @@ class DummyEnv(gym.Env):
     Custom gym environment for testing purposes
     """
 
+    render_mode = None
+
     def __init__(self):
         self.action_space = spaces.Box(1, 5, (1,))
         self.observation_space = spaces.Box(1, 5, (1,))
-        self._observations = [1, 2, 3, 4, 5]
+        self._observations = np.array([[1.0], [2.0], [3.0], [4.0], [5.0]], dtype=np.float32)
         self._rewards = [1, 2, 3, 4, 5]
         self._t = 0
         self._ep_length = 100
@@ -43,11 +46,13 @@ class DummyDictEnv(gym.Env):
     Custom gym environment for testing purposes
     """
 
+    render_mode = None
+
     def __init__(self):
         self.action_space = spaces.Box(1, 5, (1,))
         space = spaces.Box(1, 5, (1,))
         self.observation_space = spaces.Dict({"observation": space, "achieved_goal": space, "desired_goal": space})
-        self._observations = [1, 2, 3, 4, 5]
+        self._observations = np.array([[1.0], [2.0], [3.0], [4.0], [5.0]], dtype=np.float32)
         self._rewards = [1, 2, 3, 4, 5]
         self._t = 0
         self._ep_length = 100
@@ -64,6 +69,15 @@ class DummyDictEnv(gym.Env):
         done = truncated = self._t >= self._ep_length
         reward = self._rewards[index]
         return obs, reward, done, truncated, {}
+
+
+@pytest.mark.parametrize("env_cls", [DummyEnv, DummyDictEnv])
+def test_test_env(env_cls):
+    # Check the env used for testing
+    check_env(env_cls())
+
+
+check_env(DummyEnv())
 
 
 @pytest.mark.parametrize("replay_buffer_cls", [ReplayBuffer, DictReplayBuffer])

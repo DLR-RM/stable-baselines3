@@ -5,6 +5,7 @@ import torch as th
 from gym import spaces
 
 from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
+from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.envs import IdentityEnv
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import DummyVecEnv
@@ -34,6 +35,12 @@ class CustomSubClassedSpaceEnv(gym.Env):
 
     def step(self, action):
         return self.observation_space.sample(), 0.0, np.random.rand() > 0.5, False, {}
+
+
+@pytest.mark.parametrize("env_cls", [CustomSubClassedSpaceEnv])
+def test_env(env_cls):
+    # Check the env used for testing
+    check_env(env_cls(), skip_render_check=True)
 
 
 @pytest.mark.parametrize("model_class", MODEL_LIST)

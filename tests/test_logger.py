@@ -13,6 +13,7 @@ from matplotlib import pyplot as plt
 from pandas.errors import EmptyDataError
 
 from stable_baselines3 import A2C, DQN
+from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.logger import (
     DEBUG,
     INFO,
@@ -361,6 +362,12 @@ class TimeDelayEnv(gym.Env):
         time.sleep(self.delay)
         obs = self.observation_space.sample()
         return obs, 0.0, True, False, {}
+
+
+@pytest.mark.parametrize("env_cls", [TimeDelayEnv])
+def test_env(env_cls):
+    # Check the env used for testing
+    check_env(env_cls(), skip_render_check=True)
 
 
 class InMemoryLogger(Logger):

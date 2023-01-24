@@ -6,6 +6,7 @@ import pytest
 from gym import spaces
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
+from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
 
@@ -51,6 +52,12 @@ class DummyMultidimensionalAction(gym.Env):
 
     def step(self, action):
         return self.observation_space.sample(), 0.0, False, False, {}
+
+
+@pytest.mark.parametrize("env", [DummyMultiDiscreteSpace([4, 3]), DummyMultiBinary(8), DummyMultiBinary((3, 2))])
+def test_env(env):
+    # Check the env used for testing
+    check_env(env, skip_render_check=True)
 
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DQN])

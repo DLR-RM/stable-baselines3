@@ -8,6 +8,7 @@ from gym import spaces
 
 from stable_baselines3 import A2C, PPO, SAC
 from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.policies import ActorCriticPolicy
 
 
@@ -119,6 +120,12 @@ class CustomPolicy(ActorCriticPolicy):
         # Overwrite values with ones
         values = th.ones_like(values) * self.constant_value
         return actions, values, log_prob
+
+
+@pytest.mark.parametrize("env_cls", [CustomEnv, InfiniteHorizonEnv])
+def test_env(env_cls):
+    # Check the env used for testing
+    check_env(env_cls(), skip_render_check=True)
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO])

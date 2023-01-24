@@ -7,6 +7,7 @@ from gym import spaces
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.envs import BitFlippingEnv, SimpleMultiObsEnv
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack, VecNormalize
@@ -71,9 +72,6 @@ class DummyDictEnv(gym.Env):
         done = truncated = False
         return self.observation_space.sample(), reward, done, truncated, {}
 
-    def compute_reward(self, achieved_goal, desired_goal, info):
-        return np.zeros((len(achieved_goal),))
-
     def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
         if seed is not None:
             self.observation_space.seed(seed)
@@ -81,6 +79,15 @@ class DummyDictEnv(gym.Env):
 
     def render(self):
         pass
+
+
+@pytest.mark.parametrize("use_discrete_actions", [True, False])
+@pytest.mark.parametrize("channel_last", [True, False])
+@pytest.mark.parametrize("nested_dict_obs", [True, False])
+@pytest.mark.parametrize("vec_only", [True, False])
+def test_test_env(use_discrete_actions, channel_last, nested_dict_obs, vec_only):
+    # Check the env used for testing
+    check_env(DummyDictEnv(use_discrete_actions, channel_last, nested_dict_obs, vec_only))
 
 
 @pytest.mark.parametrize("policy", ["MlpPolicy", "CnnPolicy"])

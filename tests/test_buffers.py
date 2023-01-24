@@ -17,8 +17,6 @@ class DummyEnv(gym.Env):
     Custom gym environment for testing purposes
     """
 
-    render_mode = None
-
     def __init__(self):
         self.action_space = spaces.Box(1, 5, (1,))
         self.observation_space = spaces.Box(1, 5, (1,))
@@ -46,8 +44,6 @@ class DummyDictEnv(gym.Env):
     Custom gym environment for testing purposes
     """
 
-    render_mode = None
-
     def __init__(self):
         self.action_space = spaces.Box(1, 5, (1,))
         space = spaces.Box(1, 5, (1,))
@@ -74,10 +70,7 @@ class DummyDictEnv(gym.Env):
 @pytest.mark.parametrize("env_cls", [DummyEnv, DummyDictEnv])
 def test_test_env(env_cls):
     # Check the env used for testing
-    check_env(env_cls())
-
-
-check_env(DummyEnv())
+    check_env(env_cls(), skip_render_check=True)
 
 
 @pytest.mark.parametrize("replay_buffer_cls", [ReplayBuffer, DictReplayBuffer])

@@ -85,9 +85,13 @@ class DummyDictEnv(gym.Env):
 @pytest.mark.parametrize("channel_last", [True, False])
 @pytest.mark.parametrize("nested_dict_obs", [True, False])
 @pytest.mark.parametrize("vec_only", [True, False])
-def test_test_env(use_discrete_actions, channel_last, nested_dict_obs, vec_only):
+def test_env(use_discrete_actions, channel_last, nested_dict_obs, vec_only):
     # Check the env used for testing
-    check_env(DummyDictEnv(use_discrete_actions, channel_last, nested_dict_obs, vec_only))
+    if nested_dict_obs:
+        with pytest.warns(UserWarning, match="Nested observation spaces are not supported"):
+            check_env(DummyDictEnv(use_discrete_actions, channel_last, nested_dict_obs, vec_only))
+    else:
+        check_env(DummyDictEnv(use_discrete_actions, channel_last, nested_dict_obs, vec_only))
 
 
 @pytest.mark.parametrize("policy", ["MlpPolicy", "CnnPolicy"])

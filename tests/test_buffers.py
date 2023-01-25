@@ -68,9 +68,10 @@ class DummyDictEnv(gym.Env):
 
 
 @pytest.mark.parametrize("env_cls", [DummyEnv, DummyDictEnv])
-def test_test_env(env_cls):
+def test_env(env_cls):
     # Check the env used for testing
-    check_env(env_cls(), skip_render_check=True)
+    # Do not warn for assymetric space
+    check_env(env_cls(), warn=False, skip_render_check=True)
 
 
 @pytest.mark.parametrize("replay_buffer_cls", [ReplayBuffer, DictReplayBuffer])

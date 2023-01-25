@@ -106,7 +106,13 @@ class EpisodicLifeEnv(gym.Wrapper):
             obs = self.env.reset(**kwargs)
         else:
             # no-op step to advance from terminal/lost life state
-            obs, _, _, _ = self.env.step(0)
+            obs, _, done, _ = self.env.step(0)
+
+            # The no-op step can lead to a game over, so we need to check it again
+            # to see if we should reset the environment and avoid the
+            # monitor.py `RuntimeError: Tried to step environment that needs reset`
+            if done:
+                obs = self.env.reset(**kwargs)
         self.lives = self.env.unwrapped.ale.lives()
         return obs
 
@@ -149,9 +155,6 @@ class MaxAndSkipEnv(gym.Wrapper):
         max_frame = self._obs_buffer.max(axis=0)
 
         return max_frame, total_reward, done, info
-
-    def reset(self, **kwargs) -> GymObs:
-        return self.env.reset(**kwargs)
 
 
 class ClipRewardEnv(gym.RewardWrapper):

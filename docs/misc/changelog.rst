@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.8.0a2 (WIP)
+Release 1.8.0a3 (WIP)
 --------------------------
 
 
@@ -15,6 +15,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added ``repeat_action_probability`` argument in ``AtariWrapper``.
+- Only use ``NoopResetEnv`` and ``MaxAndSkipEnv`` when needed in ``AtariWrapper``
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

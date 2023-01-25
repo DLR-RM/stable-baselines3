@@ -160,6 +160,8 @@ def test_non_default_spaces(new_obs_space):
         spaces.Box(low=-np.inf, high=1, shape=(2,), dtype=np.float32),
         # Almost good, except for one dim
         spaces.Box(low=np.array([-1, -1, -1]), high=np.array([1, 1, 0.99]), dtype=np.float32),
+        # Non zero start index
+        spaces.Discrete(3, start=-1),
     ],
 )
 def test_non_default_action_spaces(new_action_space):
@@ -173,6 +175,12 @@ def test_non_default_action_spaces(new_action_space):
 
     # Change the action space
     env.action_space = new_action_space
+
+    # Discrete action space
+    if isinstance(new_action_space, spaces.Discrete):
+        with pytest.warns(UserWarning):
+            check_env(env)
+        return
 
     low, high = new_action_space.low[0], new_action_space.high[0]
     # Unbounded action space throws an error,

@@ -93,6 +93,12 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             "You can use a wrapper or update your observation space."
         )
 
+    if isinstance(action_space, spaces.Discrete) and action_space.start != 0:
+        warnings.warn(
+            "Discrete action space with a non-zero start is not supported by Stable-Baselines3. "
+            "You can use a wrapper or update your action space."
+        )
+
     if not _is_numpy_array_space(action_space):
         warnings.warn(
             "The action space is not based off a numpy array. Typically this means it's either a Dict or Tuple space. "

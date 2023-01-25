@@ -9,7 +9,7 @@ from gym import spaces
 
 import stable_baselines3 as sb3
 from stable_baselines3 import A2C
-from stable_baselines3.common.atari_wrappers import ClipRewardEnv, MaxAndSkipEnv
+from stable_baselines3.common.atari_wrappers import MaxAndSkipEnv
 from stable_baselines3.common.env_util import is_wrapped, make_atari_env, make_vec_env, unwrap_wrapper
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor

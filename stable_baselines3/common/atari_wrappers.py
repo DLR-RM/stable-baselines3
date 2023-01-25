@@ -140,9 +140,11 @@ class EpisodicLifeEnv(gym.Wrapper):
 class MaxAndSkipEnv(gym.Wrapper):
     """
     Return only every ``skip``-th frame (frameskipping)
+    and return the max between the two last frames.
 
     :param env: Environment to wrap
     :param skip: Number of ``skip``-th frame
+        The same action will be taken ``skip`` times.
     """
 
     def __init__(self, env: gym.Env, skip: int = 4) -> None:
@@ -236,7 +238,6 @@ class AtariWrapper(gym.Wrapper):
 
     Specifically:
 
-    * Sticky actions: disabled by default
     * Noop reset: obtain initial state by taking random number of no-ops on reset.
     * Frame skipping: 4 by default
     * Max-pooling: most recent two observations
@@ -244,6 +245,10 @@ class AtariWrapper(gym.Wrapper):
     * Resize to a square image: 84x84 by default
     * Grayscale observation
     * Clip reward to {-1, 0, 1}
+    * Sticky actions: disabled by default
+
+    See https://danieltakeshi.github.io/2016/11/25/frame-skipping-and-preprocessing-for-deep-q-networks-on-atari-2600-games/
+    for a visual explanation.
 
     .. warning::
         Use this wrapper only with Atari v4 without frame skip: ``env_id = "*NoFrameskip-v4"``.
@@ -251,6 +256,7 @@ class AtariWrapper(gym.Wrapper):
     :param env: Environment to wrap
     :param noop_max: Max number of no-ops
     :param frame_skip: Frequency at which the agent experiences the game.
+        This correspond to repeating the action ``frame_skip`` times.
     :param screen_size: Resize Atari frame
     :param terminal_on_life_loss: If True, then step() returns done=True whenever a life is lost.
     :param clip_reward: If True (default), the reward is clip to {-1, 0, 1} depending on its sign.
@@ -271,7 +277,9 @@ class AtariWrapper(gym.Wrapper):
             env = StickyActionEnv(env, action_repeat_probability)
         if noop_max > 0:
             env = NoopResetEnv(env, noop_max=noop_max)
-        env = MaxAndSkipEnv(env, skip=frame_skip)
+        # frame_skip=1 is the same as no frame-skip (action repeat)
+        if frame_skip > 1:
+            env = MaxAndSkipEnv(env, skip=frame_skip)
         if terminal_on_life_loss:
             env = EpisodicLifeEnv(env)
         if "FIRE" in env.unwrapped.get_action_meanings():

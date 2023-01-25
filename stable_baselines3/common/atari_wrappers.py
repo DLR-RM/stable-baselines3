@@ -16,6 +16,9 @@ class StickyActionEnv(gym.Wrapper):
     """
     Sticky action.
 
+    Paper: https://arxiv.org/abs/1709.06009
+    Official implementation: https://github.com/mgbellemare/Arcade-Learning-Environment
+
     :param env: Environment to wrap
     :param action_repeat_probability: Probability of repeating the last action
     """

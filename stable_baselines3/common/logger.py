@@ -5,7 +5,7 @@ import sys
 import tempfile
 import warnings
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Sequence, TextIO, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, TextIO, Tuple, Union
 
 import numpy as np
 import pandas
@@ -16,7 +16,7 @@ try:
     from torch.utils.tensorboard import SummaryWriter
     from torch.utils.tensorboard.summary import hparams
 except ImportError:
-    SummaryWriter = None
+    SummaryWriter = None  # type: ignore[misc, assignment]
 
 try:
     from tqdm import tqdm
@@ -38,7 +38,7 @@ class Video:
     :param fps: frames per second
     """
 
-    def __init__(self, frames: th.Tensor, fps: Union[float, int]):
+    def __init__(self, frames: th.Tensor, fps: float):
         self.frames = frames
         self.fps = fps
 
@@ -80,7 +80,7 @@ class HParam:
         A non-empty metrics dict is required to display hyperparameters in the corresponding Tensorboard section.
     """
 
-    def __init__(self, hparam_dict: Dict[str, Union[bool, str, float, int, None]], metric_dict: Dict[str, Union[float, int]]):
+    def __init__(self, hparam_dict: Mapping[str, Union[bool, str, float, None]], metric_dict: Mapping[str, float]):
         self.hparam_dict = hparam_dict
         if not metric_dict:
             raise Exception("`metric_dict` must not be empty to display hyperparameters to the HPARAMS tensorboard tab.")
@@ -329,7 +329,7 @@ class CSVOutputFormat(KVWriter):
 
     def __init__(self, filename: str):
         self.file = open(filename, "w+t")
-        self.keys = []
+        self.keys: List[str] = []
         self.separator = ","
         self.quotechar = '"'
 

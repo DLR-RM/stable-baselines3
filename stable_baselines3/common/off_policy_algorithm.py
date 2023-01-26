@@ -6,9 +6,9 @@ import warnings
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
-import gym
 import numpy as np
 import torch as th
+from gym import spaces
 
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.buffers import DictReplayBuffer, ReplayBuffer
@@ -100,7 +100,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         sde_sample_freq: int = -1,
         use_sde_at_warmup: bool = False,
         sde_support: bool = True,
-        supported_action_spaces: Optional[Tuple[gym.spaces.Space, ...]] = None,
+        supported_action_spaces: Optional[Tuple[spaces.Space, ...]] = None,
     ):
 
         super().__init__(
@@ -173,7 +173,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         # Use DictReplayBuffer if needed
         if self.replay_buffer_class is None:
-            if isinstance(self.observation_space, gym.spaces.Dict):
+            if isinstance(self.observation_space, spaces.Dict):
                 self.replay_buffer_class = DictReplayBuffer
             else:
                 self.replay_buffer_class = ReplayBuffer
@@ -395,7 +395,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             unscaled_action, _ = self.predict(self._last_obs, deterministic=False)
 
         # Rescale the action from [low, high] to [-1, 1]
-        if isinstance(self.action_space, gym.spaces.Box):
+        if isinstance(self.action_space, spaces.Box):
             scaled_action = self.policy.scale_action(unscaled_action)
 
             # Add noise to the action (improve exploration)

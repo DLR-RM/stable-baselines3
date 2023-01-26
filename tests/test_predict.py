@@ -2,6 +2,7 @@ import gym
 import numpy as np
 import pytest
 import torch as th
+from gym import spaces
 
 from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.envs import IdentityEnv
@@ -17,7 +18,7 @@ MODEL_LIST = [
 ]
 
 
-class SubClassedBox(gym.spaces.Box):
+class SubClassedBox(spaces.Box):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

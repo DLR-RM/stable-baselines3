@@ -8,18 +8,25 @@ from stable_baselines3.common.sb2_compat.rmsprop_tf_like import RMSpropTFLike
 @pytest.mark.parametrize(
     "net_arch",
     [
-        [12, dict(vf=[16], pi=[8])],
-        [4],
         [],
+        [4],
         [4, 4],
-        [12, dict(vf=[8, 4], pi=[8])],
-        [12, dict(vf=[8], pi=[8, 4])],
-        [12, dict(pi=[8])],
+        dict(vf=[16], pi=[8]),
+        dict(vf=[8, 4], pi=[8]),
+        dict(vf=[8], pi=[8, 4]),
+        dict(pi=[8]),
+        # Old format, emits a warning
+        [dict(vf=[8])],
+        [dict(vf=[8], pi=[4])],
     ],
 )
 @pytest.mark.parametrize("model_class", [A2C, PPO])
 def test_flexible_mlp(model_class, net_arch):
-    _ = model_class("MlpPolicy", "CartPole-v1", policy_kwargs=dict(net_arch=net_arch), n_steps=64).learn(300)
+    if isinstance(net_arch, list) and len(net_arch) > 0 and isinstance(net_arch[0], dict):
+        with pytest.warns(UserWarning):
+            _ = model_class("MlpPolicy", "CartPole-v1", policy_kwargs=dict(net_arch=net_arch), n_steps=64).learn(300)
+    else:
+        _ = model_class("MlpPolicy", "CartPole-v1", policy_kwargs=dict(net_arch=net_arch), n_steps=64).learn(300)
 
 
 @pytest.mark.parametrize("net_arch", [[], [4], [4, 4], dict(qf=[8], pi=[8, 4])])
@@ -55,10 +62,3 @@ def test_tf_like_rmsprop_optimizer():
 def test_dqn_custom_policy():
     policy_kwargs = dict(optimizer_class=RMSpropTFLike, net_arch=[32])
     _ = DQN("MlpPolicy", "CartPole-v1", policy_kwargs=policy_kwargs, learning_starts=100).learn(300)
-
-
-@pytest.mark.parametrize("model_class", [A2C, PPO])
-def test_not_shared_features_extractor(model_class):
-    policy_kwargs = dict(net_arch=[12, dict(vf=[16], pi=[8])], share_features_extractor=False)
-    with pytest.raises(ValueError):
-        model_class("MlpPolicy", "Pendulum-v1", policy_kwargs=policy_kwargs)

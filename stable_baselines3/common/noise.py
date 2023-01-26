@@ -38,7 +38,7 @@ class NormalActionNoise(ActionNoise):
         super().__init__()
 
     def __call__(self) -> np.ndarray:
-        return np.random.normal(self._mu, self._sigma)
+        return np.random.normal(self._mu, self._sigma).astype(np.float32)
 
     def __repr__(self) -> str:
         return f"NormalActionNoise(mu={self._mu}, sigma={self._sigma})"
@@ -81,7 +81,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
             + self._sigma * np.sqrt(self._dt) * np.random.normal(size=self._mu.shape)
         )
         self.noise_prev = noise
-        return noise
+        return noise.astype(np.float32)
 
     def reset(self) -> None:
         """
@@ -132,7 +132,7 @@ class VectorizedActionNoise(ActionNoise):
         Generate and stack the action noise from each noise object
         """
         noise = np.stack([noise() for noise in self.noises])
-        return noise
+        return noise.astype(np.float32)
 
     @property
     def base_noise(self) -> ActionNoise:

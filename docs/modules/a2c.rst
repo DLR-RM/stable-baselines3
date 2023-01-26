@@ -76,47 +76,22 @@ Train a A2C agent on ``CartPole-v1`` using 4 environments.
       env.render()
 
 
-Scaling with CPU Cores
-----------------------
+.. note::
 
-The A2C algorithm allows for scaling with multiple CPU cores through parallel processing.
-To enable this feature, you'll have to override the vector environment implementation
-instantiated by ``make_vec_env()`` such that it creates a ``SubprocVecEnv``.
+  A2C is meant to be run primarily on the CPU, especially when you are not using a CNN. To improve CPU utilization, try turning off the GPU and using ``SubprocVecEnv`` instead of the default ``DummyVecEnv``:
 
-The default ``DummyVecEnv`` implementation will only run a single thread for processing actions
-and collecting observations / rewards. With ``SubprocVecEnv``, each environment is running in its
-own thread, facilitating parallel processing for superior CPU utilization (see :ref:`Vectorized Environments <vec_env>`).
+  .. code-block::
 
-.. code-block:: python
+    from stable_baselines3 import A2C
+    from stable_baselines3.common.env_util import make_vec_env
+    from stable_baselines3.common.vec_env import SubprocVecEnv
 
-  import gym
-
-  from stable_baselines3 import A2C
-  from stable_baselines3.common.env_util import make_vec_env
-  from stable_baselines3.common.vec_env import SubprocVecEnv
-
-  # Parallel environments
-  env = make_vec_env("CartPole-v1", n_envs=100, vec_env_cls=SubprocVecEnv)
-
-  model = A2C("MlpPolicy", env, verbose=1)
-  model.learn(total_timesteps=25000)
-  model.save("a2c_cartpole")
-
-  del model # remove to demonstrate saving and loading
-
-  model = A2C.load("a2c_cartpole")
-
-  obs = env.reset()
-  while True:
-      action, _states = model.predict(obs)
-      obs, rewards, dones, info = env.step(action)
-      env.render()
-
-
-Scaling with ``n_envs`` comes at the trade-off of throughput for memory. While the RAM usage
-increases linearly, the CPU utilization diminishes quite a lot once the physical amount of CPU cores
-is exceeded. There'll still be benefits, but it's just a few percent per additional environment
-as the thread synchronization efforts will dominate (which is to be expected according to Amdahl's law).
+    if __name__=="__main__":
+        env = make_vec_env("CartPole-v1", n_envs=8, vec_env_cls=SubprocVecEnv)
+        model = A2C("MlpPolicy", env, device="cpu")
+        model.learn(total_timesteps=25_000)
+  
+  For more information, see :ref:`Vectorized Environments <vec_env>`, `Issue #425 <https://github.com/DLR-RM/stable-baselines3/issues/1245>`_ or the `Multiprocessing notebook <https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/multiprocessing_rl.ipynb>`_.
 
 
 Results

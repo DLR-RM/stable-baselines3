@@ -91,7 +91,7 @@ Train a A2C agent on ``CartPole-v1`` using 4 environments.
         model = A2C("MlpPolicy", env, device="cpu")
         model.learn(total_timesteps=25_000)
   
-  For more information, see :ref:`Vectorized Environments <vec_env>`, `Issue #425 <https://github.com/DLR-RM/stable-baselines3/issues/1245>`_ or the `Multiprocessing notebook <https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/multiprocessing_rl.ipynb>`_.
+  For more information, see :ref:`Vectorized Environments <vec_env>`, `Issue #1245 <https://github.com/DLR-RM/stable-baselines3/issues/1245>`_ or the `Multiprocessing notebook <https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/multiprocessing_rl.ipynb>`_.
 
 
 Results

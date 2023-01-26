@@ -39,6 +39,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Renamed ``load_parameters`` to ``set_parameters`` (@DavyMorgan)
+- Clarified documentation about subproc multiprocessing for A2C (@Bonifatius94)
 
 
 Release 1.7.0 (2023-01-10)

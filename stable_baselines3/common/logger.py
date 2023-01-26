@@ -427,6 +427,8 @@ class TensorBoardOutputFormat(KVWriter):
                 self.writer.file_writer.add_summary(experiment)
                 self.writer.file_writer.add_summary(session_start_info)
                 self.writer.file_writer.add_summary(session_end_info)
+                for k, v in value.metric_dict.items():
+                    self.writer.add_scalar(k, v)
 
         # Flush the output to the file
         self.writer.flush()

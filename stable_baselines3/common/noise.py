@@ -32,13 +32,14 @@ class NormalActionNoise(ActionNoise):
     :param sigma: the scale of the noise (std here)
     """
 
-    def __init__(self, mean: np.ndarray, sigma: np.ndarray):
+    def __init__(self, mean: np.ndarray, sigma: np.ndarray, dtype: type = np.float32):
         self._mu = mean
         self._sigma = sigma
+        self._dtype = dtype
         super().__init__()
 
     def __call__(self) -> np.ndarray:
-        return np.random.normal(self._mu, self._sigma).astype(np.float32)
+        return np.random.normal(self._mu, self._sigma).astype(self._dtype)
 
     def __repr__(self) -> str:
         return f"NormalActionNoise(mu={self._mu}, sigma={self._sigma})"
@@ -64,11 +65,13 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         theta: float = 0.15,
         dt: float = 1e-2,
         initial_noise: Optional[np.ndarray] = None,
+        dtype: type = np.float32,
     ):
         self._theta = theta
         self._mu = mean
         self._sigma = sigma
         self._dt = dt
+        self._dtype = dtype
         self.initial_noise = initial_noise
         self.noise_prev = np.zeros_like(self._mu)
         self.reset()
@@ -81,7 +84,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
             + self._sigma * np.sqrt(self._dt) * np.random.normal(size=self._mu.shape)
         )
         self.noise_prev = noise
-        return noise.astype(np.float32)
+        return noise.astype(self._dtype)
 
     def reset(self) -> None:
         """
@@ -101,7 +104,7 @@ class VectorizedActionNoise(ActionNoise):
     :param n_envs: The number of parallel environments
     """
 
-    def __init__(self, base_noise: ActionNoise, n_envs: int):
+    def __init__(self, base_noise: ActionNoise, n_envs: int, dtype: type = np.float32):
         try:
             self.n_envs = int(n_envs)
             assert self.n_envs > 0
@@ -110,6 +113,7 @@ class VectorizedActionNoise(ActionNoise):
 
         self.base_noise = base_noise
         self.noises = [copy.deepcopy(self.base_noise) for _ in range(n_envs)]
+        self._dtype = dtype
 
     def reset(self, indices: Optional[Iterable[int]] = None) -> None:
         """
@@ -132,7 +136,7 @@ class VectorizedActionNoise(ActionNoise):
         Generate and stack the action noise from each noise object
         """
         noise = np.stack([noise() for noise in self.noises])
-        return noise.astype(np.float32)
+        return noise.astype(self._dtype)
 
     @property
     def base_noise(self) -> ActionNoise:

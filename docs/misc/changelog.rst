@@ -39,6 +39,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Renamed ``load_parameters`` to ``set_parameters`` (@DavyMorgan)
+- Fixed typo in ``A2C`` docstring (@AlexPasqua)
 
 
 Release 1.7.0 (2023-01-10)

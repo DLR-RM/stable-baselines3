@@ -28,7 +28,7 @@ class StickyActionEnv(gym.Wrapper):
     def __init__(self, env: gym.Env, action_repeat_probability: float) -> None:
         super().__init__(env)
         self.action_repeat_probability = action_repeat_probability
-        assert env.unwrapped.get_action_meanings()[0] == "NOOP"
+        assert env.unwrapped.get_action_meanings()[0] == "NOOP"  # type: ignore[attr-defined]
 
     def reset(self, **kwargs) -> Tuple[np.ndarray, Dict]:
         self._sticky_action = 0  # NOOP

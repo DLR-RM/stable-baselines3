@@ -102,16 +102,18 @@ class StackedObservations(Generic[TObs]):
 
         As an alternative, use
 
-        ```python
-        low = np.repeat(observation_space.low, stacked_observation.n_stack, axis=stacked_observation.repeat_axis)
-        high = np.repeat(observation_space.high, stacked_observation.n_stack, axis=stacked_observation.repeat_axis)
-        stacked_observation_space = spaces.Box(low=low, high=high, dtype=observation_space.dtype)
-        ```
+        .. code-block:: python
+
+            low = np.repeat(observation_space.low, stacked_observation.n_stack, axis=stacked_observation.repeat_axis)
+            high = np.repeat(observation_space.high, stacked_observation.n_stack, axis=stacked_observation.repeat_axis)
+            stacked_observation_space = spaces.Box(low=low, high=high, dtype=observation_space.dtype)
 
         :return: New observation space with stacked dimensions
         """
         warnings.warn(
-            "stack_observation_space is deprecated. Please refer to the docstring for a workaround.", DeprecationWarning
+            "stack_observation_space is deprecated and will be removed in the next SB3 release. "
+            "Please refer to the docstring for a workaround.",
+            DeprecationWarning,
         )
         if isinstance(observation_space, spaces.Dict):
             return spaces.Dict(

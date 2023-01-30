@@ -12,13 +12,39 @@ except ImportError:
 from stable_baselines3.common.type_aliases import GymObs, GymStepReturn
 
 
+class StickyActionEnv(gym.Wrapper):
+    """
+    Sticky action.
+
+    Paper: https://arxiv.org/abs/1709.06009
+    Official implementation: https://github.com/mgbellemare/Arcade-Learning-Environment
+
+    :param env: Environment to wrap
+    :param action_repeat_probability: Probability of repeating the last action
+    """
+
+    def __init__(self, env: gym.Env, action_repeat_probability: float) -> None:
+        super().__init__(env)
+        self.action_repeat_probability = action_repeat_probability
+        assert env.unwrapped.get_action_meanings()[0] == "NOOP"
+
+    def reset(self, **kwargs) -> GymObs:
+        self._sticky_action = 0  # NOOP
+        return self.env.reset(**kwargs)
+
+    def step(self, action: int) -> GymStepReturn:
+        if self.np_random.random() >= self.action_repeat_probability:
+            self._sticky_action = action
+        return self.env.step(self._sticky_action)
+
+
 class NoopResetEnv(gym.Wrapper):
     """
     Sample initial states by taking random number of no-ops on reset.
     No-op is assumed to be action 0.
 
-    :param env: the environment to wrap
-    :param noop_max: the maximum value of no-ops to run
+    :param env: Environment to wrap
+    :param noop_max: Maximum value of no-ops to run
     """
 
     def __init__(self, env: gym.Env, noop_max: int = 30) -> None:
@@ -47,7 +73,7 @@ class FireResetEnv(gym.Wrapper):
     """
     Take action on reset for environments that are fixed until firing.
 
-    :param env: the environment to wrap
+    :param env: Environment to wrap
     """
 
     def __init__(self, env: gym.Env) -> None:
@@ -71,7 +97,7 @@ class EpisodicLifeEnv(gym.Wrapper):
     Make end-of-life == end-of-episode, but only reset on true game over.
     Done by DeepMind for the DQN and co. since it helps value estimation.
 
-    :param env: the environment to wrap
+    :param env: Environment to wrap
     """
 
     def __init__(self, env: gym.Env) -> None:
@@ -106,7 +132,13 @@ class EpisodicLifeEnv(gym.Wrapper):
             obs = self.env.reset(**kwargs)
         else:
             # no-op step to advance from terminal/lost life state
-            obs, _, _, _ = self.env.step(0)
+            obs, _, done, _ = self.env.step(0)
+
+            # The no-op step can lead to a game over, so we need to check it again
+            # to see if we should reset the environment and avoid the
+            # monitor.py `RuntimeError: Tried to step environment that needs reset`
+            if done:
+                obs = self.env.reset(**kwargs)
         self.lives = self.env.unwrapped.ale.lives()
         return obs
 
@@ -114,9 +146,11 @@ class EpisodicLifeEnv(gym.Wrapper):
 class MaxAndSkipEnv(gym.Wrapper):
     """
     Return only every ``skip``-th frame (frameskipping)
+    and return the max between the two last frames.
 
-    :param env: the environment
-    :param skip: number of ``skip``-th frame
+    :param env: Environment to wrap
+    :param skip: Number of ``skip``-th frame
+        The same action will be taken ``skip`` times.
     """
 
     def __init__(self, env: gym.Env, skip: int = 4) -> None:
@@ -150,15 +184,12 @@ class MaxAndSkipEnv(gym.Wrapper):
 
         return max_frame, total_reward, done, info
 
-    def reset(self, **kwargs) -> GymObs:
-        return self.env.reset(**kwargs)
-
 
 class ClipRewardEnv(gym.RewardWrapper):
     """
-    Clips the reward to {+1, 0, -1} by its sign.
+    Clip the reward to {+1, 0, -1} by its sign.
 
-    :param env: the environment
+    :param env: Environment to wrap
     """
 
     def __init__(self, env: gym.Env) -> None:
@@ -179,9 +210,9 @@ class WarpFrame(gym.ObservationWrapper):
     Convert to grayscale and warp frames to 84x84 (default)
     as done in the Nature paper and later work.
 
-    :param env: the environment
-    :param width:
-    :param height:
+    :param env: Environment to wrap
+    :param width: New frame width
+    :param height: New frame height
     """
 
     def __init__(self, env: gym.Env, width: int = 84, height: int = 84) -> None:
@@ -210,20 +241,29 @@ class AtariWrapper(gym.Wrapper):
 
     Specifically:
 
-    * NoopReset: obtain initial state by taking random number of no-ops on reset.
+    * Noop reset: obtain initial state by taking random number of no-ops on reset.
     * Frame skipping: 4 by default
     * Max-pooling: most recent two observations
     * Termination signal when a life is lost.
     * Resize to a square image: 84x84 by default
     * Grayscale observation
     * Clip reward to {-1, 0, 1}
+    * Sticky actions: disabled by default
 
-    :param env: gym environment
-    :param noop_max: max number of no-ops
-    :param frame_skip: the frequency at which the agent experiences the game.
-    :param screen_size: resize Atari frame
-    :param terminal_on_life_loss: if True, then step() returns done=True whenever a life is lost.
+    See https://danieltakeshi.github.io/2016/11/25/frame-skipping-and-preprocessing-for-deep-q-networks-on-atari-2600-games/
+    for a visual explanation.
+
+    .. warning::
+        Use this wrapper only with Atari v4 without frame skip: ``env_id = "*NoFrameskip-v4"``.
+
+    :param env: Environment to wrap
+    :param noop_max: Max number of no-ops
+    :param frame_skip: Frequency at which the agent experiences the game.
+        This correspond to repeating the action ``frame_skip`` times.
+    :param screen_size: Resize Atari frame
+    :param terminal_on_life_loss: If True, then step() returns done=True whenever a life is lost.
     :param clip_reward: If True (default), the reward is clip to {-1, 0, 1} depending on its sign.
+    :param action_repeat_probability: Probability of repeating the last action
     """
 
     def __init__(
@@ -234,9 +274,15 @@ class AtariWrapper(gym.Wrapper):
         screen_size: int = 84,
         terminal_on_life_loss: bool = True,
         clip_reward: bool = True,
+        action_repeat_probability: float = 0.0,
     ) -> None:
-        env = NoopResetEnv(env, noop_max=noop_max)
-        env = MaxAndSkipEnv(env, skip=frame_skip)
+        if action_repeat_probability > 0.0:
+            env = StickyActionEnv(env, action_repeat_probability)
+        if noop_max > 0:
+            env = NoopResetEnv(env, noop_max=noop_max)
+        # frame_skip=1 is the same as no frame-skip (action repeat)
+        if frame_skip > 1:
+            env = MaxAndSkipEnv(env, skip=frame_skip)
         if terminal_on_life_loss:
             env = EpisodicLifeEnv(env)
         if "FIRE" in env.unwrapped.get_action_meanings():

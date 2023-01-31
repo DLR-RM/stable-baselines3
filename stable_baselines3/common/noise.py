@@ -104,7 +104,7 @@ class VectorizedActionNoise(ActionNoise):
     :param n_envs: The number of parallel environments
     """
 
-    def __init__(self, base_noise: ActionNoise, n_envs: int, dtype: type = np.float32):
+    def __init__(self, base_noise: ActionNoise, n_envs: int):
         try:
             self.n_envs = int(n_envs)
             assert self.n_envs > 0
@@ -113,7 +113,6 @@ class VectorizedActionNoise(ActionNoise):
 
         self.base_noise = base_noise
         self.noises = [copy.deepcopy(self.base_noise) for _ in range(n_envs)]
-        self._dtype = dtype
 
     def reset(self, indices: Optional[Iterable[int]] = None) -> None:
         """
@@ -136,7 +135,7 @@ class VectorizedActionNoise(ActionNoise):
         Generate and stack the action noise from each noise object
         """
         noise = np.stack([noise() for noise in self.noises])
-        return noise.astype(self._dtype)
+        return noise
 
     @property
     def base_noise(self) -> ActionNoise:

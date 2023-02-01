@@ -72,7 +72,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         _init_setup_model: bool = True,
         supported_action_spaces: Optional[Tuple[spaces.Space, ...]] = None,
     ):
-
         super().__init__(
             policy=policy,
             env=env,
@@ -244,7 +243,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         callback.on_training_start(locals(), globals())
 
         while self.num_timesteps < total_timesteps:
-
             continue_training = self.collect_rollouts(self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps)
 
             if continue_training is False:

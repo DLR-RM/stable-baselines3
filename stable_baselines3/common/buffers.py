@@ -240,7 +240,6 @@ class ReplayBuffer(BaseBuffer):
         done: np.ndarray,
         infos: List[Dict[str, Any]],
     ) -> None:
-
         # Reshape needed when using multiple envs with discrete observations
         # as numpy cannot broadcast (n_discrete,) to (n_discrete, 1)
         if isinstance(self.observation_space, spaces.Discrete):
@@ -346,7 +345,6 @@ class RolloutBuffer(BaseBuffer):
         gamma: float = 0.99,
         n_envs: int = 1,
     ):
-
         super().__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
@@ -356,7 +354,6 @@ class RolloutBuffer(BaseBuffer):
         self.reset()
 
     def reset(self) -> None:
-
         self.observations = np.zeros((self.buffer_size, self.n_envs) + self.obs_shape, dtype=np.float32)
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -451,7 +448,6 @@ class RolloutBuffer(BaseBuffer):
         indices = np.random.permutation(self.buffer_size * self.n_envs)
         # Prepare the data
         if not self.generator_ready:
-
             _tensor_names = [
                 "observations",
                 "actions",
@@ -688,7 +684,6 @@ class DictRolloutBuffer(RolloutBuffer):
         gamma: float = 0.99,
         n_envs: int = 1,
     ):
-
         super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
 
         assert isinstance(self.obs_shape, dict), "DictRolloutBuffer must be used with Dict obs space only"
@@ -763,7 +758,6 @@ class DictRolloutBuffer(RolloutBuffer):
         indices = np.random.permutation(self.buffer_size * self.n_envs)
         # Prepare the data
         if not self.generator_ready:
-
             for key, obs in self.observations.items():
                 self.observations[key] = self.swap_and_flatten(obs)
 
@@ -787,7 +781,6 @@ class DictRolloutBuffer(RolloutBuffer):
         batch_inds: np.ndarray,
         env: Optional[VecNormalize] = None,
     ) -> DictRolloutBufferSamples:  # type: ignore[signature-mismatch] #FIXME
-
         return DictRolloutBufferSamples(
             observations={key: self.to_torch(obs[batch_inds]) for (key, obs) in self.observations.items()},
             actions=self.to_torch(self.actions[batch_inds]),

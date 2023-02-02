@@ -102,7 +102,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         sde_support: bool = True,
         supported_action_spaces: Optional[Tuple[spaces.Space, ...]] = None,
     ):
-
         super().__init__(
             policy=policy,
             env=env,
@@ -319,7 +318,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
     ) -> SelfOffPolicyAlgorithm:
-
         total_timesteps, callback = self._setup_learn(
             total_timesteps,
             callback,

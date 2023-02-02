@@ -173,7 +173,6 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         key2str = {}
         tag = None
         for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
-
             if excluded is not None and ("stdout" in excluded or "log" in excluded):
                 continue
 
@@ -342,7 +341,7 @@ class CSVOutputFormat(KVWriter):
             self.file.seek(0)
             lines = self.file.readlines()
             self.file.seek(0)
-            for (i, key) in enumerate(self.keys):
+            for i, key in enumerate(self.keys):
                 if i > 0:
                     self.file.write(",")
                 self.file.write(key)
@@ -399,9 +398,7 @@ class TensorBoardOutputFormat(KVWriter):
         self.writer = SummaryWriter(log_dir=folder)
 
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
-
         for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
-
             if excluded is not None and "tensorboard" in excluded:
                 continue
 

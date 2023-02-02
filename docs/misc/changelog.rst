@@ -26,7 +26,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed Atari wrapper that missed the reset condition (@luizapozzobon)
-- Fixed action noise to return float32 for consistentcy with gym action (@sidney-tio)
+- Added the argument ``dtype`` (default to ``float32``) to the noise for consistentcy with gym action (@sidney-tio)
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -81,7 +81,6 @@ class HerReplayBuffer(DictReplayBuffer):
         online_sampling: bool = True,
         handle_timeout_termination: bool = True,
     ):
-
         super().__init__(buffer_size, env.observation_space, env.action_space, device, env.num_envs)
 
         # convert goal_selection_strategy into GoalSelectionStrategy if string
@@ -389,7 +388,6 @@ class HerReplayBuffer(DictReplayBuffer):
         done: np.ndarray,
         infos: List[Dict[str, Any]],
     ) -> None:
-
         if self.current_idx == 0 and self.full:
             # Clear info buffer
             self.info_buffer[self.pos] = deque(maxlen=self.max_episode_length)

@@ -648,7 +648,6 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
 
 
 def test_open_file(tmp_path):
-
     # path must much the type
     with pytest.raises(TypeError):
         open_path(123, None, None, None)

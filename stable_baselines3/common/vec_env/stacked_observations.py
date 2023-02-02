@@ -30,7 +30,6 @@ class StackedObservations:
         observation_space: spaces.Space,
         channels_order: Optional[str] = None,
     ):
-
         self.n_stack = n_stack
         (
             self.channels_first,

@@ -15,7 +15,7 @@ class ActionNoise(ABC):
 
     def reset(self) -> None:
         """
-        call end of episode reset for the noise
+        Call end of episode reset for the noise
         """
         pass
 
@@ -26,13 +26,14 @@ class ActionNoise(ABC):
 
 class NormalActionNoise(ActionNoise):
     """
-    A Gaussian action noise
+    A Gaussian action noise.
 
-    :param mean: the mean value of the noise
-    :param sigma: the scale of the noise (std here)
+    :param mean: Mean value of the noise
+    :param sigma: Scale of the noise (std here)
+    :param dtype: Type of the output noise
     """
 
-    def __init__(self, mean: np.ndarray, sigma: np.ndarray, dtype: type = np.float32):
+    def __init__(self, mean: np.ndarray, sigma: np.ndarray, dtype: np.dtype = np.float32) -> None:
         self._mu = mean
         self._sigma = sigma
         self._dtype = dtype
@@ -51,11 +52,12 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
 
     Based on http://math.stackexchange.com/questions/1287634/implementing-ornstein-uhlenbeck-in-matlab
 
-    :param mean: the mean of the noise
-    :param sigma: the scale of the noise
-    :param theta: the rate of mean reversion
-    :param dt: the timestep for the noise
-    :param initial_noise: the initial value for the noise output, (if None: 0)
+    :param mean: Mean of the noise
+    :param sigma: Scale of the noise
+    :param theta: Rate of mean reversion
+    :param dt: Timestep for the noise
+    :param initial_noise: Initial value for the noise output, (if None: 0)
+    :param dtype: Type of the output noise
     """
 
     def __init__(
@@ -65,8 +67,8 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         theta: float = 0.15,
         dt: float = 1e-2,
         initial_noise: Optional[np.ndarray] = None,
-        dtype: type = np.float32,
-    ):
+        dtype: np.dtype = np.float32,
+    ) -> None:
         self._theta = theta
         self._mu = mean
         self._sigma = sigma
@@ -100,11 +102,11 @@ class VectorizedActionNoise(ActionNoise):
     """
     A Vectorized action noise for parallel environments.
 
-    :param base_noise: ActionNoise The noise generator to use
-    :param n_envs: The number of parallel environments
+    :param base_noise: Noise generator to use
+    :param n_envs: Number of parallel environments
     """
 
-    def __init__(self, base_noise: ActionNoise, n_envs: int):
+    def __init__(self, base_noise: ActionNoise, n_envs: int) -> None:
         try:
             self.n_envs = int(n_envs)
             assert self.n_envs > 0
@@ -116,9 +118,9 @@ class VectorizedActionNoise(ActionNoise):
 
     def reset(self, indices: Optional[Iterable[int]] = None) -> None:
         """
-        Reset all the noise processes, or those listed in indices
+        Reset all the noise processes, or those listed in indices.
 
-        :param indices: Optional[Iterable[int]] The indices to reset. Default: None.
+        :param indices: The indices to reset. Default: None.
             If the parameter is None, then all processes are reset to their initial position.
         """
         if indices is None:
@@ -132,7 +134,7 @@ class VectorizedActionNoise(ActionNoise):
 
     def __call__(self) -> np.ndarray:
         """
-        Generate and stack the action noise from each noise object
+        Generate and stack the action noise from each noise object.
         """
         noise = np.stack([noise() for noise in self.noises])
         return noise

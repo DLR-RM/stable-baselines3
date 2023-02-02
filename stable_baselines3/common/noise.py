@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Iterable, List, Optional
 
 import numpy as np
+from numpy.typing import DTypeLike
 
 
 class ActionNoise(ABC):
@@ -33,7 +34,7 @@ class NormalActionNoise(ActionNoise):
     :param dtype: Type of the output noise
     """
 
-    def __init__(self, mean: np.ndarray, sigma: np.ndarray, dtype: np.dtype = np.float32) -> None:
+    def __init__(self, mean: np.ndarray, sigma: np.ndarray, dtype: DTypeLike = np.float32) -> None:
         self._mu = mean
         self._sigma = sigma
         self._dtype = dtype
@@ -67,7 +68,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         theta: float = 0.15,
         dt: float = 1e-2,
         initial_noise: Optional[np.ndarray] = None,
-        dtype: np.dtype = np.float32,
+        dtype: DTypeLike = np.float32,
     ) -> None:
         self._theta = theta
         self._mu = mean

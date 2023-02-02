@@ -190,6 +190,7 @@ class PPO(OnPolicyAlgorithm):
         clip_fractions = []
 
         continue_training = True
+        num_updates = self.n_epochs
 
         # train for n_epochs epochs
         for epoch in range(self.n_epochs):
@@ -261,6 +262,7 @@ class PPO(OnPolicyAlgorithm):
 
                 if self.target_kl is not None and approx_kl_div > 1.5 * self.target_kl:
                     continue_training = False
+                    num_updates = epoch + 1
                     if self.verbose >= 1:
                         print(f"Early stopping at step {epoch} due to reaching max kl: {approx_kl_div:.2f}")
                     break
@@ -275,7 +277,7 @@ class PPO(OnPolicyAlgorithm):
             if not continue_training:
                 break
 
-        self._n_updates += self.n_epochs
+        self._n_updates += num_updates
         explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())
 
         # Logs

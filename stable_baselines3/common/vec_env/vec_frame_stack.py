@@ -44,7 +44,6 @@ class VecFrameStack(VecEnvWrapper):
     def step_wait(
         self,
     ) -> Tuple[Union[np.ndarray, Dict[str, np.ndarray]], np.ndarray, np.ndarray, List[Dict[str, Any]],]:
-
         observations, rewards, dones, infos = self.venv.step_wait()
 
         observations, infos = self.stackedobs.update(observations, dones, infos)

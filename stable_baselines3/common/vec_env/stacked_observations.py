@@ -13,7 +13,6 @@ TObs = TypeVar("TObs", np.ndarray, Dict[str, np.ndarray])
 # However, future versions of gym are expected to support typing, so most of the # pytype: disable=attribute-error
 # statements will be removed once the code is updated to use a newer version of gym.
 # disable for the while file:
-# pytype: disable=attribute-error
 class StackedObservations(Generic[TObs]):
     """
     Frame stacking wrapper for data.
@@ -201,7 +200,7 @@ class StackedObservations(Generic[TObs]):
                     warnings.warn("VecFrameStack wrapping a VecEnv without terminal_observation info")
                 self.stacked_obs[env_idx] = 0
         if self.channels_first:
-            self.stacked_obs[:, -observations.shape[self.stack_dimension] :, ...] = observations
+            self.stacked_obs[:, shift:, ...] = observations
         else:
-            self.stacked_obs[..., -observations.shape[self.stack_dimension] :] = observations
+            self.stacked_obs[..., shift:] = observations
         return self.stacked_obs, infos

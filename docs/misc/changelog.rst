@@ -26,6 +26,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed Atari wrapper that missed the reset condition (@luizapozzobon)
+- Fixed PPO train/n_updates metric not accounting for early stopping (@adamfrly)
 
 Deprecations:
 ^^^^^^^^^^^^^

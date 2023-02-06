@@ -28,14 +28,6 @@ class VecFrameStack(VecEnvWrapper):
         observation_space = self.stacked_obs.stacked_observation_space
         super().__init__(venv, observation_space=observation_space)
 
-    @property
-    def n_stack(self):
-        warnings.warn(
-            "Attribute n_stack is deprecated, use this_wrapper.stacked_obs.n_stack instead.",
-            DeprecationWarning,
-        )
-        return self.stacked_obs.n_stack
-
     def step_wait(
         self,
     ) -> Tuple[Union[np.ndarray, Dict[str, np.ndarray]], np.ndarray, np.ndarray, List[Dict[str, Any]],]:

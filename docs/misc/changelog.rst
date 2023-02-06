@@ -11,6 +11,7 @@ Release 1.8.0a4 (WIP)
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed shared layers in ``mlp_extractor`` (@AlexPasqua)
+- Refactored ``StackedObservations`` (it now handles dict obs, ``StackedDictObservations`` was removed)
 
 New Features:
 ^^^^^^^^^^^^^
@@ -27,6 +28,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fixed Atari wrapper that missed the reset condition (@luizapozzobon)
 - Added the argument ``dtype`` (default to ``float32``) to the noise for consistency with gym action (@sidney-tio)
+- Fixed PPO train/n_updates metric not accounting for early stopping (@adamfrly)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -36,6 +38,7 @@ Others:
 - Fixed ``tests/test_tensorboard.py`` type hint
 - Fixed ``tests/test_vec_normalize.py`` type hint
 - Fixed ``stable_baselines3/common/monitor.py`` type hint
+- Added tests for StackedObservations
 
 Documentation:
 ^^^^^^^^^^^^^^

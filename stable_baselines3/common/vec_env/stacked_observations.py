@@ -9,10 +9,6 @@ from stable_baselines3.common.preprocessing import is_image_space, is_image_spac
 TObs = TypeVar("TObs", np.ndarray, Dict[str, np.ndarray])
 
 
-# In this codebase, many type checks have been ignored mainly because gym 0.21 does not support typing.
-# However, future versions of gym are expected to support typing, so most of the # pytype: disable=attribute-error
-# statements will be removed once the code is updated to use a newer version of gym.
-# disable for the while file:
 class StackedObservations(Generic[TObs]):
     """
     Frame stacking wrapper for data.

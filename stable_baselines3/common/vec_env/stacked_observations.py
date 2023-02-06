@@ -40,12 +40,12 @@ class StackedObservations(Generic[TObs]):
             if not isinstance(channels_order, Mapping):
                 channels_order = {key: channels_order for key in observation_space.spaces.keys()}
             self.sub_stacked_observations = {
-                key: StackedObservations(num_envs, n_stack, subspace, channels_order[key])
+                key: StackedObservations(num_envs, n_stack, subspace, channels_order[key])  # type: ignore[arg-type]
                 for key, subspace in observation_space.spaces.items()
             }
             self.stacked_observation_space = spaces.Dict(
                 {key: substack_obs.stacked_observation_space for key, substack_obs in self.sub_stacked_observations.items()}
-            )  # type: spaces.Dict # make mypy happy
+            )  # type: Union[spaces.Dict, spaces.Box] # make mypy happy
         elif isinstance(observation_space, spaces.Box):
             if isinstance(channels_order, Mapping):
                 raise TypeError("When the observation space is Box, channels_order can't be a dict.")
@@ -55,7 +55,11 @@ class StackedObservations(Generic[TObs]):
             )
             low = np.repeat(observation_space.low, n_stack, axis=self.repeat_axis)
             high = np.repeat(observation_space.high, n_stack, axis=self.repeat_axis)
-            self.stacked_observation_space = spaces.Box(low=low, high=high, dtype=observation_space.dtype)
+            self.stacked_observation_space = spaces.Box(
+                low=low,
+                high=high,
+                dtype=observation_space.dtype,  # type: ignore[arg-type]
+            )
             self.stacked_obs = np.zeros((num_envs,) + self.stacked_shape, dtype=observation_space.dtype)
         else:
             raise TypeError(
@@ -125,7 +129,7 @@ class StackedObservations(Generic[TObs]):
             )
         low = np.repeat(observation_space.low, self.n_stack, axis=self.repeat_axis)
         high = np.repeat(observation_space.high, self.n_stack, axis=self.repeat_axis)
-        return spaces.Box(low=low, high=high, dtype=observation_space.dtype)
+        return spaces.Box(low=low, high=high, dtype=observation_space.dtype)  # type: ignore[arg-type]
 
     def reset(self, observation: TObs) -> TObs:
         """

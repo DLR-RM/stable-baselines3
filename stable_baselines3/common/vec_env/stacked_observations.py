@@ -9,6 +9,9 @@ from stable_baselines3.common.preprocessing import is_image_space, is_image_spac
 TObs = TypeVar("TObs", np.ndarray, Dict[str, np.ndarray])
 
 
+# Disable errors for pytype which doesn't play well with Generic[TypeVar]
+# mypy check passes though
+# pytype: disable=attribute-error
 class StackedObservations(Generic[TObs]):
     """
     Frame stacking wrapper for data.

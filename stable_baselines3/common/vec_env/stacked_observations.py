@@ -12,6 +12,8 @@ TObs = TypeVar("TObs", np.ndarray, Dict[str, np.ndarray])
 # In this codebase, many type checks have been ignored mainly because gym 0.21 does not support typing.
 # However, future versions of gym are expected to support typing, so most of the # pytype: disable=attribute-error
 # statements will be removed once the code is updated to use a newer version of gym.
+# disable for the while file:
+# pytype: disable=attribute-error
 class StackedObservations(Generic[TObs]):
     """
     Frame stacking wrapper for data.
@@ -123,8 +125,8 @@ class StackedObservations(Generic[TObs]):
                     for key, sub_stacked_observation in self.sub_stacked_observations.items()
                 }
             )
-        low = np.repeat(observation_space.low, self.n_stack, axis=self.repeat_axis)  # pytype: disable=attribute-error
-        high = np.repeat(observation_space.high, self.n_stack, axis=self.repeat_axis)  # pytype: disable=attribute-error
+        low = np.repeat(observation_space.low, self.n_stack, axis=self.repeat_axis)
+        high = np.repeat(observation_space.high, self.n_stack, axis=self.repeat_axis)
         return spaces.Box(low=low, high=high, dtype=observation_space.dtype)
 
     def reset(self, observation: TObs) -> TObs:
@@ -137,7 +139,7 @@ class StackedObservations(Generic[TObs]):
         if isinstance(observation, dict):
             return {key: self.sub_stacked_observations[key].reset(obs) for key, obs in observation.items()}
 
-        self.stacked_obs[...] = 0  # pytype: disable=attribute-error
+        self.stacked_obs[...] = 0
         if self.channels_first:
             self.stacked_obs[:, -observation.shape[self.stack_dimension] :, ...] = observation
         else:
@@ -182,45 +184,24 @@ class StackedObservations(Generic[TObs]):
                         infos[env_idx]["terminal_observation"][key] = stacked_infos[key][env_idx]["terminal_observation"]
             return stacked_obs, infos
 
-        shift = -observations.shape[self.stack_dimension]  # pytype: disable=attribute-error
-        self.stacked_obs = np.roll(self.stacked_obs, shift, axis=self.stack_dimension)  # pytype: disable=attribute-error
+        shift = -observations.shape[self.stack_dimension]
+        self.stacked_obs = np.roll(self.stacked_obs, shift, axis=self.stack_dimension)
         for env_idx, done in enumerate(dones):
             if done:
                 if "terminal_observation" in infos[env_idx]:
                     old_terminal = infos[env_idx]["terminal_observation"]
-                    if self.channels_first:  # pytype: disable=attribute-error
-                        # self.stack_dimension - 1, as there is not batch dim
-                        axis = 0
-                        new_terminal = np.concatenate((self.stacked_obs[env_idx, :shift, ...], old_terminal), axis)
+                    if self.channels_first:
+                        previous_stack = self.stacked_obs[env_idx, :shift, ...]
                     else:
-                        axis = self.stack_dimension  # pytype: disable=attribute-error
-                        new_terminal = np.concatenate((self.stacked_obs[env_idx, ..., :shift], old_terminal), axis)
+                        previous_stack = self.stacked_obs[env_idx, ..., :shift]
+
+                    new_terminal = np.concatenate((previous_stack, old_terminal), axis=self.repeat_axis)
                     infos[env_idx]["terminal_observation"] = new_terminal
                 else:
                     warnings.warn("VecFrameStack wrapping a VecEnv without terminal_observation info")
                 self.stacked_obs[env_idx] = 0
-        if self.channels_first:  # pytype: disable=attribute-error
-            self.stacked_obs[
-                :, -observations.shape[self.stack_dimension] :, ...
-            ] = observations  # pytype: disable=attribute-error
+        if self.channels_first:
+            self.stacked_obs[:, -observations.shape[self.stack_dimension] :, ...] = observations
         else:
-            self.stacked_obs[
-                ..., -observations.shape[self.stack_dimension] :
-            ] = observations  # pytype: disable=attribute-error
+            self.stacked_obs[..., -observations.shape[self.stack_dimension] :] = observations
         return self.stacked_obs, infos
-
-
-class StackedDictObservations(StackedObservations):
-    """
-    StackedDictObservations is deprecated, use StackedObservations instead.
-    """
-
-    def __init__(
-        self,
-        num_envs: int,
-        n_stack: int,
-        observation_space: Union[spaces.Box, spaces.Dict],
-        channels_order: Optional[Union[str, Dict[str, Optional[str]]]] = None,
-    ) -> None:
-        warnings.warn("StackedDictObservations is deprecated, use StackedObservations instead.", DeprecationWarning)
-        super().__init__(num_envs, n_stack, observation_space, channels_order)

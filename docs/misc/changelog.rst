@@ -4,13 +4,14 @@ Changelog
 ==========
 
 
-Release 1.8.0a3 (WIP)
+Release 1.8.0a4 (WIP)
 --------------------------
 
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed shared layers in ``mlp_extractor`` (@AlexPasqua)
+- Refactored ``StackedObservations`` (it now handles dict obs, ``StackedDictObservations`` was removed)
 
 New Features:
 ^^^^^^^^^^^^^
@@ -36,6 +37,7 @@ Others:
 - Fixed ``tests/test_tensorboard.py`` type hint
 - Fixed ``tests/test_vec_normalize.py`` type hint
 - Fixed ``stable_baselines3/common/monitor.py`` type hint
+- Added tests for StackedObservations
 
 Documentation:
 ^^^^^^^^^^^^^^

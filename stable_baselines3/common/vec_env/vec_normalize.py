@@ -1,3 +1,4 @@
+import inspect
 import pickle
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Union
@@ -159,7 +160,11 @@ class VecNormalize(VecEnvWrapper):
         """
         if self.venv is not None:
             raise ValueError("Trying to set venv of already initialized VecNormalize wrapper.")
-        VecEnvWrapper.__init__(self, venv)
+        self.venv = venv
+        self.num_envs = venv.num_envs
+        venv.observation_space = self.observation_space
+        venv.action_space = self.action_space
+        self.class_attributes = dict(inspect.getmembers(self.__class__))
 
         # Check only that the observation_space match
         utils.check_for_correct_spaces(venv, self.observation_space, venv.action_space)

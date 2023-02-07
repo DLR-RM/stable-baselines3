@@ -740,7 +740,7 @@ def test_save_load_vecnormalized_image(tmp_path, model_class):
 
     venv = VecNormalize(DummyVecEnv([env_func, env_func]))
 
-    model_kwargs = dict(batch_size=1) if issubclass(model_class, OffPolicyAlgorithm) else dict()  # avoid memory warning
+    model_kwargs = dict(buffer_size=250) if issubclass(model_class, OffPolicyAlgorithm) else dict()  # avoid memory warning
     model = model_class("CnnPolicy", venv, policy_kwargs=dict(normalize_images=False), **model_kwargs)
     model.save(tmp_path / "test_save.zip")
     venv.save(tmp_path / "vecnormalize.pkl")

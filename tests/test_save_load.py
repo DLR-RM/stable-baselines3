@@ -16,9 +16,10 @@ import torch as th
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.envs import FakeImageEnv, IdentityEnv, IdentityEnvBox
+from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.save_util import load_from_pkl, open_path, save_to_pkl
 from stable_baselines3.common.utils import get_device
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
 MODEL_LIST = [PPO, A2C, TD3, SAC, DQN, DDPG]
 
@@ -730,3 +731,20 @@ def test_load_invalid_object(tmp_path):
     with warnings.catch_warnings(record=True) as record:
         PPO.load(path, custom_objects=dict(learning_rate=lambda _: 1.0))
     assert len(record) == 0
+
+
+@pytest.mark.parametrize("model_class", MODEL_LIST)
+def test_save_load_vecnormalized_image(tmp_path, model_class):
+    def env_func():
+        return FakeImageEnv(discrete=model_class == DQN, channel_first=True)
+
+    venv = VecNormalize(DummyVecEnv([env_func, env_func]))
+
+    model_kwargs = dict(batch_size=1) if issubclass(model_class, OffPolicyAlgorithm) else dict()  # avoid memory warning
+    model = model_class("CnnPolicy", venv, policy_kwargs=dict(normalize_images=False), **model_kwargs)
+    model.save(tmp_path / "test_save.zip")
+    venv.save(tmp_path / "vecnormalize.pkl")
+
+    venv = DummyVecEnv([env_func])  # not necessarily the same number of envs, nor normalized
+    venv = VecNormalize.load(tmp_path / "vecnormalize.pkl", venv)
+    model_class.load(tmp_path / "test_save.zip", env=venv)

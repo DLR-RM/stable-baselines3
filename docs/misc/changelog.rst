@@ -27,6 +27,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed Atari wrapper that missed the reset condition (@luizapozzobon)
+- Added the argument ``dtype`` (default to ``float32``) to the noise for consistency with gym action (@sidney-tio)
 - Fixed PPO train/n_updates metric not accounting for early stopping (@adamfrly)
 
 Deprecations:

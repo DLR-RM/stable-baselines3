@@ -118,6 +118,7 @@ def make_env():
 def make_dict_env():
     return Monitor(DummyDictEnv())
 
+
 def make_image_env():
     return Monitor(FakeImageEnv())
 

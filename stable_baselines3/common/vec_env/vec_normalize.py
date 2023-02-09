@@ -162,12 +162,10 @@ class VecNormalize(VecEnvWrapper):
             raise ValueError("Trying to set venv of already initialized VecNormalize wrapper.")
         self.venv = venv
         self.num_envs = venv.num_envs
-        venv.observation_space = self.observation_space
-        venv.action_space = self.action_space
         self.class_attributes = dict(inspect.getmembers(self.__class__))
 
-        # Check only that the observation_space match
-        utils.check_for_correct_spaces(venv, self.observation_space, venv.action_space)
+        # Check that the observation_space shape match
+        utils.check_shape_equal(self.observation_space, venv.observation_space)
         self.returns = np.zeros(self.num_envs)
 
     def step_wait(self) -> VecEnvStepReturn:

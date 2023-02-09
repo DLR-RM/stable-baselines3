@@ -15,6 +15,7 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise, OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
 from stable_baselines3.common.utils import (
+    check_shape_equal,
     get_parameters_by_name,
     get_system_info,
     is_vectorized_observation,
@@ -509,3 +510,23 @@ def test_is_vectorized_observation():
         discrete_obs = np.ones((1, 1), dtype=np.int8)
         dict_obs = {"box": box_obs, "discrete": discrete_obs}
         is_vectorized_observation(dict_obs, dict_space)
+
+
+def test_check_shape_equal():
+    space1 = spaces.Box(low=0, high=1, shape=(2, 2))
+    space2 = spaces.Box(low=-1, high=1, shape=(2, 2))
+    check_shape_equal(space1, space2)
+
+    space1 = spaces.Box(low=0, high=1, shape=(2, 2))
+    space2 = spaces.Box(low=-1, high=2, shape=(3, 3))
+    with pytest.raises(AssertionError):
+        check_shape_equal(space1, space2)
+
+    space1 = spaces.Dict({"key1": spaces.Box(low=0, high=1, shape=(2, 2)), "key2": spaces.Box(low=0, high=1, shape=(2, 2))})
+    space2 = spaces.Dict({"key1": spaces.Box(low=-1, high=2, shape=(2, 2)), "key2": spaces.Box(low=-1, high=2, shape=(2, 2))})
+    check_shape_equal(space1, space2)
+
+    space1 = spaces.Dict({"key1": spaces.Box(low=0, high=1, shape=(2, 2)), "key2": spaces.Box(low=0, high=1, shape=(2, 2))})
+    space2 = spaces.Dict({"key1": spaces.Box(low=-1, high=2, shape=(3, 3)), "key2": spaces.Box(low=-1, high=2, shape=(2, 2))})
+    with pytest.raises(AssertionError):
+        check_shape_equal(space1, space2)

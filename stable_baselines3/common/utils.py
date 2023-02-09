@@ -230,6 +230,22 @@ def check_for_correct_spaces(env: GymEnv, observation_space: spaces.Space, actio
         raise ValueError(f"Action spaces do not match: {action_space} != {env.action_space}")
 
 
+def check_shape_equal(space1: Union[spaces.Box, spaces.Dict], space2: Union[spaces.Box, spaces.Dict]) -> None:
+    """
+    Check that two Box spaces (or Dict of Box spaces) have the same shape.
+
+    :param space1: Space
+    :param space2: Other space
+    """
+    if isinstance(space1, spaces.Dict):
+        assert isinstance(space2, spaces.Dict), "spaces must be of the same type"
+        assert space1.spaces.keys() == space2.spaces.keys(), "spaces must have the same keys"
+        for key in space1.spaces.keys():
+            check_shape_equal(space1.spaces[key], space2.spaces[key])
+    else:
+        assert space1.shape == space2.shape, "spaces must have the same shape"
+
+
 def is_vectorized_box_observation(observation: np.ndarray, observation_space: spaces.Box) -> bool:
     """
     For box observation type, detects and validates the shape,

@@ -1,8 +1,8 @@
-import gym
+import gymnasium as gym
 import numpy as np
 import pytest
 import torch as th
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3.common.buffers import DictReplayBuffer, DictRolloutBuffer, ReplayBuffer, RolloutBuffer
 from stable_baselines3.common.env_checker import check_env

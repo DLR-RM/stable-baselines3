@@ -3,7 +3,7 @@ import pathlib
 import warnings
 from copy import deepcopy
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pytest
 import torch as th

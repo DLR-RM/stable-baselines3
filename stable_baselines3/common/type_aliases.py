@@ -4,7 +4,7 @@ import sys
 from enum import Enum
 from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch as th
 

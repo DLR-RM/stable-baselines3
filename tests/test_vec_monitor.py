@@ -4,7 +4,7 @@ import os
 import uuid
 import warnings
 
-import gym
+import gymnasium as gym
 import pandas
 import pytest
 

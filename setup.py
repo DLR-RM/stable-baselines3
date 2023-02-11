@@ -39,11 +39,11 @@ Most of the library tries to follow a sklearn-like syntax for the Reinforcement 
 Here is a quick example of how to train and run PPO on a cartpole environment:
 
 ```python
-import gym
+import gymnasium
 
 from stable_baselines3 import PPO
 
-env = gym.make("CartPole-v1")
+env = gymnasium.make("CartPole-v1")
 
 model = PPO("MlpPolicy", env, verbose=1)
 model.learn(total_timesteps=10_000)
@@ -60,7 +60,7 @@ for i in range(1000):
 
 ```
 
-Or just train a model with a one liner if [the environment is registered in Gym](https://www.gymlibrary.ml/content/environment_creation/) and if [the policy is registered](https://stable-baselines3.readthedocs.io/en/master/guide/custom_policy.html):
+Or just train a model with a one liner if [the environment is registered in Gymnasium](https://gymnasium.farama.org/tutorials/gymnasium_basics/environment_creation/) and if [the policy is registered](https://stable-baselines3.readthedocs.io/en/master/guide/custom_policy.html):
 
 ```python
 from stable_baselines3 import PPO
@@ -76,7 +76,7 @@ setup(
     packages=[package for package in find_packages() if package.startswith("stable_baselines3")],
     package_data={"stable_baselines3": ["py.typed", "version.txt"]},
     install_requires=[
-        "gym==0.26.2",
+        "gymnasium==0.26.2",
         "numpy",
         "torch>=1.11",
         'typing_extensions>=4.0,<5; python_version < "3.8.0"',

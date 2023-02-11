@@ -1,10 +1,10 @@
 import operator
 from typing import Any, Dict, Optional
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pytest
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3 import SAC, TD3, HerReplayBuffer
 from stable_baselines3.common.monitor import Monitor

@@ -1,10 +1,10 @@
 from typing import Dict, Optional
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pytest
 import torch as th
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3 import A2C, PPO, SAC
 from stable_baselines3.common.callbacks import BaseCallback

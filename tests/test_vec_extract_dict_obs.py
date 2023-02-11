@@ -1,5 +1,5 @@
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import VecExtractDictObs, VecMonitor

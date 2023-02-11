@@ -2,7 +2,7 @@ import warnings
 from typing import Any, Dict, Generic, List, Mapping, Optional, Tuple, TypeVar, Union
 
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
 

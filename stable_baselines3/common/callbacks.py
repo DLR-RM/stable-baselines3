@@ -3,7 +3,7 @@ import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
 
 from stable_baselines3.common.logger import Logger

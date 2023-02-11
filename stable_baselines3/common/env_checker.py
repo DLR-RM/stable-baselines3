@@ -1,9 +1,9 @@
 import warnings
 from typing import Any, Dict, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3.common.preprocessing import is_image_space_channels_first
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
@@ -215,7 +215,7 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
     """
     Check the returned values by the env when calling `.reset()` or `.step()` methods.
     """
-    # because env inherits from gym.Env, we assume that `reset()` and `step()` methods exists
+    # because env inherits from gymnasium.Env, we assume that `reset()` and `step()` methods exists
     reset_returns = env.reset()
     assert isinstance(reset_returns, tuple), "`reset()` must return a tuple (obs, info)"
     assert len(reset_returns) == 2, f"`reset()` must return a tuple of size 2 (obs, info), not {len(reset_returns)}"
@@ -300,8 +300,10 @@ def _check_spaces(env: gym.Env) -> None:
     assert hasattr(env, "observation_space"), "You must specify an observation space (cf gym.spaces)" + gym_spaces
     assert hasattr(env, "action_space"), "You must specify an action space (cf gym.spaces)" + gym_spaces
 
-    assert isinstance(env.observation_space, spaces.Space), "The observation space must inherit from gym.spaces" + gym_spaces
-    assert isinstance(env.action_space, spaces.Space), "The action space must inherit from gym.spaces" + gym_spaces
+    assert isinstance(env.observation_space, spaces.Space), (
+        "The observation space must inherit from gymnasium.spaces" + gym_spaces
+    )
+    assert isinstance(env.action_space, spaces.Space), "The action space must inherit from gymnasium.spaces" + gym_spaces
 
     if _is_goal_env(env):
         assert isinstance(

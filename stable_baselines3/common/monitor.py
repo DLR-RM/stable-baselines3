@@ -7,7 +7,7 @@ import time
 from glob import glob
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pandas
 

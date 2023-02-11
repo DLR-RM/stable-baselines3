@@ -1,10 +1,10 @@
 import types
 import warnings
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pytest
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.envs import (

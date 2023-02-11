@@ -16,7 +16,7 @@ Here is a quick example of how to train and run A2C on a CartPole environment:
 
 .. code-block:: python
 
-  import gym
+  import gymnasium as gym
 
   from stable_baselines3 import A2C
 

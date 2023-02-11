@@ -2,7 +2,7 @@ import json
 import os
 import uuid
 
-import gym
+import gymnasium as gym
 import pandas
 
 from stable_baselines3.common.monitor import Monitor, get_monitor_files, load_results

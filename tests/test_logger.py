@@ -4,11 +4,11 @@ import time
 from typing import Sequence
 from unittest import mock
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pytest
 import torch as th
-from gym import spaces
+from gymnasium import spaces
 from matplotlib import pyplot as plt
 from pandas.errors import EmptyDataError
 

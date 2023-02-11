@@ -1,7 +1,7 @@
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
 
 from stable_baselines3.common import type_aliases

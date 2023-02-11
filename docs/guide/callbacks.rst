@@ -210,7 +210,7 @@ It will save the best model if ``best_model_save_path`` folder is specified and 
 
 .. code-block:: python
 
-    import gym
+    import gymnasium as gym
 
     from stable_baselines3 import SAC
     from stable_baselines3.common.callbacks import EvalCallback
@@ -260,7 +260,7 @@ Alternatively, you can pass directly a list of callbacks to the ``learn()`` meth
 
 .. code-block:: python
 
-    import gym
+    import gymnasium as gym
 
     from stable_baselines3 import SAC
     from stable_baselines3.common.callbacks import CallbackList, CheckpointCallback, EvalCallback
@@ -290,7 +290,7 @@ It must be used with the :ref:`EvalCallback` and use the event triggered by a ne
 
 .. code-block:: python
 
-    import gym
+    import gymnasium as gym
 
     from stable_baselines3 import SAC
     from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
@@ -322,7 +322,7 @@ An :ref:`EventCallback` that will trigger its child callback every ``n_steps`` t
 
 .. code-block:: python
 
-  import gym
+  import gymnasium as gym
 
   from stable_baselines3 import PPO
   from stable_baselines3.common.callbacks import CheckpointCallback, EveryNTimesteps
@@ -379,7 +379,7 @@ It must be used with the :ref:`EvalCallback` and use the event triggered after e
 
 .. code-block:: python
 
-    import gym
+    import gymnasium as gym
 
     from stable_baselines3 import SAC
     from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnNoModelImprovement

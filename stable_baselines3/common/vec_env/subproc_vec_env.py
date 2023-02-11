@@ -3,9 +3,10 @@ import warnings
 from collections import OrderedDict
 from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
+from stable_baselines3.common.vec_env.patch_gym import _patch_env_generator
 
 from stable_baselines3.common.vec_env.base_vec_env import (
     CloudpickleWrapper,
@@ -26,7 +27,7 @@ def _worker(  # noqa: C901
     from stable_baselines3.common.utils import compat_gym_seed
 
     parent_remote.close()
-    env = env_fn_wrapper.var()
+    env = _patch_env_generator(env_fn_wrapper.var)()
     reset_info = {}
     while True:
         try:

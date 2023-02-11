@@ -1,8 +1,8 @@
 from typing import Dict, List, Tuple, Type, Union
 
-import gym
+import gymnasium as gym
 import torch as th
-from gym import spaces
+from gymnasium import spaces
 from torch import nn
 
 from stable_baselines3.common.preprocessing import get_flattened_obs_dim, is_image_space

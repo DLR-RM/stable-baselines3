@@ -4,9 +4,9 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union
 
 import cloudpickle
-import gym
+import gymnasium as gym
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 
 # Define type aliases here to avoid circular import
 # Used when we want to access one or more VecEnv
@@ -196,7 +196,7 @@ class VecEnv(ABC):
 
         elif mode and self.render_mode != mode:
             warnings.warn(
-                f"""Starting from gym v0.26, render modes are determined during the initialization of the environment.
+                f"""Starting from gymnasium v0.26, render modes are determined during the initialization of the environment.
                 We allow to pass a mode argument to maintain a backwards compatible VecEnv API, but the mode ({mode})
                 has to be the same as the environment render mode ({self.render_mode}) which is not the case."""
             )

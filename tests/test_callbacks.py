@@ -1,7 +1,7 @@
 import os
 import shutil
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pytest
 

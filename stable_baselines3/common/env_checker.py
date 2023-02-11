@@ -256,7 +256,7 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
         # Make mypy happy, already checked
         assert isinstance(observation_space, spaces.Dict)
         _check_goal_env_obs(obs, observation_space, "step")
-        _check_goal_env_compute_reward(obs, env, reward, info)
+        _check_goal_env_compute_reward(obs, env, reward, info)  # type: ignore[arg-type]
     elif isinstance(observation_space, spaces.Dict):
         assert isinstance(obs, dict), "The observation returned by `step()` must be a dictionary"
 

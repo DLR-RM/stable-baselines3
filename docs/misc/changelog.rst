@@ -27,6 +27,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed Atari wrapper that missed the reset condition (@luizapozzobon)
+- Added the argument ``dtype`` (default to ``float32``) to the noise for consistency with gym action (@sidney-tio)
 - Fixed PPO train/n_updates metric not accounting for early stopping (@adamfrly)
 
 Deprecations:
@@ -44,7 +45,7 @@ Documentation:
 - Renamed ``load_parameters`` to ``set_parameters`` (@DavyMorgan)
 - Clarified documentation about subproc multiprocessing for A2C (@Bonifatius94)
 - Fixed typo in ``A2C`` docstring (@AlexPasqua)
-
+- Renamed timesteps to episodes for ``log_interval`` description (@theSquaredError)
 
 Release 1.7.0 (2023-01-10)
 --------------------------
@@ -1230,4 +1231,4 @@ And all the contributors:
 @carlosluis @arjun-kg @tlpss
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
-@DavyMorgan @luizapozzobon @Bonifatius94
+@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError

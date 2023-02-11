@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
@@ -15,7 +16,9 @@ def test_deterministic_training_common(algo):
     kwargs = {"policy_kwargs": dict(net_arch=[64])}
     env_id = "Pendulum-v1"
     if algo in [TD3, SAC]:
-        kwargs.update({"action_noise": NormalActionNoise(0.0, 0.1), "learning_starts": 100, "train_freq": 4})
+        kwargs.update(
+            {"action_noise": NormalActionNoise(np.zeros(1), 0.1 * np.ones(1)), "learning_starts": 100, "train_freq": 4}
+        )
     else:
         if algo == DQN:
             env_id = "CartPole-v1"

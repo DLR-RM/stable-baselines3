@@ -7,6 +7,7 @@ from stable_baselines3.common.atari_wrappers import AtariWrapper
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.utils import compat_gym_seed
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv
+from stable_baselines3.common.vec_env.patch_gym import _patch_env
 
 
 def unwrap_wrapper(env: gym.Env, wrapper_class: Type[gym.Wrapper]) -> Optional[gym.Wrapper]:
@@ -96,6 +97,9 @@ def make_vec_env(
                     env = gym.make(env_id, **env_kwargs)
             else:
                 env = env_id(**env_kwargs)
+                # Patch to support gym 0.21/0.26 and gymnasium
+                env = _patch_env(env)
+
             if seed is not None:
                 compat_gym_seed(env, seed=seed + rank)
                 env.action_space.seed(seed + rank)

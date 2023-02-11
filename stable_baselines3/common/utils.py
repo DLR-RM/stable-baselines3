@@ -533,7 +533,7 @@ def compat_gym_seed(env: GymEnv, seed: int) -> None:
     :param env: The Gym environment.
     :param seed: The seed for the pseudo random generator
     """
-    if isinstance(env, gym.Env) and "seed" in signature(env.unwrapped.reset).parameters:
+    if "seed" in signature(env.unwrapped.reset).parameters:
         # gym >= 0.23.1
         env.reset(seed=seed)
     else:

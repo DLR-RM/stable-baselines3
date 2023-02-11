@@ -39,6 +39,7 @@ from stable_baselines3.common.vec_env import (
     is_vecenv_wrapped,
     unwrap_vec_normalize,
 )
+from stable_baselines3.common.vec_env.patch_gym import _patch_env
 
 SelfBaseAlgorithm = TypeVar("SelfBaseAlgorithm", bound="BaseAlgorithm")
 
@@ -204,6 +205,8 @@ class BaseAlgorithm(ABC):
         :return: The wrapped environment.
         """
         if not isinstance(env, VecEnv):
+            # Patch to support gym 0.21/0.26 and gymnasium
+            env = _patch_env(env)
             if not is_wrapped(env, Monitor) and monitor_wrapper:
                 if verbose >= 1:
                     print("Wrapping the env with a `Monitor` wrapper")

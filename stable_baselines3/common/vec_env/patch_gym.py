@@ -1,6 +1,6 @@
 import warnings
 from inspect import signature
-from typing import Callable
+from typing import Union
 
 import gymnasium
 
@@ -12,60 +12,52 @@ except ImportError:
     gym_installed = False
 
 
-def _patch_env_generator(env_fn: Callable[[], gymnasium.Env]) -> Callable[[], gymnasium.Env]:
+def _patch_env(env: Union[gym.Env, gymnasium.Env]) -> gymnasium.Env:
     """
     Adapted from https://github.com/thu-ml/tianshou.
 
-    Takes an environment generator and patches it to return Gymnasium envs.
-    This function takes the environment generator ``env_fn`` and returns a patched
-    generator, without invoking ``env_fn``. The original generator may return
-    Gymnasium or OpenAI Gym environments, but the patched generator wraps
-    the result of ``env_fn`` in a shimmy wrapper to convert it to Gymnasium,
+    Takes an environment and patches it to return Gymnasium env.
+    This function takes the environment object and returns a patched
+    env, using shimmy wrapper to convert it to Gymnasium,
     if necessary.
 
-    :param env_fn: a function that returns an environment
-    :return: Patched generator
+    :param env: A gym/gymnasium env
+    :return: Patched env (gymnasium env)
     """
 
-    def patched() -> gymnasium.Env:
-        env = env_fn()
+    # Gymnasium env, no patching to be done
+    if isinstance(env, gymnasium.Env):
+        return env
 
-        # Gymnasium env, no patching to be done
-        if isinstance(env, gymnasium.Env):
-            return env
-
-        if not gym_installed or not isinstance(env, gym.Env):
-            raise ValueError(
-                f"Environment generator returned a {type(env)}, not a Gymnasium "
-                f"environment. In this case, we expect OpenAI Gym to be "
-                f"installed and the environment to be an OpenAI Gym environment."
-            )
-
-        try:
-            import shimmy
-        except ImportError as e:
-            raise ImportError(
-                "Missing shimmy installation. You provided an environment generator "
-                "that returned an OpenAI Gym environment. "
-                "Stable-Baselines3 (SB3) has transitioned to using Gymnasium internally. "
-                "In order to use OpenAI Gym environments with SB3, you need to "
-                "install shimmy (`pip install shimmy`)."
-            ) from e
-
-        warnings.warn(
-            "You provided an environment generator that returned an OpenAI Gym "
-            "environment. We strongly recommend transitioning to Gymnasium "
-            "environments. "
-            "Stable-Baselines3 is automatically wrapping your environments in a compatibility "
-            "layer, which could potentially cause issues."
+    if not gym_installed or not isinstance(env, gym.Env):
+        raise ValueError(
+            f"Environment generator returned a {type(env)}, not a Gymnasium "
+            f"environment. In this case, we expect OpenAI Gym to be "
+            f"installed and the environment to be an OpenAI Gym environment."
         )
 
-        if "seed" in signature(env.unwrapped.reset).parameters:
-            # Gym 0.26+ env
-            return shimmy.GymV26CompatibilityV0(env=env)
-        else:
-            # Gym 0.21 env
-            # TODO: rename to GymV21CompatibilityV0
-            return shimmy.GymV22CompatibilityV0(env=env)
+    try:
+        import shimmy
+    except ImportError as e:
+        raise ImportError(
+            "Missing shimmy installation. You provided an environment generator "
+            "that returned an OpenAI Gym environment. "
+            "Stable-Baselines3 (SB3) has transitioned to using Gymnasium internally. "
+            "In order to use OpenAI Gym environments with SB3, you need to "
+            "install shimmy (`pip install shimmy`)."
+        ) from e
 
-    return patched
+    warnings.warn(
+        "You provided an environment generator that returned an OpenAI Gym "
+        "environment. We strongly recommend transitioning to Gymnasium "
+        "environments. "
+        "Stable-Baselines3 is automatically wrapping your environments in a compatibility "
+        "layer, which could potentially cause issues."
+    )
+
+    if "seed" in signature(env.unwrapped.reset).parameters:
+        # Gym 0.26+ env
+        return shimmy.GymV26CompatibilityV0(env=env)
+    # Gym 0.21 env
+    # TODO: rename to GymV21CompatibilityV0
+    return shimmy.GymV22CompatibilityV0(env=env)

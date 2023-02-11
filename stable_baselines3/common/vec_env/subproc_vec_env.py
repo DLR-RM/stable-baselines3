@@ -14,7 +14,7 @@ from stable_baselines3.common.vec_env.base_vec_env import (
     VecEnvObs,
     VecEnvStepReturn,
 )
-from stable_baselines3.common.vec_env.patch_gym import _patch_env_generator
+from stable_baselines3.common.vec_env.patch_gym import _patch_env
 
 
 def _worker(  # noqa: C901
@@ -27,7 +27,7 @@ def _worker(  # noqa: C901
     from stable_baselines3.common.utils import compat_gym_seed
 
     parent_remote.close()
-    env = _patch_env_generator(env_fn_wrapper.var)()
+    env = _patch_env(env_fn_wrapper.var())
     reset_info = {}
     while True:
         try:

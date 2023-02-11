@@ -7,7 +7,7 @@ import gymnasium as gym
 import numpy as np
 
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvIndices, VecEnvObs, VecEnvStepReturn
-from stable_baselines3.common.vec_env.patch_gym import _patch_env_generator
+from stable_baselines3.common.vec_env.patch_gym import _patch_env
 from stable_baselines3.common.vec_env.util import copy_obs_dict, dict_to_obs, obs_space_info
 
 
@@ -25,7 +25,7 @@ class DummyVecEnv(VecEnv):
     """
 
     def __init__(self, env_fns: List[Callable[[], gym.Env]]):
-        self.envs = [_patch_env_generator(fn)() for fn in env_fns]
+        self.envs = [_patch_env(fn()) for fn in env_fns]
         if len(set([id(env.unwrapped) for env in self.envs])) != len(self.envs):
             raise ValueError(
                 "You tried to create multiple environments, but the function to create them returned the same instance "

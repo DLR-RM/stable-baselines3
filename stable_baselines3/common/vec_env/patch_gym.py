@@ -5,7 +5,7 @@ from typing import Union
 import gymnasium
 
 try:
-    import gym
+    import gym  # pytype: disable=import-error
 
     gym_installed = True
 except ImportError:
@@ -37,7 +37,7 @@ def _patch_env(env: Union["gym.Env", gymnasium.Env]) -> gymnasium.Env:
         )
 
     try:
-        import shimmy
+        import shimmy  # pytype: disable=import-error
     except ImportError as e:
         raise ImportError(
             "Missing shimmy installation. You provided an environment generator "

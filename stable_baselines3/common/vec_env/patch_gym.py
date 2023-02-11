@@ -12,7 +12,7 @@ except ImportError:
     gym_installed = False
 
 
-def _patch_env(env: Union[gym.Env, gymnasium.Env]) -> gymnasium.Env:
+def _patch_env(env: Union["gym.Env", gymnasium.Env]) -> gymnasium.Env:
     """
     Adapted from https://github.com/thu-ml/tianshou.
 

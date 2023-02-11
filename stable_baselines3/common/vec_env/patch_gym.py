@@ -1,4 +1,5 @@
 import warnings
+from inspect import signature
 from typing import Callable
 
 import gymnasium
@@ -10,9 +11,10 @@ try:
 except ImportError:
     gym_installed = False
 
+
 def _patch_env_generator(env_fn: Callable[[], gymnasium.Env]) -> Callable[[], gymnasium.Env]:
     """
-    Taken from https://github.com/thu-ml/tianshou.
+    Adapted from https://github.com/thu-ml/tianshou.
 
     Takes an environment generator and patches it to return Gymnasium envs.
     This function takes the environment generator ``env_fn`` and returns a patched
@@ -58,16 +60,12 @@ def _patch_env_generator(env_fn: Callable[[], gymnasium.Env]) -> Callable[[], gy
             "layer, which could potentially cause issues."
         )
 
-        # gym version only goes to 0.26.2
-        gym_version = int(gym.__version__.split(".")[1])
-        if gym_version >= 26:
+        if "seed" in signature(env.unwrapped.reset).parameters:
+            # Gym 0.26+ env
             return shimmy.GymV26CompatibilityV0(env=env)
-        elif gym_version >= 21:
+        else:
+            # Gym 0.21 env
             # TODO: rename to GymV21CompatibilityV0
             return shimmy.GymV22CompatibilityV0(env=env)
-        else:
-            raise Exception(
-                f"Found OpenAI Gym version {gym.__version__}. " f"SB3 only supports OpenAI Gym environments of version>=0.21.0"
-            )
 
     return patched

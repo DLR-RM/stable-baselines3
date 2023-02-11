@@ -7,8 +7,9 @@ import gymnasium as gym
 import numpy as np
 
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvIndices, VecEnvObs, VecEnvStepReturn
-from stable_baselines3.common.vec_env.util import copy_obs_dict, dict_to_obs, obs_space_info
 from stable_baselines3.common.vec_env.patch_gym import _patch_env_generator
+from stable_baselines3.common.vec_env.util import copy_obs_dict, dict_to_obs, obs_space_info
+
 
 class DummyVecEnv(VecEnv):
     """

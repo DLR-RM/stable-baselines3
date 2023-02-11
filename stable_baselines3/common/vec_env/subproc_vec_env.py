@@ -6,7 +6,6 @@ from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
-from stable_baselines3.common.vec_env.patch_gym import _patch_env_generator
 
 from stable_baselines3.common.vec_env.base_vec_env import (
     CloudpickleWrapper,
@@ -15,6 +14,7 @@ from stable_baselines3.common.vec_env.base_vec_env import (
     VecEnvObs,
     VecEnvStepReturn,
 )
+from stable_baselines3.common.vec_env.patch_gym import _patch_env_generator
 
 
 def _worker(  # noqa: C901

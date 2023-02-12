@@ -154,11 +154,11 @@ def test_next_observations(rollout_buffer_cls):
         next_obs, reward, done, info = env.step(action)
         values, log_prob = th.zeros(1), th.ones(1)
         if isinstance(obs, dict):
-            buffer.add(obs, action, reward, (obs["observation"] == 1.), values, log_prob)
+            buffer.add(obs, action, reward, (obs["observation"] == 1.0), values, log_prob)
         else:
-            buffer.add(obs, action, reward, (obs == 1.), values, log_prob)
+            buffer.add(obs, action, reward, (obs == 1.0), values, log_prob)
         obs = next_obs
-    
+
     data = buffer.get(50)
     for dp in data:
         if isinstance(dp, DictRolloutBufferSamples):
@@ -166,5 +166,5 @@ def test_next_observations(rollout_buffer_cls):
                 assert th.equal((dp.observations[k] % 5) + 1, dp.next_observations[k])
                 assert th.equal(th.flatten(dp.observations[k] != 5), dp.has_next_observation)
         else:
-            assert th.equal((dp.observations % 5) + 1., dp.next_observations)
+            assert th.equal((dp.observations % 5) + 1.0, dp.next_observations)
             assert th.equal(th.flatten(dp.observations != 5), dp.has_next_observation)

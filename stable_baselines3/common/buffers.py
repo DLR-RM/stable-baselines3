@@ -459,6 +459,11 @@ class RolloutBuffer(BaseBuffer):
 
             for tensor in _tensor_names:
                 self.__dict__[tensor] = self.swap_and_flatten(self.__dict__[tensor])
+
+            is_terminal = np.roll(self.episode_starts, -1, axis=0)
+            is_terminal[-1] = np.ones_like(is_terminal[-1])
+            self.has_next_observation = 1.0 - self.swap_and_flatten(is_terminal)
+
             self.generator_ready = True
 
         # Return everything, don't create minibatches
@@ -475,8 +480,11 @@ class RolloutBuffer(BaseBuffer):
         batch_inds: np.ndarray,
         env: Optional[VecNormalize] = None,
     ) -> RolloutBufferSamples:  # type: ignore[signature-mismatch] #FIXME
+        n = self.observations.shape[0]
         data = (
             self.observations[batch_inds],
+            self.observations[(batch_inds + self.n_envs) % n],
+            self.has_next_observation[batch_inds].flatten(),
             self.actions[batch_inds],
             self.values[batch_inds].flatten(),
             self.log_probs[batch_inds].flatten(),
@@ -765,6 +773,11 @@ class DictRolloutBuffer(RolloutBuffer):
 
             for tensor in _tensor_names:
                 self.__dict__[tensor] = self.swap_and_flatten(self.__dict__[tensor])
+
+            is_terminal = np.roll(self.episode_starts, -1, axis=0)
+            is_terminal[-1] = np.ones_like(is_terminal[-1])
+            self.has_next_observation = 1.0 - self.swap_and_flatten(is_terminal)
+
             self.generator_ready = True
 
         # Return everything, don't create minibatches
@@ -781,8 +794,13 @@ class DictRolloutBuffer(RolloutBuffer):
         batch_inds: np.ndarray,
         env: Optional[VecNormalize] = None,
     ) -> DictRolloutBufferSamples:  # type: ignore[signature-mismatch] #FIXME
+        n = self.actions.shape[0]
         return DictRolloutBufferSamples(
             observations={key: self.to_torch(obs[batch_inds]) for (key, obs) in self.observations.items()},
+            next_observations={
+                key: self.to_torch(obs[(batch_inds + self.n_envs) % n]) for (key, obs) in self.observations.items()
+            },
+            has_next_observation=self.to_torch(self.has_next_observation[batch_inds].flatten()),
             actions=self.to_torch(self.actions[batch_inds]),
             old_values=self.to_torch(self.values[batch_inds].flatten()),
             old_log_prob=self.to_torch(self.log_probs[batch_inds].flatten()),

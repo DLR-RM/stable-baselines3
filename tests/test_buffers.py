@@ -6,7 +6,7 @@ from gym import spaces
 
 from stable_baselines3.common.buffers import DictReplayBuffer, DictRolloutBuffer, ReplayBuffer, RolloutBuffer
 from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.type_aliases import DictReplayBufferSamples, ReplayBufferSamples
+from stable_baselines3.common.type_aliases import DictReplayBufferSamples, DictRolloutBufferSamples, ReplayBufferSamples
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import VecNormalize
 
@@ -139,3 +139,32 @@ def test_device_buffer(replay_buffer_cls, device):
                 assert value[key].device.type == desired_device
         elif isinstance(value, th.Tensor):
             assert value.device.type == desired_device
+
+
+@pytest.mark.parametrize("rollout_buffer_cls", [RolloutBuffer, DictRolloutBuffer])
+def test_next_observations(rollout_buffer_cls):
+    env = {RolloutBuffer: DummyEnv, DictRolloutBuffer: DummyDictEnv}[rollout_buffer_cls]
+    env = make_vec_env(env)
+
+    buffer = rollout_buffer_cls(100, env.observation_space, env.action_space, device="cpu")
+
+    obs = env.reset()
+    for _ in range(100):
+        action = env.action_space.sample()
+        next_obs, reward, done, info = env.step(action)
+        values, log_prob = th.zeros(1), th.ones(1)
+        if isinstance(obs, dict):
+            buffer.add(obs, action, reward, (obs["observation"] == 1.0), values, log_prob)
+        else:
+            buffer.add(obs, action, reward, (obs == 1.0), values, log_prob)
+        obs = next_obs
+
+    data = buffer.get(50)
+    for dp in data:
+        if isinstance(dp, DictRolloutBufferSamples):
+            for k in dp.observations.keys():
+                assert th.equal((dp.observations[k] % 5) + 1, dp.next_observations[k])
+                assert th.equal(th.flatten(dp.observations[k] != 5), dp.has_next_observation)
+        else:
+            assert th.equal((dp.observations % 5) + 1.0, dp.next_observations)
+            assert th.equal(th.flatten(dp.observations != 5), dp.has_next_observation)

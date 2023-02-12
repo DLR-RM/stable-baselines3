@@ -17,6 +17,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Added ``repeat_action_probability`` argument in ``AtariWrapper``.
 - Only use ``NoopResetEnv`` and ``MaxAndSkipEnv`` when needed in ``AtariWrapper``
+- Added ``next_observations`` and ``has_next_observation`` fields to ``RolloutBufferSamples`` (@eohomegrownapps)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -1227,4 +1228,4 @@ And all the contributors:
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875 @yuanmingqi
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
-@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError
+@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @eohomegrownapps

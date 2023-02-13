@@ -184,7 +184,7 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
     if isinstance(observation_space, spaces.Discrete):
         # Since https://github.com/Farama-Foundation/Gymnasium/pull/141,
         # `sample()` will return a np.int64 instead of an int
-        assert np.issubdtype(obs, np.integer), f"The observation returned by `{method_name}()` method must be an int"
+        assert np.issubdtype(type(obs), np.integer), f"The observation returned by `{method_name}()` method must be an int"
     elif _is_numpy_array_space(observation_space):
         assert isinstance(obs, np.ndarray), f"The observation returned by `{method_name}()` method must be a numpy array"
 

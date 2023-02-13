@@ -691,7 +691,7 @@ class BaseAlgorithm(ABC):
 
         # Gym -> Gymnasium space conversion
         for key in {"observation_space", "action_space"}:
-            data[key] = _convert_space(data[key])
+            data[key] = _convert_space(data[key])  # type: disable=unsupported-operands
 
         if env is not None:
             # Wrap first if needed

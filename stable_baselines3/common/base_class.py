@@ -39,7 +39,7 @@ from stable_baselines3.common.vec_env import (
     is_vecenv_wrapped,
     unwrap_vec_normalize,
 )
-from stable_baselines3.common.vec_env.patch_gym import _patch_env
+from stable_baselines3.common.vec_env.patch_gym import _convert_space, _patch_env
 
 SelfBaseAlgorithm = TypeVar("SelfBaseAlgorithm", bound="BaseAlgorithm")
 
@@ -688,6 +688,10 @@ class BaseAlgorithm(ABC):
 
         if "observation_space" not in data or "action_space" not in data:
             raise KeyError("The observation_space and action_space were not given, can't verify new environments")
+
+        # Gym -> Gymnasium space conversion
+        for key in {"observation_space", "action_space"}:
+            data[key] = _convert_space(data[key])
 
         if env is not None:
             # Wrap first if needed

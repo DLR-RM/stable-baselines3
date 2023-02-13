@@ -135,7 +135,7 @@ class EpisodicLifeEnv(gym.Wrapper):
             obs, info = self.env.reset(**kwargs)
         else:
             # no-op step to advance from terminal/lost life state
-            obs, _, terminated, truncated, _ = self.env.step(0)
+            obs, _, terminated, truncated, info = self.env.step(0)
 
             # The no-op step can lead to a game over, so we need to check it again
             # to see if we should reset the environment and avoid the

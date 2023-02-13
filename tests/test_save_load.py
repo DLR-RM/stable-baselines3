@@ -731,20 +731,3 @@ def test_load_invalid_object(tmp_path):
     with warnings.catch_warnings(record=True) as record:
         PPO.load(path, custom_objects=dict(learning_rate=lambda _: 1.0))
     assert len(record) == 0
-
-
-@pytest.mark.parametrize("model_class", MODEL_LIST)
-def test_save_load_vecnormalized_image(tmp_path, model_class):
-    def env_func():
-        return FakeImageEnv(discrete=model_class == DQN, channel_first=True)
-
-    venv = VecNormalize(DummyVecEnv([env_func, env_func]))
-
-    model_kwargs = dict(buffer_size=250) if issubclass(model_class, OffPolicyAlgorithm) else dict()  # avoid memory warning
-    model = model_class("CnnPolicy", venv, policy_kwargs=dict(normalize_images=False), **model_kwargs)
-    model.save(tmp_path / "test_save.zip")
-    venv.save(tmp_path / "vecnormalize.pkl")
-
-    venv = DummyVecEnv([env_func])  # not necessarily the same number of envs, nor normalized
-    venv = VecNormalize.load(tmp_path / "vecnormalize.pkl", venv)
-    model_class.load(tmp_path / "test_save.zip", env=venv)

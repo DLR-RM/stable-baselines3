@@ -19,6 +19,13 @@ lint:
 	# exit-zero treats all errors as warnings.
 	flake8 ${LINT_PATHS} --count --exit-zero --statistics
 
+ruff:
+	# stop the build if there are Python syntax errors or undefined names
+	# see https://lintlyci.github.io/Flake8Rules/
+	ruff ${LINT_PATHS} --select=E9,F63,F7,F82 --show-source
+	# exit-zero treats all errors as warnings.
+	ruff ${LINT_PATHS} --exit-zero --line-length 127
+
 format:
 	# Sort imports
 	isort ${LINT_PATHS}

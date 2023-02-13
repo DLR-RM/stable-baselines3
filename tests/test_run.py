@@ -115,7 +115,6 @@ def test_dqn():
 
 @pytest.mark.parametrize("train_freq", [4, (4, "step"), (1, "episode")])
 def test_train_freq(tmp_path, train_freq):
-
     model = SAC(
         "MlpPolicy",
         "Pendulum-v1",

@@ -4,15 +4,19 @@ Changelog
 ==========
 
 
-Release 1.8.0a0 (WIP)
+Release 1.8.0a4 (WIP)
 --------------------------
 
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Removed shared layers in ``mlp_extractor`` (@AlexPasqua)
+- Refactored ``StackedObservations`` (it now handles dict obs, ``StackedDictObservations`` was removed)
 
 New Features:
 ^^^^^^^^^^^^^
+- Added ``repeat_action_probability`` argument in ``AtariWrapper``.
+- Only use ``NoopResetEnv`` and ``MaxAndSkipEnv`` when needed in ``AtariWrapper``
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -22,17 +26,26 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed Atari wrapper that missed the reset condition (@luizapozzobon)
+- Added the argument ``dtype`` (default to ``float32``) to the noise for consistency with gym action (@sidney-tio)
+- Fixed PPO train/n_updates metric not accounting for early stopping (@adamfrly)
 
 Deprecations:
 ^^^^^^^^^^^^^
 
 Others:
 ^^^^^^^
+- Fixed ``tests/test_tensorboard.py`` type hint
+- Fixed ``tests/test_vec_normalize.py`` type hint
+- Fixed ``stable_baselines3/common/monitor.py`` type hint
+- Added tests for StackedObservations
 
 Documentation:
 ^^^^^^^^^^^^^^
 - Renamed ``load_parameters`` to ``set_parameters`` (@DavyMorgan)
-
+- Clarified documentation about subproc multiprocessing for A2C (@Bonifatius94)
+- Fixed typo in ``A2C`` docstring (@AlexPasqua)
+- Renamed timesteps to episodes for ``log_interval`` description (@theSquaredError)
 
 Release 1.7.0 (2023-01-10)
 --------------------------
@@ -1214,4 +1227,4 @@ And all the contributors:
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875 @yuanmingqi
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
-@DavyMorgan
+@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError

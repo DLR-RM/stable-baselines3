@@ -1,4 +1,5 @@
 import operator
+from typing import Any, Dict
 
 import gym
 import numpy as np
@@ -20,7 +21,7 @@ ENV_ID = "Pendulum-v1"
 
 
 class DummyRewardEnv(gym.Env):
-    metadata = {}
+    metadata: Dict[str, Any] = {}
 
     def __init__(self, return_reward_idx=0):
         self.action_space = spaces.Discrete(2)
@@ -177,7 +178,7 @@ def _make_warmstart_dict_env(**kwargs):
 
 def test_runningmeanstd():
     """Test RunningMeanStd object"""
-    for (x_1, x_2, x_3) in [
+    for x_1, x_2, x_3 in [
         (np.random.randn(3), np.random.randn(4), np.random.randn(5)),
         (np.random.randn(3, 2), np.random.randn(4, 2), np.random.randn(5, 2)),
     ]:
@@ -335,7 +336,6 @@ def test_normalize_dict_selected_keys():
 @pytest.mark.parametrize("model_class", [SAC, TD3, HerReplayBuffer])
 @pytest.mark.parametrize("online_sampling", [False, True])
 def test_offpolicy_normalization(model_class, online_sampling):
-
     if online_sampling and model_class != HerReplayBuffer:
         pytest.skip()
 

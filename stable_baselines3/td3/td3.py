@@ -94,7 +94,6 @@ class TD3(OffPolicyAlgorithm):
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
     ):
-
         super().__init__(
             policy,
             env,
@@ -151,7 +150,6 @@ class TD3(OffPolicyAlgorithm):
 
         actor_losses, critic_losses = [], []
         for _ in range(gradient_steps):
-
             self._n_updates += 1
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
@@ -210,7 +208,6 @@ class TD3(OffPolicyAlgorithm):
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
     ) -> SelfTD3:
-
         return super().learn(
             total_timesteps=total_timesteps,
             callback=callback,

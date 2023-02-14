@@ -450,7 +450,6 @@ The parking env is a goal-conditioned continuous control task, in which the vehi
       replay_buffer_kwargs=dict(
         n_sampled_goal=n_sampled_goal,
         goal_selection_strategy="future",
-        online_sampling=True,
       ),
       verbose=1,
       buffer_size=int(1e6),

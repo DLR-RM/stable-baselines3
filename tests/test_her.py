@@ -27,15 +27,11 @@ def test_import_error():
 
 @pytest.mark.parametrize("n_envs", [1, 2])
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
-@pytest.mark.parametrize("online_sampling", [True, False])
 @pytest.mark.parametrize("image_obs_space", [True, False])
-def test_her(n_envs, model_class, online_sampling, image_obs_space):
+def test_her(n_envs, model_class, image_obs_space):
     """
     Test Hindsight Experience Replay.
     """
-    if n_envs > 1 and not online_sampling:
-        pytest.skip("Offline sampling is not compatible with multiprocessing")
-
     n_bits = 4
 
     def env_fn():
@@ -54,7 +50,6 @@ def test_her(n_envs, model_class, online_sampling, image_obs_space):
         replay_buffer_kwargs=dict(
             n_sampled_goal=2,
             goal_selection_strategy="future",
-            online_sampling=online_sampling,
         ),
         train_freq=4,
         gradient_steps=n_envs,
@@ -89,13 +84,11 @@ def test_multiprocessing(model_class, image_obs_space):
         GoalSelectionStrategy.FUTURE,
     ],
 )
-@pytest.mark.parametrize("online_sampling", [True, False])
-def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
+def test_goal_selection_strategy(goal_selection_strategy):
     """
     Test different goal strategies.
     """
-    # Offline sampling is not compatible with multiprocessing
-    n_envs = 2 if online_sampling else 1
+    n_envs = 2
 
     def env_fn():
         return BitFlippingEnv(continuous=True)
@@ -110,7 +103,6 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
         replay_buffer_class=HerReplayBuffer,
         replay_buffer_kwargs=dict(
             goal_selection_strategy=goal_selection_strategy,
-            online_sampling=online_sampling,
             n_sampled_goal=2,
         ),
         train_freq=4,
@@ -126,17 +118,14 @@ def test_goal_selection_strategy(goal_selection_strategy, online_sampling):
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
 @pytest.mark.parametrize("use_sde", [False, True])
-@pytest.mark.parametrize("online_sampling", [False, True])
-def test_save_load(tmp_path, model_class, use_sde, online_sampling):
+def test_save_load(tmp_path, model_class, use_sde):
     """
     Test if 'save' and 'load' saves and loads model correctly
     """
     if use_sde and model_class != SAC:
         pytest.skip("Only SAC has gSDE support")
 
-    # Offline sampling is not compatible with multiprocessing
-    n_envs = 2 if online_sampling else 1
-
+    n_envs = 2
     n_bits = 4
 
     def env_fn():
@@ -154,7 +143,6 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
         replay_buffer_kwargs=dict(
             n_sampled_goal=2,
             goal_selection_strategy="future",
-            online_sampling=online_sampling,
         ),
         verbose=0,
         tau=0.05,
@@ -234,15 +222,11 @@ def test_save_load(tmp_path, model_class, use_sde, online_sampling):
 
 
 @pytest.mark.parametrize("n_envs", [1, 2])
-@pytest.mark.parametrize("online_sampling", [False, True])
 @pytest.mark.parametrize("truncate_last_trajectory", [False, True])
-def test_save_load_replay_buffer(n_envs, tmp_path, recwarn, online_sampling, truncate_last_trajectory):
+def test_save_load_replay_buffer(n_envs, tmp_path, recwarn, truncate_last_trajectory):
     """
     Test if 'save_replay_buffer' and 'load_replay_buffer' works correctly
     """
-    # Offline sampling is not compatible with multiprocessing
-    n_envs = 2 if online_sampling else 1
-
     # remove gym warnings
     warnings.filterwarnings(action="ignore", category=DeprecationWarning)
     warnings.filterwarnings(action="ignore", category=UserWarning, module="gym")
@@ -261,7 +245,6 @@ def test_save_load_replay_buffer(n_envs, tmp_path, recwarn, online_sampling, tru
         replay_buffer_kwargs=dict(
             n_sampled_goal=2,
             goal_selection_strategy="future",
-            online_sampling=online_sampling,
         ),
         gradient_steps=n_envs,
         train_freq=4,
@@ -326,7 +309,6 @@ def test_full_replay_buffer():
         replay_buffer_kwargs=dict(
             n_sampled_goal=2,
             goal_selection_strategy="future",
-            online_sampling=True,
         ),
         gradient_steps=1,
         train_freq=4,
@@ -340,15 +322,13 @@ def test_full_replay_buffer():
     model.learn(total_timesteps=100)
 
 
-@pytest.mark.parametrize("online_sampling", [False, True])
 @pytest.mark.parametrize("n_bits", [10])
-def test_performance_her(online_sampling, n_bits):
+def test_performance_her(n_bits):
     """
     That DQN+HER can solve BitFlippingEnv.
     It should not work when n_sampled_goal=0 (DQN alone).
     """
-    # Offline sampling is not compatible with multiprocessing
-    n_envs = 2 if online_sampling else 1
+    n_envs = 2
 
     def env_fn():
         return BitFlippingEnv(n_bits=n_bits, continuous=False)
@@ -362,7 +342,6 @@ def test_performance_her(online_sampling, n_bits):
         replay_buffer_kwargs=dict(
             n_sampled_goal=5,
             goal_selection_strategy="future",
-            online_sampling=online_sampling,
         ),
         verbose=1,
         learning_rate=5e-4,

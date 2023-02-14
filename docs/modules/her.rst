@@ -69,9 +69,6 @@ This example is only to demonstrate the use of the library and its functions, an
     # Available strategies (cf paper): future, final, episode
     goal_selection_strategy = "future" # equivalent to GoalSelectionStrategy.FUTURE
 
-    # If True the HER transitions will get sampled online
-    online_sampling = True
-
     # Initialize the model
     model = model_class(
         "MultiInputPolicy",
@@ -81,7 +78,6 @@ This example is only to demonstrate the use of the library and its functions, an
         replay_buffer_kwargs=dict(
             n_sampled_goal=4,
             goal_selection_strategy=goal_selection_strategy,
-            online_sampling=online_sampling,
         ),
         verbose=1,
     )

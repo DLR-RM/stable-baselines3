@@ -17,13 +17,7 @@ class HerReplayBuffer(DictReplayBuffer):
     Hindsight Experience Replay (HER) buffer.
     Paper: https://arxiv.org/abs/1707.01495
 
-    .. warning::
-      For backward compatibility, we implement offline sampling. The offline
-      sampling mode only works for `n_envs == 1`.
-
     Replay buffer for sampling HER (Hindsight Experience Replay) transitions.
-    In the online sampling case, these new transitions will not be saved in the replay buffer
-    and will only be created at sampling time.
 
     :param buffer_size: Max number of element in the buffer
     :param observation_space: Observation space
@@ -40,8 +34,6 @@ class HerReplayBuffer(DictReplayBuffer):
         by sampling new goals.
     :param goal_selection_strategy: Strategy for sampling goals for replay.
         One of ['episode', 'final', 'future']
-    :param online_sampling: If False, virtual transitions are saved in the replay buffer.
-        Only works for `n_envs == 1`.
     """
 
     def __init__(
@@ -56,7 +48,6 @@ class HerReplayBuffer(DictReplayBuffer):
         handle_timeout_termination: bool = True,
         n_sampled_goal: int = 4,
         goal_selection_strategy: Union[GoalSelectionStrategy, str] = "future",
-        online_sampling: bool = True,
     ):
         super().__init__(
             buffer_size,
@@ -81,11 +72,8 @@ class HerReplayBuffer(DictReplayBuffer):
         ), f"Invalid goal selection strategy, please use one of {list(GoalSelectionStrategy)}"
 
         self.n_sampled_goal = n_sampled_goal
-        # if we sample her transitions online use custom replay buffer
-        self.online_sampling = online_sampling
-        if not self.online_sampling:
-            assert n_envs == 1, "Offline sampling is not compatible with multiprocessing."
-        # compute ratio between HER replays and regular replays in percent for online HER sampling
+
+        # Compute ratio between HER replays and regular replays in percent
         self.her_ratio = 1 - (1.0 / (self.n_sampled_goal + 1))
 
         self.infos = np.array([[{} for _ in range(self.n_envs)] for _ in range(self.buffer_size)])
@@ -99,7 +87,6 @@ class HerReplayBuffer(DictReplayBuffer):
         Gets state for pickling.
 
         Excludes self.env, as in general Env's may not be pickleable.
-        Note: when using offline sampling, this will also save the offline replay buffer.
         """
         state = self.__dict__.copy()
         # these attributes are not pickleable
@@ -137,7 +124,6 @@ class HerReplayBuffer(DictReplayBuffer):
         reward: np.ndarray,
         done: np.ndarray,
         infos: List[Dict[str, Any]],
-        is_virtual: bool = False,
     ) -> None:
         # When the buffer is full, we rewrite on old episodes. When we start to
         # rewrite on an old episodes, we want the whole old episode to be deleted
@@ -171,17 +157,8 @@ class HerReplayBuffer(DictReplayBuffer):
                 self.ep_length[episode, env_idx] = episode_end - episode_start
                 # Update the current episode start
                 self._current_ep_start[env_idx] = self.pos
-                if not self.online_sampling and not is_virtual:
-                    self._sample_offline(env_idx)
 
     def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> DictReplayBufferSamples:
-        if self.online_sampling:
-            return self._sample_online(batch_size, env)
-        else:
-            # virtual trnasition has already been saved
-            return super().sample(batch_size, env)
-
-    def _sample_online(self, batch_size: int, env: Optional[VecNormalize] = None) -> DictReplayBufferSamples:
         """
         Sample elements from the replay buffer.
 
@@ -226,54 +203,6 @@ class HerReplayBuffer(DictReplayBuffer):
             dones=dones,
             rewards=rewards,
         )
-
-    def _sample_offline(self, env_idx: int) -> None:
-        """
-        Samples virtual transitions from the last episode, and stores them in the buffer.
-
-        :param env_idx: Environment index
-        """
-        pos = self.pos - 1  # pos has already been incremented
-        ep_length = self.ep_length[pos, env_idx]
-        episode_start = self.ep_start[pos, env_idx]
-        episode_end = episode_start + ep_length
-        if episode_end < episode_start:
-            # Occurs when the buffer becomes full, the storage resumes at the
-            # beginning of the buffer. This can happen in the middle of an episode.
-            episode_end += self.buffer_size
-        batch_inds = np.tile(np.arange(episode_start, episode_end) % self.buffer_size, self.n_sampled_goal)
-        env_indices = np.repeat(env_idx, self.n_sampled_goal * ep_length)
-
-        # Special case when using the "future" goal sampling strategy, we cannot
-        # sample all transitions, we restrict the sampling domain to non-final transitions
-        if self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
-            is_last = batch_inds == (episode_start + ep_length - 1) % self.buffer_size
-            batch_inds = batch_inds[np.logical_not(is_last)]
-            env_indices = env_indices[np.logical_not(is_last)]
-            ep_length -= 1
-
-        # Edge case: episode of one timesteps with the future strategy
-        # no virtual transition can be created
-        if batch_inds.shape[0] > 0:
-            # All transitions are virtual
-            data = self._get_virtual_samples(batch_inds, env_indices)
-            # _get_virtual_samples returns done that are not due to timeout. Moreover,
-            # the last transition may have been deleted if the goal selection strategy
-            # is "future". Therefore, we impose here done=True for the last transition.
-            is_last = batch_inds == (episode_start + ep_length - 1) % self.buffer_size
-            dones = is_last.astype(np.float32)
-            infos = self.infos[batch_inds, env_indices]
-
-            for i in range(batch_inds.shape[0]):
-                self.add(
-                    {key: value[i].cpu().numpy() for key, value in data.observations.items()},
-                    {key: value[i].cpu().numpy() for key, value in data.next_observations.items()},
-                    data.actions[i].cpu().numpy(),
-                    data.rewards[i].cpu().numpy(),
-                    np.expand_dims(dones[i], axis=0),
-                    [infos[i]],
-                    is_virtual=True,
-                )
 
     def _get_real_samples(
         self, batch_inds: np.ndarray, env_indices: np.ndarray, env: Optional[VecNormalize] = None
@@ -405,7 +334,6 @@ class HerReplayBuffer(DictReplayBuffer):
 
     def truncate_last_trajectory(self) -> None:
         """
-        Only for online sampling, called when loading the replay buffer.
         If called, we assume that the last trajectory in the replay buffer was finished
         (and truncate it).
         If not called, we assume that we continue the same trajectory (same episode).

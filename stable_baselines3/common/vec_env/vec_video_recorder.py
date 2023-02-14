@@ -30,7 +30,6 @@ class VecVideoRecorder(VecEnvWrapper):
         video_length: int = 200,
         name_prefix: str = "rl-video",
     ):
-
         VecEnvWrapper.__init__(self, venv)
 
         self.env = venv

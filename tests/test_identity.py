@@ -45,6 +45,8 @@ def test_continuous(model_class):
         n_actions = 1
         action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
         kwargs["action_noise"] = action_noise
+    elif model_class in [A2C]:
+        kwargs["policy_kwargs"]["log_std_init"] = -0.5
 
     model = model_class("MlpPolicy", env, **kwargs).learn(n_steps)
 

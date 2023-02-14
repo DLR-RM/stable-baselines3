@@ -94,7 +94,6 @@ class DQN(OffPolicyAlgorithm):
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
     ):
-
         super().__init__(
             policy,
             env,
@@ -261,7 +260,6 @@ class DQN(OffPolicyAlgorithm):
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
     ) -> SelfDQN:
-
         return super().learn(
             total_timesteps=total_timesteps,
             callback=callback,

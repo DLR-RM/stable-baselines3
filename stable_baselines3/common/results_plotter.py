@@ -84,7 +84,7 @@ def plot_curves(
     plt.figure(title, figsize=figsize)
     max_x = max(xy[0][-1] for xy in xy_list)
     min_x = 0
-    for (_, (x, y)) in enumerate(xy_list):
+    for _, (x, y) in enumerate(xy_list):
         plt.scatter(x, y, s=2)
         # Do not plot the smoothed curve at all if the timeseries is shorter than window size.
         if x.shape[0] >= EPISODES_WINDOW:

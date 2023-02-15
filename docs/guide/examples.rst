@@ -726,7 +726,7 @@ SB3 and EnvPool
 
 `EnvPool <https://github.com/sail-sg/envpool>`_ is a C++-based batched environment pool with pybind11 and thread pool.
 Just like ProcgenEnv (see above), it is already vectorized.
-To use EnvPool with SB3, you must the ``EnvPoolAdapter`` from `RL Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
+To use EnvPool with SB3, you must use the ``EnvPoolAdapter`` from `RL Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
 
 
 .. code-block:: python

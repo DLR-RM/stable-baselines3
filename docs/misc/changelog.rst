@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.8.0a4 (WIP)
+Release 1.8.0a5 (WIP)
 --------------------------
 
 
@@ -29,6 +29,7 @@ Bug Fixes:
 - Fixed Atari wrapper that missed the reset condition (@luizapozzobon)
 - Added the argument ``dtype`` (default to ``float32``) to the noise for consistency with gym action (@sidney-tio)
 - Fixed PPO train/n_updates metric not accounting for early stopping (@adamfrly)
+- Fixed loading of normalized image-based environments
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -45,6 +46,8 @@ Documentation:
 - Renamed ``load_parameters`` to ``set_parameters`` (@DavyMorgan)
 - Clarified documentation about subproc multiprocessing for A2C (@Bonifatius94)
 - Fixed typo in ``A2C`` docstring (@AlexPasqua)
+- Renamed timesteps to episodes for ``log_interval`` description (@theSquaredError)
+- Removed note about gif creation for Atari games (@harveybellini)
 - Added ``EnvPoolAdaptater`` example in doc about EnvPool support 
 
 
@@ -212,7 +215,7 @@ Bug Fixes:
 - Fixed missing verbose parameter passing in the ``EvalCallback`` constructor (@burakdmb)
 - Fixed the issue that when updating the target network in DQN, SAC, TD3, the ``running_mean`` and ``running_var`` properties of batch norm layers are not updated (@honglu2875)
 - Fixed incorrect type annotation of the replay_buffer_class argument in ``common.OffPolicyAlgorithm`` initializer, where an instance instead of a class was required (@Rocamonde)
-- Fixed loading saved model with different number of envrionments
+- Fixed loading saved model with different number of environments
 - Removed ``forward()`` abstract method declaration from ``common.policies.BaseModel`` (already defined in ``torch.nn.Module``) to fix type errors in subclasses (@Rocamonde)
 - Fixed the return type of ``.load()`` and ``.learn()`` methods in ``BaseAlgorithm`` so that they now use ``TypeVar`` (@Rocamonde)
 - Fixed an issue where keys with different tags but the same key raised an error in ``common.logger.HumanOutputFormat`` (@Rocamonde and @AdamGleave)
@@ -1228,4 +1231,4 @@ And all the contributors:
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875 @yuanmingqi
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
-@DavyMorgan @luizapozzobon @Bonifatius94
+@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini

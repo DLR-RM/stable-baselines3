@@ -7,6 +7,7 @@ import pytest
 from gym import spaces
 
 from stable_baselines3 import SAC, TD3, HerReplayBuffer
+from stable_baselines3.common.envs import FakeImageEnv
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 from stable_baselines3.common.vec_env import (
@@ -116,6 +117,10 @@ def make_env():
 
 def make_dict_env():
     return Monitor(DummyDictEnv())
+
+
+def make_image_env():
+    return Monitor(FakeImageEnv())
 
 
 def check_rms_equal(rmsa, rmsb):
@@ -244,7 +249,7 @@ def test_obs_rms_vec_normalize():
     assert np.allclose(env.ret_rms.mean, 5.688, atol=1e-3)
 
 
-@pytest.mark.parametrize("make_env", [make_env, make_dict_env])
+@pytest.mark.parametrize("make_env", [make_env, make_dict_env, make_image_env])
 def test_vec_env(tmp_path, make_env):
     """Test VecNormalize Object"""
     clip_obs = 0.5

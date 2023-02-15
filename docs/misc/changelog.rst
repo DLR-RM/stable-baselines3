@@ -46,6 +46,7 @@ Documentation:
 - Clarified documentation about subproc multiprocessing for A2C (@Bonifatius94)
 - Fixed typo in ``A2C`` docstring (@AlexPasqua)
 - Renamed timesteps to episodes for ``log_interval`` description (@theSquaredError)
+- Removed note about gif creation for Atari games (@harveybellini)
 
 Release 1.7.0 (2023-01-10)
 --------------------------
@@ -1227,4 +1228,4 @@ And all the contributors:
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875 @yuanmingqi
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
-@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError
+@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini

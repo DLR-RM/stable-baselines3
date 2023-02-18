@@ -9,12 +9,13 @@ from gym import spaces
 
 import stable_baselines3 as sb3
 from stable_baselines3 import A2C
-from stable_baselines3.common.atari_wrappers import ClipRewardEnv, MaxAndSkipEnv
+from stable_baselines3.common.atari_wrappers import MaxAndSkipEnv
 from stable_baselines3.common.env_util import is_wrapped, make_atari_env, make_vec_env, unwrap_wrapper
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise, OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
 from stable_baselines3.common.utils import (
+    check_shape_equal,
     get_parameters_by_name,
     get_system_info,
     is_vectorized_observation,
@@ -55,30 +56,54 @@ def test_make_vec_env_func_checker():
     env.close()
 
 
-@pytest.mark.parametrize("env_id", ["BreakoutNoFrameskip-v4"])
-@pytest.mark.parametrize("n_envs", [1, 2])
-@pytest.mark.parametrize("wrapper_kwargs", [None, dict(clip_reward=False, screen_size=60)])
-def test_make_atari_env(env_id, n_envs, wrapper_kwargs):
-    env = make_atari_env(env_id, n_envs, wrapper_kwargs=wrapper_kwargs, monitor_dir=None, seed=0)
+# Use Asterix as it does not requires fire reset
+@pytest.mark.parametrize("env_id", ["BreakoutNoFrameskip-v4", "AsterixNoFrameskip-v4"])
+@pytest.mark.parametrize("noop_max", [0, 10])
+@pytest.mark.parametrize("action_repeat_probability", [0.0, 0.25])
+@pytest.mark.parametrize("frame_skip", [1, 4])
+@pytest.mark.parametrize("screen_size", [60])
+@pytest.mark.parametrize("terminal_on_life_loss", [True, False])
+@pytest.mark.parametrize("clip_reward", [True])
+def test_make_atari_env(
+    env_id, noop_max, action_repeat_probability, frame_skip, screen_size, terminal_on_life_loss, clip_reward
+):
+    n_envs = 2
+    wrapper_kwargs = {
+        "noop_max": noop_max,
+        "action_repeat_probability": action_repeat_probability,
+        "frame_skip": frame_skip,
+        "screen_size": screen_size,
+        "terminal_on_life_loss": terminal_on_life_loss,
+        "clip_reward": clip_reward,
+    }
+    venv = make_atari_env(
+        env_id,
+        n_envs=2,
+        wrapper_kwargs=wrapper_kwargs,
+        monitor_dir=None,
+        seed=0,
+    )
 
-    assert env.num_envs == n_envs
+    assert venv.num_envs == n_envs
 
-    obs = env.reset()
+    needs_fire_reset = env_id == "BreakoutNoFrameskip-v4"
+    expected_frame_number_low = frame_skip * 2 if needs_fire_reset else 0  # FIRE - UP on reset
+    expected_frame_number_high = expected_frame_number_low + noop_max
+    expected_shape = (n_envs, screen_size, screen_size, 1)
 
-    new_obs, reward, _, _ = env.step([env.action_space.sample() for _ in range(n_envs)])
+    obs = venv.reset()
+    frame_numbers = [env.unwrapped.ale.getEpisodeFrameNumber() for env in venv.envs]
+    for frame_number in frame_numbers:
+        assert expected_frame_number_low <= frame_number <= expected_frame_number_high
+    assert obs.shape == expected_shape
 
-    assert obs.shape == new_obs.shape
+    new_obs, reward, _, _ = venv.step([venv.action_space.sample() for _ in range(n_envs)])
 
-    # Wrapped into DummyVecEnv
-    wrapped_atari_env = env.envs[0]
-    if wrapper_kwargs is not None:
-        assert obs.shape == (n_envs, 60, 60, 1)
-        assert wrapped_atari_env.observation_space.shape == (60, 60, 1)
-        assert not isinstance(wrapped_atari_env.env, ClipRewardEnv)
-    else:
-        assert obs.shape == (n_envs, 84, 84, 1)
-        assert wrapped_atari_env.observation_space.shape == (84, 84, 1)
-        assert isinstance(wrapped_atari_env.env, ClipRewardEnv)
+    new_frame_numbers = [env.unwrapped.ale.getEpisodeFrameNumber() for env in venv.envs]
+    for frame_number, new_frame_number in zip(frame_numbers, new_frame_numbers):
+        assert new_frame_number - frame_number == frame_skip
+    assert new_obs.shape == expected_shape
+    if clip_reward:
         assert np.max(np.abs(reward)) < 1.0
 
 
@@ -485,3 +510,23 @@ def test_is_vectorized_observation():
         discrete_obs = np.ones((1, 1), dtype=np.int8)
         dict_obs = {"box": box_obs, "discrete": discrete_obs}
         is_vectorized_observation(dict_obs, dict_space)
+
+
+def test_check_shape_equal():
+    space1 = spaces.Box(low=0, high=1, shape=(2, 2))
+    space2 = spaces.Box(low=-1, high=1, shape=(2, 2))
+    check_shape_equal(space1, space2)
+
+    space1 = spaces.Box(low=0, high=1, shape=(2, 2))
+    space2 = spaces.Box(low=-1, high=2, shape=(3, 3))
+    with pytest.raises(AssertionError):
+        check_shape_equal(space1, space2)
+
+    space1 = spaces.Dict({"key1": spaces.Box(low=0, high=1, shape=(2, 2)), "key2": spaces.Box(low=0, high=1, shape=(2, 2))})
+    space2 = spaces.Dict({"key1": spaces.Box(low=-1, high=2, shape=(2, 2)), "key2": spaces.Box(low=-1, high=2, shape=(2, 2))})
+    check_shape_equal(space1, space2)
+
+    space1 = spaces.Dict({"key1": spaces.Box(low=0, high=1, shape=(2, 2)), "key2": spaces.Box(low=0, high=1, shape=(2, 2))})
+    space2 = spaces.Dict({"key1": spaces.Box(low=-1, high=2, shape=(3, 3)), "key2": spaces.Box(low=-1, high=2, shape=(2, 2))})
+    with pytest.raises(AssertionError):
+        check_shape_equal(space1, space2)

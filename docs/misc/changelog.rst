@@ -12,7 +12,7 @@ Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed shared layers in ``mlp_extractor`` (@AlexPasqua)
 - Refactored ``StackedObservations`` (it now handles dict obs, ``StackedDictObservations`` was removed)
-- You should now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
+- You must now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
 
 New Features:
 ^^^^^^^^^^^^^

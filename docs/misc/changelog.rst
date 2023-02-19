@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.8.0a5 (WIP)
+Release 1.8.0a6 (WIP)
 --------------------------
 
 
@@ -12,6 +12,7 @@ Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed shared layers in ``mlp_extractor`` (@AlexPasqua)
 - Refactored ``StackedObservations`` (it now handles dict obs, ``StackedDictObservations`` was removed)
+- You must now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
 
 New Features:
 ^^^^^^^^^^^^^

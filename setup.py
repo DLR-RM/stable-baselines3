@@ -77,7 +77,7 @@ setup(
     package_data={"stable_baselines3": ["py.typed", "version.txt"]},
     install_requires=[
         # TODO(antonin): update to point to a release number once it is merged
-        "git+https://github.com/pseudo-rnd-thoughts/Gymnasium@fix-wrapper-type-hints",
+        "gymnasium @ git+https://github.com/pseudo-rnd-thoughts/Gymnasium@fix-wrapper-type-hints",
         "numpy",
         "torch>=1.11",
         'typing_extensions>=4.0,<5; python_version < "3.8.0"',

@@ -92,7 +92,7 @@ def make_vec_env(
                 kwargs = {"render_mode": "rgb_array"}
                 kwargs.update(env_kwargs)
                 try:
-                    env = gym.make(env_id, **kwargs)
+                    env = gym.make(env_id, **kwargs)  # type: ignore[arg-type]
                 except TypeError:
                     env = gym.make(env_id, **env_kwargs)
             else:

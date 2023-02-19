@@ -1,8 +1,10 @@
-from typing import Dict, Tuple
+from typing import Dict, SupportsFloat
 
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
+
+from stable_baselines3.common.type_aliases import AtariResetReturn, AtariStepReturn
 
 try:
     import cv2  # pytype:disable=import-error
@@ -11,10 +13,8 @@ try:
 except ImportError:
     cv2 = None
 
-from stable_baselines3.common.type_aliases import Gym26StepReturn
 
-
-class StickyActionEnv(gym.Wrapper):
+class StickyActionEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
     """
     Sticky action.
 
@@ -30,17 +30,17 @@ class StickyActionEnv(gym.Wrapper):
         self.action_repeat_probability = action_repeat_probability
         assert env.unwrapped.get_action_meanings()[0] == "NOOP"  # type: ignore[attr-defined]
 
-    def reset(self, **kwargs) -> Tuple[np.ndarray, Dict]:
+    def reset(self, **kwargs) -> AtariResetReturn:
         self._sticky_action = 0  # NOOP
         return self.env.reset(**kwargs)
 
-    def step(self, action: int) -> Gym26StepReturn:
+    def step(self, action: int) -> AtariStepReturn:
         if self.np_random.random() >= self.action_repeat_probability:
             self._sticky_action = action
         return self.env.step(self._sticky_action)
 
 
-class NoopResetEnv(gym.Wrapper):
+class NoopResetEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
     """
     Sample initial states by taking random number of no-ops on reset.
     No-op is assumed to be action 0.
@@ -56,7 +56,7 @@ class NoopResetEnv(gym.Wrapper):
         self.noop_action = 0
         assert env.unwrapped.get_action_meanings()[0] == "NOOP"  # type: ignore[attr-defined]
 
-    def reset(self, **kwargs) -> Tuple[np.ndarray, Dict]:
+    def reset(self, **kwargs) -> AtariResetReturn:
         self.env.reset(**kwargs)
         if self.override_num_noops is not None:
             noops = self.override_num_noops
@@ -72,7 +72,7 @@ class NoopResetEnv(gym.Wrapper):
         return obs, info
 
 
-class FireResetEnv(gym.Wrapper):
+class FireResetEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
     """
     Take action on reset for environments that are fixed until firing.
 
@@ -84,7 +84,7 @@ class FireResetEnv(gym.Wrapper):
         assert env.unwrapped.get_action_meanings()[1] == "FIRE"  # type: ignore[attr-defined]
         assert len(env.unwrapped.get_action_meanings()) >= 3  # type: ignore[attr-defined]
 
-    def reset(self, **kwargs) -> Tuple[np.ndarray, Dict]:
+    def reset(self, **kwargs) -> AtariResetReturn:
         self.env.reset(**kwargs)
         obs, _, terminated, truncated, _ = self.env.step(1)
         if terminated or truncated:
@@ -95,7 +95,7 @@ class FireResetEnv(gym.Wrapper):
         return obs, {}
 
 
-class EpisodicLifeEnv(gym.Wrapper):
+class EpisodicLifeEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
     """
     Make end-of-life == end-of-episode, but only reset on true game over.
     Done by DeepMind for the DQN and co. since it helps value estimation.
@@ -108,7 +108,7 @@ class EpisodicLifeEnv(gym.Wrapper):
         self.lives = 0
         self.was_real_done = True
 
-    def step(self, action: int) -> Gym26StepReturn:
+    def step(self, action: int) -> AtariStepReturn:
         obs, reward, terminated, truncated, info = self.env.step(action)
         self.was_real_done = terminated or truncated
         # check current lives, make loss of life terminal,
@@ -122,7 +122,7 @@ class EpisodicLifeEnv(gym.Wrapper):
         self.lives = lives
         return obs, reward, terminated, truncated, info
 
-    def reset(self, **kwargs) -> Tuple[np.ndarray, Dict]:
+    def reset(self, **kwargs) -> AtariResetReturn:
         """
         Calls the Gym environment reset, only when lives are exhausted.
         This way all states are still reachable even though lives are episodic,
@@ -146,7 +146,7 @@ class EpisodicLifeEnv(gym.Wrapper):
         return obs, info
 
 
-class MaxAndSkipEnv(gym.Wrapper):
+class MaxAndSkipEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
     """
     Return only every ``skip``-th frame (frameskipping)
     and return the max between the two last frames.
@@ -164,7 +164,7 @@ class MaxAndSkipEnv(gym.Wrapper):
         self._obs_buffer = np.zeros((2,) + env.observation_space.shape, dtype=env.observation_space.dtype)
         self._skip = skip
 
-    def step(self, action: int) -> Gym26StepReturn:
+    def step(self, action: int) -> AtariStepReturn:
         """
         Step the environment with the given action
         Repeat action, sum reward, and max over last observations.
@@ -181,7 +181,7 @@ class MaxAndSkipEnv(gym.Wrapper):
                 self._obs_buffer[0] = obs
             if i == self._skip - 1:
                 self._obs_buffer[1] = obs
-            total_reward += reward
+            total_reward += float(reward)
             if done:
                 break
         # Note that the observation on the done=True frame
@@ -201,17 +201,17 @@ class ClipRewardEnv(gym.RewardWrapper):
     def __init__(self, env: gym.Env) -> None:
         super().__init__(env)
 
-    def reward(self, reward: float) -> float:
+    def reward(self, reward: SupportsFloat) -> float:
         """
         Bin reward to {+1, 0, -1} by its sign.
 
         :param reward:
         :return:
         """
-        return np.sign(reward)
+        return np.sign(float(reward))
 
 
-class WarpFrame(gym.ObservationWrapper):
+class WarpFrame(gym.ObservationWrapper[np.ndarray, int, np.ndarray]):
     """
     Convert to grayscale and warp frames to 84x84 (default)
     as done in the Nature paper and later work.
@@ -246,7 +246,7 @@ class WarpFrame(gym.ObservationWrapper):
         return frame[:, :, None]
 
 
-class AtariWrapper(gym.Wrapper):
+class AtariWrapper(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
     """
     Atari 2600 preprocessings
 

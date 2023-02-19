@@ -43,7 +43,7 @@ def _patch_env(env: Union["gym.Env", gymnasium.Env]) -> gymnasium.Env:  # pragma
             "Missing shimmy installation. You an OpenAI Gym environment. "
             "Stable-Baselines3 (SB3) has transitioned to using Gymnasium internally. "
             "In order to use OpenAI Gym environments with SB3, you need to "
-            "install shimmy (`pip install shimmy`)."
+            "install shimmy (`pip install 'shimmy>=0.2.1'`)."
         ) from e
 
     warnings.warn(
@@ -57,8 +57,7 @@ def _patch_env(env: Union["gym.Env", gymnasium.Env]) -> gymnasium.Env:  # pragma
         # Gym 0.26+ env
         return shimmy.GymV26CompatibilityV0(env=env)
     # Gym 0.21 env
-    # TODO: rename to GymV21CompatibilityV0
-    return shimmy.GymV22CompatibilityV0(env=env)
+    return shimmy.GymV21CompatibilityV0(env=env)
 
 
 def _convert_space(space: Union["gym.Space", gymnasium.Space]) -> gymnasium.Space:  # pragma: no cover
@@ -90,7 +89,7 @@ def _convert_space(space: Union["gym.Space", gymnasium.Space]) -> gymnasium.Spac
             "Missing shimmy installation. You provided an OpenAI Gym space. "
             "Stable-Baselines3 (SB3) has transitioned to using Gymnasium internally. "
             "In order to use OpenAI Gym space with SB3, you need to "
-            "install shimmy (`pip install shimmy`)."
+            "install shimmy (`pip install 'shimmy>=0.2.1'`)."
         ) from e
 
     warnings.warn(

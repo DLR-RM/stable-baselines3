@@ -124,7 +124,7 @@ setup(
             "opencv-python",
             "pygame",
             # For atari games,
-            "shimmy[atari]~=0.2",
+            "shimmy[atari]~=0.2.1",
             "autorom[accept-rom-license]~=0.4.2",
             "pillow",
             # Tensorboard support

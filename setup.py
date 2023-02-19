@@ -123,7 +123,9 @@ setup(
         "extra": [
             # For render
             "opencv-python",
-            "pygame",
+            'pygame; python_version >= "3.8.0"',
+            # See https://github.com/pygame/pygame/issues/3572
+            'pygame>=2.0,<2.1.3; python_version < "3.8.0"',
             # For atari games,
             "shimmy[atari]~=0.2.1",
             "autorom[accept-rom-license]~=0.4.2",

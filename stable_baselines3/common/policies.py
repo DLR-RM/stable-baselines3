@@ -118,26 +118,14 @@ class BaseModel(nn.Module):
         """Helper method to create a features extractor."""
         return self.features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
 
-    def extract_features(self, obs: th.Tensor, features_extractor: Optional[BaseFeaturesExtractor] = None) -> th.Tensor:
+    def extract_features(self, obs: th.Tensor, features_extractor: BaseFeaturesExtractor) -> th.Tensor:
         """
         Preprocess the observation if needed and extract features.
 
          :param obs: The observation
-         :param features_extractor: The features extractor to use. If it is set to None,
-            the features extractor of the policy is used.
-         :return: The features
+         :param features_extractor: The features extractor to use.
+         :return: The extracted features
         """
-        if features_extractor is None:
-            warnings.warn(
-                (
-                    "When calling extract_features(), you should explicitely pass a features_extractor as parameter. "
-                    "This will be mandatory in Stable-Baselines v1.8.0"
-                ),
-                DeprecationWarning,
-            )
-
-        features_extractor = features_extractor or self.features_extractor
-        assert features_extractor is not None, "No features extractor was set"
         preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
         return features_extractor(preprocessed_obs)
 

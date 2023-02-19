@@ -769,10 +769,6 @@ Record a mp4 video (here using a random agent).
 Bonus: Make a GIF of a Trained Agent
 ------------------------------------
 
-.. note::
-  For Atari games, you need to use a screen recorder such as `Kazam <https://launchpad.net/kazam>`_.
-  And then convert the video using `ffmpeg <https://superuser.com/questions/556029/how-do-i-convert-a-video-to-gif-using-ffmpeg-with-reasonable-quality>`_
-
 .. code-block:: python
 
   import imageio

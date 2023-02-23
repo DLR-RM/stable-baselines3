@@ -49,6 +49,8 @@ Documentation:
 - Fixed typo in ``A2C`` docstring (@AlexPasqua)
 - Renamed timesteps to episodes for ``log_interval`` description (@theSquaredError)
 - Removed note about gif creation for Atari games (@harveybellini)
+- Added ``EnvPoolAdaptater`` example in doc about EnvPool support 
+
 
 Release 1.7.0 (2023-01-10)
 --------------------------

@@ -721,13 +721,39 @@ to keep track of the agent progress.
   model.learn(10_000)
 
 
-SB3 with EnvPool or Isaac Gym
------------------------------
+SB3 and EnvPool
+---------------
 
-Just like Procgen (see above), `EnvPool <https://github.com/sail-sg/envpool>`_ and `Isaac Gym <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_ accelerate the environment by
+`EnvPool <https://github.com/sail-sg/envpool>`_ is a C++-based batched environment pool with pybind11 and thread pool.
+Just like ProcgenEnv (see above), it is already vectorized.
+To use EnvPool with SB3, you must use the ``EnvPoolAdapter`` from `RL Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
+
+
+.. code-block:: python
+
+  import envpool
+  from rl_zoo3.vec_env_wrappers import EnvPoolAdapter
+
+  from stable_baselines3 import PPO
+  from stable_baselines3.common.vec_env import VecMonitor
+
+  # Create the environment (VizDoom/Basic-v1)
+  venv = EnvPoolAdapter(envpool.make("Basic-v1", env_type="gym", num_envs=16, seed=42))
+
+  # Wrap with a VecMonitor to collect stats and avoid errors
+  venv = VecMonitor(venv=venv)
+
+  model = PPO("CnnPolicy", venv, verbose=1)
+  model.learn(100_000)
+
+
+SB3 and Isaac Gym
+-----------------
+
+Just like Procgen and EnvPool (see above), `Isaac Gym <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_ accelerate the environment by
 already providing a vectorized implementation.
 
-To use SB3 with those tools, you must wrap the env with tool's specific ``VecEnvWrapper`` that will pre-process the data for SB3,
+To use SB3 with Isaac Gym, you must wrap the env with tool's specific ``VecEnvWrapper`` that will pre-process the data for SB3,
 you can find links to those wrappers in `issue #772 <https://github.com/DLR-RM/stable-baselines3/issues/772#issuecomment-1048657002>`_.
 
 

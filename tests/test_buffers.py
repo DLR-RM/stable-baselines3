@@ -34,9 +34,9 @@ class DummyEnv(gym.Env):
         self._t += 1
         index = self._t % len(self._observations)
         obs = self._observations[index]
-        done = truncated = self._t >= self._ep_length
+        terminated = truncated = self._t >= self._ep_length
         reward = self._rewards[index]
-        return obs, reward, done, truncated, {}
+        return obs, reward, terminated, truncated, {}
 
 
 class DummyDictEnv(gym.Env):
@@ -62,9 +62,9 @@ class DummyDictEnv(gym.Env):
         self._t += 1
         index = self._t % len(self._observations)
         obs = {key: self._observations[index] for key in self.observation_space.spaces.keys()}
-        done = truncated = self._t >= self._ep_length
+        terminated = truncated = self._t >= self._ep_length
         reward = self._rewards[index]
-        return obs, reward, done, truncated, {}
+        return obs, reward, terminated, truncated, {}
 
 
 @pytest.mark.parametrize("env_cls", [DummyEnv, DummyDictEnv])

@@ -477,10 +477,10 @@ The parking env is a goal-conditioned continuous control task, in which the vehi
   episode_reward = 0
   for _ in range(100):
       action, _ = model.predict(obs, deterministic=True)
-      obs, reward, done, truncated, info = env.step(action)
+      obs, reward, terminated, truncated, info = env.step(action)
       env.render()
       episode_reward += reward
-      if done or truncated or info.get("is_success", False):
+      if terminated or truncated or info.get("is_success", False):
           print("Reward:", episode_reward, "Success?", info.get("is_success", False))
           episode_reward = 0.0
           obs, info = env.reset()

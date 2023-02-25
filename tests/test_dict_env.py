@@ -69,8 +69,8 @@ class DummyDictEnv(gym.Env):
 
     def step(self, action):
         reward = 0.0
-        done = truncated = False
-        return self.observation_space.sample(), reward, done, truncated, {}
+        terminated = truncated = False
+        return self.observation_space.sample(), reward, terminated, truncated, {}
 
     def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
         if seed is not None:

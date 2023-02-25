@@ -22,10 +22,10 @@ def test_monitor(tmp_path):
     ep_lengths = []
     ep_len, ep_reward = 0, 0
     for _ in range(total_steps):
-        _, reward, done, truncated, _ = monitor_env.step(monitor_env.action_space.sample())
+        _, reward, terminated, truncated, _ = monitor_env.step(monitor_env.action_space.sample())
         ep_len += 1
         ep_reward += reward
-        if done or truncated:
+        if terminated or truncated:
             ep_rewards.append(ep_reward)
             ep_lengths.append(ep_len)
             monitor_env.reset()
@@ -75,8 +75,8 @@ def test_monitor_load_results(tmp_path):
     monitor_env1.reset()
     episode_count1 = 0
     for _ in range(1000):
-        _, _, done, truncated, _ = monitor_env1.step(monitor_env1.action_space.sample())
-        if done or truncated:
+        _, _, terminated, truncated, _ = monitor_env1.step(monitor_env1.action_space.sample())
+        if terminated or truncated:
             episode_count1 += 1
             monitor_env1.reset()
 
@@ -98,8 +98,8 @@ def test_monitor_load_results(tmp_path):
         monitor_env2 = Monitor(env2, monitor_file2, override_existing=False)
         monitor_env2.reset()
         for _ in range(1000):
-            _, _, done, truncated, _ = monitor_env2.step(monitor_env2.action_space.sample())
-            if done or truncated:
+            _, _, terminated, truncated, _ = monitor_env2.step(monitor_env2.action_space.sample())
+            if terminated or truncated:
                 episode_count2 += 1
                 monitor_env2.reset()
 

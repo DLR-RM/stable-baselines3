@@ -5,7 +5,7 @@ import gym
 import numpy as np
 from gym import spaces
 
-from stable_baselines3.common.preprocessing import is_image_space_channels_first
+from stable_baselines3.common.preprocessing import check_for_nested_spaces, is_image_space_channels_first
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
 
 
@@ -380,6 +380,10 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
     if not skip_render_check:
         _check_render(env, warn=warn)  # pragma: no cover
 
-    # The check only works with numpy arrays
-    if _is_numpy_array_space(observation_space) and _is_numpy_array_space(action_space):
+    try:
+        check_for_nested_spaces(env.observation_space)
+        # The check doesn't support nested observations/dict actions
+        # A warning about it has already been emitted
         _check_nan(env)
+    except NotImplementedError:
+        pass

@@ -35,8 +35,8 @@ class DummyRewardEnv(gym.Env):
         self.t += 1
         index = (self.t + self.return_reward_idx) % len(self.returned_rewards)
         returned_value = self.returned_rewards[index]
-        done = truncated = self.t == len(self.returned_rewards)
-        return np.array([returned_value]), returned_value, done, truncated, {}
+        terminated = truncated = self.t == len(self.returned_rewards)
+        return np.array([returned_value]), returned_value, terminated, truncated, {}
 
     def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
         if seed is not None:

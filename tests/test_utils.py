@@ -229,8 +229,8 @@ class AlwaysDoneWrapper(gym.Wrapper):
         self.needs_reset = True
 
     def step(self, action):
-        obs, reward, done, truncated, info = self.env.step(action)
-        self.needs_reset = done or truncated
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        self.needs_reset = terminated or truncated
         self.last_obs = obs
         return obs, reward, True, truncated, info
 

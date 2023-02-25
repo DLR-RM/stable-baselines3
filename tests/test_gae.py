@@ -32,17 +32,17 @@ class CustomEnv(gym.Env):
     def step(self, action):
         self.n_steps += 1
 
-        done = truncated = False
+        terminated = truncated = False
         reward = 0.0
         if self.n_steps >= self.max_steps:
             reward = 1.0
-            done = True
+            terminated = True
             # To simplify GAE computation checks,
             # we do not consider truncation here.
             # Truncations are checked in InfiniteHorizonEnv
             truncated = False
 
-        return self.observation_space.sample(), reward, done, truncated, {}
+        return self.observation_space.sample(), reward, terminated, truncated, {}
 
 
 class InfiniteHorizonEnv(gym.Env):

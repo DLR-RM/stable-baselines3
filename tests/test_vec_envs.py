@@ -42,8 +42,8 @@ class CustomGymEnv(gym.Env):
         reward = float(np.random.rand())
         self._choose_next_state()
         self.current_step += 1
-        done = truncated = self.current_step >= self.ep_length
-        return self.state, reward, done, truncated, {}
+        terminated = truncated = self.current_step >= self.ep_length
+        return self.state, reward, terminated, truncated, {}
 
     def _choose_next_state(self):
         self.state = self.observation_space.sample()
@@ -178,8 +178,8 @@ class StepEnv(gym.Env):
     def step(self, action):
         prev_step = self.current_step
         self.current_step += 1
-        done = truncated = self.current_step >= self.max_steps
-        return np.array([prev_step], dtype="int"), 0.0, done, truncated, {}
+        terminated = truncated = self.current_step >= self.max_steps
+        return np.array([prev_step], dtype="int"), 0.0, terminated, truncated, {}
 
 
 @pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)

@@ -81,7 +81,7 @@ class VecCheckNan(VecEnvWrapper):
                 for idx, inner_val in enumerate(value):
                     found += self.check_array_value(f"{name}.{idx}", inner_val)
             else:
-                raise ValueError(f"Unsupported observation type {type(value)}.")
+                raise TypeError(f"Unsupported observation type {type(value)}.")
 
         if found:
             self._user_warned = True

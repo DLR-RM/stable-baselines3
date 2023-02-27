@@ -18,7 +18,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Added ``repeat_action_probability`` argument in ``AtariWrapper``.
 - Only use ``NoopResetEnv`` and ``MaxAndSkipEnv`` when needed in ``AtariWrapper``
-- Added suport for dict/tuple observations spaces for ``VecCheckNan``, the check is now active in the ``env_checker()`` (@DavyMorgan)
+- Added support for dict/tuple observations spaces for ``VecCheckNan``, the check is now active in the ``env_checker()`` (@DavyMorgan)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

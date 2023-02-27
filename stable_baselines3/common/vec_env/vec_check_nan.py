@@ -1,6 +1,8 @@
 import warnings
+from typing import List, Tuple
 
 import numpy as np
+from gym import spaces
 
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvObs, VecEnvStepReturn, VecEnvWrapper
 
@@ -26,6 +28,8 @@ class VecCheckNan(VecEnvWrapper):
 
         self._actions: np.ndarray
         self._observations: VecEnvObs
+        if isinstance(venv.action_space, spaces.Dict):
+            raise NotImplementedError("VecCheckNan doesn't support dict action spaces")
 
     def step_async(self, actions: np.ndarray) -> None:
         self._check_val(event="step_async", actions=actions)
@@ -44,19 +48,40 @@ class VecCheckNan(VecEnvWrapper):
         self._observations = observations
         return observations
 
+    def check_array_value(self, name: str, value: np.ndarray) -> List[Tuple[str, str]]:
+        """
+        Check for inf and NaN for a single numpy array.
+
+        :param name: Name of the value being check
+        :param value: Value (numpy array) to check
+        :return: A list of issues found.
+        """
+        found = []
+        has_nan = np.any(np.isnan(value))
+        has_inf = self.check_inf and np.any(np.isinf(value))
+        if has_inf:
+            found.append((name, "inf"))
+        if has_nan:
+            found.append((name, "nan"))
+        return found
+
     def _check_val(self, event: str, **kwargs) -> None:
         # if warn and warn once and have warned once: then stop checking
         if not self.raise_exception and self.warn_once and self._user_warned:
             return
 
         found = []
-        for name, val in kwargs.items():
-            has_nan = np.any(np.isnan(val))
-            has_inf = self.check_inf and np.any(np.isinf(val))
-            if has_inf:
-                found.append((name, "inf"))
-            if has_nan:
-                found.append((name, "nan"))
+        for name, value in kwargs.items():
+            if isinstance(value, (np.ndarray, list)):
+                found += self.check_array_value(name, np.asarray(value))
+            elif isinstance(value, dict):
+                for inner_name, inner_val in value.items():
+                    found += self.check_array_value(f"{name}.{inner_name}", inner_val)
+            elif isinstance(value, tuple):
+                for idx, inner_val in enumerate(value):
+                    found += self.check_array_value(f"{name}.{idx}", inner_val)
+            else:
+                raise TypeError(f"Unsupported observation type {type(value)}.")
 
         if found:
             self._user_warned = True

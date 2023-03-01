@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.8.0a5 (WIP)
+Release 1.8.0a7 (WIP)
 --------------------------
 
 
@@ -12,11 +12,13 @@ Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed shared layers in ``mlp_extractor`` (@AlexPasqua)
 - Refactored ``StackedObservations`` (it now handles dict obs, ``StackedDictObservations`` was removed)
+- You must now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
 
 New Features:
 ^^^^^^^^^^^^^
 - Added ``repeat_action_probability`` argument in ``AtariWrapper``.
 - Only use ``NoopResetEnv`` and ``MaxAndSkipEnv`` when needed in ``AtariWrapper``
+- Added support for dict/tuple observations spaces for ``VecCheckNan``, the check is now active in the ``env_checker()`` (@DavyMorgan)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -1229,4 +1231,4 @@ And all the contributors:
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875 @yuanmingqi
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
-@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini
+@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan

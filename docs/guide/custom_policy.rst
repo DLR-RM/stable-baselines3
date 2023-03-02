@@ -1,7 +1,7 @@
 .. _custom_policy:
 
-Custom Policy Network
-=====================
+Policy Networks
+===============
 
 Stable Baselines3 provides policy networks for images (CnnPolicies),
 other type of input features (MlpPolicies) and multiple different inputs (MultiInputPolicies).
@@ -61,7 +61,7 @@ You can visualize the architecture by printing ``model.policy`` (see `issue #329
 For 1D observation space, a 2 layers fully connected net is used with:
 
 - 64 units (per layer) for PPO/A2C/DQN
-- 256 units for sac
+- 256 units for SAC
 - [400, 300] units for TD3/DDPG (values are taken from the original TD3 paper)
 
 For image observation spaces, the "Nature CNN" (see code for more details) is used for feature extraction, and SAC/TD3 also keeps the same fully connected network after it.

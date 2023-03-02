@@ -129,8 +129,9 @@ class DQN(OffPolicyAlgorithm):
         # "epsilon" for the epsilon-greedy exploration
         self.exploration_rate = 0.0
         # Linear schedule will be defined in `_setup_model()`
-        self.exploration_schedule = None
-        self.q_net, self.q_net_target = None, None
+        self.exploration_schedule: Schedule
+        self.q_net: th.nn.Module
+        self.q_net_target: th.nn.Module
 
         if _init_setup_model:
             self._setup_model()
@@ -160,8 +161,8 @@ class DQN(OffPolicyAlgorithm):
             self.target_update_interval = max(self.target_update_interval // self.n_envs, 1)
 
     def _create_aliases(self) -> None:
-        self.q_net = self.policy.q_net
-        self.q_net_target = self.policy.q_net_target
+        self.q_net = self.policy.q_net  # type: ignore[attr-defined]
+        self.q_net_target = self.policy.q_net_target  # type: ignore[attr-defined]
 
     def _on_step(self) -> None:
         """
@@ -174,10 +175,14 @@ class DQN(OffPolicyAlgorithm):
             # Copy running stats, see GH issue #996
             polyak_update(self.batch_norm_stats, self.batch_norm_stats_target, 1.0)
 
+        # For type checker:
+        assert self.exploration_schedule is not None
         self.exploration_rate = self.exploration_schedule(self._current_progress_remaining)
         self.logger.record("rollout/exploration_rate", self.exploration_rate)
 
     def train(self, gradient_steps: int, batch_size: int = 100) -> None:
+        # For type checker:
+        assert isinstance(self.policy, BasePolicy)
         # Switch to train mode (this affects batch norm / dropout)
         self.policy.set_training_mode(True)
         # Update learning rate according to schedule
@@ -238,6 +243,9 @@ class DQN(OffPolicyAlgorithm):
         :return: the model's action and the next state
             (used in recurrent policies)
         """
+        # For type checker:
+        assert isinstance(self.policy, BasePolicy)
+
         if not deterministic and np.random.rand() < self.exploration_rate:
             if is_vectorized_observation(maybe_transpose(observation, self.observation_space), self.observation_space):
                 if isinstance(observation, dict):

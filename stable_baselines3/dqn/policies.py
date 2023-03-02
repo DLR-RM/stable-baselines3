@@ -62,6 +62,8 @@ class QNetwork(BasePolicy):
         :param obs: Observation
         :return: The estimated Q-Value for each action.
         """
+        # For type checker:
+        assert isinstance(self.features_extractor, BaseFeaturesExtractor)
         return self.q_net(self.extract_features(obs, self.features_extractor))
 
     def _predict(self, observation: th.Tensor, deterministic: bool = True) -> th.Tensor:
@@ -144,7 +146,8 @@ class DQNPolicy(BasePolicy):
             "normalize_images": normalize_images,
         }
 
-        self.q_net, self.q_net_target = None, None
+        self.q_net: QNetwork
+        self.q_net_target: QNetwork
         self._build(lr_schedule)
 
     def _build(self, lr_schedule: Schedule) -> None:
@@ -163,7 +166,11 @@ class DQNPolicy(BasePolicy):
         self.q_net_target.set_training_mode(False)
 
         # Setup optimizer with initial learning rate
-        self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
+        self.optimizer = self.optimizer_class(  # type: ignore[call-arg]
+            self.parameters(),
+            lr=lr_schedule(1),
+            **self.optimizer_kwargs,
+        )
 
     def make_q_net(self) -> QNetwork:
         # Make sure we always have separate networks for features extractors etc

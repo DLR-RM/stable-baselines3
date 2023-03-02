@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.8.0a7 (WIP)
+Release 1.8.0a8 (WIP)
 --------------------------
 
 
@@ -42,6 +42,7 @@ Others:
 - Fixed ``tests/test_vec_normalize.py`` type hint
 - Fixed ``stable_baselines3/common/monitor.py`` type hint
 - Added tests for StackedObservations
+- Fixed ``stable_baselines3/dqn/*.py`` type hints
 
 Documentation:
 ^^^^^^^^^^^^^^

@@ -118,9 +118,9 @@ class BaseAlgorithm(ABC):
         self._vec_normalize_env = unwrap_vec_normalize(env)
         self.verbose = verbose
         self.policy_kwargs = {} if policy_kwargs is None else policy_kwargs
-        self.observation_space = None  # type: Optional[spaces.Space]
-        self.action_space = None  # type: Optional[spaces.Space]
-        self.n_envs = None
+        self.observation_space: spaces.Space
+        self.action_space: spaces.Space
+        self.n_envs: int
         self.num_timesteps = 0
         # Used for updating schedules
         self._total_timesteps = 0

@@ -84,7 +84,7 @@ class BaseModel(nn.Module):
 
         self.optimizer_class = optimizer_class
         self.optimizer_kwargs = optimizer_kwargs
-        self.optimizer = None  # type: Optional[th.optim.Optimizer]
+        self.optimizer: th.optim.Optimizer
 
         self.features_extractor_class = features_extractor_class
         self.features_extractor_kwargs = features_extractor_kwargs

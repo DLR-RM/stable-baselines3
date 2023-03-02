@@ -1,7 +1,7 @@
 .. _custom_policy:
 
-Custom Policy Network
-=====================
+Policy Networks
+===============
 
 Stable Baselines3 provides policy networks for images (CnnPolicies),
 other type of input features (MlpPolicies) and multiple different inputs (MultiInputPolicies).
@@ -49,6 +49,28 @@ Each of these network have a features extractor followed by a fully-connected ne
 
 
 .. image:: ../_static/img/sb3_policy.png
+
+
+Default Network Architecture
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The default network architecture used by SB3 depends on the algorithm and the observation space.
+You can visualize the architecture by printing ``model.policy`` (see `issue #329 <https://github.com/DLR-RM/stable-baselines3/issues/329>`_).
+
+
+For 1D observation space, a 2 layers fully connected net is used with:
+
+- 64 units (per layer) for PPO/A2C/DQN
+- 256 units for SAC
+- [400, 300] units for TD3/DDPG (values are taken from the original TD3 paper)
+
+For image observation spaces, the "Nature CNN" (see code for more details) is used for feature extraction, and SAC/TD3 also keeps the same fully connected network after it.
+The other algorithms only have a linear layer after the CNN.
+The CNN is shared between actor and critic for A2C/PPO (on-policy algorithms) to reduce computation.
+Off-policy algorithms (TD3, DDPG, SAC, ...) have separate feature extractors: one for the actor and one for the critic, since the best performance is obtained with this configuration.
+
+For mixed observations (dictionary observations), the two architectures from above are used, i.e., CNN for images and then two layers fully-connected network
+(with a smaller output size for the CNN).
 
 
 

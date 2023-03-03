@@ -87,6 +87,7 @@ class BaseAlgorithm(ABC):
 
     # Policy aliases (see _get_policy_from_name())
     policy_aliases: Dict[str, Type[BasePolicy]] = {}
+    policy: BasePolicy
 
     def __init__(
         self,
@@ -129,7 +130,6 @@ class BaseAlgorithm(ABC):
         self.seed = seed
         self.action_noise: Optional[ActionNoise] = None
         self.start_time = None
-        self.policy: BasePolicy
         self.learning_rate = learning_rate
         self.tensorboard_log = tensorboard_log
         self.lr_schedule = None  # type: Optional[Schedule]

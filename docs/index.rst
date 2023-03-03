@@ -44,8 +44,8 @@ Main Features
    guide/algos
    guide/examples
    guide/vec_envs
-   guide/custom_env
    guide/custom_policy
+   guide/custom_env
    guide/callbacks
    guide/tensorboard
    guide/integrations

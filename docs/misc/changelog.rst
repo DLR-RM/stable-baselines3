@@ -42,6 +42,7 @@ Others:
 - Fixed ``tests/test_vec_normalize.py`` type hint
 - Fixed ``stable_baselines3/common/monitor.py`` type hint
 - Added tests for StackedObservations
+- Removed Gitlab CI file
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -50,6 +51,7 @@ Documentation:
 - Fixed typo in ``A2C`` docstring (@AlexPasqua)
 - Renamed timesteps to episodes for ``log_interval`` description (@theSquaredError)
 - Removed note about gif creation for Atari games (@harveybellini)
+- Added information about default network architecture
 
 Release 1.7.0 (2023-01-10)
 --------------------------

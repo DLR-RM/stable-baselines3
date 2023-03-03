@@ -348,7 +348,7 @@ def test_get_max_episode_length():
 
     # Set max_episode_steps to None
     env.spec.max_episode_steps = None
-    vec_env = DummyVecEnv([lambda: env])
+    vec_env = DummyVecEnv([lambda: gym.make(env.spec)])
     with pytest.raises(ValueError):
         get_time_limit(vec_env, current_max_episode_length=None)
 

@@ -135,7 +135,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.train_freq = train_freq
 
         self.actor = None  # type: Optional[th.nn.Module]
-        self.replay_buffer = None  # type: Optional[ReplayBuffer]
+        self.replay_buffer: Optional[ReplayBuffer] = None
         # Update policy keyword arguments
         if sde_support:
             self.policy_kwargs["use_sde"] = self.use_sde

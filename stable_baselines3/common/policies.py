@@ -207,6 +207,26 @@ class BaseModel(nn.Module):
         """
         self.train(mode)
 
+    def is_vectorized_observation(self, observation: Union[np.ndarray, Dict[str, np.ndarray]]) -> bool:
+        """
+        Check whether or not the observation is vectorized,
+        apply transposition to image (so that they are channel-first) if needed.
+        This is used in DQN when sampling random action (epsilon-greedy policy)
+
+        :param observation: the input observation to check
+        :return: whether the given observation is vectorized or not
+        """
+        vectorized_env = False
+        if isinstance(observation, dict):
+            for key, obs in observation.items():
+                obs_space = self.observation_space.spaces[key]
+                vectorized_env = vectorized_env or is_vectorized_observation(maybe_transpose(obs, obs_space), obs_space)
+        else:
+            vectorized_env = is_vectorized_observation(
+                maybe_transpose(observation, self.observation_space), self.observation_space
+            )
+        return vectorized_env
+
     def obs_to_tensor(self, observation: Union[np.ndarray, Dict[str, np.ndarray]]) -> Tuple[th.Tensor, bool]:
         """
         Convert an input observation to a PyTorch tensor that can be fed to a model.

@@ -129,7 +129,7 @@ class BaseAlgorithm(ABC):
         self.seed = seed
         self.action_noise: Optional[ActionNoise] = None
         self.start_time = None
-        self.policy = None
+        self.policy: BasePolicy
         self.learning_rate = learning_rate
         self.tensorboard_log = tensorboard_log
         self.lr_schedule = None  # type: Optional[Schedule]

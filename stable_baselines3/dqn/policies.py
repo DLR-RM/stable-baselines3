@@ -31,7 +31,7 @@ class QNetwork(BasePolicy):
         self,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        features_extractor: nn.Module,
+        features_extractor: BaseFeaturesExtractor,
         features_dim: int,
         net_arch: Optional[List[int]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
@@ -49,7 +49,6 @@ class QNetwork(BasePolicy):
 
         self.net_arch = net_arch
         self.activation_fn = activation_fn
-        self.features_extractor = features_extractor
         self.features_dim = features_dim
         action_dim = self.action_space.n  # number of actions
         q_net = create_mlp(self.features_dim, action_dim, self.net_arch, self.activation_fn)

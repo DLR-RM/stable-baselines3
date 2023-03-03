@@ -175,8 +175,6 @@ class DQN(OffPolicyAlgorithm):
             # Copy running stats, see GH issue #996
             polyak_update(self.batch_norm_stats, self.batch_norm_stats_target, 1.0)
 
-        # For type checker:
-        assert self.exploration_schedule is not None
         self.exploration_rate = self.exploration_schedule(self._current_progress_remaining)
         self.logger.record("rollout/exploration_rate", self.exploration_rate)
 

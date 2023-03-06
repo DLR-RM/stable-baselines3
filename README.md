@@ -206,9 +206,9 @@ pip install pytype mypy
 make type
 ```
 
-Codestyle check with `flake8`:
+Codestyle check with `ruff`:
 ```
-pip install flake8
+pip install ruff
 make lint
 ```
 

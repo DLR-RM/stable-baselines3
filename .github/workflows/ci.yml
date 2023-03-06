@@ -44,7 +44,7 @@ jobs:
     - name: Check codestyle
       run: |
         make check-codestyle
-    - name: Lint with flake8
+    - name: Lint with ruff
       run: |
         make lint
     - name: Test with pytest

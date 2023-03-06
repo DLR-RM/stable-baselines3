@@ -45,6 +45,7 @@ Others:
 - Removed Gitlab CI file
 - Moved from ``setup.cg`` to ``pyproject.toml`` configuration file
 - Switched from ``flake8`` to ``ruff``
+- Upgraded AutoROM to latest version
 
 Documentation:
 ^^^^^^^^^^^^^^

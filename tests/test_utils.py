@@ -28,7 +28,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 @pytest.mark.parametrize("env_id", ["CartPole-v1", lambda: gym.make("CartPole-v1")])
 @pytest.mark.parametrize("n_envs", [1, 2])
 @pytest.mark.parametrize("vec_env_cls", [None, SubprocVecEnv])
-@pytest.mark.parametrize("wrapper_class", [None, gym.wrappers.TimeLimit])
+@pytest.mark.parametrize("wrapper_class", [None, gym.wrappers.RecordEpisodeStatistics])
 def test_make_vec_env(env_id, n_envs, vec_env_cls, wrapper_class):
     env = make_vec_env(env_id, n_envs, vec_env_cls=vec_env_cls, wrapper_class=wrapper_class, monitor_dir=None, seed=0)
 

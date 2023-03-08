@@ -171,6 +171,11 @@ class HerReplayBuffer(DictReplayBuffer):
         # When the buffer is full, we rewrite on old episodes. We don't want to
         # sample incomplete episode transitions, so we have to eliminate some indexes.
         is_valid = self.ep_length > 0
+        if not np.any(is_valid):
+            raise RuntimeError(
+                "Unable to sample before the end of the first episode. We recommend choosing a value "
+                "for learning_starts that is greater than the maximum number of timesteps in the environment."
+            )
         # Get the indices of valid transitions
         # Example: if is_valid = [[True, False, False], [True, False, True]], then valid_indices = [0, 3, 5]
         valid_indices = np.flatnonzero(is_valid)

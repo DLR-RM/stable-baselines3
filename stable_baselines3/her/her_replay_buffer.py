@@ -131,8 +131,8 @@ class HerReplayBuffer(DictReplayBuffer):
         # (and not only the transition on which we rewrite). To do this, we set
         # the length of the old episode to 0, so it can't be sampled anymore.
         for env_idx in range(self.n_envs):
-            episode_start = self.ep_start[self.pos][env_idx]
-            episode_length = self.ep_length[self.pos][env_idx]
+            episode_start = self.ep_start[self.pos, env_idx]
+            episode_length = self.ep_length[self.pos, env_idx]
             if episode_length > 0:
                 episode_end = episode_start + episode_length
                 episode_indices = np.arange(self.pos, episode_end) % self.buffer_size

@@ -312,8 +312,9 @@ class HerReplayBuffer(DictReplayBuffer):
         """
         Sample goals based on goal_selection_strategy.
 
-        :param trans_coord: Coordinates of the transistions within the buffer
-        :return: Return sampled goals
+        :param batch_inds: Indices of the transitions
+        :param env_indices: Indices of the envrionments
+        :return: Sampled goals
         """
         batch_ep_start = self.ep_start[batch_inds, env_indices]
         batch_ep_length = self.ep_length[batch_inds, env_indices]

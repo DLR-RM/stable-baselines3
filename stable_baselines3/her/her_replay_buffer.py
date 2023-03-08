@@ -75,7 +75,7 @@ class HerReplayBuffer(DictReplayBuffer):
 
         # Compute ratio between HER replays and regular replays in percent
         self.her_ratio = 1 - (1.0 / (self.n_sampled_goal + 1))
-
+        # In some environments, the info dict is used to compute the reward. Then, we need to store it.
         self.infos = np.array([[{} for _ in range(self.n_envs)] for _ in range(self.buffer_size)])
 
         self.ep_start = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)

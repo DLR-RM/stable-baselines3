@@ -171,8 +171,12 @@ class HerReplayBuffer(DictReplayBuffer):
         # When the buffer is full, we rewrite on old episodes. We don't want to
         # sample incomplete episode transitions, so we have to eliminate some indexes.
         is_valid = self.ep_length > 0
+        # Get the indices of valid transitions
+        # Example: if is_valid = [[True, False, False], [True, False, True]], then valid_indices = [0, 3, 5]
         valid_indices = np.flatnonzero(is_valid)
         sampled_idx = np.random.choice(valid_indices, size=batch_size, replace=True)
+        # Unravel the indexes, i.e. recover the batch and env indices.
+        # Example: if sampled_idx = [0, 3, 5], then batch_inds = [0, 1, 1] and env_indices = [0, 0, 2]
         batch_inds, env_indices = np.unravel_index(sampled_idx, is_valid.shape)
 
         # Split the indexes between real and virtual transitions.

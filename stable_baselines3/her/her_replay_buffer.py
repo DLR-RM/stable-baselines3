@@ -325,7 +325,7 @@ class HerReplayBuffer(DictReplayBuffer):
 
         elif self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
             # replay with random state which comes from the same episode and was observed after current transition
-            current_indices_in_episode = batch_inds - batch_ep_start
+            current_indices_in_episode = (batch_inds - batch_ep_start) % self.buffer_size
             transition_indices_in_episode = np.random.randint(current_indices_in_episode, batch_ep_length)
 
         elif self.goal_selection_strategy == GoalSelectionStrategy.EPISODE:

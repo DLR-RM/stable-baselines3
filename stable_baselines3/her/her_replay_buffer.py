@@ -77,7 +77,8 @@ class HerReplayBuffer(DictReplayBuffer):
         self.her_ratio = 1 - (1.0 / (self.n_sampled_goal + 1))
         # In some environments, the info dict is used to compute the reward. Then, we need to store it.
         self.infos = np.array([[{} for _ in range(self.n_envs)] for _ in range(self.buffer_size)])
-
+        # To create virtual transitions, we need to know when an episode starts and ends.
+        # We use the following arrays to store the indices.
         self.ep_start = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
         self._current_ep_start = np.zeros(self.n_envs, dtype=np.int64)
         self.ep_length = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)

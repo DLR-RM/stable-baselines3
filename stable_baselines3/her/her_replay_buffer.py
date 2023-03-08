@@ -42,7 +42,7 @@ class HerReplayBuffer(DictReplayBuffer):
         observation_space: spaces.Space,
         action_space: spaces.Space,
         env: VecEnv,
-        device: Union[th.device, str] = "cpu",
+        device: Union[th.device, str] = "auto",
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,

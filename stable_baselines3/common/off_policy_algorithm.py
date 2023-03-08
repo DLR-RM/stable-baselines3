@@ -132,7 +132,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 self.replay_buffer_class = ReplayBuffer
         else:
             self.replay_buffer_class = replay_buffer_class
-        self.replay_buffer_kwargs = replay_buffer_kwargs if replay_buffer_kwargs is not None else {}
+        self.replay_buffer_kwargs = replay_buffer_kwargs or {}
         self._episode_storage = None
 
         # Save train freq parameter, will be converted later to TrainFreq object

@@ -178,15 +178,13 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 self.replay_buffer_class = ReplayBuffer
 
         if self.replay_buffer is None:
-            args = ()
             if issubclass(self.replay_buffer_class, HerReplayBuffer):
                 assert self.env is not None, "You must pass an environment when using `HerReplayBuffer`"
-                args = (self.env,)
+                self.replay_buffer_kwargs["env"] = self.env
             self.replay_buffer = self.replay_buffer_class(
                 self.buffer_size,
                 self.observation_space,
                 self.action_space,
-                *args,
                 device=self.device,
                 n_envs=self.n_envs,
                 optimize_memory_usage=self.optimize_memory_usage,

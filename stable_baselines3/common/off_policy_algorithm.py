@@ -125,10 +125,14 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.gradient_steps = gradient_steps
         self.action_noise = action_noise
         self.optimize_memory_usage = optimize_memory_usage
-        self.replay_buffer_class = replay_buffer_class
-        if replay_buffer_kwargs is None:
-            replay_buffer_kwargs = {}
-        self.replay_buffer_kwargs = replay_buffer_kwargs
+        if replay_buffer_class is None:
+            if isinstance(self.observation_space, spaces.Dict):
+                self.replay_buffer_class = DictReplayBuffer
+            else:
+                self.replay_buffer_class = ReplayBuffer
+        else:
+            self.replay_buffer_class = replay_buffer_class
+        self.replay_buffer_kwargs = replay_buffer_kwargs if replay_buffer_kwargs is not None else {}
         self._episode_storage = None
 
         # Save train freq parameter, will be converted later to TrainFreq object
@@ -169,13 +173,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     def _setup_model(self) -> None:
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
-
-        # Use DictReplayBuffer if needed
-        if self.replay_buffer_class is None:
-            if isinstance(self.observation_space, spaces.Dict):
-                self.replay_buffer_class = DictReplayBuffer
-            else:
-                self.replay_buffer_class = ReplayBuffer
 
         if self.replay_buffer is None:
             if issubclass(self.replay_buffer_class, HerReplayBuffer):

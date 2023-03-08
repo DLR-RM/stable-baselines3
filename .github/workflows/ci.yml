@@ -44,18 +44,18 @@ jobs:
         pip install .[extra,tests,docs]
         # Use headless version
         pip install opencv-python-headless
-    - name: Build the doc
-      run: |
-        make doc
-    - name: Type check
-      run: |
-        make type
-    - name: Check codestyle
-      run: |
-        make check-codestyle
     - name: Lint with ruff
       run: |
         make lint
+    - name: Build the doc
+      run: |
+        make doc
+    - name: Check codestyle
+      run: |
+        make check-codestyle
+    - name: Type check
+      run: |
+        make type
     - name: Test with pytest
       run: |
         make pytest

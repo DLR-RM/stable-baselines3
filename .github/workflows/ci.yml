@@ -36,10 +36,10 @@ jobs:
         pip install torch==1.11+cpu -f https://download.pytorch.org/whl/torch_stable.html
 
         # Install Atari Roms
-        pip install autorom
-        wget $ATARI_ROMS
-        base64 Roms.tar.gz.b64 --decode &> Roms.tar.gz
-        AutoROM --accept-license --source-file Roms.tar.gz
+        # pip install autorom
+        # wget $ATARI_ROMS
+        # base64 Roms.tar.gz.b64 --decode &> Roms.tar.gz
+        # AutoROM --accept-license --source-file Roms.tar.gz
 
         pip install .[extra,tests,docs]
         # Use headless version

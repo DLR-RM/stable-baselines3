@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.8.0a7 (WIP)
+Release 1.8.0a8 (WIP)
 --------------------------
 
 
@@ -43,6 +43,9 @@ Others:
 - Fixed ``stable_baselines3/common/monitor.py`` type hint
 - Added tests for StackedObservations
 - Removed Gitlab CI file
+- Moved from ``setup.cg`` to ``pyproject.toml`` configuration file
+- Switched from ``flake8`` to ``ruff``
+- Upgraded AutoROM to latest version
 
 Documentation:
 ^^^^^^^^^^^^^^

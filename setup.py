@@ -77,7 +77,7 @@ setup(
     package_data={"stable_baselines3": ["py.typed", "version.txt"]},
     install_requires=[
         # TODO(antonin): update to point to a release number once it is merged
-        "gymnasium @ git+https://github.com/pseudo-rnd-thoughts/Gymnasium@update-env-spec",
+        "gymnasium @ git+https://github.com/Farama-Foundation/Gymnasium@main",
         "numpy",
         "torch>=1.11",
         'typing_extensions>=4.0,<5; python_version < "3.8.0"',
@@ -87,8 +87,6 @@ setup(
         "pandas",
         # Plotting learning curves
         "matplotlib",
-        # gym and flake8 not compatible with importlib-metadata>5.0
-        "importlib-metadata~=4.13",
     ],
     extras_require={
         "tests": [
@@ -100,10 +98,8 @@ setup(
             # Type check
             "pytype",
             "mypy",
-            # Lint code
-            "flake8>=3.8",
-            # Find likely bugs
-            "flake8-bugbear",
+            # Lint code (flake8 replacement)
+            "ruff",
             # Sort imports
             "isort>=5.0",
             # Reformat
@@ -128,7 +124,7 @@ setup(
             'pygame>=2.0,<2.1.3; python_version < "3.8.0"',
             # For atari games,
             "shimmy[atari]~=0.2.1",
-            "autorom[accept-rom-license]~=0.4.2",
+            "autorom[accept-rom-license]~=0.5.5",
             "pillow",
             # Tensorboard support
             "tensorboard>=2.9.1",
@@ -151,6 +147,12 @@ setup(
     version=__version__,
     python_requires=">=3.7",
     # PyPI package information.
+    project_urls={
+        "Code": "https://github.com/DLR-RM/stable-baselines3",
+        "Documentation": "https://stable-baselines3.readthedocs.io/",
+        "SB3-Contrib": "https://github.com/Stable-Baselines-Team/stable-baselines3-contrib",
+        "RL-Zoo": "https://github.com/DLR-RM/rl-baselines3-zoo",
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",

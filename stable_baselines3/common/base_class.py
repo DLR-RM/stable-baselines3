@@ -617,8 +617,8 @@ class BaseAlgorithm(ABC):
                 f"expected {objects_needing_update}, got {updated_objects}"
             )
 
-    @classmethod  # noqa: C901
-    def load(
+    @classmethod
+    def load(  # noqa: C901
         cls: Type[SelfBaseAlgorithm],
         path: Union[str, pathlib.Path, io.BufferedIOBase],
         env: Optional[GymEnv] = None,

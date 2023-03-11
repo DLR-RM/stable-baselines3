@@ -86,7 +86,7 @@ setup(
         "pandas",
         # Plotting learning curves
         "matplotlib",
-        # gym and flake8 not compatible with importlib-metadata>5.0
+        # gym not compatible with importlib-metadata>5.0
         "importlib-metadata~=4.13",
     ],
     extras_require={
@@ -99,10 +99,8 @@ setup(
             # Type check
             "pytype",
             "mypy",
-            # Lint code
-            "flake8>=3.8",
-            # Find likely bugs
-            "flake8-bugbear",
+            # Lint code (flake8 replacement)
+            "ruff",
             # Sort imports
             "isort>=5.0",
             # Reformat
@@ -126,7 +124,7 @@ setup(
             "opencv-python",
             # For atari games,
             "ale-py==0.7.4",
-            "autorom[accept-rom-license]~=0.4.2",
+            "autorom[accept-rom-license]~=0.5.5",
             "pillow",
             # Tensorboard support
             "tensorboard>=2.9.1",
@@ -149,6 +147,12 @@ setup(
     version=__version__,
     python_requires=">=3.7",
     # PyPI package information.
+    project_urls={
+        "Code": "https://github.com/DLR-RM/stable-baselines3",
+        "Documentation": "https://stable-baselines3.readthedocs.io/",
+        "SB3-Contrib": "https://github.com/Stable-Baselines-Team/stable-baselines3-contrib",
+        "RL-Zoo": "https://github.com/DLR-RM/rl-baselines3-zoo",
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",

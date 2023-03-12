@@ -16,7 +16,7 @@ from stable_baselines3.common.vec_env.base_vec_env import (
 )
 
 
-def _worker(  # noqa: C901
+def _worker(
     remote: mp.connection.Connection,
     parent_remote: mp.connection.Connection,
     env_fn_wrapper: CloudpickleWrapper,

@@ -56,7 +56,7 @@ class StackedObservations(Generic[TObs]):
             low = np.repeat(observation_space.low, n_stack, axis=self.repeat_axis)
             high = np.repeat(observation_space.high, n_stack, axis=self.repeat_axis)
             self.stacked_observation_space = spaces.Box(low=low, high=high, dtype=observation_space.dtype)
-            self.stacked_obs = np.zeros((num_envs,) + self.stacked_shape, dtype=observation_space.dtype)
+            self.stacked_obs = np.zeros((num_envs, *self.stacked_shape), dtype=observation_space.dtype)
         else:
             raise TypeError(
                 f"StackedObservations only supports Box and Dict as observation spaces. {observation_space} was provided."

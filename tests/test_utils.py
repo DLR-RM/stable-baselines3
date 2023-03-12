@@ -441,7 +441,7 @@ def test_is_vectorized_observation():
     #     pass
     # All vectorized
     box_space = spaces.Box(-1, 1, shape=(2,))
-    box_obs = np.ones((1,) + box_space.shape)
+    box_obs = np.ones((1, *box_space.shape))
     assert is_vectorized_observation(box_obs, box_space)
 
     discrete_space = spaces.Discrete(2)
@@ -485,13 +485,13 @@ def test_is_vectorized_observation():
     # Vectorized with the wrong shape
     with pytest.raises(ValueError):
         discrete_obs = np.ones((1,), dtype=np.int8)
-        box_obs = np.ones((1, 2) + box_space.shape)
+        box_obs = np.ones((1, 2, *box_space.shape))
         dict_obs = {"box": box_obs, "discrete": discrete_obs}
         is_vectorized_observation(dict_obs, dict_space)
 
     # Weird shape: error
     with pytest.raises(ValueError):
-        discrete_obs = np.ones((1,) + box_space.shape, dtype=np.int8)
+        discrete_obs = np.ones((1, *box_space.shape), dtype=np.int8)
         is_vectorized_observation(discrete_obs, discrete_space)
 
     # wrong shape
@@ -506,7 +506,7 @@ def test_is_vectorized_observation():
 
     # Almost good shape: one dimension too much for Discrete obs
     with pytest.raises(ValueError):
-        box_obs = np.ones((1,) + box_space.shape)
+        box_obs = np.ones((1, *box_space.shape))
         discrete_obs = np.ones((1, 1), dtype=np.int8)
         dict_obs = {"box": box_obs, "discrete": discrete_obs}
         is_vectorized_observation(dict_obs, dict_space)

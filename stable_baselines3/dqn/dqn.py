@@ -122,7 +122,7 @@ class DQN(OffPolicyAlgorithm):
         self.exploration_initial_eps = exploration_initial_eps
         self.exploration_final_eps = exploration_final_eps
         self.exploration_fraction = exploration_fraction
-        self.target_update_interval = target_update_interval
+        self.tg_update_interval = target_update_interval
         # For updating the target network with multiple envs:
         self._n_calls = 0
         self.max_grad_norm = max_grad_norm
@@ -149,15 +149,17 @@ class DQN(OffPolicyAlgorithm):
         # Account for multiple environments
         # each call to step() corresponds to n_envs transitions
         if self.n_envs > 1:
-            if self.n_envs > self.target_update_interval:
+            if self.n_envs > self.tg_update_interval:
                 warnings.warn(
                     "The number of environments used is greater than the target network "
-                    f"update interval ({self.n_envs} > {self.target_update_interval}), "
+                    f"update interval ({self.n_envs} > {self.tg_update_interval}), "
                     "therefore the target network will be updated after each call to env.step() "
                     f"which corresponds to {self.n_envs} steps."
                 )
 
-            self.target_update_interval = max(self.target_update_interval // self.n_envs, 1)
+            self.target_update_interval = max(self.tg_update_interval // self.n_envs, 1)
+        else:
+            self.target_update_interval = self.tg_update_interval
 
     def _create_aliases(self) -> None:
         self.q_net = self.policy.q_net

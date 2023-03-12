@@ -40,7 +40,7 @@ jobs:
         base64 Roms.tar.gz.b64 --decode &> Roms.tar.gz
         AutoROM --accept-license --source-file Roms.tar.gz
 
-        pip install .[extra_no_atari,tests,docs]
+        pip install .[extra_no_roms,tests,docs]
         # Use headless version
         pip install opencv-python-headless
     - name: Lint with ruff

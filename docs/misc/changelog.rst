@@ -46,7 +46,7 @@ Others:
 - Moved from ``setup.cg`` to ``pyproject.toml`` configuration file
 - Switched from ``flake8`` to ``ruff``
 - Upgraded AutoROM to latest version
-- Added ``extra_no_atari`` option for package installation
+- Added ``extra_no_roms`` option for package installation without Atari Roms
 
 Documentation:
 ^^^^^^^^^^^^^^

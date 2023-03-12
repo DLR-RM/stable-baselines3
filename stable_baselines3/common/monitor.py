@@ -194,7 +194,7 @@ class ResultsWriter:
         mode = "w" if override_existing else "a"
         # Prevent newline issue on Windows, see GH issue #692
         self.file_handler = open(filename, f"{mode}t", newline="\n")
-        self.logger = csv.DictWriter(self.file_handler, fieldnames=("r", "l", "t") + extra_keys)
+        self.logger = csv.DictWriter(self.file_handler, fieldnames=("r", "l", "t", *extra_keys))
         if override_existing:
             self.file_handler.write(f"#{json.dumps(header)}\n")
             self.logger.writeheader()

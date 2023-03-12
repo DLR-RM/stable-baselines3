@@ -1,0 +1,93 @@
+[tool.ruff]
+# Same as Black.
+line-length = 127
+# Assume Python 3.7
+target-version = "py37"
+# See https://beta.ruff.rs/docs/rules/
+select = ["E", "F", "B", "UP", "C90", "RUF"]
+ignore = []
+
+[tool.ruff.per-file-ignores]
+# Default implementation in abstract methods
+"./stable_baselines3/common/callbacks.py"= ["B027"]
+"./stable_baselines3/common/noise.py"= ["B027"]
+
+
+[tool.ruff.mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 15
+
+[tool.black]
+line-length = 127
+
+[tool.isort]
+profile = "black"
+line_length = 127
+src_paths = ["stable_baselines3"]
+
+[tool.pytype]
+inputs = ["stable_baselines3"]
+disable = ["pyi-error"]
+
+[tool.mypy]
+ignore_missing_imports = true
+follow_imports = "silent"
+show_error_codes = true
+exclude = """(?x)(
+    stable_baselines3/a2c/a2c.py$
+    | stable_baselines3/common/base_class.py$
+    | stable_baselines3/common/buffers.py$
+    | stable_baselines3/common/callbacks.py$
+    | stable_baselines3/common/distributions.py$
+    | stable_baselines3/common/envs/bit_flipping_env.py$
+    | stable_baselines3/common/envs/identity_env.py$
+    | stable_baselines3/common/envs/multi_input_envs.py$
+    | stable_baselines3/common/logger.py$
+    | stable_baselines3/common/off_policy_algorithm.py$
+    | stable_baselines3/common/on_policy_algorithm.py$
+    | stable_baselines3/common/policies.py$
+    | stable_baselines3/common/save_util.py$
+    | stable_baselines3/common/sb2_compat/rmsprop_tf_like.py$
+    | stable_baselines3/common/utils.py$
+    | stable_baselines3/common/vec_env/__init__.py$
+    | stable_baselines3/common/vec_env/base_vec_env.py$
+    | stable_baselines3/common/vec_env/dummy_vec_env.py$
+    | stable_baselines3/common/vec_env/subproc_vec_env.py$
+    | stable_baselines3/common/vec_env/util.py$
+    | stable_baselines3/common/vec_env/vec_extract_dict_obs.py$
+    | stable_baselines3/common/vec_env/vec_frame_stack.py$
+    | stable_baselines3/common/vec_env/vec_monitor.py$
+    | stable_baselines3/common/vec_env/vec_normalize.py$
+    | stable_baselines3/common/vec_env/vec_transpose.py$
+    | stable_baselines3/common/vec_env/vec_video_recorder.py$
+    | stable_baselines3/dqn/dqn.py$
+    | stable_baselines3/dqn/policies.py$
+    | stable_baselines3/her/her_replay_buffer.py$
+    | stable_baselines3/ppo/ppo.py$
+    | stable_baselines3/sac/policies.py$
+    | stable_baselines3/sac/sac.py$
+    | stable_baselines3/td3/policies.py$
+    | stable_baselines3/td3/td3.py$
+    | tests/test_logger.py$
+    | tests/test_train_eval_mode.py$
+  )"""
+
+[tool.pytest.ini_options]
+# Deterministic ordering for tests; useful for pytest-xdist.
+env = [
+	"PYTHONHASHSEED=0"
+]
+
+filterwarnings = [
+    # Tensorboard warnings
+    "ignore::DeprecationWarning:tensorboard",
+    # Gym warnings
+    "ignore:Parameters to load are deprecated.:DeprecationWarning",
+    "ignore:the imp module is deprecated in favour of importlib:PendingDeprecationWarning",
+    "ignore::UserWarning:gym",
+		"ignore:SelectableGroups dict interface is deprecated.:DeprecationWarning",
+		"ignore:`np.bool` is a deprecated alias for the builtin `bool`:DeprecationWarning",
+]
+markers = [
+    "expensive: marks tests as expensive (deselect with '-m \"not expensive\"')"
+]

@@ -14,6 +14,7 @@ jobs:
     env:
       TERM: xterm-256color
       FORCE_COLOR: 1
+
     # Skip CI if [ci skip] in the commit message
     if: "! contains(toJSON(github.event.commits.*.message), '[ci skip]')"
     runs-on: ubuntu-latest
@@ -32,21 +33,28 @@ jobs:
         python -m pip install --upgrade pip
         # cpu version of pytorch
         pip install torch==1.11+cpu -f https://download.pytorch.org/whl/torch_stable.html
-        pip install .[extra,tests,docs]
+
+        # Install Atari Roms
+        pip install autorom
+        wget https://gist.githubusercontent.com/jjshoots/61b22aefce4456920ba99f2c36906eda/raw/00046ac3403768bfe45857610a3d333b8e35e026/Roms.tar.gz.b64
+        base64 Roms.tar.gz.b64 --decode &> Roms.tar.gz
+        AutoROM --accept-license --source-file Roms.tar.gz
+
+        pip install .[extra_no_roms,tests,docs]
         # Use headless version
         pip install opencv-python-headless
+    - name: Lint with ruff
+      run: |
+        make lint
     - name: Build the doc
       run: |
         make doc
-    - name: Type check
-      run: |
-        make type
     - name: Check codestyle
       run: |
         make check-codestyle
-    - name: Lint with flake8
+    - name: Type check
       run: |
-        make lint
+        make type
     - name: Test with pytest
       run: |
         make pytest

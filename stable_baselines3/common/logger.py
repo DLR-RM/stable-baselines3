@@ -161,7 +161,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
     def __init__(self, filename_or_file: Union[str, TextIO], max_length: int = 36):
         self.max_length = max_length
         if isinstance(filename_or_file, str):
-            self.file = open(filename_or_file, "wt")
+            self.file = open(filename_or_file, "w")
             self.own_file = True
         else:
             assert hasattr(filename_or_file, "write"), f"Expected file or str, got {filename_or_file}"
@@ -283,7 +283,7 @@ class JSONOutputFormat(KVWriter):
     """
 
     def __init__(self, filename: str):
-        self.file = open(filename, "wt")
+        self.file = open(filename, "w")
 
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
         def cast_to_json_serializable(value: Any):

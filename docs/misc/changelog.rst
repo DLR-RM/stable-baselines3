@@ -47,6 +47,7 @@ Others:
 - Switched from ``flake8`` to ``ruff``
 - Upgraded AutoROM to latest version
 - Fixed ``stable_baselines3/dqn/*.py`` type hints
+- Added ``extra_no_roms`` option for package installation without Atari Roms
 
 Documentation:
 ^^^^^^^^^^^^^^

@@ -37,7 +37,7 @@ def recursive_getattr(obj: Any, attr: str, *args) -> Any:
     def _getattr(obj: Any, attr: str) -> Any:
         return getattr(obj, attr, *args)
 
-    return functools.reduce(_getattr, [obj] + attr.split("."))
+    return functools.reduce(_getattr, [obj, *attr.split(".")])
 
 
 def recursive_setattr(obj: Any, attr: str, val: Any) -> None:

@@ -3,8 +3,8 @@
 line-length = 127
 # Assume Python 3.7
 target-version = "py37"
-# TODO(antonin): activate "RUF" https://beta.ruff.rs/docs/rules/#ruff-specific-rules-ruf
-select = ["E", "F", "B", "UP", "C90"]
+# See https://beta.ruff.rs/docs/rules/
+select = ["E", "F", "B", "UP", "C90", "RUF"]
 ignore = []
 
 [tool.ruff.per-file-ignores]

@@ -161,7 +161,7 @@ class MaxAndSkipEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
         # most recent raw observations (for max pooling across time steps)
         assert env.observation_space.dtype is not None, "No dtype specified for the observation space"
         assert env.observation_space.shape is not None, "No shape defined for the observation space"
-        self._obs_buffer = np.zeros((2,) + env.observation_space.shape, dtype=env.observation_space.dtype)
+        self._obs_buffer = np.zeros((2, *env.observation_space.shape), dtype=env.observation_space.dtype)
         self._skip = skip
 
     def step(self, action: int) -> AtariStepReturn:

@@ -14,7 +14,6 @@ jobs:
     env:
       TERM: xterm-256color
       FORCE_COLOR: 1
-      ATARI_ROMS: ${{ secrets.ATARI_ROMS }}
 
     # Skip CI if [ci skip] in the commit message
     if: "! contains(toJSON(github.event.commits.*.message), '[ci skip]')"
@@ -37,11 +36,11 @@ jobs:
 
         # Install Atari Roms
         pip install autorom
-        wget $ATARI_ROMS
+        wget https://gist.githubusercontent.com/jjshoots/61b22aefce4456920ba99f2c36906eda/raw/00046ac3403768bfe45857610a3d333b8e35e026/Roms.tar.gz.b64
         base64 Roms.tar.gz.b64 --decode &> Roms.tar.gz
         AutoROM --accept-license --source-file Roms.tar.gz
 
-        pip install .[extra,tests,docs]
+        pip install .[extra_no_roms,tests,docs]
         # Use headless version
         pip install opencv-python-headless
     - name: Lint with ruff

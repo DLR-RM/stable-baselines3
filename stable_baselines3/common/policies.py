@@ -228,7 +228,7 @@ class BaseModel(nn.Module):
                     obs_ = np.array(obs)
                 vectorized_env = vectorized_env or is_vectorized_observation(obs_, obs_space)
                 # Add batch dimension if needed
-                observation[key] = obs_.reshape((-1,) + self.observation_space[key].shape)
+                observation[key] = obs_.reshape((-1, *self.observation_space[key].shape))
 
         elif is_image_space(self.observation_space):
             # Handle the different cases for images
@@ -242,7 +242,7 @@ class BaseModel(nn.Module):
             # Dict obs need to be handled separately
             vectorized_env = is_vectorized_observation(observation, self.observation_space)
             # Add batch dimension if needed
-            observation = observation.reshape((-1,) + self.observation_space.shape)
+            observation = observation.reshape((-1, *self.observation_space.shape))
 
         observation = obs_as_tensor(observation, self.device)
         return observation, vectorized_env
@@ -330,7 +330,7 @@ class BasePolicy(BaseModel, ABC):
         with th.no_grad():
             actions = self._predict(observation, deterministic=deterministic)
         # Convert to numpy, and reshape to the original action shape
-        actions = actions.cpu().numpy().reshape((-1,) + self.action_space.shape)
+        actions = actions.cpu().numpy().reshape((-1, *self.action_space.shape))
 
         if isinstance(self.action_space, spaces.Box):
             if self.squash_output:
@@ -608,7 +608,7 @@ class ActorCriticPolicy(BasePolicy):
         distribution = self._get_action_dist_from_latent(latent_pi)
         actions = distribution.get_actions(deterministic=deterministic)
         log_prob = distribution.log_prob(actions)
-        actions = actions.reshape((-1,) + self.action_space.shape)
+        actions = actions.reshape((-1, *self.action_space.shape))
         return actions, values, log_prob
 
     def extract_features(self, obs: th.Tensor) -> Union[th.Tensor, Tuple[th.Tensor, th.Tensor]]:

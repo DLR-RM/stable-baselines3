@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.8.0a8 (WIP)
+Release 1.8.0a9 (WIP)
 --------------------------
 
 
@@ -46,6 +46,7 @@ Others:
 - Moved from ``setup.cg`` to ``pyproject.toml`` configuration file
 - Switched from ``flake8`` to ``ruff``
 - Upgraded AutoROM to latest version
+- Added ``extra_no_roms`` option for package installation without Atari Roms
 
 Documentation:
 ^^^^^^^^^^^^^^

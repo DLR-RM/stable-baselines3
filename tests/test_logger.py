@@ -234,7 +234,7 @@ def test_report_video_to_tensorboard(tmp_path, read_log, capsys):
 
 def is_moviepy_installed():
     try:
-        import moviepy  # noqa: F401
+        import moviepy
     except ModuleNotFoundError:
         return False
     return True

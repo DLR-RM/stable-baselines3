@@ -85,7 +85,7 @@ extra_no_atari = [
     "rich",
 ]
 
-extra_packages = extra_no_atari + [
+extra_packages = extra_no_atari + [  # noqa: RUF005
     # For atari games,
     "ale-py==0.7.4",
     "autorom[accept-rom-license]~=0.5.5",

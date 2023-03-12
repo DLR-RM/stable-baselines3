@@ -34,6 +34,10 @@ class HerReplayBuffer(DictReplayBuffer):
         by sampling new goals.
     :param goal_selection_strategy: Strategy for sampling goals for replay.
         One of ['episode', 'final', 'future']
+    :param copy_info_dict: Whether to copy the info dictionary and pass it to
+        ``compute_reward()`` method.
+        Please note that the copy may cause a slowdown.
+        False by default.
     """
 
     def __init__(
@@ -48,6 +52,7 @@ class HerReplayBuffer(DictReplayBuffer):
         handle_timeout_termination: bool = True,
         n_sampled_goal: int = 4,
         goal_selection_strategy: Union[GoalSelectionStrategy, str] = "future",
+        copy_info_dict: bool = False,
     ):
         super().__init__(
             buffer_size,
@@ -59,6 +64,7 @@ class HerReplayBuffer(DictReplayBuffer):
             handle_timeout_termination=handle_timeout_termination,
         )
         self.env = env
+        self.copy_info_dict = copy_info_dict
 
         # convert goal_selection_strategy into GoalSelectionStrategy if string
         if isinstance(goal_selection_strategy, str):
@@ -263,10 +269,11 @@ class HerReplayBuffer(DictReplayBuffer):
         # Get infos and obs
         obs = {key: obs[batch_inds, env_indices, :] for key, obs in self.observations.items()}
         next_obs = {key: obs[batch_inds, env_indices, :] for key, obs in self.next_observations.items()}
-        # For speed up we replace this
-        # infos = copy.deepcopy(self.infos[batch_inds, env_indices])
-        # by
-        infos = [{} for _ in range(len(batch_inds))]
+        if self.copy_info_dict:
+            # The copy may cause a slow down
+            infos = copy.deepcopy(self.infos[batch_inds, env_indices])
+        else:
+            infos = [{} for _ in range(len(batch_inds))]
         # Sample and set new goals
         new_goals = self._sample_goals(batch_inds, env_indices)
         obs["desired_goal"] = new_goals

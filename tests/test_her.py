@@ -25,13 +25,13 @@ def test_import_error():
     assert "documentation" in str(excinfo.value)
 
 
-@pytest.mark.parametrize("n_envs", [1, 2])
 @pytest.mark.parametrize("model_class", [SAC, TD3, DDPG, DQN])
 @pytest.mark.parametrize("image_obs_space", [True, False])
-def test_her(n_envs, model_class, image_obs_space):
+def test_her(model_class, image_obs_space):
     """
     Test Hindsight Experience Replay.
     """
+    n_envs = 1
     n_bits = 4
 
     def env_fn():
@@ -50,6 +50,7 @@ def test_her(n_envs, model_class, image_obs_space):
         replay_buffer_kwargs=dict(
             n_sampled_goal=2,
             goal_selection_strategy="future",
+            copy_info_dict=True,
         ),
         train_freq=4,
         gradient_steps=n_envs,

@@ -7,6 +7,13 @@ Changelog
 Release 1.8.0a9 (WIP)
 --------------------------
 
+.. warning::
+
+  Stable-Baselines3 (SB3) v1.8.0 will be the last one to use Gym as a backend.
+  Starting with v2.0.0, Gymnasium will be the default backend (though SB3 will have compatibility layers for Gym envs).
+  You can find a migration guide here: https://gymnasium.farama.org/content/migration-guide/.
+  If you want to try the SB3 v2.0 alpha version, you can take a look at `PR #1327 <https://github.com/DLR-RM/stable-baselines3/pull/1327>`_.
+
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -56,6 +63,7 @@ Documentation:
 - Renamed timesteps to episodes for ``log_interval`` description (@theSquaredError)
 - Removed note about gif creation for Atari games (@harveybellini)
 - Added information about default network architecture
+- Update information about Gymnasium support
 
 Release 1.7.0 (2023-01-10)
 --------------------------

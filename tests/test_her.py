@@ -70,7 +70,7 @@ def test_multiprocessing(model_class, image_obs_space):
         return BitFlippingEnv(n_bits=4, continuous=not (model_class == DQN), image_obs_space=image_obs_space)
 
     env = make_vec_env(env_fn, n_envs=2, vec_env_cls=SubprocVecEnv)
-    model = model_class("MultiInputPolicy", env, replay_buffer_class=HerReplayBuffer, train_freq=4)
+    model = model_class("MultiInputPolicy", env, replay_buffer_class=HerReplayBuffer, buffer_size=int(2e4), train_freq=4)
     model.learn(total_timesteps=150)
 
 

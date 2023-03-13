@@ -83,11 +83,13 @@ class HerReplayBuffer(DictReplayBuffer):
         self.her_ratio = 1 - (1.0 / (self.n_sampled_goal + 1))
         # In some environments, the info dict is used to compute the reward. Then, we need to store it.
         self.infos = np.array([[{} for _ in range(self.n_envs)] for _ in range(self.buffer_size)])
-        # To create virtual transitions, we need to know when an episode starts and ends.
-        # We use the following arrays to store the indices.
+        # To create virtual transitions, we need to know for each transition
+        # when an episode starts and ends.
+        # We use the following arrays to store the indices,
+        # and update them when an episode ends.
         self.ep_start = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
-        self._current_ep_start = np.zeros(self.n_envs, dtype=np.int64)
         self.ep_length = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
+        self._current_ep_start = np.zeros(self.n_envs, dtype=np.int64)
 
     def __getstate__(self) -> Dict[str, Any]:
         """
@@ -147,8 +149,9 @@ class HerReplayBuffer(DictReplayBuffer):
         # Update episode start
         self.ep_start[self.pos] = self._current_ep_start.copy()
 
+        if self.copy_info_dict:
+            self.infos[self.pos] = infos
         # Store the transition
-        self.infos[self.pos] = infos
         super().add(obs, next_obs, action, reward, done, infos)
 
         # When episode ends, compute and store the episode length
@@ -160,8 +163,8 @@ class HerReplayBuffer(DictReplayBuffer):
                     # Occurs when the buffer becomes full, the storage resumes at the
                     # beginning of the buffer. This can happen in the middle of an episode.
                     episode_end += self.buffer_size
-                episode = np.arange(episode_start, episode_end) % self.buffer_size
-                self.ep_length[episode, env_idx] = episode_end - episode_start
+                episode_indices = np.arange(episode_start, episode_end) % self.buffer_size
+                self.ep_length[episode_indices, env_idx] = episode_end - episode_start
                 # Update the current episode start
                 self._current_ep_start[env_idx] = self.pos
 
@@ -170,8 +173,7 @@ class HerReplayBuffer(DictReplayBuffer):
         Sample elements from the replay buffer.
 
         :param batch_size: Number of element to sample
-        :param env: Associated gym VecEnv
-            to normalize the observations/rewards when sampling
+        :param env: Associated VecEnv to normalize the observations/rewards when sampling
         :return: Samples
         """
         # When the buffer is full, we rewrite on old episodes. We don't want to
@@ -183,21 +185,29 @@ class HerReplayBuffer(DictReplayBuffer):
                 "for learning_starts that is greater than the maximum number of timesteps in the environment."
             )
         # Get the indices of valid transitions
-        # Example: if is_valid = [[True, False, False], [True, False, True]], then valid_indices = [0, 3, 5]
+        # Example:
+        # if is_valid = [[True, False, False], [True, False, True]],
+        # is_valid has shape (buffer_size=2, n_envs=3)
+        # then valid_indices = [0, 3, 5]
+        # they correspond to is_valid[0, 0], is_valid[1, 0] and is_valid[1, 2]
+        # or in numpy format ([rows], [columns]): (array([0, 1, 1]), array([0, 0, 2]))
+        # Those indices are obtained back using np.unravel_index(valid_indices, is_valid.shape)
         valid_indices = np.flatnonzero(is_valid)
-        sampled_idx = np.random.choice(valid_indices, size=batch_size, replace=True)
+        # Sample valid transitions that will constitute the minibatch of size batch_size
+        sampled_indices = np.random.choice(valid_indices, size=batch_size, replace=True)
         # Unravel the indexes, i.e. recover the batch and env indices.
-        # Example: if sampled_idx = [0, 3, 5], then batch_inds = [0, 1, 1] and env_indices = [0, 0, 2]
-        batch_inds, env_indices = np.unravel_index(sampled_idx, is_valid.shape)
+        # Example: if sampled_indices = [0, 3, 5], then batch_indices = [0, 1, 1] and env_indices = [0, 0, 2]
+        batch_indices, env_indices = np.unravel_index(sampled_indices, is_valid.shape)
 
         # Split the indexes between real and virtual transitions.
         nb_virtual = int(self.her_ratio * batch_size)
-        virtual_batch_inds, real_batch_inds = np.split(batch_inds, [nb_virtual])
+        virtual_batch_indices, real_batch_indices = np.split(batch_indices, [nb_virtual])
         virtual_env_indices, real_env_indices = np.split(env_indices, [nb_virtual])
 
         # Get real and virtual data
-        real_data = self._get_real_samples(real_batch_inds, real_env_indices, env)
-        virtual_data = self._get_virtual_samples(virtual_batch_inds, virtual_env_indices, env)
+        real_data = self._get_real_samples(real_batch_indices, real_env_indices, env)
+        # Create virtual transitions by sampling new desired goals and computing new rewards
+        virtual_data = self._get_virtual_samples(virtual_batch_indices, virtual_env_indices, env)
 
         # Concatenate real and virtual data
         observations = {
@@ -221,21 +231,24 @@ class HerReplayBuffer(DictReplayBuffer):
         )
 
     def _get_real_samples(
-        self, batch_inds: np.ndarray, env_indices: np.ndarray, env: Optional[VecNormalize] = None
+        self,
+        batch_indices: np.ndarray,
+        env_indices: np.ndarray,
+        env: Optional[VecNormalize] = None,
     ) -> DictReplayBufferSamples:
         """
         Get the samples corresponding to the batch and environment indices.
 
-        :param batch_inds: Indices of the transitions
+        :param batch_indices: Indices of the transitions
         :param env_indices: Indices of the envrionments
         :param env: associated gym VecEnv to normalize the
             observations/rewards when sampling, defaults to None
         :return: Samples
         """
         # Normalize if needed and remove extra dimension (we are using only one env for now)
-        obs_ = self._normalize_obs({key: obs[batch_inds, env_indices, :] for key, obs in self.observations.items()}, env)
+        obs_ = self._normalize_obs({key: obs[batch_indices, env_indices, :] for key, obs in self.observations.items()}, env)
         next_obs_ = self._normalize_obs(
-            {key: obs[batch_inds, env_indices, :] for key, obs in self.next_observations.items()}, env
+            {key: obs[batch_indices, env_indices, :] for key, obs in self.next_observations.items()}, env
         )
 
         # Convert to torch tensor
@@ -244,46 +257,45 @@ class HerReplayBuffer(DictReplayBuffer):
 
         return DictReplayBufferSamples(
             observations=observations,
-            actions=self.to_torch(self.actions[batch_inds, env_indices]),
+            actions=self.to_torch(self.actions[batch_indices, env_indices]),
             next_observations=next_observations,
             # Only use dones that are not due to timeouts
             # deactivated by default (timeouts is initialized as an array of False)
-            dones=self.to_torch(self.dones[batch_inds, env_indices] * (1 - self.timeouts[batch_inds, env_indices])).reshape(
-                -1, 1
-            ),
-            rewards=self.to_torch(self._normalize_reward(self.rewards[batch_inds, env_indices].reshape(-1, 1), env)),
+            dones=self.to_torch(
+                self.dones[batch_indices, env_indices] * (1 - self.timeouts[batch_indices, env_indices])
+            ).reshape(-1, 1),
+            rewards=self.to_torch(self._normalize_reward(self.rewards[batch_indices, env_indices].reshape(-1, 1), env)),
         )
 
     def _get_virtual_samples(
-        self, batch_inds: np.ndarray, env_indices: np.ndarray, env: Optional[VecNormalize] = None
+        self,
+        batch_indices: np.ndarray,
+        env_indices: np.ndarray,
+        env: Optional[VecNormalize] = None,
     ) -> DictReplayBufferSamples:
         """
         Get the samples, sample new desired goals and compute new rewards.
 
-        :param batch_inds: Indices of the transitions
+        :param batch_indices: Indices of the transitions
         :param env_indices: Indices of the envrionments
         :param env: associated gym VecEnv to normalize the
             observations/rewards when sampling, defaults to None
         :return: Samples, with new desired goals and new rewards
         """
         # Get infos and obs
-        obs = {key: obs[batch_inds, env_indices, :] for key, obs in self.observations.items()}
-        next_obs = {key: obs[batch_inds, env_indices, :] for key, obs in self.next_observations.items()}
+        obs = {key: obs[batch_indices, env_indices, :] for key, obs in self.observations.items()}
+        next_obs = {key: obs[batch_indices, env_indices, :] for key, obs in self.next_observations.items()}
         if self.copy_info_dict:
             # The copy may cause a slow down
-            infos = copy.deepcopy(self.infos[batch_inds, env_indices])
+            infos = copy.deepcopy(self.infos[batch_indices, env_indices])
         else:
-            infos = [{} for _ in range(len(batch_inds))]
+            infos = [{} for _ in range(len(batch_indices))]
         # Sample and set new goals
-        new_goals = self._sample_goals(batch_inds, env_indices)
+        new_goals = self._sample_goals(batch_indices, env_indices)
         obs["desired_goal"] = new_goals
         # The desired goal for the next observation must be the same as the previous one
         next_obs["desired_goal"] = new_goals
-        # The goal has changed, there is no longer a guarantee that the transition is
-        # successful. Since it is not possible to easily get this information, we prefer
-        # to remove it. The success information is not used in the learning algorithm anyway.
-        # for info in infos:
-        #     info.pop("is_success", None)
+
         # Compute new reward
         rewards = self.env.env_method(
             "compute_reward",
@@ -310,26 +322,26 @@ class HerReplayBuffer(DictReplayBuffer):
 
         return DictReplayBufferSamples(
             observations=observations,
-            actions=self.to_torch(self.actions[batch_inds, env_indices]),
+            actions=self.to_torch(self.actions[batch_indices, env_indices]),
             next_observations=next_observations,
             # Only use dones that are not due to timeouts
             # deactivated by default (timeouts is initialized as an array of False)
-            dones=self.to_torch(self.dones[batch_inds, env_indices] * (1 - self.timeouts[batch_inds, env_indices])).reshape(
-                -1, 1
-            ),
+            dones=self.to_torch(
+                self.dones[batch_indices, env_indices] * (1 - self.timeouts[batch_indices, env_indices])
+            ).reshape(-1, 1),
             rewards=self.to_torch(self._normalize_reward(rewards.reshape(-1, 1), env)),
         )
 
-    def _sample_goals(self, batch_inds: np.ndarray, env_indices: np.ndarray) -> np.ndarray:
+    def _sample_goals(self, batch_indices: np.ndarray, env_indices: np.ndarray) -> np.ndarray:
         """
         Sample goals based on goal_selection_strategy.
 
-        :param batch_inds: Indices of the transitions
+        :param batch_indices: Indices of the transitions
         :param env_indices: Indices of the envrionments
         :return: Sampled goals
         """
-        batch_ep_start = self.ep_start[batch_inds, env_indices]
-        batch_ep_length = self.ep_length[batch_inds, env_indices]
+        batch_ep_start = self.ep_start[batch_indices, env_indices]
+        batch_ep_length = self.ep_length[batch_indices, env_indices]
 
         if self.goal_selection_strategy == GoalSelectionStrategy.FINAL:
             # replay with final state of current episode
@@ -337,7 +349,7 @@ class HerReplayBuffer(DictReplayBuffer):
 
         elif self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
             # replay with random state which comes from the same episode and was observed after current transition
-            current_indices_in_episode = (batch_inds - batch_ep_start) % self.buffer_size
+            current_indices_in_episode = (batch_indices - batch_ep_start) % self.buffer_size
             transition_indices_in_episode = np.random.randint(current_indices_in_episode, batch_ep_length)
 
         elif self.goal_selection_strategy == GoalSelectionStrategy.EPISODE:

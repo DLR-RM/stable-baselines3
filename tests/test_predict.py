@@ -4,7 +4,7 @@ import pytest
 import torch as th
 from gym import spaces
 
-from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
+from stable_baselines3 import A2C, DQN, PPO, SAC, TD3, DDPG
 from stable_baselines3.common.envs import IdentityEnv
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import DummyVecEnv
@@ -15,6 +15,7 @@ MODEL_LIST = [
     TD3,
     SAC,
     DQN,
+    DDPG
 ]
 
 
@@ -52,18 +53,19 @@ def test_auto_wrap(model_class):
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 @pytest.mark.parametrize("env_id", ["Pendulum-v1", "CartPole-v1"])
 @pytest.mark.parametrize("device", ["cpu", "cuda", "auto"])
-def test_predict(model_class, env_id, device):
+@pytest.mark.parametrize("torch_compile", [False, True])
+def test_predict(model_class, env_id, device, torch_compile):
     if device == "cuda" and not th.cuda.is_available():
         pytest.skip("CUDA not available")
 
     if env_id == "CartPole-v1":
-        if model_class in [SAC, TD3]:
+        if model_class in [SAC, TD3, DDPG]:
             return
     elif model_class in [DQN]:
         return
 
     # Test detection of different shapes by the predict method
-    model = model_class("MlpPolicy", env_id, device=device)
+    model = model_class("MlpPolicy", env_id, device=device, torch_compile=torch_compile)
     # Check that the policy is on the right device
     assert get_device(device).type == model.policy.device.type
 

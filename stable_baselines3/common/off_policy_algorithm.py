@@ -71,6 +71,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         during the warm up phase (before learning starts)
     :param sde_support: Whether the model support gSDE or not
     :param supported_action_spaces: The action spaces supported by the algorithm.
+    :param torch_compile: Compiles the PyTorch policy model. Default: False
     """
 
     def __init__(
@@ -101,6 +102,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         use_sde_at_warmup: bool = False,
         sde_support: bool = True,
         supported_action_spaces: Optional[Tuple[spaces.Space, ...]] = None,
+        torch_compile: bool = False,
     ):
         super().__init__(
             policy=policy,
@@ -116,6 +118,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             use_sde=use_sde,
             sde_sample_freq=sde_sample_freq,
             supported_action_spaces=supported_action_spaces,
+            torch_compile=torch_compile,
         )
         self.buffer_size = buffer_size
         self.batch_size = batch_size
@@ -218,6 +221,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             **self.policy_kwargs,  # pytype:disable=not-instantiable
         )
         self.policy = self.policy.to(self.device)
+        if self.torch_compile:
+            self.policy = th.compile(self.policy, mode="max-autotune")
 
         # Convert train freq parameter to TrainFreq object
         self._convert_train_freq()

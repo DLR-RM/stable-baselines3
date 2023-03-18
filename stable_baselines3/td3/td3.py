@@ -60,6 +60,7 @@ class TD3(OffPolicyAlgorithm):
     :param device: Device (cpu, cuda, ...) on which the code should be run.
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: Whether or not to build the network at the creation of the instance
+    :param torch_compile: Compiles the PyTorch policy model. Default: False
     """
 
     policy_aliases: Dict[str, Type[BasePolicy]] = {
@@ -93,6 +94,7 @@ class TD3(OffPolicyAlgorithm):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
+        torch_compile: bool = False,
     ):
         super().__init__(
             policy,
@@ -117,6 +119,7 @@ class TD3(OffPolicyAlgorithm):
             optimize_memory_usage=optimize_memory_usage,
             supported_action_spaces=(spaces.Box),
             support_multi_env=True,
+            torch_compile=torch_compile,
         )
 
         self.policy_delay = policy_delay

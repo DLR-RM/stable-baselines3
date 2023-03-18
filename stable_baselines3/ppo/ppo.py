@@ -64,6 +64,7 @@ class PPO(OnPolicyAlgorithm):
     :param device: Device (cpu, cuda, ...) on which the code should be run.
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: Whether or not to build the network at the creation of the instance
+    :param torch_compile: Compiles the PyTorch policy model. Default: False
     """
 
     policy_aliases: Dict[str, Type[BasePolicy]] = {
@@ -97,6 +98,7 @@ class PPO(OnPolicyAlgorithm):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
+        torch_compile: bool = False,
     ):
         super().__init__(
             policy,
@@ -122,6 +124,7 @@ class PPO(OnPolicyAlgorithm):
                 spaces.MultiDiscrete,
                 spaces.MultiBinary,
             ),
+            torch_compile=torch_compile,
         )
 
         # Sanity check, otherwise it will lead to noisy gradient and NaN

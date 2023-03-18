@@ -117,7 +117,7 @@ Bug Fixes:
 - Fixed ``ProgressBarCallback`` under-reporting (@dominicgkerr)
 - Fixed return type of ``evaluate_actions`` in ``ActorCritcPolicy`` to reflect that entropy is an optional tensor (@Rocamonde)
 - Fixed type annotation of ``policy`` in ``BaseAlgorithm`` and ``OffPolicyAlgorithm``
-- Allowed model trained with Python 3.7 to be loaded with Python 3.8+ without the ``custom_objects`` workaround
+- Allowed model trained with Python 3.10 to be loaded with Python 3.8+ without the ``custom_objects`` workaround
 - Raise an error when the same gym environment instance is passed as separate environments when creating a vectorized environment with more than one environment. (@Rocamonde)
 - Fix type annotation of ``model`` in ``evaluate_policy``
 - Fixed ``Self`` return type using ``TypeVar``
@@ -266,7 +266,7 @@ Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Changed the way policy "aliases" are handled ("MlpPolicy", "CnnPolicy", ...), removing the former
   ``register_policy`` helper, ``policy_base`` parameter and using ``policy_aliases`` static attributes instead (@Gregwar)
-- SB3 now requires PyTorch >= 1.11
+- SB3 now requires PyTorch >= 2.0.0
 - Changed the default network architecture when using ``CnnPolicy`` or ``MultiInputPolicy`` with SAC or DDPG/TD3,
   ``share_features_extractor`` is now set to False by default and the ``net_arch=[256, 256]`` (instead of ``net_arch=[]`` that was before)
 
@@ -296,7 +296,7 @@ Deprecations:
 
 Others:
 ^^^^^^^
-- Upgraded to Python 3.7+ syntax using ``pyupgrade``
+- Upgraded to Python 3.10+ syntax using ``pyupgrade``
 - Removed redundant double-check for nested observations from ``BaseAlgorithm._wrap_env`` (@TibiGG)
 
 Documentation:
@@ -440,7 +440,7 @@ Release 1.3.0 (2021-10-23)
 .. warning::
 
   This version will be the last one supporting Python 3.6 (end of life in Dec 2021).
-  We highly recommended you to upgrade to Python >= 3.7.
+  We highly recommended you to upgrade to Python >= 3.10.
 
 
 Breaking Changes:

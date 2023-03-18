@@ -1,8 +1,8 @@
 [tool.ruff]
 # Same as Black.
 line-length = 127
-# Assume Python 3.7
-target-version = "py37"
+# Assume Python 3.10
+target-version = "py310"
 # See https://beta.ruff.rs/docs/rules/
 select = ["E", "F", "B", "UP", "C90", "RUF"]
 ignore = []

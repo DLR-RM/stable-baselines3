@@ -51,6 +51,7 @@ class DDPG(TD3):
     :param device: Device (cpu, cuda, ...) on which the code should be run.
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: Whether or not to build the network at the creation of the instance
+    :param torch_compile: Compiles the PyTorch policy model. Default: False
     """
 
     def __init__(
@@ -75,6 +76,7 @@ class DDPG(TD3):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
+        torch_compile: bool = False,
     ):
         super().__init__(
             policy=policy,
@@ -96,6 +98,7 @@ class DDPG(TD3):
             device=device,
             seed=seed,
             optimize_memory_usage=optimize_memory_usage,
+            torch_compile=torch_compile,
             # Remove all tricks from TD3 to obtain DDPG:
             # we still need to specify target_policy_noise > 0 to avoid errors
             policy_delay=1,

@@ -48,6 +48,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         Setting it to auto, the code will be run on the GPU if possible.
     :param _init_setup_model: Whether or not to build the network at the creation of the instance
     :param supported_action_spaces: The action spaces supported by the algorithm.
+    :param torch_compile: Compiles the PyTorch policy model. Default: False
     """
 
     def __init__(
@@ -71,6 +72,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
         supported_action_spaces: Optional[Tuple[spaces.Space, ...]] = None,
+        torch_compile: bool = False
     ):
         super().__init__(
             policy=policy,
@@ -85,6 +87,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             seed=seed,
             tensorboard_log=tensorboard_log,
             supported_action_spaces=supported_action_spaces,
+            torch_compile=torch_compile,
         )
 
         self.n_steps = n_steps
@@ -121,6 +124,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             **self.policy_kwargs  # pytype:disable=not-instantiable
         )
         self.policy = self.policy.to(self.device)
+        if self.torch_compile:
+            self.policy = th.compile(self.policy, mode="max-autotune")
 
     def collect_rollouts(
         self,

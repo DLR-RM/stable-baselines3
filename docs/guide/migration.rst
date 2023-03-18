@@ -44,7 +44,7 @@ Breaking Changes
 ================
 
 
-- SB3 requires python 3.7+ (instead of python 3.5+ for SB2)
+- SB3 requires python 3.10+ (instead of python 3.5+ for SB2)
 - Dropped MPI support
 - Dropped layer normalized policies (``MlpLnLstmPolicy``, ``CnnLnLstmPolicy``)
 - LSTM policies (```MlpLstmPolicy```, ```CnnLstmPolicy```) are not supported for the time being

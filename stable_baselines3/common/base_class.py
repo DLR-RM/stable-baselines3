@@ -83,6 +83,7 @@ class BaseAlgorithm(ABC):
     :param sde_sample_freq: Sample a new noise matrix every n steps when using gSDE
         Default: -1 (only sample at the beginning of the rollout)
     :param supported_action_spaces: The action spaces supported by the algorithm.
+    :param torch_compile: Compiles the PyTorch policy model. Default: False
     """
 
     # Policy aliases (see _get_policy_from_name())
@@ -103,6 +104,7 @@ class BaseAlgorithm(ABC):
         use_sde: bool = False,
         sde_sample_freq: int = -1,
         supported_action_spaces: Optional[Tuple[spaces.Space, ...]] = None,
+        torch_compile: bool = False,
     ):
         if isinstance(policy, str):
             self.policy_class = self._get_policy_from_name(policy)
@@ -141,6 +143,8 @@ class BaseAlgorithm(ABC):
         # Used for gSDE only
         self.use_sde = use_sde
         self.sde_sample_freq = sde_sample_freq
+        # Compile PyTorch models
+        self.torch_compile = torch_compile
         # Track the training progress remaining (from 1 to 0)
         # this is used to update the learning rate
         self._current_progress_remaining = 1

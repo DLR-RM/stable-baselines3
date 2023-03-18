@@ -34,6 +34,12 @@ It creates "virtual" transitions by relabeling transitions (changing the desired
   without instantiating the environment, we recommend saving the policy only.
 
 
+.. note::
+
+  Compared to other implementations, the ``future`` goal sampling strategy is inclusive:
+  the current transition can be used when re-sampling.
+
+
 Notes
 -----
 

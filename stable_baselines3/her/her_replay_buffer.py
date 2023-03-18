@@ -19,6 +19,11 @@ class HerReplayBuffer(DictReplayBuffer):
 
     Replay buffer for sampling HER (Hindsight Experience Replay) transitions.
 
+    .. note::
+
+      Compared to other implementations, the ``future`` goal sampling strategy is inclusive:
+      the current transition can be used when re-sampling.
+
     :param buffer_size: Max number of element in the buffer
     :param observation_space: Observation space
     :param action_space: Action space
@@ -344,16 +349,17 @@ class HerReplayBuffer(DictReplayBuffer):
         batch_ep_length = self.ep_length[batch_indices, env_indices]
 
         if self.goal_selection_strategy == GoalSelectionStrategy.FINAL:
-            # replay with final state of current episode
+            # Replay with final state of current episode
             transition_indices_in_episode = batch_ep_length - 1
 
         elif self.goal_selection_strategy == GoalSelectionStrategy.FUTURE:
-            # replay with random state which comes from the same episode and was observed after current transition
+            # Replay with random state which comes from the same episode and was observed after current transition
+            # Note: our implementation is inclusive: current transition can be sampled
             current_indices_in_episode = (batch_indices - batch_ep_start) % self.buffer_size
             transition_indices_in_episode = np.random.randint(current_indices_in_episode, batch_ep_length)
 
         elif self.goal_selection_strategy == GoalSelectionStrategy.EPISODE:
-            # replay with random state which comes from the same episode as current transition
+            # Replay with random state which comes from the same episode as current transition
             transition_indices_in_episode = np.random.randint(0, batch_ep_length)
 
         else:

@@ -175,9 +175,12 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.set_random_seed(self.seed)
 
         if self.replay_buffer is None:
+            # Make a local copy as we should not pickle
+            # the environment when using HerReplayBuffer
+            replay_buffer_kwargs = self.replay_buffer_kwargs.copy()
             if issubclass(self.replay_buffer_class, HerReplayBuffer):
                 assert self.env is not None, "You must pass an environment when using `HerReplayBuffer`"
-                self.replay_buffer_kwargs["env"] = self.env
+                replay_buffer_kwargs["env"] = self.env
             self.replay_buffer = self.replay_buffer_class(
                 self.buffer_size,
                 self.observation_space,
@@ -185,7 +188,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 device=self.device,
                 n_envs=self.n_envs,
                 optimize_memory_usage=self.optimize_memory_usage,
-                **self.replay_buffer_kwargs,  # pytype:disable=wrong-keyword-args
+                **replay_buffer_kwargs,  # pytype:disable=wrong-keyword-args
             )
 
         self.policy = self.policy_class(  # pytype:disable=not-instantiable

@@ -44,7 +44,7 @@ class DummyDictEnv(gym.Env):
     """
 
     def __init__(self):
-        self.action_space = spaces.Box(1, 5, (1,))
+        self.action_space = spaces.Box(1, 5, (10, 7))
         space = spaces.Box(1, 5, (1,))
         self.observation_space = spaces.Dict({"observation": space, "achieved_goal": space, "desired_goal": space})
         self._observations = [1, 2, 3, 4, 5]

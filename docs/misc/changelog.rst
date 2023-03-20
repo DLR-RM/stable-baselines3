@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.8.0a10 (WIP)
+Release 1.8.0a11 (WIP)
 --------------------------
 
 .. warning::

@@ -125,10 +125,14 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.gradient_steps = gradient_steps
         self.action_noise = action_noise
         self.optimize_memory_usage = optimize_memory_usage
-        self.replay_buffer_class = replay_buffer_class
-        if replay_buffer_kwargs is None:
-            replay_buffer_kwargs = {}
-        self.replay_buffer_kwargs = replay_buffer_kwargs
+        if replay_buffer_class is None:
+            if isinstance(self.observation_space, spaces.Dict):
+                self.replay_buffer_class = DictReplayBuffer
+            else:
+                self.replay_buffer_class = ReplayBuffer
+        else:
+            self.replay_buffer_class = replay_buffer_class
+        self.replay_buffer_kwargs = replay_buffer_kwargs or {}
         self._episode_storage = None
 
         # Save train freq parameter, will be converted later to TrainFreq object
@@ -170,37 +174,13 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
 
-        # Use DictReplayBuffer if needed
-        if self.replay_buffer_class is None:
-            if isinstance(self.observation_space, spaces.Dict):
-                self.replay_buffer_class = DictReplayBuffer
-            else:
-                self.replay_buffer_class = ReplayBuffer
-
-        elif self.replay_buffer_class == HerReplayBuffer:
-            assert self.env is not None, "You must pass an environment when using `HerReplayBuffer`"
-
-            # If using offline sampling, we need a classic replay buffer too
-            if self.replay_buffer_kwargs.get("online_sampling", True):
-                replay_buffer = None
-            else:
-                replay_buffer = DictReplayBuffer(
-                    self.buffer_size,
-                    self.observation_space,
-                    self.action_space,
-                    device=self.device,
-                    optimize_memory_usage=self.optimize_memory_usage,
-                )
-
-            self.replay_buffer = HerReplayBuffer(
-                self.env,
-                self.buffer_size,
-                device=self.device,
-                replay_buffer=replay_buffer,
-                **self.replay_buffer_kwargs,
-            )
-
         if self.replay_buffer is None:
+            # Make a local copy as we should not pickle
+            # the environment when using HerReplayBuffer
+            replay_buffer_kwargs = self.replay_buffer_kwargs.copy()
+            if issubclass(self.replay_buffer_class, HerReplayBuffer):
+                assert self.env is not None, "You must pass an environment when using `HerReplayBuffer`"
+                replay_buffer_kwargs["env"] = self.env
             self.replay_buffer = self.replay_buffer_class(
                 self.buffer_size,
                 self.observation_space,
@@ -208,7 +188,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 device=self.device,
                 n_envs=self.n_envs,
                 optimize_memory_usage=self.optimize_memory_usage,
-                **self.replay_buffer_kwargs,
+                **replay_buffer_kwargs,  # pytype:disable=wrong-keyword-args
             )
 
         self.policy = self.policy_class(  # pytype:disable=not-instantiable
@@ -276,12 +256,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # when using memory efficient replay buffer
         # see https://github.com/DLR-RM/stable-baselines3/issues/46
 
-        # Special case when using HerReplayBuffer,
-        # the classic replay buffer is inside it when using offline sampling
-        if isinstance(self.replay_buffer, HerReplayBuffer):
-            replay_buffer = self.replay_buffer.replay_buffer
-        else:
-            replay_buffer = self.replay_buffer
+        replay_buffer = self.replay_buffer
 
         truncate_last_traj = (
             self.optimize_memory_usage
@@ -552,7 +527,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_rollout_start()
         continue_training = True
-
         while should_collect_more_steps(train_freq, num_collected_steps, num_collected_episodes):
             if self.use_sde and self.sde_sample_freq > 0 and num_collected_steps % self.sde_sample_freq == 0:
                 # Sample a new noise matrix

@@ -4,8 +4,15 @@ Changelog
 ==========
 
 
-Release 1.8.0a9 (WIP)
+Release 1.8.0a10 (WIP)
 --------------------------
+
+.. warning::
+
+  Stable-Baselines3 (SB3) v1.8.0 will be the last one to use Gym as a backend.
+  Starting with v2.0.0, Gymnasium will be the default backend (though SB3 will have compatibility layers for Gym envs).
+  You can find a migration guide here: https://gymnasium.farama.org/content/migration-guide/.
+  If you want to try the SB3 v2.0 alpha version, you can take a look at `PR #1327 <https://github.com/DLR-RM/stable-baselines3/pull/1327>`_.
 
 
 Breaking Changes:
@@ -13,12 +20,18 @@ Breaking Changes:
 - Removed shared layers in ``mlp_extractor`` (@AlexPasqua)
 - Refactored ``StackedObservations`` (it now handles dict obs, ``StackedDictObservations`` was removed)
 - You must now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
+- Dropped offline sampling for ``HerReplayBuffer``
+- As ``HerReplayBuffer`` was refactored to support multiprocessing, previous replay buffer are incompatible with this new version
+- ``HerReplayBuffer`` doesn't require a ``max_episode_length`` anymore
 
 New Features:
 ^^^^^^^^^^^^^
 - Added ``repeat_action_probability`` argument in ``AtariWrapper``.
 - Only use ``NoopResetEnv`` and ``MaxAndSkipEnv`` when needed in ``AtariWrapper``
 - Added support for dict/tuple observations spaces for ``VecCheckNan``, the check is now active in the ``env_checker()`` (@DavyMorgan)
+- Added multiprocessing support for ``HerReplayBuffer``
+- ``HerReplayBuffer`` now supports all datatypes supported by ``ReplayBuffer``
+
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -56,6 +69,7 @@ Documentation:
 - Renamed timesteps to episodes for ``log_interval`` description (@theSquaredError)
 - Removed note about gif creation for Atari games (@harveybellini)
 - Added information about default network architecture
+- Update information about Gymnasium support
 
 Release 1.7.0 (2023-01-10)
 --------------------------

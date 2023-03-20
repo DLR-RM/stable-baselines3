@@ -56,13 +56,15 @@ Bleeding-edge version
 
 .. note::
 
-  If you want to use latest gym version (0.24+), you have to use
+  If you want to use Gymnasium (or the latest Gym version 0.24+), you have to use
 
 	.. code-block:: bash
 
-		pip install git+https://github.com/carlosluis/stable-baselines3@fix_tests
+		pip install git+https://github.com/DLR-RM/stable-baselines3@feat/gymnasium-support
+		pip install git+https://github.com/Stable-Baselines-Team/stable-baselines3-contrib@feat/gymnasium-support
 
-  See `PR #780 <https://github.com/DLR-RM/stable-baselines3/pull/780>`_ for more information.
+
+  See `PR #1327 <https://github.com/DLR-RM/stable-baselines3/pull/1327>`_ for more information.
 
 
 Development version

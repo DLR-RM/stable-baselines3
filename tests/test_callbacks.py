@@ -140,7 +140,6 @@ def test_eval_success_logging(tmp_path):
         replay_buffer_class=HerReplayBuffer,
         learning_starts=100,
         seed=0,
-        replay_buffer_kwargs=dict(max_episode_length=n_bits),
     )
     model.learn(500, callback=eval_callback)
     assert len(eval_callback._is_success_buffer) > 0

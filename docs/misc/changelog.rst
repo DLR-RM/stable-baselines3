@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.8.0a9 (WIP)
+Release 1.8.0a10 (WIP)
 --------------------------
 
 .. warning::
@@ -20,12 +20,18 @@ Breaking Changes:
 - Removed shared layers in ``mlp_extractor`` (@AlexPasqua)
 - Refactored ``StackedObservations`` (it now handles dict obs, ``StackedDictObservations`` was removed)
 - You must now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
+- Dropped offline sampling for ``HerReplayBuffer``
+- As ``HerReplayBuffer`` was refactored to support multiprocessing, previous replay buffer are incompatible with this new version
+- ``HerReplayBuffer`` doesn't require a ``max_episode_length`` anymore
 
 New Features:
 ^^^^^^^^^^^^^
 - Added ``repeat_action_probability`` argument in ``AtariWrapper``.
 - Only use ``NoopResetEnv`` and ``MaxAndSkipEnv`` when needed in ``AtariWrapper``
 - Added support for dict/tuple observations spaces for ``VecCheckNan``, the check is now active in the ``env_checker()`` (@DavyMorgan)
+- Added multiprocessing support for ``HerReplayBuffer``
+- ``HerReplayBuffer`` now supports all datatypes supported by ``ReplayBuffer``
+
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

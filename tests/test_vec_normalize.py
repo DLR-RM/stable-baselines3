@@ -338,36 +338,44 @@ def test_normalize_dict_selected_keys():
         np.testing.assert_array_equal(obs["achieved_goal"], orig_obs["achieved_goal"])
 
 
-@pytest.mark.parametrize("model_class", [SAC, TD3, HerReplayBuffer])
-@pytest.mark.parametrize("online_sampling", [False, True])
-def test_offpolicy_normalization(model_class, online_sampling):
-    if online_sampling and model_class != HerReplayBuffer:
-        pytest.skip()
-
-    make_env_ = make_dict_env if model_class == HerReplayBuffer else make_env
-    env = DummyVecEnv([make_env_])
+def test_her_normalization():
+    env = DummyVecEnv([make_dict_env])
     env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10.0, clip_reward=10.0)
 
-    eval_env = DummyVecEnv([make_env_])
+    eval_env = DummyVecEnv([make_dict_env])
     eval_env = VecNormalize(eval_env, training=False, norm_obs=True, norm_reward=False, clip_obs=10.0, clip_reward=10.0)
 
-    if model_class == HerReplayBuffer:
-        model = SAC(
-            "MultiInputPolicy",
-            env,
-            verbose=1,
-            learning_starts=100,
-            policy_kwargs=dict(net_arch=[64]),
-            replay_buffer_kwargs=dict(
-                max_episode_length=100,
-                online_sampling=online_sampling,
-                n_sampled_goal=2,
-            ),
-            replay_buffer_class=HerReplayBuffer,
-            seed=2,
-        )
-    else:
-        model = model_class("MlpPolicy", env, verbose=1, learning_starts=100, policy_kwargs=dict(net_arch=[64]))
+    model = SAC(
+        "MultiInputPolicy",
+        env,
+        verbose=1,
+        learning_starts=100,
+        policy_kwargs=dict(net_arch=[64]),
+        replay_buffer_kwargs=dict(n_sampled_goal=2),
+        replay_buffer_class=HerReplayBuffer,
+        seed=2,
+    )
+
+    # Check that VecNormalize object is correctly updated
+    assert model.get_vec_normalize_env() is env
+    model.set_env(eval_env)
+    assert model.get_vec_normalize_env() is eval_env
+    model.learn(total_timesteps=10)
+    model.set_env(env)
+    model.learn(total_timesteps=150)
+    # Check getter
+    assert isinstance(model.get_vec_normalize_env(), VecNormalize)
+
+
+@pytest.mark.parametrize("model_class", [SAC, TD3])
+def test_offpolicy_normalization(model_class):
+    env = DummyVecEnv([make_env])
+    env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10.0, clip_reward=10.0)
+
+    eval_env = DummyVecEnv([make_env])
+    eval_env = VecNormalize(eval_env, training=False, norm_obs=True, norm_reward=False, clip_obs=10.0, clip_reward=10.0)
+
+    model = model_class("MlpPolicy", env, verbose=1, learning_starts=100, policy_kwargs=dict(net_arch=[64]))
 
     # Check that VecNormalize object is correctly updated
     assert model.get_vec_normalize_env() is env

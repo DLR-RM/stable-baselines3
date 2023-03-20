@@ -5,7 +5,8 @@ line-length = 127
 target-version = "py37"
 # See https://beta.ruff.rs/docs/rules/
 select = ["E", "F", "B", "UP", "C90", "RUF"]
-ignore = []
+# Ignore explicit stacklevel`
+ignore = ["B028"]
 
 [tool.ruff.per-file-ignores]
 # Default implementation in abstract methods

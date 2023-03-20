@@ -117,7 +117,7 @@ def _check_goal_env_obs(obs: dict, observation_space: spaces.Dict, method_name: 
         f"The current observation contains {len(observation_space.spaces)} keys: {list(observation_space.spaces.keys())}"
     )
 
-    for key in ["observation", "achieved_goal", "desired_goal"]:
+    for key in ["achieved_goal", "desired_goal"]:
         if key not in observation_space.spaces:
             raise AssertionError(
                 f"The observation returned by the `{method_name}()` method of a goal-conditioned env requires the '{key}' "

@@ -205,7 +205,7 @@ make pytest
 ```
 To run a single test file:
 ```sh
-python -m pytest -v tests/test_env_checker.py
+python3 -m pytest -v tests/test_env_checker.py
 ```
 To run a single test:
 ```sh

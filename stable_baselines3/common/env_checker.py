@@ -172,16 +172,36 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
     # Check observation_space properties
     assert (
         observation_space.shape == obs.shape
-    ), f"The observation returned by the `{method_name}()` method does not match the shape of the given observation space. Expected: {observation_space.shape}, actual: {obs.shape}"
+    ), """\
+        The observation returned by the `{method_name}()` method does not match the shape
+        of the given observation space. Expected: {shape_exp}, actual: {shape_act}\
+        """.format(
+        method_name=method_name, shape_exp=observation_space.shape, shape_act=obs.shape
+    )
     assert (
         observation_space.dtype == obs.dtype
-    ), f"The observation returned by the `{method_name}()` method does not match the data type of the given observation space. Expected: {observation_space.dtype}, actual: {obs.dtype}"
+    ), """\
+        The observation returned by the `{method_name}()` method does not match the data type
+        of the given observation space. Expected: {dtype_exp}, actual: {dtype_act}\
+        """.format(
+        method_name=method_name, dtype_exp=observation_space.dtype, dtype_act=obs.dtype
+    )
     assert np.all(
         obs >= observation_space.low
-    ), f"The observation returned by the `{method_name}()` method does not match the lower bound of the given observation space. Expected: obs >= {np.min(observation_space.low)}, actual: {np.min(obs)}"
+    ), """\
+        The observation returned by the `{method_name}()` method does not match the lower bound
+        of the given observation space. Expected: obs >= {lower_exp}, actual: {lower_act}\
+        """.format(
+        method_name=method_name, lower_exp=np.min(observation_space.low), lower_act=np.min(obs)
+    )
     assert np.all(
         obs <= observation_space.high
-    ), f"The observation returned by the `{method_name}()` method does not match the upper bound of the given observation space. Expected: obs <= {np.max(observation_space.high)}, actual: {np.max(obs)}"
+    ), """\
+        The observation returned by the `{method_name}()` method does not match the upper bound
+        of the given observation space. Expected: obs <= {upper_exp}, actual: {upper_act}\
+        """.format(
+        method_name=method_name, upper_exp=np.max(observation_space.high), upper_act=np.max(obs)
+    )
 
     assert observation_space.contains(
         obs

@@ -170,15 +170,22 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
         assert isinstance(obs, np.ndarray), f"The observation returned by `{method_name}()` method must be a numpy array"
 
     # Check observation_space properties
-    assert observation_space.shape == obs.shape, f"The observation returned by the `{method_name}()` method does not match the shape of the given observation space. Expected: {observation_space.shape}, actual: {obs.shape}"
-    assert observation_space.dtype == obs.dtype, f"The observation returned by the `{method_name}()` method does not match the data type of the given observation space. Expected: {observation_space.dtype}, actual: {obs.dtype}"
-    assert np.all(obs >= observation_space.low), f"The observation returned by the `{method_name}()` method does not match the lower bound of the given observation space. Expected: obs >= {np.min(observation_space.low)}, actual: {np.min(obs)}"
-    assert np.all(obs <= observation_space.high), f"The observation returned by the `{method_name}()` method does not match the upper bound of the given observation space. Expected: obs <= {np.min(observation_space.high)}, actual: {np.max(obs)}"
-
+    assert (
+        observation_space.shape == obs.shape
+    ), f"The observation returned by the `{method_name}()` method does not match the shape of the given observation space. Expected: {observation_space.shape}, actual: {obs.shape}"
+    assert (
+        observation_space.dtype == obs.dtype
+    ), f"The observation returned by the `{method_name}()` method does not match the data type of the given observation space. Expected: {observation_space.dtype}, actual: {obs.dtype}"
+    assert np.all(
+        obs >= observation_space.low
+    ), f"The observation returned by the `{method_name}()` method does not match the lower bound of the given observation space. Expected: obs >= {np.min(observation_space.low)}, actual: {np.min(obs)}"
+    assert np.all(
+        obs <= observation_space.high
+    ), f"The observation returned by the `{method_name}()` method does not match the upper bound of the given observation space. Expected: obs <= {np.max(observation_space.high)}, actual: {np.max(obs)}"
 
     assert observation_space.contains(
         obs
-    ), f"The observation returned by the `{method_name}()` method does not match the shape of the given observation space. Expected: `{1}`, actual: `{2}`"
+    ), f"The observation returned by the `{method_name}()` method does not match the given observation space"
 
 
 def _check_box_obs(observation_space: spaces.Box, key: str = "") -> None:

@@ -741,6 +741,7 @@ class DictRolloutBuffer(RolloutBuffer):
                 obs_ = obs_.reshape((self.n_envs,) + self.obs_shape[key])
             self.observations[key][self.pos] = obs_
 
+        # Same reshape, for actions
         action = action.reshape((self.n_envs, self.action_dim))
 
         self.actions[self.pos] = np.array(action).copy()

@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.8.0a11 (WIP)
+Release 1.8.0a12 (WIP)
 --------------------------
 
 .. warning::
@@ -46,6 +46,7 @@ Bug Fixes:
 - Added the argument ``dtype`` (default to ``float32``) to the noise for consistency with gym action (@sidney-tio)
 - Fixed PPO train/n_updates metric not accounting for early stopping (@adamfrly)
 - Fixed loading of normalized image-based environments
+- Fixed `DictRolloutBuffer.add` with multidimensional action space (@younik)
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -1,14 +1,14 @@
 #!/bin/bash
 
-CPU_PARENT=ubuntu:20.04
-GPU_PARENT=nvidia/cuda:11.3.1-base-ubuntu20.04
+CPU_PARENT=mambaorg/micromamba:1.4-kinetic
+GPU_PARENT=mambaorg/micromamba:1.4.1-focal-cuda-11.7.1
 
 TAG=stablebaselines/stable-baselines3
 VERSION=$(cat ./stable_baselines3/version.txt)
 
 if [[ ${USE_GPU} == "True" ]]; then
   PARENT=${GPU_PARENT}
-  PYTORCH_DEPS="cudatoolkit=11.3"
+  PYTORCH_DEPS="pytorch-cuda=11.7"
 else
   PARENT=${CPU_PARENT}
   PYTORCH_DEPS="cpuonly"

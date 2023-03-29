@@ -104,7 +104,7 @@ pip install stable-baselines3[extra]
 **Note:** Some shells such as Zsh require quotation marks around brackets, i.e. `pip install 'stable-baselines3[extra]'` ([More Info](https://stackoverflow.com/a/30539963)).
 
 This includes an optional dependencies like Tensorboard, OpenCV or `atari-py` to train on atari games. If you do not need those, you can use:
-```
+```sh
 pip install stable-baselines3
 ```
 
@@ -194,20 +194,32 @@ Actions `gym.spaces`:
 
 
 ## Testing the installation
-All unit tests in stable baselines3 can be run using `pytest` runner:
+### Install dependencies
+```sh
+pip install -e .[docs,tests,extra]
 ```
-pip install pytest pytest-cov
+### Run tests
+All unit tests in stable baselines3 can be run using `pytest` runner:
+```sh
 make pytest
+```
+To run a single test file:
+```sh
+python3 -m pytest -v tests/test_env_checker.py
+```
+To run a single test:
+```sh
+python3 -m pytest -v -k 'test_check_env_dict_action'
 ```
 
 You can also do a static type check using `pytype` and `mypy`:
-```
+```sh
 pip install pytype mypy
 make type
 ```
 
 Codestyle check with `ruff`:
-```
+```sh
 pip install ruff
 make lint
 ```

@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.8.0a10 (WIP)
+Release 1.8.0a12 (WIP)
 --------------------------
 
 .. warning::
@@ -31,6 +31,7 @@ New Features:
 - Added support for dict/tuple observations spaces for ``VecCheckNan``, the check is now active in the ``env_checker()`` (@DavyMorgan)
 - Added multiprocessing support for ``HerReplayBuffer``
 - ``HerReplayBuffer`` now supports all datatypes supported by ``ReplayBuffer``
+- Provide more helpful failure messages when validating the ``observation_space`` of custom gym environments using ``check_env``` (@FieteO)
 
 
 `SB3-Contrib`_
@@ -45,6 +46,7 @@ Bug Fixes:
 - Added the argument ``dtype`` (default to ``float32``) to the noise for consistency with gym action (@sidney-tio)
 - Fixed PPO train/n_updates metric not accounting for early stopping (@adamfrly)
 - Fixed loading of normalized image-based environments
+- Fixed `DictRolloutBuffer.add` with multidimensional action space (@younik)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -1255,4 +1257,4 @@ And all the contributors:
 @carlosluis @arjun-kg @tlpss
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
-@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan
+@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO

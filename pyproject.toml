@@ -83,7 +83,7 @@ filterwarnings = [
     # Tensorboard warnings
     "ignore::DeprecationWarning:tensorboard",
     # Gymnasium warnings
-    # "ignore::UserWarning:gym",
+    "ignore::UserWarning:gymnasium",
     # "ignore::DeprecationWarning:.*passive_env_checker.*",
 ]
 markers = [

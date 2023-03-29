@@ -42,7 +42,8 @@ class CustomGymEnv(gym.Env):
         reward = float(np.random.rand())
         self._choose_next_state()
         self.current_step += 1
-        terminated = truncated = self.current_step >= self.ep_length
+        terminated = False
+        truncated = self.current_step >= self.ep_length
         return self.state, reward, terminated, truncated, {}
 
     def _choose_next_state(self):
@@ -178,7 +179,8 @@ class StepEnv(gym.Env):
     def step(self, action):
         prev_step = self.current_step
         self.current_step += 1
-        terminated = truncated = self.current_step >= self.max_steps
+        terminated = False
+        truncated = self.current_step >= self.max_steps
         return np.array([prev_step], dtype="int"), 0.0, terminated, truncated, {}
 
 

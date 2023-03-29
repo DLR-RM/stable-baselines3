@@ -34,7 +34,8 @@ class DummyEnv(gym.Env):
         self._t += 1
         index = self._t % len(self._observations)
         obs = self._observations[index]
-        terminated = truncated = self._t >= self._ep_length
+        terminated = False
+        truncated = self._t >= self._ep_length
         reward = self._rewards[index]
         return obs, reward, terminated, truncated, {}
 
@@ -63,7 +64,8 @@ class DummyDictEnv(gym.Env):
         self._t += 1
         index = self._t % len(self._observations)
         obs = {key: self._observations[index] for key in self.observation_space.spaces.keys()}
-        terminated = truncated = self._t >= self._ep_length
+        terminated = False
+        truncated = self._t >= self._ep_length
         reward = self._rewards[index]
         return obs, reward, terminated, truncated, {}
 

@@ -250,7 +250,7 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
     assert isinstance(reset_returns, tuple), "`reset()` must return a tuple (obs, info)"
     assert len(reset_returns) == 2, f"`reset()` must return a tuple of size 2 (obs, info), not {len(reset_returns)}"
     obs, info = reset_returns
-    assert isinstance(info, dict), "The second element of the tuple return by `reset()` must be a dictionary"
+    assert isinstance(info, dict), f"The second element of the tuple return by `reset()` must be a dictionary not {info}"
 
     if _is_goal_env(env):
         # Make mypy happy, already checked
@@ -277,7 +277,10 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
     action = action_space.sample()
     data = env.step(action)
 
-    assert len(data) == 5, "The `step()` method must return four values: obs, reward, terminated, truncated, info"
+    assert len(data) == 5, (
+        "The `step()` method must return five values: "
+        f"obs, reward, terminated, truncated, info. Actual: {len(data)} values returned."
+    )
 
     # Unpack
     obs, reward, terminated, truncated, info = data

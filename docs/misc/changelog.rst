@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 1.8.0a10 (WIP)
+Release 1.8.0a11 (WIP)
 --------------------------
 
 .. warning::
@@ -31,6 +31,7 @@ New Features:
 - Added support for dict/tuple observations spaces for ``VecCheckNan``, the check is now active in the ``env_checker()`` (@DavyMorgan)
 - Added multiprocessing support for ``HerReplayBuffer``
 - ``HerReplayBuffer`` now supports all datatypes supported by ``ReplayBuffer``
+- Provide more helpful failure messages when validating the ``observation_space`` of custom gym environments using ``check_env``` (@FieteO)
 
 
 `SB3-Contrib`_
@@ -1251,4 +1252,4 @@ And all the contributors:
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875 @yuanmingqi
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
-@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan
+@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO

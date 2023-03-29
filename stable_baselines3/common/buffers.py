@@ -246,7 +246,7 @@ class ReplayBuffer(BaseBuffer):
             obs = obs.reshape((self.n_envs, *self.obs_shape))
             next_obs = next_obs.reshape((self.n_envs, *self.obs_shape))
 
-        # Same, for actions
+        # Reshape to handle multi-dim and discrete action spaces, see GH #970 #1392
         action = action.reshape((self.n_envs, self.action_dim))
 
         # Copy to avoid modification by reference
@@ -430,7 +430,7 @@ class RolloutBuffer(BaseBuffer):
         if isinstance(self.observation_space, spaces.Discrete):
             obs = obs.reshape((self.n_envs, *self.obs_shape))
 
-        # Same reshape, for actions
+        # Reshape to handle multi-dim and discrete action spaces, see GH #970 #1392
         action = action.reshape((self.n_envs, self.action_dim))
 
         self.observations[self.pos] = np.array(obs).copy()
@@ -588,7 +588,7 @@ class DictReplayBuffer(ReplayBuffer):
                 next_obs[key] = next_obs[key].reshape((self.n_envs,) + self.obs_shape[key])
             self.next_observations[key][self.pos] = np.array(next_obs[key]).copy()
 
-        # Same reshape, for actions
+        # Reshape to handle multi-dim and discrete action spaces, see GH #970 #1392
         action = action.reshape((self.n_envs, self.action_dim))
 
         self.actions[self.pos] = np.array(action).copy()
@@ -740,6 +740,9 @@ class DictRolloutBuffer(RolloutBuffer):
             if isinstance(self.observation_space.spaces[key], spaces.Discrete):
                 obs_ = obs_.reshape((self.n_envs,) + self.obs_shape[key])
             self.observations[key][self.pos] = obs_
+
+        # Reshape to handle multi-dim and discrete action spaces, see GH #970 #1392
+        action = action.reshape((self.n_envs, self.action_dim))
 
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()

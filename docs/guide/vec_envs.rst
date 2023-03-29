@@ -52,26 +52,46 @@ SB3 VecEnv API is not the same as Gym API.
 SB3 VecEnv API is actually close to Gym 0.21 API but differs to Gym 0.26+ API:
 
 - the ``reset()`` method only returns the observation (``obs = vec_env.reset()``) and not a tuple, the info at reset are stored in ``vec_env.reset_infos``.
+
 - only the initial call to ``vec_env.reset()`` is required, environments are reset automatically afterward (and ``reset_infos`` is updated automatically).
+
 - the ``vec_env.step(actions)`` method expects an array as input
   (with a batch size corresponding to the number of environments) and returns a 4-tuple (and not a 5-tuple): ``obs, rewards, dones, infos`` instead of ``obs, reward, terminated, truncated, info``
   where ``dones = terminated or truncated`` (for each env).
   ``obs, rewards, dones`` are numpy arrays with shape ``(n_envs, shape_for_single_env)`` (so with a batch dimension).
   Additional information is passed via the ``infos`` value which is a list of dictionaries.
+
 - at the end of an episode, ``infos[env_idx]["TimeLimit.truncated"] = truncated and not terminated``
   tells the user if an episode was truncated or not:
-  you should bootstrap when ``infos[env_idx]["TimeLimit.truncated"] is True`` or ``dones[env_idx] is False``.
+  you should bootstrap if ``infos[env_idx]["TimeLimit.truncated"] is True`` (episode over due to a timeout/truncation)
+  or ``dones[env_idx] is False`` (episode not finished).
   Note: compared to Gym 0.26+ ``infos[env_idx]["TimeLimit.truncated"]`` and ``terminated`` `are mutually exclusive <https://github.com/openai/gym/issues/3102>`_.
+  The conversion from SB3 to Gym API is
+
+  .. code-block:: python
+
+    # done is True at the end of an episode
+    # dones[env_idx] = terminated[env_idx] or truncated[env_idx]
+    # In SB3, truncated and terminated are mutually exclusive
+    # infos[env_idx]["TimeLimit.truncated"] = truncated and not terminated
+    # terminated[env_idx] tells you whether you should bootstrap or not:
+    # when the episode has not ended or when the termination was a timeout/truncation
+    terminated[env_idx] = dones[env_idx] and not infos[env_idx]["TimeLimit.truncated"]
+    should_bootstrap[env_idx] = not terminated[env_idx]
+
+
 - at the end of an episode, because the environment resets automatically,
   we provide ``infos[env_idx]["terminal_observation"]`` which contains the last observation
   of an episode (and can be used when bootstrapping, see note in the previous section)
-- if you pass ``render_mode="rgb_array"`` to your Gym env, a corresponding VecEnv can automatically show the rendered image
-  by calling ``vec_env.render(mode="human")``. This is different from Gym which currently `doesn't allow multiple render modes <https://github.com/Farama-Foundation/Gymnasium/issues/100>`_
-  and doesn't allow passing a ``mode`` parameter. Note that if ``render_mode != "rgb_array"``, you can only call ``vec_env.render()`` (without argument or with ``mode=env.render_mode``).
+
+- to overcome the current Gymnasium limitation (only one render mode allowed per env instance, see `issue #100 <https://github.com/Farama-Foundation/Gymnasium/issues/100>`_),
+  we recommend using ``render_mode="rgb_array"`` since we can both have the image as a numpy array and display it with OpenCV.
+  if no mode is passed or ``mode="rgb_array"`` is passed when calling ``vec_env.render`` then we use the default mode, otherwise, we use the OpenCV display.
+  Note that if ``render_mode != "rgb_array"``, you can only call ``vec_env.render()`` (without argument or with ``mode=env.render_mode``).
+
 - the ``reset()`` method doesn't take any parameter. If you want to seed the pseudo-random generator,
   you should call ``vec_env.seed(seed=seed)`` and ``obs = vec_env.reset()`` afterward.
-  If your Gym env implements a ``seed()`` method then it will be called,
-  otherwise ``env.reset(seed=seed)`` will be called (in that case, you will need two resets to set the seed).
+
 - methods and attributes of the underlying Gym envs can be accessed, called and set using ``vec_env.get_attr("attribute_name")``,
   ``vec_env.env_method("method_name", args1, args2, kwargs1=kwargs1)`` and ``vec_env.set_attr("attribute_name", new_value)``.
 

@@ -170,7 +170,7 @@ class MaxAndSkipEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
         Repeat action, sum reward, and max over last observations.
 
         :param action: the action
-        :return: observation, reward, done, information
+        :return: observation, reward, terminated, truncated, information
         """
         total_reward = 0.0
         terminated = truncated = False

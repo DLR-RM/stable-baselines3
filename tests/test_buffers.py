@@ -45,7 +45,8 @@ class DummyDictEnv(gym.Env):
     """
 
     def __init__(self):
-        self.action_space = spaces.Box(1, 5, (1,))
+        # Test for multi-dim action space
+        self.action_space = spaces.Box(1, 5, shape=(10, 7))
         space = spaces.Box(1, 5, (1,))
         self.observation_space = spaces.Dict({"observation": space, "achieved_goal": space, "desired_goal": space})
         self._observations = np.array([[1.0], [2.0], [3.0], [4.0], [5.0]], dtype=np.float32)

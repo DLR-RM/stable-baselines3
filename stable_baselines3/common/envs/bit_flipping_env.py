@@ -96,7 +96,7 @@ class BitFlippingEnv(Env):
         self.discrete_obs_space = discrete_obs_space
         self.image_obs_space = image_obs_space
         self.state = None
-        self.desired_goal = np.ones((n_bits,))
+        self.desired_goal = np.ones((n_bits,), dtype=self.observation_space["desired_goal"].dtype)
         if max_steps is None:
             max_steps = n_bits
         self.max_steps = max_steps

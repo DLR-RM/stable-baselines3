@@ -191,27 +191,32 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
         # check obs dimensions, dtype and bounds
         assert observation_space.shape == obs.shape, (
             f"The observation returned by the `{method_name}()` method does not match the shape "
-            f"of the given observation space. Expected: {observation_space.shape}, actual shape: {obs.shape}"
+            f"of the given observation space {observation_space}. "
+            f"Expected: {observation_space.shape}, actual shape: {obs.shape}"
         )
-        assert observation_space.dtype == obs.dtype, (
-            f"The observation returned by the `{method_name}()` method does not match the data type "
-            f"of the given observation space. Expected: {observation_space.dtype}, actual dtype: {obs.dtype}"
+        assert np.can_cast(obs.dtype, observation_space.dtype), (
+            f"The observation returned by the `{method_name}()` method does not match the data type (cannot cast) "
+            f"of the given observation space {observation_space}. "
+            f"Expected: {observation_space.dtype}, actual dtype: {obs.dtype}"
         )
         if isinstance(observation_space, spaces.Box):
             assert np.all(obs >= observation_space.low), (
                 f"The observation returned by the `{method_name}()` method does not match the lower bound "
-                f"of the given observation space. Expected: obs >= {np.min(observation_space.low)}, "
+                f"of the given observation space {observation_space}."
+                f"Expected: obs >= {np.min(observation_space.low)}, "
                 f"actual min value: {np.min(obs)} at index {np.argmin(obs)}"
             )
             assert np.all(obs <= observation_space.high), (
                 f"The observation returned by the `{method_name}()` method does not match the upper bound "
-                f"of the given observation space. Expected: obs <= {np.max(observation_space.high)}, "
+                f"of the given observation space {observation_space}. "
+                f"Expected: obs <= {np.max(observation_space.high)}, "
                 f"actual max value: {np.max(obs)} at index {np.argmax(obs)}"
             )
 
-    assert observation_space.contains(
-        obs
-    ), f"The observation returned by the `{method_name}()` method does not match the given observation space"
+    assert observation_space.contains(obs), (
+        f"The observation returned by the `{method_name}()` method "
+        f"does not match the given observation space {observation_space}"
+    )
 
 
 def _check_box_obs(observation_space: spaces.Box, key: str = "") -> None:

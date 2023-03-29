@@ -1,3 +1,4 @@
+import importlib.util
 import os
 import sys
 import time
@@ -233,11 +234,7 @@ def test_report_video_to_tensorboard(tmp_path, read_log, capsys):
 
 
 def is_moviepy_installed():
-    try:
-        import moviepy
-    except ModuleNotFoundError:
-        return False
-    return True
+    return importlib.util.find_spec("moviepy") is not None
 
 
 @pytest.mark.parametrize("unsupported_format", ["stdout", "log", "json", "csv"])

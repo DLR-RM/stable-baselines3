@@ -29,17 +29,15 @@ It creates "virtual" transitions by relabeling transitions (changing the desired
 
 .. warning::
 
-  For performance reasons, the maximum number of steps per episodes must be specified.
-  In most cases, it will be inferred if you specify ``max_episode_steps`` when registering the environment
-  or if you use a ``gym.wrappers.TimeLimit`` (and ``env.spec`` is not None).
-  Otherwise, you can directly pass ``max_episode_length`` to the model constructor
-
-
-.. warning::
-
   Because it needs access to ``env.compute_reward()``
   ``HER`` must be loaded with the env. If you just want to use the trained policy
   without instantiating the environment, we recommend saving the policy only.
+
+
+.. note::
+
+  Compared to other implementations, the ``future`` goal sampling strategy is inclusive:
+  the current transition can be used when re-sampling.
 
 
 Notes
@@ -77,11 +75,6 @@ This example is only to demonstrate the use of the library and its functions, an
     # Available strategies (cf paper): future, final, episode
     goal_selection_strategy = "future" # equivalent to GoalSelectionStrategy.FUTURE
 
-    # If True the HER transitions will get sampled online
-    online_sampling = True
-    # Time limit for the episodes
-    max_episode_length = N_BITS
-
     # Initialize the model
     model = model_class(
         "MultiInputPolicy",
@@ -91,8 +84,6 @@ This example is only to demonstrate the use of the library and its functions, an
         replay_buffer_kwargs=dict(
             n_sampled_goal=4,
             goal_selection_strategy=goal_selection_strategy,
-            online_sampling=online_sampling,
-            max_episode_length=max_episode_length,
         ),
         verbose=1,
     )

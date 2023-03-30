@@ -186,9 +186,10 @@ def test_evaluate_policy(direct_policy: bool):
 
     assert model.policy is not None
     policy = model.policy if direct_policy else model
-    policy.n_callback_calls = 0
+
+    policy.n_callback_calls = 0  # type: ignore[assignment, attr-defined]
     _, episode_lengths = evaluate_policy(
-        policy,
+        policy,  # type: ignore[arg-type]
         model.get_env(),
         n_eval_episodes,
         deterministic=True,
@@ -198,21 +199,26 @@ def test_evaluate_policy(direct_policy: bool):
         return_episode_rewards=True,
     )
 
-    n_steps = sum(episode_lengths)
+    n_steps = sum(episode_lengths)  # type: ignore[arg-type]
     assert n_steps == n_steps_per_episode * n_eval_episodes
-    assert n_steps == policy.n_callback_calls
+    assert n_steps == policy.n_callback_calls  # type: ignore[attr-defined]
 
     # Reaching a mean reward of zero is impossible with the Pendulum env
     with pytest.raises(AssertionError):
-        evaluate_policy(policy, model.get_env(), n_eval_episodes, reward_threshold=0.0)
+        evaluate_policy(policy, model.get_env(), n_eval_episodes, reward_threshold=0.0)  # type: ignore[arg-type]
 
-    episode_rewards, _ = evaluate_policy(policy, model.get_env(), n_eval_episodes, return_episode_rewards=True)
-    assert len(episode_rewards) == n_eval_episodes
+    episode_rewards, _ = evaluate_policy(
+        policy,  # type: ignore[arg-type]
+        model.get_env(),
+        n_eval_episodes,
+        return_episode_rewards=True,
+    )
+    assert len(episode_rewards) == n_eval_episodes  # type: ignore[arg-type]
 
     # Test that warning is given about no monitor
     eval_env = gym.make("Pendulum-v1")
     with pytest.warns(UserWarning):
-        _ = evaluate_policy(policy, eval_env, n_eval_episodes)
+        _ = evaluate_policy(policy, eval_env, n_eval_episodes)  # type: ignore[arg-type]
 
 
 class ZeroRewardWrapper(gym.RewardWrapper):
@@ -510,6 +516,55 @@ def test_is_vectorized_observation():
         discrete_obs = np.ones((1, 1), dtype=np.int8)
         dict_obs = {"box": box_obs, "discrete": discrete_obs}
         is_vectorized_observation(dict_obs, dict_space)
+
+
+def test_policy_is_vectorized_obs():
+    """
+    Additional tests to check `policy.is_vectorized()`
+    which handle transposing image to channel-first if needed.
+
+    We check for basic cases, the rest is handled
+    by is_vectorized_observation() helper.
+    """
+    policy = sb3.DQN("MlpPolicy", "CartPole-v1").policy
+
+    box_space = spaces.Box(-1, 1, shape=(2,))
+    box_obs = np.ones((1, *box_space.shape))
+    policy.observation_space = box_space
+    assert policy.is_vectorized_observation(box_obs)
+    assert not policy.is_vectorized_observation(np.ones(box_space.shape))
+
+    discrete_space = spaces.Discrete(2)
+    discrete_obs = np.ones((3,), dtype=np.int8)
+    policy.observation_space = discrete_space
+    assert not policy.is_vectorized_observation(np.ones((), dtype=np.int8))
+
+    dict_space = spaces.Dict({"box": box_space, "discrete": discrete_space})
+    dict_obs = {"box": box_obs, "discrete": discrete_obs}
+    policy.observation_space = dict_space
+    assert policy.is_vectorized_observation(dict_obs)
+    dict_obs = {"box": np.ones(box_space.shape), "discrete": np.ones((), dtype=np.int8)}
+    assert not policy.is_vectorized_observation(dict_obs)
+
+    # Image space are channel-first (done automatically in SB3 using VecTranspose)
+    # but observation passed is channel last
+    image_space = spaces.Box(low=0, high=255, shape=(3, 32, 32), dtype=np.uint8)
+
+    image_channel_first = image_space.sample()
+    image_channel_last = np.transpose(image_channel_first, (1, 2, 0))
+    policy.observation_space = image_space
+    assert not policy.is_vectorized_observation(image_channel_first)
+    assert not policy.is_vectorized_observation(image_channel_last)
+    assert policy.is_vectorized_observation(image_channel_first[np.newaxis])
+    assert policy.is_vectorized_observation(image_channel_last[np.newaxis])
+
+    # Same with dict obs
+    dict_space = spaces.Dict({"image": image_space})
+    policy.observation_space = dict_space
+    assert not policy.is_vectorized_observation({"image": image_channel_first})
+    assert not policy.is_vectorized_observation({"image": image_channel_last})
+    assert policy.is_vectorized_observation({"image": image_channel_first[np.newaxis]})
+    assert policy.is_vectorized_observation({"image": image_channel_last[np.newaxis]})
 
 
 def test_check_shape_equal():

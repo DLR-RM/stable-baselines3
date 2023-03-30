@@ -61,8 +61,6 @@ exclude = """(?x)(
     | stable_baselines3/common/vec_env/vec_normalize.py$
     | stable_baselines3/common/vec_env/vec_transpose.py$
     | stable_baselines3/common/vec_env/vec_video_recorder.py$
-    | stable_baselines3/dqn/dqn.py$
-    | stable_baselines3/dqn/policies.py$
     | stable_baselines3/her/her_replay_buffer.py$
     | stable_baselines3/ppo/ppo.py$
     | stable_baselines3/sac/policies.py$
@@ -92,3 +90,18 @@ filterwarnings = [
 markers = [
     "expensive: marks tests as expensive (deselect with '-m \"not expensive\"')"
 ]
+
+[tool.coverage.run]
+disable_warnings = ["couldnt-parse"]
+branch = false
+omit = [
+  "tests/*",
+  "setup.py",
+  # Require graphical interface
+  "stable_baselines3/common/results_plotter.py",
+  # Require ffmpeg
+  "stable_baselines3/common/vec_env/vec_video_recorder.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [ "pragma: no cover", "raise NotImplementedError()", "if typing.TYPE_CHECKING:"]

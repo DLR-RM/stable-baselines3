@@ -64,7 +64,7 @@ class BaseModel(nn.Module):
         action_space: spaces.Space,
         features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
-        features_extractor: Optional[nn.Module] = None,
+        features_extractor: Optional[BaseFeaturesExtractor] = None,
         normalize_images: bool = True,
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
@@ -84,7 +84,7 @@ class BaseModel(nn.Module):
 
         self.optimizer_class = optimizer_class
         self.optimizer_kwargs = optimizer_kwargs
-        self.optimizer = None  # type: Optional[th.optim.Optimizer]
+        self.optimizer: th.optim.Optimizer
 
         self.features_extractor_class = features_extractor_class
         self.features_extractor_kwargs = features_extractor_kwargs
@@ -206,6 +206,26 @@ class BaseModel(nn.Module):
         :param mode: if true, set to training mode, else set to evaluation mode
         """
         self.train(mode)
+
+    def is_vectorized_observation(self, observation: Union[np.ndarray, Dict[str, np.ndarray]]) -> bool:
+        """
+        Check whether or not the observation is vectorized,
+        apply transposition to image (so that they are channel-first) if needed.
+        This is used in DQN when sampling random action (epsilon-greedy policy)
+
+        :param observation: the input observation to check
+        :return: whether the given observation is vectorized or not
+        """
+        vectorized_env = False
+        if isinstance(observation, dict):
+            for key, obs in observation.items():
+                obs_space = self.observation_space.spaces[key]
+                vectorized_env = vectorized_env or is_vectorized_observation(maybe_transpose(obs, obs_space), obs_space)
+        else:
+            vectorized_env = is_vectorized_observation(
+                maybe_transpose(observation, self.observation_space), self.observation_space
+            )
+        return vectorized_env
 
     def obs_to_tensor(self, observation: Union[np.ndarray, Dict[str, np.ndarray]]) -> Tuple[th.Tensor, bool]:
         """

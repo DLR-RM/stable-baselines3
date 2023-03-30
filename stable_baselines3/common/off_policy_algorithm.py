@@ -125,13 +125,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.gradient_steps = gradient_steps
         self.action_noise = action_noise
         self.optimize_memory_usage = optimize_memory_usage
-        if replay_buffer_class is None:
-            if isinstance(self.observation_space, spaces.Dict):
-                self.replay_buffer_class = DictReplayBuffer
-            else:
-                self.replay_buffer_class = ReplayBuffer
-        else:
-            self.replay_buffer_class = replay_buffer_class
+        self.replay_buffer_class = replay_buffer_class
         self.replay_buffer_kwargs = replay_buffer_kwargs or {}
         self._episode_storage = None
 
@@ -139,7 +133,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.train_freq = train_freq
 
         self.actor = None  # type: Optional[th.nn.Module]
-        self.replay_buffer = None  # type: Optional[ReplayBuffer]
+        self.replay_buffer: Optional[ReplayBuffer] = None
         # Update policy keyword arguments
         if sde_support:
             self.policy_kwargs["use_sde"] = self.use_sde
@@ -173,6 +167,12 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     def _setup_model(self) -> None:
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
+
+        if self.replay_buffer_class is None:
+            if isinstance(self.observation_space, spaces.Dict):
+                self.replay_buffer_class = DictReplayBuffer
+            else:
+                self.replay_buffer_class = ReplayBuffer
 
         if self.replay_buffer is None:
             # Make a local copy as we should not pickle

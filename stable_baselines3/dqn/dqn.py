@@ -9,9 +9,8 @@ from torch.nn import functional as F
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
-from stable_baselines3.common.preprocessing import maybe_transpose
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
-from stable_baselines3.common.utils import get_linear_fn, get_parameters_by_name, is_vectorized_observation, polyak_update
+from stable_baselines3.common.utils import get_linear_fn, get_parameters_by_name, polyak_update
 from stable_baselines3.dqn.policies import CnnPolicy, DQNPolicy, MlpPolicy, MultiInputPolicy
 
 SelfDQN = TypeVar("SelfDQN", bound="DQN")
@@ -93,7 +92,7 @@ class DQN(OffPolicyAlgorithm):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
-    ):
+    ) -> None:
         super().__init__(
             policy,
             env,
@@ -129,8 +128,9 @@ class DQN(OffPolicyAlgorithm):
         # "epsilon" for the epsilon-greedy exploration
         self.exploration_rate = 0.0
         # Linear schedule will be defined in `_setup_model()`
-        self.exploration_schedule = None
-        self.q_net, self.q_net_target = None, None
+        self.exploration_schedule: Schedule
+        self.q_net: th.nn.Module
+        self.q_net_target: th.nn.Module
 
         if _init_setup_model:
             self._setup_model()
@@ -160,6 +160,8 @@ class DQN(OffPolicyAlgorithm):
             self.target_update_interval = max(self.target_update_interval // self.n_envs, 1)
 
     def _create_aliases(self) -> None:
+        # For type checker:
+        assert isinstance(self.policy, DQNPolicy)
         self.q_net = self.policy.q_net
         self.q_net_target = self.policy.q_net_target
 
@@ -186,7 +188,7 @@ class DQN(OffPolicyAlgorithm):
         losses = []
         for _ in range(gradient_steps):
             # Sample replay buffer
-            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
+            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)  # type: ignore[union-attr]
 
             with th.no_grad():
                 # Compute the next Q-values using the target network
@@ -239,7 +241,7 @@ class DQN(OffPolicyAlgorithm):
             (used in recurrent policies)
         """
         if not deterministic and np.random.rand() < self.exploration_rate:
-            if is_vectorized_observation(maybe_transpose(observation, self.observation_space), self.observation_space):
+            if self.policy.is_vectorized_observation(observation):
                 if isinstance(observation, dict):
                     n_batch = observation[list(observation.keys())[0]].shape[0]
                 else:

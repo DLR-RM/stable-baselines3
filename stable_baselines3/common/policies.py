@@ -64,7 +64,7 @@ class BaseModel(nn.Module):
         action_space: spaces.Space,
         features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
         features_extractor_kwargs: Optional[Dict[str, Any]] = None,
-        features_extractor: Optional[nn.Module] = None,
+        features_extractor: Optional[BaseFeaturesExtractor] = None,
         normalize_images: bool = True,
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
@@ -84,7 +84,7 @@ class BaseModel(nn.Module):
 
         self.optimizer_class = optimizer_class
         self.optimizer_kwargs = optimizer_kwargs
-        self.optimizer = None  # type: Optional[th.optim.Optimizer]
+        self.optimizer: th.optim.Optimizer
 
         self.features_extractor_class = features_extractor_class
         self.features_extractor_kwargs = features_extractor_kwargs
@@ -118,26 +118,14 @@ class BaseModel(nn.Module):
         """Helper method to create a features extractor."""
         return self.features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
 
-    def extract_features(self, obs: th.Tensor, features_extractor: Optional[BaseFeaturesExtractor] = None) -> th.Tensor:
+    def extract_features(self, obs: th.Tensor, features_extractor: BaseFeaturesExtractor) -> th.Tensor:
         """
         Preprocess the observation if needed and extract features.
 
          :param obs: The observation
-         :param features_extractor: The features extractor to use. If it is set to None,
-            the features extractor of the policy is used.
-         :return: The features
+         :param features_extractor: The features extractor to use.
+         :return: The extracted features
         """
-        if features_extractor is None:
-            warnings.warn(
-                (
-                    "When calling extract_features(), you should explicitely pass a features_extractor as parameter. "
-                    "This will be mandatory in Stable-Baselines v1.8.0"
-                ),
-                DeprecationWarning,
-            )
-
-        features_extractor = features_extractor or self.features_extractor
-        assert features_extractor is not None, "No features extractor was set"
         preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
         return features_extractor(preprocessed_obs)
 
@@ -219,6 +207,26 @@ class BaseModel(nn.Module):
         """
         self.train(mode)
 
+    def is_vectorized_observation(self, observation: Union[np.ndarray, Dict[str, np.ndarray]]) -> bool:
+        """
+        Check whether or not the observation is vectorized,
+        apply transposition to image (so that they are channel-first) if needed.
+        This is used in DQN when sampling random action (epsilon-greedy policy)
+
+        :param observation: the input observation to check
+        :return: whether the given observation is vectorized or not
+        """
+        vectorized_env = False
+        if isinstance(observation, dict):
+            for key, obs in observation.items():
+                obs_space = self.observation_space.spaces[key]
+                vectorized_env = vectorized_env or is_vectorized_observation(maybe_transpose(obs, obs_space), obs_space)
+        else:
+            vectorized_env = is_vectorized_observation(
+                maybe_transpose(observation, self.observation_space), self.observation_space
+            )
+        return vectorized_env
+
     def obs_to_tensor(self, observation: Union[np.ndarray, Dict[str, np.ndarray]]) -> Tuple[th.Tensor, bool]:
         """
         Convert an input observation to a PyTorch tensor that can be fed to a model.
@@ -240,7 +248,7 @@ class BaseModel(nn.Module):
                     obs_ = np.array(obs)
                 vectorized_env = vectorized_env or is_vectorized_observation(obs_, obs_space)
                 # Add batch dimension if needed
-                observation[key] = obs_.reshape((-1,) + self.observation_space[key].shape)
+                observation[key] = obs_.reshape((-1, *self.observation_space[key].shape))
 
         elif is_image_space(self.observation_space):
             # Handle the different cases for images
@@ -254,7 +262,7 @@ class BaseModel(nn.Module):
             # Dict obs need to be handled separately
             vectorized_env = is_vectorized_observation(observation, self.observation_space)
             # Add batch dimension if needed
-            observation = observation.reshape((-1,) + self.observation_space.shape)
+            observation = observation.reshape((-1, *self.observation_space.shape))
 
         observation = obs_as_tensor(observation, self.device)
         return observation, vectorized_env
@@ -342,7 +350,7 @@ class BasePolicy(BaseModel, ABC):
         with th.no_grad():
             actions = self._predict(observation, deterministic=deterministic)
         # Convert to numpy, and reshape to the original action shape
-        actions = actions.cpu().numpy().reshape((-1,) + self.action_space.shape)
+        actions = actions.cpu().numpy().reshape((-1, *self.action_space.shape))
 
         if isinstance(self.action_space, spaces.Box):
             if self.squash_output:
@@ -418,8 +426,7 @@ class ActorCriticPolicy(BasePolicy):
         observation_space: spaces.Space,
         action_space: spaces.Space,
         lr_schedule: Schedule,
-        # TODO(antonin): update type annotation when we remove shared network support
-        net_arch: Union[List[int], Dict[str, List[int]], List[Dict[str, List[int]]], None] = None,
+        net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
@@ -434,7 +441,6 @@ class ActorCriticPolicy(BasePolicy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
     ):
-
         if optimizer_kwargs is None:
             optimizer_kwargs = {}
             # Small values to avoid NaN in Adam optimizer
@@ -452,21 +458,15 @@ class ActorCriticPolicy(BasePolicy):
             normalize_images=normalize_images,
         )
 
-        # Convert [dict()] to dict() as shared network are deprecated
-        if isinstance(net_arch, list) and len(net_arch) > 0:
-            if isinstance(net_arch[0], dict):
-                warnings.warn(
-                    (
-                        "As shared layers in the mlp_extractor are deprecated and will be removed in SB3 v1.8.0, "
-                        "you should now pass directly a dictionary and not a list "
-                        "(net_arch=dict(pi=..., vf=...) instead of net_arch=[dict(pi=..., vf=...)])"
-                    ),
-                )
-                net_arch = net_arch[0]
-            else:
-                # Note: deprecation warning will be emitted
-                # by the MlpExtractor constructor
-                pass
+        if isinstance(net_arch, list) and len(net_arch) > 0 and isinstance(net_arch[0], dict):
+            warnings.warn(
+                (
+                    "As shared layers in the mlp_extractor are removed since SB3 v1.8.0, "
+                    "you should now pass directly a dictionary and not a list "
+                    "(net_arch=dict(pi=..., vf=...) instead of net_arch=[dict(pi=..., vf=...)])"
+                ),
+            )
+            net_arch = net_arch[0]
 
         # Default network architecture, from stable-baselines
         if net_arch is None:
@@ -488,12 +488,6 @@ class ActorCriticPolicy(BasePolicy):
         else:
             self.pi_features_extractor = self.features_extractor
             self.vf_features_extractor = self.make_features_extractor()
-            # if the features extractor is not shared, there cannot be shared layers in the mlp_extractor
-            # TODO(antonin): update the check once we change net_arch behavior
-            if isinstance(net_arch, list) and len(net_arch) > 0:
-                raise ValueError(
-                    "Error: if the features extractor is not shared, there cannot be shared layers in the mlp_extractor"
-                )
 
         self.log_std_init = log_std_init
         dist_kwargs = None
@@ -634,7 +628,7 @@ class ActorCriticPolicy(BasePolicy):
         distribution = self._get_action_dist_from_latent(latent_pi)
         actions = distribution.get_actions(deterministic=deterministic)
         log_prob = distribution.log_prob(actions)
-        actions = actions.reshape((-1,) + self.action_space.shape)
+        actions = actions.reshape((-1, *self.action_space.shape))
         return actions, values, log_prob
 
     def extract_features(self, obs: th.Tensor) -> Union[th.Tensor, Tuple[th.Tensor, th.Tensor]]:
@@ -770,7 +764,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         observation_space: spaces.Space,
         action_space: spaces.Space,
         lr_schedule: Schedule,
-        net_arch: Union[List[int], Dict[str, List[int]], List[Dict[str, List[int]]], None] = None,
+        net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
@@ -843,7 +837,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         observation_space: spaces.Dict,
         action_space: spaces.Space,
         lr_schedule: Schedule,
-        net_arch: Union[List[int], Dict[str, List[int]], List[Dict[str, List[int]]], None] = None,
+        net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,

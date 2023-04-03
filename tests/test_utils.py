@@ -9,12 +9,13 @@ from gym import spaces
 
 import stable_baselines3 as sb3
 from stable_baselines3 import A2C
-from stable_baselines3.common.atari_wrappers import ClipRewardEnv, MaxAndSkipEnv
+from stable_baselines3.common.atari_wrappers import MaxAndSkipEnv
 from stable_baselines3.common.env_util import is_wrapped, make_atari_env, make_vec_env, unwrap_wrapper
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import ActionNoise, OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
 from stable_baselines3.common.utils import (
+    check_shape_equal,
     get_parameters_by_name,
     get_system_info,
     is_vectorized_observation,
@@ -55,30 +56,54 @@ def test_make_vec_env_func_checker():
     env.close()
 
 
-@pytest.mark.parametrize("env_id", ["BreakoutNoFrameskip-v4"])
-@pytest.mark.parametrize("n_envs", [1, 2])
-@pytest.mark.parametrize("wrapper_kwargs", [None, dict(clip_reward=False, screen_size=60)])
-def test_make_atari_env(env_id, n_envs, wrapper_kwargs):
-    env = make_atari_env(env_id, n_envs, wrapper_kwargs=wrapper_kwargs, monitor_dir=None, seed=0)
+# Use Asterix as it does not requires fire reset
+@pytest.mark.parametrize("env_id", ["BreakoutNoFrameskip-v4", "AsterixNoFrameskip-v4"])
+@pytest.mark.parametrize("noop_max", [0, 10])
+@pytest.mark.parametrize("action_repeat_probability", [0.0, 0.25])
+@pytest.mark.parametrize("frame_skip", [1, 4])
+@pytest.mark.parametrize("screen_size", [60])
+@pytest.mark.parametrize("terminal_on_life_loss", [True, False])
+@pytest.mark.parametrize("clip_reward", [True])
+def test_make_atari_env(
+    env_id, noop_max, action_repeat_probability, frame_skip, screen_size, terminal_on_life_loss, clip_reward
+):
+    n_envs = 2
+    wrapper_kwargs = {
+        "noop_max": noop_max,
+        "action_repeat_probability": action_repeat_probability,
+        "frame_skip": frame_skip,
+        "screen_size": screen_size,
+        "terminal_on_life_loss": terminal_on_life_loss,
+        "clip_reward": clip_reward,
+    }
+    venv = make_atari_env(
+        env_id,
+        n_envs=2,
+        wrapper_kwargs=wrapper_kwargs,
+        monitor_dir=None,
+        seed=0,
+    )
 
-    assert env.num_envs == n_envs
+    assert venv.num_envs == n_envs
 
-    obs = env.reset()
+    needs_fire_reset = env_id == "BreakoutNoFrameskip-v4"
+    expected_frame_number_low = frame_skip * 2 if needs_fire_reset else 0  # FIRE - UP on reset
+    expected_frame_number_high = expected_frame_number_low + noop_max
+    expected_shape = (n_envs, screen_size, screen_size, 1)
 
-    new_obs, reward, _, _ = env.step([env.action_space.sample() for _ in range(n_envs)])
+    obs = venv.reset()
+    frame_numbers = [env.unwrapped.ale.getEpisodeFrameNumber() for env in venv.envs]
+    for frame_number in frame_numbers:
+        assert expected_frame_number_low <= frame_number <= expected_frame_number_high
+    assert obs.shape == expected_shape
 
-    assert obs.shape == new_obs.shape
+    new_obs, reward, _, _ = venv.step([venv.action_space.sample() for _ in range(n_envs)])
 
-    # Wrapped into DummyVecEnv
-    wrapped_atari_env = env.envs[0]
-    if wrapper_kwargs is not None:
-        assert obs.shape == (n_envs, 60, 60, 1)
-        assert wrapped_atari_env.observation_space.shape == (60, 60, 1)
-        assert not isinstance(wrapped_atari_env.env, ClipRewardEnv)
-    else:
-        assert obs.shape == (n_envs, 84, 84, 1)
-        assert wrapped_atari_env.observation_space.shape == (84, 84, 1)
-        assert isinstance(wrapped_atari_env.env, ClipRewardEnv)
+    new_frame_numbers = [env.unwrapped.ale.getEpisodeFrameNumber() for env in venv.envs]
+    for frame_number, new_frame_number in zip(frame_numbers, new_frame_numbers):
+        assert new_frame_number - frame_number == frame_skip
+    assert new_obs.shape == expected_shape
+    if clip_reward:
         assert np.max(np.abs(reward)) < 1.0
 
 
@@ -161,9 +186,10 @@ def test_evaluate_policy(direct_policy: bool):
 
     assert model.policy is not None
     policy = model.policy if direct_policy else model
-    policy.n_callback_calls = 0
+
+    policy.n_callback_calls = 0  # type: ignore[assignment, attr-defined]
     _, episode_lengths = evaluate_policy(
-        policy,
+        policy,  # type: ignore[arg-type]
         model.get_env(),
         n_eval_episodes,
         deterministic=True,
@@ -173,21 +199,26 @@ def test_evaluate_policy(direct_policy: bool):
         return_episode_rewards=True,
     )
 
-    n_steps = sum(episode_lengths)
+    n_steps = sum(episode_lengths)  # type: ignore[arg-type]
     assert n_steps == n_steps_per_episode * n_eval_episodes
-    assert n_steps == policy.n_callback_calls
+    assert n_steps == policy.n_callback_calls  # type: ignore[attr-defined]
 
     # Reaching a mean reward of zero is impossible with the Pendulum env
     with pytest.raises(AssertionError):
-        evaluate_policy(policy, model.get_env(), n_eval_episodes, reward_threshold=0.0)
+        evaluate_policy(policy, model.get_env(), n_eval_episodes, reward_threshold=0.0)  # type: ignore[arg-type]
 
-    episode_rewards, _ = evaluate_policy(policy, model.get_env(), n_eval_episodes, return_episode_rewards=True)
-    assert len(episode_rewards) == n_eval_episodes
+    episode_rewards, _ = evaluate_policy(
+        policy,  # type: ignore[arg-type]
+        model.get_env(),
+        n_eval_episodes,
+        return_episode_rewards=True,
+    )
+    assert len(episode_rewards) == n_eval_episodes  # type: ignore[arg-type]
 
     # Test that warning is given about no monitor
     eval_env = gym.make("Pendulum-v1")
     with pytest.warns(UserWarning):
-        _ = evaluate_policy(policy, eval_env, n_eval_episodes)
+        _ = evaluate_policy(policy, eval_env, n_eval_episodes)  # type: ignore[arg-type]
 
 
 class ZeroRewardWrapper(gym.RewardWrapper):
@@ -416,7 +447,7 @@ def test_is_vectorized_observation():
     #     pass
     # All vectorized
     box_space = spaces.Box(-1, 1, shape=(2,))
-    box_obs = np.ones((1,) + box_space.shape)
+    box_obs = np.ones((1, *box_space.shape))
     assert is_vectorized_observation(box_obs, box_space)
 
     discrete_space = spaces.Discrete(2)
@@ -460,13 +491,13 @@ def test_is_vectorized_observation():
     # Vectorized with the wrong shape
     with pytest.raises(ValueError):
         discrete_obs = np.ones((1,), dtype=np.int8)
-        box_obs = np.ones((1, 2) + box_space.shape)
+        box_obs = np.ones((1, 2, *box_space.shape))
         dict_obs = {"box": box_obs, "discrete": discrete_obs}
         is_vectorized_observation(dict_obs, dict_space)
 
     # Weird shape: error
     with pytest.raises(ValueError):
-        discrete_obs = np.ones((1,) + box_space.shape, dtype=np.int8)
+        discrete_obs = np.ones((1, *box_space.shape), dtype=np.int8)
         is_vectorized_observation(discrete_obs, discrete_space)
 
     # wrong shape
@@ -481,7 +512,76 @@ def test_is_vectorized_observation():
 
     # Almost good shape: one dimension too much for Discrete obs
     with pytest.raises(ValueError):
-        box_obs = np.ones((1,) + box_space.shape)
+        box_obs = np.ones((1, *box_space.shape))
         discrete_obs = np.ones((1, 1), dtype=np.int8)
         dict_obs = {"box": box_obs, "discrete": discrete_obs}
         is_vectorized_observation(dict_obs, dict_space)
+
+
+def test_policy_is_vectorized_obs():
+    """
+    Additional tests to check `policy.is_vectorized()`
+    which handle transposing image to channel-first if needed.
+
+    We check for basic cases, the rest is handled
+    by is_vectorized_observation() helper.
+    """
+    policy = sb3.DQN("MlpPolicy", "CartPole-v1").policy
+
+    box_space = spaces.Box(-1, 1, shape=(2,))
+    box_obs = np.ones((1, *box_space.shape))
+    policy.observation_space = box_space
+    assert policy.is_vectorized_observation(box_obs)
+    assert not policy.is_vectorized_observation(np.ones(box_space.shape))
+
+    discrete_space = spaces.Discrete(2)
+    discrete_obs = np.ones((3,), dtype=np.int8)
+    policy.observation_space = discrete_space
+    assert not policy.is_vectorized_observation(np.ones((), dtype=np.int8))
+
+    dict_space = spaces.Dict({"box": box_space, "discrete": discrete_space})
+    dict_obs = {"box": box_obs, "discrete": discrete_obs}
+    policy.observation_space = dict_space
+    assert policy.is_vectorized_observation(dict_obs)
+    dict_obs = {"box": np.ones(box_space.shape), "discrete": np.ones((), dtype=np.int8)}
+    assert not policy.is_vectorized_observation(dict_obs)
+
+    # Image space are channel-first (done automatically in SB3 using VecTranspose)
+    # but observation passed is channel last
+    image_space = spaces.Box(low=0, high=255, shape=(3, 32, 32), dtype=np.uint8)
+
+    image_channel_first = image_space.sample()
+    image_channel_last = np.transpose(image_channel_first, (1, 2, 0))
+    policy.observation_space = image_space
+    assert not policy.is_vectorized_observation(image_channel_first)
+    assert not policy.is_vectorized_observation(image_channel_last)
+    assert policy.is_vectorized_observation(image_channel_first[np.newaxis])
+    assert policy.is_vectorized_observation(image_channel_last[np.newaxis])
+
+    # Same with dict obs
+    dict_space = spaces.Dict({"image": image_space})
+    policy.observation_space = dict_space
+    assert not policy.is_vectorized_observation({"image": image_channel_first})
+    assert not policy.is_vectorized_observation({"image": image_channel_last})
+    assert policy.is_vectorized_observation({"image": image_channel_first[np.newaxis]})
+    assert policy.is_vectorized_observation({"image": image_channel_last[np.newaxis]})
+
+
+def test_check_shape_equal():
+    space1 = spaces.Box(low=0, high=1, shape=(2, 2))
+    space2 = spaces.Box(low=-1, high=1, shape=(2, 2))
+    check_shape_equal(space1, space2)
+
+    space1 = spaces.Box(low=0, high=1, shape=(2, 2))
+    space2 = spaces.Box(low=-1, high=2, shape=(3, 3))
+    with pytest.raises(AssertionError):
+        check_shape_equal(space1, space2)
+
+    space1 = spaces.Dict({"key1": spaces.Box(low=0, high=1, shape=(2, 2)), "key2": spaces.Box(low=0, high=1, shape=(2, 2))})
+    space2 = spaces.Dict({"key1": spaces.Box(low=-1, high=2, shape=(2, 2)), "key2": spaces.Box(low=-1, high=2, shape=(2, 2))})
+    check_shape_equal(space1, space2)
+
+    space1 = spaces.Dict({"key1": spaces.Box(low=0, high=1, shape=(2, 2)), "key2": spaces.Box(low=0, high=1, shape=(2, 2))})
+    space2 = spaces.Dict({"key1": spaces.Box(low=-1, high=2, shape=(3, 3)), "key2": spaces.Box(low=-1, high=2, shape=(2, 2))})
+    with pytest.raises(AssertionError):
+        check_shape_equal(space1, space2)

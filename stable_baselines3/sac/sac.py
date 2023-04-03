@@ -109,7 +109,6 @@ class SAC(OffPolicyAlgorithm):
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
     ):
-
         super().__init__(
             policy,
             env,
@@ -295,7 +294,6 @@ class SAC(OffPolicyAlgorithm):
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
     ) -> SelfSAC:
-
         return super().learn(
             total_timesteps=total_timesteps,
             callback=callback,
@@ -306,7 +304,7 @@ class SAC(OffPolicyAlgorithm):
         )
 
     def _excluded_save_params(self) -> List[str]:
-        return super()._excluded_save_params() + ["actor", "critic", "critic_target"]
+        return super()._excluded_save_params() + ["actor", "critic", "critic_target"]  # noqa: RUF005
 
     def _get_torch_save_params(self) -> Tuple[List[str], List[str]]:
         state_dicts = ["policy", "actor.optimizer", "critic.optimizer"]

@@ -450,10 +450,6 @@ The parking env is a goal-conditioned continuous control task, in which the vehi
       replay_buffer_kwargs=dict(
         n_sampled_goal=n_sampled_goal,
         goal_selection_strategy="future",
-        # IMPORTANT: because the env is not wrapped with a TimeLimit wrapper
-        # we have to manually specify the max number of steps per episode
-        max_episode_length=100,
-        online_sampling=True,
       ),
       verbose=1,
       buffer_size=int(1e6),
@@ -768,10 +764,6 @@ Record a mp4 video (here using a random agent).
 
 Bonus: Make a GIF of a Trained Agent
 ------------------------------------
-
-.. note::
-  For Atari games, you need to use a screen recorder such as `Kazam <https://launchpad.net/kazam>`_.
-  And then convert the video using `ffmpeg <https://superuser.com/questions/556029/how-do-i-convert-a-video-to-gif-using-ffmpeg-with-reasonable-quality>`_
 
 .. code-block:: python
 

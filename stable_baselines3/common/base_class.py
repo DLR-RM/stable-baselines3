@@ -87,6 +87,7 @@ class BaseAlgorithm(ABC):
 
     # Policy aliases (see _get_policy_from_name())
     policy_aliases: Dict[str, Type[BasePolicy]] = {}
+    policy: BasePolicy
 
     def __init__(
         self,
@@ -118,9 +119,9 @@ class BaseAlgorithm(ABC):
         self._vec_normalize_env = unwrap_vec_normalize(env)
         self.verbose = verbose
         self.policy_kwargs = {} if policy_kwargs is None else policy_kwargs
-        self.observation_space = None  # type: Optional[spaces.Space]
-        self.action_space = None  # type: Optional[spaces.Space]
-        self.n_envs = None
+        self.observation_space: spaces.Space
+        self.action_space: spaces.Space
+        self.n_envs: int
         self.num_timesteps = 0
         # Used for updating schedules
         self._total_timesteps = 0
@@ -129,7 +130,6 @@ class BaseAlgorithm(ABC):
         self.seed = seed
         self.action_noise: Optional[ActionNoise] = None
         self.start_time = None
-        self.policy = None
         self.learning_rate = learning_rate
         self.tensorboard_log = tensorboard_log
         self.lr_schedule = None  # type: Optional[Schedule]
@@ -505,7 +505,7 @@ class BaseAlgorithm(ABC):
 
         :param total_timesteps: The total number of samples (env steps) to train on
         :param callback: callback(s) called at every step with state of the algorithm.
-        :param log_interval: The number of timesteps before logging.
+        :param log_interval: The number of episodes before logging.
         :param tb_log_name: the name of the run for TensorBoard logging
         :param reset_num_timesteps: whether or not to reset the current timestep number (used in logging)
         :param progress_bar: Display a progress bar using tqdm and rich.
@@ -617,8 +617,8 @@ class BaseAlgorithm(ABC):
                 f"expected {objects_needing_update}, got {updated_objects}"
             )
 
-    @classmethod  # noqa: C901
-    def load(
+    @classmethod
+    def load(  # noqa: C901
         cls: Type[SelfBaseAlgorithm],
         path: Union[str, pathlib.Path, io.BufferedIOBase],
         env: Optional[GymEnv] = None,
@@ -667,6 +667,11 @@ class BaseAlgorithm(ABC):
         if "policy_kwargs" in data:
             if "device" in data["policy_kwargs"]:
                 del data["policy_kwargs"]["device"]
+            # backward compatibility, convert to new format
+            if "net_arch" in data["policy_kwargs"] and len(data["policy_kwargs"]["net_arch"]) > 0:
+                saved_net_arch = data["policy_kwargs"]["net_arch"]
+                if isinstance(saved_net_arch, list) and isinstance(saved_net_arch[0], dict):
+                    data["policy_kwargs"]["net_arch"] = saved_net_arch[0]
 
         if "policy_kwargs" in kwargs and kwargs["policy_kwargs"] != data["policy_kwargs"]:
             raise ValueError(
@@ -726,7 +731,6 @@ class BaseAlgorithm(ABC):
                 )
             else:
                 raise e
-
         # put other pytorch variables back in place
         if pytorch_variables is not None:
             for name in pytorch_variables:

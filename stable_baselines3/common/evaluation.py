@@ -91,7 +91,6 @@ def evaluate_policy(
         current_lengths += 1
         for i in range(n_envs):
             if episode_counts[i] < episode_count_targets[i]:
-
                 # unpack values so that the callback can access the local variables
                 reward = rewards[i]
                 done = dones[i]

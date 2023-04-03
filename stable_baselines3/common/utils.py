@@ -76,7 +76,7 @@ def update_learning_rate(optimizer: th.optim.Optimizer, learning_rate: float) ->
         param_group["lr"] = learning_rate
 
 
-def get_schedule_fn(value_schedule: Union[Schedule, float, int]) -> Schedule:
+def get_schedule_fn(value_schedule: Union[Schedule, float]) -> Schedule:
     """
     Transform (if needed) learning rate and clip range (for PPO)
     to callable.
@@ -228,6 +228,24 @@ def check_for_correct_spaces(env: GymEnv, observation_space: spaces.Space, actio
         raise ValueError(f"Observation spaces do not match: {observation_space} != {env.observation_space}")
     if action_space != env.action_space:
         raise ValueError(f"Action spaces do not match: {action_space} != {env.action_space}")
+
+
+def check_shape_equal(space1: spaces.Space, space2: spaces.Space) -> None:
+    """
+    If the spaces are Box, check that they have the same shape.
+
+    If the spaces are Dict, it recursively checks the subspaces.
+
+    :param space1: Space
+    :param space2: Other space
+    """
+    if isinstance(space1, spaces.Dict):
+        assert isinstance(space2, spaces.Dict), "spaces must be of the same type"
+        assert space1.spaces.keys() == space2.spaces.keys(), "spaces must have the same keys"
+        for key in space1.spaces.keys():
+            check_shape_equal(space1.spaces[key], space2.spaces[key])
+    elif isinstance(space1, spaces.Box):
+        assert space1.shape == space2.shape, "spaces must have the same shape"
 
 
 def is_vectorized_box_observation(observation: np.ndarray, observation_space: spaces.Box) -> bool:

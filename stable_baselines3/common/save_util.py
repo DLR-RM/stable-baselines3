@@ -37,7 +37,7 @@ def recursive_getattr(obj: Any, attr: str, *args) -> Any:
     def _getattr(obj: Any, attr: str) -> Any:
         return getattr(obj, attr, *args)
 
-    return functools.reduce(_getattr, [obj] + attr.split("."))
+    return functools.reduce(_getattr, [obj, *attr.split(".")])
 
 
 def recursive_setattr(obj: Any, attr: str, val: Any) -> None:
@@ -367,7 +367,7 @@ def load_from_zip_file(
     device: Union[th.device, str] = "auto",
     verbose: int = 0,
     print_system_info: bool = False,
-) -> (Tuple[Optional[Dict[str, Any]], Optional[TensorDict], Optional[TensorDict]]):
+) -> Tuple[Optional[Dict[str, Any]], Optional[TensorDict], Optional[TensorDict]]:
     """
     Load model data from a .zip archive
 

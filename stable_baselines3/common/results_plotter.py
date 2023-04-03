@@ -25,7 +25,7 @@ def rolling_window(array: np.ndarray, window: int) -> np.ndarray:
     :return: rolling window on the input array
     """
     shape = array.shape[:-1] + (array.shape[-1] - window + 1, window)
-    strides = array.strides + (array.strides[-1],)
+    strides = (*array.strides, array.strides[-1])
     return np.lib.stride_tricks.as_strided(array, shape=shape, strides=strides)
 
 
@@ -84,7 +84,7 @@ def plot_curves(
     plt.figure(title, figsize=figsize)
     max_x = max(xy[0][-1] for xy in xy_list)
     min_x = 0
-    for (_, (x, y)) in enumerate(xy_list):
+    for _, (x, y) in enumerate(xy_list):
         plt.scatter(x, y, s=2)
         # Do not plot the smoothed curve at all if the timeseries is shorter than window size.
         if x.shape[0] >= EPISODES_WINDOW:

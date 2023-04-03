@@ -5,7 +5,7 @@ import sys
 import tempfile
 import warnings
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Sequence, TextIO, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, TextIO, Tuple, Union
 
 import numpy as np
 import pandas
@@ -16,7 +16,7 @@ try:
     from torch.utils.tensorboard import SummaryWriter
     from torch.utils.tensorboard.summary import hparams
 except ImportError:
-    SummaryWriter = None
+    SummaryWriter = None  # type: ignore[misc, assignment]
 
 try:
     from tqdm import tqdm
@@ -38,7 +38,7 @@ class Video:
     :param fps: frames per second
     """
 
-    def __init__(self, frames: th.Tensor, fps: Union[float, int]):
+    def __init__(self, frames: th.Tensor, fps: float):
         self.frames = frames
         self.fps = fps
 
@@ -80,7 +80,7 @@ class HParam:
         A non-empty metrics dict is required to display hyperparameters in the corresponding Tensorboard section.
     """
 
-    def __init__(self, hparam_dict: Dict[str, Union[bool, str, float, int, None]], metric_dict: Dict[str, Union[float, int]]):
+    def __init__(self, hparam_dict: Mapping[str, Union[bool, str, float, None]], metric_dict: Mapping[str, float]):
         self.hparam_dict = hparam_dict
         if not metric_dict:
             raise Exception("`metric_dict` must not be empty to display hyperparameters to the HPARAMS tensorboard tab.")
@@ -161,7 +161,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
     def __init__(self, filename_or_file: Union[str, TextIO], max_length: int = 36):
         self.max_length = max_length
         if isinstance(filename_or_file, str):
-            self.file = open(filename_or_file, "wt")
+            self.file = open(filename_or_file, "w")
             self.own_file = True
         else:
             assert hasattr(filename_or_file, "write"), f"Expected file or str, got {filename_or_file}"
@@ -173,7 +173,6 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         key2str = {}
         tag = None
         for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
-
             if excluded is not None and ("stdout" in excluded or "log" in excluded):
                 continue
 
@@ -284,7 +283,7 @@ class JSONOutputFormat(KVWriter):
     """
 
     def __init__(self, filename: str):
-        self.file = open(filename, "wt")
+        self.file = open(filename, "w")
 
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
         def cast_to_json_serializable(value: Any):
@@ -329,7 +328,7 @@ class CSVOutputFormat(KVWriter):
 
     def __init__(self, filename: str):
         self.file = open(filename, "w+t")
-        self.keys = []
+        self.keys: List[str] = []
         self.separator = ","
         self.quotechar = '"'
 
@@ -342,7 +341,7 @@ class CSVOutputFormat(KVWriter):
             self.file.seek(0)
             lines = self.file.readlines()
             self.file.seek(0)
-            for (i, key) in enumerate(self.keys):
+            for i, key in enumerate(self.keys):
                 if i > 0:
                     self.file.write(",")
                 self.file.write(key)
@@ -399,9 +398,7 @@ class TensorBoardOutputFormat(KVWriter):
         self.writer = SummaryWriter(log_dir=folder)
 
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Union[str, Tuple[str, ...]]], step: int = 0) -> None:
-
         for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
-
             if excluded is not None and "tensorboard" in excluded:
                 continue
 

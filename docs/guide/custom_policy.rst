@@ -1,7 +1,7 @@
 .. _custom_policy:
 
-Custom Policy Network
-=====================
+Policy Networks
+===============
 
 Stable Baselines3 provides policy networks for images (CnnPolicies),
 other type of input features (MlpPolicies) and multiple different inputs (MultiInputPolicies).
@@ -49,6 +49,28 @@ Each of these network have a features extractor followed by a fully-connected ne
 
 
 .. image:: ../_static/img/sb3_policy.png
+
+
+Default Network Architecture
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The default network architecture used by SB3 depends on the algorithm and the observation space.
+You can visualize the architecture by printing ``model.policy`` (see `issue #329 <https://github.com/DLR-RM/stable-baselines3/issues/329>`_).
+
+
+For 1D observation space, a 2 layers fully connected net is used with:
+
+- 64 units (per layer) for PPO/A2C/DQN
+- 256 units for SAC
+- [400, 300] units for TD3/DDPG (values are taken from the original TD3 paper)
+
+For image observation spaces, the "Nature CNN" (see code for more details) is used for feature extraction, and SAC/TD3 also keeps the same fully connected network after it.
+The other algorithms only have a linear layer after the CNN.
+The CNN is shared between actor and critic for A2C/PPO (on-policy algorithms) to reduce computation.
+Off-policy algorithms (TD3, DDPG, SAC, ...) have separate feature extractors: one for the actor and one for the critic, since the best performance is obtained with this configuration.
+
+For mixed observations (dictionary observations), the two architectures from above are used, i.e., CNN for images and then two layers fully-connected network
+(with a smaller output size for the CNN).
 
 
 
@@ -115,11 +137,6 @@ that derives from ``BaseFeaturesExtractor`` and then pass it to the model when t
   For on-policy algorithms, the features extractor is shared by default between the actor and the critic to save computation (when applicable).
   However, this can be changed setting ``share_features_extractor=False`` in the
   ``policy_kwargs`` (both for on-policy and off-policy algorithms).
-
-
-.. warning::
-  If the features extractor is **non-shared**, it is **not** possible to have shared layers in the ``mlp_extractor``.
-  Please note that this option is **deprecated**, therefore in a future release the layers in the ``mlp_extractor`` will have to be non-shared.
 
 
 .. code-block:: python
@@ -242,41 +259,31 @@ On-Policy Algorithms
 Custom Networks
 ---------------
 
-.. warning::
-  Shared layers in the the ``mlp_extractor`` are **deprecated**.
-  In a future release all layers will have to be non-shared.
-  If needed, you can implement a custom policy network (see `advanced example below <#advanced-example>`_).
-
-.. warning::
-  In the next Stable-Baselines3 release, the behavior of ``net_arch=[128, 128]`` will change
-  to match the one of off-policy algorithms: it will create **separate** networks (instead of shared currently)
-  for the actor and the critic, with the same architecture.
-
-
 If you need a network architecture that is different for the actor and the critic when using ``PPO``, ``A2C`` or ``TRPO``,
 you can pass a dictionary of the following structure: ``dict(pi=[<actor network architecture>], vf=[<critic network architecture>])``.
 
 For example, if you want a different architecture for the actor (aka ``pi``) and the critic ( value-function aka ``vf``) networks,
 then you can specify ``net_arch=dict(pi=[32, 32], vf=[64, 64])``.
 
-.. Otherwise, to have actor and critic that share the same network architecture,
-.. you only need to specify ``net_arch=[128, 128]`` (here, two hidden layers of 128 units each).
+Otherwise, to have actor and critic that share the same network architecture,
+you only need to specify ``net_arch=[128, 128]`` (here, two hidden layers of 128 units each, this is equivalent to ``net_arch=dict(pi=[128, 128], vf=[128, 128])``).
+
+If shared layers are needed, you need to implement a custom policy network (see `advanced example below <#advanced-example>`_).
 
 Examples
 ~~~~~~~~
 
-.. TODO(antonin): uncomment when shared network is removed
-.. Same architecture for actor and critic with two layers of size 128: ``net_arch=[128, 128]``
-..
-.. .. code-block:: none
-..
-..             obs
-..        /            \
-..      <128>          <128>
-..       |              |
-..      <128>          <128>
-..       |              |
-..     action         value
+Same architecture for actor and critic with two layers of size 128: ``net_arch=[128, 128]``
+
+.. code-block:: none
+
+            obs
+       /            \
+     <128>          <128>
+      |              |
+     <128>          <128>
+      |              |
+    action         value
 
 Different architectures for actor and critic: ``net_arch=dict(pi=[32, 32], vf=[64, 64])``
 

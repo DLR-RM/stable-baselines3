@@ -361,10 +361,10 @@ def test_framestack_vecenv():
     """Test that framestack environment stacks on desired axis"""
 
     image_space_shape = [12, 8, 3]
-    zero_acts = np.zeros([N_ENVS] + image_space_shape)
+    zero_acts = np.zeros([N_ENVS, *image_space_shape])
 
     transposed_image_space_shape = image_space_shape[::-1]
-    transposed_zero_acts = np.zeros([N_ENVS] + transposed_image_space_shape)
+    transposed_zero_acts = np.zeros([N_ENVS, *transposed_image_space_shape])
 
     def make_image_env():
         return CustomGymEnv(

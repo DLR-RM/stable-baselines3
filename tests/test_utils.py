@@ -190,7 +190,7 @@ def test_evaluate_policy(direct_policy: bool):
     policy.n_callback_calls = 0  # type: ignore[assignment, attr-defined]
     _, episode_lengths = evaluate_policy(
         policy,  # type: ignore[arg-type]
-        model.get_env(), # type: ignore[arg-type]
+        model.get_env(),  # type: ignore[arg-type]
         n_eval_episodes,
         deterministic=True,
         render=False,
@@ -209,7 +209,7 @@ def test_evaluate_policy(direct_policy: bool):
 
     episode_rewards, _ = evaluate_policy(
         policy,  # type: ignore[arg-type]
-        model.get_env(), # type: ignore[arg-type]
+        model.get_env(),  # type: ignore[arg-type]
         n_eval_episodes,
         return_episode_rewards=True,
     )

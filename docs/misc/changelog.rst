@@ -4,19 +4,35 @@ Changelog
 ==========
 
 
-Release 1.8.0a4 (WIP)
+Release 1.8.0a13 (WIP)
 --------------------------
+
+.. warning::
+
+  Stable-Baselines3 (SB3) v1.8.0 will be the last one to use Gym as a backend.
+  Starting with v2.0.0, Gymnasium will be the default backend (though SB3 will have compatibility layers for Gym envs).
+  You can find a migration guide here: https://gymnasium.farama.org/content/migration-guide/.
+  If you want to try the SB3 v2.0 alpha version, you can take a look at `PR #1327 <https://github.com/DLR-RM/stable-baselines3/pull/1327>`_.
 
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed shared layers in ``mlp_extractor`` (@AlexPasqua)
 - Refactored ``StackedObservations`` (it now handles dict obs, ``StackedDictObservations`` was removed)
+- You must now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
+- Dropped offline sampling for ``HerReplayBuffer``
+- As ``HerReplayBuffer`` was refactored to support multiprocessing, previous replay buffer are incompatible with this new version
+- ``HerReplayBuffer`` doesn't require a ``max_episode_length`` anymore
 
 New Features:
 ^^^^^^^^^^^^^
 - Added ``repeat_action_probability`` argument in ``AtariWrapper``.
 - Only use ``NoopResetEnv`` and ``MaxAndSkipEnv`` when needed in ``AtariWrapper``
+- Added support for dict/tuple observations spaces for ``VecCheckNan``, the check is now active in the ``env_checker()`` (@DavyMorgan)
+- Added multiprocessing support for ``HerReplayBuffer``
+- ``HerReplayBuffer`` now supports all datatypes supported by ``ReplayBuffer``
+- Provide more helpful failure messages when validating the ``observation_space`` of custom gym environments using ``check_env``` (@FieteO)
+
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -29,6 +45,8 @@ Bug Fixes:
 - Fixed Atari wrapper that missed the reset condition (@luizapozzobon)
 - Added the argument ``dtype`` (default to ``float32``) to the noise for consistency with gym action (@sidney-tio)
 - Fixed PPO train/n_updates metric not accounting for early stopping (@adamfrly)
+- Fixed loading of normalized image-based environments
+- Fixed `DictRolloutBuffer.add` with multidimensional action space (@younik)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -39,6 +57,12 @@ Others:
 - Fixed ``tests/test_vec_normalize.py`` type hint
 - Fixed ``stable_baselines3/common/monitor.py`` type hint
 - Added tests for StackedObservations
+- Removed Gitlab CI file
+- Moved from ``setup.cg`` to ``pyproject.toml`` configuration file
+- Switched from ``flake8`` to ``ruff``
+- Upgraded AutoROM to latest version
+- Fixed ``stable_baselines3/dqn/*.py`` type hints
+- Added ``extra_no_roms`` option for package installation without Atari Roms
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -46,6 +70,9 @@ Documentation:
 - Clarified documentation about subproc multiprocessing for A2C (@Bonifatius94)
 - Fixed typo in ``A2C`` docstring (@AlexPasqua)
 - Renamed timesteps to episodes for ``log_interval`` description (@theSquaredError)
+- Removed note about gif creation for Atari games (@harveybellini)
+- Added information about default network architecture
+- Update information about Gymnasium support
 
 Release 1.7.0 (2023-01-10)
 --------------------------
@@ -212,7 +239,7 @@ Bug Fixes:
 - Fixed missing verbose parameter passing in the ``EvalCallback`` constructor (@burakdmb)
 - Fixed the issue that when updating the target network in DQN, SAC, TD3, the ``running_mean`` and ``running_var`` properties of batch norm layers are not updated (@honglu2875)
 - Fixed incorrect type annotation of the replay_buffer_class argument in ``common.OffPolicyAlgorithm`` initializer, where an instance instead of a class was required (@Rocamonde)
-- Fixed loading saved model with different number of envrionments
+- Fixed loading saved model with different number of environments
 - Removed ``forward()`` abstract method declaration from ``common.policies.BaseModel`` (already defined in ``torch.nn.Module``) to fix type errors in subclasses (@Rocamonde)
 - Fixed the return type of ``.load()`` and ``.learn()`` methods in ``BaseAlgorithm`` so that they now use ``TypeVar`` (@Rocamonde)
 - Fixed an issue where keys with different tags but the same key raised an error in ``common.logger.HumanOutputFormat`` (@Rocamonde and @AdamGleave)
@@ -1229,4 +1256,4 @@ And all the contributors:
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875 @yuanmingqi
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
-@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError
+@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO

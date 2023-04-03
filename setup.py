@@ -70,6 +70,29 @@ model = PPO("MlpPolicy", "CartPole-v1").learn(10_000)
 
 """  # noqa:E501
 
+# Atari Games download is sometimes problematic:
+# https://github.com/Farama-Foundation/AutoROM/issues/39
+# That's why we define extra packages without it.
+extra_no_roms = [
+    # For render
+    "opencv-python",
+    # Tensorboard support
+    "tensorboard>=2.9.1",
+    # Checking memory taken by replay buffer
+    "psutil",
+    # For progress bar callback
+    "tqdm",
+    "rich",
+    # For atari games,
+    "ale-py==0.7.4",
+    "pillow",
+]
+
+extra_packages = extra_no_roms + [  # noqa: RUF005
+    # For atari roms,
+    "autorom[accept-rom-license]~=0.5.5",
+]
+
 
 setup(
     name="stable_baselines3",
@@ -86,7 +109,7 @@ setup(
         "pandas",
         # Plotting learning curves
         "matplotlib",
-        # gym and flake8 not compatible with importlib-metadata>5.0
+        # gym not compatible with importlib-metadata>5.0
         "importlib-metadata~=4.13",
     ],
     extras_require={
@@ -99,10 +122,8 @@ setup(
             # Type check
             "pytype",
             "mypy",
-            # Lint code
-            "flake8>=3.8",
-            # Find likely bugs
-            "flake8-bugbear",
+            # Lint code (flake8 replacement)
+            "ruff",
             # Sort imports
             "isort>=5.0",
             # Reformat
@@ -121,21 +142,8 @@ setup(
             # Copy button for code snippets
             "sphinx_copybutton",
         ],
-        "extra": [
-            # For render
-            "opencv-python",
-            # For atari games,
-            "ale-py==0.7.4",
-            "autorom[accept-rom-license]~=0.4.2",
-            "pillow",
-            # Tensorboard support
-            "tensorboard>=2.9.1",
-            # Checking memory taken by replay buffer
-            "psutil",
-            # For progress bar callback
-            "tqdm",
-            "rich",
-        ],
+        "extra": extra_packages,
+        "extra_no_roms": extra_no_roms,
     },
     description="Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.",
     author="Antonin Raffin",
@@ -149,6 +157,12 @@ setup(
     version=__version__,
     python_requires=">=3.7",
     # PyPI package information.
+    project_urls={
+        "Code": "https://github.com/DLR-RM/stable-baselines3",
+        "Documentation": "https://stable-baselines3.readthedocs.io/",
+        "SB3-Contrib": "https://github.com/Stable-Baselines-Team/stable-baselines3-contrib",
+        "RL-Zoo": "https://github.com/DLR-RM/rl-baselines3-zoo",
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",

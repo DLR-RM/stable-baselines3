@@ -53,7 +53,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param policy_kwargs: Additional arguments to be passed to the policy on creation
     :param stats_window_size: Window size for the rollout logging, specifying the number of episodes to average
-        the reported success rate and mean episode length over
+        the reported success rate, mean episode length, and mean reward over
     :param tensorboard_log: the log location for tensorboard (if None, no logging)
     :param verbose: Verbosity level: 0 for no output, 1 for info messages (such as device or wrappers used), 2 for
         debug messages

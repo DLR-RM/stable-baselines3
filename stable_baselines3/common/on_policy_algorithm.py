@@ -38,7 +38,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     :param sde_sample_freq: Sample a new noise matrix every n steps when using gSDE
         Default: -1 (only sample at the beginning of the rollout)
     :param stats_window_size: Window size for the rollout logging, specifying the number of episodes to average
-        the reported success rate and mean episode length over
+        the reported success rate, mean episode length, and mean reward over
     :param tensorboard_log: the log location for tensorboard (if None, no logging)
     :param monitor_wrapper: When creating an environment, whether to wrap it
         or not in a Monitor wrapper.

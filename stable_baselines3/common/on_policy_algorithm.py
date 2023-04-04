@@ -86,6 +86,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             sde_sample_freq=sde_sample_freq,
             support_multi_env=True,
             seed=seed,
+            stats_window_size=stats_window_size,
             tensorboard_log=tensorboard_log,
             supported_action_spaces=supported_action_spaces,
         )

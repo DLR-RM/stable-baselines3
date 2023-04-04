@@ -110,6 +110,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             env=env,
             learning_rate=learning_rate,
             policy_kwargs=policy_kwargs,
+            stats_window_size=stats_window_size,
             tensorboard_log=tensorboard_log,
             verbose=verbose,
             device=device,

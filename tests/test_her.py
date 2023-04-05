@@ -260,7 +260,7 @@ def test_save_load_replay_buffer(n_envs, tmp_path, recwarn, truncate_last_trajec
     del model.replay_buffer
 
     with pytest.raises(AttributeError):
-        model.replay_buffer
+        model.replay_buffer  # noqa: B018
 
     # Check that there is no warning
     assert len(recwarn) == 0

@@ -416,3 +416,14 @@ def test_human_output_format_no_crash_on_same_keys_different_tags():
         {"key1/foo": "value1", "key1/bar": "value2", "key2/bizz": "value3", "key2/foo": "value4"},
         {"key1/foo": None, "key2/bizz": None, "key1/bar": None, "key2/foo": None},
     )
+
+
+@pytest.mark.parametrize("algo", [A2C, DQN])
+@pytest.mark.parametrize("stats_window_size", [1, 42])
+def test_ep_buffers_stats_window_size(algo, stats_window_size):
+    """Set stats_window_size for logging to non-default value and check if
+    ep_info_buffer and ep_success_buffer are initialized to the correct length"""
+    model = algo("MlpPolicy", "CartPole-v1", stats_window_size=stats_window_size)
+    model.learn(total_timesteps=10)
+    assert model.ep_info_buffer.maxlen == stats_window_size
+    assert model.ep_success_buffer.maxlen == stats_window_size

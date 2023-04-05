@@ -76,10 +76,10 @@ All ``eval/`` values are computed by the ``EvalCallback``.
 
 rollout/
 ^^^^^^^^
-- ``ep_len_mean``: Mean episode length (averaged over 100 episodes)
-- ``ep_rew_mean``: Mean episodic training reward (averaged over 100 episodes), a ``Monitor`` wrapper is required to compute that value (automatically added by `make_vec_env`).
+- ``ep_len_mean``: Mean episode length (averaged over ``stats_window_size`` episodes, 100 by default)
+- ``ep_rew_mean``: Mean episodic training reward (averaged over ``stats_window_size`` episodes, 100 by default), a ``Monitor`` wrapper is required to compute that value (automatically added by `make_vec_env`).
 - ``exploration_rate``: Current value of the exploration rate when using DQN, it corresponds to the fraction of actions taken randomly (epsilon of the "epsilon-greedy" exploration)
-- ``success_rate``: Mean success rate during training (averaged over 100 episodes), you must pass an extra argument to the ``Monitor`` wrapper to log that value (``info_keywords=("is_success",)``) and provide ``info["is_success"]=True/False`` on the final step of the episode
+- ``success_rate``: Mean success rate during training (averaged over ``stats_window_size`` episodes, 100 by default), you must pass an extra argument to the ``Monitor`` wrapper to log that value (``info_keywords=("is_success",)``) and provide ``info["is_success"]=True/False`` on the final step of the episode
 
 time/
 ^^^^^

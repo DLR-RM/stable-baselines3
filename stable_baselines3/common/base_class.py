@@ -67,6 +67,8 @@ class BaseAlgorithm(ABC):
     :param learning_rate: learning rate for the optimizer,
         it can be a function of the current progress remaining (from 1 to 0)
     :param policy_kwargs: Additional arguments to be passed to the policy on creation
+    :param stats_window_size: Window size for the rollout logging, specifying the number of episodes to average
+        the reported success rate, mean episode length, and mean reward over
     :param tensorboard_log: the log location for tensorboard (if None, no logging)
     :param verbose: Verbosity level: 0 for no output, 1 for info messages (such as device or wrappers used), 2 for
         debug messages
@@ -95,6 +97,7 @@ class BaseAlgorithm(ABC):
         env: Union[GymEnv, str, None],
         learning_rate: Union[float, Schedule],
         policy_kwargs: Optional[Dict[str, Any]] = None,
+        stats_window_size: int = 100,
         tensorboard_log: Optional[str] = None,
         verbose: int = 0,
         device: Union[th.device, str] = "auto",
@@ -145,6 +148,7 @@ class BaseAlgorithm(ABC):
         # this is used to update the learning rate
         self._current_progress_remaining = 1
         # Buffers for logging
+        self._stats_window_size = stats_window_size
         self.ep_info_buffer = None  # type: Optional[deque]
         self.ep_success_buffer = None  # type: Optional[deque]
         # For logging (and TD3 delayed updates)
@@ -388,8 +392,8 @@ class BaseAlgorithm(ABC):
 
         if self.ep_info_buffer is None or reset_num_timesteps:
             # Initialize buffers if they don't exist, or reinitialize if resetting counters
-            self.ep_info_buffer = deque(maxlen=100)
-            self.ep_success_buffer = deque(maxlen=100)
+            self.ep_info_buffer = deque(maxlen=self._stats_window_size)
+            self.ep_success_buffer = deque(maxlen=self._stats_window_size)
 
         if self.action_noise is not None:
             self.action_noise.reset()

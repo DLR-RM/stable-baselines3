@@ -3,6 +3,45 @@
 Changelog
 ==========
 
+Release 2.0.0a1 (WIP)
+--------------------------
+
+**Gymnasium support**
+
+.. warning::
+
+  Stable-Baselines3 (SB3) v2.0 will be the last one supporting python 3.7 (end of life in June 2023).
+  We highly recommended you to upgrade to Python >= 3.8.
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+- Switched to Gymnasium as primary backend, Gym 0.21 and 0.26 are still supported via the ``shimmy`` package
+- The deprecated ``online_sampling`` argument of ``HerReplayBuffer`` was removed
+- Removed deprecated ``stack_observation_space`` method of ``StackedObservations``
+
+New Features:
+^^^^^^^^^^^^^
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+- Added documentation about ``VecEnv`` API vs Gym API
+
 
 Release 1.8.0a14 (WIP)
 --------------------------

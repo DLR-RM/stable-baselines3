@@ -58,7 +58,6 @@ class HerReplayBuffer(DictReplayBuffer):
         n_sampled_goal: int = 4,
         goal_selection_strategy: Union[GoalSelectionStrategy, str] = "future",
         copy_info_dict: bool = False,
-        online_sampling: Optional[bool] = None,
     ):
         super().__init__(
             buffer_size,
@@ -71,14 +70,6 @@ class HerReplayBuffer(DictReplayBuffer):
         )
         self.env = env
         self.copy_info_dict = copy_info_dict
-
-        if online_sampling is not None:
-            assert online_sampling is True, "Since v1.8.0, SB3 only supports online sampling with HerReplayBuffer."
-            warnings.warn(
-                "Since v1.8.0, the `online_sampling` argument is deprecated "
-                "as SB3 only supports online sampling with HerReplayBuffer. It will be removed in v2.0",
-                stacklevel=1,
-            )
 
         # convert goal_selection_strategy into GoalSelectionStrategy if string
         if isinstance(goal_selection_strategy, str):

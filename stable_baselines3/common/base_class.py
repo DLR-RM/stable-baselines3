@@ -116,7 +116,7 @@ class BaseAlgorithm(ABC):
         seed: Optional[int] = None,
         use_sde: bool = False,
         sde_sample_freq: int = -1,
-        supported_action_spaces: Optional[Tuple[spaces.Space, ...]] = None,
+        supported_action_spaces: Optional[Tuple[Type[spaces.Space], ...]] = None,
     ):
         if isinstance(policy, str):
             self.policy_class = self._get_policy_from_name(policy)
@@ -139,7 +139,7 @@ class BaseAlgorithm(ABC):
         self._num_timesteps_at_start = 0
         self.seed = seed
         self.action_noise: Optional[ActionNoise] = None
-        self.start_time = None
+        self.start_time = 0.0
         self.learning_rate = learning_rate
         self.tensorboard_log = tensorboard_log
         self._last_obs = None  # type: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]

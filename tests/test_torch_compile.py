@@ -1,7 +1,6 @@
 import os
 
 import gym
-import numpy as np
 import torch as th
 
 from stable_baselines3 import SAC

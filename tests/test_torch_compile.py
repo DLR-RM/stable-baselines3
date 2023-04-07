@@ -15,15 +15,10 @@ def test_load_compiled():
 
     del model  # remove to demonstrate saving and loading
 
-    bugged = False
     try:
-        model = SAC.load("sac_pendulum")
-    except Exception:
-        bugged = True
+        SAC.load("sac_pendulum")
     finally:
         os.remove("sac_pendulum.zip")
-
-    assert not bugged, "Bugged, sadly."
 
 
 if __name__ == "__main__":

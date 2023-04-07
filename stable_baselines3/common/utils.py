@@ -1,3 +1,4 @@
+import copy
 import glob
 import os
 import platform
@@ -541,3 +542,20 @@ def get_system_info(print_info: bool = True) -> Tuple[Dict[str, str], str]:
     if print_info:
         print(env_info_str)
     return env_info, env_info_str
+
+
+def rename_torch_compile_parameters(params: TensorDict, name: str) -> TensorDict:
+    """
+    Renames compiled torch module parameters by truncating the prefix of a named subset.
+
+    :param params: PyTorch module parameters tensor dictionary.
+    :param name: Name of the tensor dictionary subset to modify.
+    :return: Tensordict with renamed parameters of the named subset.
+    """
+    new_params = copy.deepcopy(params)
+    for n, t in params[name].items():
+        if "_orig_mod." in n:
+            del new_params[name][n]
+            new_params[name][n.replace("_orig_mod.", "")] = t
+
+    return new_params

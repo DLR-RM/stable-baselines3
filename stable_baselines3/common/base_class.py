@@ -612,6 +612,8 @@ class BaseAlgorithm(ABC):
                 attr.load_state_dict(params[name])
             else:
                 # Assume attr is th.nn.Module
+                # Truncate parameter name prefixes if state_dict comes from compiled model
+                params = utils.rename_torch_compile_parameters(params, name)
                 attr.load_state_dict(params[name], strict=exact_match)
             updated_objects.add(name)
 

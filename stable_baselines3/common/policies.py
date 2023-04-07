@@ -59,7 +59,6 @@ class BaseModel(nn.Module):
     """
 
     optimizer: th.optim.Optimizer
-    features_extractor: Optional[BaseFeaturesExtractor] = None
 
     def __init__(
         self,

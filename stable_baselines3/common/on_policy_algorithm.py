@@ -205,10 +205,10 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                     rewards[idx] += self.gamma * terminal_value
 
             rollout_buffer.add(
-                self._last_obs, # type: ignore[arg-type]
+                self._last_obs,  # type: ignore[arg-type]
                 actions,
                 rewards,
-                self._last_episode_starts, # type: ignore[arg-type]
+                self._last_episode_starts,  # type: ignore[arg-type]
                 values,
                 log_probs,
             )
@@ -217,7 +217,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         with th.no_grad():
             # Compute value for the last timestep
-            values = self.policy.predict_values(obs_as_tensor(new_obs, self.device)) # type: ignore[arg-type]
+            values = self.policy.predict_values(obs_as_tensor(new_obs, self.device))  # type: ignore[arg-type]
 
         rollout_buffer.compute_returns_and_advantage(last_values=values, dones=dones)
 

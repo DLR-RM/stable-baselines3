@@ -76,7 +76,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     """
 
     actor: th.nn.Module
-    replay_buffer: Optional[ReplayBuffer] = None
 
     def __init__(
         self,
@@ -132,6 +131,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.gradient_steps = gradient_steps
         self.action_noise = action_noise
         self.optimize_memory_usage = optimize_memory_usage
+        self.replay_buffer: Optional[ReplayBuffer] = None
         self.replay_buffer_class = replay_buffer_class
         self.replay_buffer_kwargs = replay_buffer_kwargs or {}
         self._episode_storage = None

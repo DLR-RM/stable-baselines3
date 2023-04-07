@@ -22,7 +22,7 @@ AtariResetReturn = Tuple[np.ndarray, Dict[str, Any]]
 GymStepReturn = Tuple[GymObs, float, bool, Dict]
 Gym26StepReturn = Tuple[GymObs, float, bool, bool, Dict]
 AtariStepReturn = Tuple[np.ndarray, SupportsFloat, bool, bool, Dict[str, Any]]
-TensorDict = Dict[Union[str, int], th.Tensor]
+TensorDict = Dict[str, th.Tensor]
 OptimizerStateDict = Dict[str, Any]
 MaybeCallback = Union[None, Callable, List[callbacks.BaseCallback], callbacks.BaseCallback]
 

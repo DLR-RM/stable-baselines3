@@ -35,8 +35,7 @@ ignore_missing_imports = true
 follow_imports = "silent"
 show_error_codes = true
 exclude = """(?x)(
-    stable_baselines3/common/base_class.py$
-    | stable_baselines3/common/buffers.py$
+    stable_baselines3/common/buffers.py$
     | stable_baselines3/common/callbacks.py$
     | stable_baselines3/common/distributions.py$
     | stable_baselines3/common/envs/bit_flipping_env.py$

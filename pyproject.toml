@@ -63,8 +63,6 @@ exclude = """(?x)(
     | stable_baselines3/common/vec_env/vec_video_recorder.py$
     | stable_baselines3/her/her_replay_buffer.py$
     | stable_baselines3/ppo/ppo.py$
-    | stable_baselines3/sac/policies.py$
-    | stable_baselines3/sac/sac.py$
     | stable_baselines3/td3/policies.py$
     | stable_baselines3/td3/td3.py$
     | tests/test_logger.py$

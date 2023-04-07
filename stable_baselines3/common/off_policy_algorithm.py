@@ -75,6 +75,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param supported_action_spaces: The action spaces supported by the algorithm.
     """
 
+    actor: th.nn.Module
+    replay_buffer: Optional[ReplayBuffer] = None
+
     def __init__(
         self,
         policy: Union[str, Type[BasePolicy]],
@@ -136,8 +139,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # Save train freq parameter, will be converted later to TrainFreq object
         self.train_freq = train_freq
 
-        self.actor = None  # type: Optional[th.nn.Module]
-        self.replay_buffer: Optional[ReplayBuffer] = None
         # Update policy keyword arguments
         if sde_support:
             self.policy_kwargs["use_sde"] = self.use_sde

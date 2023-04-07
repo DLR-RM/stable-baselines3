@@ -27,6 +27,8 @@ class QNetwork(BasePolicy):
          dividing by 255.0 (True by default)
     """
 
+    action_space: spaces.Discrete
+
     def __init__(
         self,
         observation_space: spaces.Space,
@@ -50,7 +52,6 @@ class QNetwork(BasePolicy):
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.features_dim = features_dim
-        assert isinstance(self.action_space, spaces.Discrete)
         action_dim = int(self.action_space.n)  # number of actions
         q_net = create_mlp(self.features_dim, action_dim, self.net_arch, self.activation_fn)
         self.q_net = nn.Sequential(*q_net)
@@ -62,8 +63,6 @@ class QNetwork(BasePolicy):
         :param obs: Observation
         :return: The estimated Q-Value for each action.
         """
-        # For type checker:
-        assert isinstance(self.features_extractor, BaseFeaturesExtractor)
         return self.q_net(self.extract_features(obs, self.features_extractor))
 
     def _predict(self, observation: th.Tensor, deterministic: bool = True) -> th.Tensor:
@@ -106,6 +105,9 @@ class DQNPolicy(BasePolicy):
         excluding the learning rate, to pass to the optimizer
     """
 
+    q_net: QNetwork
+    q_net_target: QNetwork
+
     def __init__(
         self,
         observation_space: spaces.Space,
@@ -146,8 +148,6 @@ class DQNPolicy(BasePolicy):
             "normalize_images": normalize_images,
         }
 
-        self.q_net: QNetwork
-        self.q_net_target: QNetwork
         self._build(lr_schedule)
 
     def _build(self, lr_schedule: Schedule) -> None:

@@ -95,6 +95,10 @@ class BaseAlgorithm(ABC):
     # Policy aliases (see _get_policy_from_name())
     policy_aliases: Dict[str, Type[BasePolicy]] = {}
     policy: BasePolicy
+    observation_space: spaces.Space
+    action_space: spaces.Space
+    n_envs: int
+    lr_schedule: Schedule
 
     def __init__(
         self,
@@ -127,9 +131,7 @@ class BaseAlgorithm(ABC):
         self._vec_normalize_env = unwrap_vec_normalize(env)
         self.verbose = verbose
         self.policy_kwargs = {} if policy_kwargs is None else policy_kwargs
-        self.observation_space: spaces.Space
-        self.action_space: spaces.Space
-        self.n_envs: int
+
         self.num_timesteps = 0
         # Used for updating schedules
         self._total_timesteps = 0
@@ -140,7 +142,6 @@ class BaseAlgorithm(ABC):
         self.start_time = None
         self.learning_rate = learning_rate
         self.tensorboard_log = tensorboard_log
-        self.lr_schedule = None  # type: Optional[Schedule]
         self._last_obs = None  # type: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
         self._last_episode_starts = None  # type: Optional[np.ndarray]
         # When using VecNormalize:

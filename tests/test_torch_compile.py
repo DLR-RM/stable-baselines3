@@ -23,7 +23,7 @@ def test_load_compiled():
     finally:
         os.remove("sac_pendulum.zip")
 
-    assert not bugged, "Bugged sadly"
+    assert not bugged, "Bugged, sadly."
 
 
 if __name__ == "__main__":

@@ -35,8 +35,7 @@ ignore_missing_imports = true
 follow_imports = "silent"
 show_error_codes = true
 exclude = """(?x)(
-    stable_baselines3/a2c/a2c.py$
-    | stable_baselines3/common/base_class.py$
+    stable_baselines3/common/base_class.py$
     | stable_baselines3/common/buffers.py$
     | stable_baselines3/common/callbacks.py$
     | stable_baselines3/common/distributions.py$
@@ -63,8 +62,6 @@ exclude = """(?x)(
     | stable_baselines3/common/vec_env/vec_video_recorder.py$
     | stable_baselines3/her/her_replay_buffer.py$
     | stable_baselines3/ppo/ppo.py$
-    | stable_baselines3/td3/policies.py$
-    | stable_baselines3/td3/td3.py$
     | tests/test_logger.py$
     | tests/test_train_eval_mode.py$
   )"""

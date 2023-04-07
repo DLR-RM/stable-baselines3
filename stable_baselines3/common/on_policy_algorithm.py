@@ -52,6 +52,9 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     :param supported_action_spaces: The action spaces supported by the algorithm.
     """
 
+    rollout_buffer: RolloutBuffer
+    policy: ActorCriticPolicy
+
     def __init__(
         self,
         policy: Union[str, Type[ActorCriticPolicy]],
@@ -97,7 +100,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         self.ent_coef = ent_coef
         self.vf_coef = vf_coef
         self.max_grad_norm = max_grad_norm
-        self.rollout_buffer = None
 
         if _init_setup_model:
             self._setup_model()

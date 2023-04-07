@@ -37,7 +37,9 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Fixed ``stable_baselines3/a2c/*.py`` type hints
 - Fixed ``stable_baselines3/sac/*.py`` type hints
+- Fixed ``stable_baselines3/td3/*.py`` type hints
 
 Documentation:
 ^^^^^^^^^^^^^^

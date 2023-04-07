@@ -4,8 +4,10 @@ Changelog
 ==========
 
 
-Release 1.8.0a14 (WIP)
+Release 1.8.0 (2023-04-07)
 --------------------------
+
+**Multi-env HerReplayBuffer, Open RL Benchmark, Improved env checker**
 
 .. warning::
 
@@ -31,15 +33,29 @@ New Features:
 - Added support for dict/tuple observations spaces for ``VecCheckNan``, the check is now active in the ``env_checker()`` (@DavyMorgan)
 - Added multiprocessing support for ``HerReplayBuffer``
 - ``HerReplayBuffer`` now supports all datatypes supported by ``ReplayBuffer``
-- Provide more helpful failure messages when validating the ``observation_space`` of custom gym environments using ``check_env``` (@FieteO)
+- Provide more helpful failure messages when validating the ``observation_space`` of custom gym environments using ``check_env`` (@FieteO)
 - Added ``stats_window_size`` argument to control smoothing in rollout logging (@jonasreiher)
 
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
+- Added warning about potential crashes caused by ``check_env`` in the ``MaskablePPO`` docs (@AlexPasqua)
+- Fixed ``sb3_contrib/qrdqn/*.py`` type hints
+- Removed shared layers in ``mlp_extractor`` (@AlexPasqua)
 
 `RL Zoo`_
 ^^^^^^^^^
+- `Open RL Benchmark <https://github.com/openrlbenchmark/openrlbenchmark/issues/7>`_
+- Upgraded to new `HerReplayBuffer` implementation that supports multiple envs
+- Removed `TimeFeatureWrapper` for Panda and Fetch envs, as the new replay buffer should handle timeout.
+- Tuned hyperparameters for RecurrentPPO on Swimmer
+- Documentation is now built using Sphinx and hosted on read the doc
+- Removed `use_auth_token` for push to hub util
+- Reverted from v3 to v2 for HumanoidStandup, Reacher, InvertedPendulum and InvertedDoublePendulum since they were not part of the mujoco refactoring (see https://github.com/openai/gym/pull/1304)
+- Fixed `gym-minigrid` policy (from `MlpPolicy` to `MultiInputPolicy`)
+- Replaced deprecated `optuna.suggest_loguniform(...)` by `optuna.suggest_float(..., log=True)`
+- Switched to `ruff` and `pyproject.toml`
+- Removed `online_sampling` and `max_episode_length` argument when using `HerReplayBuffer`
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -47,7 +63,7 @@ Bug Fixes:
 - Added the argument ``dtype`` (default to ``float32``) to the noise for consistency with gym action (@sidney-tio)
 - Fixed PPO train/n_updates metric not accounting for early stopping (@adamfrly)
 - Fixed loading of normalized image-based environments
-- Fixed `DictRolloutBuffer.add` with multidimensional action space (@younik)
+- Fixed ``DictRolloutBuffer.add`` with multidimensional action space (@younik)
 
 Deprecations:
 ^^^^^^^^^^^^^

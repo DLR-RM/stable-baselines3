@@ -90,7 +90,7 @@ extra_no_roms = [
 
 extra_packages = extra_no_roms + [  # noqa: RUF005
     # For atari roms,
-    "autorom[accept-rom-license]~=0.5.5",
+    "autorom[accept-rom-license]~=0.6.0",
 ]
 
 
@@ -138,7 +138,7 @@ setup(
             # For spelling
             "sphinxcontrib.spelling",
             # Type hints support
-            "sphinx-autodoc-typehints==1.21.1",  # TODO: remove version constraint, see #1290
+            "sphinx-autodoc-typehints",
             # Copy button for code snippets
             "sphinx_copybutton",
         ],

@@ -97,6 +97,7 @@ class BaseAlgorithm(ABC):
     policy: BasePolicy
     observation_space: spaces.Space
     action_space: spaces.Space
+    env: Optional[VecEnv] = None
     n_envs: int
     lr_schedule: Schedule
 
@@ -126,7 +127,6 @@ class BaseAlgorithm(ABC):
         if verbose >= 1:
             print(f"Using {self.device} device")
 
-        self.env = None  # type: Optional[GymEnv]
         # get VecNormalize object if needed
         self._vec_normalize_env = unwrap_vec_normalize(env)
         self.verbose = verbose

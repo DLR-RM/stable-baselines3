@@ -99,7 +99,6 @@ def evaluate_policy(
 
                 if callback is not None:
                     callback(locals(), globals())
-                observations = new_observations
 
                 if dones[i]:
                     if is_monitor_wrapped:
@@ -120,6 +119,8 @@ def evaluate_policy(
                         episode_counts[i] += 1
                     current_rewards[i] = 0
                     current_lengths[i] = 0
+
+        observations = new_observations
 
         if render:
             env.render()

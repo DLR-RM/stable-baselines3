@@ -617,7 +617,6 @@ class TanhBijector:
     """
     Bijective transformation of a probability distribution
     using a squashing function (tanh)
-    TODO: use Pyro instead (https://pyro.ai/)
 
     :param epsilon: small value to avoid NaN due to numerical imprecision.
     """

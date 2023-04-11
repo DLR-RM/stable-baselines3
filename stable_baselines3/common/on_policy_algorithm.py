@@ -37,6 +37,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         instead of action noise exploration (default: False)
     :param sde_sample_freq: Sample a new noise matrix every n steps when using gSDE
         Default: -1 (only sample at the beginning of the rollout)
+    :param stats_window_size: Window size for the rollout logging, specifying the number of episodes to average
+        the reported success rate, mean episode length, and mean reward over
     :param tensorboard_log: the log location for tensorboard (if None, no logging)
     :param monitor_wrapper: When creating an environment, whether to wrap it
         or not in a Monitor wrapper.
@@ -63,6 +65,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         max_grad_norm: float,
         use_sde: bool,
         sde_sample_freq: int,
+        stats_window_size: int = 100,
         tensorboard_log: Optional[str] = None,
         monitor_wrapper: bool = True,
         policy_kwargs: Optional[Dict[str, Any]] = None,
@@ -83,6 +86,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             sde_sample_freq=sde_sample_freq,
             support_multi_env=True,
             seed=seed,
+            stats_window_size=stats_window_size,
             tensorboard_log=tensorboard_log,
             supported_action_spaces=supported_action_spaces,
         )

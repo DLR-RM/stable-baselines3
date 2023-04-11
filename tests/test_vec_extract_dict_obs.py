@@ -19,6 +19,14 @@ class DictObsVecEnv:
         self.actions = actions
 
     def step_wait(self):
+        done = np.random.rand() > 0.8
+        if done:
+            return (
+                {"rgb": np.zeros((self.num_envs, 86, 86))},
+                np.zeros((self.num_envs,)),
+                np.ones((self.num_envs,), dtype=bool),
+                [{"terminal_observation": np.zeros((86, 86))} for _ in range(self.num_envs)],
+            )
         return (
             {"rgb": np.zeros((self.num_envs, 86, 86))},
             np.zeros((self.num_envs,)),

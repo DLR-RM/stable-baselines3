@@ -2,7 +2,8 @@
 
 Changelog
 ==========
-
+Release 1.8.0a16 (WIP)
+--------------------------
 
 Release 1.8.0 (2023-04-07)
 --------------------------
@@ -64,6 +65,7 @@ Bug Fixes:
 - Fixed PPO train/n_updates metric not accounting for early stopping (@adamfrly)
 - Fixed loading of normalized image-based environments
 - Fixed ``DictRolloutBuffer.add`` with multidimensional action space (@younik)
+- Fixed ``VecExtractDictObs`` does not handle terminal observation (@WeberSamuel)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -1271,4 +1273,4 @@ And all the contributors:
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875 @yuanmingqi
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
-@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher
+@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @WeberSamuel

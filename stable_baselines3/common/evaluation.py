@@ -86,7 +86,7 @@ def evaluate_policy(
     episode_starts = np.ones((env.num_envs,), dtype=bool)
     while (episode_counts < episode_count_targets).any():
         actions, states = model.predict(observations, state=states, episode_start=episode_starts, deterministic=deterministic)
-        observations, rewards, dones, infos = env.step(actions)
+        new_observations, rewards, dones, infos = env.step(actions)
         current_rewards += rewards
         current_lengths += 1
         for i in range(n_envs):
@@ -119,6 +119,8 @@ def evaluate_policy(
                         episode_counts[i] += 1
                     current_rewards[i] = 0
                     current_lengths[i] = 0
+
+        observations = new_observations
 
         if render:
             env.render()

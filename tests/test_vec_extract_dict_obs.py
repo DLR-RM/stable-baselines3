@@ -23,7 +23,7 @@ class DictObsVecEnv:
             {"rgb": np.zeros((self.num_envs, 86, 86))},
             np.zeros((self.num_envs,)),
             np.ones((self.num_envs,), dtype=bool),
-            [{"terminal_observation": np.zeros((86, 86))} for _ in range(self.num_envs)],
+            [{"terminal_observation": {"rgb": np.zeros((86, 86))}} for _ in range(self.num_envs)],
         )
 
     def reset(self):
@@ -39,6 +39,7 @@ def test_extract_dict_obs():
     env = DictObsVecEnv()
     env = VecExtractDictObs(env, "rgb")
     assert env.reset().shape == (4, 86, 86)
+    env.step(None)
 
 
 def test_vec_with_ppo():

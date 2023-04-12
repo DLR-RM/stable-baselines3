@@ -339,7 +339,7 @@ class VecEnvWrapper(VecEnv):
 
         return attr
 
-    def getattr_depth_check(self, name: str, already_found: bool) -> str:
+    def getattr_depth_check(self, name: str, already_found: bool) -> Optional[str]:
         """See base class.
 
         :return: name of module whose attribute is being shadowed, if any.

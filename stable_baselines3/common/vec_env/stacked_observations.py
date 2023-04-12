@@ -135,14 +135,16 @@ class StackedObservations(Generic[TObs]):
         :return: The stacked reset observation
         """
         if isinstance(observation, dict):
-            return {key: self.sub_stacked_observations[key].reset(obs) for key, obs in observation.items()}
+            return {
+                key: self.sub_stacked_observations[key].reset(obs) for key, obs in observation.items()
+            }  # pytype: disable=bad-return-type
 
         self.stacked_obs[...] = 0
         if self.channels_first:
             self.stacked_obs[:, -observation.shape[self.stack_dimension] :, ...] = observation
         else:
             self.stacked_obs[..., -observation.shape[self.stack_dimension] :] = observation
-        return self.stacked_obs
+        return self.stacked_obs  # pytype: disable=bad-return-type
 
     def update(
         self,

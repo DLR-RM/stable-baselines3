@@ -135,7 +135,9 @@ class StackedObservations(Generic[TObs]):
         :return: The stacked reset observation
         """
         if isinstance(observation, dict):
-            return {key: self.sub_stacked_observations[key].reset(obs) for key, obs in observation.items()}
+            return {
+                key: self.sub_stacked_observations[key].reset(obs) for key, obs in observation.items()
+            }  # pytype: disable=bad-return-type
 
         self.stacked_obs[...] = 0
         if self.channels_first:

@@ -144,7 +144,7 @@ class StackedObservations(Generic[TObs]):
             self.stacked_obs[:, -observation.shape[self.stack_dimension] :, ...] = observation
         else:
             self.stacked_obs[..., -observation.shape[self.stack_dimension] :] = observation
-        return self.stacked_obs
+        return self.stacked_obs  # pytype: disable=bad-return-type
 
     def update(
         self,

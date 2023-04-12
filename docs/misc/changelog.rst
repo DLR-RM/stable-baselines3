@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.0.0a1 (WIP)
+Release 2.0.0a3 (WIP)
 --------------------------
 
 **Gymnasium support**
@@ -19,6 +19,7 @@ Breaking Changes:
 - Switched to Gymnasium as primary backend, Gym 0.21 and 0.26 are still supported via the ``shimmy`` package
 - The deprecated ``online_sampling`` argument of ``HerReplayBuffer`` was removed
 - Removed deprecated ``stack_observation_space`` method of ``StackedObservations``
+- Renamed environment output observations in ``evaluate_policy`` to prevent shadowing the input observations during callbacks (@npit)
 
 New Features:
 ^^^^^^^^^^^^^
@@ -31,6 +32,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed ``VecExtractDictObs`` does not handle terminal observation (@WeberSamuel)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -1314,4 +1316,4 @@ And all the contributors:
 @carlosluis @arjun-kg @tlpss
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
-@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher
+@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel

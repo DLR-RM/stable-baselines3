@@ -898,10 +898,12 @@ class ContinuousCritic(BaseModel):
         between the actor and the critic (this saves computation time)
     """
 
+    features_extractor: BaseFeaturesExtractor
+
     def __init__(
         self,
         observation_space: spaces.Space,
-        action_space: spaces.Space,
+        action_space: spaces.Box,
         net_arch: List[int],
         features_extractor: nn.Module,
         features_dim: int,

@@ -31,7 +31,7 @@ class StackedObservations(Generic[TObs]):
         self,
         num_envs: int,
         n_stack: int,
-        observation_space: Union[spaces.Box, spaces.Dict],  # Replace by Space[TObs] in gym>=0.26
+        observation_space: Union[spaces.Box, spaces.Dict],
         channels_order: Optional[Union[str, Mapping[str, Optional[str]]]] = None,
     ) -> None:
         self.n_stack = n_stack

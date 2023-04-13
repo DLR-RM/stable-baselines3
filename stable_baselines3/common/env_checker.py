@@ -366,8 +366,7 @@ def _check_render(env: gym.Env, warn: bool = False) -> None:  # pragma: no cover
                 "you may have trouble when calling `.render()`"
             )
 
-    # TODO: if we want to check all declared render modes,
-    # we need to initialize new environments so the class should be passed as argument.
+    # Only check currrent render mode
     if env.render_mode:
         env.render()
     env.close()

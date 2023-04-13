@@ -31,7 +31,7 @@ class StackedObservations(Generic[TObs]):
         self,
         num_envs: int,
         n_stack: int,
-        observation_space: Union[spaces.Box, spaces.Dict],  # Replace by Space[TObs] in gym>=0.26
+        observation_space: Union[spaces.Box, spaces.Dict],
         channels_order: Optional[Union[str, Mapping[str, Optional[str]]]] = None,
     ) -> None:
         self.n_stack = n_stack
@@ -109,14 +109,16 @@ class StackedObservations(Generic[TObs]):
         :return: The stacked reset observation
         """
         if isinstance(observation, dict):
-            return {key: self.sub_stacked_observations[key].reset(obs) for key, obs in observation.items()}
+            return {
+                key: self.sub_stacked_observations[key].reset(obs) for key, obs in observation.items()
+            }  # pytype: disable=bad-return-type
 
         self.stacked_obs[...] = 0
         if self.channels_first:
             self.stacked_obs[:, -observation.shape[self.stack_dimension] :, ...] = observation
         else:
             self.stacked_obs[..., -observation.shape[self.stack_dimension] :] = observation
-        return self.stacked_obs
+        return self.stacked_obs  # pytype: disable=bad-return-type
 
     def update(
         self,

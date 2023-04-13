@@ -16,12 +16,15 @@ Release 2.0.0a3 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-- Switched to Gymnasium as primary backend, Gym 0.21 and 0.26 are still supported via the ``shimmy`` package
+- Switched to Gymnasium as primary backend, Gym 0.21 and 0.26 are still supported via the ``shimmy`` package (@carlosluis, @arjun-kg, @tlpss)
 - The deprecated ``online_sampling`` argument of ``HerReplayBuffer`` was removed
 - Removed deprecated ``stack_observation_space`` method of ``StackedObservations``
+- Renamed environment output observations in ``evaluate_policy`` to prevent shadowing the input observations during callbacks (@npit)
+- Upgraded wrappers and custom environment to Gymnasium
 
 New Features:
 ^^^^^^^^^^^^^
+
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -31,6 +34,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed ``VecExtractDictObs`` does not handle terminal observation (@WeberSamuel)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -42,14 +46,23 @@ Others:
 - Fixed ``stable_baselines3/sac/*.py`` type hints
 - Fixed ``stable_baselines3/td3/*.py`` type hints
 - Fixed ``stable_baselines3/common/base_class.py`` type hints
+- Upgraded docker images to use mamba/micromamba and CUDA 11.7
+- Updated env checker to reflect what subset of Gymnasium is supported and improve GoalEnv checks
+- Improve type annotation of wrappers
+- Tests envs are now checked too
+- Added render test for ``VecEnv``
 
 Documentation:
 ^^^^^^^^^^^^^^
 - Added documentation about ``VecEnv`` API vs Gym API
+- Upgraded tutorials to Gymnasium API
+- Make it more explicit when using ``VecEnv`` vs Gym env
 
 
-Release 1.8.0a14 (WIP)
+Release 1.8.0 (2023-04-07)
 --------------------------
+
+**Multi-env HerReplayBuffer, Open RL Benchmark, Improved env checker**
 
 .. warning::
 
@@ -75,15 +88,29 @@ New Features:
 - Added support for dict/tuple observations spaces for ``VecCheckNan``, the check is now active in the ``env_checker()`` (@DavyMorgan)
 - Added multiprocessing support for ``HerReplayBuffer``
 - ``HerReplayBuffer`` now supports all datatypes supported by ``ReplayBuffer``
-- Provide more helpful failure messages when validating the ``observation_space`` of custom gym environments using ``check_env``` (@FieteO)
+- Provide more helpful failure messages when validating the ``observation_space`` of custom gym environments using ``check_env`` (@FieteO)
 - Added ``stats_window_size`` argument to control smoothing in rollout logging (@jonasreiher)
 
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
+- Added warning about potential crashes caused by ``check_env`` in the ``MaskablePPO`` docs (@AlexPasqua)
+- Fixed ``sb3_contrib/qrdqn/*.py`` type hints
+- Removed shared layers in ``mlp_extractor`` (@AlexPasqua)
 
 `RL Zoo`_
 ^^^^^^^^^
+- `Open RL Benchmark <https://github.com/openrlbenchmark/openrlbenchmark/issues/7>`_
+- Upgraded to new `HerReplayBuffer` implementation that supports multiple envs
+- Removed `TimeFeatureWrapper` for Panda and Fetch envs, as the new replay buffer should handle timeout.
+- Tuned hyperparameters for RecurrentPPO on Swimmer
+- Documentation is now built using Sphinx and hosted on read the doc
+- Removed `use_auth_token` for push to hub util
+- Reverted from v3 to v2 for HumanoidStandup, Reacher, InvertedPendulum and InvertedDoublePendulum since they were not part of the mujoco refactoring (see https://github.com/openai/gym/pull/1304)
+- Fixed `gym-minigrid` policy (from `MlpPolicy` to `MultiInputPolicy`)
+- Replaced deprecated `optuna.suggest_loguniform(...)` by `optuna.suggest_float(..., log=True)`
+- Switched to `ruff` and `pyproject.toml`
+- Removed `online_sampling` and `max_episode_length` argument when using `HerReplayBuffer`
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -91,7 +118,7 @@ Bug Fixes:
 - Added the argument ``dtype`` (default to ``float32``) to the noise for consistency with gym action (@sidney-tio)
 - Fixed PPO train/n_updates metric not accounting for early stopping (@adamfrly)
 - Fixed loading of normalized image-based environments
-- Fixed `DictRolloutBuffer.add` with multidimensional action space (@younik)
+- Fixed ``DictRolloutBuffer.add`` with multidimensional action space (@younik)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -143,7 +170,6 @@ Breaking Changes:
   please use an ``EvalCallback`` instead
 - Removed deprecated ``sde_net_arch`` parameter
 - Removed ``ret`` attributes in ``VecNormalize``, please use ``returns`` instead
-- Switched minimum Gym version to 0.26 (@carlosluis, @arjun-kg, @tlpss)
 - ``VecNormalize`` now updates the observation space when normalizing images
 
 New Features:
@@ -203,7 +229,7 @@ Others:
 - Upgraded GitHub CI/setup-python to v4 and checkout to v3
 - Set tensors construction directly on the device (~8% speed boost on GPU)
 - Monkey-patched ``np.bool = bool`` so gym 0.21 is compatible with NumPy 1.24+
-- Standardized the use of ``from gymnasium import spaces``
+- Standardized the use of ``from gym import spaces``
 - Modified ``get_system_info`` to avoid issue linked to copy-pasting on GitHub issue
 
 Documentation:
@@ -327,7 +353,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-- ``noop_max`` and ``frame_skip`` are now allowed to be equal to zero when using ``AtariWrapper``
+
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -353,7 +379,6 @@ Deprecations:
 Others:
 ^^^^^^^
 - Upgraded to Python 3.7+ syntax using ``pyupgrade``
-- Updated docker base image to Ubuntu 20.04 and cuda 11.3
 - Removed redundant double-check for nested observations from ``BaseAlgorithm._wrap_env`` (@TibiGG)
 
 Documentation:
@@ -1303,4 +1328,4 @@ And all the contributors:
 @carlosluis @arjun-kg @tlpss
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
-@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher
+@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel

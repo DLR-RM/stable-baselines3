@@ -20,5 +20,8 @@ class VecExtractDictObs(VecEnvWrapper):
         return obs[self.key]
 
     def step_wait(self) -> VecEnvStepReturn:
-        obs, reward, done, info = self.venv.step_wait()
-        return obs[self.key], reward, done, info
+        obs, reward, done, infos = self.venv.step_wait()
+        for info in infos:
+            if "terminal_observation" in info:
+                info["terminal_observation"] = info["terminal_observation"][self.key]
+        return obs[self.key], reward, done, infos

@@ -183,6 +183,10 @@ def test_evaluate_policy(direct_policy: bool):
 
     def dummy_callback(locals_, _globals):
         locals_["model"].n_callback_calls += 1
+        assert "observations" in locals_
+        assert "new_observations" in locals_
+        assert locals_["new_observations"] is not locals_["observations"]
+        assert not np.allclose(locals_["new_observations"], locals_["observations"])
 
     assert model.policy is not None
     policy = model.policy if direct_policy else model

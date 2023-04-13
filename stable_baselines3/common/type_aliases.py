@@ -17,10 +17,9 @@ from stable_baselines3.common import callbacks, vec_env
 
 GymEnv = Union[gym.Env, vec_env.VecEnv]
 GymObs = Union[Tuple, Dict[str, Any], np.ndarray, int]
-Gym26ResetReturn = Tuple[GymObs, Dict]
+GymResetReturn = Tuple[GymObs, Dict]
 AtariResetReturn = Tuple[np.ndarray, Dict[str, Any]]
-GymStepReturn = Tuple[GymObs, float, bool, Dict]
-Gym26StepReturn = Tuple[GymObs, float, bool, bool, Dict]
+GymStepReturn = Tuple[GymObs, float, bool, bool, Dict]
 AtariStepReturn = Tuple[np.ndarray, SupportsFloat, bool, bool, Dict[str, Any]]
 TensorDict = Dict[str, th.Tensor]
 OptimizerStateDict = Dict[str, Any]

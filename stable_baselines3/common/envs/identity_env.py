@@ -4,7 +4,7 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-from stable_baselines3.common.type_aliases import Gym26StepReturn
+from stable_baselines3.common.type_aliases import GymStepReturn
 
 T = TypeVar("T", int, np.ndarray)
 
@@ -148,7 +148,7 @@ class FakeImageEnv(gym.Env):
         self.current_step = 0
         return self.observation_space.sample(), {}
 
-    def step(self, action: Union[np.ndarray, int]) -> Gym26StepReturn:
+    def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:
         reward = 0.0
         self.current_step += 1
         terminated = False

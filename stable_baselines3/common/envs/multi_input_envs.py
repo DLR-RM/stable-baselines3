@@ -4,7 +4,7 @@ import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
 
-from stable_baselines3.common.type_aliases import Gym26StepReturn
+from stable_baselines3.common.type_aliases import GymStepReturn
 
 
 class SimpleMultiObsEnv(gym.Env):
@@ -121,7 +121,7 @@ class SimpleMultiObsEnv(gym.Env):
         self.right_possible = [0, 1, 2, 12, 13, 14]
         self.up_possible = [4, 8, 12, 7, 11, 15]
 
-    def step(self, action: Union[float, np.ndarray]) -> Gym26StepReturn:
+    def step(self, action: Union[float, np.ndarray]) -> GymStepReturn:
         """
         Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`

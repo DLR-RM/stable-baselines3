@@ -16,13 +16,15 @@ Release 2.0.0a3 (WIP)
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-- Switched to Gymnasium as primary backend, Gym 0.21 and 0.26 are still supported via the ``shimmy`` package
+- Switched to Gymnasium as primary backend, Gym 0.21 and 0.26 are still supported via the ``shimmy`` package (@carlosluis, @arjun-kg, @tlpss)
 - The deprecated ``online_sampling`` argument of ``HerReplayBuffer`` was removed
 - Removed deprecated ``stack_observation_space`` method of ``StackedObservations``
 - Renamed environment output observations in ``evaluate_policy`` to prevent shadowing the input observations during callbacks (@npit)
+- Upgraded wrappers and custom environment to Gymnasium
 
 New Features:
 ^^^^^^^^^^^^^
+
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -39,10 +41,17 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Upgraded docker images to use mamba/micromamba and CUDA 11.7
+- Updated env checker to reflect what subset of Gymnasium is supported and improve GoalEnv checks
+- Improve type annotation of wrappers
+- Tests envs are now checked too
+- Added render test for ``VecEnv``
 
 Documentation:
 ^^^^^^^^^^^^^^
 - Added documentation about ``VecEnv`` API vs Gym API
+- Upgraded tutorials to Gymnasium API
+- Make it more explicit when using ``VecEnv`` vs Gym env
 
 
 Release 1.8.0 (2023-04-07)
@@ -156,7 +165,6 @@ Breaking Changes:
   please use an ``EvalCallback`` instead
 - Removed deprecated ``sde_net_arch`` parameter
 - Removed ``ret`` attributes in ``VecNormalize``, please use ``returns`` instead
-- Switched minimum Gym version to 0.26 (@carlosluis, @arjun-kg, @tlpss)
 - ``VecNormalize`` now updates the observation space when normalizing images
 
 New Features:
@@ -216,7 +224,7 @@ Others:
 - Upgraded GitHub CI/setup-python to v4 and checkout to v3
 - Set tensors construction directly on the device (~8% speed boost on GPU)
 - Monkey-patched ``np.bool = bool`` so gym 0.21 is compatible with NumPy 1.24+
-- Standardized the use of ``from gymnasium import spaces``
+- Standardized the use of ``from gym import spaces``
 - Modified ``get_system_info`` to avoid issue linked to copy-pasting on GitHub issue
 
 Documentation:
@@ -340,7 +348,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-- ``noop_max`` and ``frame_skip`` are now allowed to be equal to zero when using ``AtariWrapper``
+
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -366,7 +374,6 @@ Deprecations:
 Others:
 ^^^^^^^
 - Upgraded to Python 3.7+ syntax using ``pyupgrade``
-- Updated docker base image to Ubuntu 20.04 and cuda 11.3
 - Removed redundant double-check for nested observations from ``BaseAlgorithm._wrap_env`` (@TibiGG)
 
 Documentation:

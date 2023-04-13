@@ -82,7 +82,6 @@ filterwarnings = [
     "ignore::DeprecationWarning:tensorboard",
     # Gymnasium warnings
     "ignore::UserWarning:gymnasium",
-    # "ignore::DeprecationWarning:.*passive_env_checker.*",
 ]
 markers = [
     "expensive: marks tests as expensive (deselect with '-m \"not expensive\"')"

@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.0.0a4 (WIP)
+Release 2.0.0a5 (WIP)
 --------------------------
 
 **Gymnasium support**
@@ -51,6 +51,7 @@ Others:
 - Improve type annotation of wrappers
 - Tests envs are now checked too
 - Added render test for ``VecEnv``
+- Update issue templates and env info saved with the model
 
 Documentation:
 ^^^^^^^^^^^^^^

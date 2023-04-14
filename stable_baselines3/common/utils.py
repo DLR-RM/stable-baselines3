@@ -537,7 +537,7 @@ def get_system_info(print_info: bool = True) -> Tuple[Dict[str, str], str]:
         "Gymnasium": gym.__version__,
     }
     try:
-        import gym as openai_gym
+        import gym as openai_gym  # pytype: disable=import-error
 
         env_info.update({"OpenAI Gym": openai_gym.__version__})
     except ImportError:

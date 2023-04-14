@@ -1,7 +1,7 @@
 import os
 from typing import Callable
 
-from gym.wrappers.monitoring import video_recorder
+from gymnasium.wrappers.monitoring import video_recorder
 
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvObs, VecEnvStepReturn, VecEnvWrapper
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
@@ -47,6 +47,7 @@ class VecVideoRecorder(VecEnvWrapper):
             metadata = temp_env.metadata
 
         self.env.metadata = metadata
+        assert self.env.render_mode == "rgb_array", f"The render_mode must be 'rgb_array', not {self.env.render_mode}"
 
         self.record_video_trigger = record_video_trigger
         self.video_recorder = None
@@ -109,4 +110,4 @@ class VecVideoRecorder(VecEnvWrapper):
         self.close_video_recorder()
 
     def __del__(self):
-        self.close()
+        self.close_video_recorder()

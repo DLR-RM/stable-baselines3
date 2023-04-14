@@ -1,9 +1,9 @@
 from collections import OrderedDict
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
-from gym import Env, spaces
-from gym.envs.registration import EnvSpec
+from gymnasium import Env, spaces
+from gymnasium.envs.registration import EnvSpec
 
 from stable_baselines3.common.type_aliases import GymStepReturn
 
@@ -25,7 +25,7 @@ class BitFlippingEnv(Env):
     :param channel_first: Whether to use channel-first or last image.
     """
 
-    spec = EnvSpec("BitFlippingEnv-v0")
+    spec = EnvSpec("BitFlippingEnv-v0", "no-entry-point")
 
     def __init__(
         self,
@@ -96,7 +96,7 @@ class BitFlippingEnv(Env):
         self.discrete_obs_space = discrete_obs_space
         self.image_obs_space = image_obs_space
         self.state = None
-        self.desired_goal = np.ones((n_bits,))
+        self.desired_goal = np.ones((n_bits,), dtype=self.observation_space["desired_goal"].dtype)
         if max_steps is None:
             max_steps = n_bits
         self.max_steps = max_steps
@@ -157,24 +157,34 @@ class BitFlippingEnv(Env):
             ]
         )
 
-    def reset(self) -> Dict[str, Union[int, np.ndarray]]:
+    def reset(
+        self, *, seed: Optional[int] = None, options: Optional[Dict] = None
+    ) -> Tuple[Dict[str, Union[int, np.ndarray]], Dict]:
+        if seed is not None:
+            self.obs_space.seed(seed)
         self.current_step = 0
         self.state = self.obs_space.sample()
-        return self._get_obs()
+        return self._get_obs(), {}
 
     def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:
+        """
+        Step into the env.
+
+        :param action:
+        :return:
+        """
         if self.continuous:
             self.state[action > 0] = 1 - self.state[action > 0]
         else:
             self.state[action] = 1 - self.state[action]
         obs = self._get_obs()
         reward = float(self.compute_reward(obs["achieved_goal"], obs["desired_goal"], None))
-        done = reward == 0
+        terminated = reward == 0
         self.current_step += 1
         # Episode terminate when we reached the goal or the max number of steps
-        info = {"is_success": done}
-        done = done or self.current_step >= self.max_steps
-        return obs, reward, done, info
+        info = {"is_success": terminated}
+        truncated = self.current_step >= self.max_steps
+        return obs, reward, terminated, truncated, info
 
     def compute_reward(
         self, achieved_goal: Union[int, np.ndarray], desired_goal: Union[int, np.ndarray], _info: Optional[Dict[str, Any]]

@@ -1,5 +1,5 @@
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import VecExtractDictObs, VecMonitor
@@ -41,7 +41,7 @@ class DictObsVecEnv:
         self.n_steps = 0
         return {"rgb": np.zeros((self.num_envs, 86, 86))}
 
-    def render(self, mode="human", close=False):
+    def render(self, close=False):
         pass
 
 

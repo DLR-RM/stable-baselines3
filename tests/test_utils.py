@@ -1,11 +1,11 @@
 import os
 import shutil
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pytest
 import torch as th
-from gym import spaces
+from gymnasium import spaces
 
 import stable_baselines3 as sb3
 from stable_baselines3 import A2C
@@ -28,7 +28,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 @pytest.mark.parametrize("env_id", ["CartPole-v1", lambda: gym.make("CartPole-v1")])
 @pytest.mark.parametrize("n_envs", [1, 2])
 @pytest.mark.parametrize("vec_env_cls", [None, SubprocVecEnv])
-@pytest.mark.parametrize("wrapper_class", [None, gym.wrappers.TimeLimit])
+@pytest.mark.parametrize("wrapper_class", [None, gym.wrappers.RecordEpisodeStatistics])
 def test_make_vec_env(env_id, n_envs, vec_env_cls, wrapper_class):
     env = make_vec_env(env_id, n_envs, vec_env_cls=vec_env_cls, wrapper_class=wrapper_class, monitor_dir=None, seed=0)
 
@@ -194,7 +194,7 @@ def test_evaluate_policy(direct_policy: bool):
     policy.n_callback_calls = 0  # type: ignore[assignment, attr-defined]
     _, episode_lengths = evaluate_policy(
         policy,  # type: ignore[arg-type]
-        model.get_env(),
+        model.get_env(),  # type: ignore[arg-type]
         n_eval_episodes,
         deterministic=True,
         render=False,
@@ -213,7 +213,7 @@ def test_evaluate_policy(direct_policy: bool):
 
     episode_rewards, _ = evaluate_policy(
         policy,  # type: ignore[arg-type]
-        model.get_env(),
+        model.get_env(),  # type: ignore[arg-type]
         n_eval_episodes,
         return_episode_rewards=True,
     )
@@ -239,17 +239,18 @@ class AlwaysDoneWrapper(gym.Wrapper):
         self.needs_reset = True
 
     def step(self, action):
-        obs, reward, done, info = self.env.step(action)
-        self.needs_reset = done
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        self.needs_reset = terminated or truncated
         self.last_obs = obs
-        return obs, reward, True, info
+        return obs, reward, True, truncated, info
 
     def reset(self, **kwargs):
+        info = {}
         if self.needs_reset:
-            obs = self.env.reset(**kwargs)
+            obs, info = self.env.reset(**kwargs)
             self.last_obs = obs
             self.needs_reset = False
-        return self.last_obs
+        return self.last_obs, info
 
 
 @pytest.mark.parametrize("n_envs", [1, 2, 5, 7])

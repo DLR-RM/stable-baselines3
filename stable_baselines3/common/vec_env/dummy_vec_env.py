@@ -1,18 +1,20 @@
+import warnings
 from collections import OrderedDict
 from copy import deepcopy
 from typing import Any, Callable, List, Optional, Sequence, Type, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
 
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvIndices, VecEnvObs, VecEnvStepReturn
+from stable_baselines3.common.vec_env.patch_gym import _patch_env
 from stable_baselines3.common.vec_env.util import copy_obs_dict, dict_to_obs, obs_space_info
 
 
 class DummyVecEnv(VecEnv):
     """
     Creates a simple vectorized wrapper for multiple environments, calling each environment in sequence on the current
-    Python process. This is useful for computationally simple environment such as ``cartpole-v1``,
+    Python process. This is useful for computationally simple environment such as ``Cartpole-v1``,
     as the overhead of multiprocess or multithread outweighs the environment computation time.
     This can also be used for RL methods that
     require a vectorized environment, but that you want a single environments to train with.
@@ -23,7 +25,7 @@ class DummyVecEnv(VecEnv):
     """
 
     def __init__(self, env_fns: List[Callable[[], gym.Env]]):
-        self.envs = [fn() for fn in env_fns]
+        self.envs = [_patch_env(fn()) for fn in env_fns]
         if len(set([id(env.unwrapped) for env in self.envs])) != len(self.envs):
             raise ValueError(
                 "You tried to create multiple environments, but the function to create them returned the same instance "
@@ -35,7 +37,7 @@ class DummyVecEnv(VecEnv):
                 "Please read https://github.com/DLR-RM/stable-baselines3/issues/1151 for more information."
             )
         env = self.envs[0]
-        VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space)
+        VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space, env.render_mode)
         obs_space = env.observation_space
         self.keys, shapes, dtypes = obs_space_info(obs_space)
 
@@ -50,28 +52,38 @@ class DummyVecEnv(VecEnv):
         self.actions = actions
 
     def step_wait(self) -> VecEnvStepReturn:
+        # Avoid circular imports
         for env_idx in range(self.num_envs):
-            obs, self.buf_rews[env_idx], self.buf_dones[env_idx], self.buf_infos[env_idx] = self.envs[env_idx].step(
+            obs, self.buf_rews[env_idx], terminated, truncated, self.buf_infos[env_idx] = self.envs[env_idx].step(
                 self.actions[env_idx]
             )
+            # convert to SB3 VecEnv api
+            self.buf_dones[env_idx] = terminated or truncated
+            # See https://github.com/openai/gym/issues/3102
+            # Gym 0.26 introduces a breaking change
+            self.buf_infos[env_idx]["TimeLimit.truncated"] = truncated and not terminated
+
             if self.buf_dones[env_idx]:
                 # save final observation where user can get it, then reset
                 self.buf_infos[env_idx]["terminal_observation"] = obs
-                obs = self.envs[env_idx].reset()
+                obs, self.reset_infos[env_idx] = self.envs[env_idx].reset()
             self._save_obs(env_idx, obs)
         return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones), deepcopy(self.buf_infos))
 
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
+        # Avoid circular import
+        from stable_baselines3.common.utils import compat_gym_seed
+
         if seed is None:
             seed = np.random.randint(0, 2**32 - 1)
         seeds = []
         for idx, env in enumerate(self.envs):
-            seeds.append(env.seed(seed + idx))
+            seeds.append(compat_gym_seed(env, seed=seed + idx))
         return seeds
 
     def reset(self) -> VecEnvObs:
         for env_idx in range(self.num_envs):
-            obs = self.envs[env_idx].reset()
+            obs, self.reset_infos[env_idx] = self.envs[env_idx].reset()
             self._save_obs(env_idx, obs)
         return self._obs_from_buf()
 
@@ -79,25 +91,22 @@ class DummyVecEnv(VecEnv):
         for env in self.envs:
             env.close()
 
-    def get_images(self) -> Sequence[np.ndarray]:
-        return [env.render(mode="rgb_array") for env in self.envs]
+    def get_images(self) -> Sequence[Optional[np.ndarray]]:
+        if self.render_mode != "rgb_array":
+            warnings.warn(
+                f"The render mode is {self.render_mode}, but this method assumes it is `rgb_array` to obtain images."
+            )
+            return [None for _ in self.envs]
+        return [env.render() for env in self.envs]
 
-    def render(self, mode: str = "human") -> Optional[np.ndarray]:
+    def render(self, mode: Optional[str] = None) -> Optional[np.ndarray]:
         """
         Gym environment rendering. If there are multiple environments then
         they are tiled together in one image via ``BaseVecEnv.render()``.
-        Otherwise (if ``self.num_envs == 1``), we pass the render call directly to the
-        underlying environment.
-
-        Therefore, some arguments such as ``mode`` will have values that are valid
-        only when ``num_envs == 1``.
 
         :param mode: The rendering type.
         """
-        if self.num_envs == 1:
-            return self.envs[0].render(mode=mode)
-        else:
-            return super().render(mode=mode)
+        return super().render(mode=mode)
 
     def _save_obs(self, env_idx: int, obs: VecEnvObs) -> None:
         for key in self.keys:

@@ -5,15 +5,16 @@ import time
 from typing import Sequence
 from unittest import mock
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pytest
 import torch as th
-from gym import spaces
+from gymnasium import spaces
 from matplotlib import pyplot as plt
 from pandas.errors import EmptyDataError
 
 from stable_baselines3 import A2C, DQN
+from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.logger import (
     DEBUG,
     INFO,
@@ -352,12 +353,18 @@ class TimeDelayEnv(gym.Env):
         self.action_space = spaces.Discrete(2)
 
     def reset(self):
-        return self.observation_space.sample()
+        return self.observation_space.sample(), {}
 
     def step(self, action):
         time.sleep(self.delay)
         obs = self.observation_space.sample()
-        return obs, 0.0, True, {}
+        return obs, 0.0, True, False, {}
+
+
+@pytest.mark.parametrize("env_cls", [TimeDelayEnv])
+def test_env(env_cls):
+    # Check the env used for testing
+    check_env(env_cls(), skip_render_check=True)
 
 
 class InMemoryLogger(Logger):

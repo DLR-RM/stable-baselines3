@@ -1,11 +1,14 @@
-import gym
+from typing import Dict, Optional
+
+import gymnasium as gym
 import numpy as np
 import pytest
 import torch as th
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3 import A2C, PPO, SAC
 from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.policies import ActorCriticPolicy
 
 
@@ -20,20 +23,26 @@ class CustomEnv(gym.Env):
     def seed(self, seed):
         self.observation_space.seed(seed)
 
-    def reset(self):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+        if seed is not None:
+            self.observation_space.seed(seed)
         self.n_steps = 0
-        return self.observation_space.sample()
+        return self.observation_space.sample(), {}
 
     def step(self, action):
         self.n_steps += 1
 
-        done = False
+        terminated = truncated = False
         reward = 0.0
         if self.n_steps >= self.max_steps:
             reward = 1.0
-            done = True
+            terminated = True
+            # To simplify GAE computation checks,
+            # we do not consider truncation here.
+            # Truncations are checked in InfiniteHorizonEnv
+            truncated = False
 
-        return self.observation_space.sample(), reward, done, {}
+        return self.observation_space.sample(), reward, terminated, truncated, {}
 
 
 class InfiniteHorizonEnv(gym.Env):
@@ -44,13 +53,16 @@ class InfiniteHorizonEnv(gym.Env):
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         self.current_state = 0
 
-    def reset(self):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+        if seed is not None:
+            super().reset(seed=seed)
+
         self.current_state = 0
-        return self.current_state
+        return self.current_state, {}
 
     def step(self, action):
         self.current_state = (self.current_state + 1) % self.n_states
-        return self.current_state, 1.0, False, {}
+        return self.current_state, 1.0, False, False, {}
 
 
 class CheckGAECallback(BaseCallback):
@@ -108,6 +120,12 @@ class CustomPolicy(ActorCriticPolicy):
         # Overwrite values with ones
         values = th.ones_like(values) * self.constant_value
         return actions, values, log_prob
+
+
+@pytest.mark.parametrize("env_cls", [CustomEnv, InfiniteHorizonEnv])
+def test_env(env_cls):
+    # Check the env used for testing
+    check_env(env_cls(), skip_render_check=True)
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO])

@@ -4,11 +4,11 @@ channels:
   - defaults
 dependencies:
   - cpuonly=1.0=0
-  - pip=21.1
+  - pip=22.3.1
   - python=3.7
-  - pytorch=1.11=py3.7_cpu_0
+  - pytorch=1.11.0=py3.7_cpu_0
   - pip:
-    - gym==0.21
+    - gymnasium
     - cloudpickle
     - opencv-python-headless
     - pandas

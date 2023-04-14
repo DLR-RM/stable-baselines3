@@ -1,9 +1,12 @@
-import gym
+from typing import Dict, Optional
+
+import gymnasium as gym
 import numpy as np
 import pytest
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
+from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
 
@@ -14,11 +17,13 @@ class DummyMultiDiscreteSpace(gym.Env):
         self.observation_space = spaces.MultiDiscrete(nvec)
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
 
-    def reset(self):
-        return self.observation_space.sample()
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+        if seed is not None:
+            super().reset(seed=seed)
+        return self.observation_space.sample(), {}
 
     def step(self, action):
-        return self.observation_space.sample(), 0.0, False, {}
+        return self.observation_space.sample(), 0.0, False, False, {}
 
 
 class DummyMultiBinary(gym.Env):
@@ -27,11 +32,13 @@ class DummyMultiBinary(gym.Env):
         self.observation_space = spaces.MultiBinary(n)
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
 
-    def reset(self):
-        return self.observation_space.sample()
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+        if seed is not None:
+            super().reset(seed=seed)
+        return self.observation_space.sample(), {}
 
     def step(self, action):
-        return self.observation_space.sample(), 0.0, False, {}
+        return self.observation_space.sample(), 0.0, False, False, {}
 
 
 class DummyMultidimensionalAction(gym.Env):
@@ -41,10 +48,16 @@ class DummyMultidimensionalAction(gym.Env):
         self.action_space = spaces.Box(low=-1, high=1, shape=(2, 2), dtype=np.float32)
 
     def reset(self):
-        return self.observation_space.sample()
+        return self.observation_space.sample(), {}
 
     def step(self, action):
-        return self.observation_space.sample(), 0.0, False, {}
+        return self.observation_space.sample(), 0.0, False, False, {}
+
+
+@pytest.mark.parametrize("env", [DummyMultiDiscreteSpace([4, 3]), DummyMultiBinary(8), DummyMultiBinary((3, 2))])
+def test_env(env):
+    # Check the env used for testing
+    check_env(env, skip_render_check=True)
 
 
 @pytest.mark.parametrize("model_class", [SAC, TD3, DQN])

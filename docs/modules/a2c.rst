@@ -53,7 +53,7 @@ Train a A2C agent on ``CartPole-v1`` using 4 environments.
 
 .. code-block:: python
 
-  import gym
+  import gymnasium as gym
 
   from stable_baselines3 import A2C
   from stable_baselines3.common.env_util import make_vec_env

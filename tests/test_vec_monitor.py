@@ -2,8 +2,9 @@ import csv
 import json
 import os
 import uuid
+import warnings
 
-import gym
+import gymnasium as gym
 import pandas
 import pytest
 
@@ -132,8 +133,9 @@ def test_vec_monitor_ppo(recwarn):
     """
     Test the `VecMonitor` with PPO
     """
+    warnings.filterwarnings(action="ignore", category=DeprecationWarning, module=r".*passive_env_checker")
     env = DummyVecEnv([lambda: gym.make("CartPole-v1")])
-    env.seed(0)
+    env.seed(seed=0)
     monitor_env = VecMonitor(env)
     model = PPO("MlpPolicy", monitor_env, verbose=1, n_steps=64, device="cpu")
     model.learn(total_timesteps=250)

@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 import numpy as np
 import torch as th
-from gym import spaces
+from gymnasium import spaces
 from torch import nn
 
 from stable_baselines3.common.distributions import (
@@ -58,6 +58,8 @@ class BaseModel(nn.Module):
         excluding the learning rate, to pass to the optimizer
     """
 
+    optimizer: th.optim.Optimizer
+
     def __init__(
         self,
         observation_space: spaces.Space,
@@ -84,7 +86,6 @@ class BaseModel(nn.Module):
 
         self.optimizer_class = optimizer_class
         self.optimizer_kwargs = optimizer_kwargs
-        self.optimizer: th.optim.Optimizer
 
         self.features_extractor_class = features_extractor_class
         self.features_extractor_kwargs = features_extractor_kwargs
@@ -278,6 +279,8 @@ class BasePolicy(BaseModel, ABC):
     :param squash_output: For continuous actions, whether the output is squashed
         or not using a ``tanh()`` function.
     """
+
+    features_extractor: BaseFeaturesExtractor
 
     def __init__(self, *args, squash_output: bool = False, **kwargs):
         super().__init__(*args, **kwargs)
@@ -898,9 +901,9 @@ class ContinuousCritic(BaseModel):
     def __init__(
         self,
         observation_space: spaces.Space,
-        action_space: spaces.Space,
+        action_space: spaces.Box,
         net_arch: List[int],
-        features_extractor: nn.Module,
+        features_extractor: BaseFeaturesExtractor,
         features_dim: int,
         activation_fn: Type[nn.Module] = nn.ReLU,
         normalize_images: bool = True,

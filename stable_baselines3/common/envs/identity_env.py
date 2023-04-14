@@ -1,8 +1,8 @@
 from typing import Any, Dict, Generic, Optional, Tuple, TypeVar, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3.common.type_aliases import GymStepReturn
 
@@ -34,18 +34,21 @@ class IdentityEnv(gym.Env, Generic[T]):
         self.num_resets = -1  # Becomes 0 after __init__ exits.
         self.reset()
 
-    def reset(self) -> T:
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[T, Dict]:
+        if seed is not None:
+            super().reset(seed=seed)
         self.current_step = 0
         self.num_resets += 1
         self._choose_next_state()
-        return self.state
+        return self.state, {}
 
-    def step(self, action: T) -> Tuple[T, float, bool, Dict[str, Any]]:
+    def step(self, action: T) -> Tuple[T, float, bool, bool, Dict[str, Any]]:
         reward = self._get_reward(action)
         self._choose_next_state()
         self.current_step += 1
-        done = self.current_step >= self.ep_length
-        return self.state, reward, done, {}
+        terminated = False
+        truncated = self.current_step >= self.ep_length
+        return self.state, reward, terminated, truncated, {}
 
     def _choose_next_state(self) -> None:
         self.state = self.action_space.sample()
@@ -71,12 +74,13 @@ class IdentityEnvBox(IdentityEnv[np.ndarray]):
         super().__init__(ep_length=ep_length, space=space)
         self.eps = eps
 
-    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, Dict[str, Any]]:
+    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
         reward = self._get_reward(action)
         self._choose_next_state()
         self.current_step += 1
-        done = self.current_step >= self.ep_length
-        return self.state, reward, done, {}
+        terminated = False
+        truncated = self.current_step >= self.ep_length
+        return self.state, reward, terminated, truncated, {}
 
     def _get_reward(self, action: np.ndarray) -> float:
         return 1.0 if (self.state - self.eps) <= action <= (self.state + self.eps) else 0.0
@@ -138,15 +142,18 @@ class FakeImageEnv(gym.Env):
         self.ep_length = 10
         self.current_step = 0
 
-    def reset(self) -> np.ndarray:
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[np.ndarray, Dict]:
+        if seed is not None:
+            super().reset(seed=seed)
         self.current_step = 0
-        return self.observation_space.sample()
+        return self.observation_space.sample(), {}
 
     def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:
         reward = 0.0
         self.current_step += 1
-        done = self.current_step >= self.ep_length
-        return self.observation_space.sample(), reward, done, {}
+        terminated = False
+        truncated = self.current_step >= self.ep_length
+        return self.observation_space.sample(), reward, terminated, truncated, {}
 
     def render(self, mode: str = "human") -> None:
         pass

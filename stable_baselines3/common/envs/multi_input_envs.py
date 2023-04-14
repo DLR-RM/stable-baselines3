@@ -1,8 +1,8 @@
-from typing import Dict, Union
+from typing import Dict, Optional, Tuple, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3.common.type_aliases import GymStepReturn
 
@@ -153,11 +153,12 @@ class SimpleMultiObsEnv(gym.Env):
 
         got_to_end = self.state == self.max_state
         reward = 1 if got_to_end else reward
-        done = self.count > self.max_count or got_to_end
+        truncated = self.count > self.max_count
+        terminated = got_to_end
 
         self.log = f"Went {self.action2str[action]} in state {prev_state}, got to state {self.state}"
 
-        return self.get_state_mapping(), reward, done, {"got_to_end": got_to_end}
+        return self.get_state_mapping(), reward, terminated, truncated, {"got_to_end": got_to_end}
 
     def render(self, mode: str = "human") -> None:
         """
@@ -167,15 +168,18 @@ class SimpleMultiObsEnv(gym.Env):
         """
         print(self.log)
 
-    def reset(self) -> Dict[str, np.ndarray]:
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[Dict[str, np.ndarray], Dict]:
         """
         Resets the environment state and step count and returns reset observation.
 
+        :param seed:
         :return: observation dict {'vec': ..., 'img': ...}
         """
+        if seed is not None:
+            super().reset(seed=seed)
         self.count = 0
         if not self.random_start:
             self.state = 0
         else:
             self.state = np.random.randint(0, self.max_state)
-        return self.state_mapping[self.state]
+        return self.state_mapping[self.state], {}

@@ -8,10 +8,10 @@ from abc import ABC, abstractmethod
 from collections import deque
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch as th
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3.common import utils
 from stable_baselines3.common.callbacks import BaseCallback, CallbackList, ConvertCallback, ProgressBarCallback
@@ -22,7 +22,7 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.preprocessing import check_for_nested_spaces, is_image_space, is_image_space_channels_first
 from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr, save_to_zip_file
-from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
+from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule, TensorDict
 from stable_baselines3.common.utils import (
     check_for_correct_spaces,
     get_device,
@@ -39,11 +39,12 @@ from stable_baselines3.common.vec_env import (
     is_vecenv_wrapped,
     unwrap_vec_normalize,
 )
+from stable_baselines3.common.vec_env.patch_gym import _convert_space, _patch_env
 
 SelfBaseAlgorithm = TypeVar("SelfBaseAlgorithm", bound="BaseAlgorithm")
 
 
-def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymEnv]:
+def maybe_make_env(env: Union[GymEnv, str], verbose: int) -> GymEnv:
     """If env is a string, make the environment; otherwise, return env.
 
     :param env: The environment to learn from.
@@ -51,9 +52,14 @@ def maybe_make_env(env: Union[GymEnv, str, None], verbose: int) -> Optional[GymE
     :return A Gym (vector) environment.
     """
     if isinstance(env, str):
+        env_id = env
         if verbose >= 1:
-            print(f"Creating environment from the given name '{env}'")
-        env = gym.make(env)
+            print(f"Creating environment from the given name '{env_id}'")
+        # Set render_mode to `rgb_array` as default, so we can record video
+        try:
+            env = gym.make(env_id, render_mode="rgb_array")
+        except TypeError:
+            env = gym.make(env_id)
     return env
 
 
@@ -90,6 +96,11 @@ class BaseAlgorithm(ABC):
     # Policy aliases (see _get_policy_from_name())
     policy_aliases: Dict[str, Type[BasePolicy]] = {}
     policy: BasePolicy
+    observation_space: spaces.Space
+    action_space: spaces.Space
+    n_envs: int
+    lr_schedule: Schedule
+    _logger: Logger
 
     def __init__(
         self,
@@ -106,8 +117,8 @@ class BaseAlgorithm(ABC):
         seed: Optional[int] = None,
         use_sde: bool = False,
         sde_sample_freq: int = -1,
-        supported_action_spaces: Optional[Tuple[spaces.Space, ...]] = None,
-    ):
+        supported_action_spaces: Optional[Tuple[Type[spaces.Space], ...]] = None,
+    ) -> None:
         if isinstance(policy, str):
             self.policy_class = self._get_policy_from_name(policy)
         else:
@@ -117,14 +128,9 @@ class BaseAlgorithm(ABC):
         if verbose >= 1:
             print(f"Using {self.device} device")
 
-        self.env = None  # type: Optional[GymEnv]
-        # get VecNormalize object if needed
-        self._vec_normalize_env = unwrap_vec_normalize(env)
         self.verbose = verbose
         self.policy_kwargs = {} if policy_kwargs is None else policy_kwargs
-        self.observation_space: spaces.Space
-        self.action_space: spaces.Space
-        self.n_envs: int
+
         self.num_timesteps = 0
         # Used for updating schedules
         self._total_timesteps = 0
@@ -132,10 +138,9 @@ class BaseAlgorithm(ABC):
         self._num_timesteps_at_start = 0
         self.seed = seed
         self.action_noise: Optional[ActionNoise] = None
-        self.start_time = None
+        self.start_time = 0.0
         self.learning_rate = learning_rate
         self.tensorboard_log = tensorboard_log
-        self.lr_schedule = None  # type: Optional[Schedule]
         self._last_obs = None  # type: Optional[Union[np.ndarray, Dict[str, np.ndarray]]]
         self._last_episode_starts = None  # type: Optional[np.ndarray]
         # When using VecNormalize:
@@ -146,17 +151,17 @@ class BaseAlgorithm(ABC):
         self.sde_sample_freq = sde_sample_freq
         # Track the training progress remaining (from 1 to 0)
         # this is used to update the learning rate
-        self._current_progress_remaining = 1
+        self._current_progress_remaining = 1.0
         # Buffers for logging
         self._stats_window_size = stats_window_size
         self.ep_info_buffer = None  # type: Optional[deque]
         self.ep_success_buffer = None  # type: Optional[deque]
         # For logging (and TD3 delayed updates)
         self._n_updates = 0  # type: int
-        # The logger object
-        self._logger = None  # type: Logger
         # Whether the user passed a custom logger or not
         self._custom_logger = False
+        self.env: Optional[VecEnv] = None
+        self._vec_normalize_env: Optional[VecNormalize] = None
 
         # Create and wrap the env if needed
         if env is not None:
@@ -167,6 +172,9 @@ class BaseAlgorithm(ABC):
             self.action_space = env.action_space
             self.n_envs = env.num_envs
             self.env = env
+
+            # get VecNormalize object if needed
+            self._vec_normalize_env = unwrap_vec_normalize(env)
 
             if supported_action_spaces is not None:
                 assert isinstance(self.action_space, supported_action_spaces), (
@@ -204,13 +212,15 @@ class BaseAlgorithm(ABC):
         :return: The wrapped environment.
         """
         if not isinstance(env, VecEnv):
+            # Patch to support gym 0.21/0.26 and gymnasium
+            env = _patch_env(env)
             if not is_wrapped(env, Monitor) and monitor_wrapper:
                 if verbose >= 1:
                     print("Wrapping the env with a `Monitor` wrapper")
                 env = Monitor(env)
             if verbose >= 1:
                 print("Wrapping the env in a DummyVecEnv.")
-            env = DummyVecEnv([lambda: env])
+            env = DummyVecEnv([lambda: env])  # type: ignore[list-item, return-value]
 
         # Make sure that dict-spaces are not nested (not supported)
         check_for_nested_spaces(env.observation_space)
@@ -223,11 +233,11 @@ class BaseAlgorithm(ABC):
                 # the other channel last), VecTransposeImage will throw an error
                 for space in env.observation_space.spaces.values():
                     wrap_with_vectranspose = wrap_with_vectranspose or (
-                        is_image_space(space) and not is_image_space_channels_first(space)
+                        is_image_space(space) and not is_image_space_channels_first(space)  # type: ignore[arg-type]
                     )
             else:
                 wrap_with_vectranspose = is_image_space(env.observation_space) and not is_image_space_channels_first(
-                    env.observation_space
+                    env.observation_space  # type: ignore[arg-type]
                 )
 
             if wrap_with_vectranspose:
@@ -409,7 +419,10 @@ class BaseAlgorithm(ABC):
 
         # Avoid resetting the environment when calling ``.learn()`` consecutive times
         if reset_num_timesteps or self._last_obs is None:
-            self._last_obs = self.env.reset()  # pytype: disable=annotation-type-mismatch
+            assert self.env is not None
+            # pytype: disable=annotation-type-mismatch
+            self._last_obs = self.env.reset()  # type: ignore[assignment]
+            # pytype: enable=annotation-type-mismatch
             self._last_episode_starts = np.ones((self.env.num_envs,), dtype=bool)
             # Retrieve unnormalized observation for saving into the buffer
             if self._vec_normalize_env is not None:
@@ -432,6 +445,9 @@ class BaseAlgorithm(ABC):
         :param infos: List of additional information about the transition.
         :param dones: Termination signals
         """
+        assert self.ep_info_buffer is not None
+        assert self.ep_success_buffer is not None
+
         if dones is None:
             dones = np.array([False] * len(infos))
         for idx, info in enumerate(infos):
@@ -555,7 +571,7 @@ class BaseAlgorithm(ABC):
 
     def set_parameters(
         self,
-        load_path_or_dict: Union[str, Dict[str, Dict]],
+        load_path_or_dict: Union[str, TensorDict],
         exact_match: bool = True,
         device: Union[th.device, str] = "auto",
     ) -> None:
@@ -571,7 +587,7 @@ class BaseAlgorithm(ABC):
             can be used to update only specific parameters.
         :param device: Device on which the code should run.
         """
-        params = None
+        params = {}
         if isinstance(load_path_or_dict, dict):
             params = load_path_or_dict
         else:
@@ -609,7 +625,7 @@ class BaseAlgorithm(ABC):
                 #
                 # Solution: Just load the state-dict as is, and trust
                 # the user has provided a sensible state dictionary.
-                attr.load_state_dict(params[name])
+                attr.load_state_dict(params[name])  # type: ignore[arg-type]
             else:
                 # Assume attr is th.nn.Module
                 attr.load_state_dict(params[name], strict=exact_match)
@@ -667,6 +683,9 @@ class BaseAlgorithm(ABC):
             print_system_info=print_system_info,
         )
 
+        assert data is not None, "No data found in the saved file"
+        assert params is not None, "No params found in the saved file"
+
         # Remove stored device information and replace with ours
         if "policy_kwargs" in data:
             if "device" in data["policy_kwargs"]:
@@ -686,6 +705,10 @@ class BaseAlgorithm(ABC):
         if "observation_space" not in data or "action_space" not in data:
             raise KeyError("The observation_space and action_space were not given, can't verify new environments")
 
+        # Gym -> Gymnasium space conversion
+        for key in {"observation_space", "action_space"}:
+            data[key] = _convert_space(data[key])  # pytype: disable=unsupported-operands
+
         if env is not None:
             # Wrap first if needed
             env = cls._wrap_env(env, data["verbose"])
@@ -703,13 +726,14 @@ class BaseAlgorithm(ABC):
             if "env" in data:
                 env = data["env"]
 
-        # noinspection PyArgumentList
-        model = cls(  # pytype: disable=not-instantiable,wrong-keyword-args
+        # pytype: disable=not-instantiable,wrong-keyword-args
+        model = cls(
             policy=data["policy_class"],
             env=env,
             device=device,
-            _init_setup_model=False,  # pytype: disable=not-instantiable,wrong-keyword-args
+            _init_setup_model=False,  # type: ignore[call-arg]
         )
+        # pytype: enable=not-instantiable,wrong-keyword-args
 
         # load parameters
         model.__dict__.update(data)
@@ -747,12 +771,12 @@ class BaseAlgorithm(ABC):
                     continue
                 # Set the data attribute directly to avoid issue when using optimizers
                 # See https://github.com/DLR-RM/stable-baselines3/issues/391
-                recursive_setattr(model, name + ".data", pytorch_variables[name].data)
+                recursive_setattr(model, f"{name}.data", pytorch_variables[name].data)
 
         # Sample gSDE exploration matrix, so it uses the right device
         # see issue #44
         if model.use_sde:
-            model.policy.reset_noise()  # pytype: disable=attribute-error
+            model.policy.reset_noise()  # type: ignore[operator]  # pytype: disable=attribute-error
         return model
 
     def get_parameters(self) -> Dict[str, Dict]:

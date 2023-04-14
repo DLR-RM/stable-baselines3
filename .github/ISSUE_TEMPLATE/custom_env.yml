@@ -34,9 +34,9 @@ body:
         Please use the [markdown code blocks](https://help.github.com/en/articles/creating-and-highlighting-code-blocks) for both code and stack traces.
       value: |
         ```python
-        import gym
+        import gymnasium as gym
         import numpy as np
-        from gym import spaces
+        from gymnasium import spaces
 
         from stable_baselines3 import A2C
         from stable_baselines3.common.env_checker import check_env
@@ -49,7 +49,7 @@ body:
                 self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(14,))
                 self.action_space = spaces.Box(low=-1, high=1, shape=(6,))
 
-            def reset(self, seed=None):
+            def reset(self, seed=None, options=None):
                 return self.observation_space.sample(), {}
 
             def step(self, action):
@@ -84,7 +84,8 @@ body:
          * GPU models and configuration
          * Python version
          * PyTorch version
-         * Gym version
+         * Gymnasium version
+         * (if installed) OpenAI Gym version
          * Versions of any other relevant libraries
 
         You can use `sb3.get_system_info()` to print relevant packages info:

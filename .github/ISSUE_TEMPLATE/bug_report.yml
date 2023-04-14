@@ -48,7 +48,8 @@ body:
          * GPU models and configuration
          * Python version
          * PyTorch version
-         * Gym version
+         * Gymnasium version
+         * (if installed) OpenAI Gym version
          * Versions of any other relevant libraries
 
         You can use `sb3.get_system_info()` to print relevant packages info:

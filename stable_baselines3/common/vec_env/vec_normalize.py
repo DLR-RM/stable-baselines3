@@ -4,7 +4,7 @@ from copy import deepcopy
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3.common import utils
 from stable_baselines3.common.preprocessing import is_image_space

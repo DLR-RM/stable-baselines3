@@ -54,19 +54,6 @@ Bleeding-edge version
 	pip install git+https://github.com/DLR-RM/stable-baselines3
 
 
-.. note::
-
-  If you want to use Gymnasium (or the latest Gym version 0.24+), you have to use
-
-	.. code-block:: bash
-
-		pip install git+https://github.com/DLR-RM/stable-baselines3@feat/gymnasium-support
-		pip install git+https://github.com/Stable-Baselines-Team/stable-baselines3-contrib@feat/gymnasium-support
-
-
-  See `PR #1327 <https://github.com/DLR-RM/stable-baselines3/pull/1327>`_ for more information.
-
-
 Development version
 -------------------
 
@@ -131,7 +118,7 @@ Run the nvidia-docker GPU image
 
 .. code-block:: bash
 
-   docker run -it --runtime=nvidia --rm --network host --ipc=host --name test --mount src="$(pwd)",target=/root/code/stable-baselines3,type=bind stablebaselines/stable-baselines3 bash -c 'cd /root/code/stable-baselines3/ && pytest tests/'
+   docker run -it --runtime=nvidia --rm --network host --ipc=host --name test --mount src="$(pwd)",target=/home/mamba/stable-baselines3,type=bind stablebaselines/stable-baselines3 bash -c 'cd /home/mamba/stable-baselines3/ && pytest tests/'
 
 Or, with the shell file:
 
@@ -143,7 +130,7 @@ Run the docker CPU image
 
 .. code-block:: bash
 
-   docker run -it --rm --network host --ipc=host --name test --mount src="$(pwd)",target=/root/code/stable-baselines3,type=bind stablebaselines/stable-baselines3-cpu bash -c 'cd /root/code/stable-baselines3/ && pytest tests/'
+   docker run -it --rm --network host --ipc=host --name test --mount src="$(pwd)",target=/home/mamba/stable-baselines3,type=bind stablebaselines/stable-baselines3-cpu bash -c 'cd /home/mamba/stable-baselines3/ && pytest tests/'
 
 Or, with the shell file:
 
@@ -165,7 +152,7 @@ Explanation of the docker command:
 -  ``--name test`` give explicitly the name ``test`` to the container,
    otherwise it will be assigned a random name
 -  ``--mount src=...`` give access of the local directory (``pwd``
-   command) to the container (it will be map to ``/root/code/stable-baselines``), so
+   command) to the container (it will be map to ``/home/mamba/stable-baselines``), so
    all the logs created in the container in this folder will be kept
 -  ``bash -c '...'`` Run command inside the docker image, here run the tests
    (``pytest tests/``)

@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Type
 
 import torch as th
-from gym import spaces
+from gymnasium import spaces
 from torch import nn
 
 from stable_baselines3.common.policies import BasePolicy
@@ -27,10 +27,12 @@ class QNetwork(BasePolicy):
          dividing by 255.0 (True by default)
     """
 
+    action_space: spaces.Discrete
+
     def __init__(
         self,
         observation_space: spaces.Space,
-        action_space: spaces.Space,
+        action_space: spaces.Discrete,
         features_extractor: BaseFeaturesExtractor,
         features_dim: int,
         net_arch: Optional[List[int]] = None,
@@ -50,7 +52,7 @@ class QNetwork(BasePolicy):
         self.net_arch = net_arch
         self.activation_fn = activation_fn
         self.features_dim = features_dim
-        action_dim = self.action_space.n  # number of actions
+        action_dim = int(self.action_space.n)  # number of actions
         q_net = create_mlp(self.features_dim, action_dim, self.net_arch, self.activation_fn)
         self.q_net = nn.Sequential(*q_net)
 
@@ -61,8 +63,6 @@ class QNetwork(BasePolicy):
         :param obs: Observation
         :return: The estimated Q-Value for each action.
         """
-        # For type checker:
-        assert isinstance(self.features_extractor, BaseFeaturesExtractor)
         return self.q_net(self.extract_features(obs, self.features_extractor))
 
     def _predict(self, observation: th.Tensor, deterministic: bool = True) -> th.Tensor:
@@ -105,10 +105,13 @@ class DQNPolicy(BasePolicy):
         excluding the learning rate, to pass to the optimizer
     """
 
+    q_net: QNetwork
+    q_net_target: QNetwork
+
     def __init__(
         self,
         observation_space: spaces.Space,
-        action_space: spaces.Space,
+        action_space: spaces.Discrete,
         lr_schedule: Schedule,
         net_arch: Optional[List[int]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
@@ -145,8 +148,6 @@ class DQNPolicy(BasePolicy):
             "normalize_images": normalize_images,
         }
 
-        self.q_net: QNetwork
-        self.q_net_target: QNetwork
         self._build(lr_schedule)
 
     def _build(self, lr_schedule: Schedule) -> None:
@@ -234,7 +235,7 @@ class CnnPolicy(DQNPolicy):
     def __init__(
         self,
         observation_space: spaces.Space,
-        action_space: spaces.Space,
+        action_space: spaces.Discrete,
         lr_schedule: Schedule,
         net_arch: Optional[List[int]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,
@@ -279,7 +280,7 @@ class MultiInputPolicy(DQNPolicy):
     def __init__(
         self,
         observation_space: spaces.Dict,
-        action_space: spaces.Space,
+        action_space: spaces.Discrete,
         lr_schedule: Schedule,
         net_arch: Optional[List[int]] = None,
         activation_fn: Type[nn.Module] = nn.ReLU,

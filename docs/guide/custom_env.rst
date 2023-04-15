@@ -26,9 +26,9 @@ That is to say, your environment must implement the following methods (and inher
 
 .. code-block:: python
 
-  import gym
+  import gymnasium as gym
   import numpy as np
-  from gym import spaces
+  from gymnasium import spaces
 
 
   class CustomEnv(gym.Env):
@@ -54,7 +54,7 @@ That is to say, your environment must implement the following methods (and inher
           ...
           return observation  # reward, done, info can't be included
 
-      def render(self, mode="human"):
+      def render(self):
           ...
 
       def close(self):
@@ -91,7 +91,7 @@ Optionally, you can also register the environment with gym, that will allow you 
 
 .. code-block:: python
 
-	from gym.envs.registration import register
+	from gymnasium.envs.registration import register
 	# Example for the CartPole environment
 	register(
 	    # unique identifier for the env `name-version`

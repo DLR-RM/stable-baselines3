@@ -2,9 +2,9 @@
 
 import sys
 from enum import Enum
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, SupportsFloat, Tuple, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch as th
 
@@ -17,8 +17,11 @@ from stable_baselines3.common import callbacks, vec_env
 
 GymEnv = Union[gym.Env, vec_env.VecEnv]
 GymObs = Union[Tuple, Dict[str, Any], np.ndarray, int]
-GymStepReturn = Tuple[GymObs, float, bool, Dict]
-TensorDict = Dict[Union[str, int], th.Tensor]
+GymResetReturn = Tuple[GymObs, Dict]
+AtariResetReturn = Tuple[np.ndarray, Dict[str, Any]]
+GymStepReturn = Tuple[GymObs, float, bool, bool, Dict]
+AtariStepReturn = Tuple[np.ndarray, SupportsFloat, bool, bool, Dict[str, Any]]
+TensorDict = Dict[str, th.Tensor]
 OptimizerStateDict = Dict[str, Any]
 MaybeCallback = Union[None, Callable, List[callbacks.BaseCallback], callbacks.BaseCallback]
 

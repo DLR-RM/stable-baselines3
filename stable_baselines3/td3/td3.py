@@ -2,16 +2,16 @@ from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 import numpy as np
 import torch as th
-from gym import spaces
+from gymnasium import spaces
 from torch.nn import functional as F
 
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
-from stable_baselines3.common.policies import BasePolicy
+from stable_baselines3.common.policies import BasePolicy, ContinuousCritic
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import get_parameters_by_name, polyak_update
-from stable_baselines3.td3.policies import CnnPolicy, MlpPolicy, MultiInputPolicy, TD3Policy
+from stable_baselines3.td3.policies import Actor, CnnPolicy, MlpPolicy, MultiInputPolicy, TD3Policy
 
 SelfTD3 = TypeVar("SelfTD3", bound="TD3")
 
@@ -70,6 +70,11 @@ class TD3(OffPolicyAlgorithm):
         "CnnPolicy": CnnPolicy,
         "MultiInputPolicy": MultiInputPolicy,
     }
+    policy: TD3Policy
+    actor: Actor
+    actor_target: Actor
+    critic: ContinuousCritic
+    critic_target: ContinuousCritic
 
     def __init__(
         self,
@@ -120,7 +125,7 @@ class TD3(OffPolicyAlgorithm):
             seed=seed,
             sde_support=False,
             optimize_memory_usage=optimize_memory_usage,
-            supported_action_spaces=(spaces.Box),
+            supported_action_spaces=(spaces.Box,),
             support_multi_env=True,
         )
 
@@ -157,7 +162,7 @@ class TD3(OffPolicyAlgorithm):
         for _ in range(gradient_steps):
             self._n_updates += 1
             # Sample replay buffer
-            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
+            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)  # type: ignore[union-attr]
 
             with th.no_grad():
                 # Select action according to policy and add clipped noise
@@ -175,6 +180,7 @@ class TD3(OffPolicyAlgorithm):
 
             # Compute critic loss
             critic_loss = sum(F.mse_loss(current_q, target_q_values) for current_q in current_q_values)
+            assert isinstance(critic_loss, th.Tensor)
             critic_losses.append(critic_loss.item())
 
             # Optimize the critics

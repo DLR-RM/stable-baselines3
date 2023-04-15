@@ -1,9 +1,12 @@
-import gym
+from typing import Dict, Optional
+
+import gymnasium as gym
 import numpy as np
 import pytest
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
+from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.envs import BitFlippingEnv, SimpleMultiObsEnv
 from stable_baselines3.common.evaluation import evaluate_policy
@@ -13,7 +16,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFram
 class DummyDictEnv(gym.Env):
     """Custom Environment for testing purposes only"""
 
-    metadata = {"render.modes": ["human"]}
+    metadata = {"render_modes": ["human"]}
 
     def __init__(
         self,
@@ -66,17 +69,29 @@ class DummyDictEnv(gym.Env):
 
     def step(self, action):
         reward = 0.0
-        done = False
-        return self.observation_space.sample(), reward, done, {}
+        terminated = truncated = False
+        return self.observation_space.sample(), reward, terminated, truncated, {}
 
-    def compute_reward(self, achieved_goal, desired_goal, info):
-        return np.zeros((len(achieved_goal),))
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+        if seed is not None:
+            self.observation_space.seed(seed)
+        return self.observation_space.sample(), {}
 
-    def reset(self):
-        return self.observation_space.sample()
-
-    def render(self, mode="human"):
+    def render(self):
         pass
+
+
+@pytest.mark.parametrize("use_discrete_actions", [True, False])
+@pytest.mark.parametrize("channel_last", [True, False])
+@pytest.mark.parametrize("nested_dict_obs", [True, False])
+@pytest.mark.parametrize("vec_only", [True, False])
+def test_env(use_discrete_actions, channel_last, nested_dict_obs, vec_only):
+    # Check the env used for testing
+    if nested_dict_obs:
+        with pytest.warns(UserWarning, match="Nested observation spaces are not supported"):
+            check_env(DummyDictEnv(use_discrete_actions, channel_last, nested_dict_obs, vec_only))
+    else:
+        check_env(DummyDictEnv(use_discrete_actions, channel_last, nested_dict_obs, vec_only))
 
 
 @pytest.mark.parametrize("policy", ["MlpPolicy", "CnnPolicy"])
@@ -105,7 +120,7 @@ def test_consistency(model_class):
     dict_env = gym.wrappers.TimeLimit(dict_env, 100)
     env = gym.wrappers.FlattenObservation(dict_env)
     dict_env.seed(10)
-    obs = dict_env.reset()
+    obs, _ = dict_env.reset()
 
     kwargs = {}
     n_steps = 256

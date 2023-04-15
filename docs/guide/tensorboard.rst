@@ -190,7 +190,7 @@ Here is an example of how to render an episode and log the resulting video to Te
 
     from typing import Any, Dict
 
-    import gym
+    import gymnasium as gym
     import torch as th
 
     from stable_baselines3 import A2C

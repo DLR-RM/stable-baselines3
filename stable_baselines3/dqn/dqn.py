@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 import numpy as np
 import torch as th
-from gym import spaces
+from gymnasium import spaces
 from torch.nn import functional as F
 
 from stable_baselines3.common.buffers import ReplayBuffer
@@ -11,7 +11,7 @@ from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import get_linear_fn, get_parameters_by_name, polyak_update
-from stable_baselines3.dqn.policies import CnnPolicy, DQNPolicy, MlpPolicy, MultiInputPolicy
+from stable_baselines3.dqn.policies import CnnPolicy, DQNPolicy, MlpPolicy, MultiInputPolicy, QNetwork
 
 SelfDQN = TypeVar("SelfDQN", bound="DQN")
 
@@ -67,6 +67,11 @@ class DQN(OffPolicyAlgorithm):
         "CnnPolicy": CnnPolicy,
         "MultiInputPolicy": MultiInputPolicy,
     }
+    # Linear schedule will be defined in `_setup_model()`
+    exploration_schedule: Schedule
+    q_net: QNetwork
+    q_net_target: QNetwork
+    policy: DQNPolicy
 
     def __init__(
         self,
@@ -131,10 +136,6 @@ class DQN(OffPolicyAlgorithm):
         self.max_grad_norm = max_grad_norm
         # "epsilon" for the epsilon-greedy exploration
         self.exploration_rate = 0.0
-        # Linear schedule will be defined in `_setup_model()`
-        self.exploration_schedule: Schedule
-        self.q_net: th.nn.Module
-        self.q_net_target: th.nn.Module
 
         if _init_setup_model:
             self._setup_model()
@@ -164,8 +165,6 @@ class DQN(OffPolicyAlgorithm):
             self.target_update_interval = max(self.target_update_interval // self.n_envs, 1)
 
     def _create_aliases(self) -> None:
-        # For type checker:
-        assert isinstance(self.policy, DQNPolicy)
         self.q_net = self.policy.q_net
         self.q_net_target = self.policy.q_net_target
 

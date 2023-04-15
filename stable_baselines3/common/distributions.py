@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import torch as th
-from gym import spaces
+from gymnasium import spaces
 from torch import nn
 from torch.distributions import Bernoulli, Categorical, Normal
 
@@ -617,7 +617,6 @@ class TanhBijector:
     """
     Bijective transformation of a probability distribution
     using a squashing function (tanh)
-    TODO: use Pyro instead (https://pyro.ai/)
 
     :param epsilon: small value to avoid NaN due to numerical imprecision.
     """

@@ -15,21 +15,17 @@ DIM = 4
 def test_discrete(model_class, env):
     env_ = DummyVecEnv([lambda: env])
     kwargs = {}
-    n_steps = 3000
+    n_steps = 2500
     if model_class == DQN:
         kwargs = dict(learning_starts=0)
-        n_steps = 4000
         # DQN only support discrete actions
         if isinstance(env, (IdentityEnvMultiDiscrete, IdentityEnvMultiBinary)):
             return
-    elif model_class == A2C:
-        # slightly higher budget
-        n_steps = 3500
 
-    model = model_class("MlpPolicy", env_, gamma=0.4, seed=1, **kwargs).learn(n_steps)
+    model = model_class("MlpPolicy", env_, gamma=0.4, seed=3, **kwargs).learn(n_steps)
 
     evaluate_policy(model, env_, n_eval_episodes=20, reward_threshold=90, warn=False)
-    obs = env.reset()
+    obs, _ = env.reset()
 
     assert np.shape(model.predict(obs)[0]) == np.shape(obs)
 
@@ -38,16 +34,19 @@ def test_discrete(model_class, env):
 def test_continuous(model_class):
     env = IdentityEnvBox(eps=0.5)
 
-    n_steps = {A2C: 3500, PPO: 3000, SAC: 700, TD3: 500, DDPG: 500}[model_class]
+    n_steps = {A2C: 2000, PPO: 2000, SAC: 400, TD3: 400, DDPG: 400}[model_class]
 
     kwargs = dict(policy_kwargs=dict(net_arch=[64, 64]), seed=0, gamma=0.95)
+
     if model_class in [TD3]:
         n_actions = 1
         action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
         kwargs["action_noise"] = action_noise
     elif model_class in [A2C]:
         kwargs["policy_kwargs"]["log_std_init"] = -0.5
+    elif model_class == PPO:
+        kwargs = dict(n_steps=512, n_epochs=5)
 
-    model = model_class("MlpPolicy", env, **kwargs).learn(n_steps)
+    model = model_class("MlpPolicy", env, learning_rate=1e-3, **kwargs).learn(n_steps)
 
     evaluate_policy(model, env, n_eval_episodes=20, reward_threshold=90, warn=False)

@@ -4,7 +4,7 @@ from copy import deepcopy
 import numpy as np
 import pytest
 import torch as th
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3 import A2C, DQN, PPO, SAC, TD3
 from stable_baselines3.common.envs import FakeImageEnv
@@ -45,7 +45,7 @@ def test_cnn(tmp_path, model_class, share_features_extractor):
     # FakeImageEnv is channel last by default and should be wrapped
     assert is_vecenv_wrapped(model.get_env(), VecTransposeImage)
 
-    obs = env.reset()
+    obs, _ = env.reset()
 
     # Test stochastic predict with channel last input
     if model_class == DQN:
@@ -248,7 +248,7 @@ def test_channel_first_env(tmp_path):
 
     assert not is_vecenv_wrapped(model.get_env(), VecTransposeImage)
 
-    obs = env.reset()
+    obs, _ = env.reset()
 
     action, _ = model.predict(obs, deterministic=True)
 

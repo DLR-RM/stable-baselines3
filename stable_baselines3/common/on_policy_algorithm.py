@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 import numpy as np
 import torch as th
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.buffers import DictRolloutBuffer, RolloutBuffer
@@ -52,6 +52,9 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     :param supported_action_spaces: The action spaces supported by the algorithm.
     """
 
+    rollout_buffer: RolloutBuffer
+    policy: ActorCriticPolicy
+
     def __init__(
         self,
         policy: Union[str, Type[ActorCriticPolicy]],
@@ -73,7 +76,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
-        supported_action_spaces: Optional[Tuple[spaces.Space, ...]] = None,
+        supported_action_spaces: Optional[Tuple[Type[spaces.Space], ...]] = None,
     ):
         super().__init__(
             policy=policy,
@@ -97,7 +100,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         self.ent_coef = ent_coef
         self.vf_coef = vf_coef
         self.max_grad_norm = max_grad_norm
-        self.rollout_buffer = None
 
         if _init_setup_model:
             self._setup_model()
@@ -117,13 +119,11 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             gae_lambda=self.gae_lambda,
             n_envs=self.n_envs,
         )
-        self.policy = self.policy_class(  # pytype:disable=not-instantiable
-            self.observation_space,
-            self.action_space,
-            self.lr_schedule,
-            use_sde=self.use_sde,
-            **self.policy_kwargs  # pytype:disable=not-instantiable
+        # pytype:disable=not-instantiable
+        self.policy = self.policy_class(  # type: ignore[assignment]
+            self.observation_space, self.action_space, self.lr_schedule, use_sde=self.use_sde, **self.policy_kwargs
         )
+        # pytype:enable=not-instantiable
         self.policy = self.policy.to(self.device)
 
     def collect_rollouts(
@@ -201,16 +201,23 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 ):
                     terminal_obs = self.policy.obs_to_tensor(infos[idx]["terminal_observation"])[0]
                     with th.no_grad():
-                        terminal_value = self.policy.predict_values(terminal_obs)[0]
+                        terminal_value = self.policy.predict_values(terminal_obs)[0]  # type: ignore[arg-type]
                     rewards[idx] += self.gamma * terminal_value
 
-            rollout_buffer.add(self._last_obs, actions, rewards, self._last_episode_starts, values, log_probs)
-            self._last_obs = new_obs
+            rollout_buffer.add(
+                self._last_obs,  # type: ignore[arg-type]
+                actions,
+                rewards,
+                self._last_episode_starts,  # type: ignore[arg-type]
+                values,
+                log_probs,
+            )
+            self._last_obs = new_obs  # type: ignore[assignment]
             self._last_episode_starts = dones
 
         with th.no_grad():
             # Compute value for the last timestep
-            values = self.policy.predict_values(obs_as_tensor(new_obs, self.device))
+            values = self.policy.predict_values(obs_as_tensor(new_obs, self.device))  # type: ignore[arg-type]
 
         rollout_buffer.compute_returns_and_advantage(last_values=values, dones=dones)
 
@@ -246,6 +253,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_training_start(locals(), globals())
 
+        assert self.env is not None
+
         while self.num_timesteps < total_timesteps:
             continue_training = self.collect_rollouts(self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps)
 
@@ -257,6 +266,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             # Display training infos
             if log_interval is not None and iteration % log_interval == 0:
+                assert self.ep_info_buffer is not None
                 time_elapsed = max((time.time_ns() - self.start_time) / 1e9, sys.float_info.epsilon)
                 fps = int((self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
                 self.logger.record("time/iterations", iteration, exclude="tensorboard")

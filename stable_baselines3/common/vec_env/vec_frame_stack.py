@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvWrapper
 from stable_baselines3.common.vec_env.stacked_observations import StackedObservations
@@ -35,6 +35,9 @@ class VecFrameStack(VecEnvWrapper):
         return observations, rewards, dones, infos
 
     def reset(self) -> Union[np.ndarray, Dict[str, np.ndarray]]:
+        """
+        Reset all environments
+        """
         observation = self.venv.reset()  # pytype:disable=annotation-type-mismatch
         observation = self.stacked_obs.reset(observation)
         return observation

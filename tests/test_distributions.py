@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import Tuple
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pytest
 import torch as th

@@ -6,6 +6,21 @@ Projects
 This is a list of projects using stable-baselines3.
 Please tell us, if you want your project to appear on this page ;)
 
+UAV_Navigation_DRL_AirSim
+---------
+
+A platform for training UAV navigation policies in complex unknown environment. 
+
+- based on AirSim and SB3. 
+- An Open AI Gym env is created include kinematic models for both multirotor and fixed-wing UAVs. 
+- Some UE4 environments are provided to train and test the navigation policy. 
+
+Try to train your own autonomous flight policy and even transfer it into real UAVs! Have fun ^_^!
+
+| Author: Lei He
+| Github: https://github.com/heleidsn/UAV_Navigation_DRL_AirSim
+
+
 DriverGym
 ---------
 

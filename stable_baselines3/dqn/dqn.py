@@ -162,8 +162,6 @@ class DQN(OffPolicyAlgorithm):
                     f"which corresponds to {self.n_envs} steps."
                 )
 
-            self.target_update_interval = max(self.target_update_interval // self.n_envs, 1)
-
     def _create_aliases(self) -> None:
         self.q_net = self.policy.q_net
         self.q_net_target = self.policy.q_net_target
@@ -174,7 +172,7 @@ class DQN(OffPolicyAlgorithm):
         This method is called in ``collect_rollouts()`` after each step in the environment.
         """
         self._n_calls += 1
-        if self._n_calls % self.target_update_interval == 0:
+        if self._n_calls % max(self.target_update_interval // self.n_envs, 1) == 0:
             polyak_update(self.q_net.parameters(), self.q_net_target.parameters(), self.tau)
             # Copy running stats, see GH issue #996
             polyak_update(self.batch_norm_stats, self.batch_norm_stats_target, 1.0)

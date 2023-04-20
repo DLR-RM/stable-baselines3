@@ -730,3 +730,12 @@ def test_load_invalid_object(tmp_path):
     with warnings.catch_warnings(record=True) as record:
         PPO.load(path, custom_objects=dict(learning_rate=lambda _: 1.0))
     assert len(record) == 0
+
+def test_dqn_target_update_interval():
+    # See GH Issue #1373
+    env = DummyVecEnv([lambda: gym.make("CartPole-v1") for _ in range(2)])
+    model = DQN("MlpPolicy", env, verbose=1, target_update_interval=100)
+    model.save("dqn_cartpole")
+    del model
+    model = DQN.load("dqn_cartpole")
+    assert model.target_update_interval == 100

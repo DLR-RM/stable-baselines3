@@ -173,3 +173,18 @@ RLeXplore is a set of implementations of intrinsic reward driven-exploration app
 
 | Author: Mingqi Yuan
 | GitHub: https://github.com/yuanmingqi/rl-exploration-baselines
+
+
+UAV_Navigation_DRL_AirSim
+-------------------------
+
+A platform for training UAV navigation policies in complex unknown environments. 
+
+- Based on AirSim and SB3. 
+- An Open AI Gym env is created including kinematic models for both multirotor and fixed-wing UAVs. 
+- Some UE4 environments are provided to train and test the navigation policy. 
+
+Try to train your own autonomous flight policy and even transfer it to real UAVs! Have fun ^_^!
+
+| Author: Lei He
+| Github: https://github.com/heleidsn/UAV_Navigation_DRL_AirSim

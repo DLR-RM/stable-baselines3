@@ -58,6 +58,7 @@ Documentation:
 - Added documentation about ``VecEnv`` API vs Gym API
 - Upgraded tutorials to Gymnasium API
 - Make it more explicit when using ``VecEnv`` vs Gym env
+- Added UAV_Navigation_DRL_AirSim to the project page (@heleidsn)
 
 
 Release 1.8.0 (2023-04-07)

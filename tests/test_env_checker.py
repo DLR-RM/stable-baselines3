@@ -1,26 +1,32 @@
-import gym
+from typing import Dict, Optional
+
+import gymnasium as gym
 import numpy as np
 import pytest
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3.common.env_checker import check_env
 
 
 class ActionDictTestEnv(gym.Env):
+    metadata = {"render_modes": ["human"]}
+    render_mode = None
+
     action_space = spaces.Dict({"position": spaces.Discrete(1), "velocity": spaces.Discrete(1)})
     observation_space = spaces.Box(low=-1.0, high=2.0, shape=(3,), dtype=np.float32)
 
     def step(self, action):
         observation = np.array([1.0, 1.5, 0.5], dtype=self.observation_space.dtype)
         reward = 1
-        done = True
+        terminated = True
+        truncated = False
         info = {}
-        return observation, reward, done, info
+        return observation, reward, terminated, truncated, info
 
     def reset(self):
-        return np.array([1.0, 1.5, 0.5], dtype=self.observation_space.dtype)
+        return np.array([1.0, 1.5, 0.5], dtype=self.observation_space.dtype), {}
 
-    def render(self, mode="human"):
+    def render(self):
         pass
 
 
@@ -94,12 +100,12 @@ def test_check_env_detailed_error(obs_tuple, method):
     class TestEnv(gym.Env):
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(3,), dtype=np.float32)
 
-        def reset(self):
-            return wrong_obs if method == "reset" else good_obs
+        def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+            return wrong_obs if method == "reset" else good_obs, {}
 
         def step(self, action):
             obs = wrong_obs if method == "step" else good_obs
-            return obs, 0.0, True, {}
+            return obs, 0.0, True, False, {}
 
     TestEnv.observation_space = observation_space
 

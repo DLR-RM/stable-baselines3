@@ -35,9 +35,7 @@ ignore_missing_imports = true
 follow_imports = "silent"
 show_error_codes = true
 exclude = """(?x)(
-    stable_baselines3/a2c/a2c.py$
-    | stable_baselines3/common/base_class.py$
-    | stable_baselines3/common/buffers.py$
+    stable_baselines3/common/buffers.py$
     | stable_baselines3/common/callbacks.py$
     | stable_baselines3/common/distributions.py$
     | stable_baselines3/common/envs/bit_flipping_env.py$
@@ -45,7 +43,6 @@ exclude = """(?x)(
     | stable_baselines3/common/envs/multi_input_envs.py$
     | stable_baselines3/common/logger.py$
     | stable_baselines3/common/off_policy_algorithm.py$
-    | stable_baselines3/common/on_policy_algorithm.py$
     | stable_baselines3/common/policies.py$
     | stable_baselines3/common/save_util.py$
     | stable_baselines3/common/sb2_compat/rmsprop_tf_like.py$
@@ -62,11 +59,6 @@ exclude = """(?x)(
     | stable_baselines3/common/vec_env/vec_transpose.py$
     | stable_baselines3/common/vec_env/vec_video_recorder.py$
     | stable_baselines3/her/her_replay_buffer.py$
-    | stable_baselines3/ppo/ppo.py$
-    | stable_baselines3/sac/policies.py$
-    | stable_baselines3/sac/sac.py$
-    | stable_baselines3/td3/policies.py$
-    | stable_baselines3/td3/td3.py$
     | tests/test_logger.py$
     | tests/test_train_eval_mode.py$
   )"""
@@ -80,12 +72,8 @@ env = [
 filterwarnings = [
     # Tensorboard warnings
     "ignore::DeprecationWarning:tensorboard",
-    # Gym warnings
-    "ignore:Parameters to load are deprecated.:DeprecationWarning",
-    "ignore:the imp module is deprecated in favour of importlib:PendingDeprecationWarning",
-    "ignore::UserWarning:gym",
-		"ignore:SelectableGroups dict interface is deprecated.:DeprecationWarning",
-		"ignore:`np.bool` is a deprecated alias for the builtin `bool`:DeprecationWarning",
+    # Gymnasium warnings
+    "ignore::UserWarning:gymnasium",
 ]
 markers = [
     "expensive: marks tests as expensive (deselect with '-m \"not expensive\"')"

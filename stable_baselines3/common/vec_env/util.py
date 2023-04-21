@@ -5,7 +5,7 @@ from collections import OrderedDict
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3.common.preprocessing import check_for_nested_spaces
 from stable_baselines3.common.vec_env.base_vec_env import VecEnvObs

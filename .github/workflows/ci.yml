@@ -55,6 +55,8 @@ jobs:
     - name: Type check
       run: |
         make type
+      # skip mypy type check for python3.7 (result is different to all other versions)
+      if: "!(matrix.python-version == '3.7')"
     - name: Test with pytest
       run: |
         make pytest

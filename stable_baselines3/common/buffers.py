@@ -4,7 +4,7 @@ from typing import Any, Dict, Generator, List, Optional, Union
 
 import numpy as np
 import torch as th
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3.common.preprocessing import get_action_dim, get_obs_shape
 from stable_baselines3.common.type_aliases import (
@@ -335,6 +335,15 @@ class RolloutBuffer(BaseBuffer):
     :param n_envs: Number of parallel environments
     """
 
+    observations: np.ndarray
+    actions: np.ndarray
+    rewards: np.ndarray
+    advantages: np.ndarray
+    returns: np.ndarray
+    episode_starts: np.ndarray
+    log_probs: np.ndarray
+    values: np.ndarray
+
     def __init__(
         self,
         buffer_size: int,
@@ -348,8 +357,6 @@ class RolloutBuffer(BaseBuffer):
         super().__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
-        self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
-        self.returns, self.episode_starts, self.values, self.log_probs = None, None, None, None
         self.generator_ready = False
         self.reset()
 

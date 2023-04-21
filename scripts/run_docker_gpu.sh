@@ -15,5 +15,5 @@ else
 fi
 
 docker run -it ${NVIDIA_ARG} --rm --network host --ipc=host \
-  --mount src=$(pwd),target=/root/code/stable-baselines3,type=bind stablebaselines/stable-baselines3:latest \
-  bash -c "cd /root/code/stable-baselines3/ && $cmd_line"
+  --mount src=$(pwd),target=/home/mamba/stable-baselines3,type=bind stablebaselines/stable-baselines3:latest \
+  bash -c "cd /home/mamba/stable-baselines3/ && $cmd_line"

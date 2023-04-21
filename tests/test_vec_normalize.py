@@ -1,10 +1,10 @@
 import operator
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pytest
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3 import SAC, TD3, HerReplayBuffer
 from stable_baselines3.common.envs import FakeImageEnv
@@ -35,11 +35,15 @@ class DummyRewardEnv(gym.Env):
         self.t += 1
         index = (self.t + self.return_reward_idx) % len(self.returned_rewards)
         returned_value = self.returned_rewards[index]
-        return np.array([returned_value]), returned_value, self.t == len(self.returned_rewards), {}
+        terminated = False
+        truncated = self.t == len(self.returned_rewards)
+        return np.array([returned_value]), returned_value, terminated, truncated, {}
 
-    def reset(self):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+        if seed is not None:
+            super().reset(seed=seed)
         self.t = 0
-        return np.array([self.returned_rewards[self.return_reward_idx]])
+        return np.array([self.returned_rewards[self.return_reward_idx]]), {}
 
 
 class DummyDictEnv(gym.Env):
@@ -58,14 +62,16 @@ class DummyDictEnv(gym.Env):
         )
         self.action_space = spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
 
-    def reset(self):
-        return self.observation_space.sample()
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+        if seed is not None:
+            super().reset(seed=seed)
+        return self.observation_space.sample(), {}
 
     def step(self, action):
         obs = self.observation_space.sample()
         reward = self.compute_reward(obs["achieved_goal"], obs["desired_goal"], {})
-        done = np.random.rand() > 0.8
-        return obs, reward, done, {}
+        terminated = np.random.rand() > 0.8
+        return obs, reward, terminated, False, {}
 
     def compute_reward(self, achieved_goal: np.ndarray, desired_goal: np.ndarray, _info) -> np.float32:
         distance = np.linalg.norm(achieved_goal - desired_goal, axis=-1)
@@ -88,13 +94,15 @@ class DummyMixedDictEnv(gym.Env):
         )
         self.action_space = spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
 
-    def reset(self):
-        return self.observation_space.sample()
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+        if seed is not None:
+            super().reset(seed=seed)
+        return self.observation_space.sample(), {}
 
     def step(self, action):
         obs = self.observation_space.sample()
-        done = np.random.rand() > 0.8
-        return obs, 0.0, done, {}
+        terminated = np.random.rand() > 0.8
+        return obs, 0.0, terminated, False, {}
 
 
 def allclose(obs_1, obs_2):

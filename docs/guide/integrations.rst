@@ -13,7 +13,7 @@ The full documentation is available here: https://docs.wandb.ai/guides/integrati
 
 .. code-block:: python
 
-  import gym
+  import gymnasium as gym
   import wandb
   from wandb.integration.sb3 import WandbCallback
 
@@ -86,7 +86,7 @@ For instance ``sb3/demo-hf-CartPole-v1``:
 
 .. code-block:: python
 
-  import gym
+  import gymnasium as gym
 
   from huggingface_sb3 import load_from_hub
   from stable_baselines3 import PPO

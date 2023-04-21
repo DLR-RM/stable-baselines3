@@ -1,5 +1,5 @@
 import torch
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3.common.preprocessing import get_obs_shape, preprocess_obs
 

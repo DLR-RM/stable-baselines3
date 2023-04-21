@@ -1,9 +1,9 @@
 import warnings
 from typing import Any, Dict, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
-from gym import spaces
+from gymnasium import spaces
 
 from stable_baselines3.common.preprocessing import check_for_nested_spaces, is_image_space_channels_first
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
@@ -60,9 +60,15 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
 
     if isinstance(observation_space, spaces.Dict):
         nested_dict = False
-        for space in observation_space.spaces.values():
+        for key, space in observation_space.spaces.items():
             if isinstance(space, spaces.Dict):
                 nested_dict = True
+            if isinstance(space, spaces.Discrete) and space.start != 0:
+                warnings.warn(
+                    f"Discrete observation space (key '{key}') with a non-zero start is not supported by Stable-Baselines3. "
+                    "You can use a wrapper or update your observation space."
+                )
+
         if nested_dict:
             warnings.warn(
                 "Nested observation spaces are not supported by Stable Baselines3 "
@@ -79,6 +85,18 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             "However, you can convert it to a Dict observation space "
             "(cf. https://github.com/openai/gym/blob/master/gym/spaces/dict.py). "
             "which is supported by SB3."
+        )
+
+    if isinstance(observation_space, spaces.Discrete) and observation_space.start != 0:
+        warnings.warn(
+            "Discrete observation space with a non-zero start is not supported by Stable-Baselines3. "
+            "You can use a wrapper or update your observation space."
+        )
+
+    if isinstance(action_space, spaces.Discrete) and action_space.start != 0:
+        warnings.warn(
+            "Discrete action space with a non-zero start is not supported by Stable-Baselines3. "
+            "You can use a wrapper or update your action space."
         )
 
     if not _is_numpy_array_space(action_space):
@@ -101,9 +119,8 @@ def _is_goal_env(env: gym.Env) -> bool:
     """
     Check if the env uses the convention for goal-conditioned envs (previously, the gym.GoalEnv interface)
     """
-    if isinstance(env, gym.Wrapper):  # We need to unwrap the env since gym.Wrapper has the compute_reward method
-        return _is_goal_env(env.unwrapped)
-    return hasattr(env, "compute_reward")
+    # We need to unwrap the env since gym.Wrapper has the compute_reward method
+    return hasattr(env.unwrapped, "compute_reward")
 
 
 def _check_goal_env_obs(obs: dict, observation_space: spaces.Dict, method_name: str) -> None:
@@ -131,7 +148,7 @@ def _check_goal_env_compute_reward(
     env: gym.Env,
     reward: float,
     info: Dict[str, Any],
-):
+) -> None:
     """
     Check that reward is computed with `compute_reward`
     and that the implementation is vectorized.
@@ -165,7 +182,9 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
 
     # The check for a GoalEnv is done by the base class
     if isinstance(observation_space, spaces.Discrete):
-        assert isinstance(obs, int), f"The observation returned by `{method_name}()` method must be an int"
+        # Since https://github.com/Farama-Foundation/Gymnasium/pull/141,
+        # `sample()` will return a np.int64 instead of an int
+        assert np.issubdtype(type(obs), np.integer), f"The observation returned by `{method_name}()` method must be an int"
     elif _is_numpy_array_space(observation_space):
         assert isinstance(obs, np.ndarray), f"The observation returned by `{method_name}()` method must be a numpy array"
 
@@ -174,27 +193,32 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
         # check obs dimensions, dtype and bounds
         assert observation_space.shape == obs.shape, (
             f"The observation returned by the `{method_name}()` method does not match the shape "
-            f"of the given observation space. Expected: {observation_space.shape}, actual shape: {obs.shape}"
+            f"of the given observation space {observation_space}. "
+            f"Expected: {observation_space.shape}, actual shape: {obs.shape}"
         )
-        assert observation_space.dtype == obs.dtype, (
-            f"The observation returned by the `{method_name}()` method does not match the data type "
-            f"of the given observation space. Expected: {observation_space.dtype}, actual dtype: {obs.dtype}"
+        assert np.can_cast(obs.dtype, observation_space.dtype), (
+            f"The observation returned by the `{method_name}()` method does not match the data type (cannot cast) "
+            f"of the given observation space {observation_space}. "
+            f"Expected: {observation_space.dtype}, actual dtype: {obs.dtype}"
         )
         if isinstance(observation_space, spaces.Box):
             assert np.all(obs >= observation_space.low), (
                 f"The observation returned by the `{method_name}()` method does not match the lower bound "
-                f"of the given observation space. Expected: obs >= {np.min(observation_space.low)}, "
+                f"of the given observation space {observation_space}."
+                f"Expected: obs >= {np.min(observation_space.low)}, "
                 f"actual min value: {np.min(obs)} at index {np.argmin(obs)}"
             )
             assert np.all(obs <= observation_space.high), (
                 f"The observation returned by the `{method_name}()` method does not match the upper bound "
-                f"of the given observation space. Expected: obs <= {np.max(observation_space.high)}, "
+                f"of the given observation space {observation_space}. "
+                f"Expected: obs <= {np.max(observation_space.high)}, "
                 f"actual max value: {np.max(obs)} at index {np.argmax(obs)}"
             )
 
-    assert observation_space.contains(
-        obs
-    ), f"The observation returned by the `{method_name}()` method does not match the given observation space"
+    assert observation_space.contains(obs), (
+        f"The observation returned by the `{method_name}()` method "
+        f"does not match the given observation space {observation_space}"
+    )
 
 
 def _check_box_obs(observation_space: spaces.Box, key: str = "") -> None:
@@ -221,8 +245,12 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
     """
     Check the returned values by the env when calling `.reset()` or `.step()` methods.
     """
-    # because env inherits from gym.Env, we assume that `reset()` and `step()` methods exists
-    obs = env.reset()
+    # because env inherits from gymnasium.Env, we assume that `reset()` and `step()` methods exists
+    reset_returns = env.reset()
+    assert isinstance(reset_returns, tuple), "`reset()` must return a tuple (obs, info)"
+    assert len(reset_returns) == 2, f"`reset()` must return a tuple of size 2 (obs, info), not {len(reset_returns)}"
+    obs, info = reset_returns
+    assert isinstance(info, dict), f"The second element of the tuple return by `reset()` must be a dictionary not {info}"
 
     if _is_goal_env(env):
         # Make mypy happy, already checked
@@ -249,18 +277,23 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
     action = action_space.sample()
     data = env.step(action)
 
-    assert len(data) == 4, "The `step()` method must return four values: obs, reward, done, info"
+    assert len(data) == 5, (
+        "The `step()` method must return five values: "
+        f"obs, reward, terminated, truncated, info. Actual: {len(data)} values returned."
+    )
 
     # Unpack
-    obs, reward, done, info = data
+    obs, reward, terminated, truncated, info = data
 
-    if _is_goal_env(env):
-        # Make mypy happy, already checked
-        assert isinstance(observation_space, spaces.Dict)
-        _check_goal_env_obs(obs, observation_space, "step")
-        _check_goal_env_compute_reward(obs, env, reward, info)
-    elif isinstance(observation_space, spaces.Dict):
+    if isinstance(observation_space, spaces.Dict):
         assert isinstance(obs, dict), "The observation returned by `step()` must be a dictionary"
+
+        # Additional checks for GoalEnvs
+        if _is_goal_env(env):
+            # Make mypy happy, already checked
+            assert isinstance(observation_space, spaces.Dict)
+            _check_goal_env_obs(obs, observation_space, "step")
+            _check_goal_env_compute_reward(obs, env, float(reward), info)
 
         if not obs.keys() == observation_space.spaces.keys():
             raise AssertionError(
@@ -279,11 +312,14 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
 
     # We also allow int because the reward will be cast to float
     assert isinstance(reward, (float, int)), "The reward returned by `step()` must be a float"
-    assert isinstance(done, bool), "The `done` signal must be a boolean"
+    assert isinstance(terminated, bool), "The `terminated` signal must be a boolean"
+    assert isinstance(truncated, bool), "The `truncated` signal must be a boolean"
     assert isinstance(info, dict), "The `info` returned by `step()` must be a python dictionary"
 
     # Goal conditioned env
     if _is_goal_env(env):
+        # for mypy, env.unwrapped was checked by _is_goal_env()
+        assert hasattr(env, "compute_reward")
         assert reward == env.compute_reward(obs["achieved_goal"], obs["desired_goal"], info)
 
 
@@ -299,8 +335,10 @@ def _check_spaces(env: gym.Env) -> None:
     assert hasattr(env, "observation_space"), "You must specify an observation space (cf gym.spaces)" + gym_spaces
     assert hasattr(env, "action_space"), "You must specify an action space (cf gym.spaces)" + gym_spaces
 
-    assert isinstance(env.observation_space, spaces.Space), "The observation space must inherit from gym.spaces" + gym_spaces
-    assert isinstance(env.action_space, spaces.Space), "The action space must inherit from gym.spaces" + gym_spaces
+    assert isinstance(env.observation_space, spaces.Space), (
+        "The observation space must inherit from gymnasium.spaces" + gym_spaces
+    )
+    assert isinstance(env.action_space, spaces.Space), "The action space must inherit from gymnasium.spaces" + gym_spaces
 
     if _is_goal_env(env):
         assert isinstance(
@@ -309,9 +347,9 @@ def _check_spaces(env: gym.Env) -> None:
 
 
 # Check render cannot be covered by CI
-def _check_render(env: gym.Env, warn: bool = True, headless: bool = False) -> None:  # pragma: no cover
+def _check_render(env: gym.Env, warn: bool = False) -> None:  # pragma: no cover
     """
-    Check the declared render modes and the `render()`/`close()`
+    Check the instantiated render mode (if any) by calling the `render()`/`close()`
     method of the environment.
 
     :param env: The environment to check
@@ -319,24 +357,19 @@ def _check_render(env: gym.Env, warn: bool = True, headless: bool = False) -> No
     :param headless: Whether to disable render modes
         that require a graphical interface. False by default.
     """
-    render_modes = env.metadata.get("render.modes")
+    render_modes = env.metadata.get("render_modes")
     if render_modes is None:
         if warn:
             warnings.warn(
                 "No render modes was declared in the environment "
-                " (env.metadata['render.modes'] is None or not defined), "
+                "(env.metadata['render_modes'] is None or not defined), "
                 "you may have trouble when calling `.render()`"
             )
 
-    else:
-        # Don't check render mode that require a
-        # graphical interface (useful for CI)
-        if headless and "human" in render_modes:
-            render_modes.remove("human")
-        # Check all declared render modes
-        for render_mode in render_modes:
-            env.render(mode=render_mode)
-        env.close()
+    # Only check currrent render mode
+    if env.render_mode:
+        env.render()
+    env.close()
 
 
 def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -> None:
@@ -401,7 +434,7 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
 
     # ==== Check the render method and the declared render modes ====
     if not skip_render_check:
-        _check_render(env, warn=warn)  # pragma: no cover
+        _check_render(env, warn)  # pragma: no cover
 
     try:
         check_for_nested_spaces(env.observation_space)

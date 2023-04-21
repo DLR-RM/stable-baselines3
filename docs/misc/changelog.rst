@@ -35,6 +35,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed ``VecExtractDictObs`` does not handle terminal observation (@WeberSamuel)
+- Fixed loading DQN changes ``target_update_interval`` (@tobirohrer)
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -731,8 +731,9 @@ def test_load_invalid_object(tmp_path):
         PPO.load(path, custom_objects=dict(learning_rate=lambda _: 1.0))
     assert len(record) == 0
 
+
 def test_dqn_target_update_interval():
-    # See GH Issue #1373
+    # `target_update_interval` should not change when reloading the model. See GH Issue #1373.
     env = DummyVecEnv([lambda: gym.make("CartPole-v1") for _ in range(2)])
     model = DQN("MlpPolicy", env, verbose=1, target_update_interval=100)
     model.save("dqn_cartpole")

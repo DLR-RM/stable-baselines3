@@ -1,11 +1,14 @@
 import os
+import platform
+import packaging
 
 import gym
 import torch as th
 
 from stable_baselines3 import SAC
 
-
+@pytest.mark.skipif(platform.system() == "Windows", reason="Windows does not support torch.compile.")
+@pytest.mark.skipif(packaging.version.parse(th.__version__.split) < "2.0.0", reason="PyTorch version does not support torch.compile.")
 def test_load_compiled():
     env = gym.make("Pendulum-v1")
 

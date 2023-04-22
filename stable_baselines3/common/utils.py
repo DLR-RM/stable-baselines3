@@ -565,18 +565,18 @@ def compat_gym_seed(env: GymEnv, seed: int) -> None:
         # VecEnv and backward compatibility
         env.seed(seed)
 
-def rename_torch_compile_parameters(params: TensorDict, name: str) -> TensorDict:
+def rename_torch_compile_parameters(parameters: TensorDict, namespace: str) -> TensorDict:
     """
     Renames compiled torch module parameters by truncating the prefix of a named subset.
 
-    :param params: PyTorch module parameters tensor dictionary.
-    :param name: Name of the tensor dictionary subset to modify.
+    :param parameters: PyTorch module parameters tensor dictionary.
+    :param namespace: Name of the tensor dictionary subset to modify.
     :return: Tensordict with renamed parameters of the named subset.
     """
-    new_params = copy.deepcopy(params)
-    for n, t in params[name].items():
+    new_parameters = copy.deepcopy(parameters)
+    for name, tensor in parameters[namespace].items():
         if "_orig_mod." in n:
-            del new_params[name][n]
-            new_params[name][n.replace("_orig_mod.", "")] = t
+            del new_parameters[namespace][name]
+            new_parameters[namespace][name.replace("_orig_mod.", "")] = tensor
 
-    return new_params
+    return new_parameters

@@ -209,9 +209,11 @@ These dictionaries are randomly initialized on the creation of the environment a
   model.learn(total_timesteps=100_000)
 
 
-Using Callback: Monitoring Training
------------------------------------
+Using Callbacks
+---------------
 
+Monitoring Training
+^^^^^^^^^^^^^^^^^^^
 .. note::
 
 	We recommend reading the `Callback section <callbacks.html>`_

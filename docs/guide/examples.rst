@@ -312,7 +312,7 @@ If your callback returns False, training is aborted early.
 Evaluating your agents
 ^^^^^^^^^^^^^^^^^^^^^^
 To periodically evaluate an agent's performance on a separate test environment, use EvalCallback.
-Control the evaluation frequency with eval_freq to monitor your agent's progress during training.
+You can control the evaluation frequency with eval_freq to monitor your agent's progress during training.
 
 .. code-block:: python
 

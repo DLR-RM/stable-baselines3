@@ -309,6 +309,36 @@ If your callback returns False, training is aborted early.
   plot_results([log_dir], timesteps, results_plotter.X_TIMESTEPS, "TD3 LunarLander")
   plt.show()
 
+Evaluating your agents
+^^^^^^^^^^^^^^^^^^^^^^
+To periodically evaluate an agent's performance on a separate test environment, use EvalCallback.
+Control the evaluation frequency with eval_freq to monitor your agent's progress during training.
+
+.. code-block:: python
+
+  import os
+  import gymnasium as gym
+
+  from stable_baselines3 import SAC
+  from stable_baselines3.common.callbacks import EvalCallback
+
+  # Create log dir
+  eval_log_dir = "./eval_logs/"
+  os.makedirs(eval_log_dir, exist_ok=True)
+
+  # Initialize training environment with default parameters
+  train_env = gym.make("Pendulum-v1")
+
+  # Separate evaluation env, with different parameters
+  eval_env = gym.make("Pendulum-v1", g=7.0)
+
+  # Create callback that evaluates agent every 500 environment steps
+  eval_callback = EvalCallback(eval_env, best_model_save_path=eval_log_dir,
+                                log_path=eval_log_dir, eval_freq=500,
+                                deterministic=True, render=False)
+
+  model = SAC("MlpPolicy", train_env)
+  model.learn(5000, callback=eval_callback)
 
 Atari Games
 -----------

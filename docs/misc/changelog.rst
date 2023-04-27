@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.0.0a5 (WIP)
+Release 2.0.0a6 (WIP)
 --------------------------
 
 **Gymnasium support**
@@ -35,6 +35,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed ``VecExtractDictObs`` does not handle terminal observation (@WeberSamuel)
+- Fixed loading DQN changes ``target_update_interval`` (@tobirohrer)
 
 Deprecations:
 ^^^^^^^^^^^^^

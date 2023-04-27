@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.0.0a5 (WIP)
+Release 2.0.0a6 (WIP)
 --------------------------
 
 **Gymnasium support**
@@ -35,6 +35,8 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fixed ``VecExtractDictObs`` does not handle terminal observation (@WeberSamuel)
 - Fixed loading of ``torch.compile`` policies by adjusting parameter names (@Pythoniasm)
+- Set NumPy version to ``>=1.20`` due to use of ``numpy.typing`` (@troiganto)
+- Fixed loading DQN changes ``target_update_interval`` (@tobirohrer)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -1330,5 +1332,5 @@ And all the contributors:
 @carlosluis @arjun-kg @tlpss
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
-@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel 
+@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @Pythoniasm

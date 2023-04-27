@@ -151,8 +151,7 @@ class DQN(OffPolicyAlgorithm):
             self.exploration_final_eps,
             self.exploration_fraction,
         )
-        # Account for multiple environments
-        # each call to step() corresponds to n_envs transitions
+
         if self.n_envs > 1:
             if self.n_envs > self.target_update_interval:
                 warnings.warn(
@@ -161,8 +160,6 @@ class DQN(OffPolicyAlgorithm):
                     "therefore the target network will be updated after each call to env.step() "
                     f"which corresponds to {self.n_envs} steps."
                 )
-
-            self.target_update_interval = max(self.target_update_interval // self.n_envs, 1)
 
     def _create_aliases(self) -> None:
         self.q_net = self.policy.q_net
@@ -174,7 +171,9 @@ class DQN(OffPolicyAlgorithm):
         This method is called in ``collect_rollouts()`` after each step in the environment.
         """
         self._n_calls += 1
-        if self._n_calls % self.target_update_interval == 0:
+        # Account for multiple environments
+        # each call to step() corresponds to n_envs transitions
+        if self._n_calls % max(self.target_update_interval // self.n_envs, 1) == 0:
             polyak_update(self.q_net.parameters(), self.q_net_target.parameters(), self.tau)
             # Copy running stats, see GH issue #996
             polyak_update(self.batch_norm_stats, self.batch_norm_stats_target, 1.0)

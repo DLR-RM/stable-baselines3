@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.0.0a5 (WIP)
+Release 2.0.0a6 (WIP)
 --------------------------
 
 **Gymnasium support**
@@ -36,6 +36,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fixed ``VecExtractDictObs`` does not handle terminal observation (@WeberSamuel)
 - Set NumPy version to ``>=1.20`` due to use of ``numpy.typing`` (@troiganto)
+- Fixed loading DQN changes ``target_update_interval`` (@tobirohrer)
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -151,8 +151,7 @@ class DQN(OffPolicyAlgorithm):
             self.exploration_final_eps,
             self.exploration_fraction,
         )
-        # Account for multiple environments
-        # each call to step() corresponds to n_envs transitions
+
         if self.n_envs > 1:
             if self.n_envs > self.target_update_interval:
                 warnings.warn(
@@ -172,6 +171,8 @@ class DQN(OffPolicyAlgorithm):
         This method is called in ``collect_rollouts()`` after each step in the environment.
         """
         self._n_calls += 1
+        # Account for multiple environments
+        # each call to step() corresponds to n_envs transitions
         if self._n_calls % max(self.target_update_interval // self.n_envs, 1) == 0:
             polyak_update(self.q_net.parameters(), self.q_net_target.parameters(), self.tau)
             # Copy running stats, see GH issue #996

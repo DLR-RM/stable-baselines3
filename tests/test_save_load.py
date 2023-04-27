@@ -15,6 +15,7 @@ import torch as th
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.base_class import BaseAlgorithm
+from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.envs import FakeImageEnv, IdentityEnv, IdentityEnvBox
 from stable_baselines3.common.save_util import load_from_pkl, open_path, save_to_pkl
 from stable_baselines3.common.utils import get_device
@@ -732,11 +733,12 @@ def test_load_invalid_object(tmp_path):
     assert len(record) == 0
 
 
-def test_dqn_target_update_interval():
+def test_dqn_target_update_interval(tmp_path):
     # `target_update_interval` should not change when reloading the model. See GH Issue #1373.
-    env = DummyVecEnv([lambda: gym.make("CartPole-v1") for _ in range(2)])
+    env = make_vec_env(env_id="CartPole-v1", n_envs=2)
     model = DQN("MlpPolicy", env, verbose=1, target_update_interval=100)
-    model.save("dqn_cartpole")
+    model.save(tmp_path / "dqn_cartpole")
     del model
-    model = DQN.load("dqn_cartpole")
+    model = DQN.load(tmp_path / "dqn_cartpole")
+    os.remove(tmp_path / "dqn_cartpole.zip")
     assert model.target_update_interval == 100

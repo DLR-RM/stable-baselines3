@@ -103,7 +103,7 @@ setup(
     package_data={"stable_baselines3": ["py.typed", "version.txt"]},
     install_requires=[
         "gymnasium==0.28.1",
-        "numpy",
+        "numpy>=1.20",
         "torch>=1.11",
         'typing_extensions>=4.0,<5; python_version < "3.8.0"',
         # For saving models

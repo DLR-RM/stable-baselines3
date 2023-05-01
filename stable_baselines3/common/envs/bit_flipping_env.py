@@ -129,21 +129,20 @@ class BitFlippingEnv(Env):
         """
         Convert to bit vector if needed.
 
-        :param state:
-        :param batch_size:
-        :return:
+        :param state: The state to be converted, which can be either an integer or a numpy array.
+        :param batch_size: The batch size.
+        :return: The state converted into a bit vector.
         """
         # Convert back to bit vector
         if isinstance(state, int):
-            state = np.array(state).reshape(batch_size, -1)
+            bit_vector = np.array(state).reshape(batch_size, -1)
             # Convert to binary representation
-            state = ((state[:, :] & (1 << np.arange(len(self.state)))) > 0).astype(int)
+            bit_vector = ((bit_vector[:, :] & (1 << np.arange(len(self.state)))) > 0).astype(int)
         elif self.image_obs_space:
-            state = state.reshape(batch_size, -1)[:, : len(self.state)] / 255
+            bit_vector = state.reshape(batch_size, -1)[:, : len(self.state)] / 255
         else:
-            state = np.array(state).reshape(batch_size, -1)
-        assert isinstance(state, np.ndarray)
-        return state
+            bit_vector = np.array(state).reshape(batch_size, -1)
+        return bit_vector
 
     def _get_obs(self) -> Dict[str, Union[int, np.ndarray]]:
         """

@@ -46,8 +46,6 @@ exclude = """(?x)(
     | stable_baselines3/common/vec_env/base_vec_env.py$
     | stable_baselines3/common/vec_env/dummy_vec_env.py$
     | stable_baselines3/common/vec_env/subproc_vec_env.py$
-    | stable_baselines3/common/vec_env/util.py$
-    | stable_baselines3/common/vec_env/vec_extract_dict_obs.py$
     | stable_baselines3/common/vec_env/vec_frame_stack.py$
     | stable_baselines3/common/vec_env/vec_normalize.py$
     | stable_baselines3/common/vec_env/vec_transpose.py$

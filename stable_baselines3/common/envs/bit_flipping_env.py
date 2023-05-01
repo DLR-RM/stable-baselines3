@@ -26,6 +26,7 @@ class BitFlippingEnv(Env):
     """
 
     spec = EnvSpec("BitFlippingEnv-v0", "no-entry-point")
+    state: np.ndarray
 
     def __init__(
         self,
@@ -35,8 +36,10 @@ class BitFlippingEnv(Env):
         discrete_obs_space: bool = False,
         image_obs_space: bool = False,
         channel_first: bool = True,
+        render_mode: str = "human",
     ):
         super().__init__()
+        self.render_mode = render_mode
         # Shape of the observation when using image space
         self.image_shape = (1, 36, 36) if channel_first else (36, 36, 1)
         # The achieved goal is determined by the current state
@@ -95,7 +98,6 @@ class BitFlippingEnv(Env):
         self.continuous = continuous
         self.discrete_obs_space = discrete_obs_space
         self.image_obs_space = image_obs_space
-        self.state = None
         self.desired_goal = np.ones((n_bits,), dtype=self.observation_space["desired_goal"].dtype)
         if max_steps is None:
             max_steps = n_bits
@@ -140,7 +142,7 @@ class BitFlippingEnv(Env):
             state = state.reshape(batch_size, -1)[:, : len(self.state)] / 255
         else:
             state = np.array(state).reshape(batch_size, -1)
-
+        assert isinstance(state, np.ndarray)
         return state
 
     def _get_obs(self) -> Dict[str, Union[int, np.ndarray]]:
@@ -205,10 +207,11 @@ class BitFlippingEnv(Env):
         distance = np.linalg.norm(achieved_goal - desired_goal, axis=-1)
         return -(distance > 0).astype(np.float32)
 
-    def render(self, mode: str = "human") -> Optional[np.ndarray]:
-        if mode == "rgb_array":
+    def render(self) -> Optional[np.ndarray]:  # type: ignore[override]
+        if self.render_mode == "rgb_array":
             return self.state.copy()
         print(self.state)
+        return None
 
     def close(self) -> None:
         pass

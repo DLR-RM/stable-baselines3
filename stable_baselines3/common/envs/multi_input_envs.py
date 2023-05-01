@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import gymnasium as gym
 import numpy as np
@@ -73,7 +73,7 @@ class SimpleMultiObsEnv(gym.Env):
         self.init_possible_transitions()
 
         self.num_col = num_col
-        self.state_mapping = []
+        self.state_mapping: List[Dict[str, np.ndarray]] = []
         self.init_state_mapping(num_col, num_row)
 
         self.max_state = len(self.state_mapping) - 1
@@ -132,7 +132,7 @@ class SimpleMultiObsEnv(gym.Env):
         :return: tuple (observation, reward, done, info).
         """
         if not self.discrete_actions:
-            action = np.argmax(action)
+            action = int(np.argmax(action))
         else:
             action = int(action)
 

@@ -121,20 +121,18 @@ class SimpleMultiObsEnv(gym.Env):
         self.right_possible = [0, 1, 2, 12, 13, 14]
         self.up_possible = [4, 8, 12, 7, 11, 15]
 
-    def step(self, action: Union[float, np.ndarray]) -> GymStepReturn:
+    def step(self, action: Union[int, np.ndarray]) -> GymStepReturn:
         """
         Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`
         to reset this environment's state.
-        Accepts an action and returns a tuple (observation, reward, done, info).
+        Accepts an action and returns a tuple (observation, reward, terminated, truncated, info).
 
         :param action:
-        :return: tuple (observation, reward, done, info).
+        :return: tuple (observation, reward, terminated, truncated, info).
         """
         if not self.discrete_actions:
-            action = int(np.argmax(action))
-        else:
-            action = int(action)
+            action = np.argmax(action)  # type: ignore[assignment]
 
         self.count += 1
 

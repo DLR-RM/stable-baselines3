@@ -48,6 +48,7 @@ Others:
 - Fixed ``stable_baselines3/sac/*.py`` type hints
 - Fixed ``stable_baselines3/td3/*.py`` type hints
 - Fixed ``stable_baselines3/common/base_class.py`` type hints
+- Fixed ``stable_baselines3/common/logger.py`` type hints
 - Upgraded docker images to use mamba/micromamba and CUDA 11.7
 - Updated env checker to reflect what subset of Gymnasium is supported and improve GoalEnv checks
 - Improve type annotation of wrappers

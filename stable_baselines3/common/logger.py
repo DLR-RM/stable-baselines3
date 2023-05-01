@@ -393,8 +393,10 @@ class TensorBoardOutputFormat(KVWriter):
     def __init__(self, folder: str):
         assert SummaryWriter is not None, "tensorboard is not installed, you can use `pip install tensorboard` to do so"
         self.writer = SummaryWriter(log_dir=folder)
+        self._is_closed = False
 
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Tuple[str, ...]], step: int = 0) -> None:
+        assert not self._is_closed, "The SummaryWriter was closed, please re-create one."
         for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
             if excluded is not None and "tensorboard" in excluded:
                 continue
@@ -434,7 +436,7 @@ class TensorBoardOutputFormat(KVWriter):
         """
         if self.writer:
             self.writer.close()
-            self.writer = None  # type: ignore[assignment]
+            self._is_closed = True
 
 
 def make_output_format(_format: str, log_dir: str, log_suffix: str = "") -> KVWriter:

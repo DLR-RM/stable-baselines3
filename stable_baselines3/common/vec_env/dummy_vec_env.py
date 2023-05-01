@@ -114,8 +114,7 @@ class DummyVecEnv(VecEnv):
             if key is None:
                 self.buf_obs[key][env_idx] = obs
             else:
-                assert isinstance(obs, dict)
-                self.buf_obs[key][env_idx] = obs[key]
+                self.buf_obs[key][env_idx] = obs[key]  # type: ignore[call-overload]
 
     def _obs_from_buf(self) -> VecEnvObs:
         return dict_to_obs(self.observation_space, copy_obs_dict(self.buf_obs))

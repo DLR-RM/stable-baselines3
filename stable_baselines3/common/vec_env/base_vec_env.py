@@ -238,7 +238,7 @@ class VecEnv(ABC):
             self.env_method("render")
 
     @abstractmethod
-    def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
+    def seed(self, seed: Optional[int] = None) -> Sequence[Union[None, int]]:
         """
         Sets the random seeds for all environments, based on a given seed.
         Each individual environment will still get its own seed, by incrementing the given seed.
@@ -319,7 +319,7 @@ class VecEnvWrapper(VecEnv):
     def step_wait(self) -> VecEnvStepReturn:
         pass
 
-    def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
+    def seed(self, seed: Optional[int] = None) -> Sequence[Union[None, int]]:
         return self.venv.seed(seed)
 
     def close(self) -> None:

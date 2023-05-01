@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.0.0a6 (WIP)
+Release 2.0.0a7 (WIP)
 --------------------------
 
 **Gymnasium support**
@@ -54,6 +54,7 @@ Others:
 - Tests envs are now checked too
 - Added render test for ``VecEnv``
 - Update issue templates and env info saved with the model
+- Changed ``seed()`` method return type from ``List`` to ``Sequence``
 
 Documentation:
 ^^^^^^^^^^^^^^

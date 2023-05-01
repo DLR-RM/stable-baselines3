@@ -135,7 +135,7 @@ class SubprocVecEnv(VecEnv):
         obs, rews, dones, infos, self.reset_infos = zip(*results)
         return _flatten_obs(obs, self.observation_space), np.stack(rews), np.stack(dones), infos
 
-    def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
+    def seed(self, seed: Optional[int] = None) -> Sequence[Union[None, int]]:
         if seed is None:
             seed = np.random.randint(0, 2**32 - 1)
         for idx, remote in enumerate(self.remotes):

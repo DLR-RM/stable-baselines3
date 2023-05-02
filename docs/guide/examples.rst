@@ -320,16 +320,19 @@ You can control the evaluation frequency with ``eval_freq`` to monitor your agen
 
   from stable_baselines3 import SAC
   from stable_baselines3.common.callbacks import EvalCallback
+  from stable-baselines3.common.env_util import make_vec_env
 
   # Create log dir
   eval_log_dir = "./eval_logs/"
   os.makedirs(eval_log_dir, exist_ok=True)
 
-  # Initialize training environment with default parameters
-  train_env = gym.make("Pendulum-v1")
+  # Initialize a vectorized training environment with default parameters
+  train_env = make_vec_env(env_id, n_env=n_training_envs, seed=0)
 
-  # Separate evaluation env, with different parameters
-  eval_env = gym.make("Pendulum-v1", g=7.0)
+  # Separate evaluation env, with different parameters passed via env_kwargs
+  # Eval environments can be vectorized to speed up evaluation.
+  eval_env = make_vec_env(env_id, n_envs=n_eval_envs, seed=0,
+                          env_kwargs={'g':0.7})
 
   # Create callback that evaluates agent every 500 environment steps
   eval_callback = EvalCallback(eval_env, best_model_save_path=eval_log_dir,
@@ -338,6 +341,7 @@ You can control the evaluation frequency with ``eval_freq`` to monitor your agen
 
   model = SAC("MlpPolicy", train_env)
   model.learn(5000, callback=eval_callback)
+
 
 Atari Games
 -----------

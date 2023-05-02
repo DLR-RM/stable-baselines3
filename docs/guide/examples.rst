@@ -340,7 +340,8 @@ You can control the evaluation frequency with ``eval_freq`` to monitor your agen
 
   # Create callback that evaluates agent for 5 episodes every 500 training environment steps.
   # When using multiple training environments, agent will be evaluated every
-  # (eval_freq // n_training_envs) calls to train_env.step(). See EvalCallback doc for more information.
+  # eval_freq calls to train_env.step(), thus it will be evaluated every
+  # (eval_freq * n_envs) training steps. See EvalCallback doc for more information.
   eval_callback = EvalCallback(eval_env, best_model_save_path=eval_log_dir,
                                 log_path=eval_log_dir, eval_freq=500,
                                 n_eval_episodes=5, deterministic=True,

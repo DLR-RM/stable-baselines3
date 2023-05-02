@@ -209,11 +209,9 @@ These dictionaries are randomly initialized on the creation of the environment a
   model.learn(total_timesteps=100_000)
 
 
-Using Callbacks
----------------
+Callbacks: Monitoring Training
+------------------------------
 
-Monitoring Training
-^^^^^^^^^^^^^^^^^^^
 .. note::
 
 	We recommend reading the `Callback section <callbacks.html>`_
@@ -309,10 +307,11 @@ If your callback returns False, training is aborted early.
   plot_results([log_dir], timesteps, results_plotter.X_TIMESTEPS, "TD3 LunarLander")
   plt.show()
 
-Evaluating your agents
-^^^^^^^^^^^^^^^^^^^^^^
-To periodically evaluate an agent's performance on a separate test environment, use EvalCallback.
-You can control the evaluation frequency with eval_freq to monitor your agent's progress during training.
+
+Callbacks: Evaluate Agent Performance
+-------------------------------------
+To periodically evaluate an agent's performance on a separate test environment, use ``EvalCallback``.
+You can control the evaluation frequency with ``eval_freq`` to monitor your agent's progress during training.
 
 .. code-block:: python
 

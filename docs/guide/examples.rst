@@ -338,10 +338,13 @@ You can control the evaluation frequency with ``eval_freq`` to monitor your agen
   eval_env = make_vec_env(env_id, n_envs=n_eval_envs, seed=0,
                           env_kwargs={'g':0.7})
 
-  # Create callback that evaluates agent every 500 environment steps
+  # Create callback that evaluates agent for 5 episodes every 500 training environment steps.
+  # When using multiple training environments, agent will be evaluated every
+  # (eval_freq // n_training_envs) calls to train_env.step(). See EvalCallback doc for more information.
   eval_callback = EvalCallback(eval_env, best_model_save_path=eval_log_dir,
                                 log_path=eval_log_dir, eval_freq=500,
-                                deterministic=True, render=False)
+                                n_eval_episodes=5, deterministic=True,
+                                render=False)
 
   model = SAC("MlpPolicy", train_env)
   model.learn(5000, callback=eval_callback)

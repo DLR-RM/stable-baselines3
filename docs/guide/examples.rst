@@ -322,7 +322,11 @@ You can control the evaluation frequency with ``eval_freq`` to monitor your agen
   from stable_baselines3.common.callbacks import EvalCallback
   from stable-baselines3.common.env_util import make_vec_env
 
-  # Create log dir
+  env_id = "Pendulum-v1"
+  n_training_envs = 5
+  n_eval_envs = 5
+
+  # Create log dir where evaluation results will be saved
   eval_log_dir = "./eval_logs/"
   os.makedirs(eval_log_dir, exist_ok=True)
 

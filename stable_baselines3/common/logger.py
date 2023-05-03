@@ -164,7 +164,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         if isinstance(filename_or_file, str):
             self.file = open(filename_or_file, "w")
             self.own_file = True
-        elif isinstance(filename_or_file, TextIOWrapper):  # equivalent to `isinstance(..., TextIO)` (the later is not supported)
+        elif isinstance(filename_or_file, TextIOWrapper):  # equivalent to `isinstance(..., TextIO)` (not supported)
             self.file = filename_or_file
             self.own_file = False
         else:

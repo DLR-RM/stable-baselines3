@@ -23,9 +23,6 @@ class VecMonitor(VecEnvWrapper):
     :param info_keywords: extra information to log, from the information return of env.step()
     """
 
-    episode_returns: np.ndarray
-    episode_lengths: np.ndarray
-
     def __init__(
         self,
         venv: VecEnv,

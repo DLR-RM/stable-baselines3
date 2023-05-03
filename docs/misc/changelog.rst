@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.0.0a5 (WIP)
+Release 2.0.0a6 (WIP)
 --------------------------
 
 **Gymnasium support**
@@ -35,6 +35,8 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed ``VecExtractDictObs`` does not handle terminal observation (@WeberSamuel)
+- Set NumPy version to ``>=1.20`` due to use of ``numpy.typing`` (@troiganto)
+- Fixed loading DQN changes ``target_update_interval`` (@tobirohrer)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -59,6 +61,7 @@ Documentation:
 - Upgraded tutorials to Gymnasium API
 - Make it more explicit when using ``VecEnv`` vs Gym env
 - Added UAV_Navigation_DRL_AirSim to the project page (@heleidsn)
+- Added ``EvalCallback`` example (@sidney-tio)
 
 
 Release 1.8.0 (2023-04-07)
@@ -1332,4 +1335,4 @@ And all the contributors:
 @carlosluis @arjun-kg @tlpss
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
-@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel
+@DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto

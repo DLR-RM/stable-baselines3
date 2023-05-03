@@ -349,7 +349,7 @@ def test_vec_noise():
     num_actions = 10
     mu = np.zeros(num_actions)
     sigma = np.ones(num_actions) * 0.4
-    base: ActionNoise = OrnsteinUhlenbeckActionNoise(mu, sigma)
+    base = OrnsteinUhlenbeckActionNoise(mu, sigma)
     with pytest.raises(ValueError):
         vec = VectorizedActionNoise(base, -1)
     with pytest.raises(ValueError):

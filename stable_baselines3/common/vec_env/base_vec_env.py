@@ -218,7 +218,7 @@ class VecEnv(ABC):
 
         if mode == "rgb_array" or mode == "human":
             # call the render method of the environments
-            images = self.get_images()  # type: ignore[arg-type]
+            images = self.get_images()
             # Create a big image by tiling images from subprocesses
             bigimg = tile_images(images)  # type: ignore[arg-type]
 
@@ -394,10 +394,9 @@ class VecEnvWrapper(VecEnv):
         :return: name of module whose attribute is being shadowed, if any.
         """
         all_attributes = self._get_all_attributes()
-        shadowed_wrapper_class: Optional[str]
         if name in all_attributes and already_found:
             # this venv's attribute is being hidden because of a higher venv.
-            shadowed_wrapper_class = f"{type(self).__module__}.{type(self).__name__}"
+            shadowed_wrapper_class: Optional[str] = f"{type(self).__module__}.{type(self).__name__}"
         elif name in all_attributes and not already_found:
             # we have found the first reference to the attribute. Now check for duplicates.
             shadowed_wrapper_class = self.venv.getattr_depth_check(name, True)

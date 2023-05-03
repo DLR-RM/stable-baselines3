@@ -5,6 +5,7 @@ import sys
 import tempfile
 import warnings
 from collections import defaultdict
+from io import TextIOWrapper
 from typing import Any, Dict, List, Mapping, Optional, Sequence, TextIO, Tuple, Union
 
 import numpy as np
@@ -163,10 +164,11 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         if isinstance(filename_or_file, str):
             self.file = open(filename_or_file, "w")
             self.own_file = True
-        else:
-            assert hasattr(filename_or_file, "write"), f"Expected file or str, got {filename_or_file}"
-            self.file = filename_or_file  # type: ignore[assignment]
+        elif isinstance(filename_or_file, TextIOWrapper):  # equivalent to `isinstance(..., TextIO)` (the later is not supported)
+            self.file = filename_or_file
             self.own_file = False
+        else:
+            raise ValueError(f"Expected file or str, got {filename_or_file}")
 
     def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Tuple[str, ...]], step: int = 0) -> None:
         # Create strings for printing

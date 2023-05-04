@@ -13,7 +13,7 @@ from stable_baselines3.common.atari_wrappers import MaxAndSkipEnv
 from stable_baselines3.common.env_util import is_wrapped, make_atari_env, make_vec_env, unwrap_wrapper
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.noise import ActionNoise, OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
+from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
 from stable_baselines3.common.utils import (
     check_shape_equal,
     get_parameters_by_name,

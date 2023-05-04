@@ -38,23 +38,12 @@ exclude = """(?x)(
     stable_baselines3/common/buffers.py$
     | stable_baselines3/common/callbacks.py$
     | stable_baselines3/common/distributions.py$
-    | stable_baselines3/common/envs/bit_flipping_env.py$
-    | stable_baselines3/common/envs/identity_env.py$
-    | stable_baselines3/common/envs/multi_input_envs.py$
-    | stable_baselines3/common/logger.py$
     | stable_baselines3/common/off_policy_algorithm.py$
     | stable_baselines3/common/policies.py$
     | stable_baselines3/common/save_util.py$
-    | stable_baselines3/common/sb2_compat/rmsprop_tf_like.py$
     | stable_baselines3/common/utils.py$
     | stable_baselines3/common/vec_env/__init__.py$
-    | stable_baselines3/common/vec_env/base_vec_env.py$
-    | stable_baselines3/common/vec_env/dummy_vec_env.py$
     | stable_baselines3/common/vec_env/subproc_vec_env.py$
-    | stable_baselines3/common/vec_env/util.py$
-    | stable_baselines3/common/vec_env/vec_extract_dict_obs.py$
-    | stable_baselines3/common/vec_env/vec_frame_stack.py$
-    | stable_baselines3/common/vec_env/vec_monitor.py$
     | stable_baselines3/common/vec_env/vec_normalize.py$
     | stable_baselines3/common/vec_env/vec_transpose.py$
     | stable_baselines3/common/vec_env/vec_video_recorder.py$

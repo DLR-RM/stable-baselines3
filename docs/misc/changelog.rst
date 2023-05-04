@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.0.0a6 (WIP)
+Release 2.0.0a7 (WIP)
 --------------------------
 
 **Gymnasium support**
@@ -48,12 +48,19 @@ Others:
 - Fixed ``stable_baselines3/sac/*.py`` type hints
 - Fixed ``stable_baselines3/td3/*.py`` type hints
 - Fixed ``stable_baselines3/common/base_class.py`` type hints
+- Fixed ``stable_baselines3/common/logger.py`` type hints
+- Fixed ``stable_baselines3/common/envs/*.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/vec_monitor|vec_extract_dict_obs|util.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/base_vec_env.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/vec_frame_stack.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/dummy_vec_env.py`` type hints
 - Upgraded docker images to use mamba/micromamba and CUDA 11.7
 - Updated env checker to reflect what subset of Gymnasium is supported and improve GoalEnv checks
 - Improve type annotation of wrappers
 - Tests envs are now checked too
 - Added render test for ``VecEnv``
 - Update issue templates and env info saved with the model
+- Changed ``seed()`` method return type from ``List`` to ``Sequence``
 
 Documentation:
 ^^^^^^^^^^^^^^

@@ -19,17 +19,17 @@ VecEnvObs = Union[np.ndarray, Dict[str, np.ndarray], Tuple[np.ndarray, ...]]
 VecEnvStepReturn = Tuple[VecEnvObs, np.ndarray, np.ndarray, List[Dict]]
 
 
-def tile_images(img_nhwc: Sequence[np.ndarray]) -> np.ndarray:  # pragma: no cover
+def tile_images(images_nhwc: Sequence[np.ndarray]) -> np.ndarray:  # pragma: no cover
     """
     Tile N images into one big PxQ image
     (P,Q) are chosen to be as close as possible, and if N
     is square, then P=Q.
 
-    :param img_nhwc: list or array of images, ndim=4 once turned into array. img nhwc
+    :param images_nhwc: list or array of images, ndim=4 once turned into array.
         n = batch index, h = height, w = width, c = channel
     :return: img_HWc, ndim=3
     """
-    img_nhwc = np.asarray(img_nhwc)
+    img_nhwc = np.asarray(images_nhwc)
     n_images, height, width, n_channels = img_nhwc.shape
     # new_height was named H before
     new_height = int(np.ceil(np.sqrt(n_images)))
@@ -67,7 +67,8 @@ class VecEnv(ABC):
         self.observation_space = observation_space
         self.action_space = action_space
         self.render_mode = render_mode
-        self.reset_infos = [{} for _ in range(num_envs)]  # store info returned by the reset method
+        # store info returned by the reset method
+        self.reset_infos: List[Dict[str, Any]] = [{} for _ in range(num_envs)]
 
     @abstractmethod
     def reset(self) -> VecEnvObs:
@@ -192,7 +193,7 @@ class VecEnv(ABC):
                     "but the render mode defined when initializing the environment must be "
                     f"'human' or 'rgb_array', not '{self.render_mode}'."
                 )
-                return
+                return None
 
         elif mode and self.render_mode != mode:
             warnings.warn(
@@ -200,26 +201,26 @@ class VecEnv(ABC):
                 We allow to pass a mode argument to maintain a backwards compatible VecEnv API, but the mode ({mode})
                 has to be the same as the environment render mode ({self.render_mode}) which is not the case."""
             )
-            return
+            return None
 
         mode = mode or self.render_mode
 
         if mode is None:
             warnings.warn("You tried to call render() but no `render_mode` was passed to the env constructor.")
-            return
+            return None
 
         # mode == self.render_mode == "human"
         # In that case, we try to call `self.env.render()` but it might
         # crash for subprocesses
         if self.render_mode == "human":
             self.env_method("render")
-            return
+            return None
 
         if mode == "rgb_array" or mode == "human":
             # call the render method of the environments
             images = self.get_images()
             # Create a big image by tiling images from subprocesses
-            bigimg = tile_images(images)
+            bigimg = tile_images(images)  # type: ignore[arg-type]
 
             if mode == "human":
                 # Display it using OpenCV
@@ -236,9 +237,10 @@ class VecEnv(ABC):
             # crash for subprocesses
             # and we don't return the values
             self.env_method("render")
+        return None
 
     @abstractmethod
-    def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
+    def seed(self, seed: Optional[int] = None) -> Sequence[Union[None, int]]:
         """
         Sets the random seeds for all environments, based on a given seed.
         Each individual environment will still get its own seed, by incrementing the given seed.
@@ -319,7 +321,7 @@ class VecEnvWrapper(VecEnv):
     def step_wait(self) -> VecEnvStepReturn:
         pass
 
-    def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
+    def seed(self, seed: Optional[int] = None) -> Sequence[Union[None, int]]:
         return self.venv.seed(seed)
 
     def close(self) -> None:
@@ -394,7 +396,7 @@ class VecEnvWrapper(VecEnv):
         all_attributes = self._get_all_attributes()
         if name in all_attributes and already_found:
             # this venv's attribute is being hidden because of a higher venv.
-            shadowed_wrapper_class = f"{type(self).__module__}.{type(self).__name__}"
+            shadowed_wrapper_class: Optional[str] = f"{type(self).__module__}.{type(self).__name__}"
         elif name in all_attributes and not already_found:
             # we have found the first reference to the attribute. Now check for duplicates.
             shadowed_wrapper_class = self.venv.getattr_depth_check(name, True)

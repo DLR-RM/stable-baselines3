@@ -681,6 +681,8 @@ class DictRolloutBuffer(RolloutBuffer):
     :param n_envs: Number of parallel environments
     """
 
+    observations: Dict[str, np.ndarray]
+
     def __init__(
         self,
         buffer_size: int,
@@ -697,8 +699,7 @@ class DictRolloutBuffer(RolloutBuffer):
 
         self.gae_lambda = gae_lambda
         self.gamma = gamma
-        self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
-        self.returns, self.episode_starts, self.values, self.log_probs = None, None, None, None
+
         self.generator_ready = False
         self.reset()
 

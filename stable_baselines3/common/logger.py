@@ -159,10 +159,10 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         no longer than 79 characters wide.
     """
 
-    def __init__(self, filename_or_file: Union[str, TextIOBase], max_length: int = 36):
+    def __init__(self, filename_or_file: Union[str, TextIO], max_length: int = 36):
         self.max_length = max_length
         if isinstance(filename_or_file, str):
-            self.file: TextIOBase = open(filename_or_file, "w")
+            self.file = open(filename_or_file, "w")
             self.own_file = True
         elif isinstance(filename_or_file, TextIOBase):
             self.file = filename_or_file
@@ -452,7 +452,7 @@ def make_output_format(_format: str, log_dir: str, log_suffix: str = "") -> KVWr
     """
     os.makedirs(log_dir, exist_ok=True)
     if _format == "stdout":
-        return HumanOutputFormat(sys.stdout)  # type: ignore[arg-type] # mypy does not recognize sys.stdout as a TextIO, but isinstance does
+        return HumanOutputFormat(sys.stdout)
     elif _format == "log":
         return HumanOutputFormat(os.path.join(log_dir, f"log{log_suffix}.txt"))
     elif _format == "json":

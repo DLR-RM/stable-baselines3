@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.0.0a7 (WIP)
+Release 2.0.0a8 (WIP)
 --------------------------
 
 **Gymnasium support**
@@ -21,6 +21,7 @@ Breaking Changes:
 - Removed deprecated ``stack_observation_space`` method of ``StackedObservations``
 - Renamed environment output observations in ``evaluate_policy`` to prevent shadowing the input observations during callbacks (@npit)
 - Upgraded wrappers and custom environment to Gymnasium
+- Refined the ``HumanOutputFormat`` file check: now it verifies if the object is an instance of ``io.TextIOBase`` instead of only checking for the presence of a ``write`` method.
 
 New Features:
 ^^^^^^^^^^^^^

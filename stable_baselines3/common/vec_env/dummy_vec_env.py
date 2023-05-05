@@ -48,6 +48,8 @@ class DummyVecEnv(VecEnv):
         self.buf_rews = np.zeros((self.num_envs,), dtype=np.float32)
         self.buf_infos: List[Dict[str, Any]] = [{} for _ in range(self.num_envs)]
         self.metadata = env.metadata
+        
+        self.seed = [None for _ in range(len(self.envs))]  # seed to be used in the next env.reset()
 
     def step_async(self, actions: np.ndarray) -> None:
         self.actions = actions
@@ -73,19 +75,20 @@ class DummyVecEnv(VecEnv):
 
     def seed(self, seed: Optional[int] = None) -> Sequence[Union[None, int]]:
         # Avoid circular import
-        from stable_baselines3.common.utils import compat_gym_seed
-
+        # from stable_baselines3.common.utils import compat_gym_seed
         if seed is None:
-            seed = np.random.randint(0, 2**32 - 1)
-        seeds = []
-        for idx, env in enumerate(self.envs):
-            seeds.append(compat_gym_seed(env, seed=seed + idx))  # type: ignore[func-returns-value]
-        return seeds
+            self.seed = [None for _ in range(len(self.envs))]  # seed to be used in the next env.reset()
+            return
+        
+        self.seed = [seed + i for i in range(len(self.envs))]
+        return self.seed
 
     def reset(self) -> VecEnvObs:
         for env_idx in range(self.num_envs):
-            obs, self.reset_infos[env_idx] = self.envs[env_idx].reset()
+            obs, self.reset_infos[env_idx] = self.envs[env_idx].reset(seed=self.seed)
             self._save_obs(env_idx, obs)
+
+        self.seed = [None for _ in range(len(self.envs))]
         return self._obs_from_buf()
 
     def close(self) -> None:

@@ -21,6 +21,7 @@ Breaking Changes:
 - Removed deprecated ``stack_observation_space`` method of ``StackedObservations``
 - Renamed environment output observations in ``evaluate_policy`` to prevent shadowing the input observations during callbacks (@npit)
 - Upgraded wrappers and custom environment to Gymnasium
+- Refined the ``HumanOutputFormat`` file check: now it verifies if the object is an instance of ``io.TextIOBase`` instead of only checking for the presence of a ``write`` method.
 
 New Features:
 ^^^^^^^^^^^^^
@@ -37,7 +38,6 @@ Bug Fixes:
 - Fixed ``VecExtractDictObs`` does not handle terminal observation (@WeberSamuel)
 - Set NumPy version to ``>=1.20`` due to use of ``numpy.typing`` (@troiganto)
 - Fixed loading DQN changes ``target_update_interval`` (@tobirohrer)
-- Fixed logger for Google Colab
 
 Deprecations:
 ^^^^^^^^^^^^^

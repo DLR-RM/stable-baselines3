@@ -456,9 +456,9 @@ def test_human_output_format_custom_test_io():
             return "\n".join(["".join(line) for line in self.lines])
 
     dummy_text_io = DummyTextIO()
-    o = HumanOutputFormat(dummy_text_io)
-    o.write({"key1": "value1", "key2": 42}, {"key1": None, "key2": None})
-    o.write({"key1": "value2", "key2": 43}, {"key1": None, "key2": None})
+    output = HumanOutputFormat(dummy_text_io)
+    output.write({"key1": "value1", "key2": 42}, {"key1": None, "key2": None})
+    output.write({"key1": "value2", "key2": 43}, {"key1": None, "key2": None})
     printed = dummy_text_io.get_printed()
     desired_printed = """-----------------
 | key1 | value1 |

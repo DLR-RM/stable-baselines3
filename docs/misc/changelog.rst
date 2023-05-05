@@ -37,6 +37,7 @@ Bug Fixes:
 - Fixed ``VecExtractDictObs`` does not handle terminal observation (@WeberSamuel)
 - Set NumPy version to ``>=1.20`` due to use of ``numpy.typing`` (@troiganto)
 - Fixed loading DQN changes ``target_update_interval`` (@tobirohrer)
+- Fixed logger for Google Colab
 
 Deprecations:
 ^^^^^^^^^^^^^

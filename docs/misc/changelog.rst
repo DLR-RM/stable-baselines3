@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.0.0a7 (WIP)
+Release 2.0.0a8 (WIP)
 --------------------------
 
 **Gymnasium support**

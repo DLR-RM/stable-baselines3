@@ -473,6 +473,3 @@ def test_human_output_format_custom_test_io():
 """
 
     assert printed == desired_printed
-
-
-test_human_output_format_custom_test_io()

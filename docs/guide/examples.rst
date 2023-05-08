@@ -71,7 +71,7 @@ In the following example, we will train, save and load a DQN model on the Lunar 
 
 
   # Create environment
-  env = gym.make("LunarLander-v2")
+  env = gym.make("LunarLander-v2", render_mode="rgb_array")
 
   # Instantiate the agent
   model = DQN("MlpPolicy", env, verbose=1)
@@ -99,7 +99,7 @@ In the following example, we will train, save and load a DQN model on the Lunar 
   for i in range(1000):
       action, _states = model.predict(obs, deterministic=True)
       obs, rewards, dones, info = vec_env.step(action)
-      vec_env.render()
+      vec_env.render("human")
 
 
 Multiprocessing: Unleashing the Power of Vectorized Environments
@@ -116,7 +116,6 @@ Multiprocessing: Unleashing the Power of Vectorized Environments
 .. code-block:: python
 
   import gymnasium as gym
-  import numpy as np
 
   from stable_baselines3 import PPO
   from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
@@ -512,6 +511,7 @@ The parking env is a goal-conditioned continuous control task, in which the vehi
   # Load saved model
   # Because it needs access to `env.compute_reward()`
   # HER must be loaded with the env
+  env = gym.make("parking-v0", render_mode="human") # Change the render mode
   model = SAC.load("her_sac_highway", env=env)
 
   obs, info = env.reset()
@@ -521,7 +521,6 @@ The parking env is a goal-conditioned continuous control task, in which the vehi
   for _ in range(100):
       action, _ = model.predict(obs, deterministic=True)
       obs, reward, terminated, truncated, info = env.step(action)
-      env.render()
       episode_reward += reward
       if terminated or truncated or info.get("is_success", False):
           print("Reward:", episode_reward, "Success?", info.get("is_success", False))

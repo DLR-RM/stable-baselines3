@@ -71,9 +71,9 @@ Train a PPO agent on ``CartPole-v1`` using 4 environments.
   from stable_baselines3.common.env_util import make_vec_env
 
   # Parallel environments
-  env = make_vec_env("CartPole-v1", n_envs=4)
+  vec_env = make_vec_env("CartPole-v1", n_envs=4)
 
-  model = PPO("MlpPolicy", env, verbose=1)
+  model = PPO("MlpPolicy", vec_env, verbose=1)
   model.learn(total_timesteps=25000)
   model.save("ppo_cartpole")
 
@@ -81,11 +81,11 @@ Train a PPO agent on ``CartPole-v1`` using 4 environments.
 
   model = PPO.load("ppo_cartpole")
 
-  obs = env.reset()
+  obs = vec_env.reset()
   while True:
       action, _states = model.predict(obs)
-      obs, rewards, dones, info = env.step(action)
-      env.render()
+      obs, rewards, dones, info = vec_env.step(action)
+      vec_env.render("human")
 
 
 Results

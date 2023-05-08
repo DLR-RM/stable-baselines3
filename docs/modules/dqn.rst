@@ -60,7 +60,7 @@ This example is only to demonstrate the use of the library and its functions, an
 
   from stable_baselines3 import DQN
 
-  env = gym.make("CartPole-v1")
+  env = gym.make("CartPole-v1", render_mode="human")
 
   model = DQN("MlpPolicy", env, verbose=1)
   model.learn(total_timesteps=10000, log_interval=4)
@@ -70,13 +70,12 @@ This example is only to demonstrate the use of the library and its functions, an
 
   model = DQN.load("dqn_cartpole")
 
-  obs = env.reset()
+  obs, info = env.reset()
   while True:
       action, _states = model.predict(obs, deterministic=True)
-      obs, reward, done, info = env.step(action)
-      env.render()
-      if done:
-        obs = env.reset()
+      obs, reward, terminated, truncated, info = env.step(action)
+      if terminated or truncated:
+          obs, info = env.reset()
 
 
 Results

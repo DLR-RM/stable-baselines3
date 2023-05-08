@@ -70,6 +70,7 @@ Documentation:
 - Make it more explicit when using ``VecEnv`` vs Gym env
 - Added UAV_Navigation_DRL_AirSim to the project page (@heleidsn)
 - Added ``EvalCallback`` example (@sidney-tio)
+- Update custom env documentation
 
 
 Release 1.8.0 (2023-04-07)

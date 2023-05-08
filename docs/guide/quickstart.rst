@@ -40,8 +40,8 @@ Here is a quick example of how to train and run A2C on a CartPole environment:
 	You can find explanations about the logger output and names in the :ref:`Logger <logger>` section.
 
 
-Or just train a model with a one liner if
-`the environment is registered in Gym <https://github.com/openai/gym/wiki/Environments>`_ and if
+Or just train a model with a one line if
+`the environment is registered in Gymnasium <https://gymnasium.farama.org/tutorials/gymnasium_basics/environment_creation/#registering-envs>`_ and if
 the policy is registered:
 
 .. code-block:: python

@@ -210,14 +210,14 @@ If you want to quickly try a random agent on your environment, you can also do:
 .. code-block:: python
 
   env = YourEnv()
-  obs = env.reset()
+  obs, info = env.reset()
   n_steps = 10
   for _ in range(n_steps):
       # Random action
       action = env.action_space.sample()
-      obs, reward, done, info = env.step(action)
+      obs, reward, terminated, truncated, info = env.step(action)
       if done:
-          obs = env.reset()
+          obs, info = env.reset()
 
 
 **Why should I normalize the action space?**

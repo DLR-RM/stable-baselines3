@@ -67,7 +67,7 @@ This example is only to demonstrate the use of the library and its functions, an
   from stable_baselines3 import DDPG
   from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 
-  env = gym.make("Pendulum-v1")
+  env = gym.make("Pendulum-v1", render_mode="rgb_array")
 
   # The noise objects for DDPG
   n_actions = env.action_space.shape[-1]
@@ -76,17 +76,17 @@ This example is only to demonstrate the use of the library and its functions, an
   model = DDPG("MlpPolicy", env, action_noise=action_noise, verbose=1)
   model.learn(total_timesteps=10000, log_interval=10)
   model.save("ddpg_pendulum")
-  env = model.get_env()
+  vec_env = model.get_env()
 
   del model # remove to demonstrate saving and loading
 
   model = DDPG.load("ddpg_pendulum")
 
-  obs = env.reset()
+  obs = vec_env.reset()
   while True:
       action, _states = model.predict(obs)
-      obs, rewards, dones, info = env.step(action)
-      env.render()
+      obs, rewards, dones, info = vec_env.step(action)
+      env.render("human")
 
 Results
 -------

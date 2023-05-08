@@ -65,7 +65,6 @@ This example is only to demonstrate the use of the library and its functions, an
     from stable_baselines3 import HerReplayBuffer, DDPG, DQN, SAC, TD3
     from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
     from stable_baselines3.common.envs import BitFlippingEnv
-    from stable_baselines3.common.vec_env import DummyVecEnv
 
     model_class = DQN  # works also with SAC, DDPG and TD3
     N_BITS = 15
@@ -96,13 +95,12 @@ This example is only to demonstrate the use of the library and its functions, an
     # HER must be loaded with the env
     model = model_class.load("./her_bit_env", env=env)
 
-    obs = env.reset()
+    obs, info = env.reset()
     for _ in range(100):
         action, _ = model.predict(obs, deterministic=True)
-        obs, reward, done, _ = env.step(action)
-
-        if done:
-            obs = env.reset()
+        obs, reward, terminated, truncated, _ = env.step(action)
+        if terminated or truncated:
+            obs, info = env.reset()
 
 
 Results

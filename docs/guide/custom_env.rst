@@ -3,18 +3,19 @@
 Using Custom Environments
 ==========================
 
-To use the RL baselines with custom environments, they just need to follow the *gym* interface.
-That is to say, your environment must implement the following methods (and inherits from OpenAI Gym Class):
+To use the RL baselines with custom environments, they just need to follow the *gymnasium*  `interface <https://gymnasium.farama.org/tutorials/gymnasium_basics/environment_creation/#sphx-glr-tutorials-gymnasium-basics-environment-creation-py>`_.
+That is to say, your environment must implement the following methods (and inherits from Gym Class):
 
 
 .. note::
-	If you are using images as input, the observation must be of type ``np.uint8`` and be contained in [0, 255].
-	By default, the observation is normalized by SB3 pre-processing (dividing by 255 to have values in [0, 1]) when using CNN policies.
-	Images can be either channel-first or channel-last.
+
+  If you are using images as input, the observation must be of type ``np.uint8`` and be contained in [0, 255].
+  By default, the observation is normalized by SB3 pre-processing (dividing by 255 to have values in [0, 1]) when using CNN policies.
+  Images can be either channel-first or channel-last.
 
   If you want to use ``CnnPolicy`` or ``MultiInputPolicy`` with image-like observation (3D tensor) that are already normalized, you must pass ``normalize_images=False``
-	to the policy (using ``policy_kwargs`` parameter, ``policy_kwargs=dict(normalize_images=False)``)
-	and make sure your image is in the **channel-first** format.
+  to the policy (using ``policy_kwargs`` parameter, ``policy_kwargs=dict(normalize_images=False)``)
+  and make sure your image is in the **channel-first** format.
 
 
 .. note::
@@ -34,7 +35,7 @@ That is to say, your environment must implement the following methods (and inher
   class CustomEnv(gym.Env):
       """Custom Environment that follows gym interface."""
 
-      metadata = {"render.modes": ["human"]}
+      metadata = {"render_modes": ["human"], "render_fps": 30}
 
       def __init__(self, arg1, arg2, ...):
           super().__init__()
@@ -48,11 +49,11 @@ That is to say, your environment must implement the following methods (and inher
 
       def step(self, action):
           ...
-          return observation, reward, done, info
+          return observation, reward, terminated, truncated, info
 
-      def reset(self):
+      def reset(self, seed=None, options=None):
           ...
-          return observation  # reward, done, info can't be included
+          return observation, info
 
       def render(self):
           ...
@@ -81,11 +82,11 @@ To check that your environment follows the Gym interface that SB3 supports, plea
 	# It will check your custom environment and output additional warnings if needed
 	check_env(env)
 
-Gym also have its own `env checker <https://www.gymlibrary.ml/content/api/#checking-api-conformity>`_ but it checks a superset of what SB3 supports (SB3 does not support all Gym features).
+Gymnasium also have its own `env checker <https://gymnasium.farama.org/api/utils/#gymnasium.utils.env_checker.check_env>`_ but it checks a superset of what SB3 supports (SB3 does not support all Gym features).
 
-We have created a `colab notebook <https://colab.research.google.com/github/araffin/rl-tutorial-jnrr19/blob/master/5_custom_gym_env.ipynb>`_ for a concrete example on creating a custom environment along with an example of using it with Stable-Baselines3 interface.
+We have created a `colab notebook <https://colab.research.google.com/github/araffin/rl-tutorial-jnrr19/blob/sb3/5_custom_gym_env.ipynb>`_ for a concrete example on creating a custom environment along with an example of using it with Stable-Baselines3 interface.
 
-Alternatively, you may look at OpenAI Gym `built-in environments <https://www.gymlibrary.ml/>`_. However, the readers are cautioned as per OpenAI Gym `official wiki <https://github.com/openai/gym/wiki/FAQ>`_, its advised not to customize their built-in environments. It is better to copy and create new ones if you need to modify them.
+Alternatively, you may look at Gymnasium `built-in environments <https://gymnasium.farama.org>`_.
 
 Optionally, you can also register the environment with gym, that will allow you to create the RL agent in one line (and use ``gym.make()`` to instantiate the env):
 

@@ -20,7 +20,7 @@ Here is a quick example of how to train and run A2C on a CartPole environment:
 
   from stable_baselines3 import A2C
 
-  env = gym.make("CartPole-v1")
+  env = gym.make("CartPole-v1", render_mode="rgb_array")
 
   model = A2C("MlpPolicy", env, verbose=1)
   model.learn(total_timesteps=10_000)
@@ -30,7 +30,7 @@ Here is a quick example of how to train and run A2C on a CartPole environment:
   for i in range(1000):
       action, _state = model.predict(obs, deterministic=True)
       obs, reward, done, info = vec_env.step(action)
-      vec_env.render()
+      vec_env.render("human")
       # VecEnv resets automatically
       # if done:
       #   obs = vec_env.reset()
@@ -40,8 +40,8 @@ Here is a quick example of how to train and run A2C on a CartPole environment:
 	You can find explanations about the logger output and names in the :ref:`Logger <logger>` section.
 
 
-Or just train a model with a one liner if
-`the environment is registered in Gym <https://github.com/openai/gym/wiki/Environments>`_ and if
+Or just train a model with a one line if
+`the environment is registered in Gymnasium <https://gymnasium.farama.org/tutorials/gymnasium_basics/environment_creation/#registering-envs>`_ and if
 the policy is registered:
 
 .. code-block:: python

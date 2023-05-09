@@ -195,6 +195,7 @@ class PPO(OnPolicyAlgorithm):
         continue_training = True
         # train for n_epochs epochs
         for epoch in range(self.n_epochs):
+            print(f"Starting Epoch {epoch}")
             approx_kl_divs = []
             # Do a complete pass on the rollout buffer
             for rollout_data in self.rollout_buffer.get(self.batch_size):

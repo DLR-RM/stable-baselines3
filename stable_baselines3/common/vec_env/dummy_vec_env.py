@@ -48,7 +48,7 @@ class DummyVecEnv(VecEnv):
         self.buf_rews = np.zeros((self.num_envs,), dtype=np.float32)
         self.buf_infos: List[Dict[str, Any]] = [{} for _ in range(self.num_envs)]
         self.metadata = env.metadata
-        
+
         self._seed = [None for _ in range(len(self.envs))]  # seed to be used in the next env.reset()
 
     def step_async(self, actions: np.ndarray) -> None:
@@ -77,11 +77,11 @@ class DummyVecEnv(VecEnv):
         # Avoid circular import
         # from stable_baselines3.common.utils import compat_gym_seed
         if seed is None:
-            self.seed = [None for _ in range(len(self.envs))]  # seed to be used in the next env.reset()
+            self._seed = [None for _ in range(len(self.envs))]  # seed to be used in the next env.reset()
             return
 
         self._seed = [seed + i for i in range(len(self.envs))]
-        return self.seed
+        return self._seed
 
     def reset(self) -> VecEnvObs:
         for env_idx in range(self.num_envs):

@@ -1,14 +1,14 @@
 import warnings
 from collections import OrderedDict
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, List, Optional, Sequence, Type, Union
 
 import gymnasium as gym
 import numpy as np
 
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvIndices, VecEnvObs, VecEnvStepReturn
 from stable_baselines3.common.vec_env.patch_gym import _patch_env
-from stable_baselines3.common.vec_env.util import copy_obs_dict, dict_to_obs, obs_space_info
+from stable_baselines3.common.vec_env.util import graph_copy_obs_dict, copy_obs_dict, dict_to_obs, obs_space_info
 
 
 class DummyVecEnv(VecEnv):
@@ -23,8 +23,6 @@ class DummyVecEnv(VecEnv):
         that return environments to vectorize
     :raises ValueError: If the same environment instance is passed as the output of two or more different env_fn.
     """
-
-    actions: np.ndarray
 
     def __init__(self, env_fns: List[Callable[[], gym.Env]]):
         self.envs = [_patch_env(fn()) for fn in env_fns]
@@ -42,11 +40,14 @@ class DummyVecEnv(VecEnv):
         VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space, env.render_mode)
         obs_space = env.observation_space
         self.keys, shapes, dtypes = obs_space_info(obs_space)
-
-        self.buf_obs = OrderedDict([(k, np.zeros((self.num_envs, *tuple(shapes[k])), dtype=dtypes[k])) for k in self.keys])
+        if isinstance(obs_space, gym.spaces.Graph):
+            self.buf_obs = OrderedDict([(k, {}) for k in self.keys])
+        else:
+            self.buf_obs = OrderedDict([(k, np.zeros((self.num_envs, *tuple(shapes[k])), dtype=dtypes[k])) for k in self.keys])
         self.buf_dones = np.zeros((self.num_envs,), dtype=bool)
         self.buf_rews = np.zeros((self.num_envs,), dtype=np.float32)
-        self.buf_infos: List[Dict[str, Any]] = [{} for _ in range(self.num_envs)]
+        self.buf_infos = [{} for _ in range(self.num_envs)]
+        self.actions = None
         self.metadata = env.metadata
 
     def step_async(self, actions: np.ndarray) -> None:
@@ -55,9 +56,9 @@ class DummyVecEnv(VecEnv):
     def step_wait(self) -> VecEnvStepReturn:
         # Avoid circular imports
         for env_idx in range(self.num_envs):
-            obs, self.buf_rews[env_idx], terminated, truncated, self.buf_infos[env_idx] = self.envs[env_idx].step(
-                self.actions[env_idx]
-            )
+            action = self.actions[env_idx]  # TODO: Nonsense
+            obs, self.buf_rews[env_idx], terminated, truncated, self.buf_infos[env_idx] = self.envs[env_idx].step(action)
+
             # convert to SB3 VecEnv api
             self.buf_dones[env_idx] = terminated or truncated
             # See https://github.com/openai/gym/issues/3102
@@ -71,7 +72,7 @@ class DummyVecEnv(VecEnv):
             self._save_obs(env_idx, obs)
         return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones), deepcopy(self.buf_infos))
 
-    def seed(self, seed: Optional[int] = None) -> Sequence[Union[None, int]]:
+    def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
         # Avoid circular import
         from stable_baselines3.common.utils import compat_gym_seed
 
@@ -79,7 +80,7 @@ class DummyVecEnv(VecEnv):
             seed = np.random.randint(0, 2**32 - 1)
         seeds = []
         for idx, env in enumerate(self.envs):
-            seeds.append(compat_gym_seed(env, seed=seed + idx))  # type: ignore[func-returns-value]
+            seeds.append(compat_gym_seed(env, seed=seed + idx))
         return seeds
 
     def reset(self) -> VecEnvObs:
@@ -98,7 +99,7 @@ class DummyVecEnv(VecEnv):
                 f"The render mode is {self.render_mode}, but this method assumes it is `rgb_array` to obtain images."
             )
             return [None for _ in self.envs]
-        return [env.render() for env in self.envs]  # type: ignore[misc]
+        return [env.render() for env in self.envs]
 
     def render(self, mode: Optional[str] = None) -> Optional[np.ndarray]:
         """
@@ -110,14 +111,22 @@ class DummyVecEnv(VecEnv):
         return super().render(mode=mode)
 
     def _save_obs(self, env_idx: int, obs: VecEnvObs) -> None:
-        for key in self.keys:
-            if key is None:
-                self.buf_obs[key][env_idx] = obs
-            else:
-                self.buf_obs[key][env_idx] = obs[key]  # type: ignore[call-overload]
+        if isinstance(self.envs[env_idx].observation_space, gym.spaces.Graph):
+            self.buf_obs["node"][env_idx] = obs.x
+            self.buf_obs["edge_weight"][env_idx] = obs.w
+            self.buf_obs["edge_index"][env_idx] = obs.edge_index
+        else:
+            for key in self.keys:
+                if key is None:
+                    self.buf_obs[key][env_idx] = obs
+                else:
+                    self.buf_obs[key][env_idx] = obs[key]
 
     def _obs_from_buf(self) -> VecEnvObs:
-        return dict_to_obs(self.observation_space, copy_obs_dict(self.buf_obs))
+        if isinstance(self.observation_space, gym.spaces.Graph):
+            return dict_to_obs(self.observation_space, graph_copy_obs_dict(self.buf_obs))
+        else:
+            return dict_to_obs(self.observation_space, copy_obs_dict(self.buf_obs))
 
     def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:
         """Return attribute from vectorized environment (see base class)."""

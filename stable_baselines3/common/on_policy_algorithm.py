@@ -7,7 +7,7 @@ import torch as th
 from gymnasium import spaces
 
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.buffers import DictRolloutBuffer, RolloutBuffer
+from stable_baselines3.common.buffers import DictRolloutBuffer, RolloutBuffer, GraphRolloutBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
@@ -107,8 +107,12 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     def _setup_model(self) -> None:
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
-
-        buffer_cls = DictRolloutBuffer if isinstance(self.observation_space, spaces.Dict) else RolloutBuffer
+        if isinstance(self.observation_space, spaces.Dict):
+            buffer_cls = DictRolloutBuffer
+        elif isinstance(self.observation_space, spaces.Graph):
+            buffer_cls = GraphRolloutBuffer
+        else:
+            buffer_cls = RolloutBuffer
 
         self.rollout_buffer = buffer_cls(
             self.n_steps,
@@ -167,13 +171,31 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 # Convert to pytorch tensor or to TensorDict
                 obs_tensor = obs_as_tensor(self._last_obs, self.device)
                 actions, values, log_probs = self.policy(obs_tensor)
-            actions = actions.cpu().numpy()
+                actions, log_probs = actions, log_probs
 
             # Rescale and perform action
             clipped_actions = actions
             # Clip the actions to avoid out of bound error
             if isinstance(self.action_space, spaces.Box):
                 clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
+                if isinstance(actions, List):
+                    clipped_actions = [
+                        th.clamp(
+                            a,
+                            min=th.Tensor(self.action_space.low).to(a.device),
+                            max=th.Tensor(self.action_space.high).to(a.device),
+                        )
+                        for a in actions
+                    ]
+                else:
+                    clipped_actions = th.clamp(
+                        actions,
+                        min=th.Tensor(self.action_space.low).to(actions.device),
+                        max=th.Tensor(self.action_space.high).to(actions.device),
+                    )
+            else:
+                clipped_actions = actions.cpu().numpy()
+            actions = actions.cpu().numpy()
 
             new_obs, rewards, dones, infos = env.step(clipped_actions)
 

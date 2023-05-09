@@ -624,9 +624,13 @@ class ActorCriticPolicy(BasePolicy):
         # Evaluate the values for the given observations
         values = self.value_net(latent_vf)
         distribution = self._get_action_dist_from_latent(latent_pi)
-        actions = distribution.get_actions(deterministic=deterministic)
-        log_prob = distribution.log_prob(actions)
-        actions = actions.reshape((-1, *self.action_space.shape))
+        if isinstance(distribution, List):
+            actions = [d.get_actions(deterministic=deterministic) for d in distribution]
+            log_prob = [d.log_prob(a) for d, a in zip(distribution, actions)]
+        else:
+            actions = distribution.get_actions(deterministic=deterministic)
+            log_prob = distribution.log_prob(actions)
+            actions = actions.reshape((-1, *self.action_space.shape))
         return actions, values, log_prob
 
     def extract_features(self, obs: th.Tensor) -> Union[th.Tensor, Tuple[th.Tensor, th.Tensor]]:
@@ -650,23 +654,36 @@ class ActorCriticPolicy(BasePolicy):
         :param latent_pi: Latent code for the actor
         :return: Action distribution
         """
-        mean_actions = self.action_net(latent_pi)
-
-        if isinstance(self.action_dist, DiagGaussianDistribution):
-            return self.action_dist.proba_distribution(mean_actions, self.log_std)
-        elif isinstance(self.action_dist, CategoricalDistribution):
-            # Here mean_actions are the logits before the softmax
-            return self.action_dist.proba_distribution(action_logits=mean_actions)
-        elif isinstance(self.action_dist, MultiCategoricalDistribution):
-            # Here mean_actions are the flattened logits
-            return self.action_dist.proba_distribution(action_logits=mean_actions)
-        elif isinstance(self.action_dist, BernoulliDistribution):
-            # Here mean_actions are the logits (before rounding to get the binary actions)
-            return self.action_dist.proba_distribution(action_logits=mean_actions)
-        elif isinstance(self.action_dist, StateDependentNoiseDistribution):
-            return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_pi)
+        if isinstance(latent_pi, List):  # indicates we're doing one policy to rule them all
+            mean_actions_graphs = [self.action_net(a_latent_pi) for a_latent_pi in latent_pi]
+            if isinstance(self.action_dist, DiagGaussianDistribution):
+                dist = [
+                    self.action_dist.proba_distribution(mean_actions, self.log_std) for mean_actions in mean_actions_graphs
+                ]
+            else:
+                raise NotImplementedError
+            return dist
         else:
-            raise ValueError("Invalid action distribution")
+            mean_actions = self.action_net(latent_pi)
+
+            dist = None
+            if isinstance(self.action_dist, DiagGaussianDistribution):
+                dist = self.action_dist.proba_distribution(mean_actions, self.log_std)
+            elif isinstance(self.action_dist, CategoricalDistribution):
+                # Here mean_actions are the logits before the softmax
+                dist = self.action_dist.proba_distribution(action_logits=mean_actions)
+            elif isinstance(self.action_dist, MultiCategoricalDistribution):
+                # Here mean_actions are the flattened logits
+                dist = self.action_dist.proba_distribution(action_logits=mean_actions)
+            elif isinstance(self.action_dist, BernoulliDistribution):
+                # Here mean_actions are the logits (before rounding to get the binary actions)
+                dist = self.action_dist.proba_distribution(action_logits=mean_actions)
+            elif isinstance(self.action_dist, StateDependentNoiseDistribution):
+                dist = self.action_dist.proba_distribution(mean_actions, self.log_std, latent_pi)
+            else:
+                raise ValueError("Invalid action distribution")
+
+            return dist
 
     def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         """
@@ -697,9 +714,17 @@ class ActorCriticPolicy(BasePolicy):
             latent_pi = self.mlp_extractor.forward_actor(pi_features)
             latent_vf = self.mlp_extractor.forward_critic(vf_features)
         distribution = self._get_action_dist_from_latent(latent_pi)
-        log_prob = distribution.log_prob(actions)
+        if isinstance(distribution, List):
+            log_prob = [d.log_prob(a) for d, a in zip(distribution, actions)]
+            log_prob = th.stack(log_prob)
+            entropy = [d.entropy() for d in distribution]
+            entropy = th.stack(entropy)
+        else:
+            log_prob = distribution.log_prob(actions)
+
+            entropy = distribution.entropy()
         values = self.value_net(latent_vf)
-        entropy = distribution.entropy()
+
         return values, log_prob, entropy
 
     def get_distribution(self, obs: th.Tensor) -> Distribution:

@@ -177,7 +177,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             clipped_actions = actions
             # Clip the actions to avoid out of bound error
             if isinstance(self.action_space, spaces.Box):
-                clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
                 if isinstance(actions, List):
                     clipped_actions = [
                         th.clamp(
@@ -187,15 +186,17 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                         )
                         for a in actions
                     ]
+                    actions = [a.cpu().numpy() for a in actions]
                 else:
                     clipped_actions = th.clamp(
                         actions,
                         min=th.Tensor(self.action_space.low).to(actions.device),
                         max=th.Tensor(self.action_space.high).to(actions.device),
                     )
+                    actions = actions.cpu().numpy()
             else:
                 clipped_actions = actions.cpu().numpy()
-            actions = actions.cpu().numpy()
+                actions = actions.cpu().numpy()
 
             new_obs, rewards, dones, infos = env.step(clipped_actions)
 

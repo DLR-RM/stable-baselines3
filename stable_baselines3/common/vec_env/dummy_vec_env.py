@@ -38,12 +38,9 @@ class DummyVecEnv(VecEnv):
             )
         env = self.envs[0]
         VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space, env.render_mode)
-        obs_space = env.observation_space
-        self.keys, shapes, dtypes = obs_space_info(obs_space)
-        if isinstance(obs_space, gym.spaces.Graph):
-            self.buf_obs = OrderedDict([(k, {}) for k in self.keys])
-        else:
-            self.buf_obs = OrderedDict([(k, np.zeros((self.num_envs, *tuple(shapes[k])), dtype=dtypes[k])) for k in self.keys])
+        self.obs_space = env.observation_space
+        self.keys, shapes, dtypes = obs_space_info(self.obs_space)
+        self.buf_obs = OrderedDict([(k, np.zeros((self.num_envs, *tuple(shapes[k])), dtype=dtypes[k])) for k in self.keys])
         self.buf_dones = np.zeros((self.num_envs,), dtype=bool)
         self.buf_rews = np.zeros((self.num_envs,), dtype=np.float32)
         self.buf_infos = [{} for _ in range(self.num_envs)]
@@ -111,22 +108,14 @@ class DummyVecEnv(VecEnv):
         return super().render(mode=mode)
 
     def _save_obs(self, env_idx: int, obs: VecEnvObs) -> None:
-        if isinstance(self.envs[env_idx].observation_space, gym.spaces.Graph):
-            self.buf_obs["node"][env_idx] = obs.x
-            self.buf_obs["edge_weight"][env_idx] = obs.w
-            self.buf_obs["edge_index"][env_idx] = obs.edge_index
-        else:
-            for key in self.keys:
-                if key is None:
-                    self.buf_obs[key][env_idx] = obs
-                else:
-                    self.buf_obs[key][env_idx] = obs[key]
+        for key in self.keys:
+            if key is None:
+                self.buf_obs[key][env_idx] = obs
+            else:
+                self.buf_obs[key][env_idx] = obs[key]
 
     def _obs_from_buf(self) -> VecEnvObs:
-        if isinstance(self.observation_space, gym.spaces.Graph):
-            return dict_to_obs(self.observation_space, graph_copy_obs_dict(self.buf_obs))
-        else:
-            return dict_to_obs(self.observation_space, copy_obs_dict(self.buf_obs))
+        return dict_to_obs(self.observation_space, copy_obs_dict(self.buf_obs))
 
     def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:
         """Return attribute from vectorized environment (see base class)."""
@@ -155,3 +144,20 @@ class DummyVecEnv(VecEnv):
     def _get_target_envs(self, indices: VecEnvIndices) -> List[gym.Env]:
         indices = self._get_indices(indices)
         return [self.envs[i] for i in indices]
+
+
+class DummyGraphVecEnv(DummyVecEnv):
+    def __init__(self, env_fns: List[Callable[[], gym.Env]]):
+        super().__init__(env_fns)
+        assert isinstance(self.obs_space, gym.spaces.Graph)
+        self.buf_obs = OrderedDict([(k, {}) for k in self.keys])
+
+    def _obs_from_buf(self) -> VecEnvObs:
+        assert isinstance(self.observation_space, gym.spaces.Graph)
+        return dict_to_obs(self.observation_space, graph_copy_obs_dict(self.buf_obs))
+
+    def _save_obs(self, env_idx: int, obs: VecEnvObs) -> None:
+        assert isinstance(self.envs[env_idx].observation_space, gym.spaces.Graph)
+        self.buf_obs["node"][env_idx] = obs.x
+        self.buf_obs["edge_weight"][env_idx] = obs.w
+        self.buf_obs["edge_index"][env_idx] = obs.edge_index

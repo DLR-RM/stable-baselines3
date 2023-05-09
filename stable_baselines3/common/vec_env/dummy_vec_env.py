@@ -1,7 +1,7 @@
 import warnings
 from collections import OrderedDict
 from copy import deepcopy
-from typing import Any, Callable, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 
 import gymnasium as gym
 import numpy as np
@@ -44,7 +44,7 @@ class DummyVecEnv(VecEnv):
         self.buf_obs = OrderedDict([(k, np.zeros((self.num_envs, *tuple(shapes[k])), dtype=dtypes[k])) for k in self.keys])
         self.buf_dones = np.zeros((self.num_envs,), dtype=bool)
         self.buf_rews = np.zeros((self.num_envs,), dtype=np.float32)
-        self.buf_infos = [{} for _ in range(self.num_envs)]
+        self.buf_infos: List[Dict[str, Any]] = [{} for _ in range(self.num_envs)]
         self.actions = None
         self.metadata = env.metadata
 

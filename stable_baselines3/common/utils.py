@@ -13,6 +13,7 @@ import gymnasium as gym
 import numpy as np
 import torch as th
 from gymnasium import spaces
+from torch_geometric.data import Data
 
 import stable_baselines3 as sb3
 
@@ -482,6 +483,8 @@ def obs_as_tensor(obs: Union[np.ndarray, Dict[str, np.ndarray]], device: th.devi
     """
     if isinstance(obs, np.ndarray):
         return th.as_tensor(obs, device=device)
+    elif isinstance(obs, Data):
+        return obs.to(device)
     elif isinstance(obs, dict):
         return {key: th.as_tensor(_obs, device=device) for (key, _obs) in obs.items()}
     else:

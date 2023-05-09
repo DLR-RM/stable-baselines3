@@ -6,7 +6,7 @@ import numpy as np
 import torch as th
 from gymnasium import spaces
 
-from torch_geometric.data import Data
+from torch_geometric.data import Data, Batch
 
 from stable_baselines3.common.preprocessing import get_action_dim, get_obs_shape
 from stable_baselines3.common.type_aliases import (
@@ -607,7 +607,7 @@ class GraphRolloutBuffer(BaseBuffer):
     ) -> None:
         """
         :param obs: Observation
-        :param action: Action
+        :param action: Action -- assumed to be ndarray by clipping
         :param reward:
         :param episode_start: Start of episode signal.
         :param value: estimated value of the current state
@@ -632,8 +632,9 @@ class GraphRolloutBuffer(BaseBuffer):
         # Reshape to handle multi-dim and discrete action spaces, see GH #970 #1392
         if isinstance(action, List):
             if len(action) == 1:
-                action = action[0].cpu()
+                action = action[0]
             else:
+                # Probably loop trough and add each entry independently into the buffer
                 raise NotImplementedError
         else:
             action = action.reshape((self.n_envs, self.action_dim))
@@ -642,6 +643,7 @@ class GraphRolloutBuffer(BaseBuffer):
         self.observations["node"][self.pos] = obs.x  # should be a pyg Data entry
         self.observations["edge_index"][self.pos] = obs.edge_index
         self.observations["edge_weight"][self.pos] = obs.w
+
         self.actions[self.pos] = np.array(action).copy()
         self.rewards[self.pos] = np.array(reward).copy()
         self.episode_starts[self.pos] = np.array(episode_start).copy()
@@ -691,13 +693,14 @@ class GraphRolloutBuffer(BaseBuffer):
         env: Optional[VecNormalize] = None,
     ) -> RolloutBufferSamples:  # type: ignore[signature-mismatch] #FIXME
         data = (
-            self.observations,
+            Batch.from_data_list(self.observations[batch_inds]),
             self.to_torch(self.actions[batch_inds]),
             self.to_torch(self.values[batch_inds].flatten()),
             self.to_torch(self.log_probs[batch_inds]),
             self.to_torch(self.advantages[batch_inds]),
             self.to_torch(self.returns[batch_inds].flatten()),
         )
+
         return GraphRolloutBufferSamples(*tuple(data))
 
 

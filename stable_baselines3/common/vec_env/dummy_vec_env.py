@@ -40,6 +40,7 @@ class DummyVecEnv(VecEnv):
         VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space, env.render_mode)
         self.obs_space = env.observation_space
         self.keys, shapes, dtypes = obs_space_info(self.obs_space)
+
         self.buf_obs = OrderedDict([(k, np.zeros((self.num_envs, *tuple(shapes[k])), dtype=dtypes[k])) for k in self.keys])
         self.buf_dones = np.zeros((self.num_envs,), dtype=bool)
         self.buf_rews = np.zeros((self.num_envs,), dtype=np.float32)
@@ -53,9 +54,9 @@ class DummyVecEnv(VecEnv):
     def step_wait(self) -> VecEnvStepReturn:
         # Avoid circular imports
         for env_idx in range(self.num_envs):
-            action = self.actions[env_idx]  # TODO: Nonsense
-            obs, self.buf_rews[env_idx], terminated, truncated, self.buf_infos[env_idx] = self.envs[env_idx].step(action)
-
+            obs, self.buf_rews[env_idx], terminated, truncated, self.buf_infos[env_idx] = self.envs[env_idx].step(
+                self.actions[env_idx]
+            )
             # convert to SB3 VecEnv api
             self.buf_dones[env_idx] = terminated or truncated
             # See https://github.com/openai/gym/issues/3102
@@ -69,7 +70,7 @@ class DummyVecEnv(VecEnv):
             self._save_obs(env_idx, obs)
         return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones), deepcopy(self.buf_infos))
 
-    def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
+    def seed(self, seed: Optional[int] = None) -> Sequence[Union[None, int]]:
         # Avoid circular import
         from stable_baselines3.common.utils import compat_gym_seed
 
@@ -77,7 +78,7 @@ class DummyVecEnv(VecEnv):
             seed = np.random.randint(0, 2**32 - 1)
         seeds = []
         for idx, env in enumerate(self.envs):
-            seeds.append(compat_gym_seed(env, seed=seed + idx))
+            seeds.append(compat_gym_seed(env, seed=seed + idx))  # type: ignore[func-returns-value]
         return seeds
 
     def reset(self) -> VecEnvObs:
@@ -96,7 +97,7 @@ class DummyVecEnv(VecEnv):
                 f"The render mode is {self.render_mode}, but this method assumes it is `rgb_array` to obtain images."
             )
             return [None for _ in self.envs]
-        return [env.render() for env in self.envs]
+        return [env.render() for env in self.envs]  # type: ignore[misc]
 
     def render(self, mode: Optional[str] = None) -> Optional[np.ndarray]:
         """
@@ -112,7 +113,7 @@ class DummyVecEnv(VecEnv):
             if key is None:
                 self.buf_obs[key][env_idx] = obs
             else:
-                self.buf_obs[key][env_idx] = obs[key]
+                self.buf_obs[key][env_idx] = obs[key]  # type: ignore[call-overload]
 
     def _obs_from_buf(self) -> VecEnvObs:
         return dict_to_obs(self.observation_space, copy_obs_dict(self.buf_obs))

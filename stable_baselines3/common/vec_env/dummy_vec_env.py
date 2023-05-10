@@ -78,7 +78,7 @@ class DummyVecEnv(VecEnv):
         # from stable_baselines3.common.utils import compat_gym_seed
         if seed is None:
             self._seed = [None for _ in range(len(self.envs))]  # seed to be used in the next env.reset()
-            return
+            return self._seed
 
         self._seed = [seed + i for i in range(len(self.envs))]
         return self._seed

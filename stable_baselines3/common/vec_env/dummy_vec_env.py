@@ -85,7 +85,7 @@ class DummyVecEnv(VecEnv):
 
     def reset(self) -> VecEnvObs:
         for env_idx in range(self.num_envs):
-            obs, self.reset_infos[env_idx] = self.envs[env_idx].reset(seed=self._seed)
+            obs, self.reset_infos[env_idx] = self.envs[env_idx].reset(seed=self._seed[env_idx])
             self._save_obs(env_idx, obs)
 
         self._seed = [None for _ in range(len(self.envs))]

@@ -487,6 +487,15 @@ def test_vec_deterministic(vec_env_class):
     vec_env.seed(3)
     new_obs = vec_env.reset()
     assert np.allclose(new_obs, obs)
+    vec_env.close()
+    # Similar test but with make_vec_env
+    vec_env_1 = make_vec_env("Pendulum-v1", n_envs=N_ENVS, vec_env_cls=vec_env_class, seed=0)
+    vec_env_2 = make_vec_env("Pendulum-v1", n_envs=N_ENVS, vec_env_cls=vec_env_class, seed=0)
+    assert np.allclose(vec_env_1.reset(), vec_env_2.reset())
+    random_actions = [vec_env_1.action_space.sample() for _ in range(N_ENVS)]
+    assert np.allclose(vec_env_1.step(random_actions)[0], vec_env_2.step(random_actions)[0])
+    vec_env_1.close()
+    vec_env_2.close()
 
 
 @pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)

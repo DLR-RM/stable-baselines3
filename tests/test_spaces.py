@@ -47,14 +47,18 @@ class DummyMultidimensionalAction(gym.Env):
         self.observation_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         self.action_space = spaces.Box(low=-1, high=1, shape=(2, 2), dtype=np.float32)
 
-    def reset(self):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+        if seed is not None:
+            super().reset(seed=seed)
         return self.observation_space.sample(), {}
 
     def step(self, action):
         return self.observation_space.sample(), 0.0, False, False, {}
 
 
-@pytest.mark.parametrize("env", [DummyMultiDiscreteSpace([4, 3]), DummyMultiBinary(8), DummyMultiBinary((3, 2))])
+@pytest.mark.parametrize(
+    "env", [DummyMultiDiscreteSpace([4, 3]), DummyMultiBinary(8), DummyMultiBinary((3, 2)), DummyMultidimensionalAction()]
+)
 def test_env(env):
     # Check the env used for testing
     check_env(env, skip_render_check=True)

@@ -398,6 +398,11 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
     observation_space = env.observation_space
     action_space = env.action_space
 
+    try:
+        env.reset(seed=0)
+    except TypeError as e:
+        raise TypeError("The reset() method must accept a `seed` parameter") from e
+
     # Warn the user if needed.
     # A warning means that the environment may run but not work properly with Stable Baselines algorithms
     if warn:

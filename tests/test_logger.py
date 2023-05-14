@@ -96,7 +96,7 @@ def read_log(tmp_path, capsys):
             tb_values_logged = []
             for reservoir in [acc.scalars, acc.tensors, acc.images, acc.histograms, acc.compressed_histograms]:
                 for k in reservoir.Keys():
-                    tb_values_logged.append(f"{k}: {str(reservoir.Items(k))}")
+                    tb_values_logged.append(f"{k}: {reservoir.Items(k)!s}")
 
             content = LogContent(_format, tb_values_logged)
             return content
@@ -353,7 +353,7 @@ class TimeDelayEnv(gym.Env):
         self.observation_space = spaces.Box(low=-20.0, high=20.0, shape=(4,), dtype=np.float32)
         self.action_space = spaces.Discrete(2)
 
-    def reset(self):
+    def reset(self, seed=None):
         return self.observation_space.sample(), {}
 
     def step(self, action):

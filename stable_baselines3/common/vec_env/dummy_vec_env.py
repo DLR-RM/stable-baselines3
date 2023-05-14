@@ -1,7 +1,7 @@
 import warnings
 from collections import OrderedDict
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type
 
 import gymnasium as gym
 import numpy as np
@@ -49,8 +49,6 @@ class DummyVecEnv(VecEnv):
         self.buf_infos: List[Dict[str, Any]] = [{} for _ in range(self.num_envs)]
         self.metadata = env.metadata
 
-        self._seed = [None for _ in range(len(self.envs))]  # seed to be used in the next env.reset()
-
     def step_async(self, actions: np.ndarray) -> None:
         self.actions = actions
 
@@ -73,22 +71,12 @@ class DummyVecEnv(VecEnv):
             self._save_obs(env_idx, obs)
         return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones), deepcopy(self.buf_infos))
 
-    def seed(self, seed: Optional[int] = None) -> Sequence[Union[None, int]]:
-        # Avoid circular import
-        # from stable_baselines3.common.utils import compat_gym_seed
-        if seed is None:
-            self._seed = [None for _ in range(len(self.envs))]  # seed to be used in the next env.reset()
-            return self._seed
-
-        self._seed = [seed + i for i in range(len(self.envs))]
-        return self._seed
-
     def reset(self) -> VecEnvObs:
         for env_idx in range(self.num_envs):
-            obs, self.reset_infos[env_idx] = self.envs[env_idx].reset(seed=self._seed[env_idx])
+            obs, self.reset_infos[env_idx] = self.envs[env_idx].reset(seed=self._seeds[env_idx])
             self._save_obs(env_idx, obs)
-
-        self._seed = [None for _ in range(len(self.envs))]
+        # Seeds are only used once
+        self._reset_seeds()
         return self._obs_from_buf()
 
     def close(self) -> None:

@@ -100,6 +100,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         self.ent_coef = ent_coef
         self.vf_coef = vf_coef
         self.max_grad_norm = max_grad_norm
+        self.episodes = 0
 
         if _init_setup_model:
             self._setup_model()
@@ -161,6 +162,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             self.policy.reset_noise(env.num_envs)
 
         callback.on_rollout_start()
+
+        self.episodes = 0
 
         while n_steps < n_rollout_steps:
             if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
@@ -226,6 +229,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                     with th.no_grad():
                         terminal_value = self.policy.predict_values(terminal_obs)[0]  # type: ignore[arg-type]
                     rewards[idx] += self.gamma * terminal_value
+                if done:
+                    self.episodes += 1
 
             rollout_buffer.add(
                 self._last_obs,  # type: ignore[arg-type]
@@ -296,6 +301,17 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
                     self.logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
                     self.logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
+
+                    diff = self.episodes
+                    self.logger.record("result/success", sum([ep_info["success"] for ep_info in self.ep_info_buffer][-diff:]))
+                    self.logger.record("result/failed", sum([ep_info["failed"] for ep_info in self.ep_info_buffer][-diff:]))
+                    self.logger.record(
+                        "result/truncated", sum([ep_info["truncated"] for ep_info in self.ep_info_buffer][-diff:])
+                    )
+                    self.logger.record(
+                        "result/terminated", sum([ep_info["terminated"] for ep_info in self.ep_info_buffer][-diff:])
+                    )
+
                 self.logger.record("time/fps", fps)
                 self.logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
                 self.logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")

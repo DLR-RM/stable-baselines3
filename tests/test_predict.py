@@ -30,7 +30,7 @@ class CustomSubClassedSpaceEnv(gym.Env):
         self.observation_space = SubClassedBox(-1, 1, shape=(2,), dtype=np.float32)
         self.action_space = SubClassedBox(-1, 1, shape=(2,), dtype=np.float32)
 
-    def reset(self):
+    def reset(self, seed=None):
         return self.observation_space.sample(), {}
 
     def step(self, action):

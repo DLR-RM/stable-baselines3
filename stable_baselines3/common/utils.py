@@ -4,7 +4,6 @@ import platform
 import random
 import re
 from collections import deque
-from inspect import signature
 from itertools import zip_longest
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
@@ -549,18 +548,3 @@ def get_system_info(print_info: bool = True) -> Tuple[Dict[str, str], str]:
     if print_info:
         print(env_info_str)
     return env_info, env_info_str
-
-
-def compat_gym_seed(env: GymEnv, seed: int) -> None:
-    """
-    Compatibility helper to seed Gym envs.
-
-    :param env: The Gym environment.
-    :param seed: The seed for the pseudo random generator
-    """
-    if "seed" in signature(env.unwrapped.reset).parameters:
-        # gym >= 0.23.1
-        env.reset(seed=seed)
-    else:
-        # VecEnv and backward compatibility
-        env.seed(seed)

@@ -1,7 +1,7 @@
 import warnings
 from collections import OrderedDict
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type
 
 import gymnasium as gym
 import numpy as np
@@ -71,21 +71,12 @@ class DummyVecEnv(VecEnv):
             self._save_obs(env_idx, obs)
         return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones), deepcopy(self.buf_infos))
 
-    def seed(self, seed: Optional[int] = None) -> Sequence[Union[None, int]]:
-        # Avoid circular import
-        from stable_baselines3.common.utils import compat_gym_seed
-
-        if seed is None:
-            seed = np.random.randint(0, 2**32 - 1)
-        seeds = []
-        for idx, env in enumerate(self.envs):
-            seeds.append(compat_gym_seed(env, seed=seed + idx))  # type: ignore[func-returns-value]
-        return seeds
-
     def reset(self) -> VecEnvObs:
         for env_idx in range(self.num_envs):
-            obs, self.reset_infos[env_idx] = self.envs[env_idx].reset()
+            obs, self.reset_infos[env_idx] = self.envs[env_idx].reset(seed=self._seeds[env_idx])
             self._save_obs(env_idx, obs)
+        # Seeds are only used once
+        self._reset_seeds()
         return self._obs_from_buf()
 
     def close(self) -> None:

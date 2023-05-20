@@ -69,6 +69,14 @@ class VecEnv(ABC):
         self.render_mode = render_mode
         # store info returned by the reset method
         self.reset_infos: List[Dict[str, Any]] = [{} for _ in range(num_envs)]
+        # seeds to be used in the next call to env.reset()
+        self._seeds: List[Optional[int]] = [None for _ in range(num_envs)]
+
+    def _reset_seeds(self) -> None:
+        """
+        Reset the seeds that are going to be used at the next reset.
+        """
+        self._seeds = [None for _ in range(self.num_envs)]
 
     @abstractmethod
     def reset(self) -> VecEnvObs:
@@ -239,17 +247,24 @@ class VecEnv(ABC):
             self.env_method("render")
         return None
 
-    @abstractmethod
     def seed(self, seed: Optional[int] = None) -> Sequence[Union[None, int]]:
         """
         Sets the random seeds for all environments, based on a given seed.
         Each individual environment will still get its own seed, by incrementing the given seed.
+        WARNING: since gym 0.26, those seeds will only be passed to the environment
+        at the next reset.
 
         :param seed: The random seed. May be None for completely random seeding.
         :return: Returns a list containing the seeds for each individual env.
             Note that all list elements may be None, if the env does not return anything when being seeded.
         """
-        pass
+        if seed is None:
+            # To ensure that subprocesses have different seeds,
+            # we still populate the seed variable when no argument is passed
+            seed = np.random.randint(0, 2**32 - 1)
+
+        self._seeds = [seed + idx for idx in range(self.num_envs)]
+        return self._seeds
 
     @property
     def unwrapped(self) -> "VecEnv":

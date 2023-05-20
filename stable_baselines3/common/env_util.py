@@ -5,7 +5,6 @@ import gymnasium as gym
 
 from stable_baselines3.common.atari_wrappers import AtariWrapper
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.utils import compat_gym_seed
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv
 from stable_baselines3.common.vec_env.patch_gym import _patch_env
 
@@ -101,7 +100,8 @@ def make_vec_env(
                 env = _patch_env(env)
 
             if seed is not None:
-                compat_gym_seed(env, seed=seed + rank)
+                # Note: here we only seed the action space
+                # We will seed the env at the next reset
                 env.action_space.seed(seed + rank)
             # Wrap the env in a Monitor wrapper
             # to have additional training information
@@ -122,7 +122,10 @@ def make_vec_env(
         # Default: use a DummyVecEnv
         vec_env_cls = DummyVecEnv
 
-    return vec_env_cls([make_env(i + start_index) for i in range(n_envs)], **vec_env_kwargs)
+    vec_env = vec_env_cls([make_env(i + start_index) for i in range(n_envs)], **vec_env_kwargs)
+    # Prepare the seeds for the first reset
+    vec_env.seed(seed)
+    return vec_env
 
 
 def make_atari_env(

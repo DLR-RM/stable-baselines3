@@ -131,7 +131,7 @@ class VectorizedActionNoise(ActionNoise):
             self.noises[index].reset()
 
     def __repr__(self) -> str:
-        return f"VecNoise(BaseNoise={repr(self.base_noise)}), n_envs={len(self.noises)})"
+        return f"VecNoise(BaseNoise={self.base_noise!r}), n_envs={len(self.noises)})"
 
     def __call__(self) -> np.ndarray:
         """

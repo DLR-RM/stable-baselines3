@@ -1,7 +1,7 @@
 import multiprocessing as mp
 import warnings
 from collections import OrderedDict
-from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import gymnasium as gym
 import numpy as np
@@ -24,11 +24,10 @@ def _worker(
 ) -> None:
     # Import here to avoid a circular import
     from stable_baselines3.common.env_util import is_wrapped
-    from stable_baselines3.common.utils import compat_gym_seed
 
     parent_remote.close()
     env = _patch_env(env_fn_wrapper.var())
-    reset_info = {}
+    reset_info: Optional[Dict[str, Any]] = {}
     while True:
         try:
             cmd, data = remote.recv()
@@ -42,10 +41,8 @@ def _worker(
                     info["terminal_observation"] = observation
                     observation, reset_info = env.reset()
                 remote.send((observation, reward, done, info, reset_info))
-            elif cmd == "seed":
-                remote.send(compat_gym_seed(env, seed=data))
             elif cmd == "reset":
-                observation, reset_info = env.reset()
+                observation, reset_info = env.reset(seed=data)
                 remote.send((observation, reset_info))
             elif cmd == "render":
                 remote.send(env.render())
@@ -61,7 +58,7 @@ def _worker(
             elif cmd == "get_attr":
                 remote.send(getattr(env, data))
             elif cmd == "set_attr":
-                remote.send(setattr(env, data[0], data[1]))
+                remote.send(setattr(env, data[0], data[1]))  # type: ignore[func-returns-value]
             elif cmd == "is_wrapped":
                 remote.send(is_wrapped(env, data))
             else:
@@ -112,7 +109,9 @@ class SubprocVecEnv(VecEnv):
         for work_remote, remote, env_fn in zip(self.work_remotes, self.remotes, env_fns):
             args = (work_remote, remote, CloudpickleWrapper(env_fn))
             # daemon=True: if the main process crashes, we should not cause things to hang
-            process = ctx.Process(target=_worker, args=args, daemon=True)  # pytype:disable=attribute-error
+            # pytype: disable=attribute-error
+            process = ctx.Process(target=_worker, args=args, daemon=True)  # type: ignore[attr-defined]
+            # pytype: enable=attribute-error
             process.start()
             self.processes.append(process)
             work_remote.close()
@@ -135,18 +134,13 @@ class SubprocVecEnv(VecEnv):
         obs, rews, dones, infos, self.reset_infos = zip(*results)
         return _flatten_obs(obs, self.observation_space), np.stack(rews), np.stack(dones), infos
 
-    def seed(self, seed: Optional[int] = None) -> Sequence[Union[None, int]]:
-        if seed is None:
-            seed = np.random.randint(0, 2**32 - 1)
-        for idx, remote in enumerate(self.remotes):
-            remote.send(("seed", seed + idx))
-        return [remote.recv() for remote in self.remotes]
-
     def reset(self) -> VecEnvObs:
-        for remote in self.remotes:
-            remote.send(("reset", None))
+        for env_idx, remote in enumerate(self.remotes):
+            remote.send(("reset", self._seeds[env_idx]))
         results = [remote.recv() for remote in self.remotes]
         obs, self.reset_infos = zip(*results)
+        # Seeds are only used once
+        self._reset_seeds()
         return _flatten_obs(obs, self.observation_space)
 
     def close(self) -> None:
@@ -235,6 +229,6 @@ def _flatten_obs(obs: Union[List[VecEnvObs], Tuple[VecEnvObs]], space: spaces.Sp
     elif isinstance(space, spaces.Tuple):
         assert isinstance(obs[0], tuple), "non-tuple observation for environment with Tuple observation space"
         obs_len = len(space.spaces)
-        return tuple(np.stack([o[i] for o in obs]) for i in range(obs_len))
+        return tuple(np.stack([o[i] for o in obs]) for i in range(obs_len))  # type: ignore[index]
     else:
-        return np.stack(obs)
+        return np.stack(obs)  # type: ignore[arg-type]

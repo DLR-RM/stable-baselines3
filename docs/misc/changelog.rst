@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.0.0a9 (WIP)
+Release 2.0.0a10 (WIP)
 --------------------------
 
 **Gymnasium support**
@@ -64,6 +64,7 @@ Others:
 - Added render test for ``VecEnv``
 - Update issue templates and env info saved with the model
 - Changed ``seed()`` method return type from ``List`` to ``Sequence``
+- Updated env checker doc and requirements for tuple spaces/goal envs
 
 Documentation:
 ^^^^^^^^^^^^^^

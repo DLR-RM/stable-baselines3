@@ -1,9 +1,14 @@
 import warnings
 from typing import Any, Dict, Union
 
-import gymnasium as gym
+try:
+    import gymnasium as gym
+    from gymnasium import spaces
+except ImportError:
+    import gym as gym
+    from gym import spaces
+    
 import numpy as np
-from gymnasium import spaces
 
 from stable_baselines3.common.preprocessing import check_for_nested_spaces, is_image_space_channels_first
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan

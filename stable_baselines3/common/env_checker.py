@@ -83,7 +83,7 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             "The observation space is a Tuple,"
             "this is currently not supported by Stable Baselines3. "
             "However, you can convert it to a Dict observation space "
-            "(cf. https://github.com/openai/gym/blob/master/gym/spaces/dict.py). "
+            "(cf. https://gymnasium.farama.org/api/spaces/composite/#dict). "
             "which is supported by SB3."
         )
 
@@ -126,11 +126,11 @@ def _is_goal_env(env: gym.Env) -> bool:
 def _check_goal_env_obs(obs: dict, observation_space: spaces.Dict, method_name: str) -> None:
     """
     Check that an environment implementing the `compute_rewards()` method
-    (previously known as GoalEnv in gym) contains three elements,
+    (previously known as GoalEnv in gym) contains at least three elements,
     namely `observation`, `desired_goal`, and `achieved_goal`.
     """
-    assert len(observation_space.spaces) == 3, (
-        "A goal conditioned env must contain 3 observation keys: `observation`, `desired_goal`, and `achieved_goal`."
+    assert len(observation_space.spaces) >= 3, (
+        "A goal conditioned env must contain at least 3 observation keys: `observation`, `desired_goal`, and `achieved_goal`. "
         f"The current observation contains {len(observation_space.spaces)} keys: {list(observation_space.spaces.keys())}"
     )
 
@@ -327,23 +327,22 @@ def _check_spaces(env: gym.Env) -> None:
     """
     Check that the observation and action spaces are defined and inherit from spaces.Space. For
     envs that follow the goal-conditioned standard (previously, the gym.GoalEnv interface) we check
-    the observation space is gym.spaces.Dict
+    the observation space is gymnasium.spaces.Dict
     """
-    # Helper to link to the code, because gym has no proper documentation
-    gym_spaces = " cf https://github.com/openai/gym/blob/master/gym/spaces/"
+    gym_spaces = "cf. https://gymnasium.farama.org/api/spaces/"
 
-    assert hasattr(env, "observation_space"), "You must specify an observation space (cf gym.spaces)" + gym_spaces
-    assert hasattr(env, "action_space"), "You must specify an action space (cf gym.spaces)" + gym_spaces
+    assert hasattr(env, "observation_space"), f"You must specify an observation space ({gym_spaces})"
+    assert hasattr(env, "action_space"), f"You must specify an action space ({gym_spaces})"
 
-    assert isinstance(env.observation_space, spaces.Space), (
-        "The observation space must inherit from gymnasium.spaces" + gym_spaces
-    )
-    assert isinstance(env.action_space, spaces.Space), "The action space must inherit from gymnasium.spaces" + gym_spaces
+    assert isinstance(
+        env.observation_space, spaces.Space
+    ), f"The observation space must inherit from gymnasium.spaces ({gym_spaces})"
+    assert isinstance(env.action_space, spaces.Space), f"The action space must inherit from gymnasium.spaces ({gym_spaces})"
 
     if _is_goal_env(env):
         assert isinstance(
             env.observation_space, spaces.Dict
-        ), "Goal conditioned envs (previously gym.GoalEnv) require the observation space to be gym.spaces.Dict"
+        ), "Goal conditioned envs (previously gym.GoalEnv) require the observation space to be gymnasium.spaces.Dict"
 
 
 # Check render cannot be covered by CI
@@ -376,7 +375,7 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
     """
     Check that an environment follows Gym API.
     This is particularly useful when using a custom environment.
-    Please take a look at https://github.com/openai/gym/blob/master/gym/core.py
+    Please take a look at https://gymnasium.farama.org/api/env/
     for more information about the API.
 
     It also optionally check that the environment is compatible with Stable-Baselines.
@@ -389,7 +388,7 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
     """
     assert isinstance(
         env, gym.Env
-    ), "Your environment must inherit from the gym.Env class cf https://github.com/openai/gym/blob/master/gym/core.py"
+    ), "Your environment must inherit from the gymnasium.Env class cf. https://gymnasium.farama.org/api/env/"
 
     # ============= Check the spaces (observation and action) ================
     _check_spaces(env)
@@ -421,7 +420,7 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
         ):
             warnings.warn(
                 "We recommend you to use a symmetric and normalized Box action space (range=[-1, 1]) "
-                "cf https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html"
+                "cf. https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html"
             )
 
         if isinstance(action_space, spaces.Box):

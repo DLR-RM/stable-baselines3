@@ -130,8 +130,12 @@ def test_high_dimension_action_space():
 def test_non_default_spaces(new_obs_space):
     env = FakeImageEnv()
     env.observation_space = new_obs_space
+
     # Patch methods to avoid errors
-    env.reset = lambda: (new_obs_space.sample(), {})
+    def patched_reset(seed=None):
+        return new_obs_space.sample(), {}
+
+    env.reset = patched_reset
 
     def patched_step(_action):
         return new_obs_space.sample(), 0.0, False, False, {}
@@ -204,7 +208,7 @@ def check_reset_assert_error(env, new_reset_return):
     :param new_reset_return: (Any)
     """
 
-    def wrong_reset():
+    def wrong_reset(seed=None):
         return new_reset_return, {}
 
     # Patch the reset method with a wrong one
@@ -224,8 +228,19 @@ def test_common_failures_reset():
     check_reset_assert_error(env, 1)
 
     # Return only obs (gym < 0.26)
-    env.reset = env.observation_space.sample
+    def wrong_reset(self, seed=None):
+        return env.observation_space.sample()
+
+    env.reset = types.MethodType(wrong_reset, env)
     with pytest.raises(AssertionError):
+        check_env(env)
+
+    # No seed parameter (gym < 0.26)
+    def wrong_reset(self):
+        return env.observation_space.sample(), {}
+
+    env.reset = types.MethodType(wrong_reset, env)
+    with pytest.raises(TypeError):
         check_env(env)
 
     # Return not only the observation
@@ -242,7 +257,7 @@ def test_common_failures_reset():
 
     obs, _ = env.reset()
 
-    def wrong_reset(self):
+    def wrong_reset(self, seed=None):
         return {"img": obs["img"], "vec": obs["img"]}, {}
 
     env.reset = types.MethodType(wrong_reset, env)

@@ -1,7 +1,7 @@
 import warnings
 from collections import OrderedDict
 from copy import deepcopy
-from typing import Any, Callable, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type
 
 import gymnasium as gym
 import numpy as np
@@ -24,6 +24,8 @@ class DummyVecEnv(VecEnv):
     :raises ValueError: If the same environment instance is passed as the output of two or more different env_fn.
     """
 
+    actions: np.ndarray
+
     def __init__(self, env_fns: List[Callable[[], gym.Env]]):
         self.envs = [_patch_env(fn()) for fn in env_fns]
         if len(set([id(env.unwrapped) for env in self.envs])) != len(self.envs):
@@ -44,8 +46,7 @@ class DummyVecEnv(VecEnv):
         self.buf_obs = OrderedDict([(k, np.zeros((self.num_envs, *tuple(shapes[k])), dtype=dtypes[k])) for k in self.keys])
         self.buf_dones = np.zeros((self.num_envs,), dtype=bool)
         self.buf_rews = np.zeros((self.num_envs,), dtype=np.float32)
-        self.buf_infos = [{} for _ in range(self.num_envs)]
-        self.actions = None
+        self.buf_infos: List[Dict[str, Any]] = [{} for _ in range(self.num_envs)]
         self.metadata = env.metadata
 
     def step_async(self, actions: np.ndarray) -> None:
@@ -70,21 +71,12 @@ class DummyVecEnv(VecEnv):
             self._save_obs(env_idx, obs)
         return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones), deepcopy(self.buf_infos))
 
-    def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
-        # Avoid circular import
-        from stable_baselines3.common.utils import compat_gym_seed
-
-        if seed is None:
-            seed = np.random.randint(0, 2**32 - 1)
-        seeds = []
-        for idx, env in enumerate(self.envs):
-            seeds.append(compat_gym_seed(env, seed=seed + idx))
-        return seeds
-
     def reset(self) -> VecEnvObs:
         for env_idx in range(self.num_envs):
-            obs, self.reset_infos[env_idx] = self.envs[env_idx].reset()
+            obs, self.reset_infos[env_idx] = self.envs[env_idx].reset(seed=self._seeds[env_idx])
             self._save_obs(env_idx, obs)
+        # Seeds are only used once
+        self._reset_seeds()
         return self._obs_from_buf()
 
     def close(self) -> None:
@@ -97,7 +89,7 @@ class DummyVecEnv(VecEnv):
                 f"The render mode is {self.render_mode}, but this method assumes it is `rgb_array` to obtain images."
             )
             return [None for _ in self.envs]
-        return [env.render() for env in self.envs]
+        return [env.render() for env in self.envs]  # type: ignore[misc]
 
     def render(self, mode: Optional[str] = None) -> Optional[np.ndarray]:
         """
@@ -113,7 +105,7 @@ class DummyVecEnv(VecEnv):
             if key is None:
                 self.buf_obs[key][env_idx] = obs
             else:
-                self.buf_obs[key][env_idx] = obs[key]
+                self.buf_obs[key][env_idx] = obs[key]  # type: ignore[call-overload]
 
     def _obs_from_buf(self) -> VecEnvObs:
         return dict_to_obs(self.observation_space, copy_obs_dict(self.buf_obs))

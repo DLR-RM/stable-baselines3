@@ -3,6 +3,13 @@
 Installation
 ============
 
+.. warning::
+
+  Only Stable-Baselines3 2.x supports Gymnasium. As SB3 2.x is currently in beta,
+  you will need to specify ``pip install "stable_baselines3[extra]>=2.0.0a9"`` explicitly,
+  or install the master version (see below).
+
+
 Prerequisites
 -------------
 

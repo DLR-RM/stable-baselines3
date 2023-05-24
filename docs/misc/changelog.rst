@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.0.0a6 (WIP)
+Release 2.0.0a10 (WIP)
 --------------------------
 
 **Gymnasium support**
@@ -21,6 +21,8 @@ Breaking Changes:
 - Removed deprecated ``stack_observation_space`` method of ``StackedObservations``
 - Renamed environment output observations in ``evaluate_policy`` to prevent shadowing the input observations during callbacks (@npit)
 - Upgraded wrappers and custom environment to Gymnasium
+- Refined the ``HumanOutputFormat`` file check: now it verifies if the object is an instance of ``io.TextIOBase`` instead of only checking for the presence of a ``write`` method.
+- Because of new Gym API (0.26+), the random seed passed to ``vec_env.seed(seed=seed)`` will only be effective after then ``env.reset()`` call.
 
 New Features:
 ^^^^^^^^^^^^^
@@ -48,12 +50,21 @@ Others:
 - Fixed ``stable_baselines3/sac/*.py`` type hints
 - Fixed ``stable_baselines3/td3/*.py`` type hints
 - Fixed ``stable_baselines3/common/base_class.py`` type hints
+- Fixed ``stable_baselines3/common/logger.py`` type hints
+- Fixed ``stable_baselines3/common/envs/*.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/vec_monitor|vec_extract_dict_obs|util.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/base_vec_env.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/vec_frame_stack.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/dummy_vec_env.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/subproc_vec_env.py`` type hints
 - Upgraded docker images to use mamba/micromamba and CUDA 11.7
 - Updated env checker to reflect what subset of Gymnasium is supported and improve GoalEnv checks
 - Improve type annotation of wrappers
 - Tests envs are now checked too
 - Added render test for ``VecEnv``
 - Update issue templates and env info saved with the model
+- Changed ``seed()`` method return type from ``List`` to ``Sequence``
+- Updated env checker doc and requirements for tuple spaces/goal envs
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -62,6 +73,7 @@ Documentation:
 - Make it more explicit when using ``VecEnv`` vs Gym env
 - Added UAV_Navigation_DRL_AirSim to the project page (@heleidsn)
 - Added ``EvalCallback`` example (@sidney-tio)
+- Update custom env documentation
 
 
 Release 1.8.0 (2023-04-07)

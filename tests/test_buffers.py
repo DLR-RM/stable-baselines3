@@ -25,7 +25,7 @@ class DummyEnv(gym.Env):
         self._t = 0
         self._ep_length = 100
 
-    def reset(self):
+    def reset(self, *, seed=None, options=None):
         self._t = 0
         obs = self._observations[0]
         return obs, {}
@@ -55,7 +55,7 @@ class DummyDictEnv(gym.Env):
         self._t = 0
         self._ep_length = 100
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
         self._t = 0
         obs = {key: self._observations[0] for key in self.observation_space.spaces.keys()}
         return obs, {}

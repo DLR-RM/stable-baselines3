@@ -49,8 +49,6 @@ class VecMonitor(VecEnvWrapper):
             )
 
         VecEnvWrapper.__init__(self, venv)
-        self.episode_returns = None
-        self.episode_lengths = None
         self.episode_count = 0
         self.t_start = time.time()
 
@@ -58,13 +56,15 @@ class VecMonitor(VecEnvWrapper):
         if hasattr(venv, "spec") and venv.spec is not None:
             env_id = venv.spec.id
 
+        self.results_writer: Optional[ResultsWriter] = None
         if filename:
             self.results_writer = ResultsWriter(
-                filename, header={"t_start": self.t_start, "env_id": env_id}, extra_keys=info_keywords
+                filename, header={"t_start": self.t_start, "env_id": str(env_id)}, extra_keys=info_keywords
             )
-        else:
-            self.results_writer = None
+
         self.info_keywords = info_keywords
+        self.episode_returns = np.zeros(self.num_envs, dtype=np.float32)
+        self.episode_lengths = np.zeros(self.num_envs, dtype=np.int32)
 
     def reset(self) -> VecEnvObs:
         obs = self.venv.reset()

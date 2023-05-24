@@ -126,7 +126,7 @@ def _is_goal_env(env: gym.Env) -> bool:
 def _check_goal_env_obs(obs: dict, observation_space: spaces.Dict, method_name: str) -> None:
     """
     Check that an environment implementing the `compute_rewards()` method
-    (previously known as GoalEnv in gym) contains three elements,
+    (previously known as GoalEnv in gym) contains at least three elements,
     namely `observation`, `desired_goal`, and `achieved_goal`.
     """
     assert len(observation_space.spaces) >= 3, (

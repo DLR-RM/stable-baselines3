@@ -313,7 +313,6 @@ class VecEnvWrapper(VecEnv):
         venv: VecEnv,
         observation_space: Optional[spaces.Space] = None,
         action_space: Optional[spaces.Space] = None,
-        render_mode: Optional[str] = None,
     ):
         self.venv = venv
         VecEnv.__init__(
@@ -321,7 +320,8 @@ class VecEnvWrapper(VecEnv):
             num_envs=venv.num_envs,
             observation_space=observation_space or venv.observation_space,
             action_space=action_space or venv.action_space,
-            render_mode=render_mode,
+            # Render mode cannot be changed by a wrapper
+            render_mode=venv.render_mode,
         )
         self.class_attributes = dict(inspect.getmembers(self.__class__))
 

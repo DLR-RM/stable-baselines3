@@ -16,7 +16,6 @@ class DictObsVecEnv:
         self.observation_space = spaces.Dict({"rgb": spaces.Box(low=0.0, high=255.0, shape=(86, 86), dtype=np.float32)})
         self.n_steps = 0
         self.max_steps = 5
-        self.render_mode = None
 
     def step_async(self, actions):
         self.actions = actions

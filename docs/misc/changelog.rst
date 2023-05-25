@@ -23,7 +23,6 @@ Breaking Changes:
 - Upgraded wrappers and custom environment to Gymnasium
 - Refined the ``HumanOutputFormat`` file check: now it verifies if the object is an instance of ``io.TextIOBase`` instead of only checking for the presence of a ``write`` method.
 - Because of new Gym API (0.26+), the random seed passed to ``vec_env.seed(seed=seed)`` will only be effective after then ``env.reset()`` call.
-- Custom ``VecEnv`` are now required to have a ``render_mode`` attribute (can be ``None``)
 
 New Features:
 ^^^^^^^^^^^^^

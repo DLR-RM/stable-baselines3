@@ -315,13 +315,16 @@ class VecEnvWrapper(VecEnv):
         action_space: Optional[spaces.Space] = None,
     ):
         self.venv = venv
+        # Since SB3 v2.x (Gymnasium backend), render_mode attribute is required
+        # and cannot be changed by a wrapper
+        render_mode = venv.render_mode if hasattr(venv, "render_mode") else None
+
         VecEnv.__init__(
             self,
             num_envs=venv.num_envs,
             observation_space=observation_space or venv.observation_space,
             action_space=action_space or venv.action_space,
-            # Render mode cannot be changed by a wrapper
-            render_mode=venv.render_mode,
+            render_mode=render_mode,
         )
         self.class_attributes = dict(inspect.getmembers(self.__class__))
 

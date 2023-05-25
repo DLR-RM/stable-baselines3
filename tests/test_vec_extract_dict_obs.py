@@ -8,7 +8,7 @@ from stable_baselines3.common.vec_env import VecExtractDictObs, VecMonitor
 class DictObsVecEnv:
     """Custom Environment that produces observation in a dictionary like the procgen env"""
 
-    metadata = {"render.modes": ["human"]}
+    metadata = {"render_modes": ["human"]}
 
     def __init__(self):
         self.num_envs = 4
@@ -16,6 +16,7 @@ class DictObsVecEnv:
         self.observation_space = spaces.Dict({"rgb": spaces.Box(low=0.0, high=255.0, shape=(86, 86), dtype=np.float32)})
         self.n_steps = 0
         self.max_steps = 5
+        self.render_mode = None
 
     def step_async(self, actions):
         self.actions = actions
@@ -41,7 +42,7 @@ class DictObsVecEnv:
         self.n_steps = 0
         return {"rgb": np.zeros((self.num_envs, 86, 86))}
 
-    def render(self, close=False):
+    def render(self, mode=""):
         pass
 
 

@@ -114,14 +114,7 @@ def test_check_env_detailed_error(obs_tuple, method):
         check_env(env=test_env)
 
 
-class StepCalledAfterEnvTerminatedException(Exception):
-    pass
-
-
 class LimitedStepsTestEnv(gym.Env):
-    metadata = {"render_modes": ["human"]}
-    render_mode = None
-
     action_space = spaces.Discrete(n=2)
     observation_space = spaces.Discrete(n=2)
 
@@ -145,8 +138,7 @@ class LimitedStepsTestEnv(gym.Env):
     def step(self, action: np.ndarray) -> Tuple[int, float, bool, bool, Dict[str, Any]]:
         self._steps_called += 1
 
-        if self._terminated:
-            raise StepCalledAfterEnvTerminatedException
+        assert not self._terminated
 
         observation = 0
         reward = 0.0
@@ -155,10 +147,7 @@ class LimitedStepsTestEnv(gym.Env):
 
         return observation, reward, self._terminated, truncated, {}
 
-    def render(self, mode: str = "human") -> None:
-        pass
-
-    def close(self):
+    def render(self) -> None:
         pass
 
 

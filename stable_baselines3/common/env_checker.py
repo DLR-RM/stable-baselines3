@@ -110,6 +110,7 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
 def _check_nan(env: gym.Env) -> None:
     """Check for Inf and NaN using the VecWrapper."""
     vec_env = VecCheckNan(DummyVecEnv([lambda: env]))
+    vec_env.reset()
     for _ in range(10):
         action = np.array([env.action_space.sample()])
         _, _, _, _ = vec_env.step(action)

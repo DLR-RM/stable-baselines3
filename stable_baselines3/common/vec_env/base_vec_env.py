@@ -61,16 +61,17 @@ class VecEnv(ABC):
         num_envs: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        render_mode: Optional[str] = None,
     ):
         self.num_envs = num_envs
         self.observation_space = observation_space
         self.action_space = action_space
-        self.render_mode = render_mode
         # store info returned by the reset method
         self.reset_infos: List[Dict[str, Any]] = [{} for _ in range(num_envs)]
         # seeds to be used in the next call to env.reset()
         self._seeds: List[Optional[int]] = [None for _ in range(num_envs)]
+        render_modes = self.get_attr("render_mode")
+        assert all(render_mode == render_modes[0] for render_mode in render_modes)  # all render modes should be the same
+        self.render_mode = render_modes[0]
 
     def _reset_seeds(self) -> None:
         """
@@ -315,16 +316,11 @@ class VecEnvWrapper(VecEnv):
         action_space: Optional[spaces.Space] = None,
     ):
         self.venv = venv
-        # Since SB3 v2.x (Gymnasium backend), render_mode attribute is required
-        # and cannot be changed by a wrapper
-        render_mode = venv.render_mode if hasattr(venv, "render_mode") else None
 
-        VecEnv.__init__(
-            self,
+        super().__init__(
             num_envs=venv.num_envs,
             observation_space=observation_space or venv.observation_space,
             action_space=action_space or venv.action_space,
-            render_mode=render_mode,
         )
         self.class_attributes = dict(inspect.getmembers(self.__class__))
 

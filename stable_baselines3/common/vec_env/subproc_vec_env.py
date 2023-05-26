@@ -119,9 +119,7 @@ class SubprocVecEnv(VecEnv):
         self.remotes[0].send(("get_spaces", None))
         observation_space, action_space = self.remotes[0].recv()
 
-        self.remotes[0].send(("get_attr", "render_mode"))
-        render_mode = self.remotes[0].recv()
-        VecEnv.__init__(self, len(env_fns), observation_space, action_space, render_mode)
+        super().__init__(len(env_fns), observation_space, action_space)
 
     def step_async(self, actions: np.ndarray) -> None:
         for remote, action in zip(self.remotes, actions):

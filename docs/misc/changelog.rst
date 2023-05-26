@@ -76,6 +76,7 @@ Documentation:
 - Added UAV_Navigation_DRL_AirSim to the project page (@heleidsn)
 - Added ``EvalCallback`` example (@sidney-tio)
 - Update custom env documentation
+- Added `pink-noise-rl` to projects page
 
 
 Release 1.8.0 (2023-04-07)

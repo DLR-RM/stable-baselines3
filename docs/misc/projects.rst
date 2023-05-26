@@ -188,3 +188,12 @@ Try to train your own autonomous flight policy and even transfer it to real UAVs
 
 | Author: Lei He
 | Github: https://github.com/heleidsn/UAV_Navigation_DRL_AirSim
+
+Pink Noise Exploration
+----------------------
+
+A simple library for pink noise exploration with deterministic (DDPG / TD3) and stochastic (SAC) off-policy algorithms. Pink noise has been shown to work better than uncorrelated Gaussian noise (the default choice) and Ornstein-Uhlenbeck noise on a range of continuous control benchmark tasks. This library is designed to work with Stable Baselines3.
+
+| Authors: Onno Eberhard, Jakob Hollenstein, Cristina Pinneri, Georg Martius
+| Github: https://github.com/martius-lab/pink-noise-rl
+| Paper: https://openreview.net/forum?id=hQ9V5QN27eS (Oral at ICLR 2023)

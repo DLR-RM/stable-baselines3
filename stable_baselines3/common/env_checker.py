@@ -455,6 +455,4 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
         try:
             new_env.close()
         except Exception as e:
-            logger.warn(
-                f"Calling `env.close()` on the closed environment should be allowed, but it raised an exception: {e}"
-            )
+            warnings.warn(f"Calling `env.close()` on the closed environment should be allowed, but it raised an exception: {e}")

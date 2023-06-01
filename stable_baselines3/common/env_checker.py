@@ -369,7 +369,6 @@ def _check_render(env: gym.Env, warn: bool = False) -> None:  # pragma: no cover
     # Only check currrent render mode
     if env.render_mode:
         env.render()
-    env.close()
 
 
 def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -> None:
@@ -448,3 +447,10 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
         _check_nan(env)
     except NotImplementedError:
         pass
+
+    # finally, check that the allows calling `close()` even if the environment was already closed
+    env.close()
+    try:
+        env.close()
+    except Exception as e:
+        warnings.warn(f"We recommend to allow calling `close()` even if the environment was already closed.")

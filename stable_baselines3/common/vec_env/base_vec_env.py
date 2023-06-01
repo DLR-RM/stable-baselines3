@@ -69,8 +69,15 @@ class VecEnv(ABC):
         self.reset_infos: List[Dict[str, Any]] = [{} for _ in range(num_envs)]
         # seeds to be used in the next call to env.reset()
         self._seeds: List[Optional[int]] = [None for _ in range(num_envs)]
-        render_modes = self.get_attr("render_mode")
-        assert all(render_mode == render_modes[0] for render_mode in render_modes)  # all render modes should be the same
+        try:
+            render_modes = self.get_attr("render_mode")
+        except AttributeError:
+            warnings.warn("The `render_mode` attribute is not defined in your environment. It will be set to None.")
+            render_modes = [None for _ in range(num_envs)]
+
+        assert all(
+            render_mode == render_modes[0] for render_mode in render_modes
+        ), "render_mode mode should be the same for all environments"
         self.render_mode = render_modes[0]
 
     def _reset_seeds(self) -> None:

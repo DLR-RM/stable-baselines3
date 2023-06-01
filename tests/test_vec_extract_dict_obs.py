@@ -53,7 +53,7 @@ class DictObsVecEnv(VecEnv):
         pass
 
     def env_is_wrapped(self, wrapper_class, indices=None):
-        raise NotImplementedError  # not used in the test
+        return [False]
 
     def env_method(self):
         raise NotImplementedError  # not used in the test

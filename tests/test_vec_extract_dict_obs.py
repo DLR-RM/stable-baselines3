@@ -13,9 +13,7 @@ class DictObsVecEnv(VecEnv):
     def __init__(self):
         self.num_envs = 4
         self.action_space = spaces.Discrete(2)
-        self.observation_space = spaces.Dict(
-            {"rgb": spaces.Box(low=0.0, high=255.0, shape=(86, 86), dtype=np.float32)}
-        )
+        self.observation_space = spaces.Dict({"rgb": spaces.Box(low=0.0, high=255.0, shape=(86, 86), dtype=np.float32)})
         self.n_steps = 0
         self.max_steps = 5
         self.render_mode = None

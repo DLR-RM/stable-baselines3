@@ -448,9 +448,13 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
     except NotImplementedError:
         pass
 
-    # finally, check that the allows calling `close()` even if the environment was already closed
-    env.close()
-    try:
-        env.close()
-    except Exception as e:
-        warnings.warn(f"We recommend to allow calling `close()` even if the environment was already closed.")
+    # Finally, check that the allows calling `close()` even if the environment was already closed
+    if env.spec is not None:
+        new_env = env.spec.make()
+        new_env.close()
+        try:
+            new_env.close()
+        except Exception as e:
+            logger.warn(
+                f"Calling `env.close()` on the closed environment should be allowed, but it raised an exception: {e}"
+            )

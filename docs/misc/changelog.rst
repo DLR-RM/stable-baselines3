@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.0.0a11 (WIP)
+Release 2.0.0a12 (WIP)
 --------------------------
 
 **Gymnasium support**
@@ -26,6 +26,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Added a check in ``check_env`` to ensure that the environment allows calling ``close`` if it is already closed.
 
 
 `SB3-Contrib`_

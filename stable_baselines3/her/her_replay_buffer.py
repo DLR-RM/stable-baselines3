@@ -375,12 +375,11 @@ class HerReplayBuffer(DictReplayBuffer):
         If not called, we assume that we continue the same trajectory (same episode).
         """
         # If we are at the start of an episode, no need to truncate
-        if (self.ep_start[self.pos] != self.pos).any():
+        if (self._current_ep_start != self.pos).any():
             warnings.warn(
                 "The last trajectory in the replay buffer will be truncated.\n"
                 "If you are in the same episode as when the replay buffer was saved,\n"
                 "you should use `truncate_last_trajectory=False` to avoid that issue."
             )
-            self.ep_start[-1] = self.pos
-            # set done = True for current episodes
-            self.dones[self.pos - 1] = True
+
+            self._current_ep_start = self.pos * np.ones(self.n_envs, dtype=np.int64)

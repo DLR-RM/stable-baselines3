@@ -267,7 +267,7 @@ def test_save_load_replay_buffer(n_envs, tmp_path, recwarn, truncate_last_trajec
 
     model.load_replay_buffer(path, truncate_last_traj=truncate_last_trajectory)
 
-    if truncate_last_trajectory:
+    if truncate_last_trajectory and n_envs == 2:
         assert len(recwarn) == 1
         warning = recwarn.pop(UserWarning)
         assert "The last trajectory in the replay buffer will be truncated" in str(warning.message)
@@ -322,6 +322,42 @@ def test_full_replay_buffer():
 
     model.learn(total_timesteps=100)
 
+def test_ep_length_after_loading_replay_buffer(tmp_path):
+    n_envs = 1
+    n_bits = 4
+    path = pathlib.Path(tmp_path / "replay_buffer.pkl")
+    path.parent.mkdir(exist_ok=True, parents=True)  # to not raise a warning
+
+    def env_fn():
+        return BitFlippingEnv(n_bits=n_bits, continuous=True)
+    env = make_vec_env(env_fn, n_envs)
+
+    model = SAC(
+            "MultiInputPolicy",
+            env,
+            replay_buffer_class=HerReplayBuffer,
+            replay_buffer_kwargs=dict(
+                n_sampled_goal=2,
+                goal_selection_strategy="future",
+            ),
+            gradient_steps=n_envs,
+            train_freq=4,
+            buffer_size=100,
+            policy_kwargs=dict(net_arch=[64]),
+            seed=0,
+        )
+
+    model.learn(135)
+    assert np.max(model.replay_buffer.ep_length) <= n_bits
+
+    model.save_replay_buffer(path)
+
+    del model.replay_buffer
+
+    model.load_replay_buffer(path, truncate_last_traj=True)
+
+    model.learn(30)
+    assert np.max(model.replay_buffer.ep_length) <= n_bits
 
 @pytest.mark.parametrize("n_bits", [10])
 def test_performance_her(n_bits):

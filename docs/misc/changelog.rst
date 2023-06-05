@@ -70,6 +70,7 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Added Deep RL Course link to the Deep RL Resources page
 - Added documentation about ``VecEnv`` API vs Gym API
 - Upgraded tutorials to Gymnasium API
 - Make it more explicit when using ``VecEnv`` vs Gym env

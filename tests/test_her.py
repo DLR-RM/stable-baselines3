@@ -267,7 +267,7 @@ def test_save_load_replay_buffer(n_envs, tmp_path, recwarn, truncate_last_trajec
 
     model.load_replay_buffer(path, truncate_last_traj=truncate_last_trajectory)
 
-    if truncate_last_trajectory and n_envs == 2:
+    if truncate_last_trajectory and (model.replay_buffer.dones[model.replay_buffer.pos - 1] == 0).any():
         assert len(recwarn) == 1
         warning = recwarn.pop(UserWarning)
         assert "The last trajectory in the replay buffer will be truncated" in str(warning.message)

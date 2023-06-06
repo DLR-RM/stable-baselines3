@@ -7,7 +7,7 @@ import torch as th
 from gymnasium import spaces
 
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.buffers import DictRolloutBuffer, RolloutBuffer
+from stable_baselines3.common.buffers import DictRolloutBuffer, RolloutBuffer, GraphRolloutBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
@@ -100,6 +100,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         self.ent_coef = ent_coef
         self.vf_coef = vf_coef
         self.max_grad_norm = max_grad_norm
+        self.episodes = 0
 
         if _init_setup_model:
             self._setup_model()
@@ -107,8 +108,12 @@ class OnPolicyAlgorithm(BaseAlgorithm):
     def _setup_model(self) -> None:
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
-
-        buffer_cls = DictRolloutBuffer if isinstance(self.observation_space, spaces.Dict) else RolloutBuffer
+        if isinstance(self.observation_space, spaces.Dict):
+            buffer_cls = DictRolloutBuffer
+        elif isinstance(self.observation_space, spaces.Graph):
+            buffer_cls = GraphRolloutBuffer
+        else:
+            buffer_cls = RolloutBuffer
 
         self.rollout_buffer = buffer_cls(
             self.n_steps,
@@ -158,6 +163,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_rollout_start()
 
+        self.episodes = 0
+
         while n_steps < n_rollout_steps:
             if self.use_sde and self.sde_sample_freq > 0 and n_steps % self.sde_sample_freq == 0:
                 # Sample a new noise matrix
@@ -167,13 +174,32 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 # Convert to pytorch tensor or to TensorDict
                 obs_tensor = obs_as_tensor(self._last_obs, self.device)
                 actions, values, log_probs = self.policy(obs_tensor)
-            actions = actions.cpu().numpy()
+                actions, log_probs = actions, log_probs
 
             # Rescale and perform action
             clipped_actions = actions
             # Clip the actions to avoid out of bound error
             if isinstance(self.action_space, spaces.Box):
-                clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
+                if isinstance(actions, List):
+                    clipped_actions = [
+                        th.clamp(
+                            a,
+                            min=th.Tensor(self.action_space.low).to(a.device),
+                            max=th.Tensor(self.action_space.high).to(a.device),
+                        )
+                        for a in actions
+                    ]
+                    actions = [a.cpu().numpy() for a in actions]
+                else:
+                    clipped_actions = th.clamp(
+                        actions,
+                        min=th.Tensor(self.action_space.low).to(actions.device),
+                        max=th.Tensor(self.action_space.high).to(actions.device),
+                    )
+                    actions = actions.cpu().numpy()
+            else:
+                clipped_actions = actions.cpu().numpy()
+                actions = actions.cpu().numpy()
 
             new_obs, rewards, dones, infos = env.step(clipped_actions)
 
@@ -203,6 +229,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                     with th.no_grad():
                         terminal_value = self.policy.predict_values(terminal_obs)[0]  # type: ignore[arg-type]
                     rewards[idx] += self.gamma * terminal_value
+                if done:
+                    self.episodes += 1
 
             rollout_buffer.add(
                 self._last_obs,  # type: ignore[arg-type]
@@ -273,6 +301,17 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
                     self.logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
                     self.logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
+
+                    diff = self.episodes
+                    self.logger.record("result/success", sum([ep_info["success"] for ep_info in self.ep_info_buffer][-diff:]))
+                    self.logger.record("result/failed", sum([ep_info["failed"] for ep_info in self.ep_info_buffer][-diff:]))
+                    self.logger.record(
+                        "result/truncated", sum([ep_info["truncated"] for ep_info in self.ep_info_buffer][-diff:])
+                    )
+                    self.logger.record(
+                        "result/terminated", sum([ep_info["terminated"] for ep_info in self.ep_info_buffer][-diff:])
+                    )
+
                 self.logger.record("time/fps", fps)
                 self.logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
                 self.logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")

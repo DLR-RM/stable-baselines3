@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, SupportsFloa
 import gymnasium as gym
 import numpy as np
 import torch as th
+from torch_geometric.data import Batch
 
 if sys.version_info >= (3, 8):
     from typing import Protocol
@@ -32,6 +33,15 @@ Schedule = Callable[[float], float]
 
 class RolloutBufferSamples(NamedTuple):
     observations: th.Tensor
+    actions: th.Tensor
+    old_values: th.Tensor
+    old_log_prob: th.Tensor
+    advantages: th.Tensor
+    returns: th.Tensor
+
+
+class GraphRolloutBufferSamples(NamedTuple):
+    observations: Batch
     actions: th.Tensor
     old_values: th.Tensor
     old_log_prob: th.Tensor

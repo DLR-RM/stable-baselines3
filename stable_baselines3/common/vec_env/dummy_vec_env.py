@@ -8,7 +8,7 @@ import numpy as np
 
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvIndices, VecEnvObs, VecEnvStepReturn
 from stable_baselines3.common.vec_env.patch_gym import _patch_env
-from stable_baselines3.common.vec_env.util import copy_obs_dict, dict_to_obs, obs_space_info
+from stable_baselines3.common.vec_env.util import graph_copy_obs_dict, copy_obs_dict, dict_to_obs, obs_space_info
 
 
 class DummyVecEnv(VecEnv):
@@ -24,8 +24,6 @@ class DummyVecEnv(VecEnv):
     :raises ValueError: If the same environment instance is passed as the output of two or more different env_fn.
     """
 
-    actions: np.ndarray
-
     def __init__(self, env_fns: List[Callable[[], gym.Env]]):
         self.envs = [_patch_env(fn()) for fn in env_fns]
         if len(set([id(env.unwrapped) for env in self.envs])) != len(self.envs):
@@ -40,13 +38,14 @@ class DummyVecEnv(VecEnv):
             )
         env = self.envs[0]
         VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space, env.render_mode)
-        obs_space = env.observation_space
-        self.keys, shapes, dtypes = obs_space_info(obs_space)
+        self.obs_space = env.observation_space
+        self.keys, shapes, dtypes = obs_space_info(self.obs_space)
 
         self.buf_obs = OrderedDict([(k, np.zeros((self.num_envs, *tuple(shapes[k])), dtype=dtypes[k])) for k in self.keys])
         self.buf_dones = np.zeros((self.num_envs,), dtype=bool)
         self.buf_rews = np.zeros((self.num_envs,), dtype=np.float32)
         self.buf_infos: List[Dict[str, Any]] = [{} for _ in range(self.num_envs)]
+        self.actions = None
         self.metadata = env.metadata
 
     def step_async(self, actions: np.ndarray) -> None:
@@ -137,3 +136,20 @@ class DummyVecEnv(VecEnv):
     def _get_target_envs(self, indices: VecEnvIndices) -> List[gym.Env]:
         indices = self._get_indices(indices)
         return [self.envs[i] for i in indices]
+
+
+class DummyGraphVecEnv(DummyVecEnv):
+    def __init__(self, env_fns: List[Callable[[], gym.Env]]):
+        super().__init__(env_fns)
+        assert isinstance(self.obs_space, gym.spaces.Graph)
+        self.buf_obs = OrderedDict([(k, {}) for k in self.keys])
+
+    def _obs_from_buf(self) -> VecEnvObs:
+        assert isinstance(self.observation_space, gym.spaces.Graph)
+        return dict_to_obs(self.observation_space, graph_copy_obs_dict(self.buf_obs))
+
+    def _save_obs(self, env_idx: int, obs: VecEnvObs) -> None:
+        assert isinstance(self.envs[env_idx].observation_space, gym.spaces.Graph)
+        self.buf_obs["node"][env_idx] = obs.x
+        self.buf_obs["edge_weight"][env_idx] = obs.w
+        self.buf_obs["edge_index"][env_idx] = obs.edge_index

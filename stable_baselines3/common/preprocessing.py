@@ -134,7 +134,8 @@ def preprocess_obs(
         for key, _obs in obs.items():
             preprocessed_obs[key] = preprocess_obs(_obs, observation_space[key], normalize_images=normalize_images)
         return preprocessed_obs
-
+    elif isinstance(observation_space, spaces.Graph):
+        return obs
     else:
         raise NotImplementedError(f"Preprocessing not implemented for {observation_space}")
 
@@ -161,7 +162,8 @@ def get_obs_shape(
         return observation_space.shape
     elif isinstance(observation_space, spaces.Dict):
         return {key: get_obs_shape(subspace) for (key, subspace) in observation_space.spaces.items()}  # type: ignore[misc]
-
+    elif isinstance(observation_space, spaces.Graph):
+        return {key: get_obs_shape(subspace) for (key, subspace) in observation_space.spaces.items()}
     else:
         raise NotImplementedError(f"{observation_space} observation space is not supported")
 

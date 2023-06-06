@@ -267,7 +267,7 @@ def test_save_load_replay_buffer(n_envs, tmp_path, recwarn, truncate_last_trajec
 
     model.load_replay_buffer(path, truncate_last_traj=truncate_last_trajectory)
 
-    if truncate_last_trajectory and (model.replay_buffer.dones[model.replay_buffer.pos - 1] == 0).any():
+    if truncate_last_trajectory and (old_replay_buffer.dones[old_replay_buffer.pos - 1] == 0).any():
         assert len(recwarn) == 1
         warning = recwarn.pop(UserWarning)
         assert "The last trajectory in the replay buffer will be truncated" in str(warning.message)
@@ -323,17 +323,20 @@ def test_full_replay_buffer():
     model.learn(total_timesteps=100)
 
 
-def test_ep_length_after_loading_replay_buffer(tmp_path):
-    n_envs = 1
-    n_bits = 4
-    path = pathlib.Path(tmp_path / "replay_buffer.pkl")
-    path.parent.mkdir(exist_ok=True, parents=True)  # to not raise a warning
+@pytest.mark.parametrize("n_envs", [1, 2])
+@pytest.mark.parametrize("handle_timeout_termination", [False, True])
+def test_truncate_last_trajectory(n_envs, recwarn, handle_timeout_termination):
+    """
+    Test if 'truncate_last_trajectory' works correctly
+    """
+    # remove gym warnings
+    warnings.filterwarnings(action="ignore", category=DeprecationWarning)
+    warnings.filterwarnings(action="ignore", category=UserWarning, module="gym")
 
     def env_fn():
-        return BitFlippingEnv(n_bits=n_bits, continuous=True)
+        return BitFlippingEnv(n_bits=4, continuous=True)
 
     env = make_vec_env(env_fn, n_envs)
-
     model = SAC(
         "MultiInputPolicy",
         env,
@@ -344,22 +347,81 @@ def test_ep_length_after_loading_replay_buffer(tmp_path):
         ),
         gradient_steps=n_envs,
         train_freq=4,
-        buffer_size=100,
+        buffer_size=int(2e4),
         policy_kwargs=dict(net_arch=[64]),
         seed=0,
     )
+    model.learn(200)
 
-    model.learn(135)
-    assert np.max(model.replay_buffer.ep_length) <= n_bits
+    old_replay_buffer = deepcopy(model.replay_buffer)
+    replay_buffer = model.replay_buffer
+    pos = replay_buffer.pos
+    if handle_timeout_termination:
+        env_idx_not_finished = np.where(replay_buffer._current_ep_start != pos)[0]
 
-    model.save_replay_buffer(path)
+    # Check that there is no warning
+    assert len(recwarn) == 0
 
-    del model.replay_buffer
+    replay_buffer.truncate_last_trajectory()
 
-    model.load_replay_buffer(path, truncate_last_traj=True)
+    if (old_replay_buffer.dones[pos - 1] == 0).any():
+        # at least one episode in the replay buffer did not finish
+        assert len(recwarn) == 1
+        warning = recwarn.pop(UserWarning)
+        assert "The last trajectory in the replay buffer will be truncated" in str(warning.message)
+    else:
+        # all episodes in the replay buffer are finished
+        assert len(recwarn) == 0
 
-    model.learn(30)
-    assert np.max(model.replay_buffer.ep_length) <= n_bits
+    # next episode starts at current pos
+    assert (replay_buffer._current_ep_start == pos).all()
+    # done = True for last episodes
+    assert (replay_buffer.dones[pos - 1] == 1).all()
+    # for all episodes that are not finished before truncate_last_trajectory: timeouts should be 1
+    if handle_timeout_termination:
+        assert (replay_buffer.timeouts[pos - 1, env_idx_not_finished] == 1).all()
+    # episode length sould be != 0 -> episode can be sampled
+    assert (replay_buffer.ep_length[pos - 1] != 0).all()
+
+    # replay buffer should not have changed after truncate_last_trajectory (except dones[pos-1])
+    for key in ["observation", "desired_goal", "achieved_goal"]:
+        assert np.allclose(old_replay_buffer.observations[key], replay_buffer.observations[key])
+        assert np.allclose(old_replay_buffer.next_observations[key], replay_buffer.next_observations[key])
+    assert np.allclose(old_replay_buffer.actions, replay_buffer.actions)
+    assert np.allclose(old_replay_buffer.rewards, replay_buffer.rewards)
+    # we might change the last done of the last trajectory so we don't compare it
+    assert np.allclose(old_replay_buffer.dones[: pos - 1], replay_buffer.dones[: pos - 1])
+    assert np.allclose(old_replay_buffer.dones[pos:], replay_buffer.dones[pos:])
+
+    n_steps = 100
+    model.learn(n_steps, reset_num_timesteps=True)
+
+    # old oberservations must remain unchanged
+    for key in ["observation", "desired_goal", "achieved_goal"]:
+        assert np.allclose(old_replay_buffer.observations[key][:pos], replay_buffer.observations[key][:pos])
+        assert np.allclose(old_replay_buffer.next_observations[key][:pos], replay_buffer.next_observations[key][:pos])
+    assert np.allclose(old_replay_buffer.actions[:pos], replay_buffer.actions[:pos])
+    assert np.allclose(old_replay_buffer.rewards[:pos], replay_buffer.rewards[:pos])
+    assert np.allclose(old_replay_buffer.dones[: pos - 1], replay_buffer.dones[: pos - 1])
+
+    # new oberservations must differ from old observations
+    end_pos = replay_buffer.pos
+    for key in ["observation", "desired_goal", "achieved_goal"]:
+        assert not np.allclose(old_replay_buffer.observations[key][pos:end_pos], replay_buffer.observations[key][pos:end_pos])
+        assert not np.allclose(
+            old_replay_buffer.next_observations[key][pos:end_pos], replay_buffer.next_observations[key][pos:end_pos]
+        )
+    assert not np.allclose(old_replay_buffer.actions[pos:end_pos], replay_buffer.actions[pos:end_pos])
+    assert not np.allclose(old_replay_buffer.rewards[pos:end_pos], replay_buffer.rewards[pos:end_pos])
+    assert not np.allclose(old_replay_buffer.dones[pos - 1 : end_pos], replay_buffer.dones[pos - 1 : end_pos])
+
+    # all entries with index >= replay_buffer.pos must remain unchanged
+    for key in ["observation", "desired_goal", "achieved_goal"]:
+        assert np.allclose(old_replay_buffer.observations[key][end_pos:], replay_buffer.observations[key][end_pos:])
+        assert np.allclose(old_replay_buffer.next_observations[key][end_pos:], replay_buffer.next_observations[key][end_pos:])
+    assert np.allclose(old_replay_buffer.actions[end_pos:], replay_buffer.actions[end_pos:])
+    assert np.allclose(old_replay_buffer.rewards[end_pos:], replay_buffer.rewards[end_pos:])
+    assert np.allclose(old_replay_buffer.dones[end_pos:], replay_buffer.dones[end_pos:])
 
 
 @pytest.mark.parametrize("n_bits", [10])

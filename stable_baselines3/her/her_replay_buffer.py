@@ -162,16 +162,24 @@ class HerReplayBuffer(DictReplayBuffer):
         # When episode ends, compute and store the episode length
         for env_idx in range(self.n_envs):
             if done[env_idx]:
-                episode_start = self._current_ep_start[env_idx]
-                episode_end = self.pos
-                if episode_end < episode_start:
-                    # Occurs when the buffer becomes full, the storage resumes at the
-                    # beginning of the buffer. This can happen in the middle of an episode.
-                    episode_end += self.buffer_size
-                episode_indices = np.arange(episode_start, episode_end) % self.buffer_size
-                self.ep_length[episode_indices, env_idx] = episode_end - episode_start
-                # Update the current episode start
-                self._current_ep_start[env_idx] = self.pos
+                self._compute_episode_length(env_idx)
+
+    def _compute_episode_length(self, env_idx: int) -> None:
+        """
+        Compute and store the episode length for environment with index env_idx
+
+        :param env_idx: index of the environment for which the episode length should be computed
+        """
+        episode_start = self._current_ep_start[env_idx]
+        episode_end = self.pos
+        if episode_end < episode_start:
+            # Occurs when the buffer becomes full, the storage resumes at the
+            # beginning of the buffer. This can happen in the middle of an episode.
+            episode_end += self.buffer_size
+        episode_indices = np.arange(episode_start, episode_end) % self.buffer_size
+        self.ep_length[episode_indices, env_idx] = episode_end - episode_start
+        # Update the current episode start
+        self._current_ep_start[env_idx] = self.pos
 
     def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> DictReplayBufferSamples:
         """
@@ -381,5 +389,13 @@ class HerReplayBuffer(DictReplayBuffer):
                 "If you are in the same episode as when the replay buffer was saved,\n"
                 "you should use `truncate_last_trajectory=False` to avoid that issue."
             )
-
-            self._current_ep_start = self.pos * np.ones(self.n_envs, dtype=np.int64)
+            # only consider epsiodes that are not finished
+            for env_idx in np.where(self._current_ep_start != self.pos)[0]:
+                # set done = True for last episodes
+                self.dones[self.pos - 1] = True
+                # make sure that last episodes can be sampled and
+                # update next episode start (self._current_ep_start)
+                self._compute_episode_length(env_idx)
+                # handle infinite horizon tasks
+                if self.handle_timeout_termination:
+                    self.timeouts[self.pos - 1] = True

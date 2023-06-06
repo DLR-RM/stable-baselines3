@@ -41,7 +41,7 @@ Bug Fixes:
 - Fixed loading DQN changes ``target_update_interval`` (@tobirohrer)
 - Fixed env checker to properly reset the env before calling ``step()`` when checking
   for ``Inf`` and ``NaN`` (@lutogniew)
-- Fixed wrong episode length after loading HER replay buffer (@lbergmann1)
+- Fixed HER ``truncate_last_trajectory()`` (@lbergmann1)
 
 Deprecations:
 ^^^^^^^^^^^^^

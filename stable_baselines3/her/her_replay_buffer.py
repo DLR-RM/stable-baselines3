@@ -392,10 +392,10 @@ class HerReplayBuffer(DictReplayBuffer):
             # only consider epsiodes that are not finished
             for env_idx in np.where(self._current_ep_start != self.pos)[0]:
                 # set done = True for last episodes
-                self.dones[self.pos - 1] = True
+                self.dones[self.pos - 1, env_idx] = True
                 # make sure that last episodes can be sampled and
                 # update next episode start (self._current_ep_start)
                 self._compute_episode_length(env_idx)
                 # handle infinite horizon tasks
                 if self.handle_timeout_termination:
-                    self.timeouts[self.pos - 1] = True
+                    self.timeouts[self.pos - 1, env_idx] = True

@@ -324,8 +324,9 @@ def test_full_replay_buffer():
 
 
 @pytest.mark.parametrize("n_envs", [1, 2])
+@pytest.mark.parametrize("n_steps", [4, 5])
 @pytest.mark.parametrize("handle_timeout_termination", [False, True])
-def test_truncate_last_trajectory(n_envs, recwarn, handle_timeout_termination):
+def test_truncate_last_trajectory(n_envs, recwarn, n_steps, handle_timeout_termination):
     """
     Test if 'truncate_last_trajectory' works correctly
     """
@@ -333,28 +334,31 @@ def test_truncate_last_trajectory(n_envs, recwarn, handle_timeout_termination):
     warnings.filterwarnings(action="ignore", category=DeprecationWarning)
     warnings.filterwarnings(action="ignore", category=UserWarning, module="gym")
 
+    n_bits = 4
+
     def env_fn():
-        return BitFlippingEnv(n_bits=4, continuous=True)
+        return BitFlippingEnv(n_bits=n_bits, continuous=True)
 
-    env = make_vec_env(env_fn, n_envs)
-    model = SAC(
-        "MultiInputPolicy",
-        env,
-        replay_buffer_class=HerReplayBuffer,
-        replay_buffer_kwargs=dict(
-            n_sampled_goal=2,
-            goal_selection_strategy="future",
-        ),
-        gradient_steps=n_envs,
-        train_freq=4,
-        buffer_size=int(2e4),
-        policy_kwargs=dict(net_arch=[64]),
-        seed=0,
+    venv = make_vec_env(env_fn, n_envs)
+
+    replay_buffer = HerReplayBuffer(
+        buffer_size=int(1e4),
+        observation_space=venv.observation_space,
+        action_space=venv.action_space,
+        env=venv,
+        n_envs=n_envs,
+        n_sampled_goal=2,
+        goal_selection_strategy="future",
     )
-    model.learn(200)
 
-    old_replay_buffer = deepcopy(model.replay_buffer)
-    replay_buffer = model.replay_buffer
+    observations = venv.reset()
+    for _ in range(n_steps):
+        actions = np.random.rand(n_envs, n_bits)
+        next_observations, rewards, dones, infos = venv.step(actions)
+        replay_buffer.add(observations, next_observations, actions, rewards, dones, infos)
+        observations = next_observations
+
+    old_replay_buffer = deepcopy(replay_buffer)
     pos = replay_buffer.pos
     if handle_timeout_termination:
         env_idx_not_finished = np.where(replay_buffer._current_ep_start != pos)[0]
@@ -393,8 +397,11 @@ def test_truncate_last_trajectory(n_envs, recwarn, handle_timeout_termination):
     assert np.allclose(old_replay_buffer.dones[: pos - 1], replay_buffer.dones[: pos - 1])
     assert np.allclose(old_replay_buffer.dones[pos:], replay_buffer.dones[pos:])
 
-    n_steps = 100
-    model.learn(n_steps, reset_num_timesteps=True)
+    for _ in range(10):
+        actions = np.random.rand(n_envs, n_bits)
+        next_observations, rewards, dones, infos = venv.step(actions)
+        replay_buffer.add(observations, next_observations, actions, rewards, dones, infos)
+        observations = next_observations
 
     # old oberservations must remain unchanged
     for key in ["observation", "desired_goal", "achieved_goal"]:

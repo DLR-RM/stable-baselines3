@@ -46,14 +46,15 @@ class DictObsVecEnv(VecEnv):
         pass
 
     def get_attr(self, attr_name, indices=None):
-        env_idxs = range(self.num_envs) if indices is None else indices
-        return [getattr(self, attr_name) for _ in env_idxs]
+        indices = range(self.num_envs) if indices is None else indices
+        return [getattr(self, attr_name) for _ in indices]
 
     def close(self):
         pass
 
     def env_is_wrapped(self, wrapper_class, indices=None):
-        return [False]
+        indices = range(self.num_envs) if indices is None else indices
+        return [False for _ in indices]
 
     def env_method(self):
         raise NotImplementedError  # not used in the test

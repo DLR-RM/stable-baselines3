@@ -398,4 +398,4 @@ class HerReplayBuffer(DictReplayBuffer):
                 self._compute_episode_length(env_idx)
                 # handle infinite horizon tasks
                 if self.handle_timeout_termination:
-                    self.timeouts[self.pos - 1, env_idx] = True
+                    self.timeouts[self.pos - 1, env_idx] = True  # not an actual timeout, but it allows bootstrapping

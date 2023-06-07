@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.0.0a11 (WIP)
+Release 2.0.0a12 (WIP)
 --------------------------
 
 **Gymnasium support**
@@ -41,6 +41,7 @@ Bug Fixes:
 - Fixed loading DQN changes ``target_update_interval`` (@tobirohrer)
 - Fixed env checker to properly reset the env before calling ``step()`` when checking
   for ``Inf`` and ``NaN`` (@lutogniew)
+- Fixed HER ``truncate_last_trajectory()`` (@lbergmann1)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -1350,4 +1351,4 @@ And all the contributors:
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
-@lutogniew
+@lutogniew @lbergmann1

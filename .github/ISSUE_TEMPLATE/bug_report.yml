@@ -1,5 +1,5 @@
 name: "\U0001F41B Bug Report"
-description: Submit a bug report to help us improve Stable-Baselines3
+description: If you encounter an unexpected behavior, software crash, or other bug.
 title: "[Bug]: bug title"
 labels: ["bug"]
 body:
@@ -61,6 +61,8 @@ body:
     attributes:
       label: Checklist
       options:
+        - label: My issue does not relate to a custom gym environment. (Use the custom gym env template instead)
+          required: true
         - label: I have checked that there is no similar [issue](https://github.com/DLR-RM/stable-baselines3/issues) in the repo
           required: true
         - label: I have read the [documentation](https://stable-baselines3.readthedocs.io/en/master/)

@@ -1,6 +1,6 @@
 name: "\U0001F916 Custom Gym Environment Issue"
-description: How to report an issue when using a custom Gym environment
-labels: ["question", "custom gym env"]
+description: If your problem involves a custom gym environment.
+labels: ["custom gym env"]
 body:
   - type: markdown
     attributes:

@@ -159,6 +159,7 @@ setup(
     project_urls={
         "Code": "https://github.com/DLR-RM/stable-baselines3",
         "Documentation": "https://stable-baselines3.readthedocs.io/",
+        "Changelog": "https://stable-baselines3.readthedocs.io/en/master/misc/changelog.html",
         "SB3-Contrib": "https://github.com/Stable-Baselines-Team/stable-baselines3-contrib",
         "RL-Zoo": "https://github.com/DLR-RM/rl-baselines3-zoo",
     },

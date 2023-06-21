@@ -73,7 +73,7 @@ Goals of this repository:
 
 Github repo: https://github.com/DLR-RM/rl-baselines3-zoo
 
-Documentation: https://stable-baselines3.readthedocs.io/en/master/guide/rl_zoo.html
+Documentation: https://rl-baselines3-zoo.readthedocs.io/en/master/
 
 ## SB3-Contrib: Experimental RL Features
 

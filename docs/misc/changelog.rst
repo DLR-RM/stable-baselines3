@@ -80,6 +80,7 @@ Documentation:
 - Update custom env documentation
 - Added `pink-noise-rl` to projects page
 - Fix custom policy example, ``ortho_init`` was ignored
+- Added SBX page
 
 
 Release 1.8.0 (2023-04-07)

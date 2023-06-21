@@ -42,7 +42,7 @@ Bug Fixes:
 - Fixed env checker to properly reset the env before calling ``step()`` when checking
   for ``Inf`` and ``NaN`` (@lutogniew)
 - Fixed HER ``truncate_last_trajectory()`` (@lbergmann1)
-- Fixed HER desired and achieved goal ordre in reward computation (@JonathanKuelz)
+- Fixed HER desired and achieved goal order in reward computation (@JonathanKuelz)
 
 Deprecations:
 ^^^^^^^^^^^^^

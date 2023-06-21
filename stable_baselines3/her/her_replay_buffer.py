@@ -312,8 +312,6 @@ class HerReplayBuffer(DictReplayBuffer):
         # Compute new reward
         rewards = self.env.env_method(
             "compute_reward",
-            # here we use the new desired goal
-            obs["desired_goal"],
             # the new state depends on the previous state and action
             # s_{t+1} = f(s_t, a_t)
             # so the next achieved_goal depends also on the previous state and action
@@ -321,6 +319,8 @@ class HerReplayBuffer(DictReplayBuffer):
             # r_t = reward(s_t, a_t) = reward(next_achieved_goal, desired_goal)
             # therefore we have to use next_obs["achieved_goal"] and not obs["achieved_goal"]
             next_obs["achieved_goal"],
+            # here we use the new desired goal
+            obs["desired_goal"],
             infos,
             # we use the method of the first environment assuming that all environments are identical.
             indices=[0],

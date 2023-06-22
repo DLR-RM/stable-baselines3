@@ -43,6 +43,7 @@ Bug Fixes:
   for ``Inf`` and ``NaN`` (@lutogniew)
 - Fixed HER ``truncate_last_trajectory()`` (@lbergmann1)
 - Fixed HER desired and achieved goal order in reward computation (@JonathanKuelz)
+- Fixed off-policy algorithms with continuous float64 actions (see #1145) (@tobirohrer)
 
 Deprecations:
 ^^^^^^^^^^^^^

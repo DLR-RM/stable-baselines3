@@ -56,6 +56,19 @@ class DummyMultidimensionalAction(gym.Env):
         return self.observation_space.sample(), 0.0, False, False, {}
 
 
+class DummyContinuousActionFloat64(gym.Env):
+    def __init__(self):
+        super().__init__()
+        self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float64)
+        self.observation_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float64)
+
+    def step(self, action):
+        return self.observation_space.sample(), 0.0, False, False, {}
+
+    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+        return self.observation_space.sample(), {}
+
+
 @pytest.mark.parametrize(
     "env", [DummyMultiDiscreteSpace([4, 3]), DummyMultiBinary(8), DummyMultiBinary((3, 2)), DummyMultidimensionalAction()]
 )
@@ -127,3 +140,13 @@ def test_discrete_obs_space(model_class, env):
     else:
         kwargs = dict(n_steps=256)
     model_class("MlpPolicy", env, **kwargs).learn(256)
+
+
+@pytest.mark.parametrize("model_class", [SAC, TD3, PPO, DDPG, A2C])
+def test_float64_support(model_class):
+    env = DummyContinuousActionFloat64()
+    env = gym.wrappers.TimeLimit(env, max_episode_steps=200)
+    model_class(
+        "MlpPolicy",
+        env
+    ).learn(20)

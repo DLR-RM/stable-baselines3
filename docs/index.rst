@@ -51,6 +51,7 @@ Main Features
    guide/integrations
    guide/rl_zoo
    guide/sb3_contrib
+   guide/sbx
    guide/imitation
    guide/migration
    guide/checking_nan

@@ -1,5 +1,5 @@
 name: "\U0001F4DA Documentation"
-description: Report an issue related to Stable-Baselines3 documentation
+description: If you want to improve the documentation by reporting errors, inconsistencies, or missing information.
 labels: ["documentation"]
 body:
   - type: markdown

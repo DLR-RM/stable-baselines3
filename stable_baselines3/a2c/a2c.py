@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Type, TypeVar, Union
+from typing import Any, ClassVar, Dict, Optional, Type, TypeVar, Union
 
 import torch as th
 from gymnasium import spaces
@@ -54,7 +54,7 @@ class A2C(OnPolicyAlgorithm):
     :param _init_setup_model: Whether or not to build the network at the creation of the instance
     """
 
-    policy_aliases: Dict[str, Type[BasePolicy]] = {
+    policy_aliases: ClassVar[Dict[str, Type[BasePolicy]]] = {
         "MlpPolicy": ActorCriticPolicy,
         "CnnPolicy": ActorCriticCnnPolicy,
         "MultiInputPolicy": MultiInputActorCriticPolicy,

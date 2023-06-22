@@ -146,4 +146,8 @@ def test_discrete_obs_space(model_class, env):
 def test_float64_support(model_class):
     env = DummyContinuousActionFloat64()
     env = gym.wrappers.TimeLimit(env, max_episode_steps=200)
-    model_class("MlpPolicy", env).learn(20)
+    model = model_class("MlpPolicy", env)
+    model.learn(20)
+    initial_obs, _ = env.reset()
+    action, _ = model.predict(initial_obs)
+    assert action.dtype == np.float64

@@ -13,8 +13,7 @@
 #
 import os
 import sys
-from typing import Dict, List
-from unittest.mock import MagicMock
+from typing import Dict
 
 # We CANNOT enable 'sphinxcontrib.spelling' because ReadTheDocs.org does not support
 # PyEnchant.
@@ -35,22 +34,6 @@ except ImportError:
 
 # source code directory, relative to this file, for sphinx-autobuild
 sys.path.insert(0, os.path.abspath(".."))
-
-
-class Mock(MagicMock):
-    __subclasses__ = []  # type: ignore
-
-    @classmethod
-    def __getattr__(cls, name):
-        return MagicMock()
-
-
-# Mock modules that requires C modules
-# Note: because of that we cannot test examples using CI
-# 'torch', 'torch.nn', 'torch.nn.functional',
-# DO not mock modules for now, we will need to do that for read the docs later
-MOCK_MODULES: List[str] = []
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # Read version from file
 version_file = os.path.join(os.path.dirname(__file__), "../stable_baselines3", "version.txt")

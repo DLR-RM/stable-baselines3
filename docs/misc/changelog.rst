@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.0.0a14 (WIP)
+Release 2.0.0 (2023-06-22)
 --------------------------
 
 **Gymnasium support**
@@ -26,13 +26,20 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-
+- Added Gymnasium support (Gym 0.21 and 0.26 are supported via the ``shimmy`` package)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
+- Fixed QRDQN update interval for multi envs
+
 
 `RL Zoo`_
 ^^^^^^^^^
+- Gym 0.26+ patches to continue working with pybullet and TimeLimit wrapper
+- Renamed `CarRacing-v1` to `CarRacing-v2` in hyperparameters
+- Huggingface push to hub now accepts a `--n-timesteps` argument to adjust the length of the video
+- Fixed `record_video` steps (before it was stepping in a closed env)
+- Dropped Gym 0.21 support
 
 Bug Fixes:
 ^^^^^^^^^^

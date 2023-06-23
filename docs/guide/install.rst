@@ -3,12 +3,6 @@
 Installation
 ============
 
-.. warning::
-
-  Only Stable-Baselines3 2.x supports Gymnasium. As SB3 2.x is currently in beta,
-  you will need to specify ``pip install "stable_baselines3[extra]>=2.0.0a9"`` explicitly,
-  or install the master version (see below).
-
 
 Prerequisites
 -------------
@@ -40,7 +34,7 @@ To install Stable Baselines3 with pip, execute:
         Some shells such as Zsh require quotation marks around brackets, i.e. ``pip install 'stable-baselines3[extra]'`` `More information <https://stackoverflow.com/a/30539963>`_.
 
 
-This includes an optional dependencies like Tensorboard, OpenCV or ``atari-py`` to train on atari games. If you do not need those, you can use:
+This includes an optional dependencies like Tensorboard, OpenCV or ``ale-py`` to train on atari games. If you do not need those, you can use:
 
 .. code-block:: bash
 
@@ -59,6 +53,12 @@ Bleeding-edge version
 .. code-block:: bash
 
 	pip install git+https://github.com/DLR-RM/stable-baselines3
+
+with extras:
+
+.. code-block:: bash
+
+  pip install "stable_baselines3[extra,tests,docs] @ git+https://github.com/DLR-RM/stable-baselines3"
 
 
 Development version

@@ -117,7 +117,7 @@ Most of the code in the library tries to follow a sklearn-like syntax for the Re
 
 Here is a quick example of how to train and run PPO on a cartpole environment:
 ```python
-import gym
+import gymnasium as gym
 
 from stable_baselines3 import PPO
 

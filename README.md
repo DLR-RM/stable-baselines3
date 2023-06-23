@@ -83,6 +83,12 @@ This allows SB3 to maintain a stable and compact core, while still providing the
 
 Documentation is available online: [https://sb3-contrib.readthedocs.io/](https://sb3-contrib.readthedocs.io/)
 
+## Stable-Baselines Jax (SBX)
+
+[Stable Baselines Jax (SBX)](https://github.com/araffin/sbx) is a proof of concept version of Stable-Baselines3 in Jax.
+
+It provides a minimal number of features compared to SB3 but can be much faster (up to 20x times!): https://twitter.com/araffin2/status/1590714558628253698
+
 
 ## Installation
 

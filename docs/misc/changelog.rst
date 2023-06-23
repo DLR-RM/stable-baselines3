@@ -26,7 +26,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-- Added Gymnasium support (Gym 0.21 and 0.26 are supported bia the ``shimmy`` package)
+- Added Gymnasium support (Gym 0.21 and 0.26 are supported via the ``shimmy`` package)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

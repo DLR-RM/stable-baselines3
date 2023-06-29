@@ -54,8 +54,6 @@ class VecEnv(ABC):
     :param action_space: Action space
     """
 
-    metadata = {"render_modes": ["human", "rgb_array"]}
-
     def __init__(
         self,
         num_envs: int,
@@ -69,6 +67,7 @@ class VecEnv(ABC):
         self.reset_infos: List[Dict[str, Any]] = [{} for _ in range(num_envs)]
         # seeds to be used in the next call to env.reset()
         self._seeds: List[Optional[int]] = [None for _ in range(num_envs)]
+
         try:
             render_modes = self.get_attr("render_mode")
         except AttributeError:
@@ -79,6 +78,16 @@ class VecEnv(ABC):
             render_mode == render_modes[0] for render_mode in render_modes
         ), "render_mode mode should be the same for all environments"
         self.render_mode = render_modes[0]
+
+        render_modes = []
+        if self.render_mode is not None:
+            if self.render_mode == "rgb_array":
+                # SB3 uses OpenCV for the "human" mode
+                render_modes = ["human", "rgb_array"]
+            else:
+                render_modes = [self.render_mode]
+
+        self.metadata = {"render_modes": render_modes}
 
     def _reset_seeds(self) -> None:
         """

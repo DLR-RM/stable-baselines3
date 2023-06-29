@@ -207,7 +207,7 @@ class ReplayBuffer(BaseBuffer):
         else:
             self.next_observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape), dtype=observation_space.dtype)
 
-        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
+        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=self._get_action_data_type(action_space))
 
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -310,6 +310,10 @@ class ReplayBuffer(BaseBuffer):
             self._normalize_reward(self.rewards[batch_inds, env_indices].reshape(-1, 1), env),
         )
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
+
+    @staticmethod
+    def _get_action_data_type(action_space):
+        return np.float32 if action_space.dtype == np.float64 else action_space.dtype
 
 
 class RolloutBuffer(BaseBuffer):
@@ -543,7 +547,7 @@ class DictReplayBuffer(ReplayBuffer):
             for key, _obs_shape in self.obs_shape.items()
         }
 
-        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=action_space.dtype)
+        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=self._get_action_data_type(action_space))
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
 

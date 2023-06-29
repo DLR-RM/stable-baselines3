@@ -207,7 +207,9 @@ class ReplayBuffer(BaseBuffer):
         else:
             self.next_observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape), dtype=observation_space.dtype)
 
-        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=self._get_action_data_type(action_space))
+        self.actions = np.zeros(
+            (self.buffer_size, self.n_envs, self.action_dim), dtype=self._get_action_data_type(action_space)
+        )
 
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -547,7 +549,9 @@ class DictReplayBuffer(ReplayBuffer):
             for key, _obs_shape in self.obs_shape.items()
         }
 
-        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=self._get_action_data_type(action_space))
+        self.actions = np.zeros(
+            (self.buffer_size, self.n_envs, self.action_dim), dtype=self._get_action_data_type(action_space)
+        )
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
 

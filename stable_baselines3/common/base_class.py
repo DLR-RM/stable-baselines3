@@ -6,7 +6,7 @@ import time
 import warnings
 from abc import ABC, abstractmethod
 from collections import deque
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, ClassVar, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
 
 import gymnasium as gym
 import numpy as np
@@ -94,7 +94,7 @@ class BaseAlgorithm(ABC):
     """
 
     # Policy aliases (see _get_policy_from_name())
-    policy_aliases: Dict[str, Type[BasePolicy]] = {}
+    policy_aliases: ClassVar[Dict[str, Type[BasePolicy]]] = {}
     policy: BasePolicy
     observation_space: spaces.Space
     action_space: spaces.Space

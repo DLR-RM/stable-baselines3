@@ -371,7 +371,8 @@ If your task requires even more granular control over the policy/value architect
           *args,
           **kwargs,
       ):
-
+          # Disable orthogonal initialization
+          kwargs["ortho_init"] = False
           super().__init__(
               observation_space,
               action_space,
@@ -380,8 +381,7 @@ If your task requires even more granular control over the policy/value architect
               *args,
               **kwargs,
           )
-          # Disable orthogonal initialization
-          self.ortho_init = False
+
 
       def _build_mlp_extractor(self) -> None:
           self.mlp_extractor = CustomNetwork(self.features_dim)

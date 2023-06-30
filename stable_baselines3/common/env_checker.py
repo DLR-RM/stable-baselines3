@@ -110,6 +110,7 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
 def _check_nan(env: gym.Env) -> None:
     """Check for Inf and NaN using the VecWrapper."""
     vec_env = VecCheckNan(DummyVecEnv([lambda: env]))
+    vec_env.reset()
     for _ in range(10):
         action = np.array([env.action_space.sample()])
         _, _, _, _ = vec_env.step(action)
@@ -127,10 +128,10 @@ def _check_goal_env_obs(obs: dict, observation_space: spaces.Dict, method_name: 
     """
     Check that an environment implementing the `compute_rewards()` method
     (previously known as GoalEnv in gym) contains at least three elements,
-    namely `observation`, `desired_goal`, and `achieved_goal`.
+    namely `observation`, `achieved_goal`, and `desired_goal`.
     """
     assert len(observation_space.spaces) >= 3, (
-        "A goal conditioned env must contain at least 3 observation keys: `observation`, `desired_goal`, and `achieved_goal`. "
+        "A goal conditioned env must contain at least 3 observation keys: `observation`, `achieved_goal`, and `desired_goal`. "
         f"The current observation contains {len(observation_space.spaces)} keys: {list(observation_space.spaces.keys())}"
     )
 

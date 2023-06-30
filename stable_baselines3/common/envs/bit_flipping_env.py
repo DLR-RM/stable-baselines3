@@ -179,7 +179,7 @@ class BitFlippingEnv(Env):
         else:
             self.state[action] = 1 - self.state[action]
         obs = self._get_obs()
-        reward = float(self.compute_reward(obs["achieved_goal"], obs["desired_goal"], None))
+        reward = float(self.compute_reward(obs["achieved_goal"], obs["desired_goal"], None).item())
         terminated = reward == 0
         self.current_step += 1
         # Episode terminate when we reached the goal or the max number of steps

@@ -297,7 +297,7 @@ class JSONOutputFormat(KVWriter):
             if hasattr(value, "dtype"):
                 if value.shape == () or len(value) == 1:
                     # if value is a dimensionless numpy array or of length 1, serialize as a float
-                    return float(value)
+                    return float(value.item())
                 else:
                     # otherwise, a value is a numpy array, serialize as a list or nested lists
                     return value.tolist()

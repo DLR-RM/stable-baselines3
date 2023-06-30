@@ -5,13 +5,16 @@ line-length = 127
 target-version = "py37"
 # See https://beta.ruff.rs/docs/rules/
 select = ["E", "F", "B", "UP", "C90", "RUF"]
-# Ignore explicit stacklevel`
-ignore = ["B028"]
+# B028: Ignore explicit stacklevel`
+# RUF013: Too many false positives (implicit optional)
+ignore = ["B028", "RUF013"]
 
 [tool.ruff.per-file-ignores]
 # Default implementation in abstract methods
 "./stable_baselines3/common/callbacks.py"= ["B027"]
 "./stable_baselines3/common/noise.py"= ["B027"]
+# ClassVar, implicit optional check not needed for tests
+"./tests/*.py"= ["RUF012", "RUF013"]
 
 
 [tool.ruff.mccabe]

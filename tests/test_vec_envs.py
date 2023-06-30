@@ -586,4 +586,13 @@ def test_render(vec_env_class):
     for _ in range(10):
         vec_env.step([vec_env.action_space.sample() for _ in range(n_envs)])
         vec_env.render()
+
+    # Check that it still works with vec env wrapper
+    vec_env = VecFrameStack(vec_env, 2)
+    vec_env.render()
+    assert vec_env.render_mode == "rgb_array"
+    vec_env = VecNormalize(vec_env)
+    assert vec_env.render_mode == "rgb_array"
+    vec_env.render()
+
     vec_env.close()

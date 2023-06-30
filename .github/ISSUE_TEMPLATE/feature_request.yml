@@ -1,5 +1,5 @@
 name: "\U0001F680 Feature Request"
-description: How to create an issue for requesting a feature
+description: If you have an idea for a new feature or an improvement.
 title: "[Feature Request] request title"
 labels: ["enhancement"]
 body:

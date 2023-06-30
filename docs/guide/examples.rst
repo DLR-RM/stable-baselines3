@@ -422,7 +422,7 @@ will compute a running average and standard deviation of input features (it can 
 
   # Note: pybullet is not compatible yet with Gymnasium
   # you might need to use `import rl_zoo3.gym_patches`
-  # and use gym (not Gymnasium) to instanciate the env
+  # and use gym (not Gymnasium) to instantiate the env
   # Alternatively, you can use the MuJoCo equivalent "HalfCheetah-v4"
   vec_env = DummyVecEnv([lambda: gym.make("HalfCheetahBulletEnv-v0")])
   # Automatically normalize the input features and reward

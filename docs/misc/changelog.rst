@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.0.0a10 (WIP)
+Release 2.0.0 (2023-06-22)
 --------------------------
 
 **Gymnasium support**
@@ -26,19 +26,30 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-
+- Added Gymnasium support (Gym 0.21 and 0.26 are supported via the ``shimmy`` package)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
+- Fixed QRDQN update interval for multi envs
+
 
 `RL Zoo`_
 ^^^^^^^^^
+- Gym 0.26+ patches to continue working with pybullet and TimeLimit wrapper
+- Renamed `CarRacing-v1` to `CarRacing-v2` in hyperparameters
+- Huggingface push to hub now accepts a `--n-timesteps` argument to adjust the length of the video
+- Fixed `record_video` steps (before it was stepping in a closed env)
+- Dropped Gym 0.21 support
 
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed ``VecExtractDictObs`` does not handle terminal observation (@WeberSamuel)
 - Set NumPy version to ``>=1.20`` due to use of ``numpy.typing`` (@troiganto)
 - Fixed loading DQN changes ``target_update_interval`` (@tobirohrer)
+- Fixed env checker to properly reset the env before calling ``step()`` when checking
+  for ``Inf`` and ``NaN`` (@lutogniew)
+- Fixed HER ``truncate_last_trajectory()`` (@lbergmann1)
+- Fixed HER desired and achieved goal order in reward computation (@JonathanKuelz)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -61,19 +72,23 @@ Others:
 - Updated env checker to reflect what subset of Gymnasium is supported and improve GoalEnv checks
 - Improve type annotation of wrappers
 - Tests envs are now checked too
-- Added render test for ``VecEnv``
+- Added render test for ``VecEnv`` and ``VecEnvWrapper``
 - Update issue templates and env info saved with the model
 - Changed ``seed()`` method return type from ``List`` to ``Sequence``
 - Updated env checker doc and requirements for tuple spaces/goal envs
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Added Deep RL Course link to the Deep RL Resources page
 - Added documentation about ``VecEnv`` API vs Gym API
 - Upgraded tutorials to Gymnasium API
 - Make it more explicit when using ``VecEnv`` vs Gym env
 - Added UAV_Navigation_DRL_AirSim to the project page (@heleidsn)
 - Added ``EvalCallback`` example (@sidney-tio)
 - Update custom env documentation
+- Added `pink-noise-rl` to projects page
+- Fix custom policy example, ``ortho_init`` was ignored
+- Added SBX page
 
 
 Release 1.8.0 (2023-04-07)
@@ -1344,7 +1359,8 @@ And all the contributors:
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
-@carlosluis @arjun-kg @tlpss
+@carlosluis @arjun-kg @tlpss @JonathanKuelz
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
+@lutogniew @lbergmann1

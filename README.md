@@ -95,7 +95,7 @@ It provides a minimal number of features compared to SB3 but can be much faster 
 **Note:** Stable-Baselines3 supports PyTorch >= 1.11
 
 ### Prerequisites
-Stable Baselines3 requires Python 3.7+.
+Stable Baselines3 requires Python 3.8+.
 
 #### Windows 10
 

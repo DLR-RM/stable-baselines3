@@ -28,7 +28,7 @@ body:
     attributes:
       label: Code example
       description: |
-        Please try to provide a minimal example to reproduce the bug.
+        Please try to provide a [minimal example](https://github.com/DLR-RM/stable-baselines3/issues/982#issuecomment-1197044014) to reproduce the bug.
         For a custom environment, you need to give at least the observation space, action space, `reset()` and `step()` methods (see working example below).
         Error messages and stack traces are also helpful.
         Please use the [markdown code blocks](https://help.github.com/en/articles/creating-and-highlighting-code-blocks) for both code and stack traces.
@@ -101,7 +101,7 @@ body:
           required: true
         - label: I have read the [documentation](https://stable-baselines3.readthedocs.io/en/master/)
           required: true
-        - label: I have provided a minimal working example to reproduce the bug
+        - label: I have provided a [minimal and working](https://github.com/DLR-RM/stable-baselines3/issues/982#issuecomment-1197044014) example to reproduce the bug
           required: true
         - label: I have checked my env using the env checker
           required: true

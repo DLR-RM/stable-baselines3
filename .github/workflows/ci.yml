@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
 
     steps:
     - uses: actions/checkout@v3
@@ -32,7 +32,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         # cpu version of pytorch
-        pip install torch==1.11+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install torch==1.13+cpu -f https://download.pytorch.org/whl/torch_stable.html
 
         # Install Atari Roms
         pip install autorom
@@ -55,8 +55,8 @@ jobs:
     - name: Type check
       run: |
         make type
-      # skip mypy type check for python3.7 (result is different to all other versions)
-      if: "!(matrix.python-version == '3.7')"
+      # skip PyType, doesn't support 3.11 yet
+      if: "!(matrix.python-version == '3.11')"
     - name: Test with pytest
       run: |
         make pytest

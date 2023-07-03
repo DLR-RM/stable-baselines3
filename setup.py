@@ -105,7 +105,6 @@ setup(
         "gymnasium==0.28.1",
         "numpy>=1.20",
         "torch>=1.11",
-        'typing_extensions>=4.0,<5; python_version < "3.8.0"',
         # For saving models
         "cloudpickle",
         # For reading logs
@@ -154,7 +153,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     version=__version__,
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     # PyPI package information.
     project_urls={
         "Code": "https://github.com/DLR-RM/stable-baselines3",
@@ -166,10 +165,10 @@ setup(
     },
     classifiers=[
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
 )
 

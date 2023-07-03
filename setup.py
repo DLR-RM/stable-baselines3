@@ -76,9 +76,7 @@ model = PPO("MlpPolicy", "CartPole-v1").learn(10_000)
 extra_no_roms = [
     # For render
     "opencv-python",
-    'pygame; python_version >= "3.8.0"',
-    # See https://github.com/pygame/pygame/issues/3572
-    'pygame>=2.0,<2.1.3; python_version < "3.8.0"',
+    "pygame",
     # Tensorboard support
     "tensorboard>=2.9.1",
     # Checking memory taken by replay buffer
@@ -87,13 +85,13 @@ extra_no_roms = [
     "tqdm",
     "rich",
     # For atari games,
-    "shimmy[atari]~=0.2.1",
+    "shimmy[atari]~=1.1.0",
     "pillow",
 ]
 
 extra_packages = extra_no_roms + [  # noqa: RUF005
     # For atari roms,
-    "autorom[accept-rom-license]~=0.6.0",
+    "autorom[accept-rom-license]~=0.6.1",
 ]
 
 
@@ -104,7 +102,7 @@ setup(
     install_requires=[
         "gymnasium==0.28.1",
         "numpy>=1.20",
-        "torch>=1.11",
+        "torch>=1.13",
         # For saving models
         "cloudpickle",
         # For reading logs

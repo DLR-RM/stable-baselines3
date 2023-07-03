@@ -10,6 +10,7 @@ Release 2.1.0a0 (WIP)
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed Python 3.7 support
+- SB3 now requires PyTorch >= 1.13
 
 New Features:
 ^^^^^^^^^^^^^

@@ -31,6 +31,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Updated GitHub issue templates
+- Fix typo in gym patch error message (@lukashass)
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -1394,4 +1395,4 @@ And all the contributors:
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
-@lutogniew @lbergmann1
+@lutogniew @lbergmann1 @lukashass

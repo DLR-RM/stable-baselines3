@@ -314,7 +314,9 @@ class ReplayBuffer(BaseBuffer):
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
 
     @staticmethod
-    def _get_action_data_type(action_space):
+    def _get_action_data_type(action_space: spaces.Space) -> np.typing.DTypeLike:
+        # Casts np.float64 action datatype to np.float32. See
+        # https://github.com/DLR-RM/stable-baselines3/pull/1572 for more information.
         return np.float32 if action_space.dtype == np.float64 else action_space.dtype
 
 

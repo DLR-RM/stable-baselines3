@@ -26,7 +26,7 @@ body:
           required: true
         - label: I have read the [documentation](https://stable-baselines3.readthedocs.io/en/master/)
           required: true
-        - label: If code there is, it is minimal and working
+        - label: If code there is, it is [minimal and working](https://github.com/DLR-RM/stable-baselines3/issues/982#issuecomment-1197044014)
           required: true
         - label: If code there is, it is formatted using the [markdown code blocks](https://help.github.com/en/articles/creating-and-highlighting-code-blocks) for both code and stack traces.
           required: true

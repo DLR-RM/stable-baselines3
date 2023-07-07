@@ -1,17 +1,11 @@
 """Common aliases for type hints"""
 
-import sys
 from enum import Enum
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, SupportsFloat, Tuple, Union
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Protocol, SupportsFloat, Tuple, Union
 
 import gymnasium as gym
 import numpy as np
 import torch as th
-
-if sys.version_info >= (3, 8):
-    from typing import Protocol
-else:
-    from typing_extensions import Protocol
 
 from stable_baselines3.common import callbacks, vec_env
 

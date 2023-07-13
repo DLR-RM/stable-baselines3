@@ -301,7 +301,9 @@ class VecEnv(ABC):
         """
         if options is None:
             options = {}
-        self._options = [options,] * self.num_envs
+        self._options = [
+            options,
+        ] * self.num_envs
         return self._options
 
     @property

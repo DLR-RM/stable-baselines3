@@ -15,6 +15,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added Python 3.11 support
+- Add options argument to pass to `env.reset()`. Same as seeds logic, options are reset at the end of an episode (@ReHoss)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -1395,4 +1396,4 @@ And all the contributors:
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
-@lutogniew @lbergmann1 @lukashass
+@lutogniew @lbergmann1 @lukashass @ReHoss

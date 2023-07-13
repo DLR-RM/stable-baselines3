@@ -67,6 +67,8 @@ class VecEnv(ABC):
         self.reset_infos: List[Dict[str, Any]] = [{} for _ in range(num_envs)]
         # seeds to be used in the next call to env.reset()
         self._seeds: List[Optional[int]] = [None for _ in range(num_envs)]
+        # options to be used in the next call to env.reset()
+        self._options: List[Dict[str, Any]] = [{} for _ in range(num_envs)]
 
         try:
             render_modes = self.get_attr("render_mode")
@@ -94,6 +96,12 @@ class VecEnv(ABC):
         Reset the seeds that are going to be used at the next reset.
         """
         self._seeds = [None for _ in range(self.num_envs)]
+
+    def _reset_options(self) -> None:
+        """
+        Reset the options that are going to be used at the next reset.
+        """
+        self._options = [{} for _ in range(self.num_envs)]
 
     @abstractmethod
     def reset(self) -> VecEnvObs:
@@ -282,6 +290,19 @@ class VecEnv(ABC):
 
         self._seeds = [seed + idx for idx in range(self.num_envs)]
         return self._seeds
+
+    def set_options(self, options: Optional[Dict] = None) -> None:
+        """
+        Set environment options for all environments, based on an unique dict.
+        WARNING: Those options will only be passed to the environment at the next reset.
+
+        :param options: A dictionary of environment options to pass to each environment at the next reset.
+        :return:
+        """
+        if options is None:
+            options = {}
+        self._options = [options,] * self.num_envs
+        return self._options
 
     @property
     def unwrapped(self) -> "VecEnv":

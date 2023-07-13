@@ -132,7 +132,7 @@ def test_non_default_spaces(new_obs_space):
     env.observation_space = new_obs_space
 
     # Patch methods to avoid errors
-    def patched_reset(seed=None):
+    def patched_reset(seed=None, options=None):
         return new_obs_space.sample(), {}
 
     env.reset = patched_reset
@@ -208,7 +208,7 @@ def check_reset_assert_error(env, new_reset_return):
     :param new_reset_return: (Any)
     """
 
-    def wrong_reset(seed=None):
+    def wrong_reset(seed=None, options=None):
         return new_reset_return, {}
 
     # Patch the reset method with a wrong one
@@ -228,7 +228,7 @@ def test_common_failures_reset():
     check_reset_assert_error(env, 1)
 
     # Return only obs (gym < 0.26)
-    def wrong_reset(self, seed=None):
+    def wrong_reset(self, seed=None, options=None):
         return env.observation_space.sample()
 
     env.reset = types.MethodType(wrong_reset, env)
@@ -236,6 +236,14 @@ def test_common_failures_reset():
         check_env(env)
 
     # No seed parameter (gym < 0.26)
+    def wrong_reset(self, options=None):
+        return env.observation_space.sample(), {}
+
+    # No options parameter
+    def wrong_reset(self, seed=None):
+        return env.observation_space.sample(), {}
+
+    # No parameter
     def wrong_reset(self):
         return env.observation_space.sample(), {}
 
@@ -257,7 +265,7 @@ def test_common_failures_reset():
 
     obs, _ = env.reset()
 
-    def wrong_reset(self, seed=None):
+    def wrong_reset(self, seed=None, options=None):
         return {"img": obs["img"], "vec": obs["img"]}, {}
 
     env.reset = types.MethodType(wrong_reset, env)

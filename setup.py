@@ -100,7 +100,7 @@ setup(
     packages=[package for package in find_packages() if package.startswith("stable_baselines3")],
     package_data={"stable_baselines3": ["py.typed", "version.txt"]},
     install_requires=[
-        "gymnasium==0.28.1",
+        "gymnasium>=0.28.1,<0.30",
         "numpy>=1.20",
         "torch>=1.13",
         # For saving models

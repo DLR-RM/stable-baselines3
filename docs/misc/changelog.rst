@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 2.1.0a0 (WIP)
+Release 2.1.0a1 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -15,6 +15,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added Python 3.11 support
+- Added Gymnasium 0.29 support (@pseudo-rnd-thoughts)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -1396,4 +1397,4 @@ And all the contributors:
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
-@lutogniew @lbergmann1 @lukashass @BertrandDecoster
+@lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts

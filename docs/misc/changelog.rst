@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 2.1.0a1 (WIP)
+Release 2.1.0a2 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -25,6 +25,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Relaxed check in logger, that was causing issue on Windows with colorama
 
 Deprecations:
 ^^^^^^^^^^^^^

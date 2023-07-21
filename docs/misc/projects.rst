@@ -200,7 +200,7 @@ A simple library for pink noise exploration with deterministic (DDPG / TD3) and 
 
 
 mobile-env
-----------------------
+----------
 
 An open, minimalist Gymnasium environment for autonomous coordination in wireless mobile networks.
 It allows simulating various scenarios with moving users in a cellular network with multiple base stations.

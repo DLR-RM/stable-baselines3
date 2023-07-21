@@ -437,8 +437,9 @@ def test_ep_buffers_stats_window_size(algo, stats_window_size):
     assert model.ep_success_buffer.maxlen == stats_window_size
 
 
-def test_human_output_format_custom_test_io():
-    class DummyTextIO(TextIOBase):
+@pytest.mark.parametrize("base_class", [object, TextIOBase])
+def test_human_output_format_custom_test_io(base_class):
+    class DummyTextIO(base_class):
         def __init__(self) -> None:
             super().__init__()
             self.lines = [[]]

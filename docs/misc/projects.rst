@@ -197,3 +197,18 @@ A simple library for pink noise exploration with deterministic (DDPG / TD3) and 
 | Authors: Onno Eberhard, Jakob Hollenstein, Cristina Pinneri, Georg Martius
 | Github: https://github.com/martius-lab/pink-noise-rl
 | Paper: https://openreview.net/forum?id=hQ9V5QN27eS (Oral at ICLR 2023)
+
+
+mobile-env
+----------
+
+An open, minimalist Gymnasium environment for autonomous coordination in wireless mobile networks.
+It allows simulating various scenarios with moving users in a cellular network with multiple base stations.
+
+- Written in pure Python, easy to modify and extend, and can be installed directly via PyPI.
+- Implements the standard Gymnasium interface such that it can be used with all common frameworks for reinforcement learning.
+- There are examples for both single-agent and multi-agent RL using either `stable-baselines3` or Ray RLlib.
+
+| Authors: Stefan Schneider, Stefan Werner
+| Github: https://github.com/stefanbschneider/mobile-env
+| Paper: https://ris.uni-paderborn.de/download/30236/30237 (2022 IEEE/IFIP Network Operations and Management Symposium (NOMS))

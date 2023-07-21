@@ -38,6 +38,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Fixed callback example (@BertrandDecoster)
+- Added mobile-env as new community project (@stefanbschneider)
 
 
 Release 2.0.0 (2023-06-22)
@@ -1398,4 +1399,4 @@ And all the contributors:
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
-@lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts
+@lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider

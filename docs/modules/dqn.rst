@@ -27,7 +27,8 @@ Notes
 - Further reference: https://www.nature.com/articles/nature14236
 
 .. note::
-    This implementation provides only vanilla Deep Q-Learning and has no extensions such as Double-DQN, Dueling-DQN and Prioritized Experience Replay.
+    This implementation does **not** provide Rainbow DQN, but only vanilla Deep Q-Learning.
+    There are no extensions such as Double-DQN or Dueling-DQN, with the only exception being Prioritized Experience Replay.
 
 
 Can I use?

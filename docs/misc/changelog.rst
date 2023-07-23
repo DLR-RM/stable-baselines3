@@ -15,6 +15,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added Python 3.11 support
+- Prioritized Experience Replay for DQN (@AlexPasqua)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

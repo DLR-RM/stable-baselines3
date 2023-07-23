@@ -1,9 +1,11 @@
 import random
-from typing import Any, Dict, List, Optional, Union
 import warnings
-from gymnasium import spaces
+from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
 import torch as th
+from gymnasium import spaces
+
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.type_aliases import ReplayBufferSamples
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
@@ -16,6 +18,7 @@ class SumTree:
 
     :param size: Max number of element in the buffer.
     """
+
     def __init__(self, size: int):
         self.nodes = [0] * (2 * size - 1)
         self.data = [None] * size
@@ -24,34 +27,53 @@ class SumTree:
         self.real_size = 0
 
     @property
-    def p_total(self):
+    def p_total(self) -> float:
+        """
+        Returns the root node value, which represents the total sum of all priorities in the tree.
+
+        :return: Total sum of all priorities in the tree.
+        """
         return self.nodes[0]
 
     def update(self, data_idx: int, value: float):
+        """
+        Update the priority of a leaf node.
+
+        :param data_idx: Index of the leaf node to update.
+        :param value: New priority value.
+        """
         idx = data_idx + self.size - 1  # child index in tree array
         change = value - self.nodes[idx]
-
         self.nodes[idx] = value
-
         parent = (idx - 1) // 2
         while parent >= 0:
             self.nodes[parent] += change
             parent = (parent - 1) // 2
 
-    def add(self, value: float, data):
+    def add(self, value: float, data: int):
+        """
+        Add a new transition with priority value.
+
+        :param value: Priority value.
+        :param data: Transition data.
+        """
         self.data[self.count] = data
         self.update(self.count, value)
-
         self.count = (self.count + 1) % self.size
         self.real_size = min(self.size, self.real_size + 1)
 
-    def get(self, cumsum):
+    def get(self, cumsum) -> tuple[int, float, Any]:
+        """
+        Get a leaf node index, its priority value and transition data by cumsum value.
+
+        :param cumsum: Cumulative sum value.
+        :return: Leaf node index, its priority value and transition data.
+        """
         assert cumsum <= self.p_total
 
         idx = 0
         while 2 * idx + 1 < len(self.nodes):
-            left, right = 2*idx + 1, 2*idx + 2
-
+            left, right = 2 * idx + 1, 2 * idx + 2
             if cumsum <= self.nodes[left]:
                 idx = left
             else:
@@ -59,7 +81,6 @@ class SumTree:
                 cumsum = cumsum - self.nodes[left]
 
         data_idx = idx - self.size + 1
-
         return data_idx, self.nodes[idx], self.data[data_idx]
 
     def __repr__(self):
@@ -101,7 +122,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         # PER params
         self.eps = 1e-8  # minimal priority, prevents zero probabilities
         self.alpha = alpha  # determines how much prioritization is used, alpha = 0 corresponding to the uniform case
-        self.beta = beta  # determines the amount of importance-sampling correction, beta = 1 fully compensate for the non-uniform probabilities
+        self.beta = beta  # determines the amount of importance-sampling correction
         self.max_priority = self.eps  # priority for new samples, init as eps
 
         # SumTree: data structure to store priorities
@@ -109,8 +130,9 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
         self.real_size = 0
         self.count = 0
-    
-    def add(self,
+
+    def add(
+        self,
         obs: np.ndarray,
         next_obs: np.ndarray,
         action: np.ndarray,
@@ -118,16 +140,26 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         done: np.ndarray,
         infos: List[Dict[str, Any]],
     ) -> None:
+        """
+        Add a new transition to the buffer.
+
+        :param obs: Starting observation of the transition to be stored.
+        :param next_obs: Destination observation of the transition to be stored.
+        :param action: Action performed in the transition to be stored.
+        :param reward: Reward received in the transition to be stored.
+        :param done: Whether the episode was finished after the transition to be stored.
+        :param infos: Eventual information given by the environment.
+        """
         # store transition index with maximum priority in sum tree
         self.tree.add(self.max_priority, self.count)
 
         # update counters
         self.count = (self.count + 1) % self.buffer_size
         self.real_size = min(self.buffer_size, self.real_size + 1)
-        
+
         # store transition in the buffer
         super().add(obs, next_obs, action, reward, done, infos)
-    
+
     def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
         """
         Sample elements from the prioritized replay buffer.
@@ -135,7 +167,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         :param batch_size: Number of element to sample
         :param env:associated gym VecEnv
             to normalize the observations/rewards when sampling
-        :return:
+        :return: a batch of sampled experiences from the buffer.
         """
         assert self.buffer_size >= batch_size, "The buffer contains less samples than the batch size requires."
 
@@ -165,14 +197,6 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         # where p_i > 0 is the priority of transition i.
         probs = priorities / self.tree.p_total
 
-        # The estimation of the expected value with stochastic updates relies on those updates corresponding
-        # to the same distribution as its expectation. Prioritized replay introduces bias because it changes this
-        # distribution in an uncontrolled fashion, and therefore changes the solution that the estimates will
-        # converge to (even if the policy and state distribution are fixed). We can correct this bias by using
-        # importance-sampling (IS) weights w_i = (1/N * 1/P(i))^β that fully compensates for the non-uniform
-        # probabilities P(i) if β = 1. These weights can be folded into the Q-learning update by using w_i * δ_i
-        # instead of δ_i (this is thus weighted IS, not ordinary IS, see e.g. Mahmood et al., 2014).
-
         # Importance sampling weights.
         # All weights w_i were scaled so that max_i w_i = 1.
         weights = (self.real_size * probs) ** -self.beta
@@ -185,4 +209,4 @@ class PrioritizedReplayBuffer(ReplayBuffer):
             self.dones[sample_idxs],
             self.rewards[sample_idxs],
         )
-        return batch, weights, tree_idxs
+        return batch

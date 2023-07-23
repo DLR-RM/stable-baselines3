@@ -1,6 +1,8 @@
 import random
-from typing import Optional, Union
+from typing import Any, Dict, List, Optional, Union
+import warnings
 from gymnasium import spaces
+import numpy as np
 import torch as th
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.type_aliases import ReplayBufferSamples
@@ -25,7 +27,7 @@ class SumTree:
     def p_total(self):
         return self.nodes[0]
 
-    def update(self, data_idx, value):
+    def update(self, data_idx: int, value: float):
         idx = data_idx + self.size - 1  # child index in tree array
         change = value - self.nodes[idx]
 
@@ -36,7 +38,7 @@ class SumTree:
             self.nodes[parent] += change
             parent = (parent - 1) // 2
 
-    def add(self, value, data):
+    def add(self, value: float, data):
         self.data[self.count] = data
         self.update(self.count, value)
 
@@ -88,8 +90,13 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         n_envs: int = 1,
         alpha: float = 0.6,
         beta: float = 0.4,
+        optimize_memory_usage: bool = False,
     ):
         super().__init__(buffer_size, observation_space, action_space, device, n_envs)
+
+        # TODO: check this
+        if optimize_memory_usage:
+            warnings.warn("PrioritizedReplayBuffer does not support optimize_memory_usage=True during sampling")
 
         # PER params
         self.eps = 1e-8  # minimal priority, prevents zero probabilities
@@ -99,6 +106,27 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
         # SumTree: data structure to store priorities
         self.tree = SumTree(size=buffer_size)
+
+        self.real_size = 0
+        self.count = 0
+    
+    def add(self,
+        obs: np.ndarray,
+        next_obs: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        done: np.ndarray,
+        infos: List[Dict[str, Any]],
+    ) -> None:
+        # store transition index with maximum priority in sum tree
+        self.tree.add(self.max_priority, self.count)
+
+        # update counters
+        self.count = (self.count + 1) % self.buffer_size
+        self.real_size = min(self.buffer_size, self.real_size + 1)
+        
+        # store transition in the buffer
+        super().add(obs, next_obs, action, reward, done, infos)
     
     def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
         """

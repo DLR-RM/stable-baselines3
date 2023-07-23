@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 2.1.0a0 (WIP)
+Release 2.1.0a2 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -15,6 +15,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added Python 3.11 support
+- Added Gymnasium 0.29 support (@pseudo-rnd-thoughts)
 - Prioritized Experience Replay for DQN (@AlexPasqua)
 
 `SB3-Contrib`_
@@ -25,6 +26,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Relaxed check in logger, that was causing issue on Windows with colorama
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -36,6 +38,8 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Fixed callback example (@BertrandDecoster)
+- Added mobile-env as new community project (@stefanbschneider)
 
 
 Release 2.0.0 (2023-06-22)
@@ -1396,4 +1400,4 @@ And all the contributors:
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
-@lutogniew @lbergmann1 @lukashass
+@lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider

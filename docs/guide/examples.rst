@@ -319,7 +319,7 @@ You can control the evaluation frequency with ``eval_freq`` to monitor your agen
 
   from stable_baselines3 import SAC
   from stable_baselines3.common.callbacks import EvalCallback
-  from stable-baselines3.common.env_util import make_vec_env
+  from stable_baselines3.common.env_util import make_vec_env
 
   env_id = "Pendulum-v1"
   n_training_envs = 1
@@ -330,7 +330,7 @@ You can control the evaluation frequency with ``eval_freq`` to monitor your agen
   os.makedirs(eval_log_dir, exist_ok=True)
 
   # Initialize a vectorized training environment with default parameters
-  train_env = make_vec_env(env_id, n_env=n_training_envs, seed=0)
+  train_env = make_vec_env(env_id, n_envs=n_training_envs, seed=0)
 
   # Separate evaluation env, with different parameters passed via env_kwargs
   # Eval environments can be vectorized to speed up evaluation.

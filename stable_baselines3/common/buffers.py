@@ -317,8 +317,12 @@ class ReplayBuffer(BaseBuffer):
     def _maybe_cast_dtype(dtype: np.typing.DTypeLike) -> np.typing.DTypeLike:
         """
         Cast `np.float64` action datatype to `np.float32`,
-        keep the other dtype unchanged.
+        keep the others dtype unchanged.
         See GH#1572 for more information.
+
+        :param dtype: The original action space dtype
+        :return: ``np.float32`` if the dtype was float64,
+            the original dtype otherwise.
         """
         if dtype == np.float64:
             return np.float32

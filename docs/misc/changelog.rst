@@ -35,6 +35,7 @@ Others:
 ^^^^^^^
 - Updated GitHub issue templates
 - Fix typo in gym patch error message (@lukashass)
+- Refactor ``test_spaces.py`` tests
 
 Documentation:
 ^^^^^^^^^^^^^^

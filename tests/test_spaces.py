@@ -33,7 +33,7 @@ class DummyEnv(gym.Env):
 class DummyMultidimensionalAction(DummyEnv):
     def __init__(self):
         super().__init__(
-            spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32),
+            BOX_SPACE_FLOAT32,
             spaces.Box(low=-1, high=1, shape=(2, 2), dtype=np.float32),
         )
 

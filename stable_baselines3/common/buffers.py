@@ -208,7 +208,7 @@ class ReplayBuffer(BaseBuffer):
             self.next_observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape), dtype=observation_space.dtype)
 
         self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, self.action_dim), dtype=self._get_action_data_type(action_space)
+            (self.buffer_size, self.n_envs, self.action_dim), dtype=self._maybe_cast_dtype(action_space.dtype)
         )
 
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -314,10 +314,15 @@ class ReplayBuffer(BaseBuffer):
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
 
     @staticmethod
-    def _get_action_data_type(action_space: spaces.Space) -> np.typing.DTypeLike:
-        # Casts np.float64 action datatype to np.float32. See
-        # https://github.com/DLR-RM/stable-baselines3/pull/1572 for more information.
-        return np.float32 if action_space.dtype == np.float64 else action_space.dtype
+    def _maybe_cast_dtype(dtype: np.typing.DTypeLike) -> np.typing.DTypeLike:
+        """
+        Cast `np.float64` action datatype to `np.float32`,
+        keep the other dtype unchanged.
+        See GH#1572 for more information.
+        """
+        if dtype == np.float64:
+            return np.float32
+        return dtype
 
 
 class RolloutBuffer(BaseBuffer):
@@ -552,7 +557,7 @@ class DictReplayBuffer(ReplayBuffer):
         }
 
         self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, self.action_dim), dtype=self._get_action_data_type(action_space)
+            (self.buffer_size, self.n_envs, self.action_dim), dtype=self._maybe_cast_dtype(action_space.dtype)
         )
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)

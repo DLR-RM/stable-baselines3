@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Dict, Optional
 
 import gymnasium as gym
@@ -11,57 +12,14 @@ from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
 
-
-class DummyMultiDiscreteSpace(gym.Env):
-    def __init__(self, nvec):
-        super().__init__()
-        self.observation_space = spaces.MultiDiscrete(nvec)
-        self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
-
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
-        if seed is not None:
-            super().reset(seed=seed)
-        return self.observation_space.sample(), {}
-
-    def step(self, action):
-        return self.observation_space.sample(), 0.0, False, False, {}
+BOX_SPACE_FLOAT64 = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float64)
+BOX_SPACE_FLOAT32 = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
 
 
-class DummyMultiBinary(gym.Env):
-    def __init__(self, n):
-        super().__init__()
-        self.observation_space = spaces.MultiBinary(n)
-        self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
-
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
-        if seed is not None:
-            super().reset(seed=seed)
-        return self.observation_space.sample(), {}
-
-    def step(self, action):
-        return self.observation_space.sample(), 0.0, False, False, {}
-
-
-class DummyMultidimensionalAction(gym.Env):
-    def __init__(self):
-        super().__init__()
-        self.observation_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
-        self.action_space = spaces.Box(low=-1, high=1, shape=(2, 2), dtype=np.float32)
-
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
-        if seed is not None:
-            super().reset(seed=seed)
-        return self.observation_space.sample(), {}
-
-    def step(self, action):
-        return self.observation_space.sample(), 0.0, False, False, {}
-
-
+@dataclass
 class DummyEnv(gym.Env):
-    def __init__(self, action_space: Space, observation_space: Space):
-        super().__init__()
-        self.action_space = action_space
-        self.observation_space = observation_space
+    observation_space: Space
+    action_space: Space
 
     def step(self, action):
         return self.observation_space.sample(), 0.0, False, False, {}
@@ -70,10 +28,40 @@ class DummyEnv(gym.Env):
         if seed is not None:
             super().reset(seed=seed)
         return self.observation_space.sample(), {}
+
+
+class DummyMultidimensionalAction(DummyEnv):
+    def __init__(self):
+        super().__init__(
+            spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32),
+            spaces.Box(low=-1, high=1, shape=(2, 2), dtype=np.float32),
+        )
+
+
+class DummyMultiBinary(DummyEnv):
+    def __init__(self, n):
+        super().__init__(
+            spaces.MultiBinary(n),
+            BOX_SPACE_FLOAT32,
+        )
+
+
+class DummyMultiDiscreteSpace(DummyEnv):
+    def __init__(self, nvec):
+        super().__init__(
+            spaces.MultiDiscrete(nvec),
+            BOX_SPACE_FLOAT32,
+        )
 
 
 @pytest.mark.parametrize(
-    "env", [DummyMultiDiscreteSpace([4, 3]), DummyMultiBinary(8), DummyMultiBinary((3, 2)), DummyMultidimensionalAction()]
+    "env",
+    [
+        DummyMultiDiscreteSpace([4, 3]),
+        DummyMultiBinary(8),
+        DummyMultiBinary((3, 2)),
+        DummyMultidimensionalAction(),
+    ],
 )
 def test_env(env):
     # Check the env used for testing
@@ -145,59 +133,38 @@ def test_discrete_obs_space(model_class, env):
     model_class("MlpPolicy", env, **kwargs).learn(256)
 
 
-@pytest.fixture()
-def dummy_env_float64_action_float64_observation():
-    return DummyEnv(
-        action_space=spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float64),
-        observation_space=spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float64),
-    )
-
-
-@pytest.fixture()
-def dummy_env_float64_action_float32_observation():
-    return DummyEnv(
-        action_space=spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float64),
-        observation_space=spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32),
-    )
-
-
-@pytest.fixture()
-def dummy_env_float64_action_float32_dict_observation():
-    space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float64)
-    return DummyEnv(
-        action_space=spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32),
-        observation_space=spaces.Dict({"a": space, "b": space}),
-    )
-
-
-@pytest.fixture()
-def dummy_env_float64_action_float64_dict_observation():
-    space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float64)
-    return DummyEnv(
-        action_space=spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float64),
-        observation_space=spaces.Dict({"a": space, "b": space}),
-    )
-
-
+@pytest.mark.parametrize("model_class", [SAC, TD3, PPO, DDPG, A2C])
 @pytest.mark.parametrize(
-    "env_fixture",
+    "obs_space",
     [
-        "dummy_env_float64_action_float32_observation",
-        "dummy_env_float64_action_float64_observation",
-        "dummy_env_float64_action_float32_dict_observation",
-        "dummy_env_float64_action_float64_dict_observation",
+        BOX_SPACE_FLOAT32,
+        BOX_SPACE_FLOAT64,
+        spaces.Dict({"a": BOX_SPACE_FLOAT32, "b": BOX_SPACE_FLOAT32}),
+        spaces.Dict({"a": BOX_SPACE_FLOAT32, "b": BOX_SPACE_FLOAT64}),
     ],
 )
-@pytest.mark.parametrize("model_class", [SAC, TD3, PPO, DDPG, A2C])
-def test_float64_action_space_support(env_fixture, model_class, request):
-    env = request.getfixturevalue(env_fixture)
+@pytest.mark.parametrize(
+    "action_space",
+    [
+        BOX_SPACE_FLOAT32,
+        BOX_SPACE_FLOAT64,
+    ],
+)
+def test_float64_action_space(model_class, obs_space, action_space):
+    env = DummyEnv(obs_space, action_space)
     env = gym.wrappers.TimeLimit(env, max_episode_steps=200)
     if isinstance(env.observation_space, spaces.Dict):
         policy = "MultiInputPolicy"
     else:
         policy = "MlpPolicy"
-    model = model_class(policy, env)
-    model.learn(20)
+
+    if model_class in [PPO, A2C]:
+        kwargs = dict(n_steps=64, policy_kwargs=dict(net_arch=[12]))
+    else:
+        kwargs = dict(learning_starts=60, policy_kwargs=dict(net_arch=[12]))
+
+    model = model_class(policy, env, **kwargs)
+    model.learn(64)
     initial_obs, _ = env.reset()
-    action, _ = model.predict(initial_obs)
+    action, _ = model.predict(initial_obs, deterministic=False)
     assert action.dtype == env.action_space.dtype

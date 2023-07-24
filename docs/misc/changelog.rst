@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 2.1.0a2 (WIP)
+Release 2.1.0a3 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -26,6 +26,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Relaxed check in logger, that was causing issue on Windows with colorama
+- Fixed off-policy algorithms with continuous float64 actions (see #1145) (@tobirohrer)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -88,7 +89,6 @@ Bug Fixes:
   for ``Inf`` and ``NaN`` (@lutogniew)
 - Fixed HER ``truncate_last_trajectory()`` (@lbergmann1)
 - Fixed HER desired and achieved goal order in reward computation (@JonathanKuelz)
-- Fixed off-policy algorithms with continuous float64 actions (see #1145) (@tobirohrer)
 
 Deprecations:
 ^^^^^^^^^^^^^

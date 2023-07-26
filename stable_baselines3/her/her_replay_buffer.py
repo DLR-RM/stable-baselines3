@@ -9,7 +9,7 @@ from gymnasium import spaces
 from stable_baselines3.common.buffers import DictReplayBuffer
 from stable_baselines3.common.type_aliases import DictReplayBufferSamples, TensorDict
 from stable_baselines3.common.vec_env import VecEnv, VecNormalize
-from stable_baselines3.her.goal_selection_strategy import KEY_TO_GOAL_STRATEGY, GoalSelectionStrategy
+from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
 
 
 class HerReplayBuffer(DictReplayBuffer):
@@ -73,7 +73,7 @@ class HerReplayBuffer(DictReplayBuffer):
 
         # convert goal_selection_strategy into GoalSelectionStrategy if string
         if isinstance(goal_selection_strategy, str):
-            self.goal_selection_strategy = KEY_TO_GOAL_STRATEGY[goal_selection_strategy.lower()]
+            self.goal_selection_strategy = GoalSelectionStrategy[goal_selection_strategy.upper()]
         else:
             self.goal_selection_strategy = goal_selection_strategy
 

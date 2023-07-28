@@ -27,6 +27,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Relaxed check in logger, that was causing issue on Windows with colorama
 - Fixed off-policy algorithms with continuous float64 actions (see #1145) (@tobirohrer)
+- Enable np.ndarray logging for TensorBoardOutputFormat as histogram (see #1634) (@iwishwasaneagle)
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -412,7 +412,7 @@ class TensorBoardOutputFormat(KVWriter):
                 else:
                     self.writer.add_scalar(key, value, step)
 
-            if isinstance(value, th.Tensor):
+            if isinstance(value, (th.Tensor, np.ndarray)):
                 self.writer.add_histogram(key, value, step)
 
             if isinstance(value, Video):

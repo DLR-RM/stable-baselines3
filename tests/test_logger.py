@@ -250,6 +250,34 @@ def test_report_video_to_unsupported_format_raises_error(tmp_path, unsupported_f
     writer.close()
 
 
+@pytest.mark.parametrize("histogram", [th.rand(100), np.random.rand(100)])
+def test_report_histogram_to_tensorboard(tmp_path, read_log, histogram):
+    pytest.importorskip("tensorboard")
+
+    writer = make_output_format("tensorboard", tmp_path)
+    writer.write({"data": histogram}, key_excluded={"data": ()})
+
+    log = read_log("tensorboard")
+
+    assert not log.empty
+    assert any("data" in f for f in log.lines)
+    assert any("Histogram" in f for f in log.lines)
+
+    writer.close()
+
+
+@pytest.mark.parametrize("histogram", [list(np.random.rand(100)), tuple(np.random.rand(100)), "1 2 3 4"])
+def test_report_unsupported_type_as_histogram_to_tensorboard(tmp_path, read_log, histogram):
+    pytest.importorskip("tensorboard")
+
+    writer = make_output_format("tensorboard", tmp_path)
+    writer.write({"data": histogram}, key_excluded={"data": ()})
+
+    assert all("Histogram" not in f for f in read_log("tensorboard").lines)
+
+    writer.close()
+
+
 def test_report_image_to_tensorboard(tmp_path, read_log):
     pytest.importorskip("tensorboard")
 

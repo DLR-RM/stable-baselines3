@@ -42,15 +42,15 @@ def test_check_env_dict_action():
     [
         # Above upper bound
         (
-            spaces.Box(low=0.0, high=1.0, shape=(3,), dtype=np.float32),
+            spaces.Box(low=np.array([0.0, 0.0, 0.0]), high=np.array([2.0, 1.0, 1.0]), shape=(3,), dtype=np.float32),
             np.array([1.0, 1.5, 0.5], dtype=np.float32),
-            r"Expected: obs <= 1\.0, actual max value: 1\.5 at index 1",
+            r"Expected: 0\.0 <= obs\[1] <= 1\.0, actual value: 1\.5",
         ),
         # Below lower bound
         (
-            spaces.Box(low=0.0, high=2.0, shape=(3,), dtype=np.float32),
+            spaces.Box(low=np.array([0.0, -10.0, 0.0]), high=np.array([2.0, 1.0, 1.0]), shape=(3,), dtype=np.float32),
             np.array([-1.0, 1.5, 0.5], dtype=np.float32),
-            r"Expected: obs >= 0\.0, actual min value: -1\.0 at index 0",
+            r"Expected: 0\.0 <= obs\[0] <= 2\.0, actual value: -1\.0",
         ),
         # Wrong dtype
         (

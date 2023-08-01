@@ -8,7 +8,7 @@ This folder contains documentation for the RL baselines.
 #### Install Sphinx and Theme
 Execute this command in the project root:
 ```
-pip install -e .[docs]
+pip install -e ".[docs]"
 ```
 
 #### Building the Docs

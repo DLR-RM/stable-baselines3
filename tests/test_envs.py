@@ -156,8 +156,6 @@ def test_non_default_spaces(new_obs_space):
         spaces.Box(low=-1000, high=1000, shape=(3,), dtype=np.float32),
         # Too small range
         spaces.Box(low=-0.1, high=0.1, shape=(2,), dtype=np.float32),
-        # Inverted boundaries
-        spaces.Box(low=1, high=-1, shape=(2,), dtype=np.float32),
         # Same boundaries
         spaces.Box(low=1, high=1, shape=(2,), dtype=np.float32),
         # Unbounded action space

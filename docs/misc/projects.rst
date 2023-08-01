@@ -212,3 +212,15 @@ It allows simulating various scenarios with moving users in a cellular network w
 | Authors: Stefan Schneider, Stefan Werner
 | Github: https://github.com/stefanbschneider/mobile-env
 | Paper: https://ris.uni-paderborn.de/download/30236/30237 (2022 IEEE/IFIP Network Operations and Management Symposium (NOMS))
+
+
+DeepNetSlice
+------------
+
+A Deep Reinforcement Learning Open-Source Toolkit for Network Slice Placement.
+It includes a customizable simulation environments, as well as some ready-to-use demos for training
+intelligent agents to perform network slice placement.
+
+| Author: Alex Pasquali
+| Github: https://github.com/AlexPasqua/DeepNetSlice
+| Paper: **under review** (citation instructions on the project's README.md) -> see this Master's Thesis for the moment: https://etd.adm.unipi.it/theses/available/etd-01182023-110038/unrestricted/Tesi_magistrale_Pasquali_Alex.pdf

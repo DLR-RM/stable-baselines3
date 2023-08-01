@@ -203,13 +203,24 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
             f"Expected: {observation_space.dtype}, actual dtype: {obs.dtype}"
         )
         if isinstance(observation_space, spaces.Box):
-            for i, (low, high) in enumerate(zip(observation_space.low, observation_space.high)):
-                assert low <= obs[i] <= high, (
+            lower_bounds, upper_bounds = observation_space.low, observation_space.high
+            # Expose all invalid indices at once
+            invalid_indices = np.where(np.logical_or(obs < lower_bounds, obs > upper_bounds))
+            if (obs > upper_bounds).any() or (obs < lower_bounds).any():
+                message = (
                     f"The observation returned by the `{method_name}()` method does not match the bounds "
-                    f"of the given observation space {observation_space}. "
-                    f"Expected: {low} <= obs[{i}] <= {high}, "
-                    f"actual value: {obs[i]}"
+                    f"of the given observation space {observation_space}. \n"
                 )
+                message += f"{len(invalid_indices[0])} invalid indices: \n"
+
+                for index in zip(*invalid_indices):
+                    index_str = ",".join(map(str, index))
+                    message += (
+                        f"Expected: {lower_bounds[index]} <= obs[{index_str}] <= {upper_bounds[index]}, "
+                        f"actual value: {obs[index]} \n"
+                    )
+
+                raise AssertionError(message)
 
     assert observation_space.contains(obs), (
         f"The observation returned by the `{method_name}()` method "

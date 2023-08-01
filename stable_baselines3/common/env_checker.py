@@ -203,12 +203,12 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
             f"Expected: {observation_space.dtype}, actual dtype: {obs.dtype}"
         )
         if isinstance(observation_space, spaces.Box):
-            for i, (obs_dim, low, high) in enumerate(zip(obs, observation_space.low, observation_space.high)):
-                assert low <= obs_dim <= high, (
+            for i, (low, high) in enumerate(zip(observation_space.low, observation_space.high)):
+                assert low <= obs[i] <= high, (
                     f"The observation returned by the `{method_name}()` method does not match the bounds "
                     f"of the given observation space {observation_space}. "
                     f"Expected: {low} <= obs[{i}] <= {high}, "
-                    f"actual value: {obs_dim}"
+                    f"actual value: {obs[i]}"
                 )
 
     assert observation_space.contains(obs), (

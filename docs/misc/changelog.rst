@@ -93,7 +93,7 @@ Bug Fixes:
   for ``Inf`` and ``NaN`` (@lutogniew)
 - Fixed HER ``truncate_last_trajectory()`` (@lbergmann1)
 - Fixed HER desired and achieved goal order in reward computation (@JonathanKuelz)
-- Fixed env_checker for FrameStack observation (@corentinlger)
+- Fixed ``env_checker`` for ``FrameStack`` observation (@corentinlger)
 
 Deprecations:
 ^^^^^^^^^^^^^

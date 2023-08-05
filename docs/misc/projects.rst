@@ -197,3 +197,35 @@ A simple library for pink noise exploration with deterministic (DDPG / TD3) and 
 | Authors: Onno Eberhard, Jakob Hollenstein, Cristina Pinneri, Georg Martius
 | Github: https://github.com/martius-lab/pink-noise-rl
 | Paper: https://openreview.net/forum?id=hQ9V5QN27eS (Oral at ICLR 2023)
+
+
+mobile-env
+----------
+
+An open, minimalist Gymnasium environment for autonomous coordination in wireless mobile networks.
+It allows simulating various scenarios with moving users in a cellular network with multiple base stations.
+
+- Written in pure Python, easy to modify and extend, and can be installed directly via PyPI.
+- Implements the standard Gymnasium interface such that it can be used with all common frameworks for reinforcement learning.
+- There are examples for both single-agent and multi-agent RL using either `stable-baselines3` or Ray RLlib.
+
+| Authors: Stefan Schneider, Stefan Werner
+| Github: https://github.com/stefanbschneider/mobile-env
+| Paper: https://ris.uni-paderborn.de/download/30236/30237 (2022 IEEE/IFIP Network Operations and Management Symposium (NOMS))
+
+
+DeepNetSlice
+------------
+
+A Deep Reinforcement Learning Open-Source Toolkit for Network Slice Placement (NSP).
+
+NSP is the problem of deciding which physical servers in a network should host the virtual network functions (VNFs) that make up a network slice, as well as managing the mapping of the virtual links between the VNFs onto the physical infrastructure.
+It is a complex optimization problem, as it involves considering the requirements of the network slice and the available resources on the physical network.
+The goal is generally to maximize the utilization of the physical resources while ensuring that the network slices meet their performance requirements.
+
+The toolkit includes a customizable simulation environments, as well as some ready-to-use demos for training
+intelligent agents to perform network slice placement.
+
+| Author: Alex Pasquali
+| Github: https://github.com/AlexPasqua/DeepNetSlice
+| Paper: **under review** (citation instructions on the project's README.md) -> see this Master's Thesis for the moment: https://etd.adm.unipi.it/theses/available/etd-01182023-110038/unrestricted/Tesi_magistrale_Pasquali_Alex.pdf

@@ -43,6 +43,7 @@ Documentation:
 - Fixed callback example (@BertrandDecoster)
 - Fixed policy network example (@kyle-he)
 - Added mobile-env as new community project (@stefanbschneider)
+- Added [DeepNetSlice](https://github.com/AlexPasqua/DeepNetSlice) to community projects (@AlexPasqua)
 
 
 Release 2.0.0 (2023-06-22)

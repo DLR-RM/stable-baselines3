@@ -42,15 +42,28 @@ def test_check_env_dict_action():
     [
         # Above upper bound
         (
-            spaces.Box(low=0.0, high=1.0, shape=(3,), dtype=np.float32),
+            spaces.Box(low=np.array([0.0, 0.0, 0.0]), high=np.array([2.0, 1.0, 1.0]), shape=(3,), dtype=np.float32),
             np.array([1.0, 1.5, 0.5], dtype=np.float32),
-            r"Expected: obs <= 1\.0, actual max value: 1\.5 at index 1",
+            r"Expected: 0\.0 <= obs\[1] <= 1\.0, actual value: 1\.5",
+        ),
+        # Above upper bound (multi-dim)
+        (
+            spaces.Box(low=-1.0, high=2.0, shape=(2, 3, 3, 1), dtype=np.float32),
+            3.0 * np.ones((2, 3, 3, 1), dtype=np.float32),
+            # Note: this is one of the 18 invalid indices
+            r"Expected: -1\.0 <= obs\[1,2,1,0\] <= 2\.0, actual value: 3\.0",
         ),
         # Below lower bound
         (
-            spaces.Box(low=0.0, high=2.0, shape=(3,), dtype=np.float32),
+            spaces.Box(low=np.array([0.0, -10.0, 0.0]), high=np.array([2.0, 1.0, 1.0]), shape=(3,), dtype=np.float32),
             np.array([-1.0, 1.5, 0.5], dtype=np.float32),
-            r"Expected: obs >= 0\.0, actual min value: -1\.0 at index 0",
+            r"Expected: 0\.0 <= obs\[0] <= 2\.0, actual value: -1\.0",
+        ),
+        # Below lower bound (multi-dim)
+        (
+            spaces.Box(low=-1.0, high=2.0, shape=(2, 3, 3, 1), dtype=np.float32),
+            -2 * np.ones((2, 3, 3, 1), dtype=np.float32),
+            r"18 invalid indices:",
         ),
         # Wrong dtype
         (
@@ -111,7 +124,7 @@ def test_check_env_detailed_error(obs_tuple, method):
 
     test_env = TestEnv()
     with pytest.raises(AssertionError, match=error_message):
-        check_env(env=test_env)
+        check_env(env=test_env, warn=False)
 
 
 class LimitedStepsTestEnv(gym.Env):

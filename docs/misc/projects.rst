@@ -217,8 +217,13 @@ It allows simulating various scenarios with moving users in a cellular network w
 DeepNetSlice
 ------------
 
-A Deep Reinforcement Learning Open-Source Toolkit for Network Slice Placement.
-It includes a customizable simulation environments, as well as some ready-to-use demos for training
+A Deep Reinforcement Learning Open-Source Toolkit for Network Slice Placement (NSP).
+
+NSP is the problem of deciding which physical servers in a network should host the virtual network functions (VNFs) that make up a network slice, as well as managing the mapping of the virtual links between the VNFs onto the physical infrastructure.
+It is a complex optimization problem, as it involves considering the requirements of the network slice and the available resources on the physical network.
+The goal is generally to maximize the utilization of the physical resources while ensuring that the network slices meet their performance requirements.
+
+The toolkit includes a customizable simulation environments, as well as some ready-to-use demos for training
 intelligent agents to perform network slice placement.
 
 | Author: Alex Pasquali

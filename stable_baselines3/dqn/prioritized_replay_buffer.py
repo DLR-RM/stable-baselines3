@@ -218,4 +218,4 @@ class PrioritizedReplayBuffer(ReplayBuffer):
             self.dones[sample_idxs],
             self.rewards[sample_idxs],
         )
-        return ReplayBufferSamples(*tuple(map(self.to_torch, batch)))
+        return ReplayBufferSamples(*tuple(map(self.to_torch, batch)))  # type: ignore

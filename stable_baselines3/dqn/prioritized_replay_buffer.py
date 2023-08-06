@@ -20,8 +20,8 @@ class SumTree:
     """
 
     def __init__(self, size: int):
-        self.nodes = [0] * (2 * size - 1)
-        self.data = [None] * size
+        self.nodes = th.zeros(2 * size - 1)
+        self.data = th.empty(size)
         self.size = size
         self.count = 0
         self.real_size = 0
@@ -33,7 +33,7 @@ class SumTree:
 
         :return: Total sum of all priorities in the tree.
         """
-        return self.nodes[0]
+        return self.nodes[0].item()
 
     def update(self, data_idx: int, value: float):
         """
@@ -62,7 +62,7 @@ class SumTree:
         self.count = (self.count + 1) % self.size
         self.real_size = min(self.size, self.real_size + 1)
 
-    def get(self, cumsum) -> tuple[int, float, Any]:
+    def get(self, cumsum) -> tuple[int, float, th.Tensor]:
         """
         Get a leaf node index, its priority value and transition data by cumsum value.
 
@@ -81,7 +81,7 @@ class SumTree:
                 cumsum = cumsum - self.nodes[left]
 
         data_idx = idx - self.size + 1
-        return data_idx, self.nodes[idx], self.data[data_idx]
+        return data_idx, self.nodes[idx].item(), self.data[data_idx]
 
     def __repr__(self):
         return f"SumTree(nodes={self.nodes.__repr__()}, data={self.data.__repr__()})"
@@ -191,7 +191,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
             priorities[i] = priority
             tree_idxs.append(tree_idx)
-            sample_idxs.append(sample_idx)
+            sample_idxs.append(int(sample_idx.item()))
 
         # probability of sampling transition i as P(i) = p_i^alpha / \sum_{k} p_k^alpha
         # where p_i > 0 is the priority of transition i.
@@ -202,11 +202,18 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         weights = (self.real_size * probs) ** -self.beta
         weights = weights / weights.max()
 
-        batch = ReplayBufferSamples(
-            self.observations[sample_idxs],
-            self.actions[sample_idxs],
-            self.next_observations[sample_idxs],
+        env_indices = np.random.randint(0, high=self.n_envs, size=(len(sample_idxs),))
+
+        if self.optimize_memory_usage:
+            next_obs = self._normalize_obs(self.observations[(np.array(sample_idxs) + 1) % self.buffer_size, env_indices, :], env)
+        else:
+            next_obs = self._normalize_obs(self.next_observations[sample_idxs, env_indices, :], env)
+
+        batch = (
+            self._normalize_obs(self.observations[sample_idxs, env_indices, :], env),
+            self.actions[sample_idxs, env_indices, :],
+            next_obs,
             self.dones[sample_idxs],
             self.rewards[sample_idxs],
         )
-        return batch
+        return ReplayBufferSamples(*tuple(map(self.to_torch, batch)))

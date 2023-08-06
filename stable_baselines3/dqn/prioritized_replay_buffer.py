@@ -205,7 +205,9 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         env_indices = np.random.randint(0, high=self.n_envs, size=(len(sample_idxs),))
 
         if self.optimize_memory_usage:
-            next_obs = self._normalize_obs(self.observations[(np.array(sample_idxs) + 1) % self.buffer_size, env_indices, :], env)
+            next_obs = self._normalize_obs(
+                self.observations[(np.array(sample_idxs) + 1) % self.buffer_size, env_indices, :], env
+            )
         else:
             next_obs = self._normalize_obs(self.next_observations[sample_idxs, env_indices, :], env)
 

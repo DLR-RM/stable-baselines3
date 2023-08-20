@@ -40,7 +40,7 @@ class VecTransposeImage(VecEnvWrapper):
                     observation_space.spaces[key] = self.transpose_space(space, key)
         else:
             assert isinstance(venv.observation_space, spaces.Box)
-            observation_space = self.transpose_space(venv.observation_space) # type: ignore[assignment]
+            observation_space = self.transpose_space(venv.observation_space)  # type: ignore[assignment]
         super().__init__(venv, observation_space=observation_space)
 
     @staticmethod
@@ -59,7 +59,7 @@ class VecTransposeImage(VecEnvWrapper):
         ), f"The observation space {key} must follow the channel last convention"
         height, width, channels = observation_space.shape
         new_shape = (channels, height, width)
-        return spaces.Box(low=0, high=255, shape=new_shape, dtype=observation_space.dtype) # type: ignore[arg-type]
+        return spaces.Box(low=0, high=255, shape=new_shape, dtype=observation_space.dtype)  # type: ignore[arg-type]
 
     @staticmethod
     def transpose_image(image: np.ndarray) -> np.ndarray:

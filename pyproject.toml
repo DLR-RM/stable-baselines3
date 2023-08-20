@@ -39,7 +39,6 @@ follow_imports = "silent"
 show_error_codes = true
 exclude = """(?x)(
     stable_baselines3/common/buffers.py$
-    | stable_baselines3/common/callbacks.py$
     | stable_baselines3/common/distributions.py$
     | stable_baselines3/common/off_policy_algorithm.py$
     | stable_baselines3/common/policies.py$

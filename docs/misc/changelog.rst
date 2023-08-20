@@ -3,6 +3,38 @@
 Changelog
 ==========
 
+
+Release 2.2.0a0 (WIP)
+--------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Fixed ``stable_baselines3/common/callbacks.py`` type hints
+- Fixed ``stable_baselines3/common/utils.py`` type hints
+- Fixed ``stable_baselines3/common/vec_envs/vec_transpose.py`` type hints
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
 Release 2.1.0 (2023-08-17)
 --------------------------
 

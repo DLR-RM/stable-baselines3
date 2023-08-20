@@ -677,7 +677,7 @@ class ProgressBarCallback(BaseCallback):
     using tqdm and rich packages.
     """
 
-    pbar: tqdm
+    pbar: tqdm  # pytype: disable=invalid-annotation
 
     def __init__(self) -> None:
         super().__init__()

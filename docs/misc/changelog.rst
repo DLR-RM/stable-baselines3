@@ -3,9 +3,10 @@
 Changelog
 ==========
 
-
-Release 2.1.0a4 (WIP)
+Release 2.1.0 (2023-08-17)
 --------------------------
+
+**Float64 actions , Gymnasium 0.29 support and bug fixes**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -19,16 +20,21 @@ New Features:
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
+- Fixed MaskablePPO ignoring ``stats_window_size`` argument
+- Added Python 3.11 support
 
 `RL Zoo`_
 ^^^^^^^^^
+- Upgraded to Huggingface-SB3 >= 2.3
+- Added Python 3.11 support
+
 
 Bug Fixes:
 ^^^^^^^^^^
 - Relaxed check in logger, that was causing issue on Windows with colorama
 - Fixed off-policy algorithms with continuous float64 actions (see #1145) (@tobirohrer)
-- Fixed env_checker.py warning messages for out of bounds in complex observation spaces (@Gabo-Tor)
- 
+- Fixed ``env_checker.py`` warning messages for out of bounds in complex observation spaces (@Gabo-Tor)
+
 Deprecations:
 ^^^^^^^^^^^^^
 

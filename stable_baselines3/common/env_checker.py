@@ -4,6 +4,7 @@ from typing import Any, Dict, Union
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
+from gymnasium.wrappers.frame_stack import LazyFrames
 
 from stable_baselines3.common.preprocessing import check_for_nested_spaces, is_image_space_channels_first
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
@@ -171,7 +172,9 @@ def _check_goal_env_compute_reward(
     assert rewards[0] == reward, f"Vectorized computation of reward differs from single computation: {rewards[0]} != {reward}"
 
 
-def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spaces.Space, method_name: str) -> None:
+def _check_obs(
+    obs: Union[tuple, dict, np.ndarray, int, LazyFrames], observation_space: spaces.Space, method_name: str
+) -> None:
     """
     Check that the observation returned by the environment
     correspond to the declared one.
@@ -187,7 +190,10 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
         # `sample()` will return a np.int64 instead of an int
         assert np.issubdtype(type(obs), np.integer), f"The observation returned by `{method_name}()` method must be an int"
     elif _is_numpy_array_space(observation_space):
-        assert isinstance(obs, np.ndarray), f"The observation returned by `{method_name}()` method must be a numpy array"
+        # Check if obs is a ndarray or a FrameStacking of ndarrays
+        assert isinstance(
+            obs, (np.ndarray, LazyFrames)
+        ), f"The observation returned by `{method_name}()` method must be a numpy array"
 
     # Additional checks for numpy arrays, so the error message is clearer (see GH#1399)
     if isinstance(obs, np.ndarray):

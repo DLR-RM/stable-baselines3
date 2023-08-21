@@ -203,8 +203,11 @@ def open_path(
         is not None, we attempt to open the path with the suffix.
     :return:
     """
-    if not isinstance(path, (io.BufferedWriter, io.BufferedReader, io.BytesIO)):
-        raise TypeError(f"Path {path} parameter has invalid type.", io.BufferedIOBase)
+    # Note(antonin): the true annotation should be IO[bytes]
+    # but there is not easy way to check that
+    allowed_types = (io.BufferedWriter, io.BufferedReader, io.BytesIO)
+    if not isinstance(path, allowed_types):
+        raise TypeError(f"Path {path} parameter has invalid type: expected one of {allowed_types}.")
     if path.closed:
         raise ValueError(f"File stream {path} is closed.")
     mode = mode.lower()

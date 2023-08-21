@@ -178,7 +178,9 @@ def json_to_data(json_string: str, custom_objects: Optional[Dict[str, Any]] = No
 
 
 @functools.singledispatch
-def open_path(path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verbose: int = 0, suffix: Optional[str] = None):
+def open_path(
+    path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verbose: int = 0, suffix: Optional[str] = None
+) -> Union[io.BufferedWriter, io.BufferedReader]:
     """
     Opens a path for reading or writing with a preferred suffix and raises debug information.
     If the provided path is a derivative of io.BufferedIOBase it ensures that the file
@@ -201,18 +203,18 @@ def open_path(path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verb
         is not None, we attempt to open the path with the suffix.
     :return:
     """
-    if not isinstance(path, io.BufferedIOBase):
-        raise TypeError("Path parameter has invalid type.", io.BufferedIOBase)
+    if not isinstance(path, (io.BufferedWriter, io.BufferedReader)):
+        raise TypeError(f"Path {path} parameter has invalid type.", io.BufferedIOBase)
     if path.closed:
-        raise ValueError("File stream is closed.")
+        raise ValueError(f"File stream {path} is closed.")
     mode = mode.lower()
     try:
         mode = {"write": "w", "read": "r", "w": "w", "r": "r"}[mode]
     except KeyError as e:
         raise ValueError("Expected mode to be either 'w' or 'r'.") from e
     if ("w" == mode) and not path.writable() or ("r" == mode) and not path.readable():
-        e1 = "writable" if "w" == mode else "readable"
-        raise ValueError(f"Expected a {e1} file.")
+        error_msg = "writable" if "w" == mode else "readable"
+        raise ValueError(f"Expected a {error_msg} file.")
     return path
 
 
@@ -255,7 +257,7 @@ def open_path_pathlib(path: pathlib.Path, mode: str, verbose: int = 0, suffix: O
 
     if mode == "r":
         try:
-            path = path.open("rb")
+            path = path.open("rb")  # type: ignore[assignment]
         except FileNotFoundError as error:
             if suffix is not None and suffix != "":
                 newpath = pathlib.Path(f"{path}.{suffix}")
@@ -270,7 +272,7 @@ def open_path_pathlib(path: pathlib.Path, mode: str, verbose: int = 0, suffix: O
                 path = pathlib.Path(f"{path}.{suffix}")
             if path.exists() and path.is_file() and verbose >= 2:
                 warnings.warn(f"Path '{path}' exists, will overwrite it.")
-            path = path.open("wb")
+            path = path.open("wb")  # type: ignore[assignment]
         except IsADirectoryError:
             warnings.warn(f"Path '{path}' is a folder. Will save instead to {path}_2")
             path = pathlib.Path(f"{path}_2")

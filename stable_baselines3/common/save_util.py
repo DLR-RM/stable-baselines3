@@ -180,7 +180,7 @@ def json_to_data(json_string: str, custom_objects: Optional[Dict[str, Any]] = No
 @functools.singledispatch
 def open_path(
     path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verbose: int = 0, suffix: Optional[str] = None
-) -> Union[io.BufferedWriter, io.BufferedReader]:
+) -> Union[io.BufferedWriter, io.BufferedReader, io.BytesIO]:
     """
     Opens a path for reading or writing with a preferred suffix and raises debug information.
     If the provided path is a derivative of io.BufferedIOBase it ensures that the file
@@ -203,7 +203,7 @@ def open_path(
         is not None, we attempt to open the path with the suffix.
     :return:
     """
-    if not isinstance(path, (io.BufferedWriter, io.BufferedReader)):
+    if not isinstance(path, (io.BufferedWriter, io.BufferedReader, io.BytesIO)):
         raise TypeError(f"Path {path} parameter has invalid type.", io.BufferedIOBase)
     if path.closed:
         raise ValueError(f"File stream {path} is closed.")

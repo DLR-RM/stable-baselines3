@@ -34,9 +34,6 @@ class BaseCallback(ABC):
     # The RL model
     # Type hint as string to avoid circular import
     model: "base_class.BaseAlgorithm"
-    logger: Logger
-    # An alias for self.model.get_env(), the environment used for training
-    training_env: VecEnv
 
     def __init__(self, verbose: int = 0):
         super().__init__()
@@ -51,6 +48,18 @@ class BaseCallback(ABC):
         # to have access to the parent object
         self.parent = None  # type: Optional[BaseCallback]
 
+    @property
+    def training_env(self) -> VecEnv:
+        training_env = self.model.get_env()
+        assert (
+            training_env is not None
+        ), "`model.get_env()` returned None, you must initialize the model with an environment to use callbacks"
+        return training_env
+
+    @property
+    def logger(self) -> Logger:
+        return self.model.logger
+
     # Type hint as string to avoid circular import
     def init_callback(self, model: "base_class.BaseAlgorithm") -> None:
         """
@@ -58,12 +67,6 @@ class BaseCallback(ABC):
         RL model and the training environment for convenience.
         """
         self.model = model
-        training_env = model.get_env()
-        assert (
-            training_env is not None
-        ), "`model.get_env()` returned None, you must initialize the model with an environment to use callbacks"
-        self.training_env = training_env
-        self.logger = model.logger
         self._init_callback()
 
     def _init_callback(self) -> None:

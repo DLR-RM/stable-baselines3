@@ -72,7 +72,7 @@ def test_sde_check():
 @pytest.mark.parametrize("squash_output", [False, True])
 def test_state_dependent_noise(model_class, use_expln, squash_output):
     kwargs = {"learning_starts": 0} if model_class == SAC else {"n_steps": 64}
-    if model_class == SAC: 
+    if model_class == SAC:
         policy_kwargs = dict(log_std_init=-2, use_expln=use_expln, net_arch=[64])
     else:
         policy_kwargs = dict(log_std_init=-2, use_expln=use_expln, net_arch=[64], squash_output=squash_output)
@@ -88,20 +88,23 @@ def test_state_dependent_noise(model_class, use_expln, squash_output):
     )
     model.learn(total_timesteps=255)
     buffer = model.replay_buffer if model_class == SAC else model.rollout_buffer
-    assert (buffer.actions <= model.action_space.high).all() 
+    assert (buffer.actions <= model.action_space.high).all()
     assert (buffer.actions >= model.action_space.low).all()
     if squash_output:
         if buffer.actions.max() > 0.5:
-            assert np.max(env.actions) > 1.
+            assert np.max(env.actions) > 1.0
         if buffer.actions.max() < -0.5:
-            assert np.min(env.actions) < -1.
+            assert np.min(env.actions) < -1.0
     model.policy.reset_noise()
     if model_class == SAC:
         model.policy.actor.get_std()
 
+
 # default pendulum env from gymnasium with action tracking
 DEFAULT_X = np.pi
 DEFAULT_Y = 1.0
+
+
 class PendulumEnv(gym.Env):
     """
     ## Description
@@ -203,9 +206,7 @@ class PendulumEnv(gym.Env):
         # This will throw a warning in tests/envs/test_envs in utils/env_checker.py as the space is not symmetric
         #   or normalised as max_torque == 2 by default. Ignoring the issue here as the default settings are too old
         #   to update to follow the gymnasium api
-        self.action_space = spaces.Box(
-            low=-self.max_torque, high=self.max_torque, shape=(1,), dtype=np.float32
-        )
+        self.action_space = spaces.Box(low=-self.max_torque, high=self.max_torque, shape=(1,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-high, high=high, dtype=np.float32)
 
         # added for tracking actions
@@ -274,17 +275,13 @@ class PendulumEnv(gym.Env):
             import pygame
             from pygame import gfxdraw
         except ImportError as e:
-            raise DependencyNotInstalled(
-                "pygame is not installed, run `pip install gymnasium[classic-control]`"
-            ) from e
+            raise DependencyNotInstalled("pygame is not installed, run `pip install gymnasium[classic-control]`") from e
 
         if self.screen is None:
             pygame.init()
             if self.render_mode == "human":
                 pygame.display.init()
-                self.screen = pygame.display.set_mode(
-                    (self.screen_dim, self.screen_dim)
-                )
+                self.screen = pygame.display.set_mode((self.screen_dim, self.screen_dim))
             else:  # mode in "rgb_array"
                 self.screen = pygame.Surface((self.screen_dim, self.screen_dim))
         if self.clock is None:
@@ -310,19 +307,13 @@ class PendulumEnv(gym.Env):
         gfxdraw.filled_polygon(self.surf, transformed_coords, (204, 77, 77))
 
         gfxdraw.aacircle(self.surf, offset, offset, int(rod_width / 2), (204, 77, 77))
-        gfxdraw.filled_circle(
-            self.surf, offset, offset, int(rod_width / 2), (204, 77, 77)
-        )
+        gfxdraw.filled_circle(self.surf, offset, offset, int(rod_width / 2), (204, 77, 77))
 
         rod_end = (rod_length, 0)
         rod_end = pygame.math.Vector2(rod_end).rotate_rad(self.state[0] + np.pi / 2)
         rod_end = (int(rod_end[0] + offset), int(rod_end[1] + offset))
-        gfxdraw.aacircle(
-            self.surf, rod_end[0], rod_end[1], int(rod_width / 2), (204, 77, 77)
-        )
-        gfxdraw.filled_circle(
-            self.surf, rod_end[0], rod_end[1], int(rod_width / 2), (204, 77, 77)
-        )
+        gfxdraw.aacircle(self.surf, rod_end[0], rod_end[1], int(rod_width / 2), (204, 77, 77))
+        gfxdraw.filled_circle(self.surf, rod_end[0], rod_end[1], int(rod_width / 2), (204, 77, 77))
 
         fname = path.join(path.dirname(__file__), "assets/clockwise.png")
         img = pygame.image.load(fname)
@@ -353,9 +344,7 @@ class PendulumEnv(gym.Env):
             pygame.display.flip()
 
         else:  # mode == "rgb_array":
-            return np.transpose(
-                np.array(pygame.surfarray.pixels3d(self.screen)), axes=(1, 0, 2)
-            )
+            return np.transpose(np.array(pygame.surfarray.pixels3d(self.screen)), axes=(1, 0, 2))
 
     def close(self):
         if self.screen is not None:

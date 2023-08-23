@@ -171,9 +171,17 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             # Rescale and perform action
             clipped_actions = actions
+            # Unsquash the actions (if perviously squashed), otherwise
             # Clip the actions to avoid out of bound error
             if isinstance(self.action_space, spaces.Box):
-                clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
+                try: 
+                    squash_output = self.policy_kwargs['squash_output']
+                except KeyError:
+                    squash_output = False
+                if squash_output:
+                    clipped_actions = self.policy.unscale_action(clipped_actions)
+                else:
+                    clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
 
             new_obs, rewards, dones, infos = env.step(clipped_actions)
 

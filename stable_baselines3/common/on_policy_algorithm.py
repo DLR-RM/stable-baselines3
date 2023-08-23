@@ -174,11 +174,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             # Unsquash the actions (if perviously squashed), otherwise
             # Clip the actions to avoid out of bound error
             if isinstance(self.action_space, spaces.Box):
-                try: 
-                    squash_output = self.policy_kwargs['squash_output']
-                except KeyError:
-                    squash_output = False
-                if squash_output:
+                if self.policy.squash_output:
                     clipped_actions = self.policy.unscale_action(clipped_actions)
                 else:
                     clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)

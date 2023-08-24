@@ -1,5 +1,5 @@
 from os import path
-from typing import Optional, List
+from typing import List, Optional
 
 import gymnasium as gym
 import numpy as np

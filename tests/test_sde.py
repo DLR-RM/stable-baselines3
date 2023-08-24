@@ -1,5 +1,5 @@
 from os import path
-from typing import Optional
+from typing import Optional, List
 
 import gymnasium as gym
 import numpy as np
@@ -210,7 +210,7 @@ class PendulumEnv(gym.Env):
         self.observation_space = spaces.Box(low=-high, high=high, dtype=np.float32)
 
         # added for tracking actions
-        self.actions = []
+        self.actions: List[float] = []
 
     def step(self, u):
         # added for tracking actions
@@ -244,10 +244,8 @@ class PendulumEnv(gym.Env):
         else:
             # Note that if you use custom reset bounds, it may lead to out-of-bound
             # state/observations.
-            x = options.get("x_init") if "x_init" in options else DEFAULT_X
-            y = options.get("y_init") if "y_init" in options else DEFAULT_Y
-            x = utils.verify_number_and_cast(x)
-            y = utils.verify_number_and_cast(y)
+            x = DEFAULT_X
+            y = DEFAULT_Y
             high = np.array([x, y])
         low = -high  # We enforce symmetric limits.
         self.state = self.np_random.uniform(low=low, high=high)

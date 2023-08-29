@@ -675,8 +675,8 @@ def test_open_file(tmp_path):
     buff = io.BytesIO()
     assert buff.writable()
     assert buff.readable() is ("w" == "w")
-    _ = open_path(buff, "w")
-    assert _ is buff
+    opened_buffer = open_path(buff, "w")
+    assert opened_buffer is buff
     with pytest.raises(ValueError):
         buff.close()
         open_path(buff, "w")

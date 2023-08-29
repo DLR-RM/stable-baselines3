@@ -119,23 +119,18 @@ A child callback is for instance :ref:`StopTrainingOnRewardThreshold <StopTraini
         """
         Base class for triggering callback on event.
 
-        :param callback: (Optional[BaseCallback]) Callback that will be called
-            when an event is triggered.
+        :param callback: Callback that will be called when an event is triggered.
         :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
         """
-        def __init__(self, callback: Optional[BaseCallback] = None, verbose: int = 0):
-            super(EventCallback, self).__init__(verbose=verbose)
+        def __init__(self, callback: BaseCallback, verbose: int = 0):
+            super().__init__(verbose=verbose)
             self.callback = callback
             # Give access to the parent
-            if callback is not None:
-                self.callback.parent = self
+            self.callback.parent = self
         ...
 
         def _on_event(self) -> bool:
-            if self.callback is not None:
-                return self.callback()
-            return True
-
+            return self.callback()
 
 
 Callback Collection

@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.1.1 
+Release 2.2.0a0 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -27,6 +27,11 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Fixed ``stable_baselines3/common/callbacks.py`` type hints
+- Fixed ``stable_baselines3/common/utils.py`` type hints
+- Fixed ``stable_baselines3/common/vec_envs/vec_transpose.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/vec_video_recorder.py`` type hints
+- Fixed ``stable_baselines3/common/save_util.py`` type hints
 
 Documentation:
 ^^^^^^^^^^^^^^

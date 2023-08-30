@@ -3,9 +3,45 @@
 Changelog
 ==========
 
-
-Release 2.1.0a4 (WIP)
+Release 2.2.0a0 (WIP)
 --------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+- Moves VectorizedActionNoise into ``_setup_learn()`` in OffPolicyAlgorithm (@PatrickHelm)
+- Prevents out of bound error on Windows if no seed is passed (@PatrickHelm)
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Fixed ``stable_baselines3/common/callbacks.py`` type hints
+- Fixed ``stable_baselines3/common/utils.py`` type hints
+- Fixed ``stable_baselines3/common/vec_envs/vec_transpose.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/vec_video_recorder.py`` type hints
+- Fixed ``stable_baselines3/common/save_util.py`` type hints
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
+Release 2.1.0 (2023-08-17)
+--------------------------
+
+**Float64 actions , Gymnasium 0.29 support and bug fixes**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -19,16 +55,21 @@ New Features:
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
+- Fixed MaskablePPO ignoring ``stats_window_size`` argument
+- Added Python 3.11 support
 
 `RL Zoo`_
 ^^^^^^^^^
+- Upgraded to Huggingface-SB3 >= 2.3
+- Added Python 3.11 support
+
 
 Bug Fixes:
 ^^^^^^^^^^
 - Relaxed check in logger, that was causing issue on Windows with colorama
 - Fixed off-policy algorithms with continuous float64 actions (see #1145) (@tobirohrer)
-- Fixed env_checker.py warning messages for out of bounds in complex observation spaces (@Gabo-Tor)
- 
+- Fixed ``env_checker.py`` warning messages for out of bounds in complex observation spaces (@Gabo-Tor)
+
 Deprecations:
 ^^^^^^^^^^^^^
 
@@ -1406,4 +1447,4 @@ And all the contributors:
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
-@lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he
+@lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm

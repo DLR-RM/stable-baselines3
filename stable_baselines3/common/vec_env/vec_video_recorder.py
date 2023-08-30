@@ -22,6 +22,8 @@ class VecVideoRecorder(VecEnvWrapper):
     :param name_prefix: Prefix to the video name
     """
 
+    video_recorder: video_recorder.VideoRecorder
+
     def __init__(
         self,
         venv: VecEnv,
@@ -50,8 +52,6 @@ class VecVideoRecorder(VecEnvWrapper):
         assert self.env.render_mode == "rgb_array", f"The render_mode must be 'rgb_array', not {self.env.render_mode}"
 
         self.record_video_trigger = record_video_trigger
-        self.video_recorder = None
-
         self.video_folder = os.path.abspath(video_folder)
         # Create output folder if needed
         os.makedirs(self.video_folder, exist_ok=True)

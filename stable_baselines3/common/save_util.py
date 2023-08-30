@@ -178,7 +178,9 @@ def json_to_data(json_string: str, custom_objects: Optional[Dict[str, Any]] = No
 
 
 @functools.singledispatch
-def open_path(path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verbose: int = 0, suffix: Optional[str] = None):
+def open_path(
+    path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verbose: int = 0, suffix: Optional[str] = None
+) -> Union[io.BufferedWriter, io.BufferedReader, io.BytesIO]:
     """
     Opens a path for reading or writing with a preferred suffix and raises debug information.
     If the provided path is a derivative of io.BufferedIOBase it ensures that the file
@@ -201,18 +203,21 @@ def open_path(path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verb
         is not None, we attempt to open the path with the suffix.
     :return:
     """
-    if not isinstance(path, io.BufferedIOBase):
-        raise TypeError("Path parameter has invalid type.", io.BufferedIOBase)
+    # Note(antonin): the true annotation should be IO[bytes]
+    # but there is not easy way to check that
+    allowed_types = (io.BufferedWriter, io.BufferedReader, io.BytesIO)
+    if not isinstance(path, allowed_types):
+        raise TypeError(f"Path {path} parameter has invalid type: expected one of {allowed_types}.")
     if path.closed:
-        raise ValueError("File stream is closed.")
+        raise ValueError(f"File stream {path} is closed.")
     mode = mode.lower()
     try:
         mode = {"write": "w", "read": "r", "w": "w", "r": "r"}[mode]
     except KeyError as e:
         raise ValueError("Expected mode to be either 'w' or 'r'.") from e
     if ("w" == mode) and not path.writable() or ("r" == mode) and not path.readable():
-        e1 = "writable" if "w" == mode else "readable"
-        raise ValueError(f"Expected a {e1} file.")
+        error_msg = "writable" if "w" == mode else "readable"
+        raise ValueError(f"Expected a {error_msg} file.")
     return path
 
 
@@ -231,7 +236,7 @@ def open_path_str(path: str, mode: str, verbose: int = 0, suffix: Optional[str] 
         is not None, we attempt to open the path with the suffix.
     :return:
     """
-    return open_path(pathlib.Path(path), mode, verbose, suffix)
+    return open_path_pathlib(pathlib.Path(path), mode, verbose, suffix)
 
 
 @open_path.register(pathlib.Path)
@@ -255,7 +260,7 @@ def open_path_pathlib(path: pathlib.Path, mode: str, verbose: int = 0, suffix: O
 
     if mode == "r":
         try:
-            path = path.open("rb")
+            return open_path(path.open("rb"), mode, verbose, suffix)
         except FileNotFoundError as error:
             if suffix is not None and suffix != "":
                 newpath = pathlib.Path(f"{path}.{suffix}")
@@ -270,7 +275,7 @@ def open_path_pathlib(path: pathlib.Path, mode: str, verbose: int = 0, suffix: O
                 path = pathlib.Path(f"{path}.{suffix}")
             if path.exists() and path.is_file() and verbose >= 2:
                 warnings.warn(f"Path '{path}' exists, will overwrite it.")
-            path = path.open("wb")
+            return open_path(path.open("wb"), mode, verbose, suffix)
         except IsADirectoryError:
             warnings.warn(f"Path '{path}' is a folder. Will save instead to {path}_2")
             path = pathlib.Path(f"{path}_2")
@@ -278,12 +283,11 @@ def open_path_pathlib(path: pathlib.Path, mode: str, verbose: int = 0, suffix: O
             warnings.warn(f"Path '{path.parent}' does not exist. Will create it.")
             path.parent.mkdir(exist_ok=True, parents=True)
 
-    # if opening was successful uses the identity function
+    # if opening was successful uses the open_path() function
     # if opening failed with IsADirectory|FileNotFound, calls open_path_pathlib
     #   with corrections
     # if reading failed with FileNotFoundError, calls open_path_pathlib with suffix
-
-    return open_path(path, mode, verbose, suffix)
+    return open_path_pathlib(path, mode, verbose, suffix)
 
 
 def save_to_zip_file(

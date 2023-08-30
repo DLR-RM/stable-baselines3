@@ -22,6 +22,9 @@ Bug Fixes:
 ^^^^^^^^^^
 - Prevents using squash_output and not use_sde in ActorCritcPolicy (@PatrickHelm)
 - Performs unscaling of actions in collect_rollout in OnPolicyAlgorithm (@PatrickHelm)
+- Moves VectorizedActionNoise into ``_setup_learn()`` in OffPolicyAlgorithm (@PatrickHelm)
+- Prevents out of bound error on Windows if no seed is passed (@PatrickHelm)
+
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -278,7 +278,7 @@ class VecEnv(ABC):
         if seed is None:
             # To ensure that subprocesses have different seeds,
             # we still populate the seed variable when no argument is passed
-            seed = np.random.randint(0, 2**32 - 1)
+            seed = int(np.random.randint(0, np.iinfo(np.uint32).max, dtype=np.uint32))
 
         self._seeds = [seed + idx for idx in range(self.num_envs)]
         return self._seeds

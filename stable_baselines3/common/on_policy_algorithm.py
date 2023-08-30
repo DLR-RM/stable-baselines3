@@ -221,6 +221,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         rollout_buffer.compute_returns_and_advantage(last_values=values, dones=dones)
 
+        callback.update_locals(locals())
+
         callback.on_rollout_end()
 
         return True

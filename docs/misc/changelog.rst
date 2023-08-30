@@ -22,6 +22,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Moves VectorizedActionNoise into ``_setup_learn()`` in OffPolicyAlgorithm (@PatrickHelm)
 - Prevents out of bound error on Windows if no seed is passed (@PatrickHelm)
+- Calls ``callback.update_locals()`` before ``callback.on_rollout_end()`` in OnPolicyAlgorithm (@PatrickHelm)
 
 Deprecations:
 ^^^^^^^^^^^^^

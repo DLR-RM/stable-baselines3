@@ -246,6 +246,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             if truncate_last_traj:
                 self.replay_buffer.truncate_last_trajectory()
 
+        self.replay_buffer.device = self.device
+
     def _setup_learn(
         self,
         total_timesteps: int,

@@ -3,7 +3,6 @@
 Changelog
 ==========
 
-
 Release 2.2.0a0 (WIP)
 --------------------------
 
@@ -21,6 +20,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Prevents OOB error on Windows if no seed is passed (@PatrickHelm)
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -1444,4 +1444,4 @@ And all the contributors:
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
-@lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he
+@lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm

@@ -413,7 +413,17 @@ class TensorBoardOutputFormat(KVWriter):
                     self.writer.add_scalar(key, value, step)
 
             if isinstance(value, (th.Tensor, np.ndarray)):
-                self.writer.add_histogram(key, value, step)
+                try:
+                    self.writer.add_histogram(key, value, step)
+                except TypeError:
+                    warnings.warn(
+                        "A numpy.ndarray was passed to write which threw a "
+                        "TypeError. This is most likely due to an outdated numpy version (<1.24.0) and/or "
+                        "an outdated torch version (<2.0.0). The ndarray will be converted to a torch.Tensor "
+                        "as a workaround. For more information, "
+                        "see https://github.com/DLR-RM/stable-baselines3/pull/1635"
+                    )
+                    self.writer.add_histogram(key, th.from_numpy(value), step)
 
             if isinstance(value, Video):
                 self.writer.add_video(key, value.frames, step, value.fps)

@@ -1,3 +1,4 @@
+import functools
 import importlib.util
 import os
 import sys
@@ -250,11 +251,39 @@ def test_report_video_to_unsupported_format_raises_error(tmp_path, unsupported_f
     writer.close()
 
 
-@pytest.mark.parametrize("histogram", [th.rand(100), np.random.rand(100)])
-def test_report_histogram_to_tensorboard(tmp_path, read_log, histogram):
+_called = None
+
+
+def get_fail_first_then_pass_fn(fn, exception=Exception):
+    _called = False
+
+    @functools.wraps(fn)
+    def _fn(*args, **kwargs):
+        global _called
+        if not _called:
+            _called = True
+            raise exception()
+        return fn(*args, **kwargs)
+
+    return _fn
+
+
+@pytest.mark.parametrize(
+    "histogram,fail_first_write",
+    [
+        (th.rand(100), False),
+        (np.random.rand(100), False),
+        (np.random.rand(100), True),
+    ],
+)
+def test_report_histogram_to_tensorboard(tmp_path, read_log, fail_first_write, histogram):
     pytest.importorskip("tensorboard")
 
     writer = make_output_format("tensorboard", tmp_path)
+
+    if fail_first_write:
+        writer.writer.add_histogram = get_fail_first_then_pass_fn(writer.writer.add_histogram, TypeError)
+
     writer.write({"data": histogram}, key_excluded={"data": ()})
 
     log = read_log("tensorboard")

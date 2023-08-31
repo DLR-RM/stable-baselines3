@@ -297,6 +297,9 @@ def test_report_histogram_to_tensorboard(tmp_path, read_log, fail_first_write, h
 
 @pytest.mark.parametrize("histogram", [list(np.random.rand(100)), tuple(np.random.rand(100)), "1 2 3 4"])
 def test_report_unsupported_type_as_histogram_to_tensorboard(tmp_path, read_log, histogram):
+    """
+    Check that other types aren't accidentally logged as a Histogram
+    """
     pytest.importorskip("tensorboard")
 
     writer = make_output_format("tensorboard", tmp_path)

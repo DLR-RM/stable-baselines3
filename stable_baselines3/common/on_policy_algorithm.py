@@ -173,11 +173,13 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             clipped_actions = actions
 
             if isinstance(self.action_space, spaces.Box):
-                # Unsquash the actions if they were previously squashed
                 if self.policy.squash_output:
+                    # Unscale the actions to match env bounds
+                    # if they were previously squashed (scaled in [-1, 1])
                     clipped_actions = self.policy.unscale_action(clipped_actions)
-                # Otherwise, clip the actions to avoid out of bound error
                 else:
+                    # Otherwise, clip the actions to avoid out of bound error
+                    # as we are sampling from an unbounded Gaussian distribution
                     clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
 
             new_obs, rewards, dones, infos = env.step(clipped_actions)

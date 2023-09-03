@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.2.0a0 (WIP)
+Release 2.2.0a1 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -25,6 +25,7 @@ Bug Fixes:
 - Moves VectorizedActionNoise into ``_setup_learn()`` in OffPolicyAlgorithm (@PatrickHelm)
 - Prevents out of bound error on Windows if no seed is passed (@PatrickHelm)
 - Calls ``callback.update_locals()`` before ``callback.on_rollout_end()`` in OnPolicyAlgorithm (@PatrickHelm)
+- Fixes replay buffer device after loading in OffPolicyAlgorithm (@PatrickHelm)
 
 
 Deprecations:
@@ -37,7 +38,7 @@ Others:
 - Fixed ``stable_baselines3/common/vec_envs/vec_transpose.py`` type hints
 - Fixed ``stable_baselines3/common/vec_env/vec_video_recorder.py`` type hints
 - Fixed ``stable_baselines3/common/save_util.py`` type hints
-
+- Updated docker images to  Ubuntu Jammy using micromamba 1.5
 
 Documentation:
 ^^^^^^^^^^^^^^

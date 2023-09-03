@@ -1,7 +1,7 @@
 ARG PARENT_IMAGE
 FROM $PARENT_IMAGE
 ARG PYTORCH_DEPS=cpuonly
-ARG PYTHON_VERSION=3.8
+ARG PYTHON_VERSION=3.10
 ARG MAMBA_DOCKERFILE_ACTIVATE=1  # (otherwise python will not be found)
 
 # Install micromamba env and dependencies

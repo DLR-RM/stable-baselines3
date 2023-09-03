@@ -359,8 +359,10 @@ def test_save_load_replay_buffer(tmp_path, model_class):
     old_replay_buffer = deepcopy(model.replay_buffer)
     model.save_replay_buffer(path)
     model.replay_buffer = None
-    for device in ["cpu", "cuda", "auto"]:
-        model.device = get_device(device)
+    for device in ["cpu", "cuda"]:
+        # Manually force device to check that the replay buffer device
+        # is correctly updated
+        model.device = th.device(device)
         model.load_replay_buffer(path)
         assert model.replay_buffer.device.type == model.device.type
 

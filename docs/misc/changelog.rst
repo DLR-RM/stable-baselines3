@@ -38,7 +38,7 @@ Others:
 - Fixed ``stable_baselines3/common/vec_envs/vec_transpose.py`` type hints
 - Fixed ``stable_baselines3/common/vec_env/vec_video_recorder.py`` type hints
 - Fixed ``stable_baselines3/common/save_util.py`` type hints
-
+- Updated docker images to  Ubuntu Jammy using micromamba 1.5
 
 Documentation:
 ^^^^^^^^^^^^^^

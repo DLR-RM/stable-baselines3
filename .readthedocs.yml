@@ -14,9 +14,3 @@ formats: all
 # Set requirements using conda env
 conda:
   environment: docs/conda_env.yml
-
-# When using Conda, it’s required to specify build.tools.python
-build:
-  os: ubuntu-22.04
-  tools:
-    python: "3.10"

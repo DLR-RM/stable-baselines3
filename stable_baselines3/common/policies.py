@@ -489,6 +489,8 @@ class ActorCriticPolicy(BasePolicy):
 
         self.log_std_init = log_std_init
         dist_kwargs = None
+
+        assert not (squash_output and not use_sde), "squash_output=True is only available when using gSDE (use_sde=True)"
         # Keyword arguments for gSDE distribution
         if use_sde:
             dist_kwargs = {

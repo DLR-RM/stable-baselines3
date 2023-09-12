@@ -3,11 +3,12 @@
 Changelog
 ==========
 
-Release 2.2.0a1 (WIP)
+Release 2.2.0a2 (WIP)
 --------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Switched to ``ruff`` for sorting imports (isort is no longer needed), black and ruff version now require a minimum version
 
 New Features:
 ^^^^^^^^^^^^^
@@ -18,6 +19,10 @@ New Features:
 `RL Zoo`_
 ^^^^^^^^^
 
+`SBX`_
+^^^^^^^^^
+- Added ``DDPG`` and ``TD3``
+
 Bug Fixes:
 ^^^^^^^^^^
 - Prevents using squash_output and not use_sde in ActorCritcPolicy (@PatrickHelm)
@@ -25,7 +30,8 @@ Bug Fixes:
 - Moves VectorizedActionNoise into ``_setup_learn()`` in OffPolicyAlgorithm (@PatrickHelm)
 - Prevents out of bound error on Windows if no seed is passed (@PatrickHelm)
 - Calls ``callback.update_locals()`` before ``callback.on_rollout_end()`` in OnPolicyAlgorithm (@PatrickHelm)
-- Fixes replay buffer device after loading in OffPolicyAlgorithm (@PatrickHelm)
+- Fixed replay buffer device after loading in OffPolicyAlgorithm (@PatrickHelm)
+- Fixed ``render_mode`` which was not properly loaded when using ``VecNormalize.load()``
 
 
 Deprecations:
@@ -1424,6 +1430,7 @@ and `Quentin Gallouédec`_ (aka @qgallouedec).
 
 .. _SB3-Contrib: https://github.com/Stable-Baselines-Team/stable-baselines3-contrib
 .. _RL Zoo: https://github.com/DLR-RM/rl-baselines3-zoo
+.. _SBX: https://github.com/araffin/sbx
 
 Contributors:
 -------------

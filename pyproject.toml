@@ -24,11 +24,6 @@ max-complexity = 15
 [tool.black]
 line-length = 127
 
-[tool.isort]
-profile = "black"
-line_length = 127
-src_paths = ["stable_baselines3"]
-
 [tool.pytype]
 inputs = ["stable_baselines3"]
 disable = ["pyi-error"]

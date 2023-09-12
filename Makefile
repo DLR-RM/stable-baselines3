@@ -27,13 +27,13 @@ lint:
 
 format:
 	# Sort imports
-	isort ${LINT_PATHS}
+	ruff --select I ${LINT_PATHS} --fix
 	# Reformat using black
 	black ${LINT_PATHS}
 
 check-codestyle:
 	# Sort imports
-	isort --check ${LINT_PATHS}
+	ruff --select I ${LINT_PATHS}
 	# Reformat using black
 	black --check ${LINT_PATHS}
 

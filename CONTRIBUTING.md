@@ -38,7 +38,7 @@ pip install -e .[docs,tests,extra]
 
 ## Codestyle
 
-We use [black codestyle](https://github.com/psf/black) (max line length of 127 characters) together with [isort](https://github.com/timothycrosley/isort) to sort the imports.
+We use [black codestyle](https://github.com/psf/black) (max line length of 127 characters) together with [ruff](https://github.com/astral-sh/ruff) (isort rules) to sort the imports.
 For the documentation, we use the default line length of 88 characters per line.
 
 **Please run `make format`** to reformat your code. You can check the codestyle using `make check-codestyle` and `make lint`.
@@ -63,7 +63,7 @@ def my_function(arg1: type1, arg2: type2) -> returntype:
 
 Before proposing a PR, please open an issue, where the feature will be discussed. This prevent from duplicated PR to be proposed and also ease the code review process.
 
-Each PR need to be reviewed and accepted by at least one of the maintainers (@hill-a, @araffin, @ernestum, @AdamGleave or @Miffyli).
+Each PR need to be reviewed and accepted by at least one of the maintainers (@hill-a, @araffin, @ernestum, @AdamGleave, @Miffyli or @qgallouedec).
 A PR must pass the Continuous Integration tests to be merged with the master branch.
 
 
@@ -85,7 +85,7 @@ Type checking with `pytype` and `mypy`:
 make type
 ```
 
-Codestyle check with `black`, `isort` and `ruff`:
+Codestyle check with `black`, and `ruff` (`isort` rules):
 
 ```
 make check-codestyle

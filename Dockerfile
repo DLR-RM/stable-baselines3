@@ -2,7 +2,8 @@ ARG PARENT_IMAGE
 FROM $PARENT_IMAGE
 ARG PYTORCH_DEPS=cpuonly
 ARG PYTHON_VERSION=3.10
-ARG MAMBA_DOCKERFILE_ACTIVATE=1  # (otherwise python will not be found)
+# (otherwise python will not be found)
+ARG MAMBA_DOCKERFILE_ACTIVATE=1
 
 # Install micromamba env and dependencies
 RUN micromamba install -n base -y python=$PYTHON_VERSION \
@@ -10,16 +11,15 @@ RUN micromamba install -n base -y python=$PYTHON_VERSION \
     micromamba clean --all --yes
 
 ENV CODE_DIR /home/$MAMBA_USER
-
+WORKDIR ${CODE_DIR}/stable-baselines3
 # Copy setup file only to install dependencies
-COPY --chown=$MAMBA_USER:$MAMBA_USER ./setup.py ${CODE_DIR}/stable-baselines3/setup.py
-COPY --chown=$MAMBA_USER:$MAMBA_USER ./stable_baselines3/version.txt ${CODE_DIR}/stable-baselines3/stable_baselines3/version.txt
+COPY --chown=$MAMBA_USER:$MAMBA_USER ./poetry.lock .
+COPY --chown=$MAMBA_USER:$MAMBA_USER ./pyproject.toml .
 
-RUN cd ${CODE_DIR}/stable-baselines3 && \
-    pip install -e .[extra,tests,docs] && \
-    # Use headless version for docker
-    pip uninstall -y opencv-python && \
-    pip install opencv-python-headless && \
-    pip cache purge
+RUN pip install poetry>=1.6.1
+RUN poetry install -extras extra,tests,docs --no-root --no-cache
+RUN pip uninstall -y opencv-python
+RUN pip install opencv-python-headless
+RUN pip cache purge
 
 CMD /bin/bash

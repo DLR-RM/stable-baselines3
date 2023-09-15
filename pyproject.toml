@@ -1,3 +1,100 @@
+[tool.poetry]
+name = "stable-baselines3"
+version = "2.2.0a2"
+description = "Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms."
+authors = ["Antonin Raffin <antonin.raffin@dlr.de>"]
+readme = "README.md"
+packages = [{include = "stable_baselines3"}]
+
+keywords = [
+    "reinforcement-learning-algorithms",
+    "reinforcement-learning",
+    "machine-learning",
+    "gymnasium",
+    "gym",
+    "openai",
+    "stable",
+    "baselines",
+    "toolbox",
+    "python",
+    "data-science"]
+license = "MIT"
+classifiers=[
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+[tool.poetry.urls]
+Code = "https://github.com/DLR-RM/stable-baselines3"
+Documentation = "https://stable-baselines3.readthedocs.io/"
+Changelog = "https://stable-baselines3.readthedocs.io/en/master/misc/changelog.html"
+SB3-Contrib = "https://github.com/Stable-Baselines-Team/stable-baselines3-contrib"
+RL-Zoo = "https://github.com/DLR-RM/rl-baselines3-zoo"
+SBX = "https://github.com/araffin/sbx"
+
+[tool.poetry.dependencies]
+python = ">=3.8"
+gymnasium = ">=0.28.1,<0.30"
+numpy = ">=1.20"
+torch = ">=1.13"
+cloudpickle = "*"
+pandas = "*"
+matplotlib = "*"
+pytest = {version = "*", optional = true}
+pytest-cov = {version = "*", optional = true}
+pytest-env = {version = "*", optional = true}
+pytest-xdist = {version = "*", optional = true}
+pytype = {version = "*", optional = true}
+mypy = {version = "*", optional = true}
+ruff = {version = "*", optional = true}
+isort = {version = ">=5.0", optional = true}
+black = {version = "*", optional = true}
+sphinx = {version = ">=5.3,<7.0", optional = true}
+sphinx-autobuild = {version = "*", optional = true}
+sphinx-rtd-theme = {version = "*", optional = true}
+"sphinxcontrib.spelling" = {version = "*", optional = true}
+sphinx-autodoc-typehints = {version = "*", optional = true}
+sphinx_copybutton = {version = "*", optional = true}
+autorom = {version = "~=0.6.1", extras=["accept-rom-license"], optional = true}
+
+[tool.poetry.extras]
+tests = [
+            # Run tests and coverage
+            "pytest",
+            "pytest-cov",
+            "pytest-env",
+            "pytest-xdist",
+            # Type check
+            "pytype",
+            "mypy",
+            # Lint code (flake8 replacement)
+            "ruff",
+            # Sort imports
+            "isort>=5.0",
+            # Reformat
+            "black",
+        ]
+docs = [
+    "sphinx",
+    "sphinx-autobuild",
+    "sphinx-rtd-theme",
+    # For spelling
+    "sphinxcontrib.spelling",
+    # Type hints support
+    "sphinx-autodoc-typehints",
+    # Copy button for code snippets
+    "sphinx_copybutton",
+]
+
+extra = ["autorom"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.ruff]
 # Same as Black.
 line-length = 127

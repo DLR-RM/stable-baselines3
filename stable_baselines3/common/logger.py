@@ -8,7 +8,7 @@ from collections import defaultdict
 from io import TextIOBase
 from typing import Any, Dict, List, Mapping, Optional, Sequence, TextIO, Tuple, Union
 
-import matplotlib
+import matplotlib.figure
 import numpy as np
 import pandas
 import torch as th

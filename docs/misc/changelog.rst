@@ -32,6 +32,7 @@ Bug Fixes:
 - Calls ``callback.update_locals()`` before ``callback.on_rollout_end()`` in OnPolicyAlgorithm (@PatrickHelm)
 - Fixed replay buffer device after loading in OffPolicyAlgorithm (@PatrickHelm)
 - Fixed ``render_mode`` which was not properly loaded when using ``VecNormalize.load()``
+- ``SimpleMultiObsEnv`` returns a float reward on episode completion instead of an int (@NixGD)
 
 
 Deprecations:

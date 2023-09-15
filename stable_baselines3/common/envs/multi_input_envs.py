@@ -150,7 +150,7 @@ class SimpleMultiObsEnv(gym.Env):
             self.state -= self.num_col
 
         got_to_end = self.state == self.max_state
-        reward = 1 if got_to_end else reward
+        reward = 1.0 if got_to_end else reward
         truncated = self.count > self.max_count
         terminated = got_to_end
 

@@ -60,12 +60,13 @@ docker-gpu:
 
 # PyPi package release
 release:
-	python -m build
-	twine upload dist/*
+	poetry build
+	poetry publish
 
 # Test PyPi package release
 test-release:
-	python -m build
-	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+	poetry build
+	poetry config repositories.testpypi https://test.pypi.org/legacy/
+	poetry publish
 
 .PHONY: clean spelling doc lint format check-codestyle commit-checks

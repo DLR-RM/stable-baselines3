@@ -59,6 +59,7 @@ sphinx-rtd-theme = {version = "*", optional = true}
 sphinx-autodoc-typehints = {version = "*", optional = true}
 sphinx_copybutton = {version = "*", optional = true}
 autorom = {version = "~=0.6.1", extras=["accept-rom-license"], optional = true}
+tqdm = "^4.66.1"
 
 [tool.poetry.extras]
 tests = [
@@ -73,7 +74,7 @@ tests = [
             # Lint code (flake8 replacement)
             "ruff",
             # Sort imports
-            "isort>=5.0",
+            "isort",
             # Reformat
             "black",
         ]
@@ -89,7 +90,7 @@ docs = [
     "sphinx_copybutton",
 ]
 
-extra = ["autorom"]
+extra = ["autorom", "tqdm"]
 
 [build-system]
 requires = ["poetry-core"]

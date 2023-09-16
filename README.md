@@ -202,7 +202,7 @@ Actions `gym.spaces`:
 ## Testing the installation
 ### Install dependencies
 ```sh
-pip install -e .[docs,tests,extra]
+poetry install --all-extras
 ```
 ### Run tests
 All unit tests in stable baselines3 can be run using `pytest` runner:

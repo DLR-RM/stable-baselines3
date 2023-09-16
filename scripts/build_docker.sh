@@ -4,7 +4,7 @@ CPU_PARENT=mambaorg/micromamba:1.5-jammy
 GPU_PARENT=mambaorg/micromamba:1.5-jammy-cuda-11.7.1
 
 TAG=stablebaselines/stable-baselines3
-VERSION=$(cat ./stable_baselines3/version.txt)
+VERSION=$(grep -m 1 version pyproject.toml | tr -s ' ' | tr -d '"' | tr -d "'" | cut -d' ' -f3)
 
 if [[ ${USE_GPU} == "True" ]]; then
   PARENT=${GPU_PARENT}

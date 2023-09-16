@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.2.0a2 (WIP)
+Release 2.2.0a3 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -32,6 +32,7 @@ Bug Fixes:
 - Calls ``callback.update_locals()`` before ``callback.on_rollout_end()`` in OnPolicyAlgorithm (@PatrickHelm)
 - Fixed replay buffer device after loading in OffPolicyAlgorithm (@PatrickHelm)
 - Fixed ``render_mode`` which was not properly loaded when using ``VecNormalize.load()``
+- Fixed success reward dtype in ``SimpleMultiObsEnv`` (@NixGD)
 
 
 Deprecations:

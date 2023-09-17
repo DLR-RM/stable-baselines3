@@ -52,13 +52,13 @@ Bleeding-edge version
 
 .. code-block:: bash
 
-	pip install git+https://github.com/DLR-RM/stable-baselines3
+	poetry install git+https://github.com/DLR-RM/stable-baselines3.git
 
 with extras:
 
 .. code-block:: bash
 
-  pip install "stable_baselines3[extra,tests,docs] @ git+https://github.com/DLR-RM/stable-baselines3"
+  poetry install --all-extras git+https://github.com/DLR-RM/stable-baselines3.git
 
 
 Development version
@@ -69,7 +69,7 @@ To contribute to Stable-Baselines3, with support for running tests and building 
 .. code-block:: bash
 
     git clone https://github.com/DLR-RM/stable-baselines3 && cd stable-baselines3
-    pip install -e .[docs,tests,extra]
+    poetry install --all-extras
 
 
 Using Docker Images

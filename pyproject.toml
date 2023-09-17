@@ -60,6 +60,8 @@ sphinx-autodoc-typehints = {version = "*", optional = true}
 sphinx_copybutton = {version = "*", optional = true}
 autorom = {version = "~=0.6.1", extras=["accept-rom-license"], optional = true}
 tqdm = "^4.66.1"
+toml = "^0.10.2"
+tensorboard = "^2.14.0"
 
 [tool.poetry.extras]
 tests = [
@@ -90,7 +92,7 @@ docs = [
     "sphinx_copybutton",
 ]
 
-extra = ["autorom", "tqdm"]
+extra = ["autorom", "tqdm", "tensorboard"]
 
 [build-system]
 requires = ["poetry-core"]

@@ -20,6 +20,7 @@ COPY --chown=$MAMBA_USER:$MAMBA_USER ./poetry.lock .
 COPY --chown=$MAMBA_USER:$MAMBA_USER ./pyproject.toml .
 
 RUN pip install poetry>=1.6.1
+RUN poetry poetry config virtualenvs.create false
 RUN poetry install --all-extras --no-root --no-cache
 RUN pip uninstall -y opencv-python
 RUN pip install opencv-python-headless

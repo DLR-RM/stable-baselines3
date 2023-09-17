@@ -14,7 +14,10 @@
 import datetime
 import os
 import sys
+from pathlib import Path
 from typing import Dict
+
+import toml
 
 # We CANNOT enable 'sphinxcontrib.spelling' because ReadTheDocs.org does not support
 # PyEnchant.
@@ -37,9 +40,9 @@ except ImportError:
 sys.path.insert(0, os.path.abspath(".."))
 
 # Read version from file
-version_file = os.path.join(os.path.dirname(__file__), "../stable_baselines3", "version.txt")
-with open(version_file) as file_handler:
-    __version__ = file_handler.read().strip()
+pyproject = toml.load(Path(__file__).parent.parent / "pyproject.toml") # This is in a nested directory, 2 directories down
+
+__version__ = pyproject["tool"]["poetry"]["version"]
 
 # -- Project information -----------------------------------------------------
 

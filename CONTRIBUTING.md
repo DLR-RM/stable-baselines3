@@ -33,7 +33,7 @@ cd stable-baselines3/
 2. Install Stable-Baselines3 in develop mode, with support for building the docs and running tests:
 
 ```bash
-pip install -e .[docs,tests,extra]
+poetry install --all-extras
 ```
 
 ## Codestyle

@@ -36,7 +36,7 @@ RL-Zoo = "https://github.com/DLR-RM/rl-baselines3-zoo"
 SBX = "https://github.com/araffin/sbx"
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.8,<3.11"
 gymnasium = ">=0.28.1,<0.30"
 numpy = ">=1.20"
 torch = ">=1.13"
@@ -47,7 +47,7 @@ pytest = {version = "*", optional = true}
 pytest-cov = {version = "*", optional = true}
 pytest-env = {version = "*", optional = true}
 pytest-xdist = {version = "*", optional = true}
-pytype = {version = "*", optional = true}
+pytype = {version = "2023.09.11", optional = true}
 mypy = {version = "*", optional = true}
 ruff = {version = "*", optional = true}
 isort = {version = ">=5.0", optional = true}
@@ -61,7 +61,8 @@ sphinx_copybutton = {version = "*", optional = true}
 autorom = {version = "~=0.6.1", extras=["accept-rom-license"], optional = true}
 tqdm = "^4.66.1"
 toml = "^0.10.2"
-tensorboard = "^2.14.0"
+tensorboard = {version = "^2.14.0", optional = true}
+types-toml = "^0.10.8.7"
 
 [tool.poetry.extras]
 tests = [

@@ -40,7 +40,7 @@ except ImportError:
 sys.path.insert(0, os.path.abspath(".."))
 
 # Read version from file
-pyproject = toml.load(Path(__file__).parent.parent / "pyproject.toml") # This is in a nested directory, 2 directories down
+pyproject = toml.load(Path(__file__).parent.parent / "pyproject.toml")  # This is in a nested directory, 2 directories down
 
 __version__ = pyproject["tool"]["poetry"]["version"]
 

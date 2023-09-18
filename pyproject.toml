@@ -37,7 +37,7 @@ SBX = "https://github.com/araffin/sbx"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
-gymnasium = ">=0.28.1,<0.30"
+gymnasium = { version = ">=0.28.1,<0.30", extras = ["atari", "accept-rom-license"]}
 numpy = ">=1.20"
 torch = ">=1.13"
 cloudpickle = "*"
@@ -58,7 +58,7 @@ sphinx-rtd-theme = {version = "*", optional = true}
 "sphinxcontrib.spelling" = {version = "*", optional = true}
 sphinx-autodoc-typehints = {version = "*", optional = true}
 sphinx_copybutton = {version = "*", optional = true}
-autorom = {version = "~=0.6.1", extras=["accept-rom-license"], optional = true}
+autorom = {version = ">=0.4.2,<0.5.0", extras=["accept-rom-license"], optional = true}
 tqdm = "^4.66.1"
 toml = "^0.10.2"
 tensorboard = {version = "^2.14.0", optional = true}

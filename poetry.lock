@@ -23,6 +23,43 @@ files = [
 ]
 
 [[package]]
+name = "ale-py"
+version = "0.8.1"
+description = "The Arcade Learning Environment (ALE) - a platform for AI research."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "ale_py-0.8.1-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:b2aa2f69a4169742800615970efe6914fa856e33eaf7fa9133c0e06a617a80e2"},
+    {file = "ale_py-0.8.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:6f2f6b92c8fd6189654979bbf0b305dbe0ecf82176c47f244d8c1cbc36286b89"},
+    {file = "ale_py-0.8.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c9b168eb88c87d0f3e2a778e6c5cdde4ad951d1ca8a6dc3d3679fd45398df7d1"},
+    {file = "ale_py-0.8.1-cp310-cp310-win_amd64.whl", hash = "sha256:5fcc31f495de79ee1d6bfc0f4b7c4619948851e679bbf010035e25f23146a687"},
+    {file = "ale_py-0.8.1-cp311-cp311-macosx_10_15_x86_64.whl", hash = "sha256:0856ca777473ec4ae8a59f3af9580259adb0fd4a47d586a125a440c62e82fc10"},
+    {file = "ale_py-0.8.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:f10b1df8774bbe3b00365748b5e0e07cf35f6a703bbaff991bc7b3b2247dccc9"},
+    {file = "ale_py-0.8.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0006d80dfe7745eb5a93444492337203c8bc7eb594a2c24c6a651c5c5b0eaf09"},
+    {file = "ale_py-0.8.1-cp311-cp311-win_amd64.whl", hash = "sha256:9773eea7505484e024beb2fff0f3bfd363db151bdb9799d70995448e196b1ded"},
+    {file = "ale_py-0.8.1-cp37-cp37m-macosx_10_15_x86_64.whl", hash = "sha256:87557db05be0e04130e2ec1bf909d3bb0b0bc034645d4f664e6baa573fe32191"},
+    {file = "ale_py-0.8.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ae2ba24557e0ce541ea3be13b148db2a9cfa730d83537b4cbed5e10449826e51"},
+    {file = "ale_py-0.8.1-cp37-cp37m-win_amd64.whl", hash = "sha256:ade5c32af567629164a6b49378978c728a15dc4db07ad6b679e8832d4fd3ea1f"},
+    {file = "ale_py-0.8.1-cp38-cp38-macosx_10_15_x86_64.whl", hash = "sha256:0ffecb5c956749596030e464827642945162170a132d093c3d4fa2d7e5725c18"},
+    {file = "ale_py-0.8.1-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:7cd74b7ee0248ef11a086c9764e142e71defd40ec8989a99232bfd2d9e8023be"},
+    {file = "ale_py-0.8.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:eadf9f3990b4ff2f9e5ca35889f5e2e95cddd6a353d9d857d9b4601a6e1c4e7c"},
+    {file = "ale_py-0.8.1-cp38-cp38-win_amd64.whl", hash = "sha256:817adf9a3a82c4923c731e634520a5ecf296aca0367f5c69959a96b32119d831"},
+    {file = "ale_py-0.8.1-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:2d9fcfa06c74a613c5419e942ef4d3e0959533f52e94d2d4bda61d07fbfffeee"},
+    {file = "ale_py-0.8.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:f278036f9b6066062abcdf0987a0ec5a8e0f22a2c7cfac925e39378d4343d490"},
+    {file = "ale_py-0.8.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b00f74e27815131c1a2791f3d48114363fa2708e19f09ce6b7b614cb14c9d469"},
+    {file = "ale_py-0.8.1-cp39-cp39-win_amd64.whl", hash = "sha256:d49b550a2d9c25b63c343aa680fd81f253a3714cdc0e1835640933ebff1798ff"},
+]
+
+[package.dependencies]
+importlib-metadata = {version = ">=4.10.0", markers = "python_version < \"3.10\""}
+importlib-resources = "*"
+numpy = "*"
+typing-extensions = {version = "*", markers = "python_version < \"3.11\""}
+
+[package.extras]
+test = ["gym (>=0.23,<1.0)", "pytest (>=7.0)"]
+
+[[package]]
 name = "attrs"
 version = "23.1.0"
 description = "Classes Without Boilerplate"
@@ -42,13 +79,13 @@ tests-no-zope = ["cloudpickle", "hypothesis", "mypy (>=1.1.1)", "pympler", "pyte
 
 [[package]]
 name = "autorom"
-version = "0.6.1"
+version = "0.4.2"
 description = "Automated installation of Atari ROMs for Gym/ALE-Py"
-optional = true
-python-versions = ">=3.7"
+optional = false
+python-versions = ">=3.6"
 files = [
-    {file = "AutoROM-0.6.1-py3-none-any.whl", hash = "sha256:e734fdad23dc8e48897de013803eba3c9e109e028d5463a4817346f7f669604f"},
-    {file = "AutoROM-0.6.1.tar.gz", hash = "sha256:6eff1f1b96a9d519577437f71d96a8d3b896238eca3433a8e69c5c92f6de3231"},
+    {file = "AutoROM-0.4.2-py3-none-any.whl", hash = "sha256:719c9d363ef08391fdb7003d70df235b68f36de628d289a946c4a59a3adefa13"},
+    {file = "AutoROM-0.4.2.tar.gz", hash = "sha256:b426a39bc0ee3781c7791f28963a9b2e4385b6421eeaf2f368edc00c761d428a"},
 ]
 
 [package.dependencies]
@@ -56,6 +93,7 @@ files = [
 click = "*"
 importlib-resources = {version = "*", markers = "python_version < \"3.9\""}
 requests = "*"
+tqdm = "*"
 
 [package.extras]
 accept-rom-license = ["AutoROM.accept-rom-license"]
@@ -64,7 +102,7 @@ accept-rom-license = ["AutoROM.accept-rom-license"]
 name = "autorom-accept-rom-license"
 version = "0.6.1"
 description = "Automated installation of Atari ROMs for Gym/ALE-Py"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "AutoROM.accept-rom-license-0.6.1.tar.gz", hash = "sha256:0c905a708d634a076f686802f672817d3585259ce3be0bde8713a4fb59e3159e"},
@@ -153,7 +191,7 @@ files = [
 name = "certifi"
 version = "2023.7.22"
 description = "Python package for providing Mozilla's CA Bundle."
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "certifi-2023.7.22-py3-none-any.whl", hash = "sha256:92d6037539857d8206b8f6ae472e8b77db8058fec5937a1ef3f54304089edbb9"},
@@ -164,7 +202,7 @@ files = [
 name = "charset-normalizer"
 version = "3.2.0"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
-optional = true
+optional = false
 python-versions = ">=3.7.0"
 files = [
     {file = "charset-normalizer-3.2.0.tar.gz", hash = "sha256:3bb3d25a8e6c0aedd251753a79ae98a093c7e7b471faa3aa9a93a81431987ace"},
@@ -248,7 +286,7 @@ files = [
 name = "click"
 version = "8.1.7"
 description = "Composable command line interface toolkit"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "click-8.1.7-py3-none-any.whl", hash = "sha256:ae74fb96c20a0277a1d615f1e4d73c8414f5a98db8b799a7931d1582f3390c28"},
@@ -663,10 +701,12 @@ files = [
 ]
 
 [package.dependencies]
+autorom = {version = ">=0.4.2,<0.5.0", extras = ["accept-rom-license"], optional = true, markers = "extra == \"accept-rom-license\""}
 cloudpickle = ">=1.2.0"
 farama-notifications = ">=0.0.1"
 importlib-metadata = {version = ">=4.8.0", markers = "python_version < \"3.10\""}
 numpy = ">=1.21.0"
+shimmy = {version = ">=0.1.0,<1.0", extras = ["atari"], optional = true, markers = "extra == \"atari\""}
 typing-extensions = ">=4.3.0"
 
 [package.extras]
@@ -686,7 +726,7 @@ toy-text = ["pygame (>=2.1.3)", "pygame (>=2.1.3)"]
 name = "idna"
 version = "3.4"
 description = "Internationalized Domain Names in Applications (IDNA)"
-optional = true
+optional = false
 python-versions = ">=3.5"
 files = [
     {file = "idna-3.4-py3-none-any.whl", hash = "sha256:90b77e79eaa3eba6de819a0c442c0b4ceefc341a7a2ab77d7562bf49f425c5c2"},
@@ -1894,7 +1934,7 @@ files = [
 name = "requests"
 version = "2.31.0"
 description = "Python HTTP for Humans."
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "requests-2.31.0-py3-none-any.whl", hash = "sha256:58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f"},
@@ -2024,6 +2064,31 @@ typing-extensions = "*"
 [package.extras]
 test = ["pytest (>=6.2)", "virtualenv (>20)"]
 toml = ["setuptools (>=42)"]
+
+[[package]]
+name = "shimmy"
+version = "0.2.1"
+description = "API for converting popular non-gymnasium environments to a gymnasium compatible environment."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "Shimmy-0.2.1-py3-none-any.whl", hash = "sha256:2d7d21c4ca679a64bb452e6a4232c6b0f5dba7589f5420454ddc1f0634334334"},
+    {file = "Shimmy-0.2.1.tar.gz", hash = "sha256:7b96915445ee5488dcb19ccf52ce5581d6f00cc5cf0e0dff36b16cd65bffcb75"},
+]
+
+[package.dependencies]
+ale-py = {version = ">=0.8.1,<0.9.0", optional = true, markers = "extra == \"atari\""}
+gymnasium = ">=0.27.0"
+numpy = ">=1.18.0"
+
+[package.extras]
+all = ["ale-py (>=0.8.1,<0.9.0)", "dm-control (>=1.0.10)", "gym (>=0.21)", "h5py (>=3.7.0)", "imageio", "open-spiel (>=1.2)", "pettingzoo (>=1.22)"]
+atari = ["ale-py (>=0.8.1,<0.9.0)"]
+dm-control = ["dm-control (>=1.0.10)", "h5py (>=3.7.0)", "imageio"]
+dm-control-multi-agent = ["dm-control (>=1.0.10)", "pettingzoo (>=1.22)"]
+gym = ["gym (>=0.21)"]
+openspiel = ["open-spiel (>=1.2)", "pettingzoo (>=1.22)"]
+testing = ["autorom[accept-rom-license] (>=0.4.2,<0.5.0)", "pillow (>=9.3.0)", "pytest (==7.1.3)"]
 
 [[package]]
 name = "six"
@@ -2495,7 +2560,7 @@ files = [
 name = "urllib3"
 version = "1.26.16"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
-optional = true
+optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*"
 files = [
     {file = "urllib3-1.26.16-py2.py3-none-any.whl", hash = "sha256:8d36afa7616d8ab714608411b4a3b13e58f463aee519024578e062e141dce20f"},
@@ -2561,4 +2626,4 @@ tests = ["black", "isort", "mypy", "pytest", "pytest-cov", "pytest-env", "pytest
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.12"
-content-hash = "7984118eb4eac96e6b20cc99763229a405106e5ca5a48ef82abc9f6d832e511e"
+content-hash = "850ffca020cbb0f68a133d0ca851228815e9b75301ccf8c5d635875b486b0d31"

@@ -47,7 +47,7 @@ pytest = {version = "*", optional = true}
 pytest-cov = {version = "*", optional = true}
 pytest-env = {version = "*", optional = true}
 pytest-xdist = {version = "*", optional = true}
-pytype = {version = "2023.09.11", optional = true}
+pytype = {version = "2023.09.11", optional = true, python = "<3.11"}
 mypy = {version = "*", optional = true}
 ruff = {version = "*", optional = true}
 isort = {version = ">=5.0", optional = true}

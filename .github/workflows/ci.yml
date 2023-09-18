@@ -32,12 +32,11 @@ jobs:
       uses: snok/install-poetry@v1
       with:
         version: 1.6.1
-    - name: Install Dependencies
-      run: poetry install --no-root --all-extras
-      if: steps.cache.outputs.cache-hit != 'true'
 
-    - name: Install dependencies
+    - name: Install Dependencies
       run: |
+        poetry poetry config virtualenvs.create false
+        poetry install --no-root --all-extras
         # cpu version of pytorch
         pip install torch==1.13+cpu -f https://download.pytorch.org/whl/torch_stable.html
 
@@ -50,6 +49,7 @@ jobs:
         pip install .[extra_no_roms,tests,docs]
         # Use headless version
         pip install opencv-python-headless
+      if: steps.cache.outputs.cache-hit != 'true'
     - name: Lint with ruff
       run: |
         make lint

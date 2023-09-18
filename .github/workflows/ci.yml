@@ -35,7 +35,7 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        poetry poetry config virtualenvs.create false
+        poetry config virtualenvs.create false
         poetry install --no-root --all-extras
         # cpu version of pytorch
         pip install torch==1.13+cpu -f https://download.pytorch.org/whl/torch_stable.html

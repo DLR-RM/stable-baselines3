@@ -32,6 +32,7 @@ Bug Fixes:
 - Calls ``callback.update_locals()`` before ``callback.on_rollout_end()`` in OnPolicyAlgorithm (@PatrickHelm)
 - Fixed replay buffer device after loading in OffPolicyAlgorithm (@PatrickHelm)
 - Fixed ``render_mode`` which was not properly loaded when using ``VecNormalize.load()``
+- Fixed ``test_buffers.py::test_device`` which was not actually checking the device of tensors (@rhaps0dy)
 
 
 Deprecations:

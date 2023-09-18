@@ -96,7 +96,7 @@ docs = [
     "sphinx_copybutton",
 ]
 
-extra = ["autorom", "tqdm", "tensorboard", "rich", "pygame"]
+extra = ["autorom", "tqdm", "tensorboard", "rich", "pygame", "opencv-python"]
 
 [build-system]
 requires = ["poetry-core"]

@@ -2553,10 +2553,10 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 
 [extras]
 docs = ["sphinx", "sphinx-autobuild", "sphinx-autodoc-typehints", "sphinx-rtd-theme", "sphinx_copybutton", "sphinxcontrib.spelling"]
-extra = ["autorom", "pygame", "rich", "tensorboard", "tqdm"]
+extra = ["autorom", "opencv-python", "pygame", "rich", "tensorboard", "tqdm"]
 tests = ["black", "isort", "mypy", "pytest", "pytest-cov", "pytest-env", "pytest-xdist", "pytype", "ruff"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.11"
-content-hash = "86f5a71b49fc33242b4506b4d8f9680125bcebb9c8ee986149883da3984c8f97"
+content-hash = "dca50fddd22cf07a4a51b81772bccc711f0641626dd5eecc36a1b720e47606c1"

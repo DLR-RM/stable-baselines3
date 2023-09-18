@@ -36,7 +36,7 @@ RL-Zoo = "https://github.com/DLR-RM/rl-baselines3-zoo"
 SBX = "https://github.com/araffin/sbx"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<=3.11"
+python = ">=3.8,<3.12"
 gymnasium = ">=0.28.1,<0.30"
 numpy = ">=1.20"
 torch = ">=1.13"

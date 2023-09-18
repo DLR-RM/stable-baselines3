@@ -2560,5 +2560,5 @@ tests = ["black", "isort", "mypy", "pytest", "pytest-cov", "pytest-env", "pytest
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.8,<=3.11"
-content-hash = "820c5b2547b54561e6787fffd0eb686e34e860b404aaea60d0983876362f805e"
+python-versions = ">=3.8,<3.12"
+content-hash = "7984118eb4eac96e6b20cc99763229a405106e5ca5a48ef82abc9f6d832e511e"

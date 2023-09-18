@@ -140,13 +140,16 @@ def test_device_buffer(replay_buffer_cls, device):
     if replay_buffer_cls in [RolloutBuffer, DictRolloutBuffer]:
         data = buffer.get(50)
     elif replay_buffer_cls in [ReplayBuffer, DictReplayBuffer]:
-        data = buffer.sample(50)
+        data = [buffer.sample(50)]
 
     # Check that all data are on the desired device
     desired_device = get_device(device).type
-    for value in list(data):
-        if isinstance(value, dict):
-            for key in value.keys():
-                assert value[key].device.type == desired_device
-        elif isinstance(value, th.Tensor):
-            assert value.device.type == desired_device
+    for minibatch in list(data):
+        for value in minibatch:
+            if isinstance(value, dict):
+                for key in value.keys():
+                    assert value[key].device.type == desired_device
+            elif isinstance(value, th.Tensor):
+                assert value.device.type == desired_device
+            else:
+                raise ValueError("unknown value type: ", type(value))

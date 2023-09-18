@@ -1,4 +1,6 @@
-import os
+from pathlib import Path
+
+import toml
 
 from stable_baselines3.a2c import A2C
 from stable_baselines3.common.utils import get_system_info
@@ -10,9 +12,9 @@ from stable_baselines3.sac import SAC
 from stable_baselines3.td3 import TD3
 
 # Read version from file
-version_file = os.path.join(os.path.dirname(__file__), "version.txt")
-with open(version_file) as file_handler:
-    __version__ = file_handler.read().strip()
+pyproject = toml.load(Path(__file__).parent.parent / "pyproject.toml")  # This is in a nested directory, 2 directories down
+
+__version__ = pyproject["tool"]["poetry"]["version"]
 
 
 def HER(*args, **kwargs):

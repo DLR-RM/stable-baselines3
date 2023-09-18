@@ -9,7 +9,7 @@ Release 2.2.0a3 (WIP)
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Switched to ``ruff`` for sorting imports (isort is no longer needed), black and ruff version now require a minimum version
-
+- Switched to using Poetry for package management
 New Features:
 ^^^^^^^^^^^^^
 

@@ -11,6 +11,8 @@ Breaking Changes:
 - Switched to ``ruff`` for sorting imports (isort is no longer needed), black and ruff version now require a minimum version
 
 New Features:
+
+- Fixed check_env for Sequence observation space (@corentinlger)
 ^^^^^^^^^^^^^
 
 `SB3-Contrib`_
@@ -1459,4 +1461,4 @@ And all the contributors:
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
-@lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm
+@lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger

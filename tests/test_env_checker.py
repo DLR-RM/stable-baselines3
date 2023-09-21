@@ -75,7 +75,7 @@ class SequenceObservationEnv(gym.Env):
         return observation, reward, terminated, truncated, info 
 
 
-def test_check_env_dict_action():
+def test_check_env_sequence_obs():
     test_env = SequenceObservationEnv()
 
     with pytest.warns(Warning):

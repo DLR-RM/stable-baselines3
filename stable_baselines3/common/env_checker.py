@@ -80,7 +80,7 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
 
     if isinstance(observation_space, spaces.Tuple):
         warnings.warn(
-            "The observation space is a Tuple,"
+            "The observation space is a Tuple, "
             "this is currently not supported by Stable Baselines3. "
             "However, you can convert it to a Dict observation space "
             "(cf. https://gymnasium.farama.org/api/spaces/composite/#dict). "
@@ -91,6 +91,12 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
         warnings.warn(
             "Discrete observation space with a non-zero start is not supported by Stable-Baselines3. "
             "You can use a wrapper or update your observation space."
+        )
+
+    if isinstance(observation_space, spaces.Sequence):
+        warnings.warn(
+            "Sequence observation space is not supported by Stable-Baselines3. "
+            "You can use a Box, Discrete, MultiDiscrete or  MultiBinary observation space instead"
         )
 
     if isinstance(action_space, spaces.Discrete) and action_space.start != 0:
@@ -418,6 +424,10 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
         for key, space in obs_spaces.items():
             if isinstance(space, spaces.Box):
                 _check_box_obs(space, key)
+
+        # If Sequence observation space, do not check the observation any further
+        if isinstance(observation_space, spaces.Sequence):
+            return
 
         # Check for the action space, it may lead to hard-to-debug issues
         if isinstance(action_space, spaces.Box) and (

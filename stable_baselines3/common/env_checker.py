@@ -96,7 +96,7 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
     if isinstance(observation_space, spaces.Sequence):
         warnings.warn(
             "Sequence observation space is not supported by Stable-Baselines3. "
-            "You can use a Box, Discrete, MultiDiscrete or  MultiBinary observation space instead"
+            "You can use a Box, Discrete, MultiDiscrete or MultiBinary observation space instead"
         )
 
     if isinstance(action_space, spaces.Discrete) and action_space.start != 0:

@@ -37,6 +37,51 @@ def test_check_env_dict_action():
         check_env(env=test_env, warn=True)
 
 
+class SequenceObservationEnv(gym.Env):
+    metadata = {"render_modes": ["human"], "render_fps": 2}
+    
+    def _get_obs(self):
+        return self.items
+    
+    def _get_info(self):
+        return {}
+    
+    def __init__(self, render_mode=None, size=5):
+        self.observation_space = spaces.Sequence(spaces.Discrete(8))
+        
+        self.action_space = spaces.MultiDiscrete(8*[4] + [5])
+
+        assert render_mode is None or render_mode in self.metadata["render_modes"]
+        self.render_mode = render_mode
+
+        self.clock = None
+    
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
+        self.step_count = 0
+        self.items = self.observation_space.sample()
+            
+        observation = self._get_obs()
+        info = self._get_info()
+
+        return observation, info
+    
+    def step(self, action):
+        observation = self._get_obs()
+        reward = 1
+        terminated = True
+        truncated = False
+        info = {}
+        return observation, reward, terminated, truncated, info 
+
+
+def test_check_env_dict_action():
+    test_env = SequenceObservationEnv()
+
+    with pytest.warns(Warning):
+        check_env(env=test_env, warn=True)
+
+
 @pytest.mark.parametrize(
     "obs_tuple",
     [

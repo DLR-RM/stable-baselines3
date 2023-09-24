@@ -38,47 +38,24 @@ def test_check_env_dict_action():
 
 
 class SequenceObservationEnv(gym.Env):
-    metadata = {"render_modes": ["human"], "render_fps": 2}
-    
-    def _get_obs(self):
-        return self.items
-    
-    def _get_info(self):
-        return {}
-    
-    def __init__(self, render_mode=None, size=5):
+    metadata = {"render_modes": [], "render_fps": 2}
+
+    def __init__(self, render_mode=None):
         self.observation_space = spaces.Sequence(spaces.Discrete(8))
-        
-        self.action_space = spaces.MultiDiscrete(8*[4] + [5])
+        self.action_space = spaces.Discrete(4)
 
-        assert render_mode is None or render_mode in self.metadata["render_modes"]
-        self.render_mode = render_mode
-
-        self.clock = None
-    
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-        self.step_count = 0
-        self.items = self.observation_space.sample()
-            
-        observation = self._get_obs()
-        info = self._get_info()
+        return self.observation_space.sample(), {}
 
-        return observation, info
-    
     def step(self, action):
-        observation = self._get_obs()
-        reward = 1
-        terminated = True
-        truncated = False
-        info = {}
-        return observation, reward, terminated, truncated, info 
+        return self.observation_space.sample(), 1.0, False, False, {}
 
 
 def test_check_env_sequence_obs():
     test_env = SequenceObservationEnv()
 
-    with pytest.warns(Warning):
+    with pytest.warns(Warning, match="Sequence.*not supported"):
         check_env(env=test_env, warn=True)
 
 

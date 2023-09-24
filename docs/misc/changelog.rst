@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.2.0a3 (WIP)
+Release 2.2.0a4 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -11,19 +11,8 @@ Breaking Changes:
 - Switched to ``ruff`` for sorting imports (isort is no longer needed), black and ruff version now require a minimum version
 
 New Features:
-
-- Fixed check_env for Sequence observation space (@corentinlger)
 ^^^^^^^^^^^^^
-
-`SB3-Contrib`_
-^^^^^^^^^^^^^^
-
-`RL Zoo`_
-^^^^^^^^^
-
-`SBX`_
-^^^^^^^^^
-- Added ``DDPG`` and ``TD3``
+- Improved error message of the ``env_checker`` for env wrongly detected as GoalEnv (``compute_reward()`` is defined)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -35,7 +24,17 @@ Bug Fixes:
 - Fixed replay buffer device after loading in OffPolicyAlgorithm (@PatrickHelm)
 - Fixed ``render_mode`` which was not properly loaded when using ``VecNormalize.load()``
 - Fixed success reward dtype in ``SimpleMultiObsEnv`` (@NixGD)
+- Fixed check_env for Sequence observation space (@corentinlger)
 
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+`SBX`_
+^^^^^^^^^
+- Added ``DDPG`` and ``TD3``
 
 Deprecations:
 ^^^^^^^^^^^^^

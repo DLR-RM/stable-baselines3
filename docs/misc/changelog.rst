@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.2.0a3 (WIP)
+Release 2.2.0a4 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -12,16 +12,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-
-`SB3-Contrib`_
-^^^^^^^^^^^^^^
-
-`RL Zoo`_
-^^^^^^^^^
-
-`SBX`_
-^^^^^^^^^
-- Added ``DDPG`` and ``TD3``
+- Improved error message of the ``env_checker`` for env wrongly detected as GoalEnv (``compute_reward()`` is defined)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -33,7 +24,17 @@ Bug Fixes:
 - Fixed replay buffer device after loading in OffPolicyAlgorithm (@PatrickHelm)
 - Fixed ``render_mode`` which was not properly loaded when using ``VecNormalize.load()``
 - Fixed success reward dtype in ``SimpleMultiObsEnv`` (@NixGD)
+- Fixed check_env for Sequence observation space (@corentinlger)
 
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+`SBX`_
+^^^^^^^^^
+- Added ``DDPG`` and ``TD3``
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -1459,4 +1460,4 @@ And all the contributors:
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
-@lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm
+@lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger

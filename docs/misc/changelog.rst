@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.2.0a4 (WIP)
+Release 2.2.0a5 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -13,6 +13,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Improved error message of the ``env_checker`` for env wrongly detected as GoalEnv (``compute_reward()`` is defined)
+- Improved error message when mixing Gym API with VecEnv API (see GH#1694)
 
 Bug Fixes:
 ^^^^^^^^^^

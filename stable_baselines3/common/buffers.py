@@ -540,7 +540,7 @@ class DictReplayBuffer(ReplayBuffer):
     observation_space: spaces.Dict
     obs_shape: Dict[str, Tuple[int, ...]]  # type: ignore[assignment]
     observations: Dict[str, np.ndarray]  # type: ignore[assignment]
-    next_observations: Dict[str, np.ndarray]  # type: ignore[assignment]
+    next_observations: Dict[str, np.ndarray]
 
     def __init__(
         self,

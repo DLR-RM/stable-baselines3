@@ -45,10 +45,8 @@ class BitFlippingEnv(Env):
         # The achieved goal is determined by the current state
         # here, it is a special where they are equal
 
-        # observation space for observations given to the model 
-        self.observation_space = self._make_observation_space(
-            discrete_obs_space, image_obs_space, n_bits
-        )
+        # observation space for observations given to the model
+        self.observation_space = self._make_observation_space(discrete_obs_space, image_obs_space, n_bits)
         # observation space used to update internal state
         self._obs_space = spaces.MultiBinary(n_bits)
 
@@ -104,13 +102,8 @@ class BitFlippingEnv(Env):
         else:
             bit_vector = np.array(state).reshape(batch_size, -1)
         return bit_vector
-    
-    def _make_observation_space(
-        self,
-        discrete_obs_space: bool,    
-        image_obs_space: bool,
-        n_bits: int
-    ) -> spaces.Space:
+
+    def _make_observation_space(self, discrete_obs_space: bool, image_obs_space: bool, n_bits: int) -> spaces.Dict:
         """
         Helper to create observation space
 
@@ -132,7 +125,7 @@ class BitFlippingEnv(Env):
                     "desired_goal": spaces.Discrete(2**n_bits),
                 }
             )
-        
+
         if image_obs_space:
             # When using image as input,
             # one image contains the bits 0 -> 0, 1 -> 255
@@ -159,7 +152,7 @@ class BitFlippingEnv(Env):
                     ),
                 }
             )
-        
+
         return spaces.Dict(
             {
                 "observation": spaces.MultiBinary(n_bits),

@@ -508,7 +508,7 @@ class RolloutBuffer(BaseBuffer):
         self,
         batch_inds: np.ndarray,
         env: Optional[VecNormalize] = None,
-    ) -> RolloutBufferSamples:  # type: ignore[signature-mismatch] #FIXME
+    ) -> RolloutBufferSamples:  #FIXME
         data = (
             self.observations[batch_inds],
             self.actions[batch_inds],
@@ -615,7 +615,7 @@ class DictReplayBuffer(ReplayBuffer):
         reward: np.ndarray,
         done: np.ndarray,
         infos: List[Dict[str, Any]],
-    ) -> None:  # pytype: disable=signature-mismatch
+    ) -> None:
         # Copy to avoid modification by reference
         for key in self.observations.keys():
             # Reshape needed when using multiple envs with discrete observations
@@ -648,7 +648,7 @@ class DictReplayBuffer(ReplayBuffer):
         self,
         batch_size: int,
         env: Optional[VecNormalize] = None,
-    ) -> DictReplayBufferSamples:  # type: ignore[signature-mismatch]
+    ) -> DictReplayBufferSamples:
         """
         Sample elements from the replay buffer.
 
@@ -663,7 +663,7 @@ class DictReplayBuffer(ReplayBuffer):
         self,
         batch_inds: np.ndarray,
         env: Optional[VecNormalize] = None,
-    ) -> DictReplayBufferSamples:  # type: ignore[signature-mismatch] #FIXME:
+    ) -> DictReplayBufferSamples:
         # Sample randomly the env idx
         env_indices = np.random.randint(0, high=self.n_envs, size=(len(batch_inds),))
 
@@ -764,7 +764,7 @@ class DictRolloutBuffer(RolloutBuffer):
         episode_start: np.ndarray,
         value: th.Tensor,
         log_prob: th.Tensor,
-    ) -> None:  # pytype: disable=signature-mismatch
+    ) -> None:
         """
         :param obs: Observation
         :param action: Action
@@ -802,7 +802,7 @@ class DictRolloutBuffer(RolloutBuffer):
     def get(  # type: ignore[override]
         self,
         batch_size: Optional[int] = None,
-    ) -> Generator[DictRolloutBufferSamples, None, None]:  # type: ignore[signature-mismatch]
+    ) -> Generator[DictRolloutBufferSamples, None, None]:
         assert self.full, ""
         indices = np.random.permutation(self.buffer_size * self.n_envs)
         # Prepare the data
@@ -829,7 +829,7 @@ class DictRolloutBuffer(RolloutBuffer):
         self,
         batch_inds: np.ndarray,
         env: Optional[VecNormalize] = None,
-    ) -> DictRolloutBufferSamples:  # type: ignore[signature-mismatch]
+    ) -> DictRolloutBufferSamples:
         return DictRolloutBufferSamples(
             observations={key: self.to_torch(obs[batch_inds]) for (key, obs) in self.observations.items()},
             actions=self.to_torch(self.actions[batch_inds]),

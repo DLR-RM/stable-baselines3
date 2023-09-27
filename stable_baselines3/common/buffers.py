@@ -231,7 +231,7 @@ class ReplayBuffer(BaseBuffer):
                 self.observations.nbytes + self.actions.nbytes + self.rewards.nbytes + self.dones.nbytes
             )
 
-            if self.next_observations is not None:
+            if not optimize_memory_usage:
                 total_memory_usage += self.next_observations.nbytes
 
             if total_memory_usage > mem_available:
@@ -742,7 +742,6 @@ class DictRolloutBuffer(RolloutBuffer):
         self.reset()
 
     def reset(self) -> None:
-        # assert isinstance(self.obs_shape, dict), "DictRolloutBuffer must be used with Dict obs space only"
         self.observations = {}
         for key, obs_input_shape in self.obs_shape.items():
             self.observations[key] = np.zeros((self.buffer_size, self.n_envs, *obs_input_shape), dtype=np.float32)

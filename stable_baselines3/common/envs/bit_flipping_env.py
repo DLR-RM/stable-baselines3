@@ -44,9 +44,13 @@ class BitFlippingEnv(Env):
         self.image_shape = (1, 36, 36) if channel_first else (36, 36, 1)
         # The achieved goal is determined by the current state
         # here, it is a special where they are equal
+
+        # observation space for observations given to the model 
         self.observation_space = self._make_observation_space(
             discrete_obs_space, image_obs_space, n_bits
         )
+        # observation space used to update internal state
+        self._obs_space = spaces.MultiBinary(n_bits)
 
         if continuous:
             self.action_space = spaces.Box(-1, 1, shape=(n_bits,), dtype=np.float32)
@@ -62,7 +66,7 @@ class BitFlippingEnv(Env):
         self.current_step = 0
 
     def seed(self, seed: int) -> None:
-        self.observation_space.seed(seed)
+        self._obs_space.seed(seed)
 
     def convert_if_needed(self, state: np.ndarray) -> Union[int, np.ndarray]:
         """
@@ -182,9 +186,9 @@ class BitFlippingEnv(Env):
         self, *, seed: Optional[int] = None, options: Optional[Dict] = None
     ) -> Tuple[Dict[str, Union[int, np.ndarray]], Dict]:
         if seed is not None:
-            self.observation_space.seed(seed)
+            self._obs_space.seed(seed)
         self.current_step = 0
-        self.state = self.observation_space.sample()
+        self.state = self._obs_space.sample()
         return self._get_obs(), {}
 
     def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:

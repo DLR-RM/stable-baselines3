@@ -26,6 +26,7 @@ Bug Fixes:
 - Fixed ``render_mode`` which was not properly loaded when using ``VecNormalize.load()``
 - Fixed success reward dtype in ``SimpleMultiObsEnv`` (@NixGD)
 - Fixed check_env for Sequence observation space (@corentinlger)
+- Prevents instantiating BitFlippingEnv with conflicting observation spaces (@kylesayrs)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

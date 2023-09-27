@@ -13,15 +13,17 @@ class BitFlippingEnv(Env):
     Simple bit flipping env, useful to test HER.
     The goal is to flip all the bits to get a vector of ones.
     In the continuous variant, if the ith action component has a value > 0,
-    then the ith bit will be flipped.
+    then the ith bit will be flipped. Uses a ``MultiBinary`` observation space
+    by default.
 
     :param n_bits: Number of bits to flip
     :param continuous: Whether to use the continuous actions version or not,
         by default, it uses the discrete one
     :param max_steps: Max number of steps, by default, equal to n_bits
     :param discrete_obs_space: Whether to use the discrete observation
-        version or not, by default, it uses the ``MultiBinary`` one
-    :param image_obs_space: Use image as input instead of the ``MultiBinary`` one.
+        version or not, ie a one-hot encoding of all possible states
+    :param image_obs_space: Whether to use an image observation version
+        or not, ie a greyscale image of the state
     :param channel_first: Whether to use channel-first or last image.
     """
 

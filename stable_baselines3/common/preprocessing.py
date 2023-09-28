@@ -112,7 +112,7 @@ def preprocess_obs(
 
     elif isinstance(observation_space, spaces.Discrete):
         # One hot encoding and convert to float to avoid errors
-        return F.one_hot(obs.long(), num_classes=observation_space.n).float()
+        return F.one_hot(obs.long(), num_classes=int(observation_space.n)).float()
 
     elif isinstance(observation_space, spaces.MultiDiscrete):
         # Tensor concatenation of one hot encodings of each Categorical sub-space

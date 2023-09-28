@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.2.0a5 (WIP)
+Release 2.2.0a6 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -49,6 +49,9 @@ Others:
 - Fixed ``stable_baselines3/common/vec_env/vec_video_recorder.py`` type hints
 - Fixed ``stable_baselines3/common/save_util.py`` type hints
 - Updated docker images to  Ubuntu Jammy using micromamba 1.5
+- Fixed ``stable_baselines3/common/buffers.py`` type hints
+- Fixed ``stable_baselines3/her/her_replay_buffer.py`` type hints
+- Buffers do no call an additional ``.copy()`` when storing new transitions
 
 Documentation:
 ^^^^^^^^^^^^^^

@@ -1,4 +1,3 @@
-import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -19,7 +18,7 @@ class SumTree:
     """
 
     def __init__(self, buffer_size: int) -> None:
-        self.nodes = np.zeros((2 * buffer_size - 1))
+        self.nodes = np.zeros(2 * buffer_size - 1)
         self.data = np.zeros(buffer_size)
         self.size = buffer_size
         self.count = 0

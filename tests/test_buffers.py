@@ -7,6 +7,7 @@ from gymnasium import spaces
 from stable_baselines3.common.buffers import DictReplayBuffer, DictRolloutBuffer, ReplayBuffer, RolloutBuffer
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.prioritized_replay_buffer import PrioritizedReplayBuffer
 from stable_baselines3.common.type_aliases import DictReplayBufferSamples, ReplayBufferSamples
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import VecNormalize
@@ -108,7 +109,9 @@ def test_replay_buffer_normalization(replay_buffer_cls):
     assert np.allclose(sample.rewards.mean(0), np.zeros(1), atol=1)
 
 
-@pytest.mark.parametrize("replay_buffer_cls", [DictReplayBuffer, DictRolloutBuffer, ReplayBuffer, RolloutBuffer])
+@pytest.mark.parametrize(
+    "replay_buffer_cls", [DictReplayBuffer, DictRolloutBuffer, ReplayBuffer, RolloutBuffer, PrioritizedReplayBuffer]
+)
 @pytest.mark.parametrize("device", ["cpu", "cuda", "auto"])
 def test_device_buffer(replay_buffer_cls, device):
     if device == "cuda" and not th.cuda.is_available():
@@ -119,6 +122,7 @@ def test_device_buffer(replay_buffer_cls, device):
         DictRolloutBuffer: DummyDictEnv,
         ReplayBuffer: DummyEnv,
         DictReplayBuffer: DummyDictEnv,
+        PrioritizedReplayBuffer: DummyEnv,
     }[replay_buffer_cls]
     env = make_vec_env(env)
 
@@ -139,7 +143,7 @@ def test_device_buffer(replay_buffer_cls, device):
     # Get data from the buffer
     if replay_buffer_cls in [RolloutBuffer, DictRolloutBuffer]:
         data = buffer.get(50)
-    elif replay_buffer_cls in [ReplayBuffer, DictReplayBuffer]:
+    elif replay_buffer_cls in [ReplayBuffer, DictReplayBuffer, PrioritizedReplayBuffer]:
         data = buffer.sample(50)
 
     # Check that all data are on the desired device

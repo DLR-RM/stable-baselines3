@@ -1,6 +1,5 @@
-import random
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch as th
@@ -16,13 +15,13 @@ class SumTree:
     SumTree data structure for Prioritized Replay Buffer.
     This code is inspired by: https://github.com/Howuhh/prioritized_experience_replay
 
-    :param size: Max number of element in the buffer.
+    :param buffer_size: Max number of element in the buffer.
     """
 
-    def __init__(self, size: int):
-        self.nodes = th.zeros(2 * size - 1)
-        self.data = th.empty(size)
-        self.size = size
+    def __init__(self, buffer_size: int) -> None:
+        self.nodes = np.zeros((2 * buffer_size - 1))
+        self.data = np.zeros(buffer_size)
+        self.size = buffer_size
         self.count = 0
         self.real_size = 0
 
@@ -35,7 +34,7 @@ class SumTree:
         """
         return self.nodes[0].item()
 
-    def update(self, data_idx: int, value: float):
+    def update(self, data_idx: int, value: float) -> None:
         """
         Update the priority of a leaf node.
 
@@ -50,7 +49,7 @@ class SumTree:
             self.nodes[parent] += change
             parent = (parent - 1) // 2
 
-    def add(self, value: float, data: int):
+    def add(self, value: float, data: int) -> None:
         """
         Add a new transition with priority value.
 
@@ -62,7 +61,7 @@ class SumTree:
         self.count = (self.count + 1) % self.size
         self.real_size = min(self.size, self.real_size + 1)
 
-    def get(self, cumsum) -> tuple[int, float, th.Tensor]:
+    def get(self, cumsum) -> Tuple[int, float, th.Tensor]:
         """
         Get a leaf node index, its priority value and transition data by cumsum value.
 
@@ -83,7 +82,7 @@ class SumTree:
         data_idx = idx - self.size + 1
         return data_idx, self.nodes[idx].item(), self.data[data_idx]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"SumTree(nodes={self.nodes.__repr__()}, data={self.data.__repr__()})"
 
 
@@ -115,18 +114,15 @@ class PrioritizedReplayBuffer(ReplayBuffer):
     ):
         super().__init__(buffer_size, observation_space, action_space, device, n_envs)
 
-        # TODO: check this
-        if optimize_memory_usage:
-            warnings.warn("PrioritizedReplayBuffer does not support optimize_memory_usage=True during sampling")
+        assert optimize_memory_usage is False, "PrioritizedReplayBuffer doesn't support optimize_memory_usage=True"
 
-        # PER params
         self.eps = 1e-8  # minimal priority, prevents zero probabilities
         self.alpha = alpha  # determines how much prioritization is used, alpha = 0 corresponding to the uniform case
         self.beta = beta  # determines the amount of importance-sampling correction
         self.max_priority = self.eps  # priority for new samples, init as eps
 
         # SumTree: data structure to store priorities
-        self.tree = SumTree(size=buffer_size)
+        self.tree = SumTree(buffer_size=buffer_size)
 
         self.real_size = 0
         self.count = 0
@@ -172,7 +168,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         assert self.buffer_size >= batch_size, "The buffer contains less samples than the batch size requires."
 
         sample_idxs, tree_idxs = [], []
-        priorities = th.empty(batch_size, 1, dtype=th.float)
+        priorities = np.zeros((batch_size, 1))
 
         # To sample a minibatch of size k, the range [0, p_total] is divided equally into k ranges.
         # Next, a value is uniformly sampled from each range. Finally the transitions that correspond
@@ -183,7 +179,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
             a, b = segment * i, segment * (i + 1)
 
             # uniformely sample a value from the current segment
-            cumsum = random.uniform(a, b)
+            cumsum = np.random.uniform(a, b)
 
             # tree_idx is a index of a sample in the tree, needed further to update priorities
             # sample_idx is a sample index in buffer, needed further to sample actual transitions
@@ -218,4 +214,4 @@ class PrioritizedReplayBuffer(ReplayBuffer):
             self.dones[sample_idxs],
             self.rewards[sample_idxs],
         )
-        return ReplayBufferSamples(*tuple(map(self.to_torch, batch)))  # type: ignore
+        return ReplayBufferSamples(*tuple(map(self.to_torch, batch)))  # type: ignore[arg-type]

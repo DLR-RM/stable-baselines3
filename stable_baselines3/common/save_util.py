@@ -205,7 +205,7 @@ def open_path(
     """
     # Note(antonin): the true annotation should be IO[bytes]
     # but there is not easy way to check that
-    allowed_types = (io.BufferedWriter, io.BufferedReader, io.BytesIO)
+    allowed_types = (io.BufferedWriter, io.BufferedReader, io.BytesIO, io.BufferedRandom)
     if not isinstance(path, allowed_types):
         raise TypeError(f"Path {path} parameter has invalid type: expected one of {allowed_types}.")
     if path.closed:

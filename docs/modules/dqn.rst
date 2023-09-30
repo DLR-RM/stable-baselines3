@@ -28,7 +28,7 @@ Notes
 
 .. note::
     This implementation does **not** provide Rainbow DQN, but only vanilla Deep Q-Learning.
-    There are no extensions such as Double-DQN or Dueling-DQN, with the only exception being Prioritized Experience Replay.
+    Currently, there are no extensions such as Double-DQN or Dueling-DQN, with the only exception being Prioritized Experience Replay.
 
 
 Can I use?
@@ -48,6 +48,15 @@ MultiDiscrete ❌      ✔️
 MultiBinary   ❌      ✔️
 Dict          ❌      ✔️️
 ============= ====== ===========
+
+- Rainbow DQN extensions:
+
+  - Double Q-Learning: ❌
+  - Prioritized Experience Replay: ✔️
+  - Dueling Networks: ❌
+  - Multi-step Learning: ❌
+  - Distributional RL: ❌
+  - Noisy Nets: ❌
 
 
 Example

@@ -14,6 +14,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Improved error message of the ``env_checker`` for env wrongly detected as GoalEnv (``compute_reward()`` is defined)
 - Improved error message when mixing Gym API with VecEnv API (see GH#1694)
+- Added Prioritized Experience Replay for DQN (@AlexPasqua)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -71,7 +72,6 @@ New Features:
 ^^^^^^^^^^^^^
 - Added Python 3.11 support
 - Added Gymnasium 0.29 support (@pseudo-rnd-thoughts)
-- Prioritized Experience Replay for DQN (@AlexPasqua)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

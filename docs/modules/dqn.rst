@@ -27,9 +27,9 @@ Notes
 - Further reference: https://www.nature.com/articles/nature14236
 
 .. note::
-    This implementation does **not** provide Rainbow DQN, but only vanilla Deep Q-Learning.
-    Currently, there are no extensions such as Double-DQN or Dueling-DQN, with the only exception being Prioritized Experience Replay.
 
+  This implementation provides only vanilla Deep Q-Learning and has no extensions such as Double-DQN or Dueling-DQN.
+  To Prioritized Experience Replay, you need to pass it via the ``replay_buffer_class`` argument
 
 Can I use?
 ----------
@@ -52,10 +52,10 @@ Dict          ❌      ✔️️
 - Rainbow DQN extensions:
 
   - Double Q-Learning: ❌
-  - Prioritized Experience Replay: ✔️
+  - Prioritized Experience Replay: ✔️ (``from stable_baselines3.common.prioritized_replay_buffer import PrioritizedReplayBuffer``)
   - Dueling Networks: ❌
   - Multi-step Learning: ❌
-  - Distributional RL: ❌
+  - Distributional RL: ✔️ (``QR-DQN`` is implemented in the SB3 contrib repo)
   - Noisy Nets: ❌
 
 

@@ -215,7 +215,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
             self.rewards[sample_indices],
             weights,
         )
-        return ReplayBufferSamples(*tuple(map(self.to_torch, batch)), leaf_nodes_indices)  # type: ignore[arg-type]
+        return ReplayBufferSamples(*tuple(map(self.to_torch, batch)), leaf_nodes_indices)  # type: ignore[arg-type,call-arg]
 
     def update_priorities(self, leaf_nodes_indices: np.ndarray, td_errors: th.Tensor) -> None:
         """

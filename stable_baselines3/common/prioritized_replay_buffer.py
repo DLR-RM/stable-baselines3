@@ -19,18 +19,11 @@ class SumTree:
 
     def __init__(self, buffer_size: int) -> None:
         self.nodes = np.zeros(2 * buffer_size - 1)
+        # The data array stores transition indices
         self.data = np.zeros(buffer_size)
         self.buffer_size = buffer_size
         self.pos = 0
         self.full = False
-
-    def size(self) -> int:
-        """
-        :return: The current size of the SumTree
-        """
-        if self.full:
-            return self.buffer_size
-        return self.pos
 
     @property
     def total_sum(self) -> float:
@@ -41,14 +34,14 @@ class SumTree:
         """
         return self.nodes[0].item()
 
-    def update(self, data_idx: int, value: float) -> None:
+    def update(self, leaf_node_idx: int, value: float) -> None:
         """
         Update the priority of a leaf node.
 
-        :param data_idx: Index of the leaf node to update.
+        :param leaf_node_idx: Index of the leaf node to update.
         :param value: New priority value.
         """
-        idx = data_idx + self.buffer_size - 1  # child index in tree array
+        idx = leaf_node_idx + self.buffer_size - 1  # child index in tree array
         change = value - self.nodes[idx]
         self.nodes[idx] = value
         parent = (idx - 1) // 2
@@ -58,24 +51,25 @@ class SumTree:
 
     def add(self, value: float, data: int) -> None:
         """
-        Add a new transition with priority value.
+        Add a new transition with priority value,
+        it adds a new leaf node and update cumulative sum.
 
         :param value: Priority value.
-        :param data: Transition data.
+        :param data: Data for the new leaf node, storing transition index
+            in the case of the prioritized replay buffer.
         """
+        # Note: transition_indices should be constant
+        # as the replay buffer already updates a pointer
         self.data[self.pos] = data
         self.update(self.pos, value)
-        self.pos += 1
-        if self.pos == self.buffer_size:
-            self.full = True
-            self.pos = 0
+        self.pos = (self.pos + 1) % self.buffer_size
 
     def get(self, cumulative_sum: float) -> Tuple[int, float, th.Tensor]:
         """
-        Get a leaf node index, its priority value and transition data by cumulative_sum value.
+        Get a leaf node index, its priority value and transition index by cumulative_sum value.
 
         :param cumulative_sum: Cumulative sum value.
-        :return: Leaf node index, its priority value and transition data.
+        :return: Leaf node index, its priority value and transition index.
         """
         assert cumulative_sum <= self.total_sum
 
@@ -88,8 +82,8 @@ class SumTree:
                 idx = right
                 cumulative_sum = cumulative_sum - self.nodes[left]
 
-        data_idx = idx - self.buffer_size + 1
-        return data_idx, self.nodes[idx].item(), self.data[data_idx]
+        leaf_node_idx = idx - self.buffer_size + 1
+        return leaf_node_idx, self.nodes[idx].item(), self.data[leaf_node_idx]
 
     def __repr__(self) -> str:
         return f"SumTree(nodes={self.nodes!r}, data={self.data!r})"
@@ -97,7 +91,7 @@ class SumTree:
 
 class PrioritizedReplayBuffer(ReplayBuffer):
     """
-    Prioritized Replay Buffer.
+    Prioritized Replay Buffer (proportional priorities version).
     Paper: https://arxiv.org/abs/1511.05952
     This code is inspired by: https://github.com/Howuhh/prioritized_experience_replay
 
@@ -108,6 +102,8 @@ class PrioritizedReplayBuffer(ReplayBuffer):
     :param n_envs: Number of parallel environments
     :param alpha: How much prioritization is used (0 - no prioritization aka uniform case, 1 - full prioritization)
     :param beta: To what degree to use importance weights (0 - no corrections, 1 - full correction)
+    :param min_priority: Minimum priority, prevents zero probabilities, so that all samples
+        always have a non-zero probability to be sampled.
     """
 
     def __init__(
@@ -120,12 +116,13 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         alpha: float = 0.6,
         beta: float = 0.4,
         optimize_memory_usage: bool = False,
+        min_priority: float = 1e-8,
     ):
         super().__init__(buffer_size, observation_space, action_space, device, n_envs)
 
         assert optimize_memory_usage is False, "PrioritizedReplayBuffer doesn't support optimize_memory_usage=True"
 
-        self.min_priority = 1e-8  # minimal priority, prevents zero probabilities
+        self.min_priority = 1e-8
         self.alpha = alpha
         self.beta = beta
         self.max_priority = self.min_priority  # priority for new samples, init as eps
@@ -169,7 +166,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         """
         assert self.buffer_size >= batch_size, "The buffer contains less samples than the batch size requires."
 
-        tree_indices = np.zeros(batch_size, dtype=np.uint32)
+        leaf_nodes_indices = np.zeros(batch_size, dtype=np.uint32)
         priorities = np.zeros((batch_size, 1))
         sample_indices = np.zeros(batch_size, dtype=np.uint32)
 
@@ -184,11 +181,11 @@ class PrioritizedReplayBuffer(ReplayBuffer):
             # uniformely sample a value from the current segment
             cumulative_sum = np.random.uniform(start, end)
 
-            # tree_idx is a index of a sample in the tree, needed further to update priorities
+            # leaf_node_idx is a index of a sample in the tree, needed further to update priorities
             # sample_idx is a sample index in buffer, needed further to sample actual transitions
-            tree_idx, priority, sample_idx = self.tree.get(cumulative_sum)
+            leaf_node_idx, priority, sample_idx = self.tree.get(cumulative_sum)
 
-            tree_indices[batch_idx] = tree_idx
+            leaf_nodes_indices[batch_idx] = leaf_node_idx
             priorities[batch_idx] = priority
             sample_indices[batch_idx] = sample_idx
 
@@ -201,12 +198,12 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         weights = (self.size() * probs) ** -self.beta
         weights = weights / weights.max()
 
-        env_indices = np.random.randint(0, high=self.n_envs, size=(batch_size,))
+        # TODO: add proper support for multi env
+        # env_indices = np.random.randint(0, high=self.n_envs, size=(batch_size,))
+        env_indices = np.zeros(batch_size, dtype=np.uint32)
 
         if self.optimize_memory_usage:
-            next_obs = self._normalize_obs(
-                self.observations[(sample_indices + 1) % self.buffer_size, env_indices, :], env
-            )
+            next_obs = self._normalize_obs(self.observations[(sample_indices + 1) % self.buffer_size, env_indices, :], env)
         else:
             next_obs = self._normalize_obs(self.next_observations[sample_indices, env_indices, :], env)
 
@@ -216,5 +213,26 @@ class PrioritizedReplayBuffer(ReplayBuffer):
             next_obs,
             self.dones[sample_indices],
             self.rewards[sample_indices],
+            weights,
         )
-        return ReplayBufferSamples(*tuple(map(self.to_torch, batch)))  # type: ignore[arg-type]
+        return ReplayBufferSamples(*tuple(map(self.to_torch, batch)), leaf_nodes_indices)  # type: ignore[arg-type]
+
+    def update_priorities(self, leaf_nodes_indices: np.ndarray, td_errors: th.Tensor) -> None:
+        """
+        Update transition priorities.
+
+        :param leaf_nodes_indices: Indices for the leaf nodes to update
+            (correponding to the transitions)
+        :param td_errors: New priorities, td error in the case of
+            proportional prioritized replay buffer.
+        """
+        td_errors = td_errors.detach().cpu().numpy().flatten()
+
+        for leaf_node_idx, td_error in zip(leaf_nodes_indices, td_errors):
+            # Proportional prioritization priority = (abs(td_error) + eps) ^ alpha
+            # where eps is a small positive constant that prevents the edge-case of transitions not being
+            # revisited once their error is zero. (Section 3.3)
+            priority = (abs(td_error) + self.min_priority) ** self.alpha
+            self.tree.update(leaf_node_idx, priority)
+            # Update max priority for new samples
+            self.max_priority = max(self.max_priority, priority)

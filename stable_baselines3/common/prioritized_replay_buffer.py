@@ -20,12 +20,20 @@ class SumTree:
     def __init__(self, buffer_size: int) -> None:
         self.nodes = np.zeros(2 * buffer_size - 1)
         self.data = np.zeros(buffer_size)
-        self.size = buffer_size
-        self.count = 0
-        self.real_size = 0
+        self.buffer_size = buffer_size
+        self.pos = 0
+        self.full = False
+
+    def size(self) -> int:
+        """
+        :return: The current size of the SumTree
+        """
+        if self.full:
+            return self.buffer_size
+        return self.pos
 
     @property
-    def p_total(self) -> float:
+    def total_sum(self) -> float:
         """
         Returns the root node value, which represents the total sum of all priorities in the tree.
 
@@ -40,7 +48,7 @@ class SumTree:
         :param data_idx: Index of the leaf node to update.
         :param value: New priority value.
         """
-        idx = data_idx + self.size - 1  # child index in tree array
+        idx = data_idx + self.buffer_size - 1  # child index in tree array
         change = value - self.nodes[idx]
         self.nodes[idx] = value
         parent = (idx - 1) // 2
@@ -55,34 +63,36 @@ class SumTree:
         :param value: Priority value.
         :param data: Transition data.
         """
-        self.data[self.count] = data
-        self.update(self.count, value)
-        self.count = (self.count + 1) % self.size
-        self.real_size = min(self.size, self.real_size + 1)
+        self.data[self.pos] = data
+        self.update(self.pos, value)
+        self.pos += 1
+        if self.pos == self.buffer_size:
+            self.full = True
+            self.pos = 0
 
-    def get(self, cumsum) -> Tuple[int, float, th.Tensor]:
+    def get(self, cumulative_sum: float) -> Tuple[int, float, th.Tensor]:
         """
-        Get a leaf node index, its priority value and transition data by cumsum value.
+        Get a leaf node index, its priority value and transition data by cumulative_sum value.
 
-        :param cumsum: Cumulative sum value.
+        :param cumulative_sum: Cumulative sum value.
         :return: Leaf node index, its priority value and transition data.
         """
-        assert cumsum <= self.p_total
+        assert cumulative_sum <= self.total_sum
 
         idx = 0
         while 2 * idx + 1 < len(self.nodes):
             left, right = 2 * idx + 1, 2 * idx + 2
-            if cumsum <= self.nodes[left]:
+            if cumulative_sum <= self.nodes[left]:
                 idx = left
             else:
                 idx = right
-                cumsum = cumsum - self.nodes[left]
+                cumulative_sum = cumulative_sum - self.nodes[left]
 
-        data_idx = idx - self.size + 1
+        data_idx = idx - self.buffer_size + 1
         return data_idx, self.nodes[idx].item(), self.data[data_idx]
 
     def __repr__(self) -> str:
-        return f"SumTree(nodes={self.nodes.__repr__()}, data={self.data.__repr__()})"
+        return f"SumTree(nodes={self.nodes!r}, data={self.data!r})"
 
 
 class PrioritizedReplayBuffer(ReplayBuffer):
@@ -96,7 +106,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
     :param action_space: Action space
     :param device: PyTorch device
     :param n_envs: Number of parallel environments
-    :param alpha: How much prioritization is used (0 - no prioritization, 1 - full prioritization)
+    :param alpha: How much prioritization is used (0 - no prioritization aka uniform case, 1 - full prioritization)
     :param beta: To what degree to use importance weights (0 - no corrections, 1 - full correction)
     """
 
@@ -115,16 +125,13 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
         assert optimize_memory_usage is False, "PrioritizedReplayBuffer doesn't support optimize_memory_usage=True"
 
-        self.eps = 1e-8  # minimal priority, prevents zero probabilities
-        self.alpha = alpha  # determines how much prioritization is used, alpha = 0 corresponding to the uniform case
-        self.beta = beta  # determines the amount of importance-sampling correction
-        self.max_priority = self.eps  # priority for new samples, init as eps
+        self.min_priority = 1e-8  # minimal priority, prevents zero probabilities
+        self.alpha = alpha
+        self.beta = beta
+        self.max_priority = self.min_priority  # priority for new samples, init as eps
 
         # SumTree: data structure to store priorities
         self.tree = SumTree(buffer_size=buffer_size)
-
-        self.real_size = 0
-        self.count = 0
 
     def add(
         self,
@@ -146,11 +153,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         :param infos: Eventual information given by the environment.
         """
         # store transition index with maximum priority in sum tree
-        self.tree.add(self.max_priority, self.count)
-
-        # update counters
-        self.count = (self.count + 1) % self.buffer_size
-        self.real_size = min(self.buffer_size, self.real_size + 1)
+        self.tree.add(self.max_priority, self.pos)
 
         # store transition in the buffer
         super().add(obs, next_obs, action, reward, done, infos)
@@ -166,51 +169,52 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         """
         assert self.buffer_size >= batch_size, "The buffer contains less samples than the batch size requires."
 
-        sample_idxs, tree_idxs = [], []
+        tree_indices = np.zeros(batch_size, dtype=np.uint32)
         priorities = np.zeros((batch_size, 1))
+        sample_indices = np.zeros(batch_size, dtype=np.uint32)
 
-        # To sample a minibatch of size k, the range [0, p_total] is divided equally into k ranges.
+        # To sample a minibatch of size k, the range [0, total_sum] is divided equally into k ranges.
         # Next, a value is uniformly sampled from each range. Finally the transitions that correspond
         # to each of these sampled values are retrieved from the tree.
-        segment = self.tree.p_total / batch_size
-        for i in range(batch_size):
+        segment_size = self.tree.total_sum / batch_size
+        for batch_idx in range(batch_size):
             # extremes of the current segment
-            a, b = segment * i, segment * (i + 1)
+            start, end = segment_size * batch_idx, segment_size * (batch_idx + 1)
 
             # uniformely sample a value from the current segment
-            cumsum = np.random.uniform(a, b)
+            cumulative_sum = np.random.uniform(start, end)
 
             # tree_idx is a index of a sample in the tree, needed further to update priorities
             # sample_idx is a sample index in buffer, needed further to sample actual transitions
-            tree_idx, priority, sample_idx = self.tree.get(cumsum)
+            tree_idx, priority, sample_idx = self.tree.get(cumulative_sum)
 
-            priorities[i] = priority
-            tree_idxs.append(tree_idx)
-            sample_idxs.append(int(sample_idx.item()))
+            tree_indices[batch_idx] = tree_idx
+            priorities[batch_idx] = priority
+            sample_indices[batch_idx] = sample_idx
 
         # probability of sampling transition i as P(i) = p_i^alpha / \sum_{k} p_k^alpha
         # where p_i > 0 is the priority of transition i.
-        probs = priorities / self.tree.p_total
+        probs = priorities / self.tree.total_sum
 
         # Importance sampling weights.
         # All weights w_i were scaled so that max_i w_i = 1.
-        weights = (self.real_size * probs) ** -self.beta
+        weights = (self.size() * probs) ** -self.beta
         weights = weights / weights.max()
 
-        env_indices = np.random.randint(0, high=self.n_envs, size=(len(sample_idxs),))
+        env_indices = np.random.randint(0, high=self.n_envs, size=(batch_size,))
 
         if self.optimize_memory_usage:
             next_obs = self._normalize_obs(
-                self.observations[(np.array(sample_idxs) + 1) % self.buffer_size, env_indices, :], env
+                self.observations[(sample_indices + 1) % self.buffer_size, env_indices, :], env
             )
         else:
-            next_obs = self._normalize_obs(self.next_observations[sample_idxs, env_indices, :], env)
+            next_obs = self._normalize_obs(self.next_observations[sample_indices, env_indices, :], env)
 
         batch = (
-            self._normalize_obs(self.observations[sample_idxs, env_indices, :], env),
-            self.actions[sample_idxs, env_indices, :],
+            self._normalize_obs(self.observations[sample_indices, env_indices, :], env),
+            self.actions[sample_indices, env_indices, :],
             next_obs,
-            self.dones[sample_idxs],
-            self.rewards[sample_idxs],
+            self.dones[sample_indices],
+            self.rewards[sample_indices],
         )
         return ReplayBufferSamples(*tuple(map(self.to_torch, batch)))  # type: ignore[arg-type]

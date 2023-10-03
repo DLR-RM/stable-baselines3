@@ -8,10 +8,10 @@ from collections import defaultdict
 from io import TextIOBase
 from typing import Any, Dict, List, Mapping, Optional, Sequence, TextIO, Tuple, Union
 
+import matplotlib.figure
 import numpy as np
 import pandas
 import torch as th
-from matplotlib import pyplot as plt
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -52,7 +52,7 @@ class Figure:
     :param close: if true, close the figure after logging it
     """
 
-    def __init__(self, figure: plt.figure, close: bool):
+    def __init__(self, figure: matplotlib.figure.Figure, close: bool):
         self.figure = figure
         self.close = close
 

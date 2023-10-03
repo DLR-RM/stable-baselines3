@@ -116,3 +116,12 @@ def test_subclassed_space_env(model_class):
     model.learn(300)
     obs, _ = env.reset()
     env.step(model.predict(obs))
+
+
+def test_mixing_gym_vecenv_api():
+    env = gym.make("CartPole-v1")
+    model = PPO("MlpPolicy", env)
+    # Reset return a tuple (obs, info)
+    wrong_obs = env.reset()
+    with pytest.raises(ValueError, match="mixing Gym API"):
+        model.predict(wrong_obs)

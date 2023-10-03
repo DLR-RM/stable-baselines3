@@ -80,7 +80,7 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
 
     if isinstance(observation_space, spaces.Tuple):
         warnings.warn(
-            "The observation space is a Tuple,"
+            "The observation space is a Tuple, "
             "this is currently not supported by Stable Baselines3. "
             "However, you can convert it to a Dict observation space "
             "(cf. https://gymnasium.farama.org/api/spaces/composite/#dict). "
@@ -91,6 +91,13 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
         warnings.warn(
             "Discrete observation space with a non-zero start is not supported by Stable-Baselines3. "
             "You can use a wrapper or update your observation space."
+        )
+
+    if isinstance(observation_space, spaces.Sequence):
+        warnings.warn(
+            "Sequence observation space is not supported by Stable-Baselines3. "
+            "You can pad your observation to have a fixed size instead.\n"
+            "Note: The checks for returned values are skipped."
         )
 
     if isinstance(action_space, spaces.Discrete) and action_space.start != 0:
@@ -347,9 +354,15 @@ def _check_spaces(env: gym.Env) -> None:
     assert isinstance(env.action_space, spaces.Space), f"The action space must inherit from gymnasium.spaces ({gym_spaces})"
 
     if _is_goal_env(env):
-        assert isinstance(
-            env.observation_space, spaces.Dict
-        ), "Goal conditioned envs (previously gym.GoalEnv) require the observation space to be gymnasium.spaces.Dict"
+        print(
+            "We detected your env to be a GoalEnv because `env.compute_reward()` was defined.\n"
+            "If it's not the case, please rename `env.compute_reward()` to something else to avoid False positives."
+        )
+        assert isinstance(env.observation_space, spaces.Dict), (
+            "Goal conditioned envs (previously gym.GoalEnv) require the observation space to be gymnasium.spaces.Dict.\n"
+            "Note: if your env is not a GoalEnv, please rename `env.compute_reward()` "
+            "to something else to avoid False positive."
+        )
 
 
 # Check render cannot be covered by CI
@@ -439,6 +452,10 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
             warnings.warn(
                 f"Your action space has dtype {action_space.dtype}, we recommend using np.float32 to avoid cast errors."
             )
+
+    # If Sequence observation space, do not check the observation any further
+    if isinstance(observation_space, spaces.Sequence):
+        return
 
     # ============ Check the returned values ===============
     _check_returned_values(env, observation_space, action_space)

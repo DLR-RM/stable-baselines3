@@ -112,18 +112,16 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         self.rollout_buffer = buffer_cls(
             self.n_steps,
-            self.observation_space,
+            self.observation_space,  # type: ignore[arg-type]
             self.action_space,
             device=self.device,
             gamma=self.gamma,
             gae_lambda=self.gae_lambda,
             n_envs=self.n_envs,
         )
-        # pytype:disable=not-instantiable
         self.policy = self.policy_class(  # type: ignore[assignment]
             self.observation_space, self.action_space, self.lr_schedule, use_sde=self.use_sde, **self.policy_kwargs
         )
-        # pytype:enable=not-instantiable
         self.policy = self.policy.to(self.device)
 
     def collect_rollouts(

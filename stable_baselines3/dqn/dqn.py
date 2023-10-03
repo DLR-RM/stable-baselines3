@@ -217,7 +217,9 @@ class DQN(OffPolicyAlgorithm):
                 loss = (replay_data.weights * th.where(td_error < 1.0, 0.5 * td_error**2, td_error - 0.5)).mean()
                 # Update priorities, they will be proportional to the td error
                 assert replay_data.leaf_nodes_indices is not None, "Node leaf node indices provided"
-                self.replay_buffer.update_priorities(replay_data.leaf_nodes_indices, td_error)
+                self.replay_buffer.update_priorities(
+                    replay_data.leaf_nodes_indices, td_error, self._current_progress_remaining
+                )
             else:
                 # Compute Huber loss (less sensitive to outliers)
                 loss = F.smooth_l1_loss(current_q_values, target_q_values)

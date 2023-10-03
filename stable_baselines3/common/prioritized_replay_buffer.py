@@ -6,6 +6,7 @@ from gymnasium import spaces
 
 from stable_baselines3.common.buffers import ReplayBuffer
 from stable_baselines3.common.type_aliases import ReplayBufferSamples
+from stable_baselines3.common.utils import get_linear_fn
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 
 
@@ -102,6 +103,8 @@ class PrioritizedReplayBuffer(ReplayBuffer):
     :param n_envs: Number of parallel environments
     :param alpha: How much prioritization is used (0 - no prioritization aka uniform case, 1 - full prioritization)
     :param beta: To what degree to use importance weights (0 - no corrections, 1 - full correction)
+    :param final_beta: Value of beta at the end of training.
+        Linear annealing is used to interpolate between initial value of beta and final beta.
     :param min_priority: Minimum priority, prevents zero probabilities, so that all samples
         always have a non-zero probability to be sampled.
     """
@@ -113,8 +116,9 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         action_space: spaces.Space,
         device: Union[th.device, str] = "auto",
         n_envs: int = 1,
-        alpha: float = 0.6,
+        alpha: float = 0.5,
         beta: float = 0.4,
+        final_beta: float = 1.0,
         optimize_memory_usage: bool = False,
         min_priority: float = 1e-8,
     ):
@@ -124,11 +128,24 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
         self.min_priority = 1e-8
         self.alpha = alpha
-        self.beta = beta
         self.max_priority = self.min_priority  # priority for new samples, init as eps
-
+        # Track the training progress remaining (from 1 to 0)
+        # this is used to update beta
+        self._current_progress_remaining = 1.0
+        self.inital_beta = beta
+        self.final_beta = final_beta
+        self.beta_schedule = get_linear_fn(
+            self.inital_beta,
+            self.final_beta,
+            end_fraction=1.0,
+        )
         # SumTree: data structure to store priorities
         self.tree = SumTree(buffer_size=buffer_size)
+
+    @property
+    def beta(self) -> float:
+        # Linear schedule
+        return self.beta_schedule(self._current_progress_remaining)
 
     def add(
         self,
@@ -217,7 +234,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         )
         return ReplayBufferSamples(*tuple(map(self.to_torch, batch)), leaf_nodes_indices)  # type: ignore[arg-type,call-arg]
 
-    def update_priorities(self, leaf_nodes_indices: np.ndarray, td_errors: th.Tensor) -> None:
+    def update_priorities(self, leaf_nodes_indices: np.ndarray, td_errors: th.Tensor, progress_remaining: float) -> None:
         """
         Update transition priorities.
 
@@ -225,7 +242,11 @@ class PrioritizedReplayBuffer(ReplayBuffer):
             (correponding to the transitions)
         :param td_errors: New priorities, td error in the case of
             proportional prioritized replay buffer.
+        :param progress_remaining: Current progress remaining (starts from 1 and ends to 0)
+            to linearly anneal beta from its start value to 1.0 at the end of training
         """
+        # Update beta schedule
+        self._current_progress_remaining = progress_remaining
         td_errors = td_errors.detach().cpu().numpy().flatten()
 
         for leaf_node_idx, td_error in zip(leaf_nodes_indices, td_errors):

@@ -186,7 +186,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             # Give access to local variables
             callback.update_locals(locals())
-            if callback.on_step() is False:
+            if not callback.on_step():
                 return False
 
             self._update_info_buffer(infos)

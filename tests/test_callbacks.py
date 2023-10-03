@@ -4,9 +4,11 @@ import shutil
 import gymnasium as gym
 import numpy as np
 import pytest
+import torch as th
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3, HerReplayBuffer
 from stable_baselines3.common.callbacks import (
+    BaseCallback,
     CallbackList,
     CheckpointCallback,
     EvalCallback,
@@ -121,6 +123,33 @@ def test_eval_callback_vec_env():
     )
     model.learn(300, callback=eval_callback)
     assert eval_callback.last_mean_reward == 100.0
+
+
+class AlwaysFailCallback(BaseCallback):
+    def __init__(self, *args, callback_false_value, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.callback_false_value = callback_false_value
+
+    def _on_step(self) -> bool:
+        return self.callback_false_value
+
+
+@pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN, DDPG])
+@pytest.mark.parametrize("callback_false_value", [False, np.bool_(0), th.tensor(0, dtype=th.bool)])
+def test_callbacks_can_cancel_runs(model_class, callback_false_value):
+    assert not callback_false_value  # Sanity check to ensure parametrized values are valid
+    env_id = select_env(model_class)
+    model = model_class("MlpPolicy", env_id, policy_kwargs=dict(net_arch=[32]))
+    eval_callback = EvalCallback(
+        gym.make(env_id),
+        callback_after_eval=AlwaysFailCallback(callback_false_value=callback_false_value),
+        n_eval_episodes=1,
+        eval_freq=1,
+        warn=False,
+    )
+    model.learn(10, callback=eval_callback)
+
+    assert eval_callback.n_calls == 1
 
 
 def test_eval_success_logging(tmp_path):

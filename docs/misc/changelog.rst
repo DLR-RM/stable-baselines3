@@ -27,6 +27,7 @@ Bug Fixes:
 - Fixed success reward dtype in ``SimpleMultiObsEnv`` (@NixGD)
 - Fixed check_env for Sequence observation space (@corentinlger)
 - Prevents instantiating BitFlippingEnv with conflicting observation spaces (@kylesayrs)
+- Fixed incorrect boolean evaluation for values returned by callbacks in ``OffPolicyAlgorithm`` and ``OnPolicyAlgorithm``(@iwishiwasaneagle)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

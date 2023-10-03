@@ -145,7 +145,7 @@ class DiagGaussianDistribution(Distribution):
         :param log_std_init: Initial value for the log standard deviation
         :return:
         """
-        mean_actions = nn.Linear(latent_dim, self.action_dim)
+        mean_actions = nn.Sequential(nn.Linear(latent_dim, self.action_dim), nn.Tanh()) 
         # TODO: allow action dependent std
         log_std = nn.Parameter(th.ones(self.action_dim) * log_std_init, requires_grad=True)
         return mean_actions, log_std

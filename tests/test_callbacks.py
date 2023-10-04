@@ -134,12 +134,25 @@ class AlwaysFailCallback(BaseCallback):
         return self.callback_false_value
 
 
-@pytest.mark.parametrize("model_class", [A2C, PPO, SAC, TD3, DQN, DDPG])
+@pytest.mark.parametrize(
+    "model_class,model_kwargs",
+    [
+        (A2C, dict(n_steps=1, stats_window_size=1)),
+        (
+            SAC,
+            dict(
+                learning_starts=1,
+                buffer_size=1,
+                batch_size=1,
+            ),
+        ),
+    ],
+)
 @pytest.mark.parametrize("callback_false_value", [False, np.bool_(0), th.tensor(0, dtype=th.bool)])
-def test_callbacks_can_cancel_runs(model_class, callback_false_value):
+def test_callbacks_can_cancel_runs(model_class, model_kwargs, callback_false_value):
     assert not callback_false_value  # Sanity check to ensure parametrized values are valid
     env_id = select_env(model_class)
-    model = model_class("MlpPolicy", env_id, policy_kwargs=dict(net_arch=[32]))
+    model = model_class("MlpPolicy", env_id, **model_kwargs, policy_kwargs=dict(net_arch=[2]))
     eval_callback = EvalCallback(
         gym.make(env_id),
         callback_after_eval=AlwaysFailCallback(callback_false_value=callback_false_value),

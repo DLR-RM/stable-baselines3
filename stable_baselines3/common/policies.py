@@ -90,7 +90,7 @@ class BaseModel(nn.Module):
         self.features_extractor_class = features_extractor_class
         self.features_extractor_kwargs = features_extractor_kwargs
         # Automatically deactivate dtype and bounds checks
-        if normalize_images is False and issubclass(features_extractor_class, (NatureCNN, CombinedExtractor)):
+        if not normalize_images and issubclass(features_extractor_class, (NatureCNN, CombinedExtractor)):
             self.features_extractor_kwargs.update(dict(normalized_image=True))
 
     def _update_features_extractor(

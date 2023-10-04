@@ -334,11 +334,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             if rollout.continue_training is False:
                 break
 
-            iteration += 1
-
-            if log_interval is not None and iteration % log_interval == 0:
-                self._dump_logs()
-
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
                 # If no `gradient_steps` is specified,
                 # do as many gradients steps as steps performed during the rollout
@@ -346,6 +341,11 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 # Special case when the user passes `gradient_steps=0`
                 if gradient_steps > 0:
                     self.train(batch_size=self.batch_size, gradient_steps=gradient_steps)
+
+            iteration += 1
+
+            if log_interval is not None and iteration % log_interval == 0:
+                self._dump_logs()
 
         callback.on_training_end()
 

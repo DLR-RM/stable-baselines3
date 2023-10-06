@@ -521,7 +521,7 @@ def get_available_accelerator() -> str:
     Return the available accelerator
     (currently checking only for CUDA and MPS device)
     """
-    if hasattr(th, "has_mps") and th.backends.mps.is_available():
+    if hasattr(th, "has_mps") and th.backends.mps.is_built():
         # MacOS Metal GPU
         return "mps"
     elif th.cuda.is_available():

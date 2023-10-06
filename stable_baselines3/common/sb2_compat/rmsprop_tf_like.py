@@ -74,7 +74,7 @@ class RMSpropTFLike(Optimizer):
             group.setdefault("centered", False)
 
     @torch.no_grad()
-    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:  # type: ignore[override]
         """Performs a single optimization step.
 
         :param closure: A closure that reevaluates the model

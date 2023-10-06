@@ -123,6 +123,10 @@ def make_env():
     return Monitor(gym.make(ENV_ID))
 
 
+def make_env_render():
+    return Monitor(gym.make(ENV_ID, render_mode="rgb_array"))
+
+
 def make_dict_env():
     return Monitor(DummyDictEnv())
 
@@ -257,14 +261,17 @@ def test_obs_rms_vec_normalize():
     assert np.allclose(env.ret_rms.mean, 5.688, atol=1e-3)
 
 
-@pytest.mark.parametrize("make_env", [make_env, make_dict_env, make_image_env])
-def test_vec_env(tmp_path, make_env):
+@pytest.mark.parametrize("make_gym_env", [make_env, make_dict_env, make_image_env])
+def test_vec_env(tmp_path, make_gym_env):
     """Test VecNormalize Object"""
     clip_obs = 0.5
     clip_reward = 5.0
 
-    orig_venv = DummyVecEnv([make_env])
+    orig_venv = DummyVecEnv([make_gym_env])
     norm_venv = VecNormalize(orig_venv, norm_obs=True, norm_reward=True, clip_obs=clip_obs, clip_reward=clip_reward)
+    assert orig_venv.render_mode is None
+    assert norm_venv.render_mode is None
+
     _, done = norm_venv.reset(), [False]
     while not done[0]:
         actions = [norm_venv.action_space.sample()]
@@ -278,8 +285,18 @@ def test_vec_env(tmp_path, make_env):
 
     path = tmp_path / "vec_normalize"
     norm_venv.save(path)
+    assert orig_venv.render_mode is None
     deserialized = VecNormalize.load(path, venv=orig_venv)
+    assert deserialized.render_mode is None
     check_vec_norm_equal(norm_venv, deserialized)
+
+    # Check that render mode is properly updated
+    vec_env = DummyVecEnv([make_env_render])
+    assert vec_env.render_mode == "rgb_array"
+    # Test that loading and wrapping keep the correct render mode
+    if make_gym_env == make_env:
+        assert VecNormalize.load(path, venv=vec_env).render_mode == "rgb_array"
+        assert VecNormalize(vec_env).render_mode == "rgb_array"
 
 
 def test_get_original():

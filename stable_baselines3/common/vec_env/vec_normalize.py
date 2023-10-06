@@ -163,6 +163,7 @@ class VecNormalize(VecEnvWrapper):
         self.venv = venv
         self.num_envs = venv.num_envs
         self.class_attributes = dict(inspect.getmembers(self.__class__))
+        self.render_mode = venv.render_mode
 
         # Check that the observation_space shape match
         utils.check_shape_equal(self.observation_space, venv.observation_space)

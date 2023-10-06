@@ -120,12 +120,10 @@ setup(
             # Type check
             "pytype",
             "mypy",
-            # Lint code (flake8 replacement)
-            "ruff",
-            # Sort imports
-            "isort>=5.0",
+            # Lint code and sort imports (flake8 and isort replacement)
+            "ruff>=0.0.288",
             # Reformat
-            "black",
+            "black>=23.9.1,<24",
         ],
         "docs": [
             "sphinx>=5.3,<7.0",

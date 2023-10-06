@@ -246,6 +246,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             if truncate_last_traj:
                 self.replay_buffer.truncate_last_trajectory()
 
+        # Update saved replay buffer device to match current setting, see GH#1561
+        self.replay_buffer.device = self.device
+
     def _setup_learn(
         self,
         total_timesteps: int,

@@ -3,14 +3,30 @@
 Changelog
 ==========
 
-Release 2.2.0a0 (WIP)
+Release 2.2.0a6 (WIP)
 --------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Switched to ``ruff`` for sorting imports (isort is no longer needed), black and ruff version now require a minimum version
 
 New Features:
 ^^^^^^^^^^^^^
+- Improved error message of the ``env_checker`` for env wrongly detected as GoalEnv (``compute_reward()`` is defined)
+- Improved error message when mixing Gym API with VecEnv API (see GH#1694)
+
+Bug Fixes:
+^^^^^^^^^^
+- Prevents using squash_output and not use_sde in ActorCritcPolicy (@PatrickHelm)
+- Performs unscaling of actions in collect_rollout in OnPolicyAlgorithm (@PatrickHelm)
+- Moves VectorizedActionNoise into ``_setup_learn()`` in OffPolicyAlgorithm (@PatrickHelm)
+- Prevents out of bound error on Windows if no seed is passed (@PatrickHelm)
+- Calls ``callback.update_locals()`` before ``callback.on_rollout_end()`` in OnPolicyAlgorithm (@PatrickHelm)
+- Fixed replay buffer device after loading in OffPolicyAlgorithm (@PatrickHelm)
+- Fixed ``render_mode`` which was not properly loaded when using ``VecNormalize.load()``
+- Fixed success reward dtype in ``SimpleMultiObsEnv`` (@NixGD)
+- Fixed check_env for Sequence observation space (@corentinlger)
+- Prevents instantiating BitFlippingEnv with conflicting observation spaces (@kylesayrs)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -18,10 +34,9 @@ New Features:
 `RL Zoo`_
 ^^^^^^^^^
 
-Bug Fixes:
-^^^^^^^^^^
-- Moves VectorizedActionNoise into ``_setup_learn()`` in OffPolicyAlgorithm (@PatrickHelm)
-- Prevents out of bound error on Windows if no seed is passed (@PatrickHelm)
+`SBX`_
+^^^^^^^^^
+- Added ``DDPG`` and ``TD3``
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -33,6 +48,10 @@ Others:
 - Fixed ``stable_baselines3/common/vec_envs/vec_transpose.py`` type hints
 - Fixed ``stable_baselines3/common/vec_env/vec_video_recorder.py`` type hints
 - Fixed ``stable_baselines3/common/save_util.py`` type hints
+- Updated docker images to  Ubuntu Jammy using micromamba 1.5
+- Fixed ``stable_baselines3/common/buffers.py`` type hints
+- Fixed ``stable_baselines3/her/her_replay_buffer.py`` type hints
+- Buffers do no call an additional ``.copy()`` when storing new transitions
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -1420,6 +1439,7 @@ and `Quentin Gallouédec`_ (aka @qgallouedec).
 
 .. _SB3-Contrib: https://github.com/Stable-Baselines-Team/stable-baselines3-contrib
 .. _RL Zoo: https://github.com/DLR-RM/rl-baselines3-zoo
+.. _SBX: https://github.com/araffin/sbx
 
 Contributors:
 -------------
@@ -1447,4 +1467,4 @@ And all the contributors:
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
-@lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm
+@lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger

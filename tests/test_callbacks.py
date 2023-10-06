@@ -153,16 +153,10 @@ def test_callbacks_can_cancel_runs(model_class, model_kwargs, callback_false_val
     assert not callback_false_value  # Sanity check to ensure parametrized values are valid
     env_id = select_env(model_class)
     model = model_class("MlpPolicy", env_id, **model_kwargs, policy_kwargs=dict(net_arch=[2]))
-    eval_callback = EvalCallback(
-        gym.make(env_id),
-        callback_after_eval=AlwaysFailCallback(callback_false_value=callback_false_value),
-        n_eval_episodes=1,
-        eval_freq=1,
-        warn=False,
-    )
-    model.learn(10, callback=eval_callback)
+    alwaysfailcallback = AlwaysFailCallback(callback_false_value=callback_false_value)
+    model.learn(10, callback=alwaysfailcallback)
 
-    assert eval_callback.n_calls == 1
+    assert alwaysfailcallback.n_calls == 1
 
 
 def test_eval_success_logging(tmp_path):

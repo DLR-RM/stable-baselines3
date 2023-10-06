@@ -29,8 +29,8 @@ def set_random_seed(seed: int, using_cuda: bool = False) -> None:
     """
     Seed the different random generators.
 
-    :param seed:
-    :param using_cuda:
+    :param seed: Seed
+    :param using_cuda: Whether CUDA is currently used
     """
     # Seed python RNG
     random.seed(seed)

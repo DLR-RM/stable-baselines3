@@ -3,12 +3,13 @@
 Changelog
 ==========
 
-Release 2.2.0a6 (WIP)
+Release 2.2.0a7 (WIP)
 --------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Switched to ``ruff`` for sorting imports (isort is no longer needed), black and ruff version now require a minimum version
+- Dropped ``x is False`` in favor of ``not x``, which means that callbacks that wrongly returned None (instead of a boolean) will cause the training to stop (@iwishiwasaneagle)
 
 New Features:
 ^^^^^^^^^^^^^
@@ -30,7 +31,6 @@ Bug Fixes:
 
 Others:
 ^^^^^^^
-- Drop `x is False` in favor of `not x` (@iwishiwasaneagle)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

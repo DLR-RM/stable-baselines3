@@ -652,8 +652,6 @@ class ActorCriticPolicy(BasePolicy):
         :param features_extractor: The features extractor to use. If None, then ``self.features_extractor`` is used.
         :return: The extracted features. If features extractor is not shared, returns a tuple with the
             features for the actor and the features for the critic.
-
-
         """
         if self.share_features_extractor:
             return super().extract_features(obs, self.features_extractor if features_extractor is None else features_extractor)

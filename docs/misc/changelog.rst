@@ -29,9 +29,6 @@ Bug Fixes:
 - Fixed check_env for Sequence observation space (@corentinlger)
 - Prevents instantiating BitFlippingEnv with conflicting observation spaces (@kylesayrs)
 
-Others:
-^^^^^^^
-
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
 

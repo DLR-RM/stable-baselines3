@@ -214,7 +214,7 @@ class TD3(OffPolicyAlgorithm):
         self: SelfTD3,
         total_timesteps: int,
         callback: MaybeCallback = None,
-        log_interval: int = 4,
+        log_interval: int = 1000,
         tb_log_name: str = "TD3",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,

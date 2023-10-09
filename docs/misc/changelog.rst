@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.2.0a6 (WIP)
+Release 2.2.0a7 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -52,6 +52,7 @@ Others:
 - Fixed ``stable_baselines3/common/buffers.py`` type hints
 - Fixed ``stable_baselines3/her/her_replay_buffer.py`` type hints
 - Buffers do no call an additional ``.copy()`` when storing new transitions
+- Fixed ``ActorCriticPolicy.extract_features()`` signature by adding an optional ``features_extractor`` argument
 
 Documentation:
 ^^^^^^^^^^^^^^

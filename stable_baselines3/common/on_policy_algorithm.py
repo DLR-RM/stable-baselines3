@@ -186,7 +186,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             # Give access to local variables
             callback.update_locals(locals())
-            if callback.on_step() is False:
+            if not callback.on_step():
                 return False
 
             self._update_info_buffer(infos)
@@ -265,7 +265,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         while self.num_timesteps < total_timesteps:
             continue_training = self.collect_rollouts(self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps)
 
-            if continue_training is False:
+            if not continue_training:
                 break
 
             iteration += 1

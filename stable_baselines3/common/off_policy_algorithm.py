@@ -331,7 +331,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 replay_buffer=self.replay_buffer,
             )
 
-            if rollout.continue_training is False:
+            if not rollout.continue_training:
                 break
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
@@ -560,7 +560,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             # Give access to local variables
             callback.update_locals(locals())
             # Only stop training if return value is False, not when it is None.
-            if callback.on_step() is False:
+            if not callback.on_step():
                 return RolloutReturn(num_collected_steps * env.num_envs, num_collected_episodes, continue_training=False)
 
             # Retrieve reward and episode length if using Monitor wrapper

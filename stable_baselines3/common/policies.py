@@ -90,7 +90,7 @@ class BaseModel(nn.Module):
         self.features_extractor_class = features_extractor_class
         self.features_extractor_kwargs = features_extractor_kwargs
         # Automatically deactivate dtype and bounds checks
-        if normalize_images is False and issubclass(features_extractor_class, (NatureCNN, CombinedExtractor)):
+        if not normalize_images and issubclass(features_extractor_class, (NatureCNN, CombinedExtractor)):
             self.features_extractor_kwargs.update(dict(normalized_image=True))
 
     def _update_features_extractor(
@@ -123,9 +123,9 @@ class BaseModel(nn.Module):
         """
         Preprocess the observation if needed and extract features.
 
-         :param obs: The observation
-         :param features_extractor: The features extractor to use.
-         :return: The extracted features
+        :param obs: Observation
+        :param features_extractor: The features extractor to use.
+        :return: The extracted features
         """
         preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
         return features_extractor(preprocessed_obs)
@@ -343,6 +343,17 @@ class BasePolicy(BaseModel, ABC):
         # Switch to eval mode (this affects batch norm / dropout)
         self.set_training_mode(False)
 
+        # Check for common mistake that the user does not mix Gym/VecEnv API
+        # Tuple obs are not supported by SB3, so we can safely do that check
+        if isinstance(observation, tuple) and len(observation) == 2 and isinstance(observation[1], dict):
+            raise ValueError(
+                "You have passed a tuple to the predict() function instead of a Numpy array or a Dict. "
+                "You are probably mixing Gym API with SB3 VecEnv API: `obs, info = env.reset()` (Gym) "
+                "vs `obs = vec_env.reset()` (SB3 VecEnv). "
+                "See related issue https://github.com/DLR-RM/stable-baselines3/issues/1694 "
+                "and documentation for more information: https://stable-baselines3.readthedocs.io/en/master/guide/vec_envs.html#vecenv-api-vs-gym-api"
+            )
+
         observation, vectorized_env = self.obs_to_tensor(observation)
 
         with th.no_grad():
@@ -489,6 +500,8 @@ class ActorCriticPolicy(BasePolicy):
 
         self.log_std_init = log_std_init
         dist_kwargs = None
+
+        assert not (squash_output and not use_sde), "squash_output=True is only available when using gSDE (use_sde=True)"
         # Keyword arguments for gSDE distribution
         if use_sde:
             dist_kwargs = {
@@ -629,16 +642,26 @@ class ActorCriticPolicy(BasePolicy):
         actions = actions.reshape((-1, *self.action_space.shape))
         return actions, values, log_prob
 
-    def extract_features(self, obs: th.Tensor) -> Union[th.Tensor, Tuple[th.Tensor, th.Tensor]]:
+    def extract_features(
+        self, obs: th.Tensor, features_extractor: Optional[BaseFeaturesExtractor] = None
+    ) -> Union[th.Tensor, Tuple[th.Tensor, th.Tensor]]:
         """
         Preprocess the observation if needed and extract features.
 
         :param obs: Observation
-        :return: the output of the features extractor(s)
+        :param features_extractor: The features extractor to use. If None, then ``self.features_extractor`` is used.
+        :return: The extracted features. If features extractor is not shared, returns a tuple with the
+            features for the actor and the features for the critic.
         """
         if self.share_features_extractor:
-            return super().extract_features(obs, self.features_extractor)
+            return super().extract_features(obs, self.features_extractor if features_extractor is None else features_extractor)
         else:
+            if features_extractor is not None:
+                warnings.warn(
+                    "Provided features_extractor will be ignored because the features extractor is not shared.",
+                    UserWarning,
+                )
+
             pi_features = super().extract_features(obs, self.pi_features_extractor)
             vf_features = super().extract_features(obs, self.vf_features_extractor)
             return pi_features, vf_features

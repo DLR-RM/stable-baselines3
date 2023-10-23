@@ -19,7 +19,7 @@ except ImportError:
     # if the progress bar is used
     tqdm = None
 
-from stable_baselines3.common import base_class  # pytype: disable=pyi-error
+from stable_baselines3.common import base_class
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, sync_envs_normalization
 
@@ -554,7 +554,6 @@ class StopTrainingOnRewardThreshold(BaseCallback):
 
     def _on_step(self) -> bool:
         assert self.parent is not None, "``StopTrainingOnMinimumReward`` callback must be used with an ``EvalCallback``"
-        # Convert np.bool_ to bool, otherwise callback() is False won't work
         continue_training = bool(self.parent.best_mean_reward < self.reward_threshold)
         if self.verbose >= 1 and not continue_training:
             print(
@@ -680,7 +679,7 @@ class ProgressBarCallback(BaseCallback):
     using tqdm and rich packages.
     """
 
-    pbar: tqdm  # pytype: disable=invalid-annotation
+    pbar: tqdm
 
     def __init__(self) -> None:
         super().__init__()

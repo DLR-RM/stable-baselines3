@@ -246,6 +246,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             if truncate_last_traj:
                 self.replay_buffer.truncate_last_trajectory()
 
+        # Update saved replay buffer device to match current setting, see GH#1561
+        self.replay_buffer.device = self.device
+
     def _setup_learn(
         self,
         total_timesteps: int,
@@ -327,7 +330,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 log_interval=log_interval,
             )
 
-            if rollout.continue_training is False:
+            if not rollout.continue_training:
                 break
 
             if self.num_timesteps > 0 and self.num_timesteps > self.learning_starts:
@@ -553,7 +556,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             # Give access to local variables
             callback.update_locals(locals())
             # Only stop training if return value is False, not when it is None.
-            if callback.on_step() is False:
+            if not callback.on_step():
                 return RolloutReturn(num_collected_steps * env.num_envs, num_collected_episodes, continue_training=False)
 
             # Retrieve reward and episode length if using Monitor wrapper

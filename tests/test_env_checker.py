@@ -37,6 +37,28 @@ def test_check_env_dict_action():
         check_env(env=test_env, warn=True)
 
 
+class SequenceObservationEnv(gym.Env):
+    metadata = {"render_modes": [], "render_fps": 2}
+
+    def __init__(self, render_mode=None):
+        self.observation_space = spaces.Sequence(spaces.Discrete(8))
+        self.action_space = spaces.Discrete(4)
+
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
+        return self.observation_space.sample(), {}
+
+    def step(self, action):
+        return self.observation_space.sample(), 1.0, False, False, {}
+
+
+def test_check_env_sequence_obs():
+    test_env = SequenceObservationEnv()
+
+    with pytest.warns(Warning, match="Sequence.*not supported"):
+        check_env(env=test_env, warn=True)
+
+
 @pytest.mark.parametrize(
     "obs_tuple",
     [

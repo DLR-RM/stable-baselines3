@@ -1,3 +1,5 @@
+import gymnasium as gym
+import numpy as np
 import pytest
 import torch as th
 from torch.distributions import Normal
@@ -59,20 +61,62 @@ def test_sde_check():
         PPO("MlpPolicy", "CartPole-v1", use_sde=True)
 
 
+def test_only_sde_squashed():
+    with pytest.raises(AssertionError, match="use_sde=True"):
+        PPO("MlpPolicy", "Pendulum-v1", use_sde=False, policy_kwargs=dict(squash_output=True))
+
+
 @pytest.mark.parametrize("model_class", [SAC, A2C, PPO])
 @pytest.mark.parametrize("use_expln", [False, True])
-def test_state_dependent_noise(model_class, use_expln):
+@pytest.mark.parametrize("squash_output", [False, True])
+def test_state_dependent_noise(model_class, use_expln, squash_output):
     kwargs = {"learning_starts": 0} if model_class == SAC else {"n_steps": 64}
+
+    policy_kwargs = dict(log_std_init=-2, use_expln=use_expln, net_arch=[64])
+
+    if model_class in [A2C, PPO]:
+        policy_kwargs["squash_output"] = squash_output
+    elif not squash_output:
+        pytest.skip("SAC can only use squashed output")
+
+    env = StoreActionEnvWrapper(gym.make("Pendulum-v1"))
     model = model_class(
         "MlpPolicy",
-        "Pendulum-v1",
+        env,
         use_sde=True,
-        seed=None,
+        seed=1,
         verbose=1,
-        policy_kwargs=dict(log_std_init=-2, use_expln=use_expln, net_arch=[64]),
+        policy_kwargs=policy_kwargs,
         **kwargs,
     )
     model.learn(total_timesteps=255)
+    buffer = model.replay_buffer if model_class == SAC else model.rollout_buffer
+    # Check that only scaled actions are stored
+    assert (buffer.actions <= model.action_space.high).all()
+    assert (buffer.actions >= model.action_space.low).all()
+    if squash_output:
+        # Pendulum action range is [-2, 2]
+        # we check that the action are correctly unscaled
+        if buffer.actions.max() > 0.5:
+            assert np.max(env.actions) > 1.0
+        if buffer.actions.max() < -0.5:
+            assert np.min(env.actions) < -1.0
     model.policy.reset_noise()
     if model_class == SAC:
         model.policy.actor.get_std()
+
+
+class StoreActionEnvWrapper(gym.Wrapper):
+    """
+    Keep track of which actions were sent to the env.
+    """
+
+    def __init__(self, env):
+        super().__init__(env)
+        # defines list for tracking actions
+        self.actions = []
+
+    def step(self, action):
+        # appends list for tracking actions
+        self.actions.append(action)
+        return super().step(action)

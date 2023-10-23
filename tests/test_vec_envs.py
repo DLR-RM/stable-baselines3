@@ -508,7 +508,7 @@ def test_vec_deterministic(vec_env_class):
     vec_env.seed(3)
     new_obs = vec_env.reset()
     assert np.allclose(new_obs, obs)
-    # Test with VecNormalize (VecEnvWrapper shoudl call self.venv.seed())
+    # Test with VecNormalize (VecEnvWrapper should call self.venv.seed())
     vec_normalize = VecNormalize(vec_env)
     vec_normalize.seed(3)
     obs = vec_env.reset()

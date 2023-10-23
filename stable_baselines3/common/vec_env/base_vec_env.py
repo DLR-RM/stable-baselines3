@@ -1,6 +1,7 @@
 import inspect
 import warnings
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union
 
 import cloudpickle
@@ -301,10 +302,11 @@ class VecEnv(ABC):
         """
         if options is None:
             options = {}
+        # Use deepcopy to avoid side effects
         if isinstance(options, dict):
-            self._options = [options] * self.num_envs
+            self._options = deepcopy([options] * self.num_envs)
         else:
-            self._options = options
+            self._options = deepcopy(options)
 
     @property
     def unwrapped(self) -> "VecEnv":

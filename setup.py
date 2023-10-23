@@ -126,13 +126,11 @@ setup(
             "black>=23.9.1,<24",
         ],
         "docs": [
-            "sphinx",
+            "sphinx>=5,<8",
             "sphinx-autobuild",
-            "sphinx-rtd-theme",
+            "sphinx-rtd-theme>=1.3.0",
             # For spelling
             "sphinxcontrib.spelling",
-            # Type hints support
-            "sphinx-autodoc-typehints",
             # Copy button for code snippets
             "sphinx_copybutton",
         ],

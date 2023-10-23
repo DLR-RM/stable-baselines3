@@ -40,7 +40,6 @@ def make_vec_env(
     env_id: Union[str, Callable[..., gym.Env]],
     n_envs: int = 1,
     seed: Optional[int] = None,
-    options: Optional[Dict[str, Any]] = None,
     start_index: int = 0,
     monitor_dir: Optional[str] = None,
     wrapper_class: Optional[Callable[[gym.Env], gym.Env]] = None,
@@ -58,7 +57,6 @@ def make_vec_env(
     :param env_id: either the env ID, the env class or a callable returning an env
     :param n_envs: the number of environments you wish to have in parallel
     :param seed: the initial seed for the random number generator
-    :param options: extra options to pass to the env constructor
     :param start_index: start rank index
     :param monitor_dir: Path to a folder where the monitor files will be saved.
         If None, no file will be written, however, the env will still be wrapped

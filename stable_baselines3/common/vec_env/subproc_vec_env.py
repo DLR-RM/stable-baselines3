@@ -42,7 +42,8 @@ def _worker(
                     observation, reset_info = env.reset()
                 remote.send((observation, reward, done, info, reset_info))
             elif cmd == "reset":
-                observation, reset_info = env.reset(seed=data[0], options=data[1])  # Not sure yet
+                maybe_options = {"options": data[1]} if data[1] else {}
+                observation, reset_info = env.reset(seed=data[0], **maybe_options)
                 remote.send((observation, reset_info))
             elif cmd == "render":
                 remote.send(env.render())

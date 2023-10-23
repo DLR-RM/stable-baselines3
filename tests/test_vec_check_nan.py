@@ -27,7 +27,7 @@ class NanAndInfEnv(gym.Env):
         return [obs], 0.0, False, False, {}
 
     @staticmethod
-    def reset(seed=None, options=None):
+    def reset(seed=None):
         return [0.0], {}
 
     def render(self):

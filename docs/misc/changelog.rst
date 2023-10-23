@@ -15,6 +15,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Improved error message of the ``env_checker`` for env wrongly detected as GoalEnv (``compute_reward()`` is defined)
 - Improved error message when mixing Gym API with VecEnv API (see GH#1694)
+- Add support for setting ``options`` at reset with VecEnv via the ``set_options()`` method. Same as seeds logic, options are reset at the end of an episode (@ReHoss)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -72,7 +73,6 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added Python 3.11 support
-- Add options argument to pass to `env.reset()`. Same as seeds logic, options are reset at the end of an episode (@ReHoss)
 - Added Gymnasium 0.29 support (@pseudo-rnd-thoughts)
 
 `SB3-Contrib`_

@@ -291,20 +291,20 @@ class VecEnv(ABC):
         self._seeds = [seed + idx for idx in range(self.num_envs)]
         return self._seeds
 
-    def set_options(self, options: Optional[Dict] = None) -> None:
+    def set_options(self, options: Optional[Union[List[Dict], Dict]] = None) -> None:
         """
-        Set environment options for all environments, based on an unique dict.
+        Set environment options for all environments.
+        If a dict is passed instead of a list, the same options will be used for all environments.
         WARNING: Those options will only be passed to the environment at the next reset.
 
         :param options: A dictionary of environment options to pass to each environment at the next reset.
-        :return:
         """
         if options is None:
             options = {}
-        self._options = [
-            options,
-        ] * self.num_envs
-        return self._options
+        if isinstance(options, dict):
+            self._options = [options] * self.num_envs
+        else:
+            self._options = options
 
     @property
     def unwrapped(self) -> "VecEnv":
@@ -376,6 +376,9 @@ class VecEnvWrapper(VecEnv):
 
     def seed(self, seed: Optional[int] = None) -> Sequence[Union[None, int]]:
         return self.venv.seed(seed)
+
+    def set_options(self, options: Optional[Union[List[Dict], Dict]] = None) -> None:
+        return self.venv.set_options(options)
 
     def close(self) -> None:
         return self.venv.close()

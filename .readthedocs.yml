@@ -17,6 +17,3 @@ conda:
 
 build:
   os: ubuntu-22.04
-  tools:
-    # Note: we are using a conda env, we specify one tool as it is required
-    python: "3.10"

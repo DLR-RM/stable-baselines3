@@ -30,7 +30,7 @@ class CustomGymEnv(gym.Env):
         self.current_step = 0
         self.ep_length = 4
         self.render_mode = render_mode
-        self.current_options = None
+        self.current_options: Optional[Dict] = None
 
     def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
         if seed is not None:

@@ -3,8 +3,9 @@
 Changelog
 ==========
 
-Release 2.2.0a8 (WIP)
+Release 2.2.0a9 (WIP)
 --------------------------
+**Support for options at reset, bug fixes and better error messages**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -16,6 +17,8 @@ New Features:
 - Improved error message of the ``env_checker`` for env wrongly detected as GoalEnv (``compute_reward()`` is defined)
 - Improved error message when mixing Gym API with VecEnv API (see GH#1694)
 - Add support for setting ``options`` at reset with VecEnv via the ``set_options()`` method. Same as seeds logic, options are reset at the end of an episode (@ReHoss)
+- Added ``rollout_buffer_class`` and ``rollout_buffer_kwargs`` arguments to on-policy algorithms (A2C and PPO)
+
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -36,9 +39,9 @@ Bug Fixes:
 `RL Zoo`_
 ^^^^^^^^^
 
-`SBX`_
-^^^^^^^^^
-- Added ``DDPG`` and ``TD3``
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+- Added ``DDPG`` and ``TD3`` algorithms
 
 Deprecations:
 ^^^^^^^^^^^^^

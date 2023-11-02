@@ -42,7 +42,8 @@ def _worker(
                     observation, reset_info = env.reset()
                 remote.send((observation, reward, done, info, reset_info))
             elif cmd == "reset":
-                observation, reset_info = env.reset(seed=data)
+                maybe_options = {"options": data[1]} if data[1] else {}
+                observation, reset_info = env.reset(seed=data[0], **maybe_options)
                 remote.send((observation, reset_info))
             elif cmd == "render":
                 remote.send(env.render())
@@ -132,11 +133,12 @@ class SubprocVecEnv(VecEnv):
 
     def reset(self) -> VecEnvObs:
         for env_idx, remote in enumerate(self.remotes):
-            remote.send(("reset", self._seeds[env_idx]))
+            remote.send(("reset", (self._seeds[env_idx], self._options[env_idx])))
         results = [remote.recv() for remote in self.remotes]
         obs, self.reset_infos = zip(*results)
-        # Seeds are only used once
+        # Seeds and options are only used once
         self._reset_seeds()
+        self._reset_options()
         return _flatten_obs(obs, self.observation_space)
 
     def close(self) -> None:

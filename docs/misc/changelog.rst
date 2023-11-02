@@ -3,17 +3,22 @@
 Changelog
 ==========
 
-Release 2.2.0a6 (WIP)
+Release 2.2.0a9 (WIP)
 --------------------------
+**Support for options at reset, bug fixes and better error messages**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Switched to ``ruff`` for sorting imports (isort is no longer needed), black and ruff version now require a minimum version
+- Dropped ``x is False`` in favor of ``not x``, which means that callbacks that wrongly returned None (instead of a boolean) will cause the training to stop (@iwishiwasaneagle)
 
 New Features:
 ^^^^^^^^^^^^^
 - Improved error message of the ``env_checker`` for env wrongly detected as GoalEnv (``compute_reward()`` is defined)
 - Improved error message when mixing Gym API with VecEnv API (see GH#1694)
+- Add support for setting ``options`` at reset with VecEnv via the ``set_options()`` method. Same as seeds logic, options are reset at the end of an episode (@ReHoss)
+- Added ``rollout_buffer_class`` and ``rollout_buffer_kwargs`` arguments to on-policy algorithms (A2C and PPO)
+
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -34,9 +39,9 @@ Bug Fixes:
 `RL Zoo`_
 ^^^^^^^^^
 
-`SBX`_
-^^^^^^^^^
-- Added ``DDPG`` and ``TD3``
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+- Added ``DDPG`` and ``TD3`` algorithms
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -52,6 +57,8 @@ Others:
 - Fixed ``stable_baselines3/common/buffers.py`` type hints
 - Fixed ``stable_baselines3/her/her_replay_buffer.py`` type hints
 - Buffers do no call an additional ``.copy()`` when storing new transitions
+- Fixed ``ActorCriticPolicy.extract_features()`` signature by adding an optional ``features_extractor`` argument
+- Update dependencies (accept newer Shimmy/Sphinx version and remove ``sphinx_autodoc_typehints``)
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -1463,8 +1470,8 @@ And all the contributors:
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
-@carlosluis @arjun-kg @tlpss @JonathanKuelz @Gabo-Tor
+@carlosluis @arjun-kg @tlpss @JonathanKuelz @Gabo-Tor @iwishiwasaneagle
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
-@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
+@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong @ReHoss
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger

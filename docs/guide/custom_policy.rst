@@ -262,7 +262,7 @@ Custom Networks
 If you need a network architecture that is different for the actor and the critic when using ``PPO``, ``A2C`` or ``TRPO``,
 you can pass a dictionary of the following structure: ``dict(pi=[<actor network architecture>], vf=[<critic network architecture>])``.
 
-For example, if you want a different architecture for the actor (aka ``pi``) and the critic ( value-function aka ``vf``) networks,
+For example, if you want a different architecture for the actor (aka ``pi``) and the critic (value-function aka ``vf``) networks,
 then you can specify ``net_arch=dict(pi=[32, 32], vf=[64, 64])``.
 
 Otherwise, to have actor and critic that share the same network architecture,

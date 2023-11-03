@@ -8,7 +8,7 @@ into two categories:
 2. You want to implement a feature or bug-fix for an outstanding issue
     - Look at the outstanding issues here: https://github.com/DLR-RM/stable-baselines3/issues
     - Pick an issue or feature and comment on the task that you want to work on this feature.
-    - If you need more context on a particular issue, please ask and we shall provide.
+    - If you need more context on a particular issue, please ask, and we shall provide.
 
 Once you finish implementing a feature or bug-fix, please send a Pull Request to
 https://github.com/DLR-RM/stable-baselines3
@@ -61,7 +61,7 @@ def my_function(arg1: type1, arg2: type2) -> returntype:
 
 ## Pull Request (PR)
 
-Before proposing a PR, please open an issue, where the feature will be discussed. This prevent from duplicated PR to be proposed and also ease the code review process.
+Before proposing a PR, please open an issue, where the feature will be discussed. This prevents from duplicated PR to be proposed and also ease the code review process.
 
 Each PR need to be reviewed and accepted by at least one of the maintainers (@hill-a, @araffin, @ernestum, @AdamGleave, @Miffyli or @qgallouedec).
 A PR must pass the Continuous Integration tests to be merged with the master branch.

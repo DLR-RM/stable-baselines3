@@ -4,7 +4,7 @@
 Reinforcement Learning Tips and Tricks
 ======================================
 
-The aim of this section is to help you doing reinforcement learning experiments.
+The aim of this section is to help you do reinforcement learning experiments.
 It covers general advice about RL (where to start, which algorithm to choose, how to evaluate an algorithm, ...),
 as well as tips and tricks when using a custom environment or implementing an RL algorithm.
 
@@ -27,7 +27,7 @@ TL;DR
 
 
 Like any other subject, if you want to work with RL, you should first read about it (we have a dedicated `resource page <rl.html>`_ to get you started)
-to understand what you are using. We also recommend you read Stable Baselines3 (SB3) documentation and do the `tutorial <https://github.com/araffin/rl-tutorial-jnrr19/tree/sb3>`_.
+to understand what you are using. We also recommend you read Stable Baselines3 (SB3) documentation and do the `tutorial <https://github.com/araffin/rl-tutorial-jnrr19>`_.
 It covers basic usage and guide you towards more advanced concepts of the library (e.g. callbacks and wrappers).
 
 Reinforcement Learning differs from other machine learning methods in several ways. The data used to train the agent is collected
@@ -38,13 +38,13 @@ bad trajectories.
 This factor, among others, explains that results in RL may vary from one run to another (i.e., when only the seed of the pseudo-random generator changes).
 For this reason, you should always do several runs to have quantitative results.
 
-Good results in RL are generally dependent on finding appropriate hyperparameters. Recent algorithms (PPO, SAC, TD3) normally require little hyperparameter tuning,
+Good results in RL are generally dependent on finding appropriate hyperparameters. Recent algorithms (PPO, SAC, TD3, DroQ) normally require little hyperparameter tuning,
 however, *don't expect the default ones to work* on any environment.
 
 Therefore, we *highly recommend you* to take a look at the `RL zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_ (or the original papers) for tuned hyperparameters.
 A best practice when you apply RL to a new problem is to do automatic hyperparameter optimization. Again, this is included in the `RL zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
 
-When applying RL to a custom problem, you should always normalize the input to the agent (e.g. using VecNormalize for PPO/A2C)
+When applying RL to a custom problem, you should always normalize the input to the agent (e.g. using ``VecNormalize`` for PPO/A2C)
 and look at common preprocessing done on other environments (e.g. for `Atari <https://danieltakeshi.github.io/2016/11/25/frame-skipping-and-preprocessing-for-deep-q-networks-on-atari-2600-games/>`_, frame-stack, ...).
 Please refer to *Tips and Tricks when creating a custom environment* paragraph below for more advice related to custom environments.
 
@@ -86,13 +86,15 @@ and average the reward per episode to have a good estimate.
 
 	We provide an ``EvalCallback`` for doing such evaluation. You can read more about it in the :ref:`Callbacks <callbacks>` section.
 
-As some policy are stochastic by default (e.g. A2C or PPO), you should also try to set `deterministic=True` when calling the `.predict()` method,
+As some policies are stochastic by default (e.g. A2C or PPO), you should also try to set `deterministic=True` when calling the `.predict()` method,
 this frequently leads to better performance.
 Looking at the training curve (episode reward function of the timesteps) is a good proxy but underestimates the agent true performance.
 
 
+We highly recommend reading `Empirical Design in Reinforcement Learning <https://arxiv.org/abs/2304.01315>`_, as it provides valuable insights for best practices when running RL experiments.
 
-We suggest you reading `Deep Reinforcement Learning that Matters <https://arxiv.org/abs/1709.06560>`_ for a good discussion about RL evaluation.
+We also suggest reading `Deep Reinforcement Learning that Matters <https://arxiv.org/abs/1709.06560>`_ for a good discussion about RL evaluation,
+and `Rliable: Better Evaluation for Reinforcement Learning <https://araffin.github.io/post/rliable/>`_ for comparing results.
 
 You can also take a look at this `blog post <https://openlab-flowers.inria.fr/t/how-many-random-seeds-should-i-use-statistical-power-analysis-in-deep-reinforcement-learning-experiments/457>`_
 and this `issue <https://github.com/hill-a/stable-baselines/issues/199>`_ by Cédric Colas.
@@ -110,6 +112,10 @@ Some algorithms are only tailored for one or the other domain: ``DQN`` only supp
 The second difference that will help you choose is whether you can parallelize your training or not.
 If what matters is the wall clock training time, then you should lean towards ``A2C`` and its derivatives (PPO, ...).
 Take a look at the `Vectorized Environments <vec_envs.html>`_ to learn more about training with multiple workers.
+
+To accelerate training, you can also take a look at `SBX`_, which is SB3 + Jax, it has fewer features than SB3 but can be up to 20x faster than SB3 PyTorch thanks to JIT compilation of the gradient update.
+
+In sparse reward settings, we either recommend to use dedicated methods like HER (see below) or population-based algorithms like ARS (available in our :ref:`contrib repo <sb3_contrib>`).
 
 To sum it up:
 
@@ -142,6 +148,8 @@ Continuous Actions - Single Process
 
 Current State Of The Art (SOTA) algorithms are ``SAC``, ``TD3`` and ``TQC`` (available in our :ref:`contrib repo <sb3_contrib>`).
 Please use the hyperparameters in the `RL zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_ for best results.
+
+If you want an extremely sample-efficient algorithm, we recommend using the `DroQ configuration <https://twitter.com/araffin2/status/1575439865222660098>`_ in `SBX`_ (it does many gradient steps per step in the environment).
 
 
 Continuous Actions - Multiprocessed
@@ -188,7 +196,8 @@ and properly handle termination due to a timeout (maximum number of steps in an 
 For instance, if there is some time delay between action and observation (e.g. due to wifi communication), you should give a history of observations
 as input.
 
-Termination due to timeout (max number of steps per episode) needs to be handled separately. You should fill the key in the info dict: ``info["TimeLimit.truncated"] = True``.
+Termination due to timeout (max number of steps per episode) needs to be handled separately.
+You should return ``truncated = True``.
 If you are using the gym ``TimeLimit`` wrapper, this will be done automatically.
 You can read `Time Limit in RL <https://arxiv.org/abs/1712.00378>`_ or take a look at the `RL Tips and Tricks video <https://www.youtube.com/watch?v=Ikngt0_DXJg>`_
 for more details.
@@ -230,7 +239,7 @@ this can harm learning and be difficult to debug (cf attached image and `issue #
 .. figure:: ../_static/img/mistake.png
 
 
-Another consequence of using a Gaussian is that the action range is not bounded.
+Another consequence of using a Gaussian distribution is that the action range is not bounded.
 That's why clipping is usually used as a bandage to stay in a valid interval.
 A better solution would be to use a squashing function (cf ``SAC``) or a Beta distribution (cf `issue #112 <https://github.com/hill-a/stable-baselines/issues/112>`_).
 
@@ -272,3 +281,5 @@ in RL with discrete actions:
 2. LunarLander
 3. Pong (one of the easiest Atari game)
 4. other Atari games (e.g. Breakout)
+
+.. _SBX: https://github.com/araffin/sbx

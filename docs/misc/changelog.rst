@@ -62,7 +62,8 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
-
+- Updated RL Tips and Tricks (include recommendation for evaluation, added links to DroQ, ARS and SBX).
+- Fixed various typos and grammar mistakes
 
 Release 2.1.0 (2023-08-17)
 --------------------------

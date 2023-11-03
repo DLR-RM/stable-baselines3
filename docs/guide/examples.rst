@@ -5,7 +5,7 @@ Examples
 
 .. note::
 
-        These examples are only to demonstrate the use of the library and its functions, and the trained agents may not solve the environments. Optimized               hyperparameters can be found in the RL Zoo `repository <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
+  These examples are only to demonstrate the use of the library and its functions, and the trained agents may not solve the environments. Optimized hyperparameters can be found in the RL Zoo `repository <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
 
 
 Try it online with Colab Notebooks!
@@ -191,8 +191,8 @@ Dict Observations
 
 You can use environments with dictionary observation spaces. This is useful in the case where one can't directly
 concatenate observations such as an image from a camera combined with a vector of servo sensor data (e.g., rotation angles).
-Stable Baselines3 provides ``SimpleMultiObsEnv`` as an example of this kind of of setting.
-The environment is a simple grid world but the observations for each cell come in the form of dictionaries.
+Stable Baselines3 provides ``SimpleMultiObsEnv`` as an example of this kind of setting.
+The environment is a simple grid world, but the observations for each cell come in the form of dictionaries.
 These dictionaries are randomly initialized on the creation of the environment and contain a vector observation and an image observation.
 
 .. code-block:: python
@@ -217,7 +217,7 @@ Callbacks: Monitoring Training
 
 You can define a custom callback function that will be called inside the agent.
 This could be useful when you want to monitor training, for instance display live
-learning curves in Tensorboard (or in Visdom) or save the best agent.
+learning curves in Tensorboard or save the best agent.
 If your callback returns False, training is aborted early.
 
 .. image:: ../_static/img/colab-badge.svg
@@ -251,7 +251,7 @@ If your callback returns False, training is aborted early.
       :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
       """
       def __init__(self, check_freq: int, log_dir: str, verbose: int = 1):
-          super(SaveOnBestTrainingRewardCallback, self).__init__(verbose)
+          super().__init__(verbose)
           self.check_freq = check_freq
           self.log_dir = log_dir
           self.save_path = os.path.join(log_dir, "best_model")

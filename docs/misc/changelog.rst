@@ -59,6 +59,8 @@ Others:
 - Buffers do no call an additional ``.copy()`` when storing new transitions
 - Fixed ``ActorCriticPolicy.extract_features()`` signature by adding an optional ``features_extractor`` argument
 - Update dependencies (accept newer Shimmy/Sphinx version and remove ``sphinx_autodoc_typehints``)
+- Fixed ``stable_baselines3/common/off_policy_algorithm.py`` type hints
+
 
 Documentation:
 ^^^^^^^^^^^^^^

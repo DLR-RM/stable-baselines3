@@ -685,7 +685,7 @@ def make_proba_distribution(
     elif isinstance(action_space, spaces.MultiBinary):
         assert isinstance(
             action_space.n, int
-        ), f"Only 1D MultiBinary action space are supported, not MultiBinary({action_space.n}), you should flatten this space."
+        ), f"Multi-dimensional MultiBinary({action_space.n}) action space is not supported. You can flatten it instead."
         return BernoulliDistribution(action_space.n, **dist_kwargs)
     else:
         raise NotImplementedError(

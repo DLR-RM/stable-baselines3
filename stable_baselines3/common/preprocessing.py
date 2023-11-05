@@ -204,7 +204,7 @@ def get_action_dim(action_space: spaces.Space) -> int:
         # Number of binary actions
         assert isinstance(
             action_space.n, int
-        ), "Multi-dimensional MultiBinary action space is not supported. You can flatten it instead."
+        ), f"Multi-dimensional MultiBinary({action_space.n}) action space is not supported. You can flatten it instead."
         return int(action_space.n)
     else:
         raise NotImplementedError(f"{action_space} action space is not supported")

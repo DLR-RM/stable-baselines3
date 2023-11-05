@@ -35,7 +35,8 @@ exclude = [
   "stable_baselines3/common/on_policy_algorithm.py",
   "stable_baselines3/common/vec_env/stacked_observations.py",
   "stable_baselines3/common/vec_env/subproc_vec_env.py",
-  "stable_baselines3/common/vec_env/patch_gym.py"
+  "stable_baselines3/common/vec_env/patch_gym.py",
+  "stable_baselines3/common/distributions.py",
 ]
 
 [tool.mypy]
@@ -43,8 +44,7 @@ ignore_missing_imports = true
 follow_imports = "silent"
 show_error_codes = true
 exclude = """(?x)(
-    stable_baselines3/common/distributions.py$
-    | stable_baselines3/common/off_policy_algorithm.py$
+    stable_baselines3/common/off_policy_algorithm.py$
     | stable_baselines3/common/policies.py$
     | stable_baselines3/common/vec_env/__init__.py$
     | stable_baselines3/common/vec_env/vec_normalize.py$

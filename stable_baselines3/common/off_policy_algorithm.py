@@ -158,7 +158,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 train_freq = (train_freq, "step")
 
             try:
-                train_freq = (train_freq[0], TrainFrequencyUnit(train_freq[1]))
+                train_freq = (train_freq[0], TrainFrequencyUnit(train_freq[1]))  # type: ignore[assignment]
             except ValueError as e:
                 raise ValueError(
                     f"The unit of the `train_freq` must be either 'step' or 'episode' not '{train_freq[1]}'!"
@@ -167,7 +167,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             if not isinstance(train_freq[0], int):
                 raise ValueError(f"The frequency of `train_freq` must be an integer and not {train_freq[0]}")
 
-            self.train_freq = TrainFreq(*train_freq)
+            self.train_freq = TrainFreq(*train_freq)  # type: ignore[assignment,arg-type]
 
     def _setup_model(self) -> None:
         self._setup_lr_schedule()
@@ -242,7 +242,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         if isinstance(self.replay_buffer, HerReplayBuffer):
             assert self.env is not None, "You must pass an environment at load time when using `HerReplayBuffer`"
-            self.replay_buffer.set_env(self.get_env())
+            self.replay_buffer.set_env(self.env)
             if truncate_last_traj:
                 self.replay_buffer.truncate_last_trajectory()
 
@@ -280,10 +280,12 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 "You should use `reset_num_timesteps=False` or `optimize_memory_usage=False`"
                 "to avoid that issue."
             )
+            assert replay_buffer is not None  # for mypy
             # Go to the previous index
             pos = (replay_buffer.pos - 1) % replay_buffer.buffer_size
             replay_buffer.dones[pos] = True
 
+        assert self.env is not None, "You must set the environment before calling _setup_learn()"
         # Vectorize action noise if needed
         if (
             self.action_noise is not None
@@ -318,6 +320,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         )
 
         callback.on_training_start(locals(), globals())
+
+        assert self.env is not None, "You must set the environment before calling learn()"
+        assert isinstance(self.train_freq, TrainFreq)  # check done in _setup_learn()
 
         while self.num_timesteps < total_timesteps:
             rollout = self.collect_rollouts(
@@ -381,6 +386,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             # Note: when using continuous actions,
             # we assume that the policy uses tanh to scale the action
             # We use non-deterministic action in the case of SAC, for TD3, it does not matter
+            assert self._last_obs is not None, "self._last_obs was not set"
             unscaled_action, _ = self.predict(self._last_obs, deterministic=False)
 
         # Rescale the action from [low, high] to [-1, 1]
@@ -404,6 +410,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         """
         Write log.
         """
+        assert self.ep_info_buffer is not None
+        assert self.ep_success_buffer is not None
+
         time_elapsed = max((time.time_ns() - self.start_time) / 1e9, sys.float_info.epsilon)
         fps = int((self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
         self.logger.record("time/episodes", self._episode_num, exclude="tensorboard")
@@ -481,8 +490,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                         next_obs[i] = self._vec_normalize_env.unnormalize_obs(next_obs[i, :])
 
         replay_buffer.add(
-            self._last_original_obs,
-            next_obs,
+            self._last_original_obs,  # type: ignore[arg-type]
+            next_obs,  # type: ignore[arg-type]
             buffer_action,
             reward_,
             dones,
@@ -563,7 +572,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             self._update_info_buffer(infos, dones)
 
             # Store data in replay buffer (normalized action and unnormalized observation)
-            self._store_transition(replay_buffer, buffer_actions, new_obs, rewards, dones, infos)
+            self._store_transition(replay_buffer, buffer_actions, new_obs, rewards, dones, infos)  # type: ignore[arg-type]
 
             self._update_current_progress_remaining(self.num_timesteps, self._total_timesteps)
 

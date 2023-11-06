@@ -90,7 +90,7 @@ def maybe_transpose(observation: np.ndarray, observation_space: spaces.Space) ->
 
 
 def preprocess_obs(
-    obs: th.Tensor,
+    obs: Union[th.Tensor, Dict[str, th.Tensor]],
     observation_space: spaces.Space,
     normalize_images: bool = True,
 ) -> Union[th.Tensor, Dict[str, th.Tensor]]:
@@ -105,6 +105,16 @@ def preprocess_obs(
         (True by default)
     :return:
     """
+    if isinstance(observation_space, spaces.Dict):
+        # Do not modify by reference the original observation
+        assert isinstance(obs, Dict), f"Expected dict, got {type(obs)}"
+        preprocessed_obs = {}
+        for key, _obs in obs.items():
+            preprocessed_obs[key] = preprocess_obs(_obs, observation_space[key], normalize_images=normalize_images)
+        return preprocessed_obs  # type: ignore[return-value]
+
+    assert isinstance(obs, th.Tensor), f"Expecting a torch Tensor, but got {type(obs)}"
+
     if isinstance(observation_space, spaces.Box):
         if normalize_images and is_image_space(observation_space):
             return obs.float() / 255.0
@@ -126,15 +136,6 @@ def preprocess_obs(
 
     elif isinstance(observation_space, spaces.MultiBinary):
         return obs.float()
-
-    elif isinstance(observation_space, spaces.Dict):
-        # Do not modify by reference the original observation
-        assert isinstance(obs, Dict), f"Expected dict, got {type(obs)}"
-        preprocessed_obs = {}
-        for key, _obs in obs.items():
-            preprocessed_obs[key] = preprocess_obs(_obs, observation_space[key], normalize_images=normalize_images)
-        return preprocessed_obs
-
     else:
         raise NotImplementedError(f"Preprocessing not implemented for {observation_space}")
 

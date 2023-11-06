@@ -40,6 +40,7 @@ exclude = [
   "stable_baselines3/common/vec_env/vec_normalize.py",
   "stable_baselines3/common/vec_env/__init__.py",
   "stable_baselines3/common/distributions.py",
+  "stable_baselines3/common/policies.py",
 ]
 
 [tool.mypy]
@@ -47,8 +48,7 @@ ignore_missing_imports = true
 follow_imports = "silent"
 show_error_codes = true
 exclude = """(?x)(
-    stable_baselines3/common/policies.py$
-    | tests/test_logger.py$
+    tests/test_logger.py$
     | tests/test_train_eval_mode.py$
   )"""
 

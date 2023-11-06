@@ -30,7 +30,7 @@ from stable_baselines3.common.torch_layers import (
     NatureCNN,
     create_mlp,
 )
-from stable_baselines3.common.type_aliases import Schedule
+from stable_baselines3.common.type_aliases import PyTorchObs, Schedule
 from stable_baselines3.common.utils import get_device, is_vectorized_observation, obs_as_tensor
 
 SelfBaseModel = TypeVar("SelfBaseModel", bound="BaseModel")
@@ -119,7 +119,7 @@ class BaseModel(nn.Module):
         """Helper method to create a features extractor."""
         return self.features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
 
-    def extract_features(self, obs: th.Tensor, features_extractor: BaseFeaturesExtractor) -> th.Tensor:
+    def extract_features(self, obs: PyTorchObs, features_extractor: BaseFeaturesExtractor) -> th.Tensor:
         """
         Preprocess the observation if needed and extract features.
 
@@ -219,6 +219,9 @@ class BaseModel(nn.Module):
         """
         vectorized_env = False
         if isinstance(observation, dict):
+            assert isinstance(
+                self.observation_space, spaces.Dict
+            ), f"The observation provided is a dict but the obs space is {self.observation_space}"
             for key, obs in observation.items():
                 obs_space = self.observation_space.spaces[key]
                 vectorized_env = vectorized_env or is_vectorized_observation(maybe_transpose(obs, obs_space), obs_space)
@@ -228,7 +231,7 @@ class BaseModel(nn.Module):
             )
         return vectorized_env
 
-    def obs_to_tensor(self, observation: Union[np.ndarray, Dict[str, np.ndarray]]) -> Tuple[th.Tensor, bool]:
+    def obs_to_tensor(self, observation: Union[np.ndarray, Dict[str, np.ndarray]]) -> Tuple[PyTorchObs, bool]:
         """
         Convert an input observation to a PyTorch tensor that can be fed to a model.
         Includes sugar-coating to handle different observations (e.g. normalizing images).
@@ -239,6 +242,9 @@ class BaseModel(nn.Module):
         """
         vectorized_env = False
         if isinstance(observation, dict):
+            assert isinstance(
+                self.observation_space, spaces.Dict
+            ), f"The observation provided is a dict but the obs space is {self.observation_space}"
             # need to copy the dict as the dict in VecFrameStack will become a torch tensor
             observation = copy.deepcopy(observation)
             for key, obs in observation.items():
@@ -249,7 +255,7 @@ class BaseModel(nn.Module):
                     obs_ = np.array(obs)
                 vectorized_env = vectorized_env or is_vectorized_observation(obs_, obs_space)
                 # Add batch dimension if needed
-                observation[key] = obs_.reshape((-1, *self.observation_space[key].shape))
+                observation[key] = obs_.reshape((-1, *self.observation_space[key].shape))  # type: ignore[misc]
 
         elif is_image_space(self.observation_space):
             # Handle the different cases for images
@@ -263,10 +269,10 @@ class BaseModel(nn.Module):
             # Dict obs need to be handled separately
             vectorized_env = is_vectorized_observation(observation, self.observation_space)
             # Add batch dimension if needed
-            observation = observation.reshape((-1, *self.observation_space.shape))
+            observation = observation.reshape((-1, *self.observation_space.shape))  # type: ignore[misc]
 
-        observation = obs_as_tensor(observation, self.device)
-        return observation, vectorized_env
+        obs_tensor = obs_as_tensor(observation, self.device)
+        return obs_tensor, vectorized_env
 
 
 class BasePolicy(BaseModel, ABC):
@@ -308,7 +314,7 @@ class BasePolicy(BaseModel, ABC):
                 module.bias.data.fill_(0.0)
 
     @abstractmethod
-    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+    def _predict(self, observation: PyTorchObs, deterministic: bool = False) -> th.Tensor:
         """
         Get the action according to the policy for a given observation.
 
@@ -354,27 +360,28 @@ class BasePolicy(BaseModel, ABC):
                 "and documentation for more information: https://stable-baselines3.readthedocs.io/en/master/guide/vec_envs.html#vecenv-api-vs-gym-api"
             )
 
-        observation, vectorized_env = self.obs_to_tensor(observation)
+        obs_tensor, vectorized_env = self.obs_to_tensor(observation)
 
         with th.no_grad():
-            actions = self._predict(observation, deterministic=deterministic)
+            actions = self._predict(obs_tensor, deterministic=deterministic)
         # Convert to numpy, and reshape to the original action shape
-        actions = actions.cpu().numpy().reshape((-1, *self.action_space.shape))
+        actions = actions.cpu().numpy().reshape((-1, *self.action_space.shape))  # type: ignore[misc]
 
         if isinstance(self.action_space, spaces.Box):
             if self.squash_output:
                 # Rescale to proper domain when using squashing
-                actions = self.unscale_action(actions)
+                actions = self.unscale_action(actions)  # type: ignore[assignment, arg-type]
             else:
                 # Actions could be on arbitrary scale, so clip the actions to avoid
                 # out of bound error (e.g. if sampling from a Gaussian distribution)
-                actions = np.clip(actions, self.action_space.low, self.action_space.high)
+                actions = np.clip(actions, self.action_space.low, self.action_space.high)  # type: ignore[assignment, arg-type]
 
         # Remove batch dimension if needed
         if not vectorized_env:
+            assert isinstance(actions, np.ndarray)
             actions = actions.squeeze(axis=0)
 
-        return actions, state
+        return actions, state  # type: ignore[return-value]
 
     def scale_action(self, action: np.ndarray) -> np.ndarray:
         """
@@ -384,6 +391,9 @@ class BasePolicy(BaseModel, ABC):
         :param action: Action to scale
         :return: Scaled action
         """
+        assert isinstance(
+            self.action_space, spaces.Box
+        ), f"Trying to scale an action using an action space that is not a Box(): {self.action_space}"
         low, high = self.action_space.low, self.action_space.high
         return 2.0 * ((action - low) / (high - low)) - 1.0
 
@@ -394,6 +404,9 @@ class BasePolicy(BaseModel, ABC):
 
         :param scaled_action: Action to un-scale
         """
+        assert isinstance(
+            self.action_space, spaces.Box
+        ), f"Trying to unscale an action using an action space that is not a Box(): {self.action_space}"
         low, high = self.action_space.low, self.action_space.high
         return low + (0.5 * (scaled_action + 1.0) * (high - low))
 
@@ -522,7 +535,7 @@ class ActorCriticPolicy(BasePolicy):
     def _get_constructor_parameters(self) -> Dict[str, Any]:
         data = super()._get_constructor_parameters()
 
-        default_none_kwargs = self.dist_kwargs or collections.defaultdict(lambda: None)
+        default_none_kwargs = self.dist_kwargs or collections.defaultdict(lambda: None)  # type: ignore[arg-type, return-value]
 
         data.update(
             dict(
@@ -616,7 +629,7 @@ class ActorCriticPolicy(BasePolicy):
                 module.apply(partial(self.init_weights, gain=gain))
 
         # Setup optimizer with initial learning rate
-        self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)
+        self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)  # type: ignore[call-arg]
 
     def forward(self, obs: th.Tensor, deterministic: bool = False) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
@@ -639,11 +652,11 @@ class ActorCriticPolicy(BasePolicy):
         distribution = self._get_action_dist_from_latent(latent_pi)
         actions = distribution.get_actions(deterministic=deterministic)
         log_prob = distribution.log_prob(actions)
-        actions = actions.reshape((-1, *self.action_space.shape))
+        actions = actions.reshape((-1, *self.action_space.shape))  # type: ignore[misc]
         return actions, values, log_prob
 
-    def extract_features(
-        self, obs: th.Tensor, features_extractor: Optional[BaseFeaturesExtractor] = None
+    def extract_features(  # type: ignore[override]
+        self, obs: PyTorchObs, features_extractor: Optional[BaseFeaturesExtractor] = None
     ) -> Union[th.Tensor, Tuple[th.Tensor, th.Tensor]]:
         """
         Preprocess the observation if needed and extract features.
@@ -691,7 +704,7 @@ class ActorCriticPolicy(BasePolicy):
         else:
             raise ValueError("Invalid action distribution")
 
-    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+    def _predict(self, observation: PyTorchObs, deterministic: bool = False) -> th.Tensor:
         """
         Get the action according to the policy for a given observation.
 
@@ -701,7 +714,7 @@ class ActorCriticPolicy(BasePolicy):
         """
         return self.get_distribution(observation).get_actions(deterministic=deterministic)
 
-    def evaluate_actions(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, Optional[th.Tensor]]:
+    def evaluate_actions(self, obs: PyTorchObs, actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, Optional[th.Tensor]]:
         """
         Evaluate actions according to the current policy,
         given the observations.
@@ -725,7 +738,7 @@ class ActorCriticPolicy(BasePolicy):
         entropy = distribution.entropy()
         return values, log_prob, entropy
 
-    def get_distribution(self, obs: th.Tensor) -> Distribution:
+    def get_distribution(self, obs: PyTorchObs) -> Distribution:
         """
         Get the current policy distribution given the observations.
 
@@ -736,7 +749,7 @@ class ActorCriticPolicy(BasePolicy):
         latent_pi = self.mlp_extractor.forward_actor(features)
         return self._get_action_dist_from_latent(latent_pi)
 
-    def predict_values(self, obs: th.Tensor) -> th.Tensor:
+    def predict_values(self, obs: PyTorchObs) -> th.Tensor:
         """
         Get the estimated values according to the current policy given the observations.
 
@@ -921,6 +934,8 @@ class ContinuousCritic(BaseModel):
         between the actor and the critic (this saves computation time)
     """
 
+    features_extractor: BaseFeaturesExtractor
+
     def __init__(
         self,
         observation_space: spaces.Space,
@@ -944,10 +959,10 @@ class ContinuousCritic(BaseModel):
 
         self.share_features_extractor = share_features_extractor
         self.n_critics = n_critics
-        self.q_networks = []
+        self.q_networks: List[nn.Module] = []
         for idx in range(n_critics):
-            q_net = create_mlp(features_dim + action_dim, 1, net_arch, activation_fn)
-            q_net = nn.Sequential(*q_net)
+            q_net_list = create_mlp(features_dim + action_dim, 1, net_arch, activation_fn)
+            q_net = nn.Sequential(*q_net_list)
             self.add_module(f"qf{idx}", q_net)
             self.q_networks.append(q_net)
 

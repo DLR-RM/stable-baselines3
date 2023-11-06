@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.2.0a10 (WIP)
+Release 2.2.0a11 (WIP)
 --------------------------
 **Support for options at reset, bug fixes and better error messages**
 
@@ -64,6 +64,7 @@ Others:
 - Fixed ``stable_baselines3/common/vec_env/vec_normalize.py`` type hints
 - Fixed ``stable_baselines3/common/vec_env/__init__.py`` type hints
 - Switched to PyTorch 2.1.0 in the CI (fixes type annotations)
+- Fixed ``stable_baselines3/common/policies.py`` type hints
 
 Documentation:
 ^^^^^^^^^^^^^^

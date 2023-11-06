@@ -44,7 +44,7 @@ def unwrap_vec_normalize(env: VecEnv) -> Optional[VecNormalize]:
 
 def is_vecenv_wrapped(env: VecEnv, vec_wrapper_class: Type[VecEnvWrapper]) -> bool:
     """
-    Check if an environment is already wrapped by a given ``VecEnvWrapper``.
+    Check if an environment is already wrapped in a given ``VecEnvWrapper``.
 
     :param env: The VecEnv that is going to be checked
     :param vec_wrapper_class: The desired ``VecEnvWrapper`` class.
@@ -55,7 +55,7 @@ def is_vecenv_wrapped(env: VecEnv, vec_wrapper_class: Type[VecEnvWrapper]) -> bo
 
 def sync_envs_normalization(env: VecEnv, eval_env: VecEnv) -> None:
     """
-    Synchronize eval env and train env statistics when using ``VecNormalize``
+    Synchronize the normalization statistics of an eval environment and train environment when they are both wrapped in a ``VecNormalize`` wrapper.
 
     :param env: Training env
     :param eval_env: Environment used for evaluation.

@@ -61,6 +61,7 @@ Others:
 - Update dependencies (accept newer Shimmy/Sphinx version and remove ``sphinx_autodoc_typehints``)
 - Fixed ``stable_baselines3/common/off_policy_algorithm.py`` type hints
 - Fixed ``stable_baselines3/common/distributions.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/vec_normalize.py`` type hints
 - Switched to PyTorch 2.1.0 in the CI (fixes type annotations)
 
 Documentation:

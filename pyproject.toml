@@ -37,6 +37,7 @@ exclude = [
   "stable_baselines3/common/vec_env/subproc_vec_env.py",
   "stable_baselines3/common/vec_env/patch_gym.py",
   "stable_baselines3/common/off_policy_algorithm.py",
+  "stable_baselines3/common/vec_env/vec_normalize.py",
   "stable_baselines3/common/distributions.py",
 ]
 
@@ -47,7 +48,6 @@ show_error_codes = true
 exclude = """(?x)(
     stable_baselines3/common/policies.py$
     | stable_baselines3/common/vec_env/__init__.py$
-    | stable_baselines3/common/vec_env/vec_normalize.py$
     | tests/test_logger.py$
     | tests/test_train_eval_mode.py$
   )"""

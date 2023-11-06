@@ -55,7 +55,8 @@ def is_vecenv_wrapped(env: VecEnv, vec_wrapper_class: Type[VecEnvWrapper]) -> bo
 
 def sync_envs_normalization(env: VecEnv, eval_env: VecEnv) -> None:
     """
-    Synchronize the normalization statistics of an eval environment and train environment when they are both wrapped in a ``VecNormalize`` wrapper.
+    Synchronize the normalization statistics of an eval environment and train environment
+    when they are both wrapped in a ``VecNormalize`` wrapper.
 
     :param env: Training env
     :param eval_env: Environment used for evaluation.

@@ -193,14 +193,14 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 device=self.device,
                 n_envs=self.n_envs,
                 optimize_memory_usage=self.optimize_memory_usage,
-                **replay_buffer_kwargs,  # pytype:disable=wrong-keyword-args
+                **replay_buffer_kwargs,
             )
 
-        self.policy = self.policy_class(  # pytype:disable=not-instantiable
+        self.policy = self.policy_class(
             self.observation_space,
             self.action_space,
             self.lr_schedule,
-            **self.policy_kwargs,  # pytype:disable=not-instantiable
+            **self.policy_kwargs,
         )
         self.policy = self.policy.to(self.device)
 

@@ -14,7 +14,7 @@ from stable_baselines3.common.torch_layers import (
     create_mlp,
     get_actor_critic_arch,
 )
-from stable_baselines3.common.type_aliases import Schedule
+from stable_baselines3.common.type_aliases import PyTorchObs, Schedule
 
 
 class Actor(BasePolicy):
@@ -77,7 +77,7 @@ class Actor(BasePolicy):
         features = self.extract_features(obs, self.features_extractor)
         return self.mu(features)
 
-    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+    def _predict(self, observation: PyTorchObs, deterministic: bool = False) -> th.Tensor:
         # Note: the deterministic deterministic parameter is ignored in the case of TD3.
         #   Predictions are always deterministic.
         return self(observation)
@@ -233,10 +233,10 @@ class TD3Policy(BasePolicy):
         critic_kwargs = self._update_features_extractor(self.critic_kwargs, features_extractor)
         return ContinuousCritic(**critic_kwargs).to(self.device)
 
-    def forward(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+    def forward(self, observation: PyTorchObs, deterministic: bool = False) -> th.Tensor:
         return self._predict(observation, deterministic=deterministic)
 
-    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+    def _predict(self, observation: PyTorchObs, deterministic: bool = False) -> th.Tensor:
         # Note: the deterministic deterministic parameter is ignored in the case of TD3.
         #   Predictions are always deterministic.
         return self.actor(observation)

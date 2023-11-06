@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.2.0a9 (WIP)
+Release 2.2.0a10 (WIP)
 --------------------------
 **Support for options at reset, bug fixes and better error messages**
 
@@ -60,7 +60,7 @@ Others:
 - Fixed ``ActorCriticPolicy.extract_features()`` signature by adding an optional ``features_extractor`` argument
 - Update dependencies (accept newer Shimmy/Sphinx version and remove ``sphinx_autodoc_typehints``)
 - Fixed ``stable_baselines3/common/off_policy_algorithm.py`` type hints
-
+- Fixed ``stable_baselines3/common/distributions.py`` type hints
 
 Documentation:
 ^^^^^^^^^^^^^^

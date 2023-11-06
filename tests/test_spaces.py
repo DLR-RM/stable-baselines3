@@ -168,3 +168,9 @@ def test_float64_action_space(model_class, obs_space, action_space):
     initial_obs, _ = env.reset()
     action, _ = model.predict(initial_obs, deterministic=False)
     assert action.dtype == env.action_space.dtype
+
+
+def test_multidim_binary_not_supported():
+    env = DummyEnv(BOX_SPACE_FLOAT32, spaces.MultiBinary([2, 3]))
+    with pytest.raises(AssertionError, match=r"Multi-dimensional MultiBinary\(.*\) action space is not supported"):
+        A2C("MlpPolicy", env)

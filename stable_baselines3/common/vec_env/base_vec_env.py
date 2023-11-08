@@ -258,7 +258,7 @@ class VecEnv(ABC):
 
             if mode == "human":
                 # Display it using OpenCV
-                import cv2  # pytype:disable=import-error
+                import cv2
 
                 cv2.imshow("vecenv", bigimg[:, :, ::-1])
                 cv2.waitKey(1)

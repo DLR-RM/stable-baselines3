@@ -118,7 +118,6 @@ setup(
             "pytest-env",
             "pytest-xdist",
             # Type check
-            "pytype",
             "mypy",
             # Lint code and sort imports (flake8 and isort replacement)
             "ruff>=0.0.288",

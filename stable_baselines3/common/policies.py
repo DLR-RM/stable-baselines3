@@ -176,7 +176,7 @@ class BaseModel(nn.Module):
         saved_variables = th.load(path, map_location=device)
 
         # Create policy object
-        model = cls(**saved_variables["data"])  # pytype: disable=not-instantiable
+        model = cls(**saved_variables["data"])
         # Load weights
         model.load_state_dict(saved_variables["state_dict"])
         model.to(device)

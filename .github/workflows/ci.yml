@@ -55,8 +55,6 @@ jobs:
     - name: Type check
       run: |
         make type
-      # skip PyType, doesn't support 3.11 yet
-      if: "!(matrix.python-version == '3.11')"
     - name: Test with pytest
       run: |
         make pytest

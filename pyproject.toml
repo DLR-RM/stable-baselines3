@@ -24,31 +24,12 @@ max-complexity = 15
 [tool.black]
 line-length = 127
 
-[tool.pytype]
-inputs = ["stable_baselines3"]
-disable = ["pyi-error"]
-# Checked with mypy
-exclude = [
-  "stable_baselines3/common/buffers.py",
-  "stable_baselines3/common/base_class.py",
-  "stable_baselines3/common/callbacks.py",
-  "stable_baselines3/common/on_policy_algorithm.py",
-  "stable_baselines3/common/vec_env/stacked_observations.py",
-  "stable_baselines3/common/vec_env/subproc_vec_env.py",
-  "stable_baselines3/common/vec_env/patch_gym.py",
-  "stable_baselines3/common/off_policy_algorithm.py",
-  "stable_baselines3/common/distributions.py",
-  "stable_baselines3/common/policies.py",
-]
-
 [tool.mypy]
 ignore_missing_imports = true
 follow_imports = "silent"
 show_error_codes = true
 exclude = """(?x)(
-    stable_baselines3/common/vec_env/__init__.py$
-    | stable_baselines3/common/vec_env/vec_normalize.py$
-    | tests/test_logger.py$
+    tests/test_logger.py$
     | tests/test_train_eval_mode.py$
   )"""
 

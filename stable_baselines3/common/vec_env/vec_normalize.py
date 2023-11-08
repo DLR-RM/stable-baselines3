@@ -29,6 +29,9 @@ class VecNormalize(VecEnvWrapper):
         If not specified, all keys will be normalized.
     """
 
+    obs_spaces: Dict[str, spaces.Space]
+    old_obs: Union[np.ndarray, Dict[str, np.ndarray]]
+
     def __init__(
         self,
         venv: VecEnv,
@@ -47,11 +50,12 @@ class VecNormalize(VecEnvWrapper):
         self.norm_obs_keys = norm_obs_keys
         # Check observation spaces
         if self.norm_obs:
+            # Note: mypy doesn't take into account the sanity checks, which lead to several type: ignore...
             self._sanity_checks()
 
             if isinstance(self.observation_space, spaces.Dict):
                 self.obs_spaces = self.observation_space.spaces
-                self.obs_rms = {key: RunningMeanStd(shape=self.obs_spaces[key].shape) for key in self.norm_obs_keys}
+                self.obs_rms = {key: RunningMeanStd(shape=self.obs_spaces[key].shape) for key in self.norm_obs_keys}  # type: ignore[arg-type, union-attr]
                 # Update observation space when using image
                 # See explanation below and GH #1214
                 for key in self.obs_rms.keys():
@@ -64,8 +68,7 @@ class VecNormalize(VecEnvWrapper):
                         )
 
             else:
-                self.obs_spaces = None
-                self.obs_rms = RunningMeanStd(shape=self.observation_space.shape)
+                self.obs_rms = RunningMeanStd(shape=self.observation_space.shape)  # type: ignore[assignment, arg-type]
                 # Update observation space when using image
                 # See GH #1214
                 # This is to raise proper error when
@@ -92,7 +95,6 @@ class VecNormalize(VecEnvWrapper):
         self.training = training
         self.norm_obs = norm_obs
         self.norm_reward = norm_reward
-        self.old_obs = np.array([])
         self.old_reward = np.array([])
 
     def _sanity_checks(self) -> None:
@@ -148,7 +150,7 @@ class VecNormalize(VecEnvWrapper):
             state["norm_obs_keys"] = list(state["observation_space"].spaces.keys())
         self.__dict__.update(state)
         assert "venv" not in state
-        self.venv = None
+        self.venv = None  # type: ignore[assignment]
 
     def set_venv(self, venv: VecEnv) -> None:
         """
@@ -177,6 +179,7 @@ class VecNormalize(VecEnvWrapper):
         where ``dones`` is a boolean vector indicating whether each element is new.
         """
         obs, rewards, dones, infos = self.venv.step_wait()
+        assert isinstance(obs, (np.ndarray, dict))  # for mypy
         self.old_obs = obs
         self.old_reward = rewards
 
@@ -235,10 +238,12 @@ class VecNormalize(VecEnvWrapper):
         obs_ = deepcopy(obs)
         if self.norm_obs:
             if isinstance(obs, dict) and isinstance(self.obs_rms, dict):
+                assert self.norm_obs_keys is not None
                 # Only normalize the specified keys
                 for key in self.norm_obs_keys:
                     obs_[key] = self._normalize_obs(obs[key], self.obs_rms[key]).astype(np.float32)
             else:
+                assert isinstance(self.obs_rms, RunningMeanStd)
                 obs_ = self._normalize_obs(obs, self.obs_rms).astype(np.float32)
         return obs_
 
@@ -256,9 +261,11 @@ class VecNormalize(VecEnvWrapper):
         obs_ = deepcopy(obs)
         if self.norm_obs:
             if isinstance(obs, dict) and isinstance(self.obs_rms, dict):
+                assert self.norm_obs_keys is not None
                 for key in self.norm_obs_keys:
                     obs_[key] = self._unnormalize_obs(obs[key], self.obs_rms[key])
             else:
+                assert isinstance(self.obs_rms, RunningMeanStd)
                 obs_ = self._unnormalize_obs(obs, self.obs_rms)
         return obs_
 
@@ -286,6 +293,7 @@ class VecNormalize(VecEnvWrapper):
         :return: first observation of the episode
         """
         obs = self.venv.reset()
+        assert isinstance(obs, (np.ndarray, dict))
         self.old_obs = obs
         self.returns = np.zeros(self.num_envs)
         if self.training and self.norm_obs:
@@ -293,6 +301,7 @@ class VecNormalize(VecEnvWrapper):
                 for key in self.obs_rms.keys():
                     self.obs_rms[key].update(obs[key])
             else:
+                assert isinstance(self.obs_rms, RunningMeanStd)
                 self.obs_rms.update(obs)
         return self.normalize_obs(obs)
 

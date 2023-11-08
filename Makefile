@@ -4,9 +4,6 @@ LINT_PATHS=stable_baselines3/ tests/ docs/conf.py setup.py
 pytest:
 	./scripts/run_tests.sh
 
-pytype:
-	pytype -j auto
-
 mypy:
 	mypy ${LINT_PATHS}
 
@@ -16,7 +13,7 @@ missing-annotations:
 # missing docstrings
 # pylint -d R,C,W,E -e C0116 stable_baselines3 -j 4
 
-type: pytype mypy
+type: mypy
 
 lint:
 	# stop the build if there are Python syntax errors or undefined names

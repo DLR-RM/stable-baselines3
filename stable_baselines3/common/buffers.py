@@ -561,7 +561,7 @@ class DictReplayBuffer(ReplayBuffer):
         if psutil is not None:
             mem_available = psutil.virtual_memory().available
 
-        assert optimize_memory_usage is False, "DictReplayBuffer does not support optimize_memory_usage"
+        assert not optimize_memory_usage, "DictReplayBuffer does not support optimize_memory_usage"
         # disabling as this adds quite a bit of complexity
         # https://github.com/DLR-RM/stable-baselines3/pull/243#discussion_r531535702
         self.optimize_memory_usage = optimize_memory_usage

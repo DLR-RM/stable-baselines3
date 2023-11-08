@@ -141,7 +141,7 @@ Here is an example of how to render an image to TensorBoard at regular intervals
 
 Logging Figures/Plots
 ---------------------
-TensorBoard supports periodic logging of figures/plots created with matplotlib, which helps evaluating agents at various stages during training.
+TensorBoard supports periodic logging of figures/plots created with matplotlib, which helps evaluate agents at various stages during training.
 
 .. warning::
     To support figure logging `matplotlib <https://matplotlib.org/>`_ must be installed otherwise, TensorBoard ignores the figure and logs a warning.
@@ -179,7 +179,7 @@ Here is an example of how to store a plot in TensorBoard at regular intervals:
 Logging Videos
 --------------
 
-TensorBoard supports periodic logging of video data, which helps evaluating agents at various stages during training.
+TensorBoard supports periodic logging of video data, which helps evaluate agents at various stages during training.
 
 .. warning::
     To support video logging `moviepy <https://zulko.github.io/moviepy/>`_ must be installed otherwise, TensorBoard ignores the video and logs a warning.
@@ -252,7 +252,7 @@ Here is an example of how to render an episode and log the resulting video to Te
 Logging Hyperparameters
 -----------------------
 
-TensorBoard supports logging of hyperparameters in its HPARAMS tab, which helps comparing agents trainings.
+TensorBoard supports logging of hyperparameters in its HPARAMS tab, which helps to compare agents trainings.
 
 .. warning::
     To display hyperparameters in the HPARAMS section, a ``metric_dict`` must be given (as well as a ``hparam_dict``).

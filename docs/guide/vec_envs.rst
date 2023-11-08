@@ -58,7 +58,7 @@ SB3 VecEnv API is actually close to Gym 0.21 API but differs to Gym 0.26+ API:
 - the ``vec_env.step(actions)`` method expects an array as input
   (with a batch size corresponding to the number of environments) and returns a 4-tuple (and not a 5-tuple): ``obs, rewards, dones, infos`` instead of ``obs, reward, terminated, truncated, info``
   where ``dones = terminated or truncated`` (for each env).
-  ``obs, rewards, dones`` are numpy arrays with shape ``(n_envs, shape_for_single_env)`` (so with a batch dimension).
+  ``obs, rewards, dones`` are NumPy arrays with shape ``(n_envs, shape_for_single_env)`` (so with a batch dimension).
   Additional information is passed via the ``infos`` value which is a list of dictionaries.
 
 - at the end of an episode, ``infos[env_idx]["TimeLimit.truncated"] = truncated and not terminated``
@@ -89,8 +89,8 @@ SB3 VecEnv API is actually close to Gym 0.21 API but differs to Gym 0.26+ API:
   if no mode is passed or ``mode="rgb_array"`` is passed when calling ``vec_env.render`` then we use the default mode, otherwise, we use the OpenCV display.
   Note that if ``render_mode != "rgb_array"``, you can only call ``vec_env.render()`` (without argument or with ``mode=env.render_mode``).
 
-- the ``reset()`` method doesn't take any parameter. If you want to seed the pseudo-random generator,
-  you should call ``vec_env.seed(seed=seed)`` and ``obs = vec_env.reset()`` afterward.
+- the ``reset()`` method doesn't take any parameter. If you want to seed the pseudo-random generator or pass options,
+  you should call ``vec_env.seed(seed=seed)``/``vec_env.set_options(options)`` and ``obs = vec_env.reset()`` afterward (seed and options are discarded after each call to ``reset()``).
 
 - methods and attributes of the underlying Gym envs can be accessed, called and set using ``vec_env.get_attr("attribute_name")``,
   ``vec_env.env_method("method_name", args1, args2, kwargs1=kwargs1)`` and ``vec_env.set_attr("attribute_name", new_value)``.

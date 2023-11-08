@@ -1,6 +1,5 @@
-import typing
 from copy import deepcopy
-from typing import Optional, Type, Union
+from typing import Optional, Type, TypeVar
 
 from stable_baselines3.common.vec_env.base_vec_env import CloudpickleWrapper, VecEnv, VecEnvWrapper
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
@@ -14,18 +13,16 @@ from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines3.common.vec_env.vec_transpose import VecTransposeImage
 from stable_baselines3.common.vec_env.vec_video_recorder import VecVideoRecorder
 
-# Avoid circular import
-if typing.TYPE_CHECKING:
-    from stable_baselines3.common.type_aliases import GymEnv
+VecEnvWrapperT = TypeVar("VecEnvWrapperT", bound=VecEnvWrapper)
 
 
-def unwrap_vec_wrapper(env: Union["GymEnv", VecEnv], vec_wrapper_class: Type[VecEnvWrapper]) -> Optional[VecEnvWrapper]:
+def unwrap_vec_wrapper(env: VecEnv, vec_wrapper_class: Type[VecEnvWrapperT]) -> Optional[VecEnvWrapperT]:
     """
     Retrieve a ``VecEnvWrapper`` object by recursively searching.
 
-    :param env:
-    :param vec_wrapper_class:
-    :return:
+    :param env: The ``VecEnv`` that is going to be unwrapped
+    :param vec_wrapper_class: The desired ``VecEnvWrapper`` class.
+    :return: The ``VecEnvWrapper`` object if the ``VecEnv`` is wrapped with the desired wrapper, None otherwise
     """
     env_tmp = env
     while isinstance(env_tmp, VecEnvWrapper):
@@ -35,36 +32,50 @@ def unwrap_vec_wrapper(env: Union["GymEnv", VecEnv], vec_wrapper_class: Type[Vec
     return None
 
 
-def unwrap_vec_normalize(env: Union["GymEnv", VecEnv]) -> Optional[VecNormalize]:
+def unwrap_vec_normalize(env: VecEnv) -> Optional[VecNormalize]:
     """
-    :param env:
-    :return:
+    Retrieve a ``VecNormalize`` object by recursively searching.
+
+    :param env: The VecEnv that is going to be unwrapped
+    :return: The ``VecNormalize`` object if the ``VecEnv`` is wrapped with ``VecNormalize``, None otherwise
     """
-    return unwrap_vec_wrapper(env, VecNormalize)  # pytype:disable=bad-return-type
+    return unwrap_vec_wrapper(env, VecNormalize)
 
 
-def is_vecenv_wrapped(env: Union["GymEnv", VecEnv], vec_wrapper_class: Type[VecEnvWrapper]) -> bool:
+def is_vecenv_wrapped(env: VecEnv, vec_wrapper_class: Type[VecEnvWrapper]) -> bool:
     """
-    Check if an environment is already wrapped by a given ``VecEnvWrapper``.
+    Check if an environment is already wrapped in a given ``VecEnvWrapper``.
 
-    :param env:
-    :param vec_wrapper_class:
-    :return:
+    :param env: The VecEnv that is going to be checked
+    :param vec_wrapper_class: The desired ``VecEnvWrapper`` class.
+    :return: True if the ``VecEnv`` is wrapped with the desired wrapper, False otherwise
     """
     return unwrap_vec_wrapper(env, vec_wrapper_class) is not None
 
 
-# Define here to avoid circular import
-def sync_envs_normalization(env: "GymEnv", eval_env: "GymEnv") -> None:
+def sync_envs_normalization(env: VecEnv, eval_env: VecEnv) -> None:
     """
-    Sync eval env and train env when using VecNormalize
+    Synchronize the normalization statistics of an eval environment and train environment
+    when they are both wrapped in a ``VecNormalize`` wrapper.
 
-    :param env:
-    :param eval_env:
+    :param env: Training env
+    :param eval_env: Environment used for evaluation.
     """
     env_tmp, eval_env_tmp = env, eval_env
     while isinstance(env_tmp, VecEnvWrapper):
+        assert isinstance(eval_env_tmp, VecEnvWrapper), (
+            "Error while synchronizing normalization stats: expected the eval env to be "
+            f"a VecEnvWrapper but got {eval_env_tmp} instead. "
+            "This is probably due to the training env not being wrapped the same way as the evaluation env. "
+            f"Training env type: {env_tmp}."
+        )
         if isinstance(env_tmp, VecNormalize):
+            assert isinstance(eval_env_tmp, VecNormalize), (
+                "Error while synchronizing normalization stats: expected the eval env to be "
+                f"a VecNormalize but got {eval_env_tmp} instead. "
+                "This is probably due to the training env not being wrapped the same way as the evaluation env. "
+                f"Training env type: {env_tmp}."
+            )
             # Only synchronize if observation normalization exists
             if hasattr(env_tmp, "obs_rms"):
                 eval_env_tmp.obs_rms = deepcopy(env_tmp.obs_rms)

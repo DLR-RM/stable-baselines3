@@ -15,7 +15,7 @@ Overview
 
 Overall Stable-Baselines3 (SB3) keeps the high-level API of Stable-Baselines (SB2).
 Most of the changes are to ensure more consistency and are internal ones.
-Because of the backend change, from Tensorflow to PyTorch, the internal code is much much readable and easy to debug
+Because of the backend change, from Tensorflow to PyTorch, the internal code is much more readable and easy to debug
 at the cost of some speed (dynamic graph vs static graph., see `Issue #90 <https://github.com/DLR-RM/stable-baselines3/issues/90>`_)
 However, the algorithms were extensively benchmarked on Atari games and continuous control PyBullet envs
 (see `Issue #48 <https://github.com/DLR-RM/stable-baselines3/issues/48>`_  and `Issue #49 <https://github.com/DLR-RM/stable-baselines3/issues/49>`_)
@@ -203,8 +203,8 @@ New Features (SB3 vs SB2)
 - Much cleaner and consistent base code (and no more warnings =D!) and static type checks
 - Independent saving/loading/predict for policies
 - A2C now supports Generalized Advantage Estimation (GAE) and advantage normalization (both are deactivated by default)
-- Generalized State-Dependent Exploration (gSDE) exploration is available for A2C/PPO/SAC. It allows to use RL directly on real robots (cf https://arxiv.org/abs/2005.05719)
-- Better saving/loading: optimizers are now included in the saved parameters and there is two new methods ``save_replay_buffer`` and ``load_replay_buffer`` for the replay buffer when using off-policy algorithms (DQN/DDPG/SAC/TD3)
+- Generalized State-Dependent Exploration (gSDE) exploration is available for A2C/PPO/SAC. It allows using RL directly on real robots (cf https://arxiv.org/abs/2005.05719)
+- Better saving/loading: optimizers are now included in the saved parameters and there are two new methods ``save_replay_buffer`` and ``load_replay_buffer`` for the replay buffer when using off-policy algorithms (DQN/DDPG/SAC/TD3)
 - You can pass ``optimizer_class`` and ``optimizer_kwargs`` to ``policy_kwargs`` in order to easily
   customize optimizers
 - Seeding now works properly to have deterministic results

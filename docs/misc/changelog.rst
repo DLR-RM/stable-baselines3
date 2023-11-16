@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.2.0 (2023-11-16)
+Release 2.2.1 (2023-11-16)
 --------------------------
 **Support for options at reset, bug fixes and better error messages**
 
@@ -18,7 +18,7 @@ New Features:
 - Improved error message when mixing Gym API with VecEnv API (see GH#1694)
 - Add support for setting ``options`` at reset with VecEnv via the ``set_options()`` method. Same as seeds logic, options are reset at the end of an episode (@ReHoss)
 - Added ``rollout_buffer_class`` and ``rollout_buffer_kwargs`` arguments to on-policy algorithms (A2C and PPO)
-
+- Added ``close_file`` argument to ``save()`` and ``load()`` (set it to False to have SB3 < 2.2.0 behavior)
 
 Bug Fixes:
 ^^^^^^^^^^

@@ -644,6 +644,7 @@ class BaseAlgorithm(ABC):
         custom_objects: Optional[Dict[str, Any]] = None,
         print_system_info: bool = False,
         force_reset: bool = True,
+        close_file: bool = True,
         **kwargs,
     ) -> SelfBaseAlgorithm:
         """
@@ -667,6 +668,7 @@ class BaseAlgorithm(ABC):
         :param force_reset: Force call to ``reset()`` before training
             to avoid unexpected behavior.
             See https://github.com/DLR-RM/stable-baselines3/issues/597
+        :param close_file: Whether to close or not the path after loading (True by default)
         :param kwargs: extra arguments to change the model when loading
         :return: new model instance with loaded parameters
         """
@@ -679,6 +681,7 @@ class BaseAlgorithm(ABC):
             device=device,
             custom_objects=custom_objects,
             print_system_info=print_system_info,
+            close_file=close_file,
         )
 
         assert data is not None, "No data found in the saved file"
@@ -795,6 +798,7 @@ class BaseAlgorithm(ABC):
         path: Union[str, pathlib.Path, io.BufferedIOBase],
         exclude: Optional[Iterable[str]] = None,
         include: Optional[Iterable[str]] = None,
+        close_file: bool = True,
     ) -> None:
         """
         Save all the attributes of the object and the model parameters in a zip-file.
@@ -802,6 +806,7 @@ class BaseAlgorithm(ABC):
         :param path: path to the file where the rl agent should be saved
         :param exclude: name of parameters that should be excluded in addition to the default ones
         :param include: name of parameters that might be excluded but should be included anyway
+        :param close_file: Whether to close or not the path after saving (True by default)
         """
         # Copy parameter list so we don't mutate the original dict
         data = self.__dict__.copy()
@@ -838,4 +843,4 @@ class BaseAlgorithm(ABC):
         # Build dict of state_dicts
         params_to_save = self.get_parameters()
 
-        save_to_zip_file(path, data=data, params=params_to_save, pytorch_variables=pytorch_variables)
+        save_to_zip_file(path, data=data, params=params_to_save, pytorch_variables=pytorch_variables, close_file=close_file)

@@ -3,6 +3,7 @@ import io
 import json
 import os
 import pathlib
+import tempfile
 import warnings
 import zipfile
 from collections import OrderedDict
@@ -756,3 +757,10 @@ def test_no_resource_warning(tmp_path):
     # Create a PPO agent and save it
     PPO("MlpPolicy", "CartPole-v1").save(tmp_path / "dqn_cartpole")
     PPO.load(tmp_path / "dqn_cartpole")
+
+    # Do the same but in memory
+    temp_file = tempfile.TemporaryFile()
+    PPO("MlpPolicy", "CartPole-v1").save(temp_file, close_file=False)
+    PPO.load(temp_file, close_file=False)
+    assert not temp_file.closed
+    temp_file.close()

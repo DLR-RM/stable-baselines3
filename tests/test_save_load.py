@@ -747,3 +747,12 @@ def test_dqn_target_update_interval(tmp_path):
     model = DQN.load(tmp_path / "dqn_cartpole")
     os.remove(tmp_path / "dqn_cartpole.zip")
     assert model.target_update_interval == 100
+
+
+# Turn warnings into errors
+@pytest.mark.filterwarnings("error")
+def test_no_resource_warning(tmp_path):
+    # check that files are properly closed
+    # Create a PPO agent and save it
+    PPO("MlpPolicy", "CartPole-v1").save(tmp_path / "dqn_cartpole")
+    PPO.load(tmp_path / "dqn_cartpole")

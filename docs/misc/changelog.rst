@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.2.0a11 (WIP)
+Release 2.2.0a12 (WIP)
 --------------------------
 **Support for options at reset, bug fixes and better error messages**
 
@@ -32,6 +32,7 @@ Bug Fixes:
 - Fixed success reward dtype in ``SimpleMultiObsEnv`` (@NixGD)
 - Fixed check_env for Sequence observation space (@corentinlger)
 - Prevents instantiating BitFlippingEnv with conflicting observation spaces (@kylesayrs)
+- Fixed ResourceWarning when loading and saving models (files were not closed)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

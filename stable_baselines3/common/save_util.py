@@ -308,28 +308,28 @@ def save_to_zip_file(
     :param pytorch_variables: Other PyTorch variables expected to contain name and value of the variable.
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
-    save_path = open_path(save_path, "w", verbose=0, suffix="zip")
-    # data/params can be None, so do not
-    # try to serialize them blindly
-    if data is not None:
-        serialized_data = data_to_json(data)
-
-    # Create a zip-archive and write our objects there.
-    with zipfile.ZipFile(save_path, mode="w") as archive:
-        # Do not try to save "None" elements
+    with open_path(save_path, "w", verbose=0, suffix="zip") as save_path:
+        # data/params can be None, so do not
+        # try to serialize them blindly
         if data is not None:
-            archive.writestr("data", serialized_data)
-        if pytorch_variables is not None:
-            with archive.open("pytorch_variables.pth", mode="w", force_zip64=True) as pytorch_variables_file:
-                th.save(pytorch_variables, pytorch_variables_file)
-        if params is not None:
-            for file_name, dict_ in params.items():
-                with archive.open(file_name + ".pth", mode="w", force_zip64=True) as param_file:
-                    th.save(dict_, param_file)
-        # Save metadata: library version when file was saved
-        archive.writestr("_stable_baselines3_version", sb3.__version__)
-        # Save system info about the current python env
-        archive.writestr("system_info.txt", get_system_info(print_info=False)[1])
+            serialized_data = data_to_json(data)
+
+        # Create a zip-archive and write our objects there.
+        with zipfile.ZipFile(save_path, mode="w") as archive:
+            # Do not try to save "None" elements
+            if data is not None:
+                archive.writestr("data", serialized_data)
+            if pytorch_variables is not None:
+                with archive.open("pytorch_variables.pth", mode="w", force_zip64=True) as pytorch_variables_file:
+                    th.save(pytorch_variables, pytorch_variables_file)
+            if params is not None:
+                for file_name, dict_ in params.items():
+                    with archive.open(file_name + ".pth", mode="w", force_zip64=True) as param_file:
+                        th.save(dict_, param_file)
+            # Save metadata: library version when file was saved
+            archive.writestr("_stable_baselines3_version", sb3.__version__)
+            # Save system info about the current python env
+            archive.writestr("system_info.txt", get_system_info(print_info=False)[1])
 
 
 def save_to_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], obj: Any, verbose: int = 0) -> None:
@@ -450,4 +450,6 @@ def load_from_zip_file(
     except zipfile.BadZipFile as e:
         # load_path wasn't a zip file
         raise ValueError(f"Error: the file {load_path} wasn't a zip-file") from e
+    finally:
+        load_path.close()
     return data, params, pytorch_variables

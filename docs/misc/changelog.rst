@@ -11,6 +11,7 @@ Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Switched to ``ruff`` for sorting imports (isort is no longer needed), black and ruff version now require a minimum version
 - Dropped ``x is False`` in favor of ``not x``, which means that callbacks that wrongly returned None (instead of a boolean) will cause the training to stop (@iwishiwasaneagle)
+- Fixed ResourceWarning when loading and saving models (files were not closed), to revert to previous behavior, you can pass ``close_file=False`` when saving or loading the file
 
 New Features:
 ^^^^^^^^^^^^^
@@ -32,7 +33,6 @@ Bug Fixes:
 - Fixed success reward dtype in ``SimpleMultiObsEnv`` (@NixGD)
 - Fixed check_env for Sequence observation space (@corentinlger)
 - Prevents instantiating BitFlippingEnv with conflicting observation spaces (@kylesayrs)
-- Fixed ResourceWarning when loading and saving models (files were not closed)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

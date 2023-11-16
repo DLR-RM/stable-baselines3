@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.2.0a9 (WIP)
+Release 2.2.0a11 (WIP)
 --------------------------
 **Support for options at reset, bug fixes and better error messages**
 
@@ -59,10 +59,18 @@ Others:
 - Buffers do no call an additional ``.copy()`` when storing new transitions
 - Fixed ``ActorCriticPolicy.extract_features()`` signature by adding an optional ``features_extractor`` argument
 - Update dependencies (accept newer Shimmy/Sphinx version and remove ``sphinx_autodoc_typehints``)
+- Fixed ``stable_baselines3/common/off_policy_algorithm.py`` type hints
+- Fixed ``stable_baselines3/common/distributions.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/vec_normalize.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/__init__.py`` type hints
+- Switched to PyTorch 2.1.0 in the CI (fixes type annotations)
+- Fixed ``stable_baselines3/common/policies.py`` type hints
+- Switched to ``mypy`` only for checking types
 
 Documentation:
 ^^^^^^^^^^^^^^
-
+- Updated RL Tips and Tricks (include recommendation for evaluation, added links to DroQ, ARS and SBX).
+- Fixed various typos and grammar mistakes
 
 Release 2.1.0 (2023-08-17)
 --------------------------

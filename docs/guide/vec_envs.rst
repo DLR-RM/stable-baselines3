@@ -58,7 +58,7 @@ SB3 VecEnv API is actually close to Gym 0.21 API but differs to Gym 0.26+ API:
 - the ``vec_env.step(actions)`` method expects an array as input
   (with a batch size corresponding to the number of environments) and returns a 4-tuple (and not a 5-tuple): ``obs, rewards, dones, infos`` instead of ``obs, reward, terminated, truncated, info``
   where ``dones = terminated or truncated`` (for each env).
-  ``obs, rewards, dones`` are numpy arrays with shape ``(n_envs, shape_for_single_env)`` (so with a batch dimension).
+  ``obs, rewards, dones`` are NumPy arrays with shape ``(n_envs, shape_for_single_env)`` (so with a batch dimension).
   Additional information is passed via the ``infos`` value which is a list of dictionaries.
 
 - at the end of an episode, ``infos[env_idx]["TimeLimit.truncated"] = truncated and not terminated``

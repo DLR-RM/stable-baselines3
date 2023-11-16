@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.2.0a12 (WIP)
+Release 2.2.0 (2023-11-16)
 --------------------------
 **Support for options at reset, bug fixes and better error messages**
 
@@ -36,9 +36,18 @@ Bug Fixes:
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
+- Added ``set_options`` for ``AsyncEval``
+- Added ``rollout_buffer_class`` and ``rollout_buffer_kwargs`` arguments to TRPO
 
 `RL Zoo`_
 ^^^^^^^^^
+- Removed `gym` dependency, the package is still required for some pretrained agents.
+- Added `--eval-env-kwargs` to `train.py` (@Quentin18)
+- Added `ppo_lstm` to hyperparams_opt.py (@technocrat13)
+- Upgraded to `pybullet_envs_gymnasium>=0.4.0`
+- Removed old hacks (for instance limiting offpolicy algorithms to one env at test time)
+- Updated docker image, removed support for X server
+- Replaced deprecated `optuna.suggest_uniform(...)` by `optuna.suggest_float(..., low=..., high=...)`
 
 `SBX`_ (SB3 + Jax)
 ^^^^^^^^^^^^^^^^^^

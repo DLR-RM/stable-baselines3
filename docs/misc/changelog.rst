@@ -3,9 +3,15 @@
 Changelog
 ==========
 
-Release 2.2.0 (2023-11-16)
+Release 2.2.1 (2023-11-17)
 --------------------------
 **Support for options at reset, bug fixes and better error messages**
+
+.. note::
+
+  SB3 v2.2.0 was yanked after a breaking change was found in `GH#1751 <https://github.com/DLR-RM/stable-baselines3/issues/1751>`_.
+  Please use SB3 v2.2.1 and not v2.2.0.
+
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -32,7 +38,9 @@ Bug Fixes:
 - Fixed success reward dtype in ``SimpleMultiObsEnv`` (@NixGD)
 - Fixed check_env for Sequence observation space (@corentinlger)
 - Prevents instantiating BitFlippingEnv with conflicting observation spaces (@kylesayrs)
-- Fixed ResourceWarning when loading and saving models (files were not closed)
+- Fixed ResourceWarning when loading and saving models (files were not closed), please note that only path are closed automatically,
+  the behavior stay the same for tempfiles (they need to be closed manually),
+  the behavior is now consistent when loading/saving replay buffer
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -76,6 +84,7 @@ Others:
 - Switched to PyTorch 2.1.0 in the CI (fixes type annotations)
 - Fixed ``stable_baselines3/common/policies.py`` type hints
 - Switched to ``mypy`` only for checking types
+- Added tests to check consistency when saving/loading files
 
 Documentation:
 ^^^^^^^^^^^^^^

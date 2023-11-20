@@ -9,10 +9,10 @@ Prerequisites
 
 Stable-Baselines3 requires python 3.8+ and PyTorch >= 1.13
 
-Windows 10
-~~~~~~~~~~
+Windows
+~~~~~~~
 
-We recommend using `Anaconda <https://conda.io/docs/user-guide/install/windows.html>`_ for Windows users for easier installation of Python packages and required libraries. You need an environment with Python version 3.6 or above.
+We recommend using `Anaconda <https://conda.io/docs/user-guide/install/windows.html>`_ for Windows users for easier installation of Python packages and required libraries. You need an environment with Python version 3.8 or above.
 
 For a quick start you can move straight to installing Stable-Baselines3 in the next step.
 
@@ -34,7 +34,7 @@ To install Stable Baselines3 with pip, execute:
         Some shells such as Zsh require quotation marks around brackets, i.e. ``pip install 'stable-baselines3[extra]'`` `More information <https://stackoverflow.com/a/30539963>`_.
 
 
-This includes an optional dependencies like Tensorboard, OpenCV or ``ale-py`` to train on atari games. If you do not need those, you can use:
+This includes an optional dependencies like Tensorboard, OpenCV or ``ale-py`` to train on Atari games. If you do not need those, you can use:
 
 .. code-block:: bash
 

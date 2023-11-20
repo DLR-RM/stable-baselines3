@@ -3,17 +3,28 @@
 Changelog
 ==========
 
-Release 2.2.0a6 (WIP)
+Release 2.2.1 (2023-11-17)
 --------------------------
+**Support for options at reset, bug fixes and better error messages**
+
+.. note::
+
+  SB3 v2.2.0 was yanked after a breaking change was found in `GH#1751 <https://github.com/DLR-RM/stable-baselines3/issues/1751>`_.
+  Please use SB3 v2.2.1 and not v2.2.0.
+
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Switched to ``ruff`` for sorting imports (isort is no longer needed), black and ruff version now require a minimum version
+- Dropped ``x is False`` in favor of ``not x``, which means that callbacks that wrongly returned None (instead of a boolean) will cause the training to stop (@iwishiwasaneagle)
 
 New Features:
 ^^^^^^^^^^^^^
 - Improved error message of the ``env_checker`` for env wrongly detected as GoalEnv (``compute_reward()`` is defined)
 - Improved error message when mixing Gym API with VecEnv API (see GH#1694)
+- Add support for setting ``options`` at reset with VecEnv via the ``set_options()`` method. Same as seeds logic, options are reset at the end of an episode (@ReHoss)
+- Added ``rollout_buffer_class`` and ``rollout_buffer_kwargs`` arguments to on-policy algorithms (A2C and PPO)
+
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -27,16 +38,28 @@ Bug Fixes:
 - Fixed success reward dtype in ``SimpleMultiObsEnv`` (@NixGD)
 - Fixed check_env for Sequence observation space (@corentinlger)
 - Prevents instantiating BitFlippingEnv with conflicting observation spaces (@kylesayrs)
+- Fixed ResourceWarning when loading and saving models (files were not closed), please note that only path are closed automatically,
+  the behavior stay the same for tempfiles (they need to be closed manually),
+  the behavior is now consistent when loading/saving replay buffer
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
+- Added ``set_options`` for ``AsyncEval``
+- Added ``rollout_buffer_class`` and ``rollout_buffer_kwargs`` arguments to TRPO
 
 `RL Zoo`_
 ^^^^^^^^^
+- Removed `gym` dependency, the package is still required for some pretrained agents.
+- Added `--eval-env-kwargs` to `train.py` (@Quentin18)
+- Added `ppo_lstm` to hyperparams_opt.py (@technocrat13)
+- Upgraded to `pybullet_envs_gymnasium>=0.4.0`
+- Removed old hacks (for instance limiting offpolicy algorithms to one env at test time)
+- Updated docker image, removed support for X server
+- Replaced deprecated `optuna.suggest_uniform(...)` by `optuna.suggest_float(..., low=..., high=...)`
 
-`SBX`_
-^^^^^^^^^
-- Added ``DDPG`` and ``TD3``
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+- Added ``DDPG`` and ``TD3`` algorithms
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -52,10 +75,21 @@ Others:
 - Fixed ``stable_baselines3/common/buffers.py`` type hints
 - Fixed ``stable_baselines3/her/her_replay_buffer.py`` type hints
 - Buffers do no call an additional ``.copy()`` when storing new transitions
+- Fixed ``ActorCriticPolicy.extract_features()`` signature by adding an optional ``features_extractor`` argument
+- Update dependencies (accept newer Shimmy/Sphinx version and remove ``sphinx_autodoc_typehints``)
+- Fixed ``stable_baselines3/common/off_policy_algorithm.py`` type hints
+- Fixed ``stable_baselines3/common/distributions.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/vec_normalize.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/__init__.py`` type hints
+- Switched to PyTorch 2.1.0 in the CI (fixes type annotations)
+- Fixed ``stable_baselines3/common/policies.py`` type hints
+- Switched to ``mypy`` only for checking types
+- Added tests to check consistency when saving/loading files
 
 Documentation:
 ^^^^^^^^^^^^^^
-
+- Updated RL Tips and Tricks (include recommendation for evaluation, added links to DroQ, ARS and SBX).
+- Fixed various typos and grammar mistakes
 
 Release 2.1.0 (2023-08-17)
 --------------------------
@@ -1462,8 +1496,8 @@ And all the contributors:
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
-@carlosluis @arjun-kg @tlpss @JonathanKuelz @Gabo-Tor
+@carlosluis @arjun-kg @tlpss @JonathanKuelz @Gabo-Tor @iwishiwasaneagle
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
-@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
+@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong @ReHoss
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger

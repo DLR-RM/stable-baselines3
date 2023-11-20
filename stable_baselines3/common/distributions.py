@@ -175,7 +175,7 @@ class DiagGaussianDistribution(Distribution):
         log_prob = self.distribution.log_prob(actions)
         return sum_independent_dims(log_prob)
 
-    def entropy(self) -> th.Tensor:
+    def entropy(self) -> Optional[th.Tensor]:
         return sum_independent_dims(self.distribution.entropy())
 
     def sample(self) -> th.Tensor:
@@ -216,7 +216,7 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         super().__init__(action_dim)
         # Avoid NaN (prevents division by zero or log of zero)
         self.epsilon = epsilon
-        self.gaussian_actions = None
+        self.gaussian_actions: Optional[th.Tensor] = None
 
     def proba_distribution(
         self: SelfSquashedDiagGaussianDistribution, mean_actions: th.Tensor, log_std: th.Tensor
@@ -339,7 +339,7 @@ class MultiCategoricalDistribution(Distribution):
     def proba_distribution(
         self: SelfMultiCategoricalDistribution, action_logits: th.Tensor
     ) -> SelfMultiCategoricalDistribution:
-        self.distribution = [Categorical(logits=split) for split in th.split(action_logits, tuple(self.action_dims), dim=1)]
+        self.distribution = [Categorical(logits=split) for split in th.split(action_logits, list(self.action_dims), dim=1)]
         return self
 
     def log_prob(self, actions: th.Tensor) -> th.Tensor:
@@ -440,6 +440,13 @@ class StateDependentNoiseDistribution(Distribution):
     :param epsilon: small value to avoid NaN due to numerical imprecision.
     """
 
+    bijector: Optional["TanhBijector"]
+    latent_sde_dim: Optional[int]
+    weights_dist: Normal
+    _latent_sde: th.Tensor
+    exploration_mat: th.Tensor
+    exploration_matrices: th.Tensor
+
     def __init__(
         self,
         action_dim: int,
@@ -454,10 +461,6 @@ class StateDependentNoiseDistribution(Distribution):
         self.latent_sde_dim = None
         self.mean_actions = None
         self.log_std = None
-        self.weights_dist = None
-        self.exploration_mat = None
-        self.exploration_matrices = None
-        self._latent_sde = None
         self.use_expln = use_expln
         self.full_std = full_std
         self.epsilon = epsilon
@@ -489,6 +492,7 @@ class StateDependentNoiseDistribution(Distribution):
 
         if self.full_std:
             return std
+        assert self.latent_sde_dim is not None
         # Reduce the number of parameters:
         return th.ones(self.latent_sde_dim, self.action_dim).to(log_std.device) * std
 
@@ -675,10 +679,13 @@ def make_proba_distribution(
         cls = StateDependentNoiseDistribution if use_sde else DiagGaussianDistribution
         return cls(get_action_dim(action_space), **dist_kwargs)
     elif isinstance(action_space, spaces.Discrete):
-        return CategoricalDistribution(action_space.n, **dist_kwargs)
+        return CategoricalDistribution(int(action_space.n), **dist_kwargs)
     elif isinstance(action_space, spaces.MultiDiscrete):
         return MultiCategoricalDistribution(list(action_space.nvec), **dist_kwargs)
     elif isinstance(action_space, spaces.MultiBinary):
+        assert isinstance(
+            action_space.n, int
+        ), f"Multi-dimensional MultiBinary({action_space.n}) action space is not supported. You can flatten it instead."
         return BernoulliDistribution(action_space.n, **dist_kwargs)
     else:
         raise NotImplementedError(
@@ -702,7 +709,10 @@ def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> th.Tensor
     # MultiCategoricalDistribution is not a PyTorch Distribution subclass
     # so we need to implement it ourselves!
     if isinstance(dist_pred, MultiCategoricalDistribution):
-        assert np.allclose(dist_pred.action_dims, dist_true.action_dims), "Error: distributions must have the same input space"
+        assert isinstance(dist_true, MultiCategoricalDistribution)  # already checked above, for mypy
+        assert np.allclose(
+            dist_pred.action_dims, dist_true.action_dims
+        ), f"Error: distributions must have the same input space: {dist_pred.action_dims} != {dist_true.action_dims}"
         return th.stack(
             [th.distributions.kl_divergence(p, q) for p, q in zip(dist_true.distribution, dist_pred.distribution)],
             dim=1,

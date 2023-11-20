@@ -16,7 +16,7 @@ The policy networks output parameters for the distributions (named ``flat`` in t
 Actions are then sampled from those distributions.
 
 For instance, in the case of discrete actions. The policy network outputs probability
-of taking each action. The ``CategoricalDistribution`` allows to sample from it,
+of taking each action. The ``CategoricalDistribution`` allows sampling from it,
 computes the entropy, the log probability (``log_prob``) and backpropagate the gradient.
 
 In the case of continuous actions, a Gaussian distribution is used. The policy network outputs

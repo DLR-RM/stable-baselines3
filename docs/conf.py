@@ -64,7 +64,6 @@ release = __version__
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx_autodoc_typehints",
     "sphinx.ext.autosummary",
     "sphinx.ext.mathjax",
     "sphinx.ext.ifconfig",
@@ -72,6 +71,8 @@ extensions = [
     # 'sphinx.ext.intersphinx',
     # 'sphinx.ext.doctest'
 ]
+
+autodoc_typehints = "description"
 
 if enable_spell_check:
     extensions.append("sphinxcontrib.spelling")

@@ -194,14 +194,14 @@ Full example code: https://github.com/chunky/sb3_to_coral
 
 Google created a chip called the "Coral" for deploying AI to the
 edge. It's available in a variety of form factors, including USB (using
-the Coral on a Rasbperry pi, with a SB3-developed model, was the original
+the Coral on a Raspberry Pi, with a SB3-developed model, was the original
 motivation for the code example above).
 
 The Coral chip is fast, with very low power consumption, but only has limited
 on-device training abilities. More information is on the webpage here:
 https://coral.ai.
 
-To deploy to a Coral, one must work via TFLite, and quantise the
+To deploy to a Coral, one must work via TFLite, and quantize the
 network to reflect the Coral's capabilities. The full chain to go from
 SB3 to Coral is: SB3 (Torch) => ONNX => TensorFlow => TFLite => Coral.
 

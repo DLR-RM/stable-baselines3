@@ -85,7 +85,7 @@ extra_no_roms = [
     "tqdm",
     "rich",
     # For atari games,
-    "shimmy[atari]~=1.1.0",
+    "shimmy[atari]~=1.3.0",
     "pillow",
 ]
 
@@ -118,7 +118,6 @@ setup(
             "pytest-env",
             "pytest-xdist",
             # Type check
-            "pytype",
             "mypy",
             # Lint code and sort imports (flake8 and isort replacement)
             "ruff>=0.0.288",
@@ -126,13 +125,11 @@ setup(
             "black>=23.9.1,<24",
         ],
         "docs": [
-            "sphinx>=5.3,<7.0",
+            "sphinx>=5,<8",
             "sphinx-autobuild",
-            "sphinx-rtd-theme",
+            "sphinx-rtd-theme>=1.3.0",
             # For spelling
             "sphinxcontrib.spelling",
-            # Type hints support
-            "sphinx-autodoc-typehints",
             # Copy button for code snippets
             "sphinx_copybutton",
         ],

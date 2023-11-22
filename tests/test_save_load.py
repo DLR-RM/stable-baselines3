@@ -3,6 +3,7 @@ import io
 import json
 import os
 import pathlib
+import tempfile
 import warnings
 import zipfile
 from collections import OrderedDict
@@ -752,7 +753,33 @@ def test_dqn_target_update_interval(tmp_path):
 # Turn warnings into errors
 @pytest.mark.filterwarnings("error")
 def test_no_resource_warning(tmp_path):
+    # Check behavior of save/load
+    # see https://github.com/DLR-RM/stable-baselines3/issues/1751
+
     # check that files are properly closed
     # Create a PPO agent and save it
     PPO("MlpPolicy", "CartPole-v1").save(tmp_path / "dqn_cartpole")
     PPO.load(tmp_path / "dqn_cartpole")
+
+    PPO("MlpPolicy", "CartPole-v1").save(str(tmp_path / "dqn_cartpole"))
+    PPO.load(str(tmp_path / "dqn_cartpole"))
+
+    # Do the same but in memory, should not close the file
+    with tempfile.TemporaryFile() as fp:
+        PPO("MlpPolicy", "CartPole-v1").save(fp)
+        PPO.load(fp)
+        assert not fp.closed
+
+    # Same but with replay buffer
+    model = SAC("MlpPolicy", "Pendulum-v1", buffer_size=200)
+    model.save_replay_buffer(tmp_path / "replay")
+    model.load_replay_buffer(tmp_path / "replay")
+
+    model.save_replay_buffer(str(tmp_path / "replay"))
+    model.load_replay_buffer(str(tmp_path / "replay"))
+
+    with tempfile.TemporaryFile() as fp:
+        model.save_replay_buffer(fp)
+        fp.seek(0)
+        model.load_replay_buffer(fp)
+        assert not fp.closed

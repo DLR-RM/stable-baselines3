@@ -229,3 +229,13 @@ intelligent agents to perform network slice placement.
 | Author: Alex Pasquali
 | Github: https://github.com/AlexPasqua/DeepNetSlice
 | Paper: **under review** (citation instructions on the project's README.md) -> see this Master's Thesis for the moment: https://etd.adm.unipi.it/theses/available/etd-01182023-110038/unrestricted/Tesi_magistrale_Pasquali_Alex.pdf
+
+
+PokemonRedExperiments
+---------------------
+
+Playing Pokemon Red with Reinforcement Learning.
+
+| Author: Peter Whidden
+| Github: https://github.com/PWhiddy/PokemonRedExperiments
+| Video: https://www.youtube.com/watch?v=DcYLT37ImBY

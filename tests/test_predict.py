@@ -59,9 +59,14 @@ def test_auto_wrap(model_class):
 @pytest.mark.parametrize("model_class", MODEL_LIST)
 @pytest.mark.parametrize("env_id", ["Pendulum-v1", "CartPole-v1"])
 @pytest.mark.parametrize("device", ["cpu", "cuda", "auto"])
-def test_predict(model_class, env_id, device):
+@pytest.mark.parametrize("policy_kwargs", [None, dict(optimizer_kwargs={"fused": True})])
+def test_predict(model_class, env_id, device, policy_kwargs):
     if device == "cuda" and not th.cuda.is_available():
         pytest.skip("CUDA not available")
+
+    if policy_kwargs is not None:
+        if not (device == "cuda" and model_class in [PPO, A2C]):
+            pytest.skip("Special 'fused' optimizer only available on PPO/A2C with cuda")
 
     if env_id == "CartPole-v1":
         if model_class in [SAC, TD3]:
@@ -70,7 +75,7 @@ def test_predict(model_class, env_id, device):
         return
 
     # Test detection of different shapes by the predict method
-    model = model_class("MlpPolicy", env_id, device=device)
+    model = model_class("MlpPolicy", env_id, device=device, policy_kwargs=policy_kwargs)
     # Check that the policy is on the right device
     assert get_device(device).type == model.policy.device.type
 

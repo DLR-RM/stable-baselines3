@@ -441,6 +441,8 @@ class ActorCriticPolicy(BasePolicy):
         ``th.optim.Adam`` by default
     :param optimizer_kwargs: Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
+    :param _init_optimizer: If the optimizer should be initialised immediately. True by default.
+        When set to False, the optimizer should be explicitly initialized using ``._build_optimizer(...)``.
     """
 
     def __init__(
@@ -462,6 +464,7 @@ class ActorCriticPolicy(BasePolicy):
         normalize_images: bool = True,
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        _init_optimizer=True,
     ):
         if optimizer_kwargs is None:
             optimizer_kwargs = {}
@@ -530,7 +533,7 @@ class ActorCriticPolicy(BasePolicy):
         # Action distribution
         self.action_dist = make_proba_distribution(action_space, use_sde=use_sde, dist_kwargs=dist_kwargs)
 
-        self._build(lr_schedule)
+        self._build(lr_schedule, _init_optimizer)
 
     def _get_constructor_parameters(self) -> Dict[str, Any]:
         data = super()._get_constructor_parameters()
@@ -580,7 +583,7 @@ class ActorCriticPolicy(BasePolicy):
             device=self.device,
         )
 
-    def _build(self, lr_schedule: Schedule) -> None:
+    def _build(self, lr_schedule: Schedule, _init_optimizer=True) -> None:
         """
         Create the networks and the optimizer.
 
@@ -628,8 +631,14 @@ class ActorCriticPolicy(BasePolicy):
             for module, gain in module_gains.items():
                 module.apply(partial(self.init_weights, gain=gain))
 
+        if _init_optimizer:
+            self._build_optimizer(lr_schedule)
+
+    def _build_optimizer(self, lr_schedule: Schedule) -> None:
         # Setup optimizer with initial learning rate
-        self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)  # type: ignore[call-arg]
+        self.optimizer = self.optimizer_class(
+            self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs
+        )  # type: ignore[call-arg]
 
     def forward(self, obs: th.Tensor, deterministic: bool = False) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
@@ -791,6 +800,8 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         ``th.optim.Adam`` by default
     :param optimizer_kwargs: Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
+    :param _init_optimizer: If the optimizer should be initialised immediately. True by default.
+        When set to False, the optimizer should be explicitly initialized using ``._build_optimizer(...)``.
     """
 
     def __init__(
@@ -812,6 +823,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         normalize_images: bool = True,
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        _init_optimizer=True,
     ):
         super().__init__(
             observation_space,
@@ -831,6 +843,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
             normalize_images,
             optimizer_class,
             optimizer_kwargs,
+            _init_optimizer,
         )
 
 
@@ -864,6 +877,8 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         ``th.optim.Adam`` by default
     :param optimizer_kwargs: Additional keyword arguments,
         excluding the learning rate, to pass to the optimizer
+    :param _init_optimizer: If the optimizer should be initialised immediately. True by default.
+        When set to False, the optimizer should be explicitly initialized using ``._build_optimizer(...)``.
     """
 
     def __init__(
@@ -885,6 +900,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         normalize_images: bool = True,
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        _init_optimizer=True,
     ):
         super().__init__(
             observation_space,
@@ -904,6 +920,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
             normalize_images,
             optimizer_class,
             optimizer_kwargs,
+            _init_optimizer,
         )
 
 

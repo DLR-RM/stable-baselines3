@@ -91,6 +91,7 @@ Documentation:
 - Updated RL Tips and Tricks (include recommendation for evaluation, added links to DroQ, ARS and SBX).
 - Fixed various typos and grammar mistakes
 - Added PokemonRedExperiments to the project page
+- Fixed an out-of-date command for installing Atari in examples
 
 Release 2.1.0 (2023-08-17)
 --------------------------

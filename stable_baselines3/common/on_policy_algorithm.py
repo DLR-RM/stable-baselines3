@@ -131,9 +131,15 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             **self.rollout_buffer_kwargs,
         )
         self.policy = self.policy_class(  # type: ignore[assignment]
-            self.observation_space, self.action_space, self.lr_schedule, use_sde=self.use_sde, **self.policy_kwargs
+            self.observation_space,
+            self.action_space,
+            self.lr_schedule,
+            use_sde=self.use_sde,
+            _init_optimizer=False,
+            **self.policy_kwargs,
         )
         self.policy = self.policy.to(self.device)
+        self.policy._build_optimizer(self.lr_schedule)
 
     def collect_rollouts(
         self,

@@ -3,6 +3,13 @@
 Changelog
 ==========
 
+Unreleased
+----------
+
+Bug Fixes:
+^^^^^^^^^^
+- In ``OnPolicyAlgorithm``, delay the initialization of the optimizer until after the correct compute-device type is set (@cmangla)
+
 Release 2.2.1 (2023-11-17)
 --------------------------
 **Support for options at reset, bug fixes and better error messages**

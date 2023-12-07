@@ -6,7 +6,7 @@ import time
 import warnings
 from abc import ABC, abstractmethod
 from collections import deque
-from typing import Any, ClassVar, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, ClassVar, Dict, Iterable, List, Optional, Self, Tuple, Type, Union
 
 import gymnasium as gym
 import numpy as np
@@ -40,8 +40,6 @@ from stable_baselines3.common.vec_env import (
     unwrap_vec_normalize,
 )
 from stable_baselines3.common.vec_env.patch_gym import _convert_space, _patch_env
-
-SelfBaseAlgorithm = TypeVar("SelfBaseAlgorithm", bound="BaseAlgorithm")
 
 
 def maybe_make_env(env: Union[GymEnv, str], verbose: int) -> GymEnv:
@@ -510,14 +508,14 @@ class BaseAlgorithm(ABC):
 
     @abstractmethod
     def learn(
-        self: SelfBaseAlgorithm,
+        self,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 100,
         tb_log_name: str = "run",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
-    ) -> SelfBaseAlgorithm:
+    ) -> Self:
         """
         Return a trained model.
 
@@ -637,7 +635,7 @@ class BaseAlgorithm(ABC):
 
     @classmethod
     def load(  # noqa: C901
-        cls: Type[SelfBaseAlgorithm],
+        cls,
         path: Union[str, pathlib.Path, io.BufferedIOBase],
         env: Optional[GymEnv] = None,
         device: Union[th.device, str] = "auto",
@@ -645,7 +643,7 @@ class BaseAlgorithm(ABC):
         print_system_info: bool = False,
         force_reset: bool = True,
         **kwargs,
-    ) -> SelfBaseAlgorithm:
+    ) -> Self:
         """
         Load the model from a zip-file.
         Warning: ``load`` re-creates the model from scratch, it does not update it in-place!

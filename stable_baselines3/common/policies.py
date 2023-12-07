@@ -5,7 +5,7 @@ import copy
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, List, Optional, Self, Tuple, Type, Union
 
 import numpy as np
 import torch as th
@@ -32,8 +32,6 @@ from stable_baselines3.common.torch_layers import (
 )
 from stable_baselines3.common.type_aliases import PyTorchObs, Schedule
 from stable_baselines3.common.utils import get_device, is_vectorized_observation, obs_as_tensor
-
-SelfBaseModel = TypeVar("SelfBaseModel", bound="BaseModel")
 
 
 class BaseModel(nn.Module):
@@ -164,7 +162,7 @@ class BaseModel(nn.Module):
         th.save({"state_dict": self.state_dict(), "data": self._get_constructor_parameters()}, path)
 
     @classmethod
-    def load(cls: Type[SelfBaseModel], path: str, device: Union[th.device, str] = "auto") -> SelfBaseModel:
+    def load(cls, path: str, device: Union[th.device, str] = "auto") -> Self:
         """
         Load model from path.
 

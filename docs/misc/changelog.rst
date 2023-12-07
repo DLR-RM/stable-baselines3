@@ -3,6 +3,38 @@
 Changelog
 ==========
 
+
+Release 2.3.0a0 (WIP)
+--------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Use ``Self`` type annotation
+
+Documentation:
+^^^^^^^^^^^^^^
+
 Release 2.2.1 (2023-11-17)
 --------------------------
 **Support for options at reset, bug fixes and better error messages**

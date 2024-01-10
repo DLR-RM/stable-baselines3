@@ -98,14 +98,15 @@ SB3 VecEnv API is actually close to Gym 0.21 API but differs to Gym 0.26+ API:
 
 Modifying Vectorized Environments Attributes
 --------------------------------------------
-If you plan on modifying the attributes of an environment while it is used (e.g., modifying an attribute specifying the task carried out for a portion of training when doing multi-task learning, or
-a parameter of the environment dynamics), you should develop your environment so that it exposes a setter method. 
-Directly accessing the environment attribute in the callback might indeed lead to unexpected behavior due to environments being wrapped in monitor wrapper before being passed to SB3 algorithms.
+
+If you plan to `modify the attributes of an environment <https://github.com/DLR-RM/stable-baselines3/issues/1573>`_ while it is used (e.g., modifying an attribute specifying the task carried out for a portion of training when doing multi-task learning, or
+a parameter of the environment dynamics), you must expose a setter method.
+In fact, directly accessing the environment attribute in the callback can lead to unexpected behavior because environments can be wrapped (using gym or VecEnv wrappers, the ``Monitor`` wrapper being one example).
 
 Consider the following example for a custom env:
 
 .. code-block:: python
-  
+
   import gymnasium as gym
   from gymnasium import spaces
 
@@ -117,40 +118,64 @@ Consider the following example for a custom env:
     def __init__(self):
         super().__init__()
         """
-        A state and action space for robotic locomotion. The multi-task twist is that the policy would need to adapt to different terrains, each with its own
-        friction coefficient, mu. The friction coefficient is the only parameter that changes between tasks.
+        A state and action space for robotic locomotion.
+				The multi-task twist is that the policy would need to adapt to different terrains, each with its own
+        friction coefficient, mu.
+				The friction coefficient is the only parameter that changes between tasks.
         mu is a scalar between 0 and 1, and during training a callback is used to update mu.
         """
+				...
 
     def step(self, action):
       # Do something, depending on the action and current value of mu the next state is computed
-      return self._get_obs(), self.compute_reward(), self.done, self.truncated, self._get_info()
+      return self._get_obs(), reward, done, truncated, info
 
-    def set_mu(self, new_mu:float):
+    def set_mu(self, new_mu: float) -> None:
+				# Note: this value should be used only at the next reset
         self.mu = new_mu
 
+		# Example of wrapped env
+		# env is of type <TimeLimit<OrderEnforcing<PassiveEnvChecker<CartPoleEnv<CartPole-v1>>>>>
+		env = gym.make("CartPole-v1")
+		# To access the base env, without wrapper, you should use `.unwrapped`
+		# or env.get_wrapper_attr("gravity") to include wrappers
+		env.unwrapped.gravity
+		# SB3 uses VecEnv for training, where `env.unwrapped.x = new_value` cannot be used to set an attribute
+		# therefore, you should expose a setter like `set_mu` to properly set an attribute
+		vec_env = make_vec_env(MyMultiTaskEnv)
+		# Print current mu value
+		# Note: you should use vec_env.env_method("get_wrapper_attr", "mu") in Gymnasium v1.0
+		print(vec_env.env_method("get_wrapper_attr", "mu"))
 
-When training a policy on this environment, this would be wrapped into a ``Monitor`` wrapper, which would prevent the mu attribute from being modifiable 
-``env.mu = <some_value>``. Instead, the callback should be using the ``set_mu`` method via the ``env_method`` method for Vectorized Environments.
+
+In this example ``env.mu`` cannot be accessed/changed directly because it is wrapped in a ``VecEnv`` and because it could be wrapped with other wrappers (see `GH#1573 <https://github.com/DLR-RM/stable-baselines3/issues/1573>`_ for a longer explanation).
+Instead, the callback should use the ``set_mu`` method via the ``env_method`` method for Vectorized Environments.
 
 .. code-block:: python
 
   from itertools import cycle
+
   class ChangeMuCallback(BaseCallback):
     """
-    This callback changes the value of mu during training looping through a list of values until training is aborted.
-    The environment is implemented so that the impact of changing the value of mu mid-episode is visible only after the episode is over
+    This callback changes the value of mu during training looping
+		through a list of values until training is aborted.
+    The environment is implemented so that the impact of changing
+		the value of mu mid-episode is visible only after the episode is over
     and the reset method has been called.
     """"
-    def __init__(self, env, values=[0.1, 0.2, 0.5, 0.13, 0.9]):
+    def __init__(self):
       super().__init__()
-      self.env = env
-      self.mus = cycle(values)
+			# An iterator that contains the different of the friction coefficient
+      self.mus = cycle([0.1, 0.2, 0.5, 0.13, 0.9])
 
     def _on_step(self):
-      self.env.env_method("set_mu", next(self.mus))
+			# Note: in practice, you should not change this value at every step
+			# but rather depending on some events/metrics like agent performance/episode termination
+			# both accessible via the `self.logger` or `self.locals` variables
+      self.training_env.env_method("set_mu", next(self.mus))
 
-This callback can then be used to safely modify environment attributes during training since it is invoking the environment itself setter method.
+This callback can then be used to safely modify environment attributes during training since
+it calls the environment setter method.
 
 
 Vectorized Environments Wrappers

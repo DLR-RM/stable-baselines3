@@ -3,6 +3,39 @@
 Changelog
 ==========
 
+
+Release 2.3.0a0 (WIP)
+--------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+- Added a paragraph on modifying vectorized environment parameters via setters (@fracapuano)
+- Updated callback code example
+
 Release 2.2.1 (2023-11-17)
 --------------------------
 **Support for options at reset, bug fixes and better error messages**
@@ -92,7 +125,6 @@ Documentation:
 - Fixed various typos and grammar mistakes
 - Added PokemonRedExperiments to the project page
 - Fixed an out-of-date command for installing Atari in examples
-- Added a paragraph on modifying vectorized environment parameters via setters
 
 Release 2.1.0 (2023-08-17)
 --------------------------

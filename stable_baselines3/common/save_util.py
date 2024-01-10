@@ -308,14 +308,14 @@ def save_to_zip_file(
     :param pytorch_variables: Other PyTorch variables expected to contain name and value of the variable.
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
-    save_path = open_path(save_path, "w", verbose=0, suffix="zip")
+    file = open_path(save_path, "w", verbose=0, suffix="zip")
     # data/params can be None, so do not
     # try to serialize them blindly
     if data is not None:
         serialized_data = data_to_json(data)
 
     # Create a zip-archive and write our objects there.
-    with zipfile.ZipFile(save_path, mode="w") as archive:
+    with zipfile.ZipFile(file, mode="w") as archive:
         # Do not try to save "None" elements
         if data is not None:
             archive.writestr("data", serialized_data)
@@ -331,6 +331,9 @@ def save_to_zip_file(
         # Save system info about the current python env
         archive.writestr("system_info.txt", get_system_info(print_info=False)[1])
 
+    if isinstance(save_path, (str, pathlib.Path)):
+        file.close()
+
 
 def save_to_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], obj: Any, verbose: int = 0) -> None:
     """
@@ -344,10 +347,12 @@ def save_to_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], obj: Any, ver
     :param obj: The object to save.
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
-    with open_path(path, "w", verbose=verbose, suffix="pkl") as file_handler:
-        # Use protocol>=4 to support saving replay buffers >= 4Gb
-        # See https://docs.python.org/3/library/pickle.html
-        pickle.dump(obj, file_handler, protocol=pickle.HIGHEST_PROTOCOL)
+    file = open_path(path, "w", verbose=verbose, suffix="pkl")
+    # Use protocol>=4 to support saving replay buffers >= 4Gb
+    # See https://docs.python.org/3/library/pickle.html
+    pickle.dump(obj, file, protocol=pickle.HIGHEST_PROTOCOL)
+    if isinstance(path, (str, pathlib.Path)):
+        file.close()
 
 
 def load_from_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], verbose: int = 0) -> Any:
@@ -360,8 +365,11 @@ def load_from_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], verbose: in
         path actually exists. If path is a io.BufferedIOBase the path exists.
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
-    with open_path(path, "r", verbose=verbose, suffix="pkl") as file_handler:
-        return pickle.load(file_handler)
+    file = open_path(path, "r", verbose=verbose, suffix="pkl")
+    obj = pickle.load(file)
+    if isinstance(path, (str, pathlib.Path)):
+        file.close()
+    return obj
 
 
 def load_from_zip_file(
@@ -391,14 +399,14 @@ def load_from_zip_file(
     :return: Class parameters, model state_dicts (aka "params", dict of state_dict)
         and dict of pytorch variables
     """
-    load_path = open_path(load_path, "r", verbose=verbose, suffix="zip")
+    file = open_path(load_path, "r", verbose=verbose, suffix="zip")
 
     # set device to cpu if cuda is not available
     device = get_device(device=device)
 
     # Open the zip archive and load data
     try:
-        with zipfile.ZipFile(load_path) as archive:
+        with zipfile.ZipFile(file) as archive:
             namelist = archive.namelist()
             # If data or parameters is not in the
             # zip archive, assume they were stored
@@ -450,4 +458,7 @@ def load_from_zip_file(
     except zipfile.BadZipFile as e:
         # load_path wasn't a zip file
         raise ValueError(f"Error: the file {load_path} wasn't a zip-file") from e
+    finally:
+        if isinstance(load_path, (str, pathlib.Path)):
+            file.close()
     return data, params, pytorch_variables

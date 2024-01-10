@@ -90,7 +90,9 @@ SB3 VecEnv API is actually close to Gym 0.21 API but differs to Gym 0.26+ API:
   Note that if ``render_mode != "rgb_array"``, you can only call ``vec_env.render()`` (without argument or with ``mode=env.render_mode``).
 
 - the ``reset()`` method doesn't take any parameter. If you want to seed the pseudo-random generator or pass options,
-  you should call ``vec_env.seed(seed=seed)``/``vec_env.set_options(options)`` and ``obs = vec_env.reset()`` afterward (seed and options are discarded after each call to ``reset()``).
+  you should call ``vec_env.seed(seed=seed)``/``vec_env.set_options(options)``.
+  Seed and options parameters will be passed to the next call to ``obs = vec_env.reset()`` and any implicit environment reset invoked by episode termination / truncation.
+  The provided seed and options will be discarded after each call to ``vec_env.reset()``.
 
 - methods and attributes of the underlying Gym envs can be accessed, called and set using ``vec_env.get_attr("attribute_name")``,
   ``vec_env.env_method("method_name", args1, args2, kwargs1=kwargs1)`` and ``vec_env.set_attr("attribute_name", new_value)``.

@@ -9,13 +9,14 @@ Release 2.3.0a0 (WIP)
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - The defaults hyperparameters of ``TD3`` and ``DDPG`` have been changed to be consistent with ``SAC``
+  (except for the learning rate and the policy architecture, we kept ``learning_rate=1e-3``, see `W&B report <https://wandb.ai/openrlbenchmark/sbx/reports/SBX-TD3-RL-Zoo-v2-3-0a0-vs-SB3-TD3-RL-Zoo-2-2-1---Vmlldzo2MjUyNTQx>`_)
 
 .. code-block:: python
 
   # SB3 < 2.3.0 default hyperparameters
-  # model = TD3("MlpPolicy", env, train_freq=(1, "episode"), gradient_steps=-1, batch_size=100, learning_rate=1e-3)
+  # model = TD3("MlpPolicy", env, train_freq=(1, "episode"), gradient_steps=-1, batch_size=100)
   # SB3 >= 2.3.0:
-  model = TD3("MlpPolicy", env, train_freq=1, gradient_steps=1, batch_size=256, learning_rate=3e-4)
+  model = TD3("MlpPolicy", env, train_freq=1, gradient_steps=1, batch_size=256)
 
 .. note::
 
@@ -56,8 +57,8 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
-
-
+- Added a paragraph on modifying vectorized environment parameters via setters (@fracapuano)
+- Updated callback code example
 
 Release 2.2.1 (2023-11-17)
 --------------------------
@@ -1546,7 +1547,7 @@ And all the contributors:
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
-@tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @JadenTravnik @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
+@tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @fracapuano @JadenTravnik @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
 @ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan
 @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum

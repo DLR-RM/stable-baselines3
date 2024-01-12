@@ -3,12 +3,36 @@
 Changelog
 ==========
 
-
-Release 2.3.0a0 (WIP)
+Release 2.3.0a1 (WIP)
 --------------------------
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- The defaults hyperparameters of ``TD3`` and ``DDPG`` have been changed to be more consistent with ``SAC``
+
+.. code-block:: python
+
+  # SB3 < 2.3.0 default hyperparameters
+  # model = TD3("MlpPolicy", env, train_freq=(1, "episode"), gradient_steps=-1, batch_size=100)
+  # SB3 >= 2.3.0:
+  model = TD3("MlpPolicy", env, train_freq=1, gradient_steps=1, batch_size=256)
+
+.. note::
+
+	Two inconsistencies remains: the default network architecture for ``TD3/DDPG`` is ``[400, 300]`` instead of ``[256, 256]`` for SAC (for backward compatibility reasons, see `report on the influence of the network size <https://wandb.ai/openrlbenchmark/sbx/reports/SBX-TD3-Influence-of-policy-net--Vmlldzo2NDg1Mzk3>`_) and the default learning rate is 1e-3 instead of 3e-4 for SAC (for performance reasons, see `W&B report on the influence of the lr <https://wandb.ai/openrlbenchmark/sbx/reports/SBX-TD3-RL-Zoo-v2-3-0a0-vs-SB3-TD3-RL-Zoo-2-2-1---Vmlldzo2MjUyNTQx>`_)
+
+
+
+- The default ``leanrning_starts`` parameter of ``DQN`` have been changed to be consistent with the other offpolicy algorithms
+
+
+.. code-block:: python
+
+  # SB3 < 2.3.0 default hyperparameters, 50_000 corresponded to Atari defaults hyperparameters
+  # model = DQN("MlpPolicy", env, learning_start=50_000)
+  # SB3 >= 2.3.0:
+  model = DQN("MlpPolicy", env, learning_start=100)
+
 
 New Features:
 ^^^^^^^^^^^^^

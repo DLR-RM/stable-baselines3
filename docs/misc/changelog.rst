@@ -39,6 +39,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed seed / options argument passing to environment resets in ``vec_env.reset()``
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -59,6 +60,7 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Added a paragraph on modifying vectorized environment parameters via setters (@fracapuano)
 - Updated callback code example
+- Expanded the description for vec_env.reset seed and options passing
 
 Release 2.2.1 (2023-11-17)
 --------------------------

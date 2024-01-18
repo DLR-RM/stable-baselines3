@@ -32,14 +32,15 @@ def _worker(
         try:
             cmd, data = remote.recv()
             if cmd == "step":
-                observation, reward, terminated, truncated, info = env.step(data)
+                action, seed, options = data
+                observation, reward, terminated, truncated, info = env.step(action)
                 # convert to SB3 VecEnv api
                 done = terminated or truncated
                 info["TimeLimit.truncated"] = truncated and not terminated
                 if done:
                     # save final observation where user can get it, then reset
                     info["terminal_observation"] = observation
-                    observation, reset_info = env.reset()
+                    observation, reset_info = env.reset(seed=seed, options=options)
                 remote.send((observation, reward, done, info, reset_info))
             elif cmd == "reset":
                 maybe_options = {"options": data[1]} if data[1] else {}
@@ -121,8 +122,8 @@ class SubprocVecEnv(VecEnv):
         super().__init__(len(env_fns), observation_space, action_space)
 
     def step_async(self, actions: np.ndarray) -> None:
-        for remote, action in zip(self.remotes, actions):
-            remote.send(("step", action))
+        for remote, action, seed, option in zip(self.remotes, actions, self._seeds, self._options):
+            remote.send(("step", (action, seed, option)))
         self.waiting = True
 
     def step_wait(self) -> VecEnvStepReturn:

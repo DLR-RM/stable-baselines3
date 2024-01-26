@@ -59,6 +59,8 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Added a paragraph on modifying vectorized environment parameters via setters (@fracapuano)
 - Updated callback code example
+- Updated export to ONNX documentation, it is now much simpler to export SB3 models with newer ONNX Opset!
+- Added video link to "Practical Tips for Reliable Reinforcement Learning" video
 
 Release 2.2.1 (2023-11-17)
 --------------------------

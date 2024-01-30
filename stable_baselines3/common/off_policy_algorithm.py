@@ -311,6 +311,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
     ) -> SelfOffPolicyAlgorithm:
+        iteration = 0
+
         total_timesteps, callback = self._setup_learn(
             total_timesteps,
             callback,
@@ -332,7 +334,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 callback=callback,
                 learning_starts=self.learning_starts,
                 replay_buffer=self.replay_buffer,
-                log_interval=log_interval,
             )
 
             if not rollout.continue_training:
@@ -345,6 +346,11 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 # Special case when the user passes `gradient_steps=0`
                 if gradient_steps > 0:
                     self.train(batch_size=self.batch_size, gradient_steps=gradient_steps)
+
+            iteration += 1
+
+            if log_interval is not None and iteration % log_interval == 0:
+                self._dump_logs()
 
         callback.on_training_end()
 
@@ -511,7 +517,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         replay_buffer: ReplayBuffer,
         action_noise: Optional[ActionNoise] = None,
         learning_starts: int = 0,
-        log_interval: Optional[int] = None,
     ) -> RolloutReturn:
         """
         Collect experiences and store them into a ``ReplayBuffer``.
@@ -529,7 +534,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             in addition to the stochastic policy for SAC.
         :param learning_starts: Number of steps before learning for the warm-up phase.
         :param replay_buffer:
-        :param log_interval: Log data every ``log_interval`` episodes
         :return:
         """
         # Switch to eval mode (this affects batch norm / dropout)
@@ -592,9 +596,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                         kwargs = dict(indices=[idx]) if env.num_envs > 1 else {}
                         action_noise.reset(**kwargs)
 
-                    # Log training infos
-                    if log_interval is not None and self._episode_num % log_interval == 0:
-                        self._dump_logs()
         callback.on_rollout_end()
 
         return RolloutReturn(num_collected_steps * env.num_envs, num_collected_episodes, continue_training)

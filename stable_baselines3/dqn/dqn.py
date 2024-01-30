@@ -259,7 +259,7 @@ class DQN(OffPolicyAlgorithm):
         self: SelfDQN,
         total_timesteps: int,
         callback: MaybeCallback = None,
-        log_interval: int = 4,
+        log_interval: int = 1000,
         tb_log_name: str = "DQN",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,

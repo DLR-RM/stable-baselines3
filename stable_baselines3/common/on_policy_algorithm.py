@@ -279,8 +279,11 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             if not continue_training:
                 break
 
-            iteration += 1
             self._update_current_progress_remaining(self.num_timesteps, total_timesteps)
+
+            self.train()
+
+            iteration += 1
 
             # Display training infos
             if log_interval is not None and iteration % log_interval == 0:
@@ -295,8 +298,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 self.logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
                 self.logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")
                 self.logger.dump(step=self.num_timesteps)
-
-            self.train()
 
         callback.on_training_end()
 

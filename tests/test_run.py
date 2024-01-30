@@ -229,7 +229,7 @@ def test_ppo_warnings():
     # in that case
     with pytest.warns(UserWarning, match="there will be a truncated mini-batch of size 1"):
         model = PPO("MlpPolicy", "Pendulum-v1", n_steps=64, batch_size=63, verbose=1)
-        model.learn(64)
+        model.learn(64, log_interval=2)
 
     loss = model.logger.name_to_value["train/loss"]
     assert loss > 0

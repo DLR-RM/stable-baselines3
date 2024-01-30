@@ -252,6 +252,12 @@ A better solution would be to use a squashing function (cf ``SAC``) or a Beta di
 Tips and Tricks when implementing an RL algorithm
 =================================================
 
+.. note::
+
+  We have a `video on YouTube about reliable RL <https://www.youtube.com/watch?v=7-PUg9EAa3Y>`_ that covers
+  this section in more details. You can also find the `slides online <https://araffin.github.io/slides/tips-reliable-rl/>`_.
+
+
 When you try to reproduce a RL paper by implementing the algorithm, the `nuts and bolts of RL research <http://joschu.net/docs/nuts-and-bolts.pdf>`_
 by John Schulman are quite useful (`video <https://www.youtube.com/watch?v=8EcdaCk9KaQ>`_).
 

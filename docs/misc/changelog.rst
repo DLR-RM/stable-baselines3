@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.3.0a1 (WIP)
+Release 2.3.0a2 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -54,6 +54,7 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Updated black from v23 to v24
 
 Documentation:
 ^^^^^^^^^^^^^^

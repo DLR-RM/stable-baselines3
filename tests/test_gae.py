@@ -73,7 +73,7 @@ class CheckGAECallback(BaseCallback):
         buffer = self.model.rollout_buffer
         rollout_size = buffer.size()
 
-        max_steps = self.training_env.envs[0].max_steps
+        max_steps = self.training_env.envs[0].get_wrapper_attr("max_steps")
         gamma = self.model.gamma
         gae_lambda = self.model.gae_lambda
         value = self.model.policy.constant_value

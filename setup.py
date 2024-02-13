@@ -122,7 +122,7 @@ setup(
             # Lint code and sort imports (flake8 and isort replacement)
             "ruff>=0.0.288",
             # Reformat
-            "black>=23.9.1,<24",
+            "black>=24.2.0,<25",
         ],
         "docs": [
             "sphinx>=5,<8",

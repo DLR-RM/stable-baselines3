@@ -1,8 +1,6 @@
 import os
 from typing import Callable
 
-from gymnasium.wrappers.monitoring import video_recorder
-
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvObs, VecEnvStepReturn, VecEnvWrapper
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
@@ -22,7 +20,7 @@ class VecVideoRecorder(VecEnvWrapper):
     :param name_prefix: Prefix to the video name
     """
 
-    video_recorder: video_recorder.VideoRecorder
+    # video_recorder: video_recorder.VideoRecorder
 
     def __init__(
         self,
@@ -73,9 +71,9 @@ class VecVideoRecorder(VecEnvWrapper):
 
         video_name = f"{self.name_prefix}-step-{self.step_id}-to-step-{self.step_id + self.video_length}"
         base_path = os.path.join(self.video_folder, video_name)
-        self.video_recorder = video_recorder.VideoRecorder(
-            env=self.env, base_path=base_path, metadata={"step_id": self.step_id}
-        )
+        # self.video_recorder = video_recorder.VideoRecorder(
+        #     env=self.env, base_path=base_path, metadata={"step_id": self.step_id}
+        # )
 
         self.video_recorder.capture_frame()
         self.recorded_frames = 1

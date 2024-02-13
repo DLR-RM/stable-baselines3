@@ -43,7 +43,7 @@ import gymnasium
 
 from stable_baselines3 import PPO
 
-env = gymnasium.make("CartPole-v1")
+env = gymnasium.make("CartPole-v1", render_mode="human")
 
 model = PPO("MlpPolicy", env, verbose=1)
 model.learn(total_timesteps=10_000)

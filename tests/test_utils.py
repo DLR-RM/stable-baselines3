@@ -24,6 +24,10 @@ from stable_baselines3.common.utils import (
 )
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
+# a hack to get atari environment registered for 1.0.0 alpha 1
+from shimmy import registration
+registration._register_atari_envs()
+
 
 @pytest.mark.parametrize("env_id", ["CartPole-v1", lambda: gym.make("CartPole-v1")])
 @pytest.mark.parametrize("n_envs", [1, 2])

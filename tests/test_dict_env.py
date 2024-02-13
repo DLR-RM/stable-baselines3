@@ -117,12 +117,11 @@ def test_consistency(model_class):
     """
     use_discrete_actions = model_class == DQN
     dict_env = DummyDictEnv(use_discrete_actions=use_discrete_actions, vec_only=True)
+    dict_env.seed(10)
     dict_env = gym.wrappers.TimeLimit(dict_env, 100)
     env = gym.wrappers.FlattenObservation(dict_env)
-    dict_env.seed(10)
     obs, _ = dict_env.reset()
 
-    kwargs = {}
     n_steps = 256
 
     if model_class in {A2C, PPO}:

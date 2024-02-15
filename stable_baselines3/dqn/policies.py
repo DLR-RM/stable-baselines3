@@ -69,7 +69,7 @@ class QNetwork(BasePolicy):
         q_values = self(observation)
         # Greedy action
         action = q_values.argmax(dim=1).reshape(-1)
-        return action
+        return action + self.action_space.start
 
     def _get_constructor_parameters(self) -> Dict[str, Any]:
         data = super()._get_constructor_parameters()

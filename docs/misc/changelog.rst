@@ -56,6 +56,7 @@ Others:
 ^^^^^^^
 - Updated black from v23 to v24
 - Updated ruff to >= v0.2.2
+- Updated env checker for (multi)discrete spaces with non-zero start.
 
 Documentation:
 ^^^^^^^^^^^^^^

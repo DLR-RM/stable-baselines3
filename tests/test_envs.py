@@ -123,6 +123,8 @@ def test_high_dimension_action_space():
         spaces.Dict({"img": spaces.Box(low=0, high=255, shape=(32, 32, 3), dtype=np.uint8)}),
         # Non zero start index
         spaces.Discrete(3, start=-1),
+        # Non zero start index (MultiDiscrete)
+        spaces.MultiDiscrete([4, 4], start=[1, 0]),
         # Non zero start index inside a Dict
         spaces.Dict({"obs": spaces.Discrete(3, start=1)}),
     ],
@@ -164,6 +166,8 @@ def test_non_default_spaces(new_obs_space):
         spaces.Box(low=np.array([-1, -1, -1]), high=np.array([1, 1, 0.99]), dtype=np.float32),
         # Non zero start index
         spaces.Discrete(3, start=-1),
+        # Non zero start index (MultiDiscrete)
+        spaces.MultiDiscrete([4, 4], start=[1, 0]),
     ],
 )
 def test_non_default_action_spaces(new_action_space):
@@ -179,7 +183,7 @@ def test_non_default_action_spaces(new_action_space):
     env.action_space = new_action_space
 
     # Discrete action space
-    if isinstance(new_action_space, spaces.Discrete):
+    if isinstance(new_action_space, (spaces.Discrete, spaces.MultiDiscrete)):
         with pytest.warns(UserWarning):
             check_env(env)
         return

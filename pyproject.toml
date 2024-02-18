@@ -3,13 +3,15 @@
 line-length = 127
 # Assume Python 3.8
 target-version = "py38"
+
+[tool.ruff.lint]
 # See https://beta.ruff.rs/docs/rules/
 select = ["E", "F", "B", "UP", "C90", "RUF"]
 # B028: Ignore explicit stacklevel`
 # RUF013: Too many false positives (implicit optional)
 ignore = ["B028", "RUF013"]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 # Default implementation in abstract methods
 "./stable_baselines3/common/callbacks.py"= ["B027"]
 "./stable_baselines3/common/noise.py"= ["B027"]
@@ -17,7 +19,7 @@ ignore = ["B028", "RUF013"]
 "./tests/*.py"= ["RUF012", "RUF013"]
 
 
-[tool.ruff.mccabe]
+[tool.ruff.lint.mccabe]
 # Unlike Flake8, default to a complexity level of 10.
 max-complexity = 15
 

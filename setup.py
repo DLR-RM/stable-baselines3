@@ -120,7 +120,7 @@ setup(
             # Type check
             "mypy",
             # Lint code and sort imports (flake8 and isort replacement)
-            "ruff>=0.0.288",
+            "ruff>=0.2.2",
             # Reformat
             "black>=24.2.0,<25",
         ],

@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.3.0a2 (WIP)
+Release 2.3.0a3 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -55,6 +55,8 @@ Deprecations:
 Others:
 ^^^^^^^
 - Updated black from v23 to v24
+- Updated ruff to >= v0.2.2
+- Updated env checker for (multi)discrete spaces with non-zero start.
 
 Documentation:
 ^^^^^^^^^^^^^^

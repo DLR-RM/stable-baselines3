@@ -3,11 +3,13 @@
 line-length = 127
 # Assume Python 3.8
 target-version = "py38"
+
+[tool.ruff.lint]
 # See https://beta.ruff.rs/docs/rules/
-lint.select = ["E", "F", "B", "UP", "C90", "RUF"]
+select = ["E", "F", "B", "UP", "C90", "RUF"]
 # B028: Ignore explicit stacklevel`
 # RUF013: Too many false positives (implicit optional)
-lint.ignore = ["B028", "RUF013"]
+ignore = ["B028", "RUF013"]
 
 [tool.ruff.lint.per-file-ignores]
 # Default implementation in abstract methods

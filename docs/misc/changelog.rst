@@ -65,6 +65,7 @@ Documentation:
 - Updated export to ONNX documentation, it is now much simpler to export SB3 models with newer ONNX Opset!
 - Added video link to "Practical Tips for Reliable Reinforcement Learning" video
 - Added ``render_mode="human"`` in the README example (@marekm4)
+- Fixed docstring signature for sum_independent_dims (@stagoverflow)
 
 Release 2.2.1 (2023-11-17)
 --------------------------
@@ -1565,4 +1566,4 @@ And all the contributors:
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong @ReHoss
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
-@marekm4
+@marekm4 @stagoverflow

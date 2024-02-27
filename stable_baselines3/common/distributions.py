@@ -113,7 +113,7 @@ def sum_independent_dims(tensor: th.Tensor) -> th.Tensor:
     so we can sum components of the ``log_prob`` or the entropy.
 
     :param tensor: shape: (n_batch, n_actions) or (n_batch,)
-    :return: shape: (n_batch,)
+    :return: shape: (n_batch,) for (n_batch, n_actions) input, scalar for (n_batch,) input
     """
     if len(tensor.shape) > 1:
         tensor = tensor.sum(dim=1)

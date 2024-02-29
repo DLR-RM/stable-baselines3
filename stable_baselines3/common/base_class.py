@@ -523,7 +523,10 @@ class BaseAlgorithm(ABC):
 
         :param total_timesteps: The total number of samples (env steps) to train on
         :param callback: callback(s) called at every step with state of the algorithm.
-        :param log_interval: The number of episodes before logging.
+        :param log_interval: for on-policy algos (e.g., PPO) this is the number of
+            training iters (i.e., log_interval * n_steps timesteps) before logging;
+            for off-policy algos (e.g., TD3, SAC, etc.) this number of episodes before
+            logging.
         :param tb_log_name: the name of the run for TensorBoard logging
         :param reset_num_timesteps: whether or not to reset the current timestep number (used in logging)
         :param progress_bar: Display a progress bar using tqdm and rich.

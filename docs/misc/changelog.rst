@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.3.0a3 (WIP)
+Release 2.3.0a4 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -33,6 +33,11 @@ Breaking Changes:
   # SB3 >= 2.3.0:
   model = DQN("MlpPolicy", env, learning_start=100)
 
+- For safety, ``torch.load()`` is now called with ``weights_only=True`` when loading torch tensors,
+  policy ``load()`` still uses ``weights_only=False`` as gymnasium imports are required for it to work
+- When using ``huggingface_sb3``, you will now need to set ``TRUST_REMOTE_CODE=True`` when downloading models from the hub,
+  as ``pickle.load`` is not safe.
+
 
 New Features:
 ^^^^^^^^^^^^^
@@ -48,6 +53,11 @@ Bug Fixes:
 
 `SBX`_ (SB3 + Jax)
 ^^^^^^^^^^^^^^^^^^
+- Added support for ``MultiDiscrete`` and ``MultiBinary`` action spaces to PPO
+- Added support for large values for gradient_steps to SAC, TD3, and TQC
+- Fix  ``train()`` signature and update type hints
+- Fix replay buffer device at load time
+- Added flatten layer
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -55,7 +65,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Updated black from v23 to v24
-- Updated ruff to >= v0.2.2
+- Updated ruff to >= v0.3.1
 - Updated env checker for (multi)discrete spaces with non-zero start.
 
 Documentation:
@@ -66,7 +76,7 @@ Documentation:
 - Added video link to "Practical Tips for Reliable Reinforcement Learning" video
 - Added ``render_mode="human"`` in the README example (@marekm4)
 - Fixed docstring signature for sum_independent_dims (@stagoverflow)
-- Updated docstring description for ``log_interval`` in the base class (@rushitnshah).  
+- Updated docstring description for ``log_interval`` in the base class (@rushitnshah).
 
 Release 2.2.1 (2023-11-17)
 --------------------------

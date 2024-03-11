@@ -33,6 +33,10 @@ Breaking Changes:
   # SB3 >= 2.3.0:
   model = DQN("MlpPolicy", env, learning_start=100)
 
+- For safety, ``torch.load()`` is now called with ``weights_only=True``
+- When using ``huggingface_sb3``, you will now need to set ``TRUST_REMOTE_CODE=True`` when downloading models from the hub,
+  as ``pickle.load`` is not safe.
+
 
 New Features:
 ^^^^^^^^^^^^^

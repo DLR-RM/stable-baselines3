@@ -54,7 +54,7 @@ Bug Fixes:
 ^^^^^^^^^^^^^^^^^^
 - Added support for ``MultiDiscrete`` and ``MultiBinary`` action spaces to PPO
 - Added support for large values for gradient_steps to SAC, TD3, and TQC
-- Fix  ``train() `` signature and update type hints
+- Fix  ``train()`` signature and update type hints
 - Fix replay buffer device at load time
 - Added flatten layer
 

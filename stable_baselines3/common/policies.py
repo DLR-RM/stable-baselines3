@@ -173,7 +173,7 @@ class BaseModel(nn.Module):
         :return:
         """
         device = get_device(device)
-        saved_variables = th.load(path, map_location=device)
+        saved_variables = th.load(path, map_location=device, weights_only=True)
 
         # Create policy object
         model = cls(**saved_variables["data"])

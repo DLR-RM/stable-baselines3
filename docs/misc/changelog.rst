@@ -41,6 +41,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Added rollout/success_rate option for OnPolicyAlgorithm (@corentinlger)
 
 Bug Fixes:
 ^^^^^^^^^^

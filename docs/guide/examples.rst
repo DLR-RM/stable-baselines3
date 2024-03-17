@@ -5,7 +5,7 @@ Examples
 
 .. note::
 
-        These examples are only to demonstrate the use of the library and its functions, and the trained agents may not solve the environments. Optimized               hyperparameters can be found in the RL Zoo `repository <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
+  These examples are only to demonstrate the use of the library and its functions, and the trained agents may not solve the environments. Optimized hyperparameters can be found in the RL Zoo `repository <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
 
 
 Try it online with Colab Notebooks!
@@ -191,8 +191,8 @@ Dict Observations
 
 You can use environments with dictionary observation spaces. This is useful in the case where one can't directly
 concatenate observations such as an image from a camera combined with a vector of servo sensor data (e.g., rotation angles).
-Stable Baselines3 provides ``SimpleMultiObsEnv`` as an example of this kind of of setting.
-The environment is a simple grid world but the observations for each cell come in the form of dictionaries.
+Stable Baselines3 provides ``SimpleMultiObsEnv`` as an example of this kind of setting.
+The environment is a simple grid world, but the observations for each cell come in the form of dictionaries.
 These dictionaries are randomly initialized on the creation of the environment and contain a vector observation and an image observation.
 
 .. code-block:: python
@@ -217,7 +217,7 @@ Callbacks: Monitoring Training
 
 You can define a custom callback function that will be called inside the agent.
 This could be useful when you want to monitor training, for instance display live
-learning curves in Tensorboard (or in Visdom) or save the best agent.
+learning curves in Tensorboard or save the best agent.
 If your callback returns False, training is aborted early.
 
 .. image:: ../_static/img/colab-badge.svg
@@ -251,7 +251,7 @@ If your callback returns False, training is aborted early.
       :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
       """
       def __init__(self, check_freq: int, log_dir: str, verbose: int = 1):
-          super(SaveOnBestTrainingRewardCallback, self).__init__(verbose)
+          super().__init__(verbose)
           self.check_freq = check_freq
           self.log_dir = log_dir
           self.save_path = os.path.join(log_dir, "best_model")
@@ -364,7 +364,7 @@ Atari Games
 
 Training a RL agent on Atari games is straightforward thanks to ``make_atari_env`` helper function.
 It will do `all the preprocessing <https://danieltakeshi.github.io/2016/11/25/frame-skipping-and-preprocessing-for-deep-q-networks-on-atari-2600-games/>`_
-and multiprocessing for you. To install the Atari environments, run the command ``pip install gym[atari, accept-rom-license]`` to install the Atari environments and ROMs, or install Stable Baselines3 with ``pip install stable-baselines3[extra]`` to install this and other optional dependencies.
+and multiprocessing for you. To install the Atari environments, run the command ``pip install gymnasium[atari,accept-rom-license]`` to install the Atari environments and ROMs, or install Stable Baselines3 with ``pip install stable-baselines3[extra]`` to install this and other optional dependencies.
 
 .. image:: ../_static/img/colab-badge.svg
    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/atari_games.ipynb

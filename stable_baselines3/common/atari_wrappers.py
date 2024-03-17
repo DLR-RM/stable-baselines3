@@ -7,7 +7,7 @@ from gymnasium import spaces
 from stable_baselines3.common.type_aliases import AtariResetReturn, AtariStepReturn
 
 try:
-    import cv2  # pytype:disable=import-error
+    import cv2
 
     cv2.ocl.setUseOpenCL(False)
 except ImportError:

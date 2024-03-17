@@ -15,4 +15,5 @@ However, if you want to learn about RL, there are several good resources to get 
 - `Lilian Weng's blog <https://lilianweng.github.io/lil-log/2018/04/08/policy-gradient-algorithms.html>`_
 - `Berkeley's Deep RL Bootcamp <https://sites.google.com/view/deep-rl-bootcamp/lectures>`_
 - `Berkeley's Deep Reinforcement Learning course <http://rail.eecs.berkeley.edu/deeprlcourse/>`_
+- `DQN tutorial <https://github.com/araffin/rlss23-dqn-tutorial>`_
 - `More resources <https://github.com/dennybritz/reinforcement-learning>`_

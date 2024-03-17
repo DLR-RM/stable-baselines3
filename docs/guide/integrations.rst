@@ -70,8 +70,10 @@ Installation
 
  .. code-block:: bash
 
+
      # Download model and save it into the logs/ folder
-     python -m rl_zoo3.load_from_hub --algo a2c --env LunarLander-v2 -orga sb3 -f logs/
+     # Only use TRUST_REMOTE_CODE=True with HF models that can be trusted (here the SB3 organization)
+     TRUST_REMOTE_CODE=True python -m rl_zoo3.load_from_hub --algo a2c --env LunarLander-v2 -orga sb3 -f logs/
      # Test the agent
      python -m rl_zoo3.enjoy --algo a2c --env LunarLander-v2  -f logs/
      # Push model, config and hyperparameters to the hub
@@ -86,11 +88,18 @@ For instance ``sb3/demo-hf-CartPole-v1``:
 
 .. code-block:: python
 
+  import os
+
   import gymnasium as gym
 
   from huggingface_sb3 import load_from_hub
   from stable_baselines3 import PPO
   from stable_baselines3.common.evaluation import evaluate_policy
+
+
+  # Allow the use of `pickle.load()` when downloading model from the hub
+  # Please make sure that the organization from which you download can be trusted
+  os.environ["TRUST_REMOTE_CODE"] = "True"
 
   # Retrieve the model from the hub
   ## repo_id = id of the model repository from the Hugging Face Hub (repo_id = {organization}/{repo_name})

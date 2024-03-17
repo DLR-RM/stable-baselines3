@@ -109,7 +109,7 @@ pip install stable-baselines3[extra]
 ```
 **Note:** Some shells such as Zsh require quotation marks around brackets, i.e. `pip install 'stable-baselines3[extra]'` ([More Info](https://stackoverflow.com/a/30539963)).
 
-This includes an optional dependencies like Tensorboard, OpenCV or `atari-py` to train on atari games. If you do not need those, you can use:
+This includes an optional dependencies like Tensorboard, OpenCV or `ale-py` to train on atari games. If you do not need those, you can use:
 ```sh
 pip install stable-baselines3
 ```
@@ -127,7 +127,7 @@ import gymnasium as gym
 
 from stable_baselines3 import PPO
 
-env = gym.make("CartPole-v1")
+env = gym.make("CartPole-v1", render_mode="human")
 
 model = PPO("MlpPolicy", env, verbose=1)
 model.learn(total_timesteps=10_000)

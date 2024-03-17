@@ -250,7 +250,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         Implemented by individual algorithms.
         """
         raise NotImplementedError
-    
+
     def _dump_logs(self, iteration: int) -> None:
         """
         Write log.

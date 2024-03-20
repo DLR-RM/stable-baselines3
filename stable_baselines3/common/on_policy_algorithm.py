@@ -257,6 +257,9 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         :param iteration: Current logging iteration
         """
+        assert self.ep_info_buffer is not None
+        assert self.ep_success_buffer is not None
+
         time_elapsed = max((time.time_ns() - self.start_time) / 1e9, sys.float_info.epsilon)
         fps = int((self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
         self.logger.record("time/iterations", iteration, exclude="tensorboard")

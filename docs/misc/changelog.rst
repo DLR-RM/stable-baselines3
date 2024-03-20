@@ -41,10 +41,11 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-- Added rollout/success_rate option for OnPolicyAlgorithm (@corentinlger)
 
 Bug Fixes:
 ^^^^^^^^^^
+- Added rollout/success_rate info option to the logger for OnPolicyAlgorithm (@corentinlger)
+- Fixed monitor_wrapper argument that was not passed to the parent class, and dones argument that wasn't passed to _update_into_buffer (@corentinlger)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

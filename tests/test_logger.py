@@ -2,7 +2,6 @@ import importlib.util
 import os
 import sys
 import time
-import uuid
 from io import TextIOBase
 from typing import Sequence
 from unittest import mock
@@ -478,7 +477,61 @@ def test_human_output_format_custom_test_io(base_class):
     assert printed == desired_printed
 
 
-def test_rollout_success_rate_on_policy_algorithm():
+class DummySuccessEnv(gym.Env):
+    """
+    Create a dummy success environment that returns wether True or False for info['is_success']
+    at the end of an episode according to its dummy successes list
+    """
+
+    def __init__(self, dummy_successes, ep_steps):
+        """Init the dummy success env
+
+        :param dummy_successes: list of size (n_logs_iterations, n_episodes_per_log) that specifies
+            the success value of log iteration i at episode j
+        :param ep_steps: number of steps per episode (to activate truncated)
+        """
+        self.n_steps = 0
+        self.log_id = 0
+        self.ep_id = 0
+
+        self.ep_steps = ep_steps
+
+        self.dummy_success = dummy_successes
+        self.num_logs = len(dummy_successes)
+        self.ep_per_log = len(dummy_successes[0])
+        self.steps_per_log = self.ep_per_log * self.ep_steps
+
+        self.action_space = spaces.Discrete(2)
+        self.observation_space = spaces.Discrete(2)
+
+    def reset(self, seed=None, options=None):
+        """
+        Reset the env and advance to the next episode_id to get the next dummy success
+        """
+        self.n_steps = 0
+
+        if self.ep_id == self.ep_per_log:
+            self.ep_id = 0
+            self.log_id = (self.log_id + 1) % self.num_logs
+
+        return self.observation_space.sample(), {}
+
+    def step(self, action):
+        """
+        Step and return a dummy success when an episode is truncated
+        """
+        self.n_steps += 1
+        truncated = self.n_steps >= self.ep_steps
+
+        info = {}
+        if truncated:
+            maybe_success = self.dummy_success[self.log_id][self.ep_id]
+            info["is_success"] = maybe_success
+            self.ep_id += 1
+        return self.observation_space.sample(), 0.0, False, truncated, info
+
+
+def test_rollout_success_rate_on_policy_algorithm(tmp_path):
     """
     Test if the rollout/success_rate information is correctly logged with on policy algorithms
 
@@ -489,73 +542,14 @@ def test_rollout_success_rate_on_policy_algorithm():
     STATS_WINDOW_SIZE = 10
     # Add dummy successes with 0.3, 0.5 and 0.8 success_rate of length STATS_WINDOW_SIZE
     dummy_successes = [
-        [True, True, True, False, False, False, False, False, False, False],  # successes of episodes of 1st log
-        [True, True, True, True, True, False, False, False, False, False],  # successes of episodes of 2nd log
-        [True, True, True, True, True, True, True, True, False, False],  # successes of episodes of 3rd log
+        [True] * 3 + [False] * 7,
+        [True] * 5 + [False] * 5,
+        [True] * 8 + [False] * 2,
     ]
-
     ep_steps = 64
 
-    class DummySuccessEnv(gym.Env):
-        """
-        Create a dummy success environment that returns wether True or False for info['is_success']
-        at the end of an episode according to its dummy successes list
-        """
-
-        def __init__(self, dummy_successes, ep_steps):
-            """Init the dummy success env
-
-            :param dummy_successes: list of size (n_logs_iterations, n_episodes_per_log) that specifies
-            the success value of log iteration i at episode j
-            :param ep_steps: number of steps per episode (to activate truncated)
-            """
-            self.time = 0
-            self.log_id = 0
-            self.ep_id = 0
-
-            self.ep_steps = ep_steps
-
-            self.dummy_success = dummy_successes
-            self.num_logs = len(dummy_successes)
-            self.ep_per_log = len(dummy_successes[0])
-            self.steps_per_log = self.ep_per_log * self.ep_steps
-
-            self.action_space = spaces.Discrete(1)
-            self.observation_space = spaces.Discrete(1)
-
-            self.obs = 0
-            self.reward = 0
-
-        def reset(self, seed=None, options=None):
-            """
-            Reset the env and advance to the next episode_id to get the next dummy success
-            """
-            self.time = 0
-
-            if self.ep_id == self.ep_per_log:
-                self.ep_id = 0
-                self.log_id += 1
-
-            return self.obs, {}
-
-        def step(self, action):
-            """
-            Step and return a dummy success when an episode is truncated
-            """
-            info = {}
-
-            terminated = False
-            truncated = self.time >= self.ep_steps
-            self.time += 1
-
-            if terminated or truncated:
-                maybe_success = self.dummy_success[self.log_id][self.ep_id]
-                info["is_success"] = maybe_success
-                self.ep_id += 1
-            return self.obs, self.reward, terminated, truncated, info
-
     # Monitor the env to track the success info
-    monitor_file = os.path.join("tmp", f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
+    monitor_file = str(tmp_path / "monitor.csv")
     env = Monitor(DummySuccessEnv(dummy_successes, ep_steps), filename=monitor_file, info_keywords=("is_success",))
 
     # Equip the model of a custom logger to check the success_rate info
@@ -565,8 +559,8 @@ def test_rollout_success_rate_on_policy_algorithm():
 
     # Make the model learn and check that the success rate corresponds to the ratio of dummy successes
     model.learn(total_timesteps=env.ep_per_log * ep_steps, log_interval=1)
-    assert logger.name_to_value["rollout/success_rate"] == 0.3333333333333333
+    assert logger.name_to_value["rollout/success_rate"] == 0.3
     model.learn(total_timesteps=env.ep_per_log * ep_steps, log_interval=1)
-    assert logger.name_to_value["rollout/success_rate"] == 0.5555555555555556
+    assert logger.name_to_value["rollout/success_rate"] == 0.5
     model.learn(total_timesteps=env.ep_per_log * ep_steps, log_interval=1)
-    assert logger.name_to_value["rollout/success_rate"] == 0.7777777777777778
+    assert logger.name_to_value["rollout/success_rate"] == 0.8

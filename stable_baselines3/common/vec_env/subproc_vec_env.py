@@ -54,10 +54,10 @@ def _worker(
             elif cmd == "get_spaces":
                 remote.send((env.observation_space, env.action_space))
             elif cmd == "env_method":
-                method = getattr(env, data[0])
+                method = env.get_wrapper_attr(data[0])
                 remote.send(method(*data[1], **data[2]))
             elif cmd == "get_attr":
-                remote.send(getattr(env, data))
+                remote.send(env.get_wrapper_attr(data))
             elif cmd == "set_attr":
                 remote.send(setattr(env, data[0], data[1]))  # type: ignore[func-returns-value]
             elif cmd == "is_wrapped":

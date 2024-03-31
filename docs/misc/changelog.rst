@@ -3,8 +3,11 @@
 Changelog
 ==========
 
-Release 2.3.0a5 (WIP)
+Release 2.3.0 (2024-03-31)
 --------------------------
+
+**New defaults hyperparameters for DDPG, TD3 and DQN**
+
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -19,11 +22,11 @@ Breaking Changes:
 
 .. note::
 
-	Two inconsistencies remains: the default network architecture for ``TD3/DDPG`` is ``[400, 300]`` instead of ``[256, 256]`` for SAC (for backward compatibility reasons, see `report on the influence of the network size <https://wandb.ai/openrlbenchmark/sbx/reports/SBX-TD3-Influence-of-policy-net--Vmlldzo2NDg1Mzk3>`_) and the default learning rate is 1e-3 instead of 3e-4 for SAC (for performance reasons, see `W&B report on the influence of the lr <https://wandb.ai/openrlbenchmark/sbx/reports/SBX-TD3-RL-Zoo-v2-3-0a0-vs-SB3-TD3-RL-Zoo-2-2-1---Vmlldzo2MjUyNTQx>`_)
+	Two inconsistencies remain: the default network architecture for ``TD3/DDPG`` is ``[400, 300]`` instead of ``[256, 256]`` for SAC (for backward compatibility reasons, see `report on the influence of the network size <https://wandb.ai/openrlbenchmark/sbx/reports/SBX-TD3-Influence-of-policy-net--Vmlldzo2NDg1Mzk3>`_) and the default learning rate is 1e-3 instead of 3e-4 for SAC (for performance reasons, see `W&B report on the influence of the lr <https://wandb.ai/openrlbenchmark/sbx/reports/SBX-TD3-RL-Zoo-v2-3-0a0-vs-SB3-TD3-RL-Zoo-2-2-1---Vmlldzo2MjUyNTQx>`_)
 
 
 
-- The default ``leanrning_starts`` parameter of ``DQN`` have been changed to be consistent with the other offpolicy algorithms
+- The default ``learning_starts`` parameter of ``DQN`` have been changed to be consistent with the other offpolicy algorithms
 
 
 .. code-block:: python
@@ -35,8 +38,7 @@ Breaking Changes:
 
 - For safety, ``torch.load()`` is now called with ``weights_only=True`` when loading torch tensors,
   policy ``load()`` still uses ``weights_only=False`` as gymnasium imports are required for it to work
-- When using ``huggingface_sb3``, you will now need to set ``TRUST_REMOTE_CODE=True`` when downloading models from the hub,
-  as ``pickle.load`` is not safe.
+- When using ``huggingface_sb3``, you will now need to set ``TRUST_REMOTE_CODE=True`` when downloading models from the hub, as ``pickle.load`` is not safe.
 
 
 New Features:
@@ -49,9 +51,20 @@ Bug Fixes:
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
+- Added ``rollout_buffer_class`` and ``rollout_buffer_kwargs`` arguments to MaskablePPO
+- Fixed ``train_freq`` type annotation for tqc and qrdqn (@Armandpl)
+- Fixed ``sb3_contrib/common/maskable/*.py`` type annotations
+- Fixed ``sb3_contrib/ppo_mask/ppo_mask.py`` type annotations
+- Fixed ``sb3_contrib/common/vec_env/async_eval.py`` type annotations
+- Add some additional notes about ``MaskablePPO`` (evaluation and multi-process) (@icheered)
+
 
 `RL Zoo`_
 ^^^^^^^^^
+- Updated defaults hyperparameters for TD3/DDPG to be more consistent with SAC
+- Upgraded MuJoCo envs hyperparameters to v4 (pre-trained agents need to be updated)
+- Added test dependencies to `setup.py` (@power-edge)
+- Simplify dependencies of `requirements.txt` (remove duplicates from `setup.py`)
 
 `SBX`_ (SB3 + Jax)
 ^^^^^^^^^^^^^^^^^^
@@ -60,6 +73,7 @@ Bug Fixes:
 - Fix  ``train()`` signature and update type hints
 - Fix replay buffer device at load time
 - Added flatten layer
+- Added ``CrossQ``
 
 Deprecations:
 ^^^^^^^^^^^^^

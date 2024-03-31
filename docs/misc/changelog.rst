@@ -3,8 +3,11 @@
 Changelog
 ==========
 
-Release 2.3.0a5 (WIP)
+Release 2.3.0 (2024-03-31)
 --------------------------
+
+**New defaults hyperparameters for DDPG, TD3 and DQN**
+
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -49,9 +52,20 @@ Bug Fixes:
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
+- Added ``rollout_buffer_class`` and ``rollout_buffer_kwargs`` arguments to MaskablePPO
+- Fixed ``train_freq`` type annotation for tqc and qrdqn (@Armandpl)
+- Fixed ``sb3_contrib/common/maskable/*.py`` type annotations
+- Fixed ``sb3_contrib/ppo_mask/ppo_mask.py`` type annotations
+- Fixed ``sb3_contrib/common/vec_env/async_eval.py`` type annotations
+- Add some additional notes about ``MaskablePPO`` (evaluation and multi-process) (@icheered)
+
 
 `RL Zoo`_
 ^^^^^^^^^
+- Updated defaults hyperparameters for TD3/DDPG to be more consistent with SAC
+- Upgraded MuJoCo envs hyperparameters to v4 (pre-trained agents need to be updated)
+- Added test dependencies to `setup.py` (@power-edge)
+- Simplify dependencies of `requirements.txt` (remove duplicates from `setup.py`)
 
 `SBX`_ (SB3 + Jax)
 ^^^^^^^^^^^^^^^^^^
@@ -60,6 +74,7 @@ Bug Fixes:
 - Fix  ``train()`` signature and update type hints
 - Fix replay buffer device at load time
 - Added flatten layer
+- Added ``CrossQ``
 
 Deprecations:
 ^^^^^^^^^^^^^

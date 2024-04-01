@@ -32,9 +32,9 @@ Breaking Changes:
 .. code-block:: python
 
   # SB3 < 2.3.0 default hyperparameters, 50_000 corresponded to Atari defaults hyperparameters
-  # model = DQN("MlpPolicy", env, learning_start=50_000)
+  # model = DQN("MlpPolicy", env, learning_starts=50_000)
   # SB3 >= 2.3.0:
-  model = DQN("MlpPolicy", env, learning_start=100)
+  model = DQN("MlpPolicy", env, learning_starts=100)
 
 - For safety, ``torch.load()`` is now called with ``weights_only=True`` when loading torch tensors,
   policy ``load()`` still uses ``weights_only=False`` as gymnasium imports are required for it to work

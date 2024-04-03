@@ -553,14 +553,14 @@ def test_rollout_success_rate_on_policy_algorithm(tmp_path):
     env = Monitor(DummySuccessEnv(dummy_successes, ep_steps), filename=monitor_file, info_keywords=("is_success",))
 
     # Equip the model of a custom logger to check the success_rate info
-    model = PPO("MlpPolicy", env=env, stats_window_size=STATS_WINDOW_SIZE, n_steps=env.steps_per_log, verbose=1)
+    model = PPO("MlpPolicy", env=env, stats_window_size=STATS_WINDOW_SIZE, n_steps=env.env.steps_per_log, verbose=1)
     logger = InMemoryLogger()
     model.set_logger(logger)
 
     # Make the model learn and check that the success rate corresponds to the ratio of dummy successes
-    model.learn(total_timesteps=env.ep_per_log * ep_steps, log_interval=1)
+    model.learn(total_timesteps=env.env.ep_per_log * ep_steps, log_interval=1)
     assert logger.name_to_value["rollout/success_rate"] == 0.3
-    model.learn(total_timesteps=env.ep_per_log * ep_steps, log_interval=1)
+    model.learn(total_timesteps=env.env.ep_per_log * ep_steps, log_interval=1)
     assert logger.name_to_value["rollout/success_rate"] == 0.5
-    model.learn(total_timesteps=env.ep_per_log * ep_steps, log_interval=1)
+    model.learn(total_timesteps=env.env.ep_per_log * ep_steps, log_interval=1)
     assert logger.name_to_value["rollout/success_rate"] == 0.8

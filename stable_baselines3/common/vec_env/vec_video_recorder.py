@@ -53,7 +53,7 @@ class VideoRecorder:
         self.enabled = enabled
         self._closed = False
 
-        self.render_history: list[np.ndarray] = []
+        self.render_history: List[np.ndarray] = []
         self.env = env
 
         self.render_mode = env.render_mode
@@ -100,7 +100,7 @@ class VideoRecorder:
         self.write_metadata()
 
         logger.info(f"Starting new video recorder writing to {self.path}")
-        self.recorded_frames: list[np.ndarray] = []
+        self.recorded_frames: List[np.ndarray] = []
 
     @property
     def functional(self):

@@ -1,4 +1,5 @@
 """Common aliases for type hints"""
+
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Protocol, SupportsFloat, Tuple, Union
 

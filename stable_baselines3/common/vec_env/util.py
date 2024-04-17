@@ -1,6 +1,7 @@
 """
 Helpers for dealing with vectorized environments.
 """
+
 from collections import OrderedDict
 from typing import Any, Dict, List, Tuple
 

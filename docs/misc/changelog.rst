@@ -130,7 +130,6 @@ Documentation:
 - Fixed docstring signature for sum_independent_dims (@stagoverflow)
 - Updated docstring description for ``log_interval`` in the base class (@rushitnshah).
 
-
 Release 2.2.1 (2023-11-17)
 --------------------------
 **Support for options at reset, bug fixes and better error messages**

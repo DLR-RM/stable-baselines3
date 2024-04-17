@@ -83,9 +83,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
-
 - Fixed ``monitor_wrapper`` argument that was not passed to the parent class, and dones argument that wasn't passed to ``_update_into_buffer`` (@corentinlger)
-
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

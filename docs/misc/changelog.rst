@@ -36,9 +36,6 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Expanded the description for vec_env.reset seed and options passing
 
-
-
-
 Release 2.3.0 (2024-03-31)
 --------------------------
 

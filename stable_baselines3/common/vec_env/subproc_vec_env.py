@@ -123,6 +123,7 @@ class SubprocVecEnv(VecEnv):
 
     def step_async(self, actions: np.ndarray) -> None:
         for remote, action, seed, option in zip(self.remotes, actions, self._seeds, self._options):
+            # seed and option are used if step triggers a reset
             remote.send(("step", (action, seed, option)))
         self.waiting = True
 

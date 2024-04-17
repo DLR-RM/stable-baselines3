@@ -354,7 +354,7 @@ class TimeDelayEnv(gym.Env):
         self.observation_space = spaces.Box(low=-20.0, high=20.0, shape=(4,), dtype=np.float32)
         self.action_space = spaces.Discrete(2)
 
-    def reset(self, seed=None):
+    def reset(self, seed=None, options=None):
         return self.observation_space.sample(), {}
 
     def step(self, action):

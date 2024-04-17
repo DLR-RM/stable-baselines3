@@ -3,6 +3,39 @@
 Changelog
 ==========
 
+
+Release 2.4.0a1 (WIP)
+--------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed seed / options argument passing to environment resets in ``vec_env.reset()``
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+- Expanded the description for vec_env.reset seed and options passing
+
 Release 2.3.0 (2024-03-31)
 --------------------------
 

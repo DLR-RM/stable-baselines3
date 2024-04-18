@@ -3,6 +3,97 @@
 Changelog
 ==========
 
+Release 2.3.0 (2024-03-31)
+--------------------------
+
+**New defaults hyperparameters for DDPG, TD3 and DQN**
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+- The defaults hyperparameters of ``TD3`` and ``DDPG`` have been changed to be more consistent with ``SAC``
+
+.. code-block:: python
+
+  # SB3 < 2.3.0 default hyperparameters
+  # model = TD3("MlpPolicy", env, train_freq=(1, "episode"), gradient_steps=-1, batch_size=100)
+  # SB3 >= 2.3.0:
+  model = TD3("MlpPolicy", env, train_freq=1, gradient_steps=1, batch_size=256)
+
+.. note::
+
+	Two inconsistencies remain: the default network architecture for ``TD3/DDPG`` is ``[400, 300]`` instead of ``[256, 256]`` for SAC (for backward compatibility reasons, see `report on the influence of the network size <https://wandb.ai/openrlbenchmark/sbx/reports/SBX-TD3-Influence-of-policy-net--Vmlldzo2NDg1Mzk3>`_) and the default learning rate is 1e-3 instead of 3e-4 for SAC (for performance reasons, see `W&B report on the influence of the lr <https://wandb.ai/openrlbenchmark/sbx/reports/SBX-TD3-RL-Zoo-v2-3-0a0-vs-SB3-TD3-RL-Zoo-2-2-1---Vmlldzo2MjUyNTQx>`_)
+
+
+
+- The default ``learning_starts`` parameter of ``DQN`` have been changed to be consistent with the other offpolicy algorithms
+
+
+.. code-block:: python
+
+  # SB3 < 2.3.0 default hyperparameters, 50_000 corresponded to Atari defaults hyperparameters
+  # model = DQN("MlpPolicy", env, learning_starts=50_000)
+  # SB3 >= 2.3.0:
+  model = DQN("MlpPolicy", env, learning_starts=100)
+
+- For safety, ``torch.load()`` is now called with ``weights_only=True`` when loading torch tensors,
+  policy ``load()`` still uses ``weights_only=False`` as gymnasium imports are required for it to work
+- When using ``huggingface_sb3``, you will now need to set ``TRUST_REMOTE_CODE=True`` when downloading models from the hub, as ``pickle.load`` is not safe.
+
+
+New Features:
+^^^^^^^^^^^^^
+- Log success rate ``rollout/success_rate`` when available for on policy algorithms (@corentinlger)
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed ``monitor_wrapper`` argument that was not passed to the parent class, and dones argument that wasn't passed to ``_update_into_buffer`` (@corentinlger)
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+- Added ``rollout_buffer_class`` and ``rollout_buffer_kwargs`` arguments to MaskablePPO
+- Fixed ``train_freq`` type annotation for tqc and qrdqn (@Armandpl)
+- Fixed ``sb3_contrib/common/maskable/*.py`` type annotations
+- Fixed ``sb3_contrib/ppo_mask/ppo_mask.py`` type annotations
+- Fixed ``sb3_contrib/common/vec_env/async_eval.py`` type annotations
+- Add some additional notes about ``MaskablePPO`` (evaluation and multi-process) (@icheered)
+
+
+`RL Zoo`_
+^^^^^^^^^
+- Updated defaults hyperparameters for TD3/DDPG to be more consistent with SAC
+- Upgraded MuJoCo envs hyperparameters to v4 (pre-trained agents need to be updated)
+- Added test dependencies to `setup.py` (@power-edge)
+- Simplify dependencies of `requirements.txt` (remove duplicates from `setup.py`)
+
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+- Added support for ``MultiDiscrete`` and ``MultiBinary`` action spaces to PPO
+- Added support for large values for gradient_steps to SAC, TD3, and TQC
+- Fix  ``train()`` signature and update type hints
+- Fix replay buffer device at load time
+- Added flatten layer
+- Added ``CrossQ``
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Updated black from v23 to v24
+- Updated ruff to >= v0.3.1
+- Updated env checker for (multi)discrete spaces with non-zero start.
+
+Documentation:
+^^^^^^^^^^^^^^
+- Added a paragraph on modifying vectorized environment parameters via setters (@fracapuano)
+- Updated callback code example
+- Updated export to ONNX documentation, it is now much simpler to export SB3 models with newer ONNX Opset!
+- Added video link to "Practical Tips for Reliable Reinforcement Learning" video
+- Added ``render_mode="human"`` in the README example (@marekm4)
+- Fixed docstring signature for sum_independent_dims (@stagoverflow)
+- Updated docstring description for ``log_interval`` in the base class (@rushitnshah).
+
 Release 2.2.1 (2023-11-17)
 --------------------------
 **Support for options at reset, bug fixes and better error messages**
@@ -1492,7 +1583,7 @@ And all the contributors:
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
-@tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @JadenTravnik @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
+@tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @fracapuano @JadenTravnik @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
 @ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan
 @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
@@ -1504,3 +1595,4 @@ And all the contributors:
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong @ReHoss
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
+@marekm4 @stagoverflow @rushitnshah

@@ -173,7 +173,9 @@ class BaseModel(nn.Module):
         :return:
         """
         device = get_device(device)
-        saved_variables = th.load(path, map_location=device)
+        # Note(antonin): we cannot use `weights_only=True` here because we need to allow
+        # gymnasium imports for the policy to be loaded successfully
+        saved_variables = th.load(path, map_location=device, weights_only=False)
 
         # Create policy object
         model = cls(**saved_variables["data"])

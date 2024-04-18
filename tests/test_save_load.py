@@ -1,19 +1,17 @@
 import base64
 import io
 import json
-import os
 import math
-import pickle
+import os
 import pathlib
+import pickle
 import tempfile
 import warnings
 import zipfile
-
 from collections import OrderedDict
 from copy import deepcopy
 
 import gymnasium as gym
-from gymnasium.spaces import Box, Discrete
 import numpy as np
 import pytest
 import torch as th
@@ -776,8 +774,10 @@ def test_load_torch_weights_only(tmp_path):
         model.load(path, weights_only=True)
     assert len(record) == 0
 
-    # Causes pickle error due to numpy scalars in the learning rate schedule
-    # _pickle.UnpicklingError: Weights only load failed. Re-running `torch.load` with `weights_only` set to `False` will likely succeed, but it can result in arbitrary code execution.Do it only if you get the file from a trusted source. WeightsUnpickler error: Unsupported class numpy.core.multiarray.scalar
+    # Causes pickle error due to numpy scalars in the learning rate schedule:
+    # _pickle.UnpicklingError: Weights only load failed. Re-running `torch.load` with `weights_only` set to `False`
+    # will likely succeed, but it can result in arbitrary code execution.Do it only if you get the file from a
+    # trusted source. WeightsUnpickler error: Unsupported class numpy.core.multiarray.scalar
     def learning_rate_schedule(progress):
         rate = 0.0003
         variation = 0.2 * rate * progress

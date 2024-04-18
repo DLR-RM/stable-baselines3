@@ -431,9 +431,9 @@ def load_from_zip_file(
                         UserWarning,
                     )
             if weights_only is False:
-                        warnings.warn(
-                            "Unpickling unsafe objects! Loading full state_dict. See pytorch docs on torch.load for more info."
-                        )
+                warnings.warn(
+                    "Unpickling unsafe objects! Loading full state_dict. See pytorch docs on torch.load for more info."
+                )
             if "data" in namelist and load_data:
                 # Load class parameters that are stored
                 # with either JSON or pickle (not PyTorch variables).

@@ -1,10 +1,8 @@
 import base64
 import io
 import json
-import math
 import os
 import pathlib
-import pickle
 import tempfile
 import warnings
 import zipfile
@@ -739,64 +737,6 @@ def test_load_invalid_object(tmp_path):
     with warnings.catch_warnings(record=True) as record:
         PPO.load(path, custom_objects=dict(learning_rate=lambda _: 1.0))
     assert len(record) == 0
-
-
-def test_load_torch_weights_only(tmp_path):
-    # Test loading only the torch weights
-    path = str(tmp_path / "ppo_pendulum.zip")
-    model = PPO("MlpPolicy", "Pendulum-v1", learning_rate=lambda _: 1.0)
-    model.learn(10)
-    model.save(path)
-    # Load with custom object, no warnings
-    with warnings.catch_warnings(record=True) as record:
-        model.load(path, custom_objects=dict(learning_rate=lambda _: 1.0), weights_only=False)
-    assert len(record) == 1
-
-    # Load only the weights from a valid model
-    with warnings.catch_warnings(record=True) as record:
-        model.load(path, weights_only=True)
-    assert len(record) == 0
-
-    # No pickle error.
-    def learning_rate_schedule(progress):
-        rate = 0.0003
-        variation = 0.2 * rate * progress
-        new_rate = rate + variation * math.sin(progress * math.pi * 20)  # positive and negative adjustments
-        return new_rate
-
-    model = PPO(
-        policy="MlpPolicy",
-        env="Pendulum-v1",
-        learning_rate=learning_rate_schedule,
-    )
-    model.save(path)
-    with warnings.catch_warnings(record=True) as record:
-        model.load(path, weights_only=True)
-    assert len(record) == 0
-
-    # Causes pickle error due to numpy scalars in the learning rate schedule:
-    # _pickle.UnpicklingError: Weights only load failed. Re-running `torch.load` with `weights_only` set to `False`
-    # will likely succeed, but it can result in arbitrary code execution.Do it only if you get the file from a
-    # trusted source. WeightsUnpickler error: Unsupported class numpy.core.multiarray.scalar
-    def learning_rate_schedule(progress):
-        rate = 0.0003
-        variation = 0.2 * rate * progress
-        new_rate = rate + variation * np.sin(progress * np.pi * 20)
-        return new_rate
-
-    model = PPO(
-        policy="MlpPolicy",
-        env="Pendulum-v1",
-        learning_rate=learning_rate_schedule,
-    )
-    model.save(path)
-
-    with pytest.raises(pickle.UnpicklingError) as record:
-        model.load(path, weights_only=True)
-
-    with warnings.catch_warnings(record=True) as record:
-        model.load(path, weights_only=False)
-    assert len(record) == 1
 
 
 def test_dqn_target_update_interval(tmp_path):

@@ -738,6 +738,16 @@ def test_load_invalid_object(tmp_path):
         PPO.load(path, custom_objects=dict(learning_rate=lambda _: 1.0))
     assert len(record) == 0
 
+def test_load_torch_weights_only(tmp_path):
+    # Test loading only the torch weights
+    path = str(tmp_path / "ppo_pendulum.zip")
+    model = PPO("MlpPolicy", "Pendulum-v1", learning_rate=lambda _: 1.0)
+    model.learn(1)
+    model.save(path)
+    # Load with custom object, no warnings
+    with warnings.catch_warnings(record=True) as record:
+        model.load(path, custom_objects=dict(learning_rate=lambda _: 1.0), weights_only=False)
+    assert len(record) == 1
 
 def test_dqn_target_update_interval(tmp_path):
     # `target_update_interval` should not change when reloading the model. See GH Issue #1373.

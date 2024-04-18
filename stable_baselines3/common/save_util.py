@@ -430,7 +430,10 @@ def load_from_zip_file(
                         "The model was saved with SB3 <= 1.2.0 and thus cannot print system information.",
                         UserWarning,
                     )
-
+            if weights_only is False:
+                        warnings.warn(
+                            "Unpickling unsafe objects! Loading full state_dict. See pytorch docs on torch.load for more info."
+                        )
             if "data" in namelist and load_data:
                 # Load class parameters that are stored
                 # with either JSON or pickle (not PyTorch variables).
@@ -451,10 +454,6 @@ def load_from_zip_file(
                     file_content.seek(0)
                     # Load the parameters with the right ``map_location``.
                     # Remove ".pth" ending with splitext
-                    if weights_only is False:
-                        warnings.warn(
-                            f"Unpickling unsafe objects! Loading full state_dict from {file_path}. See pytorch docs on torch.load for more info."
-                        )
                     th_object = th.load(file_content, map_location=device, weights_only=weights_only)
                     # "tensors.pth" was renamed "pytorch_variables.pth" in v0.9.0, see PR #138
                     if file_path == "pytorch_variables.pth" or file_path == "tensors.pth":

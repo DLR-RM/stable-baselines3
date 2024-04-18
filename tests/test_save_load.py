@@ -10,6 +10,7 @@ from collections import OrderedDict
 from copy import deepcopy
 
 import gymnasium as gym
+from gymnasium.spaces import Box, Discrete
 import numpy as np
 import pytest
 import torch as th
@@ -742,12 +743,19 @@ def test_load_torch_weights_only(tmp_path):
     # Test loading only the torch weights
     path = str(tmp_path / "ppo_pendulum.zip")
     model = PPO("MlpPolicy", "Pendulum-v1", learning_rate=lambda _: 1.0)
-    model.learn(1)
+    model.learn(10)
     model.save(path)
     # Load with custom object, no warnings
     with warnings.catch_warnings(record=True) as record:
         model.load(path, custom_objects=dict(learning_rate=lambda _: 1.0), weights_only=False)
     assert len(record) == 1
+
+    # Load only the weights from a valid model
+    with warnings.catch_warnings(record=True) as record:
+        model.load(path, weights_only=True)
+    assert len(record) == 0
+
+    # TODO: Negative test case.  I can cause this to fail with a saved model.  Need to understand how / why.
 
 def test_dqn_target_update_interval(tmp_path):
     # `target_update_interval` should not change when reloading the model. See GH Issue #1373.

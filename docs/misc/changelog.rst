@@ -38,6 +38,7 @@ Breaking Changes:
 
 - For safety, ``torch.load()`` is now called with ``weights_only=True`` when loading torch tensors,
   policy ``load()`` still uses ``weights_only=False`` as gymnasium imports are required for it to work
+  This can be overriden using the ``weights_only`` boolean argument in the ``load()`` method in sb3, which will be passed to ``torch.load()``
 - When using ``huggingface_sb3``, you will now need to set ``TRUST_REMOTE_CODE=True`` when downloading models from the hub, as ``pickle.load`` is not safe.
 
 

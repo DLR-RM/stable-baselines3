@@ -575,6 +575,7 @@ class BaseAlgorithm(ABC):
         load_path_or_dict: Union[str, TensorDict],
         exact_match: bool = True,
         device: Union[th.device, str] = "auto",
+        weights_only: bool = True,
     ) -> None:
         """
         Load parameters from a given zip-file or a nested dictionary containing parameters for
@@ -587,12 +588,15 @@ class BaseAlgorithm(ABC):
             module and each of their parameters, otherwise raises an Exception. If set to False, this
             can be used to update only specific parameters.
         :param device: Device on which the code should run.
+        :param weights_only: Set torch weights_only for passthrough into load function.
+            WARNING: weights_only=True to avoid posisble arbitrary code execution!
+            See https://pytorch.org/docs/stable/generated/torch.load.html
         """
         params = {}
         if isinstance(load_path_or_dict, dict):
             params = load_path_or_dict
         else:
-            _, params, _ = load_from_zip_file(load_path_or_dict, device=device)
+            _, params, _ = load_from_zip_file(load_path_or_dict, device=device, weights_only=weights_only)
 
         # Keep track which objects were updated.
         # `_get_torch_save_params` returns [params, other_pytorch_variables].
@@ -647,6 +651,7 @@ class BaseAlgorithm(ABC):
         custom_objects: Optional[Dict[str, Any]] = None,
         print_system_info: bool = False,
         force_reset: bool = True,
+        weights_only: bool = True,
         **kwargs,
     ) -> SelfBaseAlgorithm:
         """
@@ -670,6 +675,9 @@ class BaseAlgorithm(ABC):
         :param force_reset: Force call to ``reset()`` before training
             to avoid unexpected behavior.
             See https://github.com/DLR-RM/stable-baselines3/issues/597
+        :param weights_only: Set torch weights_only for passthrough into load function.
+            WARNING: weights_only=True to avoid posisble arbitrary code execution!
+            See https://pytorch.org/docs/stable/generated/torch.load.html
         :param kwargs: extra arguments to change the model when loading
         :return: new model instance with loaded parameters
         """
@@ -678,10 +686,7 @@ class BaseAlgorithm(ABC):
             get_system_info()
 
         data, params, pytorch_variables = load_from_zip_file(
-            path,
-            device=device,
-            custom_objects=custom_objects,
-            print_system_info=print_system_info,
+            path, device=device, custom_objects=custom_objects, print_system_info=print_system_info, weights_only=weights_only
         )
 
         assert data is not None, "No data found in the saved file"

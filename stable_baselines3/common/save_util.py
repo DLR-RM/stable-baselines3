@@ -380,6 +380,7 @@ def load_from_zip_file(
     device: Union[th.device, str] = "auto",
     verbose: int = 0,
     print_system_info: bool = False,
+    weights_only: bool = True,
 ) -> Tuple[Optional[Dict[str, Any]], TensorDict, Optional[TensorDict]]:
     """
     Load model data from a .zip archive
@@ -397,6 +398,9 @@ def load_from_zip_file(
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     :param print_system_info: Whether to print or not the system info
         about the saved model.
+    :param weights_only: Set torch weights_only for passthrough into load function.
+        WARNING: weights_only=True to avoid posisble arbitrary code execution!
+        See https://pytorch.org/docs/stable/generated/torch.load.html
     :return: Class parameters, model state_dicts (aka "params", dict of state_dict)
         and dict of pytorch variables
     """
@@ -447,7 +451,11 @@ def load_from_zip_file(
                     file_content.seek(0)
                     # Load the parameters with the right ``map_location``.
                     # Remove ".pth" ending with splitext
-                    th_object = th.load(file_content, map_location=device, weights_only=True)
+                    if weights_only is False:
+                        warnings.warn(
+                            f"Unpickling unsafe objects! Loading full state_dict from {file_path}. See pytorch docs on torch.load for more info."
+                        )
+                    th_object = th.load(file_content, map_location=device, weights_only=weights_only)
                     # "tensors.pth" was renamed "pytorch_variables.pth" in v0.9.0, see PR #138
                     if file_path == "pytorch_variables.pth" or file_path == "tensors.pth":
                         # PyTorch variables (not state_dicts)

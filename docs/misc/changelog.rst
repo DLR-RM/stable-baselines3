@@ -38,13 +38,13 @@ Breaking Changes:
 
 - For safety, ``torch.load()`` is now called with ``weights_only=True`` when loading torch tensors,
   policy ``load()`` still uses ``weights_only=False`` as gymnasium imports are required for it to work
-  This can be overriden using the ``weights_only`` boolean argument in the ``load()`` method in sb3, which will be passed to ``torch.load()``
 - When using ``huggingface_sb3``, you will now need to set ``TRUST_REMOTE_CODE=True`` when downloading models from the hub, as ``pickle.load`` is not safe.
 
 
 New Features:
 ^^^^^^^^^^^^^
 - Log success rate ``rollout/success_rate`` when available for on policy algorithms (@corentinlger)
+- This can be overriden using the ``weights_only`` boolean argument in the ``load()`` method in sb3, which will be passed to ``torch.load()`` (@markscsmith)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -1594,4 +1594,4 @@ And all the contributors:
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong @ReHoss
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
-@marekm4 @stagoverflow @rushitnshah
+@marekm4 @stagoverflow @rushitnshah @markscsmith

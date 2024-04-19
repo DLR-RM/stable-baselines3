@@ -771,7 +771,6 @@ def test_load_torch_weights_only(tmp_path):
     # will likely succeed, but it can result in arbitrary code execution.Do it only if you get the file from a
     # trusted source. WeightsUnpickler error: Unsupported class numpy.core.multiarray.scalar
 
-
     model = PPO(
         policy="MlpPolicy",
         env="Pendulum-v1",

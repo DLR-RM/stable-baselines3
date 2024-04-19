@@ -48,6 +48,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed ``monitor_wrapper`` argument that was not passed to the parent class, and dones argument that wasn't passed to ``_update_into_buffer`` (@corentinlger)
+- Fixed ``learning_rate`` argument that could cause weights_only=True to fail if passed a function with non-float types (e.g. ``learning_rate=lambda _: np.sin(1.0)``) (@markscsmith)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -1593,4 +1594,4 @@ And all the contributors:
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong @ReHoss
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
-@marekm4 @stagoverflow @rushitnshah
+@marekm4 @stagoverflow @rushitnshah @markscsmith

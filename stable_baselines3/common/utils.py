@@ -92,7 +92,7 @@ def get_schedule_fn(value_schedule: Union[Schedule, float]) -> Schedule:
         value_schedule = constant_fn(float(value_schedule))
     else:
         assert callable(value_schedule)
-    # cast to float to avoid unpickling errors to enable weights_only=True
+    # Cast to float to avoid unpickling errors to enable weights_only=True, see GH#1900
     # Some types are have odd behaviors when part of a Schedule, like numpy floats
     return lambda progress_remaining: float(value_schedule(progress_remaining))
 

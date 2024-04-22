@@ -739,14 +739,6 @@ def test_load_invalid_object(tmp_path):
     assert len(record) == 0
 
 
-def test_learning_rate_float_for_unpickle(tmp_path):
-    path = str(tmp_path / "ppo_pendulum.zip")
-    PPO("MlpPolicy", "Pendulum-v1", learning_rate=lambda _: np.sin(1.0)).save(path)
-    with warnings.catch_warnings(record=True) as record:
-        PPO.load(path)
-    assert len(record) == 0
-
-
 def test_dqn_target_update_interval(tmp_path):
     # `target_update_interval` should not change when reloading the model. See GH Issue #1373.
     env = make_vec_env(env_id="CartPole-v1", n_envs=2)
@@ -791,3 +783,17 @@ def test_no_resource_warning(tmp_path):
         fp.seek(0)
         model.load_replay_buffer(fp)
         assert not fp.closed
+
+
+def test_cast_lr_schedule(tmp_path):
+    # See GH#1900
+    model = PPO("MlpPolicy", "Pendulum-v1", learning_rate=lambda t: t * np.sin(1.0))
+    # Note: for recent version of numpy, np.float64 is a subclass of float
+    # so we need to use type here
+    # assert isinstance(model.lr_schedule(1.0), float)
+    assert type(model.lr_schedule(1.0)) is float  # noqa: E721
+    assert np.allclose(model.lr_schedule(0.5), 0.5 * np.sin(1.0))
+    model.save(tmp_path / "ppo.zip")
+    model = PPO.load(tmp_path / "ppo.zip")
+    assert type(model.lr_schedule(1.0)) is float  # noqa: E721
+    assert np.allclose(model.lr_schedule(0.5), 0.5 * np.sin(1.0))

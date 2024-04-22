@@ -6,6 +6,17 @@ Projects
 This is a list of projects using stable-baselines3.
 Please tell us, if you want your project to appear on this page ;)
 
+
+Evolving Reservoirs for Meta Reinforcement Learning
+---------
+
+A simplified framework to study how neural structures can be optimized at the scale of evolution, in order to enhance the capabilities of agents to learn complex tasks at the scale of development.
+
+| Authors: Corentin Léger, Gautier Hamon, Eleni Nisioti, Xavier Hinaut, Clément Moulin-Frier
+| Github: https://github.com/corentinlger/ER-MRL
+| Paper: https://arxiv.org/abs/2312.06695
+
+
 DriverGym
 ---------
 

@@ -3,6 +3,18 @@
 Changelog
 ==========
 
+Release 2.3.1 (2024-04-22)
+--------------------------
+
+Bug Fixes:
+^^^^^^^^^^
+- Cast return value of learning rate schedule to float, to avoid issue when loading model because of ``weights_only=True`` (@markscsmith)
+
+Documentation:
+^^^^^^^^^^^^^^
+- Updated SBX documentation (CrossQ and deprecated DroQ)
+
+
 Release 2.3.0 (2024-03-31)
 --------------------------
 
@@ -48,7 +60,6 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed ``monitor_wrapper`` argument that was not passed to the parent class, and dones argument that wasn't passed to ``_update_into_buffer`` (@corentinlger)
-- Fixed ``learning_rate`` argument that could cause weights_only=True to fail if passed a function with non-float types (e.g. ``learning_rate=lambda _: np.sin(1.0)``) (@markscsmith)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

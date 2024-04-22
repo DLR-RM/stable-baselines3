@@ -3,6 +3,18 @@
 Changelog
 ==========
 
+Release 2.3.1 (2024-04-22)
+--------------------------
+
+Bug Fixes:
+^^^^^^^^^^
+- Cast return value of learning rate schedule to float, to avoid issue when loading model because of ``weights_only=True`` (@markscsmith)
+
+Documentation:
+^^^^^^^^^^^^^^
+- Updated SBX documentation (CrossQ and deprecated DroQ)
+
+
 Release 2.3.0 (2024-03-31)
 --------------------------
 
@@ -1593,4 +1605,4 @@ And all the contributors:
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong @ReHoss
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
-@marekm4 @stagoverflow @rushitnshah
+@marekm4 @stagoverflow @rushitnshah @markscsmith

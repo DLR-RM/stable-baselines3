@@ -24,6 +24,11 @@ A zip-archived JSON dump, PyTorch state dictionaries and PyTorch variables. The 
 is stored as a JSON file, model parameters and optimizers are serialized with ``torch.save()`` function and these files
 are stored under a single .zip archive.
 
+Note that if you use unsafe objects in your torch model, ``torch.load()`` will raise an unpickling error.  You can
+use the "weights_only" argument to adjust whether or not to load unsafe objects using Pickle, but it will issue 
+a warning if set to False.  (e.g.: if learning_rate_schedule contains the scalar np.pi, it will raise an error without
+the "weights_only" argument set to False)
+
 Any objects that are not JSON serializable are serialized with cloudpickle and stored as base64-encoded
 string in the JSON file, along with some information that was stored in the serialization. This allows
 inspecting stored objects without deserializing the object itself.

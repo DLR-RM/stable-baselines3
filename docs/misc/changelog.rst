@@ -57,6 +57,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Log success rate ``rollout/success_rate`` when available for on policy algorithms (@corentinlger)
+- This can be overriden using the ``weights_only`` boolean argument in the ``load()`` method in sb3, which will be passed to ``torch.load()`` (@markscsmith)
 
 Bug Fixes:
 ^^^^^^^^^^

@@ -14,6 +14,7 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Updated SBX documentation (CrossQ and deprecated DroQ)
 - Updated RL Tips and Tricks section
+- Added ER-MRL to the project page
 
 
 Release 2.3.0 (2024-03-31)

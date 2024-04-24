@@ -246,7 +246,7 @@ Playing Pokemon Red with Reinforcement Learning.
 Evolving Reservoirs for Meta Reinforcement Learning
 ---------------------------------------------------
 
-A simplified framework to study how neural structures can be optimized at the scale of evolution, in order to enhance the capabilities of agents to learn complex tasks at the scale of development.
+Meta-RL framework to optimize reservoir-like neural structures (special kind of RNNs), and integrate them to RL agents to improve their training. It enables solving environments involving partial observability or locomotion (e.g MuJoCo), and optimizing reservoirs that can generalize to unseen tasks.   
 
 | Authors: Corentin Léger, Gautier Hamon, Eleni Nisioti, Xavier Hinaut, Clément Moulin-Frier
 | Github: https://github.com/corentinlger/ER-MRL

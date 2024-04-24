@@ -192,6 +192,7 @@ Here is an example of how to render an episode and log the resulting video to Te
 
     import gymnasium as gym
     import torch as th
+    import numpy as np
 
     from stable_baselines3 import A2C
     from stable_baselines3.common.callbacks import BaseCallback
@@ -239,7 +240,7 @@ Here is an example of how to render an episode and log the resulting video to Te
                 )
                 self.logger.record(
                     "trajectory/video",
-                    Video(th.ByteTensor([screens]), fps=40),
+                    Video(th.from_numpy(np.asarray([screens])), fps=40),
                     exclude=("stdout", "log", "json", "csv"),
                 )
             return True

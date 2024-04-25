@@ -3,6 +3,41 @@
 Changelog
 ==========
 
+Release 2.4.0a0 (WIP)
+--------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+- Added ER-MRL to the project page
+
+
 Release 2.3.1 (2024-04-22)
 --------------------------
 

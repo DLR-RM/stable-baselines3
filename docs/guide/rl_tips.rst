@@ -16,7 +16,7 @@ as well as tips and tricks when using a custom environment or implementing an RL
 
 .. note::
 
-	We also have a `video on Designing and Running Real-World RL Experiments <https://youtu.be/eZ6ZEpCi6D8>`_, slides are `can be found online <https://araffin.github.io/slides/design-real-rl-experiments/>`_.
+	We also have a `video on Designing and Running Real-World RL Experiments <https://youtu.be/eZ6ZEpCi6D8>`_, slides `can be found online <https://araffin.github.io/slides/design-real-rl-experiments/>`_.
 
 
 General advice when using Reinforcement Learning

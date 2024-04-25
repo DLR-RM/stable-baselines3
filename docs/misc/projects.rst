@@ -6,8 +6,6 @@ Projects
 This is a list of projects using stable-baselines3.
 Please tell us, if you want your project to appear on this page ;)
 
-
-
 DriverGym
 ---------
 
@@ -246,7 +244,8 @@ Playing Pokemon Red with Reinforcement Learning.
 Evolving Reservoirs for Meta Reinforcement Learning
 ---------------------------------------------------
 
-Meta-RL framework to optimize reservoir-like neural structures (special kind of RNNs), and integrate them to RL agents to improve their training. It enables solving environments involving partial observability or locomotion (e.g MuJoCo), and optimizing reservoirs that can generalize to unseen tasks.   
+Meta-RL framework to optimize reservoir-like neural structures (special kind of RNNs), and integrate them to RL agents to improve their training.
+It enables solving environments involving partial observability or locomotion (e.g MuJoCo), and optimizing reservoirs that can generalize to unseen tasks.
 
 | Authors: Corentin Léger, Gautier Hamon, Eleni Nisioti, Xavier Hinaut, Clément Moulin-Frier
 | Github: https://github.com/corentinlger/ER-MRL

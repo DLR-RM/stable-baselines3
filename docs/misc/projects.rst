@@ -239,3 +239,14 @@ Playing Pokemon Red with Reinforcement Learning.
 | Author: Peter Whidden
 | Github: https://github.com/PWhiddy/PokemonRedExperiments
 | Video: https://www.youtube.com/watch?v=DcYLT37ImBY
+
+
+Evolving Reservoirs for Meta Reinforcement Learning
+---------------------------------------------------
+
+Meta-RL framework to optimize reservoir-like neural structures (special kind of RNNs), and integrate them to RL agents to improve their training.
+It enables solving environments involving partial observability or locomotion (e.g MuJoCo), and optimizing reservoirs that can generalize to unseen tasks.
+
+| Authors: Corentin Léger, Gautier Hamon, Eleni Nisioti, Xavier Hinaut, Clément Moulin-Frier
+| Github: https://github.com/corentinlger/ER-MRL
+| Paper: https://arxiv.org/abs/2312.06695

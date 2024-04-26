@@ -35,8 +35,8 @@ Bug Fixes:
 
 Documentation:
 ^^^^^^^^^^^^^^
-- Added ER-MRL to the project page
-
+- Added ER-MRL to the project page (@corentinlger)
+- Updated Tensorboard Logging Videos documentation (@NickLucche)
 
 Release 2.3.1 (2024-04-22)
 --------------------------
@@ -49,8 +49,6 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Updated SBX documentation (CrossQ and deprecated DroQ)
 - Updated RL Tips and Tricks section
-- Updated Tensorboard Logging Videos documentation
-
 
 Release 2.3.0 (2024-03-31)
 --------------------------

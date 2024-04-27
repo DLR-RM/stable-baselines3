@@ -35,8 +35,20 @@ Bug Fixes:
 
 Documentation:
 ^^^^^^^^^^^^^^
+
+Release 2.3.2 (2024-04-27)
+--------------------------
+
+Bug Fixes:
+^^^^^^^^^^
+- Reverted ``torch.load()`` to be called ``weights_only=False`` as it caused loading issue with old version of PyTorch.
+
+
+Documentation:
+^^^^^^^^^^^^^^
 - Added ER-MRL to the project page (@corentinlger)
 - Updated Tensorboard Logging Videos documentation (@NickLucche)
+
 
 Release 2.3.1 (2024-04-22)
 --------------------------
@@ -54,6 +66,11 @@ Release 2.3.0 (2024-03-31)
 --------------------------
 
 **New defaults hyperparameters for DDPG, TD3 and DQN**
+
+.. warning::
+
+  Because of ``weights_only=True``, this release breaks loading of policies when using PyTorch 1.13.
+  Please upgrade to PyTorch >= 2.0 or upgrade SB3 version (we reverted the change in SB3 2.3.2)
 
 
 Breaking Changes:

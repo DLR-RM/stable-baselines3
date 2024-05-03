@@ -192,6 +192,7 @@ Here is an example of how to render an episode and log the resulting video to Te
 
     import gymnasium as gym
     import torch as th
+    import numpy as np
 
     from stable_baselines3 import A2C
     from stable_baselines3.common.callbacks import BaseCallback
@@ -226,6 +227,9 @@ Here is an example of how to render an episode and log the resulting video to Te
                     :param _locals: A dictionary containing all local variables of the callback's scope
                     :param _globals: A dictionary containing all global variables of the callback's scope
                     """
+                    # We expect `render()` to return a uint8 array with values in [0, 255] or a float array
+                    # with values in [0, 1], as described in
+                    # https://pytorch.org/docs/stable/tensorboard.html#torch.utils.tensorboard.writer.SummaryWriter.add_video
                     screen = self._eval_env.render(mode="rgb_array")
                     # PyTorch uses CxHxW vs HxWxC gym (and tensorflow) image convention
                     screens.append(screen.transpose(2, 0, 1))
@@ -239,7 +243,7 @@ Here is an example of how to render an episode and log the resulting video to Te
                 )
                 self.logger.record(
                     "trajectory/video",
-                    Video(th.ByteTensor([screens]), fps=40),
+                    Video(th.from_numpy(np.asarray([screens])), fps=40),
                     exclude=("stdout", "log", "json", "csv"),
                 )
             return True

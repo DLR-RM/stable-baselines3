@@ -43,7 +43,7 @@ import gymnasium
 
 from stable_baselines3 import PPO
 
-env = gymnasium.make("CartPole-v1")
+env = gymnasium.make("CartPole-v1", render_mode="human")
 
 model = PPO("MlpPolicy", env, verbose=1)
 model.learn(total_timesteps=10_000)
@@ -120,9 +120,9 @@ setup(
             # Type check
             "mypy",
             # Lint code and sort imports (flake8 and isort replacement)
-            "ruff>=0.0.288",
+            "ruff>=0.3.1",
             # Reformat
-            "black>=23.9.1,<24",
+            "black>=24.2.0,<25",
         ],
         "docs": [
             "sphinx>=5,<8",

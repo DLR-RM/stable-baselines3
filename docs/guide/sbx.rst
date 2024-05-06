@@ -17,6 +17,7 @@ Implemented algorithms:
 - Deep Q Network (DQN)
 - Twin Delayed DDPG (TD3)
 - Deep Deterministic Policy Gradient (DDPG)
+- Batch Normalization in Deep Reinforcement Learning (CrossQ)
 
 
 As SBX follows SB3 API, it is also compatible with the `RL Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
@@ -29,16 +30,17 @@ For that you will need to create two files:
   import rl_zoo3
   import rl_zoo3.train
   from rl_zoo3.train import train
-
-  from sbx import DDPG, DQN, PPO, SAC, TD3, TQC, DroQ
+  from sbx import DDPG, DQN, PPO, SAC, TD3, TQC, CrossQ
 
   rl_zoo3.ALGOS["ddpg"] = DDPG
   rl_zoo3.ALGOS["dqn"] = DQN
-  rl_zoo3.ALGOS["droq"] = DroQ
+  # See SBX readme to use DroQ configuration
+  # rl_zoo3.ALGOS["droq"] = DroQ
   rl_zoo3.ALGOS["sac"] = SAC
   rl_zoo3.ALGOS["ppo"] = PPO
   rl_zoo3.ALGOS["td3"] = TD3
   rl_zoo3.ALGOS["tqc"] = TQC
+  rl_zoo3.ALGOS["crossq"] = CrossQ
   rl_zoo3.train.ALGOS = rl_zoo3.ALGOS
   rl_zoo3.exp_manager.ALGOS = rl_zoo3.ALGOS
 
@@ -56,16 +58,17 @@ Then you can call ``python train_sbx.py --algo sac --env Pendulum-v1`` and use t
   import rl_zoo3
   import rl_zoo3.enjoy
   from rl_zoo3.enjoy import enjoy
-
-  from sbx import DDPG, DQN, PPO, SAC, TD3, TQC, DroQ
+  from sbx import DDPG, DQN, PPO, SAC, TD3, TQC, CrossQ
 
   rl_zoo3.ALGOS["ddpg"] = DDPG
   rl_zoo3.ALGOS["dqn"] = DQN
-  rl_zoo3.ALGOS["droq"] = DroQ
+  # See SBX readme to use DroQ configuration
+  # rl_zoo3.ALGOS["droq"] = DroQ
   rl_zoo3.ALGOS["sac"] = SAC
   rl_zoo3.ALGOS["ppo"] = PPO
   rl_zoo3.ALGOS["td3"] = TD3
   rl_zoo3.ALGOS["tqc"] = TQC
+  rl_zoo3.ALGOS["crossq"] = CrossQ
   rl_zoo3.enjoy.ALGOS = rl_zoo3.ALGOS
   rl_zoo3.exp_manager.ALGOS = rl_zoo3.ALGOS
 

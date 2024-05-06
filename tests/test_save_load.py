@@ -783,3 +783,17 @@ def test_no_resource_warning(tmp_path):
         fp.seek(0)
         model.load_replay_buffer(fp)
         assert not fp.closed
+
+
+def test_cast_lr_schedule(tmp_path):
+    # See GH#1900
+    model = PPO("MlpPolicy", "Pendulum-v1", learning_rate=lambda t: t * np.sin(1.0))
+    # Note: for recent version of numpy, np.float64 is a subclass of float
+    # so we need to use type here
+    # assert isinstance(model.lr_schedule(1.0), float)
+    assert type(model.lr_schedule(1.0)) is float  # noqa: E721
+    assert np.allclose(model.lr_schedule(0.5), 0.5 * np.sin(1.0))
+    model.save(tmp_path / "ppo.zip")
+    model = PPO.load(tmp_path / "ppo.zip")
+    assert type(model.lr_schedule(1.0)) is float  # noqa: E721
+    assert np.allclose(model.lr_schedule(0.5), 0.5 * np.sin(1.0))

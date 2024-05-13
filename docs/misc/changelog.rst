@@ -14,6 +14,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Cast type in compute gae method to avoid error when using torch compile (@amjames)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

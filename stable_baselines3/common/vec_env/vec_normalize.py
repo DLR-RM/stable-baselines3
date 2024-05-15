@@ -111,7 +111,7 @@ class VecNormalize(VecEnvWrapper):
                     raise ValueError(
                         f"VecNormalize only supports `gym.spaces.Box` observation spaces but {obs_key} "
                         f"is of type {self.observation_space.spaces[obs_key]}. "
-                        "You should probably explicitely pass the observation keys "
+                        "You should probably explicitly pass the observation keys "
                         " that should be normalized via the `norm_obs_keys` parameter."
                     )
 

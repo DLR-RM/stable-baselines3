@@ -606,7 +606,7 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
         self.n_episodes = 0
 
     def _init_callback(self) -> None:
-        # At start set total max according to number of envirnments
+        # At start set total max according to number of environments
         self._total_max_episodes = self.max_episodes * self.training_env.num_envs
 
     def _on_step(self) -> bool:

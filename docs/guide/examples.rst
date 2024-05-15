@@ -128,7 +128,7 @@ Multiprocessing: Unleashing the Power of Vectorized Environments
 
       :param env_id: the environment ID
       :param num_env: the number of environments you wish to have in subprocesses
-      :param seed: the inital seed for RNG
+      :param seed: the initial seed for RNG
       :param rank: index of the subprocess
       """
       def _init():

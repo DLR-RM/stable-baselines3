@@ -326,7 +326,7 @@ def test_vec_normalize(model_class):
 
 def test_dict_nested():
     """
-    Make sure we throw an appropiate error with nested Dict observation spaces
+    Make sure we throw an appropriate error with nested Dict observation spaces
     """
     # Test without manual wrapping to vec-env
     env = DummyDictEnv(nested_dict_obs=True)

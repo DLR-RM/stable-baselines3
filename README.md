@@ -192,7 +192,7 @@ All the following examples can be executed online using Google Colab notebooks:
 <b id="f1">1</b>: Implemented in [SB3 Contrib](https://github.com/Stable-Baselines-Team/stable-baselines3-contrib) GitHub repository.
 
 Actions `gym.spaces`:
- * `Box`: A N-dimensional box that containes every point in the action space.
+ * `Box`: A N-dimensional box that contains every point in the action space.
  * `Discrete`: A list of possible actions, where each timestep only one of the actions can be used.
  * `MultiDiscrete`: A list of possible actions, where each timestep only one action of each discrete set can be used.
  * `MultiBinary`: A list of possible actions, where each timestep any of the actions can be used in any combination.

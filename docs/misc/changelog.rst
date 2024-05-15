@@ -15,7 +15,6 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Cast type in compute gae method to avoid error when using torch compile (@amjames)
-- Fix various typos
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -31,6 +30,7 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Fix various typos (@cschindlbeck)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -1659,4 +1659,4 @@ And all the contributors:
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong @ReHoss
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
-@marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche
+@marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck

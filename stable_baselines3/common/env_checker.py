@@ -397,7 +397,7 @@ def _check_render(env: gym.Env, warn: bool = False) -> None:  # pragma: no cover
                 "you may have trouble when calling `.render()`"
             )
 
-    # Only check currrent render mode
+    # Only check current render mode
     if env.render_mode:
         env.render()
     env.close()

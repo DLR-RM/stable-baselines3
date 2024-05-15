@@ -30,6 +30,7 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Fix various typos (@cschindlbeck)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -403,7 +404,7 @@ Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed shared layers in ``mlp_extractor`` (@AlexPasqua)
 - Refactored ``StackedObservations`` (it now handles dict obs, ``StackedDictObservations`` was removed)
-- You must now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
+- You must now explicitly pass a ``features_extractor`` parameter when calling ``extract_features()``
 - Dropped offline sampling for ``HerReplayBuffer``
 - As ``HerReplayBuffer`` was refactored to support multiprocessing, previous replay buffer are incompatible with this new version
 - ``HerReplayBuffer`` doesn't require a ``max_episode_length`` anymore
@@ -535,7 +536,7 @@ Bug Fixes:
 
 Deprecations:
 ^^^^^^^^^^^^^
-- You should now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
+- You should now explicitly pass a ``features_extractor`` parameter when calling ``extract_features()``
 - Deprecated shared layers in ``MlpExtractor`` (@AlexPasqua)
 
 Others:
@@ -746,7 +747,7 @@ Bug Fixes:
 - Fixed a bug in ``HumanOutputFormat``. Distinct keys truncated to the same prefix would overwrite each others value,
   resulting in only one being output. This now raises an error (this should only affect a small fraction of use cases
   with very long keys.)
-- Routing all the ``nn.Module`` calls through implicit rather than explict forward as per pytorch guidelines (@manuel-delverme)
+- Routing all the ``nn.Module`` calls through implicit rather than explicit forward as per pytorch guidelines (@manuel-delverme)
 - Fixed a bug in ``VecNormalize`` where error occurs when ``norm_obs`` is set to False for environment with dictionary observation  (@buoyancy99)
 - Set default ``env`` argument to ``None`` in ``HerReplayBuffer.sample`` (@qgallouedec)
 - Fix ``batch_size`` typing in ``DQN`` (@qgallouedec)
@@ -1658,4 +1659,4 @@ And all the contributors:
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong @ReHoss
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
-@marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche
+@marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck

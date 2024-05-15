@@ -384,7 +384,7 @@ def test_truncate_last_trajectory(n_envs, recwarn, n_steps, handle_timeout_termi
     # for all episodes that are not finished before truncate_last_trajectory: timeouts should be 1
     if handle_timeout_termination:
         assert (replay_buffer.timeouts[pos - 1, env_idx_not_finished] == 1).all()
-    # episode length sould be != 0 -> episode can be sampled
+    # episode length should be != 0 -> episode can be sampled
     assert (replay_buffer.ep_length[pos - 1] != 0).all()
 
     # replay buffer should not have changed after truncate_last_trajectory (except dones[pos-1])

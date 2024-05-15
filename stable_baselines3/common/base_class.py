@@ -48,7 +48,7 @@ def maybe_make_env(env: Union[GymEnv, str], verbose: int) -> GymEnv:
     """If env is a string, make the environment; otherwise, return env.
 
     :param env: The environment to learn from.
-    :param verbose: Verbosity level: 0 for no output, 1 for indicating if envrironment is created
+    :param verbose: Verbosity level: 0 for no output, 1 for indicating if environment is created
     :return A Gym (vector) environment.
     """
     if isinstance(env, str):

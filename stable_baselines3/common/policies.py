@@ -922,7 +922,7 @@ class ContinuousCritic(BaseModel):
     By default, it creates two critic networks used to reduce overestimation
     thanks to clipped Q-learning (cf TD3 paper).
 
-    :param observation_space: Obervation space
+    :param observation_space: Observation space
     :param action_space: Action space
     :param net_arch: Network architecture
     :param features_extractor: Network to extract features

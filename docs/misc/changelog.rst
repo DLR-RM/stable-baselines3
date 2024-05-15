@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.4.0a0 (WIP)
+Release 2.4.0a1 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -14,6 +14,8 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed memory leak when loading learner from storage, ``set_parameters()`` does not try to load the object data anymore
+  and only loads the PyTorch parameters (@peteole)
 - Cast type in compute gae method to avoid error when using torch compile (@amjames)
 
 `SB3-Contrib`_
@@ -30,7 +32,7 @@ Deprecations:
 
 Others:
 ^^^^^^^
-- Fix various typos (@cschindlbeck)
+- Fixed various typos (@cschindlbeck)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -1659,4 +1661,4 @@ And all the contributors:
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong @ReHoss
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
-@marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck
+@marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole

@@ -1,12 +1,12 @@
 import os
 import shutil
 
+import ale_py
 import gymnasium as gym
 import numpy as np
 import pytest
 import torch as th
 from gymnasium import spaces
-from shimmy import registration
 
 import stable_baselines3 as sb3
 from stable_baselines3 import A2C
@@ -25,8 +25,7 @@ from stable_baselines3.common.utils import (
 )
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
-# a hack to get atari environment registered for 1.0.0 alpha 1
-registration._register_atari_envs()
+gym.register_envs(ale_py)
 
 
 @pytest.mark.parametrize("env_id", ["CartPole-v1", lambda: gym.make("CartPole-v1")])

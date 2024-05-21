@@ -70,37 +70,13 @@ model = PPO("MlpPolicy", "CartPole-v1").learn(10_000)
 
 """  # noqa:E501
 
-# Atari Games download is sometimes problematic:
-# https://github.com/Farama-Foundation/AutoROM/issues/39
-# That's why we define extra packages without it.
-extra_no_roms = [
-    # For render
-    "opencv-python",
-    "pygame",
-    # Tensorboard support
-    "tensorboard>=2.9.1",
-    # Checking memory taken by replay buffer
-    "psutil",
-    # For progress bar callback
-    "tqdm",
-    "rich",
-    # For atari games,
-    "shimmy[atari]~=1.3.0",
-    "pillow",
-]
-
-extra_packages = extra_no_roms + [  # noqa: RUF005
-    # For atari roms,
-    "autorom[accept-rom-license]~=0.6.1",
-]
-
 
 setup(
     name="stable_baselines3",
     packages=[package for package in find_packages() if package.startswith("stable_baselines3")],
     package_data={"stable_baselines3": ["py.typed", "version.txt"]},
     install_requires=[
-        "gymnasium==1.0.0a1",
+        "gymnasium>=1.0.0a1",
         "numpy>=1.20",
         "torch>=1.13",
         # For saving models
@@ -133,8 +109,21 @@ setup(
             # Copy button for code snippets
             "sphinx_copybutton",
         ],
-        "extra": extra_packages,
-        "extra_no_roms": extra_no_roms,
+        "extra": [
+            # For render
+            "opencv-python",
+            "pygame",
+            # Tensorboard support
+            "tensorboard>=2.9.1",
+            # Checking memory taken by replay buffer
+            "psutil",
+            # For progress bar callback
+            "tqdm",
+            "rich",
+            # For atari games,
+            "ale-py>=0.9.0",
+            "pillow",
+        ],
     },
     description="Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.",
     author="Antonin Raffin",

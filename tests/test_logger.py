@@ -479,7 +479,7 @@ def test_human_output_format_custom_test_io(base_class):
 
 class DummySuccessEnv(gym.Env):
     """
-    Create a dummy success environment that returns wether True or False for info['is_success']
+    Create a dummy success environment that returns whether True or False for info['is_success']
     at the end of an episode according to its dummy successes list
     """
 
@@ -536,7 +536,7 @@ def test_rollout_success_rate_on_policy_algorithm(tmp_path):
     Test if the rollout/success_rate information is correctly logged with on policy algorithms
 
     To do so, create a dummy environment that takes as argument dummy successes (i.e when an episode)
-    is going to be successfull or not.
+    is going to be successful or not.
     """
 
     STATS_WINDOW_SIZE = 10

@@ -189,7 +189,7 @@ class MlpExtractor(nn.Module):
 
         # save dimensions of layers in policy and value nets
         if isinstance(net_arch, dict):
-            # Note: if key is not specificed, assume linear network
+            # Note: if key is not specified, assume linear network
             pi_layers_dims = net_arch.get("pi", [])  # Layer sizes of the policy network
             vf_layers_dims = net_arch.get("vf", [])  # Layer sizes of the value network
         else:

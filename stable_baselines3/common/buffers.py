@@ -424,7 +424,7 @@ class RolloutBuffer(BaseBuffer):
         last_gae_lam = 0
         for step in reversed(range(self.buffer_size)):
             if step == self.buffer_size - 1:
-                next_non_terminal = 1.0 - dones
+                next_non_terminal = 1.0 - dones.astype(np.float32)
                 next_values = last_values
             else:
                 next_non_terminal = 1.0 - self.episode_starts[step + 1]

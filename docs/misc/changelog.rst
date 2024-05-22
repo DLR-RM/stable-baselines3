@@ -17,6 +17,7 @@ Bug Fixes:
 - Fixed memory leak when loading learner from storage, ``set_parameters()`` does not try to load the object data anymore
   and only loads the PyTorch parameters (@peteole)
 - Cast type in compute gae method to avoid error when using torch compile (@amjames)
+- Remove unnecessary SDE noise resampling in PPO update (@brn-dev)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

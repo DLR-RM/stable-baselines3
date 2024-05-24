@@ -126,7 +126,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
         assert optimize_memory_usage is False, "PrioritizedReplayBuffer doesn't support optimize_memory_usage=True"
 
-        self.min_priority = 1e-8
+        self.min_priority = min_priority
         self.alpha = alpha
         self.max_priority = self.min_priority  # priority for new samples, init as eps
         # Track the training progress remaining (from 1 to 0)

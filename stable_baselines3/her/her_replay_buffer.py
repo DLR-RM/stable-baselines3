@@ -255,7 +255,7 @@ class HerReplayBuffer(DictReplayBuffer):
         Get the samples corresponding to the batch and environment indices.
 
         :param batch_indices: Indices of the transitions
-        :param env_indices: Indices of the envrionments
+        :param env_indices: Indices of the environments
         :param env: associated gym VecEnv to normalize the
             observations/rewards when sampling, defaults to None
         :return: Samples
@@ -294,7 +294,7 @@ class HerReplayBuffer(DictReplayBuffer):
         Get the samples, sample new desired goals and compute new rewards.
 
         :param batch_indices: Indices of the transitions
-        :param env_indices: Indices of the envrionments
+        :param env_indices: Indices of the environments
         :param env: associated gym VecEnv to normalize the
             observations/rewards when sampling, defaults to None
         :return: Samples, with new desired goals and new rewards
@@ -357,7 +357,7 @@ class HerReplayBuffer(DictReplayBuffer):
         Sample goals based on goal_selection_strategy.
 
         :param batch_indices: Indices of the transitions
-        :param env_indices: Indices of the envrionments
+        :param env_indices: Indices of the environments
         :return: Sampled goals
         """
         batch_ep_start = self.ep_start[batch_indices, env_indices]

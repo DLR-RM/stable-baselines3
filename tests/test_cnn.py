@@ -161,7 +161,7 @@ def test_features_extractor_target_net(model_class, share_features_extractor):
         if model_class == TD3:
             assert id(model.policy.actor_target.features_extractor) != id(model.policy.critic_target.features_extractor)
 
-    # Critic and target should be equal at the begginning of training
+    # Critic and target should be equal at the beginning of training
     params_should_match(model.critic.parameters(), model.critic_target.parameters())
 
     # TD3 has also a target actor net

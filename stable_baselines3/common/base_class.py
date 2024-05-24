@@ -48,7 +48,7 @@ def maybe_make_env(env: Union[GymEnv, str], verbose: int) -> GymEnv:
     """If env is a string, make the environment; otherwise, return env.
 
     :param env: The environment to learn from.
-    :param verbose: Verbosity level: 0 for no output, 1 for indicating if envrironment is created
+    :param verbose: Verbosity level: 0 for no output, 1 for indicating if environment is created
     :return A Gym (vector) environment.
     """
     if isinstance(env, str):
@@ -592,7 +592,7 @@ class BaseAlgorithm(ABC):
         if isinstance(load_path_or_dict, dict):
             params = load_path_or_dict
         else:
-            _, params, _ = load_from_zip_file(load_path_or_dict, device=device)
+            _, params, _ = load_from_zip_file(load_path_or_dict, device=device, load_data=False)
 
         # Keep track which objects were updated.
         # `_get_torch_save_params` returns [params, other_pytorch_variables].

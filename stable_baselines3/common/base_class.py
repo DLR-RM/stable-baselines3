@@ -692,7 +692,7 @@ class BaseAlgorithm(ABC):
             if "device" in data["policy_kwargs"]:
                 del data["policy_kwargs"]["device"]
             # backward compatibility, convert to new format
-            saved_net_arch = data.get("policy_kwargs", {}).get("net_arch")
+            saved_net_arch = data["policy_kwargs"].get("net_arch")
             if saved_net_arch and isinstance(saved_net_arch, list) and isinstance(saved_net_arch[0], dict):
                 data["policy_kwargs"]["net_arch"] = saved_net_arch[0]
 

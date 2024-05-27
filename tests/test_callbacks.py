@@ -264,3 +264,31 @@ def test_checkpoint_additional_info(tmp_path):
     model = DQN.load(checkpoint_dir / "rl_model_200_steps.zip")
     model.load_replay_buffer(checkpoint_dir / "rl_model_replay_buffer_200_steps.pkl")
     VecNormalize.load(checkpoint_dir / "rl_model_vecnormalize_200_steps.pkl", dummy_vec_env)
+
+
+def test_eval_callback_chaining():
+    class CustomCallback(BaseCallback):
+
+        def __init__(self, verbose=0):
+            super().__init__(verbose)
+
+        def _on_step(self):
+            # Draw a figure
+            return True
+
+    eval_env = gym.make("Pendulum-v1")
+
+    stop_on_threshold_callback = StopTrainingOnRewardThreshold(reward_threshold=-200, verbose=1)
+
+    eval_callback = EvalCallback(
+        eval_env,
+        best_model_save_path="./logs/",
+        log_path="./logs/",
+        eval_freq=199,
+        deterministic=True,
+        render=False,
+        callback_on_new_best=CallbackList([CustomCallback(), stop_on_threshold_callback]),
+    )
+
+    model = PPO("MlpPolicy", "Pendulum-v1")
+    model.learn(200, callback=eval_callback)

@@ -62,7 +62,7 @@ def explained_variance(y_pred: np.ndarray, y_true: np.ndarray) -> np.ndarray:
     """
     assert y_true.ndim == 1 and y_pred.ndim == 1
     var_y = np.var(y_true)
-    return np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
+    return np.nan if (var_y == 0 or var_y == float("inf")) else 1 - np.var(y_true - y_pred) / var_y
 
 
 def update_learning_rate(optimizer: th.optim.Optimizer, learning_rate: float) -> None:

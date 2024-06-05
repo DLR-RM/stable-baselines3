@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.4.0a1 (WIP)
+Release 2.4.0a2 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -17,6 +17,7 @@ Bug Fixes:
 - Fixed memory leak when loading learner from storage, ``set_parameters()`` does not try to load the object data anymore
   and only loads the PyTorch parameters (@peteole)
 - Cast type in compute gae method to avoid error when using torch compile (@amjames)
+- Fixed error when loading a model that has ``net_arch`` manually set to ``None`` (@jak3122)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -1661,4 +1662,4 @@ And all the contributors:
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong @ReHoss
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
-@marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole
+@marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122

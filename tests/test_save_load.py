@@ -804,9 +804,8 @@ def test_save_load_net_arch_none(tmp_path):
     Test that the model is loaded correctly when net_arch is manually set to None.
     See GH#1928
     """
-    policy_kwargs = dict(net_arch=None)
-    model = PPO("MlpPolicy", "CartPole-v1", policy_kwargs=policy_kwargs)
-    model.learn(100)
-    model.save(tmp_path / "ppo.zip")
+    PPO("MlpPolicy", "CartPole-v1", policy_kwargs=dict(net_arch=None)).save(tmp_path / "ppo.zip")
     model = PPO.load(tmp_path / "ppo.zip")
+    # None has been replaced by the default net arch
+    assert model.policy.net_arch is not None
     os.remove(tmp_path / "ppo.zip")

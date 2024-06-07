@@ -419,7 +419,7 @@ class RolloutBuffer(BaseBuffer):
         :param dones: if the last step was a terminal step (one bool for each env).
         """
         # Convert to numpy
-        last_values = last_values.clone().cpu().numpy().flatten()
+        last_values = last_values.clone().cpu().numpy().flatten()  # type: ignore[assignment]
 
         last_gae_lam = 0
         for step in reversed(range(self.buffer_size)):

@@ -284,6 +284,7 @@ def test_eval_callback_chaining(tmp_path):
         deterministic=True,
         render=False,
         callback_on_new_best=CallbackList([DummyCallback(), stop_on_threshold_callback]),
+        callback_after_eval=CallbackList([DummyCallback()]),
         warn=False,
     )
 

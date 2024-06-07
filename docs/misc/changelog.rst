@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.4.0a2 (WIP)
+Release 2.4.0a3 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -17,8 +17,8 @@ Bug Fixes:
 - Fixed memory leak when loading learner from storage, ``set_parameters()`` does not try to load the object data anymore
   and only loads the PyTorch parameters (@peteole)
 - Cast type in compute gae method to avoid error when using torch compile (@amjames)
-- `CallbackList` now sets the `.parent` attribute of child callbacks to its own `.parent`. This resolves https://github.com/DLR-RM/stable-baselines3/issues/1791 (will-maclean)
-- Fixed error when loading a model that has ``net_arch`` manually set to ``None`` (@jak3122)
+- ``CallbackList`` now sets the ``.parent`` attribute of child callbacks to its own ``.parent``. This resolves `<https://github.com/DLR-RM/stable-baselines3/issues/1791>`_. (will-maclean)
+- Fixed error when loading a model that has ``net_arch`` manually set to ``None``   (@jak3122)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

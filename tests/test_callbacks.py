@@ -266,29 +266,26 @@ def test_checkpoint_additional_info(tmp_path):
     VecNormalize.load(checkpoint_dir / "rl_model_vecnormalize_200_steps.pkl", dummy_vec_env)
 
 
-def test_eval_callback_chaining():
-    class CustomCallback(BaseCallback):
-
-        def __init__(self, verbose=0):
-            super().__init__(verbose)
-
+def test_eval_callback_chaining(tmp_path):
+    class DummyCallback(BaseCallback):
         def _on_step(self):
-            # Draw a figure
+            # Check that the parent callback is an EvalCallback
+            assert isinstance(self.parent, EvalCallback)
+            assert hasattr(self.parent, "best_mean_reward")
             return True
-
-    eval_env = gym.make("Pendulum-v1")
 
     stop_on_threshold_callback = StopTrainingOnRewardThreshold(reward_threshold=-200, verbose=1)
 
     eval_callback = EvalCallback(
-        eval_env,
-        best_model_save_path="./logs/",
-        log_path="./logs/",
-        eval_freq=199,
+        gym.make("Pendulum-v1"),
+        best_model_save_path=tmp_path,
+        log_path=tmp_path,
+        eval_freq=32,
         deterministic=True,
         render=False,
-        callback_on_new_best=CallbackList([CustomCallback(), stop_on_threshold_callback]),
+        callback_on_new_best=CallbackList([DummyCallback(), stop_on_threshold_callback]),
+        warn=False,
     )
 
-    model = PPO("MlpPolicy", "Pendulum-v1")
-    model.learn(200, callback=eval_callback)
+    model = PPO("MlpPolicy", "Pendulum-v1", n_steps=64, n_epochs=1)
+    model.learn(64, callback=eval_callback)

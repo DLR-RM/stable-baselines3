@@ -46,6 +46,8 @@ filterwarnings = [
     "ignore::DeprecationWarning:tensorboard",
     # Gymnasium warnings
     "ignore::UserWarning:gymnasium",
+    # tqdm warning about rich being experimental
+    "ignore:rich is experimental"
 ]
 markers = [
     "expensive: marks tests as expensive (deselect with '-m \"not expensive\"')"

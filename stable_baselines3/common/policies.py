@@ -367,7 +367,7 @@ class BasePolicy(BaseModel, ABC):
         with th.no_grad():
             actions = self._predict(obs_tensor, deterministic=deterministic)
         # Convert to numpy, and reshape to the original action shape
-        actions = actions.cpu().numpy().reshape((-1, *self.action_space.shape))  # type: ignore[misc]
+        actions = actions.cpu().numpy().reshape((-1, *self.action_space.shape))  # type: ignore[misc, assignment]
 
         if isinstance(self.action_space, spaces.Box):
             if self.squash_output:

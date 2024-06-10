@@ -797,3 +797,15 @@ def test_cast_lr_schedule(tmp_path):
     model = PPO.load(tmp_path / "ppo.zip")
     assert type(model.lr_schedule(1.0)) is float  # noqa: E721
     assert np.allclose(model.lr_schedule(0.5), 0.5 * np.sin(1.0))
+
+
+def test_save_load_net_arch_none(tmp_path):
+    """
+    Test that the model is loaded correctly when net_arch is manually set to None.
+    See GH#1928
+    """
+    PPO("MlpPolicy", "CartPole-v1", policy_kwargs=dict(net_arch=None)).save(tmp_path / "ppo.zip")
+    model = PPO.load(tmp_path / "ppo.zip")
+    # None has been replaced by the default net arch
+    assert model.policy.net_arch is not None
+    os.remove(tmp_path / "ppo.zip")

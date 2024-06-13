@@ -259,7 +259,7 @@ Tips and Tricks when implementing an RL algorithm
   this section in more details. You can also find the `slides online <https://araffin.github.io/slides/tips-reliable-rl/>`_.
 
 
-When you try to reproduce a RL paper by implementing the algorithm, the `nuts and bolts of RL research <http://joschu.net/docs/nuts-and-bolts.pdf>`_
+When you try to reproduce a RL paper by implementing the algorithm, the `nuts and bolts of RL research <https://rll.berkeley.edu/deeprlcourse/docs/nuts-and-bolts.pdf>`_
 by John Schulman are quite useful (`video <https://www.youtube.com/watch?v=8EcdaCk9KaQ>`_).
 
 We *recommend following those steps to have a working RL algorithm*:

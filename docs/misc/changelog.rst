@@ -268,6 +268,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Added Python 3.11 support
 - Added Gymnasium 0.29 support (@pseudo-rnd-thoughts)
+- Enabled np.ndarray logging for TensorBoardOutputFormat as histogram (see GH#1634) (@iwishwasaneagle)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

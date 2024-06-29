@@ -36,6 +36,7 @@ Others:
 ^^^^^^^
 - Fixed various typos (@cschindlbeck)
 - Remove unnecessary SDE noise resampling in PPO update (@brn-dev)
+- Updated Torch CI version to 2.3.1 to be compatible with Numpy v2.0
 
 Bug Fixes:
 ^^^^^^^^^^

@@ -791,11 +791,11 @@ def test_cast_lr_schedule(tmp_path):
     # Note: for recent version of numpy, np.float64 is a subclass of float
     # so we need to use type here
     # assert isinstance(model.lr_schedule(1.0), float)
-    assert type(model.lr_schedule(1.0)) is float  # noqa: E721
+    assert type(model.lr_schedule(1.0)) is float
     assert np.allclose(model.lr_schedule(0.5), 0.5 * np.sin(1.0))
     model.save(tmp_path / "ppo.zip")
     model = PPO.load(tmp_path / "ppo.zip")
-    assert type(model.lr_schedule(1.0)) is float  # noqa: E721
+    assert type(model.lr_schedule(1.0)) is float
     assert np.allclose(model.lr_schedule(0.5), 0.5 * np.sin(1.0))
 
 

@@ -1,6 +1,7 @@
 import os
 import shutil
 
+import ale_py
 import gymnasium as gym
 import numpy as np
 import pytest
@@ -23,6 +24,8 @@ from stable_baselines3.common.utils import (
     zip_strict,
 )
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+
+gym.register_envs(ale_py)
 
 
 @pytest.mark.parametrize("env_id", ["CartPole-v1", lambda: gym.make("CartPole-v1")])

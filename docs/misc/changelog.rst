@@ -19,6 +19,7 @@ Bug Fixes:
 - Cast type in compute gae method to avoid error when using torch compile (@amjames)
 - ``CallbackList`` now sets the ``.parent`` attribute of child callbacks to its own ``.parent``. (will-maclean)
 - Fixed error when loading a model that has ``net_arch`` manually set to ``None``   (@jak3122)
+- Set requirement numpy<2.0 until PyTorch is compatible (https://github.com/pytorch/pytorch/issues/107302)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -36,7 +37,7 @@ Others:
 ^^^^^^^
 - Fixed various typos (@cschindlbeck)
 - Remove unnecessary SDE noise resampling in PPO update (@brn-dev)
-- Updated Torch CI version to 2.3.1 to be compatible with Numpy v2.0
+- Updated PyTorch version on CI to 2.3.1
 
 Bug Fixes:
 ^^^^^^^^^^

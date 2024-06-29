@@ -101,7 +101,7 @@ setup(
     package_data={"stable_baselines3": ["py.typed", "version.txt"]},
     install_requires=[
         "gymnasium>=0.28.1,<0.30",
-        "numpy>=1.20",
+        "numpy>=1.20,<2.0",  # PyTorch not compatible https://github.com/pytorch/pytorch/issues/107302
         "torch>=1.13",
         # For saving models
         "cloudpickle",

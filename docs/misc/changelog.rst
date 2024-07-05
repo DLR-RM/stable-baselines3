@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.4.0a4 (WIP)
+Release 2.4.0a5 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -20,6 +20,7 @@ Bug Fixes:
 - ``CallbackList`` now sets the ``.parent`` attribute of child callbacks to its own ``.parent``. (will-maclean)
 - Fixed error when loading a model that has ``net_arch`` manually set to ``None``   (@jak3122)
 - Set requirement numpy<2.0 until PyTorch is compatible (https://github.com/pytorch/pytorch/issues/107302)
+- Updated DQN optimizer input to only include q_network parameters, removing the target_q_network ones (@corentinlger)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

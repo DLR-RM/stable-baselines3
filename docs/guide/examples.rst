@@ -436,7 +436,7 @@ will compute a running average and standard deviation of input features (it can 
   log_dir = "/tmp/"
   model.save(log_dir + "ppo_halfcheetah")
   stats_path = os.path.join(log_dir, "vec_normalize.pkl")
-  env.save(stats_path)
+  vec_env.save(stats_path)
 
   # To demonstrate loading
   del model, vec_env

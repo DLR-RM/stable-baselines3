@@ -120,7 +120,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         beta: float = 0.4,
         final_beta: float = 1.0,
         optimize_memory_usage: bool = False,
-        min_priority: float = 1e-8,
+        min_priority: float = 1e-6,
     ):
         super().__init__(buffer_size, observation_space, action_space, device, n_envs)
 

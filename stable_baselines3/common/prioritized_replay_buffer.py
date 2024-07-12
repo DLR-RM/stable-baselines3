@@ -247,7 +247,8 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         """
         # Update beta schedule
         self._current_progress_remaining = progress_remaining
-        td_errors = td_errors.detach().cpu().numpy().flatten()
+        if isinstance(td_errors, th.Tensor):
+            td_errors = td_errors.detach().cpu().numpy().flatten()
 
         for leaf_node_idx, td_error in zip(leaf_nodes_indices, td_errors):
             # Proportional prioritization priority = (abs(td_error) + eps) ^ alpha

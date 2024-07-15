@@ -179,9 +179,9 @@ Multiprocessing with off-policy algorithms
 
   vec_env = make_vec_env("Pendulum-v0", n_envs=4, seed=0)
 
-  # We collect 4 transitions per call to `ènv.step()`
-  # and performs 2 gradient steps per call to `ènv.step()`
-  # if gradient_steps=-1, then we would do 4 gradients steps per call to `ènv.step()`
+  # We collect 4 transitions per call to `env.step()`
+  # and performs 2 gradient steps per call to `env.step()`
+  # if gradient_steps=-1, then we would do 4 gradients steps per call to `env.step()`
   model = SAC("MlpPolicy", vec_env, train_freq=1, gradient_steps=2, verbose=1)
   model.learn(total_timesteps=10_000)
 

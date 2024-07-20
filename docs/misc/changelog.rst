@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.4.0a5 (WIP)
+Release 2.4.0a6 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -11,6 +11,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Added support for ``pre_linear_modules`` and ``post_linear_modules`` in ``create_mlp`` (useful for adding normalization layers, like in DroQ or CrossQ)
 
 Bug Fixes:
 ^^^^^^^^^^

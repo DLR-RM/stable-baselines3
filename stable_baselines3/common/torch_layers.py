@@ -131,14 +131,15 @@ def create_mlp(
     :param squash_output: Whether to squash the output using a Tanh
         activation function
     :param with_bias: If set to False, the layers will not learn an additive bias
-    :param pre_linear_modules: List of nn.Module to add before the linear layers,
-        for instance, BatchNorm layers.
+    :param pre_linear_modules: List of nn.Module to add before the linear layers.
+        These modules should maintain the input tensor dimension (e.g. BatchNorm).
+        The number of input features is passed to the module's constructor.
         Compared to post_linear_modules, they are used before the output layer (output_dim > 0).
-        The number of input features is passed to the module's constructor.
-    :param post_linear_modules: List of nn.Module to add after the linear layers (and before the activation function),
-        for instance, Dropout or LayerNorm layers.
-        They are not used after the output layer (output_dim > 0).
-        The number of input features is passed to the module's constructor.
+    :param post_linear_modules: List of nn.Module to add after the linear layers 
+        (and before the activation function). These modules should maintain the input 
+        tensor dimension (e.g. Dropout, LayerNorm). They are not used after the 
+        output layer (output_dim > 0). The number of input features is passed to 
+        the module's constructor.
     :return: The list of layers of the neural network
     """
 

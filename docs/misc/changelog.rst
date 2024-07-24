@@ -3,8 +3,15 @@
 Changelog
 ==========
 
-Release 2.4.0a6 (WIP)
+Release 2.4.0a7 (WIP)
 --------------------------
+
+.. note::
+
+  DQN (and QR-DQN) models saved with SB3 < 2.4.0 will show a warning about
+  truncation of optimizer state when loaded with SB3 >= 2.4.0.
+  To suppress the warning, simply save the model again.
+  You can find more info in `PR #1963 <https://github.com/DLR-RM/stable-baselines3/pull/1963>`_
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -28,9 +35,11 @@ Bug Fixes:
 
 `RL Zoo`_
 ^^^^^^^^^
+- Updated defaults hyperparameters for TQC/SAC for Swimmer-v4 (decrease gamma for more consistent results)
 
 `SBX`_ (SB3 + Jax)
 ^^^^^^^^^^^^^^^^^^
+- Added CNN support for DQN
 
 Deprecations:
 ^^^^^^^^^^^^^

@@ -5,9 +5,9 @@ name: CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   build:
@@ -23,32 +23,34 @@ jobs:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        # cpu version of pytorch
-        pip install torch==2.3.1 --index-url https://download.pytorch.org/whl/cpu
-
-        pip install .[extra,tests,docs]
-        # Use headless version
-        pip install opencv-python-headless
-    - name: Lint with ruff
-      run: |
-        make lint
-    - name: Build the doc
-      run: |
-        make doc
-    - name: Check codestyle
-      run: |
-        make check-codestyle
-    - name: Type check
-      run: |
-        make type
-    - name: Test with pytest
-      run: |
-        make pytest
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # cpu version of pytorch
+          pip install torch==2.3.1 --index-url https://download.pytorch.org/whl/cpu
+          
+          pip install .[extra,tests,docs]
+          # Use headless version
+          pip install opencv-python-headless
+      - name: Lint with ruff
+        run: |
+          make lint
+      - name: Build the doc
+        run: |
+          make doc
+      - name: Check codestyle
+        run: |
+          make check-codestyle
+      - name: Type check
+        run: |
+          make type
+        # Do not run for python 3.8 (mypy internal error)
+        if: matrix.python-version != '3.8'
+      - name: Test with pytest
+        run: |
+          make pytest

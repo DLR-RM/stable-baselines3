@@ -23,7 +23,7 @@ Notes
 
 - Original paper: https://arxiv.org/abs/1707.06347
 - Clear explanation of PPO on Arxiv Insights channel: https://www.youtube.com/watch?v=5P7I-xPq8u8
-- OpenAI blog post: https://blog.openai.com/openai-baselines-ppo/
+- OpenAI blog post: https://openai.com/research/openai-baselines-ppo
 - Spinning Up guide: https://spinningup.openai.com/en/latest/algorithms/ppo.html
 - 37 implementation details blog: https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/
 

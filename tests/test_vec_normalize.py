@@ -484,7 +484,7 @@ def test_non_dict_obs_keys():
     with pytest.raises(ValueError, match=".*is applicable only.*"):
         _make_warmstart(lambda: DummyRewardEnv(), norm_obs_keys=["key"])
 
-    with pytest.raises(ValueError, match=".* explicitely pass the observation keys.*"):
+    with pytest.raises(ValueError, match=".* explicitly pass the observation keys.*"):
         _make_warmstart(lambda: DummyMixedDictEnv())
 
     # Ignore Discrete observation key

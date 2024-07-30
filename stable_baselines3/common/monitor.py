@@ -189,7 +189,7 @@ class ResultsWriter:
         filename = os.path.realpath(filename)
         # Create (if any) missing filename directories
         os.makedirs(os.path.dirname(filename), exist_ok=True)
-        # Append mode when not overridding existing file
+        # Append mode when not overriding existing file
         mode = "w" if override_existing else "a"
         # Prevent newline issue on Windows, see GH issue #692
         self.file_handler = open(filename, f"{mode}t", newline="\n")

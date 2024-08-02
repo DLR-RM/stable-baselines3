@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.4.0a7 (WIP)
+Release 2.4.0a8 (WIP)
 --------------------------
 
 .. note::
@@ -19,6 +19,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added support for ``pre_linear_modules`` and ``post_linear_modules`` in ``create_mlp`` (useful for adding normalization layers, like in DroQ or CrossQ)
+- Enabled np.ndarray logging for TensorBoardOutputFormat as histogram (see GH#1634) (@iwishwasaneagle)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -282,7 +283,6 @@ New Features:
 ^^^^^^^^^^^^^
 - Added Python 3.11 support
 - Added Gymnasium 0.29 support (@pseudo-rnd-thoughts)
-- Enabled np.ndarray logging for TensorBoardOutputFormat as histogram (see GH#1634) (@iwishwasaneagle)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

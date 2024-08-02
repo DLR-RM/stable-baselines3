@@ -52,6 +52,8 @@ class ReplayBufferSamples(NamedTuple):
     next_observations: th.Tensor
     dones: th.Tensor
     rewards: th.Tensor
+    weights: Union[th.Tensor, float] = 1.0
+    leaf_nodes_indices: Optional[np.ndarray] = None
 
 
 class DictReplayBufferSamples(NamedTuple):
@@ -60,6 +62,8 @@ class DictReplayBufferSamples(NamedTuple):
     next_observations: TensorDict
     dones: th.Tensor
     rewards: th.Tensor
+    weights: Union[th.Tensor, float] = 1.0
+    leaf_nodes_indices: Optional[np.ndarray] = None
 
 
 class RolloutReturn(NamedTuple):

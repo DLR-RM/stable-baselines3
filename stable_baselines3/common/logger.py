@@ -412,8 +412,9 @@ class TensorBoardOutputFormat(KVWriter):
                 else:
                     self.writer.add_scalar(key, value, step)
 
-            if isinstance(value, th.Tensor):
-                self.writer.add_histogram(key, value, step)
+            if isinstance(value, (th.Tensor, np.ndarray)):
+                # Convert to Torch so it works with numpy<1.24 and torch<2.0
+                self.writer.add_histogram(key, th.as_tensor(value), step)
 
             if isinstance(value, Video):
                 self.writer.add_video(key, value.frames, step, value.fps)

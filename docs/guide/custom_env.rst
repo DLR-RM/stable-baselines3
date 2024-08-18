@@ -3,7 +3,7 @@
 Using Custom Environments
 ==========================
 
-To use the RL baselines with custom environments, they just need to follow the *gymnasium*  `interface <https://gymnasium.farama.org/tutorials/gymnasium_basics/environment_creation/#sphx-glr-tutorials-gymnasium-basics-environment-creation-py>`_.
+To use the RL baselines with custom environments, they just need to follow the *gymnasium* `interface <https://gymnasium.farama.org/tutorials/gymnasium_basics/environment_creation/#sphx-glr-tutorials-gymnasium-basics-environment-creation-py>`_.
 That is to say, your environment must implement the following methods (and inherits from Gym Class):
 
 

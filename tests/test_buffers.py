@@ -4,6 +4,7 @@ import pytest
 import torch as th
 from gymnasium import spaces
 
+from stable_baselines3 import A2C
 from stable_baselines3.common.buffers import DictReplayBuffer, DictRolloutBuffer, ReplayBuffer, RolloutBuffer
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.env_util import make_vec_env
@@ -73,7 +74,7 @@ class DummyDictEnv(gym.Env):
 @pytest.mark.parametrize("env_cls", [DummyEnv, DummyDictEnv])
 def test_env(env_cls):
     # Check the env used for testing
-    # Do not warn for assymetric space
+    # Do not warn for asymmetric space
     check_env(env_cls(), warn=False, skip_render_check=True)
 
 
@@ -85,7 +86,7 @@ def test_replay_buffer_normalization(replay_buffer_cls):
 
     buffer = replay_buffer_cls(100, env.observation_space, env.action_space, device="cpu")
 
-    # Interract and store transitions
+    # Interact and store transitions
     env.reset()
     obs = env.get_original_obs()
     for _ in range(100):
@@ -124,7 +125,7 @@ def test_device_buffer(replay_buffer_cls, device):
 
     buffer = replay_buffer_cls(100, env.observation_space, env.action_space, device=device)
 
-    # Interract and store transitions
+    # Interact and store transitions
     obs = env.reset()
     for _ in range(100):
         action = env.action_space.sample()
@@ -138,6 +139,7 @@ def test_device_buffer(replay_buffer_cls, device):
 
     # Get data from the buffer
     if replay_buffer_cls in [RolloutBuffer, DictRolloutBuffer]:
+        # get returns an iterator over minibatches
         data = buffer.get(50)
     elif replay_buffer_cls in [ReplayBuffer, DictReplayBuffer]:
         data = [buffer.sample(50)]
@@ -151,5 +153,21 @@ def test_device_buffer(replay_buffer_cls, device):
                     assert value[key].device.type == desired_device
             elif isinstance(value, th.Tensor):
                 assert value.device.type == desired_device
+            elif isinstance(value, np.ndarray):
+                # For prioritized replay weights/indices
+                pass
             else:
-                raise ValueError("unknown value type: ", type(value))
+                raise TypeError(f"Unknown value type: {type(value)}")
+
+
+def test_custom_rollout_buffer():
+    A2C("MlpPolicy", "Pendulum-v1", rollout_buffer_class=RolloutBuffer, rollout_buffer_kwargs=dict())
+
+    with pytest.raises(TypeError, match="unexpected keyword argument 'wrong_keyword'"):
+        A2C("MlpPolicy", "Pendulum-v1", rollout_buffer_class=RolloutBuffer, rollout_buffer_kwargs=dict(wrong_keyword=1))
+
+    with pytest.raises(TypeError, match="got multiple values for keyword argument 'gamma'"):
+        A2C("MlpPolicy", "Pendulum-v1", rollout_buffer_class=RolloutBuffer, rollout_buffer_kwargs=dict(gamma=1))
+
+    with pytest.raises(AssertionError, match="DictRolloutBuffer must be used with Dict obs space only"):
+        A2C("MlpPolicy", "Pendulum-v1", rollout_buffer_class=DictRolloutBuffer)

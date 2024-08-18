@@ -13,13 +13,13 @@ An open-source Gym-compatible environment specifically tailored for developing R
 
 | Authors: Parth Kothari, Christian Perone, Luca Bergamini, Alexandre Alahi, Peter Ondruska
 | Github: https://github.com/lyft/l5kit
-| Paper: https://arxiv.org/abs/2111.06889 
+| Paper: https://arxiv.org/abs/2111.06889
 
 
 RL Reach
 --------
 
-A platform for running reproducible reinforcement learning experiments for customisable robotic reaching tasks. This self-contained and straightforward toolbox allows its users to quickly investigate and identify optimal training configurations.
+A platform for running reproducible reinforcement learning experiments for customizable robotic reaching tasks. This self-contained and straightforward toolbox allows its users to quickly investigate and identify optimal training configurations.
 
 | Authors: Pierre Aumjaud, David McAuliffe, Francisco Javier Rodríguez Lera, Philip Cardiff
 | Github: https://github.com/PierreExeter/rl_reach
@@ -40,7 +40,7 @@ It was the starting point of Stable-Baselines3.
 Furuta Pendulum Robot
 ---------------------
 
-Everything you need to build and train a rotary inverted pendulum, also know as a furuta pendulum! This makes use of gSDE listed above.   
+Everything you need to build and train a rotary inverted pendulum, also known as a furuta pendulum! This makes use of gSDE listed above.
 The Github repository contains code, CAD files and a bill of materials for you to build the robot. You can watch `a video overview of the project here <https://www.youtube.com/watch?v=Y6FVBbqjR40>`_.
 
 | Authors: Armand du Parc Locmaria, Pierre Fabre
@@ -65,7 +65,7 @@ A simple interface to instantiate RL environments with SUMO for Traffic Signal C
 
 - Supports Multiagent RL
 - Compatibility with gym.Env and popular RL libraries such as stable-baselines3 and RLlib
-- Easy customisation: state and reward definitions are easily modifiable
+- Easy customization: state and reward definitions are easily modifiable
 
 | Author: Lucas Alegre
 | Github: https://github.com/LucasAlegre/sumo-rl
@@ -178,11 +178,11 @@ RLeXplore is a set of implementations of intrinsic reward driven-exploration app
 UAV_Navigation_DRL_AirSim
 -------------------------
 
-A platform for training UAV navigation policies in complex unknown environments. 
+A platform for training UAV navigation policies in complex unknown environments.
 
-- Based on AirSim and SB3. 
-- An Open AI Gym env is created including kinematic models for both multirotor and fixed-wing UAVs. 
-- Some UE4 environments are provided to train and test the navigation policy. 
+- Based on AirSim and SB3.
+- An Open AI Gym env is created including kinematic models for both multirotor and fixed-wing UAVs.
+- Some UE4 environments are provided to train and test the navigation policy.
 
 Try to train your own autonomous flight policy and even transfer it to real UAVs! Have fun ^_^!
 
@@ -229,3 +229,24 @@ intelligent agents to perform network slice placement.
 | Author: Alex Pasquali
 | Github: https://github.com/AlexPasqua/DeepNetSlice
 | Paper: **under review** (citation instructions on the project's README.md) -> see this Master's Thesis for the moment: https://etd.adm.unipi.it/theses/available/etd-01182023-110038/unrestricted/Tesi_magistrale_Pasquali_Alex.pdf
+
+
+PokemonRedExperiments
+---------------------
+
+Playing Pokemon Red with Reinforcement Learning.
+
+| Author: Peter Whidden
+| Github: https://github.com/PWhiddy/PokemonRedExperiments
+| Video: https://www.youtube.com/watch?v=DcYLT37ImBY
+
+
+Evolving Reservoirs for Meta Reinforcement Learning
+---------------------------------------------------
+
+Meta-RL framework to optimize reservoir-like neural structures (special kind of RNNs), and integrate them to RL agents to improve their training.
+It enables solving environments involving partial observability or locomotion (e.g MuJoCo), and optimizing reservoirs that can generalize to unseen tasks.
+
+| Authors: Corentin Léger, Gautier Hamon, Eleni Nisioti, Xavier Hinaut, Clément Moulin-Frier
+| Github: https://github.com/corentinlger/ER-MRL
+| Paper: https://arxiv.org/abs/2312.06695

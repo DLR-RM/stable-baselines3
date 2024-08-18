@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Type, Union
+from typing import Dict, List, Optional, Tuple, Type, Union
 
 import gymnasium as gym
 import torch as th
@@ -14,7 +14,7 @@ class BaseFeaturesExtractor(nn.Module):
     """
     Base class that represents a features extractor.
 
-    :param observation_space:
+    :param observation_space: The observation space of the environment
     :param features_dim: Number of features extracted.
     """
 
@@ -26,6 +26,7 @@ class BaseFeaturesExtractor(nn.Module):
 
     @property
     def features_dim(self) -> int:
+        """The number of features that the extractor outputs."""
         return self._features_dim
 
 
@@ -34,7 +35,7 @@ class FlattenExtractor(BaseFeaturesExtractor):
     Feature extract that flatten the input.
     Used as a placeholder when feature extraction is not needed.
 
-    :param observation_space:
+    :param observation_space: The observation space of the environment
     """
 
     def __init__(self, observation_space: gym.Space) -> None:
@@ -52,7 +53,7 @@ class NatureCNN(BaseFeaturesExtractor):
         "Human-level control through deep reinforcement learning."
         Nature 518.7540 (2015): 529-533.
 
-    :param observation_space:
+    :param observation_space: The observation space of the environment
     :param features_dim: Number of features extracted.
         This corresponds to the number of unit for the last layer.
     :param normalized_image: Whether to assume that the image is already normalized
@@ -113,13 +114,15 @@ def create_mlp(
     activation_fn: Type[nn.Module] = nn.ReLU,
     squash_output: bool = False,
     with_bias: bool = True,
+    pre_linear_modules: Optional[List[Type[nn.Module]]] = None,
+    post_linear_modules: Optional[List[Type[nn.Module]]] = None,
 ) -> List[nn.Module]:
     """
     Create a multi layer perceptron (MLP), which is
     a collection of fully-connected layers each followed by an activation function.
 
     :param input_dim: Dimension of the input vector
-    :param output_dim:
+    :param output_dim: Dimension of the output (last layer, for instance, the number of actions)
     :param net_arch: Architecture of the neural net
         It represents the number of units per layer.
         The length of this list is the number of layers.
@@ -128,20 +131,52 @@ def create_mlp(
     :param squash_output: Whether to squash the output using a Tanh
         activation function
     :param with_bias: If set to False, the layers will not learn an additive bias
-    :return:
+    :param pre_linear_modules: List of nn.Module to add before the linear layers.
+        These modules should maintain the input tensor dimension (e.g. BatchNorm).
+        The number of input features is passed to the module's constructor.
+        Compared to post_linear_modules, they are used before the output layer (output_dim > 0).
+    :param post_linear_modules: List of nn.Module to add after the linear layers
+        (and before the activation function). These modules should maintain the input
+        tensor dimension (e.g. Dropout, LayerNorm). They are not used after the
+        output layer (output_dim > 0). The number of input features is passed to
+        the module's constructor.
+    :return: The list of layers of the neural network
     """
 
+    pre_linear_modules = pre_linear_modules or []
+    post_linear_modules = post_linear_modules or []
+
+    modules = []
     if len(net_arch) > 0:
-        modules = [nn.Linear(input_dim, net_arch[0], bias=with_bias), activation_fn()]
-    else:
-        modules = []
+        # BatchNorm maintains input dim
+        for module in pre_linear_modules:
+            modules.append(module(input_dim))
+
+        modules.append(nn.Linear(input_dim, net_arch[0], bias=with_bias))
+
+        # LayerNorm, Dropout maintain output dim
+        for module in post_linear_modules:
+            modules.append(module(net_arch[0]))
+
+        modules.append(activation_fn())
 
     for idx in range(len(net_arch) - 1):
+        for module in pre_linear_modules:
+            modules.append(module(net_arch[idx]))
+
         modules.append(nn.Linear(net_arch[idx], net_arch[idx + 1], bias=with_bias))
+
+        for module in post_linear_modules:
+            modules.append(module(net_arch[idx + 1]))
+
         modules.append(activation_fn())
 
     if output_dim > 0:
         last_layer_dim = net_arch[-1] if len(net_arch) > 0 else input_dim
+        # Only add BatchNorm before output layer
+        for module in pre_linear_modules:
+            modules.append(module(last_layer_dim))
+
         modules.append(nn.Linear(last_layer_dim, output_dim, bias=with_bias))
     if squash_output:
         modules.append(nn.Tanh())
@@ -189,7 +224,7 @@ class MlpExtractor(nn.Module):
 
         # save dimensions of layers in policy and value nets
         if isinstance(net_arch, dict):
-            # Note: if key is not specificed, assume linear network
+            # Note: if key is not specified, assume linear network
             pi_layers_dims = net_arch.get("pi", [])  # Layer sizes of the policy network
             vf_layers_dims = net_arch.get("vf", [])  # Layer sizes of the value network
         else:

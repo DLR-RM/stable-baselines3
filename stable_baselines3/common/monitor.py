@@ -189,13 +189,11 @@ class ResultsWriter:
         filename = os.path.realpath(filename)
         # Create (if any) missing filename directories
         os.makedirs(os.path.dirname(filename), exist_ok=True)
-        # Append mode when not overridding existing file
+        # Append mode when not overriding existing file
         mode = "w" if override_existing else "a"
         # Prevent newline issue on Windows, see GH issue #692
         self.file_handler = open(filename, f"{mode}t", newline="\n")
-        self.logger = csv.DictWriter(
-            self.file_handler, fieldnames=("r", "l", "t", *extra_keys)
-        )  # pytype: disable=wrong-arg-types
+        self.logger = csv.DictWriter(self.file_handler, fieldnames=("r", "l", "t", *extra_keys))
         if override_existing:
             self.file_handler.write(f"#{json.dumps(header)}\n")
             self.logger.writeheader()

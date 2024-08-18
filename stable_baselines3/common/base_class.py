@@ -48,7 +48,7 @@ def maybe_make_env(env: Union[GymEnv, str], verbose: int) -> GymEnv:
     """If env is a string, make the environment; otherwise, return env.
 
     :param env: The environment to learn from.
-    :param verbose: Verbosity level: 0 for no output, 1 for indicating if envrironment is created
+    :param verbose: Verbosity level: 0 for no output, 1 for indicating if environment is created
     :return A Gym (vector) environment.
     """
     if isinstance(env, str):
@@ -420,9 +420,7 @@ class BaseAlgorithm(ABC):
         # Avoid resetting the environment when calling ``.learn()`` consecutive times
         if reset_num_timesteps or self._last_obs is None:
             assert self.env is not None
-            # pytype: disable=annotation-type-mismatch
             self._last_obs = self.env.reset()  # type: ignore[assignment]
-            # pytype: enable=annotation-type-mismatch
             self._last_episode_starts = np.ones((self.env.num_envs,), dtype=bool)
             # Retrieve unnormalized observation for saving into the buffer
             if self._vec_normalize_env is not None:
@@ -525,7 +523,10 @@ class BaseAlgorithm(ABC):
 
         :param total_timesteps: The total number of samples (env steps) to train on
         :param callback: callback(s) called at every step with state of the algorithm.
-        :param log_interval: The number of episodes before logging.
+        :param log_interval: for on-policy algos (e.g., PPO, A2C, ...) this is the number of
+            training iterations (i.e., log_interval * n_steps * n_envs timesteps) before logging;
+            for off-policy algos (e.g., TD3, SAC, ...) this is the number of episodes before
+            logging.
         :param tb_log_name: the name of the run for TensorBoard logging
         :param reset_num_timesteps: whether or not to reset the current timestep number (used in logging)
         :param progress_bar: Display a progress bar using tqdm and rich.
@@ -591,7 +592,7 @@ class BaseAlgorithm(ABC):
         if isinstance(load_path_or_dict, dict):
             params = load_path_or_dict
         else:
-            _, params, _ = load_from_zip_file(load_path_or_dict, device=device)
+            _, params, _ = load_from_zip_file(load_path_or_dict, device=device, load_data=False)
 
         # Keep track which objects were updated.
         # `_get_torch_save_params` returns [params, other_pytorch_variables].
@@ -691,10 +692,9 @@ class BaseAlgorithm(ABC):
             if "device" in data["policy_kwargs"]:
                 del data["policy_kwargs"]["device"]
             # backward compatibility, convert to new format
-            if "net_arch" in data["policy_kwargs"] and len(data["policy_kwargs"]["net_arch"]) > 0:
-                saved_net_arch = data["policy_kwargs"]["net_arch"]
-                if isinstance(saved_net_arch, list) and isinstance(saved_net_arch[0], dict):
-                    data["policy_kwargs"]["net_arch"] = saved_net_arch[0]
+            saved_net_arch = data["policy_kwargs"].get("net_arch")
+            if saved_net_arch and isinstance(saved_net_arch, list) and isinstance(saved_net_arch[0], dict):
+                data["policy_kwargs"]["net_arch"] = saved_net_arch[0]
 
         if "policy_kwargs" in kwargs and kwargs["policy_kwargs"] != data["policy_kwargs"]:
             raise ValueError(
@@ -707,7 +707,7 @@ class BaseAlgorithm(ABC):
 
         # Gym -> Gymnasium space conversion
         for key in {"observation_space", "action_space"}:
-            data[key] = _convert_space(data[key])  # pytype: disable=unsupported-operands
+            data[key] = _convert_space(data[key])
 
         if env is not None:
             # Wrap first if needed
@@ -726,14 +726,12 @@ class BaseAlgorithm(ABC):
             if "env" in data:
                 env = data["env"]
 
-        # pytype: disable=not-instantiable,wrong-keyword-args
         model = cls(
             policy=data["policy_class"],
             env=env,
             device=device,
             _init_setup_model=False,  # type: ignore[call-arg]
         )
-        # pytype: enable=not-instantiable,wrong-keyword-args
 
         # load parameters
         model.__dict__.update(data)
@@ -744,13 +742,13 @@ class BaseAlgorithm(ABC):
             # put state_dicts back in place
             model.set_parameters(params, exact_match=True, device=device)
         except RuntimeError as e:
-            # Patch to load Policy saved using SB3 < 1.7.0
+            # Patch to load policies saved using SB3 < 1.7.0
             # the error is probably due to old policy being loaded
             # See https://github.com/DLR-RM/stable-baselines3/issues/1233
             if "pi_features_extractor" in str(e) and "Missing key(s) in state_dict" in str(e):
                 model.set_parameters(params, exact_match=False, device=device)
                 warnings.warn(
-                    "You are probably loading a model saved with SB3 < 1.7.0, "
+                    "You are probably loading a A2C/PPO model saved with SB3 < 1.7.0, "
                     "we deactivated exact_match so you can save the model "
                     "again to avoid issues in the future "
                     "(see https://github.com/DLR-RM/stable-baselines3/issues/1233 for more info). "
@@ -759,6 +757,29 @@ class BaseAlgorithm(ABC):
                 )
             else:
                 raise e
+        except ValueError as e:
+            # Patch to load DQN policies saved using SB3 < 2.4.0
+            # The target network params are no longer in the optimizer
+            # See https://github.com/DLR-RM/stable-baselines3/pull/1963
+            saved_optim_params = params["policy.optimizer"]["param_groups"][0]["params"]  # type: ignore[index]
+            n_params_saved = len(saved_optim_params)
+            n_params = len(model.policy.optimizer.param_groups[0]["params"])
+            if n_params_saved == 2 * n_params:
+                # Truncate to include only online network params
+                params["policy.optimizer"]["param_groups"][0]["params"] = saved_optim_params[:n_params]  # type: ignore[index]
+
+                model.set_parameters(params, exact_match=True, device=device)
+                warnings.warn(
+                    "You are probably loading a DQN model saved with SB3 < 2.4.0, "
+                    "we truncated the optimizer state so you can save the model "
+                    "again to avoid issues in the future "
+                    "(see https://github.com/DLR-RM/stable-baselines3/pull/1963 for more info). "
+                    f"Original error: {e} \n"
+                    "Note: the model should still work fine, this only a warning."
+                )
+            else:
+                raise e
+
         # put other pytorch variables back in place
         if pytorch_variables is not None:
             for name in pytorch_variables:
@@ -776,7 +797,7 @@ class BaseAlgorithm(ABC):
         # Sample gSDE exploration matrix, so it uses the right device
         # see issue #44
         if model.use_sde:
-            model.policy.reset_noise()  # type: ignore[operator]  # pytype: disable=attribute-error
+            model.policy.reset_noise()  # type: ignore[operator]
         return model
 
     def get_parameters(self) -> Dict[str, Dict]:

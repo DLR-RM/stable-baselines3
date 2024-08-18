@@ -14,7 +14,7 @@ from gymnasium import spaces
 from matplotlib import pyplot as plt
 from pandas.errors import EmptyDataError
 
-from stable_baselines3 import A2C, DQN
+from stable_baselines3 import A2C, DQN, PPO
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.logger import (
     DEBUG,
@@ -33,6 +33,7 @@ from stable_baselines3.common.logger import (
     read_csv,
     read_json,
 )
+from stable_baselines3.common.monitor import Monitor
 
 KEY_VALUES = {
     "test": 1,
@@ -43,6 +44,7 @@ KEY_VALUES = {
     "f": np.array(1),
     "g": np.array([[[1]]]),
     "h": 'this ", ;is a \n tes:,t',
+    "i": th.ones(3),
 }
 
 KEY_EXCLUDED = {}
@@ -175,6 +177,9 @@ def test_main(tmp_path):
     logger.record_mean("b", -22.5)
     logger.record_mean("b", -44.4)
     logger.record("a", 5.5)
+    # Converted to string:
+    logger.record("hist1", th.ones(2))
+    logger.record("hist2", np.ones(2))
     logger.dump()
 
     logger.record("a", "longasslongasslongasslongasslongasslongassvalue")
@@ -240,13 +245,61 @@ def is_moviepy_installed():
 
 
 @pytest.mark.parametrize("unsupported_format", ["stdout", "log", "json", "csv"])
-def test_report_video_to_unsupported_format_raises_error(tmp_path, unsupported_format):
+def test_unsupported_video_format(tmp_path, unsupported_format):
     writer = make_output_format(unsupported_format, tmp_path)
 
     with pytest.raises(FormatUnsupportedError) as exec_info:
         video = Video(frames=th.rand(1, 20, 3, 16, 16), fps=20)
         writer.write({"video": video}, key_excluded={"video": ()})
     assert unsupported_format in str(exec_info.value)
+    writer.close()
+
+
+@pytest.mark.parametrize(
+    "histogram",
+    [
+        th.rand(100),
+        np.random.rand(100),
+        np.ones(1),
+        np.ones(1, dtype="int"),
+    ],
+)
+def test_log_histogram(tmp_path, read_log, histogram):
+    pytest.importorskip("tensorboard")
+
+    writer = make_output_format("tensorboard", tmp_path)
+    writer.write({"data": histogram}, key_excluded={"data": ()})
+
+    log = read_log("tensorboard")
+
+    assert not log.empty
+    assert any("data" in line for line in log.lines)
+    assert any("Histogram" in line for line in log.lines)
+
+    writer.close()
+
+
+@pytest.mark.parametrize(
+    "histogram",
+    [
+        list(np.random.rand(100)),
+        tuple(np.random.rand(100)),
+        "1 2 3 4",
+        np.ones(1).item(),
+        th.ones(1).item(),
+    ],
+)
+def test_unsupported_type_histogram(tmp_path, read_log, histogram):
+    """
+    Check that other types aren't accidentally logged as a Histogram
+    """
+    pytest.importorskip("tensorboard")
+
+    writer = make_output_format("tensorboard", tmp_path)
+    writer.write({"data": histogram}, key_excluded={"data": ()})
+
+    assert all("Histogram" not in line for line in read_log("tensorboard").lines)
+
     writer.close()
 
 
@@ -262,7 +315,7 @@ def test_report_image_to_tensorboard(tmp_path, read_log):
 
 
 @pytest.mark.parametrize("unsupported_format", ["stdout", "log", "json", "csv"])
-def test_report_image_to_unsupported_format_raises_error(tmp_path, unsupported_format):
+def test_unsupported_image_format(tmp_path, unsupported_format):
     writer = make_output_format(unsupported_format, tmp_path)
 
     with pytest.raises(FormatUnsupportedError) as exec_info:
@@ -286,7 +339,7 @@ def test_report_figure_to_tensorboard(tmp_path, read_log):
 
 
 @pytest.mark.parametrize("unsupported_format", ["stdout", "log", "json", "csv"])
-def test_report_figure_to_unsupported_format_raises_error(tmp_path, unsupported_format):
+def test_unsupported_figure_format(tmp_path, unsupported_format):
     writer = make_output_format(unsupported_format, tmp_path)
 
     with pytest.raises(FormatUnsupportedError) as exec_info:
@@ -299,7 +352,7 @@ def test_report_figure_to_unsupported_format_raises_error(tmp_path, unsupported_
 
 
 @pytest.mark.parametrize("unsupported_format", ["stdout", "log", "json", "csv"])
-def test_report_hparam_to_unsupported_format_raises_error(tmp_path, unsupported_format):
+def test_unsupported_hparam(tmp_path, unsupported_format):
     writer = make_output_format(unsupported_format, tmp_path)
 
     with pytest.raises(FormatUnsupportedError) as exec_info:
@@ -418,9 +471,9 @@ def test_fps_no_div_zero(algo):
             model.learn(total_timesteps=100)
 
 
-def test_human_output_format_no_crash_on_same_keys_different_tags():
-    o = HumanOutputFormat(sys.stdout, max_length=60)
-    o.write(
+def test_human_output_same_keys_different_tags():
+    human_out = HumanOutputFormat(sys.stdout, max_length=60)
+    human_out.write(
         {"key1/foo": "value1", "key1/bar": "value2", "key2/bizz": "value3", "key2/foo": "value4"},
         {"key1/foo": None, "key2/bizz": None, "key1/bar": None, "key2/foo": None},
     )
@@ -438,7 +491,7 @@ def test_ep_buffers_stats_window_size(algo, stats_window_size):
 
 
 @pytest.mark.parametrize("base_class", [object, TextIOBase])
-def test_human_output_format_custom_test_io(base_class):
+def test_human_out_custom_text_io(base_class):
     class DummyTextIO(base_class):
         def __init__(self) -> None:
             super().__init__()
@@ -474,3 +527,92 @@ def test_human_output_format_custom_test_io(base_class):
 """
 
     assert printed == desired_printed
+
+
+class DummySuccessEnv(gym.Env):
+    """
+    Create a dummy success environment that returns whether True or False for info['is_success']
+    at the end of an episode according to its dummy successes list
+    """
+
+    def __init__(self, dummy_successes, ep_steps):
+        """Init the dummy success env
+
+        :param dummy_successes: list of size (n_logs_iterations, n_episodes_per_log) that specifies
+            the success value of log iteration i at episode j
+        :param ep_steps: number of steps per episode (to activate truncated)
+        """
+        self.n_steps = 0
+        self.log_id = 0
+        self.ep_id = 0
+
+        self.ep_steps = ep_steps
+
+        self.dummy_success = dummy_successes
+        self.num_logs = len(dummy_successes)
+        self.ep_per_log = len(dummy_successes[0])
+        self.steps_per_log = self.ep_per_log * self.ep_steps
+
+        self.action_space = spaces.Discrete(2)
+        self.observation_space = spaces.Discrete(2)
+
+    def reset(self, seed=None, options=None):
+        """
+        Reset the env and advance to the next episode_id to get the next dummy success
+        """
+        self.n_steps = 0
+
+        if self.ep_id == self.ep_per_log:
+            self.ep_id = 0
+            self.log_id = (self.log_id + 1) % self.num_logs
+
+        return self.observation_space.sample(), {}
+
+    def step(self, action):
+        """
+        Step and return a dummy success when an episode is truncated
+        """
+        self.n_steps += 1
+        truncated = self.n_steps >= self.ep_steps
+
+        info = {}
+        if truncated:
+            maybe_success = self.dummy_success[self.log_id][self.ep_id]
+            info["is_success"] = maybe_success
+            self.ep_id += 1
+        return self.observation_space.sample(), 0.0, False, truncated, info
+
+
+def test_rollout_success_rate_onpolicy_algo(tmp_path):
+    """
+    Test if the rollout/success_rate information is correctly logged with on policy algorithms
+
+    To do so, create a dummy environment that takes as argument dummy successes (i.e when an episode)
+    is going to be successful or not.
+    """
+
+    STATS_WINDOW_SIZE = 10
+    # Add dummy successes with 0.3, 0.5 and 0.8 success_rate of length STATS_WINDOW_SIZE
+    dummy_successes = [
+        [True] * 3 + [False] * 7,
+        [True] * 5 + [False] * 5,
+        [True] * 8 + [False] * 2,
+    ]
+    ep_steps = 64
+
+    # Monitor the env to track the success info
+    monitor_file = str(tmp_path / "monitor.csv")
+    env = Monitor(DummySuccessEnv(dummy_successes, ep_steps), filename=monitor_file, info_keywords=("is_success",))
+
+    # Equip the model of a custom logger to check the success_rate info
+    model = PPO("MlpPolicy", env=env, stats_window_size=STATS_WINDOW_SIZE, n_steps=env.steps_per_log, verbose=1)
+    logger = InMemoryLogger()
+    model.set_logger(logger)
+
+    # Make the model learn and check that the success rate corresponds to the ratio of dummy successes
+    model.learn(total_timesteps=env.ep_per_log * ep_steps, log_interval=1)
+    assert logger.name_to_value["rollout/success_rate"] == 0.3
+    model.learn(total_timesteps=env.ep_per_log * ep_steps, log_interval=1)
+    assert logger.name_to_value["rollout/success_rate"] == 0.5
+    model.learn(total_timesteps=env.ep_per_log * ep_steps, log_interval=1)
+    assert logger.name_to_value["rollout/success_rate"] == 0.8

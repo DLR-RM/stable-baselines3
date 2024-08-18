@@ -141,7 +141,7 @@ Here is an example of how to render an image to TensorBoard at regular intervals
 
 Logging Figures/Plots
 ---------------------
-TensorBoard supports periodic logging of figures/plots created with matplotlib, which helps evaluating agents at various stages during training.
+TensorBoard supports periodic logging of figures/plots created with matplotlib, which helps evaluate agents at various stages during training.
 
 .. warning::
     To support figure logging `matplotlib <https://matplotlib.org/>`_ must be installed otherwise, TensorBoard ignores the figure and logs a warning.
@@ -179,7 +179,7 @@ Here is an example of how to store a plot in TensorBoard at regular intervals:
 Logging Videos
 --------------
 
-TensorBoard supports periodic logging of video data, which helps evaluating agents at various stages during training.
+TensorBoard supports periodic logging of video data, which helps evaluate agents at various stages during training.
 
 .. warning::
     To support video logging `moviepy <https://zulko.github.io/moviepy/>`_ must be installed otherwise, TensorBoard ignores the video and logs a warning.
@@ -192,6 +192,7 @@ Here is an example of how to render an episode and log the resulting video to Te
 
     import gymnasium as gym
     import torch as th
+    import numpy as np
 
     from stable_baselines3 import A2C
     from stable_baselines3.common.callbacks import BaseCallback
@@ -226,6 +227,9 @@ Here is an example of how to render an episode and log the resulting video to Te
                     :param _locals: A dictionary containing all local variables of the callback's scope
                     :param _globals: A dictionary containing all global variables of the callback's scope
                     """
+                    # We expect `render()` to return a uint8 array with values in [0, 255] or a float array
+                    # with values in [0, 1], as described in
+                    # https://pytorch.org/docs/stable/tensorboard.html#torch.utils.tensorboard.writer.SummaryWriter.add_video
                     screen = self._eval_env.render(mode="rgb_array")
                     # PyTorch uses CxHxW vs HxWxC gym (and tensorflow) image convention
                     screens.append(screen.transpose(2, 0, 1))
@@ -239,7 +243,7 @@ Here is an example of how to render an episode and log the resulting video to Te
                 )
                 self.logger.record(
                     "trajectory/video",
-                    Video(th.ByteTensor([screens]), fps=40),
+                    Video(th.from_numpy(np.asarray([screens])), fps=40),
                     exclude=("stdout", "log", "json", "csv"),
                 )
             return True
@@ -252,7 +256,7 @@ Here is an example of how to render an episode and log the resulting video to Te
 Logging Hyperparameters
 -----------------------
 
-TensorBoard supports logging of hyperparameters in its HPARAMS tab, which helps comparing agents trainings.
+TensorBoard supports logging of hyperparameters in its HPARAMS tab, which helps to compare agents trainings.
 
 .. warning::
     To display hyperparameters in the HPARAMS section, a ``metric_dict`` must be given (as well as a ``hparam_dict``).

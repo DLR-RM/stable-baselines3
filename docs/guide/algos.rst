@@ -43,7 +43,8 @@ Actions ``gym.spaces``:
 
 .. note::
 
-  More algorithms (like QR-DQN or TQC) are implemented in our :ref:`contrib repo <sb3_contrib>`.
+  More algorithms (like QR-DQN or TQC) are implemented in our :ref:`contrib repo <sb3_contrib>`
+  and in our :ref:`SBX (SB3 + Jax) repo <sbx>` (DroQ, CrossQ, ...).
 
 .. note::
 

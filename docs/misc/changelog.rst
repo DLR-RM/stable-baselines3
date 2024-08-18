@@ -3,25 +3,206 @@
 Changelog
 ==========
 
-Release 2.2.0a2 (WIP)
+Release 2.4.0a8 (WIP)
 --------------------------
+
+.. note::
+
+  DQN (and QR-DQN) models saved with SB3 < 2.4.0 will show a warning about
+  truncation of optimizer state when loaded with SB3 >= 2.4.0.
+  To suppress the warning, simply save the model again.
+  You can find more info in `PR #1963 <https://github.com/DLR-RM/stable-baselines3/pull/1963>`_
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-- Switched to ``ruff`` for sorting imports (isort is no longer needed), black and ruff version now require a minimum version
 
 New Features:
 ^^^^^^^^^^^^^
+- Added support for ``pre_linear_modules`` and ``post_linear_modules`` in ``create_mlp`` (useful for adding normalization layers, like in DroQ or CrossQ)
+- Enabled np.ndarray logging for TensorBoardOutputFormat as histogram (see GH#1634) (@iwishwasaneagle)
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed memory leak when loading learner from storage, ``set_parameters()`` does not try to load the object data anymore
+  and only loads the PyTorch parameters (@peteole)
+- Cast type in compute gae method to avoid error when using torch compile (@amjames)
+- ``CallbackList`` now sets the ``.parent`` attribute of child callbacks to its own ``.parent``. (will-maclean)
+- Fixed error when loading a model that has ``net_arch`` manually set to ``None``   (@jak3122)
+- Set requirement numpy<2.0 until PyTorch is compatible (https://github.com/pytorch/pytorch/issues/107302)
+- Updated DQN optimizer input to only include q_network parameters, removing the target_q_network ones (@corentinlger)
+- Fixed ``test_buffers.py::test_device`` which was not actually checking the device of tensors (@rhaps0dy)
+
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
 
 `RL Zoo`_
 ^^^^^^^^^
+- Updated defaults hyperparameters for TQC/SAC for Swimmer-v4 (decrease gamma for more consistent results)
 
-`SBX`_
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+- Added CNN support for DQN
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Fixed various typos (@cschindlbeck)
+- Remove unnecessary SDE noise resampling in PPO update (@brn-dev)
+- Updated PyTorch version on CI to 2.3.1
+
+Bug Fixes:
+^^^^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+
+Release 2.3.2 (2024-04-27)
+--------------------------
+
+Bug Fixes:
+^^^^^^^^^^
+- Reverted ``torch.load()`` to be called ``weights_only=False`` as it caused loading issue with old version of PyTorch.
+
+
+Documentation:
+^^^^^^^^^^^^^^
+- Added ER-MRL to the project page (@corentinlger)
+- Updated Tensorboard Logging Videos documentation (@NickLucche)
+
+
+Release 2.3.1 (2024-04-22)
+--------------------------
+
+Bug Fixes:
+^^^^^^^^^^
+- Cast return value of learning rate schedule to float, to avoid issue when loading model because of ``weights_only=True`` (@markscsmith)
+
+Documentation:
+^^^^^^^^^^^^^^
+- Updated SBX documentation (CrossQ and deprecated DroQ)
+- Updated RL Tips and Tricks section
+
+Release 2.3.0 (2024-03-31)
+--------------------------
+
+**New defaults hyperparameters for DDPG, TD3 and DQN**
+
+.. warning::
+
+  Because of ``weights_only=True``, this release breaks loading of policies when using PyTorch 1.13.
+  Please upgrade to PyTorch >= 2.0 or upgrade SB3 version (we reverted the change in SB3 2.3.2)
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+- The defaults hyperparameters of ``TD3`` and ``DDPG`` have been changed to be more consistent with ``SAC``
+
+.. code-block:: python
+
+  # SB3 < 2.3.0 default hyperparameters
+  # model = TD3("MlpPolicy", env, train_freq=(1, "episode"), gradient_steps=-1, batch_size=100)
+  # SB3 >= 2.3.0:
+  model = TD3("MlpPolicy", env, train_freq=1, gradient_steps=1, batch_size=256)
+
+.. note::
+
+	Two inconsistencies remain: the default network architecture for ``TD3/DDPG`` is ``[400, 300]`` instead of ``[256, 256]`` for SAC (for backward compatibility reasons, see `report on the influence of the network size <https://wandb.ai/openrlbenchmark/sbx/reports/SBX-TD3-Influence-of-policy-net--Vmlldzo2NDg1Mzk3>`_) and the default learning rate is 1e-3 instead of 3e-4 for SAC (for performance reasons, see `W&B report on the influence of the lr <https://wandb.ai/openrlbenchmark/sbx/reports/SBX-TD3-RL-Zoo-v2-3-0a0-vs-SB3-TD3-RL-Zoo-2-2-1---Vmlldzo2MjUyNTQx>`_)
+
+
+
+- The default ``learning_starts`` parameter of ``DQN`` have been changed to be consistent with the other offpolicy algorithms
+
+
+.. code-block:: python
+
+  # SB3 < 2.3.0 default hyperparameters, 50_000 corresponded to Atari defaults hyperparameters
+  # model = DQN("MlpPolicy", env, learning_starts=50_000)
+  # SB3 >= 2.3.0:
+  model = DQN("MlpPolicy", env, learning_starts=100)
+
+- For safety, ``torch.load()`` is now called with ``weights_only=True`` when loading torch tensors,
+  policy ``load()`` still uses ``weights_only=False`` as gymnasium imports are required for it to work
+- When using ``huggingface_sb3``, you will now need to set ``TRUST_REMOTE_CODE=True`` when downloading models from the hub, as ``pickle.load`` is not safe.
+
+
+New Features:
+^^^^^^^^^^^^^
+- Log success rate ``rollout/success_rate`` when available for on policy algorithms (@corentinlger)
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed ``monitor_wrapper`` argument that was not passed to the parent class, and dones argument that wasn't passed to ``_update_into_buffer`` (@corentinlger)
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+- Added ``rollout_buffer_class`` and ``rollout_buffer_kwargs`` arguments to MaskablePPO
+- Fixed ``train_freq`` type annotation for tqc and qrdqn (@Armandpl)
+- Fixed ``sb3_contrib/common/maskable/*.py`` type annotations
+- Fixed ``sb3_contrib/ppo_mask/ppo_mask.py`` type annotations
+- Fixed ``sb3_contrib/common/vec_env/async_eval.py`` type annotations
+- Add some additional notes about ``MaskablePPO`` (evaluation and multi-process) (@icheered)
+
+
+`RL Zoo`_
 ^^^^^^^^^
-- Added ``DDPG`` and ``TD3``
+- Updated defaults hyperparameters for TD3/DDPG to be more consistent with SAC
+- Upgraded MuJoCo envs hyperparameters to v4 (pre-trained agents need to be updated)
+- Added test dependencies to `setup.py` (@power-edge)
+- Simplify dependencies of `requirements.txt` (remove duplicates from `setup.py`)
+
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+- Added support for ``MultiDiscrete`` and ``MultiBinary`` action spaces to PPO
+- Added support for large values for gradient_steps to SAC, TD3, and TQC
+- Fix  ``train()`` signature and update type hints
+- Fix replay buffer device at load time
+- Added flatten layer
+- Added ``CrossQ``
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Updated black from v23 to v24
+- Updated ruff to >= v0.3.1
+- Updated env checker for (multi)discrete spaces with non-zero start.
+
+Documentation:
+^^^^^^^^^^^^^^
+- Added a paragraph on modifying vectorized environment parameters via setters (@fracapuano)
+- Updated callback code example
+- Updated export to ONNX documentation, it is now much simpler to export SB3 models with newer ONNX Opset!
+- Added video link to "Practical Tips for Reliable Reinforcement Learning" video
+- Added ``render_mode="human"`` in the README example (@marekm4)
+- Fixed docstring signature for sum_independent_dims (@stagoverflow)
+- Updated docstring description for ``log_interval`` in the base class (@rushitnshah).
+
+Release 2.2.1 (2023-11-17)
+--------------------------
+**Support for options at reset, bug fixes and better error messages**
+
+.. note::
+
+  SB3 v2.2.0 was yanked after a breaking change was found in `GH#1751 <https://github.com/DLR-RM/stable-baselines3/issues/1751>`_.
+  Please use SB3 v2.2.1 and not v2.2.0.
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+- Switched to ``ruff`` for sorting imports (isort is no longer needed), black and ruff version now require a minimum version
+- Dropped ``x is False`` in favor of ``not x``, which means that callbacks that wrongly returned None (instead of a boolean) will cause the training to stop (@iwishiwasaneagle)
+
+New Features:
+^^^^^^^^^^^^^
+- Improved error message of the ``env_checker`` for env wrongly detected as GoalEnv (``compute_reward()`` is defined)
+- Improved error message when mixing Gym API with VecEnv API (see GH#1694)
+- Add support for setting ``options`` at reset with VecEnv via the ``set_options()`` method. Same as seeds logic, options are reset at the end of an episode (@ReHoss)
+- Added ``rollout_buffer_class`` and ``rollout_buffer_kwargs`` arguments to on-policy algorithms (A2C and PPO)
+
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -32,8 +213,31 @@ Bug Fixes:
 - Calls ``callback.update_locals()`` before ``callback.on_rollout_end()`` in OnPolicyAlgorithm (@PatrickHelm)
 - Fixed replay buffer device after loading in OffPolicyAlgorithm (@PatrickHelm)
 - Fixed ``render_mode`` which was not properly loaded when using ``VecNormalize.load()``
-- Fixed ``test_buffers.py::test_device`` which was not actually checking the device of tensors (@rhaps0dy)
+- Fixed success reward dtype in ``SimpleMultiObsEnv`` (@NixGD)
+- Fixed check_env for Sequence observation space (@corentinlger)
+- Prevents instantiating BitFlippingEnv with conflicting observation spaces (@kylesayrs)
+- Fixed ResourceWarning when loading and saving models (files were not closed), please note that only path are closed automatically,
+  the behavior stay the same for tempfiles (they need to be closed manually),
+  the behavior is now consistent when loading/saving replay buffer
 
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+- Added ``set_options`` for ``AsyncEval``
+- Added ``rollout_buffer_class`` and ``rollout_buffer_kwargs`` arguments to TRPO
+
+`RL Zoo`_
+^^^^^^^^^
+- Removed `gym` dependency, the package is still required for some pretrained agents.
+- Added `--eval-env-kwargs` to `train.py` (@Quentin18)
+- Added `ppo_lstm` to hyperparams_opt.py (@technocrat13)
+- Upgraded to `pybullet_envs_gymnasium>=0.4.0`
+- Removed old hacks (for instance limiting offpolicy algorithms to one env at test time)
+- Updated docker image, removed support for X server
+- Replaced deprecated `optuna.suggest_uniform(...)` by `optuna.suggest_float(..., low=..., high=...)`
+
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+- Added ``DDPG`` and ``TD3`` algorithms
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -46,10 +250,26 @@ Others:
 - Fixed ``stable_baselines3/common/vec_env/vec_video_recorder.py`` type hints
 - Fixed ``stable_baselines3/common/save_util.py`` type hints
 - Updated docker images to  Ubuntu Jammy using micromamba 1.5
+- Fixed ``stable_baselines3/common/buffers.py`` type hints
+- Fixed ``stable_baselines3/her/her_replay_buffer.py`` type hints
+- Buffers do no call an additional ``.copy()`` when storing new transitions
+- Fixed ``ActorCriticPolicy.extract_features()`` signature by adding an optional ``features_extractor`` argument
+- Update dependencies (accept newer Shimmy/Sphinx version and remove ``sphinx_autodoc_typehints``)
+- Fixed ``stable_baselines3/common/off_policy_algorithm.py`` type hints
+- Fixed ``stable_baselines3/common/distributions.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/vec_normalize.py`` type hints
+- Fixed ``stable_baselines3/common/vec_env/__init__.py`` type hints
+- Switched to PyTorch 2.1.0 in the CI (fixes type annotations)
+- Fixed ``stable_baselines3/common/policies.py`` type hints
+- Switched to ``mypy`` only for checking types
+- Added tests to check consistency when saving/loading files
 
 Documentation:
 ^^^^^^^^^^^^^^
-
+- Updated RL Tips and Tricks (include recommendation for evaluation, added links to DroQ, ARS and SBX).
+- Fixed various typos and grammar mistakes
+- Added PokemonRedExperiments to the project page
+- Fixed an out-of-date command for installing Atari in examples
 
 Release 2.1.0 (2023-08-17)
 --------------------------
@@ -205,7 +425,7 @@ Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed shared layers in ``mlp_extractor`` (@AlexPasqua)
 - Refactored ``StackedObservations`` (it now handles dict obs, ``StackedDictObservations`` was removed)
-- You must now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
+- You must now explicitly pass a ``features_extractor`` parameter when calling ``extract_features()``
 - Dropped offline sampling for ``HerReplayBuffer``
 - As ``HerReplayBuffer`` was refactored to support multiprocessing, previous replay buffer are incompatible with this new version
 - ``HerReplayBuffer`` doesn't require a ``max_episode_length`` anymore
@@ -337,7 +557,7 @@ Bug Fixes:
 
 Deprecations:
 ^^^^^^^^^^^^^
-- You should now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
+- You should now explicitly pass a ``features_extractor`` parameter when calling ``extract_features()``
 - Deprecated shared layers in ``MlpExtractor`` (@AlexPasqua)
 
 Others:
@@ -548,7 +768,7 @@ Bug Fixes:
 - Fixed a bug in ``HumanOutputFormat``. Distinct keys truncated to the same prefix would overwrite each others value,
   resulting in only one being output. This now raises an error (this should only affect a small fraction of use cases
   with very long keys.)
-- Routing all the ``nn.Module`` calls through implicit rather than explict forward as per pytorch guidelines (@manuel-delverme)
+- Routing all the ``nn.Module`` calls through implicit rather than explicit forward as per pytorch guidelines (@manuel-delverme)
 - Fixed a bug in ``VecNormalize`` where error occurs when ``norm_obs`` is set to False for environment with dictionary observation  (@buoyancy99)
 - Set default ``env`` argument to ``None`` in ``HerReplayBuffer.sample`` (@qgallouedec)
 - Fix ``batch_size`` typing in ``DQN`` (@qgallouedec)
@@ -1448,15 +1668,17 @@ And all the contributors:
 @flodorner @KuKuXia @NeoExtended @PartiallyTyped @mmcenta @richardwu @kinalmehta @rolandgvc @tkelestemur @mloo3
 @tirafesi @blurLake @koulakis @joeljosephjin @shwang @rk37 @andyshih12 @RaphaelWag @xicocaio
 @diditforlulz273 @liorcohen5 @ManifoldFR @mloo3 @SwamyDev @wmmc88 @megan-klaiber @thisray
-@tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @JadenTravnik @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
+@tfederico @hn2 @LucasAlegre @AptX395 @zampanteymedio @fracapuano @JadenTravnik @decodyng @ardabbour @lorenz-h @mschweizer @lorepieri8 @vwxyzjn
 @ShangqunYu @PierreExeter @JacopoPan @ltbd78 @tom-doerr @Atlis @liusida @09tangriro @amy12xx @juancroldan
 @benblack769 @bstee615 @c-rizz @skandermoalla @MihaiAnca13 @davidblom603 @ayeright @cyprienc
 @wkirgsn @AechPro @CUN-bjy @batu @IljaAvadiev @timokau @kachayev @cleversonahum
 @eleurent @ac-93 @cove9988 @theDebugger811 @hsuehch @Demetrio92 @thomasgubler @IperGiove @ScheiklP
 @simoninithomas @armandpl @manuel-delverme @Gautam-J @gianlucadecola @buoyancy99 @caburu @xy9485
 @Gregwar @ycheng517 @quantitative-technologies @bcollazo @git-thor @TibiGG @cool-RR @MWeltevrede
-@carlosluis @arjun-kg @tlpss @JonathanKuelz @Gabo-Tor
+@carlosluis @arjun-kg @tlpss @JonathanKuelz @Gabo-Tor @iwishiwasaneagle
 @Melanol @qgallouedec @francescoluciano @jlp-ue @burakdmb @timothe-chaumont @honglu2875
-@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong
+@anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong @ReHoss
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
-@lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm
+@lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
+@marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
+@brn-dev

@@ -43,7 +43,7 @@ import gymnasium
 
 from stable_baselines3 import PPO
 
-env = gymnasium.make("CartPole-v1")
+env = gymnasium.make("CartPole-v1", render_mode="human")
 
 model = PPO("MlpPolicy", env, verbose=1)
 model.learn(total_timesteps=10_000)
@@ -85,7 +85,7 @@ extra_no_roms = [
     "tqdm",
     "rich",
     # For atari games,
-    "shimmy[atari]~=1.1.0",
+    "shimmy[atari]~=1.3.0",
     "pillow",
 ]
 
@@ -101,7 +101,7 @@ setup(
     package_data={"stable_baselines3": ["py.typed", "version.txt"]},
     install_requires=[
         "gymnasium>=0.28.1,<0.30",
-        "numpy>=1.20",
+        "numpy>=1.20,<2.0",  # PyTorch not compatible https://github.com/pytorch/pytorch/issues/107302
         "torch>=1.13",
         # For saving models
         "cloudpickle",
@@ -118,21 +118,18 @@ setup(
             "pytest-env",
             "pytest-xdist",
             # Type check
-            "pytype",
             "mypy",
             # Lint code and sort imports (flake8 and isort replacement)
-            "ruff>=0.0.288",
+            "ruff>=0.3.1",
             # Reformat
-            "black>=23.9.1,<24",
+            "black>=24.2.0,<25",
         ],
         "docs": [
-            "sphinx>=5.3,<7.0",
+            "sphinx>=5,<8",
             "sphinx-autobuild",
-            "sphinx-rtd-theme",
+            "sphinx-rtd-theme>=1.3.0",
             # For spelling
             "sphinxcontrib.spelling",
-            # Type hints support
-            "sphinx-autodoc-typehints",
             # Copy button for code snippets
             "sphinx_copybutton",
         ],

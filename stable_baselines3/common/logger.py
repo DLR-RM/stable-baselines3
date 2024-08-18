@@ -8,10 +8,10 @@ from collections import defaultdict
 from io import TextIOBase
 from typing import Any, Dict, List, Mapping, Optional, Sequence, TextIO, Tuple, Union
 
+import matplotlib.figure
 import numpy as np
 import pandas
 import torch as th
-from matplotlib import pyplot as plt
 
 try:
     from torch.utils.tensorboard import SummaryWriter
@@ -52,7 +52,7 @@ class Figure:
     :param close: if true, close the figure after logging it
     """
 
-    def __init__(self, figure: plt.figure, close: bool):
+    def __init__(self, figure: matplotlib.figure.Figure, close: bool):
         self.figure = figure
         self.close = close
 
@@ -412,8 +412,9 @@ class TensorBoardOutputFormat(KVWriter):
                 else:
                     self.writer.add_scalar(key, value, step)
 
-            if isinstance(value, th.Tensor):
-                self.writer.add_histogram(key, value, step)
+            if isinstance(value, (th.Tensor, np.ndarray)):
+                # Convert to Torch so it works with numpy<1.24 and torch<2.0
+                self.writer.add_histogram(key, th.as_tensor(value), step)
 
             if isinstance(value, Video):
                 self.writer.add_video(key, value.frames, step, value.fps)

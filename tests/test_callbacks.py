@@ -4,9 +4,11 @@ import shutil
 import gymnasium as gym
 import numpy as np
 import pytest
+import torch as th
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3, HerReplayBuffer
 from stable_baselines3.common.callbacks import (
+    BaseCallback,
     CallbackList,
     CheckpointCallback,
     EvalCallback,
@@ -123,6 +125,40 @@ def test_eval_callback_vec_env():
     assert eval_callback.last_mean_reward == 100.0
 
 
+class AlwaysFailCallback(BaseCallback):
+    def __init__(self, *args, callback_false_value, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.callback_false_value = callback_false_value
+
+    def _on_step(self) -> bool:
+        return self.callback_false_value
+
+
+@pytest.mark.parametrize(
+    "model_class,model_kwargs",
+    [
+        (A2C, dict(n_steps=1, stats_window_size=1)),
+        (
+            SAC,
+            dict(
+                learning_starts=1,
+                buffer_size=1,
+                batch_size=1,
+            ),
+        ),
+    ],
+)
+@pytest.mark.parametrize("callback_false_value", [False, np.bool_(0), th.tensor(0, dtype=th.bool)])
+def test_callbacks_can_cancel_runs(model_class, model_kwargs, callback_false_value):
+    assert not callback_false_value  # Sanity check to ensure parametrized values are valid
+    env_id = select_env(model_class)
+    model = model_class("MlpPolicy", env_id, **model_kwargs, policy_kwargs=dict(net_arch=[2]))
+    alwaysfailcallback = AlwaysFailCallback(callback_false_value=callback_false_value)
+    model.learn(10, callback=alwaysfailcallback)
+
+    assert alwaysfailcallback.n_calls == 1
+
+
 def test_eval_success_logging(tmp_path):
     n_bits = 2
     n_envs = 2
@@ -228,3 +264,29 @@ def test_checkpoint_additional_info(tmp_path):
     model = DQN.load(checkpoint_dir / "rl_model_200_steps.zip")
     model.load_replay_buffer(checkpoint_dir / "rl_model_replay_buffer_200_steps.pkl")
     VecNormalize.load(checkpoint_dir / "rl_model_vecnormalize_200_steps.pkl", dummy_vec_env)
+
+
+def test_eval_callback_chaining(tmp_path):
+    class DummyCallback(BaseCallback):
+        def _on_step(self):
+            # Check that the parent callback is an EvalCallback
+            assert isinstance(self.parent, EvalCallback)
+            assert hasattr(self.parent, "best_mean_reward")
+            return True
+
+    stop_on_threshold_callback = StopTrainingOnRewardThreshold(reward_threshold=-200, verbose=1)
+
+    eval_callback = EvalCallback(
+        gym.make("Pendulum-v1"),
+        best_model_save_path=tmp_path,
+        log_path=tmp_path,
+        eval_freq=32,
+        deterministic=True,
+        render=False,
+        callback_on_new_best=CallbackList([DummyCallback(), stop_on_threshold_callback]),
+        callback_after_eval=CallbackList([DummyCallback()]),
+        warn=False,
+    )
+
+    model = PPO("MlpPolicy", "Pendulum-v1", n_steps=64, n_epochs=1)
+    model.learn(64, callback=eval_callback)

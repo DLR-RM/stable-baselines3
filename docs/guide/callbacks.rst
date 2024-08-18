@@ -29,24 +29,25 @@ You can find two examples of custom callbacks in the documentation: one for savi
 
         :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
         """
-        def __init__(self, verbose=0):
-            super(CustomCallback, self).__init__(verbose)
+        def __init__(self, verbose: int = 0):
+            super().__init__(verbose)
             # Those variables will be accessible in the callback
             # (they are defined in the base class)
             # The RL model
             # self.model = None  # type: BaseAlgorithm
             # An alias for self.model.get_env(), the environment used for training
-            # self.training_env = None  # type: Union[gym.Env, VecEnv, None]
+            # self.training_env # type: VecEnv
             # Number of time the callback was called
             # self.n_calls = 0  # type: int
+            # num_timesteps = n_envs * n times env.step() was called
             # self.num_timesteps = 0  # type: int
             # local and global variables
-            # self.locals = None  # type: Dict[str, Any]
-            # self.globals = None  # type: Dict[str, Any]
+            # self.locals = {}  # type: Dict[str, Any]
+            # self.globals = {}  # type: Dict[str, Any]
             # The logger object, used to report things in the terminal
-            # self.logger = None  # stable_baselines3.common.logger
-            # # Sometimes, for event callback, it is useful
-            # # to have access to the parent object
+            # self.logger # type: stable_baselines3.common.logger.Logger
+            # Sometimes, for event callback, it is useful
+            # to have access to the parent object
             # self.parent = None  # type: Optional[BaseCallback]
 
         def _on_training_start(self) -> None:
@@ -70,7 +71,7 @@ You can find two examples of custom callbacks in the documentation: one for savi
             For child callback (of an `EventCallback`), this will be called
             when the event is triggered.
 
-            :return: (bool) If the callback returns False, training is aborted early.
+            :return: If the callback returns False, training is aborted early.
             """
             return True
 
@@ -110,7 +111,7 @@ A child callback is for instance :ref:`StopTrainingOnRewardThreshold <StopTraini
 
 .. note::
 
-	We recommend to take a look at the source code of :ref:`EvalCallback` and :ref:`StopTrainingOnRewardThreshold <StopTrainingCallback>` to have a better overview of what can be achieved with this kind of callbacks.
+	We recommend taking a look at the source code of :ref:`EvalCallback` and :ref:`StopTrainingOnRewardThreshold <StopTrainingCallback>` to have a better overview of what can be achieved with this kind of callbacks.
 
 
 .. code-block:: python
@@ -159,8 +160,8 @@ corresponding statistics using ``save_vecnormalize`` (``False`` by default).
 
 .. warning::
 
-  When using multiple environments, each call to  ``env.step()`` will effectively correspond to ``n_envs`` steps.
-  If you want the ``save_freq`` to be similar when using different number of environments,
+  When using multiple environments, each call to ``env.step()`` will effectively correspond to ``n_envs`` steps.
+  If you want the ``save_freq`` to be similar when using a different number of environments,
   you need to account for it using ``save_freq = max(save_freq // n_envs, 1)``.
   The same goes for the other callbacks.
 
@@ -189,7 +190,7 @@ EvalCallback
 ^^^^^^^^^^^^
 
 Evaluate periodically the performance of an agent, using a separate test environment.
-It will save the best model if ``best_model_save_path`` folder is specified and save the evaluations results in a numpy archive (``evaluations.npz``) if ``log_path`` folder is specified.
+It will save the best model if ``best_model_save_path`` folder is specified and save the evaluations results in a NumPy archive (``evaluations.npz``) if ``log_path`` folder is specified.
 
 
 .. note::
@@ -230,7 +231,7 @@ This callback is integrated inside SB3 via the ``progress_bar`` argument of the 
 
 .. note::
 
-	This callback requires ``tqdm`` and ``rich`` packages to be installed. This is done automatically when using ``pip install stable-baselines3[extra]``
+	``ProgressBarCallback`` callback requires ``tqdm`` and ``rich`` packages to be installed. This is done automatically when using ``pip install stable-baselines3[extra]``
 
 
 .. code-block:: python
@@ -367,7 +368,7 @@ StopTrainingOnNoModelImprovement
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Stop the training if there is no new best model (no new best mean reward) after more than a specific number of consecutive evaluations.
-The idea is to save time in experiments when you know that the learning curves are somehow well behaved and, therefore,
+The idea is to save time in experiments when you know that the learning curves are somehow well-behaved and, therefore,
 after many evaluations without improvement the learning has probably stabilized.
 It must be used with the :ref:`EvalCallback` and use the event triggered after every evaluation.
 

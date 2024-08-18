@@ -30,11 +30,13 @@ class CustomGymEnv(gym.Env):
         self.current_step = 0
         self.ep_length = 4
         self.render_mode = render_mode
+        self.current_options: Optional[Dict] = None
 
     def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
         if seed is not None:
             self.seed(seed)
         self.current_step = 0
+        self.current_options = options
         self._choose_next_state()
         return self.state, {}
 
@@ -159,6 +161,25 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
     assert setattr_result is None
     assert getattr_result == [12] + [0 for _ in range(N_ENVS - 2)] + [12]
     assert vec_env.get_attr("current_step", indices=[-1]) == [12]
+
+    # Checks that options are correctly passed
+    assert vec_env.get_attr("current_options")[0] is None
+    # Same options for all envs
+    options = {"hello": 1}
+    vec_env.set_options(options)
+    assert vec_env.get_attr("current_options")[0] is None
+    # Only effective at reset
+    vec_env.reset()
+    assert vec_env.get_attr("current_options") == [options] * N_ENVS
+    vec_env.reset()
+    # Options are reset
+    assert vec_env.get_attr("current_options")[0] is None
+    # Use a list of options, different for the first env
+    options = [{"hello": 1}] * N_ENVS
+    options[0] = {"other_option": 2}
+    vec_env.set_options(options)
+    vec_env.reset()
+    assert vec_env.get_attr("current_options") == options
 
     vec_env.close()
 
@@ -487,7 +508,14 @@ def test_vec_deterministic(vec_env_class):
     vec_env.seed(3)
     new_obs = vec_env.reset()
     assert np.allclose(new_obs, obs)
-    vec_env.close()
+    # Test with VecNormalize (VecEnvWrapper should call self.venv.seed())
+    vec_normalize = VecNormalize(vec_env)
+    vec_normalize.seed(3)
+    obs = vec_env.reset()
+    vec_normalize.seed(3)
+    new_obs = vec_env.reset()
+    assert np.allclose(new_obs, obs)
+    vec_normalize.close()
     # Similar test but with make_vec_env
     vec_env_1 = make_vec_env("Pendulum-v1", n_envs=N_ENVS, vec_env_cls=vec_env_class, seed=0)
     vec_env_2 = make_vec_env("Pendulum-v1", n_envs=N_ENVS, vec_env_cls=vec_env_class, seed=0)

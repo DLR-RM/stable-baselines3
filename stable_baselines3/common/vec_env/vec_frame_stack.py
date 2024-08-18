@@ -29,7 +29,12 @@ class VecFrameStack(VecEnvWrapper):
 
     def step_wait(
         self,
-    ) -> Tuple[Union[np.ndarray, Dict[str, np.ndarray]], np.ndarray, np.ndarray, List[Dict[str, Any]],]:
+    ) -> Tuple[
+        Union[np.ndarray, Dict[str, np.ndarray]],
+        np.ndarray,
+        np.ndarray,
+        List[Dict[str, Any]],
+    ]:
         observations, rewards, dones, infos = self.venv.step_wait()
         observations, infos = self.stacked_obs.update(observations, dones, infos)  # type: ignore[arg-type]
         return observations, rewards, dones, infos
@@ -38,6 +43,6 @@ class VecFrameStack(VecEnvWrapper):
         """
         Reset all environments
         """
-        observation = self.venv.reset()  # pytype:disable=annotation-type-mismatch
+        observation = self.venv.reset()
         observation = self.stacked_obs.reset(observation)  # type: ignore[arg-type]
         return observation

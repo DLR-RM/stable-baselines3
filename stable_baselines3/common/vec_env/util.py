@@ -63,10 +63,10 @@ def obs_space_info(obs_space: spaces.Space) -> Tuple[List[str], Dict[Any, Tuple[
         assert isinstance(obs_space.spaces, dict), "Dict space must have ordered subspaces"
         subspaces = obs_space.spaces
     elif isinstance(obs_space, spaces.Tuple):
-        subspaces = {i: space for i, space in enumerate(obs_space.spaces)}  # type: ignore[assignment]
+        subspaces = {i: space for i, space in enumerate(obs_space.spaces)}  # type: ignore[assignment,misc]
     else:
         assert not hasattr(obs_space, "spaces"), f"Unsupported structured space '{type(obs_space)}'"
-        subspaces = {None: obs_space}  # type: ignore[assignment]
+        subspaces = {None: obs_space}  # type: ignore[assignment,dict-item]
     keys = []
     shapes = {}
     dtypes = {}
@@ -74,4 +74,4 @@ def obs_space_info(obs_space: spaces.Space) -> Tuple[List[str], Dict[Any, Tuple[
         keys.append(key)
         shapes[key] = box.shape
         dtypes[key] = box.dtype
-    return keys, shapes, dtypes
+    return keys, shapes, dtypes  # type: ignore[return-value]

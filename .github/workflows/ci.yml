@@ -37,6 +37,7 @@ jobs:
           pip install .[extra,tests,docs]
           # Use headless version
           pip install opencv-python-headless
+          pip install git+https://github.com/farama-Foundation/gymnasium
       - name: Lint with ruff
         run: |
           make lint

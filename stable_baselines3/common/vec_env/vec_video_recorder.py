@@ -99,7 +99,7 @@ class VideoRecorder:
         self.metadata_path = f"{path_base}.meta.json"
         self.write_metadata()
 
-        logger.info(f"Starting new video recorder writing to {self.path}")
+        # logger.debug(f"Starting new video recorder writing to {self.path}")
         self.recorded_frames: List[np.ndarray] = []
 
     @property
@@ -119,7 +119,7 @@ class VideoRecorder:
         if self._closed:
             logger.warn("The video recorder has been closed and no frames will be captured anymore.")
             return
-        logger.debug("Capturing video frame: path=%s", self.path)
+        # logger.debug(f"Capturing video frame: path={self.path}")
 
         if frame is None:
             if self._async:
@@ -150,7 +150,7 @@ class VideoRecorder:
             except ImportError as e:
                 raise error.DependencyNotInstalled("MoviePy is not installed, run `pip install moviepy`") from e
 
-            logger.debug(f"Closing video encoder: path={self.path}")
+            # logger.debug(f"Closing video encoder: path={self.path}")
             clip = ImageSequenceClip(self.recorded_frames, fps=self.frames_per_sec)
             clip.write_videofile(self.path)
         else:

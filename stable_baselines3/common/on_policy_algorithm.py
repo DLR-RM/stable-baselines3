@@ -242,6 +242,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_rollout_end()
 
+        rollout_buffer.compute_returns_and_advantage(last_values=values, dones=dones)
+
         return True
 
     def train(self) -> None:

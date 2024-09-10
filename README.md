@@ -1,5 +1,3 @@
-<img src="docs/\_static/img/logo.png" align="right" width="40%"/>
-
 <!-- [![pipeline status](https://gitlab.com/araffin/stable-baselines3/badges/master/pipeline.svg)](https://gitlab.com/araffin/stable-baselines3/-/commits/master) -->
 ![CI](https://github.com/DLR-RM/stable-baselines3/workflows/CI/badge.svg)
 [![Documentation Status](https://readthedocs.org/projects/stable-baselines/badge/?version=master)](https://stable-baselines3.readthedocs.io/en/master/?badge=master) [![coverage report](https://gitlab.com/araffin/stable-baselines3/badges/master/coverage.svg)](https://gitlab.com/araffin/stable-baselines3/-/commits/master)
@@ -7,6 +5,8 @@
 
 
 # Stable Baselines3
+
+<img src="docs/\_static/img/logo.png" align="right" width="40%"/>
 
 Stable Baselines3 (SB3) is a set of reliable implementations of reinforcement learning algorithms in PyTorch. It is the next major version of [Stable Baselines](https://github.com/hill-a/stable-baselines).
 

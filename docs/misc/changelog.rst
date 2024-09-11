@@ -13,6 +13,13 @@ Release 2.4.0a9 (WIP)
   To suppress the warning, simply save the model again.
   You can find more info in `PR #1963 <https://github.com/DLR-RM/stable-baselines3/pull/1963>`_
 
+.. warning::
+
+    Stable-Baselines3 (SB3) v2.4.0 will be the last one supporting Python 3.8 (end of life in October 2024)
+    and PyTorch < 2.0.
+    We highly recommended you to upgrade to Python >= 3.9 and PyTorch >= 2.0.
+
+
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 

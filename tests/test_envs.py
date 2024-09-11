@@ -123,6 +123,8 @@ def test_high_dimension_action_space():
         spaces.Dict({"img": spaces.Box(low=0, high=255, shape=(32, 32, 3), dtype=np.uint8)}),
         # Non zero start index
         spaces.Discrete(3, start=-1),
+        # 2D MultiDiscrete
+        spaces.MultiDiscrete(np.array([[4, 4], [2, 3]])),
         # Non zero start index (MultiDiscrete)
         spaces.MultiDiscrete([4, 4], start=[1, 0]),
         # Non zero start index inside a Dict

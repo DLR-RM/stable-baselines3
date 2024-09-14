@@ -483,6 +483,8 @@ def obs_as_tensor(obs: Union[np.ndarray, Dict[str, np.ndarray]], device: th.devi
     if isinstance(obs, np.ndarray):
         return th.as_tensor(obs, device=device)
     elif isinstance(obs, dict):
+        if hasattr(th, "backends") and th.backends.mps.is_built():
+            return {key: th.as_tensor(_obs, dtype=th.float32, device=device) for (key, _obs) in obs.items()}
         return {key: th.as_tensor(_obs, device=device) for (key, _obs) in obs.items()}
     else:
         raise Exception(f"Unrecognized type of observation {type(obs)}")
@@ -523,6 +525,7 @@ def get_available_accelerator() -> str:
     """
     if hasattr(th, "backends") and th.backends.mps.is_built():
         # MacOS Metal GPU
+        th.set_default_dtype(th.float32)
         return "mps"
     elif th.cuda.is_available():
         return "cuda"

@@ -78,11 +78,11 @@ class BitFlippingEnv(Env):
         if self.discrete_obs_space:
             # The internal state is the binary representation of the
             # observed one
-            return int(sum(state[i] * 2**i for i in range(len(state))))
+            return int(sum(int(state[i]) * 2**i for i in range(len(state))))
 
         if self.image_obs_space:
             size = np.prod(self.image_shape)
-            image = np.concatenate((state * 255, np.zeros(size - len(state), dtype=np.uint8)))
+            image = np.concatenate((state.astype(np.uint8) * 255, np.zeros(size - len(state), dtype=np.uint8)))
             return image.reshape(self.image_shape).astype(np.uint8)
         return state
 

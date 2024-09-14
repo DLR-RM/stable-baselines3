@@ -254,7 +254,7 @@ class VecNormalize(VecEnvWrapper):
         """
         if self.norm_reward:
             reward = np.clip(reward / np.sqrt(self.ret_rms.var + self.epsilon), -self.clip_reward, self.clip_reward)
-        return reward
+        return reward.astype(np.float32)
 
     def unnormalize_obs(self, obs: Union[np.ndarray, Dict[str, np.ndarray]]) -> Union[np.ndarray, Dict[str, np.ndarray]]:
         # Avoid modifying by reference the original object

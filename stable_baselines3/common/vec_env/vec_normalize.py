@@ -125,6 +125,20 @@ class VecNormalize(VecEnvWrapper):
                 f"not {self.observation_space}"
             )
 
+    @staticmethod
+    def _maybe_cast_reward(reward: np.ndarray) -> np.ndarray:
+        """
+        Cast `np.float64` reward datatype to `np.float32`,
+        keep the others dtype unchanged.
+
+        :param dtype: The original action space dtype
+        :return: ``np.float32`` if the dtype was float64,
+            the original dtype otherwise.
+        """
+        if reward.dtype == np.float64:
+            return reward.astype(np.float32)
+        return reward
+
     def __getstate__(self) -> Dict[str, Any]:
         """
         Gets state for pickling.
@@ -254,7 +268,8 @@ class VecNormalize(VecEnvWrapper):
         """
         if self.norm_reward:
             reward = np.clip(reward / np.sqrt(self.ret_rms.var + self.epsilon), -self.clip_reward, self.clip_reward)
-        return reward.astype(np.float32)
+
+        return self._maybe_cast_reward(reward)
 
     def unnormalize_obs(self, obs: Union[np.ndarray, Dict[str, np.ndarray]]) -> Union[np.ndarray, Dict[str, np.ndarray]]:
         # Avoid modifying by reference the original object

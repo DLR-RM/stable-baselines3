@@ -135,6 +135,8 @@ class BaseBuffer(ABC):
         :return:
         """
         if copy:
+            if hasattr(th, "backends") and th.backends.mps.is_built():
+                return th.tensor(array, dtype=th.float32, device=self.device)
             return th.tensor(array, device=self.device)
         return th.as_tensor(array, device=self.device)
 

@@ -21,7 +21,7 @@ class Actor(BasePolicy):
     """
     Actor network (policy) for TD3.
 
-    :param observation_space: Obervation space
+    :param observation_space: Observation space
     :param action_space: Action space
     :param net_arch: Network architecture
     :param features_extractor: Network to extract features

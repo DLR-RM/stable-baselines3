@@ -13,10 +13,10 @@ ignore = ["B028", "RUF013"]
 
 [tool.ruff.lint.per-file-ignores]
 # Default implementation in abstract methods
-"./stable_baselines3/common/callbacks.py"= ["B027"]
-"./stable_baselines3/common/noise.py"= ["B027"]
+"./stable_baselines3/common/callbacks.py" = ["B027"]
+"./stable_baselines3/common/noise.py" = ["B027"]
 # ClassVar, implicit optional check not needed for tests
-"./tests/*.py"= ["RUF012", "RUF013"]
+"./tests/*.py" = ["RUF012", "RUF013"]
 
 
 [tool.ruff.lint.mccabe]
@@ -37,31 +37,35 @@ exclude = """(?x)(
 
 [tool.pytest.ini_options]
 # Deterministic ordering for tests; useful for pytest-xdist.
-env = [
-	"PYTHONHASHSEED=0"
-]
+env = ["PYTHONHASHSEED=0"]
 
 filterwarnings = [
     # Tensorboard warnings
     "ignore::DeprecationWarning:tensorboard",
     # Gymnasium warnings
     "ignore::UserWarning:gymnasium",
+    # tqdm warning about rich being experimental
+    "ignore:rich is experimental",
 ]
 markers = [
-    "expensive: marks tests as expensive (deselect with '-m \"not expensive\"')"
+    "expensive: marks tests as expensive (deselect with '-m \"not expensive\"')",
 ]
 
 [tool.coverage.run]
 disable_warnings = ["couldnt-parse"]
 branch = false
 omit = [
-  "tests/*",
-  "setup.py",
-  # Require graphical interface
-  "stable_baselines3/common/results_plotter.py",
-  # Require ffmpeg
-  "stable_baselines3/common/vec_env/vec_video_recorder.py",
+    "tests/*",
+    "setup.py",
+    # Require graphical interface
+    "stable_baselines3/common/results_plotter.py",
+    # Require ffmpeg
+    "stable_baselines3/common/vec_env/vec_video_recorder.py",
 ]
 
 [tool.coverage.report]
-exclude_lines = [ "pragma: no cover", "raise NotImplementedError()", "if typing.TYPE_CHECKING:"]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError()",
+    "if typing.TYPE_CHECKING:",
+]

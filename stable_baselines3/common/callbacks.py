@@ -204,6 +204,10 @@ class CallbackList(BaseCallback):
         for callback in self.callbacks:
             callback.init_callback(self.model)
 
+            # Fix for https://github.com/DLR-RM/stable-baselines3/issues/1791
+            # pass through the parent callback to all children
+            callback.parent = self.parent
+
     def _on_training_start(self) -> None:
         for callback in self.callbacks:
             callback.on_training_start(self.locals, self.globals)
@@ -606,7 +610,7 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
         self.n_episodes = 0
 
     def _init_callback(self) -> None:
-        # At start set total max according to number of envirnments
+        # At start set total max according to number of environments
         self._total_max_episodes = self.max_episodes * self.training_env.num_envs
 
     def _on_step(self) -> bool:

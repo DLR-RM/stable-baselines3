@@ -3,10 +3,105 @@
 Changelog
 ==========
 
+Release 2.4.0a9 (WIP)
+--------------------------
+
+.. note::
+
+  DQN (and QR-DQN) models saved with SB3 < 2.4.0 will show a warning about
+  truncation of optimizer state when loaded with SB3 >= 2.4.0.
+  To suppress the warning, simply save the model again.
+  You can find more info in `PR #1963 <https://github.com/DLR-RM/stable-baselines3/pull/1963>`_
+
+.. warning::
+
+    Stable-Baselines3 (SB3) v2.4.0 will be the last one supporting Python 3.8 (end of life in October 2024)
+    and PyTorch < 2.0.
+    We highly recommended you to upgrade to Python >= 3.9 and PyTorch >= 2.0.
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+- Added support for ``pre_linear_modules`` and ``post_linear_modules`` in ``create_mlp`` (useful for adding normalization layers, like in DroQ or CrossQ)
+- Enabled np.ndarray logging for TensorBoardOutputFormat as histogram (see GH#1634) (@iwishwasaneagle)
+- Updated env checker to warn users when using multi-dim array to define `MultiDiscrete` spaces
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed memory leak when loading learner from storage, ``set_parameters()`` does not try to load the object data anymore
+  and only loads the PyTorch parameters (@peteole)
+- Cast type in compute gae method to avoid error when using torch compile (@amjames)
+- ``CallbackList`` now sets the ``.parent`` attribute of child callbacks to its own ``.parent``. (will-maclean)
+- Fixed error when loading a model that has ``net_arch`` manually set to ``None``   (@jak3122)
+- Set requirement numpy<2.0 until PyTorch is compatible (https://github.com/pytorch/pytorch/issues/107302)
+- Updated DQN optimizer input to only include q_network parameters, removing the target_q_network ones (@corentinlger)
+- Fixed ``test_buffers.py::test_device`` which was not actually checking the device of tensors (@rhaps0dy)
+
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+- Updated defaults hyperparameters for TQC/SAC for Swimmer-v4 (decrease gamma for more consistent results)
+
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+- Added CNN support for DQN
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Fixed various typos (@cschindlbeck)
+- Remove unnecessary SDE noise resampling in PPO update (@brn-dev)
+- Updated PyTorch version on CI to 2.3.1
+
+Bug Fixes:
+^^^^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+
+Release 2.3.2 (2024-04-27)
+--------------------------
+
+Bug Fixes:
+^^^^^^^^^^
+- Reverted ``torch.load()`` to be called ``weights_only=False`` as it caused loading issue with old version of PyTorch.
+
+
+Documentation:
+^^^^^^^^^^^^^^
+- Added ER-MRL to the project page (@corentinlger)
+- Updated Tensorboard Logging Videos documentation (@NickLucche)
+
+
+Release 2.3.1 (2024-04-22)
+--------------------------
+
+Bug Fixes:
+^^^^^^^^^^
+- Cast return value of learning rate schedule to float, to avoid issue when loading model because of ``weights_only=True`` (@markscsmith)
+
+Documentation:
+^^^^^^^^^^^^^^
+- Updated SBX documentation (CrossQ and deprecated DroQ)
+- Updated RL Tips and Tricks section
+
 Release 2.3.0 (2024-03-31)
 --------------------------
 
 **New defaults hyperparameters for DDPG, TD3 and DQN**
+
+.. warning::
+
+  Because of ``weights_only=True``, this release breaks loading of policies when using PyTorch 1.13.
+  Please upgrade to PyTorch >= 2.0 or upgrade SB3 version (we reverted the change in SB3 2.3.2)
 
 
 Breaking Changes:
@@ -338,7 +433,7 @@ Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed shared layers in ``mlp_extractor`` (@AlexPasqua)
 - Refactored ``StackedObservations`` (it now handles dict obs, ``StackedDictObservations`` was removed)
-- You must now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
+- You must now explicitly pass a ``features_extractor`` parameter when calling ``extract_features()``
 - Dropped offline sampling for ``HerReplayBuffer``
 - As ``HerReplayBuffer`` was refactored to support multiprocessing, previous replay buffer are incompatible with this new version
 - ``HerReplayBuffer`` doesn't require a ``max_episode_length`` anymore
@@ -470,7 +565,7 @@ Bug Fixes:
 
 Deprecations:
 ^^^^^^^^^^^^^
-- You should now explicitely pass a ``features_extractor`` parameter when calling ``extract_features()``
+- You should now explicitly pass a ``features_extractor`` parameter when calling ``extract_features()``
 - Deprecated shared layers in ``MlpExtractor`` (@AlexPasqua)
 
 Others:
@@ -683,7 +778,7 @@ Bug Fixes:
 - Fixed a bug in ``HumanOutputFormat``. Distinct keys truncated to the same prefix would overwrite each others value,
   resulting in only one being output. This now raises an error (this should only affect a small fraction of use cases
   with very long keys.)
-- Routing all the ``nn.Module`` calls through implicit rather than explict forward as per pytorch guidelines (@manuel-delverme)
+- Routing all the ``nn.Module`` calls through implicit rather than explicit forward as per pytorch guidelines (@manuel-delverme)
 - Fixed a bug in ``VecNormalize`` where error occurs when ``norm_obs`` is set to False for environment with dictionary observation  (@buoyancy99)
 - Set default ``env`` argument to ``None`` in ``HerReplayBuffer.sample`` (@qgallouedec)
 - Fix ``batch_size`` typing in ``DQN`` (@qgallouedec)
@@ -1595,4 +1690,5 @@ And all the contributors:
 @anand-bala @hughperkins @sidney-tio @AlexPasqua @dominicgkerr @Akhilez @Rocamonde @tobirohrer @ZikangXiong @ReHoss
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
-@marekm4 @stagoverflow @rushitnshah
+@marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
+@brn-dev

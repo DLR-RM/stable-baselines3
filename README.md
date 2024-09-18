@@ -1,5 +1,3 @@
-<img src="docs/\_static/img/logo.png" align="right" width="40%"/>
-
 <!-- [![pipeline status](https://gitlab.com/araffin/stable-baselines3/badges/master/pipeline.svg)](https://gitlab.com/araffin/stable-baselines3/-/commits/master) -->
 ![CI](https://github.com/DLR-RM/stable-baselines3/workflows/CI/badge.svg)
 [![Documentation Status](https://readthedocs.org/projects/stable-baselines/badge/?version=master)](https://stable-baselines3.readthedocs.io/en/master/?badge=master) [![coverage report](https://gitlab.com/araffin/stable-baselines3/badges/master/coverage.svg)](https://gitlab.com/araffin/stable-baselines3/-/commits/master)
@@ -7,6 +5,8 @@
 
 
 # Stable Baselines3
+
+<img src="docs/\_static/img/logo.png" align="right" width="40%"/>
 
 Stable Baselines3 (SB3) is a set of reliable implementations of reinforcement learning algorithms in PyTorch. It is the next major version of [Stable Baselines](https://github.com/hill-a/stable-baselines).
 
@@ -85,7 +85,7 @@ Documentation is available online: [https://sb3-contrib.readthedocs.io/](https:/
 
 ## Stable-Baselines Jax (SBX)
 
-[Stable Baselines Jax (SBX)](https://github.com/araffin/sbx) is a proof of concept version of Stable-Baselines3 in Jax.
+[Stable Baselines Jax (SBX)](https://github.com/araffin/sbx) is a proof of concept version of Stable-Baselines3 in Jax, with recent algorithms like DroQ or CrossQ.
 
 It provides a minimal number of features compared to SB3 but can be much faster (up to 20x times!): https://twitter.com/araffin2/status/1590714558628253698
 
@@ -192,7 +192,7 @@ All the following examples can be executed online using Google Colab notebooks:
 <b id="f1">1</b>: Implemented in [SB3 Contrib](https://github.com/Stable-Baselines-Team/stable-baselines3-contrib) GitHub repository.
 
 Actions `gym.spaces`:
- * `Box`: A N-dimensional box that containes every point in the action space.
+ * `Box`: A N-dimensional box that contains every point in the action space.
  * `Discrete`: A list of possible actions, where each timestep only one of the actions can be used.
  * `MultiDiscrete`: A list of possible actions, where each timestep only one action of each discrete set can be used.
  * `MultiBinary`: A list of possible actions, where each timestep any of the actions can be used in any combination.

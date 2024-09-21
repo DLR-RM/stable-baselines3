@@ -206,6 +206,9 @@ class BaseAlgorithm(ABC):
                     np.isfinite(np.array([self.action_space.low, self.action_space.high]))
                 ), "Continuous action space must have a finite lower and upper bound"
 
+        # in order to initialize values
+        self.remove_additional_loss()
+
     @staticmethod
     def _wrap_env(env: GymEnv, verbose: int = 0, monitor_wrapper: bool = True) -> VecEnv:
         """ "
@@ -878,19 +881,16 @@ class BaseAlgorithm(ABC):
         name: str,
     ):
         self.has_additional_loss = True
-        self.additional_loss_fn = loss_fn
-        self.additional_loss_name = name
+        self.additional_loss_func = loss_fn
+        self.additional_loss_name = name if name.endswith("_loss") else f"{name}_loss"
 
     def remove_additional_loss(self):
         self.has_additional_loss = False
-        self.additional_loss_fn = None
+        self.additional_loss_func = None
         self.additional_loss_name = None
-
-    def _has_additional_loss(self) -> bool:
-        return hasattr(self, "policy_additional_loss_fn")
 
     def _calculate_additional_loss(
         self,
         samples: Union[RolloutBufferSamples, ReplayBufferSamples],
     ) -> th.Tensor:
-        return self.additional_loss_fn(samples) if self.has_additional_loss else th.Tensor(0)
+        return self.additional_loss_func(samples) if self.has_additional_loss else th.Tensor(0)

@@ -155,8 +155,9 @@ class A2C(OnPolicyAlgorithm):
             if self.normalize_advantage:
                 advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-            # Policy gradient loss
-            policy_loss = -(advantages * log_prob).mean()
+            # Policy gradient
+            add_policy_loss = self._calculate_additional_loss(rollout_data)
+            policy_loss = -(advantages * log_prob + add_policy_loss).mean()
 
             # Value loss using the TD(gae_lambda) target
             value_loss = F.mse_loss(rollout_data.returns, values)

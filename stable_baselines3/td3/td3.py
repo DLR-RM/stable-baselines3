@@ -193,9 +193,10 @@ class TD3(OffPolicyAlgorithm):
             if self._n_updates % self.policy_delay == 0:
                 # Compute actor loss
                 add_loss = None
-                actor_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
+                logits = self.actor(replay_data.observations)
+                actor_loss = -self.critic.q1_forward(replay_data.observations, logits).mean()
                 if self.has_additional_loss:
-                    add_loss = self._calculate_additional_loss(replay_data).mean()
+                    add_loss = self._calculate_additional_loss(replay_data.observations, logits).mean()
                     actor_loss += add_loss
                     additional_losses.append(add_loss.item())
                 actor_losses.append(actor_loss.item())

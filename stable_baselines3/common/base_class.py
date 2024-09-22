@@ -877,7 +877,7 @@ class BaseAlgorithm(ABC):
 
     def set_additional_loss(
         self,
-        loss_fn: Callable[[Union[RolloutBufferSamples, ReplayBufferSamples]], th.Tensor],
+        loss_fn: Callable[[th.Tensor, th.Tensor], th.Tensor],
         name: str,
     ):
         self.has_additional_loss = True
@@ -889,8 +889,5 @@ class BaseAlgorithm(ABC):
         self.additional_loss_func = None
         self.additional_loss_name = None
 
-    def _calculate_additional_loss(
-        self,
-        samples: Union[RolloutBufferSamples, ReplayBufferSamples],
-    ) -> th.Tensor:
-        return self.additional_loss_func(samples) if self.has_additional_loss else th.Tensor(0)
+    def _calculate_additional_loss(self, observations: th.Tensor, logits: th.Tensor) -> th.Tensor:
+        return self.additional_loss_func(observations, logits) if self.has_additional_loss else th.Tensor(0)

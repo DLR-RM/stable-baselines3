@@ -159,7 +159,7 @@ class A2C(OnPolicyAlgorithm):
             add_loss = None
             policy_loss = -(advantages * log_prob).mean()
             if self.has_additional_loss:
-                add_loss = self._calculate_additional_loss(rollout_data).mean()
+                add_loss = self._calculate_additional_loss(rollout_data.observations, log_prob).mean()
                 policy_loss += add_loss
 
             # Value loss using the TD(gae_lambda) target

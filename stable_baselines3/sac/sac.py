@@ -276,7 +276,7 @@ class SAC(OffPolicyAlgorithm):
             min_qf_pi, _ = th.min(q_values_pi, dim=1, keepdim=True)
             actor_loss = (ent_coef * log_prob - min_qf_pi).mean()
             if self.has_additional_loss:
-                add_loss = self._calculate_additional_loss(replay_data).mean()
+                add_loss = self._calculate_additional_loss(replay_data.observations, actions_pi).mean()
                 actor_loss += add_loss
                 additional_losses.append(add_loss.item())
             actor_losses.append(actor_loss.item())

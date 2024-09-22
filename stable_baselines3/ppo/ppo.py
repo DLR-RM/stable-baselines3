@@ -256,7 +256,7 @@ class PPO(OnPolicyAlgorithm):
                 add_loss = None
                 loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
                 if self.has_additional_loss:
-                    add_loss = self._calculate_additional_loss(rollout_data).mean()
+                    add_loss = self._calculate_additional_loss(rollout_data.observations, log_prob).mean()
                     loss += add_loss
                     additional_losses.append(add_loss.item())
 

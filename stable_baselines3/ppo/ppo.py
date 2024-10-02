@@ -134,6 +134,19 @@ class PPO(OnPolicyAlgorithm):
                 spaces.MultiBinary,
             ),
         )
+        try:
+            if isinstance(device, str) and device != "cpu" and isinstance(policy, str) and policy != "CnnPolicy":
+                with warnings.catch_warnings():
+                    warnings.warn(
+                        "You are attempting to run PPO on GPU, however it is primarily meant to run on CPU "
+                        "(see https://github.com/DLR-RM/stable-baselines3/issues/1245#issuecomment-1435766949"
+                        " for more info). Note: the model will train however it may take longer than expected,"
+                        " this only a warning.",
+                        UserWarning,
+                    )
+
+        except Exception:
+            pass
 
         # Sanity check, otherwise it will lead to noisy gradient and NaN
         # because of the advantage normalization

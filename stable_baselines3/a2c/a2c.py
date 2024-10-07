@@ -1,4 +1,3 @@
-import warnings
 from typing import Any, ClassVar, Dict, Optional, Type, TypeVar, Union
 
 import torch as th
@@ -118,19 +117,6 @@ class A2C(OnPolicyAlgorithm):
                 spaces.MultiBinary,
             ),
         )
-
-        try:
-            if isinstance(device, str) and device != "cpu" and isinstance(policy, str) and policy != "CnnPolicy":
-                with warnings.catch_warnings():
-                    warnings.warn(
-                        "You are attempting to run A2C on GPU, however it is primarily meant to run on CPU "
-                        "(see https://github.com/DLR-RM/stable-baselines3/issues/1245"
-                        " for more info). Note: the model will train however it may take longer than expected,"
-                        " this only a warning.",
-                        UserWarning,
-                    )
-        except Exception:
-            pass
 
         self.normalize_advantage = normalize_advantage
 

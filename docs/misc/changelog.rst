@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.4.0a9 (WIP)
+Release 2.4.0a10 (WIP)
 --------------------------
 
 .. note::
@@ -60,12 +60,14 @@ Others:
 - Fixed various typos (@cschindlbeck)
 - Remove unnecessary SDE noise resampling in PPO update (@brn-dev)
 - Updated PyTorch version on CI to 2.3.1
+- Added a warning to recommend using CPU with on policy algorithms (A2C/PPO) and ``MlpPolicy``
 
 Bug Fixes:
 ^^^^^^^^^^
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Updated PPO doc to recommend using CPU with ``MlpPolicy``
 
 Release 2.3.2 (2024-04-27)
 --------------------------

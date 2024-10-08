@@ -19,7 +19,7 @@ def copy_obs_dict(obs: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
     :param obs: a dict of numpy arrays.
     :return: a dict of copied numpy arrays.
     """
-    assert isinstance(obs, OrderedDict), f"unexpected type for observations '{type(obs)}'"
+    assert isinstance(obs, dict), f"unexpected type for observations '{type(obs)}'"
     return OrderedDict([(k, np.copy(v)) for k, v in obs.items()])
 
 
@@ -60,13 +60,13 @@ def obs_space_info(obs_space: spaces.Space) -> Tuple[List[str], Dict[Any, Tuple[
     """
     check_for_nested_spaces(obs_space)
     if isinstance(obs_space, spaces.Dict):
-        assert isinstance(obs_space.spaces, OrderedDict), "Dict space must have ordered subspaces"
+        assert isinstance(obs_space.spaces, dict), "Dict space must have ordered subspaces"
         subspaces = obs_space.spaces
     elif isinstance(obs_space, spaces.Tuple):
-        subspaces = {i: space for i, space in enumerate(obs_space.spaces)}  # type: ignore[assignment]
+        subspaces = {i: space for i, space in enumerate(obs_space.spaces)}  # type: ignore[assignment,misc]
     else:
         assert not hasattr(obs_space, "spaces"), f"Unsupported structured space '{type(obs_space)}'"
-        subspaces = {None: obs_space}  # type: ignore[assignment]
+        subspaces = {None: obs_space}  # type: ignore[assignment,dict-item]
     keys = []
     shapes = {}
     dtypes = {}
@@ -74,4 +74,4 @@ def obs_space_info(obs_space: spaces.Space) -> Tuple[List[str], Dict[Any, Tuple[
         keys.append(key)
         shapes[key] = box.shape
         dtypes[key] = box.dtype
-    return keys, shapes, dtypes
+    return keys, shapes, dtypes  # type: ignore[return-value]

@@ -1,5 +1,6 @@
 import sys
 import time
+import warnings
 from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 import numpy as np
@@ -135,6 +136,28 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             self.observation_space, self.action_space, self.lr_schedule, use_sde=self.use_sde, **self.policy_kwargs
         )
         self.policy = self.policy.to(self.device)
+        # Warn when not using CPU with MlpPolicy
+        self._maybe_recommend_cpu()
+
+    def _maybe_recommend_cpu(self, mlp_class_name: str = "ActorCriticPolicy") -> None:
+        """
+        Recommend to use CPU only when using A2C/PPO with MlpPolicy.
+
+        :param: The name of the class for the default MlpPolicy.
+        """
+        policy_class_name = self.policy_class.__name__
+        if self.device != th.device("cpu") and policy_class_name == mlp_class_name:
+            warnings.warn(
+                f"You are trying to run {self.__class__.__name__} on the GPU, "
+                "but it is primarily intended to run on the CPU when not using a CNN policy "
+                f"(you are using {policy_class_name} which should be a MlpPolicy). "
+                "See https://github.com/DLR-RM/stable-baselines3/issues/1245 "
+                "for more info. "
+                "You can pass `device='cpu'` or `export CUDA_VISIBLE_DEVICES=` to force using the CPU."
+                "Note: The model will train, but the GPU utilization will be poor and "
+                "the training might take longer than on CPU.",
+                UserWarning,
+            )
 
     def collect_rollouts(
         self,

@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.4.0a8 (WIP)
+Release 2.4.0a10 (WIP)
 --------------------------
 
 .. note::
@@ -13,6 +13,13 @@ Release 2.4.0a8 (WIP)
   To suppress the warning, simply save the model again.
   You can find more info in `PR #1963 <https://github.com/DLR-RM/stable-baselines3/pull/1963>`_
 
+.. warning::
+
+    Stable-Baselines3 (SB3) v2.4.0 will be the last one supporting Python 3.8 (end of life in October 2024)
+    and PyTorch < 2.0.
+    We highly recommended you to upgrade to Python >= 3.9 and PyTorch >= 2.0.
+
+
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 
@@ -20,6 +27,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Added support for ``pre_linear_modules`` and ``post_linear_modules`` in ``create_mlp`` (useful for adding normalization layers, like in DroQ or CrossQ)
 - Enabled np.ndarray logging for TensorBoardOutputFormat as histogram (see GH#1634) (@iwishwasaneagle)
+- Updated env checker to warn users when using multi-dim array to define `MultiDiscrete` spaces
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -52,12 +60,14 @@ Others:
 - Fixed various typos (@cschindlbeck)
 - Remove unnecessary SDE noise resampling in PPO update (@brn-dev)
 - Updated PyTorch version on CI to 2.3.1
+- Added a warning to recommend using CPU with on policy algorithms (A2C/PPO) and ``MlpPolicy``
 
 Bug Fixes:
 ^^^^^^^^^^
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Updated PPO doc to recommend using CPU with ``MlpPolicy``
 
 Release 2.3.2 (2024-04-27)
 --------------------------

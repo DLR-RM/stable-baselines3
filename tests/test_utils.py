@@ -177,7 +177,7 @@ def test_custom_vec_env(tmp_path):
 
 
 @pytest.mark.parametrize("direct_policy", [False, True])
-def test_evaluate_policy(direct_policy: bool):
+def test_evaluate_policy(direct_policy):
     model = A2C("MlpPolicy", "Pendulum-v1", seed=0)
     n_steps_per_episode, n_eval_episodes = 200, 2
 

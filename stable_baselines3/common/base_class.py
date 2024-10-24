@@ -6,7 +6,7 @@ import time
 import warnings
 from abc import ABC, abstractmethod
 from collections import deque
-from typing import Any, ClassVar, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, ClassVar, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
 
 import gymnasium as gym
 import numpy as np
@@ -22,7 +22,14 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.preprocessing import check_for_nested_spaces, is_image_space, is_image_space_channels_first
 from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr, save_to_zip_file
-from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule, TensorDict
+from stable_baselines3.common.type_aliases import (
+    GymEnv,
+    MaybeCallback,
+    ReplayBufferSamples,
+    RolloutBufferSamples,
+    Schedule,
+    TensorDict,
+)
 from stable_baselines3.common.utils import (
     check_for_correct_spaces,
     get_device,
@@ -198,6 +205,9 @@ class BaseAlgorithm(ABC):
                 assert np.all(
                     np.isfinite(np.array([self.action_space.low, self.action_space.high]))
                 ), "Continuous action space must have a finite lower and upper bound"
+
+        # in order to initialize values
+        self.remove_additional_loss()
 
     @staticmethod
     def _wrap_env(env: GymEnv, verbose: int = 0, monitor_wrapper: bool = True) -> VecEnv:
@@ -864,3 +874,20 @@ class BaseAlgorithm(ABC):
         params_to_save = self.get_parameters()
 
         save_to_zip_file(path, data=data, params=params_to_save, pytorch_variables=pytorch_variables)
+
+    def set_additional_loss(
+        self,
+        loss_fn: Callable[[th.Tensor, th.Tensor], th.Tensor],
+        name: str,
+    ):
+        self.has_additional_loss = True
+        self.additional_loss_func = loss_fn
+        self.additional_loss_name = name if name.endswith("_loss") else f"{name}_loss"
+
+    def remove_additional_loss(self):
+        self.has_additional_loss = False
+        self.additional_loss_func = None
+        self.additional_loss_name = None
+
+    def _calculate_additional_loss(self, observations: th.Tensor, logits: th.Tensor) -> th.Tensor:
+        return self.additional_loss_func(observations, logits) if self.has_additional_loss else th.Tensor(0)

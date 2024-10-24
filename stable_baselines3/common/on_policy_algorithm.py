@@ -265,6 +265,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         callback.on_rollout_end()
 
+
         return True
 
     def train(self) -> None:

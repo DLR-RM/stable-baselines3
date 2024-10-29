@@ -367,7 +367,7 @@ class BasePolicy(BaseModel, ABC):
         with th.no_grad():
             actions = self._predict(obs_tensor, deterministic=deterministic)
         # Convert to numpy, and reshape to the original action shape
-        actions = actions.cpu().numpy().reshape((-1, *self.action_space.shape))  # type: ignore[misc]
+        actions = actions.cpu().numpy().reshape((-1, *self.action_space.shape))  # type: ignore[misc, assignment]
 
         if isinstance(self.action_space, spaces.Box):
             if self.squash_output:
@@ -922,7 +922,7 @@ class ContinuousCritic(BaseModel):
     By default, it creates two critic networks used to reduce overestimation
     thanks to clipped Q-learning (cf TD3 paper).
 
-    :param observation_space: Obervation space
+    :param observation_space: Observation space
     :param action_space: Action space
     :param net_arch: Network architecture
     :param features_extractor: Network to extract features

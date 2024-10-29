@@ -8,7 +8,7 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
-  workflow_dispatch:
+
 jobs:
   build:
     env:
@@ -31,18 +31,21 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          # Use uv for faster downloads
+          pip install uv
           # cpu version of pytorch
-          pip install torch==2.1.0 --index-url https://download.pytorch.org/whl/cpu
+          # See https://github.com/astral-sh/uv/issues/1497
+          uv pip install --system torch==2.3.1+cpu --index https://download.pytorch.org/whl/cpu
 
           # Install Atari Roms
-          pip install autorom
+          uv pip install --system autorom
           wget https://gist.githubusercontent.com/jjshoots/61b22aefce4456920ba99f2c36906eda/raw/00046ac3403768bfe45857610a3d333b8e35e026/Roms.tar.gz.b64
           base64 Roms.tar.gz.b64 --decode &> Roms.tar.gz
           AutoROM --accept-license --source-file Roms.tar.gz
 
-          pip install .[extra_no_roms,tests,docs]
+          uv pip install --system .[extra_no_roms,tests,docs]
           # Use headless version
-          pip install opencv-python-headless
+          uv pip install --system opencv-python-headless
       - name: Lint with ruff
         run: |
           make lint
@@ -55,6 +58,8 @@ jobs:
       - name: Type check
         run: |
           make type
+        # Do not run for python 3.8 (mypy internal error)
+        if: matrix.python-version != '3.8'
       - name: Test with pytest
         run: |
           make pytest

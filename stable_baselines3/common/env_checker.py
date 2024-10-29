@@ -98,6 +98,14 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
                 "is not supported but `dict(space2=Box(), spaces3=Box(), spaces4=Discrete())` is."
             )
 
+    if isinstance(observation_space, spaces.MultiDiscrete) and len(observation_space.nvec.shape) > 1:
+        warnings.warn(
+            f"The MultiDiscrete observation space uses a multidimensional array {observation_space.nvec} "
+            "which is currently not supported by Stable-Baselines3. "
+            "Please convert it to a 1D array using a wrapper: "
+            "https://github.com/DLR-RM/stable-baselines3/issues/1836."
+        )
+
     if isinstance(observation_space, spaces.Tuple):
         warnings.warn(
             "The observation space is a Tuple, "
@@ -397,7 +405,7 @@ def _check_render(env: gym.Env, warn: bool = False) -> None:  # pragma: no cover
                 "you may have trouble when calling `.render()`"
             )
 
-    # Only check currrent render mode
+    # Only check current render mode
     if env.render_mode:
         env.render()
     env.close()

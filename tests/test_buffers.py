@@ -74,7 +74,7 @@ class DummyDictEnv(gym.Env):
 @pytest.mark.parametrize("env_cls", [DummyEnv, DummyDictEnv])
 def test_env(env_cls):
     # Check the env used for testing
-    # Do not warn for assymetric space
+    # Do not warn for asymmetric space
     check_env(env_cls(), warn=False, skip_render_check=True)
 
 
@@ -86,7 +86,7 @@ def test_replay_buffer_normalization(replay_buffer_cls):
 
     buffer = replay_buffer_cls(100, env.observation_space, env.action_space, device="cpu")
 
-    # Interract and store transitions
+    # Interact and store transitions
     env.reset()
     obs = env.get_original_obs()
     for _ in range(100):
@@ -125,7 +125,7 @@ def test_device_buffer(replay_buffer_cls, device):
 
     buffer = replay_buffer_cls(100, env.observation_space, env.action_space, device=device)
 
-    # Interract and store transitions
+    # Interact and store transitions
     obs = env.reset()
     for _ in range(100):
         action = env.action_space.sample()
@@ -139,18 +139,25 @@ def test_device_buffer(replay_buffer_cls, device):
 
     # Get data from the buffer
     if replay_buffer_cls in [RolloutBuffer, DictRolloutBuffer]:
+        # get returns an iterator over minibatches
         data = buffer.get(50)
     elif replay_buffer_cls in [ReplayBuffer, DictReplayBuffer]:
-        data = buffer.sample(50)
+        data = [buffer.sample(50)]
 
     # Check that all data are on the desired device
     desired_device = get_device(device).type
-    for value in list(data):
-        if isinstance(value, dict):
-            for key in value.keys():
-                assert value[key].device.type == desired_device
-        elif isinstance(value, th.Tensor):
-            assert value.device.type == desired_device
+    for minibatch in list(data):
+        for value in minibatch:
+            if isinstance(value, dict):
+                for key in value.keys():
+                    assert value[key].device.type == desired_device
+            elif isinstance(value, th.Tensor):
+                assert value.device.type == desired_device
+            elif isinstance(value, np.ndarray):
+                # For prioritized replay weights/indices
+                pass
+            else:
+                raise TypeError(f"Unknown value type: {type(value)}")
 
 
 def test_custom_rollout_buffer():

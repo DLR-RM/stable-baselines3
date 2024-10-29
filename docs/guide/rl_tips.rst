@@ -4,7 +4,7 @@
 Reinforcement Learning Tips and Tricks
 ======================================
 
-The aim of this section is to help you do reinforcement learning experiments.
+The aim of this section is to help you run reinforcement learning experiments.
 It covers general advice about RL (where to start, which algorithm to choose, how to evaluate an algorithm, ...),
 as well as tips and tricks when using a custom environment or implementing an RL algorithm.
 
@@ -12,6 +12,11 @@ as well as tips and tricks when using a custom environment or implementing an RL
 
   We have a `video on YouTube <https://www.youtube.com/watch?v=Ikngt0_DXJg>`_ that covers
   this section in more details. You can also find the `slides here <https://araffin.github.io/slides/rlvs-tips-tricks/>`_.
+
+
+.. note::
+
+	We also have a `video on Designing and Running Real-World RL Experiments <https://youtu.be/eZ6ZEpCi6D8>`_, slides `can be found online <https://araffin.github.io/slides/design-real-rl-experiments/>`_.
 
 
 General advice when using Reinforcement Learning
@@ -103,19 +108,19 @@ and this `issue <https://github.com/hill-a/stable-baselines/issues/199>`_ by Cé
 Which algorithm should I use?
 =============================
 
-There is no silver bullet in RL, depending on your needs and problem, you may choose one or the other.
+There is no silver bullet in RL, you can choose one or the other depending on your needs and problems.
 The first distinction comes from your action space, i.e., do you have discrete (e.g. LEFT, RIGHT, ...)
 or continuous actions (ex: go to a certain speed)?
 
-Some algorithms are only tailored for one or the other domain: ``DQN`` only supports discrete actions, where ``SAC`` is restricted to continuous actions.
+Some algorithms are only tailored for one or the other domain: ``DQN`` supports only discrete actions, while ``SAC`` is restricted to continuous actions.
 
-The second difference that will help you choose is whether you can parallelize your training or not.
+The second difference that will help you decide is whether you can parallelize your training or not.
 If what matters is the wall clock training time, then you should lean towards ``A2C`` and its derivatives (PPO, ...).
 Take a look at the `Vectorized Environments <vec_envs.html>`_ to learn more about training with multiple workers.
 
-To accelerate training, you can also take a look at `SBX`_, which is SB3 + Jax, it has fewer features than SB3 but can be up to 20x faster than SB3 PyTorch thanks to JIT compilation of the gradient update.
+To accelerate training, you can also take a look at `SBX`_, which is SB3 + Jax, it has less features than SB3 but can be up to 20x faster than SB3 PyTorch thanks to JIT compilation of the gradient update.
 
-In sparse reward settings, we either recommend to use dedicated methods like HER (see below) or population-based algorithms like ARS (available in our :ref:`contrib repo <sb3_contrib>`).
+In sparse reward settings, we either recommend using either dedicated methods like HER (see below) or population-based algorithms like ARS (available in our :ref:`contrib repo <sb3_contrib>`).
 
 To sum it up:
 
@@ -146,7 +151,7 @@ Continuous Actions
 Continuous Actions - Single Process
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Current State Of The Art (SOTA) algorithms are ``SAC``, ``TD3`` and ``TQC`` (available in our :ref:`contrib repo <sb3_contrib>`).
+Current State Of The Art (SOTA) algorithms are ``SAC``, ``TD3``, ``CrossQ`` and ``TQC`` (available in our :ref:`contrib repo <sb3_contrib>` and :ref:`SBX (SB3 + Jax) repo <sbx>`).
 Please use the hyperparameters in the `RL zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_ for best results.
 
 If you want an extremely sample-efficient algorithm, we recommend using the `DroQ configuration <https://twitter.com/araffin2/status/1575439865222660098>`_ in `SBX`_ (it does many gradient steps per step in the environment).
@@ -155,8 +160,7 @@ If you want an extremely sample-efficient algorithm, we recommend using the `Dro
 Continuous Actions - Multiprocessed
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Take a look at ``PPO``, ``TRPO`` (available in our :ref:`contrib repo <sb3_contrib>`) or ``A2C``. Again, don't forget to take the hyperparameters from the `RL zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_
-for continuous actions problems (cf *Bullet* envs).
+Take a look at ``PPO``, ``TRPO`` (available in our :ref:`contrib repo <sb3_contrib>`) or ``A2C``. Again, don't forget to take the hyperparameters from the `RL zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_ for continuous actions problems (cf *Bullet* envs).
 
 .. note::
 
@@ -181,26 +185,23 @@ Tips and Tricks when creating a custom environment
 ==================================================
 
 If you want to learn about how to create a custom environment, we recommend you read this `page <custom_env.html>`_.
-We also provide a `colab notebook <https://colab.research.google.com/github/araffin/rl-tutorial-jnrr19/blob/master/5_custom_gym_env.ipynb>`_ for
-a concrete example of creating a custom gym environment.
+We also provide a `colab notebook <https://colab.research.google.com/github/araffin/rl-tutorial-jnrr19/blob/master/5_custom_gym_env.ipynb>`_ for a concrete example of creating a custom gym environment.
 
 Some basic advice:
 
-- always normalize your observation space when you can, i.e., when you know the boundaries
-- normalize your action space and make it symmetric when continuous (cf potential issue below) A good practice is to rescale your actions to lie in [-1, 1]. This does not limit you as you can easily rescale the action inside the environment
-- start with shaped reward (i.e. informative reward) and simplified version of your problem
-- debug with random actions to check that your environment works and follows the gym interface:
+- always normalize your observation space if you can, i.e. if you know the boundaries
+- normalize your action space and make it symmetric if it is continuous (see potential problem below) A good practice is to rescale your actions so that they lie in [-1, 1]. This does not limit you, as you can easily rescale the action within the environment.
+- start with a shaped reward (i.e. informative reward) and a simplified version of your problem
+- debug with random actions to check if your environment works and follows the gym interface (with ``check_env``, see below)
 
-Two important things to keep in mind when creating a custom environment is to avoid breaking Markov assumption
+Two important things to keep in mind when creating a custom environment are avoiding breaking the Markov assumption
 and properly handle termination due to a timeout (maximum number of steps in an episode).
-For instance, if there is some time delay between action and observation (e.g. due to wifi communication), you should give a history of observations
-as input.
+For example, if there is a time delay between action and observation (e.g. due to wifi communication), you should provide a history of observations as input.
 
 Termination due to timeout (max number of steps per episode) needs to be handled separately.
 You should return ``truncated = True``.
 If you are using the gym ``TimeLimit`` wrapper, this will be done automatically.
-You can read `Time Limit in RL <https://arxiv.org/abs/1712.00378>`_ or take a look at the `RL Tips and Tricks video <https://www.youtube.com/watch?v=Ikngt0_DXJg>`_
-for more details.
+You can read `Time Limit in RL <https://arxiv.org/abs/1712.00378>`_, take a look at the `Designing and Running Real-World RL Experiments video <https://youtu.be/eZ6ZEpCi6D8>`_ or `RL Tips and Tricks video <https://www.youtube.com/watch?v=Ikngt0_DXJg>`_ for more details.
 
 
 We provide a helper to check that your environment runs without error:
@@ -234,7 +235,7 @@ If you want to quickly try a random agent on your environment, you can also do:
 
 Most reinforcement learning algorithms rely on a Gaussian distribution (initially centered at 0 with std 1) for continuous actions.
 So, if you forget to normalize the action space when using a custom environment,
-this can harm learning and be difficult to debug (cf attached image and `issue #473 <https://github.com/hill-a/stable-baselines/issues/473>`_).
+this can harm learning and can be difficult to debug (cf attached image and `issue #473 <https://github.com/hill-a/stable-baselines/issues/473>`_).
 
 .. figure:: ../_static/img/mistake.png
 

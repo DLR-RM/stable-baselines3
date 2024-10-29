@@ -447,7 +447,8 @@ def load_from_zip_file(
                     file_content.seek(0)
                     # Load the parameters with the right ``map_location``.
                     # Remove ".pth" ending with splitext
-                    th_object = th.load(file_content, map_location=device, weights_only=True)
+                    # Note(antonin): we cannot use weights_only=True, as it breaks with PyTorch 1.13, see GH#1911
+                    th_object = th.load(file_content, map_location=device, weights_only=False)
                     # "tensors.pth" was renamed "pytorch_variables.pth" in v0.9.0, see PR #138
                     if file_path == "pytorch_variables.pth" or file_path == "tensors.pth":
                         # PyTorch variables (not state_dicts)

@@ -68,6 +68,7 @@ Others:
 - Updated PyTorch version on CI to 2.3.1
 - Added a warning to recommend using CPU with on policy algorithms (A2C/PPO) and ``MlpPolicy``
 - Switched to uv to download packages faster on GitHub CI
+- Updated dependencies for read the doc
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -75,6 +76,7 @@ Bug Fixes:
 Documentation:
 ^^^^^^^^^^^^^^
 - Updated PPO doc to recommend using CPU with ``MlpPolicy``
+- Clarified documentation about planned features and citing software
 
 Release 2.3.2 (2024-04-27)
 --------------------------

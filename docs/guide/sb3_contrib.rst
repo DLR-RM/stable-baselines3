@@ -42,6 +42,7 @@ See documentation for the full list of included features.
 - `PPO with recurrent policy (RecurrentPPO aka PPO LSTM) <https://ppo-details.cleanrl.dev//2021/11/05/ppo-implementation-details/>`_
 - `Truncated Quantile Critics (TQC)`_
 - `Trust Region Policy Optimization (TRPO) <https://arxiv.org/abs/1502.05477>`_
+- `Batch Normalization in Deep Reinforcement Learning (CrossQ) <https://openreview.net/forum?id=PczQtTsTIX>`_
 
 
 **Gym Wrappers**:

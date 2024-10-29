@@ -22,6 +22,8 @@ These algorithms will make it easier for the research community and industry to 
 **The performance of each algorithm was tested** (see *Results* section in their respective page),
 you can take a look at the issues [#48](https://github.com/DLR-RM/stable-baselines3/issues/48) and [#49](https://github.com/DLR-RM/stable-baselines3/issues/49) for more details.
 
+We also provide detailed logs and reports on the [OpenRL Benchmark](https://wandb.ai/openrlbenchmark/sb3) platform.
+
 
 | **Features**                | **Stable-Baselines3** |
 | --------------------------- | ----------------------|
@@ -41,7 +43,7 @@ you can take a look at the issues [#48](https://github.com/DLR-RM/stable-baselin
 
 ### Planned features
 
-Since most of the features from the [original roadmap] (https://github.com/DLR-RM/stable-baselines3/issues/1) have been implemented, there are no major changes planned for SB3, it is now *stable*.
+Since most of the features from the [original roadmap](https://github.com/DLR-RM/stable-baselines3/issues/1) have been implemented, there are no major changes planned for SB3, it is now *stable*.
 If you want to contribute, you can search in the issues for the ones where [help is welcomed](https://github.com/DLR-RM/stable-baselines3/labels/help%20wanted) and the other [proposed enhancements](https://github.com/DLR-RM/stable-baselines3/labels/enhancement).
 
 While SB3 development is now focused on bug fixes and maintenance (doc update, user experience, ...), there is more active development going on in the associated repositories:

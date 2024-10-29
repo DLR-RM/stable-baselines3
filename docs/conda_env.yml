@@ -4,7 +4,7 @@ channels:
   - defaults
 dependencies:
   - cpuonly=1.0=0
-  - pip=24.3.1
+  - pip=24.2
   - python=3.11
   - pytorch=2.5.0=py3.11_cpu_0
   - pip:

@@ -1,18 +1,18 @@
 name: root
 channels:
   - pytorch
-  - defaults
+  - conda-forge
 dependencies:
   - cpuonly=1.0=0
-  - pip=22.3.1
-  - python=3.8
-  - pytorch=1.13.0=py3.8_cpu_0
+  - pip=24.2
+  - python=3.11
+  - pytorch=2.5.0=py3.11_cpu_0
   - pip:
-    - gymnasium
+    - gymnasium>=0.28.1,<0.30
     - cloudpickle
     - opencv-python-headless
     - pandas
-    - numpy
+    - numpy>=1.20,<2.0
     - matplotlib
     - sphinx>=5,<8
     - sphinx_rtd_theme>=1.3.0

@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.4.0a10 (WIP)
+Release 2.4.0a11 (WIP)
 --------------------------
 
 **New algorithm: CrossQ in SB3 Contrib**

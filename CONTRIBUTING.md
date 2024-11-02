@@ -6,7 +6,7 @@ into two categories:
     - Create an issue about your intended feature, and we shall discuss the design and
     implementation. Once we agree that the plan looks good, go ahead and implement it.
 2. You want to implement a feature or bug-fix for an outstanding issue
-    - Look at the outstanding issues here: https://github.com/DLR-RM/stable-baselines3/issues
+    - Look at the outstanding issues here: https://github.com/DLR-RM/stable-baselines3/labels/help%20wanted
     - Pick an issue or feature and comment on the task that you want to work on this feature.
     - If you need more context on a particular issue, please ask, and we shall provide.
 

@@ -6,6 +6,8 @@ Changelog
 Release 2.4.0a10 (WIP)
 --------------------------
 
+**New algorithm: CrossQ in SB3 Contrib**
+
 .. note::
 
   DQN (and QR-DQN) models saved with SB3 < 2.4.0 will show a warning about
@@ -43,6 +45,10 @@ Bug Fixes:
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
+- Added ``CrossQ`` algorithm, from "Batch Normalization in Deep Reinforcement Learning" paper (@danielpalen)
+- Added ``BatchRenorm`` PyTorch layer used in ``CrossQ`` (@danielpalen)
+- Updated QR-DQN optimizer input to only include quantile_net parameters (@corentinlger)
+- Fixed loading QRDQN changes `target_update_interval` (@jak3122)
 
 `RL Zoo`_
 ^^^^^^^^^
@@ -61,6 +67,8 @@ Others:
 - Remove unnecessary SDE noise resampling in PPO update (@brn-dev)
 - Updated PyTorch version on CI to 2.3.1
 - Added a warning to recommend using CPU with on policy algorithms (A2C/PPO) and ``MlpPolicy``
+- Switched to uv to download packages faster on GitHub CI
+- Updated dependencies for read the doc
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -68,6 +76,7 @@ Bug Fixes:
 Documentation:
 ^^^^^^^^^^^^^^
 - Updated PPO doc to recommend using CPU with ``MlpPolicy``
+- Clarified documentation about planned features and citing software
 
 Release 2.3.2 (2024-04-27)
 --------------------------

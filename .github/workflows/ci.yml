@@ -21,7 +21,14 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
-
+        include:
+          # Default version
+          - gymnasium-version: "1.0.0"
+          # Add a new config to test gym<1.0
+          - python-version: "3.10"
+            gymnasium-version: "0.29.1"
+          - python-version: "3.10"
+            gymnasium-version: "1.0.0"
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -31,13 +38,20 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          # Use uv for faster downloads
+          pip install uv
           # cpu version of pytorch
-          pip install torch==2.3.1 --index-url https://download.pytorch.org/whl/cpu
-          
-          pip install .[extra,tests,docs]
+          # See https://github.com/astral-sh/uv/issues/1497
+          uv pip install --system torch==2.3.1+cpu --index https://download.pytorch.org/whl/cpu
+
+          uv pip install --system .[extra,tests,docs]
           # Use headless version
-          pip install opencv-python-headless
-          pip install git+https://github.com/farama-Foundation/gymnasium
+          uv pip install --system opencv-python-headless
+       - name: Install specific version of gym
+        run: |
+          uv pip install --system gymnasium==${{ matrix.gymnasium-version }}
+        # Only run for python 3.10, downgrade gym to 0.29.1
+        if: matrix.gymnasium-version != '1.0.0'
       - name: Lint with ruff
         run: |
           make lint

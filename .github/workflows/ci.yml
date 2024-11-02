@@ -27,8 +27,6 @@ jobs:
           # Add a new config to test gym<1.0
           - python-version: "3.10"
             gymnasium-version: "0.29.1"
-          - python-version: "3.10"
-            gymnasium-version: "1.0.0"
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}

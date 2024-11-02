@@ -47,7 +47,7 @@ jobs:
           uv pip install --system .[extra,tests,docs]
           # Use headless version
           uv pip install --system opencv-python-headless
-       - name: Install specific version of gym
+      - name: Install specific version of gym
         run: |
           uv pip install --system gymnasium==${{ matrix.gymnasium-version }}
         # Only run for python 3.10, downgrade gym to 0.29.1

@@ -1,6 +1,5 @@
 import multiprocessing as mp
 import warnings
-from collections import OrderedDict
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import gymnasium as gym
@@ -129,7 +128,7 @@ class SubprocVecEnv(VecEnv):
         results = [remote.recv() for remote in self.remotes]
         self.waiting = False
         obs, rews, dones, infos, self.reset_infos = zip(*results)  # type: ignore[assignment]
-        return _flatten_obs(obs, self.observation_space), np.stack(rews), np.stack(dones), infos  # type: ignore[return-value]
+        return _stack_obs(obs, self.observation_space), np.stack(rews), np.stack(dones), infos  # type: ignore[return-value]
 
     def reset(self) -> VecEnvObs:
         for env_idx, remote in enumerate(self.remotes):
@@ -139,7 +138,7 @@ class SubprocVecEnv(VecEnv):
         # Seeds and options are only used once
         self._reset_seeds()
         self._reset_options()
-        return _flatten_obs(obs, self.observation_space)
+        return _stack_obs(obs, self.observation_space)
 
     def close(self) -> None:
         if self.closed:
@@ -206,27 +205,28 @@ class SubprocVecEnv(VecEnv):
         return [self.remotes[i] for i in indices]
 
 
-def _flatten_obs(obs: Union[List[VecEnvObs], Tuple[VecEnvObs]], space: spaces.Space) -> VecEnvObs:
+def _stack_obs(obs_list: Union[List[VecEnvObs], Tuple[VecEnvObs]], space: spaces.Space) -> VecEnvObs:
     """
-    Flatten observations, depending on the observation space.
+    Stack observations (convert from a list of single env obs to a stack of obs),
+    depending on the observation space.
 
     :param obs: observations.
                 A list or tuple of observations, one per environment.
                 Each environment observation may be a NumPy array, or a dict or tuple of NumPy arrays.
-    :return: flattened observations.
-            A flattened NumPy array or an OrderedDict or tuple of flattened numpy arrays.
+    :return: Concatenated observations.
+            A NumPy array or a dict or tuple of stacked numpy arrays.
             Each NumPy array has the environment index as its first axis.
     """
-    assert isinstance(obs, (list, tuple)), "expected list or tuple of observations per environment"
-    assert len(obs) > 0, "need observations from at least one environment"
+    assert isinstance(obs_list, (list, tuple)), "expected list or tuple of observations per environment"
+    assert len(obs_list) > 0, "need observations from at least one environment"
 
     if isinstance(space, spaces.Dict):
         assert isinstance(space.spaces, dict), "Dict space must have ordered subspaces"
-        assert isinstance(obs[0], dict), "non-dict observation for environment with Dict observation space"
-        return OrderedDict([(k, np.stack([o[k] for o in obs])) for k in space.spaces.keys()])  # type: ignore[call-overload]
+        assert isinstance(obs_list[0], dict), "non-dict observation for environment with Dict observation space"
+        return {key: np.stack([single_obs[key] for single_obs in obs_list]) for key in space.spaces.keys()}  # type: ignore[call-overload]
     elif isinstance(space, spaces.Tuple):
-        assert isinstance(obs[0], tuple), "non-tuple observation for environment with Tuple observation space"
+        assert isinstance(obs_list[0], tuple), "non-tuple observation for environment with Tuple observation space"
         obs_len = len(space.spaces)
-        return tuple(np.stack([o[i] for o in obs]) for i in range(obs_len))  # type: ignore[index]
+        return tuple(np.stack([single_obs[i] for single_obs in obs_list]) for i in range(obs_len))  # type: ignore[index]
     else:
-        return np.stack(obs)  # type: ignore[arg-type]
+        return np.stack(obs_list)  # type: ignore[arg-type]

@@ -8,7 +8,7 @@ dependencies:
   - python=3.11
   - pytorch=2.5.0=py3.11_cpu_0
   - pip:
-    - gymnasium>=0.28.1,<0.30
+    - gymnasium>=0.29.1,<1.1.0
     - cloudpickle
     - opencv-python-headless
     - pandas

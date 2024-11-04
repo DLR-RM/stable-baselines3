@@ -307,7 +307,7 @@ def test_vecenv_dict_spaces(vec_env_class):
     space = spaces.Dict(SPACES)
 
     def obs_assert(obs):
-        assert isinstance(obs, collections.OrderedDict)
+        assert isinstance(obs, dict)
         assert obs.keys() == space.spaces.keys()
         for key, values in obs.items():
             check_vecenv_obs(values, space.spaces[key])

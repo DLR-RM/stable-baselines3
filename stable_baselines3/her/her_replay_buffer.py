@@ -396,7 +396,7 @@ class HerReplayBuffer(DictReplayBuffer):
                 "If you are in the same episode as when the replay buffer was saved,\n"
                 "you should use `truncate_last_trajectory=False` to avoid that issue."
             )
-            # only consider epsiodes that are not finished
+            # only consider episodes that are not finished
             for env_idx in np.where(self._current_ep_start != self.pos)[0]:
                 # set done = True for last episodes
                 self.dones[self.pos - 1, env_idx] = True

@@ -3,14 +3,35 @@
 Changelog
 ==========
 
-Release 2.4.0a5 (WIP)
+Release 2.4.0a11 (WIP)
 --------------------------
+
+**New algorithm: CrossQ in SB3 Contrib, Gymnasium v1.0 support**
+
+.. note::
+
+  DQN (and QR-DQN) models saved with SB3 < 2.4.0 will show a warning about
+  truncation of optimizer state when loaded with SB3 >= 2.4.0.
+  To suppress the warning, simply save the model again.
+  You can find more info in `PR #1963 <https://github.com/DLR-RM/stable-baselines3/pull/1963>`_
+
+.. warning::
+
+    Stable-Baselines3 (SB3) v2.4.0 will be the last one supporting Python 3.8 (end of life in October 2024)
+    and PyTorch < 2.0.
+    We highly recommended you to upgrade to Python >= 3.9 and PyTorch >= 2.0.
+
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
+- Increase minimum required version of Gymnasium to 0.29.1
 
 New Features:
 ^^^^^^^^^^^^^
+- Added support for ``pre_linear_modules`` and ``post_linear_modules`` in ``create_mlp`` (useful for adding normalization layers, like in DroQ or CrossQ)
+- Enabled np.ndarray logging for TensorBoardOutputFormat as histogram (see GH#1634) (@iwishwasaneagle)
+- Updated env checker to warn users when using multi-dim array to define `MultiDiscrete` spaces
+- Added support for Gymnasium v1.0
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -21,15 +42,23 @@ Bug Fixes:
 - Fixed error when loading a model that has ``net_arch`` manually set to ``None``   (@jak3122)
 - Set requirement numpy<2.0 until PyTorch is compatible (https://github.com/pytorch/pytorch/issues/107302)
 - Updated DQN optimizer input to only include q_network parameters, removing the target_q_network ones (@corentinlger)
+- Fixed ``test_buffers.py::test_device`` which was not actually checking the device of tensors (@rhaps0dy)
+
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
+- Added ``CrossQ`` algorithm, from "Batch Normalization in Deep Reinforcement Learning" paper (@danielpalen)
+- Added ``BatchRenorm`` PyTorch layer used in ``CrossQ`` (@danielpalen)
+- Updated QR-DQN optimizer input to only include quantile_net parameters (@corentinlger)
+- Fixed loading QRDQN changes `target_update_interval` (@jak3122)
 
 `RL Zoo`_
 ^^^^^^^^^
+- Updated defaults hyperparameters for TQC/SAC for Swimmer-v4 (decrease gamma for more consistent results)
 
 `SBX`_ (SB3 + Jax)
 ^^^^^^^^^^^^^^^^^^
+- Added CNN support for DQN
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -39,12 +68,18 @@ Others:
 - Fixed various typos (@cschindlbeck)
 - Remove unnecessary SDE noise resampling in PPO update (@brn-dev)
 - Updated PyTorch version on CI to 2.3.1
+- Added a warning to recommend using CPU with on policy algorithms (A2C/PPO) and ``MlpPolicy``
+- Switched to uv to download packages faster on GitHub CI
+- Updated dependencies for read the doc
+- Removed unnecessary ``copy_obs_dict`` method for ``SubprocVecEnv``, remove the use of ordered dict and rename ``flatten_obs`` to ``stack_obs``
 
 Bug Fixes:
 ^^^^^^^^^^
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Updated PPO doc to recommend using CPU with ``MlpPolicy``
+- Clarified documentation about planned features and citing software
 
 Release 2.3.2 (2024-04-27)
 --------------------------

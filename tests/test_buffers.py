@@ -143,18 +143,25 @@ def test_device_buffer(replay_buffer_cls, device):
 
     # Get data from the buffer
     if replay_buffer_cls in [RolloutBuffer, DictRolloutBuffer]:
+        # get returns an iterator over minibatches
         data = buffer.get(50)
     elif replay_buffer_cls in [ReplayBuffer, DictReplayBuffer, PrioritizedReplayBuffer]:
         data = buffer.sample(50)
 
     # Check that all data are on the desired device
     desired_device = get_device(device).type
-    for value in list(data):
-        if isinstance(value, dict):
-            for key in value.keys():
-                assert value[key].device.type == desired_device
-        elif isinstance(value, th.Tensor):
-            assert value.device.type == desired_device
+    for minibatch in list(data):
+        for value in minibatch:
+            if isinstance(value, dict):
+                for key in value.keys():
+                    assert value[key].device.type == desired_device
+            elif isinstance(value, th.Tensor):
+                assert value.device.type == desired_device
+            elif isinstance(value, np.ndarray):
+                # For prioritized replay weights/indices
+                pass
+            else:
+                raise TypeError(f"Unknown value type: {type(value)}")
 
 
 def test_custom_rollout_buffer():

@@ -5,9 +5,9 @@ name: CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   build:
@@ -21,40 +21,49 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
-
+        include:
+          # Default version
+          - gymnasium-version: "1.0.0"
+          # Add a new config to test gym<1.0
+          - python-version: "3.10"
+            gymnasium-version: "0.29.1"
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        # cpu version of pytorch
-        pip install torch==2.3.1 --index-url https://download.pytorch.org/whl/cpu
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Use uv for faster downloads
+          pip install uv
+          # cpu version of pytorch
+          # See https://github.com/astral-sh/uv/issues/1497
+          uv pip install --system torch==2.3.1+cpu --index https://download.pytorch.org/whl/cpu
 
-        # Install Atari Roms
-        pip install autorom
-        wget https://gist.githubusercontent.com/jjshoots/61b22aefce4456920ba99f2c36906eda/raw/00046ac3403768bfe45857610a3d333b8e35e026/Roms.tar.gz.b64
-        base64 Roms.tar.gz.b64 --decode &> Roms.tar.gz
-        AutoROM --accept-license --source-file Roms.tar.gz
-
-        pip install .[extra_no_roms,tests,docs]
-        # Use headless version
-        pip install opencv-python-headless
-    - name: Lint with ruff
-      run: |
-        make lint
-    - name: Build the doc
-      run: |
-        make doc
-    - name: Check codestyle
-      run: |
-        make check-codestyle
-    - name: Type check
-      run: |
-        make type
-    - name: Test with pytest
-      run: |
-        make pytest
+          uv pip install --system .[extra,tests,docs]
+          # Use headless version
+          uv pip install --system opencv-python-headless
+      - name: Install specific version of gym
+        run: |
+          uv pip install --system gymnasium==${{ matrix.gymnasium-version }}
+        # Only run for python 3.10, downgrade gym to 0.29.1
+        if: matrix.gymnasium-version != '1.0.0'
+      - name: Lint with ruff
+        run: |
+          make lint
+      - name: Build the doc
+        run: |
+          make doc
+      - name: Check codestyle
+        run: |
+          make check-codestyle
+      - name: Type check
+        run: |
+          make type
+        # Do not run for python 3.8 (mypy internal error)
+        if: matrix.python-version != '3.8'
+      - name: Test with pytest
+        run: |
+          make pytest

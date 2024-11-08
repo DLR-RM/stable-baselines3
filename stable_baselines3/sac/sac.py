@@ -209,6 +209,7 @@ class SAC(OffPolicyAlgorithm):
 
         ent_coef_losses, ent_coefs = [], []
         actor_losses, critic_losses = [], []
+        additional_losses = []
 
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
@@ -270,9 +271,14 @@ class SAC(OffPolicyAlgorithm):
             # Compute actor loss
             # Alternative: actor_loss = th.mean(log_prob - qf1_pi)
             # Min over all critic networks
+            add_loss = None
             q_values_pi = th.cat(self.critic(replay_data.observations, actions_pi), dim=1)
             min_qf_pi, _ = th.min(q_values_pi, dim=1, keepdim=True)
             actor_loss = (ent_coef * log_prob - min_qf_pi).mean()
+            if self.has_additional_loss:
+                add_loss = self._calculate_additional_loss(replay_data.observations, actions_pi).mean()
+                actor_loss += add_loss
+                additional_losses.append(add_loss.item())
             actor_losses.append(actor_loss.item())
 
             # Optimize the actor
@@ -294,6 +300,8 @@ class SAC(OffPolicyAlgorithm):
         self.logger.record("train/critic_loss", np.mean(critic_losses))
         if len(ent_coef_losses) > 0:
             self.logger.record("train/ent_coef_loss", np.mean(ent_coef_losses))
+        if len(additional_losses):
+            self.logger.record(f"train/{self.additional_loss_name}", np.mean(additional_losses))
 
     def learn(
         self: SelfSAC,

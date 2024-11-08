@@ -198,6 +198,7 @@ class PPO(OnPolicyAlgorithm):
         entropy_losses = []
         pg_losses, value_losses = [], []
         clip_fractions = []
+        additional_losses = []
 
         continue_training = True
         # train for n_epochs epochs
@@ -252,8 +253,12 @@ class PPO(OnPolicyAlgorithm):
                     entropy_loss = -th.mean(entropy)
 
                 entropy_losses.append(entropy_loss.item())
-
+                add_loss = None
                 loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
+                if self.has_additional_loss:
+                    add_loss = self._calculate_additional_loss(rollout_data.observations, log_prob).mean()
+                    loss += add_loss
+                    additional_losses.append(add_loss.item())
 
                 # Calculate approximate form of reverse KL Divergence for early stopping
                 # see issue #417: https://github.com/DLR-RM/stable-baselines3/issues/417
@@ -298,6 +303,9 @@ class PPO(OnPolicyAlgorithm):
         self.logger.record("train/clip_range", clip_range)
         if self.clip_range_vf is not None:
             self.logger.record("train/clip_range_vf", clip_range_vf)
+
+        if len(additional_losses) > 0:
+            self.logger.record(f"train/{self.additional_loss_name}", np.mean(additional_losses))
 
     def learn(
         self: SelfPPO,

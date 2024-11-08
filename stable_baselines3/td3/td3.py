@@ -159,6 +159,7 @@ class TD3(OffPolicyAlgorithm):
         self._update_learning_rate([self.actor.optimizer, self.critic.optimizer])
 
         actor_losses, critic_losses = [], []
+        additional_losses = []
         for _ in range(gradient_steps):
             self._n_updates += 1
             # Sample replay buffer
@@ -191,7 +192,13 @@ class TD3(OffPolicyAlgorithm):
             # Delayed policy updates
             if self._n_updates % self.policy_delay == 0:
                 # Compute actor loss
-                actor_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
+                add_loss = None
+                logits = self.actor(replay_data.observations)
+                actor_loss = -self.critic.q1_forward(replay_data.observations, logits).mean()
+                if self.has_additional_loss:
+                    add_loss = self._calculate_additional_loss(replay_data.observations, logits).mean()
+                    actor_loss += add_loss
+                    additional_losses.append(add_loss.item())
                 actor_losses.append(actor_loss.item())
 
                 # Optimize the actor
@@ -209,6 +216,8 @@ class TD3(OffPolicyAlgorithm):
         if len(actor_losses) > 0:
             self.logger.record("train/actor_loss", np.mean(actor_losses))
         self.logger.record("train/critic_loss", np.mean(critic_losses))
+        if len(additional_losses) > 0:
+            self.logger.record(f"train/{self.additional_loss_name}", np.mean(additional_losses))
 
     def learn(
         self: SelfTD3,

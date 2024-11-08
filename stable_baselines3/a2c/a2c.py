@@ -155,8 +155,12 @@ class A2C(OnPolicyAlgorithm):
             if self.normalize_advantage:
                 advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-            # Policy gradient loss
+            # Policy gradient
+            add_loss = None
             policy_loss = -(advantages * log_prob).mean()
+            if self.has_additional_loss:
+                add_loss = self._calculate_additional_loss(rollout_data.observations, log_prob).mean()
+                policy_loss += add_loss
 
             # Value loss using the TD(gae_lambda) target
             value_loss = F.mse_loss(rollout_data.returns, values)
@@ -188,6 +192,8 @@ class A2C(OnPolicyAlgorithm):
         self.logger.record("train/value_loss", value_loss.item())
         if hasattr(self.policy, "log_std"):
             self.logger.record("train/std", th.exp(self.policy.log_std).mean().item())
+        if add_loss is not None:
+            self.logger.record(f"train/{self.additional_loss_name}", add_loss.item())
 
     def learn(
         self: SelfA2C,

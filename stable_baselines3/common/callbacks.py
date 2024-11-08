@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 
 import gymnasium as gym
 import numpy as np
-
+import torch as th
 from stable_baselines3.common.logger import Logger
+from stable_baselines3.common.type_aliases import ReplayBufferSamples, RolloutBufferSamples
 
 try:
     from tqdm import TqdmExperimentalWarning
@@ -123,6 +124,19 @@ class BaseCallback(ABC):
         self._on_rollout_end()
 
     def _on_rollout_end(self) -> None:
+        pass
+
+    def on_update_loss(
+        self,
+        samples: Union[RolloutBufferSamples, ReplayBufferSamples],
+    ) -> th.Tensor:
+        self.is_rollout_buffer = isinstance(samples, RolloutBufferSamples)
+        return self._on_update_loss(samples)
+
+    def _on_update_loss(
+        self,
+        samples: Union[RolloutBufferSamples, ReplayBufferSamples],
+    ) -> th.Tensor:
         pass
 
     def update_locals(self, locals_: Dict[str, Any]) -> None:

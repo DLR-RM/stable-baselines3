@@ -18,7 +18,6 @@ ignore = ["B028", "RUF013"]
 # ClassVar, implicit optional check not needed for tests
 "./tests/*.py" = ["RUF012", "RUF013"]
 
-
 [tool.ruff.lint.mccabe]
 # Unlike Flake8, default to a complexity level of 10.
 max-complexity = 15

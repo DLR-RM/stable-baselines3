@@ -59,6 +59,7 @@ Bug Fixes:
 `SBX`_ (SB3 + Jax)
 ^^^^^^^^^^^^^^^^^^
 - Added CNN support for DQN
+- Bug fix for SAC and related algorithms, optimize log of ent coeff to be consistent with SB3
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -80,6 +81,7 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Updated PPO doc to recommend using CPU with ``MlpPolicy``
 - Clarified documentation about planned features and citing software
+- Added a note about the fact we are optimizing log of ent coeff for SAC
 
 Release 2.3.2 (2024-04-27)
 --------------------------

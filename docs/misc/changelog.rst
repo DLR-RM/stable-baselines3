@@ -13,7 +13,8 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-- Added support for NumPy v2.0 (via Torch)
+- Added support for NumPy v2.0: ``VecNormalize`` now cast normalized rewards to float32,
+updated bit flipping env to avoid overflow issues too
 - Added official support for Python 3.12
 
 Bug Fixes:

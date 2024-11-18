@@ -75,14 +75,17 @@ class BitFlippingEnv(Env):
         :param state:
         :return:
         """
+
         if self.discrete_obs_space:
+            # Convert from int8 to int32 for NumPy 2.0
+            state = state.astype(np.int32)
             # The internal state is the binary representation of the
             # observed one
             return int(sum(state[i] * 2**i for i in range(len(state))))
 
         if self.image_obs_space:
             size = np.prod(self.image_shape)
-            image = np.concatenate((state * 255, np.zeros(size - len(state), dtype=np.uint8)))
+            image = np.concatenate((state.astype(np.uint8) * 255, np.zeros(size - len(state), dtype=np.uint8)))
             return image.reshape(self.image_shape).astype(np.uint8)
         return state
 

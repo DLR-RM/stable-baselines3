@@ -254,7 +254,9 @@ class VecNormalize(VecEnvWrapper):
         """
         if self.norm_reward:
             reward = np.clip(reward / np.sqrt(self.ret_rms.var + self.epsilon), -self.clip_reward, self.clip_reward)
-        return reward
+        # Note: we cast to float32 as it correspond to Python default float type
+        # This cast is needed because `RunningMeanStd` keeps stats in float64
+        return reward.astype(np.float32)
 
     def unnormalize_obs(self, obs: Union[np.ndarray, dict[str, np.ndarray]]) -> Union[np.ndarray, dict[str, np.ndarray]]:
         # Avoid modifying by reference the original object

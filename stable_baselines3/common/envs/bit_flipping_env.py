@@ -81,7 +81,7 @@ class BitFlippingEnv(Env):
             state = state.astype(np.int32)
             # The internal state is the binary representation of the
             # observed one
-            return int(sum(state[i] * 2**i for i in range(len(state))))
+            return int(sum(int(state[i]) * 2**i for i in range(len(state))))
 
         if self.image_obs_space:
             size = np.prod(self.image_shape)

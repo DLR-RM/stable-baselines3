@@ -1,6 +1,7 @@
 import copy
 from abc import ABC, abstractmethod
-from typing import Iterable, List, Optional
+from collections.abc import Iterable
+from typing import Optional
 
 import numpy as np
 from numpy.typing import DTypeLike
@@ -153,11 +154,11 @@ class VectorizedActionNoise(ActionNoise):
         self._base_noise = base_noise
 
     @property
-    def noises(self) -> List[ActionNoise]:
+    def noises(self) -> list[ActionNoise]:
         return self._noises
 
     @noises.setter
-    def noises(self, noises: List[ActionNoise]) -> None:
+    def noises(self, noises: list[ActionNoise]) -> None:
         noises = list(noises)  # raises TypeError if not iterable
         assert len(noises) == self.n_envs, f"Expected a list of {self.n_envs} ActionNoises, found {len(noises)}."
 

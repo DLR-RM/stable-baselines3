@@ -1,12 +1,13 @@
 import warnings
-from typing import Any, Dict, Generic, List, Mapping, Optional, Tuple, TypeVar, Union
+from collections.abc import Mapping
+from typing import Any, Generic, Optional, TypeVar, Union
 
 import numpy as np
 from gymnasium import spaces
 
 from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
 
-TObs = TypeVar("TObs", np.ndarray, Dict[str, np.ndarray])
+TObs = TypeVar("TObs", np.ndarray, dict[str, np.ndarray])
 
 
 class StackedObservations(Generic[TObs]):
@@ -66,7 +67,7 @@ class StackedObservations(Generic[TObs]):
     @staticmethod
     def compute_stacking(
         n_stack: int, observation_space: spaces.Box, channels_order: Optional[str] = None
-    ) -> Tuple[bool, int, Tuple[int, ...], int]:
+    ) -> tuple[bool, int, tuple[int, ...], int]:
         """
         Calculates the parameters in order to stack observations
 
@@ -119,8 +120,8 @@ class StackedObservations(Generic[TObs]):
         self,
         observations: TObs,
         dones: np.ndarray,
-        infos: List[Dict[str, Any]],
-    ) -> Tuple[TObs, List[Dict[str, Any]]]:
+        infos: list[dict[str, Any]],
+    ) -> tuple[TObs, list[dict[str, Any]]]:
         """
         Add the observations to the stack and use the dones to update the infos.
 

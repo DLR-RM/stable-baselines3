@@ -1,7 +1,7 @@
 """Common aliases for type hints"""
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Protocol, SupportsFloat, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Protocol, SupportsFloat, Union
 
 import gymnasium as gym
 import numpy as np
@@ -13,14 +13,14 @@ if TYPE_CHECKING:
     from stable_baselines3.common.vec_env import VecEnv
 
 GymEnv = Union[gym.Env, "VecEnv"]
-GymObs = Union[Tuple, Dict[str, Any], np.ndarray, int]
-GymResetReturn = Tuple[GymObs, Dict]
-AtariResetReturn = Tuple[np.ndarray, Dict[str, Any]]
-GymStepReturn = Tuple[GymObs, float, bool, bool, Dict]
-AtariStepReturn = Tuple[np.ndarray, SupportsFloat, bool, bool, Dict[str, Any]]
-TensorDict = Dict[str, th.Tensor]
-OptimizerStateDict = Dict[str, Any]
-MaybeCallback = Union[None, Callable, List["BaseCallback"], "BaseCallback"]
+GymObs = Union[tuple, dict[str, Any], np.ndarray, int]
+GymResetReturn = tuple[GymObs, dict]
+AtariResetReturn = tuple[np.ndarray, dict[str, Any]]
+GymStepReturn = tuple[GymObs, float, bool, bool, dict]
+AtariStepReturn = tuple[np.ndarray, SupportsFloat, bool, bool, dict[str, Any]]
+TensorDict = dict[str, th.Tensor]
+OptimizerStateDict = dict[str, Any]
+MaybeCallback = Union[None, Callable, list["BaseCallback"], "BaseCallback"]
 PyTorchObs = Union[th.Tensor, TensorDict]
 
 # A schedule takes the remaining progress as input
@@ -81,11 +81,11 @@ class TrainFreq(NamedTuple):
 class PolicyPredictor(Protocol):
     def predict(
         self,
-        observation: Union[np.ndarray, Dict[str, np.ndarray]],
-        state: Optional[Tuple[np.ndarray, ...]] = None,
+        observation: Union[np.ndarray, dict[str, np.ndarray]],
+        state: Optional[tuple[np.ndarray, ...]] = None,
         episode_start: Optional[np.ndarray] = None,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, Optional[Tuple[np.ndarray, ...]]]:
+    ) -> tuple[np.ndarray, Optional[tuple[np.ndarray, ...]]]:
         """
         Get the policy action from an observation (and optional hidden state).
         Includes sugar-coating to handle different observations (e.g. normalizing images).

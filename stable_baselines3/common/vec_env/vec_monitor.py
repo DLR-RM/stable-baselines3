@@ -1,6 +1,6 @@
 import time
 import warnings
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 
@@ -27,7 +27,7 @@ class VecMonitor(VecEnvWrapper):
         self,
         venv: VecEnv,
         filename: Optional[str] = None,
-        info_keywords: Tuple[str, ...] = (),
+        info_keywords: tuple[str, ...] = (),
     ):
         # Avoid circular import
         from stable_baselines3.common.monitor import Monitor, ResultsWriter

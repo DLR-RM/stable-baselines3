@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any, Callable, Optional
 
 import torch
 from torch.optim import Optimizer
@@ -67,7 +68,7 @@ class RMSpropTFLike(Optimizer):
         defaults = dict(lr=lr, momentum=momentum, alpha=alpha, eps=eps, centered=centered, weight_decay=weight_decay)
         super().__init__(params, defaults)
 
-    def __setstate__(self, state: Dict[str, Any]) -> None:
+    def __setstate__(self, state: dict[str, Any]) -> None:
         super().__setstate__(state)
         for group in self.param_groups:
             group.setdefault("momentum", 0)

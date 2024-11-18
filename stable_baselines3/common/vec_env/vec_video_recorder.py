@@ -1,6 +1,6 @@
 import os
 import os.path
-from typing import Callable, List
+from typing import Callable
 
 import numpy as np
 from gymnasium import error, logger
@@ -109,7 +109,7 @@ class VecVideoRecorder(VecEnvWrapper):
         assert self.recording, "Cannot capture a frame, recording wasn't started."
 
         frame = self.env.render()
-        if isinstance(frame, List):
+        if isinstance(frame, list):
             frame = frame[-1]
 
         if isinstance(frame, np.ndarray):

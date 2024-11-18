@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.4.0a11 (WIP)
+Release 2.4.0 (2024-11-18)
 --------------------------
 
 **New algorithm: CrossQ in SB3 Contrib, Gymnasium v1.0 support**
@@ -18,13 +18,13 @@ Release 2.4.0a11 (WIP)
 .. warning::
 
     Stable-Baselines3 (SB3) v2.4.0 will be the last one supporting Python 3.8 (end of life in October 2024)
-    and PyTorch < 2.0.
-    We highly recommended you to upgrade to Python >= 3.9 and PyTorch >= 2.0.
+    and PyTorch < 2.3.
+    We highly recommended you to upgrade to Python >= 3.9 and PyTorch >= 2.3 (compatible with NumPy v2).
 
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
-- Increase minimum required version of Gymnasium to 0.29.1
+- Increased minimum required version of Gymnasium to 0.29.1
 
 New Features:
 ^^^^^^^^^^^^^
@@ -73,9 +73,6 @@ Others:
 - Switched to uv to download packages faster on GitHub CI
 - Updated dependencies for read the doc
 - Removed unnecessary ``copy_obs_dict`` method for ``SubprocVecEnv``, remove the use of ordered dict and rename ``flatten_obs`` to ``stack_obs``
-
-Bug Fixes:
-^^^^^^^^^^
 
 Documentation:
 ^^^^^^^^^^^^^^

@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 import gymnasium as gym
 import numpy as np
@@ -172,10 +172,10 @@ def _check_goal_env_obs(obs: dict, observation_space: spaces.Dict, method_name: 
 
 
 def _check_goal_env_compute_reward(
-    obs: Dict[str, Union[np.ndarray, int]],
+    obs: dict[str, Union[np.ndarray, int]],
     env: gym.Env,
     reward: float,
-    info: Dict[str, Any],
+    info: dict[str, Any],
 ) -> None:
     """
     Check that reward is computed with `compute_reward`

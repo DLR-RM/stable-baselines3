@@ -1,5 +1,4 @@
 import warnings
-from typing import List, Tuple
 
 import numpy as np
 from gymnasium import spaces
@@ -48,7 +47,7 @@ class VecCheckNan(VecEnvWrapper):
         self._observations = observations
         return observations
 
-    def check_array_value(self, name: str, value: np.ndarray) -> List[Tuple[str, str]]:
+    def check_array_value(self, name: str, value: np.ndarray) -> list[tuple[str, str]]:
         """
         Check for inf and NaN for a single numpy array.
 

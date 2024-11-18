@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic, Optional, Tuple, TypeVar, Union
+from typing import Any, Generic, Optional, TypeVar, Union
 
 import gymnasium as gym
 import numpy as np
@@ -34,7 +34,7 @@ class IdentityEnv(gym.Env, Generic[T]):
         self.num_resets = -1  # Becomes 0 after __init__ exits.
         self.reset()
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[T, Dict]:
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[T, dict]:
         if seed is not None:
             super().reset(seed=seed)
         self.current_step = 0
@@ -42,7 +42,7 @@ class IdentityEnv(gym.Env, Generic[T]):
         self._choose_next_state()
         return self.state, {}
 
-    def step(self, action: T) -> Tuple[T, float, bool, bool, Dict[str, Any]]:
+    def step(self, action: T) -> tuple[T, float, bool, bool, dict[str, Any]]:
         reward = self._get_reward(action)
         self._choose_next_state()
         self.current_step += 1
@@ -74,7 +74,7 @@ class IdentityEnvBox(IdentityEnv[np.ndarray]):
         super().__init__(ep_length=ep_length, space=space)
         self.eps = eps
 
-    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
+    def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
         reward = self._get_reward(action)
         self._choose_next_state()
         self.current_step += 1
@@ -142,7 +142,7 @@ class FakeImageEnv(gym.Env):
         self.ep_length = 10
         self.current_step = 0
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[np.ndarray, Dict]:
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[np.ndarray, dict]:
         if seed is not None:
             super().reset(seed=seed)
         self.current_step = 0

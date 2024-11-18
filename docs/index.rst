@@ -20,6 +20,8 @@ RL Baselines3 Zoo provides a collection of pre-trained agents, scripts for train
 
 SB3 Contrib (experimental RL code, latest algorithms): https://github.com/Stable-Baselines-Team/stable-baselines3-contrib
 
+SBX (SB3 + Jax): https://github.com/araffin/sbx
+
 
 Main Features
 --------------

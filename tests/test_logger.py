@@ -2,8 +2,8 @@ import importlib.util
 import os
 import sys
 import time
+from collections.abc import Sequence
 from io import TextIOBase
-from typing import Sequence
 from unittest import mock
 
 import gymnasium as gym

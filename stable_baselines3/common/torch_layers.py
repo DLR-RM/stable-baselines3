@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple, Type, Union
+from typing import Optional, Union
 
 import gymnasium as gym
 import torch as th
@@ -110,13 +110,13 @@ class NatureCNN(BaseFeaturesExtractor):
 def create_mlp(
     input_dim: int,
     output_dim: int,
-    net_arch: List[int],
-    activation_fn: Type[nn.Module] = nn.ReLU,
+    net_arch: list[int],
+    activation_fn: type[nn.Module] = nn.ReLU,
     squash_output: bool = False,
     with_bias: bool = True,
-    pre_linear_modules: Optional[List[Type[nn.Module]]] = None,
-    post_linear_modules: Optional[List[Type[nn.Module]]] = None,
-) -> List[nn.Module]:
+    pre_linear_modules: Optional[list[type[nn.Module]]] = None,
+    post_linear_modules: Optional[list[type[nn.Module]]] = None,
+) -> list[nn.Module]:
     """
     Create a multi layer perceptron (MLP), which is
     a collection of fully-connected layers each followed by an activation function.
@@ -211,14 +211,14 @@ class MlpExtractor(nn.Module):
     def __init__(
         self,
         feature_dim: int,
-        net_arch: Union[List[int], Dict[str, List[int]]],
-        activation_fn: Type[nn.Module],
+        net_arch: Union[list[int], dict[str, list[int]]],
+        activation_fn: type[nn.Module],
         device: Union[th.device, str] = "auto",
     ) -> None:
         super().__init__()
         device = get_device(device)
-        policy_net: List[nn.Module] = []
-        value_net: List[nn.Module] = []
+        policy_net: list[nn.Module] = []
+        value_net: list[nn.Module] = []
         last_layer_dim_pi = feature_dim
         last_layer_dim_vf = feature_dim
 
@@ -249,7 +249,7 @@ class MlpExtractor(nn.Module):
         self.policy_net = nn.Sequential(*policy_net).to(device)
         self.value_net = nn.Sequential(*value_net).to(device)
 
-    def forward(self, features: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+    def forward(self, features: th.Tensor) -> tuple[th.Tensor, th.Tensor]:
         """
         :return: latent_policy, latent_value of the specified network.
             If all layers are shared, then ``latent_policy == latent_value``
@@ -288,7 +288,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
         # TODO we do not know features-dim here before going over all the items, so put something there. This is dirty!
         super().__init__(observation_space, features_dim=1)
 
-        extractors: Dict[str, nn.Module] = {}
+        extractors: dict[str, nn.Module] = {}
 
         total_concat_size = 0
         for key, subspace in observation_space.spaces.items():
@@ -313,7 +313,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
         return th.cat(encoded_tensor_list, dim=1)
 
 
-def get_actor_critic_arch(net_arch: Union[List[int], Dict[str, List[int]]]) -> Tuple[List[int], List[int]]:
+def get_actor_critic_arch(net_arch: Union[list[int], dict[str, list[int]]]) -> tuple[list[int], list[int]]:
     """
     Get the actor and critic network architectures for off-policy actor-critic algorithms (SAC, TD3, DDPG).
 

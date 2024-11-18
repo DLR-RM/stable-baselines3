@@ -1,6 +1,6 @@
 import copy
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 import torch as th
@@ -98,7 +98,7 @@ class HerReplayBuffer(DictReplayBuffer):
         self.ep_length = np.zeros((self.buffer_size, self.n_envs), dtype=np.int64)
         self._current_ep_start = np.zeros(self.n_envs, dtype=np.int64)
 
-    def __getstate__(self) -> Dict[str, Any]:
+    def __getstate__(self) -> dict[str, Any]:
         """
         Gets state for pickling.
 
@@ -109,7 +109,7 @@ class HerReplayBuffer(DictReplayBuffer):
         del state["env"]
         return state
 
-    def __setstate__(self, state: Dict[str, Any]) -> None:
+    def __setstate__(self, state: dict[str, Any]) -> None:
         """
         Restores pickled state.
 
@@ -134,12 +134,12 @@ class HerReplayBuffer(DictReplayBuffer):
 
     def add(  # type: ignore[override]
         self,
-        obs: Dict[str, np.ndarray],
-        next_obs: Dict[str, np.ndarray],
+        obs: dict[str, np.ndarray],
+        next_obs: dict[str, np.ndarray],
         action: np.ndarray,
         reward: np.ndarray,
         done: np.ndarray,
-        infos: List[Dict[str, Any]],
+        infos: list[dict[str, Any]],
     ) -> None:
         # When the buffer is full, we rewrite on old episodes. When we start to
         # rewrite on an old episodes, we want the whole old episode to be deleted

@@ -2,8 +2,8 @@ import importlib.util
 import os
 import sys
 import time
+from collections.abc import Sequence
 from io import TextIOBase
-from typing import Sequence
 from unittest import mock
 
 import gymnasium as gym
@@ -592,6 +592,7 @@ def test_rollout_success_rate_onpolicy_algo(tmp_path):
     """
 
     STATS_WINDOW_SIZE = 10
+
     # Add dummy successes with 0.3, 0.5 and 0.8 success_rate of length STATS_WINDOW_SIZE
     dummy_successes = [
         [True] * 3 + [False] * 7,
@@ -603,16 +604,17 @@ def test_rollout_success_rate_onpolicy_algo(tmp_path):
     # Monitor the env to track the success info
     monitor_file = str(tmp_path / "monitor.csv")
     env = Monitor(DummySuccessEnv(dummy_successes, ep_steps), filename=monitor_file, info_keywords=("is_success",))
+    steps_per_log = env.unwrapped.steps_per_log
 
     # Equip the model of a custom logger to check the success_rate info
-    model = PPO("MlpPolicy", env=env, stats_window_size=STATS_WINDOW_SIZE, n_steps=env.steps_per_log, verbose=1)
+    model = PPO("MlpPolicy", env=env, stats_window_size=STATS_WINDOW_SIZE, n_steps=steps_per_log, verbose=1)
     logger = InMemoryLogger()
     model.set_logger(logger)
 
     # Make the model learn and check that the success rate corresponds to the ratio of dummy successes
-    model.learn(total_timesteps=env.ep_per_log * ep_steps, log_interval=1)
+    model.learn(total_timesteps=steps_per_log * ep_steps, log_interval=1)
     assert logger.name_to_value["rollout/success_rate"] == 0.3
-    model.learn(total_timesteps=env.ep_per_log * ep_steps, log_interval=1)
+    model.learn(total_timesteps=steps_per_log * ep_steps, log_interval=1)
     assert logger.name_to_value["rollout/success_rate"] == 0.5
-    model.learn(total_timesteps=env.ep_per_log * ep_steps, log_interval=1)
+    model.learn(total_timesteps=steps_per_log * ep_steps, log_interval=1)
     assert logger.name_to_value["rollout/success_rate"] == 0.8

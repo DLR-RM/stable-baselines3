@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Optional
 
 import gymnasium as gym
 import numpy as np
@@ -25,7 +25,7 @@ class DummyEnv(gym.Env):
     def step(self, action):
         return self.observation_space.sample(), 0.0, False, False, {}
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         if seed is not None:
             super().reset(seed=seed)
         return self.observation_space.sample(), {}

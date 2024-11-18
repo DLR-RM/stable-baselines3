@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Optional
 
 import gymnasium as gym
 import numpy as np
@@ -23,7 +23,7 @@ class CustomEnv(gym.Env):
     def seed(self, seed):
         self.observation_space.seed(seed)
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         if seed is not None:
             self.observation_space.seed(seed)
         self.n_steps = 0
@@ -53,7 +53,7 @@ class InfiniteHorizonEnv(gym.Env):
         self.action_space = spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
         self.current_state = 0
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         if seed is not None:
             super().reset(seed=seed)
 
@@ -73,7 +73,7 @@ class CheckGAECallback(BaseCallback):
         buffer = self.model.rollout_buffer
         rollout_size = buffer.size()
 
-        max_steps = self.training_env.envs[0].max_steps
+        max_steps = self.training_env.envs[0].get_wrapper_attr("max_steps")
         gamma = self.model.gamma
         gae_lambda = self.model.gae_lambda
         value = self.model.policy.constant_value

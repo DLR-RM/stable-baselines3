@@ -5,7 +5,7 @@ import json
 import os
 import time
 from glob import glob
-from typing import Any, Dict, List, Optional, SupportsFloat, Tuple, Union
+from typing import Any, Optional, SupportsFloat, Union
 
 import gymnasium as gym
 import pandas
@@ -33,8 +33,8 @@ class Monitor(gym.Wrapper[ObsType, ActType, ObsType, ActType]):
         env: gym.Env,
         filename: Optional[str] = None,
         allow_early_resets: bool = True,
-        reset_keywords: Tuple[str, ...] = (),
-        info_keywords: Tuple[str, ...] = (),
+        reset_keywords: tuple[str, ...] = (),
+        info_keywords: tuple[str, ...] = (),
         override_existing: bool = True,
     ):
         super().__init__(env=env)
@@ -52,16 +52,16 @@ class Monitor(gym.Wrapper[ObsType, ActType, ObsType, ActType]):
         self.reset_keywords = reset_keywords
         self.info_keywords = info_keywords
         self.allow_early_resets = allow_early_resets
-        self.rewards: List[float] = []
+        self.rewards: list[float] = []
         self.needs_reset = True
-        self.episode_returns: List[float] = []
-        self.episode_lengths: List[int] = []
-        self.episode_times: List[float] = []
+        self.episode_returns: list[float] = []
+        self.episode_lengths: list[int] = []
+        self.episode_times: list[float] = []
         self.total_steps = 0
         # extra info about the current episode, that was passed in during reset()
-        self.current_reset_info: Dict[str, Any] = {}
+        self.current_reset_info: dict[str, Any] = {}
 
-    def reset(self, **kwargs) -> Tuple[ObsType, Dict[str, Any]]:
+    def reset(self, **kwargs) -> tuple[ObsType, dict[str, Any]]:
         """
         Calls the Gym environment reset. Can only be called if the environment is over, or if allow_early_resets is True
 
@@ -82,7 +82,7 @@ class Monitor(gym.Wrapper[ObsType, ActType, ObsType, ActType]):
             self.current_reset_info[key] = value
         return self.env.reset(**kwargs)
 
-    def step(self, action: ActType) -> Tuple[ObsType, SupportsFloat, bool, bool, Dict[str, Any]]:
+    def step(self, action: ActType) -> tuple[ObsType, SupportsFloat, bool, bool, dict[str, Any]]:
         """
         Step the environment with the given action
 
@@ -126,7 +126,7 @@ class Monitor(gym.Wrapper[ObsType, ActType, ObsType, ActType]):
         """
         return self.total_steps
 
-    def get_episode_rewards(self) -> List[float]:
+    def get_episode_rewards(self) -> list[float]:
         """
         Returns the rewards of all the episodes
 
@@ -134,7 +134,7 @@ class Monitor(gym.Wrapper[ObsType, ActType, ObsType, ActType]):
         """
         return self.episode_returns
 
-    def get_episode_lengths(self) -> List[int]:
+    def get_episode_lengths(self) -> list[int]:
         """
         Returns the number of timesteps of all the episodes
 
@@ -142,7 +142,7 @@ class Monitor(gym.Wrapper[ObsType, ActType, ObsType, ActType]):
         """
         return self.episode_lengths
 
-    def get_episode_times(self) -> List[float]:
+    def get_episode_times(self) -> list[float]:
         """
         Returns the runtime in seconds of all the episodes
 
@@ -175,8 +175,8 @@ class ResultsWriter:
     def __init__(
         self,
         filename: str = "",
-        header: Optional[Dict[str, Union[float, str]]] = None,
-        extra_keys: Tuple[str, ...] = (),
+        header: Optional[dict[str, Union[float, str]]] = None,
+        extra_keys: tuple[str, ...] = (),
         override_existing: bool = True,
     ):
         if header is None:
@@ -200,7 +200,7 @@ class ResultsWriter:
 
         self.file_handler.flush()
 
-    def write_row(self, epinfo: Dict[str, float]) -> None:
+    def write_row(self, epinfo: dict[str, float]) -> None:
         """
         Write row of monitor data to csv log file.
 
@@ -217,7 +217,7 @@ class ResultsWriter:
         self.file_handler.close()
 
 
-def get_monitor_files(path: str) -> List[str]:
+def get_monitor_files(path: str) -> list[str]:
     """
     get all the monitor files in the given path
 

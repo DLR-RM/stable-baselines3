@@ -4,7 +4,7 @@ import itertools
 import multiprocessing
 import os
 import warnings
-from typing import Dict, Optional
+from typing import Optional
 
 import gymnasium as gym
 import numpy as np
@@ -30,9 +30,9 @@ class CustomGymEnv(gym.Env):
         self.current_step = 0
         self.ep_length = 4
         self.render_mode = render_mode
-        self.current_options: Optional[Dict] = None
+        self.current_options: Optional[dict] = None
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         if seed is not None:
             self.seed(seed)
         self.current_step = 0
@@ -193,7 +193,7 @@ class StepEnv(gym.Env):
         self.max_steps = max_steps
         self.current_step = 0
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         self.current_step = 0
         return np.array([self.current_step], dtype="int"), {}
 
@@ -307,7 +307,7 @@ def test_vecenv_dict_spaces(vec_env_class):
     space = spaces.Dict(SPACES)
 
     def obs_assert(obs):
-        assert isinstance(obs, collections.OrderedDict)
+        assert isinstance(obs, dict)
         assert obs.keys() == space.spaces.keys()
         for key, values in obs.items():
             check_vecenv_obs(values, space.spaces[key])

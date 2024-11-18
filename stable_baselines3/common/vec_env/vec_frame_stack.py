@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Mapping, Optional, Tuple, Union
+from collections.abc import Mapping
+from typing import Any, Optional, Union
 
 import numpy as np
 from gymnasium import spaces
@@ -29,17 +30,17 @@ class VecFrameStack(VecEnvWrapper):
 
     def step_wait(
         self,
-    ) -> Tuple[
-        Union[np.ndarray, Dict[str, np.ndarray]],
+    ) -> tuple[
+        Union[np.ndarray, dict[str, np.ndarray]],
         np.ndarray,
         np.ndarray,
-        List[Dict[str, Any]],
+        list[dict[str, Any]],
     ]:
         observations, rewards, dones, infos = self.venv.step_wait()
         observations, infos = self.stacked_obs.update(observations, dones, infos)  # type: ignore[arg-type]
         return observations, rewards, dones, infos
 
-    def reset(self) -> Union[np.ndarray, Dict[str, np.ndarray]]:
+    def reset(self) -> Union[np.ndarray, dict[str, np.ndarray]]:
         """
         Reset all environments
         """

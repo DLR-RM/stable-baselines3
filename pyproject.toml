@@ -1,8 +1,8 @@
 [tool.ruff]
 # Same as Black.
 line-length = 127
-# Assume Python 3.8
-target-version = "py38"
+# Assume Python 3.9
+target-version = "py39"
 
 [tool.ruff.lint]
 # See https://beta.ruff.rs/docs/rules/
@@ -17,7 +17,6 @@ ignore = ["B028", "RUF013"]
 "./stable_baselines3/common/noise.py" = ["B027"]
 # ClassVar, implicit optional check not needed for tests
 "./tests/*.py" = ["RUF012", "RUF013"]
-
 
 [tool.ruff.lint.mccabe]
 # Unlike Flake8, default to a complexity level of 10.

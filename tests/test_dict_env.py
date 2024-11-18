@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Optional
 
 import gymnasium as gym
 import numpy as np
@@ -72,7 +72,7 @@ class DummyDictEnv(gym.Env):
         terminated = truncated = False
         return self.observation_space.sample(), reward, terminated, truncated, {}
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         if seed is not None:
             self.observation_space.seed(seed)
         return self.observation_space.sample(), {}
@@ -117,12 +117,11 @@ def test_consistency(model_class):
     """
     use_discrete_actions = model_class == DQN
     dict_env = DummyDictEnv(use_discrete_actions=use_discrete_actions, vec_only=True)
+    dict_env.seed(10)
     dict_env = gym.wrappers.TimeLimit(dict_env, 100)
     env = gym.wrappers.FlattenObservation(dict_env)
-    dict_env.seed(10)
     obs, _ = dict_env.reset()
 
-    kwargs = {}
     n_steps = 256
 
     if model_class in {A2C, PPO}:

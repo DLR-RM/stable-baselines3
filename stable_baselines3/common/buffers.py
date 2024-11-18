@@ -1,6 +1,7 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generator, List, Optional, Tuple, Union
+from collections.abc import Generator
+from typing import Any, Optional, Union
 
 import numpy as np
 import torch as th
@@ -36,7 +37,7 @@ class BaseBuffer(ABC):
     """
 
     observation_space: spaces.Space
-    obs_shape: Tuple[int, ...]
+    obs_shape: tuple[int, ...]
 
     def __init__(
         self,
@@ -142,9 +143,9 @@ class BaseBuffer(ABC):
 
     @staticmethod
     def _normalize_obs(
-        obs: Union[np.ndarray, Dict[str, np.ndarray]],
+        obs: Union[np.ndarray, dict[str, np.ndarray]],
         env: Optional[VecNormalize] = None,
-    ) -> Union[np.ndarray, Dict[str, np.ndarray]]:
+    ) -> Union[np.ndarray, dict[str, np.ndarray]]:
         if env is not None:
             return env.normalize_obs(obs)
         return obs
@@ -252,7 +253,7 @@ class ReplayBuffer(BaseBuffer):
         action: np.ndarray,
         reward: np.ndarray,
         done: np.ndarray,
-        infos: List[Dict[str, Any]],
+        infos: list[dict[str, Any]],
     ) -> None:
         # Reshape needed when using multiple envs with discrete observations
         # as numpy cannot broadcast (n_discrete,) to (n_discrete, 1)
@@ -540,9 +541,9 @@ class DictReplayBuffer(ReplayBuffer):
     """
 
     observation_space: spaces.Dict
-    obs_shape: Dict[str, Tuple[int, ...]]  # type: ignore[assignment]
-    observations: Dict[str, np.ndarray]  # type: ignore[assignment]
-    next_observations: Dict[str, np.ndarray]  # type: ignore[assignment]
+    obs_shape: dict[str, tuple[int, ...]]  # type: ignore[assignment]
+    observations: dict[str, np.ndarray]  # type: ignore[assignment]
+    next_observations: dict[str, np.ndarray]  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -611,12 +612,12 @@ class DictReplayBuffer(ReplayBuffer):
 
     def add(  # type: ignore[override]
         self,
-        obs: Dict[str, np.ndarray],
-        next_obs: Dict[str, np.ndarray],
+        obs: dict[str, np.ndarray],
+        next_obs: dict[str, np.ndarray],
         action: np.ndarray,
         reward: np.ndarray,
         done: np.ndarray,
-        infos: List[Dict[str, Any]],
+        infos: list[dict[str, Any]],
     ) -> None:
         # Copy to avoid modification by reference
         for key in self.observations.keys():
@@ -720,8 +721,8 @@ class DictRolloutBuffer(RolloutBuffer):
     """
 
     observation_space: spaces.Dict
-    obs_shape: Dict[str, Tuple[int, ...]]  # type: ignore[assignment]
-    observations: Dict[str, np.ndarray]  # type: ignore[assignment]
+    obs_shape: dict[str, tuple[int, ...]]  # type: ignore[assignment]
+    observations: dict[str, np.ndarray]  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -759,7 +760,7 @@ class DictRolloutBuffer(RolloutBuffer):
 
     def add(  # type: ignore[override]
         self,
-        obs: Dict[str, np.ndarray],
+        obs: dict[str, np.ndarray],
         action: np.ndarray,
         reward: np.ndarray,
         episode_start: np.ndarray,

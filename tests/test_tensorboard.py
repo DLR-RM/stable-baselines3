@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Union
+from typing import Union
 
 import pytest
 
@@ -24,7 +24,7 @@ class HParamCallback(BaseCallback):
     """
 
     def _on_training_start(self) -> None:
-        hparam_dict: Dict[str, Union[str, float]] = {
+        hparam_dict: dict[str, Union[str, float]] = {
             "algorithm": self.model.__class__.__name__,
             # Ignore type checking for gamma, see https://github.com/DLR-RM/stable-baselines3/pull/1194/files#r1035006458
             "gamma": self.model.gamma,  # type: ignore[attr-defined]
@@ -33,7 +33,7 @@ class HParamCallback(BaseCallback):
             hparam_dict["learning rate"] = self.model.learning_rate
         # define the metrics that will appear in the `HPARAMS` Tensorboard tab by referencing their tag
         # Tensorbaord will find & display metrics from the `SCALARS` tab
-        metric_dict: Dict[str, float] = {
+        metric_dict: dict[str, float] = {
             "rollout/ep_len_mean": 0,
         }
         self.logger.record(

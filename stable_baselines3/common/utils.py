@@ -4,8 +4,9 @@ import platform
 import random
 import re
 from collections import deque
+from collections.abc import Iterable
 from itertools import zip_longest
-from typing import Dict, Iterable, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import cloudpickle
 import gymnasium as gym
@@ -416,7 +417,7 @@ def safe_mean(arr: Union[np.ndarray, list, deque]) -> float:
     return np.nan if len(arr) == 0 else float(np.mean(arr))  # type: ignore[arg-type]
 
 
-def get_parameters_by_name(model: th.nn.Module, included_names: Iterable[str]) -> List[th.Tensor]:
+def get_parameters_by_name(model: th.nn.Module, included_names: Iterable[str]) -> list[th.Tensor]:
     """
     Extract parameters from the state dict of ``model``
     if the name contains one of the strings in ``included_names``.
@@ -474,7 +475,7 @@ def polyak_update(
             th.add(target_param.data, param.data, alpha=tau, out=target_param.data)
 
 
-def obs_as_tensor(obs: Union[np.ndarray, Dict[str, np.ndarray]], device: th.device) -> Union[th.Tensor, TensorDict]:
+def obs_as_tensor(obs: Union[np.ndarray, dict[str, np.ndarray]], device: th.device) -> Union[th.Tensor, TensorDict]:
     """
     Moves the observation to the given device.
 
@@ -535,7 +536,7 @@ def get_available_accelerator() -> str:
         return "cpu"
 
 
-def get_system_info(print_info: bool = True) -> Tuple[Dict[str, str], str]:
+def get_system_info(print_info: bool = True) -> tuple[dict[str, str], str]:
     """
     Retrieve system and python env info for the current system.
 

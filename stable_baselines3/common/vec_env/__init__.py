@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Optional, Type, TypeVar
+from typing import Optional, TypeVar
 
 from stable_baselines3.common.vec_env.base_vec_env import CloudpickleWrapper, VecEnv, VecEnvWrapper
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
@@ -16,7 +16,7 @@ from stable_baselines3.common.vec_env.vec_video_recorder import VecVideoRecorder
 VecEnvWrapperT = TypeVar("VecEnvWrapperT", bound=VecEnvWrapper)
 
 
-def unwrap_vec_wrapper(env: VecEnv, vec_wrapper_class: Type[VecEnvWrapperT]) -> Optional[VecEnvWrapperT]:
+def unwrap_vec_wrapper(env: VecEnv, vec_wrapper_class: type[VecEnvWrapperT]) -> Optional[VecEnvWrapperT]:
     """
     Retrieve a ``VecEnvWrapper`` object by recursively searching.
 
@@ -42,7 +42,7 @@ def unwrap_vec_normalize(env: VecEnv) -> Optional[VecNormalize]:
     return unwrap_vec_wrapper(env, VecNormalize)
 
 
-def is_vecenv_wrapped(env: VecEnv, vec_wrapper_class: Type[VecEnvWrapper]) -> bool:
+def is_vecenv_wrapped(env: VecEnv, vec_wrapper_class: type[VecEnvWrapper]) -> bool:
     """
     Check if an environment is already wrapped in a given ``VecEnvWrapper``.
 

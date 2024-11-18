@@ -5,7 +5,7 @@ import copy
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 import numpy as np
 import torch as th
@@ -64,12 +64,12 @@ class BaseModel(nn.Module):
         self,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
-        features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        features_extractor_class: type[BaseFeaturesExtractor] = FlattenExtractor,
+        features_extractor_kwargs: Optional[dict[str, Any]] = None,
         features_extractor: Optional[BaseFeaturesExtractor] = None,
         normalize_images: bool = True,
-        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
-        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        optimizer_class: type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_kwargs: Optional[dict[str, Any]] = None,
     ):
         super().__init__()
 
@@ -95,9 +95,9 @@ class BaseModel(nn.Module):
 
     def _update_features_extractor(
         self,
-        net_kwargs: Dict[str, Any],
+        net_kwargs: dict[str, Any],
         features_extractor: Optional[BaseFeaturesExtractor] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Update the network keyword arguments and create a new features extractor object if needed.
         If a ``features_extractor`` object is passed, then it will be shared.
@@ -130,7 +130,7 @@ class BaseModel(nn.Module):
         preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
         return features_extractor(preprocessed_obs)
 
-    def _get_constructor_parameters(self) -> Dict[str, Any]:
+    def _get_constructor_parameters(self) -> dict[str, Any]:
         """
         Get data that need to be saved in order to re-create the model when loading it from disk.
 
@@ -164,7 +164,7 @@ class BaseModel(nn.Module):
         th.save({"state_dict": self.state_dict(), "data": self._get_constructor_parameters()}, path)
 
     @classmethod
-    def load(cls: Type[SelfBaseModel], path: str, device: Union[th.device, str] = "auto") -> SelfBaseModel:
+    def load(cls: type[SelfBaseModel], path: str, device: Union[th.device, str] = "auto") -> SelfBaseModel:
         """
         Load model from path.
 
@@ -210,7 +210,7 @@ class BaseModel(nn.Module):
         """
         self.train(mode)
 
-    def is_vectorized_observation(self, observation: Union[np.ndarray, Dict[str, np.ndarray]]) -> bool:
+    def is_vectorized_observation(self, observation: Union[np.ndarray, dict[str, np.ndarray]]) -> bool:
         """
         Check whether or not the observation is vectorized,
         apply transposition to image (so that they are channel-first) if needed.
@@ -233,7 +233,7 @@ class BaseModel(nn.Module):
             )
         return vectorized_env
 
-    def obs_to_tensor(self, observation: Union[np.ndarray, Dict[str, np.ndarray]]) -> Tuple[PyTorchObs, bool]:
+    def obs_to_tensor(self, observation: Union[np.ndarray, dict[str, np.ndarray]]) -> tuple[PyTorchObs, bool]:
         """
         Convert an input observation to a PyTorch tensor that can be fed to a model.
         Includes sugar-coating to handle different observations (e.g. normalizing images).
@@ -330,11 +330,11 @@ class BasePolicy(BaseModel, ABC):
 
     def predict(
         self,
-        observation: Union[np.ndarray, Dict[str, np.ndarray]],
-        state: Optional[Tuple[np.ndarray, ...]] = None,
+        observation: Union[np.ndarray, dict[str, np.ndarray]],
+        state: Optional[tuple[np.ndarray, ...]] = None,
         episode_start: Optional[np.ndarray] = None,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, Optional[Tuple[np.ndarray, ...]]]:
+    ) -> tuple[np.ndarray, Optional[tuple[np.ndarray, ...]]]:
         """
         Get the policy action from an observation (and optional hidden state).
         Includes sugar-coating to handle different observations (e.g. normalizing images).
@@ -450,20 +450,20 @@ class ActorCriticPolicy(BasePolicy):
         observation_space: spaces.Space,
         action_space: spaces.Space,
         lr_schedule: Schedule,
-        net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
-        activation_fn: Type[nn.Module] = nn.Tanh,
+        net_arch: Optional[Union[list[int], dict[str, list[int]]]] = None,
+        activation_fn: type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
         log_std_init: float = 0.0,
         full_std: bool = True,
         use_expln: bool = False,
         squash_output: bool = False,
-        features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
-        features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        features_extractor_class: type[BaseFeaturesExtractor] = FlattenExtractor,
+        features_extractor_kwargs: Optional[dict[str, Any]] = None,
         share_features_extractor: bool = True,
         normalize_images: bool = True,
-        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
-        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        optimizer_class: type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_kwargs: Optional[dict[str, Any]] = None,
     ):
         if optimizer_kwargs is None:
             optimizer_kwargs = {}
@@ -534,7 +534,7 @@ class ActorCriticPolicy(BasePolicy):
 
         self._build(lr_schedule)
 
-    def _get_constructor_parameters(self) -> Dict[str, Any]:
+    def _get_constructor_parameters(self) -> dict[str, Any]:
         data = super()._get_constructor_parameters()
 
         default_none_kwargs = self.dist_kwargs or collections.defaultdict(lambda: None)  # type: ignore[arg-type, return-value]
@@ -633,7 +633,7 @@ class ActorCriticPolicy(BasePolicy):
         # Setup optimizer with initial learning rate
         self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)  # type: ignore[call-arg]
 
-    def forward(self, obs: th.Tensor, deterministic: bool = False) -> Tuple[th.Tensor, th.Tensor, th.Tensor]:
+    def forward(self, obs: th.Tensor, deterministic: bool = False) -> tuple[th.Tensor, th.Tensor, th.Tensor]:
         """
         Forward pass in all the networks (actor and critic)
 
@@ -659,7 +659,7 @@ class ActorCriticPolicy(BasePolicy):
 
     def extract_features(  # type: ignore[override]
         self, obs: PyTorchObs, features_extractor: Optional[BaseFeaturesExtractor] = None
-    ) -> Union[th.Tensor, Tuple[th.Tensor, th.Tensor]]:
+    ) -> Union[th.Tensor, tuple[th.Tensor, th.Tensor]]:
         """
         Preprocess the observation if needed and extract features.
 
@@ -716,7 +716,7 @@ class ActorCriticPolicy(BasePolicy):
         """
         return self.get_distribution(observation).get_actions(deterministic=deterministic)
 
-    def evaluate_actions(self, obs: PyTorchObs, actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, Optional[th.Tensor]]:
+    def evaluate_actions(self, obs: PyTorchObs, actions: th.Tensor) -> tuple[th.Tensor, th.Tensor, Optional[th.Tensor]]:
         """
         Evaluate actions according to the current policy,
         given the observations.
@@ -800,20 +800,20 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         observation_space: spaces.Space,
         action_space: spaces.Space,
         lr_schedule: Schedule,
-        net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
-        activation_fn: Type[nn.Module] = nn.Tanh,
+        net_arch: Optional[Union[list[int], dict[str, list[int]]]] = None,
+        activation_fn: type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
         log_std_init: float = 0.0,
         full_std: bool = True,
         use_expln: bool = False,
         squash_output: bool = False,
-        features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
-        features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        features_extractor_class: type[BaseFeaturesExtractor] = NatureCNN,
+        features_extractor_kwargs: Optional[dict[str, Any]] = None,
         share_features_extractor: bool = True,
         normalize_images: bool = True,
-        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
-        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        optimizer_class: type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_kwargs: Optional[dict[str, Any]] = None,
     ):
         super().__init__(
             observation_space,
@@ -873,20 +873,20 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         observation_space: spaces.Dict,
         action_space: spaces.Space,
         lr_schedule: Schedule,
-        net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
-        activation_fn: Type[nn.Module] = nn.Tanh,
+        net_arch: Optional[Union[list[int], dict[str, list[int]]]] = None,
+        activation_fn: type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
         log_std_init: float = 0.0,
         full_std: bool = True,
         use_expln: bool = False,
         squash_output: bool = False,
-        features_extractor_class: Type[BaseFeaturesExtractor] = CombinedExtractor,
-        features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        features_extractor_class: type[BaseFeaturesExtractor] = CombinedExtractor,
+        features_extractor_kwargs: Optional[dict[str, Any]] = None,
         share_features_extractor: bool = True,
         normalize_images: bool = True,
-        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
-        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        optimizer_class: type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_kwargs: Optional[dict[str, Any]] = None,
     ):
         super().__init__(
             observation_space,
@@ -942,10 +942,10 @@ class ContinuousCritic(BaseModel):
         self,
         observation_space: spaces.Space,
         action_space: spaces.Box,
-        net_arch: List[int],
+        net_arch: list[int],
         features_extractor: BaseFeaturesExtractor,
         features_dim: int,
-        activation_fn: Type[nn.Module] = nn.ReLU,
+        activation_fn: type[nn.Module] = nn.ReLU,
         normalize_images: bool = True,
         n_critics: int = 2,
         share_features_extractor: bool = True,
@@ -961,14 +961,14 @@ class ContinuousCritic(BaseModel):
 
         self.share_features_extractor = share_features_extractor
         self.n_critics = n_critics
-        self.q_networks: List[nn.Module] = []
+        self.q_networks: list[nn.Module] = []
         for idx in range(n_critics):
             q_net_list = create_mlp(features_dim + action_dim, 1, net_arch, activation_fn)
             q_net = nn.Sequential(*q_net_list)
             self.add_module(f"qf{idx}", q_net)
             self.q_networks.append(q_net)
 
-    def forward(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, ...]:
+    def forward(self, obs: th.Tensor, actions: th.Tensor) -> tuple[th.Tensor, ...]:
         # Learn the features extractor using the policy loss only
         # when the features_extractor is shared with the actor
         with th.set_grad_enabled(not self.share_features_extractor):

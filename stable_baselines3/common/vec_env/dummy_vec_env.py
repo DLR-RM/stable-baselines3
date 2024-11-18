@@ -1,14 +1,15 @@
 import warnings
 from collections import OrderedDict
+from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type
+from typing import Any, Callable, Optional
 
 import gymnasium as gym
 import numpy as np
 
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvIndices, VecEnvObs, VecEnvStepReturn
 from stable_baselines3.common.vec_env.patch_gym import _patch_env
-from stable_baselines3.common.vec_env.util import copy_obs_dict, dict_to_obs, obs_space_info
+from stable_baselines3.common.vec_env.util import dict_to_obs, obs_space_info
 
 
 class DummyVecEnv(VecEnv):
@@ -26,7 +27,7 @@ class DummyVecEnv(VecEnv):
 
     actions: np.ndarray
 
-    def __init__(self, env_fns: List[Callable[[], gym.Env]]):
+    def __init__(self, env_fns: list[Callable[[], gym.Env]]):
         self.envs = [_patch_env(fn()) for fn in env_fns]
         if len(set([id(env.unwrapped) for env in self.envs])) != len(self.envs):
             raise ValueError(
@@ -46,7 +47,7 @@ class DummyVecEnv(VecEnv):
         self.buf_obs = OrderedDict([(k, np.zeros((self.num_envs, *tuple(shapes[k])), dtype=dtypes[k])) for k in self.keys])
         self.buf_dones = np.zeros((self.num_envs,), dtype=bool)
         self.buf_rews = np.zeros((self.num_envs,), dtype=np.float32)
-        self.buf_infos: List[Dict[str, Any]] = [{} for _ in range(self.num_envs)]
+        self.buf_infos: list[dict[str, Any]] = [{} for _ in range(self.num_envs)]
         self.metadata = env.metadata
 
     def step_async(self, actions: np.ndarray) -> None:
@@ -110,12 +111,12 @@ class DummyVecEnv(VecEnv):
                 self.buf_obs[key][env_idx] = obs[key]  # type: ignore[call-overload]
 
     def _obs_from_buf(self) -> VecEnvObs:
-        return dict_to_obs(self.observation_space, copy_obs_dict(self.buf_obs))
+        return dict_to_obs(self.observation_space, deepcopy(self.buf_obs))
 
-    def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:
+    def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> list[Any]:
         """Return attribute from vectorized environment (see base class)."""
         target_envs = self._get_target_envs(indices)
-        return [getattr(env_i, attr_name) for env_i in target_envs]
+        return [env_i.get_wrapper_attr(attr_name) for env_i in target_envs]
 
     def set_attr(self, attr_name: str, value: Any, indices: VecEnvIndices = None) -> None:
         """Set attribute inside vectorized environments (see base class)."""
@@ -123,12 +124,12 @@ class DummyVecEnv(VecEnv):
         for env_i in target_envs:
             setattr(env_i, attr_name, value)
 
-    def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> List[Any]:
+    def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> list[Any]:
         """Call instance methods of vectorized environments."""
         target_envs = self._get_target_envs(indices)
-        return [getattr(env_i, method_name)(*method_args, **method_kwargs) for env_i in target_envs]
+        return [env_i.get_wrapper_attr(method_name)(*method_args, **method_kwargs) for env_i in target_envs]
 
-    def env_is_wrapped(self, wrapper_class: Type[gym.Wrapper], indices: VecEnvIndices = None) -> List[bool]:
+    def env_is_wrapped(self, wrapper_class: type[gym.Wrapper], indices: VecEnvIndices = None) -> list[bool]:
         """Check if worker environments are wrapped with a given wrapper"""
         target_envs = self._get_target_envs(indices)
         # Import here to avoid a circular import
@@ -136,6 +137,6 @@ class DummyVecEnv(VecEnv):
 
         return [env_util.is_wrapped(env_i, wrapper_class) for env_i in target_envs]
 
-    def _get_target_envs(self, indices: VecEnvIndices) -> List[gym.Env]:
+    def _get_target_envs(self, indices: VecEnvIndices) -> list[gym.Env]:
         indices = self._get_indices(indices)
         return [self.envs[i] for i in indices]

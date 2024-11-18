@@ -1,5 +1,5 @@
 import warnings
-from typing import Dict, Tuple, Union
+from typing import Union
 
 import numpy as np
 import torch as th
@@ -90,10 +90,10 @@ def maybe_transpose(observation: np.ndarray, observation_space: spaces.Space) ->
 
 
 def preprocess_obs(
-    obs: Union[th.Tensor, Dict[str, th.Tensor]],
+    obs: Union[th.Tensor, dict[str, th.Tensor]],
     observation_space: spaces.Space,
     normalize_images: bool = True,
-) -> Union[th.Tensor, Dict[str, th.Tensor]]:
+) -> Union[th.Tensor, dict[str, th.Tensor]]:
     """
     Preprocess observation to be to a neural network.
     For images, it normalizes the values by dividing them by 255 (to have values in [0, 1])
@@ -107,7 +107,7 @@ def preprocess_obs(
     """
     if isinstance(observation_space, spaces.Dict):
         # Do not modify by reference the original observation
-        assert isinstance(obs, Dict), f"Expected dict, got {type(obs)}"
+        assert isinstance(obs, dict), f"Expected dict, got {type(obs)}"
         preprocessed_obs = {}
         for key, _obs in obs.items():
             preprocessed_obs[key] = preprocess_obs(_obs, observation_space[key], normalize_images=normalize_images)
@@ -142,7 +142,7 @@ def preprocess_obs(
 
 def get_obs_shape(
     observation_space: spaces.Space,
-) -> Union[Tuple[int, ...], Dict[str, Tuple[int, ...]]]:
+) -> Union[tuple[int, ...], dict[str, tuple[int, ...]]]:
     """
     Get the shape of the observation (useful for the buffers).
 

@@ -5,8 +5,9 @@ import sys
 import tempfile
 import warnings
 from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from io import TextIOBase
-from typing import Any, Dict, List, Mapping, Optional, Sequence, TextIO, Tuple, Union
+from typing import Any, Optional, TextIO, Union
 
 import matplotlib.figure
 import numpy as np
@@ -114,7 +115,7 @@ class KVWriter:
     Key Value writer
     """
 
-    def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Tuple[str, ...]], step: int = 0) -> None:
+    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], step: int = 0) -> None:
         """
         Write a dictionary to file
 
@@ -136,7 +137,7 @@ class SeqWriter:
     sequence writer
     """
 
-    def write_sequence(self, sequence: List[str]) -> None:
+    def write_sequence(self, sequence: list[str]) -> None:
         """
         write_sequence an array to file
 
@@ -172,7 +173,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         else:
             raise ValueError(f"Expected file or str, got {filename_or_file}")
 
-    def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Tuple[str, ...]], step: int = 0) -> None:
+    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], step: int = 0) -> None:
         # Create strings for printing
         key2str = {}
         tag = ""
@@ -244,7 +245,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             string = string[: self.max_length - 3] + "..."
         return string
 
-    def write_sequence(self, sequence: List[str]) -> None:
+    def write_sequence(self, sequence: list[str]) -> None:
         for i, elem in enumerate(sequence):
             self.file.write(elem)
             if i < len(sequence) - 1:  # add space unless this is the last one
@@ -260,7 +261,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
             self.file.close()
 
 
-def filter_excluded_keys(key_values: Dict[str, Any], key_excluded: Dict[str, Tuple[str, ...]], _format: str) -> Dict[str, Any]:
+def filter_excluded_keys(key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], _format: str) -> dict[str, Any]:
     """
     Filters the keys specified by ``key_exclude`` for the specified format
 
@@ -286,7 +287,7 @@ class JSONOutputFormat(KVWriter):
     def __init__(self, filename: str):
         self.file = open(filename, "w")
 
-    def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Tuple[str, ...]], step: int = 0) -> None:
+    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], step: int = 0) -> None:
         def cast_to_json_serializable(value: Any):
             if isinstance(value, Video):
                 raise FormatUnsupportedError(["json"], "video")
@@ -328,12 +329,12 @@ class CSVOutputFormat(KVWriter):
     """
 
     def __init__(self, filename: str):
-        self.file = open(filename, "w+t")
-        self.keys: List[str] = []
+        self.file = open(filename, "w+")
+        self.keys: list[str] = []
         self.separator = ","
         self.quotechar = '"'
 
-    def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Tuple[str, ...]], step: int = 0) -> None:
+    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], step: int = 0) -> None:
         # Add our current row to the history
         key_values = filter_excluded_keys(key_values, key_excluded, "csv")
         extra_keys = key_values.keys() - self.keys
@@ -399,7 +400,7 @@ class TensorBoardOutputFormat(KVWriter):
         self.writer = SummaryWriter(log_dir=folder)
         self._is_closed = False
 
-    def write(self, key_values: Dict[str, Any], key_excluded: Dict[str, Tuple[str, ...]], step: int = 0) -> None:
+    def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], step: int = 0) -> None:
         assert not self._is_closed, "The SummaryWriter was closed, please re-create one."
         for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
             if excluded is not None and "tensorboard" in excluded:
@@ -481,16 +482,16 @@ class Logger:
     :param output_formats: the list of output formats
     """
 
-    def __init__(self, folder: Optional[str], output_formats: List[KVWriter]):
-        self.name_to_value: Dict[str, float] = defaultdict(float)  # values this iteration
-        self.name_to_count: Dict[str, int] = defaultdict(int)
-        self.name_to_excluded: Dict[str, Tuple[str, ...]] = {}
+    def __init__(self, folder: Optional[str], output_formats: list[KVWriter]):
+        self.name_to_value: dict[str, float] = defaultdict(float)  # values this iteration
+        self.name_to_count: dict[str, int] = defaultdict(int)
+        self.name_to_excluded: dict[str, tuple[str, ...]] = {}
         self.level = INFO
         self.dir = folder
         self.output_formats = output_formats
 
     @staticmethod
-    def to_tuple(string_or_tuple: Optional[Union[str, Tuple[str, ...]]]) -> Tuple[str, ...]:
+    def to_tuple(string_or_tuple: Optional[Union[str, tuple[str, ...]]]) -> tuple[str, ...]:
         """
         Helper function to convert str to tuple of str.
         """
@@ -500,7 +501,7 @@ class Logger:
             return string_or_tuple
         return (string_or_tuple,)
 
-    def record(self, key: str, value: Any, exclude: Optional[Union[str, Tuple[str, ...]]] = None) -> None:
+    def record(self, key: str, value: Any, exclude: Optional[Union[str, tuple[str, ...]]] = None) -> None:
         """
         Log a value of some diagnostic
         Call this once for each diagnostic quantity, each iteration
@@ -513,7 +514,7 @@ class Logger:
         self.name_to_value[key] = value
         self.name_to_excluded[key] = self.to_tuple(exclude)
 
-    def record_mean(self, key: str, value: Optional[float], exclude: Optional[Union[str, Tuple[str, ...]]] = None) -> None:
+    def record_mean(self, key: str, value: Optional[float], exclude: Optional[Union[str, tuple[str, ...]]] = None) -> None:
         """
         The same as record(), but if called many times, values averaged.
 
@@ -624,7 +625,7 @@ class Logger:
 
     # Misc
     # ----------------------------------------
-    def _do_log(self, args: Tuple[Any, ...]) -> None:
+    def _do_log(self, args: tuple[Any, ...]) -> None:
         """
         log to the requested format outputs
 
@@ -635,7 +636,7 @@ class Logger:
                 _format.write_sequence(list(map(str, args)))
 
 
-def configure(folder: Optional[str] = None, format_strings: Optional[List[str]] = None) -> Logger:
+def configure(folder: Optional[str] = None, format_strings: Optional[list[str]] = None) -> Logger:
     """
     Configure the current logger.
 

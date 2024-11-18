@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Dict, Optional, Type, TypeVar, Union
+from typing import Any, ClassVar, Optional, TypeVar, Union
 
 import torch as th
 from gymnasium import spaces
@@ -57,7 +57,7 @@ class A2C(OnPolicyAlgorithm):
     :param _init_setup_model: Whether or not to build the network at the creation of the instance
     """
 
-    policy_aliases: ClassVar[Dict[str, Type[BasePolicy]]] = {
+    policy_aliases: ClassVar[dict[str, type[BasePolicy]]] = {
         "MlpPolicy": ActorCriticPolicy,
         "CnnPolicy": ActorCriticCnnPolicy,
         "MultiInputPolicy": MultiInputActorCriticPolicy,
@@ -65,7 +65,7 @@ class A2C(OnPolicyAlgorithm):
 
     def __init__(
         self,
-        policy: Union[str, Type[ActorCriticPolicy]],
+        policy: Union[str, type[ActorCriticPolicy]],
         env: Union[GymEnv, str],
         learning_rate: Union[float, Schedule] = 7e-4,
         n_steps: int = 5,
@@ -78,12 +78,12 @@ class A2C(OnPolicyAlgorithm):
         use_rms_prop: bool = True,
         use_sde: bool = False,
         sde_sample_freq: int = -1,
-        rollout_buffer_class: Optional[Type[RolloutBuffer]] = None,
-        rollout_buffer_kwargs: Optional[Dict[str, Any]] = None,
+        rollout_buffer_class: Optional[type[RolloutBuffer]] = None,
+        rollout_buffer_kwargs: Optional[dict[str, Any]] = None,
         normalize_advantage: bool = False,
         stats_window_size: int = 100,
         tensorboard_log: Optional[str] = None,
-        policy_kwargs: Optional[Dict[str, Any]] = None,
+        policy_kwargs: Optional[dict[str, Any]] = None,
         verbose: int = 0,
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",

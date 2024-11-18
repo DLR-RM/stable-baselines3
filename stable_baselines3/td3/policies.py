@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Optional, Union
 
 import torch as th
 from gymnasium import spaces
@@ -36,10 +36,10 @@ class Actor(BasePolicy):
         self,
         observation_space: spaces.Space,
         action_space: spaces.Box,
-        net_arch: List[int],
+        net_arch: list[int],
         features_extractor: nn.Module,
         features_dim: int,
-        activation_fn: Type[nn.Module] = nn.ReLU,
+        activation_fn: type[nn.Module] = nn.ReLU,
         normalize_images: bool = True,
     ):
         super().__init__(
@@ -59,7 +59,7 @@ class Actor(BasePolicy):
         # Deterministic action
         self.mu = nn.Sequential(*actor_net)
 
-    def _get_constructor_parameters(self) -> Dict[str, Any]:
+    def _get_constructor_parameters(self) -> dict[str, Any]:
         data = super()._get_constructor_parameters()
 
         data.update(
@@ -116,13 +116,13 @@ class TD3Policy(BasePolicy):
         observation_space: spaces.Space,
         action_space: spaces.Box,
         lr_schedule: Schedule,
-        net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
-        activation_fn: Type[nn.Module] = nn.ReLU,
-        features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
-        features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        net_arch: Optional[Union[list[int], dict[str, list[int]]]] = None,
+        activation_fn: type[nn.Module] = nn.ReLU,
+        features_extractor_class: type[BaseFeaturesExtractor] = FlattenExtractor,
+        features_extractor_kwargs: Optional[dict[str, Any]] = None,
         normalize_images: bool = True,
-        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
-        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        optimizer_class: type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_kwargs: Optional[dict[str, Any]] = None,
         n_critics: int = 2,
         share_features_extractor: bool = False,
     ):
@@ -207,7 +207,7 @@ class TD3Policy(BasePolicy):
         self.actor_target.set_training_mode(False)
         self.critic_target.set_training_mode(False)
 
-    def _get_constructor_parameters(self) -> Dict[str, Any]:
+    def _get_constructor_parameters(self) -> dict[str, Any]:
         data = super()._get_constructor_parameters()
 
         data.update(
@@ -285,13 +285,13 @@ class CnnPolicy(TD3Policy):
         observation_space: spaces.Space,
         action_space: spaces.Box,
         lr_schedule: Schedule,
-        net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
-        activation_fn: Type[nn.Module] = nn.ReLU,
-        features_extractor_class: Type[BaseFeaturesExtractor] = NatureCNN,
-        features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        net_arch: Optional[Union[list[int], dict[str, list[int]]]] = None,
+        activation_fn: type[nn.Module] = nn.ReLU,
+        features_extractor_class: type[BaseFeaturesExtractor] = NatureCNN,
+        features_extractor_kwargs: Optional[dict[str, Any]] = None,
         normalize_images: bool = True,
-        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
-        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        optimizer_class: type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_kwargs: Optional[dict[str, Any]] = None,
         n_critics: int = 2,
         share_features_extractor: bool = False,
     ):
@@ -339,13 +339,13 @@ class MultiInputPolicy(TD3Policy):
         observation_space: spaces.Dict,
         action_space: spaces.Box,
         lr_schedule: Schedule,
-        net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
-        activation_fn: Type[nn.Module] = nn.ReLU,
-        features_extractor_class: Type[BaseFeaturesExtractor] = CombinedExtractor,
-        features_extractor_kwargs: Optional[Dict[str, Any]] = None,
+        net_arch: Optional[Union[list[int], dict[str, list[int]]]] = None,
+        activation_fn: type[nn.Module] = nn.ReLU,
+        features_extractor_class: type[BaseFeaturesExtractor] = CombinedExtractor,
+        features_extractor_kwargs: Optional[dict[str, Any]] = None,
         normalize_images: bool = True,
-        optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
-        optimizer_kwargs: Optional[Dict[str, Any]] = None,
+        optimizer_class: type[th.optim.Optimizer] = th.optim.Adam,
+        optimizer_kwargs: Optional[dict[str, Any]] = None,
         n_critics: int = 2,
         share_features_extractor: bool = False,
     ):

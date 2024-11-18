@@ -1,6 +1,7 @@
 import multiprocessing as mp
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, Union
 
 import gymnasium as gym
 import numpy as np
@@ -26,7 +27,7 @@ def _worker(
 
     parent_remote.close()
     env = _patch_env(env_fn_wrapper.var())
-    reset_info: Optional[Dict[str, Any]] = {}
+    reset_info: Optional[dict[str, Any]] = {}
     while True:
         try:
             cmd, data = remote.recv()
@@ -91,7 +92,7 @@ class SubprocVecEnv(VecEnv):
            Defaults to 'forkserver' on available platforms, and 'spawn' otherwise.
     """
 
-    def __init__(self, env_fns: List[Callable[[], gym.Env]], start_method: Optional[str] = None):
+    def __init__(self, env_fns: list[Callable[[], gym.Env]], start_method: Optional[str] = None):
         self.waiting = False
         self.closed = False
         n_envs = len(env_fns)
@@ -164,7 +165,7 @@ class SubprocVecEnv(VecEnv):
         outputs = [pipe.recv() for pipe in self.remotes]
         return outputs
 
-    def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:
+    def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> list[Any]:
         """Return attribute from vectorized environment (see base class)."""
         target_remotes = self._get_target_remotes(indices)
         for remote in target_remotes:
@@ -179,21 +180,21 @@ class SubprocVecEnv(VecEnv):
         for remote in target_remotes:
             remote.recv()
 
-    def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> List[Any]:
+    def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> list[Any]:
         """Call instance methods of vectorized environments."""
         target_remotes = self._get_target_remotes(indices)
         for remote in target_remotes:
             remote.send(("env_method", (method_name, method_args, method_kwargs)))
         return [remote.recv() for remote in target_remotes]
 
-    def env_is_wrapped(self, wrapper_class: Type[gym.Wrapper], indices: VecEnvIndices = None) -> List[bool]:
+    def env_is_wrapped(self, wrapper_class: type[gym.Wrapper], indices: VecEnvIndices = None) -> list[bool]:
         """Check if worker environments are wrapped with a given wrapper"""
         target_remotes = self._get_target_remotes(indices)
         for remote in target_remotes:
             remote.send(("is_wrapped", wrapper_class))
         return [remote.recv() for remote in target_remotes]
 
-    def _get_target_remotes(self, indices: VecEnvIndices) -> List[Any]:
+    def _get_target_remotes(self, indices: VecEnvIndices) -> list[Any]:
         """
         Get the connection object needed to communicate with the wanted
         envs that are in subprocesses.
@@ -205,7 +206,7 @@ class SubprocVecEnv(VecEnv):
         return [self.remotes[i] for i in indices]
 
 
-def _stack_obs(obs_list: Union[List[VecEnvObs], Tuple[VecEnvObs]], space: spaces.Space) -> VecEnvObs:
+def _stack_obs(obs_list: Union[list[VecEnvObs], tuple[VecEnvObs]], space: spaces.Space) -> VecEnvObs:
     """
     Stack observations (convert from a list of single env obs to a stack of obs),
     depending on the observation space.

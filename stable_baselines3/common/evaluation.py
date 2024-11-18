@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 import gymnasium as gym
 import numpy as np
@@ -14,11 +14,11 @@ def evaluate_policy(
     n_eval_episodes: int = 10,
     deterministic: bool = True,
     render: bool = False,
-    callback: Optional[Callable[[Dict[str, Any], Dict[str, Any]], None]] = None,
+    callback: Optional[Callable[[dict[str, Any], dict[str, Any]], None]] = None,
     reward_threshold: Optional[float] = None,
     return_episode_rewards: bool = False,
     warn: bool = True,
-) -> Union[Tuple[float, float], Tuple[List[float], List[int]]]:
+) -> Union[tuple[float, float], tuple[list[float], list[int]]]:
     """
     Runs policy for ``n_eval_episodes`` episodes and returns average reward.
     If a vector env is passed in, this divides the episodes to evaluate onto the

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 import torch as th
 
@@ -55,7 +55,7 @@ class DDPG(TD3):
 
     def __init__(
         self,
-        policy: Union[str, Type[TD3Policy]],
+        policy: Union[str, type[TD3Policy]],
         env: Union[GymEnv, str],
         learning_rate: Union[float, Schedule] = 1e-3,
         buffer_size: int = 1_000_000,  # 1e6
@@ -63,14 +63,14 @@ class DDPG(TD3):
         batch_size: int = 256,
         tau: float = 0.005,
         gamma: float = 0.99,
-        train_freq: Union[int, Tuple[int, str]] = 1,
+        train_freq: Union[int, tuple[int, str]] = 1,
         gradient_steps: int = 1,
         action_noise: Optional[ActionNoise] = None,
-        replay_buffer_class: Optional[Type[ReplayBuffer]] = None,
-        replay_buffer_kwargs: Optional[Dict[str, Any]] = None,
+        replay_buffer_class: Optional[type[ReplayBuffer]] = None,
+        replay_buffer_kwargs: Optional[dict[str, Any]] = None,
         optimize_memory_usage: bool = False,
         tensorboard_log: Optional[str] = None,
-        policy_kwargs: Optional[Dict[str, Any]] = None,
+        policy_kwargs: Optional[dict[str, Any]] = None,
         verbose: int = 0,
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",

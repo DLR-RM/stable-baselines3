@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import gymnasium as gym
 import numpy as np
@@ -73,7 +73,7 @@ class SimpleMultiObsEnv(gym.Env):
         self.init_possible_transitions()
 
         self.num_col = num_col
-        self.state_mapping: List[Dict[str, np.ndarray]] = []
+        self.state_mapping: list[dict[str, np.ndarray]] = []
         self.init_state_mapping(num_col, num_row)
 
         self.max_state = len(self.state_mapping) - 1
@@ -94,7 +94,7 @@ class SimpleMultiObsEnv(gym.Env):
             for j in range(num_row):
                 self.state_mapping.append({"vec": col_vecs[i], "img": row_imgs[j].reshape(self.img_size)})
 
-    def get_state_mapping(self) -> Dict[str, np.ndarray]:
+    def get_state_mapping(self) -> dict[str, np.ndarray]:
         """
         Uses the state to get the observation mapping.
 
@@ -166,7 +166,7 @@ class SimpleMultiObsEnv(gym.Env):
         """
         print(self.log)
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[Dict[str, np.ndarray], Dict]:
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[dict[str, np.ndarray], dict]:
         """
         Resets the environment state and step count and returns reset observation.
 

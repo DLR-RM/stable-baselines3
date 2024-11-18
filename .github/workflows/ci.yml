@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
         include:
           # Default version
           - gymnasium-version: "1.0.0"
@@ -48,7 +48,8 @@ jobs:
       - name: Install specific version of gym
         run: |
           uv pip install --system gymnasium==${{ matrix.gymnasium-version }}
-        # Only run for python 3.10, downgrade gym to 0.29.1
+          uv pip install --system "numpy<2"
+        # Only run for python 3.10, downgrade gym to 0.29.1, numpy<2
         if: matrix.gymnasium-version != '1.0.0'
       - name: Lint with ruff
         run: |
@@ -62,8 +63,6 @@ jobs:
       - name: Type check
         run: |
           make type
-        # Do not run for python 3.8 (mypy internal error)
-        if: matrix.python-version != '3.8'
       - name: Test with pytest
         run: |
           make pytest

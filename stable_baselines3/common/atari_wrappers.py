@@ -1,4 +1,4 @@
-from typing import Dict, SupportsFloat
+from typing import SupportsFloat
 
 import gymnasium as gym
 import numpy as np
@@ -64,7 +64,7 @@ class NoopResetEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
             noops = self.unwrapped.np_random.integers(1, self.noop_max + 1)
         assert noops > 0
         obs = np.zeros(0)
-        info: Dict = {}
+        info: dict = {}
         for _ in range(noops):
             obs, _, terminated, truncated, info = self.env.step(self.noop_action)
             if terminated or truncated:

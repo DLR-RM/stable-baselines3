@@ -1,5 +1,5 @@
 import operator
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import gymnasium as gym
 import numpy as np
@@ -22,7 +22,7 @@ ENV_ID = "Pendulum-v1"
 
 
 class DummyRewardEnv(gym.Env):
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
 
     def __init__(self, return_reward_idx=0):
         self.action_space = spaces.Discrete(2)
@@ -39,7 +39,7 @@ class DummyRewardEnv(gym.Env):
         truncated = self.t == len(self.returned_rewards)
         return np.array([returned_value]), returned_value, terminated, truncated, {}
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         if seed is not None:
             super().reset(seed=seed)
         self.t = 0
@@ -62,7 +62,7 @@ class DummyDictEnv(gym.Env):
         )
         self.action_space = spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         if seed is not None:
             super().reset(seed=seed)
         return self.observation_space.sample(), {}
@@ -94,7 +94,7 @@ class DummyMixedDictEnv(gym.Env):
         )
         self.action_space = spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         if seed is not None:
             super().reset(seed=seed)
         return self.observation_space.sample(), {}

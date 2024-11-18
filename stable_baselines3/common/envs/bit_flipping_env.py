@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 from gymnasium import Env, spaces
@@ -75,14 +75,17 @@ class BitFlippingEnv(Env):
         :param state:
         :return:
         """
+
         if self.discrete_obs_space:
+            # Convert from int8 to int32 for NumPy 2.0
+            state = state.astype(np.int32)
             # The internal state is the binary representation of the
             # observed one
             return int(sum(state[i] * 2**i for i in range(len(state))))
 
         if self.image_obs_space:
             size = np.prod(self.image_shape)
-            image = np.concatenate((state * 255, np.zeros(size - len(state), dtype=np.uint8)))
+            image = np.concatenate((state.astype(np.uint8) * 255, np.zeros(size - len(state), dtype=np.uint8)))
             return image.reshape(self.image_shape).astype(np.uint8)
         return state
 
@@ -163,7 +166,7 @@ class BitFlippingEnv(Env):
             }
         )
 
-    def _get_obs(self) -> Dict[str, Union[int, np.ndarray]]:
+    def _get_obs(self) -> dict[str, Union[int, np.ndarray]]:
         """
         Helper to create the observation.
 
@@ -178,8 +181,8 @@ class BitFlippingEnv(Env):
         )
 
     def reset(
-        self, *, seed: Optional[int] = None, options: Optional[Dict] = None
-    ) -> Tuple[Dict[str, Union[int, np.ndarray]], Dict]:
+        self, *, seed: Optional[int] = None, options: Optional[dict] = None
+    ) -> tuple[dict[str, Union[int, np.ndarray]], dict]:
         if seed is not None:
             self._obs_space.seed(seed)
         self.current_step = 0
@@ -207,7 +210,7 @@ class BitFlippingEnv(Env):
         return obs, reward, terminated, truncated, info
 
     def compute_reward(
-        self, achieved_goal: Union[int, np.ndarray], desired_goal: Union[int, np.ndarray], _info: Optional[Dict[str, Any]]
+        self, achieved_goal: Union[int, np.ndarray], desired_goal: Union[int, np.ndarray], _info: Optional[dict[str, Any]]
     ) -> np.float32:
         # As we are using a vectorized version, we need to keep track of the `batch_size`
         if isinstance(achieved_goal, int):

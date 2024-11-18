@@ -3,6 +3,41 @@
 Changelog
 ==========
 
+Release 2.5.0a0 (WIP)
+--------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+- Increased minimum required version of PyTorch to 2.3.0
+- Removed support for Python 3.8
+
+New Features:
+^^^^^^^^^^^^^
+- Added support for NumPy v2.0 (via Torch)
+- Added official support for Python 3.12
+
+Bug Fixes:
+^^^^^^^^^^
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
 Release 2.4.0 (2024-11-18)
 --------------------------
 

@@ -7,7 +7,7 @@ Installation
 Prerequisites
 -------------
 
-Stable-Baselines3 requires python 3.8+ and PyTorch >= 1.13
+Stable-Baselines3 requires python 3.9+ and PyTorch >= 2.3
 
 Windows
 ~~~~~~~

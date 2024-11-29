@@ -216,7 +216,7 @@ def open_path(
         mode = {"write": "w", "read": "r", "w": "w", "r": "r"}[mode]
     except KeyError as e:
         raise ValueError("Expected mode to be either 'w' or 'r'.") from e
-    if ("w" == mode) and not path.writable() or ("r" == mode) and not path.readable():
+    if (("w" == mode) and not path.writable()) or (("r" == mode) and not path.readable()):
         error_msg = "writable" if "w" == mode else "readable"
         raise ValueError(f"Expected a {error_msg} file.")
     return path

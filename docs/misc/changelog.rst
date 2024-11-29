@@ -36,7 +36,8 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
-Added Decisions and Dragons to resources. (@jmacglashan)
+- Added Decisions and Dragons to resources. (@jmacglashan)
+- Updated PyBullet example, now compatible with Gymnasium
 
 Release 2.4.0 (2024-11-18)
 --------------------------

@@ -92,7 +92,7 @@ Train a PPO agent on ``CartPole-v1`` using 4 environments.
 
   PPO is meant to be run primarily on the CPU, especially when you are not using a CNN. To improve CPU utilization, try turning off the GPU and using ``SubprocVecEnv`` instead of the default ``DummyVecEnv``:
 
-  .. code-block::
+  .. code-block:: python
 
     from stable_baselines3 import PPO
     from stable_baselines3.common.env_util import make_vec_env
@@ -102,7 +102,7 @@ Train a PPO agent on ``CartPole-v1`` using 4 environments.
         env = make_vec_env("CartPole-v1", n_envs=8, vec_env_cls=SubprocVecEnv)
         model = PPO("MlpPolicy", env, device="cpu")
         model.learn(total_timesteps=25_000)
-  
+
   For more information, see :ref:`Vectorized Environments <vec_env>`, `Issue #1245 <https://github.com/DLR-RM/stable-baselines3/issues/1245#issuecomment-1435766949>`_ or the `Multiprocessing notebook <https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/multiprocessing_rl.ipynb>`_.
 
 Results
@@ -177,6 +177,8 @@ Parameters
   :members:
   :inherited-members:
 
+
+.. _ppo_policies:
 
 PPO Policies
 -------------

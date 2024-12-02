@@ -44,7 +44,7 @@ class DDPG(TD3):
     :param optimize_memory_usage: Enable a memory efficient variant of the replay buffer
         at a cost of more complexity.
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
-    :param policy_kwargs: additional arguments to be passed to the policy on creation
+    :param policy_kwargs: additional arguments to be passed to the policy on creation. See :ref:`ddpg_policies`
     :param verbose: Verbosity level: 0 for no output, 1 for info messages (such as device or wrappers used), 2 for
         debug messages
     :param seed: Seed for the pseudo random generators

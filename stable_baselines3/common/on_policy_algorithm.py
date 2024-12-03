@@ -214,7 +214,10 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                     # Otherwise, clip the actions to avoid out of bound error
                     # as we are sampling from an unbounded Gaussian distribution
                     clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
-
+            elif isinstance(self.action_space, spaces.Discrete):
+                # match discrete actions bounds
+                clipped_actions = np.add(clipped_actions, self.action_space.start)
+                
             new_obs, rewards, dones, infos = env.step(clipped_actions)
 
             self.num_timesteps += env.num_envs

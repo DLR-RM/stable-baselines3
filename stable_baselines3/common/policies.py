@@ -377,7 +377,10 @@ class BasePolicy(BaseModel, ABC):
                 # Actions could be on arbitrary scale, so clip the actions to avoid
                 # out of bound error (e.g. if sampling from a Gaussian distribution)
                 actions = np.clip(actions, self.action_space.low, self.action_space.high)  # type: ignore[assignment, arg-type]
-
+        elif isinstance(self.action_space, spaces.Discrete):
+                # Rescale in case of discrete action
+                actions = np.add(actions, self.action_space.start)
+            
         # Remove batch dimension if needed
         if not vectorized_env:
             assert isinstance(actions, np.ndarray)

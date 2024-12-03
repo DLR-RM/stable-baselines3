@@ -18,6 +18,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- support for start-value in spaces.Discrete
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

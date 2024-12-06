@@ -377,6 +377,9 @@ class BasePolicy(BaseModel, ABC):
                 # Actions could be on arbitrary scale, so clip the actions to avoid
                 # out of bound error (e.g. if sampling from a Gaussian distribution)
                 actions = np.clip(actions, self.action_space.low, self.action_space.high)  # type: ignore[assignment, arg-type]
+        elif isinstance(self.action_space, spaces.Discrete):
+            # transform action to its action-space bounds starting from its defined start value
+            actions = self.unscale_action(actions)  # type: ignore[assignment, arg-type]
 
         # Remove batch dimension if needed
         if not vectorized_env:
@@ -387,30 +390,52 @@ class BasePolicy(BaseModel, ABC):
 
     def scale_action(self, action: np.ndarray) -> np.ndarray:
         """
-        Rescale the action from [low, high] to [-1, 1]
-        (no need for symmetric action space)
+        Rescale the action from action-space bounds
+        Box-Case:
+            Scale the action from [low, high] to [-1, 1]
+            (no need for symmetric action space)
+        Discrete-Case:
+            Shift start value from action_space.start to zero
 
         :param action: Action to scale
         :return: Scaled action
         """
-        assert isinstance(
-            self.action_space, spaces.Box
-        ), f"Trying to scale an action using an action space that is not a Box(): {self.action_space}"
-        low, high = self.action_space.low, self.action_space.high
-        return 2.0 * ((action - low) / (high - low)) - 1.0
+        scaled_action: np.ndarray
+
+        if isinstance(self.action_space, spaces.Box):
+            # Box case
+            low, high = self.action_space.low, self.action_space.high
+            scaled_action = 2.0 * ((action - low) / (high - low)) - 1.0
+        elif isinstance(self.action_space, spaces.Discrete):
+            # discrete actions case
+            scaled_action = np.subtract(action, self.action_space.start)
+        else:
+            raise AssertionError(f"Trying to scale an action using an action space that is not a Box() or Discrete(): {self.action_space}")
+
+        return scaled_action
 
     def unscale_action(self, scaled_action: np.ndarray) -> np.ndarray:
         """
-        Rescale the action from [-1, 1] to [low, high]
-        (no need for symmetric action space)
+        Box-Case:
+            Rescale the action from [-1, 1] to [low, high]
+            (no need for symmetric action space)
+        Discrete-Case:
+            Reverse shift start value from zero back to action_space.start
 
         :param scaled_action: Action to un-scale
         """
-        assert isinstance(
-            self.action_space, spaces.Box
-        ), f"Trying to unscale an action using an action space that is not a Box(): {self.action_space}"
-        low, high = self.action_space.low, self.action_space.high
-        return low + (0.5 * (scaled_action + 1.0) * (high - low))
+        unscaled_action: np.ndarray
+
+        if isinstance(self.action_space, spaces.Box):
+            low, high = self.action_space.low, self.action_space.high
+            unscaled_action = low + (0.5 * (scaled_action + 1.0) * (high - low))
+        elif isinstance(self.action_space, spaces.Discrete):
+            # match discrete actions bounds
+            unscaled_action = np.add(scaled_action, self.action_space.start)
+        else:
+            raise AssertionError(f"Trying to unscale an action using an action space that is not a Box() or Discrete(): {self.action_space}")
+
+        return unscaled_action
 
 
 class ActorCriticPolicy(BasePolicy):

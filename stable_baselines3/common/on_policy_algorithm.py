@@ -198,24 +198,27 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             with th.no_grad():
                 # Convert to pytorch tensor or to TensorDict
-                obs_tensor = obs_as_tensor(self._last_obs, self.device)
+                obs_tensor = obs_as_tensor(self._last_obs, self.device)  # type: ignore[assignment, arg-type]
                 actions, values, log_probs = self.policy(obs_tensor)
             actions = actions.cpu().numpy()
 
-            # Rescale and perform action
-            clipped_actions = actions
-
+            # Rescale to action bounds
+            unscaled_actions = actions
             if isinstance(self.action_space, spaces.Box):
                 if self.policy.squash_output:
                     # Unscale the actions to match env bounds
                     # if they were previously squashed (scaled in [-1, 1])
-                    clipped_actions = self.policy.unscale_action(clipped_actions)
+                    unscaled_actions = self.policy.unscale_action(unscaled_actions)
                 else:
                     # Otherwise, clip the actions to avoid out of bound error
                     # as we are sampling from an unbounded Gaussian distribution
-                    clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
+                    unscaled_actions = np.clip(actions, self.action_space.low, self.action_space.high)
+            elif isinstance(self.action_space, spaces.Discrete):
+                # Scale actions to match action-space bounds
+                unscaled_actions = self.policy.unscale_action(unscaled_actions)  # type: ignore[assignment, arg-type]
 
-            new_obs, rewards, dones, infos = env.step(clipped_actions)
+            # Perform step
+            new_obs, rewards, dones, infos = env.step(unscaled_actions)
 
             self.num_timesteps += env.num_envs
 

@@ -389,8 +389,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             assert self._last_obs is not None, "self._last_obs was not set"
             unscaled_action, _ = self.predict(self._last_obs, deterministic=False)
 
-        # Rescale the action from [low, high] to [-1, 1]
+        # Transform action from its action_space bounds
         if isinstance(self.action_space, spaces.Box):
+            # Rescale the action from [low, high] to [-1, 1]
             scaled_action = self.policy.scale_action(unscaled_action)
 
             # Add noise to the action (improve exploration)
@@ -400,10 +401,19 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             # We store the scaled action in the buffer
             buffer_action = scaled_action
             action = self.policy.unscale_action(scaled_action)
+        elif isinstance(self.action_space, spaces.Discrete):
+            # Discrete case: Shift action values so every action starts from zero
+            scaled_action = self.policy.scale_action(unscaled_action)
+
+            # Use buffer action to store in buffer
+            buffer_action = scaled_action
+
+            # Still use the original action for env, that is scaled to its action-space bounds
+            action = unscaled_action
         else:
-            # Discrete case, no need to normalize or clip
             buffer_action = unscaled_action
             action = buffer_action
+
         return action, buffer_action
 
     def _dump_logs(self) -> None:

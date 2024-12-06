@@ -16,6 +16,7 @@ def _is_numpy_array_space(space: spaces.Space) -> bool:
     """
     return not isinstance(space, (spaces.Dict, spaces.Tuple))
 
+
 def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
     """
     Check that the input will be compatible with Stable-Baselines
@@ -59,7 +60,7 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
 
     if isinstance(observation_space, spaces.Dict):
         nested_dict = False
-        for key, space in observation_space.spaces.items():
+        for _key, space in observation_space.spaces.items():
             if isinstance(space, spaces.Dict):
                 nested_dict = True
 

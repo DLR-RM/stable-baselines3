@@ -56,11 +56,20 @@ class DummyMultiDiscreteSpace(DummyEnv):
 class ActionBoundsTestClass(DummyEnv):
     def step(self, action):
         if isinstance(self.action_space, spaces.Discrete):
-            assert np.all(action >= self.action_space.start), f"Discrete action {action} is below the lower bound {self.action_space.start}"
-            assert np.all(action <= self.action_space.start + self.action_space.n), f"Discrete action {action} is above the upper bound {self.action_space.start}+{self.action_space.n}"
+            assert np.all(action >= self.action_space.start), (
+                f"Discrete action {action} is below the lower bound {self.action_space.start}")
+            assert np.all(action <= self.action_space.start + self.action_space.n), (
+                f"Discrete action {action} is above the upper bound {self.action_space.start}+{self.action_space.n}")
+        elif isinstance(self.action_space, spaces.MultiDiscrete):
+            assert np.all(action >= self.action_space.start), (
+                f"MultiDiscrete action {action} is below the lower bound {self.action_space.start}")
+            assert np.all(action <= self.action_space.start + self.action_space.nvec), (
+                f"MultiDiscrete action {action} is above the upper bound {self.action_space.start}+{self.action_space.nvec}")
         elif isinstance(self.action_space, spaces.Box):
-            assert np.all(action >= self.action_space.low), f"Action {action} is below the lower bound {self.action_space.low}"
-            assert np.all(action <= self.action_space.high), f"Action {action} is above the upper bound {self.action_space.high}"
+            assert np.all(action >= self.action_space.low), (
+                f"Action {action} is below the lower bound {self.action_space.low}")
+            assert np.all(action <= self.action_space.high), (
+                f"Action {action} is above the upper bound {self.action_space.high}")
         return self.observation_space.sample(), 0.0, False, False, {}
 
 @pytest.mark.parametrize(
@@ -184,6 +193,7 @@ def test_float64_action_space(model_class, obs_space, action_space):
         [
             # on-policy test
             (PPO, spaces.Discrete(5, start=-6543)),
+            (PPO, spaces.MultiDiscrete([4, 3], start=[-6543, 11])),
             (PPO, spaces.Box(low=2344, high=2345, shape=(3,), dtype=np.float32)),
             # off-policy test
             (DQN, spaces.Discrete(2, start=9923)),
@@ -210,11 +220,20 @@ def test_space_bounds(model_class, action_space):
 
     action, _ = model.predict(initial_obs, deterministic=False)
     if isinstance(action_space, spaces.Discrete):
-        assert np.all(action >= action_space.start), f"Discrete action {action} is below the lower bound {action_space.start}"
-        assert np.all(action <= action_space.start + action_space.n), f"Discrete action {action} is above the upper bound {action_space.start}+{action_space.n}"
+        assert np.all(action >= action_space.start), (
+            f"Discrete action {action} is below the lower bound {action_space.start}")
+        assert np.all(action <= action_space.start + action_space.n), (
+            f"Discrete action {action} is above the upper bound {action_space.start}+{action_space.n}")
+    elif isinstance(action_space, spaces.MultiDiscrete):
+        assert np.all(action >= action_space.start), (
+            f"MultiDiscrete action {action} is below the lower bound {action_space.start}")
+        assert np.all(action <= action_space.start + action_space.nvec), (
+            f"MultiDiscrete action {action} is above the upper bound {action_space.start}+{action_space.nvec}")
     elif isinstance(action_space, spaces.Box):
-        assert np.all(action >= action_space.low), f"Action {action} is below the lower bound {action_space.low}"
-        assert np.all(action <= action_space.high), f"Action {action} is above the upper bound {action_space.high}"
+        assert np.all(action >= action_space.low), (
+            f"Action {action} is below the lower bound {action_space.low}")
+        assert np.all(action <= action_space.high), (
+            f"Action {action} is above the upper bound {action_space.high}")
 
 
 def test_multidim_binary_not_supported():

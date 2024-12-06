@@ -16,31 +16,6 @@ def _is_numpy_array_space(space: spaces.Space) -> bool:
     """
     return not isinstance(space, (spaces.Dict, spaces.Tuple))
 
-
-def _starts_at_zero(space: Union[spaces.Discrete, spaces.MultiDiscrete]) -> bool:
-    """
-    Return False if a (Multi)Discrete space has a non-zero start.
-    """
-    return np.allclose(space.start, np.zeros_like(space.start))
-
-
-def _check_non_zero_start(space: spaces.Space, space_type: str = "observation", key: str = "") -> None:
-    """
-    :param space: Observation or action space
-    :param space_type: information about whether it is an observation or action space
-        (for the warning message)
-    :param key: When the observation space comes from a Dict space, we pass the
-        corresponding key to have more precise warning messages. Defaults to "".
-    """
-    if isinstance(space, (spaces.Discrete, spaces.MultiDiscrete)) and not _starts_at_zero(space):
-        maybe_key = f"(key='{key}')" if key else ""
-        warnings.warn(
-            f"{type(space).__name__} {space_type} space {maybe_key} with a non-zero start (start={space.start}) "
-            "is not supported by Stable-Baselines3. "
-            f"You can use a wrapper or update your {space_type} space."
-        )
-
-
 def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
     """
     Check that the input will be compatible with Stable-Baselines
@@ -87,7 +62,6 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
         for key, space in observation_space.spaces.items():
             if isinstance(space, spaces.Dict):
                 nested_dict = True
-            _check_non_zero_start(space, "observation", key)
 
         if nested_dict:
             warnings.warn(
@@ -115,16 +89,12 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             "which is supported by SB3."
         )
 
-    _check_non_zero_start(observation_space, "observation")
-
     if isinstance(observation_space, spaces.Sequence):
         warnings.warn(
             "Sequence observation space is not supported by Stable-Baselines3. "
             "You can pad your observation to have a fixed size instead.\n"
             "Note: The checks for returned values are skipped."
         )
-
-    _check_non_zero_start(action_space, "action")
 
     if not _is_numpy_array_space(action_space):
         warnings.warn(

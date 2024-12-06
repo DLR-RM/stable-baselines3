@@ -377,7 +377,7 @@ class BasePolicy(BaseModel, ABC):
                 # Actions could be on arbitrary scale, so clip the actions to avoid
                 # out of bound error (e.g. if sampling from a Gaussian distribution)
                 actions = np.clip(actions, self.action_space.low, self.action_space.high)  # type: ignore[assignment, arg-type]
-        elif isinstance(self.action_space, spaces.Discrete):
+        elif isinstance(self.action_space, (spaces.Discrete, spaces.MultiDiscrete)):
             # transform action to its action-space bounds starting from its defined start value
             actions = self.unscale_action(actions)  # type: ignore[assignment, arg-type]
 
@@ -406,7 +406,7 @@ class BasePolicy(BaseModel, ABC):
             # Box case
             low, high = self.action_space.low, self.action_space.high
             scaled_action = 2.0 * ((action - low) / (high - low)) - 1.0
-        elif isinstance(self.action_space, spaces.Discrete):
+        elif isinstance(self.action_space, (spaces.Discrete, spaces.MultiDiscrete)):
             # discrete actions case
             scaled_action = np.subtract(action, self.action_space.start)
         else:
@@ -429,7 +429,7 @@ class BasePolicy(BaseModel, ABC):
         if isinstance(self.action_space, spaces.Box):
             low, high = self.action_space.low, self.action_space.high
             unscaled_action = low + (0.5 * (scaled_action + 1.0) * (high - low))
-        elif isinstance(self.action_space, spaces.Discrete):
+        elif isinstance(self.action_space, (spaces.Discrete, spaces.MultiDiscrete)):
             # match discrete actions bounds
             unscaled_action = np.add(scaled_action, self.action_space.start)
         else:

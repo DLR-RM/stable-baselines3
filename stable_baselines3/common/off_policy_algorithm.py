@@ -401,7 +401,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             # We store the scaled action in the buffer
             buffer_action = scaled_action
             action = self.policy.unscale_action(scaled_action)
-        elif isinstance(self.action_space, spaces.Discrete):
+        elif isinstance(self.action_space, (spaces.Discrete, spaces.MultiDiscrete)):
             # Discrete case: Shift action values so every action starts from zero
             scaled_action = self.policy.scale_action(unscaled_action)
 

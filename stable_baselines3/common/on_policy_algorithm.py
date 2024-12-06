@@ -213,7 +213,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                     # Otherwise, clip the actions to avoid out of bound error
                     # as we are sampling from an unbounded Gaussian distribution
                     unscaled_actions = np.clip(actions, self.action_space.low, self.action_space.high)
-            elif isinstance(self.action_space, spaces.Discrete):
+            elif isinstance(self.action_space, (spaces.Discrete, spaces.MultiDiscrete)):
                 # Scale actions to match action-space bounds
                 unscaled_actions = self.policy.unscale_action(unscaled_actions)  # type: ignore[assignment, arg-type]
 

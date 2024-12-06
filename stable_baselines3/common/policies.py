@@ -410,7 +410,7 @@ class BasePolicy(BaseModel, ABC):
             # discrete actions case
             scaled_action = np.subtract(action, self.action_space.start)
         else:
-            raise AssertionError(f"Trying to scale an action using an action space that is not a Box() or Discrete(): {self.action_space}")
+            raise NotImplementedError(f"Trying to scale an action using action space: {self.action_space}")
 
         return scaled_action
 
@@ -433,7 +433,7 @@ class BasePolicy(BaseModel, ABC):
             # match discrete actions bounds
             unscaled_action = np.add(scaled_action, self.action_space.start)
         else:
-            raise AssertionError(f"Trying to unscale an action using an action space that is not a Box() or Discrete(): {self.action_space}")
+            raise NotImplementedError(f"Trying to unscale an action using action space: {self.action_space}")
 
         return unscaled_action
 

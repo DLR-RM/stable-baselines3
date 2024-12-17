@@ -251,6 +251,17 @@ It enables solving environments involving partial observability or locomotion (e
 | Github: https://github.com/corentinlger/ER-MRL
 | Paper: https://arxiv.org/abs/2312.06695
 
+FootstepNet Envs
+----------------
+
+These environments are dedicated to train efficient agents that can plan and forecast bipedal robot footsteps in order to go to a target location possibly avoiding obstacles. They are designed to be used with Reinforcement Learning (RL) algorithms.
+
+Real world experiments were conducted during RoboCup competitions on the Sigmaban robot, a small-sized humanoid designed by the *Rhoban Team*.
+
+| Authors: Clément Gaspard, Grégoire Passault, Mélodie Daniel, Olivier Ly
+| Github: https://github.com/Rhoban/footstepnet_envs
+| Paper: https://arxiv.org/abs/2403.12589
+
 
 FRASA: Fall Recovery And Stand up agent
 ---------------------------------------

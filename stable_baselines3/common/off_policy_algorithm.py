@@ -487,7 +487,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                     next_obs[i] = infos[i]["terminal_observation"]
                     # VecNormalize normalizes the terminal observation
                     if self._vec_normalize_env is not None:
-                        next_obs[i] = self._vec_normalize_env.unnormalize_obs(next_obs[i, :])
+                        next_obs[i] = self._vec_normalize_env.unnormalize_obs(next_obs[i, :])  # type: ignore[assignment]
 
         replay_buffer.add(
             self._last_original_obs,  # type: ignore[arg-type]

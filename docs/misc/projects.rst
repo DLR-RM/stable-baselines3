@@ -254,12 +254,9 @@ It enables solving environments involving partial observability or locomotion (e
 FootstepNet Envs
 ----------------
 
-Footsteps Planning RL Environments for Fast On-line Bipedal Footstep Planning and Forecasting.
+These environments are dedicated to train efficient agents that can plan and forecast bipedal robot footsteps in order to go to a target location possibly avoiding obstacles. They are designed to be used with Reinforcement Learning (RL) algorithms.
 
-This project introduces an efficient and lightweight method for bipedal footstep planning in local environments containing obstacles. Leveraging state-of-the-art Deep Reinforcement Learning (DRL) techniques, our approach achieves real-time on-line inference with minimal computational requirements. Unlike traditional methods, our solution is heuristic-free and operates within a continuous action space to generate feasible and effective footsteps for navigating complex environments.
-
-In addition to planning, we propose a forecasting method, allowing to quickly estimate the number of footsteps required to reach different candidates of local targets. This forecasting is seamlessly integrated into the computations performed by the actor-critic DRL architecture, ensuring fast and reliable predictions without additional overhead.
-
+Real world experiments were conducted during RoboCup competitions on the Sigmaban robot, a small-sized humanoid designed by the *Rhoban Team*.
 
 | Authors: Clément Gaspard, Grégoire Passault, Mélodie Daniel, Olivier Ly
 | Github: https://github.com/Rhoban/footstepnet_envs

@@ -39,6 +39,7 @@ Documentation:
 - Added Decisions and Dragons to resources. (@jmacglashan)
 - Updated PyBullet example, now compatible with Gymnasium
 - Added link to policies for ``policy_kwargs`` parameter (@kplers)
+- Added FRASA to the project page (@MarcDcls)
 
 Release 2.4.0 (2024-11-18)
 --------------------------
@@ -1739,4 +1740,4 @@ And all the contributors:
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
 @marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
-@brn-dev @jmacglashan @kplers
+@brn-dev @jmacglashan @kplers @MarcDcls

@@ -250,3 +250,17 @@ It enables solving environments involving partial observability or locomotion (e
 | Authors: Corentin Léger, Gautier Hamon, Eleni Nisioti, Xavier Hinaut, Clément Moulin-Frier
 | Github: https://github.com/corentinlger/ER-MRL
 | Paper: https://arxiv.org/abs/2312.06695
+
+FootStepNet Envs
+----------------
+
+Footsteps Planning RL Environments for Fast On-line Bipedal Footstep Planning and Forecasting.
+
+This project introduces an efficient and lightweight method for bipedal footstep planning in local environments containing obstacles. Leveraging state-of-the-art Deep Reinforcement Learning (DRL) techniques, our approach achieves real-time on-line inference with minimal computational requirements. Unlike traditional methods, our solution is heuristic-free and operates within a continuous action space to generate feasible and effective footsteps for navigating complex environments.
+
+In addition to planning, we propose a forecasting method, allowing to quickly estimate the number of footsteps required to reach different candidates of local targets. This forecasting is seamlessly integrated into the computations performed by the actor-critic DRL architecture, ensuring fast and reliable predictions without additional overhead.
+
+
+| Authors: Clément Gaspard, Grégoire Passault, Mélodie Daniel, Olivier Ly
+| Github: https://github.com/Rhoban/footstepnet_envs
+| Paper: https://arxiv.org/abs/2403.12589

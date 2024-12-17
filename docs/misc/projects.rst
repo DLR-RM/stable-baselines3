@@ -262,7 +262,7 @@ Sigmaban humanoid robot, a small-sized humanoid designed by the *Rhoban Team* to
 The results, detailled in the paper and the video, show that the agent is able to recover from 
 various external disturbances and stand up in a few seconds.
 
-Authors: Marc Duclusaud, Clément Gaspard, Grégoire Passault, Mélodie Daniel, Olivier Ly
-Github: https://github.com/Rhoban/frasa
-Paper: https://arxiv.org/abs/2410.08655
-Video: https://www.youtube.com/watch?v=NL65XW0O0mk
+| Authors: Marc Duclusaud, Clément Gaspard, Grégoire Passault, Mélodie Daniel, Olivier Ly
+| Github: https://github.com/Rhoban/frasa
+| Paper: https://arxiv.org/abs/2410.08655
+| Video: https://www.youtube.com/watch?v=NL65XW0O0mk

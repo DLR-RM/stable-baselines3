@@ -250,3 +250,19 @@ It enables solving environments involving partial observability or locomotion (e
 | Authors: Corentin Léger, Gautier Hamon, Eleni Nisioti, Xavier Hinaut, Clément Moulin-Frier
 | Github: https://github.com/corentinlger/ER-MRL
 | Paper: https://arxiv.org/abs/2312.06695
+
+
+FRASA: Fall Recovery And Stand up agent
+---------------------------------------
+
+A Deep Reinforcement Learning agent for a humanoid robot that learns to recover from falls and stand up. 
+
+The agent is trained using the MuJoCo physics engine. Real world experiments are conducted on the 
+Sigmaban humanoid robot, a small-sized humanoid designed by the *Rhoban Team* to compete in the RoboCup Kidsize League.
+The results, detailled in the paper and the video, show that the agent is able to recover from 
+various external disturbances and stand up in a few seconds.
+
+Authors: Marc Duclusaud, Clément Gaspard, Grégoire Passault, Mélodie Daniel, Olivier Ly
+Github: https://github.com/Rhoban/frasa
+Paper: https://arxiv.org/abs/2410.08655
+Video: https://www.youtube.com/watch?v=NL65XW0O0mk

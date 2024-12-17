@@ -103,7 +103,7 @@ class BitFlippingEnv(Env):
             # Convert to binary representation
             bit_vector = ((bit_vector[:, :] & (1 << np.arange(len(self.state)))) > 0).astype(int)
         elif self.image_obs_space:
-            bit_vector = state.reshape(batch_size, -1)[:, : len(self.state)] / 255
+            bit_vector = state.reshape(batch_size, -1)[:, : len(self.state)] / 255  # type: ignore[assignment]
         else:
             bit_vector = np.array(state).reshape(batch_size, -1)
         return bit_vector

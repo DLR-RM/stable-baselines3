@@ -157,7 +157,7 @@ class HerReplayBuffer(DictReplayBuffer):
         self.ep_start[self.pos] = self._current_ep_start.copy()
 
         if self.copy_info_dict:
-            self.infos[self.pos] = infos
+            self.infos[self.pos] = infos  # type: ignore[assignment]
         # Store the transition
         super().add(obs, next_obs, action, reward, done, infos)
 

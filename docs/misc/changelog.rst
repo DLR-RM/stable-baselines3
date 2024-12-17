@@ -39,6 +39,7 @@ Documentation:
 - Added Decisions and Dragons to resources. (@jmacglashan)
 - Updated PyBullet example, now compatible with Gymnasium
 - Added link to policies for ``policy_kwargs`` parameter (@kplers)
+- Add FootstepNet Envs to the project page (@cgaspard3333)
 
 Release 2.4.0 (2024-11-18)
 --------------------------

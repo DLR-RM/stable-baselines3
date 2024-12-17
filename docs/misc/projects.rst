@@ -251,7 +251,7 @@ It enables solving environments involving partial observability or locomotion (e
 | Github: https://github.com/corentinlger/ER-MRL
 | Paper: https://arxiv.org/abs/2312.06695
 
-FootStepNet Envs
+FootstepNet Envs
 ----------------
 
 Footsteps Planning RL Environments for Fast On-line Bipedal Footstep Planning and Forecasting.

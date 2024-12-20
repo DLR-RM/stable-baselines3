@@ -47,8 +47,7 @@ jobs:
           uv pip install --system opencv-python-headless
           # to record videos
           uv pip install --system moviepy
-          # check ffmpeg is installed
-          ffmpeg -version
+          sudo apt install ffmpeg
       - name: Install specific version of gym
         run: |
           uv pip install --system gymnasium==${{ matrix.gymnasium-version }}

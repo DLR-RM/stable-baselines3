@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.5.0a0 (WIP)
+Release 2.5.0a1 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -41,6 +41,14 @@ Documentation:
 - Added link to policies for ``policy_kwargs`` parameter (@kplers)
 - Add FootstepNet Envs to the project page (@cgaspard3333)
 - Added FRASA to the project page (@MarcDcls)
+
+Release 2.4.1 (2024-12-20)
+--------------------------
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed a bug introduced in v2.4.0 where the ``VecVideoRecorder`` would override videos
+
 
 Release 2.4.0 (2024-11-18)
 --------------------------

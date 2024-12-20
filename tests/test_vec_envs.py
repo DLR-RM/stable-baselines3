@@ -16,6 +16,13 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack, VecNormalize, VecVideoRecorder
 
+try:
+    import moviepy
+
+    have_moviepy = True
+except ImportError:
+    have_moviepy = False
+
 N_ENVS = 3
 VEC_ENV_CLASSES = [DummyVecEnv, SubprocVecEnv]
 VEC_ENV_WRAPPERS = [None, VecNormalize, VecFrameStack]
@@ -627,6 +634,7 @@ def test_render(vec_env_class):
     vec_env.close()
 
 
+@pytest.mark.skipif(not have_moviepy, reason="moviepy is not installed")
 def test_video_recorder(tmp_path):
     env_id = "CartPole-v1"
     video_folder = str(tmp_path)

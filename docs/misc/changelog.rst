@@ -3,6 +3,14 @@
 Changelog
 ==========
 
+Release 2.4.1 (2024-12-20)
+--------------------------
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed a bug introduced in v2.4.0 where the ``VecVideoRecorder`` would override videos
+
+
 Release 2.4.0 (2024-11-18)
 --------------------------
 

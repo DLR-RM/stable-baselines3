@@ -659,6 +659,7 @@ def test_video_recorder(tmp_path):
 
     # print all videos in video_folder, should be multiple step 0-100, step 1024-1124
     video_files = list(map(str, tmp_path.glob("*.mp4")))
+    video_files.sort(reverse=True)
 
     # Clean up
     vec_env.close()

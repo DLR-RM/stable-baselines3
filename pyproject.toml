@@ -39,6 +39,8 @@ exclude = """(?x)(
 env = ["PYTHONHASHSEED=0"]
 
 filterwarnings = [
+    # A2C/PPO on GPU
+    "ignore:You are trying to run (PPO|A2C) on the GPU",
     # Tensorboard warnings
     "ignore::DeprecationWarning:tensorboard",
     # Gymnasium warnings

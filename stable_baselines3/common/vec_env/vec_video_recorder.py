@@ -29,6 +29,9 @@ class VecVideoRecorder(VecEnvWrapper):
     :param name_prefix: Prefix to the video name
     """
 
+    video_name: str
+    video_path: str
+
     def __init__(
         self,
         venv: VecEnv,
@@ -50,7 +53,7 @@ class VecVideoRecorder(VecEnvWrapper):
 
         if isinstance(temp_env, DummyVecEnv) or isinstance(temp_env, SubprocVecEnv):
             metadata = temp_env.get_attr("metadata")[0]
-        else:
+        else:  # pragma: no cover # assume gym interface
             metadata = temp_env.metadata
 
         self.env.metadata = metadata
@@ -67,15 +70,12 @@ class VecVideoRecorder(VecEnvWrapper):
         self.step_id = 0
         self.video_length = video_length
 
-        self.video_name = f"{self.name_prefix}-step-{self.step_id}-to-step-{self.step_id + self.video_length}.mp4"
-        self.video_path = os.path.join(self.video_folder, self.video_name)
-
         self.recording = False
         self.recorded_frames: list[np.ndarray] = []
 
         try:
             import moviepy  # noqa: F401
-        except ImportError as e:
+        except ImportError as e:  # pragma: no cover
             raise error.DependencyNotInstalled("MoviePy is not installed, run `pip install 'gymnasium[other]'`") from e
 
     def reset(self) -> VecEnvObs:
@@ -85,6 +85,9 @@ class VecVideoRecorder(VecEnvWrapper):
         return obs
 
     def _start_video_recorder(self) -> None:
+        # Update video name and path
+        self.video_name = f"{self.name_prefix}-step-{self.step_id}-to-step-{self.step_id + self.video_length}.mp4"
+        self.video_path = os.path.join(self.video_folder, self.video_name)
         self._start_recording()
         self._capture_frame()
 
@@ -109,8 +112,6 @@ class VecVideoRecorder(VecEnvWrapper):
         assert self.recording, "Cannot capture a frame, recording wasn't started."
 
         frame = self.env.render()
-        if isinstance(frame, list):
-            frame = frame[-1]
 
         if isinstance(frame, np.ndarray):
             self.recorded_frames.append(frame)
@@ -123,12 +124,12 @@ class VecVideoRecorder(VecEnvWrapper):
     def close(self) -> None:
         """Closes the wrapper then the video recorder."""
         VecEnvWrapper.close(self)
-        if self.recording:
+        if self.recording:  # pragma: no cover
             self._stop_recording()
 
     def _start_recording(self) -> None:
         """Start a new recording. If it is already recording, stops the current recording before starting the new one."""
-        if self.recording:
+        if self.recording:  # pragma: no cover
             self._stop_recording()
 
         self.recording = True
@@ -137,7 +138,7 @@ class VecVideoRecorder(VecEnvWrapper):
         """Stop current recording and saves the video."""
         assert self.recording, "_stop_recording was called, but no recording was started"
 
-        if len(self.recorded_frames) == 0:
+        if len(self.recorded_frames) == 0:  # pragma: no cover
             logger.warn("Ignored saving a video as there were zero frames to save.")
         else:
             from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
@@ -150,5 +151,5 @@ class VecVideoRecorder(VecEnvWrapper):
 
     def __del__(self) -> None:
         """Warn the user in case last video wasn't saved."""
-        if len(self.recorded_frames) > 0:
+        if len(self.recorded_frames) > 0:  # pragma: no cover
             logger.warn("Unable to save last video! Did you call close()?")

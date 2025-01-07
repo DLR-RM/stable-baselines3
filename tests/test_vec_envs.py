@@ -11,9 +11,17 @@ import numpy as np
 import pytest
 from gymnasium import spaces
 
+from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack, VecNormalize
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack, VecNormalize, VecVideoRecorder
+
+try:
+    import moviepy  # noqa: F401
+
+    have_moviepy = True
+except ImportError:
+    have_moviepy = False
 
 N_ENVS = 3
 VEC_ENV_CLASSES = [DummyVecEnv, SubprocVecEnv]
@@ -624,3 +632,38 @@ def test_render(vec_env_class):
     vec_env.render()
 
     vec_env.close()
+
+
+@pytest.mark.skipif(not have_moviepy, reason="moviepy is not installed")
+def test_video_recorder(tmp_path):
+    env_id = "CartPole-v1"
+    video_folder = str(tmp_path)
+
+    vec_env = make_vec_env(env_id, n_envs=1)
+
+    # Wrap to check unwrapping works
+    vec_env = VecNormalize(vec_env)
+
+    # Record the video starting at the first step
+    vec_env = VecVideoRecorder(
+        vec_env,
+        video_folder,
+        record_video_trigger=lambda x: x % 65 == 0,
+        video_length=10,
+        name_prefix=f"agent-{env_id}",
+    )
+
+    model = PPO("MlpPolicy", vec_env, n_steps=64, n_epochs=1, verbose=0)
+
+    model.learn(total_timesteps=128)
+
+    # print all videos in video_folder, should be multiple step 0-100, step 1024-1124
+    video_files = list(map(str, tmp_path.glob("*.mp4")))
+    video_files.sort(reverse=True)
+
+    # Clean up
+    vec_env.close()
+
+    assert len(video_files) == 2
+    assert "agent-CartPole-v1-step-65-to-step-75.mp4" in video_files[0]
+    assert "agent-CartPole-v1-step-0-to-step-10.mp4" in video_files[1]

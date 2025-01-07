@@ -241,7 +241,7 @@ class VecNormalize(VecEnvWrapper):
                 assert self.norm_obs_keys is not None
                 # Only normalize the specified keys
                 for key in self.norm_obs_keys:
-                    obs_[key] = self._normalize_obs(obs[key], self.obs_rms[key]).astype(np.float32)
+                    obs_[key] = self._normalize_obs(obs[key], self.obs_rms[key]).astype(np.float32)  # type: ignore[call-overload]
             else:
                 assert isinstance(self.obs_rms, RunningMeanStd)
                 obs_ = self._normalize_obs(obs, self.obs_rms).astype(np.float32)
@@ -265,7 +265,7 @@ class VecNormalize(VecEnvWrapper):
             if isinstance(obs, dict) and isinstance(self.obs_rms, dict):
                 assert self.norm_obs_keys is not None
                 for key in self.norm_obs_keys:
-                    obs_[key] = self._unnormalize_obs(obs[key], self.obs_rms[key])
+                    obs_[key] = self._unnormalize_obs(obs[key], self.obs_rms[key])  # type: ignore[call-overload]
             else:
                 assert isinstance(self.obs_rms, RunningMeanStd)
                 obs_ = self._unnormalize_obs(obs, self.obs_rms)

@@ -17,7 +17,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack, VecNormalize, VecVideoRecorder
 
 try:
-    import moviepy
+    import moviepy  # noqa: F401
 
     have_moviepy = True
 except ImportError:

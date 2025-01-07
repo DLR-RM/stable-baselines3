@@ -181,7 +181,7 @@ def json_to_data(json_string: str, custom_objects: Optional[Dict[str, Any]] = No
 @functools.singledispatch
 def open_path(
     path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verbose: int = 0, suffix: Optional[str] = None
-) -> Union[io.BufferedWriter, io.BufferedReader, io.BytesIO]:
+) -> Union[io.BufferedWriter, io.BufferedReader, io.BytesIO, io.BufferedRandom]:
     """
     Opens a path for reading or writing with a preferred suffix and raises debug information.
     If the provided path is a derivative of io.BufferedIOBase it ensures that the file

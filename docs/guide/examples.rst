@@ -375,7 +375,8 @@ and multiprocessing for you. To install the Atari environments, run the command 
   from stable_baselines3.common.env_util import make_atari_env
   from stable_baselines3.common.vec_env import VecFrameStack
   from stable_baselines3 import A2C
-
+  import ale_py
+  
   # There already exists an environment generator
   # that will make and wrap atari environments correctly.
   # Here we are also multi-worker training (n_envs=4 => 4 environments)

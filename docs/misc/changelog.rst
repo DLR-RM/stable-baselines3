@@ -41,6 +41,7 @@ Documentation:
 - Added link to policies for ``policy_kwargs`` parameter (@kplers)
 - Add FootstepNet Envs to the project page (@cgaspard3333)
 - Added FRASA to the project page (@MarcDcls)
+- Fixed atari example (@chrisgao99)
 
 Release 2.4.1 (2024-12-20)
 --------------------------
@@ -1749,4 +1750,4 @@ And all the contributors:
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
 @marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
-@brn-dev @jmacglashan @kplers @MarcDcls
+@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99

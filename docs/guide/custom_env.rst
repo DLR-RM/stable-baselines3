@@ -24,6 +24,24 @@ That is to say, your environment must implement the following methods (and inher
   Under the hood, when a channel-last image is passed, SB3 uses a ``VecTransposeImage`` wrapper to re-order the channels.
 
 
+.. note::
+
+    SB3 doesn't support ``Discrete`` and ``MultiDiscrete`` spaces with ``start!=0``. However, you can update your environment or use a wrapper to make your env compatible with SB3:
+
+    .. code-block:: python
+
+        import gymnasium as gym
+
+        class ShiftWrapper(gym.Wrapper):
+        """Allow to use Discrete() action spaces with start!=0"""
+        def __init__(self, env: gym.Env) -> None:
+            super().__init__(env)
+            assert isinstance(env.action_space, gym.spaces.Discrete)
+            self.action_space = gym.spaces.Discrete(env.action_space.n, start=0)
+
+        def step(self, action: int):
+            return self.env.step(action + self.env.action_space.start)
+
 
 .. code-block:: python
 

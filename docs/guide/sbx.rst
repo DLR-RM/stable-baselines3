@@ -18,6 +18,7 @@ Implemented algorithms:
 - Twin Delayed DDPG (TD3)
 - Deep Deterministic Policy Gradient (DDPG)
 - Batch Normalization in Deep Reinforcement Learning (CrossQ)
+- Simplicity Bias for Scaling Up Parameters in Deep Reinforcement Learning (SimBa)
 
 
 As SBX follows SB3 API, it is also compatible with the `RL Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_.

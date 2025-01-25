@@ -43,6 +43,8 @@ Documentation:
 - Added FRASA to the project page (@MarcDcls)
 - Fixed atari example (@chrisgao99)
 - Add a note about ``Discrete`` action spaces with ``start!=0``
+- Update doc for massively parallel simulators (Isaac Lab, Brax, ...)
+- Add dm_control example
 
 Release 2.4.1 (2024-12-20)
 --------------------------

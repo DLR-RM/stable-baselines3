@@ -735,41 +735,40 @@ A2C policy gradient updates on the model.
       print(f"Best fitness: {top_candidates[0][1]:.2f}")
 
 
-SB3 and ProcgenEnv
-------------------
+SB3 with Isaac Lab, Brax, Procgen, EnvPool
+------------------------------------------
 
-Some environments like `Procgen <https://github.com/openai/procgen>`_ already produce a vectorized
-environment (see discussion in `issue #314 <https://github.com/DLR-RM/stable-baselines3/issues/314>`_). In order to use it with SB3, you must wrap it in a ``VecMonitor`` wrapper which will also allow
-to keep track of the agent progress.
+Some massively parallel simulations such as `EnvPool <https://github.com/sail-sg/envpool>`_, `Isaac Lab <https://github.com/isaac-sim/IsaacLab>`_, `Brax <https://github.com/google/brax>`_ or `ProcGen <https://github.com/Farama-Foundation/Procgen2>`_ already produce a vectorized environment to speed up data collection (see discussion in `issue #314 <https://github.com/DLR-RM/stable-baselines3/issues/314>`_).
+
+To use SB3 with these tools, you need to wrap the env with tool-specific ``VecEnvWrapper`` that pre-processes the data for SB3,
+you can find links to some of these wrappers in `issue #772 <https://github.com/DLR-RM/stable-baselines3/issues/772#issuecomment-1048657002>`_.
+
+- Isaac Lab wrapper: `link <https://github.com/isaac-sim/IsaacLab/blob/main/source/extensions/omni.isaac.lab_tasks/omni/isaac/lab_tasks/utils/wrappers/sb3.py>`__
+- Brax: `link <https://gist.github.com/araffin/a7a576ec1453e74d9bb93120918ef7e7>`__
+- EnvPool: `link <https://github.com/sail-sg/envpool/blob/main/examples/sb3_examples/ppo.py>`__
+
+
+SB3 with DeepMind Control (dm_control)
+--------------------------------------
+
+If you want to use SB3 with `dm_control <https://github.com/google-deepmind/dm_control>`_, you need to use two wrappers (one from `shimmy <https://github.com/Farama-Foundation/Shimmy>`_, one pre-built one) to convert it to a Gymnasium compatible environment:
 
 .. code-block:: python
 
-  from procgen import ProcgenEnv
+    import shimmy
+    import stable_baselines3 as sb3
+    from dm_control import suite
+    from gymnasium.wrappers import FlattenObservation
 
-  from stable_baselines3 import PPO
-  from stable_baselines3.common.vec_env import VecExtractDictObs, VecMonitor
+    # Available envs:
+    # suite._DOMAINS and suite.dog.SUITE
 
-  # ProcgenEnv is already vectorized
-  venv = ProcgenEnv(num_envs=2, env_name="starpilot")
+    env = suite.load(domain_name="dog", task_name="run")
+    gym_env = FlattenObservation(shimmy.DmControlCompatibilityV0(env))
 
-  # To use only part of the observation:
-  # venv = VecExtractDictObs(venv, "rgb")
+    model = sb3.PPO("MlpPolicy", gym_env, verbose=1)
+    model.learn(10_000, progress_bar=True)
 
-  # Wrap with a VecMonitor to collect stats and avoid errors
-  venv = VecMonitor(venv=venv)
-
-  model = PPO("MultiInputPolicy", venv, verbose=1)
-  model.learn(10_000)
-
-
-SB3 with EnvPool or Isaac Gym
------------------------------
-
-Just like Procgen (see above), `EnvPool <https://github.com/sail-sg/envpool>`_ and `Isaac Gym <https://github.com/NVIDIA-Omniverse/IsaacGymEnvs>`_ accelerate the environment by
-already providing a vectorized implementation.
-
-To use SB3 with those tools, you must wrap the env with tool's specific ``VecEnvWrapper`` that will pre-process the data for SB3,
-you can find links to those wrappers in `issue #772 <https://github.com/DLR-RM/stable-baselines3/issues/772#issuecomment-1048657002>`_.
 
 
 Record a Video

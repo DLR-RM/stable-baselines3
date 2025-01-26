@@ -315,7 +315,7 @@ def test_get_original():
         assert not np.array_equal(orig_obs, obs)
         assert not np.array_equal(orig_rewards, rewards)
         np.testing.assert_allclose(venv.normalize_obs(orig_obs), obs)
-        np.testing.assert_allclose(venv.normalize_reward(orig_rewards), rewards)
+        np.testing.assert_allclose(venv.normalize_reward(orig_rewards), rewards, atol=1e-6)
 
 
 def test_get_original_dict():

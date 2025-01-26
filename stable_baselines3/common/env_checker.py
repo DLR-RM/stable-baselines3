@@ -37,7 +37,8 @@ def _check_non_zero_start(space: spaces.Space, space_type: str = "observation", 
         warnings.warn(
             f"{type(space).__name__} {space_type} space {maybe_key} with a non-zero start (start={space.start}) "
             "is not supported by Stable-Baselines3. "
-            f"You can use a wrapper or update your {space_type} space."
+            "You can use a wrapper (see https://stable-baselines3.readthedocs.io/en/master/guide/custom_env.html) "
+            f"or update your {space_type} space."
         )
 
 

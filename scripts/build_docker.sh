@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CPU_PARENT=mambaorg/micromamba:2.0-ubuntu24.04
-GPU_PARENT=mambaorg/micromamba:2.0-cuda12.4.1-ubuntu24.04
+GPU_PARENT=mambaorg/micromamba:2.0-cuda12.5.1-ubuntu24.04
 
 TAG=stablebaselines/stable-baselines3
 VERSION=$(cat ./stable_baselines3/version.txt)

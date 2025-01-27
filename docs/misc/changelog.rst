@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.5.0 (205-01-27)
+Release 2.5.0 (2025-01-27)
 --------------------------
 
 **New algorithm: SimBa in SBX, NumPy 2.0 support**

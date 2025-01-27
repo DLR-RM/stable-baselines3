@@ -1,14 +1,14 @@
 #!/bin/bash
 
-CPU_PARENT=mambaorg/micromamba:1.5-jammy
-GPU_PARENT=mambaorg/micromamba:1.5-jammy-cuda-11.7.1
+CPU_PARENT=mambaorg/micromamba:2.0-ubuntu24.04
+GPU_PARENT=mambaorg/micromamba:2.0-cuda12.4.1-ubuntu24.04
 
 TAG=stablebaselines/stable-baselines3
 VERSION=$(cat ./stable_baselines3/version.txt)
 
 if [[ ${USE_GPU} == "True" ]]; then
   PARENT=${GPU_PARENT}
-  PYTORCH_DEPS="pytorch-cuda=11.7"
+  PYTORCH_DEPS="pytorch-cuda=12.4"
 else
   PARENT=${CPU_PARENT}
   PYTORCH_DEPS="cpuonly"

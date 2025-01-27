@@ -3,8 +3,11 @@
 Changelog
 ==========
 
-Release 2.5.0a1 (WIP)
+Release 2.5.0 (205-01-27)
 --------------------------
+
+**New algorithm: SimBa in SBX, NumPy 2.0 support**
+
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -27,12 +30,15 @@ Bug Fixes:
 
 `SBX`_ (SB3 + Jax)
 ^^^^^^^^^^^^^^^^^^
+- Added SimBa Policy: Simplicity Bias for Scaling Up Parameters in DRL
+- Added support for parameter resets
 
 Deprecations:
 ^^^^^^^^^^^^^
 
 Others:
 ^^^^^^^
+- Updated Dockerfile
 
 Documentation:
 ^^^^^^^^^^^^^^

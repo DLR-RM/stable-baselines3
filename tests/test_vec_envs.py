@@ -133,10 +133,12 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
 
     assert not vec_env.has_attr("dummy2")
     # Set the value on the original env
-    vec_env.env_method("set_wrapper_attr", "dummy2", 2)
-    assert vec_env.get_attr("dummy2") == [2] * N_ENVS
-    if vec_env_class == DummyVecEnv:
-        assert vec_env.envs[0].unwrapped.dummy2 == 2
+    # `set_wrapper_attr` doesn't exist before v1.0
+    if gym.__version__ > "1":
+        vec_env.env_method("set_wrapper_attr", "dummy2", 2)
+        assert vec_env.get_attr("dummy2") == [2] * N_ENVS
+        if vec_env_class == DummyVecEnv:
+            assert vec_env.envs[0].unwrapped.dummy2 == 2
 
     env_method_results = vec_env.env_method("custom_method", 1, indices=None, dim_1=2)
     setattr_results = []

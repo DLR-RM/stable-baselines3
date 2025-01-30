@@ -147,6 +147,21 @@ class VecEnv(ABC):
         """
         raise NotImplementedError()
 
+    def has_attr(self, attr_name: str) -> bool:
+        """
+        Check if an attribute exists for a vectorized environment.
+
+        :param attr_name: The name of the attribute to check
+        :return: True if 'attr_name' exists in all environments
+        """
+        # Default implementation, will not work with things that cannot be pickled:
+        # https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/issues/49
+        try:
+            self.get_attr(attr_name)
+            return True
+        except AttributeError:
+            return False
+
     @abstractmethod
     def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> list[Any]:
         """
@@ -391,6 +406,9 @@ class VecEnvWrapper(VecEnv):
 
     def get_images(self) -> Sequence[Optional[np.ndarray]]:
         return self.venv.get_images()
+
+    def has_attr(self, attr_name: str) -> bool:
+        return self.venv.has_attr(attr_name)
 
     def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> list[Any]:
         return self.venv.get_attr(attr_name, indices)

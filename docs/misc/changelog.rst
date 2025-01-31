@@ -16,6 +16,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- `SubProcVecEnv` will now exit gracefully (without big traceback) when using `KeyboardInterrupt`
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

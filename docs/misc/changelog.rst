@@ -32,6 +32,7 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Updated black from v24 to v25
 
 Documentation:
 ^^^^^^^^^^^^^^

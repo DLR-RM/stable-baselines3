@@ -123,12 +123,30 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
     # we need a X server to test the "human" mode (uses OpenCV)
     # vec_env.render(mode="human")
 
+    # Set a new attribute, on the last wrapper and on the env
+    assert not vec_env.has_attr("dummy")
+    # Set value for the last wrapper only
+    vec_env.set_attr("dummy", 12)
+    assert vec_env.get_attr("dummy") == [12] * N_ENVS
+    if vec_env_class == DummyVecEnv:
+        assert vec_env.envs[0].dummy == 12
+
+    assert not vec_env.has_attr("dummy2")
+    # Set the value on the original env
+    # `set_wrapper_attr` doesn't exist before v1.0
+    if gym.__version__ > "1":
+        vec_env.env_method("set_wrapper_attr", "dummy2", 2)
+        assert vec_env.get_attr("dummy2") == [2] * N_ENVS
+        if vec_env_class == DummyVecEnv:
+            assert vec_env.envs[0].unwrapped.dummy2 == 2
+
     env_method_results = vec_env.env_method("custom_method", 1, indices=None, dim_1=2)
     setattr_results = []
     # Set current_step to an arbitrary value
     for env_idx in range(N_ENVS):
         setattr_results.append(vec_env.set_attr("current_step", env_idx, indices=env_idx))
     # Retrieve the value for each environment
+    assert vec_env.has_attr("current_step")
     getattr_results = vec_env.get_attr("current_step")
 
     assert len(env_method_results) == N_ENVS

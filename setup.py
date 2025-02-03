@@ -98,7 +98,7 @@ setup(
             # Lint code and sort imports (flake8 and isort replacement)
             "ruff>=0.3.1",
             # Reformat
-            "black>=24.2.0,<25",
+            "black>=25.1.0,<26",
         ],
         "docs": [
             "sphinx>=5,<9",

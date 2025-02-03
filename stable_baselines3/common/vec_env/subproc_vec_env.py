@@ -17,7 +17,7 @@ from stable_baselines3.common.vec_env.base_vec_env import (
 from stable_baselines3.common.vec_env.patch_gym import _patch_env
 
 
-def _worker(
+def _worker(  # noqa: C901
     remote: mp.connection.Connection,
     parent_remote: mp.connection.Connection,
     env_fn_wrapper: CloudpickleWrapper,
@@ -58,6 +58,12 @@ def _worker(
                 remote.send(method(*data[1], **data[2]))
             elif cmd == "get_attr":
                 remote.send(env.get_wrapper_attr(data))
+            elif cmd == "has_attr":
+                try:
+                    env.get_wrapper_attr(data)
+                    remote.send(True)
+                except AttributeError:
+                    remote.send(False)
             elif cmd == "set_attr":
                 remote.send(setattr(env, data[0], data[1]))  # type: ignore[func-returns-value]
             elif cmd == "is_wrapped":
@@ -65,6 +71,8 @@ def _worker(
             else:
                 raise NotImplementedError(f"`{cmd}` is not implemented in the worker")
         except EOFError:
+            break
+        except KeyboardInterrupt:
             break
 
 
@@ -164,6 +172,13 @@ class SubprocVecEnv(VecEnv):
             pipe.send(("render", None))
         outputs = [pipe.recv() for pipe in self.remotes]
         return outputs
+
+    def has_attr(self, attr_name: str) -> bool:
+        """Check if an attribute exists for a vectorized environment. (see base class)."""
+        target_remotes = self._get_target_remotes(indices=None)
+        for remote in target_remotes:
+            remote.send(("has_attr", attr_name))
+        return all([remote.recv() for remote in target_remotes])
 
     def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> list[Any]:
         """Return attribute from vectorized environment (see base class)."""

@@ -3,6 +3,41 @@
 Changelog
 ==========
 
+Release 2.6.0a0 (WIP)
+--------------------------
+
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+- Added ``has_attr`` method for ``VecEnv`` to check if an attribute exists
+
+Bug Fixes:
+^^^^^^^^^^
+- `SubProcVecEnv` will now exit gracefully (without big traceback) when using `KeyboardInterrupt`
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+- Updated black from v24 to v25
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
 Release 2.5.0 (2025-01-27)
 --------------------------
 
@@ -19,22 +54,10 @@ New Features:
 - Added support for NumPy v2.0: ``VecNormalize`` now cast normalized rewards to float32, updated bit flipping env to avoid overflow issues too
 - Added official support for Python 3.12
 
-Bug Fixes:
-^^^^^^^^^^
-
-`SB3-Contrib`_
-^^^^^^^^^^^^^^
-
-`RL Zoo`_
-^^^^^^^^^
-
 `SBX`_ (SB3 + Jax)
 ^^^^^^^^^^^^^^^^^^
 - Added SimBa Policy: Simplicity Bias for Scaling Up Parameters in DRL
 - Added support for parameter resets
-
-Deprecations:
-^^^^^^^^^^^^^
 
 Others:
 ^^^^^^^

@@ -1,7 +1,5 @@
 .. _vec_env:
 
-.. automodule:: stable_baselines3.common.vec_env
-
 Vectorized Environments
 =======================
 
@@ -225,8 +223,16 @@ You can find below an example for extracting one key from the observation:
 	env = VecExtractDictObs(env, key="observation")
 
 
+.. note::
+   When creating a vectorized environment, you can also specify ordinary gymnasium
+   wrappers to wrap each of the sub-environments. See the documentation of
+   :func:`make_vec_env <stable_baselines3.common.env_util.make_vec_env>`
+   for details.
+
 VecEnv
 ------
+
+.. automodule:: stable_baselines3.common.vec_env
 
 .. autoclass:: VecEnv
   :members:

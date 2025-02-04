@@ -36,6 +36,7 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Added a link to `make_vec_env` in the section on Vectorized Environments
 
 
 Release 2.5.0 (2025-01-27)
@@ -1782,4 +1783,4 @@ And all the contributors:
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
 @marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
-@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99
+@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen

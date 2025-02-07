@@ -36,7 +36,7 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
-- Added a link to `make_vec_env` in the section on Vectorized Environments
+- Clarify the use of Gym wrappers with ``make_vec_env`` in the section on Vectorized Environments (@pstahlhofen)
 
 
 Release 2.5.0 (2025-01-27)

@@ -1,5 +1,7 @@
 .. _vec_env:
 
+.. automodule:: stable_baselines3.common.vec_env
+
 Vectorized Environments
 =======================
 
@@ -225,14 +227,26 @@ You can find below an example for extracting one key from the observation:
 
 .. note::
    When creating a vectorized environment, you can also specify ordinary gymnasium
-   wrappers to wrap each of the sub-environments. See the documentation of
+   wrappers to wrap each of the sub-environments. See the
    :func:`make_vec_env <stable_baselines3.common.env_util.make_vec_env>`
-   for details.
+   documentation for details.
+   Example:
+
+   .. code-block:: python
+
+    from gymnasium.wrappers import RescaleAction
+    from stable_baselines3.common.env_util import make_vec_env
+
+    # Use gym wrapper for each sub-env of the VecEnv
+    wrapper_kwargs = dict(min_action=-1.0, max_action=1.0)
+    vec_env = make_vec_env(
+        "Pendulum-v1", n_envs=2, wrapper_class=RescaleAction, wrapper_kwargs=wrapper_kwargs
+    )
+
+
 
 VecEnv
 ------
-
-.. automodule:: stable_baselines3.common.vec_env
 
 .. autoclass:: VecEnv
   :members:

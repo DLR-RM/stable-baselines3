@@ -865,3 +865,9 @@ class BaseAlgorithm(ABC):
         params_to_save = self.get_parameters()
 
         save_to_zip_file(path, data=data, params=params_to_save, pytorch_variables=pytorch_variables)
+
+    @abstractmethod
+    def _dump_logs(self) -> None:
+        """
+        Write log data. (Implemented by OffPolicyAlgorithm and OnPolicyAlgorithm)
+        """

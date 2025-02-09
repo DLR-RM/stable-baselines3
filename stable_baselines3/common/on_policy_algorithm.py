@@ -274,7 +274,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         """
         raise NotImplementedError
 
-    def _dump_logs(self, iteration: int) -> None:
+    def _dump_logs(self, iteration: int = 0) -> None:
         """
         Write log.
 
@@ -285,7 +285,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         time_elapsed = max((time.time_ns() - self.start_time) / 1e9, sys.float_info.epsilon)
         fps = int((self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
-        self.logger.record("time/iterations", iteration, exclude="tensorboard")
+        if iteration > 0:
+            self.logger.record("time/iterations", iteration, exclude="tensorboard")
         if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
             self.logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
             self.logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))

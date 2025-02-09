@@ -408,7 +408,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
     def _dump_logs(self) -> None:
         """
-        Write log.
+        Write log data.
         """
         assert self.ep_info_buffer is not None
         assert self.ep_success_buffer is not None

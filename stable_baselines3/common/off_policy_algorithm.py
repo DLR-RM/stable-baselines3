@@ -406,7 +406,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             action = buffer_action
         return action, buffer_action
 
-    def _dump_logs(self) -> None:
+    def dump_logs(self) -> None:
         """
         Write log data.
         """
@@ -594,7 +594,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
                     # Log training infos
                     if log_interval is not None and self._episode_num % log_interval == 0:
-                        self._dump_logs()
+                        self.dump_logs()
         callback.on_rollout_end()
 
         return RolloutReturn(num_collected_steps * env.num_envs, num_collected_episodes, continue_training)

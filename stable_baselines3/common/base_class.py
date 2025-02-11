@@ -866,8 +866,12 @@ class BaseAlgorithm(ABC):
 
         save_to_zip_file(path, data=data, params=params_to_save, pytorch_variables=pytorch_variables)
 
-    @abstractmethod
-    def _dump_logs(self) -> None:
+    def dump_logs(self) -> None:
         """
         Write log data. (Implemented by OffPolicyAlgorithm and OnPolicyAlgorithm)
         """
+        raise NotImplementedError()
+
+    def _dump_logs(self, *args) -> None:
+        warnings.warn("algo._dump_logs() is deprecated in favor of algo.dump_logs(). It will be removed in SB3 v2.7.0")
+        self.dump_logs(*args)

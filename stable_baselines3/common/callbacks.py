@@ -602,7 +602,7 @@ class LogEveryNTimesteps(EveryNTimesteps):
         super().__init__(n_steps, callback=ConvertCallback(self._log_data))
 
     def _log_data(self, _locals: dict[str, Any], _globals: dict[str, Any]) -> bool:
-        self.model._dump_logs()
+        self.model.dump_logs()
         return True
 
 

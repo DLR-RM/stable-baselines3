@@ -35,11 +35,12 @@ Deprecations:
 Others:
 ^^^^^^^
 - Updated black from v24 to v25
+- Improved error messages when checking Box space equality (loading ``VecNormalize``)
 
 Documentation:
 ^^^^^^^^^^^^^^
 - Clarify the use of Gym wrappers with ``make_vec_env`` in the section on Vectorized Environments (@pstahlhofen)
-
+- Updated callback doc for ``EveryNTimesteps``
 
 Release 2.5.0 (2025-01-27)
 --------------------------

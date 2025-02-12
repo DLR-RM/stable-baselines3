@@ -244,12 +244,14 @@ def check_shape_equal(space1: spaces.Space, space2: spaces.Space) -> None:
     :param space2: Other space
     """
     if isinstance(space1, spaces.Dict):
-        assert isinstance(space2, spaces.Dict), "spaces must be of the same type"
-        assert space1.spaces.keys() == space2.spaces.keys(), "spaces must have the same keys"
+        assert isinstance(space2, spaces.Dict), f"spaces must be of the same type: {type(space1)} != {type(space2)}"
+        assert (
+            space1.spaces.keys() == space2.spaces.keys()
+        ), f"spaces must have the same keys: {list(space1.spaces.keys())} != {list(space2.spaces.keys())}"
         for key in space1.spaces.keys():
             check_shape_equal(space1.spaces[key], space2.spaces[key])
     elif isinstance(space1, spaces.Box):
-        assert space1.shape == space2.shape, "spaces must have the same shape"
+        assert space1.shape == space2.shape, f"spaces must have the same shape: {space1.shape} != {space2.shape}"
 
 
 def is_vectorized_box_observation(observation: np.ndarray, observation_space: spaces.Box) -> bool:

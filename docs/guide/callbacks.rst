@@ -143,6 +143,7 @@ Stable Baselines provides you with a set of common callbacks for:
 - evaluating the model periodically and saving the best one (:ref:`EvalCallback`)
 - chaining callbacks (:ref:`CallbackList`)
 - triggering callback on events (:ref:`EventCallback`, :ref:`EveryNTimesteps`)
+- logging data every N timesteps (:ref:`LogEveryNTimesteps`)
 - stopping the training early based on a reward threshold (:ref:`StopTrainingOnRewardThreshold <StopTrainingCallback>`)
 
 
@@ -313,7 +314,7 @@ An :ref:`EventCallback` that will trigger its child callback every ``n_steps`` t
 
 .. note::
 
-	Because of the way ``PPO1`` and ``TRPO`` work (they rely on MPI), ``n_steps`` is a lower bound between two events.
+	Because of the way ``VecEnv`` work, ``n_steps`` is a lower bound between two events when using multiple environments.
 
 
 .. code-block:: python
@@ -330,7 +331,30 @@ An :ref:`EventCallback` that will trigger its child callback every ``n_steps`` t
 
   model = PPO("MlpPolicy", "Pendulum-v1", verbose=1)
 
-  model.learn(int(2e4), callback=event_callback)
+  model.learn(20_000, callback=event_callback)
+
+.. _LogEveryNTimesteps:
+
+LogEveryNTimesteps
+^^^^^^^^^^^^^^^^^^
+
+A callback derived from :ref:`EveryNTimesteps` that will dump the logged data every ``n_steps`` timesteps.
+
+
+.. code-block:: python
+
+  import gymnasium as gym
+
+  from stable_baselines3 import PPO
+  from stable_baselines3.common.callbacks import LogEveryNTimesteps
+
+  event_callback = LogEveryNTimesteps(n_steps=1_000)
+
+  model = PPO("MlpPolicy", "Pendulum-v1", verbose=1)
+
+  # Disable auto-logging by passing `log_interval=None`
+  model.learn(10_000, callback=event_callback, log_interval=None)
+
 
 
 .. _StopTrainingOnMaxEpisodes:

@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.6.0a0 (WIP)
+Release 2.6.0a1 (WIP)
 --------------------------
 
 
@@ -13,6 +13,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - Added ``has_attr`` method for ``VecEnv`` to check if an attribute exists
+- Added ``LogEveryNTimesteps`` callback to dump logs every N timesteps (note: you need to pass ``log_interval=None`` to avoid any interference)
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -29,15 +30,17 @@ Bug Fixes:
 
 Deprecations:
 ^^^^^^^^^^^^^
+- ``algo._dump_logs()`` is deprecated in favor of ``algo.dump_logs()`` and will be removed in SB3 v2.7.0
 
 Others:
 ^^^^^^^
 - Updated black from v24 to v25
+- Improved error messages when checking Box space equality (loading ``VecNormalize``)
 
 Documentation:
 ^^^^^^^^^^^^^^
 - Clarify the use of Gym wrappers with ``make_vec_env`` in the section on Vectorized Environments (@pstahlhofen)
-
+- Updated callback doc for ``EveryNTimesteps``
 
 Release 2.5.0 (2025-01-27)
 --------------------------

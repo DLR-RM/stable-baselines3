@@ -13,6 +13,7 @@ from stable_baselines3.common.callbacks import (
     CheckpointCallback,
     EvalCallback,
     EveryNTimesteps,
+    LogEveryNTimesteps,
     StopTrainingOnMaxEpisodes,
     StopTrainingOnNoModelImprovement,
     StopTrainingOnRewardThreshold,
@@ -62,11 +63,12 @@ def test_callbacks(tmp_path, model_class):
     checkpoint_on_event = CheckpointCallback(save_freq=1, save_path=log_folder, name_prefix="event")
 
     event_callback = EveryNTimesteps(n_steps=500, callback=checkpoint_on_event)
+    log_callback = LogEveryNTimesteps(n_steps=250)
 
     # Stop training if max number of episodes is reached
     callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=100, verbose=1)
 
-    callback = CallbackList([checkpoint_callback, eval_callback, event_callback, callback_max_episodes])
+    callback = CallbackList([checkpoint_callback, eval_callback, event_callback, log_callback, callback_max_episodes])
     model.learn(500, callback=callback)
 
     # Check access to local variables

@@ -591,6 +591,21 @@ class EveryNTimesteps(EventCallback):
         return True
 
 
+class LogEveryNTimesteps(EveryNTimesteps):
+    """
+    Log data every ``n_steps`` timesteps
+
+    :param n_steps: Number of timesteps between two trigger.
+    """
+
+    def __init__(self, n_steps: int):
+        super().__init__(n_steps, callback=ConvertCallback(self._log_data))
+
+    def _log_data(self, _locals: dict[str, Any], _globals: dict[str, Any]) -> bool:
+        self.model.dump_logs()
+        return True
+
+
 class StopTrainingOnMaxEpisodes(BaseCallback):
     """
     Stop the training once a maximum number of episodes are played.

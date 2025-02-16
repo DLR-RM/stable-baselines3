@@ -9,8 +9,8 @@ That is to say, your environment must implement the following methods (and inher
 
 .. note::
 
-  If you are using images as input, the observation must be of type ``np.uint8`` and be contained in [0, 255].
-  By default, the observation is normalized by SB3 pre-processing (dividing by 255 to have values in [0, 1]) when using CNN policies.
+  If you are using images as input, the observation must be of type ``np.uint8`` and be within a space ``Box`` bounded by [0, 255] (``Box(low=0, high=255, shape=(<your image shape>)``).
+  By default, the observation is normalized by SB3 pre-processing (dividing by 255 to have values in [0, 1], i.e. ``Box(low=0, high=1)``) when using CNN policies.
   Images can be either channel-first or channel-last.
 
   If you want to use ``CnnPolicy`` or ``MultiInputPolicy`` with image-like observation (3D tensor) that are already normalized, you must pass ``normalize_images=False``

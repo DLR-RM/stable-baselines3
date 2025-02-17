@@ -149,27 +149,28 @@ class StackedObservations(Generic[TObs]):
             # From {key1: [{}, {terminal_obs: ...}], key2: [{}, {terminal_obs: ...}]}
             # to [{}, {terminal_obs: {key1: ..., key2: ...}}]
             for key in stacked_infos.keys():
-                for env_idx in range(len(infos)):
+                # Optimization: only check for env where done=True
+                for env_idx in dones.nonzero()[0]:
                     if "terminal_observation" in infos[env_idx]:
                         infos[env_idx]["terminal_observation"][key] = stacked_infos[key][env_idx]["terminal_observation"]
             return stacked_obs, infos
 
         shift = -observations.shape[self.stack_dimension]
         self.stacked_obs = np.roll(self.stacked_obs, shift, axis=self.stack_dimension)
-        for env_idx, done in enumerate(dones):
-            if done:
-                if "terminal_observation" in infos[env_idx]:
-                    old_terminal = infos[env_idx]["terminal_observation"]
-                    if self.channels_first:
-                        previous_stack = self.stacked_obs[env_idx, :shift, ...]
-                    else:
-                        previous_stack = self.stacked_obs[env_idx, ..., :shift]
-
-                    new_terminal = np.concatenate((previous_stack, old_terminal), axis=self.repeat_axis)
-                    infos[env_idx]["terminal_observation"] = new_terminal
+        # Optimization: only check for env where done=True
+        for env_idx in dones.nonzero()[0]:
+            if "terminal_observation" in infos[env_idx]:
+                old_terminal = infos[env_idx]["terminal_observation"]
+                if self.channels_first:
+                    previous_stack = self.stacked_obs[env_idx, :shift, ...]
                 else:
-                    warnings.warn("VecFrameStack wrapping a VecEnv without terminal_observation info")
-                self.stacked_obs[env_idx] = 0
+                    previous_stack = self.stacked_obs[env_idx, ..., :shift]
+
+                new_terminal = np.concatenate((previous_stack, old_terminal), axis=self.repeat_axis)
+                infos[env_idx]["terminal_observation"] = new_terminal
+            else:
+                warnings.warn("VecFrameStack wrapping a VecEnv without terminal_observation info")
+            self.stacked_obs[env_idx] = 0
         if self.channels_first:
             self.stacked_obs[:, shift:, ...] = observations
         else:

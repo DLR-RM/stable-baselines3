@@ -233,12 +233,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             # Handle timeout by bootstrapping with value function
             # see GitHub issue #633
-            for idx, done in enumerate(dones):
-                if (
-                    done
-                    and infos[idx].get("terminal_observation") is not None
-                    and infos[idx].get("TimeLimit.truncated", False)
-                ):
+            for idx in dones.nonzero()[0]:
+                if infos[idx].get("terminal_observation") is not None and infos[idx].get("TimeLimit.truncated", False):
                     terminal_obs = self.policy.obs_to_tensor(infos[idx]["terminal_observation"])[0]
                     with th.no_grad():
                         terminal_value = self.policy.predict_values(terminal_obs)[0]  # type: ignore[arg-type]

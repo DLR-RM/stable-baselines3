@@ -473,8 +473,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         next_obs = deepcopy(new_obs_)
         # As the VecEnv resets automatically, new_obs is already the
         # first observation of the next episode
-        for i, done in enumerate(dones):
-            if done and infos[i].get("terminal_observation") is not None:
+        for i in dones.nonzero()[0]:
+            if infos[i].get("terminal_observation") is not None:
                 if isinstance(next_obs, dict):
                     next_obs_ = infos[i]["terminal_observation"]
                     # VecNormalize normalizes the terminal observation
@@ -582,19 +582,18 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             # see https://github.com/hill-a/stable-baselines/issues/900
             self._on_step()
 
-            for idx, done in enumerate(dones):
-                if done:
-                    # Update stats
-                    num_collected_episodes += 1
-                    self._episode_num += 1
+            for idx in dones.nonzero()[0]:
+                # Update stats
+                num_collected_episodes += 1
+                self._episode_num += 1
 
-                    if action_noise is not None:
-                        kwargs = dict(indices=[idx]) if env.num_envs > 1 else {}
-                        action_noise.reset(**kwargs)
+                if action_noise is not None:
+                    kwargs = dict(indices=[idx]) if env.num_envs > 1 else {}
+                    action_noise.reset(**kwargs)
 
-                    # Log training infos
-                    if log_interval is not None and self._episode_num % log_interval == 0:
-                        self.dump_logs()
+                # Log training infos
+                if log_interval is not None and self._episode_num % log_interval == 0:
+                    self.dump_logs()
         callback.on_rollout_end()
 
         return RolloutReturn(num_collected_steps * env.num_envs, num_collected_episodes, continue_training)

@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.6.0a1 (WIP)
+Release 2.6.0a2 (WIP)
 --------------------------
 
 
@@ -14,6 +14,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Added ``has_attr`` method for ``VecEnv`` to check if an attribute exists
 - Added ``LogEveryNTimesteps`` callback to dump logs every N timesteps (note: you need to pass ``log_interval=None`` to avoid any interference)
+- Speed up handling of terminal observations, only the env with finished episodes are checked (the speed up will be noticable on massively parallel env)
 
 Bug Fixes:
 ^^^^^^^^^^

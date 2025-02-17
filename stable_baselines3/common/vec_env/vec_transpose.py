@@ -97,9 +97,7 @@ class VecTransposeImage(VecEnvWrapper):
         observations, rewards, dones, infos = self.venv.step_wait()
 
         # Transpose the terminal observations
-        for idx, done in enumerate(dones):
-            if not done:
-                continue
+        for idx in dones.nonzero()[0]:
             if "terminal_observation" in infos[idx]:
                 infos[idx]["terminal_observation"] = self.transpose_observations(infos[idx]["terminal_observation"])
 

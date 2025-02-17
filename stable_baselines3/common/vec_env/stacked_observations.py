@@ -148,16 +148,14 @@ class StackedObservations(Generic[TObs]):
 
             # From {key1: [{}, {terminal_obs: ...}], key2: [{}, {terminal_obs: ...}]}
             # to [{}, {terminal_obs: {key1: ..., key2: ...}}]
-            for key in stacked_infos.keys():
-                # Optimization: only check for env where done=True
-                for env_idx in dones.nonzero()[0]:
-                    if "terminal_observation" in infos[env_idx]:
+            for env_idx in dones.nonzero()[0]:
+                if "terminal_observation" in infos[env_idx]:
+                    for key in stacked_infos.keys():
                         infos[env_idx]["terminal_observation"][key] = stacked_infos[key][env_idx]["terminal_observation"]
             return stacked_obs, infos
 
         shift = -observations.shape[self.stack_dimension]
         self.stacked_obs = np.roll(self.stacked_obs, shift, axis=self.stack_dimension)
-        # Optimization: only check for env where done=True
         for env_idx in dones.nonzero()[0]:
             if "terminal_observation" in infos[env_idx]:
                 old_terminal = infos[env_idx]["terminal_observation"]

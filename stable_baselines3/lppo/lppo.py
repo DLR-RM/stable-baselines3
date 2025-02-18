@@ -1,46 +1,44 @@
+import io
+import pathlib
 from collections import deque
+from typing import Union, Optional, Any
+
 import numpy as np
 
 import torch as th
+from stable_baselines3.common.vec_env.patch_gym import _convert_space
+
+from stable_baselines3.common.save_util import load_from_zip_file, recursive_setattr
+
+from stable_baselines3.common.utils import get_system_info, check_for_correct_spaces
+
+from stable_baselines3.common.type_aliases import GymEnv
+
+from stable_baselines3.common.base_class import SelfBaseAlgorithm
 from torch.nn import functional as F
 
 from gymnasium import spaces
 
+from stable_baselines3.lppo.policies import MoActorCriticPolicy
 from stable_baselines3.ppo.ppo import PPO
-from stable_baselines3.common.buffers import MoRolloutBuffer
 import warnings
 # TODO: Add support for a tolerance parameter.
-class LPPO(PPO):
-    """
-    LPPO (Lexicographic Proximal Policy Optimization) implementation. Multi-objective extension of PPO that uses lagrangian
-    multipliers to optimize the policy with respect to multiple ordered objectives.
-    Unofficial implementation code of the original paper about LPPO: https://arxiv.org/pdf/2212.13769
 
-    :param policy: (ActorCriticPolicy or str) The policy model to use (MoMlpPolicy). Value function must have the same number of outputs as the number of objectives.
-    :param env: (Gym Environment) The environment to learn from. To use parallel envs, use MoSubprocVecEnv.
-    :param n_objectives: (int) The number of objectives to optimize.
-    :param eta_values: (list of float) The learning rate for the lagrangian multipliers. See paper for more details.
-    :param beta_values: (list of float) Coefficients that establish the priorisation of the objectives. Higher values means higher ranking. See paper for more details.
-    """
+class LPPO(PPO):
+    policy_aliases = {
+        "MoMlpPolicy": MoActorCriticPolicy,
+    }
+
     def __init__(self, policy, env, n_objectives, eta_values=None, beta_values=None, *args, **kwargs):
         super().__init__(policy, env, *args, **kwargs)
         # We need to replace the default rollout buffer for the multi-objective one
-        self.rollout_buffer = MoRolloutBuffer(
+        """self.rollout_buffer = MultiObjectiveRolloutBuffer(
             self.n_steps, self.observation_space, self.action_space, self.device, n_objectives=n_objectives,
             n_envs=env.num_envs, **self.rollout_buffer_kwargs
-        )
-
-        if beta_values is None:
-            warnings.warn("Beta values not provided. Assuming they are ordered in descending priority.")
-            beta_values = [i+1 for i in range(n_objectives)]
-            beta_values.reverse()
-
-        if eta_values is None:
-            warnings.warn("Eta values not provided. Assuming they are all 0.1.")
-            eta_values = [0.1 for _ in range(n_objectives - 1)]
+        )"""
+        self.eta_values = np.array(eta_values).reshape((-1))
 
         self.beta_values = np.array(beta_values)
-        self.eta_values = np.array(eta_values).reshape((-1))
         self.mu_values = np.array([0.0] * (n_objectives - 1))
         self.n_objectives = n_objectives
         self.recent_losses = [deque(maxlen=50) for _ in range(self.n_objectives)]
@@ -110,7 +108,7 @@ class LPPO(PPO):
                             th.clamp(ratio, 1 - clip_range, 1 + clip_range) * advantages[:, obj]
                     )
                     _surr = th.min(_surr1, _surr2)
-                    _pg_loss = -((_surr1 + self.ent_coef * entropy)).sum()
+                    _pg_loss = -((_surr1 + self.ent_coef * entropy)).mean()
                     self.recent_losses[obj].append(_pg_loss.detach())
 
                 # Logging
@@ -173,6 +171,7 @@ class LPPO(PPO):
             self.j[i] = (-th.tensor(self.recent_losses[i])).mean()
             self.mu_values[i] += self.eta_values[i] * (self.j[i] - (-self.recent_losses[i][-1]))
             self.mu_values[i] = max(0, self.mu_values[i])
+
         #explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())
 
         # Logs
@@ -182,8 +181,12 @@ class LPPO(PPO):
         self.logger.record("train/approx_kl", np.mean(approx_kl_divs))
         self.logger.record("train/clip_fraction", np.mean(clip_fractions))
         self.logger.record("train/loss", loss.item())
-        self.logger.record("train/mu", self.mu_values)
-        self.logger.record("train/advantage_scalarisation_weights", first_order_weights)
+
+        for obj in range(self.n_objectives):
+            self.logger.record(f"train_mo/advantage_scalarisation_weight_{obj}", first_order_weights[obj])
+            self.logger.record(f"train_mo/loss_{obj}", np.mean(self.recent_losses[obj]))
+        for obj in range(self.n_objectives-1):
+            self.logger.record(f"train_mo/mu_{obj}", self.mu_values[obj])
         #self.logger.record("train/explained_variance", explained_var)
         if hasattr(self.policy, "log_std"):
             self.logger.record("train/std", th.exp(self.policy.log_std).mean().item())
@@ -192,4 +195,145 @@ class LPPO(PPO):
         self.logger.record("train/clip_range", clip_range)
         if self.clip_range_vf is not None:
             self.logger.record("train/clip_range_vf", clip_range_vf)
+
+    @classmethod
+    def load(  # noqa: C901
+            cls: type[SelfBaseAlgorithm],
+            path: Union[str, pathlib.Path, io.BufferedIOBase],
+            env: Optional[GymEnv] = None,
+            device: Union[th.device, str] = "auto",
+            custom_objects: Optional[dict[str, Any]] = None,
+            print_system_info: bool = False,
+            force_reset: bool = True,
+            **kwargs,
+    ) -> SelfBaseAlgorithm:
+
+        if print_system_info:
+            print("== CURRENT SYSTEM INFO ==")
+            get_system_info()
+
+        data, params, pytorch_variables = load_from_zip_file(
+            path,
+            device=device,
+            custom_objects=custom_objects,
+            print_system_info=print_system_info,
+        )
+
+        assert data is not None, "No data found in the saved file"
+        assert params is not None, "No params found in the saved file"
+
+        # Remove stored device information and replace with ours
+        if "policy_kwargs" in data:
+            if "device" in data["policy_kwargs"]:
+                del data["policy_kwargs"]["device"]
+            # backward compatibility, convert to new format
+            saved_net_arch = data["policy_kwargs"].get("net_arch")
+            if saved_net_arch and isinstance(saved_net_arch, list) and isinstance(saved_net_arch[0], dict):
+                data["policy_kwargs"]["net_arch"] = saved_net_arch[0]
+
+        if "policy_kwargs" in kwargs and kwargs["policy_kwargs"] != data["policy_kwargs"]:
+            raise ValueError(
+                f"The specified policy kwargs do not equal the stored policy kwargs."
+                f"Stored kwargs: {data['policy_kwargs']}, specified kwargs: {kwargs['policy_kwargs']}"
+            )
+
+        if "observation_space" not in data or "action_space" not in data:
+            raise KeyError("The observation_space and action_space were not given, can't verify new environments")
+
+        # Gym -> Gymnasium space conversion
+        for key in {"observation_space", "action_space"}:
+            data[key] = _convert_space(data[key])
+
+        if env is not None:
+            # Wrap first if needed
+            env = cls._wrap_env(env, data["verbose"])
+            # Check if given env is valid
+            check_for_correct_spaces(env, data["observation_space"], data["action_space"])
+            # Discard `_last_obs`, this will force the env to reset before training
+            # See issue https://github.com/DLR-RM/stable-baselines3/issues/597
+            if force_reset and data is not None:
+                data["_last_obs"] = None
+            # `n_envs` must be updated. See issue https://github.com/DLR-RM/stable-baselines3/issues/1018
+            if data is not None:
+                data["n_envs"] = env.num_envs
+        else:
+            # Use stored env, if one exists. If not, continue as is (can be used for predict)
+            if "env" in data:
+                env = data["env"]
+
+        model = cls(
+            policy=data["policy_class"],
+            env=env,
+            device=device,
+            _init_setup_model=False,  # type: ignore[call-arg]
+            n_objectives=data["n_objectives"],
+        )
+
+        # load parameters
+        model.__dict__.update(data)
+        model.__dict__.update(kwargs)
+        model._setup_model()
+
+        try:
+            # put state_dicts back in place
+            model.set_parameters(params, exact_match=True, device=device)
+        except RuntimeError as e:
+            # Patch to load policies saved using SB3 < 1.7.0
+            # the error is probably due to old policy being loaded
+            # See https://github.com/DLR-RM/stable-baselines3/issues/1233
+            if "pi_features_extractor" in str(e) and "Missing key(s) in state_dict" in str(e):
+                model.set_parameters(params, exact_match=False, device=device)
+                warnings.warn(
+                    "You are probably loading a A2C/PPO model saved with SB3 < 1.7.0, "
+                    "we deactivated exact_match so you can save the model "
+                    "again to avoid issues in the future "
+                    "(see https://github.com/DLR-RM/stable-baselines3/issues/1233 for more info). "
+                    f"Original error: {e} \n"
+                    "Note: the model should still work fine, this only a warning."
+                )
+            else:
+                raise e
+        except ValueError as e:
+            # Patch to load DQN policies saved using SB3 < 2.4.0
+            # The target network params are no longer in the optimizer
+            # See https://github.com/DLR-RM/stable-baselines3/pull/1963
+            saved_optim_params = params["policy.optimizer"]["param_groups"][0]["params"]  # type: ignore[index]
+            n_params_saved = len(saved_optim_params)
+            n_params = len(model.policy.optimizer.param_groups[0]["params"])
+            if n_params_saved == 2 * n_params:
+                # Truncate to include only online network params
+                params["policy.optimizer"]["param_groups"][0]["params"] = saved_optim_params[
+                                                                          :n_params]  # type: ignore[index]
+
+                model.set_parameters(params, exact_match=True, device=device)
+                warnings.warn(
+                    "You are probably loading a DQN model saved with SB3 < 2.4.0, "
+                    "we truncated the optimizer state so you can save the model "
+                    "again to avoid issues in the future "
+                    "(see https://github.com/DLR-RM/stable-baselines3/pull/1963 for more info). "
+                    f"Original error: {e} \n"
+                    "Note: the model should still work fine, this only a warning."
+                )
+            else:
+                raise e
+
+        # put other pytorch variables back in place
+        if pytorch_variables is not None:
+            for name in pytorch_variables:
+                # Skip if PyTorch variable was not defined (to ensure backward compatibility).
+                # This happens when using SAC/TQC.
+                # SAC has an entropy coefficient which can be fixed or optimized.
+                # If it is optimized, an additional PyTorch variable `log_ent_coef` is defined,
+                # otherwise it is initialized to `None`.
+                if pytorch_variables[name] is None:
+                    continue
+                # Set the data attribute directly to avoid issue when using optimizers
+                # See https://github.com/DLR-RM/stable-baselines3/issues/391
+                recursive_setattr(model, f"{name}.data", pytorch_variables[name].data)
+
+        # Sample gSDE exploration matrix, so it uses the right device
+        # see issue #44
+        if model.use_sde:
+            model.policy.reset_noise()  # type: ignore[operator]
+        return model
 

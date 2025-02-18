@@ -48,3 +48,4 @@ src
 *.prof
 
 MUJOCO_LOG.TXT
+/runs/

@@ -12,6 +12,7 @@ from stable_baselines3.common.vec_env.vec_monitor import VecMonitor
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines3.common.vec_env.vec_transpose import VecTransposeImage
 from stable_baselines3.common.vec_env.vec_video_recorder import VecVideoRecorder
+from stable_baselines3.common.vec_env.mo_vec_env import MoDummyVecEnv, MoVecEnv
 
 VecEnvWrapperT = TypeVar("VecEnvWrapperT", bound=VecEnvWrapper)
 

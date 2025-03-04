@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.6.0a1 (WIP)
+Release 2.6.0a2 (WIP)
 --------------------------
 
 
@@ -14,6 +14,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Added ``has_attr`` method for ``VecEnv`` to check if an attribute exists
 - Added ``LogEveryNTimesteps`` callback to dump logs every N timesteps (note: you need to pass ``log_interval=None`` to avoid any interference)
+- Added Gymnasium v1.1 support
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -36,11 +37,14 @@ Others:
 ^^^^^^^
 - Updated black from v24 to v25
 - Improved error messages when checking Box space equality (loading ``VecNormalize``)
+- Updated test to reflect how ``set_wrapper_attr`` should be used now
 
 Documentation:
 ^^^^^^^^^^^^^^
 - Clarify the use of Gym wrappers with ``make_vec_env`` in the section on Vectorized Environments (@pstahlhofen)
 - Updated callback doc for ``EveryNTimesteps``
+- Added doc on how to set env attributes via ``VecEnv`` calls
+
 
 Release 2.5.0 (2025-01-27)
 --------------------------

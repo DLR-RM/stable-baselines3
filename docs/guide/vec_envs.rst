@@ -148,6 +148,9 @@ Consider the following example for a custom env:
 	print(vec_env.env_method("get_wrapper_attr", "mu"))
 	# Change `mu` attribute via the setter
 	vec_env.env_method("set_mu", "mu", 0.1)
+	# If the variable exists, you can also use `set_wrapper_attr` to set it
+	assert vec_env.has_attr("mu")
+	vec_env.env_method("set_wrapper_attr", "mu", 0.1)
 
 
 In this example ``env.mu`` cannot be accessed/changed directly because it is wrapped in a ``VecEnv`` and because it could be wrapped with other wrappers (see `GH#1573 <https://github.com/DLR-RM/stable-baselines3/issues/1573>`_ for a longer explanation).

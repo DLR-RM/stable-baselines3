@@ -423,7 +423,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
         self.logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")
         if self.use_sde:
-            self.logger.record("train/std", (self.actor.get_std()).mean().item())
+            self.logger.record("train/std", (self.actor.get_std()).mean().item())  # type: ignore[operator]
 
         if len(self.ep_success_buffer) > 0:
             self.logger.record("rollout/success_rate", safe_mean(self.ep_success_buffer))
@@ -544,14 +544,14 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             assert train_freq.unit == TrainFrequencyUnit.STEP, "You must use only one env when doing episodic training."
 
         if self.use_sde:
-            self.actor.reset_noise(env.num_envs)
+            self.actor.reset_noise(env.num_envs)  # type: ignore[operator]
 
         callback.on_rollout_start()
         continue_training = True
         while should_collect_more_steps(train_freq, num_collected_steps, num_collected_episodes):
             if self.use_sde and self.sde_sample_freq > 0 and num_collected_steps % self.sde_sample_freq == 0:
                 # Sample a new noise matrix
-                self.actor.reset_noise(env.num_envs)
+                self.actor.reset_noise(env.num_envs)  # type: ignore[operator]
 
             # Select action randomly or according to policy
             actions, buffer_actions = self._sample_action(learning_starts, action_noise, env.num_envs)

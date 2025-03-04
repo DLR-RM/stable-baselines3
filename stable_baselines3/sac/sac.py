@@ -228,6 +228,7 @@ class SAC(OffPolicyAlgorithm):
                 # so we don't change it with other losses
                 # see https://github.com/rail-berkeley/softlearning/issues/60
                 ent_coef = th.exp(self.log_ent_coef.detach())
+                assert isinstance(self.target_entropy, float)
                 ent_coef_loss = -(self.log_ent_coef * (log_prob + self.target_entropy).detach()).mean()
                 ent_coef_losses.append(ent_coef_loss.item())
             else:

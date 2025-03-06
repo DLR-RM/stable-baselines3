@@ -97,7 +97,8 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
     """Test access to methods/attributes of vectorized environments"""
 
     def make_env():
-        return CustomGymEnv(spaces.Box(low=np.zeros(2), high=np.ones(2)))
+        # Wrap the env to check that get_attr and set_attr are working properly
+        return Monitor(CustomGymEnv(spaces.Box(low=np.zeros(2), high=np.ones(2))))
 
     vec_env = vec_env_class([make_env for _ in range(N_ENVS)])
 
@@ -133,21 +134,23 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
 
     assert not vec_env.has_attr("dummy2")
     # Set the value on the original env
+    # Note: doesn't work anymore with gym >= 1.1,
+    # the value needs to exists before
     # `set_wrapper_attr` doesn't exist before v1.0
     if gym.__version__ > "1":
         vec_env.env_method("set_wrapper_attr", "dummy2", 2)
         assert vec_env.get_attr("dummy2") == [2] * N_ENVS
-        if vec_env_class == DummyVecEnv:
-            assert vec_env.envs[0].unwrapped.dummy2 == 2
+        # if vec_env_class == DummyVecEnv:
+        #     assert vec_env.envs[0].unwrapped.dummy2 == 2
 
     env_method_results = vec_env.env_method("custom_method", 1, indices=None, dim_1=2)
     setattr_results = []
-    # Set current_step to an arbitrary value
+    # Set new variable dummy1 of the last wrapper to an arbitrary value
     for env_idx in range(N_ENVS):
-        setattr_results.append(vec_env.set_attr("current_step", env_idx, indices=env_idx))
+        setattr_results.append(vec_env.set_attr("dummy1", env_idx, indices=env_idx))
     # Retrieve the value for each environment
-    assert vec_env.has_attr("current_step")
-    getattr_results = vec_env.get_attr("current_step")
+    assert vec_env.has_attr("dummy1")
+    getattr_results = vec_env.get_attr("dummy1")
 
     assert len(env_method_results) == N_ENVS
     assert len(setattr_results) == N_ENVS
@@ -165,28 +168,31 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
     assert len(env_method_subset) == 2
 
     # Test to change value for all the environments
-    setattr_result = vec_env.set_attr("current_step", 42, indices=None)
-    getattr_result = vec_env.get_attr("current_step")
+    setattr_result = vec_env.set_attr("dummy1", 42, indices=None)
+    getattr_result = vec_env.get_attr("dummy1")
     assert setattr_result is None
     assert getattr_result == [42 for _ in range(N_ENVS)]
 
     # Additional tests for setattr that does not affect all the environments
     vec_env.reset()
-    setattr_result = vec_env.set_attr("current_step", 12, indices=[0, 1])
-    getattr_result = vec_env.get_attr("current_step")
-    getattr_result_subset = vec_env.get_attr("current_step", indices=[0, 1])
-    assert setattr_result is None
-    assert getattr_result == [12 for _ in range(2)] + [0 for _ in range(N_ENVS - 2)]
-    assert getattr_result_subset == [12, 12]
-    assert vec_env.get_attr("current_step", indices=[0, 2]) == [12, 0]
+    # Since gym >= 0.29, set_attr only sets the attribute on the last wrapper
+    # but `set_wrapper_attr` doesn't exist before v1.0
+    if gym.__version__ > "1":
+        setattr_result = vec_env.env_method("set_wrapper_attr", "current_step", 12, indices=[0, 1])
+        getattr_result = vec_env.get_attr("current_step")
+        getattr_result_subset = vec_env.get_attr("current_step", indices=[0, 1])
+        assert setattr_result == [True, True]
+        assert getattr_result == [12 for _ in range(2)] + [0 for _ in range(N_ENVS - 2)]
+        assert getattr_result_subset == [12, 12]
+        assert vec_env.get_attr("current_step", indices=[0, 2]) == [12, 0]
 
-    vec_env.reset()
-    # Change value only for first and last environment
-    setattr_result = vec_env.set_attr("current_step", 12, indices=[0, -1])
-    getattr_result = vec_env.get_attr("current_step")
-    assert setattr_result is None
-    assert getattr_result == [12] + [0 for _ in range(N_ENVS - 2)] + [12]
-    assert vec_env.get_attr("current_step", indices=[-1]) == [12]
+        vec_env.reset()
+        # Change value only for first and last environment
+        setattr_result = vec_env.env_method("set_wrapper_attr", "current_step", 12, indices=[0, -1])
+        getattr_result = vec_env.get_attr("current_step")
+        assert setattr_result == [True, True]
+        assert getattr_result == [12] + [0 for _ in range(N_ENVS - 2)] + [12]
+        assert vec_env.get_attr("current_step", indices=[-1]) == [12]
 
     # Checks that options are correctly passed
     assert vec_env.get_attr("current_options")[0] is None
@@ -281,7 +287,7 @@ SPACES = collections.OrderedDict(
         ("discrete", spaces.Discrete(2)),
         ("multidiscrete", spaces.MultiDiscrete([2, 3])),
         ("multibinary", spaces.MultiBinary(3)),
-        ("continuous", spaces.Box(low=np.zeros(2), high=np.ones(2))),
+        ("continuous", spaces.Box(low=np.zeros(2, dtype=np.float32), high=np.ones(2, dtype=np.float32))),
     ]
 )
 

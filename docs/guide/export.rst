@@ -100,6 +100,7 @@ If you are using PyTorch 2.0+ and ONNX Opset 14+, you can easily export SB3 poli
   with th.no_grad():
       print(model.policy(th.as_tensor(observation), deterministic=True))
 
+For ``MultiInputPolicy`` export see example at `GH#1873 <https://github.com/DLR-RM/stable-baselines3/issues/1873#issuecomment-2692500058>`_.
 
 For SAC the procedure is similar. The example shown only exports the actor network as the actor is sufficient to roll out the trained policies.
 

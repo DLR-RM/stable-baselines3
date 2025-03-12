@@ -44,6 +44,7 @@ Documentation:
 - Clarify the use of Gym wrappers with ``make_vec_env`` in the section on Vectorized Environments (@pstahlhofen)
 - Updated callback doc for ``EveryNTimesteps``
 - Added doc on how to set env attributes via ``VecEnv`` calls
+- Added ONNX export example for ``MultiInputPolicy`` (@darkopetrovic)
 
 
 Release 2.5.0 (2025-01-27)

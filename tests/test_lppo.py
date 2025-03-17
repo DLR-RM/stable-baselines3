@@ -33,7 +33,7 @@ from EthicalGatheringGame.presets import tiny
 tiny['n_agents'] = 1
 tiny["reward_mode"] = "vectorial"
 tiny["objective_order"] = "ethical_first"
-tiny["inequality_mode"] = "tie"
+tiny["inequality_mode"] = "loss"
 tiny["efficiency"] = 0.6
 tiny["donation_capacity"] = 15
 tiny["survival_threshold"] = 30
@@ -41,28 +41,45 @@ tiny["survival_threshold"] = 30
 env = MoDummyVecEnv([lambda: MAEGG(**tiny) for _ in range(5)], n_objectives=2)
 
 args = {
-    "n_steps": 500,
-    "batch_size": 2500,
+    "n_steps": 1000,
+    "batch_size": 5000,
     "ent_coef": 0.04,
-    "learning_rate": linear_schedule(3e-2),
+    "learning_rate": linear_schedule(3e-3),
     "rollout_buffer_class": MoRolloutBuffer,
     "rollout_buffer_kwargs": {},
     "beta_values": [2.0, 1.0],
     "eta_values": 5.0,
-    "policy_kwargs": {"n_objectives": 2},
+    "policy_kwargs": {
+        "n_objectives": 2,
+        "net_arch": dict(pi=[256, 128], vf=[256, 128])
+    },
     "verbose": 1,
     "device": "cpu",
     "tensorboard_log": "runs",
     "n_epochs": 25,
     "clip_range_vf": 0.2,
     "gamma": 0.8,
-    "normalize_advantage": False,
+    "normalize_advantage": True,
 }
 
 
-model = LPPO("MoMlpPolicy", env, 2, **args)
-model.learn(total_timesteps=25000000, callback=[
-    EntropyScheduleCallback(),
-    MoEvalCallback(env, n_objectives=2, deterministic=False, n_eval_episodes=200, eval_freq=100000)
-                                                ], log_interval=50)
-model.save("test")
+"""model = LPPO("MoMlpPolicy", env, 2, **args)
+model.learn(total_timesteps=10000000, callback=[
+    MoEvalCallback(env, n_objectives=2, deterministic=False, n_eval_episodes=50, eval_freq=25000)
+                                                ], log_interval=5)"""
+#model.save("test")
+env = MAEGG(**tiny)
+env.toggleTrack(True)
+env.toggleStash(True)
+model = LPPO.load("test", env=env)
+
+for ep in range(150):
+    obs, _ = env.reset()
+    for i in range(500):
+        action, _ = model.predict(obs, deterministic=False)
+        obs, reward, tr, tm, info = env.step(action.item())
+        #env.render()
+        if tr or tm:
+            obs, _ = env.reset()
+
+env.plot_results("median")

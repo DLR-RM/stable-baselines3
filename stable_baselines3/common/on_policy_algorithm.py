@@ -242,7 +242,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                     terminal_obs = self.policy.obs_to_tensor(infos[idx]["terminal_observation"])[0]
                     with th.no_grad():
                         terminal_value = self.policy.predict_values(terminal_obs)[0]  # type: ignore[arg-type]
-                    rewards[idx] += self.gamma * terminal_value
+                    rewards[idx] += np.array(self.gamma * terminal_value)
 
             rollout_buffer.add(
                 self._last_obs,  # type: ignore[arg-type]

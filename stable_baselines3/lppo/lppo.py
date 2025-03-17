@@ -89,7 +89,8 @@ class LPPO(PPO):
                 advantages = rollout_data.advantages
                 # Normalization does not make sense if mini batchsize == 1, see GH issue #325
                 if self.normalize_advantage and len(advantages) > 1:
-                    advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+                    # normalize advantages per objective
+                    advantages = (advantages - advantages.mean(axis=0)) / (advantages.std(axis=0) + 1e-8)
 
                 # ratio between old and new policy, should be one at the first iteration
                 ratio = th.exp(log_prob - rollout_data.old_log_prob)
@@ -183,7 +184,7 @@ class LPPO(PPO):
         self.logger.record("train/loss", loss.item())
 
         for obj in range(self.n_objectives):
-            self.logger.record(f"train_mo/advantage_scalarisation_weight_{obj}", first_order_weights[obj])
+            self.logger.record(f"train_mo/advantage_scalarisation_weight_{obj}", first_order_weights[obj].float().item())
             self.logger.record(f"train_mo/loss_{obj}", np.mean(self.recent_losses[obj]))
         for obj in range(self.n_objectives-1):
             self.logger.record(f"train_mo/mu_{obj}", self.mu_values[obj])

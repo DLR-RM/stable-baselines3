@@ -233,9 +233,9 @@ If you want to quickly try a random agent on your environment, you can also do:
 **Why should I normalize the action space?**
 
 
-Most reinforcement learning algorithms rely on a Gaussian distribution (initially centered at 0 with std 1) for continuous actions.
+Most reinforcement learning algorithms rely on a `Gaussian distribution <https://araffin.github.io/post/sac-massive-sim/>`_ (initially centered at 0 with std 1) for continuous actions.
 So, if you forget to normalize the action space when using a custom environment,
-this can harm learning and can be difficult to debug (cf attached image and `issue #473 <https://github.com/hill-a/stable-baselines/issues/473>`_).
+this can `harm learning <https://araffin.github.io/post/sac-massive-sim/>`_ and can be difficult to debug (cf attached image and `issue #473 <https://github.com/hill-a/stable-baselines/issues/473>`_).
 
 .. figure:: ../_static/img/mistake.png
 

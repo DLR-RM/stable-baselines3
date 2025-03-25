@@ -48,3 +48,6 @@ src
 *.prof
 
 MUJOCO_LOG.TXT
+
+rsa2c/
+exptd3/

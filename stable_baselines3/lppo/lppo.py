@@ -169,9 +169,10 @@ class LPPO(PPO):
                 break
 
         # Update Lagrange multipliers
+        tol = self.tolerance if isinstance(self.tolerance, float) else self.tolerance(self._current_progress_remaining)
         for i in range(self.n_objectives - 1):
             self.j[i] = (-th.tensor(self.recent_losses[i])).mean()
-            self.mu_values[i] += self.eta_values[i] * (self.j[i] - self.tolerance - (-self.recent_losses[i][-1]) )
+            self.mu_values[i] += self.eta_values[i] * (self.j[i] - tol - (-self.recent_losses[i][-1]) )
             self.mu_values[i] = max(0, self.mu_values[i])
 
         #explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())
@@ -190,7 +191,7 @@ class LPPO(PPO):
             self.logger.record(f"train_mo/loss_{obj}", np.mean(self.recent_losses[obj]))
         for obj in range(self.n_objectives-1):
             self.logger.record(f"train_mo/mu_{obj}", self.mu_values[obj])
-        self.logger.record(f"train_mo/tolerance", self.tolerance)
+        self.logger.record(f"train_mo/tolerance", tol)
         #self.logger.record("train/explained_variance", explained_var)
         if hasattr(self.policy, "log_std"):
             self.logger.record("train/std", th.exp(self.policy.log_std).mean().item())

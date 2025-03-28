@@ -1,7 +1,7 @@
 import io
 import pathlib
 from collections import deque
-from typing import Union, Optional, Any
+from typing import Union, Optional, Any, List
 
 import numpy as np
 
@@ -12,7 +12,7 @@ from stable_baselines3.common.save_util import load_from_zip_file, recursive_set
 
 from stable_baselines3.common.utils import get_system_info, check_for_correct_spaces
 
-from stable_baselines3.common.type_aliases import GymEnv
+from stable_baselines3.common.type_aliases import GymEnv, Schedule
 
 from stable_baselines3.common.base_class import SelfBaseAlgorithm
 from torch.nn import functional as F
@@ -22,14 +22,14 @@ from gymnasium import spaces
 from stable_baselines3.lppo.policies import MoActorCriticPolicy
 from stable_baselines3.ppo.ppo import PPO
 import warnings
-# TODO: Add support for a tolerance parameter.
+
 
 class LPPO(PPO):
     policy_aliases = {
         "MoMlpPolicy": MoActorCriticPolicy,
     }
 
-    def __init__(self, policy, env, n_objectives, eta_values=None, beta_values=None, *args, **kwargs):
+    def __init__(self, policy, env, n_objectives, eta_values : List[float]=None, beta_values : List[float]=None, tolerance : Union[float, Schedule] = 3e-5, *args, **kwargs):
         super().__init__(policy, env, *args, **kwargs)
         # We need to replace the default rollout buffer for the multi-objective one
         """self.rollout_buffer = MultiObjectiveRolloutBuffer(
@@ -42,6 +42,7 @@ class LPPO(PPO):
         self.mu_values = np.array([0.0] * (n_objectives - 1))
         self.n_objectives = n_objectives
         self.recent_losses = [deque(maxlen=50) for _ in range(self.n_objectives)]
+        self.tolerance = tolerance
         self.j = np.zeros(self.n_objectives - 1)
 
     def train(self):
@@ -109,7 +110,7 @@ class LPPO(PPO):
                             th.clamp(ratio, 1 - clip_range, 1 + clip_range) * advantages[:, obj]
                     )
                     _surr = th.min(_surr1, _surr2)
-                    _pg_loss = -((_surr1 + self.ent_coef * entropy)).mean()
+                    _pg_loss = -((_surr + self.ent_coef * entropy)).mean()
                     self.recent_losses[obj].append(_pg_loss.detach())
 
                 # Logging
@@ -170,7 +171,7 @@ class LPPO(PPO):
         # Update Lagrange multipliers
         for i in range(self.n_objectives - 1):
             self.j[i] = (-th.tensor(self.recent_losses[i])).mean()
-            self.mu_values[i] += self.eta_values[i] * (self.j[i] - (-self.recent_losses[i][-1]))
+            self.mu_values[i] += self.eta_values[i] * (self.j[i] - self.tolerance - (-self.recent_losses[i][-1]) )
             self.mu_values[i] = max(0, self.mu_values[i])
 
         #explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())
@@ -182,12 +183,14 @@ class LPPO(PPO):
         self.logger.record("train/approx_kl", np.mean(approx_kl_divs))
         self.logger.record("train/clip_fraction", np.mean(clip_fractions))
         self.logger.record("train/loss", loss.item())
+        self.logger.record("train/ent_coef", self.ent_coef)
 
         for obj in range(self.n_objectives):
             self.logger.record(f"train_mo/advantage_scalarisation_weight_{obj}", first_order_weights[obj].float().item())
             self.logger.record(f"train_mo/loss_{obj}", np.mean(self.recent_losses[obj]))
         for obj in range(self.n_objectives-1):
             self.logger.record(f"train_mo/mu_{obj}", self.mu_values[obj])
+        self.logger.record(f"train_mo/tolerance", self.tolerance)
         #self.logger.record("train/explained_variance", explained_var)
         if hasattr(self.policy, "log_std"):
             self.logger.record("train/std", th.exp(self.policy.log_std).mean().item())

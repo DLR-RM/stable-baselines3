@@ -63,10 +63,10 @@ args = {
 }
 
 
-"""model = LPPO("MoMlpPolicy", env, 2, **args)
+model = LPPO("MoMlpPolicy", env, 2, **args)
 model.learn(total_timesteps=10000000, callback=[
     MoEvalCallback(env, n_objectives=2, deterministic=False, n_eval_episodes=50, eval_freq=25000)
-                                                ], log_interval=5)"""
+                                                ], log_interval=5)
 #model.save("test")
 env = MAEGG(**tiny)
 env.toggleTrack(True)

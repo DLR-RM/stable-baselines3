@@ -46,8 +46,10 @@ src
 .cache
 *.lprof
 *.prof
+*.zip
 
 MUJOCO_LOG.TXT
 
+dummy.py
 rsa2c/
 exptd3/

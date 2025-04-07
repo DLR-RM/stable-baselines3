@@ -156,7 +156,7 @@ def get_obs_shape(
         return (1,)
     elif isinstance(observation_space, spaces.MultiDiscrete):
         # Number of discrete features
-        return (int(len(observation_space.nvec)),)
+        return (len(observation_space.nvec),)
     elif isinstance(observation_space, spaces.MultiBinary):
         # Number of binary features
         return observation_space.shape
@@ -200,7 +200,7 @@ def get_action_dim(action_space: spaces.Space) -> int:
         return 1
     elif isinstance(action_space, spaces.MultiDiscrete):
         # Number of discrete actions
-        return int(len(action_space.nvec))
+        return len(action_space.nvec)
     elif isinstance(action_space, spaces.MultiBinary):
         # Number of binary actions
         assert isinstance(

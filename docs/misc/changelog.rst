@@ -3,9 +3,42 @@
 Changelog
 ==========
 
-Release 2.6.0a2 (WIP)
+Release 2.6.1a0 (WIP)
 --------------------------
 
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+
+New Features:
+^^^^^^^^^^^^^
+
+Bug Fixes:
+^^^^^^^^^^
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+- Clarify ``evaluate_policy`` documentation
+
+
+Release 2.6.0 (2025-03-24)
+--------------------------
+
+**New ``LogEveryNTimesteps`` callback and ``has_attr`` method, refactored hyperparameter optimization**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -23,12 +56,24 @@ Bug Fixes:
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
+- Renamed ``_dump_logs()`` to ``dump_logs()``
+- Fixed issues with ``SubprocVecEnv`` and ``MaskablePPO`` by using ``vec_env.has_attr()`` (pickling issues, mask function not present)
 
 `RL Zoo`_
 ^^^^^^^^^
+- Refactored hyperparameter optimization. The Optuna `Journal storage backend <https://optuna.readthedocs.io/en/stable/reference/generated/optuna.storages.JournalStorage.html>`__ is now supported (recommended default) and you can easily load tuned hyperparameter via the new ``--trial-id`` argument of ``train.py``.
+- Save the exact command line used to launch a training
+- Added support for special vectorized env (e.g. Brax, IsaacSim) by allowing to override the ``VecEnv`` class use to instantiate the env in the ``ExperimentManager``
+- Allow to disable auto-logging by passing ``--log-interval -2`` (useful when logging things manually)
+- Added Gymnasium v1.1 support
+- Fixed use of old HF api in ``get_hf_trained_models()``
 
 `SBX`_ (SB3 + Jax)
 ^^^^^^^^^^^^^^^^^^
+- Updated PPO to support ``net_arch``, and additional fixes
+- Fixed entropy coeff wrongly logged for SAC and derivatives.
+- Fixed PPO ``predict()`` for env that were not normalized (action spaces with limits != [-1, 1])
+- PPO now logs the standard deviation
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -45,6 +90,7 @@ Documentation:
 - Clarify the use of Gym wrappers with ``make_vec_env`` in the section on Vectorized Environments (@pstahlhofen)
 - Updated callback doc for ``EveryNTimesteps``
 - Added doc on how to set env attributes via ``VecEnv`` calls
+- Added ONNX export example for ``MultiInputPolicy`` (@darkopetrovic)
 
 
 Release 2.5.0 (2025-01-27)

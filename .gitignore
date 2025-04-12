@@ -53,3 +53,4 @@ MUJOCO_LOG.TXT
 dummy.py
 rsa2c/
 exptd3/
+train.py

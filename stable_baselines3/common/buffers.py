@@ -544,37 +544,36 @@ class ExpRolloutBuffer(RolloutBuffer):
 
     def compute_returns_and_advantage(self, last_values, dones):
 
-        # Convert to numpy
-        last_values = last_values.clone().cpu().numpy().flatten()  # type: ignore[assignment]
-
-        last_gae_lam = 0
-        for step in reversed(range(self.buffer_size)):
-            if step == self.buffer_size - 1:
-                next_non_terminal = 1.0 - dones.astype(np.float32)
-                next_values = last_values
-            else:
-                next_non_terminal = 1.0 - self.episode_starts[step + 1]
-                next_values = self.values[step + 1]
-            delta = np.exp(self.beta * self.rewards[step] + self.gamma * np.log(1e-15 + np.maximum(next_values, 0)) * next_non_terminal) - self.values[step]
-            # delta = self.rewards[step] + self.gamma * next_values * next_non_terminal - self.values[step]
-            last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
-            self.advantages[step] = last_gae_lam
-        # TD(lambda) estimator, see Github PR #375 or "Telescoping in TD(lambda)"
-        # in David Silver Lecture 4: https://www.youtube.com/watch?v=PnHCvfgC_ZA
-        self.returns = self.advantages + self.values
-
-
+        # # Convert to numpy
         # last_values = last_values.clone().cpu().numpy().flatten()  # type: ignore[assignment]
-        # values = np.concatenate((self.values, last_values.reshape(1, -1)))
-        # dones = np.concatenate((self.episode_starts, dones.reshape(1, -1)))
-        # next_non_terminal = (1.0 - dones.astype(np.float32))[1:]
 
-        # returns = [self.values[-1]]
-        # interm = self.beta * self.rewards + self.gamma * (1 - self.gae_lambda) * next_non_terminal * np.log(1e-15 + np.maximum(0, values[1:]))
+        # last_gae_lam = 0
         # for step in reversed(range(self.buffer_size)):
-        #     returns.append(np.exp(interm[step] + self.gamma * self.gae_lambda * next_non_terminal[step] * np.log(1e-15 + np.maximum(0, returns[-1]))))
-        # self.returns = np.stack(list(reversed(returns))[:-1], 0)
-        # self.advantages = (self.returns - self.values)
+        #     if step == self.buffer_size - 1:
+        #         next_non_terminal = 1.0 - dones.astype(np.float32)
+        #         next_values = last_values
+        #     else:
+        #         next_non_terminal = 1.0 - self.episode_starts[step + 1]
+        #         next_values = self.values[step + 1]
+        #     delta = np.exp(self.beta * self.rewards[step] + self.gamma * np.log(1e-15 + np.maximum(next_values, 0)) * next_non_terminal) - self.values[step]
+        #     # delta = self.rewards[step] + self.gamma * next_values * next_non_terminal - self.values[step]
+        #     last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
+        #     self.advantages[step] = last_gae_lam
+        # # TD(lambda) estimator, see Github PR #375 or "Telescoping in TD(lambda)"
+        # # in David Silver Lecture 4: https://www.youtube.com/watch?v=PnHCvfgC_ZA
+        # self.returns = self.advantages + self.values
+
+        last_values = last_values.clone().cpu().numpy().flatten()  # type: ignore[assignment]
+        values = np.concatenate((self.values, last_values.reshape(1, -1)))
+        dones = np.concatenate((self.episode_starts, dones.reshape(1, -1)))
+        next_non_terminal = (1.0 - dones.astype(np.float32))[1:]
+
+        returns = [self.values[-1]]
+        interm = self.beta * self.rewards + self.gamma * (1 - self.gae_lambda) * next_non_terminal * np.log(1e-15 + np.maximum(0, values[1:]))
+        for step in reversed(range(self.buffer_size)):
+            returns.append(np.exp(interm[step] + self.gamma * self.gae_lambda * next_non_terminal[step] * np.log(1e-15 + np.maximum(0, returns[-1]))))
+        self.returns = np.stack(list(reversed(returns))[:-1], 0)
+        self.advantages = (self.returns - self.values)
         
 
 

@@ -14,6 +14,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed docker GPU image (PyTorch GPU was not installed)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

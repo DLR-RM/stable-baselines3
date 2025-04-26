@@ -15,6 +15,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed docker GPU image (PyTorch GPU was not installed)
+- Fixed segmentation faults caused by non-portable schedules during model loading (#2115)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

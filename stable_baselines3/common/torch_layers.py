@@ -61,47 +61,49 @@ class NatureCNN(BaseFeaturesExtractor):
         the space is a Box and has 3 dimensions.
         Otherwise, it checks that it has expected dtype (uint8) and bounds (values in [0, 255]).
     """
-
     def __init__(
         self,
         observation_space: gym.Space,
         features_dim: int = 512,
         normalized_image: bool = False,
+        use_batch_norm: bool = False,
     ) -> None:
-        assert isinstance(observation_space, spaces.Box), (
-            "NatureCNN must be used with a gym.spaces.Box ",
-            f"observation space, not {observation_space}",
-        )
+        assert isinstance(observation_space, spaces.Box), "NatureCNN only supports Box"
         super().__init__(observation_space, features_dim)
-        # We assume CxHxW images (channels first)
-        # Re-ordering will be done by pre-preprocessing or wrapper
-        assert is_image_space(observation_space, check_channels=False, normalized_image=normalized_image), (
-            "You should use NatureCNN "
-            f"only with images not with {observation_space}\n"
-            "(you are probably using `CnnPolicy` instead of `MlpPolicy` or `MultiInputPolicy`)\n"
-            "If you are using a custom environment,\n"
-            "please check it using our env checker:\n"
-            "https://stable-baselines3.readthedocs.io/en/master/common/env_checker.html.\n"
-            "If you are using `VecNormalize` or already normalized channel-first images "
-            "you should pass `normalize_images=False`: \n"
-            "https://stable-baselines3.readthedocs.io/en/master/guide/custom_env.html"
-        )
-        n_input_channels = observation_space.shape[0]
-        self.cnn = nn.Sequential(
-            nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
-            nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
-            nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=0),
-            nn.ReLU(),
-            nn.Flatten(),
-        )
+        assert is_image_space(
+            observation_space, check_channels=False, normalized_image=normalized_image
+        ), "NatureCNN only supports image spaces"
 
-        # Compute shape by doing one forward pass
+        n_in = observation_space.shape[0]
+        layers: list[nn.Module] = []
+
+        # conv1
+        layers.append(nn.Conv2d(n_in, 32, kernel_size=8, stride=4))
+        if use_batch_norm:
+            layers.append(nn.BatchNorm2d(32))
+        layers.append(nn.ReLU())
+
+        # conv2
+        layers.append(nn.Conv2d(32, 64, kernel_size=4, stride=2))
+        if use_batch_norm:
+            layers.append(nn.BatchNorm2d(64))
+        layers.append(nn.ReLU())
+
+        # conv3
+        layers.append(nn.Conv2d(64, 64, kernel_size=3, stride=1))
+        if use_batch_norm:
+            layers.append(nn.BatchNorm2d(64))
+        layers.append(nn.ReLU())
+
+        layers.append(nn.Flatten())
+        self.cnn = nn.Sequential(*layers)
+
         with th.no_grad():
-            n_flatten = self.cnn(th.as_tensor(observation_space.sample()[None]).float()).shape[1]
+            sample = observation_space.sample()[None]
+            n_flat = self.cnn(th.as_tensor(sample).float()).shape[1]
 
-        self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
+        linear_layers = [nn.Linear(n_flat, features_dim), nn.ReLU()]
+        self.linear = nn.Sequential(*linear_layers)
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
         return self.linear(self.cnn(observations))
@@ -116,70 +118,35 @@ def create_mlp(
     with_bias: bool = True,
     pre_linear_modules: Optional[list[type[nn.Module]]] = None,
     post_linear_modules: Optional[list[type[nn.Module]]] = None,
+    use_batch_norm: bool = False,
 ) -> list[nn.Module]:
-    """
-    Create a multi layer perceptron (MLP), which is
-    a collection of fully-connected layers each followed by an activation function.
+    modules: list[nn.Module] = []
 
-    :param input_dim: Dimension of the input vector
-    :param output_dim: Dimension of the output (last layer, for instance, the number of actions)
-    :param net_arch: Architecture of the neural net
-        It represents the number of units per layer.
-        The length of this list is the number of layers.
-    :param activation_fn: The activation function
-        to use after each layer.
-    :param squash_output: Whether to squash the output using a Tanh
-        activation function
-    :param with_bias: If set to False, the layers will not learn an additive bias
-    :param pre_linear_modules: List of nn.Module to add before the linear layers.
-        These modules should maintain the input tensor dimension (e.g. BatchNorm).
-        The number of input features is passed to the module's constructor.
-        Compared to post_linear_modules, they are used before the output layer (output_dim > 0).
-    :param post_linear_modules: List of nn.Module to add after the linear layers
-        (and before the activation function). These modules should maintain the input
-        tensor dimension (e.g. Dropout, LayerNorm). They are not used after the
-        output layer (output_dim > 0). The number of input features is passed to
-        the module's constructor.
-    :return: The list of layers of the neural network
-    """
+    if use_batch_norm:
+        modules.append(nn.BatchNorm1d(input_dim))
 
     pre_linear_modules = pre_linear_modules or []
     post_linear_modules = post_linear_modules or []
 
-    modules = []
-    if len(net_arch) > 0:
-        # BatchNorm maintains input dim
-        for module in pre_linear_modules:
-            modules.append(module(input_dim))
-
-        modules.append(nn.Linear(input_dim, net_arch[0], bias=with_bias))
-
-        # LayerNorm, Dropout maintain output dim
-        for module in post_linear_modules:
-            modules.append(module(net_arch[0]))
-
+    last_dim = input_dim
+    for layer_size in net_arch:
+        for mod in pre_linear_modules:
+            modules.append(mod(last_dim))
+        modules.append(nn.Linear(last_dim, layer_size, bias=with_bias))
+        for mod in post_linear_modules:
+            modules.append(mod(layer_size))
         modules.append(activation_fn())
-
-    for idx in range(len(net_arch) - 1):
-        for module in pre_linear_modules:
-            modules.append(module(net_arch[idx]))
-
-        modules.append(nn.Linear(net_arch[idx], net_arch[idx + 1], bias=with_bias))
-
-        for module in post_linear_modules:
-            modules.append(module(net_arch[idx + 1]))
-
-        modules.append(activation_fn())
+        last_dim = layer_size
 
     if output_dim > 0:
-        last_layer_dim = net_arch[-1] if len(net_arch) > 0 else input_dim
-        # Only add BatchNorm before output layer
-        for module in pre_linear_modules:
-            modules.append(module(last_layer_dim))
+        for mod in pre_linear_modules:
+            modules.append(mod(last_dim))
+        modules.append(nn.Linear(last_dim, output_dim, bias=with_bias))
+        last_dim = output_dim
 
-        modules.append(nn.Linear(last_layer_dim, output_dim, bias=with_bias))
     if squash_output:
         modules.append(nn.Tanh())
+
     return modules
 
 

@@ -61,6 +61,7 @@ class NatureCNN(BaseFeaturesExtractor):
         the space is a Box and has 3 dimensions.
         Otherwise, it checks that it has expected dtype (uint8) and bounds (values in [0, 255]).
     """
+
     def __init__(
         self,
         observation_space: gym.Space,

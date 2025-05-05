@@ -124,7 +124,7 @@ def create_mlp(
 
     pre_linear_modules = pre_linear_modules or []
     post_linear_modules = post_linear_modules or []
-    
+
     last_dim = input_dim
     for layer_size in net_arch:
         for mod in pre_linear_modules:

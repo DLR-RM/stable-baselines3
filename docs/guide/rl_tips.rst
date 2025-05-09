@@ -25,29 +25,29 @@ General advice when using Reinforcement Learning
 TL;DR
 -----
 
-1. Read about RL and Stable Baselines3
+1. Read about RL and Stable-Baselines3 (SB3)
 2. Do quantitative experiments and hyperparameter tuning if needed
 3. Evaluate the performance using a separate test environment (remember to check wrappers!)
 4. For better performance, increase the training budget
 
 
-Like any other subject, if you want to work with RL, you should first read about it (we have a dedicated `resource page <rl.html>`_ to get you started)
-to understand what you are using. We also recommend you read Stable Baselines3 (SB3) documentation and do the `tutorial <https://github.com/araffin/rl-tutorial-jnrr19>`_.
-It covers basic usage and guide you towards more advanced concepts of the library (e.g. callbacks and wrappers).
+Like any other subject, if you want to work with RL, you should first read about it (we have a dedicated `resource page <rl.html>`_ to get you started) to understand what you are using.
+We also recommend that you read the Stable Baselines3 (SB3) documentation and do the `tutorial <https://github.com/araffin/rl-tutorial-jnrr19>`_.
+It covers basic usage and guides you towards more advanced concepts of the library (e.g. callbacks and wrappers).
 
 Reinforcement Learning differs from other machine learning methods in several ways. The data used to train the agent is collected
-through interactions with the environment by the agent itself (compared to supervised learning where you have a fixed dataset for instance).
-This dependence can lead to vicious circle: if the agent collects poor quality data (e.g., trajectories with no rewards), then it will not improve and continue to amass
-bad trajectories.
+through interactions with the environment by the agent itself (as opposed to, for example, supervised learning where you have a fixed dataset).
+This dependency can lead to a vicious circle: if the agent collects poor quality data (e.g. trajectories with no rewards), it will not improve and will continue to collect bad trajectories.
 
 This factor, among others, explains that results in RL may vary from one run to another (i.e., when only the seed of the pseudo-random generator changes).
-For this reason, you should always do several runs to have quantitative results.
+For this reason, you should always do several runs to obtain quantitative results.
 
-Good results in RL are generally dependent on finding appropriate hyperparameters. Recent algorithms (PPO, SAC, TD3, DroQ) normally require little hyperparameter tuning,
-however, *don't expect the default ones to work* on any environment.
+Good results in RL generally depend on finding appropriate hyperparameters.
+Recent algorithms (PPO, SAC, TD3, DroQ) normally require little hyperparameter tuning, however, *don't expect the default ones to work* in every environment.
 
 Therefore, we *highly recommend you* to take a look at the `RL zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_ (or the original papers) for tuned hyperparameters.
-A best practice when you apply RL to a new problem is to do automatic hyperparameter optimization. Again, this is included in the `RL zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
+A best practice when you apply RL to a new problem is to do automatic `hyperparameter optimization <https://araffin.github.io/post/hyperparam-tuning/>`_.
+Again, this is included in the `RL zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_.
 
 When applying RL to a custom problem, you should always normalize the input to the agent (e.g. using ``VecNormalize`` for PPO/A2C)
 and look at common preprocessing done on other environments (e.g. for `Atari <https://danieltakeshi.github.io/2016/11/25/frame-skipping-and-preprocessing-for-deep-q-networks-on-atari-2600-games/>`_, frame-stack, ...).
@@ -59,9 +59,9 @@ Current Limitations of RL
 
 You have to be aware of the current `limitations <https://www.alexirpan.com/2018/02/14/rl-hard.html>`_ of reinforcement learning.
 
-
-Model-free RL algorithms (i.e. all the algorithms implemented in SB) are usually *sample inefficient*. They require a lot of samples (sometimes millions of interactions) to learn something useful.
-That's why most of the successes in RL were achieved on games or in simulation only. For instance, in this `work <https://www.youtube.com/watch?v=aTDkYFZFWug>`_ by ETH Zurich, the ANYmal robot was trained in simulation only, and then tested in the real world.
+Model-free RL algorithms (i.e. all the algorithms implemented in SB3) are usually *sample inefficient*. They require a lot of samples (sometimes millions of interactions) to learn anything useful.
+That's why most of the successes in RL were achieved on games or in simulation only.
+For instance, in this `work <https://www.youtube.com/watch?v=aTDkYFZFWug>`_ by ETH Zurich, the ANYmal robot was trained in simulation only, and then tested in the real world.
 
 As a general advice, to obtain better performances, you should augment the budget of the agent (number of training timesteps).
 
@@ -70,9 +70,9 @@ In order to achieve the desired behavior, expert knowledge is often required to 
 This *reward engineering* (or *RewArt* as coined by `Freek Stulp <http://www.freekstulp.net/>`_), necessitates several iterations. As a good example of reward shaping,
 you can take a look at `Deep Mimic paper <https://xbpeng.github.io/projects/DeepMimic/index.html>`_ which combines imitation learning and reinforcement learning to do acrobatic moves.
 
-One last limitation of RL is the instability of training. That is to say, you can observe during training a huge drop in performance.
+A final limitation of RL is the instability of training. That is, you can observe a huge drop in performance during training.
 This behavior is particularly present in ``DDPG``, that's why its extension ``TD3`` tries to tackle that issue.
-Other method, like ``TRPO`` or ``PPO`` make use of a *trust region* to minimize that problem by avoiding too large update.
+Other methods, such as ``TRPO`` or ``PPO`` use a *trust region* to minimize this problem by avoiding too large updates.
 
 
 How to evaluate an RL algorithm?
@@ -83,9 +83,8 @@ How to evaluate an RL algorithm?
   Pay attention to environment wrappers when evaluating your agent and comparing results to others' results. Modifications to episode rewards
   or lengths may also affect evaluation results which may not be desirable. Check ``evaluate_policy`` helper function in :ref:`Evaluation Helper <eval>` section.
 
-Because most algorithms use exploration noise during training, you need a separate test environment to evaluate the performance
-of your agent at a given time. It is recommended to periodically evaluate your agent for ``n`` test episodes (``n`` is usually between 5 and 20)
-and average the reward per episode to have a good estimate.
+Because most algorithms use exploration noise during training, you need a separate test environment to evaluate the performance of your agent at a given time.
+It is recommended to periodically evaluate your agent for ``n`` test episodes (``n`` is usually between 5 and 20) and average the reward per episode to have a good estimate.
 
 .. note::
 
@@ -234,8 +233,7 @@ If you want to quickly try a random agent on your environment, you can also do:
 
 
 Most reinforcement learning algorithms rely on a `Gaussian distribution <https://araffin.github.io/post/sac-massive-sim/>`_ (initially centered at 0 with std 1) for continuous actions.
-So, if you forget to normalize the action space when using a custom environment,
-this can `harm learning <https://araffin.github.io/post/sac-massive-sim/>`_ and can be difficult to debug (cf attached image and `issue #473 <https://github.com/hill-a/stable-baselines/issues/473>`_).
+So, if you forget to normalize the action space when using a custom environment, this can `harm learning <https://araffin.github.io/post/sac-massive-sim/>`_ and can be difficult to debug (cf attached image and `issue #473 <https://github.com/hill-a/stable-baselines/issues/473>`_).
 
 .. figure:: ../_static/img/mistake.png
 

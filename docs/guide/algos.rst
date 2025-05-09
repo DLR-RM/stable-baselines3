@@ -1,7 +1,7 @@
 RL Algorithms
 =============
 
-This table displays the rl algorithms that are implemented in the Stable Baselines3 project,
+This table displays the RL algorithms that are implemented in the Stable Baselines3 project,
 along with some useful characteristics: support for discrete/continuous actions, multiprocessing.
 
 
@@ -45,7 +45,7 @@ Actions ``gym.spaces``:
 .. note::
 
   More algorithms (like QR-DQN or TQC) are implemented in our :ref:`contrib repo <sb3_contrib>`
-  and in our :ref:`SBX (SB3 + Jax) repo <sbx>` (DroQ, CrossQ, ...).
+  and in our :ref:`SBX (SB3 + Jax) repo <sbx>` (DroQ, CrossQ, SimBa, ...).
 
 .. note::
 
@@ -74,3 +74,34 @@ If you pass an environment to the model using ``set_env()``, then you also need 
 
 
 Credit: part of the *Reproducibility* section comes from `PyTorch Documentation <https://pytorch.org/docs/stable/notes/randomness.html>`_
+
+Training exceeds ``total_timesteps``
+------------------------------------
+
+When you train an agent using SB3, you pass a ``total_timesteps`` parameter to the ``learn()`` method which defines the training budget for the agent (how many interaction with the environment are allowed).
+For example:
+
+.. code-block:: python
+
+    from stable_baselines3 import PPO
+
+    model = PPO("MlpPolicy", "CartPole-v1").learn(total_timesteps=1_000)
+
+
+Because of the way the algorithms work, ``total_timesteps`` is a lower bound (see `issue #1150 <https://github.com/DLR-RM/stable-baselines3/issues/1150>`_).
+In the example above, PPO will effectively collect ``n_steps * n_envs = 2048 * 1`` steps despite ``total_timesteps=1_000``
+In more details:
+
+- PPO/A2C and derivates collect ``n_steps * n_envs`` of experience
+  before performing an update, so if you want to have exactly
+  ``total_timesteps``, you will need to adjust those values
+- SAC/DQN/TD3 and other off-policy algorithms collect
+  ``train_freq * n_envs`` steps before doing an update (when ``train_freq`` is in steps and not episodes), so if you want to have exactly ``total_timesteps``
+  you have to adjust these values (``train_freq=4`` by default for DQN)
+- ARS and other population-based algorithms evaluate the policy for
+  ``n_episodes`` with ``n_envs``, so unless the number of steps per
+  episode is fixed, it is not possible to exactly achieve
+  ``total_timesteps``
+- when using multiple envs, each call to ``env.step()`` corresponds to
+  ``n_envs`` timesteps, so it is no longer possible to use the
+  ``EvaluationCallback`` at an exact timestep

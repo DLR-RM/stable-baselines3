@@ -523,6 +523,7 @@ class BaseAlgorithm(ABC):
         Return a trained model.
 
         :param total_timesteps: The total number of samples (env steps) to train on
+            Note: it is a lower bound, see `issue #1150 <https://github.com/DLR-RM/stable-baselines3/issues/1150>`_
         :param callback: callback(s) called at every step with state of the algorithm.
         :param log_interval: for on-policy algos (e.g., PPO, A2C, ...) this is the number of
             training iterations (i.e., log_interval * n_steps * n_envs timesteps) before logging;

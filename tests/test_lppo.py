@@ -60,6 +60,7 @@ args = {
     "clip_range_vf": 0.2,
     "gamma": 0.8,
     "normalize_advantage": True,
+    "tolerance": 0.001
 }
 
 

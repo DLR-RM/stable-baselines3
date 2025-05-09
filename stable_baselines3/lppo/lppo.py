@@ -73,11 +73,12 @@ class LPPO(PPO):
             first_order_weights[obj] = w
         first_order_weights[-1] = th.tensor(self.beta_values[self.n_objectives - 1],
                                             dtype=first_order_weights.dtype)
-
+        last_values = None
         # train for n_epochs epochs
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
             # Do a complete pass on the rollout buffer
+
             for rollout_data in self.rollout_buffer.get(self.batch_size):
                 actions = rollout_data.actions
                 if isinstance(self.action_space, spaces.Discrete):
@@ -118,19 +119,31 @@ class LPPO(PPO):
                 clip_fraction = th.mean((th.abs(ratio - 1) > clip_range).float()).item()
                 clip_fractions.append(clip_fraction)
 
+                unclipped_loss = F.mse_loss(rollout_data.returns, values)
+
                 if self.clip_range_vf is None:
                     # No clipping
-                    values_pred = values
+                    #values_pred = values
+                    value_loss = unclipped_loss
                 else:
                     # Clip the difference between old and new value
                     # NOTE: this depends on the reward scaling
-                    values_pred = rollout_data.old_values + th.clamp(
-                        values - rollout_data.old_values, -clip_range_vf, clip_range_vf
-                    )
+                    if epoch > 0:
+                        clipped_loss = F.mse_loss(
+                            rollout_data.returns,
+                            th.clamp(
+                                values,
+                                last_values - clip_range_vf,
+                                last_values + clip_range_vf,
+                            ))
+                        value_loss = th.min(unclipped_loss, clipped_loss)
+                    else:
+                        # First iteration, no last_values
+                        value_loss = unclipped_loss
                 # Value loss using the TD(gae_lambda) target
-                value_loss = F.mse_loss(rollout_data.returns, values_pred)
+                #value_loss = F.mse_loss(rollout_data.returns, values_pred)
                 value_losses.append(value_loss.item())
-
+                last_values = values.detach()
                 # Entropy loss favor exploration
                 if entropy is None:
                     # Approximate entropy when no analytical form

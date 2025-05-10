@@ -19,7 +19,7 @@ from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.envs import FakeImageEnv, IdentityEnv, IdentityEnvBox
 from stable_baselines3.common.save_util import load_from_pkl, open_path, save_to_pkl
-from stable_baselines3.common.utils import ConstantSchedule, FloatConverterSchedule, get_device
+from stable_baselines3.common.utils import ConstantSchedule, FloatSchedule, get_device
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 MODEL_LIST = [PPO, A2C, TD3, SAC, DQN, DDPG]
@@ -841,7 +841,7 @@ def test_save_load_backward_compatible(tmp_path, model_class):
 
     assert model.learning_rate(0) == 0.001
 
-    assert isinstance(model.clip_range, FloatConverterSchedule)
+    assert isinstance(model.clip_range, FloatSchedule)
     assert model.clip_range.value_schedule(0) == 0.3
 
 
@@ -861,7 +861,7 @@ def test_save_load_clip_range_portable(tmp_path, model_class):
     model.learn(total_timesteps=100)
 
     # Make sure that classes are used not lambdas by default
-    assert isinstance(model.clip_range, FloatConverterSchedule)
+    assert isinstance(model.clip_range, FloatSchedule)
     assert isinstance(model.clip_range.value_schedule, ConstantSchedule)
     assert model.clip_range.value_schedule.val == 0.2
 
@@ -870,6 +870,6 @@ def test_save_load_clip_range_portable(tmp_path, model_class):
     model = model_class.load(tmp_path / "test_schedule_safe.zip", env=env)
 
     # Check that the model is loaded correctly
-    assert isinstance(model.clip_range, FloatConverterSchedule)
+    assert isinstance(model.clip_range, FloatSchedule)
     assert isinstance(model.clip_range.value_schedule, ConstantSchedule)
     assert model.clip_range.value_schedule.val == 0.2

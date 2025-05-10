@@ -78,18 +78,17 @@ def update_learning_rate(optimizer: th.optim.Optimizer, learning_rate: float) ->
         param_group["lr"] = learning_rate
 
 
-class FloatConverterSchedule:
+class FloatSchedule:
     """
     Wrapper that ensures the output of a Schedule is cast to float.
     Can wrap either a constant value or an existing callable Schedule.
+
+    :param value_schedule: Constant value or callable schedule
+            (e.g. LinearSchedule, ConstantSchedule)
     """
 
     def __init__(self, value_schedule: Union[Schedule, float]):
-        """
-        :param value_schedule: Constant value or callable schedule
-            (e.g. LinearSchedule, ConstantSchedule)
-        """
-        if isinstance(value_schedule, FloatConverterSchedule):
+        if isinstance(value_schedule, FloatSchedule):
             self.value_schedule: Schedule = value_schedule.value_schedule
         elif isinstance(value_schedule, (float, int)):
             self.value_schedule = ConstantSchedule(float(value_schedule))
@@ -103,7 +102,7 @@ class FloatConverterSchedule:
         return float(self.value_schedule(progress_remaining))
 
     def __repr__(self) -> str:
-        return f"FloatConverterSchedule({self.value_schedule})"
+        return f"FloatSchedule({self.value_schedule})"
 
 
 # Deprecated: only kept for backward compatibility when unpickling old models, use ScheduleWrapper instead
@@ -133,16 +132,14 @@ class LinearSchedule:
     between ``progress_remaining`` = 1 and ``progress_remaining`` = ``end_fraction``.
     This is used in DQN for linearly annealing the exploration fraction
     (epsilon for the epsilon-greedy strategy).
+
+    :param start: value to start with if ``progress_remaining`` = 1
+    :param end: value to end with if ``progress_remaining`` = 0
+    :param end_fraction: fraction of ``progress_remaining``  where end is reached e.g 0.1
+        then end is reached after 10% of the complete training process.
     """
 
     def __init__(self, start: float, end: float, end_fraction: float):
-        """
-        :param start: value to start with if ``progress_remaining`` = 1
-        :param end: value to end with if ``progress_remaining`` = 0
-        :param end_fraction: fraction of ``progress_remaining``
-            where end is reached e.g 0.1 then end is reached after 10%
-            of the complete training process.
-        """
         self.start = start
         self.end = end
         self.end_fraction = end_fraction

@@ -25,7 +25,7 @@ from stable_baselines3.common.preprocessing import check_for_nested_spaces, is_i
 from stable_baselines3.common.save_util import load_from_zip_file, recursive_getattr, recursive_setattr, save_to_zip_file
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule, TensorDict
 from stable_baselines3.common.utils import (
-    FloatConverterSchedule,
+    FloatSchedule,
     check_for_correct_spaces,
     get_device,
     get_system_info,
@@ -273,7 +273,7 @@ class BaseAlgorithm(ABC):
 
     def _setup_lr_schedule(self) -> None:
         """Transform to callable if needed."""
-        self.lr_schedule = FloatConverterSchedule(self.learning_rate)
+        self.lr_schedule = FloatSchedule(self.learning_rate)
 
     def _update_current_progress_remaining(self, num_timesteps: int, total_timesteps: int) -> None:
         """

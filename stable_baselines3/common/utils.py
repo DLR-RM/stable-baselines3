@@ -3,6 +3,7 @@ import os
 import platform
 import random
 import re
+import warnings
 from collections import deque
 from collections.abc import Iterable
 from itertools import zip_longest
@@ -93,7 +94,7 @@ class FloatSchedule:
         elif isinstance(value_schedule, (float, int)):
             self.value_schedule = ConstantSchedule(float(value_schedule))
         else:
-            assert callable(value_schedule)
+            assert callable(value_schedule), f"The learning rate schedule must be a float or a callable, not {value_schedule}"
             self.value_schedule = value_schedule
 
     def __call__(self, progress_remaining: float) -> float:
@@ -103,27 +104,6 @@ class FloatSchedule:
 
     def __repr__(self) -> str:
         return f"FloatSchedule({self.value_schedule})"
-
-
-# Deprecated: only kept for backward compatibility when unpickling old models, use ScheduleWrapper instead
-def get_schedule_fn(value_schedule: Union[Schedule, float]) -> Schedule:
-    """
-    Transform (if needed) learning rate and clip range (for PPO)
-    to callable.
-
-    :param value_schedule: Constant value of schedule function
-    :return: Schedule function (can return constant value)
-    """
-    # If the passed schedule is a float
-    # create a constant function
-    if isinstance(value_schedule, (float, int)):
-        # Cast to float to avoid errors
-        value_schedule = constant_fn(float(value_schedule))
-    else:
-        assert callable(value_schedule)
-    # Cast to float to avoid unpickling errors to enable weights_only=True, see GH#1900
-    # Some types are have odd behaviors when part of a Schedule, like numpy floats
-    return lambda progress_remaining: float(value_schedule(progress_remaining))
 
 
 class LinearSchedule:
@@ -139,7 +119,7 @@ class LinearSchedule:
         then end is reached after 10% of the complete training process.
     """
 
-    def __init__(self, start: float, end: float, end_fraction: float):
+    def __init__(self, start: float, end: float, end_fraction: float) -> None:
         self.start = start
         self.end = end
         self.end_fraction = end_fraction
@@ -152,31 +132,6 @@ class LinearSchedule:
 
     def __repr__(self) -> str:
         return f"LinearSchedule(start={self.start}, end={self.end}, end_fraction={self.end_fraction})"
-
-
-# Deprecated: only kept for backward compatibility when unpickling old models, use LinearSchedule instead
-def get_linear_fn(start: float, end: float, end_fraction: float) -> Schedule:
-    """
-    Create a function that interpolates linearly between start and end
-    between ``progress_remaining`` = 1 and ``progress_remaining`` = ``end_fraction``.
-    This is used in DQN for linearly annealing the exploration fraction
-    (epsilon for the epsilon-greedy strategy).
-
-    :params start: value to start with if ``progress_remaining`` = 1
-    :params end: value to end with if ``progress_remaining`` = 0
-    :params end_fraction: fraction of ``progress_remaining``
-        where end is reached e.g 0.1 then end is reached after 10%
-        of the complete training process.
-    :return: Linear schedule function.
-    """
-
-    def func(progress_remaining: float) -> float:
-        if (1 - progress_remaining) > end_fraction:
-            return end
-        else:
-            return start + (1 - progress_remaining) * (end - start) / end_fraction
-
-    return func
 
 
 class ConstantSchedule:
@@ -197,7 +152,57 @@ class ConstantSchedule:
         return f"ConstantSchedule(val={self.val})"
 
 
-# Deprecated: only kept for backward compatibility when unpickling old models, use ConstantSchedule instead
+# ===== Deprecated schedule functions ====
+# only kept for backward compatibility when unpickling old models, use FloatSchedule
+# and other classes like `LinearSchedule() instead
+
+
+def get_schedule_fn(value_schedule: Union[Schedule, float]) -> Schedule:
+    """
+    Transform (if needed) learning rate and clip range (for PPO)
+    to callable.
+
+    :param value_schedule: Constant value of schedule function
+    :return: Schedule function (can return constant value)
+    """
+    warnings.warn("get_schedule_fn() is deprecated, please use FloatSchedule() instead")
+    # If the passed schedule is a float
+    # create a constant function
+    if isinstance(value_schedule, (float, int)):
+        # Cast to float to avoid errors
+        value_schedule = constant_fn(float(value_schedule))
+    else:
+        assert callable(value_schedule)
+    # Cast to float to avoid unpickling errors to enable weights_only=True, see GH#1900
+    # Some types are have odd behaviors when part of a Schedule, like numpy floats
+    return lambda progress_remaining: float(value_schedule(progress_remaining))
+
+
+def get_linear_fn(start: float, end: float, end_fraction: float) -> Schedule:
+    """
+    Create a function that interpolates linearly between start and end
+    between ``progress_remaining`` = 1 and ``progress_remaining`` = ``end_fraction``.
+    This is used in DQN for linearly annealing the exploration fraction
+    (epsilon for the epsilon-greedy strategy).
+
+    :params start: value to start with if ``progress_remaining`` = 1
+    :params end: value to end with if ``progress_remaining`` = 0
+    :params end_fraction: fraction of ``progress_remaining``
+        where end is reached e.g 0.1 then end is reached after 10%
+        of the complete training process.
+    :return: Linear schedule function.
+    """
+    warnings.warn("get_linear_fn() is deprecated, please use LinearSchedule() instead")
+
+    def func(progress_remaining: float) -> float:
+        if (1 - progress_remaining) > end_fraction:
+            return end
+        else:
+            return start + (1 - progress_remaining) * (end - start) / end_fraction
+
+    return func
+
+
 def constant_fn(val: float) -> Schedule:
     """
     Create a function that returns a constant
@@ -206,11 +211,15 @@ def constant_fn(val: float) -> Schedule:
     :param val: constant value
     :return: Constant schedule function.
     """
+    warnings.warn("constant_fn() is deprecated, please use ConstantSchedule() instead")
 
     def func(_):
         return val
 
     return func
+
+
+# ==== End of deprecated schedule functions ====
 
 
 def get_device(device: Union[th.device, str] = "auto") -> th.device:

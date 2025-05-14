@@ -28,6 +28,7 @@ Bug Fixes:
 
 Deprecations:
 ^^^^^^^^^^^^^
+- ``get_schedule_fn()``,  ``get_linear_fn()``,  ``constant_fn()`` are deprecated, please use ``FloatSchedule()``, ``LinearSchedule()``, ``ConstantSchedule()`` instead
 
 Others:
 ^^^^^^^

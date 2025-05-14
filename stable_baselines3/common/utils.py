@@ -484,12 +484,19 @@ def obs_as_tensor(obs: Union[np.ndarray, dict[str, np.ndarray]], device: th.devi
     :param device: PyTorch device
     :return: PyTorch tensor of the observation on a desired device.
     """
+    # --- PATCH: Handle GraphInstance and gymnasium.spaces.Graph as opaque objects ---
+    from gymnasium.spaces.graph import GraphInstance
     if isinstance(obs, np.ndarray):
         return th.as_tensor(obs, device=device)
     elif isinstance(obs, dict):
-        return {key: th.as_tensor(_obs, device=device) for (key, _obs) in obs.items()}
+        # Recursively handle dicts, including GraphInstance values
+        return {key: obs_as_tensor(_obs, device=device) for (key, _obs) in obs.items()}
+    elif 'GraphInstance' in type(obs).__name__:
+        # Do not convert GraphInstance to tensor; pass as-is for custom feature extractor
+        return obs
     else:
-        raise Exception(f"Unrecognized type of observation {type(obs)}")
+        # For other types (e.g., torch_geometric.data.Data), pass as-is
+        return obs
 
 
 def should_collect_more_steps(

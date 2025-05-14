@@ -4,17 +4,17 @@ from typing import Any, Union
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
+from gymnasium.spaces.graph import GraphInstance
 
 from stable_baselines3.common.preprocessing import check_for_nested_spaces, is_image_space_channels_first
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
 
-
 def _is_numpy_array_space(space: spaces.Space) -> bool:
     """
     Returns False if provided space is not representable as a single numpy array
-    (e.g. Dict and Tuple spaces return False)
+    (e.g. Dict, Tuple, and Graph spaces return False)
     """
-    return not isinstance(space, (spaces.Dict, spaces.Tuple))
+    return not isinstance(space, (spaces.Dict, spaces.Tuple, spaces.Graph))
 
 
 def _starts_at_zero(space: Union[spaces.Discrete, spaces.MultiDiscrete]) -> bool:
@@ -36,7 +36,7 @@ def _check_non_zero_start(space: spaces.Space, space_type: str = "observation", 
         maybe_key = f"(key='{key}')" if key else ""
         warnings.warn(
             f"{type(space).__name__} {space_type} space {maybe_key} with a non-zero start (start={space.start}) "
-            "is not supported by Stable-Baselines3. "
+            "is not supported by Stable-Baselines3."
             "You can use a wrapper (see https://stable-baselines3.readthedocs.io/en/master/guide/custom_env.html) "
             f"or update your {space_type} space."
         )
@@ -124,6 +124,12 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             "You can pad your observation to have a fixed size instead.\n"
             "Note: The checks for returned values are skipped."
         )
+        
+    if isinstance(observation_space, spaces.Graph):
+        warnings.warn(
+            "Graph observation space is now supported by Stable-Baselines3 but requires a custom feature extractor. "
+            "Make sure to provide a feature extractor that can process Graph observations."
+        )
 
     _check_non_zero_start(action_space, "action")
 
@@ -199,7 +205,7 @@ def _check_goal_env_compute_reward(
     assert rewards[0] == reward, f"Vectorized computation of reward differs from single computation: {rewards[0]} != {reward}"
 
 
-def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spaces.Space, method_name: str) -> None:
+def _check_obs(obs: Union[tuple, dict, np.ndarray, int, GraphInstance], observation_space: spaces.Space, method_name: str) -> None:
     """
     Check that the observation returned by the environment
     correspond to the declared one.
@@ -214,6 +220,9 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
         # Since https://github.com/Farama-Foundation/Gymnasium/pull/141,
         # `sample()` will return a np.int64 instead of an int
         assert np.issubdtype(type(obs), np.integer), f"The observation returned by `{method_name}()` method must be an int"
+    elif isinstance(observation_space, spaces.Graph):
+        # For Graph spaces, check that the observation is a GraphInstance
+        assert isinstance(obs, GraphInstance), f"The observation returned by `{method_name}()` method must be a GraphInstance"
     elif _is_numpy_array_space(observation_space):
         assert isinstance(obs, np.ndarray), f"The observation returned by `{method_name}()` method must be a numpy array"
 

@@ -18,7 +18,7 @@ For a quick start you can move straight to installing Stable-Baselines3 in the n
 
 .. note::
 
-	Trying to create Atari environments may result to vague errors related to missing DLL files and modules. This is an
+	Trying to create Atari environments may result in vague errors related to missing DLL files and modules. This is an
 	issue with atari-py package. `See this discussion for more information <https://github.com/openai/atari-py/issues/65>`_.
 
 
@@ -34,7 +34,7 @@ To install Stable Baselines3 with pip, execute:
         Some shells such as Zsh require quotation marks around brackets, i.e. ``pip install 'stable-baselines3[extra]'`` `More information <https://stackoverflow.com/a/30539963>`_.
 
 
-This includes an optional dependencies like Tensorboard, OpenCV or ``ale-py`` to train on Atari games. If you do not need those, you can use:
+This includes optional dependencies like Tensorboard, OpenCV or ``ale-py`` to train on Atari games. If you do not need those, you can use:
 
 .. code-block:: bash
 
@@ -151,7 +151,7 @@ Explanation of the docker command:
    run it interactively (so ctrl+c will work)
 -  ``--rm`` option means to remove the container once it exits/stops
    (otherwise, you will have to use ``docker rm``)
--  ``--network host`` don't use network isolation, this allow to use
+-  ``--network host`` don't use network isolation, this allows to use
    tensorboard/visdom on host machine
 -  ``--ipc=host`` Use the host system’s IPC namespace. IPC (POSIX/SysV IPC) namespace provides
    separation of named shared memory segments, semaphores and message

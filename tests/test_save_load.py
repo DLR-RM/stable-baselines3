@@ -832,7 +832,7 @@ def test_save_load_backward_compatible(tmp_path, model_class):
 
     env = DummyVecEnv([lambda: IdentityEnvBox(-1, 1)])
 
-    model = model_class("MlpPolicy", env, learning_rate=lambda _: 0.001, clip_range=lambda _: 0.3)
+    model = model_class("MlpPolicy", env, n_steps=64, learning_rate=lambda _: 0.001, clip_range=lambda _: 0.3)
     model.learn(total_timesteps=100)
 
     model.save(tmp_path / "test_schedule_safe.zip")
@@ -840,6 +840,7 @@ def test_save_load_backward_compatible(tmp_path, model_class):
     model = model_class.load(tmp_path / "test_schedule_safe.zip", env=env)
 
     assert model.learning_rate(0) == 0.001
+    assert model.learning_rate.__name__ == "<lambda>"
 
     assert isinstance(model.clip_range, FloatSchedule)
     assert model.clip_range.value_schedule(0) == 0.3

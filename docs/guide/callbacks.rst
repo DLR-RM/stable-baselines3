@@ -412,7 +412,7 @@ It must be used with the :ref:`EvalCallback` and use the event triggered after e
 
     model = SAC("MlpPolicy", "Pendulum-v1", learning_rate=1e-3, verbose=1)
     # Almost infinite number of timesteps, but the training will stop early
-    # as soon as the the number of consecutive evaluations without model
+    # as soon as the number of consecutive evaluations without model
     # improvement is greater than 3
     model.learn(int(1e10), callback=eval_callback)
 

@@ -247,7 +247,7 @@ If your callback returns False, training is aborted early.
 
       :param check_freq:
       :param log_dir: Path to the folder where the model will be saved.
-        It must contains the file created by the ``Monitor`` wrapper.
+        It must contain the file created by the ``Monitor`` wrapper.
       :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
       """
       def __init__(self, check_freq: int, log_dir: str, verbose: int = 1):
@@ -702,7 +702,7 @@ A2C policy gradient updates on the model.
       if ("policy" in key or "shared_net" in key or "action" in key)
   )
 
-  # population size of 50 invdiduals
+  # population size of 50 individuals
   pop_size = 50
   # Keep top 10%
   n_elite = pop_size // 10

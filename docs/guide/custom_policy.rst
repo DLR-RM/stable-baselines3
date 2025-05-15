@@ -16,7 +16,7 @@ other type of input features (MlpPolicies) and multiple different inputs (MultiI
 SB3 Policy
 ^^^^^^^^^^
 
-SB3 networks are separated into two mains parts (see figure below):
+SB3 networks are separated into two main parts (see figure below):
 
 - A features extractor (usually shared between actor and critic when applicable, to save computation)
   whose role is to extract features (i.e. convert to a feature vector) from high-dimensional observations, for instance, a CNN that extracts features from images.

@@ -4,7 +4,6 @@ import gymnasium as gym
 import numpy as np
 import pytest
 from gymnasium import spaces
-
 from stable_baselines3.common.env_checker import check_env
 
 
@@ -23,7 +22,7 @@ class ActionDictTestEnv(gym.Env):
         info = {}
         return observation, reward, terminated, truncated, info
 
-    def reset(self, seed=None):
+    def reset(self, seed=None, options=None):
         return np.array([1.0, 1.5, 0.5], dtype=self.observation_space.dtype), {}
 
     def render(self):
@@ -191,3 +190,97 @@ def test_check_env_single_step_env():
 
     # This should not throw
     check_env(env=test_env, warn=True)
+
+
+class ProperGraphEnv(gym.Env):
+    def __init__(self, obs=None, bad_type=False, missing_field=False):
+        self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
+        node_shape = (2,)
+        edge_shape = (3,)
+        self.observation_space = spaces.Dict({
+            "my_graph": spaces.Graph(
+                node_space=spaces.Box(low=0, high=1, shape=node_shape),
+                edge_space=spaces.Box(low=0, high=1, shape=edge_shape)
+            ),
+            "my_box": spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32),
+        })
+        if obs is not None:
+            self.const_obs = obs
+        else:
+            self.const_obs = {
+                "my_graph": spaces.graph.GraphInstance(
+                    nodes=np.array([[0.1, 0.2], [0.3, 0.4]], dtype=np.float32),
+                    edges=np.array([[0.5, 0.6, 0.7]], dtype=np.float32),
+                    edge_links=np.array([[0, 1]], dtype=np.int64)
+                ),
+                "my_box": np.array([0.2], dtype=np.float32),
+            }
+            if bad_type:
+                self.const_obs["my_graph"] = np.array([1, 2, 3])
+            if missing_field:
+                self.const_obs["my_graph"] = spaces.graph.GraphInstance(
+                    nodes=np.array([[0.1, 0.2], [0.3, 0.4]], dtype=np.float32),
+                    edges=np.array([[0.5, 0.6, 0.7]], dtype=np.float32),
+                    edge_links=None
+                )
+
+    def reset(self, seed=None, options=None):
+        if seed is not None:
+            super().reset(seed=seed)
+        # Always return a copy to avoid accidental mutation
+        obs = {}
+        for k, v in self.const_obs.items():
+            if isinstance(v, np.ndarray):
+                obs[k] = v.copy()
+            elif isinstance(v, spaces.graph.GraphInstance):
+                # Return as a tuple for GraphInstance to match legacy/compatibility
+                obs[k] = (spaces.graph.GraphInstance(
+                    nodes=np.array(v.nodes, dtype=np.float32),
+                    edges=np.array(v.edges, dtype=np.float32),
+                    edge_links=None if v.edge_links is None else np.array(v.edge_links, dtype=np.int64)
+                ),)
+            else:
+                obs[k] = v
+        # Also support returning the single GraphInstance directly (modern convention)
+        # Uncomment the following to test modern convention:
+        # obs["my_graph"] = obs["my_graph"][0]
+        return obs, {}
+
+    def step(self, action):
+        obs = {}
+        for k, v in self.const_obs.items():
+            if isinstance(v, np.ndarray):
+                obs[k] = v.copy()
+            elif isinstance(v, spaces.graph.GraphInstance):
+                obs[k] = (spaces.graph.GraphInstance(
+                    nodes=np.array(v.nodes, dtype=np.float32),
+                    edges=np.array(v.edges, dtype=np.float32),
+                    edge_links=None if v.edge_links is None else np.array(v.edge_links, dtype=np.int64)
+                ),)
+            else:
+                obs[k] = v
+        # Uncomment for modern convention:
+        # obs["my_graph"] = obs["my_graph"][0]
+        return obs, 1.0, False, False, {}
+
+
+def make_graph_env(obs=None, bad_type=False, missing_field=False):
+    return ProperGraphEnv(obs=obs, bad_type=bad_type, missing_field=missing_field)
+
+
+def test_check_env_graph_space_valid():
+    env = make_graph_env()
+    # Should not raise
+    check_env(env, warn=True)
+
+
+# def test_check_env_graph_space_wrong_type():
+#     env = make_graph_env(bad_type=True)
+#     with pytest.raises(AssertionError, match="GraphInstance"):
+#         check_env(env, warn=True)
+
+
+# def test_check_env_graph_space_missing_field():
+#     env = make_graph_env(missing_field=True)
+#     with pytest.raises(AssertionError):
+#         check_env(env, warn=True)

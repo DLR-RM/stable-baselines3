@@ -117,17 +117,8 @@ class BaseModel(nn.Module):
         return net_kwargs
 
     def make_features_extractor(self) -> BaseFeaturesExtractor:
-        """Helper method to create a features extractor, passing all kwargs if **kwargs is present, else filtering strictly."""
-        sig = inspect.signature(self.features_extractor_class.__init__)
-        params = sig.parameters
-        has_var_kwargs = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values())
-        if has_var_kwargs:
-            # If the feature extractor accepts **kwargs, pass all
-            return self.features_extractor_class(self.observation_space, **(self.features_extractor_kwargs or {}))
-        else:
-            valid_params = set(params.keys()) - {"self"}
-            filtered_kwargs = {k: v for k, v in (self.features_extractor_kwargs or {}).items() if k in valid_params}
-            return self.features_extractor_class(self.observation_space, **filtered_kwargs)
+        """Helper method to create a features extractor."""
+        return self.features_extractor_class(self.observation_space, **self.features_extractor_kwargs)
 
     def extract_features(self, obs: PyTorchObs, features_extractor: BaseFeaturesExtractor) -> th.Tensor:
         """

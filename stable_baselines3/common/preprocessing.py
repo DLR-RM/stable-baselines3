@@ -114,9 +114,6 @@ def preprocess_obs(
             preprocessed_obs[key] = preprocess_obs(_obs, observation_space[key], normalize_images=normalize_images)
         return preprocessed_obs  # type: ignore[return-value]
 
-    if isinstance(observation_space, spaces.Graph):
-        return obs  # Custom feature extractor will handle Graph observation
-
     assert isinstance(obs, th.Tensor), f"Expecting a torch Tensor, but got {type(obs)}"
 
     if isinstance(observation_space, spaces.Box):
@@ -166,9 +163,6 @@ def get_obs_shape(
         return observation_space.shape
     elif isinstance(observation_space, spaces.Dict):
         return {key: get_obs_shape(subspace) for (key, subspace) in observation_space.spaces.items()}  # type: ignore[misc]
-    elif isinstance(observation_space, spaces.Graph):
-        # For Graph spaces, return a tuple indicating non-flat shape
-        return ("graph",)
     else:
         raise NotImplementedError(f"{observation_space} observation space is not supported")
 
@@ -187,12 +181,6 @@ def get_flattened_obs_dim(observation_space: spaces.Space) -> int:
     # it may be a problem for Dict/Tuple spaces too...
     if isinstance(observation_space, spaces.MultiDiscrete):
         return sum(observation_space.nvec)
-    elif isinstance(observation_space, spaces.Graph):
-        # For Graph spaces, we can't know the flattened dimension in advance
-        raise NotImplementedError(
-            "Graph spaces cannot be flattened to a fixed dimension. "
-            "Please use a custom feature extractor that handles GraphInstance or torch_geometric.data.Data objects."
-        )
     else:
         # Use Gym internal method
         return spaces.utils.flatdim(observation_space)

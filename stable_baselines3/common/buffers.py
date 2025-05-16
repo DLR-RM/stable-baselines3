@@ -745,11 +745,6 @@ class DictRolloutBuffer(RolloutBuffer):
     def reset(self) -> None:
         self.observations = {}
         for key, obs_input_shape in self.obs_shape.items():
-            from gymnasium import spaces
-            if hasattr(self.observation_space, 'spaces') and isinstance(self.observation_space.spaces[key], spaces.Graph):
-                # For Graph spaces, store as object array (list of GraphInstance)
-                self.observations[key] = np.empty((self.buffer_size, self.n_envs), dtype=object)
-                continue
             self.observations[key] = np.zeros((self.buffer_size, self.n_envs, *obs_input_shape), dtype=np.float32)
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)

@@ -43,20 +43,7 @@ class DummyVecEnv(VecEnv):
         super().__init__(len(env_fns), env.observation_space, env.action_space)
         obs_space = env.observation_space
         self.keys, shapes, dtypes = obs_space_info(obs_space)
-
-        self.buf_obs = OrderedDict()
-        for k in self.keys:
-            if shapes[k] is None:
-                # For Graph spaces, always use a list of None (one per env),
-                # but check for torch geometric types if available
-                try:
-                    import torch_geometric.data
-                    self.buf_obs[k] = [torch_geometric.data.Data()] * self.num_envs
-                except ImportError:
-                    self.buf_obs[k] = [None] * self.num_envs
-            else:
-                self.buf_obs[k] = np.zeros((self.num_envs, *tuple(shapes[k])), dtype=dtypes[k])
-        
+        self.buf_obs = OrderedDict([(k, np.zeros((self.num_envs, *tuple(shapes[k])), dtype=dtypes[k])) for k in self.keys])
         self.buf_dones = np.zeros((self.num_envs,), dtype=bool)
         self.buf_rews = np.zeros((self.num_envs,), dtype=np.float32)
         self.buf_infos: list[dict[str, Any]] = [{} for _ in range(self.num_envs)]
@@ -120,16 +107,7 @@ class DummyVecEnv(VecEnv):
             if key is None:
                 self.buf_obs[key][env_idx] = obs
             else:
-                # For Graph spaces, always use a list, and check for torch geometric types
-                val = obs[key]
-                try:
-                    import torch_geometric.data
-                    if isinstance(val, (torch_geometric.data.Data, torch_geometric.data.Batch)):
-                        self.buf_obs[key][env_idx] = val
-                        continue
-                except ImportError:
-                    pass
-                self.buf_obs[key][env_idx] = val  # fallback
+                self.buf_obs[key][env_idx] = obs[key]  # type: ignore[call-overload]
 
     def _obs_from_buf(self) -> VecEnvObs:
         return dict_to_obs(self.observation_space, deepcopy(self.buf_obs))

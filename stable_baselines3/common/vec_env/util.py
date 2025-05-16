@@ -23,39 +23,7 @@ def dict_to_obs(obs_space: spaces.Space, obs_dict: dict[Any, np.ndarray]) -> Vec
         otherwise, space is unstructured and returns the value raw_obs[None].
     """
     if isinstance(obs_space, spaces.Dict):
-        # For Dict spaces, if a subspace is a Graph, handle both gymnasium.spaces.Graph and gymnasium.spaces.graph.Graph
-        result = {}
-        for k, v in obs_dict.items():
-            subspace = obs_space.spaces[k]
-            # Support both gymnasium.spaces.Graph and gymnasium.spaces.graph.Graph
-            is_graph = False
-            try:
-                import gymnasium.spaces.graph as sp_graph
-                is_graph = isinstance(subspace, (spaces.Graph, getattr(sp_graph, "Graph", type(None))))
-            except Exception:
-                is_graph = isinstance(subspace, spaces.Graph)
-            if is_graph:
-                # If v is a list (batched env), extract the first element (SB3 expects a single GraphInstance)
-                if isinstance(v, list):
-                    # If the list contains GraphInstance, just return the first one (for single env)
-                    if len(v) == 1 and hasattr(v[0], "nodes") and hasattr(v[0], "edges") and hasattr(v[0], "edge_links"):
-                        result[k] = v[0]
-                    else:
-                        # If the list contains dicts (from env_checker), convert dict to GraphInstance
-                        if len(v) == 1 and isinstance(v[0], dict) and {"nodes", "edges", "edge_links"}.issubset(v[0].keys()):
-                            from gymnasium.spaces.graph import GraphInstance
-                            result[k] = GraphInstance(**v[0])
-                        else:
-                            raise ValueError(f"Expected a single GraphInstance or dict in list for key={k}, got {v}.")
-                elif isinstance(v, dict) and {"nodes", "edges", "edge_links"}.issubset(v.keys()):
-                    # If v is a dict (from env_checker), convert to GraphInstance
-                    from gymnasium.spaces.graph import GraphInstance
-                    result[k] = GraphInstance(**v)
-                else:
-                    result[k] = v
-            else:
-                result[k] = v
-        return result
+        return obs_dict
     elif isinstance(obs_space, spaces.Tuple):
         assert len(obs_dict) == len(obs_space.spaces), "size of observation does not match size of observation space"
         return tuple(obs_dict[i] for i in range(len(obs_space.spaces)))
@@ -92,12 +60,6 @@ def obs_space_info(obs_space: spaces.Space) -> tuple[list[str], dict[Any, tuple[
     dtypes = {}
     for key, box in subspaces.items():
         keys.append(key)
-        if isinstance(box, spaces.Graph):
-            # For graph spaces, we don't have a fixed shape
-            # Store None as the shape to indicate special handling is needed
-            shapes[key] = None
-            dtypes[key] = np.float32  # Default dtype for graph data
-        else:
-            shapes[key] = box.shape
-            dtypes[key] = box.dtype
+        shapes[key] = box.shape
+        dtypes[key] = box.dtype
     return keys, shapes, dtypes  # type: ignore[return-value]

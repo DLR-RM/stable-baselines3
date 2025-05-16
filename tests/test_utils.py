@@ -16,8 +16,14 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
 from stable_baselines3.common.utils import (
+    ConstantSchedule,
+    FloatSchedule,
+    LinearSchedule,
     check_shape_equal,
+    constant_fn,
+    get_linear_fn,
     get_parameters_by_name,
+    get_schedule_fn,
     get_system_info,
     is_vectorized_observation,
     polyak_update,
@@ -593,3 +599,34 @@ def test_check_shape_equal():
     space2 = spaces.Dict({"key1": spaces.Box(low=-1, high=2, shape=(3, 3)), "key2": spaces.Box(low=-1, high=2, shape=(2, 2))})
     with pytest.raises(AssertionError):
         check_shape_equal(space1, space2)
+
+
+def test_deprecated_schedules():
+    with pytest.warns(Warning):
+        get_schedule_fn(0.1)
+        get_schedule_fn(lambda _: 0.1)
+    with pytest.warns(Warning):
+        linear_fn = get_linear_fn(1.0, 0.0, 0.1)
+        linear_schedule = LinearSchedule(1.0, 0.0, 0.1)
+        float_schedule = FloatSchedule(linear_schedule)
+        assert np.allclose(linear_fn(0.95), 0.5)
+        assert np.allclose(linear_fn(0.95), linear_schedule(0.95))
+        assert np.allclose(linear_fn(0.95), float_schedule(0.95))
+        assert np.allclose(linear_fn(0.9), 0.0)
+        assert np.allclose(linear_fn(0.0), 0.0)
+        assert np.allclose(linear_fn(0.9), linear_schedule(0.9))
+        assert np.allclose(linear_fn(0.9), float_schedule(0.9))
+    with pytest.warns(Warning):
+        fn = constant_fn(1.0)
+        schedule = ConstantSchedule(1.0)
+        float_schedule = FloatSchedule(1.0)
+        float_schedule_2 = FloatSchedule(float_schedule)
+        assert id(float_schedule_2.value_schedule) == id(float_schedule.value_schedule)
+        assert np.allclose(fn(0.0), 1.0)
+        assert np.allclose(fn(0.0), schedule(0.0))
+        assert np.allclose(fn(0.0), float_schedule(0.0))
+        assert np.allclose(fn(0.0), float_schedule_2(0.0))
+        assert np.allclose(fn(0.5), 1.0)
+        assert np.allclose(fn(0.5), schedule(0.5))
+        assert np.allclose(fn(0.5), float_schedule(0.5))
+        assert np.allclose(fn(0.5), float_schedule_2(0.5))

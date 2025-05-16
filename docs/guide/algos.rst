@@ -78,7 +78,7 @@ Credit: part of the *Reproducibility* section comes from `PyTorch Documentation 
 Training exceeds ``total_timesteps``
 ------------------------------------
 
-When you train an agent using SB3, you pass a ``total_timesteps`` parameter to the ``learn()`` method which defines the training budget for the agent (how many interaction with the environment are allowed).
+When you train an agent using SB3, you pass a ``total_timesteps`` parameter to the ``learn()`` method which defines the training budget for the agent (how many interactions with the environment are allowed).
 For example:
 
 .. code-block:: python

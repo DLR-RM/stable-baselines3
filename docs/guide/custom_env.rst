@@ -102,7 +102,7 @@ To check that your environment follows the Gym interface that SB3 supports, plea
 
 Gymnasium also have its own `env checker <https://gymnasium.farama.org/api/utils/#gymnasium.utils.env_checker.check_env>`_ but it checks a superset of what SB3 supports (SB3 does not support all Gym features).
 
-We have created a `colab notebook <https://colab.research.google.com/github/araffin/rl-tutorial-jnrr19/blob/sb3/5_custom_gym_env.ipynb>`_ for a concrete example on creating a custom environment along with an example of using it with Stable-Baselines3 interface.
+We have created a `colab notebook <https://colab.research.google.com/github/araffin/rl-tutorial-jnrr19/blob/sb3/5_custom_gym_env.ipynb>`_ for a concrete example of creating a custom environment along with an example of using it with Stable-Baselines3 interface.
 
 Alternatively, you may look at Gymnasium `built-in environments <https://gymnasium.farama.org>`_.
 

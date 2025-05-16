@@ -25,7 +25,7 @@ so you should not expect performance drop when switching from SB2 to SB3.
 How to migrate?
 ===============
 
-In most cases, replacing ``from stable_baselines`` by ``from stable_baselines3`` will be sufficient.
+In most cases, replacing ``from stable_baselines`` with ``from stable_baselines3`` will be sufficient.
 Some files were moved to the common folder (cf below) and could result to import errors.
 Some algorithms were removed because of their complexity to improve the maintainability of the project.
 We recommend reading this guide carefully to understand all the changes that were made.

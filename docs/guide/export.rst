@@ -167,7 +167,7 @@ For more discussion around the topic, please refer to `GH#383 <https://github.co
 Trace/Export to C++
 -------------------
 
-You can use PyTorch JIT to trace and save a trained model that can be re-used in other applications
+You can use PyTorch JIT to trace and save a trained model that can be reused in other applications
 (for instance inference code written in C++).
 
 There is a draft PR in the RL Zoo about C++ export: https://github.com/DLR-RM/rl-baselines3-zoo/pull/228

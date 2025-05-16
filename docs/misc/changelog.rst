@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.6.1a0 (WIP)
+Release 2.6.1a1 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -15,6 +15,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed docker GPU image (PyTorch GPU was not installed)
+- Fixed segmentation faults caused by non-portable schedules during model loading (@akanto)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -27,6 +28,7 @@ Bug Fixes:
 
 Deprecations:
 ^^^^^^^^^^^^^
+- ``get_schedule_fn()``,  ``get_linear_fn()``,  ``constant_fn()`` are deprecated, please use ``FloatSchedule()``, ``LinearSchedule()``, ``ConstantSchedule()`` instead
 
 Others:
 ^^^^^^^
@@ -1814,7 +1816,7 @@ Contributors:
 -------------
 In random order...
 
-Thanks to the maintainers of V2: @hill-a @enerijunior @AdamGleave @Miffyli
+Thanks to the maintainers of V2: @hill-a @ernestum @AdamGleave @Miffyli
 
 And all the contributors:
 @taymuur @bjmuld @iambenzo @iandanforth @r7vme @brendenpetersen @huvar @abhiskk @JohannesAck
@@ -1838,4 +1840,4 @@ And all the contributors:
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
 @marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
-@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen
+@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto

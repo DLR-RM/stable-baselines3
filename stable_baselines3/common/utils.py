@@ -3,6 +3,7 @@ import os
 import platform
 import random
 import re
+import warnings
 from collections import deque
 from collections.abc import Iterable
 from itertools import zip_longest
@@ -78,6 +79,84 @@ def update_learning_rate(optimizer: th.optim.Optimizer, learning_rate: float) ->
         param_group["lr"] = learning_rate
 
 
+class FloatSchedule:
+    """
+    Wrapper that ensures the output of a Schedule is cast to float.
+    Can wrap either a constant value or an existing callable Schedule.
+
+    :param value_schedule: Constant value or callable schedule
+            (e.g. LinearSchedule, ConstantSchedule)
+    """
+
+    def __init__(self, value_schedule: Union[Schedule, float]):
+        if isinstance(value_schedule, FloatSchedule):
+            self.value_schedule: Schedule = value_schedule.value_schedule
+        elif isinstance(value_schedule, (float, int)):
+            self.value_schedule = ConstantSchedule(float(value_schedule))
+        else:
+            assert callable(value_schedule), f"The learning rate schedule must be a float or a callable, not {value_schedule}"
+            self.value_schedule = value_schedule
+
+    def __call__(self, progress_remaining: float) -> float:
+        # Cast to float to avoid unpickling errors to enable weights_only=True, see GH#1900
+        # Some types are have odd behaviors when part of a Schedule, like numpy floats
+        return float(self.value_schedule(progress_remaining))
+
+    def __repr__(self) -> str:
+        return f"FloatSchedule({self.value_schedule})"
+
+
+class LinearSchedule:
+    """
+    LinearSchedule interpolates linearly between start and end
+    between ``progress_remaining`` = 1 and ``progress_remaining`` = ``end_fraction``.
+    This is used in DQN for linearly annealing the exploration fraction
+    (epsilon for the epsilon-greedy strategy).
+
+    :param start: value to start with if ``progress_remaining`` = 1
+    :param end: value to end with if ``progress_remaining`` = 0
+    :param end_fraction: fraction of ``progress_remaining``  where end is reached e.g 0.1
+        then end is reached after 10% of the complete training process.
+    """
+
+    def __init__(self, start: float, end: float, end_fraction: float) -> None:
+        self.start = start
+        self.end = end
+        self.end_fraction = end_fraction
+
+    def __call__(self, progress_remaining: float) -> float:
+        if (1 - progress_remaining) > self.end_fraction:
+            return self.end
+        else:
+            return self.start + (1 - progress_remaining) * (self.end - self.start) / self.end_fraction
+
+    def __repr__(self) -> str:
+        return f"LinearSchedule(start={self.start}, end={self.end}, end_fraction={self.end_fraction})"
+
+
+class ConstantSchedule:
+    """
+    Constant schedule that always returns the same value.
+    Useful for fixed learning rates or clip ranges.
+
+    :param val: constant value
+    """
+
+    def __init__(self, val: float):
+        self.val = val
+
+    def __call__(self, _: float) -> float:
+        return self.val
+
+    def __repr__(self) -> str:
+        return f"ConstantSchedule(val={self.val})"
+
+
+# ===== Deprecated schedule functions ====
+# only kept for backward compatibility when unpickling old models, use FloatSchedule
+# and other classes like `LinearSchedule() instead
+
+
 def get_schedule_fn(value_schedule: Union[Schedule, float]) -> Schedule:
     """
     Transform (if needed) learning rate and clip range (for PPO)
@@ -86,6 +165,7 @@ def get_schedule_fn(value_schedule: Union[Schedule, float]) -> Schedule:
     :param value_schedule: Constant value of schedule function
     :return: Schedule function (can return constant value)
     """
+    warnings.warn("get_schedule_fn() is deprecated, please use FloatSchedule() instead")
     # If the passed schedule is a float
     # create a constant function
     if isinstance(value_schedule, (float, int)):
@@ -112,6 +192,7 @@ def get_linear_fn(start: float, end: float, end_fraction: float) -> Schedule:
         of the complete training process.
     :return: Linear schedule function.
     """
+    warnings.warn("get_linear_fn() is deprecated, please use LinearSchedule() instead")
 
     def func(progress_remaining: float) -> float:
         if (1 - progress_remaining) > end_fraction:
@@ -130,11 +211,15 @@ def constant_fn(val: float) -> Schedule:
     :param val: constant value
     :return: Constant schedule function.
     """
+    warnings.warn("constant_fn() is deprecated, please use ConstantSchedule() instead")
 
     def func(_):
         return val
 
     return func
+
+
+# ==== End of deprecated schedule functions ====
 
 
 def get_device(device: Union[th.device, str] = "auto") -> th.device:

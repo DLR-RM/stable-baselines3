@@ -175,7 +175,7 @@ With ``package_to_hub()``
   # Train the agent
   model.learn(total_timesteps=int(5000))
 
-  # This method save, evaluate, generate a model card and record a replay video of your agent before pushing the repo to the hub
+  # This method saves, evaluates, generates a model card and records a replay video of your agent before pushing the repo to the hub
   package_to_hub(model=model,
                model_name="ppo-CartPole-v1",
                model_architecture="PPO",
@@ -219,7 +219,7 @@ With ``push_to_hub()``
   model.save("ppo-CartPole-v1")
 
   # Push this saved model .zip file to the hf repo
-  # If this repo does not exists it will be created
+  # If this repo does not exist it will be created
   ## repo_id = id of the model repository from the Hugging Face Hub (repo_id = {organization}/{repo_name})
   ## filename: the name of the file == "name" inside model.save("ppo-CartPole-v1")
   push_to_hub(

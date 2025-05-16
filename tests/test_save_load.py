@@ -19,7 +19,7 @@ from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.envs import FakeImageEnv, IdentityEnv, IdentityEnvBox
 from stable_baselines3.common.save_util import load_from_pkl, open_path, save_to_pkl
-from stable_baselines3.common.utils import get_device
+from stable_baselines3.common.utils import ConstantSchedule, FloatSchedule, get_device
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 MODEL_LIST = [PPO, A2C, TD3, SAC, DQN, DDPG]
@@ -821,3 +821,56 @@ def test_save_load_no_target_params(tmp_path):
     with pytest.warns(UserWarning):
         DQN.load(str(tmp_path / "test_save.zip"), env=env).learn(20)
     os.remove(tmp_path / "test_save.zip")
+
+
+@pytest.mark.parametrize("model_class", [PPO])
+def test_save_load_backward_compatible(tmp_path, model_class):
+    """
+    Test that lambdas are working when saving/loading models.
+    See GH#2115
+    """
+
+    env = DummyVecEnv([lambda: IdentityEnvBox(-1, 1)])
+
+    model = model_class("MlpPolicy", env, n_steps=64, learning_rate=lambda _: 0.001, clip_range=lambda _: 0.3)
+    model.learn(total_timesteps=100)
+
+    model.save(tmp_path / "test_schedule_safe.zip")
+
+    model = model_class.load(tmp_path / "test_schedule_safe.zip", env=env)
+
+    assert model.learning_rate(0) == 0.001
+    assert model.learning_rate.__name__ == "<lambda>"
+
+    assert isinstance(model.clip_range, FloatSchedule)
+    assert model.clip_range.value_schedule(0) == 0.3
+
+
+@pytest.mark.parametrize("model_class", [PPO])
+def test_save_load_clip_range_portable(tmp_path, model_class):
+    """
+    Test that models using callable schedule classes (e.g., ConstantSchedule, LinearSchedule)
+    are saved and loaded correctly without segfaults across different machines.
+
+    This ensures that we don't serialize fragile lambda closures.
+    See GH#2115
+    """
+    # Create a simple env
+    env = DummyVecEnv([lambda: IdentityEnvBox(-1, 1)])
+
+    model = model_class("MlpPolicy", env)
+    model.learn(total_timesteps=100)
+
+    # Make sure that classes are used not lambdas by default
+    assert isinstance(model.clip_range, FloatSchedule)
+    assert isinstance(model.clip_range.value_schedule, ConstantSchedule)
+    assert model.clip_range.value_schedule.val == 0.2
+
+    model.save(tmp_path / "test_schedule_safe.zip")
+
+    model = model_class.load(tmp_path / "test_schedule_safe.zip", env=env)
+
+    # Check that the model is loaded correctly
+    assert isinstance(model.clip_range, FloatSchedule)
+    assert isinstance(model.clip_range.value_schedule, ConstantSchedule)
+    assert model.clip_range.value_schedule.val == 0.2

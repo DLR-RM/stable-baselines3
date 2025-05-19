@@ -265,8 +265,6 @@ class ProperGraphEnv(gym.Env):
                 )
             else:
                 obs[k] = v
-        # Uncomment for modern convention:
-        # obs["my_graph"] = obs["my_graph"][0]
         return obs, 1.0, False, False, {}
 
 
@@ -280,13 +278,14 @@ def test_check_env_graph_space_valid():
     check_env(env, warn=True)
 
 
-# def test_check_env_graph_space_wrong_type():
-#     env = make_graph_env(bad_type=True)
-#     with pytest.raises(AssertionError, match="GraphInstance"):
-#         check_env(env, warn=True)
+def test_check_env_graph_space_wrong_type():
+    env = make_graph_env(bad_type=True)
+    # The error message is now about incompatibility with the Graph space, not GraphInstance type
+    with pytest.raises(AssertionError, match="incompatible w/ graph-obs"):
+        check_env(env, warn=True)
 
 
-# def test_check_env_graph_space_missing_field():
-#     env = make_graph_env(missing_field=True)
-#     with pytest.raises(AssertionError):
-#         check_env(env, warn=True)
+def test_check_env_graph_space_missing_field():
+    env = make_graph_env(missing_field=True)
+    with pytest.raises(AssertionError):
+        check_env(env, warn=True)

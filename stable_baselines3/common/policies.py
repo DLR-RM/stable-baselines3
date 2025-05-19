@@ -11,7 +11,6 @@ import numpy as np
 import torch as th
 from gymnasium import spaces
 from torch import nn
-import inspect
 
 from stable_baselines3.common.distributions import (
     BernoulliDistribution,

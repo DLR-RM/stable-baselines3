@@ -16,6 +16,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fixed docker GPU image (PyTorch GPU was not installed)
 - Fixed segmentation faults caused by non-portable schedules during model loading (@akanto)
+- Fixed NoneType error when importing Gymnasium.graph  for sb3 (@dhruvmalik007).
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

@@ -4,10 +4,11 @@ from typing import Any, Union
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
-from gymnasium.spaces.graph import Graph, GraphInstance
+from gymnasium.spaces.graph import GraphInstance 
 
 from stable_baselines3.common.preprocessing import check_for_nested_spaces, is_image_space_channels_first
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
+
 
 def _is_numpy_array_space(space: spaces.Space) -> bool:
     """
@@ -124,7 +125,7 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             "You can pad your observation to have a fixed size instead.\n"
             "Note: The checks for returned values are skipped."
         )
-        
+
     _check_non_zero_start(action_space, "action")
 
     if not _is_numpy_array_space(action_space):
@@ -211,8 +212,10 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
         elif _is_graph_space(observation_space) and isinstance(obs, GraphInstance):
             pass  # Accept as is
         else:
-            assert not (isinstance(obs, tuple) and _is_graph_space(observation_space)), (
-                f"The observation returned by the `{method_name}()` method should be a single value or a tuple of length 1 for GraphInstance, not a tuple of length {len(obs)}"
+            assert not (
+                isinstance(obs, tuple) and _is_graph_space(observation_space)
+            ), (
+                f"TypeError: `{method_name}()` should be a single value of (1, GraphInstance), not of tuple length {len(obs)}"
             )
             assert not isinstance(
                 obs, tuple
@@ -227,8 +230,10 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
     # --- Graph support ---
     elif _is_graph_space(observation_space):
         # check fields here (nodes, edges, edge_links)
-        assert observation_space.contains(obs), (
-            f"The observation returned by the `{method_name}()` method does not match the given Graph observation space {observation_space}"
+        assert observation_space.contains(
+            obs
+        ), (
+            f"The observation returned by the `{method_name}()` method is incompatible w/ graph-obs:  {observation_space}"
         )
         return
 
@@ -258,16 +263,13 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
                     f"of the given observation space {observation_space}. \n"
                 )
                 message += f"{len(invalid_indices[0])} invalid indices: \n"
-
                 for index in zip(*invalid_indices):
                     index_str = ",".join(map(str, index))
                     message += (
                         f"Expected: {lower_bounds[index]} <= obs[{index_str}] <= {upper_bounds[index]}, "
                         f"actual value: {obs[index]} \n"
                     )
-
                 raise AssertionError(message)
-
     assert observation_space.contains(obs), (
         f"The observation returned by the `{method_name}()` method "
         f"does not match the given observation space {observation_space}"
@@ -525,9 +527,8 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
     try:
         check_for_nested_spaces(env.observation_space)
         # if there is None defined , then skip the test
-        if (
-            _is_graph_space(observation_space)
-            or (isinstance(observation_space, spaces.Dict) and any(_is_graph_space(s) for s in observation_space.spaces.values()))
+        if _is_graph_space(observation_space) or (
+            isinstance(observation_space, spaces.Dict) and any(_is_graph_space(s) for s in observation_space.spaces.values())
         ):
             pass  # skip _check_nan for Graph spaces
         else:

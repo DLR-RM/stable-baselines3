@@ -197,13 +197,15 @@ class ProperGraphEnv(gym.Env):
         self.action_space = spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
         node_shape = (2,)
         edge_shape = (3,)
-        self.observation_space = spaces.Dict({
-            "my_graph": spaces.Graph(
-                node_space=spaces.Box(low=0, high=1, shape=node_shape),
-                edge_space=spaces.Box(low=0, high=1, shape=edge_shape)
-            ),
-            "my_box": spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32),
-        })
+        self.observation_space = spaces.Dict(
+            {
+                "my_graph": spaces.Graph(
+                    node_space=spaces.Box(low=0, high=1, shape=node_shape),
+                    edge_space=spaces.Box(low=0, high=1, shape=edge_shape),
+                ),
+                "my_box": spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32),
+            }
+        )
         if obs is not None:
             self.const_obs = obs
         else:
@@ -211,7 +213,7 @@ class ProperGraphEnv(gym.Env):
                 "my_graph": spaces.graph.GraphInstance(
                     nodes=np.array([[0.1, 0.2], [0.3, 0.4]], dtype=np.float32),
                     edges=np.array([[0.5, 0.6, 0.7]], dtype=np.float32),
-                    edge_links=np.array([[0, 1]], dtype=np.int64)
+                    edge_links=np.array([[0, 1]], dtype=np.int64),
                 ),
                 "my_box": np.array([0.2], dtype=np.float32),
             }
@@ -221,7 +223,7 @@ class ProperGraphEnv(gym.Env):
                 self.const_obs["my_graph"] = spaces.graph.GraphInstance(
                     nodes=np.array([[0.1, 0.2], [0.3, 0.4]], dtype=np.float32),
                     edges=np.array([[0.5, 0.6, 0.7]], dtype=np.float32),
-                    edge_links=None
+                    edge_links=None,
                 )
 
     def reset(self, seed=None, options=None):
@@ -234,11 +236,13 @@ class ProperGraphEnv(gym.Env):
                 obs[k] = v.copy()
             elif isinstance(v, spaces.graph.GraphInstance):
                 # Return as a tuple for GraphInstance to match legacy/compatibility
-                obs[k] = (spaces.graph.GraphInstance(
-                    nodes=np.array(v.nodes, dtype=np.float32),
-                    edges=np.array(v.edges, dtype=np.float32),
-                    edge_links=None if v.edge_links is None else np.array(v.edge_links, dtype=np.int64)
-                ),)
+                obs[k] = (
+                    spaces.graph.GraphInstance(
+                        nodes=np.array(v.nodes, dtype=np.float32),
+                        edges=np.array(v.edges, dtype=np.float32),
+                        edge_links=None if v.edge_links is None else np.array(v.edge_links, dtype=np.int64),
+                    ),
+                )
             else:
                 obs[k] = v
         # Also support returning the single GraphInstance directly (modern convention)
@@ -252,11 +256,13 @@ class ProperGraphEnv(gym.Env):
             if isinstance(v, np.ndarray):
                 obs[k] = v.copy()
             elif isinstance(v, spaces.graph.GraphInstance):
-                obs[k] = (spaces.graph.GraphInstance(
-                    nodes=np.array(v.nodes, dtype=np.float32),
-                    edges=np.array(v.edges, dtype=np.float32),
-                    edge_links=None if v.edge_links is None else np.array(v.edge_links, dtype=np.int64)
-                ),)
+                obs[k] = (
+                    spaces.graph.GraphInstance(
+                        nodes=np.array(v.nodes, dtype=np.float32),
+                        edges=np.array(v.edges, dtype=np.float32),
+                        edge_links=None if v.edge_links is None else np.array(v.edge_links, dtype=np.int64),
+                    ),
+                )
             else:
                 obs[k] = v
         # Uncomment for modern convention:

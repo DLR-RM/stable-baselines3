@@ -4,7 +4,7 @@ from typing import Any, Union
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
-from gymnasium.spaces.graph import GraphInstance 
+from gymnasium.spaces.graph import GraphInstance
 
 from stable_baselines3.common.preprocessing import check_for_nested_spaces, is_image_space_channels_first
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
@@ -214,9 +214,7 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
         else:
             assert not (
                 isinstance(obs, tuple) and _is_graph_space(observation_space)
-            ), (
-                f"TypeError: `{method_name}()` should be a single value of (1, GraphInstance), not of tuple length {len(obs)}"
-            )
+            ), f"TypeError: `{method_name}()` should be a single value of (1, GraphInstance), not of tuple length {len(obs)}"
             assert not isinstance(
                 obs, tuple
             ), f"The observation returned by the `{method_name}()` method should be a single value, not a tuple"
@@ -232,9 +230,7 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
         # check fields here (nodes, edges, edge_links)
         assert observation_space.contains(
             obs
-        ), (
-            f"The observation returned by the `{method_name}()` method is incompatible w/ graph-obs:  {observation_space}"
-        )
+        ), f"The observation returned by the `{method_name}()` method is incompatible w/ graph-obs:  {observation_space}"
         return
 
     elif _is_numpy_array_space(observation_space):

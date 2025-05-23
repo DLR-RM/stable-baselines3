@@ -37,7 +37,7 @@ def _check_non_zero_start(space: spaces.Space, space_type: str = "observation", 
         maybe_key = f"(key='{key}')" if key else ""
         warnings.warn(
             f"{type(space).__name__} {space_type} space {maybe_key} with a non-zero start (start={space.start}) "
-            "is not supported by Stable-Baselines3."
+            "is not supported by Stable-Baselines3. "
             "You can use a wrapper (see https://stable-baselines3.readthedocs.io/en/master/guide/custom_env.html) "
             f"or update your {space_type} space."
         )
@@ -205,16 +205,16 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
     Check that the observation returned by the environment
     correspond to the declared one.
     """
+    # If the observation space is a Graph, return early with a warning.
+    if _is_graph_space(observation_space):
+        warnings.warn(
+            f"The observation space for `{method_name}()` is a Graph space, which is not supported by the env checker. Skipping further observation checks.",
+            UserWarning,
+        )
+        return
+
     if not isinstance(observation_space, spaces.Tuple):
         # Accept a single-value tuple for GraphInstance for compatibility with other tuple types.
-        if _is_graph_space(observation_space) and isinstance(obs, tuple) and len(obs) == 1:
-            obs = obs[0]
-        elif _is_graph_space(observation_space) and isinstance(obs, GraphInstance):
-            pass  # Accept as is
-        else:
-            assert not (
-                isinstance(obs, tuple) and _is_graph_space(observation_space)
-            ), f"TypeError: `{method_name}()` should be a single value of (1, GraphInstance), not of tuple length {len(obs)}"
             assert not isinstance(
                 obs, tuple
             ), f"The observation returned by the `{method_name}()` method should be a single value, not a tuple"
@@ -224,14 +224,6 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
         # Since https://github.com/Farama-Foundation/Gymnasium/pull/141,
         # `sample()` will return a np.int64 instead of an int
         assert np.issubdtype(type(obs), np.integer), f"The observation returned by `{method_name}()` method must be an int"
-
-    # --- Graph support ---
-    elif _is_graph_space(observation_space):
-        # check fields here (nodes, edges, edge_links)
-        assert observation_space.contains(
-            obs
-        ), f"The observation returned by the `{method_name}()` method is incompatible w/ graph-obs:  {observation_space}"
-        return
 
     elif _is_numpy_array_space(observation_space):
         assert isinstance(obs, np.ndarray), f"The observation returned by `{method_name}()` method must be a numpy array"

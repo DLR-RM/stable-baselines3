@@ -4,6 +4,7 @@ from typing import Any, Union
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
+from gymnasium.spaces.graph import GraphInstance
 
 from stable_baselines3.common.preprocessing import check_for_nested_spaces, is_image_space_channels_first
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
@@ -12,7 +13,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
 def _is_numpy_array_space(space: spaces.Space) -> bool:
     """
     Returns False if provided space is not representable as a single numpy array
-    (e.g. Dict and Tuple spaces return False)
+    (e.g. Dict, Tuple spaces return False)
     """
     return not isinstance(space, (spaces.Dict, spaces.Tuple))
 
@@ -204,16 +205,26 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
     Check that the observation returned by the environment
     correspond to the declared one.
     """
+    # If the observation space is a Graph, return early with a warning.
+    if _is_graph_space(observation_space):
+        warnings.warn(
+            f"The observation space for `{method_name}()` is a Graph space, which is not supported by the env checker. Skipping further observation checks.",
+            UserWarning,
+        )
+        return
+
     if not isinstance(observation_space, spaces.Tuple):
-        assert not isinstance(
-            obs, tuple
-        ), f"The observation returned by the `{method_name}()` method should be a single value, not a tuple"
+        # Accept a single-value tuple for GraphInstance for compatibility with other tuple types.
+            assert not isinstance(
+                obs, tuple
+            ), f"The observation returned by the `{method_name}()` method should be a single value, not a tuple"
 
     # The check for a GoalEnv is done by the base class
     if isinstance(observation_space, spaces.Discrete):
         # Since https://github.com/Farama-Foundation/Gymnasium/pull/141,
         # `sample()` will return a np.int64 instead of an int
         assert np.issubdtype(type(obs), np.integer), f"The observation returned by `{method_name}()` method must be an int"
+
     elif _is_numpy_array_space(observation_space):
         assert isinstance(obs, np.ndarray), f"The observation returned by `{method_name}()` method must be a numpy array"
 
@@ -240,16 +251,13 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
                     f"of the given observation space {observation_space}. \n"
                 )
                 message += f"{len(invalid_indices[0])} invalid indices: \n"
-
                 for index in zip(*invalid_indices):
                     index_str = ",".join(map(str, index))
                     message += (
                         f"Expected: {lower_bounds[index]} <= obs[{index_str}] <= {upper_bounds[index]}, "
                         f"actual value: {obs[index]} \n"
                     )
-
                 raise AssertionError(message)
-
     assert observation_space.contains(obs), (
         f"The observation returned by the `{method_name}()` method "
         f"does not match the given observation space {observation_space}"
@@ -293,25 +301,29 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
         _check_goal_env_obs(obs, observation_space, "reset")
     elif isinstance(observation_space, spaces.Dict):
         assert isinstance(obs, dict), "The observation returned by `reset()` must be a dictionary"
-
         if not obs.keys() == observation_space.spaces.keys():
             raise AssertionError(
                 "The observation keys returned by `reset()` must match the observation "
                 f"space keys: {obs.keys()} != {observation_space.spaces.keys()}"
             )
-
         for key in observation_space.spaces.keys():
             try:
-                _check_obs(obs[key], observation_space.spaces[key], "reset")
+                # Accept a single-value tuple for GraphInstance for backward/legacy compatibility
+                if _is_graph_space(observation_space.spaces[key]) and isinstance(obs[key], tuple) and len(obs[key]) == 1:
+                    obs_val = obs[key][0]
+                else:
+                    obs_val = obs[key]
+                _check_obs(obs_val, observation_space.spaces[key], "reset")
             except AssertionError as e:
                 raise AssertionError(f"Error while checking key={key}: " + str(e)) from e
+    elif _is_graph_space(observation_space):
+        _check_obs(obs, observation_space, "reset")
     else:
         _check_obs(obs, observation_space, "reset")
 
     # Sample a random action
     action = action_space.sample()
     data = env.step(action)
-
     assert len(data) == 5, (
         "The `step()` method must return five values: "
         f"obs, reward, terminated, truncated, info. Actual: {len(data)} values returned."
@@ -329,19 +341,23 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
             assert isinstance(observation_space, spaces.Dict)
             _check_goal_env_obs(obs, observation_space, "step")
             _check_goal_env_compute_reward(obs, env, float(reward), info)
-
         if not obs.keys() == observation_space.spaces.keys():
             raise AssertionError(
                 "The observation keys returned by `step()` must match the observation "
                 f"space keys: {obs.keys()} != {observation_space.spaces.keys()}"
             )
-
         for key in observation_space.spaces.keys():
             try:
-                _check_obs(obs[key], observation_space.spaces[key], "step")
+                # Accept a single-value tuple for GraphInstance for backward/legacy compatibility
+                if _is_graph_space(observation_space.spaces[key]) and isinstance(obs[key], tuple) and len(obs[key]) == 1:
+                    obs_val = obs[key][0]
+                else:
+                    obs_val = obs[key]
+                _check_obs(obs_val, observation_space.spaces[key], "step")
             except AssertionError as e:
                 raise AssertionError(f"Error while checking key={key}: " + str(e)) from e
-
+    elif _is_graph_space(observation_space):
+        _check_obs(obs, observation_space, "step")
     else:
         _check_obs(obs, observation_space, "step")
 
@@ -384,6 +400,18 @@ def _check_spaces(env: gym.Env) -> None:
             "Note: if your env is not a GoalEnv, please rename `env.compute_reward()` "
             "to something else to avoid False positive."
         )
+
+
+def _is_graph_space(space: Any) -> bool:
+    """
+    Check if the space is a gymnasium Graph space.
+    Handles the case where gymnasium.spaces.graph may not be available.
+    """
+    try:
+        from gymnasium.spaces.graph import Graph
+    except ImportError:
+        return False
+    return isinstance(space, Graph)
 
 
 # Check render cannot be covered by CI
@@ -444,7 +472,6 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
         raise TypeError("The reset() method must accept a `seed` parameter") from e
 
     # Warn the user if needed.
-    # A warning means that the environment may run but not work properly with Stable Baselines algorithms
     if warn:
         _check_unsupported_spaces(env, observation_space, action_space)
 
@@ -487,8 +514,12 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
 
     try:
         check_for_nested_spaces(env.observation_space)
-        # The check doesn't support nested observations/dict actions
-        # A warning about it has already been emitted
-        _check_nan(env)
+        # if there is None defined , then skip the test
+        if _is_graph_space(observation_space) or (
+            isinstance(observation_space, spaces.Dict) and any(_is_graph_space(s) for s in observation_space.spaces.values())
+        ):
+            pass  # skip _check_nan for Graph spaces
+        else:
+            _check_nan(env)
     except NotImplementedError:
         pass

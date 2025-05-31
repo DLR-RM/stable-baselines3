@@ -37,6 +37,7 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Clarify ``evaluate_policy`` documentation
 - Added doc about training exceeding the `total_timesteps` parameter
+- Updated ``LunarLander`` and ``LunarLanderContinuous`` environment versions to v3
 
 
 Release 2.6.0 (2025-03-24)

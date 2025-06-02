@@ -381,7 +381,7 @@ class BasePolicy(BaseModel, ABC):
         # Remove batch dimension if needed
         if not vectorized_env:
             assert isinstance(actions, np.ndarray)
-            actions = actions.squeeze(axis=0)
+            actions = actions.squeeze(axis=0)  # type: ignore[assignment]
 
         return actions, state  # type: ignore[return-value]
 

@@ -71,7 +71,7 @@ In the following example, we will train, save and load a DQN model on the Lunar 
 
 
   # Create environment
-  env = gym.make("LunarLander-v2", render_mode="rgb_array")
+  env = gym.make("LunarLander-v3", render_mode="rgb_array")
 
   # Instantiate the agent
   model = DQN("MlpPolicy", env, verbose=1)
@@ -289,7 +289,7 @@ If your callback returns False, training is aborted early.
   os.makedirs(log_dir, exist_ok=True)
 
   # Create and wrap the environment
-  env = gym.make("LunarLanderContinuous-v2")
+  env = gym.make("LunarLanderContinuous-v3")
   env = Monitor(env, log_dir)
 
   # Add some action noise for exploration
@@ -816,7 +816,7 @@ Bonus: Make a GIF of a Trained Agent
 
   from stable_baselines3 import A2C
 
-  model = A2C("MlpPolicy", "LunarLander-v2").learn(100_000)
+  model = A2C("MlpPolicy", "LunarLander-v3").learn(100_000)
 
   images = []
   obs = model.env.reset()

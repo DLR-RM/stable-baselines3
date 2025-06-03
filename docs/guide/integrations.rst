@@ -73,11 +73,11 @@ Installation
 
      # Download model and save it into the logs/ folder
      # Only use TRUST_REMOTE_CODE=True with HF models that can be trusted (here the SB3 organization)
-     TRUST_REMOTE_CODE=True python -m rl_zoo3.load_from_hub --algo a2c --env LunarLander-v2 -orga sb3 -f logs/
+     TRUST_REMOTE_CODE=True python -m rl_zoo3.load_from_hub --algo a2c --env LunarLander-v3 -orga sb3 -f logs/
      # Test the agent
-     python -m rl_zoo3.enjoy --algo a2c --env LunarLander-v2  -f logs/
+     python -m rl_zoo3.enjoy --algo a2c --env LunarLander-v3  -f logs/
      # Push model, config and hyperparameters to the hub
-     python -m rl_zoo3.push_to_hub --algo a2c --env LunarLander-v2 -f logs/ -orga sb3 -m "Initial commit"
+     python -m rl_zoo3.push_to_hub --algo a2c --env LunarLander-v3 -f logs/ -orga sb3 -m "Initial commit"
 
 
 

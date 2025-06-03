@@ -214,11 +214,16 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
         return
 
     if not isinstance(observation_space, spaces.Tuple):
-        # Accept a single-value tuple for GraphInstance for compatibility with other tuple types.
-            assert not isinstance(
-                obs, tuple
-            ), f"The observation returned by the `{method_name}()` method should be a single value, not a tuple"
-
+        assert not isinstance(
+            obs, tuple
+        ), f"The observation returned by the `{method_name}()` method should be a single value, not a tuple"
+        # Graph spaces are not fully supported by the env checker
+        if isinstance(observation_space, spaces.Graph):
+            warnings.warn(
+                "Graph observation spaces are not fully supported by the env checker. "
+                "Skipping further observation checks."
+            )
+            return
     # The check for a GoalEnv is done by the base class
     if isinstance(observation_space, spaces.Discrete):
         # Since https://github.com/Farama-Foundation/Gymnasium/pull/141,

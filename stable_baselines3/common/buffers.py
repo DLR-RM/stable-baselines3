@@ -872,7 +872,7 @@ class NStepReplayBuffer(ReplayBuffer):
         mask = np.arange(n_steps).reshape(1, -1) <= done_idx[:, None]  # shape: [batch, n_steps]
 
         # Apply discount
-        discounts = self.gamma ** np.arange(n_steps).reshape(1, -1)  # [1, n_steps]
+        discounts = self.gamma ** np.arange(n_steps, dtype=np.float32).reshape(1, -1)  # [1, n_steps]
         discounted_rewards = rewards_seq * discounts * mask
         n_step_returns = discounted_rewards.sum(axis=1, keepdims=True)  # [batch, 1]
 

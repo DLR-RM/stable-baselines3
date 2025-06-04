@@ -838,3 +838,59 @@ class DictRolloutBuffer(RolloutBuffer):
             advantages=self.to_torch(self.advantages[batch_inds].flatten()),
             returns=self.to_torch(self.returns[batch_inds].flatten()),
         )
+
+
+class NStepReplayBuffer(ReplayBuffer):
+    def __init__(self, *args, n_steps: int = 3, gamma: float = 0.99, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.n_steps = n_steps
+        self.gamma = gamma
+
+    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
+        n_steps = self.n_steps
+
+        # Randomly choose env indices for each sample
+        env_indices = np.random.randint(0, self.n_envs, size=batch_inds.shape)
+
+        # Compute n-step indices with wrap-around
+        steps = np.arange(n_steps).reshape(1, -1)  # shape: [1, n_steps]
+        # FIXME: the self.pos index is invalid (will overlap two different episodes when buffer is full)
+        indices = (batch_inds[:, None] + steps) % self.buffer_size  # shape: [batch, n_steps]
+
+        # Retrieve sequences of transitions
+        rewards_seq = self.rewards[indices, env_indices[:, None]]  # [batch, n_steps]
+        dones_seq = self.dones[indices, env_indices[:, None]]  # [batch, n_steps]
+        truncs_seq = self.timeouts[indices, env_indices[:, None]]  # [batch, n_steps]
+
+        # Compute masks: 1 until first done/truncation (inclusive)
+        done_or_trunc = np.logical_or(dones_seq, truncs_seq)
+        done_idx = done_or_trunc.argmax(axis=1)
+        # If no done/truncation, keep full sequence
+        has_done_or_trunc = done_or_trunc.any(axis=1)
+        done_idx = np.where(has_done_or_trunc, done_idx, n_steps - 1)
+
+        mask = np.arange(n_steps).reshape(1, -1) <= done_idx[:, None]  # shape: [batch, n_steps]
+
+        # Apply discount
+        discounts = self.gamma ** np.arange(n_steps).reshape(1, -1)  # [1, n_steps]
+        discounted_rewards = rewards_seq * discounts * mask
+        n_step_returns = discounted_rewards.sum(axis=1, keepdims=True)  # [batch, 1]
+
+        # Compute indices of next_obs/done at the final point of the n-step transition
+        last_indices = (batch_inds + done_idx) % self.buffer_size
+        next_obs = self._normalize_obs(self.next_observations[last_indices, env_indices], env)
+        next_dones = self.dones[last_indices, env_indices].reshape(-1, 1).astype(np.float32)
+        next_timeouts = self.timeouts[last_indices, env_indices].reshape(-1, 1).astype(np.float32)
+        final_dones = next_dones * (1.0 - next_timeouts)
+
+        # Gather observations and actions
+        obs = self._normalize_obs(self.observations[batch_inds, env_indices], env)
+        actions = self.actions[batch_inds, env_indices]
+
+        return ReplayBufferSamples(
+            observations=self.to_torch(obs),  # type: ignore[arg-type]
+            actions=self.to_torch(actions),
+            next_observations=self.to_torch(next_obs),  # type: ignore[arg-type]
+            dones=self.to_torch(final_dones),
+            rewards=self.to_torch(n_step_returns),
+        )

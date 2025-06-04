@@ -4,7 +4,6 @@ from typing import Any, Union
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
-from gymnasium.spaces.graph import GraphInstance
 
 from stable_baselines3.common.preprocessing import check_for_nested_spaces, is_image_space_channels_first
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
@@ -208,7 +207,8 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
     # If the observation space is a Graph, return early with a warning.
     if _is_graph_space(observation_space):
         warnings.warn(
-            f"The observation space for `{method_name}()` is a Graph space, which is not supported by the env checker. Skipping further observation checks.",
+            f"The observation space for `{method_name}()` is a Graph space, which is not supported the env checker.",
+            "Skipping further observation checks.",
             UserWarning,
         )
         return
@@ -306,29 +306,25 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
         _check_goal_env_obs(obs, observation_space, "reset")
     elif isinstance(observation_space, spaces.Dict):
         assert isinstance(obs, dict), "The observation returned by `reset()` must be a dictionary"
+
         if not obs.keys() == observation_space.spaces.keys():
             raise AssertionError(
                 "The observation keys returned by `reset()` must match the observation "
                 f"space keys: {obs.keys()} != {observation_space.spaces.keys()}"
             )
+
         for key in observation_space.spaces.keys():
             try:
-                # Accept a single-value tuple for GraphInstance for backward/legacy compatibility
-                if _is_graph_space(observation_space.spaces[key]) and isinstance(obs[key], tuple) and len(obs[key]) == 1:
-                    obs_val = obs[key][0]
-                else:
-                    obs_val = obs[key]
-                _check_obs(obs_val, observation_space.spaces[key], "reset")
+                _check_obs(obs[key], observation_space.spaces[key], "reset")
             except AssertionError as e:
                 raise AssertionError(f"Error while checking key={key}: " + str(e)) from e
-    elif _is_graph_space(observation_space):
-        _check_obs(obs, observation_space, "reset")
     else:
         _check_obs(obs, observation_space, "reset")
 
     # Sample a random action
     action = action_space.sample()
     data = env.step(action)
+
     assert len(data) == 5, (
         "The `step()` method must return five values: "
         f"obs, reward, terminated, truncated, info. Actual: {len(data)} values returned."
@@ -346,23 +342,19 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
             assert isinstance(observation_space, spaces.Dict)
             _check_goal_env_obs(obs, observation_space, "step")
             _check_goal_env_compute_reward(obs, env, float(reward), info)
+
         if not obs.keys() == observation_space.spaces.keys():
             raise AssertionError(
                 "The observation keys returned by `step()` must match the observation "
                 f"space keys: {obs.keys()} != {observation_space.spaces.keys()}"
             )
+
         for key in observation_space.spaces.keys():
             try:
-                # Accept a single-value tuple for GraphInstance for backward/legacy compatibility
-                if _is_graph_space(observation_space.spaces[key]) and isinstance(obs[key], tuple) and len(obs[key]) == 1:
-                    obs_val = obs[key][0]
-                else:
-                    obs_val = obs[key]
-                _check_obs(obs_val, observation_space.spaces[key], "step")
+                _check_obs(obs[key], observation_space.spaces[key], "step")
             except AssertionError as e:
                 raise AssertionError(f"Error while checking key={key}: " + str(e)) from e
-    elif _is_graph_space(observation_space):
-        _check_obs(obs, observation_space, "step")
+
     else:
         _check_obs(obs, observation_space, "step")
 
@@ -377,6 +369,7 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
         # for mypy, env.unwrapped was checked by _is_goal_env()
         assert hasattr(env, "compute_reward")
         assert reward == env.compute_reward(obs["achieved_goal"], obs["desired_goal"], info)
+
 
 
 def _check_spaces(env: gym.Env) -> None:

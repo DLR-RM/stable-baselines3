@@ -4,6 +4,7 @@ import pytest
 
 from stable_baselines3.common.buffers import NStepReplayBuffer, ReplayBuffer
 
+# TODO(antonin): add run test with DQN/SAC, same as for her replay
 
 def create_buffer(buffer_size=10, n_steps=3, gamma=0.99, n_envs=1):
     obs_space = gym.spaces.Box(low=0, high=1, shape=(4,), dtype=np.float32)

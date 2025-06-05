@@ -292,7 +292,7 @@ class ReplayBuffer(BaseBuffer):
         :param batch_size: Number of element to sample
         :param env: associated gym VecEnv
             to normalize the observations/rewards when sampling
-        :return:
+        :return: a batch of sampled experiences from the buffer.
         """
         if not self.optimize_memory_usage:
             return super().sample(batch_size=batch_size, env=env)
@@ -322,7 +322,7 @@ class ReplayBuffer(BaseBuffer):
             (self.dones[batch_inds, env_indices] * (1 - self.timeouts[batch_inds, env_indices])).reshape(-1, 1),
             self._normalize_reward(self.rewards[batch_inds, env_indices].reshape(-1, 1), env),
         )
-        return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
+        return ReplayBufferSamples(*tuple(map(self.to_torch, data)))  # type: ignore[arg-type]
 
     @staticmethod
     def _maybe_cast_dtype(dtype: np.typing.DTypeLike) -> np.typing.DTypeLike:

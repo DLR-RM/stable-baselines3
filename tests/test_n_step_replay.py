@@ -2,9 +2,38 @@ import gymnasium as gym
 import numpy as np
 import pytest
 
+from stable_baselines3 import DQN, SAC
 from stable_baselines3.common.buffers import NStepReplayBuffer, ReplayBuffer
+from stable_baselines3.common.env_util import make_vec_env
 
-# TODO(antonin): add run test with DQN/SAC, same as for her replay
+
+@pytest.mark.parametrize("model_class", [SAC, DQN])
+def test_run(model_class):
+    env_id = "CartPole-v1" if model_class == DQN else "Pendulum-v1"
+    env = make_vec_env(env_id, n_envs=2)
+
+    # FIXME: need to set the discount factor manually
+    n_steps = 2
+    gamma = 0.99
+    discount = gamma**n_steps
+
+    model = model_class(
+        "MlpPolicy",
+        env,
+        replay_buffer_class=NStepReplayBuffer,
+        replay_buffer_kwargs=dict(
+            n_steps=n_steps,
+            gamma=gamma,
+        ),
+        train_freq=4,
+        policy_kwargs=dict(net_arch=[64]),
+        learning_starts=100,
+        buffer_size=int(2e4),
+        gamma=discount,
+    )
+
+    model.learn(total_timesteps=150)
+
 
 def create_buffer(buffer_size=10, n_steps=3, gamma=0.99, n_envs=1):
     obs_space = gym.spaces.Box(low=0, high=1, shape=(4,), dtype=np.float32)
@@ -119,6 +148,27 @@ def test_nstep_no_termination_or_truncation(n_steps):
     expected = compute_expected_nstep_reward(gamma=0.99, n_steps=n_steps)
     np.testing.assert_allclose(actual, expected, rtol=1e-4)
     assert batch.dones.numpy().item() == 0.0
+
+    # Check that self.pos-1 truncation is set when buffer is full
+    # Note: buffer size is 10, here we are erasing past transitions
+    fill_buffer(buffer, length=2)
+    # We create a tmp truncation to not sample across episodes
+    base_idx = 0
+    batch = buffer._get_samples(np.array([base_idx]))
+    actual = batch.rewards.numpy().item()
+    # Note: compute_expected_nstep assumes base_idx=1
+    expected = compute_expected_nstep_reward(gamma=0.99, n_steps=n_steps, stop_idx=buffer.pos - 1)
+    np.testing.assert_allclose(actual, expected, rtol=1e-4)
+    assert batch.dones.numpy().item() == 0.0
+
+    # Set done=1 manually, the tmp truncation should not be set (it would set batch.done=False)
+    buffer.dones[buffer.pos - 1, :] = True
+    batch = buffer._get_samples(np.array([base_idx]))
+    actual = batch.rewards.numpy().item()
+    # Note: compute_expected_nstep assumes base_idx=0
+    expected = compute_expected_nstep_reward(gamma=0.99, n_steps=n_steps, stop_idx=buffer.pos - 1)
+    np.testing.assert_allclose(actual, expected, rtol=1e-4)
+    assert batch.dones.numpy().item() == 1.0
 
 
 def test_match_normal_buffer():

@@ -939,5 +939,6 @@ class NStepReplayBuffer(ReplayBuffer):
             actions=self.to_torch(actions),
             next_observations=self.to_torch(next_obs),  # type: ignore[arg-type]
             dones=self.to_torch(final_dones),
+            # FIXME: what to do with self._normalize_reward ?
             rewards=self.to_torch(n_step_returns),
         )

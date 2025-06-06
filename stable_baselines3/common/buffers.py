@@ -846,18 +846,6 @@ class NStepReplayBuffer(ReplayBuffer):
         self.n_steps = n_steps
         self.gamma = gamma
 
-    def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
-        if self.n_steps == 1:
-            return super().sample(batch_size=batch_size, env=env)
-        # Do not sample the element with index `self.pos` as the transition is invalid
-        # (would be sampling across episodes), we set truncated=True for self.pos - 1 (temporarly)
-        if self.full:
-            batch_inds = (np.random.randint(1, self.buffer_size, size=batch_size) + self.pos) % self.buffer_size
-        else:
-            # Do not sample pos, pos - 1, ..., pos - (n_steps - 1) to avoid issue computing n_steps
-            batch_inds = np.random.randint(0, self.pos - self.n_steps + 1, size=batch_size)
-        return self._get_samples(batch_inds, env=env)
-
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
         n_steps = self.n_steps
 
@@ -869,15 +857,15 @@ class NStepReplayBuffer(ReplayBuffer):
         # Note: the self.pos index is invalid (will overlap two different episodes when buffer is full)
         # 1. We do not sample self.pos
         # 2. We set self.pos-1 to truncated=True (temporarly) if done=False
-        tmp_timeouts = self.timeouts.copy()
-        tmp_timeouts[self.pos - 1, :] = np.logical_not(self.dones[self.pos - 1, :])
+        safe_timeouts = self.timeouts.copy()
+        safe_timeouts[self.pos - 1, :] = np.logical_not(self.dones[self.pos - 1, :])
 
         indices = (batch_inds[:, None] + steps) % self.buffer_size  # shape: [batch, n_steps]
 
         # Retrieve sequences of transitions
         rewards_seq = self.rewards[indices, env_indices[:, None]]  # [batch, n_steps]
         dones_seq = self.dones[indices, env_indices[:, None]]  # [batch, n_steps]
-        truncs_seq = tmp_timeouts[indices, env_indices[:, None]]  # [batch, n_steps]
+        truncs_seq = safe_timeouts[indices, env_indices[:, None]]  # [batch, n_steps]
 
         # Compute masks: 1 until first done/truncation (inclusive)
         done_or_trunc = np.logical_or(dones_seq, truncs_seq)
@@ -897,7 +885,7 @@ class NStepReplayBuffer(ReplayBuffer):
         last_indices = (batch_inds + done_idx) % self.buffer_size
         next_obs = self._normalize_obs(self.next_observations[last_indices, env_indices], env)
         next_dones = self.dones[last_indices, env_indices].reshape(-1, 1).astype(np.float32)
-        next_timeouts = tmp_timeouts[last_indices, env_indices].reshape(-1, 1).astype(np.float32)
+        next_timeouts = safe_timeouts[last_indices, env_indices].reshape(-1, 1).astype(np.float32)
         final_dones = next_dones * (1.0 - next_timeouts)
 
         # Gather observations and actions

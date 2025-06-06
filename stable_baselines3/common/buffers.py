@@ -841,21 +841,64 @@ class DictRolloutBuffer(RolloutBuffer):
 
 
 class NStepReplayBuffer(ReplayBuffer):
+    """
+    Replay buffer used for computing n-step returns in off-policy algorithms like SAC/DQN.
+
+    The n-step return combines multiple steps of future rewards,
+    discounted by the discount factor gamma.
+    This can help improve sample efficiency and credit assignment.
+
+    This implementation uses the same storage space as a normal replay buffer,
+    and NumPy vectorized operations at sampling time to efficiently compute the
+    n-step return, without requiring extra memory.
+
+    This implementation is inspired by:
+    - https://github.com/younggyoseo/FastTD3
+    - https://github.com/DLR-RM/stable-baselines3/pull/81
+
+    It avoids potential issues such as:
+    - https://github.com/younggyoseo/FastTD3/issues/6
+
+    :param buffer_size: Max number of element in the buffer
+    :param observation_space: Observation space
+    :param action_space: Action space
+    :param device: PyTorch device
+    :param n_envs: Number of parallel environments
+    :param optimize_memory_usage: Not supported
+    :param handle_timeout_termination: Handle timeout termination (due to timelimit)
+        separately and treat the task as infinite horizon task.
+        https://github.com/DLR-RM/stable-baselines3/issues/284
+    :param n_steps: Number of steps to accumulate rewards for n-step returns
+    :param gamma: Discount factor for future rewards
+    """
+
     def __init__(self, *args, n_steps: int = 3, gamma: float = 0.99, **kwargs):
         super().__init__(*args, **kwargs)
         self.n_steps = n_steps
         self.gamma = gamma
+        if self.optimize_memory_usage:
+            raise NotImplementedError("NStepReplayBuffer doesn't support optimize_memory_usage=True")
 
     def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
-        n_steps = self.n_steps
+        """
+        Sample a batch of transitions and compute n-step returns.
 
+        For each sampled transition, the method computes the cumulative discounted reward over
+        the next `n_steps`, properly handling episode termination and timeouts.
+        The next observation and done flag correspond to the last transition in the computed n-step trajectory.
+
+        :param batch_inds: Indices of samples to retrieve
+        :param env: Optional VecNormalize environment for normalizing observations/rewards
+        :return: A batch of samples with n-step returns and corresponding observations/actions
+        """
         # Randomly choose env indices for each sample
         env_indices = np.random.randint(0, self.n_envs, size=batch_inds.shape)
 
         # Compute n-step indices with wrap-around
-        steps = np.arange(n_steps).reshape(1, -1)  # shape: [1, n_steps]
+        steps = np.arange(self.n_steps).reshape(1, -1)  # shape: [1, n_steps]
         # Note: the self.pos index is dangerous (will overlap two different episodes when buffer is full)
-        # so we set self.pos-1 to truncated=True (temporarly) if done=False
+        # so we set self.pos-1 to truncated=True (temporarily) if done=False
+        # TODO: avoid copying the whole array (requires some more indices trickery)
         safe_timeouts = self.timeouts.copy()
         safe_timeouts[self.pos - 1, :] = np.logical_not(self.dones[self.pos - 1, :])
 
@@ -871,12 +914,12 @@ class NStepReplayBuffer(ReplayBuffer):
         done_idx = done_or_trunc.argmax(axis=1)
         # If no done/truncation, keep full sequence
         has_done_or_trunc = done_or_trunc.any(axis=1)
-        done_idx = np.where(has_done_or_trunc, done_idx, n_steps - 1)
+        done_idx = np.where(has_done_or_trunc, done_idx, self.n_steps - 1)
 
-        mask = np.arange(n_steps).reshape(1, -1) <= done_idx[:, None]  # shape: [batch, n_steps]
+        mask = np.arange(self.n_steps).reshape(1, -1) <= done_idx[:, None]  # shape: [batch, n_steps]
 
         # Apply discount
-        discounts = self.gamma ** np.arange(n_steps, dtype=np.float32).reshape(1, -1)  # [1, n_steps]
+        discounts = self.gamma ** np.arange(self.n_steps, dtype=np.float32).reshape(1, -1)  # [1, n_steps]
         discounted_rewards = rewards_seq * discounts * mask
         n_step_returns = discounted_rewards.sum(axis=1, keepdims=True)  # [batch, 1]
 

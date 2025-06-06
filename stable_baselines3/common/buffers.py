@@ -854,9 +854,8 @@ class NStepReplayBuffer(ReplayBuffer):
 
         # Compute n-step indices with wrap-around
         steps = np.arange(n_steps).reshape(1, -1)  # shape: [1, n_steps]
-        # Note: the self.pos index is invalid (will overlap two different episodes when buffer is full)
-        # 1. We do not sample self.pos
-        # 2. We set self.pos-1 to truncated=True (temporarly) if done=False
+        # Note: the self.pos index is dangerous (will overlap two different episodes when buffer is full)
+        # so we set self.pos-1 to truncated=True (temporarly) if done=False
         safe_timeouts = self.timeouts.copy()
         safe_timeouts[self.pos - 1, :] = np.logical_not(self.dones[self.pos - 1, :])
 

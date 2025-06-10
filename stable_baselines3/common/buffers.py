@@ -898,7 +898,9 @@ class NStepReplayBuffer(ReplayBuffer):
         # so we set self.pos-1 to truncated=True (temporarily) if done=False
         # TODO: avoid copying the whole array (requires some more indices trickery)
         safe_timeouts = self.timeouts.copy()
-        safe_timeouts[self.pos - 1, :] = np.logical_not(self.dones[self.pos - 1, :])
+        last_valid_index = self.pos - 1
+        tmp_timeout = np.logical_not(self.dones[last_valid_index, :])
+        safe_timeouts[last_valid_index, :] = np.logical_or(safe_timeouts[last_valid_index, :], tmp_timeout)
 
         # Compute n-step indices with wrap-around
         steps = np.arange(self.n_steps).reshape(1, -1)  # shape: [1, n_steps]
@@ -907,14 +909,14 @@ class NStepReplayBuffer(ReplayBuffer):
         # Retrieve sequences of transitions
         rewards_seq = self._normalize_reward(self.rewards[indices, env_indices[:, None]], env)  # [batch, n_steps]
         dones_seq = self.dones[indices, env_indices[:, None]]  # [batch, n_steps]
-        truncs_seq = safe_timeouts[indices, env_indices[:, None]]  # [batch, n_steps]
+        truncated_seq = safe_timeouts[indices, env_indices[:, None]]  # [batch, n_steps]
 
         # Compute masks: 1 until first done/truncation (inclusive)
-        done_or_trunc = np.logical_or(dones_seq, truncs_seq)
-        done_idx = done_or_trunc.argmax(axis=1)
+        done_or_truncated = np.logical_or(dones_seq, truncated_seq)
+        done_idx = done_or_truncated.argmax(axis=1)
         # If no done/truncation, keep full sequence
-        has_done_or_trunc = done_or_trunc.any(axis=1)
-        done_idx = np.where(has_done_or_trunc, done_idx, self.n_steps - 1)
+        has_done_or_truncated = done_or_truncated.any(axis=1)
+        done_idx = np.where(has_done_or_truncated, done_idx, self.n_steps - 1)
 
         mask = np.arange(self.n_steps).reshape(1, -1) <= done_idx[:, None]  # shape: [batch, n_steps]
         # Compute discount factors for bootstrapping (using target Q-Value)

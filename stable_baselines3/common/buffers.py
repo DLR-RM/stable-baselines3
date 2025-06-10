@@ -894,18 +894,18 @@ class NStepReplayBuffer(ReplayBuffer):
         # Randomly choose env indices for each sample
         env_indices = np.random.randint(0, self.n_envs, size=batch_inds.shape)
 
-        # Compute n-step indices with wrap-around
-        steps = np.arange(self.n_steps).reshape(1, -1)  # shape: [1, n_steps]
         # Note: the self.pos index is dangerous (will overlap two different episodes when buffer is full)
         # so we set self.pos-1 to truncated=True (temporarily) if done=False
         # TODO: avoid copying the whole array (requires some more indices trickery)
         safe_timeouts = self.timeouts.copy()
         safe_timeouts[self.pos - 1, :] = np.logical_not(self.dones[self.pos - 1, :])
 
+        # Compute n-step indices with wrap-around
+        steps = np.arange(self.n_steps).reshape(1, -1)  # shape: [1, n_steps]
         indices = (batch_inds[:, None] + steps) % self.buffer_size  # shape: [batch, n_steps]
 
         # Retrieve sequences of transitions
-        rewards_seq = self.rewards[indices, env_indices[:, None]]  # [batch, n_steps]
+        rewards_seq = self._normalize_reward(self.rewards[indices, env_indices[:, None]], env)  # [batch, n_steps]
         dones_seq = self.dones[indices, env_indices[:, None]]  # [batch, n_steps]
         truncs_seq = safe_timeouts[indices, env_indices[:, None]]  # [batch, n_steps]
 
@@ -917,6 +917,9 @@ class NStepReplayBuffer(ReplayBuffer):
         done_idx = np.where(has_done_or_trunc, done_idx, self.n_steps - 1)
 
         mask = np.arange(self.n_steps).reshape(1, -1) <= done_idx[:, None]  # shape: [batch, n_steps]
+        # Compute discount factors for bootstrapping (using target Q-Value)
+        # It is gamma ** n_steps by default but should be adjusted in case of early termination/truncation.
+        target_q_discounts = self.gamma ** mask.sum(axis=1, keepdims=True).astype(np.float32)  # [batch, 1]
 
         # Apply discount
         discounts = self.gamma ** np.arange(self.n_steps, dtype=np.float32).reshape(1, -1)  # [1, n_steps]
@@ -939,6 +942,6 @@ class NStepReplayBuffer(ReplayBuffer):
             actions=self.to_torch(actions),
             next_observations=self.to_torch(next_obs),  # type: ignore[arg-type]
             dones=self.to_torch(final_dones),
-            # FIXME: what to do with self._normalize_reward ?
             rewards=self.to_torch(n_step_returns),
+            discounts=self.to_torch(target_q_discounts),
         )

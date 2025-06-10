@@ -191,6 +191,8 @@ class DQN(OffPolicyAlgorithm):
         for _ in range(gradient_steps):
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)  # type: ignore[union-attr]
+            # For n-step replay, discount factor is gamma**n_steps (when no early termination)
+            discounts = replay_data.discounts if replay_data.discounts is not None else self.gamma
 
             with th.no_grad():
                 # Compute the next Q-values using the target network
@@ -200,7 +202,7 @@ class DQN(OffPolicyAlgorithm):
                 # Avoid potential broadcast issue
                 next_q_values = next_q_values.reshape(-1, 1)
                 # 1-step TD target
-                target_q_values = replay_data.rewards + (1 - replay_data.dones) * self.gamma * next_q_values
+                target_q_values = replay_data.rewards + (1 - replay_data.dones) * discounts * next_q_values
 
             # Get current Q-values estimates
             current_q_values = self.q_net(replay_data.observations)

@@ -163,6 +163,8 @@ class TD3(OffPolicyAlgorithm):
             self._n_updates += 1
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)  # type: ignore[union-attr]
+            # For n-step replay, discount factor is gamma**n_steps (when no early termination)
+            discounts = replay_data.discounts if replay_data.discounts is not None else self.gamma
 
             with th.no_grad():
                 # Select action according to policy and add clipped noise
@@ -173,7 +175,7 @@ class TD3(OffPolicyAlgorithm):
                 # Compute the next Q-values: min over all critics targets
                 next_q_values = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
                 next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
-                target_q_values = replay_data.rewards + (1 - replay_data.dones) * self.gamma * next_q_values
+                target_q_values = replay_data.rewards + (1 - replay_data.dones) * discounts * next_q_values
 
             # Get current Q-values estimates for each critic network
             current_q_values = self.critic(replay_data.observations, replay_data.actions)

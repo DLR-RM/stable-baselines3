@@ -12,10 +12,8 @@ def test_run(model_class):
     env_id = "CartPole-v1" if model_class == DQN else "Pendulum-v1"
     env = make_vec_env(env_id, n_envs=2)
 
-    # FIXME: need to set the discount factor manually
     n_steps = 2
     gamma = 0.99
-    discount = gamma**n_steps
 
     model = model_class(
         "MlpPolicy",
@@ -29,7 +27,7 @@ def test_run(model_class):
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=100,
         buffer_size=int(2e4),
-        gamma=discount,
+        gamma=gamma,
     )
 
     model.learn(total_timesteps=150)
@@ -103,11 +101,11 @@ def test_nstep_early_termination(done_at, n_steps):
 
     base_idx = 0
     batch = buffer._get_samples(np.array([base_idx]))
-    actual = batch.rewards.numpy().item()
+    actual = batch.rewards.item()
 
     expected = compute_expected_nstep_reward(gamma=0.99, n_steps=n_steps, stop_idx=done_at - base_idx)
     np.testing.assert_allclose(actual, expected, rtol=1e-4)
-    assert batch.dones.numpy().item() == 1.0
+    assert batch.dones.item() == 1.0
 
 
 @pytest.mark.parametrize("truncated_at", [1, 2])
@@ -117,25 +115,27 @@ def test_nstep_early_truncation(truncated_at):
 
     base_idx = 0
     batch = buffer._get_samples(np.array([base_idx]))
-    actual = batch.rewards.numpy().item()
+    actual = batch.rewards.item()
 
     expected = compute_expected_nstep_reward(gamma=0.99, n_steps=3, stop_idx=truncated_at - base_idx)
     np.testing.assert_allclose(actual, expected, rtol=1e-4)
-    assert batch.dones.numpy().item() == 0.0
+    assert batch.dones.item() == 0.0
 
 
 @pytest.mark.parametrize("n_steps", [3, 5])
-def test_nstep_no_termination_or_truncation(n_steps):
+def test_nstep_no_terminations(n_steps):
     buffer = create_buffer(n_steps=n_steps)
     fill_buffer(buffer, length=10)  # no done or truncation
+    gamma = 0.99
 
     base_idx = 3
     batch = buffer._get_samples(np.array([base_idx]))
-    actual = batch.rewards.numpy().item()
-
-    expected = compute_expected_nstep_reward(gamma=0.99, n_steps=n_steps)
+    actual = batch.rewards.item()
+    # Discount factor for bootstrapping with target Q-Value
+    np.testing.assert_allclose(batch.discounts.item(), gamma**n_steps)
+    expected = compute_expected_nstep_reward(gamma=gamma, n_steps=n_steps)
     np.testing.assert_allclose(actual, expected, rtol=1e-4)
-    assert batch.dones.numpy().item() == 0.0
+    assert batch.dones.item() == 0.0
 
     # Check that self.pos-1 truncation is set when buffer is full
     # Note: buffer size is 10, here we are erasing past transitions
@@ -143,20 +143,23 @@ def test_nstep_no_termination_or_truncation(n_steps):
     # We create a tmp truncation to not sample across episodes
     base_idx = 0
     batch = buffer._get_samples(np.array([base_idx]))
-    actual = batch.rewards.numpy().item()
+    actual = batch.rewards.item()
     # Note: compute_expected_nstep assumes base_idx=1
     expected = compute_expected_nstep_reward(gamma=0.99, n_steps=n_steps, stop_idx=buffer.pos - 1)
     np.testing.assert_allclose(actual, expected, rtol=1e-4)
-    assert batch.dones.numpy().item() == 0.0
+    assert batch.dones.item() == 0.0
+    # Discount factor for bootstrapping with target Q-Value
+    # (bigger than gamma ** n_steps because of truncation at n_steps=2)
+    np.testing.assert_allclose(batch.discounts.item(), gamma**2)
 
     # Set done=1 manually, the tmp truncation should not be set (it would set batch.done=False)
     buffer.dones[buffer.pos - 1, :] = True
     batch = buffer._get_samples(np.array([base_idx]))
-    actual = batch.rewards.numpy().item()
+    actual = batch.rewards.item()
     # Note: compute_expected_nstep assumes base_idx=0
     expected = compute_expected_nstep_reward(gamma=0.99, n_steps=n_steps, stop_idx=buffer.pos - 1)
     np.testing.assert_allclose(actual, expected, rtol=1e-4)
-    assert batch.dones.numpy().item() == 1.0
+    assert batch.dones.item() == 1.0
 
 
 def test_match_normal_buffer():
@@ -168,12 +171,12 @@ def test_match_normal_buffer():
 
     base_idx = 3
     batch1 = buffer._get_samples(np.array([base_idx]))
-    actual1 = batch1.rewards.numpy().item()
+    actual1 = batch1.rewards.item()
 
     batch2 = ref_buffer._get_samples(np.array([base_idx]))
 
     expected = compute_expected_nstep_reward(gamma=0.99, n_steps=1)
     np.testing.assert_allclose(actual1, expected, rtol=1e-4)
-    assert batch1.dones.numpy().item() == 0.0
+    assert batch1.dones.item() == 0.0
 
     np.testing.assert_allclose(batch1.rewards.numpy(), batch2.rewards.numpy(), rtol=1e-4)

@@ -213,6 +213,8 @@ class SAC(OffPolicyAlgorithm):
         for gradient_step in range(gradient_steps):
             # Sample replay buffer
             replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)  # type: ignore[union-attr]
+            # For n-step replay, discount factor is gamma**n_steps (when no early termination)
+            discounts = replay_data.discounts if replay_data.discounts is not None else self.gamma
 
             # We need to sample because `log_std` may have changed between two gradient steps
             if self.use_sde:
@@ -252,7 +254,7 @@ class SAC(OffPolicyAlgorithm):
                 # add entropy term
                 next_q_values = next_q_values - ent_coef * next_log_prob.reshape(-1, 1)
                 # td error + entropy term
-                target_q_values = replay_data.rewards + (1 - replay_data.dones) * self.gamma * next_q_values
+                target_q_values = replay_data.rewards + (1 - replay_data.dones) * discounts * next_q_values
 
             # Get current Q-values estimates for each critic network
             # using action from the replay buffer

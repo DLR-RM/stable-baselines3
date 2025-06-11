@@ -2,33 +2,30 @@ import gymnasium as gym
 import numpy as np
 import pytest
 
-from stable_baselines3 import DQN, SAC
+from stable_baselines3 import DQN, SAC, TD3
 from stable_baselines3.common.buffers import NStepReplayBuffer, ReplayBuffer
 from stable_baselines3.common.env_util import make_vec_env
 
 
-@pytest.mark.parametrize("model_class", [SAC, DQN])
+@pytest.mark.parametrize("model_class", [SAC, DQN, TD3])
 def test_run(model_class):
     env_id = "CartPole-v1" if model_class == DQN else "Pendulum-v1"
     env = make_vec_env(env_id, n_envs=2)
-
-    n_steps = 2
-    gamma = 0.99
+    gamma = 0.989
 
     model = model_class(
         "MlpPolicy",
         env,
-        replay_buffer_class=NStepReplayBuffer,
-        replay_buffer_kwargs=dict(
-            n_steps=n_steps,
-            gamma=gamma,
-        ),
         train_freq=4,
+        n_steps=3,
         policy_kwargs=dict(net_arch=[64]),
         learning_starts=100,
         buffer_size=int(2e4),
         gamma=gamma,
     )
+    assert isinstance(model.replay_buffer, NStepReplayBuffer)
+    assert model.replay_buffer.n_steps == 3
+    assert model.replay_buffer.gamma == gamma
 
     model.learn(total_timesteps=150)
 

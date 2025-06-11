@@ -11,7 +11,7 @@ import torch as th
 from gymnasium import spaces
 
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.buffers import DictReplayBuffer, ReplayBuffer
+from stable_baselines3.common.buffers import DictReplayBuffer, NStepReplayBuffer, ReplayBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise, VectorizedActionNoise
 from stable_baselines3.common.policies import BasePolicy
@@ -51,6 +51,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     :param optimize_memory_usage: Enable a memory efficient variant of the replay buffer
         at a cost of more complexity.
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
+    :param n_steps: When n_step > 1, uses n-step return (with the NStepReplayBuffer) when updating the Q-value network.
     :param policy_kwargs: Additional arguments to be passed to the policy on creation
     :param stats_window_size: Window size for the rollout logging, specifying the number of episodes to average
         the reported success rate, mean episode length, and mean reward over
@@ -93,6 +94,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         replay_buffer_class: Optional[type[ReplayBuffer]] = None,
         replay_buffer_kwargs: Optional[dict[str, Any]] = None,
         optimize_memory_usage: bool = False,
+        n_steps: int = 1,
         policy_kwargs: Optional[dict[str, Any]] = None,
         stats_window_size: int = 100,
         tensorboard_log: Optional[str] = None,
@@ -134,7 +136,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.replay_buffer: Optional[ReplayBuffer] = None
         self.replay_buffer_class = replay_buffer_class
         self.replay_buffer_kwargs = replay_buffer_kwargs or {}
-        self._episode_storage = None
+        self.n_steps = n_steps
 
         # Save train freq parameter, will be converted later to TrainFreq object
         self.train_freq = train_freq
@@ -176,6 +178,11 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         if self.replay_buffer_class is None:
             if isinstance(self.observation_space, spaces.Dict):
                 self.replay_buffer_class = DictReplayBuffer
+                assert self.n_steps == 1, "N-step returns are not supported for Dict observation spaces yet."
+            elif self.n_steps > 1:
+                self.replay_buffer_class = NStepReplayBuffer
+                # Add required arguments for computing n-step returns
+                self.replay_buffer_kwargs.update({"n_steps": self.n_steps, "gamma": self.gamma})
             else:
                 self.replay_buffer_class = ReplayBuffer
 

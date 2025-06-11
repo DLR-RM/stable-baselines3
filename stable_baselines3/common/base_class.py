@@ -316,7 +316,6 @@ class BaseAlgorithm(ABC):
             "replay_buffer",
             "rollout_buffer",
             "_vec_normalize_env",
-            "_episode_storage",
             "_logger",
             "_custom_logger",
         ]

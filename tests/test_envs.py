@@ -31,7 +31,7 @@ ENV_CLASSES = [
 @pytest.mark.parametrize("env_id", ["CartPole-v1", "Pendulum-v1"])
 def test_env(env_id):
     """
-    Check that environmnent integrated in Gym pass the test.
+    Check that environment integrated in Gym pass the test.
 
     :param env_id: (str)
     """

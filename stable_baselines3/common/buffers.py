@@ -895,12 +895,10 @@ class NStepReplayBuffer(ReplayBuffer):
         env_indices = np.random.randint(0, self.n_envs, size=batch_inds.shape)
 
         # Note: the self.pos index is dangerous (will overlap two different episodes when buffer is full)
-        # so we set self.pos-1 to truncated=True (temporarily) if done=False
-        # TODO: avoid copying the whole array (requires some more indices trickery)
-        safe_timeouts = self.timeouts.copy()
+        # so we set self.pos-1 to truncated=True (temporarily) if done=False and truncated=False
         last_valid_index = self.pos - 1
-        tmp_timeout = np.logical_not(self.dones[last_valid_index, :])
-        safe_timeouts[last_valid_index, :] = np.logical_or(safe_timeouts[last_valid_index, :], tmp_timeout)
+        original_timeout_values = self.timeouts[last_valid_index].copy()
+        self.timeouts[last_valid_index] = np.logical_or(original_timeout_values, np.logical_not(self.dones[last_valid_index]))
 
         # Compute n-step indices with wrap-around
         steps = np.arange(self.n_steps).reshape(1, -1)  # shape: [1, n_steps]
@@ -909,7 +907,7 @@ class NStepReplayBuffer(ReplayBuffer):
         # Retrieve sequences of transitions
         rewards_seq = self._normalize_reward(self.rewards[indices, env_indices[:, None]], env)  # [batch, n_steps]
         dones_seq = self.dones[indices, env_indices[:, None]]  # [batch, n_steps]
-        truncated_seq = safe_timeouts[indices, env_indices[:, None]]  # [batch, n_steps]
+        truncated_seq = self.timeouts[indices, env_indices[:, None]]  # [batch, n_steps]
 
         # Compute masks: 1 until first done/truncation (inclusive)
         done_or_truncated = np.logical_or(dones_seq, truncated_seq)
@@ -931,9 +929,12 @@ class NStepReplayBuffer(ReplayBuffer):
         # Compute indices of next_obs/done at the final point of the n-step transition
         last_indices = (batch_inds + done_idx) % self.buffer_size
         next_obs = self._normalize_obs(self.next_observations[last_indices, env_indices], env)
-        next_dones = self.dones[last_indices, env_indices].reshape(-1, 1).astype(np.float32)
-        next_timeouts = safe_timeouts[last_indices, env_indices].reshape(-1, 1).astype(np.float32)
+        next_dones = self.dones[last_indices, env_indices][:, None].astype(np.float32)
+        next_timeouts = self.timeouts[last_indices, env_indices][:, None].astype(np.float32)
         final_dones = next_dones * (1.0 - next_timeouts)
+
+        # Revert back tmp changes to avoid sampling across episodes
+        self.timeouts[last_valid_index] = original_timeout_values
 
         # Gather observations and actions
         obs = self._normalize_obs(self.observations[batch_inds, env_indices], env)

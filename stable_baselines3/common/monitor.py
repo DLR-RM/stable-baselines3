@@ -150,6 +150,64 @@ class Monitor(gym.Wrapper[ObsType, ActType, ObsType, ActType]):
         """
         return self.episode_times
 
+class MoMonitor(Monitor):
+
+    def __init__(self,
+        env: gym.Env,
+        filename: Optional[str] = None,
+        allow_early_resets: bool = True,
+        reset_keywords: tuple[str, ...] = (),
+        info_keywords: tuple[str, ...] = (),
+        override_existing: bool = True,):
+        super().__init__(env, filename, allow_early_resets, reset_keywords, info_keywords, override_existing)
+        self.rewards: list[list[float]] = []
+        self.episode_returns: list[list[float]] = []
+
+    def step(self, action: ActType) -> tuple[ObsType, list[SupportsFloat], bool, bool, dict[str, Any]]:
+        """
+        Step the environment with the given action
+
+        :param action: the action
+        :return: observation, reward, terminated, truncated, information
+        """
+        if self.needs_reset:
+            raise RuntimeError("Tried to step environment that needs reset")
+        observation, reward, terminated, truncated, info = self.env.step(action)
+
+        if self.rewards == []:
+            self.rewards = [[float(r)] for r in reward]
+        else:
+            for m, r in enumerate(reward):
+                self.rewards[m].append(float(r))
+
+        if terminated or truncated:
+            self.needs_reset = True
+            ep_rew = []
+            ep_len = len(self.rewards[0])
+            ep_info = {"l": ep_len, "t": round(time.time() - self.t_start, 6)}
+            for m in self.rewards:
+                rews = sum(m)
+                ep_rew.append(rews)
+                ep_info[f"r{m}"] = round(rews, 6)
+
+            for key in self.info_keywords:
+                ep_info[key] = info[key]
+
+            if self.episode_returns == []:
+                self.episode_returns = [[ret] for ret in ep_rew]
+            else:
+                for m, ret in enumerate(ep_rew):
+                    self.episode_returns[m].append(ret)
+
+            self.episode_lengths.append(ep_len)
+            self.episode_times.append(time.time() - self.t_start)
+            ep_info.update(self.current_reset_info)
+            if self.results_writer:
+                self.results_writer.write_row(ep_info)
+            info["episode"] = ep_info
+        self.total_steps += 1
+        return observation, reward, terminated, truncated, info
+
 
 class LoadMonitorResultsError(Exception):
     """

@@ -1,5 +1,7 @@
 import io
 import pathlib
+import sys
+import time
 from collections import deque
 from typing import Union, Optional, Any, List
 
@@ -10,7 +12,7 @@ from stable_baselines3.common.vec_env.patch_gym import _convert_space
 
 from stable_baselines3.common.save_util import load_from_zip_file, recursive_setattr
 
-from stable_baselines3.common.utils import get_system_info, check_for_correct_spaces
+from stable_baselines3.common.utils import get_system_info, check_for_correct_spaces, safe_mean
 
 from stable_baselines3.common.type_aliases import GymEnv, Schedule
 
@@ -355,3 +357,27 @@ class LPPO(PPO):
             model.policy.reset_noise()  # type: ignore[operator]
         return model
 
+    def dump_logs(self, iteration: int = 0) -> None:
+        """
+        Write log.
+
+        :param iteration: Current logging iteration
+        """
+        assert self.ep_info_buffer is not None
+        assert self.ep_success_buffer is not None
+
+        time_elapsed = max((time.time_ns() - self.start_time) / 1e9, sys.float_info.epsilon)
+        fps = int((self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
+        if iteration > 0:
+            self.logger.record("time/iterations", iteration, exclude="tensorboard")
+        if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
+            for m in range(self.n_objectives):
+                self.logger.record("rollout/ep_rew_mean", safe_mean([ep_info[f"r{m}"] for ep_info in self.ep_info_buffer]))
+
+            self.logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
+        self.logger.record("time/fps", fps)
+        self.logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
+        self.logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")
+        if len(self.ep_success_buffer) > 0:
+            self.logger.record("rollout/success_rate", safe_mean(self.ep_success_buffer))
+        self.logger.dump(step=self.num_timesteps)

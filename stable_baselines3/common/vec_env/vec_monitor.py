@@ -98,3 +98,47 @@ class VecMonitor(VecEnvWrapper):
         if self.results_writer:
             self.results_writer.close()
         return self.venv.close()
+
+
+class MoVecMonitor(VecMonitor):
+    def __init__(
+            self,
+            venv: VecEnv,
+            filename: Optional[str] = None,
+            info_keywords: tuple[str, ...] = (),
+    ):
+
+        super().__init__(venv, filename, info_keywords)
+        self.episode_returns = None
+
+    def reset(self) -> VecEnvObs:
+        obs = self.venv.reset()
+        self.episode_returns = None
+        self.episode_lengths = np.zeros(self.num_envs, dtype=np.int32)
+        return obs
+
+    def step_wait(self) -> VecEnvStepReturn:
+        obs, rewards, dones, infos = self.venv.step_wait()
+        if self.episode_returns is None:
+            self.episode_returns = np.zeros((self.num_envs, rewards.shape[1]), dtype=np.float32)
+        self.episode_returns += rewards
+        self.episode_lengths += 1
+        new_infos = list(infos[:])
+        for i in range(len(dones)):
+            if dones[i]:
+                info = infos[i].copy()
+                mo_episode_return = self.episode_returns[i]
+                episode_length = self.episode_lengths[i]
+                episode_info = {"l": episode_length, "t": round(time.time() - self.t_start, 6)}
+                for m,v in enumerate(mo_episode_return):
+                    episode_info[f"r{m}"] = v
+                for key in self.info_keywords:
+                    episode_info[key] = info[key]
+                info["episode"] = episode_info
+                self.episode_count += 1
+                self.episode_returns[i] = np.zeros(rewards.shape[1], dtype=np.float32)
+                self.episode_lengths[i] = 0
+                if self.results_writer:
+                    self.results_writer.write_row(episode_info)
+                new_infos[i] = info
+        return obs, rewards, dones, new_infos

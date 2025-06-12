@@ -1,4 +1,5 @@
 from stable_baselines3.common.buffers import MoRolloutBuffer
+from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import MoVecEnv, MoDummyVecEnv
 from stable_baselines3.lppo.lppo import LPPO
 
@@ -10,7 +11,8 @@ def linear_schedule(initial_value):
     return func
 
 
-from stable_baselines3.common.callbacks import BaseCallback, EvalCallback, MoEvalCallback
+from stable_baselines3.common.monitor import MoMonitor
+from stable_baselines3.common.vec_env import MoVecMonitor
 
 
 class EntropyScheduleCallback(BaseCallback):
@@ -34,11 +36,16 @@ tiny['n_agents'] = 1
 tiny["reward_mode"] = "vectorial"
 tiny["objective_order"] = "ethical_first"
 tiny["inequality_mode"] = "loss"
-tiny["efficiency"] = 0.6
+tiny["efficiency"] = [0.6]
 tiny["donation_capacity"] = 15
 tiny["survival_threshold"] = 30
 
-env = MoDummyVecEnv([lambda: MAEGG(**tiny) for _ in range(5)], n_objectives=2)
+def make_env():
+    def _init():
+        return MoMonitor(MAEGG(**tiny))
+    return _init
+env = MoDummyVecEnv([make_env() for _ in range(5)], n_objectives=2)
+env = MoVecMonitor(env)
 
 args = {
     "n_steps": 1000,
@@ -65,13 +72,13 @@ args = {
 
 
 model = LPPO("MoMlpPolicy", env, 2, **args)
-model.learn(total_timesteps=10000000, callback=[
-    MoEvalCallback(env, n_objectives=2, deterministic=False, n_eval_episodes=50, eval_freq=25000)
-                                                ], log_interval=5)
+model.learn(total_timesteps=10000000, log_interval=5)
 #model.save("test")
 env = MAEGG(**tiny)
 env.toggleTrack(True)
 env.toggleStash(True)
+
+
 model = LPPO.load("test", env=env)
 
 for ep in range(150):
@@ -83,4 +90,4 @@ for ep in range(150):
         if tr or tm:
             obs, _ = env.reset()
 
-env.plot_results("median")
+env.unwrapped.plot_results("median")

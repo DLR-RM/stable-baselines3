@@ -372,7 +372,7 @@ class LPPO(PPO):
             self.logger.record("time/iterations", iteration, exclude="tensorboard")
         if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
             for m in range(self.n_objectives):
-                self.logger.record("rollout/ep_rew_mean", safe_mean([ep_info[f"r{m}"] for ep_info in self.ep_info_buffer]))
+                self.logger.record(f"rollout/ep_rew_mean_r{m}", safe_mean([ep_info[f"r{m}"] for ep_info in self.ep_info_buffer]))
 
             self.logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
         self.logger.record("time/fps", fps)

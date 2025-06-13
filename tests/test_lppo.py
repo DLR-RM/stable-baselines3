@@ -42,7 +42,7 @@ tiny["survival_threshold"] = 30
 
 def make_env():
     def _init():
-        return MoMonitor(MAEGG(**tiny))
+        return MAEGG(**tiny)
     return _init
 env = MoDummyVecEnv([make_env() for _ in range(5)], n_objectives=2)
 env = MoVecMonitor(env)

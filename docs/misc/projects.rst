@@ -270,7 +270,7 @@ A Deep Reinforcement Learning agent for a humanoid robot that learns to recover 
 
 The agent is trained using the MuJoCo physics engine. Real world experiments are conducted on the 
 Sigmaban humanoid robot, a small-sized humanoid designed by the *Rhoban Team* to compete in the RoboCup Kidsize League.
-The results, detailled in the paper and the video, show that the agent is able to recover from 
+The results, detailed in the paper and the video, show that the agent is able to recover from 
 various external disturbances and stand up in a few seconds.
 
 | Authors: Marc Duclusaud, Clément Gaspard, Grégoire Passault, Mélodie Daniel, Olivier Ly

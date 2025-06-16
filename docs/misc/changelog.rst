@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.6.1a1 (WIP)
+Release 2.7.0a0 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -11,6 +11,8 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Added support for n-step returns for off-policy algorithms via the `n_steps` parameter
+- Added ``NStepReplayBuffer`` that allows to compute n-step returns without additional memory requirement (and without for loops)
 
 Bug Fixes:
 ^^^^^^^^^^

@@ -44,6 +44,7 @@ class DDPG(TD3):
     :param optimize_memory_usage: Enable a memory efficient variant of the replay buffer
         at a cost of more complexity.
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
+    :param n_steps: When n_step > 1, uses n-step return (with the NStepReplayBuffer) when updating the Q-value network.
     :param policy_kwargs: additional arguments to be passed to the policy on creation. See :ref:`ddpg_policies`
     :param verbose: Verbosity level: 0 for no output, 1 for info messages (such as device or wrappers used), 2 for
         debug messages
@@ -69,6 +70,7 @@ class DDPG(TD3):
         replay_buffer_class: Optional[type[ReplayBuffer]] = None,
         replay_buffer_kwargs: Optional[dict[str, Any]] = None,
         optimize_memory_usage: bool = False,
+        n_steps: int = 1,
         tensorboard_log: Optional[str] = None,
         policy_kwargs: Optional[dict[str, Any]] = None,
         verbose: int = 0,
@@ -90,12 +92,13 @@ class DDPG(TD3):
             action_noise=action_noise,
             replay_buffer_class=replay_buffer_class,
             replay_buffer_kwargs=replay_buffer_kwargs,
+            optimize_memory_usage=optimize_memory_usage,
+            n_steps=n_steps,
             policy_kwargs=policy_kwargs,
             tensorboard_log=tensorboard_log,
             verbose=verbose,
             device=device,
             seed=seed,
-            optimize_memory_usage=optimize_memory_usage,
             # Remove all tricks from TD3 to obtain DDPG:
             # we still need to specify target_policy_noise > 0 to avoid errors
             policy_delay=1,

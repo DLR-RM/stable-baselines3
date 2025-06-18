@@ -190,7 +190,7 @@ class LPPO(PPO):
             current_loss_on_j = (-self.recent_losses[i][-1])
             # We dont want our current loss to be larger than the average loss (as that would mean that we are decreasing performance)
             diff = self.j[i]  - (current_loss_on_j - tol)
-            self.mu_values[i] += self.eta_values[i] * diff
+            self.mu_values[i] += self.eta_values[i] * -diff
             self.mu_values[i] = max(0, self.mu_values[i])
 
         #explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())

@@ -187,7 +187,10 @@ class LPPO(PPO):
         tol = self.tolerance if isinstance(self.tolerance, float) else self.tolerance(self._current_progress_remaining)
         for i in range(self.n_objectives - 1):
             self.j[i] = (-th.tensor(self.recent_losses[i])).mean()
-            self.mu_values[i] += self.eta_values[i] * (self.j[i] - tol - (-self.recent_losses[i][-1]) )
+            current_loss_on_j = (-self.recent_losses[i][-1])
+            # We dont want our current loss to be larger than the average loss (as that would mean that we are decreasing performance)
+            diff = self.j[i]  - (current_loss_on_j - tol)
+            self.mu_values[i] += self.eta_values[i] * diff
             self.mu_values[i] = max(0, self.mu_values[i])
 
         #explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())

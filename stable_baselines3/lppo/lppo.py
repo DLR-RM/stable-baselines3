@@ -114,7 +114,7 @@ class LPPO(PPO):
                     )
                     _surr = th.min(_surr1, _surr2)
                     _pg_loss = -((_surr + self.ent_coef * entropy)).mean()
-                    self.recent_losses[obj].append(_pg_loss.detach())
+                    self.recent_losses[obj].append(_pg_loss.detach().cpu())
 
                 # Logging
                 pg_losses.append(policy_loss.item())

@@ -31,7 +31,7 @@ class LPPO(PPO):
         "MoMlpPolicy": MoActorCriticPolicy,
     }
 
-    def __init__(self, policy, env, n_objectives, eta_values : List[float]=None, beta_values : List[float]=None, tolerance : Union[float, Schedule] = 3e-5, *args, **kwargs):
+    def __init__(self, policy, env, n_objectives, eta_values : List[float]=None, beta_values : List[float]=None, tolerance : Union[float, Schedule] = 3e-5, recent_loses_len : int = 50, *args, **kwargs):
         super().__init__(policy, env, *args, **kwargs)
         # We need to replace the default rollout buffer for the multi-objective one
         """self.rollout_buffer = MultiObjectiveRolloutBuffer(
@@ -43,7 +43,7 @@ class LPPO(PPO):
         self.beta_values = np.array(beta_values)
         self.mu_values = np.array([0.0] * (n_objectives - 1))
         self.n_objectives = n_objectives
-        self.recent_losses = [deque(maxlen=50) for _ in range(self.n_objectives)]
+        self.recent_losses = [deque(maxlen=recent_loses_len) for _ in range(self.n_objectives)]
         self.tolerance = tolerance
         self.j = np.zeros(self.n_objectives - 1)
 

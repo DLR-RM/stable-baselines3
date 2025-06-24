@@ -23,7 +23,7 @@ class ActionDictTestEnv(gym.Env):
         info = {}
         return observation, reward, terminated, truncated, info
 
-    def reset(self, seed=None):
+    def reset(self, seed=None, options=None):
         return np.array([1.0, 1.5, 0.5], dtype=self.observation_space.dtype), {}
 
     def render(self):
@@ -191,3 +191,48 @@ def test_check_env_single_step_env():
 
     # This should not throw
     check_env(env=test_env, warn=True)
+
+
+
+class SimpleGraphEnv(gym.Env):
+    def __init__(self):
+        self.action_space = spaces.Discrete(2)
+        # Define a simple Graph observation space
+        node_shape = (2,)
+        edge_shape = (3,)
+        self.observation_space = spaces.Graph(
+            node_space=spaces.Box(low=0, high=1, shape=node_shape),
+            edge_space=spaces.Box(low=0, high=1, shape=edge_shape),
+        )
+
+    def reset(self, seed=None, options=None):
+        # Just sample from the obs space
+        return self.observation_space.sample(), {}
+
+    def step(self, action):
+        return self.observation_space.sample(), 1.0, False, False, {}
+
+
+def test_check_env_simple_graph_space():
+    env = SimpleGraphEnv()
+    # Should emit a warning about Graph space, but not fail
+    with pytest.warns(UserWarning, match="Graph space, which is not supported by the env checker"):
+        check_env(env, warn=True)
+
+
+def test_check_wrong_type_graph_space():
+    # Create a Graph space with a wrong type
+    node_shape = (2,)
+    edge_shape = (3,)
+    graph_space = spaces.Graph(
+        node_space=spaces.Box(low=0, high=1, shape=node_shape),
+        edge_space=spaces.Box(low=0, high=1, shape=edge_shape),
+    )
+    # Create an env with the wrong type
+    env = SimpleGraphEnv()
+    env.observation_space = graph_space
+
+    # Check that the env checker raises an error
+    with pytest.raises(AssertionError, match="incompatible w/ graph-obs"):
+        check_env(env, warn=True)
+

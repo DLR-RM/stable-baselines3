@@ -156,6 +156,9 @@ def test_device_buffer(replay_buffer_cls, device):
             elif isinstance(value, np.ndarray):
                 # For prioritized replay weights/indices
                 pass
+            elif value is None:
+                # discounts factors are only set for n-step replay buffer
+                pass
             else:
                 raise TypeError(f"Unknown value type: {type(value)}")
 

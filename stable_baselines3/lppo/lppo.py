@@ -191,7 +191,8 @@ class LPPO(PPO):
             current_loss_on_j = (-self.recent_losses[i][-1])
             # We dont want our current loss to be larger than the average loss (as that would mean that we are decreasing performance)
             diff = self.j[i] - (current_loss_on_j - tol)
-            eta = self.eta_values[i] if not callable(self.eta_values[i]) else self.eta_values[i](self._current_progress_remaining)
+            eta = self.eta_values[i] if not callable(self.eta_values[i]) else self.eta_values[i](
+                self._current_progress_remaining)
             self.mu_values[i] += eta * -diff
             self.mu_values[i] = max(0, self.mu_values[i])
 

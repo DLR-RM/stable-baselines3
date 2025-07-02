@@ -31,7 +31,7 @@ class LPPO(PPO):
         "MoMlpPolicy": MoActorCriticPolicy,
     }
 
-    def __init__(self, policy, env, n_objectives, eta_values : List[float]=None, beta_values : List[float]=None, tolerance : Union[float, Schedule] = 3e-5, recent_loses_len : int = 50, *args, **kwargs):
+    def __init__(self, policy, env, n_objectives, eta_values : List[Union[float, Schedule]]=None, beta_values : List[float]=None, tolerance : Union[float, Schedule] = 3e-5, recent_loses_len : int = 50, *args, **kwargs):
         super().__init__(policy, env, *args, **kwargs)
         # We need to replace the default rollout buffer for the multi-objective one
         """self.rollout_buffer = MultiObjectiveRolloutBuffer(
@@ -190,7 +190,8 @@ class LPPO(PPO):
             current_loss_on_j = (-self.recent_losses[i][-1])
             # We dont want our current loss to be larger than the average loss (as that would mean that we are decreasing performance)
             diff = self.j[i]  - (current_loss_on_j - tol)
-            self.mu_values[i] += self.eta_values[i] * -diff
+            eta = self.eta_values[i] if not callable(self.eta_values[i]) else self.eta_values[i](self._current_progress_remaining)
+            self.mu_values[i] += eta * -diff
             self.mu_values[i] = max(0, self.mu_values[i])
 
         #explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())
@@ -209,6 +210,8 @@ class LPPO(PPO):
             self.logger.record(f"train_mo/loss_{obj}", np.mean(self.recent_losses[obj]))
         for obj in range(self.n_objectives-1):
             self.logger.record(f"train_mo/mu_{obj}", self.mu_values[obj])
+            if callable(self.eta_values[obj]):
+                self.logger.record(f"train_mo/eta_{obj}", self.eta_values[i](self._current_progress_remaining))
         self.logger.record(f"train_mo/tolerance", tol)
         #self.logger.record("train/explained_variance", explained_var)
         if hasattr(self.policy, "log_std"):

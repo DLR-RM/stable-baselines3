@@ -12,7 +12,7 @@ from stable_baselines3.common.vec_env.patch_gym import _convert_space
 
 from stable_baselines3.common.save_util import load_from_zip_file, recursive_setattr
 
-from stable_baselines3.common.utils import get_system_info, check_for_correct_spaces, safe_mean
+from stable_baselines3.common.utils import get_system_info, check_for_correct_spaces, safe_mean, explained_variance
 
 from stable_baselines3.common.type_aliases import GymEnv, Schedule
 
@@ -31,7 +31,8 @@ class LPPO(PPO):
         "MoMlpPolicy": MoActorCriticPolicy,
     }
 
-    def __init__(self, policy, env, n_objectives, eta_values : List[Union[float, Schedule]]=None, beta_values : List[float]=None, tolerance : Union[float, Schedule] = 3e-5, recent_loses_len : int = 50, *args, **kwargs):
+    def __init__(self, policy, env, n_objectives, eta_values: List[Union[float, Schedule]] = None, beta_values: List[float] = None,
+                 tolerance: Union[float, Schedule] = 3e-5, recent_loses_len: int = 50, *args, **kwargs):
         super().__init__(policy, env, *args, **kwargs)
         # We need to replace the default rollout buffer for the multi-objective one
         """self.rollout_buffer = MultiObjectiveRolloutBuffer(
@@ -189,12 +190,12 @@ class LPPO(PPO):
             self.j[i] = (-th.tensor(self.recent_losses[i])).mean()
             current_loss_on_j = (-self.recent_losses[i][-1])
             # We dont want our current loss to be larger than the average loss (as that would mean that we are decreasing performance)
-            diff = self.j[i]  - (current_loss_on_j - tol)
+            diff = self.j[i] - (current_loss_on_j - tol)
             eta = self.eta_values[i] if not callable(self.eta_values[i]) else self.eta_values[i](self._current_progress_remaining)
             self.mu_values[i] += eta * -diff
             self.mu_values[i] = max(0, self.mu_values[i])
 
-        #explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())
+        explained_vars = [explained_variance(self.rollout_buffer.values[:,j].flatten(), self.rollout_buffer.returns[:,j].flatten()) for j in range(self.n_objectives)]
 
         # Logs
         self.logger.record("train/entropy_loss", np.mean(entropy_losses))
@@ -206,9 +207,11 @@ class LPPO(PPO):
         self.logger.record("train/ent_coef", self.ent_coef)
 
         for obj in range(self.n_objectives):
-            self.logger.record(f"train_mo/advantage_scalarisation_weight_{obj}", first_order_weights[obj].float().item())
+            self.logger.record(f"train_mo/advantage_scalarisation_weight_{obj}",
+                               first_order_weights[obj].float().item())
             self.logger.record(f"train_mo/loss_{obj}", np.mean(self.recent_losses[obj]))
-        for obj in range(self.n_objectives-1):
+            self.logger.record(f"train_mo/explained_variance_{obj}", explained_vars[obj])
+        for obj in range(self.n_objectives - 1):
             self.logger.record(f"train_mo/mu_{obj}", self.mu_values[obj])
             if callable(self.eta_values[obj]):
                 self.logger.record(f"train_mo/eta_{obj}", self.eta_values[i](self._current_progress_remaining))
@@ -378,7 +381,8 @@ class LPPO(PPO):
             self.logger.record("time/iterations", iteration, exclude="tensorboard")
         if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
             for m in range(self.n_objectives):
-                self.logger.record(f"rollout/ep_rew_mean_r{m}", safe_mean([ep_info[f"r{m}"] for ep_info in self.ep_info_buffer]))
+                self.logger.record(f"rollout/ep_rew_mean_r{m}",
+                                   safe_mean([ep_info[f"r{m}"] for ep_info in self.ep_info_buffer]))
 
             self.logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
         self.logger.record("time/fps", fps)

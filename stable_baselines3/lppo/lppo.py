@@ -185,12 +185,17 @@ class LPPO(PPO):
                 break
 
         # Update Lagrange multipliers
+        diffs = []
+        diffs_without_tol = []
+
         tol = self.tolerance if isinstance(self.tolerance, float) else self.tolerance(self._current_progress_remaining)
         for i in range(self.n_objectives - 1):
             self.j[i] = (-th.tensor(self.recent_losses[i])).mean()
             current_loss_on_j = (-self.recent_losses[i][-1])
             # We dont want our current loss to be larger than the average loss (as that would mean that we are decreasing performance)
             diff = self.j[i] - (current_loss_on_j - tol)
+            diffs.append(diff)
+            diffs_without_tol.append(self.j[i] - current_loss_on_j)
             eta = self.eta_values[i] if not callable(self.eta_values[i]) else self.eta_values[i](
                 self._current_progress_remaining)
             self.mu_values[i] += eta * -diff
@@ -214,8 +219,12 @@ class LPPO(PPO):
             self.logger.record(f"train_mo/explained_variance_{obj}", explained_vars[obj])
         for obj in range(self.n_objectives - 1):
             self.logger.record(f"train_mo/mu_{obj}", self.mu_values[obj])
+            self.logger.record(f"train_mo/diff_with_tol_{obj}", diffs[obj].item())
+            self.logger.record(f"train_mo/diff_without_tol_{obj}", diffs_without_tol[obj].item())
+
             if callable(self.eta_values[obj]):
                 self.logger.record(f"train_mo/eta_{obj}", self.eta_values[i](self._current_progress_remaining))
+
         self.logger.record(f"train_mo/tolerance", tol)
         #self.logger.record("train/explained_variance", explained_var)
         if hasattr(self.policy, "log_std"):

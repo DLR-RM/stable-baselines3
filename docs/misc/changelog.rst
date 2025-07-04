@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.7.0a0 (WIP)
+Release 2.7.0a1 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -13,6 +13,7 @@ New Features:
 ^^^^^^^^^^^^^
 - Added support for n-step returns for off-policy algorithms via the `n_steps` parameter
 - Added ``NStepReplayBuffer`` that allows to compute n-step returns without additional memory requirement (and without for loops)
+- Added Gymnasium v1.2 support
 
 Bug Fixes:
 ^^^^^^^^^^

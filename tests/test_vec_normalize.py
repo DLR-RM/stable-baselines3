@@ -180,7 +180,11 @@ def _make_warmstart(env_fn, **kwargs):
 
 def _make_warmstart_cliffwalking(**kwargs):
     """Warm-start VecNormalize by stepping through CliffWalking"""
-    return _make_warmstart(lambda: gym.make("CliffWalking-v0"), **kwargs)
+    try:
+        return _make_warmstart(lambda: gym.make("CliffWalking-v0"), **kwargs)
+    except gym.error.DeprecatedEnv:
+        # v1 required since Gymnasium v1.2.0
+        return _make_warmstart(lambda: gym.make("CliffWalking-v1"), **kwargs)
 
 
 def _make_warmstart_cartpole():

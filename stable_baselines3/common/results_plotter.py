@@ -24,7 +24,7 @@ def rolling_window(array: np.ndarray, window: int) -> np.ndarray:
     :param window: length of the rolling window
     :return: rolling window on the input array
     """
-    shape = array.shape[:-1] + (array.shape[-1] - window + 1, window)
+    shape = array.shape[:-1] + (array.shape[-1] - window + 1, window)  # noqa: RUF005
     strides = (*array.strides, array.strides[-1])
     return np.lib.stride_tricks.as_strided(array, shape=shape, strides=strides)
 

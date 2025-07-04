@@ -191,7 +191,10 @@ class LPPO(PPO):
         tol = self.tolerance if isinstance(self.tolerance, float) else self.tolerance(self._current_progress_remaining)
         for i in range(self.n_objectives - 1):
             self.j[i] = (-th.tensor(self.recent_losses[i])).mean()
+            self.logger.record(f"train_mo/mean_recent_loss_{i}", self.j[i].item())
+
             current_loss_on_j = (-self.recent_losses[i][-1])
+            self.logger.record(f"train_mo/current_loss_on_{i}", current_loss_on_j)
             # We dont want our current loss to be larger than the average loss (as that would mean that we are decreasing performance)
             diff = self.j[i] - (current_loss_on_j - tol)
             diffs.append(diff)

@@ -194,7 +194,7 @@ class LPPO(PPO):
             self.logger.record(f"train_mo/mean_recent_loss_{i}", self.j[i].item())
 
             current_loss_on_j = (-self.recent_losses[i][-1])
-            self.logger.record(f"train_mo/current_loss_on_{i}", current_loss_on_j)
+            self.logger.record(f"train_mo/current_loss_on_{i}", current_loss_on_j.item())
             # We dont want our current loss to be larger than the average loss (as that would mean that we are decreasing performance)
             diff = self.j[i] - (current_loss_on_j - tol)
             diffs.append(diff)

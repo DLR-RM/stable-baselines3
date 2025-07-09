@@ -189,20 +189,28 @@ class LPPO(PPO):
         diffs_without_tol = []
 
         tol = self.tolerance if isinstance(self.tolerance, float) else self.tolerance(self._current_progress_remaining)
+        l = int(len(self.recent_losses[0])/2)
         for i in range(self.n_objectives - 1):
-            self.j[i] = (-th.tensor(self.recent_losses[i])).mean()
+            self.j[i] = (-th.tensor(self.recent_losses[i])[:l]).mean()
             self.logger.record(f"train_mo/mean_recent_loss_{i}", self.j[i].item())
-
-            current_loss_on_j = (-self.recent_losses[i][-1])
+            current_loss_on_j = -th.tensor(self.recent_losses[i])[l:].mean()
             self.logger.record(f"train_mo/current_loss_on_{i}", current_loss_on_j.item())
             # We dont want our current loss to be larger than the average loss (as that would mean that we are decreasing performance)
-            diff = self.j[i] - (current_loss_on_j - tol)
-            diffs.append(diff)
-            diffs_without_tol.append(self.j[i] - current_loss_on_j)
+
             eta = self.eta_values[i] if not callable(self.eta_values[i]) else self.eta_values[i](
                 self._current_progress_remaining)
-            self.mu_values[i] += eta * -diff
+            diff = abs(current_loss_on_j-self.j[i])
+            if diff > tol:
+                if current_loss_on_j > self.j[i]:
+                    # we are deviating from optimal
+                    self.mu_values[i] += eta * diff
+                else:
+                    # we can relax the constraint
+                    self.mu_values[i] -= eta * diff
+
             self.mu_values[i] = max(0, self.mu_values[i])
+            diffs.append(diff)
+
 
         explained_vars = [explained_variance(self.rollout_buffer.values[:,j].flatten(), self.rollout_buffer.returns[:,j].flatten()) for j in range(self.n_objectives)]
 
@@ -222,8 +230,7 @@ class LPPO(PPO):
             self.logger.record(f"train_mo/explained_variance_{obj}", explained_vars[obj])
         for obj in range(self.n_objectives - 1):
             self.logger.record(f"train_mo/mu_{obj}", self.mu_values[obj])
-            self.logger.record(f"train_mo/diff_with_tol_{obj}", diffs[obj].item())
-            self.logger.record(f"train_mo/diff_without_tol_{obj}", diffs_without_tol[obj].item())
+            self.logger.record(f"train_mo/diffs{obj}", diffs[obj].item())
 
             if callable(self.eta_values[obj]):
                 self.logger.record(f"train_mo/eta_{obj}", self.eta_values[i](self._current_progress_remaining))

@@ -63,16 +63,17 @@ args = {
     "verbose": 1,
     "device": "cpu",
     "tensorboard_log": "runs",
-    "n_epochs": 25,
     "clip_range_vf": 0.2,
     "gamma": 0.8,
     "normalize_advantage": True,
-    "tolerance": 0.001
+    "tolerance": 0.0,
+    "recent_loses_len": 80,
+    "n_epochs": 40
 }
 
 
 model = LPPO("MoMlpPolicy", env, 2, **args)
-model.learn(total_timesteps=10000000, log_interval=5)
+model.learn(total_timesteps=10000000, log_interval=1)
 #model.save("test")
 env = MAEGG(**tiny)
 env.toggleTrack(True)

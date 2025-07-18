@@ -639,7 +639,7 @@ class ActorCriticPolicy(BasePolicy):
             for name, param in self.named_parameters():
                 if "value_net" in name or "vf" in name:
                     critic_params.append(param)
-                elif "pi" in name or "policy" in name or "action_net" in name:
+                elif "pi" in name or "policy" in name or "action_net" or "log_std" in name:
                     actor_params.append(param)
                 else:
                     raise Exception(f"Parameter with name '{name}' has not been classified into actor or critic. Please check the suported name formats.")

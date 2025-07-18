@@ -463,13 +463,15 @@ class ActorCriticPolicy(BasePolicy):
         share_features_extractor: bool = True,
         normalize_images: bool = True,
         optimizer_class: type[th.optim.Optimizer] = th.optim.Adam,
-        optimizer_kwargs: Optional[dict[str, Any]] = None,
+        optimizer_kwargs: Union[Optional[dict[str, Any]], dict[str,dict[str, Any]]] = None,
     ):
         if optimizer_kwargs is None:
             optimizer_kwargs = {}
             # Small values to avoid NaN in Adam optimizer
             if optimizer_class == th.optim.Adam:
                 optimizer_kwargs["eps"] = 1e-5
+
+        self.different_optimisers = hasattr(lr_schedule, '__len__') and len(lr_schedule) == 2
 
         super().__init__(
             observation_space,
@@ -631,7 +633,20 @@ class ActorCriticPolicy(BasePolicy):
                 module.apply(partial(self.init_weights, gain=gain))
 
         # Setup optimizer with initial learning rate
-        self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)  # type: ignore[call-arg]
+        if self.different_optimisers:
+            actor_params = []
+            critic_params = []
+            for name, param in self.named_parameters():
+                if "value_net" in name or "vf" in name:
+                    critic_params.append(param)
+                elif "pi" in name or "policy" in name or "action_net" in name:
+                    actor_params.append(param)
+                else:
+                    raise Exception(f"Parameter with name '{name}' has not been classified into actor or critic. Please check the suported name formats.")
+            self.actor_optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule[0](1), **self.optimizer_kwargs)
+            self.critic_optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule[1](1), **self.optimizer_kwargs)
+        else:
+            self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)  # type: ignore[call-arg]
 
     def forward(self, obs: th.Tensor, deterministic: bool = False) -> tuple[th.Tensor, th.Tensor, th.Tensor]:
         """

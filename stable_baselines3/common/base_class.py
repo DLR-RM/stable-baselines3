@@ -13,6 +13,7 @@ import gymnasium as gym
 import numpy as np
 import torch as th
 from gymnasium import spaces
+from torch.optim import lr_scheduler
 
 from stable_baselines3.common import utils
 from stable_baselines3.common.callbacks import BaseCallback, CallbackList, ConvertCallback, ProgressBarCallback
@@ -131,6 +132,8 @@ class BaseAlgorithm(ABC):
 
         self.verbose = verbose
         self.policy_kwargs = {} if policy_kwargs is None else policy_kwargs
+
+        self.different_optimizers = hasattr(learning_rate, '__len__') and len(learning_rate) == 2
 
         self.num_timesteps = 0
         # Used for updating schedules
@@ -273,7 +276,10 @@ class BaseAlgorithm(ABC):
 
     def _setup_lr_schedule(self) -> None:
         """Transform to callable if needed."""
-        self.lr_schedule = get_schedule_fn(self.learning_rate)
+        if self.different_optimizers:
+            self.lr_schedule = [get_schedule_fn(lr) for lr in self.learning_rate]
+        else:
+            self.lr_schedule = get_schedule_fn(self.learning_rate)
 
     def _update_current_progress_remaining(self, num_timesteps: int, total_timesteps: int) -> None:
         """
@@ -292,13 +298,15 @@ class BaseAlgorithm(ABC):
         :param optimizers:
             An optimizer or a list of optimizers.
         """
-        # Log the current learning rate
-        self.logger.record("train/learning_rate", self.lr_schedule(self._current_progress_remaining))
 
         if not isinstance(optimizers, list):
             optimizers = [optimizers]
-        for optimizer in optimizers:
-            update_learning_rate(optimizer, self.lr_schedule(self._current_progress_remaining))
+        schedules = [self.lr_schedule] if not self.different_optimizers else self.lr_schedule
+
+        for i, optimizer in enumerate(optimizers):
+            update_learning_rate(optimizer, schedules[i](self._current_progress_remaining))
+            # Log the current learning rate
+            self.logger.record(f"train/learning_rate_{i}", schedules[i](self._current_progress_remaining))
 
     def _excluded_save_params(self) -> list[str]:
         """

@@ -81,7 +81,7 @@ class PPO(OnPolicyAlgorithm):
         self,
         policy: Union[str, type[ActorCriticPolicy]],
         env: Union[GymEnv, str],
-        learning_rate: Union[float, Schedule] = 3e-4,
+        learning_rate: Union[float, Schedule, list[Union[float, Schedule]]] = 3e-4,
         n_steps: int = 2048,
         batch_size: int = 64,
         n_epochs: int = 10,
@@ -167,6 +167,8 @@ class PPO(OnPolicyAlgorithm):
         self.normalize_advantage = normalize_advantage
         self.target_kl = target_kl
 
+        self.different_optimizers = hasattr(learning_rate, '__len__') and len(learning_rate) == 2
+
         if _init_setup_model:
             self._setup_model()
 
@@ -187,8 +189,12 @@ class PPO(OnPolicyAlgorithm):
         """
         # Switch to train mode (this affects batch norm / dropout)
         self.policy.set_training_mode(True)
+
         # Update optimizer learning rate
-        self._update_learning_rate(self.policy.optimizer)
+        if self.different_optimizers:
+            self._update_learning_rate([self.policy.actor_optimizer, self.policy.critic_optimizer])
+        else:
+            self._update_learning_rate(self.policy.optimizer)
         # Compute current clip range
         clip_range = self.clip_range(self._current_progress_remaining)  # type: ignore[operator]
         # Optional: clip range for the value function
@@ -253,7 +259,13 @@ class PPO(OnPolicyAlgorithm):
 
                 entropy_losses.append(entropy_loss.item())
 
-                loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
+                actor_loss = policy_loss + self.ent_coef * entropy_loss
+
+                critic_loss = self.vf_coef * value_loss
+
+                loss = actor_loss + critic_loss
+
+
 
                 # Calculate approximate form of reverse KL Divergence for early stopping
                 # see issue #417: https://github.com/DLR-RM/stable-baselines3/issues/417
@@ -270,12 +282,26 @@ class PPO(OnPolicyAlgorithm):
                         print(f"Early stopping at step {epoch} due to reaching max kl: {approx_kl_div:.2f}")
                     break
 
-                # Optimization step
-                self.policy.optimizer.zero_grad()
-                loss.backward()
-                # Clip grad norm
-                th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
-                self.policy.optimizer.step()
+                if self.different_optimizers:
+                    # actor
+                    self.policy.actor_optimizer.zero_grad()
+                    actor_loss.backward()
+                    th.nn.utils.clip_grad_norm_(self.policy.actor_optimizer.parameters(), self.max_grad_norm)
+
+                    # Critic
+                    self.policy.critic_optimizer.zero_grad()
+                    critic_loss.backward()
+                    th.nn.utils.clip_grad_norm_(self.policy.critic_optimizer.parameters(), self.max_grad_norm)
+
+                    self.policy.actor_optimizer.step()
+                    self.policy.critic_optimizer.step()
+                else:
+                    # Optimization step
+                    self.policy.optimizer.zero_grad()
+                    loss.backward()
+                    # Clip grad norm
+                    th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+                    self.policy.optimizer.step()
 
             self._n_updates += 1
             if not continue_training:
@@ -287,6 +313,11 @@ class PPO(OnPolicyAlgorithm):
         self.logger.record("train/entropy_loss", np.mean(entropy_losses))
         self.logger.record("train/policy_gradient_loss", np.mean(pg_losses))
         self.logger.record("train/value_loss", np.mean(value_losses))
+
+        self.logger.record("train/critic_loss", critic_loss.item())
+        self.logger.record("train/actor_loss", actor_loss.item())
+
+
         self.logger.record("train/approx_kl", np.mean(approx_kl_divs))
         self.logger.record("train/clip_fraction", np.mean(clip_fractions))
         self.logger.record("train/loss", loss.item())

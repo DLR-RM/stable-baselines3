@@ -35,6 +35,7 @@ Deprecations:
 
 Others:
 ^^^^^^^
+- Performance optimization: Use ``np.asarray()`` instead of ``np.array()`` in ``ReplayBuffer`` and ``RolloutBuffer`` to avoid unnecessary array copies (@sxngt)
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -1844,4 +1845,4 @@ And all the contributors:
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
 @marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
-@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto
+@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto @sxngt

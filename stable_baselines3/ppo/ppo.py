@@ -353,3 +353,12 @@ class PPO(OnPolicyAlgorithm):
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,
         )
+
+    def _get_torch_save_params(self) -> tuple[list[str], list[str]]:
+        if self.different_optimizers:
+            # If we use different optimizers, we need to save them separately
+            state_dicts = ["policy", "policy.actor_optimizer", "policy.critic_optimizer"]
+        else:
+            state_dicts = ["policy", "policy.optimizer"]
+
+        return state_dicts, []

@@ -295,8 +295,8 @@ class PPO(OnPolicyAlgorithm):
 
                     critic_loss.backward()
 
-                    th.nn.utils.clip_grad_norm_(self.policy.actor_params(), self.max_grad_norm)
-                    th.nn.utils.clip_grad_norm_(self.policy.critic_params(), self.max_grad_norm)
+                    th.nn.utils.clip_grad_norm_(self.policy.actor_params, self.max_grad_norm)
+                    th.nn.utils.clip_grad_norm_(self.policy.critic_params, self.max_grad_norm)
 
                     self.policy.actor_optimizer.step()
                     self.policy.critic_optimizer.step()

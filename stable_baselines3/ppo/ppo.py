@@ -285,7 +285,7 @@ class PPO(OnPolicyAlgorithm):
 
                 if self.different_optimizers:
                     # actor
-                    params_before = copy.deepcopy([p.data.clone() for p in self.policy.parameters()])
+                    #params_before = copy.deepcopy([p.data.clone() for p in self.policy.parameters()])
                     self.policy.actor_optimizer.zero_grad()
                     self.policy.critic_optimizer.zero_grad()
 
@@ -295,11 +295,12 @@ class PPO(OnPolicyAlgorithm):
 
                     critic_loss.backward()
 
-                    th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+                    th.nn.utils.clip_grad_norm_(self.policy.actor_params(), self.max_grad_norm)
+                    th.nn.utils.clip_grad_norm_(self.policy.critic_params(), self.max_grad_norm)
 
                     self.policy.actor_optimizer.step()
                     self.policy.critic_optimizer.step()
-                    params_after = [p.data.clone() for p in self.policy.parameters()]
+                    #params_after = [p.data.clone() for p in self.policy.parameters()]
                     pass
                 else:
                     # Optimization step

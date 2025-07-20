@@ -643,8 +643,10 @@ class ActorCriticPolicy(BasePolicy):
                     actor_params.append(param)
                 else:
                     raise Exception(f"Parameter with name '{name}' has not been classified into actor or critic. Please check the suported name formats.")
-            self.actor_optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule[0](1), **self.optimizer_kwargs)
-            self.critic_optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule[1](1), **self.optimizer_kwargs)
+            self.actor_params = actor_params
+            self.critic_params = critic_params
+            self.actor_optimizer = self.optimizer_class(self.actor_params, lr=lr_schedule[0](1), **self.optimizer_kwargs)
+            self.critic_optimizer = self.optimizer_class(self.critic_params, lr=lr_schedule[1](1), **self.optimizer_kwargs)
         else:
             self.optimizer = self.optimizer_class(self.parameters(), lr=lr_schedule(1), **self.optimizer_kwargs)  # type: ignore[call-arg]
 

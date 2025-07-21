@@ -277,3 +277,18 @@ various external disturbances and stand up in a few seconds.
 | Github: https://github.com/Rhoban/frasa
 | Paper: https://arxiv.org/abs/2410.08655
 | Video: https://www.youtube.com/watch?v=NL65XW0O0mk
+
+
+sb3-extra-buffers: RAM expansions are overrated, just compress your observations!
+------------------------------------------------------------------------------------
+
+Reduce the memory consumption of memory buffers in Reinforcement Learning while adding minimal overhead.
+
+Tired of reading a cool RL paper and realizing that the author is storing a **MILLION** observations in their replay buffers? Yeah me too. 
+This project has implemented several compressed buffer classes that replace Stable Baselines3's standard buffers like ReplayBuffer and 
+RolloutBuffer. With as simple as 2-5 lines of extra code and **negligible overhead**, memory usage can be reduced by more than **95%**!
+Benchmark results and documentations are on Github, feel free to submit feature requests / ask how to use these buffers through issues.
+
+| Authors: Hugo Huang
+| Github: https://github.com/Trenza1ore/sb3-extra-buffers
+| Relevant project for training RL agents that play Doom with Semantic Segmentation: https://github.com/Trenza1ore/SegDoom

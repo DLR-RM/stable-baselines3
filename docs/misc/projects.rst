@@ -280,7 +280,7 @@ various external disturbances and stand up in a few seconds.
 
 
 sb3-extra-buffers: RAM expansions are overrated, just compress your observations!
----------------------------------------
+------------------------------------------------------------------------------------
 
 Reduce the memory consumption of memory buffers in Reinforcement Learning while adding minimal overhead.
 

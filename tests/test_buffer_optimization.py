@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
-from stable_baselines3.common.buffers import ReplayBuffer
 from gymnasium import spaces
+
+from stable_baselines3.common.buffers import ReplayBuffer
 
 
 def test_replay_buffer_no_copy_when_already_array():

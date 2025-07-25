@@ -3,8 +3,10 @@
 Changelog
 ==========
 
-Release 2.7.0a1 (WIP)
+Release 2.7.0 (2025-07-25)
 --------------------------
+
+**n-step returns for all off-policy algorithms**
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -22,12 +24,22 @@ Bug Fixes:
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
+- Added support for n-step returns for off-policy algorithms via the `n_steps` parameter
+- Use the ``FloatSchedule`` and ``LinearSchedule`` classes instead of lambdas in the ARS, PPO, and QRDQN implementations to improve model portability across different operating systems
 
 `RL Zoo`_
 ^^^^^^^^^
+- `linear_schedule` now returns a `SimpleLinearSchedule` object for better portability
+- Renamed `LunarLander-v2` to `LunarLander-v3` in hyperparameters
+- Renamed `CarRacing-v2` to `CarRacing-v3` in hyperparameters
+- Docker GPU images are now working again
+- Use `ConstantSchedule`, and `SimpleLinearSchedule` instead of `constant_fn` and `linear_schedule`
+- Fixed `CarRacing-v3` hyperparameters for newer Gymnasium version
 
 `SBX`_ (SB3 + Jax)
 ^^^^^^^^^^^^^^^^^^
+- Added support for n-step returns for off-policy algorithms via the `n_steps` parameter
+- Added KL Adaptive LR for PPO and LR schedule for SAC/TQC
 
 Deprecations:
 ^^^^^^^^^^^^^

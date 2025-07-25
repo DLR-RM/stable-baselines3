@@ -1,6 +1,7 @@
+from stable_baselines3 import PPO
 from stable_baselines3.common.buffers import MoRolloutBuffer
 from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.vec_env import MoVecEnv, MoDummyVecEnv
+from stable_baselines3.common.vec_env import MoVecEnv, MoDummyVecEnv, DummyVecEnv, VecMonitor
 from stable_baselines3.lppo.lppo import LPPO
 
 
@@ -44,10 +45,10 @@ def make_env():
     def _init():
         return MAEGG(**tiny)
     return _init
-env = MoDummyVecEnv([make_env() for _ in range(5)], n_objectives=2)
+env = MoDummyVecEnv([make_env() for _ in range(5)],)
 env = MoVecMonitor(env)
 
-def linear_schedule(initial_value):
+def linear_schedule_then_flat(initial_value):
     def func(progress_remaining):
         return max(progress_remaining * initial_value, 1)  # Linearly decrease
 
@@ -57,7 +58,7 @@ args = {
     "n_steps": 1000,
     "batch_size": 5000,
     "ent_coef": 0.04,
-    "learning_rate": linear_schedule(3e-3),
+    "learning_rate": [linear_schedule(3e-5), linear_schedule(3e-4)],
     "rollout_buffer_class": MoRolloutBuffer,
     "rollout_buffer_kwargs": {},
     "beta_values": [2.0, 1.0],
@@ -69,7 +70,6 @@ args = {
     "verbose": 1,
     "device": "cpu",
     "tensorboard_log": "runs",
-    "n_epochs": 25,
     "clip_range_vf": 0.2,
     "gamma": 0.8,
     "normalize_advantage": True,
@@ -80,14 +80,19 @@ args = {
 
 
 model = LPPO("MoMlpPolicy", env, 2, **args)
-model.learn(total_timesteps=10000000, log_interval=1)
+
+#model = PPO("MlpPolicy", env, **args)
+
+model.learn(total_timesteps=10000, log_interval=1)
+model.save("model")
+
 #model.save("test")
 env = MAEGG(**tiny)
 env.toggleTrack(True)
 env.toggleStash(True)
 
 
-model = LPPO.load("test", env=env)
+"""model = LPPO.load("test", env=env)
 
 for ep in range(150):
     obs, _ = env.reset()
@@ -98,4 +103,4 @@ for ep in range(150):
         if tr or tm:
             obs, _ = env.reset()
 
-env.unwrapped.plot_results("median")
+env.unwrapped.plot_results("median")"""

@@ -54,8 +54,14 @@ class LPPO(PPO):
         """
         # Switch to train mode (this affects batch norm / dropout)
         self.policy.set_training_mode(True)
+
         # Update optimizer learning rate
-        self._update_learning_rate(self.policy.optimizer)
+        if self.different_optimizers:
+            self._update_learning_rate([self.policy.actor_optimizer, self.policy.critic_optimizer])
+        else:
+            self._update_learning_rate(self.policy.optimizer)
+
+
         # Compute current clip range
         clip_range = self.clip_range(self._current_progress_remaining)  # type: ignore[operator]
         # Optional: clip range for the value function
@@ -65,6 +71,7 @@ class LPPO(PPO):
         entropy_losses = []
         pg_losses, value_losses = [], []
         clip_fractions = []
+        tolerance_hit = [0] * (self.n_objectives-1)
 
         continue_training = True
 
@@ -102,6 +109,9 @@ class LPPO(PPO):
 
                 # clipped surrogate loss
                 first_order_weighted_advantages = th.matmul(advantages, first_order_weights)
+
+                if self.normalize_advantage and len(advantages) > 1:
+                    first_order_weighted_advantages = (first_order_weighted_advantages - first_order_weighted_advantages.mean()) / (first_order_weighted_advantages.std() + 1e-8)
 
                 policy_loss_1 = first_order_weighted_advantages * ratio
                 policy_loss_2 = first_order_weighted_advantages * th.clamp(ratio, 1 - clip_range, 1 + clip_range)
@@ -156,7 +166,11 @@ class LPPO(PPO):
 
                 entropy_losses.append(entropy_loss.item())
 
-                loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
+                actor_loss = policy_loss + self.ent_coef * entropy_loss
+
+                critic_loss = self.vf_coef * value_loss
+
+                loss = actor_loss + critic_loss
 
                 # Calculate approximate form of reverse KL Divergence for early stopping
                 # see issue #417: https://github.com/DLR-RM/stable-baselines3/issues/417
@@ -173,12 +187,32 @@ class LPPO(PPO):
                         print(f"Early stopping at step {epoch} due to reaching max kl: {approx_kl_div:.2f}")
                     break
 
-                # Optimization step
-                self.policy.optimizer.zero_grad()
-                loss.backward()
-                # Clip grad norm
-                th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
-                self.policy.optimizer.step()
+                if self.different_optimizers:
+                    # actor
+                    # params_before = copy.deepcopy([p.data.clone() for p in self.policy.parameters()])
+                    self.policy.actor_optimizer.zero_grad()
+                    self.policy.critic_optimizer.zero_grad()
+
+                    actor_loss.backward()
+
+                    # Critic
+
+                    critic_loss.backward()
+
+                    th.nn.utils.clip_grad_norm_(self.policy.actor_params, self.max_grad_norm)
+                    th.nn.utils.clip_grad_norm_(self.policy.critic_params, self.max_grad_norm)
+
+                    self.policy.actor_optimizer.step()
+                    self.policy.critic_optimizer.step()
+                    # params_after = [p.data.clone() for p in self.policy.parameters()]
+                    pass
+                else:
+                    # Optimization step
+                    self.policy.optimizer.zero_grad()
+                    loss.backward()
+                    # Clip grad norm
+                    th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+                    self.policy.optimizer.step()
 
             self._n_updates += 1
             if not continue_training:
@@ -207,6 +241,8 @@ class LPPO(PPO):
                 else:
                     # we can relax the constraint
                     self.mu_values[i] -= eta * diff
+            else:
+                tolerance_hit[i] = 1
 
             self.mu_values[i] = max(0, self.mu_values[i])
             diffs.append(diff)
@@ -218,19 +254,27 @@ class LPPO(PPO):
         self.logger.record("train/entropy_loss", np.mean(entropy_losses))
         self.logger.record("train/policy_gradient_loss", np.mean(pg_losses))
         self.logger.record("train/value_loss", np.mean(value_losses))
+
+        self.logger.record("train/critic_loss", critic_loss.item())
+        self.logger.record("train/actor_loss", actor_loss.item())
+
         self.logger.record("train/approx_kl", np.mean(approx_kl_divs))
         self.logger.record("train/clip_fraction", np.mean(clip_fractions))
         self.logger.record("train/loss", loss.item())
         self.logger.record("train/ent_coef", self.ent_coef)
+
+        # Lexico Logs
 
         for obj in range(self.n_objectives):
             self.logger.record(f"train_mo/advantage_scalarisation_weight_{obj}",
                                first_order_weights[obj].float().item())
             self.logger.record(f"train_mo/loss_{obj}", np.mean(self.recent_losses[obj]))
             self.logger.record(f"train_mo/explained_variance_{obj}", explained_vars[obj])
+            
         for obj in range(self.n_objectives - 1):
             self.logger.record(f"train_mo/mu_{obj}", self.mu_values[obj])
-            self.logger.record(f"train_mo/diffs{obj}", diffs[obj].item())
+            self.logger.record(f"train_mo/diffs_{obj}", diffs[obj].item())
+            self.logger.record(f"train_mo/tolerance_hit_{obj}", tolerance_hit[obj])
 
             if callable(self.eta_values[obj]):
                 self.logger.record(f"train_mo/eta_{obj}", self.eta_values[i](self._current_progress_remaining))

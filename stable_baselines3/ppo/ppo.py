@@ -228,6 +228,7 @@ class PPO(OnPolicyAlgorithm):
                 # ratio between old and new policy, should be one at the first iteration
                 ratio = th.exp(log_prob - rollout_data.old_log_prob)
 
+
                 # clipped surrogate loss
                 policy_loss_1 = advantages * ratio
                 policy_loss_2 = advantages * th.clamp(ratio, 1 - clip_range, 1 + clip_range)
@@ -265,8 +266,6 @@ class PPO(OnPolicyAlgorithm):
                 critic_loss = self.vf_coef * value_loss
 
                 loss = actor_loss + critic_loss
-
-
 
                 # Calculate approximate form of reverse KL Divergence for early stopping
                 # see issue #417: https://github.com/DLR-RM/stable-baselines3/issues/417
@@ -328,6 +327,8 @@ class PPO(OnPolicyAlgorithm):
         self.logger.record("train/approx_kl", np.mean(approx_kl_divs))
         self.logger.record("train/clip_fraction", np.mean(clip_fractions))
         self.logger.record("train/loss", loss.item())
+        self.logger.record("train/ent_coef", self.ent_coef)
+
         self.logger.record("train/explained_variance", explained_var)
         if hasattr(self.policy, "log_std"):
             self.logger.record("train/std", th.exp(self.policy.log_std).mean().item())

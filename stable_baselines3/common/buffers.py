@@ -263,19 +263,19 @@ class ReplayBuffer(BaseBuffer):
         action = action.reshape((self.n_envs, self.action_dim))
 
         # Copy to avoid modification by reference
-        self.observations[self.pos] = np.array(obs)
+        self.observations[self.pos] = np.asarray(obs).copy()
 
         if self.optimize_memory_usage:
-            self.observations[(self.pos + 1) % self.buffer_size] = np.array(next_obs)
+            self.observations[(self.pos + 1) % self.buffer_size] = np.asarray(next_obs).copy()
         else:
-            self.next_observations[self.pos] = np.array(next_obs)
+            self.next_observations[self.pos] = np.asarray(next_obs).copy()
 
-        self.actions[self.pos] = np.array(action)
-        self.rewards[self.pos] = np.array(reward)
-        self.dones[self.pos] = np.array(done)
+        self.actions[self.pos] = np.asarray(action)
+        self.rewards[self.pos] = np.asarray(reward)
+        self.dones[self.pos] = np.asarray(done)
 
         if self.handle_timeout_termination:
-            self.timeouts[self.pos] = np.array([info.get("TimeLimit.truncated", False) for info in infos])
+            self.timeouts[self.pos] = np.asarray([info.get("TimeLimit.truncated", False) for info in infos])
 
         self.pos += 1
         if self.pos == self.buffer_size:
@@ -468,10 +468,10 @@ class RolloutBuffer(BaseBuffer):
         # Reshape to handle multi-dim and discrete action spaces, see GH #970 #1392
         action = action.reshape((self.n_envs, self.action_dim))
 
-        self.observations[self.pos] = np.array(obs)
-        self.actions[self.pos] = np.array(action)
-        self.rewards[self.pos] = np.array(reward)
-        self.episode_starts[self.pos] = np.array(episode_start)
+        self.observations[self.pos] = np.asarray(obs).copy()
+        self.actions[self.pos] = np.asarray(action)
+        self.rewards[self.pos] = np.asarray(reward)
+        self.episode_starts[self.pos] = np.asarray(episode_start)
         self.values[self.pos] = value.clone().cpu().numpy().flatten()
         self.log_probs[self.pos] = log_prob.clone().cpu().numpy()
         self.pos += 1
@@ -623,22 +623,22 @@ class DictReplayBuffer(ReplayBuffer):
             # as numpy cannot broadcast (n_discrete,) to (n_discrete, 1)
             if isinstance(self.observation_space.spaces[key], spaces.Discrete):
                 obs[key] = obs[key].reshape((self.n_envs,) + self.obs_shape[key])
-            self.observations[key][self.pos] = np.array(obs[key])
+            self.observations[key][self.pos] = np.asarray(obs[key]).copy()
 
         for key in self.next_observations.keys():
             if isinstance(self.observation_space.spaces[key], spaces.Discrete):
                 next_obs[key] = next_obs[key].reshape((self.n_envs,) + self.obs_shape[key])
-            self.next_observations[key][self.pos] = np.array(next_obs[key])
+            self.next_observations[key][self.pos] = np.asarray(next_obs[key]).copy()
 
         # Reshape to handle multi-dim and discrete action spaces, see GH #970 #1392
         action = action.reshape((self.n_envs, self.action_dim))
 
-        self.actions[self.pos] = np.array(action)
-        self.rewards[self.pos] = np.array(reward)
-        self.dones[self.pos] = np.array(done)
+        self.actions[self.pos] = np.asarray(action)
+        self.rewards[self.pos] = np.asarray(reward)
+        self.dones[self.pos] = np.asarray(done)
 
         if self.handle_timeout_termination:
-            self.timeouts[self.pos] = np.array([info.get("TimeLimit.truncated", False) for info in infos])
+            self.timeouts[self.pos] = np.asarray([info.get("TimeLimit.truncated", False) for info in infos])
 
         self.pos += 1
         if self.pos == self.buffer_size:
@@ -780,7 +780,7 @@ class DictRolloutBuffer(RolloutBuffer):
             log_prob = log_prob.reshape(-1, 1)
 
         for key in self.observations.keys():
-            obs_ = np.array(obs[key])
+            obs_ = np.asarray(obs[key]).copy()
             # Reshape needed when using multiple envs with discrete observations
             # as numpy cannot broadcast (n_discrete,) to (n_discrete, 1)
             if isinstance(self.observation_space.spaces[key], spaces.Discrete):
@@ -790,9 +790,9 @@ class DictRolloutBuffer(RolloutBuffer):
         # Reshape to handle multi-dim and discrete action spaces, see GH #970 #1392
         action = action.reshape((self.n_envs, self.action_dim))
 
-        self.actions[self.pos] = np.array(action)
-        self.rewards[self.pos] = np.array(reward)
-        self.episode_starts[self.pos] = np.array(episode_start)
+        self.actions[self.pos] = np.asarray(action)
+        self.rewards[self.pos] = np.asarray(reward)
+        self.episode_starts[self.pos] = np.asarray(episode_start)
         self.values[self.pos] = value.clone().cpu().numpy().flatten()
         self.log_probs[self.pos] = log_prob.clone().cpu().numpy()
         self.pos += 1

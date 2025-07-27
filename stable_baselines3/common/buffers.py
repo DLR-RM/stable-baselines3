@@ -46,7 +46,7 @@ class BaseBuffer(ABC):
         action_space: spaces.Space,
         device: Union[th.device, str] = "auto",
         n_envs: int = 1,
-        dtypes: Optional[dict] = None
+        dtypes: Optional[dict] = None,
     ):
         super().__init__()
         self.buffer_size = buffer_size
@@ -73,15 +73,14 @@ class BaseBuffer(ABC):
                     dtypes["observations"] = {key: np.dtype(dtypes["observations"]) for key in self.obs_shape}
                 else:
                     dtypes["observations"] = {key: np.dtype(dtype) for (key, dtype) in dtypes["observations"].items()}
-            obs_dtype = {
-                key: np.dtype(space.dtype) for (key, space) in observation_space.spaces.items()
-            }  # type: ignore[misc]
+            obs_dtype = {key: np.dtype(space.dtype) for (key, space) in observation_space.spaces.items()}  # type: ignore[misc]
         else:
             obs_dtype = np.dtype(observation_space.dtype)
 
         # Validate the dtypes
-        self.dtypes = dict(observations=dtypes.get("observations", obs_dtype),
-                           actions=np.dtype(dtypes.get("actions", action_space.dtype)))
+        self.dtypes = dict(
+            observations=dtypes.get("observations", obs_dtype), actions=np.dtype(dtypes.get("actions", action_space.dtype))
+        )
         for space, dtype in self.dtypes.items():
             if not isinstance(dtype, dict):
                 dtype = {"": dtype}
@@ -247,13 +246,13 @@ class ReplayBuffer(BaseBuffer):
             )
         self.optimize_memory_usage = optimize_memory_usage
 
-        self.observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape),
-                                     dtype=self.dtypes["observations"])
+        self.observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape), dtype=self.dtypes["observations"])
 
         if not optimize_memory_usage:
             # When optimizing memory, `observations` contains also the next observation
-            self.next_observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape),
-                                              dtype=self.dtypes["observations"])
+            self.next_observations = np.zeros(
+                (self.buffer_size, self.n_envs, *self.obs_shape), dtype=self.dtypes["observations"]
+            )
 
         self.actions = np.zeros(
             (self.buffer_size, self.n_envs, self.action_dim), dtype=self._maybe_cast_dtype(self.dtypes["actions"])
@@ -429,8 +428,7 @@ class RolloutBuffer(BaseBuffer):
         self.reset()
 
     def reset(self) -> None:
-        self.observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape),
-                                     dtype=self.dtypes["observations"])
+        self.observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape), dtype=self.dtypes["observations"])
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=self.dtypes["actions"])
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -595,8 +593,7 @@ class DictReplayBuffer(ReplayBuffer):
         handle_timeout_termination: bool = True,
         dtypes: Optional[dict] = None,
     ):
-        super(ReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs,
-                                           dtypes=dtypes)
+        super(ReplayBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs, dtypes=dtypes)
 
         assert isinstance(self.obs_shape, dict), "DictReplayBuffer must be used with Dict obs space only"
         self.buffer_size = max(buffer_size // n_envs, 1)
@@ -776,8 +773,7 @@ class DictRolloutBuffer(RolloutBuffer):
         n_envs: int = 1,
         dtypes: Optional[dict] = None,
     ):
-        super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs,
-                                            dtypes=dtypes)
+        super(RolloutBuffer, self).__init__(buffer_size, observation_space, action_space, device, n_envs=n_envs, dtypes=dtypes)
 
         assert isinstance(self.obs_shape, dict), "DictRolloutBuffer must be used with Dict obs space only"
 
@@ -790,8 +786,9 @@ class DictRolloutBuffer(RolloutBuffer):
     def reset(self) -> None:
         self.observations = {}
         for key, obs_input_shape in self.obs_shape.items():
-            self.observations[key] = np.zeros((self.buffer_size, self.n_envs, *obs_input_shape),
-                                              dtype=self.dtypes["observations"])
+            self.observations[key] = np.zeros(
+                (self.buffer_size, self.n_envs, *obs_input_shape), dtype=self.dtypes["observations"]
+            )
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=self.dtypes["actions"])
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -877,8 +874,10 @@ class DictRolloutBuffer(RolloutBuffer):
         env: Optional[VecNormalize] = None,
     ) -> DictRolloutBufferSamples:
         return DictRolloutBufferSamples(
-            observations={key: self.to_torch(obs[batch_inds].astype(dtype=np.float32, copy=False)) for (key, obs) in
-                          self.observations.items()},
+            observations={
+                key: self.to_torch(obs[batch_inds].astype(dtype=np.float32, copy=False))
+                for (key, obs) in self.observations.items()
+            },
             actions=self.to_torch(self.actions[batch_inds].astype(dtype=np.float32, copy=False)),
             old_values=self.to_torch(self.values[batch_inds].flatten()),
             old_log_prob=self.to_torch(self.log_probs[batch_inds].flatten()),

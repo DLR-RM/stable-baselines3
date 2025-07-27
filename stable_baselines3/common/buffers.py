@@ -67,6 +67,7 @@ class BaseBuffer(ABC):
         object_dtype = np.dtype(object)
 
         # Ensure dtypes override is valid for dict observations
+        obs_dtype: Union[dict, np.dtype]
         if isinstance(observation_space, spaces.Dict):
             if dtypes.get("observations"):
                 if not isinstance(dtypes["observations"], dict):

@@ -3,6 +3,15 @@
 Changelog
 ==========
 
+Release 2.7.1 (2025-07-27)
+--------------------------
+**Unify the dtype decision logic for all buffer classes**
+
+New Features:
+^^^^^^^^^^^^^
+- Changed the default observations and actions `dtype` in `RolloutBuffer` and `DictRolloutBuffer` to observation / action spaces `dtype` (@Trenza1ore)
+- Added an optional `dtypes` parameter for all buffer classes to override default `dtype` for observations and actions (@Trenza1ore)
+
 Release 2.7.0 (2025-07-25)
 --------------------------
 
@@ -1857,4 +1866,4 @@ And all the contributors:
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
 @marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
-@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto
+@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto @Trenza1ore

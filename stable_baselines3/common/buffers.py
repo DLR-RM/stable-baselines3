@@ -788,7 +788,7 @@ class DictRolloutBuffer(RolloutBuffer):
         self.observations = {}
         for key, obs_input_shape in self.obs_shape.items():
             self.observations[key] = np.zeros(
-                (self.buffer_size, self.n_envs, *obs_input_shape), dtype=self.dtypes["observations"]
+                (self.buffer_size, self.n_envs, *obs_input_shape), dtype=self.dtypes["observations"][key]
             )
         self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=self.dtypes["actions"])
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)

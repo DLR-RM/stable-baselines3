@@ -60,6 +60,7 @@ class HerReplayBuffer(DictReplayBuffer):
         n_sampled_goal: int = 4,
         goal_selection_strategy: Union[GoalSelectionStrategy, str] = "future",
         copy_info_dict: bool = False,
+        dtypes: Optional[dict] = None,
     ):
         super().__init__(
             buffer_size,
@@ -69,6 +70,7 @@ class HerReplayBuffer(DictReplayBuffer):
             n_envs=n_envs,
             optimize_memory_usage=optimize_memory_usage,
             handle_timeout_termination=handle_timeout_termination,
+            dtypes=dtypes,
         )
         self.env = env
         self.copy_info_dict = copy_info_dict

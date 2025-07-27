@@ -68,17 +68,22 @@ class BaseBuffer(ABC):
 
         # Ensure dtypes override is valid for dict observations
         if isinstance(observation_space, spaces.Dict):
-            if dtypes.get("observations") and not hasattr(dtypes["observations"], "__getitem__"):
-                dtypes["observations"] = {key: dtypes["observations"] for key in self.obs_shape}
-            obs_dtype = {key: space.dtype for (key, space) in observation_space.spaces.items()}  # type: ignore[misc]
+            if dtypes.get("observations"):
+                if not isinstance(dtypes["observations"], dict):
+                    dtypes["observations"] = {key: np.dtype(dtypes["observations"]) for key in self.obs_shape}
+                else:
+                    dtypes["observations"] = {key: np.dtype(dtype) for (key, dtype) in dtypes["observations"].items()}
+            obs_dtype = {
+                key: np.dtype(space.dtype) for (key, space) in observation_space.spaces.items()
+            }  # type: ignore[misc]
         else:
-            obs_dtype = observation_space.dtype
+            obs_dtype = np.dtype(observation_space.dtype)
 
         # Validate the dtypes
-        self.dtypes = dict(observations=np.dtype(dtypes.get("observations", obs_dtype)),
+        self.dtypes = dict(observations=dtypes.get("observations", obs_dtype),
                            actions=np.dtype(dtypes.get("actions", action_space.dtype)))
         for space, dtype in self.dtypes.items():
-            if not hasattr(dtype, "__getitem__"):
+            if not isinstance(dtype, dict):
                 dtype = {"": dtype}
             for key, subspace_dtype in dtype.items():
                 if subspace_dtype == object_dtype:

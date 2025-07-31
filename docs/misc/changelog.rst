@@ -3,14 +3,17 @@
 Changelog
 ==========
 
-Release 2.7.1 (2025-07-27)
+Release 2.7.1 (2025-08-01)
 --------------------------
 **Unify the dtype decision logic for all buffer classes**
 
 New Features:
 ^^^^^^^^^^^^^
-- Changed the default observations and actions `dtype` in `RolloutBuffer` and `DictRolloutBuffer` to observation / action spaces `dtype` (@Trenza1ore)
-- Added an optional `dtypes` parameter for all buffer classes to override default `dtype` for observations and actions (@Trenza1ore)
+- Changed the default observations and actions `dtype` in `RolloutBuffer` and `DictRolloutBuffer` to observation / action space `dtype`, to align with `ReplayBuffer` and `DictReplayBuffer` (@Trenza1ore)
+
+Others:
+^^^^^^^
+- Added an additional ``test_buffers.py::test_buffer_dtypes`` which tests the `dtype` of `RolloutBuffer` and `DictRolloutBuffer` (@Trenza1ore)
 
 Release 2.7.0 (2025-07-25)
 --------------------------

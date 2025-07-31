@@ -32,8 +32,8 @@ class BufferDTypes:
     """
     Data class representing the data types used by a buffer.
 
-    :param _observations: Datatype of observation space
-    :param _actions: Datatype of action space
+    :param observations: Datatype of observation space
+    :param actions: Datatype of action space
     """
 
     MAP_TORCH_DTYPES: ClassVar[dict] = dict(complex32="complex64", float="float32", bfloat16="float32", bool="bool_")

@@ -22,6 +22,7 @@ TensorDict = dict[str, th.Tensor]
 OptimizerStateDict = dict[str, Any]
 MaybeCallback = Union[None, Callable, list["BaseCallback"], "BaseCallback"]
 PyTorchObs = Union[th.Tensor, TensorDict]
+DTypeLike = Union[None, np.dtype, th.dtype, type, str]
 
 # A schedule takes the remaining progress as input
 # and outputs a scalar (e.g. learning rate, clip range, ...)

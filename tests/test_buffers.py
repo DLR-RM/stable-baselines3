@@ -1,3 +1,5 @@
+from typing import Union
+
 import gymnasium as gym
 import numpy as np
 import pytest
@@ -161,6 +163,41 @@ def test_device_buffer(replay_buffer_cls, device):
                 pass
             else:
                 raise TypeError(f"Unknown value type: {type(value)}")
+
+
+@pytest.mark.parametrize(
+    "obs_dtype",
+    [
+        np.dtype(np.uint8),
+        np.dtype(np.int8),
+        np.dtype(np.uint16),
+        np.dtype(np.int16),
+        np.dtype(np.uint32),
+        np.dtype(np.int32),
+        np.dtype(np.uint64),
+        np.dtype(np.int64),
+        np.dtype(np.float16),
+        np.dtype(np.float32),
+        np.dtype(np.float64),
+    ],
+)
+@pytest.mark.parametrize("use_dict", [False, True])
+def test_buffer_dtypes(obs_dtype: Union[type[np.integer], type[np.floating]], use_dict: bool):
+    rollout_buffer: Union[RolloutBuffer, DictRolloutBuffer]
+    obs_space = spaces.Box(0, 100, dtype=obs_dtype)
+    action_space = spaces.Discrete(10)
+
+    if use_dict:
+        obs_space_2 = spaces.Box(0, 100, dtype=np.uint8)
+        observation_space = spaces.Dict({"obs": obs_space, "obs_2": obs_space_2})
+        rollout_buffer = DictRolloutBuffer(buffer_size=1, observation_space=observation_space, action_space=action_space)
+        assert rollout_buffer.observations["obs"].dtype == obs_dtype
+        assert rollout_buffer.observations["obs_2"].dtype == np.uint8
+    else:
+        rollout_buffer = RolloutBuffer(buffer_size=1, observation_space=obs_space, action_space=action_space)
+        assert rollout_buffer.observations.dtype == obs_dtype
+
+    assert rollout_buffer.actions.dtype == np.int64
 
 
 def test_custom_rollout_buffer():

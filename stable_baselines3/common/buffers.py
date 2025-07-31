@@ -52,6 +52,18 @@ class BufferDTypes:
             self.obs = self.to_numpy_dtype(observations)
         self.act = self.to_numpy_dtype(actions)
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        if isinstance(self.dict_obs, MappingProxyType):
+            state["dict_obs"] = dict(self.dict_obs)
+        return state
+
+    def __setstate__(self, state: Mapping[str, Any]):
+        state = dict(state)
+        if state.get("dict_obs"):
+            state["dict_obs"] = MappingProxyType(state["dict_obs"])
+        self.__dict__.update(state)
+
     @classmethod
     def to_numpy_dtype(cls, dtype_like: DTypeLike) -> np.dtype:
         if isinstance(dtype_like, np.dtype):

@@ -11,7 +11,7 @@ import torch as th
 from gymnasium import spaces
 
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.buffers import DictReplayBuffer, NStepReplayBuffer, ReplayBuffer
+from stable_baselines3.common.buffers import BufferDTypes, DictReplayBuffer, NStepReplayBuffer, ReplayBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise, VectorizedActionNoise
 from stable_baselines3.common.policies import BasePolicy
@@ -246,6 +246,19 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         if not hasattr(self.replay_buffer, "handle_timeout_termination"):  # pragma: no cover
             self.replay_buffer.handle_timeout_termination = False
             self.replay_buffer.timeouts = np.zeros_like(self.replay_buffer.dones)
+
+        # Backward compatibility with SB3 < 2.7.1 replay buffer
+        if not hasattr(self.replay_buffer, "dtypes"):
+            if isinstance(self.replay_buffer, DictReplayBuffer):
+                self.replay_buffer.dtypes = BufferDTypes(
+                    observations={key: obs.dtype for (key, obs) in self.replay_buffer.observations.items()},
+                    actions=self.replay_buffer.actions.dtype,
+                )
+            else:
+                self.replay_buffer.dtypes = BufferDTypes(
+                    observations=self.replay_buffer.observations.dtype,
+                    actions=self.replay_buffer.actions.dtype,
+                )
 
         if isinstance(self.replay_buffer, HerReplayBuffer):
             assert self.env is not None, "You must pass an environment at load time when using `HerReplayBuffer`"

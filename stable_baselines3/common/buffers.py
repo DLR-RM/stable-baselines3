@@ -66,25 +66,14 @@ class BufferDTypes:
 
     @classmethod
     def to_numpy_dtype(cls, dtype_like: DTypeLike) -> np.dtype:
-        if isinstance(dtype_like, np.dtype):
-            return dtype_like
-        elif isinstance(dtype_like, th.dtype):
+        if isinstance(dtype_like, th.dtype):
             torch_dtype_name = repr(dtype_like).removeprefix("torch.")
             numpy_dtype_name = cls.MAP_TORCH_DTYPES.get(torch_dtype_name, torch_dtype_name)
             try:
                 return np.dtype(getattr(np, numpy_dtype_name))
             except AttributeError as e:
                 raise TypeError(f"Cannot cast torch dtype '{torch_dtype_name}' to numpy.dtype implicitly.") from e
-        elif isinstance(dtype_like, type) and issubclass(dtype_like, np.generic):
-            return np.dtype(dtype_like)
-        elif isinstance(dtype_like, str):
-            try:
-                return np.dtype(dtype_like)
-            except TypeError as e:
-                raise TypeError(f"Cannot interpret str '{dtype_like}' as a valid numpy datatype.") from e
-        elif dtype_like is None:
-            return np.dtype(dtype_like)
-        raise TypeError(f"Cannot interpret unknown object '{dtype_like}' as a valid numpy datatype.")
+        return np.dtype(dtype_like)
 
 
 class BaseBuffer(ABC):
@@ -283,14 +272,14 @@ class ReplayBuffer(BaseBuffer):
             )
         self.optimize_memory_usage = optimize_memory_usage
 
-        self.observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape), dtype=self.dtypes.obs)
+        self.observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape), dtype=observation_space.dtype)
 
         if not optimize_memory_usage:
             # When optimizing memory, `observations` contains also the next observation
-            self.next_observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape), dtype=self.dtypes.obs)
+            self.next_observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape), dtype=observation_space.dtype)
 
         self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, self.action_dim), dtype=self._maybe_cast_dtype(self.dtypes.act)
+            (self.buffer_size, self.n_envs, self.action_dim), dtype=self._maybe_cast_dtype(action_space.dtype)
         )
 
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -641,16 +630,16 @@ class DictReplayBuffer(ReplayBuffer):
         self.optimize_memory_usage = optimize_memory_usage
 
         self.observations = {
-            key: np.zeros((self.buffer_size, self.n_envs, *_obs_shape), dtype=self.dtypes.dict_obs[key])
+            key: np.zeros((self.buffer_size, self.n_envs, *_obs_shape), dtype=observation_space[key].dtype)
             for key, _obs_shape in self.obs_shape.items()
         }
         self.next_observations = {
-            key: np.zeros((self.buffer_size, self.n_envs, *_obs_shape), dtype=self.dtypes.dict_obs[key])
+            key: np.zeros((self.buffer_size, self.n_envs, *_obs_shape), dtype=observation_space[key].dtype)
             for key, _obs_shape in self.obs_shape.items()
         }
 
         self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, self.action_dim), dtype=self._maybe_cast_dtype(self.dtypes.act)
+            (self.buffer_size, self.n_envs, self.action_dim), dtype=self._maybe_cast_dtype(action_space.dtype)
         )
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)

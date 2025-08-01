@@ -746,6 +746,7 @@ you can find links to some of these wrappers in `issue #772 <https://github.com/
 - Isaac Lab wrapper: `link <https://github.com/isaac-sim/IsaacLab/blob/main/source/extensions/omni.isaac.lab_tasks/omni/isaac/lab_tasks/utils/wrappers/sb3.py>`__
 - Brax: `link <https://gist.github.com/araffin/a7a576ec1453e74d9bb93120918ef7e7>`__
 - EnvPool: `link <https://github.com/sail-sg/envpool/blob/main/examples/sb3_examples/ppo.py>`__
+- Getting SAC to Work on a Massive Parallel Simulator: https://araffin.github.io/post/sac-massive-sim/
 
 
 SB3 with DeepMind Control (dm_control)

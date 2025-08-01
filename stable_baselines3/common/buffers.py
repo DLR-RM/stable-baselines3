@@ -41,7 +41,7 @@ class BufferDTypes:
     observations: InitVar[Union[DTypeLike, Mapping[str, DTypeLike]]]
     actions: InitVar[DTypeLike]
 
-    dict_obs: MappingProxyType[str, np.dtype] = field(default=MappingProxyType({}), init=False)
+    dict_obs: MappingProxyType[str, np.dtype] = field(default_factory=lambda: MappingProxyType({}), init=False)
     obs: Optional[np.dtype] = field(default=None, init=False)
     act: Optional[np.dtype] = field(default=None, init=False)
 

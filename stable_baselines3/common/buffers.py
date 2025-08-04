@@ -512,7 +512,7 @@ class RolloutBuffer(BaseBuffer):
     ) -> RolloutBufferSamples:
         data = (
             self.observations[batch_inds],
-            self.actions[batch_inds],
+            self.actions[batch_inds].astype(np.float32, copy=False),
             self.values[batch_inds].flatten(),
             self.log_probs[batch_inds].flatten(),
             self.advantages[batch_inds].flatten(),
@@ -834,7 +834,7 @@ class DictRolloutBuffer(RolloutBuffer):
     ) -> DictRolloutBufferSamples:
         return DictRolloutBufferSamples(
             observations={key: self.to_torch(obs[batch_inds]) for (key, obs) in self.observations.items()},
-            actions=self.to_torch(self.actions[batch_inds]),
+            actions=self.to_torch(self.actions[batch_inds].astype(np.float32, copy=False)),
             old_values=self.to_torch(self.values[batch_inds].flatten()),
             old_log_prob=self.to_torch(self.log_probs[batch_inds].flatten()),
             advantages=self.to_torch(self.advantages[batch_inds].flatten()),

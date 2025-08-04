@@ -390,9 +390,7 @@ class RolloutBuffer(BaseBuffer):
 
     def reset(self) -> None:
         self.observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape), dtype=self.observation_space.dtype)
-        self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, self.action_dim), dtype=self._maybe_cast_dtype(self.action_space.dtype)
-        )
+        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=self.action_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.episode_starts = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -514,28 +512,14 @@ class RolloutBuffer(BaseBuffer):
     ) -> RolloutBufferSamples:
         data = (
             self.observations[batch_inds],
-            self.actions[batch_inds],
+            # Cast to float32 (backward compatible), this would lead to RuntimeError for MultiBinary space
+            self.actions[batch_inds].astype(np.float32, copy=False),
             self.values[batch_inds].flatten(),
             self.log_probs[batch_inds].flatten(),
             self.advantages[batch_inds].flatten(),
             self.returns[batch_inds].flatten(),
         )
         return RolloutBufferSamples(*tuple(map(self.to_torch, data)))
-
-    @staticmethod
-    def _maybe_cast_dtype(dtype: np.typing.DTypeLike) -> np.typing.DTypeLike:
-        """
-        Cast `np.int8` action datatype to `np.float32`, keep the others dtype unchanged.
-        Otherwise, this would lead to
-        "RuntimeError: result type Float can't be cast to the desired output type Char"
-        when trying to compute the log prob for MultiBinary space.
-
-        :param dtype: The original action space dtype
-        :return: ``np.float32`` if the dtype was int8, the original dtype otherwise.
-        """
-        if dtype == np.int8:
-            return np.float32
-        return dtype
 
 
 class DictReplayBuffer(ReplayBuffer):
@@ -765,9 +749,7 @@ class DictRolloutBuffer(RolloutBuffer):
             self.observations[key] = np.zeros(
                 (self.buffer_size, self.n_envs, *obs_input_shape), dtype=self.observation_space[key].dtype
             )
-        self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, self.action_dim), dtype=self._maybe_cast_dtype(self.action_space.dtype)
-        )
+        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=self.action_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.episode_starts = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -853,7 +835,8 @@ class DictRolloutBuffer(RolloutBuffer):
     ) -> DictRolloutBufferSamples:
         return DictRolloutBufferSamples(
             observations={key: self.to_torch(obs[batch_inds]) for (key, obs) in self.observations.items()},
-            actions=self.to_torch(self.actions[batch_inds]),
+            # Cast to float32 (backward compatible), this would lead to RuntimeError for MultiBinary space
+            actions=self.to_torch(self.actions[batch_inds].astype(np.float32, copy=False)),
             old_values=self.to_torch(self.values[batch_inds].flatten()),
             old_log_prob=self.to_torch(self.log_probs[batch_inds].flatten()),
             advantages=self.to_torch(self.advantages[batch_inds].flatten()),

@@ -194,15 +194,18 @@ def test_buffer_dtypes(obs_dtype: Union[type[np.integer], type[np.floating]], us
         buffer_params["observation_space"] = dict_obs_space
         rollout_buffer = DictRolloutBuffer(**buffer_params)  # type: ignore[arg-type]
         replay_buffer = DictReplayBuffer(**buffer_params)  # type: ignore[arg-type]
-        assert rollout_buffer.observations["obs"].dtype == replay_buffer.observations["obs"].dtype == obs_dtype
-        assert rollout_buffer.observations["obs_2"].dtype == replay_buffer.observations["obs_2"].dtype == np.uint8
+        assert rollout_buffer.observations["obs"].dtype == obs_dtype
+        assert replay_buffer.observations["obs"].dtype == obs_dtype
+        assert rollout_buffer.observations["obs_2"].dtype == np.uint8
+        assert replay_buffer.observations["obs_2"].dtype == np.uint8
     else:
         buffer_params["observation_space"] = obs_space
         rollout_buffer = RolloutBuffer(**buffer_params)  # type: ignore[arg-type]
         replay_buffer = ReplayBuffer(**buffer_params)  # type: ignore[arg-type]
-        assert rollout_buffer.observations.dtype == replay_buffer.observations.dtype == obs_dtype
+        assert rollout_buffer.observations.dtype == obs_dtype
+        assert replay_buffer.observations.dtype == obs_dtype
 
-    assert rollout_buffer.actions.dtype == np.float32, "RolloutBuffer action dtype must be np.float32"
+    assert rollout_buffer.actions.dtype == act_space.dtype
     assert replay_buffer.actions.dtype == act_space.dtype
 
 

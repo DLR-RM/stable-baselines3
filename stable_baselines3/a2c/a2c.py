@@ -144,8 +144,8 @@ class A2C(OnPolicyAlgorithm):
         for rollout_data in self.rollout_buffer.get(batch_size=None):
             actions = rollout_data.actions
             if isinstance(self.action_space, spaces.Discrete):
-                # Convert discrete action from float to long
-                actions = actions.long().flatten()
+                # Flatten discrete actions for correct computation of log prob
+                actions = actions.flatten()
 
             values, log_prob, entropy = self.policy.evaluate_actions(rollout_data.observations, actions)
             values = values.flatten()

@@ -207,8 +207,9 @@ class PPO(OnPolicyAlgorithm):
             for rollout_data in self.rollout_buffer.get(self.batch_size):
                 actions = rollout_data.actions
                 if isinstance(self.action_space, spaces.Discrete):
-                    # Flatten discrete actions for correct computation of log prob
-                    actions = rollout_data.actions.flatten()
+                    # Convert discrete action from float to long
+                    actions = rollout_data.actions.long().flatten()
+
                 values, log_prob, entropy = self.policy.evaluate_actions(rollout_data.observations, actions)
                 values = values.flatten()
                 # Normalize advantage

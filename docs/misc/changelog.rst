@@ -13,7 +13,6 @@ New Features:
 
 Others:
 ^^^^^^^
-- Added an additional ``BufferDTypes`` dataclass to ``stable_baselines3/common/buffers.py`` for representing buffer datatypes (@Trenza1ore)
 - Added an additional ``test_buffers.py::test_buffer_dtypes`` which tests the `dtype` of `RolloutBuffer` and `DictRolloutBuffer` (@Trenza1ore)
 
 Release 2.7.0 (2025-07-25)

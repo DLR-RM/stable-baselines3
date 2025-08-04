@@ -1,9 +1,7 @@
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Generator, Mapping
-from dataclasses import InitVar, dataclass, field
-from types import MappingProxyType
-from typing import Any, ClassVar, Optional, Union
+from collections.abc import Generator
+from typing import Any, Optional, Union
 
 import numpy as np
 import torch as th
@@ -13,7 +11,6 @@ from stable_baselines3.common.preprocessing import get_action_dim, get_obs_shape
 from stable_baselines3.common.type_aliases import (
     DictReplayBufferSamples,
     DictRolloutBufferSamples,
-    DTypeLike,
     ReplayBufferSamples,
     RolloutBufferSamples,
 )
@@ -25,55 +22,6 @@ try:
     import psutil
 except ImportError:
     psutil = None
-
-
-@dataclass
-class BufferDTypes:
-    """
-    Data class representing the data types used by a buffer.
-
-    :param observations: Datatype of observation space
-    :param actions: Datatype of action space
-    """
-
-    MAP_TORCH_DTYPES: ClassVar[dict] = dict(complex32="complex64", float="float32", bfloat16="float32", bool="bool_")
-
-    observations: InitVar[Union[DTypeLike, Mapping[str, DTypeLike]]]
-    actions: InitVar[DTypeLike]
-
-    dict_obs: MappingProxyType[str, np.dtype] = field(default_factory=lambda: MappingProxyType({}), init=False)
-    obs: Optional[np.dtype] = field(default=None, init=False)
-    act: Optional[np.dtype] = field(default=None, init=False)
-
-    def __post_init__(self, observations: Union[DTypeLike, Mapping[str, DTypeLike]], actions: DTypeLike):
-        if isinstance(observations, Mapping):
-            self.dict_obs = MappingProxyType({k: self.to_numpy_dtype(v) for k, v in observations.items()})
-        else:
-            self.obs = self.to_numpy_dtype(observations)
-        self.act = self.to_numpy_dtype(actions)
-
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        if isinstance(self.dict_obs, MappingProxyType):
-            state["dict_obs"] = dict(self.dict_obs)
-        return state
-
-    def __setstate__(self, state: Mapping[str, Any]):
-        state = dict(state)
-        if state.get("dict_obs"):
-            state["dict_obs"] = MappingProxyType(state["dict_obs"].copy())
-        self.__dict__.update(state)
-
-    @classmethod
-    def to_numpy_dtype(cls, dtype_like: DTypeLike) -> np.dtype:
-        if isinstance(dtype_like, th.dtype):
-            torch_dtype_name = repr(dtype_like).removeprefix("torch.")
-            numpy_dtype_name = cls.MAP_TORCH_DTYPES.get(torch_dtype_name, torch_dtype_name)
-            try:
-                return np.dtype(getattr(np, numpy_dtype_name))
-            except AttributeError as e:
-                raise TypeError(f"Cannot cast torch dtype '{torch_dtype_name}' to numpy.dtype implicitly.") from e
-        return np.dtype(dtype_like)
 
 
 class BaseBuffer(ABC):
@@ -110,16 +58,6 @@ class BaseBuffer(ABC):
         self.full = False
         self.device = get_device(device)
         self.n_envs = n_envs
-
-        # unify the dtype decision logic for all buffer classes
-        # see https://github.com/DLR-RM/stable-baselines3/issues/2162
-        if isinstance(observation_space, spaces.Dict):
-            self.dtypes = BufferDTypes(
-                observations={key: space.dtype for (key, space) in observation_space.spaces.items()},
-                actions=action_space.dtype,
-            )
-        else:
-            self.dtypes = BufferDTypes(observations=observation_space.dtype, actions=action_space.dtype)
 
     @staticmethod
     def swap_and_flatten(arr: np.ndarray) -> np.ndarray:
@@ -451,8 +389,8 @@ class RolloutBuffer(BaseBuffer):
         self.reset()
 
     def reset(self) -> None:
-        self.observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape), dtype=self.dtypes.obs)
-        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=self.dtypes.act)
+        self.observations = np.zeros((self.buffer_size, self.n_envs, *self.obs_shape), dtype=self.observation_space.dtype)
+        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=self.action_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.episode_starts = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -808,9 +746,9 @@ class DictRolloutBuffer(RolloutBuffer):
         self.observations = {}
         for key, obs_input_shape in self.obs_shape.items():
             self.observations[key] = np.zeros(
-                (self.buffer_size, self.n_envs, *obs_input_shape), dtype=self.dtypes.dict_obs[key]
+                (self.buffer_size, self.n_envs, *obs_input_shape), dtype=self.observation_space.dtype
             )
-        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=self.dtypes.act)
+        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=self.action_space.dtype)
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.episode_starts = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)

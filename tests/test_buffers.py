@@ -1,5 +1,3 @@
-from typing import Union
-
 import gymnasium as gym
 import numpy as np
 import pytest
@@ -191,12 +189,12 @@ def test_device_buffer(replay_buffer_cls, device):
     ],
 )
 def test_buffer_dtypes(obs_dtype, use_dict, action_space):
-    rollout_buffer: Union[RolloutBuffer, DictRolloutBuffer]
-    replay_buffer: Union[ReplayBuffer, DictReplayBuffer]
     obs_space = spaces.Box(0, 100, dtype=obs_dtype)
     buffer_params = dict(buffer_size=1, action_space=action_space)
     # For off-policy algorithms, we cast float64 actions to float32, see GH#1145
     actual_replay_action_dtype = ReplayBuffer._maybe_cast_dtype(action_space.dtype)
+    # For on-policy, we cast int8 to int64 to avoid issue computing log prob
+    actual_rollout_action_dtype = RolloutBuffer._maybe_cast_dtype(action_space.dtype)
 
     if use_dict:
         dict_obs_space = spaces.Dict({"obs": obs_space, "obs_2": spaces.Box(0, 100, dtype=np.uint8)})
@@ -214,14 +212,14 @@ def test_buffer_dtypes(obs_dtype, use_dict, action_space):
         assert rollout_buffer.observations.dtype == obs_dtype
         assert replay_buffer.observations.dtype == obs_dtype
 
-    assert rollout_buffer.actions.dtype == action_space.dtype
+    assert rollout_buffer.actions.dtype == actual_rollout_action_dtype
     assert replay_buffer.actions.dtype == actual_replay_action_dtype
     # Check that sampled types are corrects
     rollout_buffer.full = True
     replay_buffer.full = True
     rollout_data = next(rollout_buffer.get(batch_size=64))
     buffer_data = replay_buffer.sample(batch_size=64)
-    assert rollout_data.actions.numpy().dtype == action_space.dtype
+    assert rollout_data.actions.numpy().dtype == actual_rollout_action_dtype
     assert buffer_data.actions.numpy().dtype == actual_replay_action_dtype
     if use_dict:
         assert buffer_data.observations["obs"].numpy().dtype == obs_dtype

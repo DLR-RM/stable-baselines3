@@ -11,7 +11,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
-- ``RolloutBuffer`` and ``DictRolloutBuffer`` now uses the actual observation / action space ``dtype`` (instead of float32), this should save memory (@Trenza1ore)
+- ``RolloutBuffer`` and ``DictRolloutBuffer`` now uses the actual observation / action space ``dtype`` (instead of float32, except for int8 actions, aka MultiBinary, which are cast to float32 to avoid PyTorch issues), this should save memory (@Trenza1ore)
 
 Bug Fixes:
 ^^^^^^^^^^

@@ -5,15 +5,35 @@ Changelog
 
 Release 2.7.1a1 (WIP)
 --------------------------
-**Unify the dtype decision logic for all buffer classes**
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
 
 New Features:
 ^^^^^^^^^^^^^
-- Changed the default observations and actions `dtype` in `RolloutBuffer` and `DictRolloutBuffer` to observation / action space `dtype`, to align with `ReplayBuffer` and `DictReplayBuffer` (@Trenza1ore)
+- ``RolloutBuffer`` and ``DictRolloutBuffer`` now uses the actual observation / action space ``dtype`` (instead of float32), this should save memory (@Trenza1ore)
+
+Bug Fixes:
+^^^^^^^^^^
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
 
 Others:
 ^^^^^^^
-- Added an additional ``test_buffers.py::test_buffer_dtypes`` which tests the `dtype` of `RolloutBuffer` and `DictRolloutBuffer` (@Trenza1ore)
+
+Documentation:
+^^^^^^^^^^^^^^
+
 
 Release 2.7.0 (2025-07-25)
 --------------------------

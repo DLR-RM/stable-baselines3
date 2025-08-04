@@ -182,31 +182,55 @@ def test_device_buffer(replay_buffer_cls, device):
     ],
 )
 @pytest.mark.parametrize("use_dict", [False, True])
-def test_buffer_dtypes(obs_dtype: Union[type[np.integer], type[np.floating]], use_dict: bool):
+@pytest.mark.parametrize(
+    "action_space",
+    [
+        spaces.Discrete(10),
+        spaces.Box(low=-1.0, high=1.0, dtype=np.float32),
+        spaces.Box(low=-1.0, high=1.0, dtype=np.float64),
+    ],
+)
+def test_buffer_dtypes(obs_dtype, use_dict, action_space):
     rollout_buffer: Union[RolloutBuffer, DictRolloutBuffer]
     replay_buffer: Union[ReplayBuffer, DictReplayBuffer]
     obs_space = spaces.Box(0, 100, dtype=obs_dtype)
-    act_space = spaces.Discrete(10)
-    buffer_params = dict(buffer_size=1, action_space=act_space)
+    buffer_params = dict(buffer_size=1, action_space=action_space)
+    # For off-policy algorithms, we cast float64 actions to float32, see GH#1145
+    actual_replay_action_dtype = ReplayBuffer._maybe_cast_dtype(action_space.dtype)
 
     if use_dict:
         dict_obs_space = spaces.Dict({"obs": obs_space, "obs_2": spaces.Box(0, 100, dtype=np.uint8)})
         buffer_params["observation_space"] = dict_obs_space
-        rollout_buffer = DictRolloutBuffer(**buffer_params)  # type: ignore[arg-type]
-        replay_buffer = DictReplayBuffer(**buffer_params)  # type: ignore[arg-type]
+        rollout_buffer = DictRolloutBuffer(**buffer_params)
+        replay_buffer = DictReplayBuffer(**buffer_params)
         assert rollout_buffer.observations["obs"].dtype == obs_dtype
         assert replay_buffer.observations["obs"].dtype == obs_dtype
         assert rollout_buffer.observations["obs_2"].dtype == np.uint8
         assert replay_buffer.observations["obs_2"].dtype == np.uint8
     else:
         buffer_params["observation_space"] = obs_space
-        rollout_buffer = RolloutBuffer(**buffer_params)  # type: ignore[arg-type]
-        replay_buffer = ReplayBuffer(**buffer_params)  # type: ignore[arg-type]
+        rollout_buffer = RolloutBuffer(**buffer_params)
+        replay_buffer = ReplayBuffer(**buffer_params)
         assert rollout_buffer.observations.dtype == obs_dtype
         assert replay_buffer.observations.dtype == obs_dtype
 
-    assert rollout_buffer.actions.dtype == act_space.dtype
-    assert replay_buffer.actions.dtype == act_space.dtype
+    assert rollout_buffer.actions.dtype == action_space.dtype
+    assert replay_buffer.actions.dtype == actual_replay_action_dtype
+    # Check that sampled types are corrects
+    rollout_buffer.full = True
+    replay_buffer.full = True
+    rollout_data = next(rollout_buffer.get(batch_size=64))
+    buffer_data = replay_buffer.sample(batch_size=64)
+    assert rollout_data.actions.numpy().dtype == action_space.dtype
+    assert buffer_data.actions.numpy().dtype == actual_replay_action_dtype
+    if use_dict:
+        assert buffer_data.observations["obs"].numpy().dtype == obs_dtype
+        assert buffer_data.observations["obs_2"].numpy().dtype == np.uint8
+        assert rollout_data.observations["obs"].numpy().dtype == obs_dtype
+        assert rollout_data.observations["obs_2"].numpy().dtype == np.uint8
+    else:
+        assert buffer_data.observations.numpy().dtype == obs_dtype
+        assert rollout_data.observations.numpy().dtype == obs_dtype
 
 
 def test_custom_rollout_buffer():

@@ -217,7 +217,7 @@ class DQN(OffPolicyAlgorithm):
             loss = (
                 F.smooth_l1_loss(current_q_values, target_q_values)
                 if not isinstance(self.replay_buffer_class, PrioritizedReplayBuffer)
-                else pal_loss(current_q_values, target_q_values)
+                else pal_loss(current_q_values, target_q_values, alpha=self.replay_buffer.alpha, beta=self.replay_buffer.beta)
             )
             losses.append(loss.item())
 

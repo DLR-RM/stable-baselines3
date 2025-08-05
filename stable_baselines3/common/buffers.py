@@ -975,3 +975,5 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         super().__init__(
             buffer_size, observation_space, action_space, device, n_envs, optimize_memory_usage, handle_timeout_termination
         )
+        self.alpha = alpha
+        self.beta = beta

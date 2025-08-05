@@ -948,3 +948,26 @@ class NStepReplayBuffer(ReplayBuffer):
             rewards=self.to_torch(n_step_returns),
             discounts=self.to_torch(target_q_discounts),
         )
+
+
+class PrioritizedReplayBuffer(ReplayBuffer):
+    """
+    Prioritized Experience Replay Buffer.
+    The buffer is the same as ReplayBuffer but when this replay class is selected, pal_loss is used.
+    """
+
+    def __init__(
+        self,
+        buffer_size: int,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
+        device: Union[th.device, str] = "auto",
+        n_envs: int = 1,
+        optimize_memory_usage: bool = False,
+        handle_timeout_termination: bool = True,
+        alpha: float = 0.6,
+            beta: float = 0.4,
+    ):
+        super().__init__(
+            buffer_size, observation_space, action_space, device, n_envs, optimize_memory_usage, handle_timeout_termination
+        )

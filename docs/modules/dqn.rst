@@ -28,7 +28,8 @@ Notes
 - Tutorial "From Tabular Q-Learning to DQN": https://github.com/araffin/rlss23-dqn-tutorial
 
 .. note::
-    This implementation provides only vanilla Deep Q-Learning and has no extensions such as Double-DQN, Dueling-DQN and Prioritized Experience Replay.
+    This implementation provides only vanilla Deep Q-Learning and has no extensions such as Double-DQN, Dueling-DQN
+    Prioritized Experience Replay can be use by passing ``PrioritizedReplayBuffer`` via the ``replay_buffer_class`` argument.
 
 
 Can I use?

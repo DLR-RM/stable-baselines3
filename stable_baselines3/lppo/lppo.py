@@ -277,7 +277,7 @@ class LPPO(PPO):
             self.logger.record(f"train_mo/tolerance_hit_{obj}", tolerance_hit[obj])
 
             if callable(self.eta_values[obj]):
-                self.logger.record(f"train_mo/eta_{obj}", self.eta_values[i](self._current_progress_remaining))
+                self.logger.record(f"train_mo/eta_{obj}", self.eta_values[obj](self._current_progress_remaining))
 
         self.logger.record(f"train_mo/tolerance", tol)
         #self.logger.record("train/explained_variance", explained_var)

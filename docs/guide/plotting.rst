@@ -4,7 +4,7 @@
 Plotting
 ========
 
-Stable Baselines3 provides utilities for plotting training results to monitor and visualize your agent's learning progress.
+Stable Baselines3 provides utilities for plotting training results to monitor and visualize your agent"s learning progress.
 The main plotting functionality is provided by the ``results_plotter`` module, which can load monitor files created during training and generate various plots.
 
 
@@ -66,43 +66,6 @@ The plotting functions support three different x-axis modes:
     plt.show()
 
 
-Plotting Multiple Runs
-======================
-
-To plot multiple training runs together:
-
-.. code-block:: python
-
-    import os
-    import gymnasium as gym
-    import matplotlib.pyplot as plt
-
-    from stable_baselines3 import PPO
-    from stable_baselines3.common.monitor import Monitor
-    from stable_baselines3.common.results_plotter import plot_results
-    from stable_baselines3.common import results_plotter
-
-    # Train multiple agents with different runs
-    runs = [("PPO_1", PPO), ("PPO_2", PPO)]
-    log_dirs = []
-
-    for name, algorithm in runs:
-        log_dir = f"logs/{name}/"
-        os.makedirs(log_dir, exist_ok=True)
-        log_dirs.append(log_dir)
-
-        env = gym.make("CartPole-v1")
-        env = Monitor(env, log_dir)
-
-        model = algorithm("MlpPolicy", env, verbose=0)
-        model.learn(total_timesteps=20_000)
-
-    # Plot all results together
-    plot_results(log_dirs, 20_000, results_plotter.X_TIMESTEPS, "Algorithm Comparison")
-    plt.legend(["", "PPO_1", "", "PPO_2"])
-    plt.show()
-
-
 Advanced Plotting with Manual Data Processing
 =============================================
 
@@ -118,111 +81,28 @@ For more control over the plotting, you can use the underlying functions to proc
     # Load the results
     df = load_results(log_dir)
 
-    # Convert to x, y coordinates
-    x, y = ts2xy(df, 'timesteps')
+    # Convert dataframe (x=timesteps, y=episodic return)
+    x, y = ts2xy(df, "timesteps")
 
     # Plot raw data
     plt.figure(figsize=(10, 6))
     plt.subplot(2, 1, 1)
     plt.scatter(x, y, s=2, alpha=0.6)
-    plt.xlabel('Timesteps')
-    plt.ylabel('Episode Reward')
-    plt.title('Raw Episode Rewards')
+    plt.xlabel("Timesteps")
+    plt.ylabel("Episode Reward")
+    plt.title("Raw Episode Rewards")
 
     # Plot smoothed data with custom window
     plt.subplot(2, 1, 2)
     if len(x) >= 50:  # Only smooth if we have enough data
         x_smooth, y_smooth = window_func(x, y, 50, np.mean)
         plt.plot(x_smooth, y_smooth, linewidth=2)
-        plt.xlabel('Timesteps')
-        plt.ylabel('Average Episode Reward (50-episode window)')
-        plt.title('Smoothed Episode Rewards')
+        plt.xlabel("Timesteps")
+        plt.ylabel("Average Episode Reward (50-episode window)"")
+        plt.title("Smoothed Episode Rewards")
 
     plt.tight_layout()
     plt.show()
-
-
-Plotting Success Rates
-======================
-
-For environments that support it (e.g., goal-conditioned environments), you can also plot success rates:
-
-.. code-block:: python
-
-    import pandas as pd
-    import numpy as np
-    from stable_baselines3.common.monitor import load_results
-
-    # For environments that log success rates in info
-    # The monitor will log 'is_success' if present in info dict
-    df = load_results(log_dir)
-
-    # Check if success data is available
-    if 'is_success' in df.columns:
-        # Calculate rolling success rate
-        window_size = 100
-        success_rate = df['is_success'].rolling(window=window_size).mean()
-
-        plt.figure(figsize=(10, 4))
-        plt.plot(success_rate)
-        plt.xlabel('Episode')
-        plt.ylabel('Success Rate')
-        plt.title(f'Success Rate (rolling {window_size}-episode average)')
-        plt.show()
-    else:
-        print("No success rate data available in monitor logs")
-
-
-Customizing Plot Appearance
-===========================
-
-You can customize the plots by modifying matplotlib parameters:
-
-.. code-block:: python
-
-    import matplotlib.pyplot as plt
-    from stable_baselines3.common.results_plotter import plot_curves, ts2xy
-    from stable_baselines3.common.monitor import load_results
-
-    # Load and process data
-    df = load_results(log_dir)
-    x, y = ts2xy(df, 'timesteps')
-
-    # Create custom plot
-    plt.figure(figsize=(12, 6))
-
-    # Use the plot_curves function with custom figure size
-    plot_curves([(x, y)], 'timesteps', 'Custom Training Progress', figsize=(12, 6))
-
-    # Customize appearance
-    plt.grid(True, alpha=0.3)
-    plt.xlabel('Training Timesteps', fontsize=12)
-    plt.ylabel('Episode Reward', fontsize=12)
-    plt.title('Training Progress with Custom Styling', fontsize=14, fontweight='bold')
-
-    plt.show()
-
-
-Saving Plots
-============
-
-To save plots instead of displaying them:
-
-.. code-block:: python
-
-    import matplotlib.pyplot as plt
-    from stable_baselines3.common.results_plotter import plot_results
-    from stable_baselines3.common import results_plotter
-
-    # Create the plot but don't show it
-    plot_results([log_dir], None, results_plotter.X_TIMESTEPS, "Training Results")
-
-    # Save as high-quality image
-    plt.savefig("training_results.png", dpi=300, bbox_inches='tight')
-    plt.savefig("training_results.pdf", bbox_inches='tight')  # Vector format
-
-    # Close the figure to free memory
-    plt.close()
 
 
 Monitor File Format
@@ -234,12 +114,12 @@ The ``Monitor`` wrapper saves training data in CSV format with the following col
 - ``l``: Episode length (number of steps)
 - ``t``: Timestamp (wall-clock time when episode ended)
 
-Additional columns may be present if you log custom metrics in the environment's info dict.
+Additional columns may be present if you log custom metrics in the environment"s info dict.
 
 .. note::
 
     The plotting functions automatically handle multiple monitor files from the same directory,
-    which occurs when using vectorized environments. The files are loaded and sorted by timestamp
+    which occurs when using vectorized environments. The episodes are loaded and sorted by timestamp
     to maintain proper chronological order.
 
 

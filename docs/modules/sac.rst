@@ -93,6 +93,15 @@ This example is only to demonstrate the use of the library and its functions, an
           obs, info = env.reset()
 
 
+.. note::
+
+  **Using gSDE (Generalized State-Dependent Exploration) during inference:**
+
+  When using SAC models trained with ``use_sde=True``, the automatic noise resetting that occurs during training (controlled by ``sde_sample_freq``) does not happen when using ``model.predict()`` for inference. This results in deterministic behavior even when ``deterministic=False``.
+
+  For continuous control tasks, it is recommended to use deterministic behavior during inference (``deterministic=True``). If you need stochastic behavior during inference, you must manually reset the noise by calling ``model.policy.reset_noise(env.num_envs)`` at appropriate intervals based on your desired ``sde_sample_freq``.
+
+
 Results
 -------
 

@@ -105,6 +105,14 @@ Train a PPO agent on ``CartPole-v1`` using 4 environments.
 
   For more information, see :ref:`Vectorized Environments <vec_env>`, `Issue #1245 <https://github.com/DLR-RM/stable-baselines3/issues/1245#issuecomment-1435766949>`_ or the `Multiprocessing notebook <https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/multiprocessing_rl.ipynb>`_.
 
+.. note::
+
+  Using gSDE (Generalized State-Dependent Exploration) during inference (see `PR #1767 <https://github.com/DLR-RM/stable-baselines3/pull/1767>`_):
+
+  When using PPO models trained with ``use_sde=True``, the automatic noise resetting that occurs during training (controlled by ``sde_sample_freq``) does not happen when using ``model.predict()`` for inference. This results in deterministic behavior even when ``deterministic=False``.
+
+  For continuous control tasks, it is recommended to use deterministic behavior during inference (``deterministic=True``). If you need stochastic behavior during inference, you must manually reset the noise by calling ``model.policy.reset_noise(env.num_envs)`` at appropriate intervals based on your desired ``sde_sample_freq``.
+
 Results
 -------
 

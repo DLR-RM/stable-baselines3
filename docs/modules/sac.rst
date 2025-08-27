@@ -95,7 +95,7 @@ This example is only to demonstrate the use of the library and its functions, an
 
 .. note::
 
-  **Using gSDE (Generalized State-Dependent Exploration) during inference:**
+  Using gSDE (Generalized State-Dependent Exploration) during inference (see `PR #1767 <https://github.com/DLR-RM/stable-baselines3/pull/1767>`_):
 
   When using SAC models trained with ``use_sde=True``, the automatic noise resetting that occurs during training (controlled by ``sde_sample_freq``) does not happen when using ``model.predict()`` for inference. This results in deterministic behavior even when ``deterministic=False``.
 

@@ -33,6 +33,7 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Added plotting documentation and examples
 - Added documentation clarifying gSDE (Generalized State-Dependent Exploration) inference behavior for PPO, SAC, and A2C algorithms
 
 

@@ -8,24 +8,13 @@ Stable Baselines3 provides utilities for plotting training results to monitor an
 
 .. note::
 
-    **Recommended Approach**: For production-ready plotting with advanced features, we recommend using the 
-    `RL Baselines3 Zoo plotting scripts <https://rl-baselines3-zoo.readthedocs.io/en/master/guide/plot.html>`_ 
-    which provide comprehensive plotting capabilities with confidence intervals, statistical analysis, and publication-ready visualizations.
+    For paper-ready plotting, we recommend using the
+    `RL Baselines3 Zoo plotting scripts <https://rl-baselines3-zoo.readthedocs.io/en/master/guide/plot.html>`_
+    which provide plotting capabilities with confidence intervals, and publication-ready visualizations.
 
 
 Recommended Approach: RL Baselines3 Zoo Plotting
-==============================================
-
-**For production use, we strongly recommend using the plotting utilities from RL Baselines3 Zoo**, which provide 
-comprehensive plotting capabilities far beyond the basic utilities included in Stable Baselines3.
-
-The RL Zoo plotting tools offer:
-
-- **Statistical analysis** with confidence intervals and error bars
-- **Multi-algorithm comparisons** across different environments  
-- **Publication-ready plots** with customizable styling
-- **Advanced evaluation plots** with proper statistical testing
-- **Automated hyperparameter comparison** visualizations
+================================================
 
 Installation and Usage
 ----------------------
@@ -41,48 +30,33 @@ Basic Training Plot Examples
 
 .. code-block:: bash
 
-    # Plot training results for a single experiment
+    # Train an agent
+    python -m rl_zoo3.train --algo ppo --env CartPole-v1 -f logs/
+
+    # Plot training results for a single algorithm
     python -m rl_zoo3.plots.plot_train --algo ppo --env CartPole-v1 --exp-folder logs/
 
-    # Compare multiple algorithms on the same environment
-    python -m rl_zoo3.plots.plot_train --algo ppo a2c --env CartPole-v1 --exp-folder logs/
-
-    # Plot with custom styling and save to file
-    python -m rl_zoo3.plots.plot_train --algo ppo --env CartPole-v1 --exp-folder logs/ \
-           --figsize 10 8 --format pdf --output-file ppo_cartpole_results.pdf
 
 Evaluation and Comparison Plots
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-    # Generate comprehensive evaluation plots with confidence intervals
-    python -m rl_zoo3.plots.all_plots --algo ppo a2c sac --env-folder logs/ --output-folder eval_plots/
+    # Generate evaluation plots and save post-processed results in `logs/demo_plots.pkl` in order to use `plot_from_file`
+    python -m rl_zoo3.plots.all_plots --algo ppo sac -e Pendulum-v1 -f logs/ -o logs/demo_plots
 
-    # Create comparison plots from benchmark results
-    python -m rl_zoo3.plots.plot_from_file --input benchmark_results.pkl --output comparison_plot.pdf
+    # More advanced plotting (with confidence intervals)
+    python -m rl_zoo3.plots.plot_from_file -i logs/demo_plots.pkl  --rliable --ci-size 0.95
 
-Advanced Features
-~~~~~~~~~~~~~~~~~
 
-.. code-block:: bash
-
-    # Plot with specific confidence intervals and statistical tests
-    python -m rl_zoo3.plots.plot_train --algo ppo --env CartPole-v1 --exp-folder logs/ \
-           --confidence-interval 0.95 --smooth 10 --million-timesteps
-
-    # Generate plots for multiple environments simultaneously  
-    python -m rl_zoo3.plots.all_plots --env CartPole-v1 LunarLander-v2 --algo ppo \
-           --env-folder logs/ --rliable
-
-For complete documentation on the plotting capabilities, see the 
+For more examples, please read the
 `RL Baselines3 Zoo plotting guide <https://rl-baselines3-zoo.readthedocs.io/en/master/guide/plot.html>`_.
 
 
 Basic SB3 Plotting (Simple Use Cases)
 ======================================
 
-The following sections document the basic plotting utilities included directly in Stable Baselines3. 
+The following sections document the basic plotting utilities included directly in Stable Baselines3.
 These are suitable for quick debugging and simple visualizations, but we recommend using RL Zoo3 for any serious analysis.
 
 Simple Plotting Examples: Single Training Run
@@ -201,7 +175,7 @@ Additional columns may be present if you log custom metrics in the environment's
 
 
 Real-Time Monitoring and Integrations
-====================================
+=====================================
 
 For real-time monitoring during training, consider using the plotting functions within callbacks
 (see the `Callbacks guide <callbacks.html>`_) or integrating with external monitoring tools.
@@ -214,12 +188,12 @@ You can log plots to Weights & Biases for remote monitoring:
 
     import wandb
     from stable_baselines3.common.monitor import load_results
-    
+
     # Log plots to W&B
     df = load_results(log_dir)
     wandb.log({"episode_reward": wandb.plot.line_series(
-        xs=df.index, 
-        ys=[df['r']], 
+        xs=df.index,
+        ys=[df['r']],
         keys=["reward"],
         title="Episode Rewards",
         xname="Episode"
@@ -232,5 +206,5 @@ during model creation. The plotting utilities complement TensorBoard by providin
 
 .. note::
 
-    For comprehensive real-time monitoring and advanced plotting, we recommend using the RL Baselines3 Zoo 
+    For comprehensive real-time monitoring and advanced plotting, we recommend using the RL Baselines3 Zoo
     plotting tools alongside TensorBoard and Weights & Biases (see the `Integrations guide <integrations.html>`_).

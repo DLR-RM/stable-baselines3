@@ -1,0 +1,304 @@
+.. _plotting:
+
+========
+Plotting
+========
+
+Stable Baselines3 provides utilities for plotting training results to monitor and visualize your agent's learning progress.
+The main plotting functionality is provided by the ``results_plotter`` module, which can load monitor files created during training
+and generate various plots.
+
+
+Basic Plotting: Single Training Run
+===================================
+
+The simplest way to plot training results is to use the ``plot_results`` function after training an agent.
+This function reads monitor files created by the ``Monitor`` wrapper and plots the episode rewards over time.
+
+.. code-block:: python
+
+    import os
+    import gymnasium as gym
+    import matplotlib.pyplot as plt
+    
+    from stable_baselines3 import PPO
+    from stable_baselines3.common.monitor import Monitor
+    from stable_baselines3.common.results_plotter import plot_results
+    from stable_baselines3.common import results_plotter
+
+    # Create log directory
+    log_dir = "tmp/"
+    os.makedirs(log_dir, exist_ok=True)
+
+    # Create and wrap the environment with Monitor
+    env = gym.make("CartPole-v1")
+    env = Monitor(env, log_dir)
+
+    # Train the agent
+    model = PPO("MlpPolicy", env, verbose=1)
+    model.learn(total_timesteps=20_000)
+
+    # Plot the results
+    plot_results([log_dir], 20_000, results_plotter.X_TIMESTEPS, "PPO CartPole")
+    plt.show()
+
+
+Different Plotting Modes
+========================
+
+The plotting functions support three different x-axis modes:
+
+- ``X_TIMESTEPS``: Plot rewards vs. timesteps (default)
+- ``X_EPISODES``: Plot rewards vs. episode number  
+- ``X_WALLTIME``: Plot rewards vs. wall-clock time in hours
+
+.. code-block:: python
+
+    import matplotlib.pyplot as plt
+    from stable_baselines3.common import results_plotter
+
+    # Plot by timesteps (shows sample efficiency)
+    plt.figure(figsize=(12, 4))
+    
+    plt.subplot(1, 3, 1)
+    plot_results([log_dir], None, results_plotter.X_TIMESTEPS, "Rewards vs Timesteps")
+    
+    plt.subplot(1, 3, 2) 
+    plot_results([log_dir], None, results_plotter.X_EPISODES, "Rewards vs Episodes")
+    
+    plt.subplot(1, 3, 3)
+    plot_results([log_dir], None, results_plotter.X_WALLTIME, "Rewards vs Time")
+    
+    plt.tight_layout()
+    plt.show()
+
+
+Plotting Multiple Runs
+======================
+
+To compare different algorithms or hyperparameters, you can plot multiple training runs together:
+
+.. code-block:: python
+
+    import os
+    import gymnasium as gym
+    import matplotlib.pyplot as plt
+    
+    from stable_baselines3 import PPO, A2C
+    from stable_baselines3.common.monitor import Monitor
+    from stable_baselines3.common.results_plotter import plot_results
+    from stable_baselines3.common import results_plotter
+
+    # Train multiple agents with different algorithms
+    algorithms = [("PPO", PPO), ("A2C", A2C)]
+    log_dirs = []
+    
+    for name, algorithm in algorithms:
+        log_dir = f"logs/{name}/"
+        os.makedirs(log_dir, exist_ok=True)
+        log_dirs.append(log_dir)
+        
+        env = gym.make("CartPole-v1")
+        env = Monitor(env, log_dir)
+        
+        model = algorithm("MlpPolicy", env, verbose=0)
+        model.learn(total_timesteps=20_000)
+
+    # Plot all results together
+    plot_results(log_dirs, 20_000, results_plotter.X_TIMESTEPS, "Algorithm Comparison")
+    plt.legend(["PPO", "A2C"])
+    plt.show()
+
+
+Advanced Plotting with Manual Data Processing
+=============================================
+
+For more control over the plotting, you can use the underlying functions to process the data manually:
+
+.. code-block:: python
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from stable_baselines3.common.monitor import load_results
+    from stable_baselines3.common.results_plotter import ts2xy, window_func
+
+    # Load the results
+    df = load_results(log_dir)
+    
+    # Convert to x, y coordinates  
+    x, y = ts2xy(df, 'timesteps')
+    
+    # Plot raw data
+    plt.figure(figsize=(10, 6))
+    plt.subplot(2, 1, 1)
+    plt.scatter(x, y, s=2, alpha=0.6)
+    plt.xlabel('Timesteps')
+    plt.ylabel('Episode Reward')
+    plt.title('Raw Episode Rewards')
+    
+    # Plot smoothed data with custom window
+    plt.subplot(2, 1, 2) 
+    if len(x) >= 50:  # Only smooth if we have enough data
+        x_smooth, y_smooth = window_func(x, y, 50, np.mean)
+        plt.plot(x_smooth, y_smooth, linewidth=2)
+        plt.xlabel('Timesteps')
+        plt.ylabel('Average Episode Reward (50-episode window)')
+        plt.title('Smoothed Episode Rewards')
+    
+    plt.tight_layout()
+    plt.show()
+
+
+Plotting Success Rates
+======================
+
+For environments that support it (e.g., goal-conditioned environments), you can also plot success rates:
+
+.. code-block:: python
+
+    import pandas as pd
+    import numpy as np
+    from stable_baselines3.common.monitor import load_results
+
+    # For environments that log success rates in info
+    # The monitor will log 'is_success' if present in info dict
+    df = load_results(log_dir)
+    
+    # Check if success data is available
+    if 'is_success' in df.columns:
+        # Calculate rolling success rate
+        window_size = 100
+        success_rate = df['is_success'].rolling(window=window_size).mean()
+        
+        plt.figure(figsize=(10, 4))
+        plt.plot(success_rate)
+        plt.xlabel('Episode')
+        plt.ylabel('Success Rate')
+        plt.title(f'Success Rate (rolling {window_size}-episode average)')
+        plt.show()
+    else:
+        print("No success rate data available in monitor logs")
+
+
+Customizing Plot Appearance
+===========================
+
+You can customize the plots by modifying matplotlib parameters:
+
+.. code-block:: python
+
+    import matplotlib.pyplot as plt
+    from stable_baselines3.common.results_plotter import plot_curves, ts2xy
+    from stable_baselines3.common.monitor import load_results
+
+    # Load and process data
+    df = load_results(log_dir)
+    x, y = ts2xy(df, 'timesteps')
+    
+    # Create custom plot
+    plt.figure(figsize=(12, 6))
+    
+    # Use the plot_curves function with custom figure size
+    plot_curves([(x, y)], 'timesteps', 'Custom Training Progress', figsize=(12, 6))
+    
+    # Customize appearance
+    plt.grid(True, alpha=0.3)
+    plt.xlabel('Training Timesteps', fontsize=12)
+    plt.ylabel('Episode Reward', fontsize=12)
+    plt.title('Training Progress with Custom Styling', fontsize=14, fontweight='bold')
+    
+    plt.show()
+
+
+Saving Plots
+============
+
+To save plots instead of displaying them:
+
+.. code-block:: python
+
+    import matplotlib.pyplot as plt
+    from stable_baselines3.common.results_plotter import plot_results
+    from stable_baselines3.common import results_plotter
+
+    # Create the plot but don't show it
+    plot_results([log_dir], None, results_plotter.X_TIMESTEPS, "Training Results")
+    
+    # Save as high-quality image
+    plt.savefig("training_results.png", dpi=300, bbox_inches='tight')
+    plt.savefig("training_results.pdf", bbox_inches='tight')  # Vector format
+    
+    # Close the figure to free memory
+    plt.close()
+
+
+Monitor File Format
+===================
+
+The ``Monitor`` wrapper saves training data in CSV format with the following columns:
+
+- ``r``: Episode reward
+- ``l``: Episode length (number of steps)
+- ``t``: Timestamp (wall-clock time when episode ended)
+
+Additional columns may be present if you log custom metrics in the environment's info dict.
+
+.. note::
+
+    The plotting functions automatically handle multiple monitor files from the same directory,
+    which occurs when using vectorized environments. The files are loaded and sorted by timestamp
+    to maintain proper chronological order.
+
+
+Advanced Plotting with RL Baselines3 Zoo
+========================================
+
+For more advanced plotting capabilities, including:
+
+- Comparing results across different environments
+- Statistical significance testing  
+- Publication-ready plots with confidence intervals
+- Evaluation plots with error bars
+- Hyperparameter optimization visualizations
+
+We recommend using the plotting scripts from `RL Baselines3 Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_:
+
+- `plot_train.py <https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/rl_zoo3/plots/plot_train.py>`_: For training plots
+- `all_plots.py <https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/rl_zoo3/plots/all_plots.py>`_: For comprehensive evaluation plots
+- `plot_from_file.py <https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/rl_zoo3/plots/plot_from_file.py>`_: For plotting from saved results
+
+These scripts provide production-ready plotting with many additional features not available in the basic SB3 plotting utilities.
+
+
+Integration with Other Tools
+============================
+
+The plotting utilities integrate well with other monitoring tools:
+
+**Weights & Biases**
+
+.. code-block:: python
+
+    import wandb
+    from stable_baselines3.common.monitor import load_results
+    
+    # Log plots to W&B
+    df = load_results(log_dir)
+    wandb.log({"episode_reward": wandb.plot.line_series(
+        xs=df.index, 
+        ys=[df['r']], 
+        keys=["reward"],
+        title="Episode Rewards",
+        xname="Episode"
+    )})
+
+**TensorBoard**
+
+Training metrics are automatically logged to TensorBoard when you specify a ``tensorboard_log`` directory
+during model creation. The plotting utilities complement TensorBoard by providing publication-ready figures.
+
+.. note::
+
+    For real-time monitoring during training, consider using the plotting functions within callbacks
+    (see the `Callbacks guide <callbacks.html>`_) or integrating with tools like Weights & Biases
+    (see the `Integrations guide <integrations.html>`_).

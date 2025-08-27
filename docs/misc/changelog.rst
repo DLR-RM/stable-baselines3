@@ -33,6 +33,7 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Added comprehensive plotting documentation and examples
 
 
 Release 2.7.0 (2025-07-25)

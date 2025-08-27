@@ -45,6 +45,7 @@ Main Features
    guide/rl
    guide/algos
    guide/examples
+   guide/plotting
    guide/vec_envs
    guide/custom_policy
    guide/custom_env

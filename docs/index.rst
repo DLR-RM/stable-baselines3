@@ -45,7 +45,6 @@ Main Features
    guide/rl
    guide/algos
    guide/examples
-   guide/plotting
    guide/vec_envs
    guide/custom_policy
    guide/custom_env
@@ -55,6 +54,7 @@ Main Features
    guide/rl_zoo
    guide/sb3_contrib
    guide/sbx
+   guide/plotting
    guide/imitation
    guide/migration
    guide/checking_nan

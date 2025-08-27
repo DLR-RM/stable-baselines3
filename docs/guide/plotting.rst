@@ -4,11 +4,13 @@
 Plotting
 ========
 
+
 Stable Baselines3 provides utilities for plotting training results to monitor and visualize your agent's learning progress.
+The plotting functionality is provided by the ``results_plotter`` module, which can load monitor files created during training and generate various plots.
 
 .. note::
 
-    For paper-ready plotting, we recommend using the
+    For plotting, we recommend using the
     `RL Baselines3 Zoo plotting scripts <https://rl-baselines3-zoo.readthedocs.io/en/master/guide/plot.html>`_
     which provide plotting capabilities with confidence intervals, and publication-ready visualizations.
 
@@ -16,8 +18,23 @@ Stable Baselines3 provides utilities for plotting training results to monitor an
 Recommended Approach: RL Baselines3 Zoo Plotting
 ================================================
 
-Installation and Usage
-----------------------
+To have good plotting capabilities, including:
+
+- Comparing results across different environments
+- Publication-ready plots with confidence intervals
+- Evaluation plots with error bars
+
+We recommend using the plotting scripts from `RL Baselines3 Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_:
+
+- `plot_train.py <https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/rl_zoo3/plots/plot_train.py>`_: For training plots
+- `all_plots.py <https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/rl_zoo3/plots/all_plots.py>`_: For evaluation plots, to post-process the result
+- `plot_from_file.py <https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/rl_zoo3/plots/plot_from_file.py>`_: For more advanced plotting from post-processed results
+
+These scripts provide additional features not available in the basic SB3 plotting utilities.
+
+
+Installation
+------------
 
 First, install RL Baselines3 Zoo:
 
@@ -26,7 +43,7 @@ First, install RL Baselines3 Zoo:
     pip install rl_zoo3[plots]
 
 Basic Training Plot Examples
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------
 
 .. code-block:: bash
 
@@ -38,14 +55,15 @@ Basic Training Plot Examples
 
 
 Evaluation and Comparison Plots
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------
 
 .. code-block:: bash
 
-    # Generate evaluation plots and save post-processed results in `logs/demo_plots.pkl` in order to use `plot_from_file`
+    # Generate evaluation plots and save post-processed results
+    # in `logs/demo_plots.pkl` in order to use `plot_from_file`
     python -m rl_zoo3.plots.all_plots --algo ppo sac -e Pendulum-v1 -f logs/ -o logs/demo_plots
 
-    # More advanced plotting (with confidence intervals)
+    # More advanced plotting from post-processed results (with confidence intervals)
     python -m rl_zoo3.plots.plot_from_file -i logs/demo_plots.pkl  --rliable --ci-size 0.95
 
 
@@ -53,14 +71,35 @@ For more examples, please read the
 `RL Baselines3 Zoo plotting guide <https://rl-baselines3-zoo.readthedocs.io/en/master/guide/plot.html>`_.
 
 
+Real-Time Monitoring
+====================
+
+For real-time monitoring during training, consider using the plotting functions within callbacks
+(see the `Callbacks guide <callbacks.html>`_) or integrating with tools like `Tensorboard <tensorboard.html>`_ or  Weights & Biases
+(see the `Integrations guide <integrations.html>`_).
+
+Monitor File Format
+===================
+
+The ``Monitor`` wrapper saves training data in CSV format with the following columns:
+
+- ``r``: Episode reward
+- ``l``: Episode length (number of steps)
+- ``t``: Timestamp (wall-clock time when episode ended)
+
+Additional columns may be present if you log custom metrics in the environment"s info dict.
+
+.. note::
+
+    The plotting functions automatically handle multiple monitor files from the same directory,
+    which occurs when using vectorized environments. The episodes are loaded and sorted by timestamp
+    to maintain proper chronological order.
+
 Basic SB3 Plotting (Simple Use Cases)
 ======================================
 
-The following sections document the basic plotting utilities included directly in Stable Baselines3.
-These are suitable for quick debugging and simple visualizations, but we recommend using RL Zoo3 for any serious analysis.
-
-Simple Plotting Examples: Single Training Run
----------------------------------------------
+Basic Plotting: Single Training Run
+-----------------------------------
 
 The simplest way to plot training results is to use the ``plot_results`` function after training an agent.
 This function reads monitor files created by the ``Monitor`` wrapper and plots the episode rewards over time.
@@ -93,8 +132,8 @@ This function reads monitor files created by the ``Monitor`` wrapper and plots t
     plt.show()
 
 
-Simple Plotting Modes
----------------------
+Different Plotting Modes
+------------------------
 
 The plotting functions support three different x-axis modes:
 
@@ -117,8 +156,8 @@ The plotting functions support three different x-axis modes:
     plt.show()
 
 
-Manual Data Processing with SB3 Utilities
-------------------------------------------
+Advanced Plotting with Manual Data Processing
+---------------------------------------------
 
 For more control over the plotting, you can use the underlying functions to process the data manually:
 
@@ -149,62 +188,8 @@ For more control over the plotting, you can use the underlying functions to proc
         x_smooth, y_smooth = window_func(x, y, 50, np.mean)
         plt.plot(x_smooth, y_smooth, linewidth=2)
         plt.xlabel("Timesteps")
-        plt.ylabel("Average Episode Reward (50-episode window)")
+        plt.ylabel("Average Episode Reward (50-episode window)"")
         plt.title("Smoothed Episode Rewards")
 
     plt.tight_layout()
     plt.show()
-
-
-Monitor File Format
--------------------
-
-The ``Monitor`` wrapper saves training data in CSV format with the following columns:
-
-- ``r``: Episode reward
-- ``l``: Episode length (number of steps)
-- ``t``: Timestamp (wall-clock time when episode ended)
-
-Additional columns may be present if you log custom metrics in the environment's info dict.
-
-.. note::
-
-    The plotting functions automatically handle multiple monitor files from the same directory,
-    which occurs when using vectorized environments. The episodes are loaded and sorted by timestamp
-    to maintain proper chronological order.
-
-
-Real-Time Monitoring and Integrations
-=====================================
-
-For real-time monitoring during training, consider using the plotting functions within callbacks
-(see the `Callbacks guide <callbacks.html>`_) or integrating with external monitoring tools.
-
-**Weights & Biases Integration**
-
-You can log plots to Weights & Biases for remote monitoring:
-
-.. code-block:: python
-
-    import wandb
-    from stable_baselines3.common.monitor import load_results
-
-    # Log plots to W&B
-    df = load_results(log_dir)
-    wandb.log({"episode_reward": wandb.plot.line_series(
-        xs=df.index,
-        ys=[df['r']],
-        keys=["reward"],
-        title="Episode Rewards",
-        xname="Episode"
-    )})
-
-**TensorBoard**
-
-Training metrics are automatically logged to TensorBoard when you specify a ``tensorboard_log`` directory
-during model creation. The plotting utilities complement TensorBoard by providing publication-ready figures.
-
-.. note::
-
-    For comprehensive real-time monitoring and advanced plotting, we recommend using the RL Baselines3 Zoo
-    plotting tools alongside TensorBoard and Weights & Biases (see the `Integrations guide <integrations.html>`_).

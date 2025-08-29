@@ -100,6 +100,15 @@ class EpisodicLifeEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
     Make end-of-life == end-of-episode, but only reset on true game over.
     Done by DeepMind for the DQN and co. since it helps value estimation.
 
+    .. note::
+        This wrapper changes the behavior of ``env.reset()``. When the environment
+        terminates due to a loss of life (but not game over), calling ``reset()`` will
+        perform a no-op step instead of truly resetting the environment. This can be
+        confusing when evaluating or testing agents, as consecutive calls to ``reset()``
+        may return different observations. To avoid this behavior and ensure ``reset()``
+        always resets to the initial state, set ``terminal_on_life_loss=False`` when
+        using ``make_atari_env()``.
+
     :param env: Environment to wrap
     """
 
@@ -127,6 +136,12 @@ class EpisodicLifeEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
         Calls the Gym environment reset, only when lives are exhausted.
         This way all states are still reachable even though lives are episodic,
         and the learner need not know about any of this behind-the-scenes.
+
+        .. warning::
+            If the environment terminated due to a loss of life (not game over),
+            this method will perform a no-op step instead of truly resetting the
+            environment. This means consecutive calls to ``reset()`` may return
+            different observations.
 
         :param kwargs: Extra keywords passed to env.reset() call
         :return: the first observation of the environment

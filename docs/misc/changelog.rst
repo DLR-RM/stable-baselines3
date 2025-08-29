@@ -35,6 +35,7 @@ Documentation:
 ^^^^^^^^^^^^^^
 - Added plotting documentation and examples
 - Added documentation clarifying gSDE (Generalized State-Dependent Exploration) inference behavior for PPO, SAC, and A2C algorithms
+- Clarified comment in ``_sample_action()`` method to better explain action scaling behavior for off-policy algorithms (@copilot)
 
 
 Release 2.7.0 (2025-07-25)

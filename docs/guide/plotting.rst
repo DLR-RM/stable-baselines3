@@ -5,12 +5,12 @@ Plotting
 ========
 
 
-Stable Baselines3 provides utilities for plotting training results to monitor and visualize your agent's learning progress.
+Stable Baselines3 provides utilities for plotting training results, allowing you to monitor and visualize your agent's learning progress.
 The plotting functionality is provided by the ``results_plotter`` module, which can load monitor files created during training and generate various plots.
 
 .. note::
 
-    For plotting, we recommend using the
+    We recommend using the
     `RL Baselines3 Zoo plotting scripts <https://rl-baselines3-zoo.readthedocs.io/en/master/guide/plot.html>`_
     which provide plotting capabilities with confidence intervals, and publication-ready visualizations.
 
@@ -18,19 +18,15 @@ The plotting functionality is provided by the ``results_plotter`` module, which 
 Recommended Approach: RL Baselines3 Zoo Plotting
 ================================================
 
-To have good plotting capabilities, including:
+The `RL Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_ provides scripts that allows to compare results across different environments and have publication-ready plots with confidence intervals.
 
-- Comparing results across different environments
-- Publication-ready plots with confidence intervals
-- Evaluation plots with error bars
-
-We recommend using the plotting scripts from `RL Baselines3 Zoo <https://github.com/DLR-RM/rl-baselines3-zoo>`_:
+The three main plotting scripts are:
 
 - `plot_train.py <https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/rl_zoo3/plots/plot_train.py>`_: For training plots
 - `all_plots.py <https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/rl_zoo3/plots/all_plots.py>`_: For evaluation plots, to post-process the result
 - `plot_from_file.py <https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/rl_zoo3/plots/plot_from_file.py>`_: For more advanced plotting from post-processed results
 
-These scripts provide additional features not available in the basic SB3 plotting utilities.
+These scripts offer features that are not included in the basic SB3 plotting utilities.
 
 
 Installation
@@ -40,7 +36,7 @@ First, install RL Baselines3 Zoo:
 
 .. code-block:: bash
 
-    pip install rl_zoo3[plots]
+    pip install 'rl_zoo3[plots]'
 
 Basic Training Plot Examples
 ----------------------------
@@ -83,17 +79,17 @@ Monitor File Format
 
 The ``Monitor`` wrapper saves training data in CSV format with the following columns:
 
-- ``r``: Episode reward
+- ``r``: Episode return (sum of rewards for one episode)
 - ``l``: Episode length (number of steps)
 - ``t``: Timestamp (wall-clock time when episode ended)
 
-Additional columns may be present if you log custom metrics in the environment"s info dict.
+Additional columns may be present if you log custom metrics in the environment's info dict and pass their names via the ``info_keywords`` parameter.
 
 .. note::
 
-    The plotting functions automatically handle multiple monitor files from the same directory,
-    which occurs when using vectorized environments. The episodes are loaded and sorted by timestamp
-    to maintain proper chronological order.
+    The plotting functions automatically handle multiple monitor files from the same directory.
+    This occurs when using vectorized environments. Episodes are loaded and sorted by timestamp
+    to ensure they are in the correct chronological order.
 
 Basic SB3 Plotting (Simple Use Cases)
 ======================================
@@ -102,7 +98,7 @@ Basic Plotting: Single Training Run
 -----------------------------------
 
 The simplest way to plot training results is to use the ``plot_results`` function after training an agent.
-This function reads monitor files created by the ``Monitor`` wrapper and plots the episode rewards over time.
+This function reads the monitor files created by the ``Monitor`` wrapper and plots the episode rewards over time.
 
 .. code-block:: python
 

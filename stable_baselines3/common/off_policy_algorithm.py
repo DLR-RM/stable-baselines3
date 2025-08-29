@@ -391,7 +391,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             unscaled_action = np.array([self.action_space.sample() for _ in range(n_envs)])
         else:
             # Note: when using continuous actions,
-            # we assume that the policy uses tanh to scale the action
+            # the policy internally uses tanh to bound the action but predict() returns
+            # actions unscaled to the original action space [low, high]
             # We use non-deterministic action in the case of SAC, for TD3, it does not matter
             assert self._last_obs is not None, "self._last_obs was not set"
             unscaled_action, _ = self.predict(self._last_obs, deterministic=False)

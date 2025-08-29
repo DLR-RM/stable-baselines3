@@ -36,6 +36,7 @@ Documentation:
 - Added plotting documentation and examples
 - Added documentation clarifying gSDE (Generalized State-Dependent Exploration) inference behavior for PPO, SAC, and A2C algorithms
 - Documented Atari wrapper reset behavior where ``env.reset()`` may perform a no-op step instead of truly resetting when ``terminal_on_life_loss=True`` (default), and how to avoid this behavior by setting ``terminal_on_life_loss=False``
+- Clarified comment in ``_sample_action()`` method to better explain action scaling behavior for off-policy algorithms (@copilot)
 
 
 Release 2.7.0 (2025-07-25)

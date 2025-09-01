@@ -287,21 +287,4 @@ in RL with discrete actions:
 3. Pong (one of the easiest Atari game)
 4. other Atari games (e.g. Breakout)
 
-.. note::
-
-	When working with Atari environments, be aware that the default ``terminal_on_life_loss=True`` behavior
-	can cause ``env.reset()`` to perform a no-op step instead of truly resetting the environment when
-	the episode ends due to a life loss (not game over). This can affect evaluation and testing.
-	To ensure ``reset()`` always resets to the initial state, use:
-
-	.. code-block:: python
-
-		from stable_baselines3.common.env_util import make_atari_env
-
-		env = make_atari_env(
-		    "BreakoutNoFrameskip-v4",
-		    n_envs=1,
-		    wrapper_kwargs=dict(terminal_on_life_loss=False)
-		)
-
 .. _SBX: https://github.com/araffin/sbx

@@ -148,7 +148,7 @@ def make_atari_env(
         By default, the ``AtariWrapper`` uses ``terminal_on_life_loss=True``, which causes
         ``env.reset()`` to perform a no-op step instead of truly resetting when the environment
         terminates due to a loss of life (but not game over). To ensure ``reset()`` always
-        resets to the initial state, pass ``wrapper_kwargs=dict(terminal_on_life_loss=False)``.
+        resets the env, pass ``wrapper_kwargs=dict(terminal_on_life_loss=False)``.
 
     :param env_id: either the env ID, the env class or a callable returning an env
     :param n_envs: the number of environments you wish to have in parallel

@@ -124,7 +124,10 @@ class LPPO(PPO):
                             th.clamp(ratio, 1 - clip_range, 1 + clip_range) * advantages[:, obj]
                     )
                     _surr = th.min(_surr1, _surr2)
-                    _pg_loss = -((_surr + self.ent_coef * entropy)).mean()
+                    # We shouldn't include the entropy term in the buffer of recent losses if we anneal the entropy coefficient.
+                    #_pg_loss = -((_surr + self.ent_coef * entropy)).mean()
+                    #self.recent_losses[obj].append(_pg_loss.detach().cpu())
+                    _pg_loss = -(_surr).mean()
                     self.recent_losses[obj].append(_pg_loss.detach().cpu())
 
                 # Logging

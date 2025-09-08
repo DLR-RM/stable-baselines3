@@ -87,7 +87,7 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
     :return: True if return value tests should be skipped.
     """
 
-    should_skip = graph_space = False
+    should_skip = graph_space = sequence_space = False
     if isinstance(observation_space, spaces.Dict):
         nested_dict = False
         for key, space in observation_space.spaces.items():
@@ -95,6 +95,8 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
                 nested_dict = True
             if isinstance(space, spaces.Graph):
                 graph_space = True
+            if isinstance(space, spaces.Sequence):
+                sequence_space = True
             _check_non_zero_start(space, "observation", key)
 
         if nested_dict:
@@ -122,10 +124,28 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             "(cf. https://gymnasium.farama.org/api/spaces/composite/#dict). "
             "which is supported by SB3."
         )
+        # Check for Sequence spaces inside Tuple
+        for space in observation_space.spaces:
+            if isinstance(space, spaces.Sequence):
+                sequence_space = True
+            
+    # Check for Sequence spaces inside OneOf
+    if isinstance(observation_space, spaces.OneOf):
+        for space in observation_space.spaces:
+            if isinstance(space, spaces.Sequence):
+                sequence_space = True
 
     _check_non_zero_start(observation_space, "observation")
 
     if isinstance(observation_space, spaces.Sequence):
+        warnings.warn(
+            "Sequence observation space is not supported by Stable-Baselines3. "
+            "You can pad your observation to have a fixed size instead.\n"
+            "Note: The checks for returned values are skipped."
+        )
+        should_skip = True
+
+    if sequence_space:
         warnings.warn(
             "Sequence observation space is not supported by Stable-Baselines3. "
             "You can pad your observation to have a fixed size instead.\n"

@@ -15,6 +15,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed env checker to properly handle ``Sequence`` observation spaces when nested inside composite spaces (``Dict``, ``Tuple``, ``OneOf``) (@copilot)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

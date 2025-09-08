@@ -80,14 +80,21 @@ def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
         )
 
 
-def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, action_space: spaces.Space) -> None:
-    """Emit warnings when the observation space or action space used is not supported by Stable-Baselines."""
+def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, action_space: spaces.Space) -> bool:
+    """
+    Emit warnings when the observation space or action space used is not supported by Stable-Baselines.
 
+    :return: True if return value tests should be skipped.
+    """
+
+    should_skip = graph_space = False
     if isinstance(observation_space, spaces.Dict):
         nested_dict = False
         for key, space in observation_space.spaces.items():
             if isinstance(space, spaces.Dict):
                 nested_dict = True
+            if isinstance(space, spaces.Graph):
+                graph_space = True
             _check_non_zero_start(space, "observation", key)
 
         if nested_dict:
@@ -124,6 +131,14 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             "You can pad your observation to have a fixed size instead.\n"
             "Note: The checks for returned values are skipped."
         )
+        should_skip = True
+
+    if isinstance(observation_space, spaces.Graph) or graph_space:
+        warnings.warn(
+            "Graph observation space is not supported by Stable-Baselines3. "
+            "Note: The checks for returned values are skipped."
+        )
+        should_skip = True
 
     _check_non_zero_start(action_space, "action")
 
@@ -133,6 +148,7 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             "This type of action space is currently not supported by Stable Baselines 3. You should try to flatten the "
             "action using a wrapper."
         )
+    return should_skip
 
 
 def _check_nan(env: gym.Env) -> None:
@@ -445,8 +461,9 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
 
     # Warn the user if needed.
     # A warning means that the environment may run but not work properly with Stable Baselines algorithms
+    should_skip = False
     if warn:
-        _check_unsupported_spaces(env, observation_space, action_space)
+        should_skip = _check_unsupported_spaces(env, observation_space, action_space)
 
         obs_spaces = observation_space.spaces if isinstance(observation_space, spaces.Dict) else {"": observation_space}
         for key, space in obs_spaces.items():
@@ -474,8 +491,8 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
                 f"Your action space has dtype {action_space.dtype}, we recommend using np.float32 to avoid cast errors."
             )
 
-    # If Sequence observation space, do not check the observation any further
-    if isinstance(observation_space, spaces.Sequence):
+    # If Sequence or Graph observation space, do not check the observation any further
+    if should_skip:
         return
 
     # ============ Check the returned values ===============

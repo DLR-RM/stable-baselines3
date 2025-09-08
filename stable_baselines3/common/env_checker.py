@@ -15,7 +15,7 @@ def _is_oneof_space(space: spaces.Space) -> bool:
     False if not or if the current version of Gym doesn't support this space.
     """
     try:
-        return isinstance(space, spaces.OneOf)
+        return isinstance(space, spaces.OneOf)  # type: ignore[attr-defined]
     except AttributeError:
         # Gym < v1.0
         return False

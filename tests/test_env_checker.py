@@ -239,7 +239,7 @@ class SequenceInTupleEnv(CustomEnv):
 class SequenceInOneOfEnv(CustomEnv):
     """Test env with Sequence space inside OneOf space."""
 
-    def __init__(self, stack=False):
+    def __init__(self):
         self.action_space = spaces.Discrete(2)
         self.observation_space = spaces.OneOf(
             (

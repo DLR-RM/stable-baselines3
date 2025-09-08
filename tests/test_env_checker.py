@@ -53,13 +53,6 @@ class CustomEnv(gym.Env):
         return self.observation_space.sample(), 1.0, False, False, {}
 
 
-def test_check_env_sequence_obs():
-    test_env = CustomEnv()
-
-    with pytest.warns(Warning, match="Sequence.*not supported"):
-        check_env(env=test_env, warn=True)
-
-
 @pytest.mark.parametrize(
     "obs_tuple",
     [
@@ -225,84 +218,56 @@ def test_check_env_graph_space():
         check_env(SimpleDictGraphEnv(), warn=True)
 
 
-class SequenceInDictEnv(gym.Env):
+class SequenceInDictEnv(CustomEnv):
     """Test env with Sequence space inside Dict space."""
-    
-    def __init__(self, stack=False):
+
+    def __init__(self):
         self.action_space = spaces.Discrete(2)
-        self.observation_space = spaces.Dict({
-            "seq": spaces.Sequence(
-                spaces.Box(low=-100, high=100, shape=(1,), dtype=np.float32),
-                stack=stack,
-            )
-        })
-
-    def reset(self, *, seed=None, options=None):
-        return self.observation_space.sample(), {}
-
-    def step(self, action):
-        return self.observation_space.sample(), 0.0, False, False, {}
+        self.observation_space = spaces.Dict(
+            {"seq": spaces.Sequence(spaces.Box(low=-100, high=100, shape=(1,), dtype=np.float32))}
+        )
 
 
-class SequenceInTupleEnv(gym.Env):
+class SequenceInTupleEnv(CustomEnv):
     """Test env with Sequence space inside Tuple space."""
-    
-    def __init__(self, stack=False):
+
+    def __init__(self):
         self.action_space = spaces.Discrete(2)
-        self.observation_space = spaces.Tuple((
-            spaces.Sequence(
-                spaces.Box(low=-100, high=100, shape=(1,), dtype=np.float32),
-                stack=stack,
-            ),
-        ))
-
-    def reset(self, *, seed=None, options=None):
-        return self.observation_space.sample(), {}
-
-    def step(self, action):
-        return self.observation_space.sample(), 0.0, False, False, {}
+        self.observation_space = spaces.Tuple((spaces.Sequence(spaces.Box(low=-100, high=100, shape=(1,), dtype=np.float32)),))
 
 
-class SequenceInOneOfEnv(gym.Env):
+class SequenceInOneOfEnv(CustomEnv):
     """Test env with Sequence space inside OneOf space."""
-    
+
     def __init__(self, stack=False):
         self.action_space = spaces.Discrete(2)
-        self.observation_space = spaces.OneOf((
-            spaces.Sequence(
-                spaces.Box(low=-100, high=100, shape=(1,), dtype=np.float32),
-                stack=stack,
-            ),
-            spaces.Discrete(3),
-        ))
-
-    def reset(self, *, seed=None, options=None):
-        return self.observation_space.sample(), {}
-
-    def step(self, action):
-        return self.observation_space.sample(), 0.0, False, False, {}
+        self.observation_space = spaces.OneOf(
+            (
+                spaces.Sequence(spaces.Box(low=-100, high=100, shape=(1,), dtype=np.float32)),
+                spaces.Discrete(3),
+            )
+        )
 
 
-@pytest.mark.parametrize("stack", [False, True])
-def test_check_env_sequence_in_dict(stack):
-    """Test that Sequence spaces inside Dict spaces are properly handled."""
-    env = SequenceInDictEnv(stack=stack)
-    with pytest.warns(UserWarning, match="Sequence.*not supported"):
-        check_env(env, warn=True)
+@pytest.mark.parametrize("env_class", [CustomEnv, SequenceInDictEnv])
+def test_check_env_sequence_obs(env_class):
+    with pytest.warns(Warning, match="Sequence.*not supported"):
+        check_env(env_class(), warn=True)
 
 
-@pytest.mark.parametrize("stack", [False, True])
-def test_check_env_sequence_in_tuple(stack):
-    """Test that Sequence spaces inside Tuple spaces are properly handled."""
-    env = SequenceInTupleEnv(stack=stack)
-    # Should emit warnings for both Tuple and Sequence spaces
-    with pytest.warns(UserWarning, match="Tuple.*not supported"):
-        check_env(env, warn=True)
+def test_check_env_sequence_tuple():
+    with (
+        pytest.warns(Warning, match="Sequence.*not supported"),
+        pytest.warns(Warning, match="Tuple.*not supported"),
+    ):
+        check_env(SequenceInTupleEnv(), warn=True)
 
 
-@pytest.mark.parametrize("stack", [False, True])
-def test_check_env_sequence_in_oneof(stack):
-    """Test that Sequence spaces inside OneOf spaces are properly handled."""
-    env = SequenceInOneOfEnv(stack=stack)
-    with pytest.warns(UserWarning, match="Sequence.*not supported"):
+def test_check_env_oneof():
+    try:
+        env = SequenceInOneOfEnv()
+    except AttributeError:
+        pytest.skip("OneOf not supported by current Gymnasium version")
+
+    with pytest.warns(Warning, match="OneOf.*not supported"):
         check_env(env, warn=True)

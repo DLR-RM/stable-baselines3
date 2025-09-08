@@ -105,7 +105,6 @@ def preprocess_obs(
         (True by default)
     :return:
     """
-
     if isinstance(observation_space, spaces.Dict):
         # Do not modify by reference the original observation
         assert isinstance(obs, dict), f"Expected dict, got {type(obs)}"

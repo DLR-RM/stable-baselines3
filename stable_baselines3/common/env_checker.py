@@ -224,6 +224,7 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
         assert not isinstance(
             obs, tuple
         ), f"The observation returned by the `{method_name}()` method should be a single value, not a tuple"
+
     # The check for a GoalEnv is done by the base class
     if isinstance(observation_space, spaces.Discrete):
         # Since https://github.com/Farama-Foundation/Gymnasium/pull/141,

@@ -229,7 +229,6 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
         # Since https://github.com/Farama-Foundation/Gymnasium/pull/141,
         # `sample()` will return a np.int64 instead of an int
         assert np.issubdtype(type(obs), np.integer), f"The observation returned by `{method_name}()` method must be an int"
-
     elif _is_numpy_array_space(observation_space):
         assert isinstance(obs, np.ndarray), f"The observation returned by `{method_name}()` method must be a numpy array"
 
@@ -256,13 +255,16 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
                     f"of the given observation space {observation_space}. \n"
                 )
                 message += f"{len(invalid_indices[0])} invalid indices: \n"
+
                 for index in zip(*invalid_indices):
                     index_str = ",".join(map(str, index))
                     message += (
                         f"Expected: {lower_bounds[index]} <= obs[{index_str}] <= {upper_bounds[index]}, "
                         f"actual value: {obs[index]} \n"
                     )
+
                 raise AssertionError(message)
+
     assert observation_space.contains(obs), (
         f"The observation returned by the `{method_name}()` method "
         f"does not match the given observation space {observation_space}"

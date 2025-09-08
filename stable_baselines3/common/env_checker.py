@@ -9,6 +9,18 @@ from stable_baselines3.common.preprocessing import check_for_nested_spaces, is_i
 from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
 
 
+def _is_oneof_space(space: spaces.Space) -> bool:
+    """
+    Return True if the provided space is a OneOf space,
+    False if not or if the current version of Gym doesn't support this space.
+    """
+    try:
+        return isinstance(space, spaces.OneOf)  # type: ignore[attr-defined]
+    except AttributeError:
+        # Gym < v1.0
+        return False
+
+
 def _is_numpy_array_space(space: spaces.Space) -> bool:
     """
     Returns False if provided space is not representable as a single numpy array
@@ -80,21 +92,23 @@ def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
         )
 
 
-def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, action_space: spaces.Space) -> bool:
+def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, action_space: spaces.Space) -> bool:  # noqa: C901
     """
     Emit warnings when the observation space or action space used is not supported by Stable-Baselines.
 
     :return: True if return value tests should be skipped.
     """
 
-    should_skip = graph_space = False
+    should_skip = graph_space = sequence_space = False
     if isinstance(observation_space, spaces.Dict):
         nested_dict = False
         for key, space in observation_space.spaces.items():
             if isinstance(space, spaces.Dict):
                 nested_dict = True
-            if isinstance(space, spaces.Graph):
+            elif isinstance(space, spaces.Graph):
                 graph_space = True
+            elif isinstance(space, spaces.Sequence):
+                sequence_space = True
             _check_non_zero_start(space, "observation", key)
 
         if nested_dict:
@@ -122,10 +136,24 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             "(cf. https://gymnasium.farama.org/api/spaces/composite/#dict). "
             "which is supported by SB3."
         )
+        # Check for Sequence spaces inside Tuple
+        for space in observation_space.spaces:
+            if isinstance(space, spaces.Sequence):
+                sequence_space = True
+            elif isinstance(space, spaces.Graph):
+                graph_space = True
+
+    # Check for Sequence spaces inside OneOf
+    if _is_oneof_space(observation_space):
+        warnings.warn(
+            "OneOf observation space is not supported by Stable-Baselines3. "
+            "Note: The checks for returned values are skipped."
+        )
+        should_skip = True
 
     _check_non_zero_start(observation_space, "observation")
 
-    if isinstance(observation_space, spaces.Sequence):
+    if isinstance(observation_space, spaces.Sequence) or sequence_space:
         warnings.warn(
             "Sequence observation space is not supported by Stable-Baselines3. "
             "You can pad your observation to have a fixed size instead.\n"

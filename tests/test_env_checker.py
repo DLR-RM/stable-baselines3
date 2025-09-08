@@ -53,13 +53,6 @@ class CustomEnv(gym.Env):
         return self.observation_space.sample(), 1.0, False, False, {}
 
 
-def test_check_env_sequence_obs():
-    test_env = CustomEnv()
-
-    with pytest.warns(Warning, match="Sequence.*not supported"):
-        check_env(env=test_env, warn=True)
-
-
 @pytest.mark.parametrize(
     "obs_tuple",
     [
@@ -223,3 +216,58 @@ def test_check_env_graph_space():
 
     with pytest.warns(UserWarning, match="Graph.*not supported"):
         check_env(SimpleDictGraphEnv(), warn=True)
+
+
+class SequenceInDictEnv(CustomEnv):
+    """Test env with Sequence space inside Dict space."""
+
+    def __init__(self):
+        self.action_space = spaces.Discrete(2)
+        self.observation_space = spaces.Dict(
+            {"seq": spaces.Sequence(spaces.Box(low=-100, high=100, shape=(1,), dtype=np.float32))}
+        )
+
+
+class SequenceInTupleEnv(CustomEnv):
+    """Test env with Sequence space inside Tuple space."""
+
+    def __init__(self):
+        self.action_space = spaces.Discrete(2)
+        self.observation_space = spaces.Tuple((spaces.Sequence(spaces.Box(low=-100, high=100, shape=(1,), dtype=np.float32)),))
+
+
+class SequenceInOneOfEnv(CustomEnv):
+    """Test env with Sequence space inside OneOf space."""
+
+    def __init__(self):
+        self.action_space = spaces.Discrete(2)
+        self.observation_space = spaces.OneOf(
+            (
+                spaces.Sequence(spaces.Box(low=-100, high=100, shape=(1,), dtype=np.float32)),
+                spaces.Discrete(3),
+            )
+        )
+
+
+@pytest.mark.parametrize("env_class", [CustomEnv, SequenceInDictEnv])
+def test_check_env_sequence_obs(env_class):
+    with pytest.warns(Warning, match="Sequence.*not supported"):
+        check_env(env_class(), warn=True)
+
+
+def test_check_env_sequence_tuple():
+    with (
+        pytest.warns(Warning, match="Sequence.*not supported"),
+        pytest.warns(Warning, match="Tuple.*not supported"),
+    ):
+        check_env(SequenceInTupleEnv(), warn=True)
+
+
+def test_check_env_oneof():
+    try:
+        env = SequenceInOneOfEnv()
+    except AttributeError:
+        pytest.skip("OneOf not supported by current Gymnasium version")
+
+    with pytest.warns(Warning, match="OneOf.*not supported"):
+        check_env(env, warn=True)

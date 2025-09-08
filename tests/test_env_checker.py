@@ -23,7 +23,7 @@ class ActionDictTestEnv(gym.Env):
         info = {}
         return observation, reward, terminated, truncated, info
 
-    def reset(self, seed=None, options=None):
+    def reset(self, *, seed=None, options=None):
         return np.array([1.0, 1.5, 0.5], dtype=self.observation_space.dtype), {}
 
     def render(self):
@@ -37,14 +37,15 @@ def test_check_env_dict_action():
         check_env(env=test_env, warn=True)
 
 
-class SequenceObservationEnv(gym.Env):
+class CustomEnv(gym.Env):
     metadata = {"render_modes": [], "render_fps": 2}
 
     def __init__(self, render_mode=None):
+        # Test Sequence obs
         self.observation_space = spaces.Sequence(spaces.Discrete(8))
         self.action_space = spaces.Discrete(4)
 
-    def reset(self, seed=None, options=None):
+    def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
         return self.observation_space.sample(), {}
 
@@ -53,7 +54,7 @@ class SequenceObservationEnv(gym.Env):
 
 
 def test_check_env_sequence_obs():
-    test_env = SequenceObservationEnv()
+    test_env = CustomEnv()
 
     with pytest.warns(Warning, match="Sequence.*not supported"):
         check_env(env=test_env, warn=True)
@@ -193,46 +194,32 @@ def test_check_env_single_step_env():
     check_env(env=test_env, warn=True)
 
 
-
-class SimpleGraphEnv(gym.Env):
+class SimpleGraphEnv(CustomEnv):
     def __init__(self):
         self.action_space = spaces.Discrete(2)
-        # Define a simple Graph observation space
-        node_shape = (2,)
-        edge_shape = (3,)
         self.observation_space = spaces.Graph(
-            node_space=spaces.Box(low=0, high=1, shape=node_shape),
-            edge_space=spaces.Box(low=0, high=1, shape=edge_shape),
+            node_space=spaces.Box(low=0, high=1, shape=(2,)),
+            edge_space=spaces.Box(low=0, high=1, shape=(3,)),
         )
 
-    def reset(self, seed=None, options=None):
-        # Just sample from the obs space
-        return self.observation_space.sample(), {}
 
-    def step(self, action):
-        return self.observation_space.sample(), 1.0, False, False, {}
+class SimpleDictGraphEnv(CustomEnv):
+    def __init__(self):
+        self.action_space = spaces.Discrete(2)
+        self.observation_space = spaces.Dict(
+            {
+                "test": spaces.Graph(
+                    node_space=spaces.Box(low=0, high=1, shape=(2,)),
+                    edge_space=spaces.Box(low=0, high=1, shape=(3,)),
+                )
+            }
+        )
 
 
-def test_check_env_simple_graph_space():
-    env = SimpleGraphEnv()
+def test_check_env_graph_space():
     # Should emit a warning about Graph space, but not fail
-    with pytest.warns(UserWarning, match="Graph space, which is not supported by the env checker"):
-        check_env(env, warn=True)
+    with pytest.warns(UserWarning, match="Graph.*not supported"):
+        check_env(SimpleGraphEnv(), warn=True)
 
-
-def test_check_wrong_type_graph_space():
-    # Create a Graph space with a wrong type
-    node_shape = (2,)
-    edge_shape = (3,)
-    graph_space = spaces.Graph(
-        node_space=spaces.Box(low=0, high=1, shape=node_shape),
-        edge_space=spaces.Box(low=0, high=1, shape=edge_shape),
-    )
-    # Create an env with the wrong type
-    env = SimpleGraphEnv()
-    env.observation_space = graph_space
-
-    # Check that the env checker raises an error
-    with pytest.raises(AssertionError, match="incompatible w/ graph-obs"):
-        check_env(env, warn=True)
-
+    with pytest.warns(UserWarning, match="Graph.*not supported"):
+        check_env(SimpleDictGraphEnv(), warn=True)

@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.7.1a1 (WIP)
+Release 2.7.1a2 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -57,7 +57,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fixed docker GPU image (PyTorch GPU was not installed)
 - Fixed segmentation faults caused by non-portable schedules during model loading (@akanto)
-- Fixed NoneType error when importing Gymnasium.graph  for sb3 (@dhruvmalik007).
+- Update env checker to warn users when using Graph space (@dhruvmalik007).
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

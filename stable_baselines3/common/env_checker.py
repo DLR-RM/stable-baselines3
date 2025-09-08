@@ -12,7 +12,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecCheckNan
 def _is_numpy_array_space(space: spaces.Space) -> bool:
     """
     Returns False if provided space is not representable as a single numpy array
-    (e.g. Dict, Tuple spaces return False)
+    (e.g. Dict and Tuple spaces return False)
     """
     return not isinstance(space, (spaces.Dict, spaces.Tuple))
 
@@ -80,14 +80,21 @@ def _check_image_input(observation_space: spaces.Box, key: str = "") -> None:
         )
 
 
-def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, action_space: spaces.Space) -> None:
-    """Emit warnings when the observation space or action space used is not supported by Stable-Baselines."""
+def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, action_space: spaces.Space) -> bool:
+    """
+    Emit warnings when the observation space or action space used is not supported by Stable-Baselines.
 
+    :return: True if return value tests should be skipped.
+    """
+
+    should_skip = graph_space = False
     if isinstance(observation_space, spaces.Dict):
         nested_dict = False
         for key, space in observation_space.spaces.items():
             if isinstance(space, spaces.Dict):
                 nested_dict = True
+            if isinstance(space, spaces.Graph):
+                graph_space = True
             _check_non_zero_start(space, "observation", key)
 
         if nested_dict:
@@ -124,6 +131,14 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             "You can pad your observation to have a fixed size instead.\n"
             "Note: The checks for returned values are skipped."
         )
+        should_skip = True
+
+    if isinstance(observation_space, spaces.Graph) or graph_space:
+        warnings.warn(
+            "Graph observation space is not supported by Stable-Baselines3. "
+            "Note: The checks for returned values are skipped."
+        )
+        should_skip = True
 
     _check_non_zero_start(action_space, "action")
 
@@ -133,6 +148,7 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             "This type of action space is currently not supported by Stable Baselines 3. You should try to flatten the "
             "action using a wrapper."
         )
+    return should_skip
 
 
 def _check_nan(env: gym.Env) -> None:
@@ -204,26 +220,10 @@ def _check_obs(obs: Union[tuple, dict, np.ndarray, int], observation_space: spac
     Check that the observation returned by the environment
     correspond to the declared one.
     """
-    # If the observation space is a Graph, return early with a warning.
-    if _is_graph_space(observation_space):
-        warnings.warn(
-            f"The observation space for `{method_name}()` is a Graph space, which is not supported the env checker.",
-            "Skipping further observation checks.",
-            UserWarning,
-        )
-        return
-
     if not isinstance(observation_space, spaces.Tuple):
         assert not isinstance(
             obs, tuple
         ), f"The observation returned by the `{method_name}()` method should be a single value, not a tuple"
-        # Graph spaces are not fully supported by the env checker
-        if isinstance(observation_space, spaces.Graph):
-            warnings.warn(
-                "Graph observation spaces are not fully supported by the env checker. "
-                "Skipping further observation checks."
-            )
-            return
     # The check for a GoalEnv is done by the base class
     if isinstance(observation_space, spaces.Discrete):
         # Since https://github.com/Farama-Foundation/Gymnasium/pull/141,
@@ -371,7 +371,6 @@ def _check_returned_values(env: gym.Env, observation_space: spaces.Space, action
         assert reward == env.compute_reward(obs["achieved_goal"], obs["desired_goal"], info)
 
 
-
 def _check_spaces(env: gym.Env) -> None:
     """
     Check that the observation and action spaces are defined and inherit from spaces.Space. For
@@ -398,18 +397,6 @@ def _check_spaces(env: gym.Env) -> None:
             "Note: if your env is not a GoalEnv, please rename `env.compute_reward()` "
             "to something else to avoid False positive."
         )
-
-
-def _is_graph_space(space: Any) -> bool:
-    """
-    Check if the space is a gymnasium Graph space.
-    Handles the case where gymnasium.spaces.graph may not be available.
-    """
-    try:
-        from gymnasium.spaces.graph import Graph
-    except ImportError:
-        return False
-    return isinstance(space, Graph)
 
 
 # Check render cannot be covered by CI
@@ -470,8 +457,10 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
         raise TypeError("The reset() method must accept a `seed` parameter") from e
 
     # Warn the user if needed.
+    # A warning means that the environment may run but not work properly with Stable Baselines algorithms
+    should_skip = False
     if warn:
-        _check_unsupported_spaces(env, observation_space, action_space)
+        should_skip = _check_unsupported_spaces(env, observation_space, action_space)
 
         obs_spaces = observation_space.spaces if isinstance(observation_space, spaces.Dict) else {"": observation_space}
         for key, space in obs_spaces.items():
@@ -499,8 +488,8 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
                 f"Your action space has dtype {action_space.dtype}, we recommend using np.float32 to avoid cast errors."
             )
 
-    # If Sequence observation space, do not check the observation any further
-    if isinstance(observation_space, spaces.Sequence):
+    # If Sequence or Graph observation space, do not check the observation any further
+    if should_skip:
         return
 
     # ============ Check the returned values ===============
@@ -512,12 +501,8 @@ def check_env(env: gym.Env, warn: bool = True, skip_render_check: bool = True) -
 
     try:
         check_for_nested_spaces(env.observation_space)
-        # if there is None defined , then skip the test
-        if _is_graph_space(observation_space) or (
-            isinstance(observation_space, spaces.Dict) and any(_is_graph_space(s) for s in observation_space.spaces.values())
-        ):
-            pass  # skip _check_nan for Graph spaces
-        else:
-            _check_nan(env)
+        # The check doesn't support nested observations/dict actions
+        # A warning about it has already been emitted
+        _check_nan(env)
     except NotImplementedError:
         pass

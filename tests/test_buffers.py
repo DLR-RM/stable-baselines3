@@ -163,6 +163,75 @@ def test_device_buffer(replay_buffer_cls, device):
                 raise TypeError(f"Unknown value type: {type(value)}")
 
 
+@pytest.mark.parametrize(
+    "obs_dtype",
+    [
+        np.dtype(np.uint8),
+        np.dtype(np.int8),
+        np.dtype(np.uint16),
+        np.dtype(np.int16),
+        np.dtype(np.uint32),
+        np.dtype(np.int32),
+        np.dtype(np.uint64),
+        np.dtype(np.int64),
+        np.dtype(np.float16),
+        np.dtype(np.float32),
+        np.dtype(np.float64),
+    ],
+)
+@pytest.mark.parametrize("use_dict", [False, True])
+@pytest.mark.parametrize(
+    "action_space",
+    [
+        spaces.Discrete(10),
+        spaces.Box(low=-1.0, high=1.0, dtype=np.float32),
+        spaces.Box(low=-1.0, high=1.0, dtype=np.float64),
+    ],
+)
+def test_buffer_dtypes(obs_dtype, use_dict, action_space):
+    obs_space = spaces.Box(0, 100, dtype=obs_dtype)
+    buffer_params = dict(buffer_size=1, action_space=action_space)
+    # For off-policy algorithms, we cast float64 actions to float32, see GH#1145
+    actual_replay_action_dtype = ReplayBuffer._maybe_cast_dtype(action_space.dtype)
+    # For on-policy, we cast at sample time to float32 for backward compat
+    # and to avoid issue computing log prob with multibinary
+    actual_rollout_action_dtype = np.float32
+
+    if use_dict:
+        dict_obs_space = spaces.Dict({"obs": obs_space, "obs_2": spaces.Box(0, 100, dtype=np.uint8)})
+        buffer_params["observation_space"] = dict_obs_space
+        rollout_buffer = DictRolloutBuffer(**buffer_params)
+        replay_buffer = DictReplayBuffer(**buffer_params)
+        assert rollout_buffer.observations["obs"].dtype == obs_dtype
+        assert replay_buffer.observations["obs"].dtype == obs_dtype
+        assert rollout_buffer.observations["obs_2"].dtype == np.uint8
+        assert replay_buffer.observations["obs_2"].dtype == np.uint8
+    else:
+        buffer_params["observation_space"] = obs_space
+        rollout_buffer = RolloutBuffer(**buffer_params)
+        replay_buffer = ReplayBuffer(**buffer_params)
+        assert rollout_buffer.observations.dtype == obs_dtype
+        assert replay_buffer.observations.dtype == obs_dtype
+
+    assert rollout_buffer.actions.dtype == action_space.dtype
+    assert replay_buffer.actions.dtype == actual_replay_action_dtype
+    # Check that sampled types are corrects
+    rollout_buffer.full = True
+    replay_buffer.full = True
+    rollout_data = next(rollout_buffer.get(batch_size=64))
+    buffer_data = replay_buffer.sample(batch_size=64)
+    assert rollout_data.actions.numpy().dtype == actual_rollout_action_dtype
+    assert buffer_data.actions.numpy().dtype == actual_replay_action_dtype
+    if use_dict:
+        assert buffer_data.observations["obs"].numpy().dtype == obs_dtype
+        assert buffer_data.observations["obs_2"].numpy().dtype == np.uint8
+        assert rollout_data.observations["obs"].numpy().dtype == obs_dtype
+        assert rollout_data.observations["obs_2"].numpy().dtype == np.uint8
+    else:
+        assert buffer_data.observations.numpy().dtype == obs_dtype
+        assert rollout_data.observations.numpy().dtype == obs_dtype
+
+
 def test_custom_rollout_buffer():
     A2C("MlpPolicy", "Pendulum-v1", rollout_buffer_class=RolloutBuffer, rollout_buffer_kwargs=dict())
 

@@ -368,7 +368,25 @@ and multiprocessing for you. To install the Atari environments, run the command 
 
 .. image:: ../_static/img/colab-badge.svg
    :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/atari_games.ipynb
-..
+
+.. note::
+
+    When working with Atari environments, be aware that the default ``terminal_on_life_loss=True`` behavior
+    can cause ``env.reset()`` to perform a no-op step instead of truly resetting the environment when
+    the episode ends due to a life loss (not game over, see `issue #666 <https://github.com/DLR-RM/stable-baselines3/issues/666>`_).
+    To ensure ``reset()`` always resets the environment, use:
+
+    .. code-block:: python
+
+        from stable_baselines3.common.env_util import make_atari_env
+
+        import ale_py
+
+        env = make_atari_env(
+            "BreakoutNoFrameskip-v4",
+            n_envs=1,
+            wrapper_kwargs=dict(terminal_on_life_loss=False)
+        )
 
 .. code-block:: python
 

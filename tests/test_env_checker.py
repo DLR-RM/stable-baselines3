@@ -211,10 +211,10 @@ class SimpleDictGraphEnv(CustomEnv):
 
 def test_check_env_graph_space():
     # Should emit a warning about Graph space, but not fail
-    with pytest.warns(UserWarning, match="Graph.*not supported"):
+    with pytest.warns(UserWarning, match=r"Graph.*not supported"):
         check_env(SimpleGraphEnv(), warn=True)
 
-    with pytest.warns(UserWarning, match="Graph.*not supported"):
+    with pytest.warns(UserWarning, match=r"Graph.*not supported"):
         check_env(SimpleDictGraphEnv(), warn=True)
 
 
@@ -251,14 +251,14 @@ class SequenceInOneOfEnv(CustomEnv):
 
 @pytest.mark.parametrize("env_class", [CustomEnv, SequenceInDictEnv])
 def test_check_env_sequence_obs(env_class):
-    with pytest.warns(Warning, match="Sequence.*not supported"):
+    with pytest.warns(Warning, match=r"Sequence.*not supported"):
         check_env(env_class(), warn=True)
 
 
 def test_check_env_sequence_tuple():
     with (
-        pytest.warns(Warning, match="Sequence.*not supported"),
-        pytest.warns(Warning, match="Tuple.*not supported"),
+        pytest.warns(Warning, match=r"Sequence.*not supported"),
+        pytest.warns(Warning, match=r"Tuple.*not supported"),
     ):
         check_env(SequenceInTupleEnv(), warn=True)
 
@@ -269,5 +269,5 @@ def test_check_env_oneof():
     except AttributeError:
         pytest.skip("OneOf not supported by current Gymnasium version")
 
-    with pytest.warns(Warning, match="OneOf.*not supported"):
+    with pytest.warns(Warning, match=r"OneOf.*not supported"):
         check_env(env, warn=True)

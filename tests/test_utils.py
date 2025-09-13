@@ -340,15 +340,13 @@ def test_evaluate_policy_monitors(vec_env_class):
     # Test that we also track correct episode dones, not the wrapped ones.
     # Sanity check that we get only one step per episode.
     eval_env = make_eval_env(with_monitor=False, wrapper_class=AlwaysDoneWrapper)
-    episode_rewards, episode_lengths = evaluate_policy(
-        model, eval_env, n_eval_episodes, return_episode_rewards=True, warn=False
-    )
+    _, episode_lengths = evaluate_policy(model, eval_env, n_eval_episodes, return_episode_rewards=True, warn=False)
     assert all(map(lambda length: length == 1, episode_lengths)), "AlwaysDoneWrapper did not fix episode lengths to one"
     eval_env.close()
 
     # Should get longer episodes with with Monitor (true episodes)
     eval_env = make_eval_env(with_monitor=True, wrapper_class=AlwaysDoneWrapper)
-    episode_rewards, episode_lengths = evaluate_policy(model, eval_env, n_eval_episodes, return_episode_rewards=True)
+    _, episode_lengths = evaluate_policy(model, eval_env, n_eval_episodes, return_episode_rewards=True)
     assert all(map(lambda length: length > 1, episode_lengths)), "evaluate_policy did not get episode lengths from Monitor"
     eval_env.close()
 

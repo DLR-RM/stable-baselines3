@@ -381,7 +381,7 @@ def test_subproc_start_method():
         vec_env_class = functools.partial(SubprocVecEnv, start_method=start_method)
         check_vecenv_spaces(vec_env_class, space, obs_assert)
 
-    with pytest.raises(ValueError, match="cannot find context for 'illegal_method'"):
+    with pytest.raises(ValueError, match=r"cannot find context for 'illegal_method'"):
         vec_env_class = functools.partial(SubprocVecEnv, start_method="illegal_method")
         check_vecenv_spaces(vec_env_class, space, obs_assert)
 

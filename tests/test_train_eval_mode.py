@@ -193,9 +193,9 @@ def test_td3_train_with_batch_norm():
         critic_bias_before,
         critic_running_mean_before,
         actor_target_bias_before,
-        actor_target_running_mean_before,
+        _actor_target_running_mean_before,
         critic_target_bias_before,
-        critic_target_running_mean_before,
+        _critic_target_running_mean_before,
     ) = clone_td3_batch_norm_stats(model)
 
     model.learn(total_timesteps=200)
@@ -332,7 +332,7 @@ def test_a2c_ppo_collect_rollouts_with_batch_norm(model_class, env_id):
 
     bias_before, running_mean_before = clone_on_policy_batch_norm(model)
 
-    total_timesteps, callback = model._setup_learn(total_timesteps=2 * 64)
+    _total_timesteps, callback = model._setup_learn(total_timesteps=2 * 64)
 
     for _ in range(2):
         model.collect_rollouts(model.get_env(), callback, model.rollout_buffer, n_rollout_steps=model.n_steps)

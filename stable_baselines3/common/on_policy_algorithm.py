@@ -198,7 +198,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             with th.no_grad():
                 # Convert to pytorch tensor or to TensorDict
-                obs_tensor = obs_as_tensor(self._last_obs, self.device)
+                obs_tensor = obs_as_tensor(self._last_obs, self.device)  # type: ignore[arg-type]
                 actions, values, log_probs = self.policy(obs_tensor)
             actions = actions.cpu().numpy()
 

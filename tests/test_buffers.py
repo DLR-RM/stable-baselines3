@@ -235,11 +235,11 @@ def test_buffer_dtypes(obs_dtype, use_dict, action_space):
 def test_custom_rollout_buffer():
     A2C("MlpPolicy", "Pendulum-v1", rollout_buffer_class=RolloutBuffer, rollout_buffer_kwargs=dict())
 
-    with pytest.raises(TypeError, match="unexpected keyword argument 'wrong_keyword'"):
+    with pytest.raises(TypeError, match=r"unexpected keyword argument 'wrong_keyword'"):
         A2C("MlpPolicy", "Pendulum-v1", rollout_buffer_class=RolloutBuffer, rollout_buffer_kwargs=dict(wrong_keyword=1))
 
-    with pytest.raises(TypeError, match="got multiple values for keyword argument 'gamma'"):
+    with pytest.raises(TypeError, match=r"got multiple values for keyword argument 'gamma'"):
         A2C("MlpPolicy", "Pendulum-v1", rollout_buffer_class=RolloutBuffer, rollout_buffer_kwargs=dict(gamma=1))
 
-    with pytest.raises(AssertionError, match="DictRolloutBuffer must be used with Dict obs space only"):
+    with pytest.raises(AssertionError, match=r"DictRolloutBuffer must be used with Dict obs space only"):
         A2C("MlpPolicy", "Pendulum-v1", rollout_buffer_class=DictRolloutBuffer)

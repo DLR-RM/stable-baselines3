@@ -123,5 +123,5 @@ def test_mixing_gym_vecenv_api():
     model = PPO("MlpPolicy", env)
     # Reset return a tuple (obs, info)
     wrong_obs = env.reset()
-    with pytest.raises(ValueError, match="mixing Gym API"):
+    with pytest.raises(ValueError, match=r"mixing Gym API"):
         model.predict(wrong_obs)

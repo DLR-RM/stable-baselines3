@@ -12,6 +12,7 @@ Breaking Changes:
 New Features:
 ^^^^^^^^^^^^^
 - ``RolloutBuffer`` and ``DictRolloutBuffer`` now uses the actual observation / action space ``dtype`` (instead of float32), this should save memory (@Trenza1ore)
+- Added ``check_vecenv()`` function to check that a VecEnv follows the VecEnv API and is compatible with Stable-Baselines3 (@copilot)
 
 Bug Fixes:
 ^^^^^^^^^^

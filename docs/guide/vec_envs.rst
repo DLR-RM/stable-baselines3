@@ -184,7 +184,7 @@ it calls the environment setter method.
 
 
 Checking VecEnv Implementation
------------------------------
+------------------------------
 
 When implementing custom vectorized environments, it's easy to make mistakes that can lead to hard-to-debug issues.
 To help with this, Stable-Baselines3 provides a ``check_vecenv`` function that validates your VecEnv implementation

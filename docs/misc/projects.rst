@@ -292,3 +292,16 @@ Benchmark results and documentations are on Github, feel free to submit feature 
 | Authors: Hugo Huang
 | Github: https://github.com/Trenza1ore/sb3-extra-buffers
 | Relevant project for training RL agents that play Doom with Semantic Segmentation: https://github.com/Trenza1ore/SegDoom
+
+
+sb3-plus: Multi-Output Policy Support for Stable-Baselines3
+-----------------------------------------------------------
+
+An extension to Stable-Baselines3 that implements support for multi-output policies and dictionary action spaces.
+
+This project provides PPO with dict action space support, enabling independent action spaces which is particularly useful 
+for environments requiring multiple types of actions (e.g., discrete and continuous actions). This addresses the 
+multi-output policy feature requested in the community and provides a practical solution for complex action scenarios.
+
+| Author: Adyson Maia
+| Github: https://github.com/adysonmaia/sb3-plus

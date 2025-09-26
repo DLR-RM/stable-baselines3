@@ -13,6 +13,9 @@ from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines3.common.vec_env.vec_transpose import VecTransposeImage
 from stable_baselines3.common.vec_env.vec_video_recorder import VecVideoRecorder
 
+# Avoid circular import by importing the vec_env_checker here  
+from stable_baselines3.common.vec_env_checker import check_vecenv
+
 VecEnvWrapperT = TypeVar("VecEnvWrapperT", bound=VecEnvWrapper)
 
 
@@ -98,6 +101,7 @@ __all__ = [
     "VecNormalize",
     "VecTransposeImage",
     "VecVideoRecorder",
+    "check_vecenv",
     "is_vecenv_wrapped",
     "sync_envs_normalization",
     "unwrap_vec_normalize",

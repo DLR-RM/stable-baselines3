@@ -18,6 +18,7 @@ Bug Fixes:
 - Fixed env checker to properly handle ``Sequence`` observation spaces when nested inside composite spaces (``Dict``, ``Tuple``, ``OneOf``) (@copilot)
 - Update env checker to warn users when using Graph space (@dhruvmalik007).
 - Fixed memory leak in ``VecVideoRecorder`` where ``recorded_frames`` stayed in memory due to reference in the moviepy clip (@copilot)
+- Remove double space in `StopTrainingOnRewardThreshold` callback message (@sea-bass)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

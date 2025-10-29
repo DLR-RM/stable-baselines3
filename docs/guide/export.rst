@@ -29,7 +29,7 @@ to do inference in another framework.
 
 
 Export to ONNX
------------------
+--------------
 
 
 If you are using PyTorch 2.0+ and ONNX Opset 14+, you can easily export SB3 policies using the following code:
@@ -192,8 +192,70 @@ There is a draft PR in the RL Zoo about C++ export: https://github.com/DLR-RM/rl
   action_jit = loaded_module(dummy_input)
 
 
-Export to tensorflowjs / ONNX-JS
---------------------------------
+Export to ONNX-JS / ONNX Runtime Web
+------------------------------------
+
+See https://onnxruntime.ai/docs/tutorials/web/build-web-app.html
+
+.. code-block:: python
+  
+  import torch as th
+
+  from stable_baselines3 import SAC
+
+
+  class OnnxablePolicy(th.nn.Module):
+      def __init__(self, actor: th.nn.Module):
+          super().__init__()
+          self.actor = actor
+
+      def forward(self, observation: th.Tensor) -> th.Tensor:
+          # NOTE: You may have to postprocess (unnormalize) actions
+          # to the correct bounds (see commented code below)
+          return self.actor(observation, deterministic=True)
+
+
+  # Example: model = SAC("MlpPolicy", "Pendulum-v1")
+  SAC("MlpPolicy", "Pendulum-v1").save("PathToTrainedModel.zip")
+  model = SAC.load("PathToTrainedModel.zip", device="cpu")
+  onnxable_model = OnnxablePolicy(model.policy.actor)
+
+  observation_size = model.observation_space.shape
+  dummy_input = th.randn(1, *observation_size)
+  th.onnx.export(
+      onnxable_model,
+      dummy_input,
+      "my_sac_actor.onnx",
+      opset_version=17,
+      input_names=["input"],
+  )
+
+.. code-block:: javascript
+  
+  // Install using `npm install onnxruntime-web` or using cdn
+  import * as ort from 'onnxruntime-web';
+
+  async function runInference() {
+    const session = await ort.InferenceSession.create('my_sac_actor.onnx');
+
+    // The observation_size = 3 (for Pendulum-v1)
+    const inputData = Float32Array.from([0.1, -0.2, 0.3]);
+
+    const inputTensor = new ort.Tensor('float32', inputData, [1, 3]);
+
+    const results = await session.run({ input: inputTensor });
+
+    const outputName = session.outputNames[0];
+    const action = results[outputName].data;
+
+    console.log('Predicted action=', action);
+  }
+
+  runInference();
+
+
+Export to tensorflowjs 
+----------------------
 
 TODO: contributors help is welcomed!
 Probably a good starting point: https://github.com/elliotwaite/pytorch-to-javascript-with-onnx-js

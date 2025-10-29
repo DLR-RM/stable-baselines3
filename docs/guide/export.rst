@@ -29,7 +29,7 @@ to do inference in another framework.
 
 
 Export to ONNX
------------------
+--------------
 
 
 If you are using PyTorch 2.0+ and ONNX Opset 14+, you can easily export SB3 policies using the following code:
@@ -192,8 +192,10 @@ There is a draft PR in the RL Zoo about C++ export: https://github.com/DLR-RM/rl
   action_jit = loaded_module(dummy_input)
 
 
-Export to ONNX-JS
---------------------------------
+Export to ONNX-JS / ONNX Runtime Web
+------------------------------------
+
+See https://onnxruntime.ai/docs/tutorials/web/build-web-app.html
 
 .. code-block:: python
   
@@ -253,7 +255,7 @@ Export to ONNX-JS
 
 
 Export to tensorflowjs 
---------------------------------
+----------------------
 
 TODO: contributors help is welcomed!
 Probably a good starting point: https://github.com/elliotwaite/pytorch-to-javascript-with-onnx-js

@@ -43,6 +43,7 @@ Documentation:
 - Clarified comment in ``_sample_action()`` method to better explain action scaling behavior for off-policy algorithms (@copilot)
 - Added sb3-plus to projects page
 - Added example usage of ONNX JS
+- Updated link to paper of community project DeepNetSlice (@AlexPasqua)
 
 
 Release 2.7.0 (2025-07-25)

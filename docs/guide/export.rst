@@ -273,8 +273,8 @@ In order for this to work, you must convert (SB3 => ONNX => Tensorflow => Tensor
 The following is a simple example that showcases the full conversion + inference
 
 .. code-block:: python
+  
   import torch as th
-
   from stable_baselines3 import SAC
 
 
@@ -305,6 +305,7 @@ The following is a simple example that showcases the full conversion + inference
   )
 
 .. code-block:: python
+  
   # Tested with python3.10 
   # Then install these dependencies in a fresh env
   """

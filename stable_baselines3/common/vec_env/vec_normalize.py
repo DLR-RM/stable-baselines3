@@ -197,9 +197,7 @@ class VecNormalize(VecEnvWrapper):
         rewards = self.normalize_reward(rewards)
 
         # Normalize the terminal observations
-        for idx, done in enumerate(dones):
-            if not done:
-                continue
+        for idx in dones.nonzero()[0]:
             if "terminal_observation" in infos[idx]:
                 infos[idx]["terminal_observation"] = self.normalize_obs(infos[idx]["terminal_observation"])
 

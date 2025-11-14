@@ -228,7 +228,8 @@ intelligent agents to perform network slice placement.
 
 | Author: Alex Pasquali
 | Github: https://github.com/AlexPasqua/DeepNetSlice
-| Paper: **under review** (citation instructions on the project's README.md) -> see this Master's Thesis for the moment: https://etd.adm.unipi.it/theses/available/etd-01182023-110038/unrestricted/Tesi_magistrale_Pasquali_Alex.pdf
+| Paper: https://ieeexplore.ieee.org/document/10625023
+| Associated Master's Thesis: https://etd.adm.unipi.it/theses/available/etd-01182023-110038/unrestricted/Tesi_magistrale_Pasquali_Alex.pdf
 
 
 PokemonRedExperiments

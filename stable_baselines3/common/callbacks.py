@@ -565,7 +565,7 @@ class StopTrainingOnRewardThreshold(BaseCallback):
         if self.verbose >= 1 and not continue_training:
             print(
                 f"Stopping training because the mean reward {self.parent.best_mean_reward:.2f} "
-                f" is above the threshold {self.reward_threshold}"
+                f"is above the threshold {self.reward_threshold}"
             )
         return continue_training
 

@@ -37,8 +37,7 @@ If you are using PyTorch 2.0+ and ONNX Opset 14+, you can easily export SB3 poli
 
 .. warning::
 
-  The following returns normalized actions and doesn't include the `post-processing <https://github.com/DLR-RM/stable-baselines3/blob/a9273f968eaf8c6e04302a07d803eebfca6e7e86/stable_baselines3/common/policies.py#L370-L377>`_ step that is done with continuous actions
-  (clip or unscale the action to the correct space).
+  The following returns normalized actions and doesn't include the `post-processing <https://github.com/DLR-RM/stable-baselines3/blob/a9273f968eaf8c6e04302a07d803eebfca6e7e86/stable_baselines3/common/policies.py#L370-L377>`_ step that is done with continuous actions (clip or unscale the action to the correct space).
 
 
 .. code-block:: python
@@ -195,19 +194,22 @@ There is a draft PR in the RL Zoo about C++ export: https://github.com/DLR-RM/rl
 Export to ONNX-JS / ONNX Runtime Web
 ------------------------------------
 
-The official documentation is located at: https://onnxruntime.ai/docs/tutorials/web/build-web-app.html
+Official documentation: https://onnxruntime.ai/docs/tutorials/web/build-web-app.html
 
-Full example code: https://github.com/JonathanColetti/CarDodgingGym and demo: https://jonathancoletti.github.io/CarDodgingGym/
+Full example code: https://github.com/JonathanColetti/CarDodgingGym
 
-The code linked above is a complete example (using car dodging) that:
-1. Creates/Trains a PPO model 
+Demo: https://jonathancoletti.github.io/CarDodgingGym
+
+The code linked above is a complete example (using car dodging environment) that:
+
+1. Creates/Trains a PPO model
 2. Exports the model to ONNX along with normalization stats in JSON
-3. Normalizes and Inferences using onnxruntime-web to achieve similar results
+3. Runs in the browser with normalization using onnxruntime-web to achieve similar results
 
 Below is a simple example with converting to ONNX then inferencing without postprocess in ONNX-JS
 
 .. code-block:: python
-  
+
   import torch as th
 
   from stable_baselines3 import SAC
@@ -219,7 +221,7 @@ Below is a simple example with converting to ONNX then inferencing without postp
           self.actor = actor
 
       def forward(self, observation: th.Tensor) -> th.Tensor:
-          # NOTE: You may have to postprocess (unnormalize or renormalize) 
+          # NOTE: You may have to postprocess (unnormalize or renormalize)
           return self.actor(observation, deterministic=True)
 
 
@@ -239,7 +241,7 @@ Below is a simple example with converting to ONNX then inferencing without postp
   )
 
 .. code-block:: javascript
-  
+
   // Install using `npm install onnxruntime-web` (tested with version 1.19) or using cdn
   import * as ort from 'onnxruntime-web';
 
@@ -262,55 +264,26 @@ Below is a simple example with converting to ONNX then inferencing without postp
   runInference();
 
 
-Export to tensorflowjs 
-----------------------
+Export to TensorFlow.js
+-----------------------
 
 .. warning::
 
-  As of writing this (November 2025), (https://github.com/PINTO0309/onnx2tf) does not support tensorflow js. Thus, (https://github.com/tensorflow/tfjs-converter) is used. This is not currently maintained and requires old opsets/tf versions.
-  
-
-In order for this to work, you must convert (SB3 => ONNX => Tensorflow => Tensorflowjs)
-
-The opset version needs to be changed for the conversion. Please refer to the code above for more stable usage with a higer opset.
-
-The following is a simple example that showcases the full conversion + inference
-
-.. code-block:: python
-  
-  import torch as th
-  from stable_baselines3 import SAC
+  As of November 2025, `onnx2tf <https://github.com/PINTO0309/onnx2tf>`_ does not support TensorFlow.js. Therefore, `tfjs-converter <https://github.com/tensorflow/tfjs-converter>`_ is used instead. However, tfjs-converter is not currently maintained and requires older opsets and TensorFlow versions.
 
 
-  class OnnxablePolicy(th.nn.Module):
-      def __init__(self, actor: th.nn.Module):
-          super().__init__()
-          self.actor = actor
+In order for this to work, you have to do multiple conversions: SB3 => ONNX => TensorFlow => TensorFlow.js.
 
-      def forward(self, observation: th.Tensor) -> th.Tensor:
-          # NOTE: You may have to postprocess (unnormalize) actions
-          # to the correct bounds (see commented code below)
-          return self.actor(observation, deterministic=True)
+The opset version needs to be changed for the conversion (``opset_version=14`` is currently required). Please refer to the code above for more stable usage with a higher opset.
 
+The following is a simple example that showcases the full conversion + inference.
 
-  # Example: model = SAC("MlpPolicy", "Pendulum-v1")
-  SAC("MlpPolicy", "Pendulum-v1").save("PathToTrainedModel.zip")
-  model = SAC.load("PathToTrainedModel.zip", device="cpu")
-  onnxable_model = OnnxablePolicy(model.policy.actor)
-
-  observation_size = model.observation_space.shape
-  dummy_input = th.randn(1, *observation_size)
-  th.onnx.export(
-      onnxable_model,
-      dummy_input,
-      "my_sac_actor.onnx",
-      opset_version=14, # because of the outdated tf-js converter you have to use an old opset
-      input_names=["input"],
-  )
+Please refer to the previous sections for the first step (SB3 => ONNX).
+The main difference is that you need to specify ``opset_version=14``.
 
 .. code-block:: python
-  
-  # Tested with python3.10 
+
+  # Tested with python3.10
   # Then install these dependencies in a fresh env
   """
   pip install --use-deprecated=legacy-resolver tensorflow==2.13.0 keras==2.13.1 onnx==1.16.0 onnx-tf==1.9.0 tensorflow-probability==0.21.0 tensorflowjs==4.15.0 jax==0.4.26 jaxlib==0.4.26

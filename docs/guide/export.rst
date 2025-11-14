@@ -195,6 +195,8 @@ There is a draft PR in the RL Zoo about C++ export: https://github.com/DLR-RM/rl
 Export to ONNX-JS / ONNX Runtime Web
 ------------------------------------
 
+The official documentation is located at: https://onnxruntime.ai/docs/tutorials/web/build-web-app.html
+
 Full example code: https://github.com/JonathanColetti/CarDodgingGym and demo: https://jonathancoletti.github.io/CarDodgingGym/
 
 The code linked above is a complete example (using car dodging) that:
@@ -266,9 +268,11 @@ Export to tensorflowjs
 .. warning::
 
   As of writing this (November 2025), (https://github.com/PINTO0309/onnx2tf) does not support tensorflow js. Thus, (https://github.com/tensorflow/tfjs-converter) is used. This is not currently maintained and requires old opsets/tf versions.
-  Therefore, it is recommended you use onnx runtime for higher opsets
+  
 
 In order for this to work, you must convert (SB3 => ONNX => Tensorflow => Tensorflowjs)
+
+The opset version needs to be changed for the conversion. Please refer to the code above for more stable usage with a higer opset.
 
 The following is a simple example that showcases the full conversion + inference
 

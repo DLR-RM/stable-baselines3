@@ -44,6 +44,9 @@ Documentation:
 - Added sb3-plus to projects page
 - Added example usage of ONNX JS
 - Updated link to paper of community project DeepNetSlice (@AlexPasqua)
+- Added example usage of Tensorflow JS
+- Included exact versions in ONNX JS and example project
+- Made step 2 (`pip install`) of `CONTRIBUTING.md` more robust 
 
 
 Release 2.7.0 (2025-07-25)

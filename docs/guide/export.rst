@@ -304,7 +304,7 @@ The following is a simple example that showcases the full conversion + inference
       onnxable_model,
       dummy_input,
       "my_sac_actor.onnx",
-      opset_version=12, # because of the outdated tf-js converter you have to use an old opset
+      opset_version=14, # because of the outdated tf-js converter you have to use an old opset
       input_names=["input"],
   )
 
@@ -334,7 +334,7 @@ The following is a simple example that showcases the full conversion + inference
   import onnx_tf.backend
   import tensorflow as tf
 
-  ONNX_FILE_PATH = "ppo_cargame.onnx"
+  ONNX_FILE_PATH = "my_sac_actor.onnx"
   MODEL_PATH = "tf_model"
 
   onnx_model = onnx.load(ONNX_FILE_PATH)

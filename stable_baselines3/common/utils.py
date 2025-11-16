@@ -14,6 +14,7 @@ import gymnasium as gym
 import numpy as np
 import torch as th
 from gymnasium import spaces
+from torch import Tensor
 
 import stable_baselines3 as sb3
 
@@ -638,3 +639,45 @@ def get_system_info(print_info: bool = True) -> tuple[dict[str, str], str]:
     if print_info:
         print(env_info_str)
     return env_info, env_info_str
+
+
+def pal_loss(input_: Tensor, target_: Tensor, reduction: str = "mean", alpha: float = 0.6, beta: float = 0.4) -> Tensor:
+    """
+    Prioritized Approximation Loss
+    Ref: An Equivalence between Loss Functions and Non-Uniform Sampling in Experience Replay - Scott Fujimoto and al. (Neurips 2020)
+
+    :param input_: (Tensor) Predicted values.
+    :param target_: (Tensor) Ground truth values.
+    :param reduction: (str) Specifies the reduction to apply to the output 'none' | 'mean' | 'sum' - default: 'mean'
+    :param alpha: (float) - default=0.6
+    :param beta: (float) - default=0.4
+
+    :return loss: (Tensor) Prioritized Approximation Loss.
+    """
+
+    if not (target_.size() == input_.size()):
+        warnings.warn(
+            f"Using a target size ({target_.size()}) that is different to the input size ({input_.size()}). "
+            "This will likely lead to incorrect results due to broadcasting. "
+            "Please ensure they have the same size.",
+            stacklevel=2,
+        )
+
+    # compute hyperparameters
+    delta = target_ - input_
+    abs_delta = delta.abs().detach()
+    tau = th.where(abs_delta <= 1.0, th.tensor(2.0), th.tensor(1.0)).to(delta.device)  # for huber loss
+    power = tau + alpha * (1 - beta)
+
+    eta = abs_delta.pow(alpha * beta).min() / (abs_delta.pow(alpha).sum() + 1e-8)  # avoid zero division
+    N = abs_delta.shape[0]
+    loss = th.tensor((eta * N / power) * (abs_delta.pow(power)))
+
+    if reduction == "none":
+        return loss
+    elif reduction == "mean":
+        return loss.mean()
+    elif reduction == "sum":
+        return th.sum(loss)
+    else:
+        raise ValueError(f"Invalid reduction mode: {reduction}. Expected one of 'none', 'mean', 'sum'.")

@@ -473,7 +473,6 @@ class BaseAlgorithm(ABC):
         :return: The ``VecNormalize`` env.
         """
         return self._vec_normalize_env
-    
 
     def set_env(self, env: GymEnv, force_reset: bool = True) -> None:
         """
@@ -873,7 +872,7 @@ class BaseAlgorithm(ABC):
         Clean up resources after training or prediction to prevent memory leaks
         when calling :meth:`learn()` repeatedly with new environments.
 
-        Fixes https://github.com/DLR-RM/stable-baselines3/issues/1996 
+        Fixes https://github.com/DLR-RM/stable-baselines3/issues/1996
         """
         if self.env is not None:
             self.env.close()

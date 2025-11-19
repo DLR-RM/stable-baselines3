@@ -1,5 +1,6 @@
 """Abstract base classes for RL algorithms."""
 
+import gc
 import io
 import pathlib
 import time
@@ -472,6 +473,7 @@ class BaseAlgorithm(ABC):
         :return: The ``VecNormalize`` env.
         """
         return self._vec_normalize_env
+    
 
     def set_env(self, env: GymEnv, force_reset: bool = True) -> None:
         """
@@ -865,6 +867,30 @@ class BaseAlgorithm(ABC):
         params_to_save = self.get_parameters()
 
         save_to_zip_file(path, data=data, params=params_to_save, pytorch_variables=pytorch_variables)
+
+    def close(self) -> None:
+        """
+        Clean up resources after training or prediction to prevent memory leaks
+        when calling :meth:`learn()` repeatedly with new environments.
+
+        Fixes https://github.com/DLR-RM/stable-baselines3/issues/1996 
+        """
+        if self.env is not None:
+            self.env.close()
+            self.env = None
+
+        if hasattr(self, "rollout_buffer") and self.rollout_buffer is not None:
+            del self.rollout_buffer
+            self.rollout_buffer = None
+
+        if hasattr(self, "policy") and self.policy is not None:
+            del self.policy
+            self.policy = None
+
+        if self.device.type == "cuda":
+            th.cuda.empty_cache()
+
+        gc.collect()
 
     def dump_logs(self) -> None:
         """

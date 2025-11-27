@@ -210,7 +210,7 @@ Actions `gymnasium.spaces`:
 ## Testing the installation
 ### Install dependencies
 ```sh
-pip install -e .[docs,tests,extra]
+pip install -e '.[docs,tests,extra]'
 ```
 ### Run tests
 All unit tests in stable baselines3 can be run using `pytest` runner:

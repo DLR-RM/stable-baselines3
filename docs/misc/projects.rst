@@ -228,7 +228,8 @@ intelligent agents to perform network slice placement.
 
 | Author: Alex Pasquali
 | Github: https://github.com/AlexPasqua/DeepNetSlice
-| Paper: **under review** (citation instructions on the project's README.md) -> see this Master's Thesis for the moment: https://etd.adm.unipi.it/theses/available/etd-01182023-110038/unrestricted/Tesi_magistrale_Pasquali_Alex.pdf
+| Paper: https://ieeexplore.ieee.org/document/10625023
+| Associated Master's Thesis: https://etd.adm.unipi.it/theses/available/etd-01182023-110038/unrestricted/Tesi_magistrale_Pasquali_Alex.pdf
 
 
 PokemonRedExperiments
@@ -292,3 +293,16 @@ Benchmark results and documentations are on Github, feel free to submit feature 
 | Authors: Hugo Huang
 | Github: https://github.com/Trenza1ore/sb3-extra-buffers
 | Relevant project for training RL agents that play Doom with Semantic Segmentation: https://github.com/Trenza1ore/SegDoom
+
+
+sb3-plus: Multi-Output Policy Support for Stable-Baselines3
+-----------------------------------------------------------
+
+An extension to Stable-Baselines3 that implements support for multi-output policies and dictionary action spaces.
+
+This project provides PPO with dict action space support, enabling independent action spaces which is particularly useful 
+for environments requiring multiple types of actions (e.g., discrete and continuous actions). This addresses the 
+multi-output policy feature requested in the community and provides a practical solution for complex action scenarios.
+
+| Author: Adyson Maia
+| Github: https://github.com/adysonmaia/sb3-plus

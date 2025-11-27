@@ -145,7 +145,9 @@ class VecVideoRecorder(VecEnvWrapper):
 
             clip = ImageSequenceClip(self.recorded_frames, fps=self.frames_per_sec)
             clip.write_videofile(self.video_path)
+            del clip
 
+        del self.recorded_frames
         self.recorded_frames = []
         self.recording = False
 

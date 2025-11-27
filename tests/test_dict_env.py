@@ -88,7 +88,7 @@ class DummyDictEnv(gym.Env):
 def test_env(use_discrete_actions, channel_last, nested_dict_obs, vec_only):
     # Check the env used for testing
     if nested_dict_obs:
-        with pytest.warns(UserWarning, match="Nested observation spaces are not supported"):
+        with pytest.warns(UserWarning, match=r"Nested observation spaces are not supported"):
             check_env(DummyDictEnv(use_discrete_actions, channel_last, nested_dict_obs, vec_only))
     else:
         check_env(DummyDictEnv(use_discrete_actions, channel_last, nested_dict_obs, vec_only))

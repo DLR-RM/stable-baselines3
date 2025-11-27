@@ -47,6 +47,9 @@ filterwarnings = [
     "ignore::UserWarning:gymnasium",
     # tqdm warning about rich being experimental
     "ignore:rich is experimental",
+    # Pygame warnings about pkg_resources
+    "ignore:pkg_resources is deprecated",
+    "ignore:Deprecated call to `pkg_resources",
 ]
 markers = [
     "expensive: marks tests as expensive (deselect with '-m \"not expensive\"')",

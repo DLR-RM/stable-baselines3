@@ -3,7 +3,7 @@
 Changelog
 ==========
 
-Release 2.7.1a1 (WIP)
+Release 2.7.1a3 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -15,6 +15,10 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed env checker to properly handle ``Sequence`` observation spaces when nested inside composite spaces (``Dict``, ``Tuple``, ``OneOf``) (@copilot)
+- Update env checker to warn users when using Graph space (@dhruvmalik007).
+- Fixed memory leak in ``VecVideoRecorder`` where ``recorded_frames`` stayed in memory due to reference in the moviepy clip (@copilot)
+- Remove double space in `StopTrainingOnRewardThreshold` callback message (@sea-bass)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -33,6 +37,16 @@ Others:
 
 Documentation:
 ^^^^^^^^^^^^^^
+- Added plotting documentation and examples
+- Added documentation clarifying gSDE (Generalized State-Dependent Exploration) inference behavior for PPO, SAC, and A2C algorithms
+- Documented Atari wrapper reset behavior where ``env.reset()`` may perform a no-op step instead of truly resetting when ``terminal_on_life_loss=True`` (default), and how to avoid this behavior by setting ``terminal_on_life_loss=False``
+- Clarified comment in ``_sample_action()`` method to better explain action scaling behavior for off-policy algorithms (@copilot)
+- Added sb3-plus to projects page
+- Added example usage of ONNX JS
+- Updated link to paper of community project DeepNetSlice (@AlexPasqua)
+- Added example usage of Tensorflow JS
+- Included exact versions in ONNX JS and example project
+- Made step 2 (`pip install`) of `CONTRIBUTING.md` more robust 
 
 
 Release 2.7.0 (2025-07-25)
@@ -1890,4 +1904,4 @@ And all the contributors:
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
 @marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
-@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto @Trenza1ore
+@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto @Trenza1ore @JonathanColetti

@@ -387,7 +387,7 @@ def test_key_length(tmp_path):
     }
     long_key_excluded = {k: None for k in long_key_dict}
     # keys truncated and aliased -- not OK
-    with pytest.raises(ValueError, match="Key.*truncated"):
+    with pytest.raises(ValueError, match=r"Key.*truncated"):
         writer.write(long_key_dict, long_key_excluded)
 
     # Just long enough to not be truncated now

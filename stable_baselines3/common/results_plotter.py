@@ -47,9 +47,10 @@ def window_func(var_1: np.ndarray, var_2: np.ndarray, window: int, func: Callabl
 def ts2xy(data_frame: pd.DataFrame, x_axis: str) -> tuple[np.ndarray, np.ndarray]:
     """
     Decompose a data frame variable to x and ys
+    (y = episodic return)
 
     :param data_frame: the input data
-    :param x_axis: the axis for the x and y output
+    :param x_axis: the x-axis for the x and y output
         (can be X_TIMESTEPS='timesteps', X_EPISODES='episodes' or X_WALLTIME='walltime_hrs')
     :return: the x and y output
     """
@@ -64,7 +65,7 @@ def ts2xy(data_frame: pd.DataFrame, x_axis: str) -> tuple[np.ndarray, np.ndarray
         x_var = data_frame.t.values / 3600.0  # type: ignore[operator, assignment]
         y_var = data_frame.r.values
     else:
-        raise NotImplementedError
+        raise NotImplementedError(f"Unsupported {x_axis=}, please use one of {POSSIBLE_X_AXES}")
     return x_var, y_var  # type: ignore[return-value]
 
 

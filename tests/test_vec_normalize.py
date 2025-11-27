@@ -356,7 +356,7 @@ def test_normalize_dict_selected_keys():
     venv = _make_warmstart_dict_env(norm_obs=True, norm_obs_keys=["observation"])
     for _ in range(3):
         actions = [venv.action_space.sample()]
-        obs, rewards, _, _ = venv.step(actions)
+        obs, _rewards, _, _ = venv.step(actions)
         orig_obs = venv.get_original_obs()
 
         # "observation" is expected to be normalized
@@ -477,7 +477,7 @@ def test_sync_vec_normalize(make_env):
 
 
 def test_discrete_obs():
-    with pytest.raises(ValueError, match=".*only supports.*"):
+    with pytest.raises(ValueError, match=r".*only supports.*"):
         _make_warmstart_cliffwalking()
 
     # Smoke test that it runs with norm_obs False
@@ -485,10 +485,10 @@ def test_discrete_obs():
 
 
 def test_non_dict_obs_keys():
-    with pytest.raises(ValueError, match=".*is applicable only.*"):
+    with pytest.raises(ValueError, match=r".*is applicable only.*"):
         _make_warmstart(lambda: DummyRewardEnv(), norm_obs_keys=["key"])
 
-    with pytest.raises(ValueError, match=".* explicitly pass the observation keys.*"):
+    with pytest.raises(ValueError, match=r".* explicitly pass the observation keys.*"):
         _make_warmstart(lambda: DummyMixedDictEnv())
 
     # Ignore Discrete observation key

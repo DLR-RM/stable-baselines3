@@ -9,7 +9,7 @@ Weights & Biases
 
 Weights & Biases provides a callback for experiment tracking that allows to visualize and share results.
 
-The full documentation is available here: https://docs.wandb.ai/guides/integrations/other/stable-baselines-3
+The full documentation is available here: https://docs.wandb.ai/models/integrations/stable-baselines-3
 
 .. code-block:: python
 

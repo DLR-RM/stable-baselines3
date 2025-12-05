@@ -180,9 +180,7 @@ class BitFlippingEnv(Env):
             ]
         )
 
-    def reset(
-        self, *, seed: int | None = None, options: dict | None = None
-    ) -> tuple[dict[str, int | np.ndarray], dict]:
+    def reset(self, *, seed: int | None = None, options: dict | None = None) -> tuple[dict[str, int | np.ndarray], dict]:
         if seed is not None:
             self._obs_space.seed(seed)
         self.current_step = 0

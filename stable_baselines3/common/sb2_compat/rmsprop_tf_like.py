@@ -1,6 +1,5 @@
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from typing import Any
-from collections.abc import Callable
 
 import torch
 from torch.optim import Optimizer

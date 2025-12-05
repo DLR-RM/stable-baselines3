@@ -1,8 +1,7 @@
 import multiprocessing as mp
 import warnings
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any
-from collections.abc import Callable
 
 import gymnasium as gym
 import numpy as np

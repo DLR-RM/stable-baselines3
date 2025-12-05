@@ -112,13 +112,17 @@ def params_should_differ(params, other_params):
 
 
 def check_td3_feature_extractor_match(model):
-    for (key, actor_param), critic_param in zip(model.actor_target.named_parameters(), model.critic_target.parameters(), strict=True):
+    for (key, actor_param), critic_param in zip(
+        model.actor_target.named_parameters(), model.critic_target.parameters(), strict=True
+    ):
         if "features_extractor" in key:
             assert th.allclose(actor_param, critic_param), key
 
 
 def check_td3_feature_extractor_differ(model):
-    for (key, actor_param), critic_param in zip(model.actor_target.named_parameters(), model.critic_target.parameters(), strict=True):
+    for (key, actor_param), critic_param in zip(
+        model.actor_target.named_parameters(), model.critic_target.parameters(), strict=True
+    ):
         if "features_extractor" in key:
             assert not th.allclose(actor_param, critic_param), key
 

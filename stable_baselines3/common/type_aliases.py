@@ -1,8 +1,8 @@
 """Common aliases for type hints"""
 
+from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NamedTuple, Protocol, SupportsFloat, Union
-from collections.abc import Callable
 
 import gymnasium as gym
 import numpy as np

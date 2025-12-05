@@ -1,8 +1,8 @@
 import os
 import warnings
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
 from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 import gymnasium as gym
 import numpy as np

@@ -1,9 +1,8 @@
 import warnings
 from collections import OrderedDict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from copy import deepcopy
 from typing import Any
-from collections.abc import Callable
 
 import gymnasium as gym
 import numpy as np

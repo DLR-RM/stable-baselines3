@@ -418,7 +418,7 @@ def test_zip_strict():
     list_a = [0, 1]
     list_b = [1, 2, 3]
     # zip does not raise any error
-    for _, _ in zip(list_a, list_b, strict=True):
+    for _, _ in zip(list_a, list_b, strict=False):
         pass
 
     # zip_strict does raise an error

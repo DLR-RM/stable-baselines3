@@ -6,7 +6,6 @@ import re
 import warnings
 from collections import deque
 from collections.abc import Iterable
-from itertools import zip_longest
 
 import cloudpickle
 import gymnasium as gym
@@ -519,18 +518,13 @@ def zip_strict(*iterables: Iterable) -> Iterable:
     r"""
     ``zip()`` function but enforces that iterables are of equal length.
     Raises ``ValueError`` if iterables not of equal length.
-    Code inspired by Stackoverflow answer for question #32954486.
+    It used to be a polyfill for Python 3.19 taken from Stackoverflow #32954486.
+    Since Python 3.10 is the minimum version, it is kept only for legacy
+    and is just returning zip(..., strict=True).
 
     :param \*iterables: iterables to ``zip()``
     """
-    # As in Stackoverflow #32954486, use
-    # new object for "empty" in case we have
-    # Nones in iterable.
-    sentinel = object()
-    for combo in zip_longest(*iterables, fillvalue=sentinel):
-        if sentinel in combo:
-            raise ValueError("Iterables have different lengths")
-        yield combo
+    return zip(*iterables, strict=True)
 
 
 def polyak_update(
@@ -554,8 +548,7 @@ def polyak_update(
     :param tau: the soft update coefficient ("Polyak update", between 0 and 1)
     """
     with th.no_grad():
-        # zip does not raise an exception if length of parameters does not match.
-        for param, target_param in zip_strict(params, target_params):
+        for param, target_param in zip(params, target_params, strict=True):
             target_param.data.mul_(1 - tau)
             th.add(target_param.data, param.data, alpha=tau, out=target_param.data)
 

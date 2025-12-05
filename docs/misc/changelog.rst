@@ -3,6 +3,41 @@
 Changelog
 ==========
 
+
+Release 2.8.0a0 (WIP)
+--------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+- Removed support for Python 3.9, please upgrade to Python >= 3.10
+
+New Features:
+^^^^^^^^^^^^^
+- Added official support for Python 3.12
+
+
+Bug Fixes:
+^^^^^^^^^^
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+
+Others:
+^^^^^^^
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
 Release 2.7.1 (2025-12-05)
 --------------------------
 

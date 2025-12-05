@@ -304,7 +304,7 @@ def test_episode_termination_dict():
     observations_3 = {key: np.stack([subspace.sample() for _ in range(NUM_ENVS)]) for key, subspace in space.spaces.items()}
     stacked_obs, infos = stacked_observations.update(observations_3, dones, infos)
 
-    for key, axis in zip(observations_1.keys(), [0, -1]):
+    for key, axis in zip(observations_1.keys(), [0, -1], strict=True):
         zeros = np.zeros_like(observations_1[key][0])
         true_stacked_obs_env1 = np.concatenate(
             (zeros, observations_1[key][0], observations_2[key][0], observations_3[key][0]), axis

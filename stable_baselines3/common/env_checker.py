@@ -285,7 +285,7 @@ def _check_obs(obs: tuple | dict | np.ndarray | int, observation_space: spaces.S
                 )
                 message += f"{len(invalid_indices[0])} invalid indices: \n"
 
-                for index in zip(*invalid_indices):
+                for index in zip(*invalid_indices, strict=True):
                     index_str = ",".join(map(str, index))
                     message += (
                         f"Expected: {lower_bounds[index]} <= obs[{index_str}] <= {upper_bounds[index]}, "

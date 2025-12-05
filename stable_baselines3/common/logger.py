@@ -177,7 +177,7 @@ class HumanOutputFormat(KVWriter, SeqWriter):
         # Create strings for printing
         key2str = {}
         tag = ""
-        for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
+        for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items()), strict=True):
             if excluded is not None and ("stdout" in excluded or "log" in excluded):
                 continue
 
@@ -402,7 +402,7 @@ class TensorBoardOutputFormat(KVWriter):
 
     def write(self, key_values: dict[str, Any], key_excluded: dict[str, tuple[str, ...]], step: int = 0) -> None:
         assert not self._is_closed, "The SummaryWriter was closed, please re-create one."
-        for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items())):
+        for (key, value), (_, excluded) in zip(sorted(key_values.items()), sorted(key_excluded.items()), strict=True):
             if excluded is not None and "tensorboard" in excluded:
                 continue
 

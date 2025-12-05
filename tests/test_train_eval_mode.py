@@ -314,7 +314,7 @@ def test_offpolicy_collect_rollout_batch_norm(model_class):
     batch_norm_stats_after = clone_helper(model)
 
     # No change in batch norm params
-    for param_before, param_after in zip(batch_norm_stats_before, batch_norm_stats_after):
+    for param_before, param_after in zip(batch_norm_stats_before, batch_norm_stats_after, strict=True):
         assert th.isclose(param_before, param_after).all()
 
 
@@ -377,5 +377,5 @@ def test_predict_with_dropout_batch_norm(model_class, env_id):
     batch_norm_stats_after = clone_helper(model)
 
     # No change in batch norm params
-    for param_before, param_after in zip(batch_norm_stats_before, batch_norm_stats_after):
+    for param_before, param_after in zip(batch_norm_stats_before, batch_norm_stats_after, strict=True):
         assert th.isclose(param_before, param_after).all()

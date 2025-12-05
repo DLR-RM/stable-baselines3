@@ -345,7 +345,7 @@ class MultiCategoricalDistribution(Distribution):
     def log_prob(self, actions: th.Tensor) -> th.Tensor:
         # Extract each discrete action and compute log prob for their respective distributions
         return th.stack(
-            [dist.log_prob(action) for dist, action in zip(self.distribution, th.unbind(actions, dim=1))], dim=1
+            [dist.log_prob(action) for dist, action in zip(self.distribution, th.unbind(actions, dim=1), strict=True)], dim=1
         ).sum(dim=1)
 
     def entropy(self) -> th.Tensor:
@@ -714,7 +714,7 @@ def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> th.Tensor
             dist_pred.action_dims, dist_true.action_dims
         ), f"Error: distributions must have the same input space: {dist_pred.action_dims} != {dist_true.action_dims}"
         return th.stack(
-            [th.distributions.kl_divergence(p, q) for p, q in zip(dist_true.distribution, dist_pred.distribution)],
+            [th.distributions.kl_divergence(p, q) for p, q in zip(dist_true.distribution, dist_pred.distribution, strict=True)],
             dim=1,
         ).sum(dim=1)
 

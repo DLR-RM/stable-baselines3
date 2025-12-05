@@ -10,11 +10,11 @@ Release 2.8.0a0 (WIP)
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
 - Removed support for Python 3.9, please upgrade to Python >= 3.10
+- Set ``strict=True`` for every call to ``zip(...)``
 
 New Features:
 ^^^^^^^^^^^^^
-- Added official support for Python 3.12
-
+- Added official support for Python 3.13
 
 Bug Fixes:
 ^^^^^^^^^^
@@ -30,9 +30,11 @@ Bug Fixes:
 
 Deprecations:
 ^^^^^^^^^^^^^
+- ``zip_strict()`` is not needed anymore since Python 3.10, please use ``zip(..., strict=True)`` instead
 
 Others:
 ^^^^^^^
+- Updated to Python 3.10+ annotations
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -65,18 +67,9 @@ Bug Fixes:
 ^^^^^^^^^^^^^^
 - Fixed tensorboard log name for ``MaskablePPO``
 
-`RL Zoo`_
-^^^^^^^^^
-
 `SBX`_ (SB3 + Jax)
 ^^^^^^^^^^^^^^^^^^
-- Added CnnPolicy to PPO
-
-Deprecations:
-^^^^^^^^^^^^^
-
-Others:
-^^^^^^^
+- Added ``CnnPolicy`` to PPO
 
 Documentation:
 ^^^^^^^^^^^^^^

@@ -3,8 +3,14 @@
 Changelog
 ==========
 
-Release 2.7.1a3 (WIP)
+Release 2.7.1 (2025-12-05)
 --------------------------
+
+.. warning::
+
+    Stable-Baselines3 (SB3) v2.7.1 will be the last one supporting Python 3.9 (end of life in October 2025).
+    We highly recommended you to upgrade to Python >= 3.10.
+
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -22,12 +28,14 @@ Bug Fixes:
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
+- Fixed tensorboard log name for ``MaskablePPO``
 
 `RL Zoo`_
 ^^^^^^^^^
 
 `SBX`_ (SB3 + Jax)
 ^^^^^^^^^^^^^^^^^^
+- Added CnnPolicy to PPO
 
 Deprecations:
 ^^^^^^^^^^^^^
@@ -46,7 +54,7 @@ Documentation:
 - Updated link to paper of community project DeepNetSlice (@AlexPasqua)
 - Added example usage of Tensorflow JS
 - Included exact versions in ONNX JS and example project
-- Made step 2 (`pip install`) of `CONTRIBUTING.md` more robust 
+- Made step 2 (`pip install`) of `CONTRIBUTING.md` more robust
 
 
 Release 2.7.0 (2025-07-25)

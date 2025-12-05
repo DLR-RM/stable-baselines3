@@ -1,6 +1,5 @@
 import time
 import warnings
-from typing import Optional
 
 import numpy as np
 
@@ -26,7 +25,7 @@ class VecMonitor(VecEnvWrapper):
     def __init__(
         self,
         venv: VecEnv,
-        filename: Optional[str] = None,
+        filename: str | None = None,
         info_keywords: tuple[str, ...] = (),
     ):
         # Avoid circular import
@@ -56,7 +55,7 @@ class VecMonitor(VecEnvWrapper):
         if hasattr(venv, "spec") and venv.spec is not None:
             env_id = venv.spec.id
 
-        self.results_writer: Optional[ResultsWriter] = None
+        self.results_writer: ResultsWriter | None = None
         if filename:
             self.results_writer = ResultsWriter(
                 filename, header={"t_start": self.t_start, "env_id": str(env_id)}, extra_keys=info_keywords

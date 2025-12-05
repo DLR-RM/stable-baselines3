@@ -109,7 +109,7 @@ def test_make_atari_env(
     new_obs, reward, _, _ = venv.step([venv.action_space.sample() for _ in range(n_envs)])
 
     new_frame_numbers = [env.unwrapped.ale.getEpisodeFrameNumber() for env in venv.envs]
-    for frame_number, new_frame_number in zip(frame_numbers, new_frame_numbers):
+    for frame_number, new_frame_number in zip(frame_numbers, new_frame_numbers, strict=True):
         assert new_frame_number - frame_number == frame_skip
     assert new_obs.shape == expected_shape
     if clip_reward:
@@ -406,7 +406,7 @@ def test_polyak():
     tau = 0.1
     polyak_update([param1], [param2], tau)
     with th.no_grad():
-        for param, target_param in zip([target1], [target2]):
+        for param, target_param in zip([target1], [target2], strict=True):
             target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
 
     assert th.allclose(param1, target1)
@@ -418,7 +418,7 @@ def test_zip_strict():
     list_a = [0, 1]
     list_b = [1, 2, 3]
     # zip does not raise any error
-    for _, _ in zip(list_a, list_b):
+    for _, _ in zip(list_a, list_b, strict=False):
         pass
 
     # zip_strict does raise an error

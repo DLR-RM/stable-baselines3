@@ -1,5 +1,3 @@
-from typing import Union
-
 import gymnasium as gym
 import numpy as np
 import pytest
@@ -123,7 +121,7 @@ def clone_sac_batch_norm_stats(
     return (actor_bias, actor_running_mean, critic_bias, critic_running_mean, critic_target_bias, critic_target_running_mean)
 
 
-def clone_on_policy_batch_norm(model: Union[A2C, PPO]) -> (th.Tensor, th.Tensor):
+def clone_on_policy_batch_norm(model: A2C | PPO) -> (th.Tensor, th.Tensor):
     return clone_batch_norm_stats(model.policy.features_extractor.batch_norm)
 
 
@@ -315,7 +313,7 @@ def test_offpolicy_collect_rollout_batch_norm(model_class):
     batch_norm_stats_after = clone_helper(model)
 
     # No change in batch norm params
-    for param_before, param_after in zip(batch_norm_stats_before, batch_norm_stats_after):
+    for param_before, param_after in zip(batch_norm_stats_before, batch_norm_stats_after, strict=True):
         assert th.isclose(param_before, param_after).all()
 
 
@@ -378,5 +376,5 @@ def test_predict_with_dropout_batch_norm(model_class, env_id):
     batch_norm_stats_after = clone_helper(model)
 
     # No change in batch norm params
-    for param_before, param_after in zip(batch_norm_stats_before, batch_norm_stats_after):
+    for param_before, param_after in zip(batch_norm_stats_before, batch_norm_stats_after, strict=True):
         assert th.isclose(param_before, param_after).all()

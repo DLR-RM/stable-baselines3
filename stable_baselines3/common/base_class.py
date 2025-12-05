@@ -142,10 +142,10 @@ class BaseAlgorithm(ABC):
         self.start_time = 0.0
         self.learning_rate = learning_rate
         self.tensorboard_log = tensorboard_log
-        self._last_obs = None  # type: Optional[Union[np.ndarray, dict[str, np.ndarray]]]
-        self._last_episode_starts = None  # type: Optional[np.ndarray]
+        self._last_obs = None  # type: np.ndarray | dict[str, np.ndarray] | None
+        self._last_episode_starts = None  # type: np.ndarray | None
         # When using VecNormalize:
-        self._last_original_obs = None  # type: Optional[Union[np.ndarray, dict[str, np.ndarray]]]
+        self._last_original_obs = None  # type: np.ndarray | dict[str, np.ndarray] | None
         self._episode_num = 0
         # Used for gSDE only
         self.use_sde = use_sde
@@ -155,8 +155,8 @@ class BaseAlgorithm(ABC):
         self._current_progress_remaining = 1.0
         # Buffers for logging
         self._stats_window_size = stats_window_size
-        self.ep_info_buffer = None  # type: Optional[deque]
-        self.ep_success_buffer = None  # type: Optional[deque]
+        self.ep_info_buffer = None  # type: deque | None
+        self.ep_success_buffer = None  # type: deque | None
         # For logging (and TD3 delayed updates)
         self._n_updates = 0  # type: int
         # Whether the user passed a custom logger or not

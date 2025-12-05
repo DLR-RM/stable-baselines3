@@ -50,7 +50,7 @@ class BaseCallback(ABC):
         self.globals: dict[str, Any] = {}
         # Sometimes, for event callback, it is useful
         # to have access to the parent object
-        self.parent = None  # type: Optional[BaseCallback]
+        self.parent = None  # type: BaseCallback | None
 
     @property
     def training_env(self) -> VecEnv:

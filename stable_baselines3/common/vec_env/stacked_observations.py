@@ -43,7 +43,7 @@ class StackedObservations(Generic[TObs]):
             }
             self.stacked_observation_space = spaces.Dict(
                 {key: substack_obs.stacked_observation_space for key, substack_obs in self.sub_stacked_observations.items()}
-            )  # type: Union[spaces.Dict, spaces.Box] # make mypy happy
+            )  # type: spaces.Dict | spaces.Box # make mypy happy
         elif isinstance(observation_space, spaces.Box):
             if isinstance(channels_order, Mapping):
                 raise TypeError("When the observation space is Box, channels_order can't be a dict.")

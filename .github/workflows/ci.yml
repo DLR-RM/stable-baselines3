@@ -20,8 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Note: 3.13t is the free-threaded version
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.13t"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
         include:
           # Default version
           - gymnasium-version: "1.0.0"

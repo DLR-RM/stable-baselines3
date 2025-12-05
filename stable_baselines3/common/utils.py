@@ -641,7 +641,7 @@ def get_system_info(print_info: bool = True) -> tuple[dict[str, str], str]:
     return env_info, env_info_str
 
 
-def pal_loss(input_: Tensor, target_: Tensor, reduction: str = "mean", alpha: float = 0.6, beta: float = 0.4) -> Tensor:
+def pal_loss(input_: Tensor, target_: Tensor, reduction: str = "mean", alpha: float = 0.6, min_priority: float = 1e-2) -> Tensor:
     """
     Prioritized Approximation Loss
     Ref: An Equivalence between Loss Functions and Non-Uniform Sampling in Experience Replay - Scott Fujimoto and al. (Neurips 2020)
@@ -649,8 +649,8 @@ def pal_loss(input_: Tensor, target_: Tensor, reduction: str = "mean", alpha: fl
     :param input_: (Tensor) Predicted values.
     :param target_: (Tensor) Ground truth values.
     :param reduction: (str) Specifies the reduction to apply to the output 'none' | 'mean' | 'sum' - default: 'mean'
-    :param alpha: (float) - default=0.6
-    :param beta: (float) - default=0.4
+    :param alpha: (float) - default=0.4
+    :param min_priority: (float) - default=1e-2
 
     :return loss: (Tensor) Prioritized Approximation Loss.
     """
@@ -663,15 +663,17 @@ def pal_loss(input_: Tensor, target_: Tensor, reduction: str = "mean", alpha: fl
             stacklevel=2,
         )
 
-    # compute hyperparameters
-    delta = target_ - input_
-    abs_delta = delta.abs().detach()
-    tau = th.where(abs_delta <= 1.0, th.tensor(2.0), th.tensor(1.0)).to(delta.device)  # for huber loss
-    power = tau + alpha * (1 - beta)
+    delta = target_ - input_ # td error
 
-    eta = abs_delta.pow(alpha * beta).min() / (abs_delta.pow(alpha).sum() + 1e-8)  # avoid zero division
-    N = abs_delta.shape[0]
-    loss = th.tensor((eta * N / power) * (abs_delta.pow(power)))
+    # compute loss components
+    quadr = 0.5 * (delta ** 2)
+    lin = delta.abs().pow(1+alpha) / (1 + alpha)
+
+    with th.no_grad():
+        prio = th.max( delta.abs().pow(alpha), th.tensor(1.0, device=delta.device) )
+        lmbda = 1 / th.mean(prio)
+
+    loss = th.where( delta.abs() <= min_priority, quadr, lin ) * lmbda
 
     if reduction == "none":
         return loss

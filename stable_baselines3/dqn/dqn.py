@@ -6,7 +6,7 @@ import torch as th
 from gymnasium import spaces
 from torch.nn import functional as F
 
-from stable_baselines3.common.buffers import ReplayBuffer, PrioritizedReplayBuffer
+from stable_baselines3.common.buffers import ReplayBuffer, PALReplayBuffer
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
@@ -216,8 +216,10 @@ class DQN(OffPolicyAlgorithm):
             # Compute Huber loss (less sensitive to outliers)
             loss = (
                 F.smooth_l1_loss(current_q_values, target_q_values)
-                if not isinstance(self.replay_buffer_class, PrioritizedReplayBuffer)
-                else pal_loss(current_q_values, target_q_values, alpha=self.replay_buffer.alpha, beta=self.replay_buffer.beta)
+                if not isinstance(self.replay_buffer, PALReplayBuffer)
+                else pal_loss(current_q_values, target_q_values,
+                              alpha=self.replay_buffer.alpha,
+                              min_priority=self.replay_buffer.min_priority)
             )
             losses.append(loss.item())
 

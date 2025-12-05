@@ -954,9 +954,9 @@ class NStepReplayBuffer(ReplayBuffer):
         )
 
 
-class PrioritizedReplayBuffer(ReplayBuffer):
+class PALReplayBuffer(ReplayBuffer):
     """
-    Prioritized Experience Replay Buffer.
+    Prioritized Approximation Loss Replay Buffer.
     This buffer is the same as the ReplayBuffer but when it is selected, pal_loss is used.
     """
 
@@ -970,10 +970,10 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
         alpha: float = 0.6,
-        beta: float = 0.4,
+        min_priority: float = 1,
     ):
         super().__init__(
             buffer_size, observation_space, action_space, device, n_envs, optimize_memory_usage, handle_timeout_termination
         )
         self.alpha = alpha
-        self.beta = beta
+        self.min_priority = min_priority

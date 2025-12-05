@@ -28,9 +28,8 @@ Notes
 - Tutorial "From Tabular Q-Learning to DQN": https://github.com/araffin/rlss23-dqn-tutorial
 
 .. note::
-    This implementation provides only vanilla Deep Q-Learning and has no extensions such as Double-DQN, Dueling-DQN
-    Prioritized Experience Replay can be use by passing ``PrioritizedReplayBuffer`` via the ``replay_buffer_class`` argument.
-
+    This implementation provides only vanilla Deep Q-Learning and has no extensions such as Double-DQN, Dueling-DQN and Prioritized Experience Replay (PER).
+    However, `Prioritized Approximation Loss (PAL) <https://proceedings.neurips.cc/paper_files/paper/2020/hash/a3bf6e4db673b6449c2f7d13ee6ec9c0-Abstract.html>`_ can be used as a simple and computationally efficient replacement for PER.
 
 Can I use?
 ----------

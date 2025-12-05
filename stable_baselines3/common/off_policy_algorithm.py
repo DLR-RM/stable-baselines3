@@ -4,7 +4,7 @@ import sys
 import time
 import warnings
 from copy import deepcopy
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, TypeVar
 
 import numpy as np
 import torch as th
@@ -80,34 +80,34 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
     def __init__(
         self,
-        policy: Union[str, type[BasePolicy]],
-        env: Union[GymEnv, str],
-        learning_rate: Union[float, Schedule],
+        policy: str | type[BasePolicy],
+        env: GymEnv | str,
+        learning_rate: float | Schedule,
         buffer_size: int = 1_000_000,  # 1e6
         learning_starts: int = 100,
         batch_size: int = 256,
         tau: float = 0.005,
         gamma: float = 0.99,
-        train_freq: Union[int, tuple[int, str]] = (1, "step"),
+        train_freq: int | tuple[int, str] = (1, "step"),
         gradient_steps: int = 1,
-        action_noise: Optional[ActionNoise] = None,
-        replay_buffer_class: Optional[type[ReplayBuffer]] = None,
-        replay_buffer_kwargs: Optional[dict[str, Any]] = None,
+        action_noise: ActionNoise | None = None,
+        replay_buffer_class: type[ReplayBuffer] | None = None,
+        replay_buffer_kwargs: dict[str, Any] | None = None,
         optimize_memory_usage: bool = False,
         n_steps: int = 1,
-        policy_kwargs: Optional[dict[str, Any]] = None,
+        policy_kwargs: dict[str, Any] | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: Optional[str] = None,
+        tensorboard_log: str | None = None,
         verbose: int = 0,
-        device: Union[th.device, str] = "auto",
+        device: th.device | str = "auto",
         support_multi_env: bool = False,
         monitor_wrapper: bool = True,
-        seed: Optional[int] = None,
+        seed: int | None = None,
         use_sde: bool = False,
         sde_sample_freq: int = -1,
         use_sde_at_warmup: bool = False,
         sde_support: bool = True,
-        supported_action_spaces: Optional[tuple[type[spaces.Space], ...]] = None,
+        supported_action_spaces: tuple[type[spaces.Space], ...] | None = None,
     ):
         super().__init__(
             policy=policy,
@@ -133,7 +133,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self.gradient_steps = gradient_steps
         self.action_noise = action_noise
         self.optimize_memory_usage = optimize_memory_usage
-        self.replay_buffer: Optional[ReplayBuffer] = None
+        self.replay_buffer: ReplayBuffer | None = None
         self.replay_buffer_class = replay_buffer_class
         self.replay_buffer_kwargs = replay_buffer_kwargs or {}
         self.n_steps = n_steps
@@ -214,7 +214,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         # Convert train freq parameter to TrainFreq object
         self._convert_train_freq()
 
-    def save_replay_buffer(self, path: Union[str, pathlib.Path, io.BufferedIOBase]) -> None:
+    def save_replay_buffer(self, path: str | pathlib.Path | io.BufferedIOBase) -> None:
         """
         Save the replay buffer as a pickle file.
 
@@ -226,7 +226,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
     def load_replay_buffer(
         self,
-        path: Union[str, pathlib.Path, io.BufferedIOBase],
+        path: str | pathlib.Path | io.BufferedIOBase,
         truncate_last_traj: bool = True,
     ) -> None:
         """
@@ -367,7 +367,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     def _sample_action(
         self,
         learning_starts: int,
-        action_noise: Optional[ActionNoise] = None,
+        action_noise: ActionNoise | None = None,
         n_envs: int = 1,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -450,7 +450,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self,
         replay_buffer: ReplayBuffer,
         buffer_action: np.ndarray,
-        new_obs: Union[np.ndarray, dict[str, np.ndarray]],
+        new_obs: np.ndarray | dict[str, np.ndarray],
         reward: np.ndarray,
         dones: np.ndarray,
         infos: list[dict[str, Any]],
@@ -517,9 +517,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         callback: BaseCallback,
         train_freq: TrainFreq,
         replay_buffer: ReplayBuffer,
-        action_noise: Optional[ActionNoise] = None,
+        action_noise: ActionNoise | None = None,
         learning_starts: int = 0,
-        log_interval: Optional[int] = None,
+        log_interval: int | None = None,
     ) -> RolloutReturn:
         """
         Collect experiences and store them into a ``ReplayBuffer``.

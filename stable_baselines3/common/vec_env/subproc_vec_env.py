@@ -1,7 +1,8 @@
 import multiprocessing as mp
 import warnings
 from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+from typing import Any
+from collections.abc import Callable
 
 import gymnasium as gym
 import numpy as np
@@ -27,7 +28,7 @@ def _worker(  # noqa: C901
 
     parent_remote.close()
     env = _patch_env(env_fn_wrapper.var())
-    reset_info: Optional[dict[str, Any]] = {}
+    reset_info: dict[str, Any] | None = {}
     while True:
         try:
             cmd, data = remote.recv()
@@ -100,7 +101,7 @@ class SubprocVecEnv(VecEnv):
            Defaults to 'forkserver' on available platforms, and 'spawn' otherwise.
     """
 
-    def __init__(self, env_fns: list[Callable[[], gym.Env]], start_method: Optional[str] = None):
+    def __init__(self, env_fns: list[Callable[[], gym.Env]], start_method: str | None = None):
         self.waiting = False
         self.closed = False
         n_envs = len(env_fns)
@@ -161,7 +162,7 @@ class SubprocVecEnv(VecEnv):
             process.join()
         self.closed = True
 
-    def get_images(self) -> Sequence[Optional[np.ndarray]]:
+    def get_images(self) -> Sequence[np.ndarray | None]:
         if self.render_mode != "rgb_array":
             warnings.warn(
                 f"The render mode is {self.render_mode}, but this method assumes it is `rgb_array` to obtain images."
@@ -221,7 +222,7 @@ class SubprocVecEnv(VecEnv):
         return [self.remotes[i] for i in indices]
 
 
-def _stack_obs(obs_list: Union[list[VecEnvObs], tuple[VecEnvObs]], space: spaces.Space) -> VecEnvObs:
+def _stack_obs(obs_list: list[VecEnvObs] | tuple[VecEnvObs], space: spaces.Space) -> VecEnvObs:
     """
     Stack observations (convert from a list of single env obs to a stack of obs),
     depending on the observation space.

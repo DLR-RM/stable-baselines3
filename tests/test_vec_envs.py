@@ -4,7 +4,6 @@ import itertools
 import multiprocessing
 import os
 import warnings
-from typing import Optional
 
 import gymnasium as gym
 import numpy as np
@@ -38,9 +37,9 @@ class CustomGymEnv(gym.Env):
         self.current_step = 0
         self.ep_length = 4
         self.render_mode = render_mode
-        self.current_options: Optional[dict] = None
+        self.current_options: dict | None = None
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
         if seed is not None:
             self.seed(seed)
         self.current_step = 0
@@ -225,7 +224,7 @@ class StepEnv(gym.Env):
         self.max_steps = max_steps
         self.current_step = 0
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
         self.current_step = 0
         return np.array([self.current_step], dtype="int"), {}
 

@@ -5,7 +5,7 @@ import json
 import os
 import time
 from glob import glob
-from typing import Any, Optional, SupportsFloat, Union
+from typing import Any, SupportsFloat
 
 import gymnasium as gym
 import pandas
@@ -31,7 +31,7 @@ class Monitor(gym.Wrapper[ObsType, ActType, ObsType, ActType]):
     def __init__(
         self,
         env: gym.Env,
-        filename: Optional[str] = None,
+        filename: str | None = None,
         allow_early_resets: bool = True,
         reset_keywords: tuple[str, ...] = (),
         info_keywords: tuple[str, ...] = (),
@@ -175,7 +175,7 @@ class ResultsWriter:
     def __init__(
         self,
         filename: str = "",
-        header: Optional[dict[str, Union[float, str]]] = None,
+        header: dict[str, float | str] | None = None,
         extra_keys: tuple[str, ...] = (),
         override_existing: bool = True,
     ):

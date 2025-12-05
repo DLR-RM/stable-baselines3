@@ -2,7 +2,8 @@ import warnings
 from collections import OrderedDict
 from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Callable, Optional
+from typing import Any
+from collections.abc import Callable
 
 import gymnasium as gym
 import numpy as np
@@ -86,7 +87,7 @@ class DummyVecEnv(VecEnv):
         for env in self.envs:
             env.close()
 
-    def get_images(self) -> Sequence[Optional[np.ndarray]]:
+    def get_images(self) -> Sequence[np.ndarray | None]:
         if self.render_mode != "rgb_array":
             warnings.warn(
                 f"The render mode is {self.render_mode}, but this method assumes it is `rgb_array` to obtain images."
@@ -94,7 +95,7 @@ class DummyVecEnv(VecEnv):
             return [None for _ in self.envs]
         return [env.render() for env in self.envs]  # type: ignore[misc]
 
-    def render(self, mode: Optional[str] = None) -> Optional[np.ndarray]:
+    def render(self, mode: str | None = None) -> np.ndarray | None:
         """
         Gym environment rendering. If there are multiple environments then
         they are tiled together in one image via ``BaseVecEnv.render()``.

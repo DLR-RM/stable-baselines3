@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Any, Optional, Union
+from typing import Any
 
 import numpy as np
 from gymnasium import Env, spaces
@@ -34,7 +34,7 @@ class BitFlippingEnv(Env):
         self,
         n_bits: int = 10,
         continuous: bool = False,
-        max_steps: Optional[int] = None,
+        max_steps: int | None = None,
         discrete_obs_space: bool = False,
         image_obs_space: bool = False,
         channel_first: bool = True,
@@ -68,7 +68,7 @@ class BitFlippingEnv(Env):
     def seed(self, seed: int) -> None:
         self._obs_space.seed(seed)
 
-    def convert_if_needed(self, state: np.ndarray) -> Union[int, np.ndarray]:
+    def convert_if_needed(self, state: np.ndarray) -> int | np.ndarray:
         """
         Convert to discrete space if needed.
 
@@ -89,7 +89,7 @@ class BitFlippingEnv(Env):
             return image.reshape(self.image_shape).astype(np.uint8)
         return state
 
-    def convert_to_bit_vector(self, state: Union[int, np.ndarray], batch_size: int) -> np.ndarray:
+    def convert_to_bit_vector(self, state: int | np.ndarray, batch_size: int) -> np.ndarray:
         """
         Convert to bit vector if needed.
 
@@ -166,7 +166,7 @@ class BitFlippingEnv(Env):
             }
         )
 
-    def _get_obs(self) -> dict[str, Union[int, np.ndarray]]:
+    def _get_obs(self) -> dict[str, int | np.ndarray]:
         """
         Helper to create the observation.
 
@@ -181,15 +181,15 @@ class BitFlippingEnv(Env):
         )
 
     def reset(
-        self, *, seed: Optional[int] = None, options: Optional[dict] = None
-    ) -> tuple[dict[str, Union[int, np.ndarray]], dict]:
+        self, *, seed: int | None = None, options: dict | None = None
+    ) -> tuple[dict[str, int | np.ndarray], dict]:
         if seed is not None:
             self._obs_space.seed(seed)
         self.current_step = 0
         self.state = self._obs_space.sample()
         return self._get_obs(), {}
 
-    def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:
+    def step(self, action: np.ndarray | int) -> GymStepReturn:
         """
         Step into the env.
 
@@ -210,7 +210,7 @@ class BitFlippingEnv(Env):
         return obs, reward, terminated, truncated, info
 
     def compute_reward(
-        self, achieved_goal: Union[int, np.ndarray], desired_goal: Union[int, np.ndarray], _info: Optional[dict[str, Any]]
+        self, achieved_goal: int | np.ndarray, desired_goal: int | np.ndarray, _info: dict[str, Any] | None
     ) -> np.float32:
         # As we are using a vectorized version, we need to keep track of the `batch_size`
         if isinstance(achieved_goal, int):
@@ -228,7 +228,7 @@ class BitFlippingEnv(Env):
         distance = np.linalg.norm(achieved_goal - desired_goal, axis=-1)
         return -(distance > 0).astype(np.float32)
 
-    def render(self) -> Optional[np.ndarray]:  # type: ignore[override]
+    def render(self) -> np.ndarray | None:  # type: ignore[override]
         if self.render_mode == "rgb_array":
             return self.state.copy()
         print(self.state)

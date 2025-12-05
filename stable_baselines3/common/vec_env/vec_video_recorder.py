@@ -1,6 +1,6 @@
 import os
 import os.path
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 from gymnasium import error, logger

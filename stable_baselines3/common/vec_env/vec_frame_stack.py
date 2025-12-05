@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, Optional, Union
+from typing import Any
 
 import numpy as np
 from gymnasium import spaces
@@ -19,7 +19,7 @@ class VecFrameStack(VecEnvWrapper):
         Alternatively channels_order can be a dictionary which can be used with environments with Dict observation spaces
     """
 
-    def __init__(self, venv: VecEnv, n_stack: int, channels_order: Optional[Union[str, Mapping[str, str]]] = None) -> None:
+    def __init__(self, venv: VecEnv, n_stack: int, channels_order: str | Mapping[str, str] | None = None) -> None:
         assert isinstance(
             venv.observation_space, (spaces.Box, spaces.Dict)
         ), "VecFrameStack only works with gym.spaces.Box and gym.spaces.Dict observation spaces"
@@ -31,7 +31,7 @@ class VecFrameStack(VecEnvWrapper):
     def step_wait(
         self,
     ) -> tuple[
-        Union[np.ndarray, dict[str, np.ndarray]],
+        np.ndarray | dict[str, np.ndarray],
         np.ndarray,
         np.ndarray,
         list[dict[str, Any]],
@@ -40,7 +40,7 @@ class VecFrameStack(VecEnvWrapper):
         observations, infos = self.stacked_obs.update(observations, dones, infos)  # type: ignore[arg-type]
         return observations, rewards, dones, infos
 
-    def reset(self) -> Union[np.ndarray, dict[str, np.ndarray]]:
+    def reset(self) -> np.ndarray | dict[str, np.ndarray]:
         """
         Reset all environments
         """

@@ -1,7 +1,7 @@
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Generator
-from typing import Any, Optional, Union
+from typing import Any
 
 import numpy as np
 import torch as th
@@ -44,7 +44,7 @@ class BaseBuffer(ABC):
         buffer_size: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        device: Union[th.device, str] = "auto",
+        device: th.device | str = "auto",
         n_envs: int = 1,
     ):
         super().__init__()
@@ -103,7 +103,7 @@ class BaseBuffer(ABC):
         self.pos = 0
         self.full = False
 
-    def sample(self, batch_size: int, env: Optional[VecNormalize] = None):
+    def sample(self, batch_size: int, env: VecNormalize | None = None):
         """
         :param batch_size: Number of element to sample
         :param env: associated gym VecEnv
@@ -116,8 +116,8 @@ class BaseBuffer(ABC):
 
     @abstractmethod
     def _get_samples(
-        self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None
-    ) -> Union[ReplayBufferSamples, RolloutBufferSamples]:
+        self, batch_inds: np.ndarray, env: VecNormalize | None = None
+    ) -> ReplayBufferSamples | RolloutBufferSamples:
         """
         :param batch_inds:
         :param env:
@@ -141,15 +141,15 @@ class BaseBuffer(ABC):
 
     @staticmethod
     def _normalize_obs(
-        obs: Union[np.ndarray, dict[str, np.ndarray]],
-        env: Optional[VecNormalize] = None,
-    ) -> Union[np.ndarray, dict[str, np.ndarray]]:
+        obs: np.ndarray | dict[str, np.ndarray],
+        env: VecNormalize | None = None,
+    ) -> np.ndarray | dict[str, np.ndarray]:
         if env is not None:
             return env.normalize_obs(obs)
         return obs
 
     @staticmethod
-    def _normalize_reward(reward: np.ndarray, env: Optional[VecNormalize] = None) -> np.ndarray:
+    def _normalize_reward(reward: np.ndarray, env: VecNormalize | None = None) -> np.ndarray:
         if env is not None:
             return env.normalize_reward(reward).astype(np.float32)
         return reward
@@ -187,7 +187,7 @@ class ReplayBuffer(BaseBuffer):
         buffer_size: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        device: Union[th.device, str] = "auto",
+        device: th.device | str = "auto",
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
@@ -282,7 +282,7 @@ class ReplayBuffer(BaseBuffer):
             self.full = True
             self.pos = 0
 
-    def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
+    def sample(self, batch_size: int, env: VecNormalize | None = None) -> ReplayBufferSamples:
         """
         Sample elements from the replay buffer.
         Custom sampling when using memory efficient variant,
@@ -304,7 +304,7 @@ class ReplayBuffer(BaseBuffer):
             batch_inds = np.random.randint(0, self.pos, size=batch_size)
         return self._get_samples(batch_inds, env=env)
 
-    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
+    def _get_samples(self, batch_inds: np.ndarray, env: VecNormalize | None = None) -> ReplayBufferSamples:
         # Sample randomly the env idx
         env_indices = np.random.randint(0, high=self.n_envs, size=(len(batch_inds),))
 
@@ -377,7 +377,7 @@ class RolloutBuffer(BaseBuffer):
         buffer_size: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        device: Union[th.device, str] = "auto",
+        device: th.device | str = "auto",
         gae_lambda: float = 1,
         gamma: float = 0.99,
         n_envs: int = 1,
@@ -478,7 +478,7 @@ class RolloutBuffer(BaseBuffer):
         if self.pos == self.buffer_size:
             self.full = True
 
-    def get(self, batch_size: Optional[int] = None) -> Generator[RolloutBufferSamples, None, None]:
+    def get(self, batch_size: int | None = None) -> Generator[RolloutBufferSamples, None, None]:
         assert self.full, ""
         indices = np.random.permutation(self.buffer_size * self.n_envs)
         # Prepare the data
@@ -508,7 +508,7 @@ class RolloutBuffer(BaseBuffer):
     def _get_samples(
         self,
         batch_inds: np.ndarray,
-        env: Optional[VecNormalize] = None,
+        env: VecNormalize | None = None,
     ) -> RolloutBufferSamples:
         data = (
             self.observations[batch_inds],
@@ -549,7 +549,7 @@ class DictReplayBuffer(ReplayBuffer):
         buffer_size: int,
         observation_space: spaces.Dict,
         action_space: spaces.Space,
-        device: Union[th.device, str] = "auto",
+        device: th.device | str = "auto",
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
@@ -649,7 +649,7 @@ class DictReplayBuffer(ReplayBuffer):
     def sample(  # type: ignore[override]
         self,
         batch_size: int,
-        env: Optional[VecNormalize] = None,
+        env: VecNormalize | None = None,
     ) -> DictReplayBufferSamples:
         """
         Sample elements from the replay buffer.
@@ -664,7 +664,7 @@ class DictReplayBuffer(ReplayBuffer):
     def _get_samples(  # type: ignore[override]
         self,
         batch_inds: np.ndarray,
-        env: Optional[VecNormalize] = None,
+        env: VecNormalize | None = None,
     ) -> DictReplayBufferSamples:
         # Sample randomly the env idx
         env_indices = np.random.randint(0, high=self.n_envs, size=(len(batch_inds),))
@@ -728,7 +728,7 @@ class DictRolloutBuffer(RolloutBuffer):
         buffer_size: int,
         observation_space: spaces.Dict,
         action_space: spaces.Space,
-        device: Union[th.device, str] = "auto",
+        device: th.device | str = "auto",
         gae_lambda: float = 1,
         gamma: float = 0.99,
         n_envs: int = 1,
@@ -804,7 +804,7 @@ class DictRolloutBuffer(RolloutBuffer):
 
     def get(  # type: ignore[override]
         self,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
     ) -> Generator[DictRolloutBufferSamples, None, None]:
         assert self.full, ""
         indices = np.random.permutation(self.buffer_size * self.n_envs)
@@ -831,7 +831,7 @@ class DictRolloutBuffer(RolloutBuffer):
     def _get_samples(  # type: ignore[override]
         self,
         batch_inds: np.ndarray,
-        env: Optional[VecNormalize] = None,
+        env: VecNormalize | None = None,
     ) -> DictRolloutBufferSamples:
         return DictRolloutBufferSamples(
             observations={key: self.to_torch(obs[batch_inds]) for (key, obs) in self.observations.items()},
@@ -883,7 +883,7 @@ class NStepReplayBuffer(ReplayBuffer):
         if self.optimize_memory_usage:
             raise NotImplementedError("NStepReplayBuffer doesn't support optimize_memory_usage=True")
 
-    def _get_samples(self, batch_inds: np.ndarray, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
+    def _get_samples(self, batch_inds: np.ndarray, env: VecNormalize | None = None) -> ReplayBufferSamples:
         """
         Sample a batch of transitions and compute n-step returns.
 

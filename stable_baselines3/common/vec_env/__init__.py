@@ -16,7 +16,7 @@ from stable_baselines3.common.vec_env.vec_video_recorder import VecVideoRecorder
 VecEnvWrapperT = TypeVar("VecEnvWrapperT", bound=VecEnvWrapper)
 
 
-def unwrap_vec_wrapper(env: VecEnv, vec_wrapper_class: type[VecEnvWrapperT]) -> Optional[VecEnvWrapperT]:
+def unwrap_vec_wrapper(env: VecEnv, vec_wrapper_class: type[VecEnvWrapperT]) -> VecEnvWrapperT | None:
     """
     Retrieve a ``VecEnvWrapper`` object by recursively searching.
 
@@ -32,7 +32,7 @@ def unwrap_vec_wrapper(env: VecEnv, vec_wrapper_class: type[VecEnvWrapperT]) -> 
     return None
 
 
-def unwrap_vec_normalize(env: VecEnv) -> Optional[VecNormalize]:
+def unwrap_vec_normalize(env: VecEnv) -> VecNormalize | None:
     """
     Retrieve a ``VecNormalize`` object by recursively searching.
 

@@ -1,4 +1,3 @@
-from typing import Optional
 
 import gymnasium as gym
 import numpy as np
@@ -72,7 +71,7 @@ class DummyDictEnv(gym.Env):
         terminated = truncated = False
         return self.observation_space.sample(), reward, terminated, truncated, {}
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
         if seed is not None:
             self.observation_space.seed(seed)
         return self.observation_space.sample(), {}

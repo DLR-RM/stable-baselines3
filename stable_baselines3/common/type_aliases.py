@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from stable_baselines3.common.vec_env import VecEnv
 
 GymEnv = Union[gym.Env, "VecEnv"]
-GymObs = Union[tuple, dict[str, Any], np.ndarray, int]
+GymObs = Union[tuple, dict[str, Any], np.ndarray, int]  # noqa: UP007
 GymResetReturn = tuple[GymObs, dict]
 AtariResetReturn = tuple[np.ndarray, dict[str, Any]]
 GymStepReturn = tuple[GymObs, float, bool, bool, dict]
@@ -22,7 +22,7 @@ AtariStepReturn = tuple[np.ndarray, SupportsFloat, bool, bool, dict[str, Any]]
 TensorDict = dict[str, th.Tensor]
 OptimizerStateDict = dict[str, Any]
 MaybeCallback = Union[None, Callable, list["BaseCallback"], "BaseCallback"]
-PyTorchObs = Union[th.Tensor, TensorDict]
+PyTorchObs = Union[th.Tensor, TensorDict]  # noqa: UP007
 
 # A schedule takes the remaining progress as input
 # and outputs a scalar (e.g. learning rate, clip range, ...)

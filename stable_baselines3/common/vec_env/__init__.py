@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 from stable_baselines3.common.vec_env.base_vec_env import CloudpickleWrapper, VecEnv, VecEnvWrapper
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv

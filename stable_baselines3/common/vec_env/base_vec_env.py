@@ -12,10 +12,10 @@ from gymnasium import spaces
 
 # Define type aliases here to avoid circular import
 # Used when we want to access one or more VecEnv
-VecEnvIndices = Union[None, int, Iterable[int]]
+VecEnvIndices = Union[None, int, Iterable[int]]  # noqa: UP007
 # VecEnvObs is what is returned by the reset() method
 # it contains the observation for each env
-VecEnvObs = Union[np.ndarray, dict[str, np.ndarray], tuple[np.ndarray, ...]]
+VecEnvObs = Union[np.ndarray, dict[str, np.ndarray], tuple[np.ndarray, ...]]  # noqa: UP007
 # VecEnvStepReturn is what is returned by the step() method
 # it contains the observation, reward, done, info for each env
 VecEnvStepReturn = tuple[VecEnvObs, np.ndarray, np.ndarray, list[dict]]

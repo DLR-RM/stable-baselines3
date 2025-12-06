@@ -132,8 +132,6 @@ class DiagGaussianDistribution(Distribution):
     def __init__(self, action_dim: int):
         super().__init__()
         self.action_dim = action_dim
-        self.mean_actions = None
-        self.log_std = None
 
     def proba_distribution_net(self, latent_dim: int, log_std_init: float = 0.0) -> tuple[nn.Module, nn.Parameter]:
         """
@@ -459,8 +457,6 @@ class StateDependentNoiseDistribution(Distribution):
         super().__init__()
         self.action_dim = action_dim
         self.latent_sde_dim = None
-        self.mean_actions = None
-        self.log_std = None
         self.use_expln = use_expln
         self.full_std = full_std
         self.epsilon = epsilon

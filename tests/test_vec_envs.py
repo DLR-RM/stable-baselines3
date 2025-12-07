@@ -13,7 +13,14 @@ from gymnasium import spaces
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack, VecNormalize, VecVideoRecorder
+from stable_baselines3.common.vec_env import (
+    DummyVecEnv,
+    PoolVecEnv,
+    SubprocVecEnv,
+    VecFrameStack,
+    VecNormalize,
+    VecVideoRecorder,
+)
 
 try:
     import moviepy  # noqa: F401
@@ -23,7 +30,7 @@ except ImportError:
     have_moviepy = False
 
 N_ENVS = 3
-VEC_ENV_CLASSES = [DummyVecEnv, SubprocVecEnv]
+VEC_ENV_CLASSES = [PoolVecEnv, DummyVecEnv, SubprocVecEnv]
 VEC_ENV_WRAPPERS = [None, VecNormalize, VecFrameStack]
 
 

@@ -18,7 +18,6 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
-- Remove some unused variables
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -36,6 +35,7 @@ Deprecations:
 Others:
 ^^^^^^^
 - Updated to Python 3.10+ annotations
+- Remove some unused variables
 
 Documentation:
 ^^^^^^^^^^^^^^

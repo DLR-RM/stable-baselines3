@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 2.8.0a0 (WIP)
+Release 2.8.0a1 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -35,7 +35,8 @@ Deprecations:
 Others:
 ^^^^^^^
 - Updated to Python 3.10+ annotations
-- Remove some unused variables
+- Remove some unused variables (@unexploredtest)
+- Improve type hints for distributions
 
 Documentation:
 ^^^^^^^^^^^^^^

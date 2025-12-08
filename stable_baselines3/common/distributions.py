@@ -8,6 +8,7 @@ import torch as th
 from gymnasium import spaces
 from torch import nn
 from torch.distributions import Bernoulli, Categorical, Normal
+from torch.distributions import Distribution as TorchDistribution
 
 from stable_baselines3.common.preprocessing import get_action_dim
 
@@ -25,9 +26,10 @@ SelfStateDependentNoiseDistribution = TypeVar("SelfStateDependentNoiseDistributi
 class Distribution(ABC):
     """Abstract base class for distributions."""
 
+    distribution: TorchDistribution | list[TorchDistribution]
+
     def __init__(self):
         super().__init__()
-        self.distribution = None
 
     @abstractmethod
     def proba_distribution_net(self, *args, **kwargs) -> nn.Module | tuple[nn.Module, nn.Parameter]:
@@ -44,11 +46,11 @@ class Distribution(ABC):
         """
 
     @abstractmethod
-    def log_prob(self, x: th.Tensor) -> th.Tensor:
+    def log_prob(self, actions: th.Tensor) -> th.Tensor:
         """
         Returns the log likelihood
 
-        :param x: the taken action
+        :param actions: the taken action
         :return: The log likelihood of the distribution
         """
 
@@ -129,11 +131,11 @@ class DiagGaussianDistribution(Distribution):
     :param action_dim:  Dimension of the action space.
     """
 
+    distribution: Normal
+
     def __init__(self, action_dim: int):
         super().__init__()
         self.action_dim = action_dim
-        self.mean_actions = None
-        self.log_std = None
 
     def proba_distribution_net(self, latent_dim: int, log_std_init: float = 0.0) -> tuple[nn.Module, nn.Parameter]:
         """
@@ -267,6 +269,8 @@ class CategoricalDistribution(Distribution):
     :param action_dim: Number of discrete actions
     """
 
+    distribution: Categorical
+
     def __init__(self, action_dim: int):
         super().__init__()
         self.action_dim = action_dim
@@ -317,6 +321,8 @@ class MultiCategoricalDistribution(Distribution):
 
     :param action_dims: List of sizes of discrete action spaces
     """
+
+    distribution: list[Categorical]  # type: ignore[assignment]
 
     def __init__(self, action_dims: list[int]):
         super().__init__()
@@ -374,6 +380,8 @@ class BernoulliDistribution(Distribution):
 
     :param action_dim: Number of binary actions
     """
+
+    distribution: Bernoulli
 
     def __init__(self, action_dims: int):
         super().__init__()
@@ -446,6 +454,7 @@ class StateDependentNoiseDistribution(Distribution):
     _latent_sde: th.Tensor
     exploration_mat: th.Tensor
     exploration_matrices: th.Tensor
+    distribution: Normal
 
     def __init__(
         self,
@@ -459,8 +468,6 @@ class StateDependentNoiseDistribution(Distribution):
         super().__init__()
         self.action_dim = action_dim
         self.latent_sde_dim = None
-        self.mean_actions = None
-        self.log_std = None
         self.use_expln = use_expln
         self.full_std = full_std
         self.epsilon = epsilon
@@ -704,7 +711,9 @@ def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> th.Tensor
     :return: KL(dist_true||dist_pred)
     """
     # KL Divergence for different distribution types is out of scope
-    assert dist_true.__class__ == dist_pred.__class__, "Error: input distributions should be the same type"
+    assert (
+        dist_true.__class__ == dist_pred.__class__
+    ), f"Error: input distributions should be the same type, {dist_true.__class__} != {dist_pred.__class__}"
 
     # MultiCategoricalDistribution is not a PyTorch Distribution subclass
     # so we need to implement it ourselves!
@@ -723,4 +732,6 @@ def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> th.Tensor
 
     # Use the PyTorch kl_divergence implementation
     else:
+        assert isinstance(dist_true.distribution, TorchDistribution)
+        assert isinstance(dist_pred.distribution, TorchDistribution)
         return th.distributions.kl_divergence(dist_true.distribution, dist_pred.distribution)

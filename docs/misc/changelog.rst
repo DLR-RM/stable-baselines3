@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 2.8.0a0 (WIP)
+Release 2.8.0a1 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -35,6 +35,8 @@ Deprecations:
 Others:
 ^^^^^^^
 - Updated to Python 3.10+ annotations
+- Remove some unused variables (@unexploredtest)
+- Improve type hints for distributions
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -1939,4 +1941,4 @@ And all the contributors:
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
 @marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
-@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto @Trenza1ore @JonathanColetti
+@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto @Trenza1ore @JonathanColetti @unexploredtest

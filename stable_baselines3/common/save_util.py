@@ -439,16 +439,7 @@ def load_from_zip_file(
             pth_files = [file_name for file_name in namelist if os.path.splitext(file_name)[1] == ".pth"]
             for file_path in pth_files:
                 with archive.open(file_path, mode="r") as param_file:
-                    # File has to be seekable, but param_file is not, so load in BytesIO first
-                    # fixed in python >= 3.7
-                    file_content = io.BytesIO()
-                    file_content.write(param_file.read())
-                    # go to start of file
-                    file_content.seek(0)
-                    # Load the parameters with the right ``map_location``.
-                    # Remove ".pth" ending with splitext
-                    # Note(antonin): we cannot use weights_only=True, as it breaks with PyTorch 1.13, see GH#1911
-                    th_object = th.load(file_content, map_location=device, weights_only=False)
+                    th_object = th.load(param_file, map_location=device, weights_only=True)
                     # "tensors.pth" was renamed "pytorch_variables.pth" in v0.9.0, see PR #138
                     if file_path == "pytorch_variables.pth" or file_path == "tensors.pth":
                         # PyTorch variables (not state_dicts)

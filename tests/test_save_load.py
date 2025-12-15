@@ -167,6 +167,12 @@ def test_save_load(tmp_path, model_class):
 
         del model
 
+    # Check that loading after compiling works, see GH#2137
+    model = model_class.load(tmp_path / "test_save.zip")
+    model.policy = th.compile(model.policy)
+    model.save(tmp_path / "test_save.zip")
+    model_class.load(tmp_path / "test_save.zip")
+
     # clear file from os
     os.remove(tmp_path / "test_save.zip")
 

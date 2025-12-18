@@ -812,8 +812,8 @@ class BaseAlgorithm(ABC):
         params = {}
         for name in state_dicts_names:
             attr = recursive_getattr(self, name)
-            # Retrieve state dict
-            params[name] = attr.state_dict()
+            # Retrieve state dict, and from the original model if compiled (see GH#2137)
+            params[name] = getattr(attr, "_orig_mod", attr).state_dict()
         return params
 
     def save(

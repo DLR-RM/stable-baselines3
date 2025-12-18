@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 2.8.0a1 (WIP)
+Release 2.8.0a2 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -18,6 +18,7 @@ New Features:
 
 Bug Fixes:
 ^^^^^^^^^^
+- Fixed saving and loading of Torch compiled models (using ``th.compile()``) by updating ``get_parameters()``
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -35,8 +36,10 @@ Deprecations:
 Others:
 ^^^^^^^
 - Updated to Python 3.10+ annotations
-- Remove some unused variables (@unexploredtest)
-- Improve type hints for distributions
+- Removed some unused variables (@unexploredtest)
+- Improved type hints for distributions
+- Simplified zip file loading by removing Python 3.6 workaround and enabling ``weights_only=True`` (PyTorch 2.x)
+- Sped up saving/loading tests
 
 Documentation:
 ^^^^^^^^^^^^^^

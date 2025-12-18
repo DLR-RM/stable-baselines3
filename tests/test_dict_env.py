@@ -8,7 +8,7 @@ from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.envs import BitFlippingEnv, SimpleMultiObsEnv
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack, VecNormalize
+from stable_baselines3.common.vec_env import DummyVecEnv, PoolVecEnv, SubprocVecEnv, VecFrameStack, VecNormalize
 
 
 class DummyDictEnv(gym.Env):
@@ -206,6 +206,81 @@ def test_multiprocessing(model_class):
         return env
 
     env = make_vec_env(make_env, n_envs=2, vec_env_cls=SubprocVecEnv)
+
+    kwargs = {}
+    n_steps = 128
+
+    if model_class in {A2C, PPO}:
+        kwargs = dict(
+            n_steps=128,
+            policy_kwargs=dict(
+                net_arch=[32],
+                features_extractor_kwargs=dict(cnn_output_dim=32),
+            ),
+        )
+    elif model_class in {SAC, TD3, DQN}:
+        kwargs = dict(
+            buffer_size=1000,
+            policy_kwargs=dict(
+                net_arch=[32],
+                features_extractor_kwargs=dict(cnn_output_dim=16),
+            ),
+            train_freq=5,
+        )
+
+    model = model_class("MultiInputPolicy", env, gamma=0.5, seed=1, **kwargs)
+
+    model.learn(total_timesteps=n_steps)
+
+
+@pytest.mark.parametrize("model_class", [PPO, A2C, SAC, DQN])
+@pytest.mark.parametrize("num_worker", [1, 8])
+def test_poolvecenv_1(model_class, num_worker):
+    use_discrete_actions = model_class not in [SAC, TD3, DDPG]
+
+    def make_env():
+        env = DummyDictEnv(use_discrete_actions=use_discrete_actions, channel_last=False)
+        env = gym.wrappers.TimeLimit(env, 50)
+        return env
+
+    env = make_vec_env(make_env, n_envs=num_worker, vec_env_kwargs={"num_worker": num_worker}, vec_env_cls=PoolVecEnv)
+
+    kwargs = {}
+    n_steps = 128
+
+    if model_class in {A2C, PPO}:
+        kwargs = dict(
+            n_steps=128,
+            policy_kwargs=dict(
+                net_arch=[32],
+                features_extractor_kwargs=dict(cnn_output_dim=32),
+            ),
+        )
+    elif model_class in {SAC, TD3, DQN}:
+        kwargs = dict(
+            buffer_size=1000,
+            policy_kwargs=dict(
+                net_arch=[32],
+                features_extractor_kwargs=dict(cnn_output_dim=16),
+            ),
+            train_freq=5,
+        )
+
+    model = model_class("MultiInputPolicy", env, gamma=0.5, seed=1, **kwargs)
+
+    model.learn(total_timesteps=n_steps)
+
+
+@pytest.mark.parametrize("model_class", [PPO, A2C, SAC, DQN])
+def test_poolvecenv_2(model_class):
+    use_discrete_actions = model_class not in [SAC, TD3, DDPG]
+
+    def make_env():
+        env = DummyDictEnv(use_discrete_actions=use_discrete_actions, channel_last=False)
+        env = gym.wrappers.TimeLimit(env, 50)
+        return env
+
+    env = make_vec_env(make_env, n_envs=8, vec_env_kwargs={"num_worker": 2}, vec_env_cls=PoolVecEnv)
 
     kwargs = {}
     n_steps = 128

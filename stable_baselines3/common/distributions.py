@@ -688,7 +688,7 @@ def make_proba_distribution(
     elif isinstance(action_space, spaces.Discrete):
         return CategoricalDistribution(int(action_space.n), **dist_kwargs)
     elif isinstance(action_space, spaces.MultiDiscrete):
-        return MultiCategoricalDistribution(list(action_space.nvec), **dist_kwargs)
+        return MultiCategoricalDistribution(list(action_space.nvec.reshape(-1)), **dist_kwargs)
     elif isinstance(action_space, spaces.MultiBinary):
         assert isinstance(
             action_space.n, int

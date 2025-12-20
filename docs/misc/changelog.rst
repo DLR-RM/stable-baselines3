@@ -19,6 +19,7 @@ New Features:
 Bug Fixes:
 ^^^^^^^^^^
 - Fixed saving and loading of Torch compiled models (using ``th.compile()``) by updating ``get_parameters()``
+- Fixed error in environments with multi-discrete action spaces when the nvec dimension is higher than 1D (@unexploredtest)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

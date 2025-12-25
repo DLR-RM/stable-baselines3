@@ -1,21 +1,21 @@
 import warnings
-from typing import Any, ClassVar, TypeVar
+from typing import Any, ClassVar, Optional, TypeVar, Union
 
 import numpy as np
 import torch as th
 from gymnasium import spaces
 from torch.nn import functional as F
 
-from stable_baselines3.common.buffers import RolloutBuffer
+from stable_baselines3.common.buffers import RolloutBuffer, ExpRolloutBuffer
 from stable_baselines3.common.on_policy_algorithm import OnPolicyAlgorithm
 from stable_baselines3.common.policies import ActorCriticCnnPolicy, ActorCriticPolicy, BasePolicy, MultiInputActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
-from stable_baselines3.common.utils import FloatSchedule, explained_variance
+from stable_baselines3.common.utils import explained_variance, get_schedule_fn
 
-SelfPPO = TypeVar("SelfPPO", bound="PPO")
+SelfRSPPO = TypeVar("SelfRSPPO", bound="RSPPO")
 
 
-class PPO(OnPolicyAlgorithm):
+class RSPPO(OnPolicyAlgorithm):
     """
     Proximal Policy Optimization algorithm (PPO) (clip version)
 
@@ -46,7 +46,6 @@ class PPO(OnPolicyAlgorithm):
         no clipping will be done on the value function.
         IMPORTANT: this clipping depends on the reward scaling.
     :param normalize_advantage: Whether to normalize or not the advantage
-    :param ent_coef: Entropy coefficient for the loss calculation
     :param vf_coef: Value function coefficient for the loss calculation
     :param max_grad_norm: The maximum value for the gradient clipping
     :param use_sde: Whether to use generalized State Dependent Exploration (gSDE)
@@ -79,31 +78,30 @@ class PPO(OnPolicyAlgorithm):
 
     def __init__(
         self,
-        policy: str | type[ActorCriticPolicy],
-        env: GymEnv | str,
-        learning_rate: float | Schedule = 3e-4,
+        policy: Union[str, type[ActorCriticPolicy]],
+        env: Union[GymEnv, str],
+        learning_rate: Union[float, Schedule] = 3e-4,
         n_steps: int = 2048,
         batch_size: int = 64,
         n_epochs: int = 10,
         gamma: float = 0.99,
         gae_lambda: float = 0.95,
-        clip_range: float | Schedule = 0.2,
-        clip_range_vf: None | float | Schedule = None,
+        clip_range: Union[float, Schedule] = 0.2,
+        clip_range_vf: Union[None, float, Schedule] = None,
         normalize_advantage: bool = True,
-        ent_coef: float = 0.0,
         vf_coef: float = 0.5,
         max_grad_norm: float = 0.5,
         use_sde: bool = False,
         sde_sample_freq: int = -1,
-        rollout_buffer_class: type[RolloutBuffer] | None = None,
-        rollout_buffer_kwargs: dict[str, Any] | None = None,
-        target_kl: float | None = None,
+        rollout_buffer_class: Optional[type[RolloutBuffer]] = ExpRolloutBuffer,
+        rollout_buffer_kwargs: Optional[dict[str, Any]] = {'beta': 0.001},
+        target_kl: Optional[float] = None,
         stats_window_size: int = 100,
-        tensorboard_log: str | None = None,
-        policy_kwargs: dict[str, Any] | None = None,
+        tensorboard_log: Optional[str] = None,
+        policy_kwargs: Optional[dict[str, Any]] = None,
         verbose: int = 0,
-        seed: int | None = None,
-        device: th.device | str = "auto",
+        seed: Optional[int] = None,
+        device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
     ):
         super().__init__(
@@ -113,7 +111,6 @@ class PPO(OnPolicyAlgorithm):
             n_steps=n_steps,
             gamma=gamma,
             gae_lambda=gae_lambda,
-            ent_coef=ent_coef,
             vf_coef=vf_coef,
             max_grad_norm=max_grad_norm,
             use_sde=use_sde,
@@ -126,6 +123,7 @@ class PPO(OnPolicyAlgorithm):
             verbose=verbose,
             device=device,
             seed=seed,
+            ent_coef=0,
             _init_setup_model=False,
             supported_action_spaces=(
                 spaces.Box,
@@ -174,12 +172,12 @@ class PPO(OnPolicyAlgorithm):
         super()._setup_model()
 
         # Initialize schedules for policy/value clipping
-        self.clip_range = FloatSchedule(self.clip_range)
+        self.clip_range = get_schedule_fn(self.clip_range)
         if self.clip_range_vf is not None:
             if isinstance(self.clip_range_vf, (float, int)):
                 assert self.clip_range_vf > 0, "`clip_range_vf` must be positive, " "pass `None` to deactivate vf clipping"
 
-            self.clip_range_vf = FloatSchedule(self.clip_range_vf)
+            self.clip_range_vf = get_schedule_fn(self.clip_range_vf)
 
     def train(self) -> None:
         """
@@ -195,7 +193,6 @@ class PPO(OnPolicyAlgorithm):
         if self.clip_range_vf is not None:
             clip_range_vf = self.clip_range_vf(self._current_progress_remaining)  # type: ignore[operator]
 
-        entropy_losses = []
         pg_losses, value_losses = [], []
         clip_fractions = []
 
@@ -210,14 +207,16 @@ class PPO(OnPolicyAlgorithm):
                     # Convert discrete action from float to long
                     actions = rollout_data.actions.long().flatten()
 
-                values, log_prob, entropy = self.policy.evaluate_actions(rollout_data.observations, actions)
+                values, log_prob, _ = self.policy.evaluate_actions(rollout_data.observations, actions)
                 values = values.flatten()
                 # Normalize advantage
                 advantages = rollout_data.advantages
+                # print(advantages.max())
                 # Normalization does not make sense if mini batchsize == 1, see GH issue #325
                 if self.normalize_advantage and len(advantages) > 1:
                     advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
-                    
+                advantages = np.sign(self.rollout_buffer_kwargs['beta']) * advantages
+
                 # ratio between old and new policy, should be one at the first iteration
                 ratio = th.exp(log_prob - rollout_data.old_log_prob)
 
@@ -244,16 +243,7 @@ class PPO(OnPolicyAlgorithm):
                 value_loss = F.mse_loss(rollout_data.returns, values_pred)
                 value_losses.append(value_loss.item())
 
-                # Entropy loss favor exploration
-                if entropy is None:
-                    # Approximate entropy when no analytical form
-                    entropy_loss = -th.mean(-log_prob)
-                else:
-                    entropy_loss = -th.mean(entropy)
-
-                entropy_losses.append(entropy_loss.item())
-
-                loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
+                loss = policy_loss + self.vf_coef * value_loss
 
                 # Calculate approximate form of reverse KL Divergence for early stopping
                 # see issue #417: https://github.com/DLR-RM/stable-baselines3/issues/417
@@ -284,7 +274,6 @@ class PPO(OnPolicyAlgorithm):
         explained_var = explained_variance(self.rollout_buffer.values.flatten(), self.rollout_buffer.returns.flatten())
 
         # Logs
-        self.logger.record("train/entropy_loss", np.mean(entropy_losses))
         self.logger.record("train/policy_gradient_loss", np.mean(pg_losses))
         self.logger.record("train/value_loss", np.mean(value_losses))
         self.logger.record("train/approx_kl", np.mean(approx_kl_divs))
@@ -300,14 +289,14 @@ class PPO(OnPolicyAlgorithm):
             self.logger.record("train/clip_range_vf", clip_range_vf)
 
     def learn(
-        self: SelfPPO,
+        self: SelfRSPPO,
         total_timesteps: int,
         callback: MaybeCallback = None,
         log_interval: int = 1,
         tb_log_name: str = "PPO",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
-    ) -> SelfPPO:
+    ) -> SelfRSPPO:
         return super().learn(
             total_timesteps=total_timesteps,
             callback=callback,

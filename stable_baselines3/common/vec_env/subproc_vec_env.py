@@ -1,7 +1,7 @@
 import multiprocessing as mp
 import warnings
-from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable, Sequence
+from typing import Any
 
 import gymnasium as gym
 import numpy as np
@@ -27,7 +27,7 @@ def _worker(  # noqa: C901
 
     parent_remote.close()
     env = _patch_env(env_fn_wrapper.var())
-    reset_info: Optional[dict[str, Any]] = {}
+    reset_info: dict[str, Any] | None = {}
     while True:
         try:
             cmd, data = remote.recv()
@@ -100,7 +100,7 @@ class SubprocVecEnv(VecEnv):
            Defaults to 'forkserver' on available platforms, and 'spawn' otherwise.
     """
 
-    def __init__(self, env_fns: list[Callable[[], gym.Env]], start_method: Optional[str] = None):
+    def __init__(self, env_fns: list[Callable[[], gym.Env]], start_method: str | None = None):
         self.waiting = False
         self.closed = False
         n_envs = len(env_fns)
@@ -113,9 +113,9 @@ class SubprocVecEnv(VecEnv):
             start_method = "forkserver" if forkserver_available else "spawn"
         ctx = mp.get_context(start_method)
 
-        self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(n_envs)])
+        self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(n_envs)], strict=True)
         self.processes = []
-        for work_remote, remote, env_fn in zip(self.work_remotes, self.remotes, env_fns):
+        for work_remote, remote, env_fn in zip(self.work_remotes, self.remotes, env_fns, strict=True):
             args = (work_remote, remote, CloudpickleWrapper(env_fn))
             # daemon=True: if the main process crashes, we should not cause things to hang
             process = ctx.Process(target=_worker, args=args, daemon=True)  # type: ignore[attr-defined]
@@ -129,21 +129,21 @@ class SubprocVecEnv(VecEnv):
         super().__init__(len(env_fns), observation_space, action_space)
 
     def step_async(self, actions: np.ndarray) -> None:
-        for remote, action in zip(self.remotes, actions):
+        for remote, action in zip(self.remotes, actions, strict=True):
             remote.send(("step", action))
         self.waiting = True
 
     def step_wait(self) -> VecEnvStepReturn:
         results = [remote.recv() for remote in self.remotes]
         self.waiting = False
-        obs, rews, dones, infos, self.reset_infos = zip(*results)  # type: ignore[assignment]
+        obs, rews, dones, infos, self.reset_infos = zip(*results, strict=True)  # type: ignore[assignment]
         return _stack_obs(obs, self.observation_space), np.stack(rews), np.stack(dones), infos  # type: ignore[return-value]
 
     def reset(self) -> VecEnvObs:
         for env_idx, remote in enumerate(self.remotes):
             remote.send(("reset", (self._seeds[env_idx], self._options[env_idx])))
         results = [remote.recv() for remote in self.remotes]
-        obs, self.reset_infos = zip(*results)  # type: ignore[assignment]
+        obs, self.reset_infos = zip(*results, strict=True)  # type: ignore[assignment]
         # Seeds and options are only used once
         self._reset_seeds()
         self._reset_options()
@@ -161,7 +161,7 @@ class SubprocVecEnv(VecEnv):
             process.join()
         self.closed = True
 
-    def get_images(self) -> Sequence[Optional[np.ndarray]]:
+    def get_images(self) -> Sequence[np.ndarray | None]:
         if self.render_mode != "rgb_array":
             warnings.warn(
                 f"The render mode is {self.render_mode}, but this method assumes it is `rgb_array` to obtain images."
@@ -221,7 +221,7 @@ class SubprocVecEnv(VecEnv):
         return [self.remotes[i] for i in indices]
 
 
-def _stack_obs(obs_list: Union[list[VecEnvObs], tuple[VecEnvObs]], space: spaces.Space) -> VecEnvObs:
+def _stack_obs(obs_list: list[VecEnvObs] | tuple[VecEnvObs], space: spaces.Space) -> VecEnvObs:
     """
     Stack observations (convert from a list of single env obs to a stack of obs),
     depending on the observation space.

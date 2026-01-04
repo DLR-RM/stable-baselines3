@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import gymnasium as gym
 import torch as th
 from gymnasium import spaces
@@ -114,8 +112,8 @@ def create_mlp(
     activation_fn: type[nn.Module] = nn.ReLU,
     squash_output: bool = False,
     with_bias: bool = True,
-    pre_linear_modules: Optional[list[type[nn.Module]]] = None,
-    post_linear_modules: Optional[list[type[nn.Module]]] = None,
+    pre_linear_modules: list[type[nn.Module]] | None = None,
+    post_linear_modules: list[type[nn.Module]] | None = None,
 ) -> list[nn.Module]:
     """
     Create a multi layer perceptron (MLP), which is
@@ -211,9 +209,9 @@ class MlpExtractor(nn.Module):
     def __init__(
         self,
         feature_dim: int,
-        net_arch: Union[list[int], dict[str, list[int]]],
+        net_arch: list[int] | dict[str, list[int]],
         activation_fn: type[nn.Module],
-        device: Union[th.device, str] = "auto",
+        device: th.device | str = "auto",
     ) -> None:
         super().__init__()
         device = get_device(device)
@@ -313,7 +311,7 @@ class CombinedExtractor(BaseFeaturesExtractor):
         return th.cat(encoded_tensor_list, dim=1)
 
 
-def get_actor_critic_arch(net_arch: Union[list[int], dict[str, list[int]]]) -> tuple[list[int], list[int]]:
+def get_actor_critic_arch(net_arch: list[int] | dict[str, list[int]]) -> tuple[list[int], list[int]]:
     """
     Get the actor and critic network architectures for off-policy actor-critic algorithms (SAC, TD3, DDPG).
 

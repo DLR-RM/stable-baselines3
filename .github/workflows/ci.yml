@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
         include:
           # Default version
           - gymnasium-version: "1.0.0"
@@ -28,9 +28,9 @@ jobs:
           - python-version: "3.10"
             gymnasium-version: "0.29.1"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -40,7 +40,8 @@ jobs:
           pip install uv
           # cpu version of pytorch
           # See https://github.com/astral-sh/uv/issues/1497
-          uv pip install --system torch==2.3.1+cpu --index https://download.pytorch.org/whl/cpu
+          # Need Pytorch 2.9+ for Python 3.13
+          uv pip install --system torch==2.9.1+cpu --index https://download.pytorch.org/whl/cpu
 
           uv pip install --system .[extra,tests,docs]
           # Use headless version

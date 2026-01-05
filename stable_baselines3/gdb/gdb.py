@@ -13,6 +13,8 @@ from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedul
 from stable_baselines3.common.utils import FloatSchedule, explained_variance
 from stable_baselines3.common.utils import obs_as_tensor, safe_mean
 
+from stable_baselines3.gdb.policies import ActorPolicy
+
 SelfGDB = TypeVar("SelfGDB", bound="GDB")
 
 
@@ -73,7 +75,7 @@ class GDB(OnPolicyAlgorithm):
     """
 
     policy_aliases: ClassVar[dict[str, type[BasePolicy]]] = {
-        "MlpPolicy": ActorCriticPolicy,
+        "MlpPolicy": ActorPolicy,
         "CnnPolicy": ActorCriticCnnPolicy,
         "MultiInputPolicy": MultiInputActorCriticPolicy,
     }
@@ -293,10 +295,62 @@ class GDB(OnPolicyAlgorithm):
 
         while self.num_timesteps < total_timesteps:
             
-            continue_training = self.collect_rollouts(self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps)
+            # continue_training = self.collect_rollouts(self.env, callback, self.rollout_buffer, n_rollout_steps=self.n_steps)
+            
+            obs_tensor = obs_as_tensor(self._last_obs, self.device)  # type: ignore[arg-type]
+            
+            loss = 0.0
+            
+            for _ in range(self.n_steps):
+                
+                
+                
+                actions, value, log_probs = self.policy(obs_tensor, deterministic=False)
+                
+                # print(log_probs)
+                
+                # print("actions", actions)
+                
+                actions = value
+                
+                surrogate_obs, reward = self.surrogate_env.step(obs_tensor, actions)
+                
+                loss -= reward.mean() #* log_probs.exp()
+                
+                surrogate_obs_detached = surrogate_obs.detach()
+                
+                new_obs, rewards, dones, infos = self.env.step(actions.detach().cpu().numpy())
+                
+                self._last_obs = new_obs
+                
+                new_obs_tensor = obs_as_tensor(new_obs, self.device)
+                
+                mse_diff = F.mse_loss(surrogate_obs_detached, new_obs_tensor)
+                
+                reward_diff = F.mse_loss(reward.detach(), th.tensor(rewards, device=self.device, dtype=reward.dtype).unsqueeze(-1)) 
 
-            if not continue_training:
-                break
+                if mse_diff > 1e-3 or reward_diff > 1e-3:
+                    print("Large MSE between surrogate and real env:", mse_diff.item(), reward_diff.item())
+                
+                obs_tensor = surrogate_obs + (new_obs_tensor - surrogate_obs_detached)
+                
+                self.num_timesteps += self.env.num_envs
+                
+            self.policy.optimizer.zero_grad()
+            loss.backward()
+            th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+
+            self.policy.optimizer.step()
+            
+            
+                
+            callback.update_locals(locals())
+            if not callback.on_step():
+                return False
+
+            self._update_info_buffer(infos, dones)
+                
+
 
             iteration += 1
             self._update_current_progress_remaining(self.num_timesteps, total_timesteps)
@@ -306,7 +360,6 @@ class GDB(OnPolicyAlgorithm):
                 assert self.ep_info_buffer is not None
                 self.dump_logs(iteration)
 
-            self.train()
 
         callback.on_training_end()
 

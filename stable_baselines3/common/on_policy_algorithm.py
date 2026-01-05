@@ -202,7 +202,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 
                 actions, values, log_probs = self.policy(obs_tensor)
                 
-                print("obs_tensor", obs_tensor, actions)
+
             actions = actions.cpu().numpy()
 
             # Rescale and perform action

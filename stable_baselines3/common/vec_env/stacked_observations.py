@@ -1,6 +1,6 @@
 import warnings
 from collections.abc import Mapping
-from typing import Any, Generic, Optional, TypeVar, Union
+from typing import Any, Generic, TypeVar
 
 import numpy as np
 from gymnasium import spaces
@@ -29,8 +29,8 @@ class StackedObservations(Generic[TObs]):
         self,
         num_envs: int,
         n_stack: int,
-        observation_space: Union[spaces.Box, spaces.Dict],
-        channels_order: Optional[Union[str, Mapping[str, Optional[str]]]] = None,
+        observation_space: spaces.Box | spaces.Dict,
+        channels_order: str | Mapping[str, str | None] | None = None,
     ) -> None:
         self.n_stack = n_stack
         self.observation_space = observation_space
@@ -43,7 +43,7 @@ class StackedObservations(Generic[TObs]):
             }
             self.stacked_observation_space = spaces.Dict(
                 {key: substack_obs.stacked_observation_space for key, substack_obs in self.sub_stacked_observations.items()}
-            )  # type: Union[spaces.Dict, spaces.Box] # make mypy happy
+            )  # type: spaces.Dict | spaces.Box # make mypy happy
         elif isinstance(observation_space, spaces.Box):
             if isinstance(channels_order, Mapping):
                 raise TypeError("When the observation space is Box, channels_order can't be a dict.")
@@ -66,7 +66,7 @@ class StackedObservations(Generic[TObs]):
 
     @staticmethod
     def compute_stacking(
-        n_stack: int, observation_space: spaces.Box, channels_order: Optional[str] = None
+        n_stack: int, observation_space: spaces.Box, channels_order: str | None = None
     ) -> tuple[bool, int, tuple[int, ...], int]:
         """
         Calculates the parameters in order to stack observations

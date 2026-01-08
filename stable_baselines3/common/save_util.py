@@ -12,7 +12,7 @@ import pathlib
 import pickle
 import warnings
 import zipfile
-from typing import Any, Optional, Union
+from typing import Any
 
 import cloudpickle
 import torch as th
@@ -128,7 +128,7 @@ def data_to_json(data: dict[str, Any]) -> str:
     return json_string
 
 
-def json_to_data(json_string: str, custom_objects: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+def json_to_data(json_string: str, custom_objects: dict[str, Any] | None = None) -> dict[str, Any]:
     """
     Turn JSON serialization of class-parameters back into dictionary.
 
@@ -180,8 +180,8 @@ def json_to_data(json_string: str, custom_objects: Optional[dict[str, Any]] = No
 
 @functools.singledispatch
 def open_path(
-    path: Union[str, pathlib.Path, io.BufferedIOBase], mode: str, verbose: int = 0, suffix: Optional[str] = None
-) -> Union[io.BufferedWriter, io.BufferedReader, io.BytesIO, io.BufferedRandom]:
+    path: str | pathlib.Path | io.BufferedIOBase, mode: str, verbose: int = 0, suffix: str | None = None
+) -> io.BufferedWriter | io.BufferedReader | io.BytesIO | io.BufferedRandom:
     """
     Opens a path for reading or writing with a preferred suffix and raises debug information.
     If the provided path is a derivative of io.BufferedIOBase it ensures that the file
@@ -223,7 +223,7 @@ def open_path(
 
 
 @open_path.register(str)
-def open_path_str(path: str, mode: str, verbose: int = 0, suffix: Optional[str] = None) -> io.BufferedIOBase:
+def open_path_str(path: str, mode: str, verbose: int = 0, suffix: str | None = None) -> io.BufferedIOBase:
     """
     Open a path given by a string. If writing to the path, the function ensures
     that the path exists.
@@ -241,7 +241,7 @@ def open_path_str(path: str, mode: str, verbose: int = 0, suffix: Optional[str] 
 
 
 @open_path.register(pathlib.Path)
-def open_path_pathlib(path: pathlib.Path, mode: str, verbose: int = 0, suffix: Optional[str] = None) -> io.BufferedIOBase:
+def open_path_pathlib(path: pathlib.Path, mode: str, verbose: int = 0, suffix: str | None = None) -> io.BufferedIOBase:
     """
     Open a path given by a string. If writing to the path, the function ensures
     that the path exists.
@@ -292,10 +292,10 @@ def open_path_pathlib(path: pathlib.Path, mode: str, verbose: int = 0, suffix: O
 
 
 def save_to_zip_file(
-    save_path: Union[str, pathlib.Path, io.BufferedIOBase],
-    data: Optional[dict[str, Any]] = None,
-    params: Optional[dict[str, Any]] = None,
-    pytorch_variables: Optional[dict[str, Any]] = None,
+    save_path: str | pathlib.Path | io.BufferedIOBase,
+    data: dict[str, Any] | None = None,
+    params: dict[str, Any] | None = None,
+    pytorch_variables: dict[str, Any] | None = None,
     verbose: int = 0,
 ) -> None:
     """
@@ -336,7 +336,7 @@ def save_to_zip_file(
         file.close()
 
 
-def save_to_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], obj: Any, verbose: int = 0) -> None:
+def save_to_pkl(path: str | pathlib.Path | io.BufferedIOBase, obj: Any, verbose: int = 0) -> None:
     """
     Save an object to path creating the necessary folders along the way.
     If the path exists and is a directory, it will raise a warning and rename the path.
@@ -356,7 +356,7 @@ def save_to_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], obj: Any, ver
         file.close()
 
 
-def load_from_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], verbose: int = 0) -> Any:
+def load_from_pkl(path: str | pathlib.Path | io.BufferedIOBase, verbose: int = 0) -> Any:
     """
     Load an object from the path. If a suffix is provided in the path, it will use that suffix.
     If the path does not exist, it will attempt to load using the .pkl suffix.
@@ -374,13 +374,13 @@ def load_from_pkl(path: Union[str, pathlib.Path, io.BufferedIOBase], verbose: in
 
 
 def load_from_zip_file(
-    load_path: Union[str, pathlib.Path, io.BufferedIOBase],
+    load_path: str | pathlib.Path | io.BufferedIOBase,
     load_data: bool = True,
-    custom_objects: Optional[dict[str, Any]] = None,
-    device: Union[th.device, str] = "auto",
+    custom_objects: dict[str, Any] | None = None,
+    device: th.device | str = "auto",
     verbose: int = 0,
     print_system_info: bool = False,
-) -> tuple[Optional[dict[str, Any]], TensorDict, Optional[TensorDict]]:
+) -> tuple[dict[str, Any] | None, TensorDict, TensorDict | None]:
     """
     Load model data from a .zip archive
 
@@ -439,16 +439,7 @@ def load_from_zip_file(
             pth_files = [file_name for file_name in namelist if os.path.splitext(file_name)[1] == ".pth"]
             for file_path in pth_files:
                 with archive.open(file_path, mode="r") as param_file:
-                    # File has to be seekable, but param_file is not, so load in BytesIO first
-                    # fixed in python >= 3.7
-                    file_content = io.BytesIO()
-                    file_content.write(param_file.read())
-                    # go to start of file
-                    file_content.seek(0)
-                    # Load the parameters with the right ``map_location``.
-                    # Remove ".pth" ending with splitext
-                    # Note(antonin): we cannot use weights_only=True, as it breaks with PyTorch 1.13, see GH#1911
-                    th_object = th.load(file_content, map_location=device, weights_only=False)
+                    th_object = th.load(param_file, map_location=device, weights_only=True)
                     # "tensors.pth" was renamed "pytorch_variables.pth" in v0.9.0, see PR #138
                     if file_path == "pytorch_variables.pth" or file_path == "tensors.pth":
                         # PyTorch variables (not state_dicts)

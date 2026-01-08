@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 import gymnasium as gym
 import numpy as np
@@ -129,7 +129,7 @@ def test_check_env_detailed_error(obs_tuple, method):
     class TestEnv(gym.Env):
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(3,), dtype=np.float32)
 
-        def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
+        def reset(self, *, seed: int | None = None, options: dict | None = None):
             return wrong_obs if method == "reset" else good_obs, {}
 
         def step(self, action):
@@ -156,7 +156,7 @@ class LimitedStepsTestEnv(gym.Env):
         self._steps_called = 0
         self._terminated = False
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[int, dict]:
+    def reset(self, *, seed: int | None = None, options: dict | None = None) -> tuple[int, dict]:
         super().reset(seed=seed)
 
         self._steps_called = 0

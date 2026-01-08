@@ -3,8 +3,56 @@
 Changelog
 ==========
 
-Release 2.7.1a3 (WIP)
+
+Release 2.8.0a2 (WIP)
 --------------------------
+
+Breaking Changes:
+^^^^^^^^^^^^^^^^^
+- Removed support for Python 3.9, please upgrade to Python >= 3.10
+- Set ``strict=True`` for every call to ``zip(...)``
+
+New Features:
+^^^^^^^^^^^^^
+- Added official support for Python 3.13
+
+Bug Fixes:
+^^^^^^^^^^
+- Fixed saving and loading of Torch compiled models (using ``th.compile()``) by updating ``get_parameters()``
+
+`SB3-Contrib`_
+^^^^^^^^^^^^^^
+
+`RL Zoo`_
+^^^^^^^^^
+
+`SBX`_ (SB3 + Jax)
+^^^^^^^^^^^^^^^^^^
+
+Deprecations:
+^^^^^^^^^^^^^
+- ``zip_strict()`` is not needed anymore since Python 3.10, please use ``zip(..., strict=True)`` instead
+
+Others:
+^^^^^^^
+- Updated to Python 3.10+ annotations
+- Removed some unused variables (@unexploredtest)
+- Improved type hints for distributions
+- Simplified zip file loading by removing Python 3.6 workaround and enabling ``weights_only=True`` (PyTorch 2.x)
+- Sped up saving/loading tests
+
+Documentation:
+^^^^^^^^^^^^^^
+
+
+Release 2.7.1 (2025-12-05)
+--------------------------
+
+.. warning::
+
+    Stable-Baselines3 (SB3) v2.7.1 will be the last one supporting Python 3.9 (end of life in October 2025).
+    We highly recommended you to upgrade to Python >= 3.10.
+
 
 Breaking Changes:
 ^^^^^^^^^^^^^^^^^
@@ -22,18 +70,11 @@ Bug Fixes:
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
-
-`RL Zoo`_
-^^^^^^^^^
+- Fixed tensorboard log name for ``MaskablePPO``
 
 `SBX`_ (SB3 + Jax)
 ^^^^^^^^^^^^^^^^^^
-
-Deprecations:
-^^^^^^^^^^^^^
-
-Others:
-^^^^^^^
+- Added ``CnnPolicy`` to PPO
 
 Documentation:
 ^^^^^^^^^^^^^^
@@ -46,7 +87,7 @@ Documentation:
 - Updated link to paper of community project DeepNetSlice (@AlexPasqua)
 - Added example usage of Tensorflow JS
 - Included exact versions in ONNX JS and example project
-- Made step 2 (`pip install`) of `CONTRIBUTING.md` more robust 
+- Made step 2 (`pip install`) of `CONTRIBUTING.md` more robust
 
 
 Release 2.7.0 (2025-07-25)
@@ -1904,4 +1945,4 @@ And all the contributors:
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
 @marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
-@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto @Trenza1ore @JonathanColetti
+@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto @Trenza1ore @JonathanColetti @unexploredtest

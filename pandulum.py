@@ -4,9 +4,10 @@ from stable_baselines3.gdb.gdb import GDB
 from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.evaluation import evaluate_policy
 import numpy as np
+from stable_baselines3.ppo_sg.ppo import PPOSG
 
 env_id = "Pendulum-v1"
-total_timesteps = 5_000
+total_timesteps = 50_000
 
 # PPO
 # env = gym.make(env_id, max_episode_steps=4096)
@@ -25,15 +26,15 @@ total_timesteps = 5_000
 # env.close()
 
 # # TD3
-env = gym.make(env_id)
-n_actions = env.action_space.shape[0]
-action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
-td3_model = TD3("MlpPolicy", env, verbose=1, learning_rate=3e-4, buffer_size=100_000, 
-                batch_size=256, action_noise=action_noise)
-td3_model.learn(total_timesteps=total_timesteps)
-td3_reward, _ = evaluate_policy(td3_model, env, n_eval_episodes=10)
-print(f"TD3 Mean Reward: {td3_reward:.2f}")
-env.close()
+# env = gym.make(env_id)
+# n_actions = env.action_space.shape[0]
+# action_noise = NormalActionNoise(mean=np.zeros(n_actions), sigma=0.1 * np.ones(n_actions))
+# td3_model = TD3("MlpPolicy", env, verbose=1, learning_rate=3e-4, buffer_size=100_000, 
+#                 batch_size=256, action_noise=action_noise)
+# td3_model.learn(total_timesteps=total_timesteps)
+# td3_reward, _ = evaluate_policy(td3_model, env, n_eval_episodes=10)
+# print(f"TD3 Mean Reward: {td3_reward:.2f}")
+# env.close()
 
 import torch
 import gymnasium as gym
@@ -83,17 +84,26 @@ class PendulumDynamics:
         if squeeze:
             return next_state.squeeze(0), reward.squeeze(0)
         return next_state, reward
+    
 
 # GDB
 env = gym.make(env_id, 
             #    render_mode="human", 
-               max_episode_steps=512)
+               max_episode_steps=2048)
 surrogate_env = PendulumDynamics(env=env, device="cpu")
-gdb_model = GDB("MlpPolicy", env, surrogate_env=surrogate_env, verbose=1, learning_rate=3e-4, n_steps=64)
-gdb_model.learn(total_timesteps=total_timesteps)
-gdb_reward, _ = evaluate_policy(gdb_model, env, n_eval_episodes=10)
-print(f"GDB Mean Reward: {gdb_reward:.2f}")
+
+pposg_model = PPOSG("MlpPolicy", env, surrogate_env=surrogate_env, verbose=1, learning_rate=5e-5, n_steps=256)
+pposg_model.learn(total_timesteps=total_timesteps)
+pposg_reward, _ = evaluate_policy(pposg_model, env, n_eval_episodes=10)
+print(f"PPOSG Mean Reward: {pposg_reward:.2f}")
 env.close()
+
+
+# gdb_model = GDB("MlpPolicy", env, surrogate_env=surrogate_env, verbose=1, learning_rate=5e-6, n_steps=256)
+# gdb_model.learn(total_timesteps=total_timesteps)
+# gdb_reward, _ = evaluate_policy(gdb_model, env, n_eval_episodes=10)
+# print(f"GDB Mean Reward: {gdb_reward:.2f}")
+# env.close()
 
 print("Training completed.")
 

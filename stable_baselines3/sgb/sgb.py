@@ -210,13 +210,12 @@ class GDB(OnPolicyAlgorithm):
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
             
-            print("self.rollout_buffer", len(self.rollout_buffer.actions))
             
             for action, obs in zip(self.rollout_buffer.actions, self.rollout_buffer.observations):
-                print("action", action)
+
 
                 action_pred = self.policy(obs_as_tensor(obs, self.device))[0]
-                print("action_pred", obs, action_pred)
+
             
             # Do a complete pass on the rollout buffer
             for rollout_data in self.rollout_buffer.get(self.batch_size):
@@ -301,22 +300,25 @@ class GDB(OnPolicyAlgorithm):
             
             loss = 0.0
             
+            self.policy.optimizer.zero_grad()
+            
             for i in range(self.n_steps):
-                
-                
-                
+
                 actions, value, probs = self.policy(obs_tensor, deterministic=False)
                 
                 # print(log_probs)
                 
                 # print("actions", actions)
                 
+                actions = value
+                
                 
                 surrogate_obs, reward = self.surrogate_env.step(obs_tensor, actions)
                 
                 loss -= reward.mean() * self.gamma ** i # * probs.mean()
                 
-                surrogate_obs_detached = surrogate_obs.detach()
+                surrogate_obs_detached = surrogate_obs["position_size"].detach()
+                
                 
                 new_obs, rewards, dones, infos = self.env.step(actions.detach().cpu().numpy())
                 
@@ -324,18 +326,29 @@ class GDB(OnPolicyAlgorithm):
                 
                 new_obs_tensor = obs_as_tensor(new_obs, self.device)
                 
-                mse_diff = F.mse_loss(surrogate_obs_detached, new_obs_tensor)
+                mse_diff = F.mse_loss(surrogate_obs_detached, new_obs_tensor["position_size"].to(self.device))
                 
                 reward_diff = F.mse_loss(reward.detach(), th.tensor(rewards, device=self.device, dtype=reward.dtype).unsqueeze(-1)) 
 
-                if mse_diff > 1e-3 or reward_diff > 1e-3:
+                if (mse_diff > 1e-3 or reward_diff > 1e-3) and not any([info.get('TimeLimit.truncated', None) for info in infos]):
                     print("Large MSE between surrogate and real env:", mse_diff.item(), reward_diff.item())
+                    # self.policy.optimizer.zero_grad()
+                    # loss.backward()
+                    # th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+
+                    # self.policy.optimizer.step()
+                    
+                    
+                obs_tensor = new_obs_tensor
                 
-                obs_tensor = surrogate_obs + (new_obs_tensor - surrogate_obs_detached)
+                correction = new_obs_tensor["position_size"] - surrogate_obs_detached if any([info.get('TimeLimit.truncated', None) for info in infos]) else th.zeros_like(surrogate_obs_detached)
+
+                
+                obs_tensor["position_size"] = surrogate_obs["position_size"] + correction
                 
                 self.num_timesteps += self.env.num_envs
                 
-            self.policy.optimizer.zero_grad()
+            
             loss.backward()
             th.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
 

@@ -168,6 +168,14 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
         )
         should_skip = True
 
+    if isinstance(action_space, spaces.MultiDiscrete) and len(action_space.nvec.shape) > 1:
+        warnings.warn(
+            f"The MultiDiscrete action space uses a multidimensional array {action_space.nvec} "
+            "which is currently not supported by Stable-Baselines3. "
+            "Please convert it to a 1D array using a wrapper: "
+            "https://github.com/DLR-RM/stable-baselines3/issues/2207."
+        )
+
     _check_non_zero_start(action_space, "action")
 
     if not _is_numpy_array_space(action_space):

@@ -12,6 +12,7 @@ import gymnasium as gym
 import numpy as np
 import torch as th
 from gymnasium import spaces
+from torch import Tensor
 
 import stable_baselines3 as sb3
 
@@ -630,3 +631,47 @@ def get_system_info(print_info: bool = True) -> tuple[dict[str, str], str]:
     if print_info:
         print(env_info_str)
     return env_info, env_info_str
+
+
+def pal_loss(input_: Tensor, target_: Tensor, reduction: str = "mean", alpha: float = 0.6, min_priority: float = 1e-2) -> Tensor:
+    """
+    Prioritized Approximation Loss
+    Ref: An Equivalence between Loss Functions and Non-Uniform Sampling in Experience Replay - Scott Fujimoto and al. (Neurips 2020)
+
+    :param input_: (Tensor) Predicted values.
+    :param target_: (Tensor) Ground truth values.
+    :param reduction: (str) Specifies the reduction to apply to the output 'none' | 'mean' | 'sum' - default: 'mean'
+    :param alpha: (float) - default=0.4
+    :param min_priority: (float) - default=1e-2
+
+    :return loss: (Tensor) Prioritized Approximation Loss.
+    """
+
+    if not (target_.size() == input_.size()):
+        warnings.warn(
+            f"Using a target size ({target_.size()}) that is different to the input size ({input_.size()}). "
+            "This will likely lead to incorrect results due to broadcasting. "
+            "Please ensure they have the same size.",
+            stacklevel=2,
+        )
+
+    delta = target_ - input_ # td error
+
+    # compute loss components
+    quadr = 0.5 * (delta ** 2)
+    lin = delta.abs().pow(1+alpha) / (1 + alpha)
+
+    with th.no_grad():
+        prio = th.max( delta.abs().pow(alpha), th.tensor(1.0, device=delta.device) )
+        lmbda = 1 / th.mean(prio)
+
+    loss = th.where( delta.abs() <= min_priority, quadr, lin ) * lmbda
+
+    if reduction == "none":
+        return loss
+    elif reduction == "mean":
+        return loss.mean()
+    elif reduction == "sum":
+        return th.sum(loss)
+    else:
+        raise ValueError(f"Invalid reduction mode: {reduction}. Expected one of 'none', 'mean', 'sum'.")

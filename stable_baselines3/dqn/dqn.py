@@ -6,11 +6,11 @@ import torch as th
 from gymnasium import spaces
 from torch.nn import functional as F
 
-from stable_baselines3.common.buffers import ReplayBuffer
+from stable_baselines3.common.buffers import ReplayBuffer, PALReplayBuffer
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
-from stable_baselines3.common.utils import LinearSchedule, get_parameters_by_name, polyak_update
+from stable_baselines3.common.utils import LinearSchedule, get_parameters_by_name, polyak_update, pal_loss
 from stable_baselines3.dqn.policies import CnnPolicy, DQNPolicy, MlpPolicy, MultiInputPolicy, QNetwork
 
 SelfDQN = TypeVar("SelfDQN", bound="DQN")
@@ -214,7 +214,13 @@ class DQN(OffPolicyAlgorithm):
             current_q_values = th.gather(current_q_values, dim=1, index=replay_data.actions.long())
 
             # Compute Huber loss (less sensitive to outliers)
-            loss = F.smooth_l1_loss(current_q_values, target_q_values)
+            loss = (
+                F.smooth_l1_loss(current_q_values, target_q_values)
+                if not isinstance(self.replay_buffer, PALReplayBuffer)
+                else pal_loss(current_q_values, target_q_values,
+                              alpha=self.replay_buffer.alpha,
+                              min_priority=self.replay_buffer.min_priority)
+            )
             losses.append(loss.item())
 
             # Optimize the policy

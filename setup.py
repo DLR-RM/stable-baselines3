@@ -120,7 +120,7 @@ setup(
             # For progress bar callback
             "tqdm",
             "rich",
-            # For atari games,
+            # For atari_board games,
             "ale-py>=0.9.0",
             "pillow",
         ],

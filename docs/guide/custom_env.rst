@@ -58,7 +58,7 @@ That is to say, your environment must implement the following methods (and inher
             super().__init__(env)
             assert isinstance(env.action_space, gym.spaces.MultiDiscrete)
             self.original_shape = env.action_space.nvec.shape
-            self.action_space = gym.spaces.MultiDiscrete(env.action_space.nvec.reshape(-1))
+            self.action_space = gym.spaces.MultiDiscrete(env.action_space.nvec.flatten())
 
         def step(self, action: np.ndarray):
             return self.env.step(action.reshape(self.original_shape))

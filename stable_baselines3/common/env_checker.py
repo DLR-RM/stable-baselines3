@@ -173,7 +173,7 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
             f"The MultiDiscrete action space uses a multidimensional array {action_space.nvec} "
             "which is currently not supported by Stable-Baselines3. "
             "Please convert it to a 1D array using a wrapper: "
-            "https://github.com/DLR-RM/stable-baselines3/issues/2207."
+            "https://stable-baselines3.readthedocs.io/en/master/guide/custom_env.html."
         )
 
     _check_non_zero_start(action_space, "action")

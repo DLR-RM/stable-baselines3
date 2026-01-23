@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 2.8.0a2 (WIP)
+Release 2.8.0a3 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -41,6 +41,8 @@ Others:
 - Improved type hints for distributions
 - Simplified zip file loading by removing Python 3.6 workaround and enabling ``weights_only=True`` (PyTorch 2.x)
 - Sped up saving/loading tests
+- Updated black from v25 to v26
+
 
 Documentation:
 ^^^^^^^^^^^^^^

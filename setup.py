@@ -94,11 +94,11 @@ setup(
             "pytest-env",
             "pytest-xdist",
             # Type check
-            "mypy",
+            "mypy>=1.9.0,<2",
             # Lint code and sort imports (flake8 and isort replacement)
-            "ruff>=0.3.1",
+            "ruff>=0.5.6",
             # Reformat
-            "black>=25.1.0,<26",
+            "black>=26.1.0,<27",
         ],
         "docs": [
             "sphinx>=5,<9",

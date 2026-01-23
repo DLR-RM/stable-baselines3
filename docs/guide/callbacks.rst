@@ -132,6 +132,36 @@ A child callback is for instance :ref:`StopTrainingOnRewardThreshold <StopTraini
 
         def _on_event(self) -> bool:
             return self.callback()
+        
+Minimal evaluation during training (EvalCallback)
+--------------------------------------------------
+
+It is good practice to evaluate an agent on a separate environment while training.
+Using a dedicated ``eval_env`` keeps evaluation metrics reliable and avoids
+interfering with the training process.
+
+The following example shows how to periodically evaluate a PPO agent and
+save the best-performing model during training:
+
+.. code-block:: python
+
+    import gymnasium as gym
+    from stable_baselines3 import PPO
+    from stable_baselines3.common.callbacks import EvalCallback
+
+    env = gym.make("CartPole-v1")
+    eval_env = gym.make("CartPole-v1")
+
+    eval_callback = EvalCallback(
+        eval_env,
+        best_model_save_path="./logs/",
+        log_path="./logs/",
+        eval_freq=5_000,
+        deterministic=True,
+    )
+
+    model = PPO("MlpPolicy", env, verbose=1)
+    model.learn(total_timesteps=50_000, callback=eval_callback)
 
 
 Callback Collection

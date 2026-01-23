@@ -107,14 +107,14 @@ class StackedObservations(Generic[TObs]):
         :return: The stacked reset observation
         """
         if isinstance(observation, dict):
-            return {key: self.sub_stacked_observations[key].reset(obs) for key, obs in observation.items()}
+            return {key: self.sub_stacked_observations[key].reset(obs) for key, obs in observation.items()}  # type: ignore[return-value]
 
         self.stacked_obs[...] = 0
         if self.channels_first:
             self.stacked_obs[:, -observation.shape[self.stack_dimension] :, ...] = observation
         else:
             self.stacked_obs[..., -observation.shape[self.stack_dimension] :] = observation
-        return self.stacked_obs
+        return self.stacked_obs  # type: ignore[return-value]
 
     def update(
         self,
@@ -152,7 +152,7 @@ class StackedObservations(Generic[TObs]):
                 for env_idx in range(len(infos)):
                     if "terminal_observation" in infos[env_idx]:
                         infos[env_idx]["terminal_observation"][key] = stacked_infos[key][env_idx]["terminal_observation"]
-            return stacked_obs, infos
+            return stacked_obs, infos  # type: ignore[return-value]
 
         shift = -observations.shape[self.stack_dimension]
         self.stacked_obs = np.roll(self.stacked_obs, shift, axis=self.stack_dimension)
@@ -174,4 +174,4 @@ class StackedObservations(Generic[TObs]):
             self.stacked_obs[:, shift:, ...] = observations
         else:
             self.stacked_obs[..., shift:] = observations
-        return self.stacked_obs, infos
+        return self.stacked_obs, infos  # type: ignore[return-value]

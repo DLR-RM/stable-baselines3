@@ -168,6 +168,14 @@ def _check_unsupported_spaces(env: gym.Env, observation_space: spaces.Space, act
         )
         should_skip = True
 
+    if isinstance(action_space, spaces.MultiDiscrete) and len(action_space.nvec.shape) > 1:
+        warnings.warn(
+            f"The MultiDiscrete action space uses a multidimensional array {action_space.nvec} "
+            "which is currently not supported by Stable-Baselines3. "
+            "Please convert it to a 1D array using a wrapper: "
+            "https://stable-baselines3.readthedocs.io/en/master/guide/custom_env.html."
+        )
+
     _check_non_zero_start(action_space, "action")
 
     if not _is_numpy_array_space(action_space):
@@ -269,7 +277,7 @@ def _check_obs(obs: tuple | dict | np.ndarray | int, observation_space: spaces.S
             f"of the given observation space {observation_space}. "
             f"Expected: {observation_space.shape}, actual shape: {obs.shape}"
         )
-        assert np.can_cast(obs.dtype, observation_space.dtype), (
+        assert np.can_cast(obs.dtype, observation_space.dtype), (  # type: ignore[arg-type]
             f"The observation returned by the `{method_name}()` method does not match the data type (cannot cast) "
             f"of the given observation space {observation_space}. "
             f"Expected: {observation_space.dtype}, actual dtype: {obs.dtype}"

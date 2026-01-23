@@ -43,6 +43,27 @@ That is to say, your environment must implement the following methods (and inher
             return self.env.step(action + self.env.action_space.start)
 
 
+.. note::
+
+    SB3 doesn't support ``MultiDiscrete`` spaces with multi-dimensional arrays. However, you can update your environment or use a wrapper to make your env compatible with SB3:
+
+    .. code-block:: python
+
+        import numpy as np
+        import gymnasium as gym
+
+        class ReshapeWrapper(gym.Wrapper):
+        """Allow to use MultiDiscrete() action spaces with len(nvec.shape) > 1:"""
+        def __init__(self, env: gym.Env) -> None:
+            super().__init__(env)
+            assert isinstance(env.action_space, gym.spaces.MultiDiscrete)
+            self.original_shape = env.action_space.nvec.shape
+            self.action_space = gym.spaces.MultiDiscrete(env.action_space.nvec.flatten())
+
+        def step(self, action: np.ndarray):
+            return self.env.step(action.reshape(self.original_shape))
+
+
 .. code-block:: python
 
   import gymnasium as gym

@@ -325,7 +325,7 @@ class ReplayBuffer(BaseBuffer):
         return ReplayBufferSamples(*tuple(map(self.to_torch, data)))
 
     @staticmethod
-    def _maybe_cast_dtype(dtype: np.typing.DTypeLike) -> np.typing.DTypeLike:
+    def _maybe_cast_dtype(dtype: np.typing.DTypeLike | None) -> np.typing.DTypeLike | None:
         """
         Cast `np.float64` action datatype to `np.float32`,
         keep the others dtype unchanged.

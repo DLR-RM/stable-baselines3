@@ -277,7 +277,7 @@ def _check_obs(obs: tuple | dict | np.ndarray | int, observation_space: spaces.S
             f"of the given observation space {observation_space}. "
             f"Expected: {observation_space.shape}, actual shape: {obs.shape}"
         )
-        assert np.can_cast(obs.dtype, observation_space.dtype), (
+        assert np.can_cast(obs.dtype, observation_space.dtype), (  # type: ignore[arg-type]
             f"The observation returned by the `{method_name}()` method does not match the data type (cannot cast) "
             f"of the given observation space {observation_space}. "
             f"Expected: {observation_space.dtype}, actual dtype: {obs.dtype}"

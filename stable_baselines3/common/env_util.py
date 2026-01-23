@@ -6,7 +6,7 @@ import gymnasium as gym
 
 from stable_baselines3.common.atari_wrappers import AtariWrapper
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, PoolVecEnv, SubprocVecEnv, VecEnv
 from stable_baselines3.common.vec_env.patch_gym import _patch_env
 
 
@@ -45,7 +45,7 @@ def make_vec_env(
     monitor_dir: str | None = None,
     wrapper_class: Callable[[gym.Env], gym.Env] | None = None,
     env_kwargs: dict[str, Any] | None = None,
-    vec_env_cls: type[DummyVecEnv | SubprocVecEnv] | None = None,
+    vec_env_cls: type[PoolVecEnv | DummyVecEnv | SubprocVecEnv] | None = None,
     vec_env_kwargs: dict[str, Any] | None = None,
     monitor_kwargs: dict[str, Any] | None = None,
     wrapper_kwargs: dict[str, Any] | None = None,
@@ -137,7 +137,7 @@ def make_atari_env(
     monitor_dir: str | None = None,
     wrapper_kwargs: dict[str, Any] | None = None,
     env_kwargs: dict[str, Any] | None = None,
-    vec_env_cls: type[DummyVecEnv] | type[SubprocVecEnv] | None = None,
+    vec_env_cls: type[PoolVecEnv] | type[DummyVecEnv] | type[SubprocVecEnv] | None = None,
     vec_env_kwargs: dict[str, Any] | None = None,
     monitor_kwargs: dict[str, Any] | None = None,
 ) -> VecEnv:

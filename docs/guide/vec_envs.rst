@@ -183,6 +183,59 @@ This callback can then be used to safely modify environment attributes during tr
 it calls the environment setter method.
 
 
+Checking VecEnv Implementation
+------------------------------
+
+When implementing custom vectorized environments, it's easy to make mistakes that can lead to hard-to-debug issues.
+To help with this, Stable-Baselines3 provides a ``check_vecenv`` function that validates your VecEnv implementation
+and checks for common issues.
+
+The ``check_vecenv`` function verifies:
+
+* The VecEnv properly inherits from ``stable_baselines3.common.vec_env.VecEnv``
+* Required attributes (``num_envs``, ``observation_space``, ``action_space``) are present and valid
+* The ``reset()`` method returns observations with the correct vectorized shape (batch dimension first)
+* The ``step()`` method returns properly shaped observations, rewards, dones, and infos
+* All return values have the expected types and dimensions
+* Compatibility with Stable-Baselines3 algorithms
+
+**Usage:**
+
+.. code-block:: python
+
+    from stable_baselines3.common.vec_env import DummyVecEnv
+    from stable_baselines3.common.vec_env_checker import check_vecenv
+    import gymnasium as gym
+
+    def make_env():
+        return gym.make('CartPole-v1')
+
+    # Create your VecEnv
+    vec_env = DummyVecEnv([make_env for _ in range(4)])
+
+    # Check the VecEnv implementation
+    check_vecenv(vec_env, warn=True)
+
+    vec_env.close()
+
+**When to use:**
+
+* When implementing a custom VecEnv class
+* When debugging issues with vectorized environments
+* When contributing new VecEnv implementations to ensure they follow the API
+* As a sanity check before training to catch potential issues early
+
+**Note:** Similar to ``check_env`` for single environments, ``check_vecenv`` is particularly useful during development
+and debugging. It helps catch common vectorization mistakes like incorrect batch dimensions, wrong return types, or
+missing required methods.
+
+
+VecEnv Checker
+~~~~~~~~~~~~~~
+
+.. autofunction:: stable_baselines3.common.vec_env_checker.check_vecenv
+
+
 Vectorized Environments Wrappers
 --------------------------------
 

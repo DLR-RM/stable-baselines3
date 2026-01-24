@@ -162,9 +162,8 @@ class HerReplayBuffer(DictReplayBuffer):
         super().add(obs, next_obs, action, reward, done, infos)
 
         # When episode ends, compute and store the episode length
-        for env_idx in range(self.n_envs):
-            if done[env_idx]:
-                self._compute_episode_length(env_idx)
+        for env_idx in done.nonzero()[0]:
+            self._compute_episode_length(env_idx)
 
     def _compute_episode_length(self, env_idx: int) -> None:
         """

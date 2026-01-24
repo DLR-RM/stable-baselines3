@@ -912,6 +912,7 @@ New Features:
 - Added checkpoints for replay buffer and ``VecNormalize`` statistics (@anand-bala)
 - Added option for ``Monitor`` to append to existing file instead of overriding (@sidney-tio)
 - The env checker now raises an error when using dict observation spaces and observation keys don't match observation space keys
+- Use MacOS Metal "mps" device when available
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^
@@ -969,6 +970,7 @@ Breaking Changes:
 
 New Features:
 ^^^^^^^^^^^^^
+- Save cloudpickle version
 
 
 `SB3-Contrib`_

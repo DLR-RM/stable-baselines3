@@ -71,6 +71,7 @@ Bug Fixes:
 - Update env checker to warn users when using Graph space (@dhruvmalik007).
 - Fixed memory leak in ``VecVideoRecorder`` where ``recorded_frames`` stayed in memory due to reference in the moviepy clip (@copilot)
 - Remove double space in `StopTrainingOnRewardThreshold` callback message (@sea-bass)
+- Add close method to BaseAlgorithm to prevent memory leaks in sequential training loops (#1966)
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

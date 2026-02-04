@@ -395,3 +395,81 @@ in their respective folders.
 
   In most cases, we recommend using PyTorch methods ``state_dict()`` and ``load_state_dict()`` from the policy,
   unless you need to access the optimizers' state dict too. In that case, you need to call ``get_parameters()``.
+
+
+:ref:`Stable Baselines Jax (SBX) <sbx>` policies can be manually exported to ONNX
+by using an intermediate PyTorch representation, as shown in the following example:
+
+.. code-block:: python
+  
+  import torch as th
+  import numpy as np
+  from sbx import PPO
+
+  class TorchPolicy(th.nn.Module):
+      def __init__(self, obs_dim: int, hid_dim: int, act_dim: int):
+          super().__init__()
+          self.net = th.nn.Sequential(
+              th.nn.Linear(obs_dim, hid_dim),
+              th.nn.Tanh(),
+              th.nn.Linear(hid_dim, hid_dim),
+              th.nn.Tanh(),
+              th.nn.Linear(hid_dim, act_dim),
+          )
+
+      def forward(self, x: th.Tensor) -> th.Tensor:
+          return self.net(x)
+
+  # Example: model = PPO("MlpPolicy", "Pendulum-v1")
+  PPO("MlpPolicy", "Pendulum-v1").save("PathToTrainedModel")
+  model = PPO.load("PathToTrainedModel.zip", device="cpu")
+
+  params = model.policy.actor_state.params["params"]
+  obs_dim = model.observation_space.shape
+  act_dim = model.action_space.shape
+
+  # hidden layer dimension from params
+  hid_dim = params["Dense_0"]["kernel"].shape[1]
+
+  # map params to torch state_dict keys
+  d = {
+      "net.0.bias": params["Dense_0"]["bias"],
+      "net.2.bias": params["Dense_1"]["bias"],
+      "net.4.bias": params["Dense_2"]["bias"],
+      "net.0.weight": params["Dense_0"]["kernel"].T,
+      "net.2.weight": params["Dense_1"]["kernel"].T,
+      "net.4.weight": params["Dense_2"]["kernel"].T,
+  }
+  d = {key: th.from_numpy(np.array(value)) for key, value in d.items()}
+
+  torch_policy = TorchPolicy(obs_dim[0], hid_dim, act_dim[0])
+  torch_policy.load_state_dict(d)
+  torch_policy.eval()
+
+  dummy_input = th.zeros((1, *obs_dim))
+
+  th.onnx.export(
+      torch_policy,
+      dummy_input,
+      "my_ppo_actor.onnx",
+      opset_version=18,
+      input_names=["input"],
+      output_names=["action"],
+  )
+
+
+  ##### Load and test with onnx
+
+  import onnxruntime as ort
+
+  onnx_path = "my_ppo_actor.onnx"
+  ort_sess = ort.InferenceSession(onnx_path)
+
+  observation = np.random.random((1, *obs_dim)).astype(np.float32)
+  action = ort_sess.run(None, {"input": observation})[0]
+
+  print(action)
+
+  # Check that the predictions are the same
+  with th.no_grad():
+      print(model.predict(th.as_tensor(observation), deterministic=True))

@@ -101,9 +101,9 @@ setup(
             "black>=26.1.0,<27",
         ],
         "docs": [
-            "sphinx>=5,<9",
+            "sphinx>=5,<10",
             "sphinx-autobuild",
-            "sphinx-rtd-theme>=1.3.0",
+            "sphinx-rtd-theme>=3.0.0",
             # For spelling
             "sphinxcontrib.spelling",
             # Copy button for code snippets

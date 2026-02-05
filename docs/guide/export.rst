@@ -397,60 +397,75 @@ in their respective folders.
   unless you need to access the optimizers' state dict too. In that case, you need to call ``get_parameters()``.
 
 
-:ref:`Stable Baselines Jax (SBX) <sbx>` policies can be manually exported to ONNX
+SBX (SB3 + Jax) Export
+----------------------
+
+As an example of manual export, :ref:`Stable Baselines Jax (SBX) <sbx>` policies can be exported to ONNX
 by using an intermediate PyTorch representation, as shown in the following example:
 
 .. code-block:: python
-  
-  import torch as th
+
   import numpy as np
-  from sbx import PPO
+  import sbx
+  import torch as th
+
 
   class TorchPolicy(th.nn.Module):
-      def __init__(self, obs_dim: int, hid_dim: int, act_dim: int):
+      def __init__(self, obs_dim: int, hidden_dim: int, act_dim: int):
           super().__init__()
           self.net = th.nn.Sequential(
-              th.nn.Linear(obs_dim, hid_dim),
+              th.nn.Linear(obs_dim, hidden_dim),
               th.nn.Tanh(),
-              th.nn.Linear(hid_dim, hid_dim),
+              th.nn.Linear(hidden_dim, hidden_dim),
               th.nn.Tanh(),
-              th.nn.Linear(hid_dim, act_dim),
+              th.nn.Linear(hidden_dim, act_dim),
           )
 
       def forward(self, x: th.Tensor) -> th.Tensor:
           return self.net(x)
 
-  # Example: model = PPO("MlpPolicy", "Pendulum-v1")
-  PPO("MlpPolicy", "Pendulum-v1").save("PathToTrainedModel")
-  model = PPO.load("PathToTrainedModel.zip", device="cpu")
+
+  sbx.PPO("MlpPolicy", "Pendulum-v1").save("PathToTrainedModel")
+  model = sbx.PPO.load("PathToTrainedModel.zip", device="cpu")
 
   params = model.policy.actor_state.params["params"]
+  # For debug:
+  print("=== SBX params ===")
+  for key, value in params.items():
+      if isinstance(value, dict):
+          for name, val in value.items():
+              print(f"{key}.{name}: {val.shape}", end=" ")
+      else:
+          print(f"{key}: {value.shape}", end=" ")
+  print("\n" + "=" * 20 + "\n")
+
   obs_dim = model.observation_space.shape
   act_dim = model.action_space.shape
 
-  # hidden layer dimension from params
-  hid_dim = params["Dense_0"]["kernel"].shape[1]
+  # Number of units in the hidden layers (assume a network architecture like [64, 64])
+  hidden_dim = params["Dense_0"]["kernel"].shape[1]
 
   # map params to torch state_dict keys
-  d = {
-      "net.0.bias": params["Dense_0"]["bias"],
-      "net.2.bias": params["Dense_1"]["bias"],
-      "net.4.bias": params["Dense_2"]["bias"],
-      "net.0.weight": params["Dense_0"]["kernel"].T,
-      "net.2.weight": params["Dense_1"]["kernel"].T,
-      "net.4.weight": params["Dense_2"]["kernel"].T,
-  }
-  d = {key: th.from_numpy(np.array(value)) for key, value in d.items()}
+  num_layers = len([k for k in params.keys() if k.startswith("Dense_")])
+  state_dict = {}
+  for i in range(num_layers):
+      layer_name = f"Dense_{i}"
+      state_dict[f"net.{i * 2}.bias"] = th.from_numpy(np.array(params[layer_name]["bias"]))
+      state_dict[f"net.{i * 2}.weight"] = th.from_numpy(np.array(params[layer_name]["kernel"].T))
 
-  torch_policy = TorchPolicy(obs_dim[0], hid_dim, act_dim[0])
-  torch_policy.load_state_dict(d)
+  torch_policy = TorchPolicy(obs_dim[0], hidden_dim, act_dim[0])
+  print("=== Torch params ===")
+  print(" ".join(f"{key}:{tuple(value.shape)}" for key, value in torch_policy.named_parameters()))
+  print("=" * 20 + "\n")
+
+  torch_policy.load_state_dict(state_dict)
   torch_policy.eval()
 
   dummy_input = th.zeros((1, *obs_dim))
-
+  # Use normal Torch export
   th.onnx.export(
       torch_policy,
-      dummy_input,
+      (dummy_input,),
       "my_ppo_actor.onnx",
       opset_version=18,
       input_names=["input"],
@@ -469,7 +484,10 @@ by using an intermediate PyTorch representation, as shown in the following examp
   action = ort_sess.run(None, {"input": observation})[0]
 
   print(action)
+  sbx_action, _ = model.predict(observation, deterministic=True)
+  with th.no_grad():
+      torch_action = torch_policy(th.as_tensor(observation))
 
   # Check that the predictions are the same
-  with th.no_grad():
-      print(model.predict(th.as_tensor(observation), deterministic=True))
+  assert np.allclose(sbx_action, action)
+  assert np.allclose(sbx_action, torch_action.numpy())

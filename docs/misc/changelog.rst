@@ -47,7 +47,7 @@ Others:
 Documentation:
 ^^^^^^^^^^^^^^
 - Added a note on MultiDiscrete spaces with multi-dimensional arrays and a wrapper to fix the issue (@unexploredtest)
-
+- Added an example of manual export of SBX (SB3 + Jax) model to ONNX (@m-abr)
 
 Release 2.7.1 (2025-12-05)
 --------------------------
@@ -1949,3 +1949,4 @@ And all the contributors:
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
 @marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
 @brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto @Trenza1ore @JonathanColetti @unexploredtest
+@m-abr

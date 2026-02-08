@@ -425,8 +425,9 @@ by using an intermediate PyTorch representation, as shown in the following examp
           return self.net(x)
 
 
-  sbx.PPO("MlpPolicy", "Pendulum-v1").save("PathToTrainedModel")
-  model = sbx.PPO.load("PathToTrainedModel.zip", device="cpu")
+  model = sbx.PPO("MlpPolicy", "Pendulum-v1")
+  # Also possible: load a trained model
+  # model = sbx.PPO.load("PathToTrainedModel.zip")
 
   params = model.policy.actor_state.params["params"]
   # For debug:

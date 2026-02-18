@@ -4,8 +4,9 @@ import uuid
 
 import gymnasium as gym
 import pandas
+import pytest
 
-from stable_baselines3.common.monitor import Monitor, get_monitor_files, load_results
+from stable_baselines3.common.monitor import LoadMonitorResultsError, Monitor, get_monitor_files, load_results
 
 
 def test_monitor(tmp_path):
@@ -62,9 +63,13 @@ def test_monitor_load_results(tmp_path):
     """
     test load_results on log files produced by the monitor wrapper
     """
+    original_tmp_path = tmp_path
     tmp_path = str(tmp_path)
     env1 = gym.make("CartPole-v1")
     env1.reset(seed=0)
+    with pytest.raises(LoadMonitorResultsError):
+        load_results(tmp_path)
+
     monitor_file1 = os.path.join(tmp_path, f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
     monitor_env1 = Monitor(env1, monitor_file1)
 
@@ -80,7 +85,7 @@ def test_monitor_load_results(tmp_path):
             episode_count1 += 1
             monitor_env1.reset()
 
-    results_size1 = len(load_results(os.path.join(tmp_path)).index)
+    results_size1 = len(load_results(tmp_path).index)
     assert results_size1 == episode_count1
 
     env2 = gym.make("CartPole-v1")
@@ -103,9 +108,17 @@ def test_monitor_load_results(tmp_path):
                 episode_count2 += 1
                 monitor_env2.reset()
 
-    results_size2 = len(load_results(os.path.join(tmp_path)).index)
+    results_size2 = len(load_results(tmp_path).index)
 
     assert results_size2 == (results_size1 + episode_count2)
+
+    # See GH#2213, check that no warnings are emited when loading empty monitor
+    #     empty_monitor = original_tmp_path / "demo" / "empty_monitor.csv"
+    #     empty_monitor.parent.mkdir()
+    #     empty_monitor.write_text("""#{"t_start": 1769701262.416353, "env_id": "None"}
+    # r,l,t
+    #     """)
+    #     load_results(empty_monitor.parent)
 
     os.remove(monitor_file1)
     os.remove(monitor_file2)

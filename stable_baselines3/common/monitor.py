@@ -247,6 +247,7 @@ def load_results(path: str) -> pandas.DataFrame:
             headers.append(header)
             data_frame["t"] += header["t_start"]
         data_frames.append(data_frame)
+    data_frames = [df for df in data_frames if not df.empty]
     data_frame = pandas.concat(data_frames)
     data_frame.sort_values("t", inplace=True)
     data_frame.reset_index(inplace=True)

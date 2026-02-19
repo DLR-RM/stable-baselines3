@@ -4,7 +4,7 @@ Changelog
 ==========
 
 
-Release 2.8.0a3 (WIP)
+Release 2.8.0a4 (WIP)
 --------------------------
 
 Breaking Changes:
@@ -20,7 +20,7 @@ Bug Fixes:
 ^^^^^^^^^^
 - Fixed saving and loading of Torch compiled models (using ``th.compile()``) by updating ``get_parameters()``
 - Added a warning to env-checker if a multidiscrete space has multi-dimensional array (@unexploredtest)
-- Fixed pandas.concat futurewarnings occuring when dataframes are empty by removing empty frames from the list before concatenating
+- Fixed ``pandas.concat`` futurewarnings occuring when dataframes are empty by removing empty frames from the list before concatenating
 
 `SB3-Contrib`_
 ^^^^^^^^^^^^^^

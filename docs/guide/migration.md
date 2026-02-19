@@ -36,7 +36,7 @@ and [issue #90](https://github.com/DLR-RM/stable-baselines3/issues/90).
 - SB3 requires python 3.7+ (instead of python 3.5+ for SB2)
 - Dropped MPI support
 - Dropped layer normalized policies (`MlpLnLstmPolicy`, `CnnLnLstmPolicy`)
-- LSTM policies (`` `MlpLstmPolicy` ``, `` `CnnLstmPolicy` ``) are not supported for the time being
+- LSTM policies (`MlpLstmPolicy`, `CnnLstmPolicy`) are not supported for the time being
   (see [PR #53](https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/pull/53) for a recurrent PPO implementation)
 - Dropped parameter noise for DDPG and DQN
 - PPO is now closer to the original implementation (no clipping of the value function by default), cf PPO section below

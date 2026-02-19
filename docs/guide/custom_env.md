@@ -27,14 +27,14 @@ SB3 doesn't support `Discrete` and `MultiDiscrete` spaces with `start!=0`. Howev
 import gymnasium as gym
 
 class ShiftWrapper(gym.Wrapper):
-"""Allow to use Discrete() action spaces with start!=0"""
-def __init__(self, env: gym.Env) -> None:
-    super().__init__(env)
-    assert isinstance(env.action_space, gym.spaces.Discrete)
-    self.action_space = gym.spaces.Discrete(env.action_space.n, start=0)
-
-def step(self, action: int):
-    return self.env.step(action + self.env.action_space.start)
+    """Allow to use Discrete() action spaces with start!=0"""
+    def __init__(self, env: gym.Env) -> None:
+        super().__init__(env)
+        assert isinstance(env.action_space, gym.spaces.Discrete)
+        self.action_space = gym.spaces.Discrete(env.action_space.n, start=0)
+    
+    def step(self, action: int):
+        return self.env.step(action + self.env.action_space.start)
 ```
 :::
 
@@ -46,15 +46,15 @@ import numpy as np
 import gymnasium as gym
 
 class ReshapeWrapper(gym.Wrapper):
-"""Allow to use MultiDiscrete() action spaces with len(nvec.shape) > 1:"""
-def __init__(self, env: gym.Env) -> None:
-    super().__init__(env)
-    assert isinstance(env.action_space, gym.spaces.MultiDiscrete)
-    self.original_shape = env.action_space.nvec.shape
-    self.action_space = gym.spaces.MultiDiscrete(env.action_space.nvec.flatten())
-
-def step(self, action: np.ndarray):
-    return self.env.step(action.reshape(self.original_shape))
+    """Allow to use MultiDiscrete() action spaces with len(nvec.shape) > 1:"""
+    def __init__(self, env: gym.Env) -> None:
+        super().__init__(env)
+        assert isinstance(env.action_space, gym.spaces.MultiDiscrete)
+        self.original_shape = env.action_space.nvec.shape
+        self.action_space = gym.spaces.MultiDiscrete(env.action_space.nvec.flatten())
+    
+    def step(self, action: np.ndarray):
+        return self.env.step(action.reshape(self.original_shape))
 ```
 :::
 

@@ -138,7 +138,7 @@ vec_env = make_vec_env(MyMultiTaskEnv)
 # Note: you should use vec_env.env_method("get_wrapper_attr", "mu") in Gymnasium v1.0
 print(vec_env.env_method("get_wrapper_attr", "mu"))
 # Change `mu` attribute via the setter
-vec_env.env_method("set_mu", "mu", 0.1)
+vec_env.env_method("set_mu", 0.1)
 # If the variable exists, you can also use `set_wrapper_attr` to set it
 assert vec_env.has_attr("mu")
 vec_env.env_method("set_wrapper_attr", "mu", 0.1)
@@ -157,7 +157,7 @@ class ChangeMuCallback(BaseCallback):
   The environment is implemented so that the impact of changing
   the value of mu mid-episode is visible only after the episode is over
   and the reset method has been called.
-  """"
+  """
   def __init__(self):
     super().__init__()
     # An iterator that contains the different of the friction coefficient

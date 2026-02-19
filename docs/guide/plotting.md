@@ -163,7 +163,7 @@ if len(x) >= 50:  # Only smooth if we have enough data
     x_smooth, y_smooth = window_func(x, y, 50, np.mean)
     plt.plot(x_smooth, y_smooth, linewidth=2)
     plt.xlabel("Timesteps")
-    plt.ylabel("Average Episode Reward (50-episode window)"")
+    plt.ylabel("Average Episode Reward (50-episode window)")
     plt.title("Smoothed Episode Rewards")
 
 plt.tight_layout()

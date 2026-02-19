@@ -12,7 +12,7 @@ along with some useful characteristics: support for discrete/continuous actions,
 | DQN                | ❌    | ✔️         | ❌              | ❌            | ✔️               |
 | HER                | ✔️    | ✔️         | ❌              | ❌            | ✔️               |
 | PPO                | ✔️    | ✔️         | ✔️              | ✔️            | ✔️               |
-| QR-DQN [^f1]       | ❌    | ️ ✔️        | ❌              | ❌            | ✔️               |
+| QR-DQN [^f1]       | ❌    | ️✔️        | ❌              | ❌            | ✔️               |
 | RecurrentPPO [^f1] | ✔️    | ✔️         | ✔️              | ✔️            | ✔️               |
 | SAC                | ✔️    | ❌         | ❌              | ❌            | ✔️               |
 | TD3                | ✔️    | ❌         | ❌              | ❌            | ✔️               |

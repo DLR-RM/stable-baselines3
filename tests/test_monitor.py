@@ -113,12 +113,13 @@ def test_monitor_load_results(tmp_path):
     assert results_size2 == (results_size1 + episode_count2)
 
     # See GH#2213, check that no warnings are emited when loading empty monitor
-    #     empty_monitor = original_tmp_path / "demo" / "empty_monitor.csv"
-    #     empty_monitor.parent.mkdir()
-    #     empty_monitor.write_text("""#{"t_start": 1769701262.416353, "env_id": "None"}
-    # r,l,t
-    #     """)
-    #     load_results(empty_monitor.parent)
+    empty_monitor = original_tmp_path / "demo" / "empty_monitor.csv"
+    empty_monitor.parent.mkdir()
+    empty_monitor.write_text("""#{"t_start": 1769701262.416353, "env_id": "None"}
+    r,l,t""")
+    empty_df = load_results(empty_monitor.parent)
+    assert empty_df.empty
+    assert list(empty_df.columns) == ["r", "l", "t"]
 
     os.remove(monitor_file1)
     os.remove(monitor_file2)

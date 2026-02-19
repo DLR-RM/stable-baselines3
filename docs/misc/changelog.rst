@@ -43,6 +43,7 @@ Others:
 - Simplified zip file loading by removing Python 3.6 workaround and enabling ``weights_only=True`` (PyTorch 2.x)
 - Sped up saving/loading tests
 - Updated black from v25 to v26
+- Updated monitor test to check handling of empty monitor files
 
 
 Documentation:

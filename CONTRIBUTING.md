@@ -112,7 +112,7 @@ make spelling
 
 ## Changelog and Documentation
 
-Please do not forget to update the changelog (`docs/misc/changelog.rst`) and add documentation if needed.
+Please do not forget to update the changelog (`docs/misc/changelog.md`) and add documentation if needed.
 You should add your username next to each changelog entry that you added. If this is your first contribution, please add your username at the bottom too.
 A README is present in the `docs/` folder for instructions on how to build the documentation.
 

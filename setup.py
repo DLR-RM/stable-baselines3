@@ -109,7 +109,7 @@ setup(
             # Copy button for code snippets
             "sphinx_copybutton",
             # Markdown support
-            "myst-parser>=4,<5",
+            "myst-parser>=4,<6",
         ],
         "extra": [
             # For render

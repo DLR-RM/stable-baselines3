@@ -1,12 +1,20 @@
 import json
 import os
 import uuid
+import warnings
 
 import gymnasium as gym
 import pandas
 import pytest
 
 from stable_baselines3.common.monitor import LoadMonitorResultsError, Monitor, get_monitor_files, load_results
+
+DEMO_MONITOR = """#{"t_start": 1771532779.9940808, "env_id": "Pendulum-v1"}
+r,l,t
+-1463.466035,200,1.622209"""
+
+EMPTY_MONITOR = """#{"t_start": 1771532779.9920808, "env_id": "Pendulum-v1"}
+r,l,t"""
 
 
 def test_monitor(tmp_path):
@@ -112,14 +120,25 @@ def test_monitor_load_results(tmp_path):
 
     assert results_size2 == (results_size1 + episode_count2)
 
-    # See GH#2213, check that no warnings are emited when loading empty monitor
     empty_monitor = original_tmp_path / "demo" / "empty_monitor.csv"
     empty_monitor.parent.mkdir()
-    empty_monitor.write_text("""#{"t_start": 1769701262.416353, "env_id": "None"}
-    r,l,t""")
+
+    empty_monitor.write_text(EMPTY_MONITOR)
     empty_df = load_results(empty_monitor.parent)
     assert empty_df.empty
-    assert list(empty_df.columns) == ["r", "l", "t"]
+    assert list(empty_df.columns) == ["index", "r", "l", "t"]
+
+    # Have non empty and empty dataframe
+    (empty_monitor.parent / "0.monitor.csv").write_text(DEMO_MONITOR)
+
+    # See GH#2213, check that no warnings are emitted
+    # when loading mixed empty/non-empty logs
+    with warnings.catch_warnings(record=True) as record:
+        df = load_results(empty_monitor.parent)
+
+    assert len(record) == 0
+    assert list(df.columns) == ["index", "r", "l", "t"]
+    assert len(df) == 1
 
     os.remove(monitor_file1)
     os.remove(monitor_file2)

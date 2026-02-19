@@ -249,7 +249,11 @@ def load_results(path: str) -> pandas.DataFrame:
         data_frames.append(data_frame)
     data_frames = [df for df in data_frames if not df.empty]
     if not data_frames:
-        return pandas.DataFrame(columns=["r", "l", "t"])
+        # Only empty monitor files, return empty df
+        empty_df = pandas.DataFrame(columns=["r", "l", "t"])
+        # Create index to have the same columns
+        empty_df.reset_index(inplace=True)
+        return empty_df
     data_frame = pandas.concat(data_frames)
     data_frame.sort_values("t", inplace=True)
     data_frame.reset_index(inplace=True)

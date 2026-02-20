@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
@@ -100,7 +100,7 @@ def plot_curves(
 
 
 def plot_results(
-    dirs: list[str], num_timesteps: Optional[int], x_axis: str, task_name: str, figsize: tuple[int, int] = (8, 2)
+    dirs: list[str], num_timesteps: int | None, x_axis: str, task_name: str, figsize: tuple[int, int] = (8, 2)
 ) -> None:
     """
     Plot the results using csv files from ``Monitor`` wrapper.

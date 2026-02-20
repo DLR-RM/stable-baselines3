@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
@@ -121,7 +119,7 @@ class SimpleMultiObsEnv(gym.Env):
         self.right_possible = [0, 1, 2, 12, 13, 14]
         self.up_possible = [4, 8, 12, 7, 11, 15]
 
-    def step(self, action: Union[int, np.ndarray]) -> GymStepReturn:
+    def step(self, action: int | np.ndarray) -> GymStepReturn:
         """
         Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`
@@ -166,7 +164,7 @@ class SimpleMultiObsEnv(gym.Env):
         """
         print(self.log)
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[dict[str, np.ndarray], dict]:
+    def reset(self, *, seed: int | None = None, options: dict | None = None) -> tuple[dict[str, np.ndarray], dict]:
         """
         Resets the environment state and step count and returns reset observation.
 

@@ -1,6 +1,6 @@
 import copy
 import warnings
-from typing import Any, Optional, Union
+from typing import Any
 
 import numpy as np
 import torch as th
@@ -45,7 +45,7 @@ class HerReplayBuffer(DictReplayBuffer):
         False by default.
     """
 
-    env: Optional[VecEnv]
+    env: VecEnv | None
 
     def __init__(
         self,
@@ -53,12 +53,12 @@ class HerReplayBuffer(DictReplayBuffer):
         observation_space: spaces.Dict,
         action_space: spaces.Space,
         env: VecEnv,
-        device: Union[th.device, str] = "auto",
+        device: th.device | str = "auto",
         n_envs: int = 1,
         optimize_memory_usage: bool = False,
         handle_timeout_termination: bool = True,
         n_sampled_goal: int = 4,
-        goal_selection_strategy: Union[GoalSelectionStrategy, str] = "future",
+        goal_selection_strategy: GoalSelectionStrategy | str = "future",
         copy_info_dict: bool = False,
     ):
         super().__init__(
@@ -183,7 +183,7 @@ class HerReplayBuffer(DictReplayBuffer):
         # Update the current episode start
         self._current_ep_start[env_idx] = self.pos
 
-    def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> DictReplayBufferSamples:  # type: ignore[override]
+    def sample(self, batch_size: int, env: VecNormalize | None = None) -> DictReplayBufferSamples:  # type: ignore[override]
         """
         Sample elements from the replay buffer.
 
@@ -249,7 +249,7 @@ class HerReplayBuffer(DictReplayBuffer):
         self,
         batch_indices: np.ndarray,
         env_indices: np.ndarray,
-        env: Optional[VecNormalize] = None,
+        env: VecNormalize | None = None,
     ) -> DictReplayBufferSamples:
         """
         Get the samples corresponding to the batch and environment indices.
@@ -288,7 +288,7 @@ class HerReplayBuffer(DictReplayBuffer):
         self,
         batch_indices: np.ndarray,
         env_indices: np.ndarray,
-        env: Optional[VecNormalize] = None,
+        env: VecNormalize | None = None,
     ) -> DictReplayBufferSamples:
         """
         Get the samples, sample new desired goals and compute new rewards.

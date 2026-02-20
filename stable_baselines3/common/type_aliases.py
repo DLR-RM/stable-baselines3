@@ -1,7 +1,8 @@
 """Common aliases for type hints"""
 
+from collections.abc import Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Protocol, SupportsFloat, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Protocol, SupportsFloat, Union
 
 import gymnasium as gym
 import numpy as np
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
     from stable_baselines3.common.vec_env import VecEnv
 
 GymEnv = Union[gym.Env, "VecEnv"]
-GymObs = Union[tuple, dict[str, Any], np.ndarray, int]
+GymObs = Union[tuple, dict[str, Any], np.ndarray, int]  # noqa: UP007
 GymResetReturn = tuple[GymObs, dict]
 AtariResetReturn = tuple[np.ndarray, dict[str, Any]]
 GymStepReturn = tuple[GymObs, float, bool, bool, dict]
@@ -21,7 +22,7 @@ AtariStepReturn = tuple[np.ndarray, SupportsFloat, bool, bool, dict[str, Any]]
 TensorDict = dict[str, th.Tensor]
 OptimizerStateDict = dict[str, Any]
 MaybeCallback = Union[None, Callable, list["BaseCallback"], "BaseCallback"]
-PyTorchObs = Union[th.Tensor, TensorDict]
+PyTorchObs = Union[th.Tensor, TensorDict]  # noqa: UP007
 
 # A schedule takes the remaining progress as input
 # and outputs a scalar (e.g. learning rate, clip range, ...)
@@ -53,7 +54,7 @@ class ReplayBufferSamples(NamedTuple):
     dones: th.Tensor
     rewards: th.Tensor
     # For n-step replay buffer
-    discounts: Optional[th.Tensor] = None
+    discounts: th.Tensor | None = None
 
 
 class DictReplayBufferSamples(NamedTuple):
@@ -62,7 +63,7 @@ class DictReplayBufferSamples(NamedTuple):
     next_observations: TensorDict
     dones: th.Tensor
     rewards: th.Tensor
-    discounts: Optional[th.Tensor] = None
+    discounts: th.Tensor | None = None
 
 
 class RolloutReturn(NamedTuple):
@@ -84,11 +85,11 @@ class TrainFreq(NamedTuple):
 class PolicyPredictor(Protocol):
     def predict(
         self,
-        observation: Union[np.ndarray, dict[str, np.ndarray]],
-        state: Optional[tuple[np.ndarray, ...]] = None,
-        episode_start: Optional[np.ndarray] = None,
+        observation: np.ndarray | dict[str, np.ndarray],
+        state: tuple[np.ndarray, ...] | None = None,
+        episode_start: np.ndarray | None = None,
         deterministic: bool = False,
-    ) -> tuple[np.ndarray, Optional[tuple[np.ndarray, ...]]]:
+    ) -> tuple[np.ndarray, tuple[np.ndarray, ...] | None]:
         """
         Get the policy action from an observation (and optional hidden state).
         Includes sugar-coating to handle different observations (e.g. normalizing images).

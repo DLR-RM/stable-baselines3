@@ -1,5 +1,5 @@
-from collections.abc import Iterable
-from typing import Any, Callable, Optional
+from collections.abc import Callable, Iterable
+from typing import Any
 
 import torch
 from torch.optim import Optimizer
@@ -75,7 +75,7 @@ class RMSpropTFLike(Optimizer):
             group.setdefault("centered", False)
 
     @torch.no_grad()
-    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:  # type: ignore[override]
+    def step(self, closure: Callable[[], float] | None = None) -> float | None:  # type: ignore[override]
         """Performs a single optimization step.
 
         :param closure: A closure that reevaluates the model

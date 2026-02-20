@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Optional, TypeVar, Union
+from typing import Any, ClassVar, TypeVar
 
 import numpy as np
 import torch as th
@@ -79,30 +79,30 @@ class TD3(OffPolicyAlgorithm):
 
     def __init__(
         self,
-        policy: Union[str, type[TD3Policy]],
-        env: Union[GymEnv, str],
-        learning_rate: Union[float, Schedule] = 1e-3,
+        policy: str | type[TD3Policy],
+        env: GymEnv | str,
+        learning_rate: float | Schedule = 1e-3,
         buffer_size: int = 1_000_000,  # 1e6
         learning_starts: int = 100,
         batch_size: int = 256,
         tau: float = 0.005,
         gamma: float = 0.99,
-        train_freq: Union[int, tuple[int, str]] = 1,
+        train_freq: int | tuple[int, str] = 1,
         gradient_steps: int = 1,
-        action_noise: Optional[ActionNoise] = None,
-        replay_buffer_class: Optional[type[ReplayBuffer]] = None,
-        replay_buffer_kwargs: Optional[dict[str, Any]] = None,
+        action_noise: ActionNoise | None = None,
+        replay_buffer_class: type[ReplayBuffer] | None = None,
+        replay_buffer_kwargs: dict[str, Any] | None = None,
         optimize_memory_usage: bool = False,
         n_steps: int = 1,
         policy_delay: int = 2,
         target_policy_noise: float = 0.2,
         target_noise_clip: float = 0.5,
         stats_window_size: int = 100,
-        tensorboard_log: Optional[str] = None,
-        policy_kwargs: Optional[dict[str, Any]] = None,
+        tensorboard_log: str | None = None,
+        policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
-        seed: Optional[int] = None,
-        device: Union[th.device, str] = "auto",
+        seed: int | None = None,
+        device: th.device | str = "auto",
         _init_setup_model: bool = True,
     ):
         super().__init__(

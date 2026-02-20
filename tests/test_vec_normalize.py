@@ -1,5 +1,5 @@
 import operator
-from typing import Any, Optional
+from typing import Any
 
 import gymnasium as gym
 import numpy as np
@@ -39,7 +39,7 @@ class DummyRewardEnv(gym.Env):
         truncated = self.t == len(self.returned_rewards)
         return np.array([returned_value]), returned_value, terminated, truncated, {}
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
         if seed is not None:
             super().reset(seed=seed)
         self.t = 0
@@ -62,7 +62,7 @@ class DummyDictEnv(gym.Env):
         )
         self.action_space = spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
         if seed is not None:
             super().reset(seed=seed)
         return self.observation_space.sample(), {}
@@ -94,7 +94,7 @@ class DummyMixedDictEnv(gym.Env):
         )
         self.action_space = spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
         if seed is not None:
             super().reset(seed=seed)
         return self.observation_space.sample(), {}

@@ -1,7 +1,7 @@
 import inspect
 import pickle
 from copy import deepcopy
-from typing import Any, Optional, Union
+from typing import Any
 
 import numpy as np
 from gymnasium import spaces
@@ -30,7 +30,7 @@ class VecNormalize(VecEnvWrapper):
     """
 
     obs_spaces: dict[str, spaces.Space]
-    old_obs: Union[np.ndarray, dict[str, np.ndarray]]
+    old_obs: np.ndarray | dict[str, np.ndarray]
 
     def __init__(
         self,
@@ -42,7 +42,7 @@ class VecNormalize(VecEnvWrapper):
         clip_reward: float = 10.0,
         gamma: float = 0.99,
         epsilon: float = 1e-8,
-        norm_obs_keys: Optional[list[str]] = None,
+        norm_obs_keys: list[str] | None = None,
     ):
         VecEnvWrapper.__init__(self, venv)
 
@@ -229,7 +229,7 @@ class VecNormalize(VecEnvWrapper):
         """
         return (obs * np.sqrt(obs_rms.var + self.epsilon)) + obs_rms.mean
 
-    def normalize_obs(self, obs: Union[np.ndarray, dict[str, np.ndarray]]) -> Union[np.ndarray, dict[str, np.ndarray]]:
+    def normalize_obs(self, obs: np.ndarray | dict[str, np.ndarray]) -> np.ndarray | dict[str, np.ndarray]:
         """
         Normalize observations using this VecNormalize's observations statistics.
         Calling this method does not update statistics.
@@ -258,7 +258,7 @@ class VecNormalize(VecEnvWrapper):
         # This cast is needed because `RunningMeanStd` keeps stats in float64
         return reward.astype(np.float32)
 
-    def unnormalize_obs(self, obs: Union[np.ndarray, dict[str, np.ndarray]]) -> Union[np.ndarray, dict[str, np.ndarray]]:
+    def unnormalize_obs(self, obs: np.ndarray | dict[str, np.ndarray]) -> np.ndarray | dict[str, np.ndarray]:
         # Avoid modifying by reference the original object
         obs_ = deepcopy(obs)
         if self.norm_obs:
@@ -276,7 +276,7 @@ class VecNormalize(VecEnvWrapper):
             return reward * np.sqrt(self.ret_rms.var + self.epsilon)
         return reward
 
-    def get_original_obs(self) -> Union[np.ndarray, dict[str, np.ndarray]]:
+    def get_original_obs(self) -> np.ndarray | dict[str, np.ndarray]:
         """
         Returns an unnormalized version of the observations from the most recent
         step or reset.
@@ -289,7 +289,7 @@ class VecNormalize(VecEnvWrapper):
         """
         return self.old_reward.copy()
 
-    def reset(self) -> Union[np.ndarray, dict[str, np.ndarray]]:
+    def reset(self) -> np.ndarray | dict[str, np.ndarray]:
         """
         Reset all environments
         :return: first observation of the episode

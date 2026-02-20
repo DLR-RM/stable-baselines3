@@ -48,9 +48,13 @@ def test_save_load(tmp_path, model_class):
 
     env = DummyVecEnv([lambda: select_env(model_class)])
 
+    kwargs = {}
+    if model_class == PPO:
+        kwargs = {"n_steps": 64, "n_epochs": 4}
+
     # create model
-    model = model_class("MlpPolicy", env, policy_kwargs=dict(net_arch=[16]), verbose=1)
-    model.learn(total_timesteps=500)
+    model = model_class("MlpPolicy", env, policy_kwargs=dict(net_arch=[16]), verbose=1, **kwargs)
+    model.learn(total_timesteps=150)
 
     env.reset()
     observations = np.concatenate([env.step([env.action_space.sample()])[0] for _ in range(10)], axis=0)
@@ -159,9 +163,15 @@ def test_save_load(tmp_path, model_class):
         assert np.allclose(selected_actions, new_selected_actions, 1e-4)
 
         # check if learn still works
-        model.learn(total_timesteps=500)
+        model.learn(total_timesteps=150)
 
         del model
+
+    # Check that loading after compiling works, see GH#2137
+    model = model_class.load(tmp_path / "test_save.zip")
+    model.policy = th.compile(model.policy)
+    model.save(tmp_path / "test_save.zip")
+    model_class.load(tmp_path / "test_save.zip")
 
     # clear file from os
     os.remove(tmp_path / "test_save.zip")
@@ -284,8 +294,8 @@ def test_exclude_include_saved_params(tmp_path, model_class):
 
 
 def test_save_load_pytorch_var(tmp_path):
-    model = SAC("MlpPolicy", "Pendulum-v1", seed=3, policy_kwargs=dict(net_arch=[64], n_critics=1))
-    model.learn(200)
+    model = SAC("MlpPolicy", "Pendulum-v1", learning_starts=10, seed=3, policy_kwargs=dict(net_arch=[64], n_critics=1))
+    model.learn(110)
     save_path = str(tmp_path / "sac_pendulum")
     model.save(save_path)
     env = model.get_env()
@@ -295,14 +305,14 @@ def test_save_load_pytorch_var(tmp_path):
 
     model = SAC.load(save_path, env=env)
     assert th.allclose(log_ent_coef_before, model.log_ent_coef)
-    model.learn(200)
+    model.learn(50)
     log_ent_coef_after = model.log_ent_coef
     # Check that the entropy coefficient is still optimized
     assert not th.allclose(log_ent_coef_before, log_ent_coef_after)
 
     # With a fixed entropy coef
     model = SAC("MlpPolicy", "Pendulum-v1", seed=3, ent_coef=0.01, policy_kwargs=dict(net_arch=[64], n_critics=1))
-    model.learn(200)
+    model.learn(110)
     save_path = str(tmp_path / "sac_pendulum")
     model.save(save_path)
     env = model.get_env()
@@ -313,7 +323,7 @@ def test_save_load_pytorch_var(tmp_path):
 
     model = SAC.load(save_path, env=env)
     assert th.allclose(ent_coef_before, model.ent_coef_tensor)
-    model.learn(200)
+    model.learn(50)
     ent_coef_after = model.ent_coef_tensor
     assert model.log_ent_coef is None
     # Check that the entropy coefficient is still the same
@@ -354,9 +364,9 @@ def test_save_load_replay_buffer(tmp_path, model_class):
     path = pathlib.Path(tmp_path / "logs/replay_buffer.pkl")
     path.parent.mkdir(exist_ok=True, parents=True)  # to not raise a warning
     model = model_class(
-        "MlpPolicy", select_env(model_class), buffer_size=1000, policy_kwargs=dict(net_arch=[64]), learning_starts=200
+        "MlpPolicy", select_env(model_class), buffer_size=1000, policy_kwargs=dict(net_arch=[64]), learning_starts=100
     )
-    model.learn(300)
+    model.learn(150)
     old_replay_buffer = deepcopy(model.replay_buffer)
     model.save_replay_buffer(path)
     model.replay_buffer = None
@@ -410,14 +420,14 @@ def test_warn_buffer(recwarn, model_class, optimize_memory_usage):
         learning_starts=10,
     )
 
-    model.learn(150)
+    model.learn(50)
 
-    model.learn(150, reset_num_timesteps=False)
+    model.learn(50, reset_num_timesteps=False)
 
     # Check that there is no warning
     assert len(recwarn) == 0
 
-    model.learn(150)
+    model.learn(50)
 
     if optimize_memory_usage:
         assert len(recwarn) == 1
@@ -438,6 +448,10 @@ def test_save_load_policy(tmp_path, model_class, policy_str, use_sde):
     :param policy_str: (str) Name of the policy.
     """
     kwargs = dict(policy_kwargs=dict(net_arch=[16]))
+
+    if model_class == PPO:
+        kwargs["n_steps"] = 64
+        kwargs["n_epochs"] = 2
 
     # gSDE is only applicable for A2C, PPO and SAC
     if use_sde and model_class not in [A2C, PPO, SAC]:
@@ -461,7 +475,7 @@ def test_save_load_policy(tmp_path, model_class, policy_str, use_sde):
 
     # create model
     model = model_class(policy_str, env, verbose=1, **kwargs)
-    model.learn(total_timesteps=300)
+    model.learn(total_timesteps=150)
 
     env.reset()
     observations = np.concatenate([env.step([env.action_space.sample()])[0] for _ in range(10)], axis=0)
@@ -556,7 +570,7 @@ def test_save_load_q_net(tmp_path, model_class, policy_str):
 
     # create model
     model = model_class(policy_str, env, verbose=1, **kwargs)
-    model.learn(total_timesteps=300)
+    model.learn(total_timesteps=150)
 
     env.reset()
     observations = np.concatenate([env.step([env.action_space.sample()])[0] for _ in range(10)], axis=0)

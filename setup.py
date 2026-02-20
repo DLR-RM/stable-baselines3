@@ -94,16 +94,16 @@ setup(
             "pytest-env",
             "pytest-xdist",
             # Type check
-            "mypy",
+            "mypy>=1.9.0,<2",
             # Lint code and sort imports (flake8 and isort replacement)
-            "ruff>=0.3.1",
+            "ruff>=0.5.6",
             # Reformat
-            "black>=25.1.0,<26",
+            "black>=26.1.0,<27",
         ],
         "docs": [
-            "sphinx>=5,<9",
+            "sphinx>=5,<10",
             "sphinx-autobuild",
-            "sphinx-rtd-theme>=1.3.0",
+            "sphinx-rtd-theme>=3.0.0",
             # For spelling
             "sphinxcontrib.spelling",
             # Copy button for code snippets
@@ -135,7 +135,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     version=__version__,
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     # PyPI package information.
     project_urls={
         "Code": "https://github.com/DLR-RM/stable-baselines3",
@@ -147,10 +147,10 @@ setup(
     },
     classifiers=[
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
 )
 

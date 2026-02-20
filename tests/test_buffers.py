@@ -8,6 +8,7 @@ from stable_baselines3 import A2C
 from stable_baselines3.common.buffers import DictReplayBuffer, DictRolloutBuffer, ReplayBuffer, RolloutBuffer
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.prioritized_replay_buffer import PrioritizedReplayBuffer
 from stable_baselines3.common.type_aliases import DictReplayBufferSamples, ReplayBufferSamples
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import VecNormalize
@@ -109,7 +110,9 @@ def test_replay_buffer_normalization(replay_buffer_cls):
     assert np.allclose(sample.rewards.mean(0), np.zeros(1), atol=1)
 
 
-@pytest.mark.parametrize("replay_buffer_cls", [DictReplayBuffer, DictRolloutBuffer, ReplayBuffer, RolloutBuffer])
+@pytest.mark.parametrize(
+    "replay_buffer_cls", [DictReplayBuffer, DictRolloutBuffer, ReplayBuffer, RolloutBuffer, PrioritizedReplayBuffer]
+)
 @pytest.mark.parametrize("device", ["cpu", "cuda", "auto"])
 def test_device_buffer(replay_buffer_cls, device):
     if device == "cuda" and not th.cuda.is_available():
@@ -120,6 +123,7 @@ def test_device_buffer(replay_buffer_cls, device):
         DictRolloutBuffer: DummyDictEnv,
         ReplayBuffer: DummyEnv,
         DictReplayBuffer: DummyDictEnv,
+        PrioritizedReplayBuffer: DummyEnv,
     }[replay_buffer_cls]
     env = make_vec_env(env)
 
@@ -141,7 +145,7 @@ def test_device_buffer(replay_buffer_cls, device):
     if replay_buffer_cls in [RolloutBuffer, DictRolloutBuffer]:
         # get returns an iterator over minibatches
         data = buffer.get(50)
-    elif replay_buffer_cls in [ReplayBuffer, DictReplayBuffer]:
+    elif replay_buffer_cls in [ReplayBuffer, DictReplayBuffer, PrioritizedReplayBuffer]:
         data = [buffer.sample(50)]
 
     # Check that all data are on the desired device
@@ -161,6 +165,49 @@ def test_device_buffer(replay_buffer_cls, device):
                 pass
             else:
                 raise TypeError(f"Unknown value type: {type(value)}")
+
+
+def test_prioritized_replay_buffer_multi_env_sampling():
+    env = make_vec_env("CartPole-v1", n_envs=4)
+    buffer = PrioritizedReplayBuffer(20, env.observation_space, env.action_space, device="cpu", n_envs=env.num_envs)
+
+    obs = env.reset()
+    for _ in range(5):
+        action = np.array([env.action_space.sample() for _ in range(env.num_envs)])
+        next_obs, reward, done, info = env.step(action)
+        buffer.add(obs, next_obs, action, reward, done, info)
+        obs = next_obs
+
+    np.random.seed(0)
+    sample = buffer.sample(buffer._n_stored)
+    assert sample.leaf_nodes_indices is not None
+    env_indices = sample.leaf_nodes_indices % buffer.n_envs
+    assert np.unique(env_indices).size > 1
+
+
+def test_prioritized_replay_buffer_prefers_high_priority_samples():
+    env = make_vec_env("CartPole-v1", n_envs=1)
+    buffer = PrioritizedReplayBuffer(64, env.observation_space, env.action_space, device="cpu")
+    obs = env.reset()
+    for _ in range(32):
+        action = np.array([env.action_space.sample() for _ in range(env.num_envs)])
+        next_obs, reward, done, info = env.step(action)
+        buffer.add(obs, next_obs, action, reward, done, info)
+        obs = next_obs
+
+    high_td_errors = np.zeros(buffer.size(), dtype=np.float64)
+    high_td_errors[: buffer.size() // 2] = 10.0
+    high_td_errors[buffer.size() // 2 :] = 1e-3
+    # map to leaf indices directly
+    leaf_nodes_indices = np.arange(buffer._n_stored, dtype=np.int64)
+    buffer.update_priorities(leaf_nodes_indices, high_td_errors, progress_remaining=1.0)
+
+    high_count = 0
+    for _ in range(500):
+        sample = buffer.sample(32)
+        idx = sample.leaf_nodes_indices[:16]
+        high_count += np.sum(idx < buffer._n_stored // 2).item()
+    assert high_count > 500 * 8
 
 
 @pytest.mark.parametrize(

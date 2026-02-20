@@ -53,7 +53,6 @@ class ReplayBufferSamples(NamedTuple):
     next_observations: th.Tensor
     dones: th.Tensor
     rewards: th.Tensor
-    # For n-step replay buffer
     discounts: th.Tensor | None = None
 
 
@@ -63,6 +62,28 @@ class DictReplayBufferSamples(NamedTuple):
     next_observations: TensorDict
     dones: th.Tensor
     rewards: th.Tensor
+    discounts: th.Tensor | None = None
+
+
+class PrioritizedReplayBufferSamples(NamedTuple):
+    observations: th.Tensor
+    actions: th.Tensor
+    next_observations: th.Tensor
+    dones: th.Tensor
+    rewards: th.Tensor
+    weights: th.Tensor
+    leaf_nodes_indices: np.ndarray
+    discounts: th.Tensor | None = None
+
+
+class PrioritizedDictReplayBufferSamples(NamedTuple):
+    observations: TensorDict
+    actions: th.Tensor
+    next_observations: TensorDict
+    dones: th.Tensor
+    rewards: th.Tensor
+    weights: th.Tensor
+    leaf_nodes_indices: np.ndarray
     discounts: th.Tensor | None = None
 
 

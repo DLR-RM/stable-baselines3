@@ -7,6 +7,7 @@ from gymnasium import spaces
 from torch.nn import functional as F
 
 from stable_baselines3.common.buffers import ReplayBuffer
+from stable_baselines3.common.prioritized_replay_buffer import PrioritizedReplayBuffer
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
@@ -213,8 +214,18 @@ class DQN(OffPolicyAlgorithm):
             # Retrieve the q-values for the actions from the replay buffer
             current_q_values = th.gather(current_q_values, dim=1, index=replay_data.actions.long())
 
-            # Compute Huber loss (less sensitive to outliers)
-            loss = F.smooth_l1_loss(current_q_values, target_q_values)
+            # Special case when using PER (prioritized replay):
+            # use importance sampling weights and update priorities based on td error
+            if isinstance(self.replay_buffer, PrioritizedReplayBuffer):
+                td_error = th.abs(current_q_values - target_q_values).reshape(-1, 1)
+                loss = (replay_data.weights * F.smooth_l1_loss(current_q_values, target_q_values, reduction="none")).mean()
+                assert replay_data.leaf_nodes_indices is not None, "Missing PER leaf node indices."
+                self.replay_buffer.update_priorities(
+                    replay_data.leaf_nodes_indices, td_error, self._current_progress_remaining
+                )
+            else:
+                # Compute Huber loss (less sensitive to outliers)
+                loss = F.smooth_l1_loss(current_q_values, target_q_values)
             losses.append(loss.item())
 
             # Optimize the policy

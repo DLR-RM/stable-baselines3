@@ -28,7 +28,8 @@ Notes
 - Tutorial "From Tabular Q-Learning to DQN": https://github.com/araffin/rlss23-dqn-tutorial
 
 .. note::
-    This implementation provides only vanilla Deep Q-Learning and has no extensions such as Double-DQN, Dueling-DQN and Prioritized Experience Replay.
+  This implementation provides only vanilla Deep Q-Learning and has no extensions such as Double-DQN or Dueling-DQN.
+  To enable Prioritized Experience Replay, set ``replay_buffer_class=PrioritizedReplayBuffer``.
 
 
 Can I use?
@@ -48,6 +49,16 @@ MultiDiscrete ❌      ✔️
 MultiBinary   ❌      ✔️
 Dict          ❌      ✔️️
 ============= ====== ===========
+
+- Rainbow DQN extensions:
+
+  - Double Q-Learning: ❌
+  - Prioritized Experience Replay: ✔️
+    (``from stable_baselines3.common.prioritized_replay_buffer import PrioritizedReplayBuffer``)
+  - Dueling Networks: ❌
+  - Multi-step Learning: ❌
+  - Distributional RL: ✔️ (``QR-DQN`` is implemented in the SB3-Contrib repo)
+  - Noisy Nets: ❌
 
 
 Example

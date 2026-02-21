@@ -108,6 +108,8 @@ setup(
             "sphinxcontrib.spelling",
             # Copy button for code snippets
             "sphinx_copybutton",
+            # Markdown support
+            "myst-parser>=4,<6",
         ],
         "extra": [
             # For render

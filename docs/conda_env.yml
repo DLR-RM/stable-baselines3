@@ -17,3 +17,4 @@ dependencies:
     - sphinx>=5,<10
     - sphinx_rtd_theme>=3.0
     - sphinx_copybutton
+    - myst-parser>=4,<6

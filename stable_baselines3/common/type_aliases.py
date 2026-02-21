@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from enum import Enum
+from dataclasses import dataclass, fields
 from typing import TYPE_CHECKING, Any, NamedTuple, Protocol, SupportsFloat, Union
 
 import gymnasium as gym
@@ -29,7 +30,35 @@ PyTorchObs = Union[th.Tensor, TensorDict]  # noqa: UP007
 Schedule = Callable[[float], float]
 
 
-class RolloutBufferSamples(NamedTuple):
+@dataclass(frozen=True)
+class _BufferSamples:
+    """Shared API between sample container classes."""
+
+    def __iter__(self):
+        for field in fields(self):
+            yield getattr(self, field.name)
+
+    def __getitem__(self, item: int):
+        return tuple(self)[item]
+
+    def __len__(self):
+        return len(fields(self))
+
+    @property
+    def _fields(self) -> tuple[str, ...]:
+        return tuple(field.name for field in fields(self))
+
+    def _asdict(self) -> dict[str, Any]:
+        return {field.name: getattr(self, field.name) for field in fields(self)}
+
+    def _replace(self, **kwargs: Any):
+        for field in fields(self):
+            kwargs.setdefault(field.name, getattr(self, field.name))
+        return type(self)(**kwargs)
+
+
+@dataclass(frozen=True)
+class RolloutBufferSamples(_BufferSamples):
     observations: th.Tensor
     actions: th.Tensor
     old_values: th.Tensor
@@ -38,7 +67,8 @@ class RolloutBufferSamples(NamedTuple):
     returns: th.Tensor
 
 
-class DictRolloutBufferSamples(NamedTuple):
+@dataclass(frozen=True)
+class DictRolloutBufferSamples(_BufferSamples):
     observations: TensorDict
     actions: th.Tensor
     old_values: th.Tensor
@@ -47,7 +77,8 @@ class DictRolloutBufferSamples(NamedTuple):
     returns: th.Tensor
 
 
-class ReplayBufferSamples(NamedTuple):
+@dataclass(frozen=True)
+class ReplayBufferSamples(_BufferSamples):
     observations: th.Tensor
     actions: th.Tensor
     next_observations: th.Tensor
@@ -56,7 +87,8 @@ class ReplayBufferSamples(NamedTuple):
     discounts: th.Tensor | None = None
 
 
-class DictReplayBufferSamples(NamedTuple):
+@dataclass(frozen=True)
+class DictReplayBufferSamples(_BufferSamples):
     observations: TensorDict
     actions: th.Tensor
     next_observations: TensorDict

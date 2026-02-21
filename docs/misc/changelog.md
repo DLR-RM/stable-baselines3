@@ -12,6 +12,7 @@
 ### New Features:
 
 - Added official support for Python 3.13
+- Added `check_vecenv()` function to check that a VecEnv follows the VecEnv API and is compatible with Stable-Baselines3 (@copilot)
 
 ### Bug Fixes:
 

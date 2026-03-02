@@ -38,9 +38,10 @@ class DictObsVecEnv(VecEnv):
             infos,
         )
 
-    def reset(self):
+    def reset(self) -> tuple[dict, list[dict]]:
         self.n_steps = 0
-        return {"rgb": np.zeros((self.num_envs, 86, 86), dtype=np.float32)}
+        infos = [{}] * self.num_envs
+        return {"rgb": np.zeros((self.num_envs, 86, 86), dtype=np.float32)}, infos
 
     def render(self, mode=""):
         pass

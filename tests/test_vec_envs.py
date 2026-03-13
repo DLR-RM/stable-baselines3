@@ -251,7 +251,7 @@ def test_vecenv_terminal_obs(vec_env_class, vec_env_wrapper):
             vec_env = vec_env_wrapper(vec_env)
 
     zero_acts = np.zeros((N_ENVS,), dtype="int")
-    prev_obs_b = vec_env.reset()
+    prev_obs_b, _ = vec_env.reset()
     for step_num in range(1, max(step_nums) + 1):
         obs_b, _, done_b, info_b = vec_env.step(zero_acts)
         assert len(obs_b) == N_ENVS
@@ -298,7 +298,7 @@ def check_vecenv_spaces(vec_env_class, space, obs_assert):
         return CustomGymEnv(space)
 
     vec_env = vec_env_class([make_env for _ in range(N_ENVS)])
-    obs = vec_env.reset()
+    obs, _ = vec_env.reset()
     obs_assert(obs)
 
     dones = [False] * N_ENVS
@@ -535,22 +535,22 @@ def test_vec_deterministic(vec_env_class):
 
     vec_env = vec_env_class([make_env for _ in range(N_ENVS)])
     vec_env.seed(3)
-    obs = vec_env.reset()
+    obs, _ = vec_env.reset()
     vec_env.seed(3)
-    new_obs = vec_env.reset()
+    new_obs, _ = vec_env.reset()
     assert np.allclose(new_obs, obs)
     # Test with VecNormalize (VecEnvWrapper should call self.venv.seed())
     vec_normalize = VecNormalize(vec_env)
     vec_normalize.seed(3)
-    obs = vec_env.reset()
+    obs, _ = vec_env.reset()
     vec_normalize.seed(3)
-    new_obs = vec_env.reset()
+    new_obs, _ = vec_env.reset()
     assert np.allclose(new_obs, obs)
     vec_normalize.close()
     # Similar test but with make_vec_env
     vec_env_1 = make_vec_env("Pendulum-v1", n_envs=N_ENVS, vec_env_cls=vec_env_class, seed=0)
     vec_env_2 = make_vec_env("Pendulum-v1", n_envs=N_ENVS, vec_env_cls=vec_env_class, seed=0)
-    assert np.allclose(vec_env_1.reset(), vec_env_2.reset())
+    assert np.allclose(vec_env_1.reset()[0], vec_env_2.reset()[0])
     random_actions = [vec_env_1.action_space.sample() for _ in range(N_ENVS)]
     assert np.allclose(vec_env_1.step(random_actions)[0], vec_env_2.step(random_actions)[0])
     vec_env_1.close()
@@ -577,7 +577,7 @@ def test_vec_seeding(vec_env_class):
         vec_env = vec_env_class([make_env] * n_envs)
         # Seed with no argument
         vec_env.seed()
-        obs = vec_env.reset()
+        obs, _ = vec_env.reset()
         _, rewards, _, _ = vec_env.step(np.array([vec_env.action_space.sample() for _ in range(n_envs)]))
         # Seed should be different per process
         assert not np.allclose(obs[0], obs[1])

@@ -367,7 +367,7 @@ def test_predict_with_dropout_batch_norm(model_class, env_id):
     batch_norm_stats_before = clone_helper(model)
 
     env = model.get_env()
-    observation = env.reset()
+    observation, _ = env.reset()
     first_prediction, _ = model.predict(observation, deterministic=True)
     for _ in range(5):
         prediction, _ = model.predict(observation, deterministic=True)

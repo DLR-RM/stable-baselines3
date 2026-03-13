@@ -78,11 +78,11 @@ class VecVideoRecorder(VecEnvWrapper):
         except ImportError as e:  # pragma: no cover
             raise error.DependencyNotInstalled("MoviePy is not installed, run `pip install 'gymnasium[other]'`") from e
 
-    def reset(self) -> VecEnvObs:
-        obs = self.venv.reset()
+    def reset(self) -> tuple[VecEnvObs, list[dict]]:
+        obs, info = self.venv.reset()
         if self._video_enabled():
             self._start_video_recorder()
-        return obs
+        return obs, info
 
     def _start_video_recorder(self) -> None:
         # Update video name and path

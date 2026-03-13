@@ -9,7 +9,7 @@ from gymnasium import spaces
 from stable_baselines3.common import utils
 from stable_baselines3.common.preprocessing import is_image_space
 from stable_baselines3.common.running_mean_std import RunningMeanStd
-from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvStepReturn, VecEnvWrapper
+from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvObs, VecEnvStepReturn, VecEnvWrapper
 
 
 class VecNormalize(VecEnvWrapper):
@@ -289,12 +289,12 @@ class VecNormalize(VecEnvWrapper):
         """
         return self.old_reward.copy()
 
-    def reset(self) -> np.ndarray | dict[str, np.ndarray]:
+    def reset(self) -> tuple[VecEnvObs, list[dict]]:
         """
         Reset all environments
         :return: first observation of the episode
         """
-        obs = self.venv.reset()
+        obs, info = self.venv.reset()
         assert isinstance(obs, (np.ndarray, dict))
         self.old_obs = obs
         self.returns = np.zeros(self.num_envs)
@@ -305,7 +305,7 @@ class VecNormalize(VecEnvWrapper):
             else:
                 assert isinstance(self.obs_rms, RunningMeanStd)
                 self.obs_rms.update(obs)
-        return self.normalize_obs(obs)
+        return self.normalize_obs(obs), info
 
     @staticmethod
     def load(load_path: str, venv: VecEnv) -> "VecNormalize":

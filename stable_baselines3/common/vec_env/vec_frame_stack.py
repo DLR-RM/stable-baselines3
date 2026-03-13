@@ -4,7 +4,7 @@ from typing import Any
 import numpy as np
 from gymnasium import spaces
 
-from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvWrapper
+from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvObs, VecEnvWrapper
 from stable_baselines3.common.vec_env.stacked_observations import StackedObservations
 
 
@@ -40,10 +40,10 @@ class VecFrameStack(VecEnvWrapper):
         observations, infos = self.stacked_obs.update(observations, dones, infos)  # type: ignore[arg-type]
         return observations, rewards, dones, infos
 
-    def reset(self) -> np.ndarray | dict[str, np.ndarray]:
+    def reset(self) -> tuple[VecEnvObs, list[dict]]:
         """
         Reset all environments
         """
-        observation = self.venv.reset()
+        observation, info = self.venv.reset()
         observation = self.stacked_obs.reset(observation)  # type: ignore[arg-type]
-        return observation
+        return observation, info

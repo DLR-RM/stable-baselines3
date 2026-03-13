@@ -30,7 +30,7 @@ def test_deterministic_training_common(algo):
         model = algo("MlpPolicy", env_id, seed=SEED, **kwargs)
         model.learn(N_STEPS_TRAINING)
         env = model.get_env()
-        obs = env.reset()
+        obs, _ = env.reset()
         for _ in range(100):
             action, _ = model.predict(obs, deterministic=False)
             obs, reward, _, _ = env.step(action)

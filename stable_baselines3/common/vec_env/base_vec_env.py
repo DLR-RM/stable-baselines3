@@ -106,7 +106,7 @@ class VecEnv(ABC):
         self._options = [{} for _ in range(self.num_envs)]
 
     @abstractmethod
-    def reset(self) -> VecEnvObs:
+    def reset(self) -> tuple[VecEnvObs, list[dict]]:
         """
         Reset all the environments and return an array of
         observations, or a tuple of observation arrays.
@@ -385,7 +385,7 @@ class VecEnvWrapper(VecEnv):
         self.venv.step_async(actions)
 
     @abstractmethod
-    def reset(self) -> VecEnvObs:
+    def reset(self) -> tuple[VecEnvObs, list[dict]]:
         pass
 
     @abstractmethod

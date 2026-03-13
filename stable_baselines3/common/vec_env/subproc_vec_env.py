@@ -139,7 +139,7 @@ class SubprocVecEnv(VecEnv):
         obs, rews, dones, infos, self.reset_infos = zip(*results, strict=True)  # type: ignore[assignment]
         return _stack_obs(obs, self.observation_space), np.stack(rews), np.stack(dones), infos  # type: ignore[return-value]
 
-    def reset(self) -> VecEnvObs:
+    def reset(self) -> tuple[VecEnvObs, list[dict]]:
         for env_idx, remote in enumerate(self.remotes):
             remote.send(("reset", (self._seeds[env_idx], self._options[env_idx])))
         results = [remote.recv() for remote in self.remotes]
@@ -147,7 +147,7 @@ class SubprocVecEnv(VecEnv):
         # Seeds and options are only used once
         self._reset_seeds()
         self._reset_options()
-        return _stack_obs(obs, self.observation_space)
+        return _stack_obs(obs, self.observation_space), list(self.reset_infos)
 
     def close(self) -> None:
         if self.closed:

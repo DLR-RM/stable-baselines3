@@ -4,7 +4,7 @@ import numpy as np
 from gymnasium import spaces
 
 from stable_baselines3.common.preprocessing import is_image_space, is_image_space_channels_first
-from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvStepReturn, VecEnvWrapper
+from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvObs, VecEnvStepReturn, VecEnvWrapper
 
 
 class VecTransposeImage(VecEnvWrapper):
@@ -105,13 +105,13 @@ class VecTransposeImage(VecEnvWrapper):
         assert isinstance(observations, (np.ndarray, dict))
         return self.transpose_observations(observations), rewards, dones, infos
 
-    def reset(self) -> np.ndarray | dict:
+    def reset(self) -> tuple[VecEnvObs, list[dict]]:
         """
         Reset all environments
         """
-        observations = self.venv.reset()
+        observations, info = self.venv.reset()
         assert isinstance(observations, (np.ndarray, dict))
-        return self.transpose_observations(observations)
+        return self.transpose_observations(observations), info
 
     def close(self) -> None:
         self.venv.close()

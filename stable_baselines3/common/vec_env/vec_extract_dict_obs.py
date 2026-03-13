@@ -19,10 +19,10 @@ class VecExtractDictObs(VecEnvWrapper):
         ), f"VecExtractDictObs can only be used with Dict obs space, not {venv.observation_space}"
         super().__init__(venv=venv, observation_space=venv.observation_space.spaces[self.key])
 
-    def reset(self) -> np.ndarray:
-        obs = self.venv.reset()
+    def reset(self) -> tuple[np.ndarray, list[dict]]:
+        obs, info = self.venv.reset()
         assert isinstance(obs, dict)
-        return obs[self.key]
+        return obs[self.key], info
 
     def step_wait(self) -> VecEnvStepReturn:
         obs, reward, done, infos = self.venv.step_wait()

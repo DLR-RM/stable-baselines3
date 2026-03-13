@@ -100,7 +100,7 @@ def test_make_atari_env(
     expected_frame_number_high = expected_frame_number_low + noop_max
     expected_shape = (n_envs, screen_size, screen_size, 1)
 
-    obs = venv.reset()
+    obs, _ = venv.reset()
     frame_numbers = [env.unwrapped.ale.getEpisodeFrameNumber() for env in venv.envs]
     for frame_number in frame_numbers:
         assert expected_frame_number_low <= frame_number <= expected_frame_number_high

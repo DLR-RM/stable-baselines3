@@ -38,9 +38,10 @@ class DictObsVecEnv(VecEnv):
             infos,
         )
 
-    def reset(self):
+    def reset(self) -> tuple[dict, list[dict]]:
         self.n_steps = 0
-        return {"rgb": np.zeros((self.num_envs, 86, 86), dtype=np.float32)}
+        infos = [{}] * self.num_envs
+        return {"rgb": np.zeros((self.num_envs, 86, 86), dtype=np.float32)}, infos
 
     def render(self, mode=""):
         pass
@@ -68,7 +69,8 @@ def test_extract_dict_obs():
 
     env = DictObsVecEnv()
     env = VecExtractDictObs(env, "rgb")
-    assert env.reset().shape == (4, 86, 86)
+    obs, _ = env.reset()
+    assert obs.shape == (4, 86, 86)
 
     for _ in range(10):
         obs, _, dones, infos = env.step([env.action_space.sample() for _ in range(env.num_envs)])

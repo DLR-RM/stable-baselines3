@@ -65,11 +65,11 @@ class VecMonitor(VecEnvWrapper):
         self.episode_returns = np.zeros(self.num_envs, dtype=np.float32)
         self.episode_lengths = np.zeros(self.num_envs, dtype=np.int32)
 
-    def reset(self) -> VecEnvObs:
-        obs = self.venv.reset()
+    def reset(self) -> tuple[VecEnvObs, list[dict]]:
+        obs, info = self.venv.reset()
         self.episode_returns = np.zeros(self.num_envs, dtype=np.float32)
         self.episode_lengths = np.zeros(self.num_envs, dtype=np.int32)
-        return obs
+        return obs, info
 
     def step_wait(self) -> VecEnvStepReturn:
         obs, rewards, dones, infos = self.venv.step_wait()

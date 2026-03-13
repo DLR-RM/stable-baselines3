@@ -75,12 +75,12 @@ def test_vec_transpose_skip(tmp_path, model_class):
     env = DummyVecEnv([lambda: env])
     # Stack 5 frames so the observation is now (50, 40, 40) but the env is still channel first
     env = VecFrameStack(env, 5, channels_order="first")
-    obs_shape_before = env.reset().shape
+    obs_shape_before = env.reset()[0].shape
     # The observation space should be different as the heuristic thinks it is channel last
-    assert not np.allclose(obs_shape_before, VecTransposeImage(env).reset().shape)
+    assert not np.allclose(obs_shape_before, VecTransposeImage(env).reset()[0].shape)
     env = VecTransposeImage(env, skip=True)
     # The observation space should be the same as we skip the VecTransposeImage
-    assert np.allclose(obs_shape_before, env.reset().shape)
+    assert np.allclose(obs_shape_before, env.reset()[0].shape)
 
     kwargs = dict(
         n_steps=64,
@@ -89,7 +89,7 @@ def test_vec_transpose_skip(tmp_path, model_class):
     )
     model = model_class("CnnPolicy", env, **kwargs).learn(250)
 
-    obs = env.reset()
+    obs, _ = env.reset()
     model.predict(obs, deterministic=True)
 
 

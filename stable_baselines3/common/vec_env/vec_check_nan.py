@@ -41,11 +41,11 @@ class VecCheckNan(VecEnvWrapper):
         self._observations = observations
         return observations, rewards, dones, infos
 
-    def reset(self) -> VecEnvObs:
-        observations = self.venv.reset()
+    def reset(self) -> tuple[VecEnvObs, list[dict]]:
+        observations, info = self.venv.reset()
         self._check_val(event="reset", observations=observations)
         self._observations = observations
-        return observations
+        return observations, info
 
     def check_array_value(self, name: str, value: np.ndarray) -> list[tuple[str, str]]:
         """

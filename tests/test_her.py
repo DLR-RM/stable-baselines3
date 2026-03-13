@@ -351,7 +351,7 @@ def test_truncate_last_trajectory(n_envs, recwarn, n_steps, handle_timeout_termi
         goal_selection_strategy="future",
     )
 
-    observations = venv.reset()
+    observations, _ = venv.reset()
     for _ in range(n_steps):
         actions = np.random.rand(n_envs, n_bits)
         next_observations, rewards, dones, infos = venv.step(actions)

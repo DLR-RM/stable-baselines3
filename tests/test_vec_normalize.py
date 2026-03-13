@@ -450,7 +450,7 @@ def test_sync_vec_normalize(make_env):
     original_latest_reward = env.get_original_reward()
     assert np.allclose(original_latest_reward, env.unnormalize_reward(latest_reward))
 
-    obs = env.reset()
+    obs, _ = env.reset()
     dummy_rewards = np.random.rand(10)
     original_obs = env.get_original_obs()
     # Check that unnormalization works

@@ -126,7 +126,7 @@ def test_device_buffer(replay_buffer_cls, device):
     buffer = replay_buffer_cls(100, env.observation_space, env.action_space, device=device)
 
     # Interact and store transitions
-    obs = env.reset()
+    obs, _ = env.reset()
     for _ in range(100):
         action = env.action_space.sample()
         next_obs, reward, done, info = env.step(action)

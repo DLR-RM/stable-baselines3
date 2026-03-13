@@ -435,11 +435,10 @@ class BetaDistribution(Distribution):
     The network outputs two heads (alpha and beta parameters), which are passed through
     softplus to ensure positivity, with +1 added to keep them >= 1 (unimodal regime).
 
-    References:
-    - Chou et al. "Improving Stochastic Policy Gradients in Continuous Control with
-      Deep Reinforcement Learning using the Beta Distribution" (ICML 2017)
-      https://proceedings.mlr.press/v70/chou17a.html
-    - Motivated by https://arxiv.org/abs/2111.02202
+    References: Chou et al. "Improving Stochastic Policy Gradients in Continuous Control with
+    Deep Reinforcement Learning using the Beta Distribution" (ICML 2017)
+    https://proceedings.mlr.press/v70/chou17a.html
+    and https://arxiv.org/abs/2111.02202
 
     :param action_dim: Dimension of the action space.
     """
@@ -777,6 +776,7 @@ def make_proba_distribution(
 
     if isinstance(action_space, spaces.Box):
         assert not (use_sde and use_beta), "use_sde and use_beta are mutually exclusive options for Box action spaces."
+        cls: type[BetaDistribution] | type[StateDependentNoiseDistribution] | type[DiagGaussianDistribution]
         if use_beta:
             cls = BetaDistribution
         elif use_sde:

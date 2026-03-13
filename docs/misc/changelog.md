@@ -21,9 +21,22 @@
 
 ### [SB3-Contrib]
 
+- Set `strict=True` for every call to `zip(...)`
+- Fix RecurrentPPO and MaskablePPO forward and predict do not reshape action before clip it (@immortal-boy)
+- Do not call `forward()` method directly in `RecurrentPPO` (@immortal-boy)
+- Switched to Markdown documentation (using MyST parser)
+
+
 ### [RL Zoo]
 
+- Set ``strict=True`` for every call to ``zip(...)``
+- Allow to specify `env_kwargs` in the hyperparam config
+- Switched to Markdown documentation (using MyST parser)
+
+
 ### [SBX] (SB3 + Jax)
+
+- Increased Jax version range and use tf-nightly
 
 ### Deprecations:
 
@@ -43,7 +56,7 @@
 
 - Added a note on MultiDiscrete spaces with multi-dimensional arrays and a wrapper to fix the issue (@unexploredtest)
 - Added an example of manual export of SBX (SB3 + Jax) model to ONNX (@m-abr)
-- Switched to mardown documentation (using MyST parser)
+- Switched to Markdown documentation (using MyST parser)
 
 ## Release 2.7.1 (2025-12-05)
 

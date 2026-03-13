@@ -435,7 +435,11 @@ class BetaDistribution(Distribution):
     The network outputs two heads (alpha and beta parameters), which are passed through
     softplus to ensure positivity, with +1 added to keep them >= 1 (unimodal regime).
 
-    Reference: https://arxiv.org/abs/2111.02202
+    References:
+    - Chou et al. "Improving Stochastic Policy Gradients in Continuous Control with
+      Deep Reinforcement Learning using the Beta Distribution" (ICML 2017)
+      https://proceedings.mlr.press/v70/chou17a.html
+    - Motivated by https://arxiv.org/abs/2111.02202
 
     :param action_dim: Dimension of the action space.
     """

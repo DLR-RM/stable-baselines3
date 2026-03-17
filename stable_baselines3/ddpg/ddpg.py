@@ -26,6 +26,8 @@ class DDPG(TD3):
     :param learning_rate: learning rate for adam optimizer,
         the same learning rate will be used for all networks (Q-Values, Actor and Value function)
         it can be a function of the current progress remaining (from 1 to 0)
+    :param qf_learning_rate: learning rate for the critic (Q-value function) optimizer.
+        If ``None``, the same ``learning_rate`` is used for both actor and critic.
     :param buffer_size: size of the replay buffer
     :param learning_starts: how many steps of the model to collect transitions for before learning starts
     :param batch_size: Minibatch size for each gradient update
@@ -59,6 +61,7 @@ class DDPG(TD3):
         policy: str | type[TD3Policy],
         env: GymEnv | str,
         learning_rate: float | Schedule = 1e-3,
+        qf_learning_rate: float | None = None,
         buffer_size: int = 1_000_000,  # 1e6
         learning_starts: int = 100,
         batch_size: int = 256,
@@ -82,6 +85,7 @@ class DDPG(TD3):
             policy=policy,
             env=env,
             learning_rate=learning_rate,
+            qf_learning_rate=qf_learning_rate,
             buffer_size=buffer_size,
             learning_starts=learning_starts,
             batch_size=batch_size,

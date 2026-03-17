@@ -87,6 +87,38 @@ def test_sac(ent_coef):
     model.learn(total_timesteps=200)
 
 
+@pytest.mark.parametrize("model_class", [TD3, DDPG, SAC])
+def test_qf_learning_rate(model_class):
+    """Test that independent critic learning rate (qf_learning_rate) works correctly.
+    See GH#338."""
+    actor_lr = 1e-4
+    critic_lr = 1e-3
+
+    model = model_class(
+        "MlpPolicy",
+        "Pendulum-v1",
+        learning_rate=actor_lr,
+        qf_learning_rate=critic_lr,
+        policy_kwargs=dict(net_arch=[64, 64]),
+        learning_starts=100,
+        buffer_size=250,
+        verbose=1,
+    )
+
+    # Check that the initial learning rates are set correctly
+    actor_optimizer_lr = model.actor.optimizer.param_groups[0]["lr"]
+    critic_optimizer_lr = model.critic.optimizer.param_groups[0]["lr"]
+    assert actor_optimizer_lr == actor_lr, f"Actor LR should be {actor_lr}, got {actor_optimizer_lr}"
+    assert critic_optimizer_lr == critic_lr, f"Critic LR should be {critic_lr}, got {critic_optimizer_lr}"
+
+    # Train and verify the learning rates are maintained
+    model.learn(total_timesteps=200)
+
+    # After training, actor LR may change (if using schedule), but critic LR should stay constant
+    critic_optimizer_lr = model.critic.optimizer.param_groups[0]["lr"]
+    assert critic_optimizer_lr == critic_lr, f"Critic LR should remain {critic_lr}, got {critic_optimizer_lr}"
+
+
 @pytest.mark.parametrize("n_critics", [1, 3])
 def test_n_critics(n_critics):
     # Test SAC with different number of critics, for TD3, n_critics=1 corresponds to DDPG

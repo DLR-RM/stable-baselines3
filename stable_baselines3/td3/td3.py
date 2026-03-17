@@ -10,7 +10,7 @@ from stable_baselines3.common.noise import ActionNoise
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
 from stable_baselines3.common.policies import BasePolicy, ContinuousCritic
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
-from stable_baselines3.common.utils import get_parameters_by_name, polyak_update
+from stable_baselines3.common.utils import get_parameters_by_name, polyak_update, update_learning_rate
 from stable_baselines3.td3.policies import Actor, CnnPolicy, MlpPolicy, MultiInputPolicy, TD3Policy
 
 SelfTD3 = TypeVar("SelfTD3", bound="TD3")
@@ -30,6 +30,8 @@ class TD3(OffPolicyAlgorithm):
     :param learning_rate: learning rate for adam optimizer,
         the same learning rate will be used for all networks (Q-Values, Actor and Value function)
         it can be a function of the current progress remaining (from 1 to 0)
+    :param qf_learning_rate: learning rate for the critic (Q-value function) optimizer.
+        If ``None``, the same ``learning_rate`` is used for both actor and critic.
     :param buffer_size: size of the replay buffer
     :param learning_starts: how many steps of the model to collect transitions for before learning starts
     :param batch_size: Minibatch size for each gradient update
@@ -82,6 +84,7 @@ class TD3(OffPolicyAlgorithm):
         policy: str | type[TD3Policy],
         env: GymEnv | str,
         learning_rate: float | Schedule = 1e-3,
+        qf_learning_rate: float | None = None,
         buffer_size: int = 1_000_000,  # 1e6
         learning_starts: int = 100,
         batch_size: int = 256,
@@ -135,6 +138,7 @@ class TD3(OffPolicyAlgorithm):
         self.policy_delay = policy_delay
         self.target_noise_clip = target_noise_clip
         self.target_policy_noise = target_policy_noise
+        self.qf_learning_rate = qf_learning_rate
 
         if _init_setup_model:
             self._setup_model()
@@ -148,6 +152,10 @@ class TD3(OffPolicyAlgorithm):
         self.actor_batch_norm_stats_target = get_parameters_by_name(self.actor_target, ["running_"])
         self.critic_batch_norm_stats_target = get_parameters_by_name(self.critic_target, ["running_"])
 
+        # Set the initial critic learning rate if qf_learning_rate is specified
+        if self.qf_learning_rate is not None:
+            update_learning_rate(self.critic.optimizer, self.qf_learning_rate)
+
     def _create_aliases(self) -> None:
         self.actor = self.policy.actor
         self.actor_target = self.policy.actor_target
@@ -159,7 +167,13 @@ class TD3(OffPolicyAlgorithm):
         self.policy.set_training_mode(True)
 
         # Update learning rate according to lr schedule
-        self._update_learning_rate([self.actor.optimizer, self.critic.optimizer])
+        if self.qf_learning_rate is not None:
+            # Actor follows the schedule, critic uses a constant learning rate
+            self._update_learning_rate([self.actor.optimizer])
+            update_learning_rate(self.critic.optimizer, self.qf_learning_rate)
+            self.logger.record("train/qf_learning_rate", self.qf_learning_rate)
+        else:
+            self._update_learning_rate([self.actor.optimizer, self.critic.optimizer])
 
         actor_losses, critic_losses = [], []
         for _ in range(gradient_steps):

@@ -68,7 +68,10 @@ class DummyVecEnv(VecEnv):
             if self.buf_dones[env_idx]:
                 # save final observation where user can get it, then reset
                 self.buf_infos[env_idx]["terminal_observation"] = obs
-                obs, self.reset_infos[env_idx] = self.envs[env_idx].reset()
+                maybe_options = {"options": self._options[env_idx]} if self._options[env_idx] else {}
+                obs, self.reset_infos[env_idx] = self.envs[env_idx].reset(
+                    seed=self._seeds[env_idx], **maybe_options
+                )
             self._save_obs(env_idx, obs)
         return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones), deepcopy(self.buf_infos))
 

@@ -215,6 +215,42 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
     vec_env.close()
 
 
+@pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
+def test_vecenv_options_on_termination_reset(vec_env_class):
+    """Test that options and seeds set via set_options() are passed
+    to the environment when it auto-resets due to episode termination
+    during step(). See GH#1790."""
+
+    def make_env():
+        env = CustomGymEnv(spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32))
+        # Use short episodes so termination happens quickly
+        env.ep_length = 2
+        return env
+
+    vec_env = vec_env_class([make_env for _ in range(N_ENVS)])
+
+    # First do an explicit reset (no options)
+    vec_env.reset()
+    assert vec_env.get_attr("current_options") == [None] * N_ENVS
+
+    # Now set options AFTER reset — these should be used when step() triggers auto-reset
+    options = {"test_option": 42}
+    vec_env.set_options(options)
+
+    # Step until episode terminates (ep_length=2, so 2 steps triggers truncation)
+    for _ in range(2):
+        vec_env.step([vec_env.action_space.sample() for _ in range(N_ENVS)])
+
+    # After auto-reset from termination, options should have been passed
+    current_options = vec_env.get_attr("current_options")
+    assert current_options == [options] * N_ENVS, (
+        f"Options were not passed during auto-reset on termination. "
+        f"Expected {[options] * N_ENVS}, got {current_options}"
+    )
+
+    vec_env.close()
+
+
 class StepEnv(gym.Env):
     def __init__(self, max_steps):
         """Gym environment for testing that terminal observation is inserted

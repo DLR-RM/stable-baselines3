@@ -231,8 +231,15 @@ def test_report_video_to_tensorboard(tmp_path, read_log, capsys):
 
     video = Video(frames=th.rand(1, 20, 3, 16, 16), fps=20)
     writer = make_output_format("tensorboard", tmp_path)
-    writer.write({"video": video}, key_excluded={"video": ()})
+    try:
+        writer.write({"video": video}, key_excluded={"video": ()})
+    except TypeError:
+        writer.close()
+        # Needs PyTorch >= 2.10, `newshape` throws an error for NumPy 2.4+
+        pytest.skip("PyTorch 2.10+ is needed for NumPy v2.4+")
 
+    # Note(antonin): this test can fail because PyTorch doesn't support
+    # newer moviepy version: https://github.com/pytorch/pytorch/issues/147317
     if is_moviepy_installed():
         assert not read_log("tensorboard").empty
     else:
@@ -387,7 +394,7 @@ def test_key_length(tmp_path):
     }
     long_key_excluded = {k: None for k in long_key_dict}
     # keys truncated and aliased -- not OK
-    with pytest.raises(ValueError, match="Key.*truncated"):
+    with pytest.raises(ValueError, match=r"Key.*truncated"):
         writer.write(long_key_dict, long_key_excluded)
 
     # Just long enough to not be truncated now

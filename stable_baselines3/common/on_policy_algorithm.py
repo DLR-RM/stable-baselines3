@@ -1,7 +1,7 @@
 import sys
 import time
 import warnings
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, TypeVar
 
 import numpy as np
 import torch as th
@@ -60,9 +60,9 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
     def __init__(
         self,
-        policy: Union[str, type[ActorCriticPolicy]],
-        env: Union[GymEnv, str],
-        learning_rate: Union[float, Schedule],
+        policy: str | type[ActorCriticPolicy],
+        env: GymEnv | str,
+        learning_rate: float | Schedule,
         n_steps: int,
         gamma: float,
         gae_lambda: float,
@@ -71,17 +71,17 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         max_grad_norm: float,
         use_sde: bool,
         sde_sample_freq: int,
-        rollout_buffer_class: Optional[type[RolloutBuffer]] = None,
-        rollout_buffer_kwargs: Optional[dict[str, Any]] = None,
+        rollout_buffer_class: type[RolloutBuffer] | None = None,
+        rollout_buffer_kwargs: dict[str, Any] | None = None,
         stats_window_size: int = 100,
-        tensorboard_log: Optional[str] = None,
+        tensorboard_log: str | None = None,
         monitor_wrapper: bool = True,
-        policy_kwargs: Optional[dict[str, Any]] = None,
+        policy_kwargs: dict[str, Any] | None = None,
         verbose: int = 0,
-        seed: Optional[int] = None,
-        device: Union[th.device, str] = "auto",
+        seed: int | None = None,
+        device: th.device | str = "auto",
         _init_setup_model: bool = True,
-        supported_action_spaces: Optional[tuple[type[spaces.Space], ...]] = None,
+        supported_action_spaces: tuple[type[spaces.Space], ...] | None = None,
     ):
         super().__init__(
             policy=policy,
@@ -198,7 +198,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             with th.no_grad():
                 # Convert to pytorch tensor or to TensorDict
-                obs_tensor = obs_as_tensor(self._last_obs, self.device)
+                obs_tensor = obs_as_tensor(self._last_obs, self.device)  # type: ignore[arg-type]
                 actions, values, log_probs = self.policy(obs_tensor)
             actions = actions.cpu().numpy()
 
@@ -274,7 +274,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         """
         raise NotImplementedError
 
-    def _dump_logs(self, iteration: int) -> None:
+    def dump_logs(self, iteration: int = 0) -> None:
         """
         Write log.
 
@@ -285,7 +285,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         time_elapsed = max((time.time_ns() - self.start_time) / 1e9, sys.float_info.epsilon)
         fps = int((self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
-        self.logger.record("time/iterations", iteration, exclude="tensorboard")
+        if iteration > 0:
+            self.logger.record("time/iterations", iteration, exclude="tensorboard")
         if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
             self.logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
             self.logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
@@ -331,7 +332,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             # Display training infos
             if log_interval is not None and iteration % log_interval == 0:
                 assert self.ep_info_buffer is not None
-                self._dump_logs(iteration)
+                self.dump_logs(iteration)
 
             self.train()
 

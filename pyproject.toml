@@ -1,8 +1,8 @@
 [tool.ruff]
 # Same as Black.
 line-length = 127
-# Assume Python 3.9
-target-version = "py39"
+# Assume Python 3.10
+target-version = "py310"
 
 [tool.ruff.lint]
 # See https://beta.ruff.rs/docs/rules/
@@ -39,12 +39,17 @@ exclude = """(?x)(
 env = ["PYTHONHASHSEED=0"]
 
 filterwarnings = [
+    # A2C/PPO on GPU
+    "ignore:You are trying to run (PPO|A2C) on the GPU",
     # Tensorboard warnings
     "ignore::DeprecationWarning:tensorboard",
     # Gymnasium warnings
     "ignore::UserWarning:gymnasium",
     # tqdm warning about rich being experimental
     "ignore:rich is experimental",
+    # Pygame warnings about pkg_resources
+    "ignore:pkg_resources is deprecated",
+    "ignore:Deprecated call to `pkg_resources",
 ]
 markers = [
     "expensive: marks tests as expensive (deselect with '-m \"not expensive\"')",

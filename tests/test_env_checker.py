@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 import gymnasium as gym
 import numpy as np
@@ -23,7 +23,7 @@ class ActionDictTestEnv(gym.Env):
         info = {}
         return observation, reward, terminated, truncated, info
 
-    def reset(self, seed=None):
+    def reset(self, *, seed=None, options=None):
         return np.array([1.0, 1.5, 0.5], dtype=self.observation_space.dtype), {}
 
     def render(self):
@@ -37,26 +37,20 @@ def test_check_env_dict_action():
         check_env(env=test_env, warn=True)
 
 
-class SequenceObservationEnv(gym.Env):
+class CustomEnv(gym.Env):
     metadata = {"render_modes": [], "render_fps": 2}
 
     def __init__(self, render_mode=None):
+        # Test Sequence obs
         self.observation_space = spaces.Sequence(spaces.Discrete(8))
         self.action_space = spaces.Discrete(4)
 
-    def reset(self, seed=None, options=None):
+    def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
         return self.observation_space.sample(), {}
 
     def step(self, action):
         return self.observation_space.sample(), 1.0, False, False, {}
-
-
-def test_check_env_sequence_obs():
-    test_env = SequenceObservationEnv()
-
-    with pytest.warns(Warning, match="Sequence.*not supported"):
-        check_env(env=test_env, warn=True)
 
 
 @pytest.mark.parametrize(
@@ -135,7 +129,7 @@ def test_check_env_detailed_error(obs_tuple, method):
     class TestEnv(gym.Env):
         action_space = spaces.Box(low=-1.0, high=1.0, shape=(3,), dtype=np.float32)
 
-        def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
+        def reset(self, *, seed: int | None = None, options: dict | None = None):
             return wrong_obs if method == "reset" else good_obs, {}
 
         def step(self, action):
@@ -162,7 +156,7 @@ class LimitedStepsTestEnv(gym.Env):
         self._steps_called = 0
         self._terminated = False
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None) -> tuple[int, dict]:
+    def reset(self, *, seed: int | None = None, options: dict | None = None) -> tuple[int, dict]:
         super().reset(seed=seed)
 
         self._steps_called = 0
@@ -191,3 +185,89 @@ def test_check_env_single_step_env():
 
     # This should not throw
     check_env(env=test_env, warn=True)
+
+
+class SimpleGraphEnv(CustomEnv):
+    def __init__(self):
+        self.action_space = spaces.Discrete(2)
+        self.observation_space = spaces.Graph(
+            node_space=spaces.Box(low=0, high=1, shape=(2,)),
+            edge_space=spaces.Box(low=0, high=1, shape=(3,)),
+        )
+
+
+class SimpleDictGraphEnv(CustomEnv):
+    def __init__(self):
+        self.action_space = spaces.Discrete(2)
+        self.observation_space = spaces.Dict(
+            {
+                "test": spaces.Graph(
+                    node_space=spaces.Box(low=0, high=1, shape=(2,)),
+                    edge_space=spaces.Box(low=0, high=1, shape=(3,)),
+                )
+            }
+        )
+
+
+def test_check_env_graph_space():
+    # Should emit a warning about Graph space, but not fail
+    with pytest.warns(UserWarning, match=r"Graph.*not supported"):
+        check_env(SimpleGraphEnv(), warn=True)
+
+    with pytest.warns(UserWarning, match=r"Graph.*not supported"):
+        check_env(SimpleDictGraphEnv(), warn=True)
+
+
+class SequenceInDictEnv(CustomEnv):
+    """Test env with Sequence space inside Dict space."""
+
+    def __init__(self):
+        self.action_space = spaces.Discrete(2)
+        self.observation_space = spaces.Dict(
+            {"seq": spaces.Sequence(spaces.Box(low=-100, high=100, shape=(1,), dtype=np.float32))}
+        )
+
+
+class SequenceInTupleEnv(CustomEnv):
+    """Test env with Sequence space inside Tuple space."""
+
+    def __init__(self):
+        self.action_space = spaces.Discrete(2)
+        self.observation_space = spaces.Tuple((spaces.Sequence(spaces.Box(low=-100, high=100, shape=(1,), dtype=np.float32)),))
+
+
+class SequenceInOneOfEnv(CustomEnv):
+    """Test env with Sequence space inside OneOf space."""
+
+    def __init__(self):
+        self.action_space = spaces.Discrete(2)
+        self.observation_space = spaces.OneOf(
+            (
+                spaces.Sequence(spaces.Box(low=-100, high=100, shape=(1,), dtype=np.float32)),
+                spaces.Discrete(3),
+            )
+        )
+
+
+@pytest.mark.parametrize("env_class", [CustomEnv, SequenceInDictEnv])
+def test_check_env_sequence_obs(env_class):
+    with pytest.warns(Warning, match=r"Sequence.*not supported"):
+        check_env(env_class(), warn=True)
+
+
+def test_check_env_sequence_tuple():
+    with (
+        pytest.warns(Warning, match=r"Sequence.*not supported"),
+        pytest.warns(Warning, match=r"Tuple.*not supported"),
+    ):
+        check_env(SequenceInTupleEnv(), warn=True)
+
+
+def test_check_env_oneof():
+    try:
+        env = SequenceInOneOfEnv()
+    except AttributeError:
+        pytest.skip("OneOf not supported by current Gymnasium version")
+
+    with pytest.warns(Warning, match=r"OneOf.*not supported"):
+        check_env(env, warn=True)

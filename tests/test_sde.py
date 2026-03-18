@@ -62,7 +62,7 @@ def test_sde_check():
 
 
 def test_only_sde_squashed():
-    with pytest.raises(AssertionError, match="use_sde=True"):
+    with pytest.raises(AssertionError, match=r"use_sde=True"):
         PPO("MlpPolicy", "Pendulum-v1", use_sde=False, policy_kwargs=dict(squash_output=True))
 
 

@@ -202,7 +202,7 @@ def test_offpolicy_multi_env(model_class):
 
 
 def test_warn_dqn_multi_env():
-    with pytest.warns(UserWarning, match="The number of environments used is greater"):
+    with pytest.warns(UserWarning, match=r"The number of environments used is greater"):
         DQN(
             "MlpPolicy",
             make_vec_env("CartPole-v1", n_envs=2),
@@ -231,7 +231,7 @@ def test_ppo_warnings():
     # torch.std(some_length_1_tensor) == NaN
     # advantage normalization is automatically deactivated
     # in that case
-    with pytest.warns(UserWarning, match="there will be a truncated mini-batch of size 1"):
+    with pytest.warns(UserWarning, match=r"there will be a truncated mini-batch of size 1"):
         model = PPO("MlpPolicy", "Pendulum-v1", n_steps=64, batch_size=63, verbose=1)
         model.learn(64)
 
@@ -239,7 +239,7 @@ def test_ppo_warnings():
     assert loss > 0
     assert not np.isnan(loss)  # check not nan (since nan does not equal nan)
 
-    with pytest.warns(UserWarning, match="You are trying to run PPO on the GPU"):
+    with pytest.warns(UserWarning, match=r"You are trying to run PPO on the GPU"):
         model = PPO("MlpPolicy", "Pendulum-v1")
         # Pretend to be on the GPU
         model.device = th.device("cuda")

@@ -3,10 +3,9 @@ import os
 import platform
 import random
 import re
+import warnings
 from collections import deque
 from collections.abc import Iterable
-from itertools import zip_longest
-from typing import Optional, Union
 
 import cloudpickle
 import gymnasium as gym
@@ -78,7 +77,85 @@ def update_learning_rate(optimizer: th.optim.Optimizer, learning_rate: float) ->
         param_group["lr"] = learning_rate
 
 
-def get_schedule_fn(value_schedule: Union[Schedule, float]) -> Schedule:
+class FloatSchedule:
+    """
+    Wrapper that ensures the output of a Schedule is cast to float.
+    Can wrap either a constant value or an existing callable Schedule.
+
+    :param value_schedule: Constant value or callable schedule
+            (e.g. LinearSchedule, ConstantSchedule)
+    """
+
+    def __init__(self, value_schedule: Schedule | float):
+        if isinstance(value_schedule, FloatSchedule):
+            self.value_schedule: Schedule = value_schedule.value_schedule
+        elif isinstance(value_schedule, (float, int)):
+            self.value_schedule = ConstantSchedule(float(value_schedule))
+        else:
+            assert callable(value_schedule), f"The learning rate schedule must be a float or a callable, not {value_schedule}"
+            self.value_schedule = value_schedule
+
+    def __call__(self, progress_remaining: float) -> float:
+        # Cast to float to avoid unpickling errors to enable weights_only=True, see GH#1900
+        # Some types are have odd behaviors when part of a Schedule, like numpy floats
+        return float(self.value_schedule(progress_remaining))
+
+    def __repr__(self) -> str:
+        return f"FloatSchedule({self.value_schedule})"
+
+
+class LinearSchedule:
+    """
+    LinearSchedule interpolates linearly between start and end
+    between ``progress_remaining`` = 1 and ``progress_remaining`` = ``end_fraction``.
+    This is used in DQN for linearly annealing the exploration fraction
+    (epsilon for the epsilon-greedy strategy).
+
+    :param start: value to start with if ``progress_remaining`` = 1
+    :param end: value to end with if ``progress_remaining`` = 0
+    :param end_fraction: fraction of ``progress_remaining``  where end is reached e.g 0.1
+        then end is reached after 10% of the complete training process.
+    """
+
+    def __init__(self, start: float, end: float, end_fraction: float) -> None:
+        self.start = start
+        self.end = end
+        self.end_fraction = end_fraction
+
+    def __call__(self, progress_remaining: float) -> float:
+        if (1 - progress_remaining) > self.end_fraction:
+            return self.end
+        else:
+            return self.start + (1 - progress_remaining) * (self.end - self.start) / self.end_fraction
+
+    def __repr__(self) -> str:
+        return f"LinearSchedule(start={self.start}, end={self.end}, end_fraction={self.end_fraction})"
+
+
+class ConstantSchedule:
+    """
+    Constant schedule that always returns the same value.
+    Useful for fixed learning rates or clip ranges.
+
+    :param val: constant value
+    """
+
+    def __init__(self, val: float):
+        self.val = val
+
+    def __call__(self, _: float) -> float:
+        return self.val
+
+    def __repr__(self) -> str:
+        return f"ConstantSchedule(val={self.val})"
+
+
+# ===== Deprecated schedule functions ====
+# only kept for backward compatibility when unpickling old models, use FloatSchedule
+# and other classes like `LinearSchedule() instead
+
+
+def get_schedule_fn(value_schedule: Schedule | float) -> Schedule:
     """
     Transform (if needed) learning rate and clip range (for PPO)
     to callable.
@@ -86,6 +163,7 @@ def get_schedule_fn(value_schedule: Union[Schedule, float]) -> Schedule:
     :param value_schedule: Constant value of schedule function
     :return: Schedule function (can return constant value)
     """
+    warnings.warn("get_schedule_fn() is deprecated, please use FloatSchedule() instead")
     # If the passed schedule is a float
     # create a constant function
     if isinstance(value_schedule, (float, int)):
@@ -112,6 +190,7 @@ def get_linear_fn(start: float, end: float, end_fraction: float) -> Schedule:
         of the complete training process.
     :return: Linear schedule function.
     """
+    warnings.warn("get_linear_fn() is deprecated, please use LinearSchedule() instead")
 
     def func(progress_remaining: float) -> float:
         if (1 - progress_remaining) > end_fraction:
@@ -130,6 +209,7 @@ def constant_fn(val: float) -> Schedule:
     :param val: constant value
     :return: Constant schedule function.
     """
+    warnings.warn("constant_fn() is deprecated, please use ConstantSchedule() instead")
 
     def func(_):
         return val
@@ -137,7 +217,10 @@ def constant_fn(val: float) -> Schedule:
     return func
 
 
-def get_device(device: Union[th.device, str] = "auto") -> th.device:
+# ==== End of deprecated schedule functions ====
+
+
+def get_device(device: th.device | str = "auto") -> th.device:
     """
     Retrieve PyTorch device.
     It checks that the requested device is available first.
@@ -182,7 +265,7 @@ def get_latest_run_id(log_path: str = "", log_name: str = "") -> int:
 
 def configure_logger(
     verbose: int = 0,
-    tensorboard_log: Optional[str] = None,
+    tensorboard_log: str | None = None,
     tb_log_name: str = "",
     reset_num_timesteps: bool = True,
 ) -> Logger:
@@ -245,12 +328,14 @@ def check_shape_equal(space1: spaces.Space, space2: spaces.Space) -> None:
     :param space2: Other space
     """
     if isinstance(space1, spaces.Dict):
-        assert isinstance(space2, spaces.Dict), "spaces must be of the same type"
-        assert space1.spaces.keys() == space2.spaces.keys(), "spaces must have the same keys"
+        assert isinstance(space2, spaces.Dict), f"spaces must be of the same type: {type(space1)} != {type(space2)}"
+        assert (
+            space1.spaces.keys() == space2.spaces.keys()
+        ), f"spaces must have the same keys: {list(space1.spaces.keys())} != {list(space2.spaces.keys())}"
         for key in space1.spaces.keys():
             check_shape_equal(space1.spaces[key], space2.spaces[key])
     elif isinstance(space1, spaces.Box):
-        assert space1.shape == space2.shape, "spaces must have the same shape"
+        assert space1.shape == space2.shape, f"spaces must have the same shape: {space1.shape} != {space2.shape}"
 
 
 def is_vectorized_box_observation(observation: np.ndarray, observation_space: spaces.Box) -> bool:
@@ -274,7 +359,7 @@ def is_vectorized_box_observation(observation: np.ndarray, observation_space: sp
         )
 
 
-def is_vectorized_discrete_observation(observation: Union[int, np.ndarray], observation_space: spaces.Discrete) -> bool:
+def is_vectorized_discrete_observation(observation: int | np.ndarray, observation_space: spaces.Discrete) -> bool:
     """
     For discrete observation type, detects and validates the shape,
     then returns whether or not the observation is vectorized.
@@ -380,7 +465,7 @@ def is_vectorized_dict_observation(observation: np.ndarray, observation_space: s
         )
 
 
-def is_vectorized_observation(observation: Union[int, np.ndarray], observation_space: spaces.Space) -> bool:
+def is_vectorized_observation(observation: int | np.ndarray, observation_space: spaces.Space) -> bool:
     """
     For every observation type, detects and validates the shape,
     then returns whether or not the observation is vectorized.
@@ -406,7 +491,7 @@ def is_vectorized_observation(observation: Union[int, np.ndarray], observation_s
         raise ValueError(f"Error: Cannot determine if the observation is vectorized with the space type {observation_space}.")
 
 
-def safe_mean(arr: Union[np.ndarray, list, deque]) -> float:
+def safe_mean(arr: np.ndarray | list | deque) -> float:
     """
     Compute the mean of an array if there is at least one element.
     For empty array, return NaN. It is used for logging only.
@@ -434,18 +519,13 @@ def zip_strict(*iterables: Iterable) -> Iterable:
     r"""
     ``zip()`` function but enforces that iterables are of equal length.
     Raises ``ValueError`` if iterables not of equal length.
-    Code inspired by Stackoverflow answer for question #32954486.
+    It used to be a polyfill for Python 3.19 taken from Stackoverflow #32954486.
+    Since Python 3.10 is the minimum version, it is kept only for legacy
+    and is just returning zip(..., strict=True).
 
     :param \*iterables: iterables to ``zip()``
     """
-    # As in Stackoverflow #32954486, use
-    # new object for "empty" in case we have
-    # Nones in iterable.
-    sentinel = object()
-    for combo in zip_longest(*iterables, fillvalue=sentinel):
-        if sentinel in combo:
-            raise ValueError("Iterables have different lengths")
-        yield combo
+    return zip(*iterables, strict=True)
 
 
 def polyak_update(
@@ -469,13 +549,12 @@ def polyak_update(
     :param tau: the soft update coefficient ("Polyak update", between 0 and 1)
     """
     with th.no_grad():
-        # zip does not raise an exception if length of parameters does not match.
-        for param, target_param in zip_strict(params, target_params):
+        for param, target_param in zip(params, target_params, strict=True):
             target_param.data.mul_(1 - tau)
             th.add(target_param.data, param.data, alpha=tau, out=target_param.data)
 
 
-def obs_as_tensor(obs: Union[np.ndarray, dict[str, np.ndarray]], device: th.device) -> Union[th.Tensor, TensorDict]:
+def obs_as_tensor(obs: np.ndarray | dict[str, np.ndarray], device: th.device) -> th.Tensor | TensorDict:
     """
     Moves the observation to the given device.
 
@@ -488,7 +567,7 @@ def obs_as_tensor(obs: Union[np.ndarray, dict[str, np.ndarray]], device: th.devi
     elif isinstance(obs, dict):
         return {key: th.as_tensor(_obs, device=device) for (key, _obs) in obs.items()}
     else:
-        raise Exception(f"Unrecognized type of observation {type(obs)}")
+        raise TypeError(f"Unrecognized type of observation {type(obs)}")
 
 
 def should_collect_more_steps(

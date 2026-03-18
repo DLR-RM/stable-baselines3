@@ -1,7 +1,8 @@
 import os
 import warnings
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 import gymnasium as gym
 import numpy as np
@@ -49,7 +50,7 @@ class BaseCallback(ABC):
         self.globals: dict[str, Any] = {}
         # Sometimes, for event callback, it is useful
         # to have access to the parent object
-        self.parent = None  # type: Optional[BaseCallback]
+        self.parent = None  # type: BaseCallback | None
 
     @property
     def training_env(self) -> VecEnv:
@@ -152,7 +153,7 @@ class EventCallback(BaseCallback):
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
 
-    def __init__(self, callback: Optional[BaseCallback] = None, verbose: int = 0):
+    def __init__(self, callback: BaseCallback | None = None, verbose: int = 0):
         super().__init__(verbose=verbose)
         self.callback = callback
         # Give access to the parent
@@ -328,7 +329,7 @@ class ConvertCallback(BaseCallback):
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
 
-    def __init__(self, callback: Optional[Callable[[dict[str, Any], dict[str, Any]], bool]], verbose: int = 0):
+    def __init__(self, callback: Callable[[dict[str, Any], dict[str, Any]], bool] | None, verbose: int = 0):
         super().__init__(verbose)
         self.callback = callback
 
@@ -368,13 +369,13 @@ class EvalCallback(EventCallback):
 
     def __init__(
         self,
-        eval_env: Union[gym.Env, VecEnv],
-        callback_on_new_best: Optional[BaseCallback] = None,
-        callback_after_eval: Optional[BaseCallback] = None,
+        eval_env: gym.Env | VecEnv,
+        callback_on_new_best: BaseCallback | None = None,
+        callback_after_eval: BaseCallback | None = None,
         n_eval_episodes: int = 5,
         eval_freq: int = 10000,
-        log_path: Optional[str] = None,
-        best_model_save_path: Optional[str] = None,
+        log_path: str | None = None,
+        best_model_save_path: str | None = None,
         deterministic: bool = True,
         render: bool = False,
         verbose: int = 1,
@@ -490,7 +491,7 @@ class EvalCallback(EventCallback):
                     timesteps=self.evaluations_timesteps,
                     results=self.evaluations_results,
                     ep_lengths=self.evaluations_length,
-                    **kwargs,
+                    **kwargs,  # type: ignore[arg-type]
                 )
 
             mean_reward, std_reward = np.mean(episode_rewards), np.std(episode_rewards)
@@ -565,7 +566,7 @@ class StopTrainingOnRewardThreshold(BaseCallback):
         if self.verbose >= 1 and not continue_training:
             print(
                 f"Stopping training because the mean reward {self.parent.best_mean_reward:.2f} "
-                f" is above the threshold {self.reward_threshold}"
+                f"is above the threshold {self.reward_threshold}"
             )
         return continue_training
 
@@ -588,6 +589,21 @@ class EveryNTimesteps(EventCallback):
         if (self.num_timesteps - self.last_time_trigger) >= self.n_steps:
             self.last_time_trigger = self.num_timesteps
             return self._on_event()
+        return True
+
+
+class LogEveryNTimesteps(EveryNTimesteps):
+    """
+    Log data every ``n_steps`` timesteps
+
+    :param n_steps: Number of timesteps between two trigger.
+    """
+
+    def __init__(self, n_steps: int):
+        super().__init__(n_steps, callback=ConvertCallback(self._log_data))
+
+    def _log_data(self, _locals: dict[str, Any], _globals: dict[str, Any]) -> bool:
+        self.model.dump_logs()
         return True
 
 

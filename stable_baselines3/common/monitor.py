@@ -5,7 +5,7 @@ import json
 import os
 import time
 from glob import glob
-from typing import Any, Optional, SupportsFloat, Union
+from typing import Any, SupportsFloat
 
 import gymnasium as gym
 import pandas
@@ -31,7 +31,7 @@ class Monitor(gym.Wrapper[ObsType, ActType, ObsType, ActType]):
     def __init__(
         self,
         env: gym.Env,
-        filename: Optional[str] = None,
+        filename: str | None = None,
         allow_early_resets: bool = True,
         reset_keywords: tuple[str, ...] = (),
         info_keywords: tuple[str, ...] = (),
@@ -175,7 +175,7 @@ class ResultsWriter:
     def __init__(
         self,
         filename: str = "",
-        header: Optional[dict[str, Union[float, str]]] = None,
+        header: dict[str, float | str] | None = None,
         extra_keys: tuple[str, ...] = (),
         override_existing: bool = True,
     ):
@@ -247,6 +247,13 @@ def load_results(path: str) -> pandas.DataFrame:
             headers.append(header)
             data_frame["t"] += header["t_start"]
         data_frames.append(data_frame)
+    data_frames = [df for df in data_frames if not df.empty]
+    if not data_frames:
+        # Only empty monitor files, return empty df
+        empty_df = pandas.DataFrame(columns=["r", "l", "t"])
+        # Create index to have the same columns
+        empty_df.reset_index(inplace=True)
+        return empty_df
     data_frame = pandas.concat(data_frames)
     data_frame.sort_values("t", inplace=True)
     data_frame.reset_index(inplace=True)

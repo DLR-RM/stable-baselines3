@@ -1,5 +1,4 @@
 from copy import deepcopy
-from typing import Union
 
 import numpy as np
 from gymnasium import spaces
@@ -73,7 +72,7 @@ class VecTransposeImage(VecEnvWrapper):
             return np.transpose(image, (2, 0, 1))
         return np.transpose(image, (0, 3, 1, 2))
 
-    def transpose_observations(self, observations: Union[np.ndarray, dict]) -> Union[np.ndarray, dict]:
+    def transpose_observations(self, observations: np.ndarray | dict) -> np.ndarray | dict:
         """
         Transpose (if needed) and return new observations.
 
@@ -106,7 +105,7 @@ class VecTransposeImage(VecEnvWrapper):
         assert isinstance(observations, (np.ndarray, dict))
         return self.transpose_observations(observations), rewards, dones, infos
 
-    def reset(self) -> Union[np.ndarray, dict]:
+    def reset(self) -> np.ndarray | dict:
         """
         Reset all environments
         """

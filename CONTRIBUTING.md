@@ -1,5 +1,7 @@
 ## Contributing to Stable-Baselines3
 
+**Important: When submitting issues or pull requests, the use of LLM or code assistants (e.g., Claude or Copilot) must be publicly disclosed.**
+
 If you are interested in contributing to Stable-Baselines, your contributions will fall
 into two categories:
 1. You want to propose a new Feature and implement it
@@ -13,6 +15,7 @@ into two categories:
 Once you finish implementing a feature or bug-fix, please send a Pull Request to
 https://github.com/DLR-RM/stable-baselines3
 
+Note: If you do not follow the template (and its mandatory steps), your pull request will be ignored.
 
 If you are not familiar with creating a Pull Request, here are some guides:
 - http://stackoverflow.com/questions/14680711/how-to-do-a-github-pull-request
@@ -33,7 +36,7 @@ cd stable-baselines3/
 2. Install Stable-Baselines3 in develop mode, with support for building the docs and running tests:
 
 ```bash
-pip install -e .[docs,tests,extra]
+pip install -e '.[docs,tests,extra]'
 ```
 
 ## Codestyle
@@ -43,7 +46,7 @@ For the documentation, we use the default line length of 88 characters per line.
 
 **Please run `make format`** to reformat your code. You can check the codestyle using `make check-codestyle` and `make lint`.
 
-Please document each function/method and [type](https://google.github.io/pytype/user_guide.html) them using the following template:
+Please document each function/method and [type](https://mypy-lang.org/) them using the following template:
 
 ```python
 
@@ -60,6 +63,8 @@ def my_function(arg1: type1, arg2: type2) -> returntype:
 ```
 
 ## Pull Request (PR)
+
+**Important: We do not accept PRs that are fully generated using an LLM/code assistant unless triggered by a maintainer. Use of code assistants (e.g., Claude, Copilot) must be publicly disclosed.**
 
 Before proposing a PR, please open an issue, where the feature will be discussed. This prevents from duplicated PR to be proposed and also ease the code review process.
 
@@ -112,7 +117,7 @@ make spelling
 
 ## Changelog and Documentation
 
-Please do not forget to update the changelog (`docs/misc/changelog.rst`) and add documentation if needed.
+Please do not forget to update the changelog (`docs/misc/changelog.md`) and add documentation if needed.
 You should add your username next to each changelog entry that you added. If this is your first contribution, please add your username at the bottom too.
 A README is present in the `docs/` folder for instructions on how to build the documentation.
 

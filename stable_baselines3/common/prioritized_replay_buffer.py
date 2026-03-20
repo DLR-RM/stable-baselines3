@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import torch as th
@@ -65,7 +65,7 @@ class SumTree:
         self.update(self.pos, value)
         self.pos = (self.pos + 1) % self.buffer_size
 
-    def get(self, cumulative_sum: float) -> Tuple[int, float, th.Tensor]:
+    def get(self, cumulative_sum: float) -> tuple[int, float, th.Tensor]:
         """
         Get a leaf node index, its priority value and transition index by cumulative_sum value.
 
@@ -114,7 +114,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         buffer_size: int,
         observation_space: spaces.Space,
         action_space: spaces.Space,
-        device: Union[th.device, str] = "auto",
+        device: th.device | str = "auto",
         n_envs: int = 1,
         alpha: float = 0.5,
         beta: float = 0.4,
@@ -154,7 +154,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         action: np.ndarray,
         reward: np.ndarray,
         done: np.ndarray,
-        infos: List[Dict[str, Any]],
+        infos: list[dict[str, Any]],
     ) -> None:
         """
         Add a new transition to the buffer.
@@ -172,7 +172,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         # store transition in the buffer
         super().add(obs, next_obs, action, reward, done, infos)
 
-    def sample(self, batch_size: int, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
+    def sample(self, batch_size: int, env: VecNormalize | None = None) -> ReplayBufferSamples:
         """
         Sample elements from the prioritized replay buffer.
 
@@ -248,9 +248,9 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         # Update beta schedule
         self._current_progress_remaining = progress_remaining
         if isinstance(td_errors, th.Tensor):
-            td_errors = td_errors.detach().cpu().numpy().flatten()
+            td_errors = td_errors.detach().cpu().numpy().flatten()  # type: ignore[assignment]
 
-        for leaf_node_idx, td_error in zip(leaf_nodes_indices, td_errors):
+        for leaf_node_idx, td_error in zip(leaf_nodes_indices, td_errors, strict=True):
             # Proportional prioritization priority = (abs(td_error) + eps) ^ alpha
             # where eps is a small positive constant that prevents the edge-case of transitions not being
             # revisited once their error is zero. (Section 3.3)

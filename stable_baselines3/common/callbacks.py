@@ -1,7 +1,8 @@
 import os
 import warnings
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 import gymnasium as gym
 import numpy as np
@@ -45,11 +46,11 @@ class BaseCallback(ABC):
         # n_envs * n times env.step() was called
         self.num_timesteps = 0  # type: int
         self.verbose = verbose
-        self.locals: Dict[str, Any] = {}
-        self.globals: Dict[str, Any] = {}
+        self.locals: dict[str, Any] = {}
+        self.globals: dict[str, Any] = {}
         # Sometimes, for event callback, it is useful
         # to have access to the parent object
-        self.parent = None  # type: Optional[BaseCallback]
+        self.parent = None  # type: BaseCallback | None
 
     @property
     def training_env(self) -> VecEnv:
@@ -75,7 +76,7 @@ class BaseCallback(ABC):
     def _init_callback(self) -> None:
         pass
 
-    def on_training_start(self, locals_: Dict[str, Any], globals_: Dict[str, Any]) -> None:
+    def on_training_start(self, locals_: dict[str, Any], globals_: dict[str, Any]) -> None:
         # Those are reference and will be updated automatically
         self.locals = locals_
         self.globals = globals_
@@ -125,7 +126,7 @@ class BaseCallback(ABC):
     def _on_rollout_end(self) -> None:
         pass
 
-    def update_locals(self, locals_: Dict[str, Any]) -> None:
+    def update_locals(self, locals_: dict[str, Any]) -> None:
         """
         Update the references to the local variables.
 
@@ -134,7 +135,7 @@ class BaseCallback(ABC):
         self.locals.update(locals_)
         self.update_child_locals(locals_)
 
-    def update_child_locals(self, locals_: Dict[str, Any]) -> None:
+    def update_child_locals(self, locals_: dict[str, Any]) -> None:
         """
         Update the references to the local variables on sub callbacks.
 
@@ -152,7 +153,7 @@ class EventCallback(BaseCallback):
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
 
-    def __init__(self, callback: Optional[BaseCallback] = None, verbose: int = 0):
+    def __init__(self, callback: BaseCallback | None = None, verbose: int = 0):
         super().__init__(verbose=verbose)
         self.callback = callback
         # Give access to the parent
@@ -177,7 +178,7 @@ class EventCallback(BaseCallback):
     def _on_step(self) -> bool:
         return True
 
-    def update_child_locals(self, locals_: Dict[str, Any]) -> None:
+    def update_child_locals(self, locals_: dict[str, Any]) -> None:
         """
         Update the references to the local variables.
 
@@ -195,7 +196,7 @@ class CallbackList(BaseCallback):
         sequentially.
     """
 
-    def __init__(self, callbacks: List[BaseCallback]):
+    def __init__(self, callbacks: list[BaseCallback]):
         super().__init__()
         assert isinstance(callbacks, list)
         self.callbacks = callbacks
@@ -231,7 +232,7 @@ class CallbackList(BaseCallback):
         for callback in self.callbacks:
             callback.on_training_end()
 
-    def update_child_locals(self, locals_: Dict[str, Any]) -> None:
+    def update_child_locals(self, locals_: dict[str, Any]) -> None:
         """
         Update the references to the local variables.
 
@@ -328,7 +329,7 @@ class ConvertCallback(BaseCallback):
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     """
 
-    def __init__(self, callback: Optional[Callable[[Dict[str, Any], Dict[str, Any]], bool]], verbose: int = 0):
+    def __init__(self, callback: Callable[[dict[str, Any], dict[str, Any]], bool] | None, verbose: int = 0):
         super().__init__(verbose)
         self.callback = callback
 
@@ -368,13 +369,13 @@ class EvalCallback(EventCallback):
 
     def __init__(
         self,
-        eval_env: Union[gym.Env, VecEnv],
-        callback_on_new_best: Optional[BaseCallback] = None,
-        callback_after_eval: Optional[BaseCallback] = None,
+        eval_env: gym.Env | VecEnv,
+        callback_on_new_best: BaseCallback | None = None,
+        callback_after_eval: BaseCallback | None = None,
         n_eval_episodes: int = 5,
         eval_freq: int = 10000,
-        log_path: Optional[str] = None,
-        best_model_save_path: Optional[str] = None,
+        log_path: str | None = None,
+        best_model_save_path: str | None = None,
         deterministic: bool = True,
         render: bool = False,
         verbose: int = 1,
@@ -405,12 +406,12 @@ class EvalCallback(EventCallback):
         if log_path is not None:
             log_path = os.path.join(log_path, "evaluations")
         self.log_path = log_path
-        self.evaluations_results: List[List[float]] = []
-        self.evaluations_timesteps: List[int] = []
-        self.evaluations_length: List[List[int]] = []
+        self.evaluations_results: list[list[float]] = []
+        self.evaluations_timesteps: list[int] = []
+        self.evaluations_length: list[list[int]] = []
         # For computing success rate
-        self._is_success_buffer: List[bool] = []
-        self.evaluations_successes: List[List[bool]] = []
+        self._is_success_buffer: list[bool] = []
+        self.evaluations_successes: list[list[bool]] = []
 
     def _init_callback(self) -> None:
         # Does not work in some corner cases, where the wrapper is not the same
@@ -427,7 +428,7 @@ class EvalCallback(EventCallback):
         if self.callback_on_new_best is not None:
             self.callback_on_new_best.init_callback(self.model)
 
-    def _log_success_callback(self, locals_: Dict[str, Any], globals_: Dict[str, Any]) -> None:
+    def _log_success_callback(self, locals_: dict[str, Any], globals_: dict[str, Any]) -> None:
         """
         Callback passed to the  ``evaluate_policy`` function
         in order to log the success rate (when applicable),
@@ -490,7 +491,7 @@ class EvalCallback(EventCallback):
                     timesteps=self.evaluations_timesteps,
                     results=self.evaluations_results,
                     ep_lengths=self.evaluations_length,
-                    **kwargs,
+                    **kwargs,  # type: ignore[arg-type]
                 )
 
             mean_reward, std_reward = np.mean(episode_rewards), np.std(episode_rewards)
@@ -530,7 +531,7 @@ class EvalCallback(EventCallback):
 
         return continue_training
 
-    def update_child_locals(self, locals_: Dict[str, Any]) -> None:
+    def update_child_locals(self, locals_: dict[str, Any]) -> None:
         """
         Update the references to the local variables.
 
@@ -565,7 +566,7 @@ class StopTrainingOnRewardThreshold(BaseCallback):
         if self.verbose >= 1 and not continue_training:
             print(
                 f"Stopping training because the mean reward {self.parent.best_mean_reward:.2f} "
-                f" is above the threshold {self.reward_threshold}"
+                f"is above the threshold {self.reward_threshold}"
             )
         return continue_training
 
@@ -588,6 +589,21 @@ class EveryNTimesteps(EventCallback):
         if (self.num_timesteps - self.last_time_trigger) >= self.n_steps:
             self.last_time_trigger = self.num_timesteps
             return self._on_event()
+        return True
+
+
+class LogEveryNTimesteps(EveryNTimesteps):
+    """
+    Log data every ``n_steps`` timesteps
+
+    :param n_steps: Number of timesteps between two trigger.
+    """
+
+    def __init__(self, n_steps: int):
+        super().__init__(n_steps, callback=ConvertCallback(self._log_data))
+
+    def _log_data(self, _locals: dict[str, Any], _globals: dict[str, Any]) -> bool:
+        self.model.dump_logs()
         return True
 
 

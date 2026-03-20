@@ -1,6 +1,7 @@
 import multiprocessing as mp
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
+from collections.abc import Callable, Sequence
+from typing import Any
 
 import gymnasium as gym
 import numpy as np
@@ -16,7 +17,7 @@ from stable_baselines3.common.vec_env.base_vec_env import (
 from stable_baselines3.common.vec_env.patch_gym import _patch_env
 
 
-def _worker(
+def _worker(  # noqa: C901
     remote: mp.connection.Connection,
     parent_remote: mp.connection.Connection,
     env_fn_wrapper: CloudpickleWrapper,
@@ -26,7 +27,7 @@ def _worker(
 
     parent_remote.close()
     env = _patch_env(env_fn_wrapper.var())
-    reset_info: Optional[Dict[str, Any]] = {}
+    reset_info: dict[str, Any] | None = {}
     while True:
         try:
             cmd, data = remote.recv()
@@ -57,6 +58,12 @@ def _worker(
                 remote.send(method(*data[1], **data[2]))
             elif cmd == "get_attr":
                 remote.send(env.get_wrapper_attr(data))
+            elif cmd == "has_attr":
+                try:
+                    env.get_wrapper_attr(data)
+                    remote.send(True)
+                except AttributeError:
+                    remote.send(False)
             elif cmd == "set_attr":
                 remote.send(setattr(env, data[0], data[1]))  # type: ignore[func-returns-value]
             elif cmd == "is_wrapped":
@@ -64,6 +71,8 @@ def _worker(
             else:
                 raise NotImplementedError(f"`{cmd}` is not implemented in the worker")
         except EOFError:
+            break
+        except KeyboardInterrupt:
             break
 
 
@@ -91,7 +100,7 @@ class SubprocVecEnv(VecEnv):
            Defaults to 'forkserver' on available platforms, and 'spawn' otherwise.
     """
 
-    def __init__(self, env_fns: List[Callable[[], gym.Env]], start_method: Optional[str] = None):
+    def __init__(self, env_fns: list[Callable[[], gym.Env]], start_method: str | None = None):
         self.waiting = False
         self.closed = False
         n_envs = len(env_fns)
@@ -104,9 +113,9 @@ class SubprocVecEnv(VecEnv):
             start_method = "forkserver" if forkserver_available else "spawn"
         ctx = mp.get_context(start_method)
 
-        self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(n_envs)])
+        self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(n_envs)], strict=True)
         self.processes = []
-        for work_remote, remote, env_fn in zip(self.work_remotes, self.remotes, env_fns):
+        for work_remote, remote, env_fn in zip(self.work_remotes, self.remotes, env_fns, strict=True):
             args = (work_remote, remote, CloudpickleWrapper(env_fn))
             # daemon=True: if the main process crashes, we should not cause things to hang
             process = ctx.Process(target=_worker, args=args, daemon=True)  # type: ignore[attr-defined]
@@ -120,21 +129,21 @@ class SubprocVecEnv(VecEnv):
         super().__init__(len(env_fns), observation_space, action_space)
 
     def step_async(self, actions: np.ndarray) -> None:
-        for remote, action in zip(self.remotes, actions):
+        for remote, action in zip(self.remotes, actions, strict=True):
             remote.send(("step", action))
         self.waiting = True
 
     def step_wait(self) -> VecEnvStepReturn:
         results = [remote.recv() for remote in self.remotes]
         self.waiting = False
-        obs, rews, dones, infos, self.reset_infos = zip(*results)  # type: ignore[assignment]
+        obs, rews, dones, infos, self.reset_infos = zip(*results, strict=True)  # type: ignore[assignment]
         return _stack_obs(obs, self.observation_space), np.stack(rews), np.stack(dones), infos  # type: ignore[return-value]
 
     def reset(self) -> VecEnvObs:
         for env_idx, remote in enumerate(self.remotes):
             remote.send(("reset", (self._seeds[env_idx], self._options[env_idx])))
         results = [remote.recv() for remote in self.remotes]
-        obs, self.reset_infos = zip(*results)  # type: ignore[assignment]
+        obs, self.reset_infos = zip(*results, strict=True)  # type: ignore[assignment]
         # Seeds and options are only used once
         self._reset_seeds()
         self._reset_options()
@@ -152,7 +161,7 @@ class SubprocVecEnv(VecEnv):
             process.join()
         self.closed = True
 
-    def get_images(self) -> Sequence[Optional[np.ndarray]]:
+    def get_images(self) -> Sequence[np.ndarray | None]:
         if self.render_mode != "rgb_array":
             warnings.warn(
                 f"The render mode is {self.render_mode}, but this method assumes it is `rgb_array` to obtain images."
@@ -164,7 +173,14 @@ class SubprocVecEnv(VecEnv):
         outputs = [pipe.recv() for pipe in self.remotes]
         return outputs
 
-    def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:
+    def has_attr(self, attr_name: str) -> bool:
+        """Check if an attribute exists for a vectorized environment. (see base class)."""
+        target_remotes = self._get_target_remotes(indices=None)
+        for remote in target_remotes:
+            remote.send(("has_attr", attr_name))
+        return all([remote.recv() for remote in target_remotes])
+
+    def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> list[Any]:
         """Return attribute from vectorized environment (see base class)."""
         target_remotes = self._get_target_remotes(indices)
         for remote in target_remotes:
@@ -179,21 +195,21 @@ class SubprocVecEnv(VecEnv):
         for remote in target_remotes:
             remote.recv()
 
-    def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> List[Any]:
+    def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> list[Any]:
         """Call instance methods of vectorized environments."""
         target_remotes = self._get_target_remotes(indices)
         for remote in target_remotes:
             remote.send(("env_method", (method_name, method_args, method_kwargs)))
         return [remote.recv() for remote in target_remotes]
 
-    def env_is_wrapped(self, wrapper_class: Type[gym.Wrapper], indices: VecEnvIndices = None) -> List[bool]:
+    def env_is_wrapped(self, wrapper_class: type[gym.Wrapper], indices: VecEnvIndices = None) -> list[bool]:
         """Check if worker environments are wrapped with a given wrapper"""
         target_remotes = self._get_target_remotes(indices)
         for remote in target_remotes:
             remote.send(("is_wrapped", wrapper_class))
         return [remote.recv() for remote in target_remotes]
 
-    def _get_target_remotes(self, indices: VecEnvIndices) -> List[Any]:
+    def _get_target_remotes(self, indices: VecEnvIndices) -> list[Any]:
         """
         Get the connection object needed to communicate with the wanted
         envs that are in subprocesses.
@@ -205,7 +221,7 @@ class SubprocVecEnv(VecEnv):
         return [self.remotes[i] for i in indices]
 
 
-def _stack_obs(obs_list: Union[List[VecEnvObs], Tuple[VecEnvObs]], space: spaces.Space) -> VecEnvObs:
+def _stack_obs(obs_list: list[VecEnvObs] | tuple[VecEnvObs], space: spaces.Space) -> VecEnvObs:
     """
     Stack observations (convert from a list of single env obs to a stack of obs),
     depending on the observation space.

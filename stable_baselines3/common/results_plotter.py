@@ -1,4 +1,4 @@
-from typing import Callable, List, Optional, Tuple
+from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
@@ -24,12 +24,12 @@ def rolling_window(array: np.ndarray, window: int) -> np.ndarray:
     :param window: length of the rolling window
     :return: rolling window on the input array
     """
-    shape = array.shape[:-1] + (array.shape[-1] - window + 1, window)
+    shape = array.shape[:-1] + (array.shape[-1] - window + 1, window)  # noqa: RUF005
     strides = (*array.strides, array.strides[-1])
     return np.lib.stride_tricks.as_strided(array, shape=shape, strides=strides)
 
 
-def window_func(var_1: np.ndarray, var_2: np.ndarray, window: int, func: Callable) -> Tuple[np.ndarray, np.ndarray]:
+def window_func(var_1: np.ndarray, var_2: np.ndarray, window: int, func: Callable) -> tuple[np.ndarray, np.ndarray]:
     """
     Apply a function to the rolling window of 2 arrays
 
@@ -44,32 +44,33 @@ def window_func(var_1: np.ndarray, var_2: np.ndarray, window: int, func: Callabl
     return var_1[window - 1 :], function_on_var2
 
 
-def ts2xy(data_frame: pd.DataFrame, x_axis: str) -> Tuple[np.ndarray, np.ndarray]:
+def ts2xy(data_frame: pd.DataFrame, x_axis: str) -> tuple[np.ndarray, np.ndarray]:
     """
     Decompose a data frame variable to x and ys
+    (y = episodic return)
 
     :param data_frame: the input data
-    :param x_axis: the axis for the x and y output
+    :param x_axis: the x-axis for the x and y output
         (can be X_TIMESTEPS='timesteps', X_EPISODES='episodes' or X_WALLTIME='walltime_hrs')
     :return: the x and y output
     """
     if x_axis == X_TIMESTEPS:
-        x_var = np.cumsum(data_frame.l.values)
+        x_var = np.cumsum(data_frame.l.values)  # type: ignore[arg-type]
         y_var = data_frame.r.values
     elif x_axis == X_EPISODES:
         x_var = np.arange(len(data_frame))
         y_var = data_frame.r.values
     elif x_axis == X_WALLTIME:
         # Convert to hours
-        x_var = data_frame.t.values / 3600.0
+        x_var = data_frame.t.values / 3600.0  # type: ignore[operator, assignment]
         y_var = data_frame.r.values
     else:
-        raise NotImplementedError
-    return x_var, y_var
+        raise NotImplementedError(f"Unsupported {x_axis=}, please use one of {POSSIBLE_X_AXES}")
+    return x_var, y_var  # type: ignore[return-value]
 
 
 def plot_curves(
-    xy_list: List[Tuple[np.ndarray, np.ndarray]], x_axis: str, title: str, figsize: Tuple[int, int] = (8, 2)
+    xy_list: list[tuple[np.ndarray, np.ndarray]], x_axis: str, title: str, figsize: tuple[int, int] = (8, 2)
 ) -> None:
     """
     plot the curves
@@ -99,7 +100,7 @@ def plot_curves(
 
 
 def plot_results(
-    dirs: List[str], num_timesteps: Optional[int], x_axis: str, task_name: str, figsize: Tuple[int, int] = (8, 2)
+    dirs: list[str], num_timesteps: int | None, x_axis: str, task_name: str, figsize: tuple[int, int] = (8, 2)
 ) -> None:
     """
     Plot the results using csv files from ``Monitor`` wrapper.

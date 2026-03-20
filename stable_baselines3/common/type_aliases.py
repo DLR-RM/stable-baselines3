@@ -1,7 +1,8 @@
 """Common aliases for type hints"""
 
+from collections.abc import Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Protocol, SupportsFloat, Tuple, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Protocol, SupportsFloat, Union
 
 import gymnasium as gym
 import numpy as np
@@ -13,15 +14,15 @@ if TYPE_CHECKING:
     from stable_baselines3.common.vec_env import VecEnv
 
 GymEnv = Union[gym.Env, "VecEnv"]
-GymObs = Union[Tuple, Dict[str, Any], np.ndarray, int]
-GymResetReturn = Tuple[GymObs, Dict]
-AtariResetReturn = Tuple[np.ndarray, Dict[str, Any]]
-GymStepReturn = Tuple[GymObs, float, bool, bool, Dict]
-AtariStepReturn = Tuple[np.ndarray, SupportsFloat, bool, bool, Dict[str, Any]]
-TensorDict = Dict[str, th.Tensor]
-OptimizerStateDict = Dict[str, Any]
-MaybeCallback = Union[None, Callable, List["BaseCallback"], "BaseCallback"]
-PyTorchObs = Union[th.Tensor, TensorDict]
+GymObs = Union[tuple, dict[str, Any], np.ndarray, int]  # noqa: UP007
+GymResetReturn = tuple[GymObs, dict]
+AtariResetReturn = tuple[np.ndarray, dict[str, Any]]
+GymStepReturn = tuple[GymObs, float, bool, bool, dict]
+AtariStepReturn = tuple[np.ndarray, SupportsFloat, bool, bool, dict[str, Any]]
+TensorDict = dict[str, th.Tensor]
+OptimizerStateDict = dict[str, Any]
+MaybeCallback = Union[None, Callable, list["BaseCallback"], "BaseCallback"]
+PyTorchObs = Union[th.Tensor, TensorDict]  # noqa: UP007
 
 # A schedule takes the remaining progress as input
 # and outputs a scalar (e.g. learning rate, clip range, ...)
@@ -52,8 +53,10 @@ class ReplayBufferSamples(NamedTuple):
     next_observations: th.Tensor
     dones: th.Tensor
     rewards: th.Tensor
-    weights: Union[th.Tensor, float] = 1.0
-    leaf_nodes_indices: Optional[np.ndarray] = None
+    weights: th.Tensor | float = 1.0
+    leaf_nodes_indices: np.ndarray | None = None
+    # For n-step replay buffer
+    discounts: th.Tensor | None = None
 
 
 class DictReplayBufferSamples(NamedTuple):
@@ -62,8 +65,9 @@ class DictReplayBufferSamples(NamedTuple):
     next_observations: TensorDict
     dones: th.Tensor
     rewards: th.Tensor
-    weights: Union[th.Tensor, float] = 1.0
-    leaf_nodes_indices: Optional[np.ndarray] = None
+    weights: th.Tensor | float = 1.0
+    leaf_nodes_indices: np.ndarray | None = None
+    discounts: th.Tensor | None = None
 
 
 class RolloutReturn(NamedTuple):
@@ -85,11 +89,11 @@ class TrainFreq(NamedTuple):
 class PolicyPredictor(Protocol):
     def predict(
         self,
-        observation: Union[np.ndarray, Dict[str, np.ndarray]],
-        state: Optional[Tuple[np.ndarray, ...]] = None,
-        episode_start: Optional[np.ndarray] = None,
+        observation: np.ndarray | dict[str, np.ndarray],
+        state: tuple[np.ndarray, ...] | None = None,
+        episode_start: np.ndarray | None = None,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, Optional[Tuple[np.ndarray, ...]]]:
+    ) -> tuple[np.ndarray, tuple[np.ndarray, ...] | None]:
         """
         Get the policy action from an observation (and optional hidden state).
         Includes sugar-coating to handle different observations (e.g. normalizing images).

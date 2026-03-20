@@ -1,13 +1,14 @@
 """Probability distributions."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Optional, TypeVar
 
 import numpy as np
 import torch as th
 from gymnasium import spaces
 from torch import nn
 from torch.distributions import Bernoulli, Categorical, Normal
+from torch.distributions import Distribution as TorchDistribution
 
 from stable_baselines3.common.preprocessing import get_action_dim
 
@@ -25,12 +26,13 @@ SelfStateDependentNoiseDistribution = TypeVar("SelfStateDependentNoiseDistributi
 class Distribution(ABC):
     """Abstract base class for distributions."""
 
+    distribution: TorchDistribution | list[TorchDistribution]
+
     def __init__(self):
         super().__init__()
-        self.distribution = None
 
     @abstractmethod
-    def proba_distribution_net(self, *args, **kwargs) -> Union[nn.Module, Tuple[nn.Module, nn.Parameter]]:
+    def proba_distribution_net(self, *args, **kwargs) -> nn.Module | tuple[nn.Module, nn.Parameter]:
         """Create the layers and parameters that represent the distribution.
 
         Subclasses must define this, but the arguments and return type vary between
@@ -44,16 +46,16 @@ class Distribution(ABC):
         """
 
     @abstractmethod
-    def log_prob(self, x: th.Tensor) -> th.Tensor:
+    def log_prob(self, actions: th.Tensor) -> th.Tensor:
         """
         Returns the log likelihood
 
-        :param x: the taken action
+        :param actions: the taken action
         :return: The log likelihood of the distribution
         """
 
     @abstractmethod
-    def entropy(self) -> Optional[th.Tensor]:
+    def entropy(self) -> th.Tensor | None:
         """
         Returns Shannon's entropy of the probability
 
@@ -98,7 +100,7 @@ class Distribution(ABC):
         """
 
     @abstractmethod
-    def log_prob_from_params(self, *args, **kwargs) -> Tuple[th.Tensor, th.Tensor]:
+    def log_prob_from_params(self, *args, **kwargs) -> tuple[th.Tensor, th.Tensor]:
         """
         Returns samples and the associated log probabilities
         from the probability distribution given its parameters.
@@ -129,13 +131,13 @@ class DiagGaussianDistribution(Distribution):
     :param action_dim:  Dimension of the action space.
     """
 
+    distribution: Normal
+
     def __init__(self, action_dim: int):
         super().__init__()
         self.action_dim = action_dim
-        self.mean_actions = None
-        self.log_std = None
 
-    def proba_distribution_net(self, latent_dim: int, log_std_init: float = 0.0) -> Tuple[nn.Module, nn.Parameter]:
+    def proba_distribution_net(self, latent_dim: int, log_std_init: float = 0.0) -> tuple[nn.Module, nn.Parameter]:
         """
         Create the layers and parameter that represent the distribution:
         one output will be the mean of the Gaussian, the other parameter will be the
@@ -175,7 +177,7 @@ class DiagGaussianDistribution(Distribution):
         log_prob = self.distribution.log_prob(actions)
         return sum_independent_dims(log_prob)
 
-    def entropy(self) -> Optional[th.Tensor]:
+    def entropy(self) -> th.Tensor | None:
         return sum_independent_dims(self.distribution.entropy())
 
     def sample(self) -> th.Tensor:
@@ -190,7 +192,7 @@ class DiagGaussianDistribution(Distribution):
         self.proba_distribution(mean_actions, log_std)
         return self.get_actions(deterministic=deterministic)
 
-    def log_prob_from_params(self, mean_actions: th.Tensor, log_std: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+    def log_prob_from_params(self, mean_actions: th.Tensor, log_std: th.Tensor) -> tuple[th.Tensor, th.Tensor]:
         """
         Compute the log probability of taking an action
         given the distribution parameters.
@@ -216,7 +218,7 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         super().__init__(action_dim)
         # Avoid NaN (prevents division by zero or log of zero)
         self.epsilon = epsilon
-        self.gaussian_actions: Optional[th.Tensor] = None
+        self.gaussian_actions: th.Tensor | None = None
 
     def proba_distribution(
         self: SelfSquashedDiagGaussianDistribution, mean_actions: th.Tensor, log_std: th.Tensor
@@ -224,7 +226,7 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         super().proba_distribution(mean_actions, log_std)
         return self
 
-    def log_prob(self, actions: th.Tensor, gaussian_actions: Optional[th.Tensor] = None) -> th.Tensor:
+    def log_prob(self, actions: th.Tensor, gaussian_actions: th.Tensor | None = None) -> th.Tensor:
         # Inverse tanh
         # Naive implementation (not stable): 0.5 * torch.log((1 + x) / (1 - x))
         # We use numpy to avoid numerical instability
@@ -239,7 +241,7 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         log_prob -= th.sum(th.log(1 - actions**2 + self.epsilon), dim=1)
         return log_prob
 
-    def entropy(self) -> Optional[th.Tensor]:
+    def entropy(self) -> th.Tensor | None:
         # No analytical form,
         # entropy needs to be estimated using -log_prob.mean()
         return None
@@ -254,7 +256,7 @@ class SquashedDiagGaussianDistribution(DiagGaussianDistribution):
         # Squash the output
         return th.tanh(self.gaussian_actions)
 
-    def log_prob_from_params(self, mean_actions: th.Tensor, log_std: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+    def log_prob_from_params(self, mean_actions: th.Tensor, log_std: th.Tensor) -> tuple[th.Tensor, th.Tensor]:
         action = self.actions_from_params(mean_actions, log_std)
         log_prob = self.log_prob(action, self.gaussian_actions)
         return action, log_prob
@@ -266,6 +268,8 @@ class CategoricalDistribution(Distribution):
 
     :param action_dim: Number of discrete actions
     """
+
+    distribution: Categorical
 
     def __init__(self, action_dim: int):
         super().__init__()
@@ -305,7 +309,7 @@ class CategoricalDistribution(Distribution):
         self.proba_distribution(action_logits)
         return self.get_actions(deterministic=deterministic)
 
-    def log_prob_from_params(self, action_logits: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+    def log_prob_from_params(self, action_logits: th.Tensor) -> tuple[th.Tensor, th.Tensor]:
         actions = self.actions_from_params(action_logits)
         log_prob = self.log_prob(actions)
         return actions, log_prob
@@ -318,7 +322,9 @@ class MultiCategoricalDistribution(Distribution):
     :param action_dims: List of sizes of discrete action spaces
     """
 
-    def __init__(self, action_dims: List[int]):
+    distribution: list[Categorical]  # type: ignore[assignment]
+
+    def __init__(self, action_dims: list[int]):
         super().__init__()
         self.action_dims = action_dims
 
@@ -345,7 +351,7 @@ class MultiCategoricalDistribution(Distribution):
     def log_prob(self, actions: th.Tensor) -> th.Tensor:
         # Extract each discrete action and compute log prob for their respective distributions
         return th.stack(
-            [dist.log_prob(action) for dist, action in zip(self.distribution, th.unbind(actions, dim=1))], dim=1
+            [dist.log_prob(action) for dist, action in zip(self.distribution, th.unbind(actions, dim=1), strict=True)], dim=1
         ).sum(dim=1)
 
     def entropy(self) -> th.Tensor:
@@ -362,7 +368,7 @@ class MultiCategoricalDistribution(Distribution):
         self.proba_distribution(action_logits)
         return self.get_actions(deterministic=deterministic)
 
-    def log_prob_from_params(self, action_logits: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+    def log_prob_from_params(self, action_logits: th.Tensor) -> tuple[th.Tensor, th.Tensor]:
         actions = self.actions_from_params(action_logits)
         log_prob = self.log_prob(actions)
         return actions, log_prob
@@ -374,6 +380,8 @@ class BernoulliDistribution(Distribution):
 
     :param action_dim: Number of binary actions
     """
+
+    distribution: Bernoulli
 
     def __init__(self, action_dims: int):
         super().__init__()
@@ -412,7 +420,7 @@ class BernoulliDistribution(Distribution):
         self.proba_distribution(action_logits)
         return self.get_actions(deterministic=deterministic)
 
-    def log_prob_from_params(self, action_logits: th.Tensor) -> Tuple[th.Tensor, th.Tensor]:
+    def log_prob_from_params(self, action_logits: th.Tensor) -> tuple[th.Tensor, th.Tensor]:
         actions = self.actions_from_params(action_logits)
         log_prob = self.log_prob(actions)
         return actions, log_prob
@@ -441,11 +449,12 @@ class StateDependentNoiseDistribution(Distribution):
     """
 
     bijector: Optional["TanhBijector"]
-    latent_sde_dim: Optional[int]
+    latent_sde_dim: int | None
     weights_dist: Normal
     _latent_sde: th.Tensor
     exploration_mat: th.Tensor
     exploration_matrices: th.Tensor
+    distribution: Normal
 
     def __init__(
         self,
@@ -459,8 +468,6 @@ class StateDependentNoiseDistribution(Distribution):
         super().__init__()
         self.action_dim = action_dim
         self.latent_sde_dim = None
-        self.mean_actions = None
-        self.log_std = None
         self.use_expln = use_expln
         self.full_std = full_std
         self.epsilon = epsilon
@@ -512,8 +519,8 @@ class StateDependentNoiseDistribution(Distribution):
         self.exploration_matrices = self.weights_dist.rsample((batch_size,))
 
     def proba_distribution_net(
-        self, latent_dim: int, log_std_init: float = -2.0, latent_sde_dim: Optional[int] = None
-    ) -> Tuple[nn.Module, nn.Parameter]:
+        self, latent_dim: int, log_std_init: float = -2.0, latent_sde_dim: int | None = None
+    ) -> tuple[nn.Module, nn.Parameter]:
         """
         Create the layers and parameter that represent the distribution:
         one output will be the deterministic action, the other parameter will be the
@@ -570,7 +577,7 @@ class StateDependentNoiseDistribution(Distribution):
             log_prob -= th.sum(self.bijector.log_prob_correction(gaussian_actions), dim=1)
         return log_prob
 
-    def entropy(self) -> Optional[th.Tensor]:
+    def entropy(self) -> th.Tensor | None:
         if self.bijector is not None:
             # No analytical form,
             # entropy needs to be estimated using -log_prob.mean()
@@ -611,7 +618,7 @@ class StateDependentNoiseDistribution(Distribution):
 
     def log_prob_from_params(
         self, mean_actions: th.Tensor, log_std: th.Tensor, latent_sde: th.Tensor
-    ) -> Tuple[th.Tensor, th.Tensor]:
+    ) -> tuple[th.Tensor, th.Tensor]:
         actions = self.actions_from_params(mean_actions, log_std, latent_sde)
         log_prob = self.log_prob(actions)
         return actions, log_prob
@@ -661,7 +668,7 @@ class TanhBijector:
 
 
 def make_proba_distribution(
-    action_space: spaces.Space, use_sde: bool = False, dist_kwargs: Optional[Dict[str, Any]] = None
+    action_space: spaces.Space, use_sde: bool = False, dist_kwargs: dict[str, Any] | None = None
 ) -> Distribution:
     """
     Return an instance of Distribution for the correct type of action space
@@ -704,7 +711,9 @@ def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> th.Tensor
     :return: KL(dist_true||dist_pred)
     """
     # KL Divergence for different distribution types is out of scope
-    assert dist_true.__class__ == dist_pred.__class__, "Error: input distributions should be the same type"
+    assert (
+        dist_true.__class__ == dist_pred.__class__
+    ), f"Error: input distributions should be the same type, {dist_true.__class__} != {dist_pred.__class__}"
 
     # MultiCategoricalDistribution is not a PyTorch Distribution subclass
     # so we need to implement it ourselves!
@@ -714,10 +723,15 @@ def kl_divergence(dist_true: Distribution, dist_pred: Distribution) -> th.Tensor
             dist_pred.action_dims, dist_true.action_dims
         ), f"Error: distributions must have the same input space: {dist_pred.action_dims} != {dist_true.action_dims}"
         return th.stack(
-            [th.distributions.kl_divergence(p, q) for p, q in zip(dist_true.distribution, dist_pred.distribution)],
+            [
+                th.distributions.kl_divergence(p, q)
+                for p, q in zip(dist_true.distribution, dist_pred.distribution, strict=True)
+            ],
             dim=1,
         ).sum(dim=1)
 
     # Use the PyTorch kl_divergence implementation
     else:
+        assert isinstance(dist_true.distribution, TorchDistribution)
+        assert isinstance(dist_pred.distribution, TorchDistribution)
         return th.distributions.kl_divergence(dist_true.distribution, dist_pred.distribution)

@@ -1,5 +1,6 @@
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from collections.abc import Callable
+from typing import Any
 
 import gymnasium as gym
 import numpy as np
@@ -10,17 +11,18 @@ from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, VecMonitor, is
 
 def evaluate_policy(
     model: "type_aliases.PolicyPredictor",
-    env: Union[gym.Env, VecEnv],
+    env: gym.Env | VecEnv,
     n_eval_episodes: int = 10,
     deterministic: bool = True,
     render: bool = False,
-    callback: Optional[Callable[[Dict[str, Any], Dict[str, Any]], None]] = None,
-    reward_threshold: Optional[float] = None,
+    callback: Callable[[dict[str, Any], dict[str, Any]], None] | None = None,
+    reward_threshold: float | None = None,
     return_episode_rewards: bool = False,
     warn: bool = True,
-) -> Union[Tuple[float, float], Tuple[List[float], List[int]]]:
+) -> tuple[float, float] | tuple[list[float], list[int]]:
     """
-    Runs policy for ``n_eval_episodes`` episodes and returns average reward.
+    Runs the policy for ``n_eval_episodes`` episodes and outputs the average return
+    per episode (sum of undiscounted rewards).
     If a vector env is passed in, this divides the episodes to evaluate onto the
     different elements of the vector env. This static division of work is done to
     remove bias. See https://github.com/DLR-RM/stable-baselines3/issues/402 for more
@@ -35,23 +37,25 @@ def evaluate_policy(
         wrapper before anything else.
 
     :param model: The RL agent you want to evaluate. This can be any object
-        that implements a `predict` method, such as an RL algorithm (``BaseAlgorithm``)
+        that implements a ``predict`` method, such as an RL algorithm (``BaseAlgorithm``)
         or policy (``BasePolicy``).
     :param env: The gym environment or ``VecEnv`` environment.
     :param n_eval_episodes: Number of episode to evaluate the agent
     :param deterministic: Whether to use deterministic or stochastic actions
     :param render: Whether to render the environment or not
-    :param callback: callback function to do additional checks,
-        called after each step. Gets locals() and globals() passed as parameters.
+    :param callback: callback function to perform additional checks,
+        called ``n_envs`` times after each step.
+        Gets locals() and globals() passed as parameters.
+        See https://github.com/DLR-RM/stable-baselines3/issues/1912 for more details.
     :param reward_threshold: Minimum expected reward per episode,
         this will raise an error if the performance is not met
     :param return_episode_rewards: If True, a list of rewards and episode lengths
         per episode will be returned instead of the mean.
     :param warn: If True (default), warns user about lack of a Monitor wrapper in the
         evaluation environment.
-    :return: Mean reward per episode, std of reward per episode.
-        Returns ([float], [int]) when ``return_episode_rewards`` is True, first
-        list containing per-episode rewards and second containing per-episode lengths
+    :return: Mean return per episode (sum of rewards), std of reward per episode.
+        Returns (list[float], list[int]) when ``return_episode_rewards`` is True, first
+        list containing per-episode return and second containing per-episode lengths
         (in number of steps).
     """
     is_monitor_wrapped = False

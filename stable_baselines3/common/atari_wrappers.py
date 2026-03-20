@@ -1,4 +1,4 @@
-from typing import Dict, SupportsFloat
+from typing import SupportsFloat
 
 import gymnasium as gym
 import numpy as np
@@ -64,7 +64,7 @@ class NoopResetEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
             noops = self.unwrapped.np_random.integers(1, self.noop_max + 1)
         assert noops > 0
         obs = np.zeros(0)
-        info: Dict = {}
+        info: dict = {}
         for _ in range(noops):
             obs, _, terminated, truncated, info = self.env.step(self.noop_action)
             if terminated or truncated:
@@ -99,6 +99,14 @@ class EpisodicLifeEnv(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
     """
     Make end-of-life == end-of-episode, but only reset on true game over.
     Done by DeepMind for the DQN and co. since it helps value estimation.
+
+    .. note::
+        This wrapper changes the behavior of ``env.reset()``. When the environment
+        terminates due to a loss of life (but not game over), calling ``reset()`` will
+        perform a no-op step instead of truly resetting the environment. This can be
+        confusing when evaluating or testing agents. To avoid this behavior and ensure ``reset()``
+        always resets to the env, set ``terminal_on_life_loss=False`` when
+        using ``make_atari_env()``.
 
     :param env: Environment to wrap
     """
@@ -273,7 +281,7 @@ class AtariWrapper(gym.Wrapper[np.ndarray, int, np.ndarray, int]):
     :param frame_skip: Frequency at which the agent experiences the game.
         This correspond to repeating the action ``frame_skip`` times.
     :param screen_size: Resize Atari frame
-    :param terminal_on_life_loss: If True, then step() returns done=True whenever a life is lost.
+    :param terminal_on_life_loss: If True, then step() returns terminated=True whenever a life is lost.
     :param clip_reward: If True (default), the reward is clip to {-1, 0, 1} depending on its sign.
     :param action_repeat_probability: Probability of repeating the last action
     """

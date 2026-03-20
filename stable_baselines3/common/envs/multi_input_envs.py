@@ -1,5 +1,3 @@
-from typing import Dict, List, Optional, Tuple, Union
-
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
@@ -73,7 +71,7 @@ class SimpleMultiObsEnv(gym.Env):
         self.init_possible_transitions()
 
         self.num_col = num_col
-        self.state_mapping: List[Dict[str, np.ndarray]] = []
+        self.state_mapping: list[dict[str, np.ndarray]] = []
         self.init_state_mapping(num_col, num_row)
 
         self.max_state = len(self.state_mapping) - 1
@@ -94,7 +92,7 @@ class SimpleMultiObsEnv(gym.Env):
             for j in range(num_row):
                 self.state_mapping.append({"vec": col_vecs[i], "img": row_imgs[j].reshape(self.img_size)})
 
-    def get_state_mapping(self) -> Dict[str, np.ndarray]:
+    def get_state_mapping(self) -> dict[str, np.ndarray]:
         """
         Uses the state to get the observation mapping.
 
@@ -121,7 +119,7 @@ class SimpleMultiObsEnv(gym.Env):
         self.right_possible = [0, 1, 2, 12, 13, 14]
         self.up_possible = [4, 8, 12, 7, 11, 15]
 
-    def step(self, action: Union[int, np.ndarray]) -> GymStepReturn:
+    def step(self, action: int | np.ndarray) -> GymStepReturn:
         """
         Run one timestep of the environment's dynamics. When end of
         episode is reached, you are responsible for calling `reset()`
@@ -166,7 +164,7 @@ class SimpleMultiObsEnv(gym.Env):
         """
         print(self.log)
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[Dict[str, np.ndarray], Dict]:
+    def reset(self, *, seed: int | None = None, options: dict | None = None) -> tuple[dict[str, np.ndarray], dict]:
         """
         Resets the environment state and step count and returns reset observation.
 

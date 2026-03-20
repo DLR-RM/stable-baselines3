@@ -1,6 +1,6 @@
 import copy
 from abc import ABC, abstractmethod
-from typing import Iterable, List, Optional
+from collections.abc import Iterable
 
 import numpy as np
 from numpy.typing import DTypeLike
@@ -67,7 +67,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         sigma: np.ndarray,
         theta: float = 0.15,
         dt: float = 1e-2,
-        initial_noise: Optional[np.ndarray] = None,
+        initial_noise: np.ndarray | None = None,
         dtype: DTypeLike = np.float32,
     ) -> None:
         self._theta = theta
@@ -117,7 +117,7 @@ class VectorizedActionNoise(ActionNoise):
         self.base_noise = base_noise
         self.noises = [copy.deepcopy(self.base_noise) for _ in range(n_envs)]
 
-    def reset(self, indices: Optional[Iterable[int]] = None) -> None:
+    def reset(self, indices: Iterable[int] | None = None) -> None:
         """
         Reset all the noise processes, or those listed in indices.
 
@@ -153,11 +153,11 @@ class VectorizedActionNoise(ActionNoise):
         self._base_noise = base_noise
 
     @property
-    def noises(self) -> List[ActionNoise]:
+    def noises(self) -> list[ActionNoise]:
         return self._noises
 
     @noises.setter
-    def noises(self, noises: List[ActionNoise]) -> None:
+    def noises(self, noises: list[ActionNoise]) -> None:
         noises = list(noises)  # raises TypeError if not iterable
         assert len(noises) == self.n_envs, f"Expected a list of {self.n_envs} ActionNoises, found {len(noises)}."
 

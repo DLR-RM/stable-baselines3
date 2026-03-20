@@ -1,8 +1,9 @@
 import inspect
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Iterable, Sequence
 from copy import deepcopy
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Union
 
 import cloudpickle
 import gymnasium as gym
@@ -11,13 +12,13 @@ from gymnasium import spaces
 
 # Define type aliases here to avoid circular import
 # Used when we want to access one or more VecEnv
-VecEnvIndices = Union[None, int, Iterable[int]]
+VecEnvIndices = Union[None, int, Iterable[int]]  # noqa: UP007
 # VecEnvObs is what is returned by the reset() method
 # it contains the observation for each env
-VecEnvObs = Union[np.ndarray, Dict[str, np.ndarray], Tuple[np.ndarray, ...]]
+VecEnvObs = Union[np.ndarray, dict[str, np.ndarray], tuple[np.ndarray, ...]]  # noqa: UP007
 # VecEnvStepReturn is what is returned by the step() method
 # it contains the observation, reward, done, info for each env
-VecEnvStepReturn = Tuple[VecEnvObs, np.ndarray, np.ndarray, List[Dict]]
+VecEnvStepReturn = tuple[VecEnvObs, np.ndarray, np.ndarray, list[dict]]
 
 
 def tile_images(images_nhwc: Sequence[np.ndarray]) -> np.ndarray:  # pragma: no cover
@@ -42,7 +43,7 @@ def tile_images(images_nhwc: Sequence[np.ndarray]) -> np.ndarray:  # pragma: no 
     # img_HhWwc
     out_image = out_image.transpose(0, 2, 1, 3, 4)
     # img_Hh_Ww_c
-    out_image = out_image.reshape((new_height * height, new_width * width, n_channels))
+    out_image = out_image.reshape((new_height * height, new_width * width, n_channels))  # type: ignore[assignment]
     return out_image
 
 
@@ -65,11 +66,11 @@ class VecEnv(ABC):
         self.observation_space = observation_space
         self.action_space = action_space
         # store info returned by the reset method
-        self.reset_infos: List[Dict[str, Any]] = [{} for _ in range(num_envs)]
+        self.reset_infos: list[dict[str, Any]] = [{} for _ in range(num_envs)]
         # seeds to be used in the next call to env.reset()
-        self._seeds: List[Optional[int]] = [None for _ in range(num_envs)]
+        self._seeds: list[int | None] = [None for _ in range(num_envs)]
         # options to be used in the next call to env.reset()
-        self._options: List[Dict[str, Any]] = [{} for _ in range(num_envs)]
+        self._options: list[dict[str, Any]] = [{} for _ in range(num_envs)]
 
         try:
             render_modes = self.get_attr("render_mode")
@@ -146,8 +147,23 @@ class VecEnv(ABC):
         """
         raise NotImplementedError()
 
+    def has_attr(self, attr_name: str) -> bool:
+        """
+        Check if an attribute exists for a vectorized environment.
+
+        :param attr_name: The name of the attribute to check
+        :return: True if 'attr_name' exists in all environments
+        """
+        # Default implementation, will not work with things that cannot be pickled:
+        # https://github.com/Stable-Baselines-Team/stable-baselines3-contrib/issues/49
+        try:
+            self.get_attr(attr_name)
+            return True
+        except AttributeError:
+            return False
+
     @abstractmethod
-    def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:
+    def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> list[Any]:
         """
         Return attribute from vectorized environment.
 
@@ -170,7 +186,7 @@ class VecEnv(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> List[Any]:
+    def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> list[Any]:
         """
         Call instance methods of vectorized environments.
 
@@ -183,7 +199,7 @@ class VecEnv(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def env_is_wrapped(self, wrapper_class: Type[gym.Wrapper], indices: VecEnvIndices = None) -> List[bool]:
+    def env_is_wrapped(self, wrapper_class: type[gym.Wrapper], indices: VecEnvIndices = None) -> list[bool]:
         """
         Check if environments are wrapped with a given wrapper.
 
@@ -205,13 +221,13 @@ class VecEnv(ABC):
         self.step_async(actions)
         return self.step_wait()
 
-    def get_images(self) -> Sequence[Optional[np.ndarray]]:
+    def get_images(self) -> Sequence[np.ndarray | None]:
         """
         Return RGB images from each environment when available
         """
         raise NotImplementedError
 
-    def render(self, mode: Optional[str] = None) -> Optional[np.ndarray]:
+    def render(self, mode: str | None = None) -> np.ndarray | None:
         """
         Gym environment rendering
 
@@ -273,7 +289,7 @@ class VecEnv(ABC):
             self.env_method("render")
         return None
 
-    def seed(self, seed: Optional[int] = None) -> Sequence[Union[None, int]]:
+    def seed(self, seed: int | None = None) -> Sequence[None | int]:
         """
         Sets the random seeds for all environments, based on a given seed.
         Each individual environment will still get its own seed, by incrementing the given seed.
@@ -292,7 +308,7 @@ class VecEnv(ABC):
         self._seeds = [seed + idx for idx in range(self.num_envs)]
         return self._seeds
 
-    def set_options(self, options: Optional[Union[List[Dict], Dict]] = None) -> None:
+    def set_options(self, options: list[dict] | dict | None = None) -> None:
         """
         Set environment options for all environments.
         If a dict is passed instead of a list, the same options will be used for all environments.
@@ -315,7 +331,7 @@ class VecEnv(ABC):
         else:
             return self
 
-    def getattr_depth_check(self, name: str, already_found: bool) -> Optional[str]:
+    def getattr_depth_check(self, name: str, already_found: bool) -> str | None:
         """Check if an attribute reference is being hidden in a recursive call to __getattr__
 
         :param name: name of attribute to check for
@@ -353,8 +369,8 @@ class VecEnvWrapper(VecEnv):
     def __init__(
         self,
         venv: VecEnv,
-        observation_space: Optional[spaces.Space] = None,
-        action_space: Optional[spaces.Space] = None,
+        observation_space: spaces.Space | None = None,
+        action_space: spaces.Space | None = None,
     ):
         self.venv = venv
 
@@ -376,31 +392,34 @@ class VecEnvWrapper(VecEnv):
     def step_wait(self) -> VecEnvStepReturn:
         pass
 
-    def seed(self, seed: Optional[int] = None) -> Sequence[Union[None, int]]:
+    def seed(self, seed: int | None = None) -> Sequence[None | int]:
         return self.venv.seed(seed)
 
-    def set_options(self, options: Optional[Union[List[Dict], Dict]] = None) -> None:
+    def set_options(self, options: list[dict] | dict | None = None) -> None:
         return self.venv.set_options(options)
 
     def close(self) -> None:
         return self.venv.close()
 
-    def render(self, mode: Optional[str] = None) -> Optional[np.ndarray]:
+    def render(self, mode: str | None = None) -> np.ndarray | None:
         return self.venv.render(mode=mode)
 
-    def get_images(self) -> Sequence[Optional[np.ndarray]]:
+    def get_images(self) -> Sequence[np.ndarray | None]:
         return self.venv.get_images()
 
-    def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:
+    def has_attr(self, attr_name: str) -> bool:
+        return self.venv.has_attr(attr_name)
+
+    def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> list[Any]:
         return self.venv.get_attr(attr_name, indices)
 
     def set_attr(self, attr_name: str, value: Any, indices: VecEnvIndices = None) -> None:
         return self.venv.set_attr(attr_name, value, indices)
 
-    def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> List[Any]:
+    def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> list[Any]:
         return self.venv.env_method(method_name, *method_args, indices=indices, **method_kwargs)
 
-    def env_is_wrapped(self, wrapper_class: Type[gym.Wrapper], indices: VecEnvIndices = None) -> List[bool]:
+    def env_is_wrapped(self, wrapper_class: type[gym.Wrapper], indices: VecEnvIndices = None) -> list[bool]:
         return self.venv.env_is_wrapped(wrapper_class, indices=indices)
 
     def __getattr__(self, name: str) -> Any:
@@ -419,7 +438,7 @@ class VecEnvWrapper(VecEnv):
 
         return self.getattr_recursive(name)
 
-    def _get_all_attributes(self) -> Dict[str, Any]:
+    def _get_all_attributes(self) -> dict[str, Any]:
         """Get all (inherited) instance and class attributes
 
         :return: all_attributes
@@ -446,7 +465,7 @@ class VecEnvWrapper(VecEnv):
 
         return attr
 
-    def getattr_depth_check(self, name: str, already_found: bool) -> Optional[str]:
+    def getattr_depth_check(self, name: str, already_found: bool) -> str | None:
         """See base class.
 
         :return: name of module whose attribute is being shadowed, if any.
@@ -454,7 +473,7 @@ class VecEnvWrapper(VecEnv):
         all_attributes = self._get_all_attributes()
         if name in all_attributes and already_found:
             # this venv's attribute is being hidden because of a higher venv.
-            shadowed_wrapper_class: Optional[str] = f"{type(self).__module__}.{type(self).__name__}"
+            shadowed_wrapper_class: str | None = f"{type(self).__module__}.{type(self).__name__}"
         elif name in all_attributes and not already_found:
             # we have found the first reference to the attribute. Now check for duplicates.
             shadowed_wrapper_class = self.venv.getattr_depth_check(name, True)

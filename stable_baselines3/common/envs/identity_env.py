@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic, Optional, Tuple, TypeVar, Union
+from typing import Any, Generic, TypeVar
 
 import gymnasium as gym
 import numpy as np
@@ -10,7 +10,7 @@ T = TypeVar("T", int, np.ndarray)
 
 
 class IdentityEnv(gym.Env, Generic[T]):
-    def __init__(self, dim: Optional[int] = None, space: Optional[spaces.Space] = None, ep_length: int = 100):
+    def __init__(self, dim: int | None = None, space: spaces.Space | None = None, ep_length: int = 100):
         """
         Identity environment for testing purposes
 
@@ -34,7 +34,7 @@ class IdentityEnv(gym.Env, Generic[T]):
         self.num_resets = -1  # Becomes 0 after __init__ exits.
         self.reset()
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[T, Dict]:
+    def reset(self, *, seed: int | None = None, options: dict | None = None) -> tuple[T, dict]:
         if seed is not None:
             super().reset(seed=seed)
         self.current_step = 0
@@ -42,7 +42,7 @@ class IdentityEnv(gym.Env, Generic[T]):
         self._choose_next_state()
         return self.state, {}
 
-    def step(self, action: T) -> Tuple[T, float, bool, bool, Dict[str, Any]]:
+    def step(self, action: T) -> tuple[T, float, bool, bool, dict[str, Any]]:
         reward = self._get_reward(action)
         self._choose_next_state()
         self.current_step += 1
@@ -74,7 +74,7 @@ class IdentityEnvBox(IdentityEnv[np.ndarray]):
         super().__init__(ep_length=ep_length, space=space)
         self.eps = eps
 
-    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
+    def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
         reward = self._get_reward(action)
         self._choose_next_state()
         self.current_step += 1
@@ -142,13 +142,13 @@ class FakeImageEnv(gym.Env):
         self.ep_length = 10
         self.current_step = 0
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[np.ndarray, Dict]:
+    def reset(self, *, seed: int | None = None, options: dict | None = None) -> tuple[np.ndarray, dict]:
         if seed is not None:
             super().reset(seed=seed)
         self.current_step = 0
         return self.observation_space.sample(), {}
 
-    def step(self, action: Union[np.ndarray, int]) -> GymStepReturn:
+    def step(self, action: np.ndarray | int) -> GymStepReturn:
         reward = 0.0
         self.current_step += 1
         terminated = False

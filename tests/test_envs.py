@@ -31,7 +31,7 @@ ENV_CLASSES = [
 @pytest.mark.parametrize("env_id", ["CartPole-v1", "Pendulum-v1"])
 def test_env(env_id):
     """
-    Check that environmnent integrated in Gym pass the test.
+    Check that environment integrated in Gym pass the test.
 
     :param env_id: (str)
     """
@@ -170,6 +170,8 @@ def test_non_default_spaces(new_obs_space):
         spaces.Discrete(3, start=-1),
         # Non zero start index (MultiDiscrete)
         spaces.MultiDiscrete([4, 4], start=[1, 0]),
+        # 2D MultiDiscrete
+        spaces.MultiDiscrete(np.array([[4, 4], [2, 3]])),
     ],
 )
 def test_non_default_action_spaces(new_action_space):

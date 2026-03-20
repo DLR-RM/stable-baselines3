@@ -4,16 +4,23 @@ import itertools
 import multiprocessing
 import os
 import warnings
-from typing import Dict, Optional
 
 import gymnasium as gym
 import numpy as np
 import pytest
 from gymnasium import spaces
 
+from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack, VecNormalize
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack, VecNormalize, VecVideoRecorder
+
+try:
+    import moviepy  # noqa: F401
+
+    have_moviepy = True
+except ImportError:
+    have_moviepy = False
 
 N_ENVS = 3
 VEC_ENV_CLASSES = [DummyVecEnv, SubprocVecEnv]
@@ -30,9 +37,9 @@ class CustomGymEnv(gym.Env):
         self.current_step = 0
         self.ep_length = 4
         self.render_mode = render_mode
-        self.current_options: Optional[Dict] = None
+        self.current_options: dict | None = None
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
         if seed is not None:
             self.seed(seed)
         self.current_step = 0
@@ -89,7 +96,8 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
     """Test access to methods/attributes of vectorized environments"""
 
     def make_env():
-        return CustomGymEnv(spaces.Box(low=np.zeros(2), high=np.ones(2)))
+        # Wrap the env to check that get_attr and set_attr are working properly
+        return Monitor(CustomGymEnv(spaces.Box(low=np.zeros(2), high=np.ones(2))))
 
     vec_env = vec_env_class([make_env for _ in range(N_ENVS)])
 
@@ -115,13 +123,33 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
     # we need a X server to test the "human" mode (uses OpenCV)
     # vec_env.render(mode="human")
 
+    # Set a new attribute, on the last wrapper and on the env
+    assert not vec_env.has_attr("dummy")
+    # Set value for the last wrapper only
+    vec_env.set_attr("dummy", 12)
+    assert vec_env.get_attr("dummy") == [12] * N_ENVS
+    if vec_env_class == DummyVecEnv:
+        assert vec_env.envs[0].dummy == 12
+
+    assert not vec_env.has_attr("dummy2")
+    # Set the value on the original env
+    # Note: doesn't work anymore with gym >= 1.1,
+    # the value needs to exists before
+    # `set_wrapper_attr` doesn't exist before v1.0
+    if gym.__version__ > "1":
+        vec_env.env_method("set_wrapper_attr", "dummy2", 2)
+        assert vec_env.get_attr("dummy2") == [2] * N_ENVS
+        # if vec_env_class == DummyVecEnv:
+        #     assert vec_env.envs[0].unwrapped.dummy2 == 2
+
     env_method_results = vec_env.env_method("custom_method", 1, indices=None, dim_1=2)
     setattr_results = []
-    # Set current_step to an arbitrary value
+    # Set new variable dummy1 of the last wrapper to an arbitrary value
     for env_idx in range(N_ENVS):
-        setattr_results.append(vec_env.set_attr("current_step", env_idx, indices=env_idx))
+        setattr_results.append(vec_env.set_attr("dummy1", env_idx, indices=env_idx))
     # Retrieve the value for each environment
-    getattr_results = vec_env.get_attr("current_step")
+    assert vec_env.has_attr("dummy1")
+    getattr_results = vec_env.get_attr("dummy1")
 
     assert len(env_method_results) == N_ENVS
     assert len(setattr_results) == N_ENVS
@@ -139,28 +167,31 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
     assert len(env_method_subset) == 2
 
     # Test to change value for all the environments
-    setattr_result = vec_env.set_attr("current_step", 42, indices=None)
-    getattr_result = vec_env.get_attr("current_step")
+    setattr_result = vec_env.set_attr("dummy1", 42, indices=None)
+    getattr_result = vec_env.get_attr("dummy1")
     assert setattr_result is None
     assert getattr_result == [42 for _ in range(N_ENVS)]
 
     # Additional tests for setattr that does not affect all the environments
     vec_env.reset()
-    setattr_result = vec_env.set_attr("current_step", 12, indices=[0, 1])
-    getattr_result = vec_env.get_attr("current_step")
-    getattr_result_subset = vec_env.get_attr("current_step", indices=[0, 1])
-    assert setattr_result is None
-    assert getattr_result == [12 for _ in range(2)] + [0 for _ in range(N_ENVS - 2)]
-    assert getattr_result_subset == [12, 12]
-    assert vec_env.get_attr("current_step", indices=[0, 2]) == [12, 0]
+    # Since gym >= 0.29, set_attr only sets the attribute on the last wrapper
+    # but `set_wrapper_attr` doesn't exist before v1.0
+    if gym.__version__ > "1":
+        setattr_result = vec_env.env_method("set_wrapper_attr", "current_step", 12, indices=[0, 1])
+        getattr_result = vec_env.get_attr("current_step")
+        getattr_result_subset = vec_env.get_attr("current_step", indices=[0, 1])
+        assert setattr_result == [True, True]
+        assert getattr_result == [12 for _ in range(2)] + [0 for _ in range(N_ENVS - 2)]
+        assert getattr_result_subset == [12, 12]
+        assert vec_env.get_attr("current_step", indices=[0, 2]) == [12, 0]
 
-    vec_env.reset()
-    # Change value only for first and last environment
-    setattr_result = vec_env.set_attr("current_step", 12, indices=[0, -1])
-    getattr_result = vec_env.get_attr("current_step")
-    assert setattr_result is None
-    assert getattr_result == [12] + [0 for _ in range(N_ENVS - 2)] + [12]
-    assert vec_env.get_attr("current_step", indices=[-1]) == [12]
+        vec_env.reset()
+        # Change value only for first and last environment
+        setattr_result = vec_env.env_method("set_wrapper_attr", "current_step", 12, indices=[0, -1])
+        getattr_result = vec_env.get_attr("current_step")
+        assert setattr_result == [True, True]
+        assert getattr_result == [12] + [0 for _ in range(N_ENVS - 2)] + [12]
+        assert vec_env.get_attr("current_step", indices=[-1]) == [12]
 
     # Checks that options are correctly passed
     assert vec_env.get_attr("current_options")[0] is None
@@ -193,7 +224,7 @@ class StepEnv(gym.Env):
         self.max_steps = max_steps
         self.current_step = 0
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
         self.current_step = 0
         return np.array([self.current_step], dtype="int"), {}
 
@@ -226,7 +257,7 @@ def test_vecenv_terminal_obs(vec_env_class, vec_env_wrapper):
         assert len(obs_b) == N_ENVS
         assert len(done_b) == N_ENVS
         assert len(info_b) == N_ENVS
-        env_iter = zip(prev_obs_b, obs_b, done_b, info_b, step_nums)
+        env_iter = zip(prev_obs_b, obs_b, done_b, info_b, step_nums, strict=True)
         for prev_obs, obs, done, info, final_step_num in env_iter:
             assert done == (step_num == final_step_num)
             if not done:
@@ -255,7 +286,7 @@ SPACES = collections.OrderedDict(
         ("discrete", spaces.Discrete(2)),
         ("multidiscrete", spaces.MultiDiscrete([2, 3])),
         ("multibinary", spaces.MultiBinary(3)),
-        ("continuous", spaces.Box(low=np.zeros(2), high=np.ones(2))),
+        ("continuous", spaces.Box(low=np.zeros(2, dtype=np.float32), high=np.ones(2, dtype=np.float32))),
     ]
 )
 
@@ -327,7 +358,7 @@ def test_vecenv_tuple_spaces(vec_env_class):
     def obs_assert(obs):
         assert isinstance(obs, tuple)
         assert len(obs) == len(space.spaces)
-        for values, inner_space in zip(obs, space.spaces):
+        for values, inner_space in zip(obs, space.spaces, strict=True):
             check_vecenv_obs(values, inner_space)
 
     return check_vecenv_spaces(vec_env_class, space, obs_assert)
@@ -349,7 +380,7 @@ def test_subproc_start_method():
         vec_env_class = functools.partial(SubprocVecEnv, start_method=start_method)
         check_vecenv_spaces(vec_env_class, space, obs_assert)
 
-    with pytest.raises(ValueError, match="cannot find context for 'illegal_method'"):
+    with pytest.raises(ValueError, match=r"cannot find context for 'illegal_method'"):
         vec_env_class = functools.partial(SubprocVecEnv, start_method="illegal_method")
         check_vecenv_spaces(vec_env_class, space, obs_assert)
 
@@ -624,3 +655,38 @@ def test_render(vec_env_class):
     vec_env.render()
 
     vec_env.close()
+
+
+@pytest.mark.skipif(not have_moviepy, reason="moviepy is not installed")
+def test_video_recorder(tmp_path):
+    env_id = "CartPole-v1"
+    video_folder = str(tmp_path)
+
+    vec_env = make_vec_env(env_id, n_envs=1)
+
+    # Wrap to check unwrapping works
+    vec_env = VecNormalize(vec_env)
+
+    # Record the video starting at the first step
+    vec_env = VecVideoRecorder(
+        vec_env,
+        video_folder,
+        record_video_trigger=lambda x: x % 65 == 0,
+        video_length=10,
+        name_prefix=f"agent-{env_id}",
+    )
+
+    model = PPO("MlpPolicy", vec_env, n_steps=64, n_epochs=1, verbose=0)
+
+    model.learn(total_timesteps=128)
+
+    # print all videos in video_folder, should be multiple step 0-100, step 1024-1124
+    video_files = list(map(str, tmp_path.glob("*.mp4")))
+    video_files.sort(reverse=True)
+
+    # Clean up
+    vec_env.close()
+
+    assert len(video_files) == 2
+    assert "agent-CartPole-v1-step-65-to-step-75.mp4" in video_files[0]
+    assert "agent-CartPole-v1-step-0-to-step-10.mp4" in video_files[1]

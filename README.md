@@ -100,10 +100,10 @@ It provides a minimal number of features compared to SB3 but can be much faster 
 
 ## Installation
 
-**Note:** Stable-Baselines3 supports PyTorch >= 1.13
+**Note:** Stable-Baselines3 supports PyTorch >= 2.3
 
 ### Prerequisites
-Stable Baselines3 requires Python 3.8+.
+Stable Baselines3 requires Python 3.10+.
 
 #### Windows
 
@@ -116,7 +116,7 @@ Install the Stable Baselines3 package:
 pip install 'stable-baselines3[extra]'
 ```
 
-This includes an optional dependencies like Tensorboard, OpenCV or `ale-py` to train on atari games. If you do not need those, you can use:
+This includes optional dependencies like Tensorboard, OpenCV or `ale-py` to train on atari games. If you do not need those, you can use:
 ```sh
 pip install stable-baselines3
 ```
@@ -210,7 +210,7 @@ Actions `gymnasium.spaces`:
 ## Testing the installation
 ### Install dependencies
 ```sh
-pip install -e .[docs,tests,extra]
+pip install -e '.[docs,tests,extra]'
 ```
 ### Run tests
 All unit tests in stable baselines3 can be run using `pytest` runner:

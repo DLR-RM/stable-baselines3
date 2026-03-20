@@ -1,5 +1,3 @@
-from typing import Dict, Optional
-
 import gymnasium as gym
 import numpy as np
 import pytest
@@ -72,7 +70,7 @@ class DummyDictEnv(gym.Env):
         terminated = truncated = False
         return self.observation_space.sample(), reward, terminated, truncated, {}
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
         if seed is not None:
             self.observation_space.seed(seed)
         return self.observation_space.sample(), {}
@@ -88,7 +86,7 @@ class DummyDictEnv(gym.Env):
 def test_env(use_discrete_actions, channel_last, nested_dict_obs, vec_only):
     # Check the env used for testing
     if nested_dict_obs:
-        with pytest.warns(UserWarning, match="Nested observation spaces are not supported"):
+        with pytest.warns(UserWarning, match=r"Nested observation spaces are not supported"):
             check_env(DummyDictEnv(use_discrete_actions, channel_last, nested_dict_obs, vec_only))
     else:
         check_env(DummyDictEnv(use_discrete_actions, channel_last, nested_dict_obs, vec_only))

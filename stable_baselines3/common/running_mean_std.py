@@ -1,10 +1,8 @@
-from typing import Tuple
-
 import numpy as np
 
 
 class RunningMeanStd:
-    def __init__(self, epsilon: float = 1e-4, shape: Tuple[int, ...] = ()):
+    def __init__(self, epsilon: float = 1e-4, shape: tuple[int, ...] = ()):
         """
         Calculates the running mean and std of a data stream
         https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm

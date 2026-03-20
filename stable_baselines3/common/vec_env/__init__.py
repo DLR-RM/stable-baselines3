@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Optional, Type, TypeVar
+from typing import TypeVar
 
 from stable_baselines3.common.vec_env.base_vec_env import CloudpickleWrapper, VecEnv, VecEnvWrapper
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
@@ -16,7 +16,7 @@ from stable_baselines3.common.vec_env.vec_video_recorder import VecVideoRecorder
 VecEnvWrapperT = TypeVar("VecEnvWrapperT", bound=VecEnvWrapper)
 
 
-def unwrap_vec_wrapper(env: VecEnv, vec_wrapper_class: Type[VecEnvWrapperT]) -> Optional[VecEnvWrapperT]:
+def unwrap_vec_wrapper(env: VecEnv, vec_wrapper_class: type[VecEnvWrapperT]) -> VecEnvWrapperT | None:
     """
     Retrieve a ``VecEnvWrapper`` object by recursively searching.
 
@@ -32,7 +32,7 @@ def unwrap_vec_wrapper(env: VecEnv, vec_wrapper_class: Type[VecEnvWrapperT]) -> 
     return None
 
 
-def unwrap_vec_normalize(env: VecEnv) -> Optional[VecNormalize]:
+def unwrap_vec_normalize(env: VecEnv) -> VecNormalize | None:
     """
     Retrieve a ``VecNormalize`` object by recursively searching.
 
@@ -42,7 +42,7 @@ def unwrap_vec_normalize(env: VecEnv) -> Optional[VecNormalize]:
     return unwrap_vec_wrapper(env, VecNormalize)
 
 
-def is_vecenv_wrapped(env: VecEnv, vec_wrapper_class: Type[VecEnvWrapper]) -> bool:
+def is_vecenv_wrapped(env: VecEnv, vec_wrapper_class: type[VecEnvWrapper]) -> bool:
     """
     Check if an environment is already wrapped in a given ``VecEnvWrapper``.
 
@@ -86,20 +86,20 @@ def sync_envs_normalization(env: VecEnv, eval_env: VecEnv) -> None:
 
 __all__ = [
     "CloudpickleWrapper",
-    "VecEnv",
-    "VecEnvWrapper",
     "DummyVecEnv",
     "StackedObservations",
     "SubprocVecEnv",
     "VecCheckNan",
+    "VecEnv",
+    "VecEnvWrapper",
     "VecExtractDictObs",
     "VecFrameStack",
     "VecMonitor",
     "VecNormalize",
     "VecTransposeImage",
     "VecVideoRecorder",
-    "unwrap_vec_wrapper",
-    "unwrap_vec_normalize",
     "is_vecenv_wrapped",
     "sync_envs_normalization",
+    "unwrap_vec_normalize",
+    "unwrap_vec_wrapper",
 ]

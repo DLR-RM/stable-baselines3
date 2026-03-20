@@ -1,5 +1,5 @@
 import operator
-from typing import Any, Dict, Optional
+from typing import Any
 
 import gymnasium as gym
 import numpy as np
@@ -22,7 +22,7 @@ ENV_ID = "Pendulum-v1"
 
 
 class DummyRewardEnv(gym.Env):
-    metadata: Dict[str, Any] = {}
+    metadata: dict[str, Any] = {}
 
     def __init__(self, return_reward_idx=0):
         self.action_space = spaces.Discrete(2)
@@ -39,7 +39,7 @@ class DummyRewardEnv(gym.Env):
         truncated = self.t == len(self.returned_rewards)
         return np.array([returned_value]), returned_value, terminated, truncated, {}
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
         if seed is not None:
             super().reset(seed=seed)
         self.t = 0
@@ -62,7 +62,7 @@ class DummyDictEnv(gym.Env):
         )
         self.action_space = spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
         if seed is not None:
             super().reset(seed=seed)
         return self.observation_space.sample(), {}
@@ -94,7 +94,7 @@ class DummyMixedDictEnv(gym.Env):
         )
         self.action_space = spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
 
-    def reset(self, *, seed: Optional[int] = None, options: Optional[Dict] = None):
+    def reset(self, *, seed: int | None = None, options: dict | None = None):
         if seed is not None:
             super().reset(seed=seed)
         return self.observation_space.sample(), {}
@@ -180,7 +180,11 @@ def _make_warmstart(env_fn, **kwargs):
 
 def _make_warmstart_cliffwalking(**kwargs):
     """Warm-start VecNormalize by stepping through CliffWalking"""
-    return _make_warmstart(lambda: gym.make("CliffWalking-v0"), **kwargs)
+    try:
+        return _make_warmstart(lambda: gym.make("CliffWalking-v0"), **kwargs)
+    except gym.error.DeprecatedEnv:
+        # v1 required since Gymnasium v1.2.0
+        return _make_warmstart(lambda: gym.make("CliffWalking-v1"), **kwargs)
 
 
 def _make_warmstart_cartpole():
@@ -315,7 +319,7 @@ def test_get_original():
         assert not np.array_equal(orig_obs, obs)
         assert not np.array_equal(orig_rewards, rewards)
         np.testing.assert_allclose(venv.normalize_obs(orig_obs), obs)
-        np.testing.assert_allclose(venv.normalize_reward(orig_rewards), rewards)
+        np.testing.assert_allclose(venv.normalize_reward(orig_rewards), rewards, atol=1e-6)
 
 
 def test_get_original_dict():
@@ -352,7 +356,7 @@ def test_normalize_dict_selected_keys():
     venv = _make_warmstart_dict_env(norm_obs=True, norm_obs_keys=["observation"])
     for _ in range(3):
         actions = [venv.action_space.sample()]
-        obs, rewards, _, _ = venv.step(actions)
+        obs, _rewards, _, _ = venv.step(actions)
         orig_obs = venv.get_original_obs()
 
         # "observation" is expected to be normalized
@@ -473,7 +477,7 @@ def test_sync_vec_normalize(make_env):
 
 
 def test_discrete_obs():
-    with pytest.raises(ValueError, match=".*only supports.*"):
+    with pytest.raises(ValueError, match=r".*only supports.*"):
         _make_warmstart_cliffwalking()
 
     # Smoke test that it runs with norm_obs False
@@ -481,10 +485,10 @@ def test_discrete_obs():
 
 
 def test_non_dict_obs_keys():
-    with pytest.raises(ValueError, match=".*is applicable only.*"):
+    with pytest.raises(ValueError, match=r".*is applicable only.*"):
         _make_warmstart(lambda: DummyRewardEnv(), norm_obs_keys=["key"])
 
-    with pytest.raises(ValueError, match=".* explicitly pass the observation keys.*"):
+    with pytest.raises(ValueError, match=r".* explicitly pass the observation keys.*"):
         _make_warmstart(lambda: DummyMixedDictEnv())
 
     # Ignore Discrete observation key

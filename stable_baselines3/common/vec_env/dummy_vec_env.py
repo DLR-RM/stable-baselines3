@@ -1,7 +1,8 @@
 import warnings
 from collections import OrderedDict
+from collections.abc import Callable, Sequence
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type
+from typing import Any
 
 import gymnasium as gym
 import numpy as np
@@ -26,7 +27,7 @@ class DummyVecEnv(VecEnv):
 
     actions: np.ndarray
 
-    def __init__(self, env_fns: List[Callable[[], gym.Env]]):
+    def __init__(self, env_fns: list[Callable[[], gym.Env]]):
         self.envs = [_patch_env(fn()) for fn in env_fns]
         if len(set([id(env.unwrapped) for env in self.envs])) != len(self.envs):
             raise ValueError(
@@ -46,7 +47,7 @@ class DummyVecEnv(VecEnv):
         self.buf_obs = OrderedDict([(k, np.zeros((self.num_envs, *tuple(shapes[k])), dtype=dtypes[k])) for k in self.keys])
         self.buf_dones = np.zeros((self.num_envs,), dtype=bool)
         self.buf_rews = np.zeros((self.num_envs,), dtype=np.float32)
-        self.buf_infos: List[Dict[str, Any]] = [{} for _ in range(self.num_envs)]
+        self.buf_infos: list[dict[str, Any]] = [{} for _ in range(self.num_envs)]
         self.metadata = env.metadata
 
     def step_async(self, actions: np.ndarray) -> None:
@@ -55,7 +56,7 @@ class DummyVecEnv(VecEnv):
     def step_wait(self) -> VecEnvStepReturn:
         # Avoid circular imports
         for env_idx in range(self.num_envs):
-            obs, self.buf_rews[env_idx], terminated, truncated, self.buf_infos[env_idx] = self.envs[env_idx].step(
+            obs, self.buf_rews[env_idx], terminated, truncated, self.buf_infos[env_idx] = self.envs[env_idx].step(  # type: ignore[assignment]
                 self.actions[env_idx]
             )
             # convert to SB3 VecEnv api
@@ -85,7 +86,7 @@ class DummyVecEnv(VecEnv):
         for env in self.envs:
             env.close()
 
-    def get_images(self) -> Sequence[Optional[np.ndarray]]:
+    def get_images(self) -> Sequence[np.ndarray | None]:
         if self.render_mode != "rgb_array":
             warnings.warn(
                 f"The render mode is {self.render_mode}, but this method assumes it is `rgb_array` to obtain images."
@@ -93,7 +94,7 @@ class DummyVecEnv(VecEnv):
             return [None for _ in self.envs]
         return [env.render() for env in self.envs]  # type: ignore[misc]
 
-    def render(self, mode: Optional[str] = None) -> Optional[np.ndarray]:
+    def render(self, mode: str | None = None) -> np.ndarray | None:
         """
         Gym environment rendering. If there are multiple environments then
         they are tiled together in one image via ``BaseVecEnv.render()``.
@@ -112,7 +113,7 @@ class DummyVecEnv(VecEnv):
     def _obs_from_buf(self) -> VecEnvObs:
         return dict_to_obs(self.observation_space, deepcopy(self.buf_obs))
 
-    def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:
+    def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> list[Any]:
         """Return attribute from vectorized environment (see base class)."""
         target_envs = self._get_target_envs(indices)
         return [env_i.get_wrapper_attr(attr_name) for env_i in target_envs]
@@ -123,12 +124,12 @@ class DummyVecEnv(VecEnv):
         for env_i in target_envs:
             setattr(env_i, attr_name, value)
 
-    def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> List[Any]:
+    def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> list[Any]:
         """Call instance methods of vectorized environments."""
         target_envs = self._get_target_envs(indices)
         return [env_i.get_wrapper_attr(method_name)(*method_args, **method_kwargs) for env_i in target_envs]
 
-    def env_is_wrapped(self, wrapper_class: Type[gym.Wrapper], indices: VecEnvIndices = None) -> List[bool]:
+    def env_is_wrapped(self, wrapper_class: type[gym.Wrapper], indices: VecEnvIndices = None) -> list[bool]:
         """Check if worker environments are wrapped with a given wrapper"""
         target_envs = self._get_target_envs(indices)
         # Import here to avoid a circular import
@@ -136,6 +137,6 @@ class DummyVecEnv(VecEnv):
 
         return [env_util.is_wrapped(env_i, wrapper_class) for env_i in target_envs]
 
-    def _get_target_envs(self, indices: VecEnvIndices) -> List[gym.Env]:
+    def _get_target_envs(self, indices: VecEnvIndices) -> list[gym.Env]:
         indices = self._get_indices(indices)
         return [self.envs[i] for i in indices]

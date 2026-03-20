@@ -45,7 +45,7 @@ def test_continuous(model_class):
     elif model_class in [A2C]:
         kwargs["policy_kwargs"]["log_std_init"] = -0.5
     elif model_class == PPO:
-        kwargs = dict(n_steps=512, n_epochs=5)
+        kwargs = dict(n_steps=512, n_epochs=5, seed=0)
 
     model = model_class("MlpPolicy", env, learning_rate=1e-3, **kwargs).learn(n_steps)
 

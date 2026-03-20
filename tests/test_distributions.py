@@ -1,5 +1,4 @@
 from copy import deepcopy
-from typing import Tuple
 
 import gymnasium as gym
 import numpy as np
@@ -55,7 +54,7 @@ def test_squashed_gaussian(model_class):
 
 
 @pytest.fixture()
-def dummy_model_distribution_obs_and_actions() -> Tuple[A2C, np.ndarray, np.ndarray]:
+def dummy_model_distribution_obs_and_actions() -> tuple[A2C, np.ndarray, np.ndarray]:
     """
     Fixture creating a Pendulum-v1 gym env, an A2C model and sampling 10 random observations and actions from the env
     :return: A2C model, random observations, random actions

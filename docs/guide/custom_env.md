@@ -20,6 +20,28 @@ Although SB3 supports both channel-last and channel-first images as input, we re
 Under the hood, when a channel-last image is passed, SB3 uses a `VecTransposeImage` wrapper to re-order the channels.
 :::
 
+:::{warning}
+Gymnasium's `FrameStackObservation` wrapper adds an extra dimension to the observation space
+(e.g., `(3, 64, 64)` becomes `(2, 3, 64, 64)` with `stack_size=2`), which causes SB3's `is_image_space`
+to no longer recognize the observation as an image. This means the `CnnPolicy` feature extractor won't be
+selected automatically.
+
+Use SB3's `VecFrameStack` wrapper instead, which stacks frames along the channel dimension
+(e.g., `(3, 64, 64)` becomes `(6, 64, 64)` with `n_stack=2`), keeping the observation compatible
+with `is_image_space`. See [issue #2090](https://github.com/DLR-RM/stable-baselines3/issues/2090)
+and [issue #1500](https://github.com/DLR-RM/stable-baselines3/issues/1500) for more details.
+
+```python
+from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
+
+env = DummyVecEnv([lambda: env])
+env = VecFrameStack(env, n_stack=2)
+```
+
+Alternatively, if you cannot use `VecFrameStack`, you can use Gymnasium's `TransformObservation`
+wrapper to reshape the stacked observation back to 3 dimensions (merging the stack and channel dimensions).
+:::
+
 :::{note}
 SB3 doesn't support `Discrete` and `MultiDiscrete` spaces with `start!=0`. However, you can update your environment or use a wrapper to make your env compatible with SB3:
 

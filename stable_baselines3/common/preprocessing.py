@@ -35,6 +35,14 @@ def is_image_space(
 
     Valid images: RGB, RGBD, GrayScale with values in [0, 255]
 
+    .. note::
+
+        This function expects exactly 3 dimensions (HxWxC or CxHxW).
+        Gymnasium's ``FrameStackObservation`` wrapper adds an extra stacking dimension,
+        which will cause this check to return False. Use SB3's ``VecFrameStack``
+        instead, which stacks along the channel dimension.
+        See https://github.com/DLR-RM/stable-baselines3/issues/2090
+
     :param observation_space:
     :param check_channels: Whether to do or not the check for the number of channels.
         e.g., with frame-stacking, the observation space may have more channels than expected.

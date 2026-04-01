@@ -114,7 +114,7 @@ setup(
         "extra": [
             # For render
             "opencv-python",
-            "pygame",
+            "pygame-ce",
             # Tensorboard support
             "tensorboard>=2.9.1",
             # Checking memory taken by replay buffer

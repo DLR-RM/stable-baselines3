@@ -65,6 +65,7 @@
 - Added a note on MultiDiscrete spaces with multi-dimensional arrays and a wrapper to fix the issue (@unexploredtest)
 - Added an example of manual export of SBX (SB3 + Jax) model to ONNX (@m-abr)
 - Switched to Markdown documentation (using MyST parser)
+- Added example for using torch.compile
 
 ## Release 2.7.1 (2025-12-05)
 

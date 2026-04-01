@@ -2,7 +2,9 @@
 
 # Changelog
 
-## Release 2.8.0a3 (WIP)
+## Release 2.8.0 (2026-04-01)
+
+**Dropped Python 3.9, added Python 3.13 support, MaskablePPO bug fix, default hyperparams for unlisted env in the RL Zoo, Markdown doc**
 
 ### Breaking Changes:
 
@@ -22,8 +24,10 @@
 ### [SB3-Contrib]
 
 - Set `strict=True` for every call to `zip(...)`
-- Fix RecurrentPPO and MaskablePPO forward and predict do not reshape action before clip it (@immortal-boy)
+- Fixed `MaskablePPO` and `RecurrentPPO` inaccurate `n_updates` counting when `target_kl` early exits the training loop
+- Fixed `RecurrentPPO` and `MaskablePPO` `forward` and `predict` not reshaping the action before clipping it (@immortal-boy)
 - Do not call `forward()` method directly in `RecurrentPPO` (@immortal-boy)
+- Fixed `MaskableCategorical.apply_masking()` crashing with `ValueError: Simplex` when cached `probs` deviate from sum=1 in float32 with large action spaces (torch 2.9+) (@kirann-05)
 - Switched to Markdown documentation (using MyST parser)
 
 
@@ -32,6 +36,9 @@
 - Set ``strict=True`` for every call to ``zip(...)``
 - Allow to specify `env_kwargs` in the hyperparam config
 - Switched to Markdown documentation (using MyST parser)
+- Allow to use default hyperparameters for any environment
+- Save training command in Weights & Biases (Wandb)
+- Save training command and default hyperparameters as study attributes
 
 
 ### [SBX] (SB3 + Jax)

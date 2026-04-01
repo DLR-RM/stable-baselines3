@@ -10,6 +10,7 @@
 
 - Removed support for Python 3.9, please upgrade to Python >= 3.10
 - Set `strict=True` for every call to `zip(...)`
+- Switched to `pygame-ce` when installing extras
 
 ### New Features:
 

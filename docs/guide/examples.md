@@ -780,6 +780,26 @@ for _ in range(video_length + 1):
 vec_env.close()
 ```
 
+## Compiling models
+
+To make models faster, you can compile them using `torch.compile()`.
+
+```python
+import torch
+from stable_baselines3 import PPO
+
+env_id = "CartPole-v1"
+model = PPO("MlpPolicy", env_id, verbose=1)
+
+model.policy = torch.compile(model.policy, backend="inductor")
+model.learn(total_timesteps=10000)
+```
+
+:::{note}
+To list available backends, you can use `torch._dynamo.list_backends()`.
+:::
+
+
 ## Bonus: Make a GIF of a Trained Agent
 
 ```python

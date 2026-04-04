@@ -11,13 +11,18 @@ def is_image_space_channels_first(observation_space: spaces.Box) -> bool:
     Check if an image observation space (see ``is_image_space``)
     is channels-first (CxHxW, True) or channels-last (HxWxC, False).
 
-    Use a heuristic that channel dimension is the smallest of the three.
-    If second dimension is smallest, raise an exception (no support).
+    Use a heuristic that channel dimension is the smallest of the last three dimensions.
+    If the middle dimension (of the last three) is smallest, raise a warning (no support).
+
+    For higher-dimensional spaces (e.g., frame-stacked observations with shape
+    ``(stack, C, H, W)``), only the last three dimensions are considered.
 
     :param observation_space:
     :return: True if observation space is channels-first image, False if channels-last.
     """
-    smallest_dimension = np.argmin(observation_space.shape).item()
+    # Only consider the last 3 dimensions (image part) for channel detection
+    image_shape = observation_space.shape[-3:]
+    smallest_dimension = np.argmin(image_shape).item()
     if smallest_dimension == 1:
         warnings.warn("Treating image space as channels-last, while second dimension was smallest of the three.")
     return smallest_dimension == 0
@@ -35,17 +40,21 @@ def is_image_space(
 
     Valid images: RGB, RGBD, GrayScale with values in [0, 255]
 
+    Supports higher-dimensional spaces such as frame-stacked observations
+    (e.g., shape ``(stack, C, H, W)``). The last three dimensions are treated
+    as the image dimensions.
+
     :param observation_space:
     :param check_channels: Whether to do or not the check for the number of channels.
         e.g., with frame-stacking, the observation space may have more channels than expected.
     :param normalized_image: Whether to assume that the image is already normalized
         or not (this disables dtype and bounds checks): when True, it only checks that
-        the space is a Box and has 3 dimensions.
+        the space is a Box and has at least 3 dimensions.
         Otherwise, it checks that it has expected dtype (uint8) and bounds (values in [0, 255]).
     :return:
     """
     check_dtype = check_bounds = not normalized_image
-    if isinstance(observation_space, spaces.Box) and len(observation_space.shape) == 3:
+    if isinstance(observation_space, spaces.Box) and len(observation_space.shape) >= 3:
         # Check the type
         if check_dtype and observation_space.dtype != np.uint8:
             return False
@@ -58,9 +67,10 @@ def is_image_space(
         # Skip channels check
         if not check_channels:
             return True
-        # Check the number of channels
+        # Check the number of channels using the last 3 dimensions
+        # For frame-stacked spaces (stack, C, H, W), we look at the image part only
         if is_image_space_channels_first(observation_space):
-            n_channels = observation_space.shape[0]
+            n_channels = observation_space.shape[-3]
         else:
             n_channels = observation_space.shape[-1]
         # GrayScale, RGB, RGBD

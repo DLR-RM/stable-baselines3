@@ -1,6 +1,7 @@
 """Common aliases for type hints"""
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass, fields
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NamedTuple, Protocol, SupportsFloat, Union
 
@@ -29,7 +30,18 @@ PyTorchObs = Union[th.Tensor, TensorDict]  # noqa: UP007
 Schedule = Callable[[float], float]
 
 
-class RolloutBufferSamples(NamedTuple):
+class _DataclassSamplesMixin:
+    """Mixin to maintain backward compatibility with NamedTuple iteration."""
+
+    def __iter__(self) -> Iterator:
+        return (getattr(self, f.name) for f in fields(self))
+
+    def __getitem__(self, index: int) -> Any:
+        return list(self)[index]
+
+
+@dataclass
+class RolloutBufferSamples(_DataclassSamplesMixin):
     observations: th.Tensor
     actions: th.Tensor
     old_values: th.Tensor
@@ -38,7 +50,8 @@ class RolloutBufferSamples(NamedTuple):
     returns: th.Tensor
 
 
-class DictRolloutBufferSamples(NamedTuple):
+@dataclass
+class DictRolloutBufferSamples(_DataclassSamplesMixin):
     observations: TensorDict
     actions: th.Tensor
     old_values: th.Tensor
@@ -47,7 +60,8 @@ class DictRolloutBufferSamples(NamedTuple):
     returns: th.Tensor
 
 
-class ReplayBufferSamples(NamedTuple):
+@dataclass
+class ReplayBufferSamples(_DataclassSamplesMixin):
     observations: th.Tensor
     actions: th.Tensor
     next_observations: th.Tensor
@@ -57,7 +71,8 @@ class ReplayBufferSamples(NamedTuple):
     discounts: th.Tensor | None = None
 
 
-class DictReplayBufferSamples(NamedTuple):
+@dataclass
+class DictReplayBufferSamples(_DataclassSamplesMixin):
     observations: TensorDict
     actions: th.Tensor
     next_observations: TensorDict

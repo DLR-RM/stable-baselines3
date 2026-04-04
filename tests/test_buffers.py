@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import gymnasium as gym
 import numpy as np
 import pytest
@@ -8,7 +10,12 @@ from stable_baselines3 import A2C
 from stable_baselines3.common.buffers import DictReplayBuffer, DictRolloutBuffer, ReplayBuffer, RolloutBuffer
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.type_aliases import DictReplayBufferSamples, ReplayBufferSamples
+from stable_baselines3.common.type_aliases import (
+    DictReplayBufferSamples,
+    DictRolloutBufferSamples,
+    ReplayBufferSamples,
+    RolloutBufferSamples,
+)
 from stable_baselines3.common.utils import get_device
 from stable_baselines3.common.vec_env import VecNormalize
 
@@ -243,3 +250,107 @@ def test_custom_rollout_buffer():
 
     with pytest.raises(AssertionError, match=r"DictRolloutBuffer must be used with Dict obs space only"):
         A2C("MlpPolicy", "Pendulum-v1", rollout_buffer_class=DictRolloutBuffer)
+
+
+class TestDataclassSamples:
+    """Tests for dataclass-based buffer samples (issue #2202)."""
+
+    def test_subclassing_replay_buffer_samples(self):
+        """Subclassing ReplayBufferSamples should work (main motivation for #2202)."""
+
+        @dataclass
+        class CustomReplayBufferSamples(ReplayBufferSamples):
+            extra_field: th.Tensor = None
+
+        sample = CustomReplayBufferSamples(
+            observations=th.zeros(2, 3),
+            actions=th.zeros(2, 1),
+            next_observations=th.zeros(2, 3),
+            dones=th.zeros(2, 1),
+            rewards=th.zeros(2, 1),
+            extra_field=th.ones(2, 1),
+        )
+        assert sample.extra_field is not None
+        assert th.equal(sample.extra_field, th.ones(2, 1))
+
+    def test_subclassing_rollout_buffer_samples(self):
+        """Subclassing RolloutBufferSamples should work."""
+
+        @dataclass
+        class CustomRolloutBufferSamples(RolloutBufferSamples):
+            auxiliary_loss: th.Tensor = None
+
+        sample = CustomRolloutBufferSamples(
+            observations=th.zeros(2, 3),
+            actions=th.zeros(2, 1),
+            old_values=th.zeros(2),
+            old_log_prob=th.zeros(2),
+            advantages=th.zeros(2),
+            returns=th.zeros(2),
+            auxiliary_loss=th.ones(2),
+        )
+        assert th.equal(sample.auxiliary_loss, th.ones(2))
+
+    def test_positional_construction(self):
+        """Positional arg construction should still work (backward compat)."""
+        sample = ReplayBufferSamples(
+            th.zeros(2, 3),
+            th.zeros(2, 1),
+            th.zeros(2, 3),
+            th.zeros(2, 1),
+            th.zeros(2, 1),
+        )
+        assert sample.discounts is None
+        assert sample.observations.shape == (2, 3)
+
+    def test_iteration_backward_compat(self):
+        """Iteration over fields should work like NamedTuple."""
+        sample = RolloutBufferSamples(
+            observations=th.zeros(2, 3),
+            actions=th.zeros(2, 1),
+            old_values=th.zeros(2),
+            old_log_prob=th.zeros(2),
+            advantages=th.zeros(2),
+            returns=th.zeros(2),
+        )
+        values = list(sample)
+        assert len(values) == 6
+        assert th.equal(values[0], th.zeros(2, 3))
+
+    def test_dict_replay_buffer_samples_subclass(self):
+        """DictReplayBufferSamples should be subclassable."""
+
+        @dataclass
+        class CustomDictReplayBufferSamples(DictReplayBufferSamples):
+            priorities: th.Tensor = None
+
+        sample = CustomDictReplayBufferSamples(
+            observations={"obs": th.zeros(2, 3)},
+            actions=th.zeros(2, 1),
+            next_observations={"obs": th.zeros(2, 3)},
+            dones=th.zeros(2, 1),
+            rewards=th.zeros(2, 1),
+            priorities=th.ones(2),
+        )
+        assert th.equal(sample.priorities, th.ones(2))
+
+    def test_default_discounts(self):
+        """ReplayBufferSamples.discounts should default to None."""
+        sample = ReplayBufferSamples(
+            observations=th.zeros(2, 3),
+            actions=th.zeros(2, 1),
+            next_observations=th.zeros(2, 3),
+            dones=th.zeros(2, 1),
+            rewards=th.zeros(2, 1),
+        )
+        assert sample.discounts is None
+
+        sample_with_discounts = ReplayBufferSamples(
+            observations=th.zeros(2, 3),
+            actions=th.zeros(2, 1),
+            next_observations=th.zeros(2, 3),
+            dones=th.zeros(2, 1),
+            rewards=th.zeros(2, 1),
+            discounts=th.ones(2, 1),
+        )
+        assert th.equal(sample_with_discounts.discounts, th.ones(2, 1))

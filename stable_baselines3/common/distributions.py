@@ -267,13 +267,15 @@ class CategoricalDistribution(Distribution):
     Categorical distribution for discrete actions.
 
     :param action_dim: Number of discrete actions
+    :param start: Starting value of the action space
     """
 
     distribution: Categorical
 
-    def __init__(self, action_dim: int):
+    def __init__(self, action_dim: int, start: int = 0):
         super().__init__()
         self.action_dim = action_dim
+        self.start = start
 
     def proba_distribution_net(self, latent_dim: int) -> nn.Module:
         """
@@ -299,10 +301,10 @@ class CategoricalDistribution(Distribution):
         return self.distribution.entropy()
 
     def sample(self) -> th.Tensor:
-        return self.distribution.sample()
+        return self.distribution.sample() + self.start
 
     def mode(self) -> th.Tensor:
-        return th.argmax(self.distribution.probs, dim=1)
+        return th.argmax(self.distribution.probs, dim=1) + self.start
 
     def actions_from_params(self, action_logits: th.Tensor, deterministic: bool = False) -> th.Tensor:
         # Update the proba distribution
@@ -686,7 +688,7 @@ def make_proba_distribution(
         cls = StateDependentNoiseDistribution if use_sde else DiagGaussianDistribution
         return cls(get_action_dim(action_space), **dist_kwargs)
     elif isinstance(action_space, spaces.Discrete):
-        return CategoricalDistribution(int(action_space.n), **dist_kwargs)
+        return CategoricalDistribution(int(action_space.n), start=int(getattr(action_space, "start", 0)), **dist_kwargs)
     elif isinstance(action_space, spaces.MultiDiscrete):
         return MultiCategoricalDistribution(list(action_space.nvec), **dist_kwargs)
     elif isinstance(action_space, spaces.MultiBinary):

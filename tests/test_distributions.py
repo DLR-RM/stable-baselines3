@@ -158,6 +158,61 @@ def test_categorical(dist, CAT_ACTIONS):
     assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=5e-3)
 
 
+def test_categorical_with_start():
+    """
+    Test CategoricalDistribution with a non-zero start parameter,
+    which occurs when using gym.spaces.Discrete(n, start=X).
+    """
+    n_actions = 4
+    start = 2
+    dist = CategoricalDistribution(n_actions, start=start)
+
+    # Test that proba_distribution_net works with the start parameter
+    action_logits = th.rand(N_SAMPLES, n_actions)
+    dist = dist.proba_distribution(action_logits)
+
+    # Test sample() returns values in [start, start + n_actions)
+    samples = dist.sample()
+    assert th.all(samples >= start), "Samples should be >= start"
+    assert th.all(samples < start + n_actions), "Samples should be < start + n_actions"
+
+    # Test mode() returns the correct action index offset by start
+    probs = th.softmax(action_logits, dim=1)
+    expected_mode = th.argmax(probs, dim=1) + start
+    actual_mode = dist.mode()
+    assert th.allclose(expected_mode, actual_mode), "mode() should return argmax(probs) + start"
+
+    # Test deterministic action selection via actions_from_params
+    action_logits_det = th.zeros(1, n_actions)
+    action_logits_det[0, 1] = 1e6  # Force action 1 (index 1)
+    action = dist.actions_from_params(action_logits_det, deterministic=True)
+    assert action.item() == start + 1, "Deterministic action should be start + 1"
+
+    # Test non-deterministic action selection
+    action_nondet = dist.actions_from_params(action_logits_det, deterministic=False)
+    assert action_nondet.item() == start + 1, "Non-deterministic action should still select highest logit"
+
+
+def test_categorical_with_start_zero():
+    """
+    Test that start=0 behaves the same as the default CategoricalDistribution.
+    """
+    n_actions = 3
+    dist_default = CategoricalDistribution(n_actions)
+    dist_with_start = CategoricalDistribution(n_actions, start=0)
+
+    action_logits = th.rand(N_SAMPLES, n_actions)
+    dist_default = dist_default.proba_distribution(action_logits)
+    dist_with_start = dist_with_start.proba_distribution(action_logits)
+
+    # Both should produce identical samples when start=0
+    set_random_seed(42)
+    samples_default = dist_default.sample()
+    set_random_seed(42)
+    samples_with_start = dist_with_start.sample()
+    assert th.allclose(samples_default, samples_with_start), "start=0 should match default"
+
+
 @pytest.mark.parametrize(
     "dist_type",
     [

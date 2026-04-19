@@ -294,7 +294,7 @@ def test_evaluate_policy_monitors(vec_env_class):
     n_eval_episodes = 3
     n_envs = 2
     env_id = "CartPole-v1"
-    model = A2C("MlpPolicy", env_id, seed=0)
+    model = A2C("MlpPolicy", env_id, seed=0, policy_kwargs=dict(net_arch=[]))
 
     def make_eval_env(with_monitor, wrapper_class=gym.Wrapper):
         # Make eval environment with or without monitor in root,

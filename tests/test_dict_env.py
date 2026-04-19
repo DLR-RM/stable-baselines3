@@ -102,8 +102,9 @@ def test_policy_hint(policy):
 @pytest.mark.parametrize("model_class", [PPO, A2C])
 def test_goal_env(model_class):
     env = BitFlippingEnv(n_bits=4)
+    kwargs = dict(n_epochs=1) if model_class == PPO else {}
     # check that goal env works for PPO/A2C that cannot use HER replay buffer
-    model = model_class("MultiInputPolicy", env, n_steps=64).learn(250)
+    model = model_class("MultiInputPolicy", env, n_steps=64, **kwargs).learn(250)
     evaluate_policy(model, model.get_env())
 
 
@@ -120,27 +121,29 @@ def test_consistency(model_class):
     env = gym.wrappers.FlattenObservation(dict_env)
     obs, _ = dict_env.reset()
 
-    n_steps = 256
+    n_steps = 128
 
     if model_class in {A2C, PPO}:
-        kwargs = dict(
-            n_steps=128,
-        )
+        kwargs = dict(n_steps=64)
+        if model_class == PPO:
+            kwargs["n_epochs"] = 1
     else:
         # Avoid memory error when using replay buffer
         # Reduce the size of the features and make learning faster
         kwargs = dict(
-            buffer_size=250,
+            buffer_size=100,
             train_freq=8,
             gradient_steps=1,
         )
         if model_class == DQN:
             kwargs["learning_starts"] = 0
 
+    kwargs["policy_kwargs"] = dict(net_arch=[8, 8])
     dict_model = model_class("MultiInputPolicy", dict_env, gamma=0.5, seed=1, **kwargs)
     action_before_learning_1, _ = dict_model.predict(obs, deterministic=True)
     dict_model.learn(total_timesteps=n_steps)
 
+    # The cnn is not used in this test anyway
     normal_model = model_class("MlpPolicy", env, gamma=0.5, seed=1, **kwargs)
     action_before_learning_2, _ = normal_model.predict(obs["vec"], deterministic=True)
     normal_model.learn(total_timesteps=n_steps)
@@ -164,24 +167,26 @@ def test_dict_spaces(model_class, channel_last):
     env = gym.wrappers.TimeLimit(env, 100)
 
     kwargs = {}
-    n_steps = 256
+    n_steps = 128
 
     if model_class in {A2C, PPO}:
         kwargs = dict(
-            n_steps=128,
+            n_steps=64,
             policy_kwargs=dict(
-                net_arch=[32],
-                features_extractor_kwargs=dict(cnn_output_dim=32),
+                net_arch=[16],
+                features_extractor_kwargs=dict(cnn_output_dim=16),
             ),
         )
+        if model_class == PPO:
+            kwargs["n_epochs"] = 1
     else:
         # Avoid memory error when using replay buffer
         # Reduce the size of the features and make learning faster
         kwargs = dict(
             buffer_size=250,
             policy_kwargs=dict(
-                net_arch=[32],
-                features_extractor_kwargs=dict(cnn_output_dim=32),
+                net_arch=[16],
+                features_extractor_kwargs=dict(cnn_output_dim=16),
             ),
             train_freq=8,
             gradient_steps=1,
@@ -212,17 +217,19 @@ def test_multiprocessing(model_class):
 
     if model_class in {A2C, PPO}:
         kwargs = dict(
-            n_steps=128,
+            n_steps=64,
             policy_kwargs=dict(
-                net_arch=[32],
-                features_extractor_kwargs=dict(cnn_output_dim=32),
+                net_arch=[16],
+                features_extractor_kwargs=dict(cnn_output_dim=16),
             ),
         )
+        if model_class == PPO:
+            kwargs["n_epochs"] = 1
     elif model_class in {SAC, TD3, DQN}:
         kwargs = dict(
-            buffer_size=1000,
+            buffer_size=500,
             policy_kwargs=dict(
-                net_arch=[32],
+                net_arch=[16],
                 features_extractor_kwargs=dict(cnn_output_dim=16),
             ),
             train_freq=5,
@@ -249,24 +256,26 @@ def test_dict_vec_framestack(model_class, channel_last):
     env = VecFrameStack(env, n_stack=3, channels_order=channels_order)
 
     kwargs = {}
-    n_steps = 256
+    n_steps = 128
 
     if model_class in {A2C, PPO}:
         kwargs = dict(
-            n_steps=128,
+            n_steps=64,
             policy_kwargs=dict(
-                net_arch=[32],
-                features_extractor_kwargs=dict(cnn_output_dim=32),
+                net_arch=[8],
+                features_extractor_kwargs=dict(cnn_output_dim=8),
             ),
         )
+        if model_class == PPO:
+            kwargs["n_epochs"] = 1
     else:
         # Avoid memory error when using replay buffer
         # Reduce the size of the features and make learning faster
         kwargs = dict(
-            buffer_size=250,
+            buffer_size=64,
             policy_kwargs=dict(
-                net_arch=[32],
-                features_extractor_kwargs=dict(cnn_output_dim=32),
+                net_arch=[8],
+                features_extractor_kwargs=dict(cnn_output_dim=8),
             ),
             train_freq=8,
             gradient_steps=1,
@@ -291,28 +300,33 @@ def test_vec_normalize(model_class):
     env = VecNormalize(env, norm_obs_keys=["vec"])
 
     kwargs = {}
-    n_steps = 256
+    n_steps = 128
 
     if model_class in {A2C, PPO}:
         kwargs = dict(
-            n_steps=128,
+            n_steps=64,
             policy_kwargs=dict(
-                net_arch=[32],
+                net_arch=[16],
+                features_extractor_kwargs=dict(cnn_output_dim=16),
             ),
         )
+        if model_class == PPO:
+            kwargs["n_epochs"] = 1
     else:
         # Avoid memory error when using replay buffer
         # Reduce the size of the features and make learning faster
         kwargs = dict(
-            buffer_size=250,
+            buffer_size=100,
             policy_kwargs=dict(
-                net_arch=[32],
+                net_arch=[16],
+                features_extractor_kwargs=dict(cnn_output_dim=16),
             ),
             train_freq=8,
             gradient_steps=1,
         )
         if model_class == DQN:
             kwargs["learning_starts"] = 0
+            del kwargs["policy_kwargs"]  # use default
 
     model = model_class("MultiInputPolicy", env, gamma=0.5, seed=1, **kwargs)
 

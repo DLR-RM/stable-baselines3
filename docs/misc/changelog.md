@@ -2,7 +2,7 @@
 
 # Changelog
 
-## Release 2.9.0a0 (WIP)
+## Release 2.9.0a1 (WIP)
 
 ### Breaking Changes:
 - Relax Gymnasium version range (from `"gymnasium>=0.29.1,<1.3.0"` to `"gymnasium>=0.29.1,<2.0"`)
@@ -20,6 +20,8 @@
 ### Deprecations:
 
 ### Others:
+
+- Optimize tests (faster to run)
 
 ### Documentation:
 

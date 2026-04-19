@@ -606,7 +606,7 @@ def test_rollout_success_rate_onpolicy_algo(tmp_path):
         [True] * 5 + [False] * 5,
         [True] * 8 + [False] * 2,
     ]
-    ep_steps = 64
+    ep_steps = 10
 
     # Monitor the env to track the success info
     monitor_file = str(tmp_path / "monitor.csv")
@@ -614,7 +614,16 @@ def test_rollout_success_rate_onpolicy_algo(tmp_path):
     steps_per_log = env.unwrapped.steps_per_log
 
     # Equip the model of a custom logger to check the success_rate info
-    model = PPO("MlpPolicy", env=env, stats_window_size=STATS_WINDOW_SIZE, n_steps=steps_per_log, verbose=1)
+    model = PPO(
+        "MlpPolicy",
+        env=env,
+        stats_window_size=STATS_WINDOW_SIZE,
+        n_steps=steps_per_log,
+        verbose=1,
+        n_epochs=1,
+        batch_size=steps_per_log,
+        policy_kwargs=dict(net_arch=[8]),
+    )
     logger = InMemoryLogger()
     model.set_logger(logger)
 

@@ -48,13 +48,13 @@ def test_save_load(tmp_path, model_class):
 
     env = DummyVecEnv([lambda: select_env(model_class)])
 
-    kwargs = {}
+    kwargs = {"learning_rate": 1e-3}
     if model_class == PPO:
-        kwargs = {"n_steps": 64, "n_epochs": 4}
+        kwargs.update({"n_steps": 64, "n_epochs": 1})
 
     # create model
     model = model_class("MlpPolicy", env, policy_kwargs=dict(net_arch=[16]), verbose=1, **kwargs)
-    model.learn(total_timesteps=150)
+    model.learn(total_timesteps=128)
 
     env.reset()
     observations = np.concatenate([env.step([env.action_space.sample()])[0] for _ in range(10)], axis=0)
@@ -163,7 +163,7 @@ def test_save_load(tmp_path, model_class):
         assert np.allclose(selected_actions, new_selected_actions, 1e-4)
 
         # check if learn still works
-        model.learn(total_timesteps=150)
+        model.learn(total_timesteps=128)
 
         del model
 
@@ -447,11 +447,11 @@ def test_save_load_policy(tmp_path, model_class, policy_str, use_sde):
     :param model_class: (BaseAlgorithm) A RL model
     :param policy_str: (str) Name of the policy.
     """
-    kwargs = dict(policy_kwargs=dict(net_arch=[16]))
+    kwargs = dict(policy_kwargs=dict(net_arch=[16]), learning_rate=1e-3)
 
     if model_class == PPO:
         kwargs["n_steps"] = 64
-        kwargs["n_epochs"] = 2
+        kwargs["n_epochs"] = 1
 
     # gSDE is only applicable for A2C, PPO and SAC
     if use_sde and model_class not in [A2C, PPO, SAC]:
@@ -464,7 +464,10 @@ def test_save_load_policy(tmp_path, model_class, policy_str, use_sde):
             # Avoid memory error when using replay buffer
             # Reduce the size of the features
             kwargs = dict(
-                buffer_size=250, learning_starts=100, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32))
+                buffer_size=250,
+                learning_starts=100,
+                policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=16)),
+                train_freq=2,
             )
         env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=2, discrete=model_class == DQN)
 
@@ -475,7 +478,7 @@ def test_save_load_policy(tmp_path, model_class, policy_str, use_sde):
 
     # create model
     model = model_class(policy_str, env, verbose=1, **kwargs)
-    model.learn(total_timesteps=150)
+    model.learn(total_timesteps=128)
 
     env.reset()
     observations = np.concatenate([env.step([env.action_space.sample()])[0] for _ in range(10)], axis=0)
@@ -872,8 +875,8 @@ def test_save_load_clip_range_portable(tmp_path, model_class):
     # Create a simple env
     env = DummyVecEnv([lambda: IdentityEnvBox(-1, 1)])
 
-    model = model_class("MlpPolicy", env)
-    model.learn(total_timesteps=100)
+    model = model_class("MlpPolicy", env, n_epochs=1, n_steps=64)
+    model.learn(total_timesteps=128)
 
     # Make sure that classes are used not lambdas by default
     assert isinstance(model.clip_range, FloatSchedule)

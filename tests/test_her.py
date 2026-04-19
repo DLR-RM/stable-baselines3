@@ -453,18 +453,19 @@ def test_performance_her(n_bits):
             goal_selection_strategy="future",
         ),
         verbose=1,
-        learning_rate=5e-4,
+        learning_rate=2e-3,
         train_freq=1,
         gradient_steps=n_envs,
-        learning_starts=100,
+        learning_starts=20,
         exploration_final_eps=0.02,
-        target_update_interval=500,
+        target_update_interval=100,
         seed=0,
         batch_size=32,
         buffer_size=int(1e5),
+        stats_window_size=50,
     )
 
-    model.learn(total_timesteps=5000, log_interval=50)
+    model.learn(total_timesteps=1500, log_interval=50)
 
     # 90% training success
     assert np.mean(model.ep_success_buffer) > 0.90

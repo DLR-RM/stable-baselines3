@@ -142,3 +142,33 @@ def test_monitor_load_results(tmp_path):
 
     os.remove(monitor_file1)
     os.remove(monitor_file2)
+
+
+def test_monitor_error_cases():
+    """
+    Test error cases in Monitor wrapper
+    """
+    env = gym.make("CartPole-v1")
+    env.reset(seed=0)
+
+    with pytest.raises(RuntimeError, match="Tried to reset an environment before done"):
+        monitor_env = Monitor(env, allow_early_resets=False)
+        monitor_env.reset()
+        monitor_env.step(monitor_env.action_space.sample())
+        monitor_env.reset()
+
+    env2 = gym.make("CartPole-v1")
+    env2.reset(seed=0)
+    with pytest.raises(ValueError, match="Expected you to pass keyword argument test_key into reset"):
+        monitor_env2 = Monitor(env2, reset_keywords=("test_key",))
+        monitor_env2.reset()
+
+    # Note: cannot use test_key because CartPole doesn't accept this keyword
+    monitor_env2 = Monitor(env2, reset_keywords=("options",))
+    monitor_env2.reset(options={"ok": 1})
+
+    env3 = gym.make("CartPole-v1")
+    env3.reset(seed=0)
+    with pytest.raises(RuntimeError, match="Tried to step environment that needs reset"):
+        monitor_env3 = Monitor(env3)
+        monitor_env3.step(monitor_env3.action_space.sample())

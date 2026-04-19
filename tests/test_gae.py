@@ -133,6 +133,7 @@ def test_env(env_cls):
 def test_gae_computation(model_class, gae_lambda, gamma, num_episodes):
     env = CustomEnv(max_steps=64)
     rollout_size = 64 * num_episodes
+    kwargs = dict() if model_class == A2C else dict(n_epochs=1)
     model = model_class(
         CustomPolicy,
         env,
@@ -140,6 +141,8 @@ def test_gae_computation(model_class, gae_lambda, gamma, num_episodes):
         gamma=gamma,
         n_steps=rollout_size,
         gae_lambda=gae_lambda,
+        **kwargs,
+        policy_kwargs=dict(net_arch=[])
     )
     model.learn(rollout_size, callback=CheckGAECallback())
 
@@ -156,21 +159,22 @@ def test_infinite_horizon(model_class, handle_timeout_termination):
     env = gym.wrappers.TimeLimit(InfiniteHorizonEnv(n_states=4), max_steps)
     kwargs = {}
     if model_class == SAC:
-        policy_kwargs = dict(net_arch=[64], n_critics=1)
+        policy_kwargs = dict(net_arch=[16], n_critics=1)
         kwargs = dict(
             replay_buffer_kwargs=dict(handle_timeout_termination=handle_timeout_termination),
             tau=0.5,
-            learning_rate=0.005,
+            learning_rate=0.01,
+            learning_starts=0,
         )
     else:
-        policy_kwargs = dict(net_arch=[64])
-        kwargs = dict(learning_rate=0.002)
+        policy_kwargs = dict(net_arch=[32])
+        kwargs = dict(learning_rate=0.01)
         # A2C always handle timeouts
         if not handle_timeout_termination:
             return
 
     model = model_class("MlpPolicy", env, gamma=gamma, seed=1, policy_kwargs=policy_kwargs, **kwargs)
-    model.learn(1500)
+    model.learn(500)
     # Value of the initial state
     obs_tensor = model.policy.obs_to_tensor(0)[0]
     if model_class == A2C:

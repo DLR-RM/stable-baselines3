@@ -16,8 +16,8 @@ These examples are only to demonstrate the use of the library and its functions,
 
 ## Try it online with Colab Notebooks!
 
-All the following examples can be executed online using Google colab {{ colab }}
-notebooks:
+All the following examples can be executed online using Google Colab
+{{ colab }} notebooks:
 
 - [Full Tutorial](https://github.com/araffin/rl-tutorial-jnrr19/tree/sb3)
 - [All Notebooks](https://github.com/Stable-Baselines-Team/rl-colab-notebooks/tree/sb3)
@@ -44,14 +44,14 @@ Lunar Lander Environment
 :::
 
 :::{note}
-LunarLander requires the python package `box2d`.
+LunarLander requires the Python package `box2d`.
 You can install it using `apt install swig` and then `pip install box2d box2d-kengz`
 :::
 
 :::{warning}
-`load` method re-creates the model from scratch and should be called on the Algorithm without instantiating it first,
+The `load` method recreates the model from scratch and should be called on the algorithm without instantiating it first,
 e.g. `model = DQN.load("dqn_lunar", env=env)` instead of `model = DQN(env=env)` followed by `model.load("dqn_lunar")`. The latter **will not work** as `load` is not an in-place operation.
-If you want to load parameters without re-creating the model, e.g. to evaluate the same model
+If you want to load parameters without recreating the model, e.g. to evaluate the same model
 with multiple different sets of parameters, consider using `set_parameters` instead.
 :::
 
@@ -82,7 +82,7 @@ model = DQN.load("dqn_lunar", env=env)
 # Evaluate the agent
 # NOTE: If you use wrappers with your environment that modify rewards,
 #       this will be reflected here. To evaluate with original rewards,
-#       wrap environment in a "Monitor" wrapper before other wrappers.
+#       wrap the environment in a "Monitor" wrapper before other wrappers.
 mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=10)
 
 # Enjoy trained agent
@@ -154,7 +154,7 @@ if __name__ == "__main__":
 :::{warning}
 When using multiple environments with off-policy algorithms, you should update the `gradient_steps`
 parameter too. Set it to `gradient_steps=-1` to perform as many gradient steps as transitions collected.
-There is usually a compromise between wall-clock time and sample efficiency,
+There is usually a trade-off between wall-clock time and sample efficiency,
 see this [example in PR #439](https://github.com/DLR-RM/stable-baselines3/pull/439#issuecomment-961796799)
 :::
 
@@ -200,8 +200,8 @@ We recommend reading the [Callback section](callbacks.md)
 :::
 
 You can define a custom callback function that will be called inside the agent.
-This could be useful when you want to monitor training, for instance display live
-learning curves in Tensorboard or save the best agent.
+This could be useful when you want to monitor training, for instance, display live
+learning curves in TensorBoard or save the best agent.
 If your callback returns False, training is aborted early.
 
 ```{image} ../_static/img/colab-badge.svg
@@ -319,7 +319,7 @@ train_env = make_vec_env(env_id, n_envs=n_training_envs, seed=0)
 eval_env = make_vec_env(env_id, n_envs=n_eval_envs, seed=0,
                         env_kwargs={'g':0.7})
 
-# Create callback that evaluates agent for 5 episodes every 500 training environment steps.
+# Create a callback that evaluates an agent for 5 episodes every 500 training environment steps.
 # When using multiple training environments, agent will be evaluated every
 # eval_freq calls to train_env.step(), thus it will be evaluated every
 # (eval_freq * n_envs) training steps. See EvalCallback doc for more information.
@@ -342,7 +342,7 @@ Trained A2C agent on Breakout
 Pong Environment
 :::
 
-Training a RL agent on Atari games is straightforward thanks to `make_atari_env` helper function.
+Training an RL agent on Atari games is straightforward thanks to the `make_atari_env` helper function.
 It will do [all the preprocessing](https://danieltakeshi.github.io/2016/11/25/frame-skipping-and-preprocessing-for-deep-q-networks-on-atari-2600-games/)
 and multiprocessing for you. To install the Atari environments, run the command `pip install gymnasium[atari,accept-rom-license]` to install the Atari environments and ROMs, or install Stable Baselines3 with `pip install stable-baselines3[extra]` to install this and other optional dependencies.
 
@@ -395,13 +395,13 @@ while True:
 
 ## PyBullet: Normalizing input features
 
-Normalizing input features may be essential to successful training of an RL agent
+Normalizing input features may be essential for successful training of an RL agent
 (by default, images are scaled, but other types of input are not),
-for instance when training on [PyBullet](https://github.com/bulletphysics/bullet3/) environments.
+for instance, when training on [PyBullet](https://github.com/bulletphysics/bullet3/) environments.
 For this, there is a wrapper `VecNormalize` that will compute a running average and standard deviation of the input features (it can do the same for rewards).
 
 :::{note}
-you need to install pybullet envs with `pip install pybullet_envs_gymnasium`
+You need to install PyBullet environments with `pip install pybullet_envs_gymnasium`
 :::
 
 ```{image} ../_static/img/colab-badge.svg
@@ -448,7 +448,7 @@ model = PPO.load(log_dir / "ppo_halfcheetah", env=vec_env)
 
 ## Hindsight Experience Replay (HER)
 
-For this example, we are using [Highway-Env](https://github.com/eleurent/highway-env) by [@eleurent](https://github.com/eleurent).
+For this example, we use [Highway-Env](https://github.com/eleurent/highway-env) by [@eleurent](https://github.com/eleurent).
 
 ```{image} ../_static/img/colab-badge.svg
 :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/stable_baselines_her.ipynb
@@ -717,9 +717,9 @@ for iteration in range(10):
 
 ## SB3 with Isaac Lab, Brax, Procgen, EnvPool
 
-Some massively parallel simulations such as [EnvPool](https://github.com/sail-sg/envpool), [Isaac Lab](https://github.com/isaac-sim/IsaacLab), [Brax](https://github.com/google/brax) or [ProcGen](https://github.com/Farama-Foundation/Procgen2) already produce a vectorized environment to speed up data collection (see discussion in [issue #314](https://github.com/DLR-RM/stable-baselines3/issues/314)).
+Some massively parallel simulation environments such as [EnvPool](https://github.com/sail-sg/envpool), [Isaac Lab](https://github.com/isaac-sim/IsaacLab), [Brax](https://github.com/google/brax) or [ProcGen](https://github.com/Farama-Foundation/Procgen2) already produce a vectorized environment to speed up data collection (see discussion in [issue #314](https://github.com/DLR-RM/stable-baselines3/issues/314)).
 
-To use SB3 with these tools, you need to wrap the env with tool-specific `VecEnvWrapper` that pre-processes the data for SB3,
+To use SB3 with these tools, you need to wrap the environment with tool-specific `VecEnvWrapper` that preprocesses the data for SB3,
 you can find links to some of these wrappers in [issue #772](https://github.com/DLR-RM/stable-baselines3/issues/772#issuecomment-1048657002).
 
 - Isaac Lab wrapper: [link](https://github.com/isaac-sim/IsaacLab/blob/main/source/extensions/omni.isaac.lab_tasks/omni/isaac/lab_tasks/utils/wrappers/sb3.py)
@@ -729,7 +729,7 @@ you can find links to some of these wrappers in [issue #772](https://github.com/
 
 ## SB3 with DeepMind Control (dm_control)
 
-If you want to use SB3 with [dm_control](https://github.com/google-deepmind/dm_control), you need to use two wrappers (one from [shimmy](https://github.com/Farama-Foundation/Shimmy), one pre-built one) to convert it to a Gymnasium compatible environment:
+If you want to use SB3 with [dm_control](https://github.com/google-deepmind/dm_control), you need to apply two wrappers (one from [shimmy](https://github.com/Farama-Foundation/Shimmy), one pre-built one) to convert it to a Gymnasium compatible environment:
 
 ```python
 import shimmy
@@ -749,7 +749,7 @@ model.learn(10_000, progress_bar=True)
 
 ## Record a Video
 
-Record a mp4 video (here using a random agent).
+Record an MP4 video (here using a random agent).
 
 :::{note}
 It requires `ffmpeg` or `avconv` to be installed on the machine.
@@ -779,6 +779,26 @@ for _ in range(video_length + 1):
 # Save the video
 vec_env.close()
 ```
+
+## Compiling models
+
+To make models faster, you can compile them using `torch.compile()`.
+
+```python
+import torch as th
+from stable_baselines3 import PPO
+
+env_id = "CartPole-v1"
+model = PPO("MlpPolicy", env_id, verbose=1)
+
+model.policy = th.compile(model.policy, backend="inductor")
+model.learn(total_timesteps=10_000)
+```
+
+:::{note}
+To list available backends, you can use `torch._dynamo.list_backends()`.
+:::
+
 
 ## Bonus: Make a GIF of a Trained Agent
 

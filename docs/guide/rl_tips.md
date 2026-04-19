@@ -12,7 +12,7 @@ this section in more details. You can also find the [slides here](https://araffi
 :::
 
 :::{note}
-We also have a [video on Designing and Running Real-World RL Experiments](https://youtu.be/eZ6ZEpCi6D8), slides [can be found online](https://araffin.github.io/slides/design-real-rl-experiments/).
+We also have a [video on Designing and Running Real-World RL Experiments](https://youtu.be/eZ6ZEpCi6D8), slides [can be found online](https://araffin.github.io/slides/design-real-rl-experiments/), and a video on [Recent Advances in RL for Continuous Control (SOTA)](https://www.youtube.com/watch?v=Sb0dgmxbGZY) with [slides (early 2026 update)](https://araffin.github.io/slides/advances-rl-sota-2026/).
 :::
 
 ## General advice when using Reinforcement Learning
@@ -127,6 +127,10 @@ You should give a try to `PPO` or `A2C`.
 ### Continuous Actions
 
 #### Continuous Actions - Single Process
+
+:::{note}
+We have a video on [Recent Advances in RL for Continuous Control (SOTA)](https://www.youtube.com/watch?v=Sb0dgmxbGZY) with [slides (early 2026 update)](https://araffin.github.io/slides/advances-rl-sota-2026/).
+:::
 
 Current State Of The Art (SOTA) algorithms are `SAC`, `TD3`, `CrossQ` and `TQC` (available in our [contrib repo](sb3_contrib.md) and [SBX (SB3 + Jax) repo](sbx.md)).
 Please use the hyperparameters in the [RL zoo](https://github.com/DLR-RM/rl-baselines3-zoo) for best results.

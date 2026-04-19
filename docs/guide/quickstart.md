@@ -7,7 +7,7 @@ Stable-Baselines3 (SB3) uses [vectorized environments (VecEnv)](vec_envs.md) int
 Please read the associated section to learn more about its features and differences compared to a single Gym environment.
 :::
 
-Most of the library tries to follow a sklearn-like syntax for the Reinforcement Learning algorithms.
+Most of the library follows a sklearn-like syntax for the reinforcement learning algorithms.
 
 Here is a quick example of how to train and run A2C on a CartPole environment:
 
@@ -36,9 +36,9 @@ for i in range(1000):
 You can find explanations about the logger output and names in the {ref}`Logger <logger>` section.
 :::
 
-Or just train a model with a one line if
-[the environment is registered in Gymnasium](https://gymnasium.farama.org/tutorials/gymnasium_basics/environment_creation/#registering-envs) and if
-the policy is registered:
+Or just train a model with a one-liner if
+[the environment is registered in Gymnasium](https://gymnasium.farama.org/tutorials/gymnasium_basics/environment_creation/#registering-envs) and the
+policy is registered:
 
 ```python
 from stable_baselines3 import A2C

@@ -5,11 +5,13 @@ import json
 import os
 import time
 from glob import glob
-from typing import Any, SupportsFloat
+from typing import TYPE_CHECKING, Any, SupportsFloat
 
 import gymnasium as gym
-import pandas
 from gymnasium.core import ActType, ObsType
+
+if TYPE_CHECKING:
+    import pandas
 
 
 class Monitor(gym.Wrapper[ObsType, ActType, ObsType, ActType]):
@@ -227,13 +229,21 @@ def get_monitor_files(path: str) -> list[str]:
     return glob(os.path.join(path, "*" + Monitor.EXT))
 
 
-def load_results(path: str) -> pandas.DataFrame:
+def load_results(path: str) -> "pandas.DataFrame":
     """
     Load all Monitor logs from a given directory path matching ``*monitor.csv``
 
     :param path: the directory path containing the log file(s)
     :return: the logged data
     """
+    try:
+        import pandas
+    except ImportError as e:
+        raise ImportError(
+            "pandas is required for loading results. "
+            "Install it with `pip install pandas` or install the extra dependencies with "
+            "`pip install 'stable-baselines3[extra]'`."
+        ) from e
     monitor_files = get_monitor_files(path)
     if len(monitor_files) == 0:
         raise LoadMonitorResultsError(f"No monitor files of the form *{Monitor.EXT} found in {path}")

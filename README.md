@@ -19,8 +19,8 @@ These algorithms will make it easier for the research community and industry to 
 
 ## Main Features
 
-**The performance of each algorithm was tested** (see *Results* section in their respective page),
-you can take a look at the issues [#48](https://github.com/DLR-RM/stable-baselines3/issues/48) and [#49](https://github.com/DLR-RM/stable-baselines3/issues/49) for more details.
+**The performance of each algorithm was tested** (see *Results* section in their respective page).
+You can take a look at the issues [#48](https://github.com/DLR-RM/stable-baselines3/issues/48) and [#49](https://github.com/DLR-RM/stable-baselines3/issues/49) for more details.
 
 We also provide detailed logs and reports on the [OpenRL Benchmark](https://wandb.ai/openrlbenchmark/sb3) platform.
 
@@ -43,7 +43,7 @@ We also provide detailed logs and reports on the [OpenRL Benchmark](https://wand
 
 ### Planned features
 
-Since most of the features from the [original roadmap](https://github.com/DLR-RM/stable-baselines3/issues/1) have been implemented, there are no major changes planned for SB3, it is now *stable*.
+Since most of the features from the [original roadmap](https://github.com/DLR-RM/stable-baselines3/issues/1) have been implemented, there are no major changes planned for SB3; it is now *stable*.
 If you want to contribute, you can search in the issues for the ones where [help is welcomed](https://github.com/DLR-RM/stable-baselines3/labels/help%20wanted) and the other [proposed enhancements](https://github.com/DLR-RM/stable-baselines3/labels/enhancement).
 
 While SB3 development is now focused on bug fixes and maintenance (doc update, user experience, ...), there is more active development going on in the associated repositories:
@@ -116,7 +116,7 @@ Install the Stable Baselines3 package:
 pip install 'stable-baselines3[extra]'
 ```
 
-This includes optional dependencies like Tensorboard, OpenCV or `ale-py` to train on atari games. If you do not need those, you can use:
+This includes optional dependencies like Tensorboard, OpenCV, `ale-py` to train on atari games, as well as `pandas` and `matplotlib` for plotting and analyzing results. If you do not need those, you can use:
 ```sh
 pip install stable-baselines3
 ```
@@ -163,7 +163,7 @@ model = PPO("MlpPolicy", "CartPole-v1").learn(10_000)
 Please read the [documentation](https://stable-baselines3.readthedocs.io/) for more examples.
 
 
-## Try it online with Colab Notebooks !
+## Try it online with Colab Notebooks!
 
 All the following examples can be executed online using Google Colab notebooks:
 
@@ -201,7 +201,7 @@ All the following examples can be executed online using Google Colab notebooks:
 
 Actions `gymnasium.spaces`:
  * `Box`: A N-dimensional box that contains every point in the action space.
- * `Discrete`: A list of possible actions, where each timestep only one of the actions can be used.
+ * `Discrete`: A list of possible actions, where only one action can be used per timestep.
  * `MultiDiscrete`: A list of possible actions, where each timestep only one action of each discrete set can be used.
  * `MultiBinary`: A list of possible actions, where each timestep any of the actions can be used in any combination.
 
@@ -272,12 +272,12 @@ Please post your question on the [RL Discord](https://discord.com/invite/xhfNqQv
 
 ## How To Contribute
 
-To any interested in making the baselines better, there is still some documentation that needs to be done.
+For anyone interested in making the baselines better, there is still some documentation that needs to be done.
 If you want to contribute, please read [**CONTRIBUTING.md**](./CONTRIBUTING.md) guide first.
 
 ## Acknowledgments
 
-The initial work to develop Stable Baselines3 was partially funded by the project *Reduced Complexity Models* from the *Helmholtz-Gemeinschaft Deutscher Forschungszentren*, and by the EU's Horizon 2020 Research and Innovation Programme under grant number 951992 ([VeriDream](https://www.veridream.eu/)).
+The initial work to develop Stable Baselines3 was partially funded by the project *Reduced Complexity Models* from the *Helmholtz-Gemeinschaft Deutscher Forschungszentren*, and by the EU Horizon 2020 Research and Innovation Programme under grant number 951992 ([VeriDream](https://www.veridream.eu/)).
 
 The original version, Stable Baselines, was created in the [robotics lab U2IS](http://u2is.ensta-paristech.fr/index.php?lang=en) ([INRIA Flowers](https://flowers.inria.fr/) team) at [ENSTA ParisTech](http://www.ensta-paristech.fr/en).
 

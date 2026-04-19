@@ -84,10 +84,6 @@ setup(
         "torch>=2.3,<3.0",
         # For saving models
         "cloudpickle",
-        # For reading logs
-        "pandas",
-        # Plotting learning curves
-        "matplotlib",
     ],
     extras_require={
         "tests": [
@@ -128,6 +124,9 @@ setup(
             # For atari games,
             "ale-py>=0.9.0",
             "pillow",
+            # For plotting and loading results
+            "pandas",
+            "matplotlib",
         ],
     },
     description="Pytorch version of Stable Baselines, implementations of reinforcement learning algorithms.",

@@ -242,7 +242,7 @@ def load_results(path: str) -> "pandas.DataFrame":
         raise ImportError(
             "pandas is required for loading results. "
             "Install it with `pip install pandas` or install the extra dependencies with "
-            "`pip install stable-baselines3[extra]`."
+            "`pip install 'stable-baselines3[extra]'`."
         ) from e
     monitor_files = get_monitor_files(path)
     if len(monitor_files) == 0:

@@ -785,14 +785,14 @@ vec_env.close()
 To make models faster, you can compile them using `torch.compile()`.
 
 ```python
-import torch
+import torch as th
 from stable_baselines3 import PPO
 
 env_id = "CartPole-v1"
 model = PPO("MlpPolicy", env_id, verbose=1)
 
-model.policy = torch.compile(model.policy, backend="inductor")
-model.learn(total_timesteps=10000)
+model.policy = th.compile(model.policy, backend="inductor")
+model.learn(total_timesteps=10_000)
 ```
 
 :::{note}

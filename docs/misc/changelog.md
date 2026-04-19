@@ -2,6 +2,29 @@
 
 # Changelog
 
+## Release 2.9.0a0 (WIP)
+
+### Breaking Changes:
+- Relax Gymnasium version range (from `"gymnasium>=0.29.1,<1.3.0"` to `"gymnasium>=0.29.1,<2.0"`)
+
+### New Features:
+
+### Bug Fixes:
+
+### [SB3-Contrib]
+
+### [RL Zoo]
+
+### [SBX] (SB3 + Jax)
+
+### Deprecations:
+
+### Others:
+
+### Documentation:
+
+- Added example for using torch.compile
+
 ## Release 2.8.0 (2026-04-01)
 
 **Dropped Python 3.9, added Python 3.13 support, MaskablePPO bug fix, default hyperparams for unlisted env in the RL Zoo, Markdown doc**
@@ -65,7 +88,6 @@
 - Added a note on MultiDiscrete spaces with multi-dimensional arrays and a wrapper to fix the issue (@unexploredtest)
 - Added an example of manual export of SBX (SB3 + Jax) model to ONNX (@m-abr)
 - Switched to Markdown documentation (using MyST parser)
-- Added example for using torch.compile
 
 ## Release 2.7.1 (2025-12-05)
 

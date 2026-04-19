@@ -8,7 +8,7 @@ as well as tips and tricks when using a custom environment or implementing an RL
 
 :::{note}
 We have a [video on YouTube](https://www.youtube.com/watch?v=Ikngt0_DXJg) that covers
-this section in more details. You can also find the [slides here](https://araffin.github.io/slides/rlvs-tips-tricks/).
+this section in more detail. You can also find the [slides here](https://araffin.github.io/slides/rlvs-tips-tricks/).
 :::
 
 :::{note}
@@ -38,7 +38,7 @@ For this reason, you should always do several runs to obtain quantitative result
 Good results in RL generally depend on finding appropriate hyperparameters.
 Recent algorithms (PPO, SAC, TD3, DroQ) normally require little hyperparameter tuning, however, *don't expect the default ones to work* in every environment.
 
-Therefore, we *highly recommend you* to take a look at the [RL zoo](https://github.com/DLR-RM/rl-baselines3-zoo) (or the original papers) for tuned hyperparameters.
+Therefore, we *highly recommend* that you take a look at the [RL zoo](https://github.com/DLR-RM/rl-baselines3-zoo) (or the original papers) for tuned hyperparameters.
 A best practice when you apply RL to a new problem is to do automatic [hyperparameter optimization](https://araffin.github.io/post/hyperparam-tuning/).
 Again, this is included in the [RL zoo](https://github.com/DLR-RM/rl-baselines3-zoo).
 
@@ -54,7 +54,7 @@ Model-free RL algorithms (i.e. all the algorithms implemented in SB3) are usuall
 That's why most of the successes in RL were achieved on games or in simulation only.
 For instance, in this [work](https://www.youtube.com/watch?v=aTDkYFZFWug) by ETH Zurich, the ANYmal robot was trained in simulation only, and then tested in the real world.
 
-As a general advice, to obtain better performances, you should augment the budget of the agent (number of training timesteps).
+As general advice, to obtain better performance, you should increase the budget of the agent (number of training timesteps).
 
 In order to achieve the desired behavior, expert knowledge is often required to design an adequate reward function.
 This *reward engineering* (or *RewArt* as coined by [Freek Stulp](http://www.freekstulp.net/)), necessitates several iterations. As a good example of reward shaping,
@@ -80,7 +80,7 @@ We provide an `EvalCallback` for doing such evaluation. You can read more about 
 
 As some policies are stochastic by default (e.g. A2C or PPO), you should also try to set `deterministic=True` when calling the `.predict()` method,
 this frequently leads to better performance.
-Looking at the training curve (episode reward function of the timesteps) is a good proxy but underestimates the agent true performance.
+Looking at the training curve (episode reward as a function of timesteps) is a good proxy but underestimates the agent's true performance.
 
 We highly recommend reading [Empirical Design in Reinforcement Learning](https://arxiv.org/abs/2304.01315), as it provides valuable insights for best practices when running RL experiments.
 
@@ -106,7 +106,7 @@ To accelerate training, you can also take a look at [SBX], which is SB3 + Jax, i
 
 In sparse reward settings, we either recommend using either dedicated methods like HER (see below) or population-based algorithms like ARS (available in our [contrib repo](sb3_contrib.md).
 
-To sum it up:
+To sum up:
 
 ### Discrete Actions
 
@@ -229,7 +229,7 @@ We *recommend following those steps to have a working RL algorithm*:
 
 1. Read the original paper several times
 2. Read existing implementations (if available)
-3. Try to have some "sign of life" on toy problems
+3. Try to have some "signs of life" on toy problems
 4. Validate the implementation by making it run on harder and harder envs (you can compare results against the RL zoo).
    You usually need to run hyperparameter optimization for that step.
 
@@ -245,11 +245,11 @@ A personal pick (by @araffin) for environments with gradual difficulty in RL wit
 2. HalfCheetahBullet (medium difficulty with local minima and shaped reward)
 3. BipedalWalkerHardcore (if it works on that one, then you can have a cookie)
 
-in RL with discrete actions:
+For RL with discrete actions:
 
 1. CartPole-v1 (easy to be better than random agent, harder to achieve maximal performance)
 2. LunarLander
-3. Pong (one of the easiest Atari game)
+3. Pong (one of the easiest Atari games)
 4. other Atari games (e.g. Breakout)
 
 [sbx]: https://github.com/araffin/sbx

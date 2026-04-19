@@ -694,3 +694,23 @@ def test_matplotlib_import_error():
         # Test results_plotter raises ImportError at import time
         with pytest.raises(ImportError, match="matplotlib is required for plotting"):
             import stable_baselines3.common.results_plotter  # noqa: F401
+
+
+def test_sb3_import_without_optional_deps():
+    """Test that SB3 core can be imported without matplotlib and pandas."""
+    # Mock the imports to simulate optional dependencies not being installed
+    with mock.patch.dict("sys.modules", {"pandas": None, "matplotlib": None, "matplotlib.pyplot": None}):
+        # First, remove the modules from cache if they exist
+        modules_to_remove = [key for key in sys.modules.keys() if key.startswith("stable_baselines3")]
+        for module in modules_to_remove:
+            del sys.modules[module]
+
+        # Core SB3 should still be importable
+        from stable_baselines3 import A2C, DQN, PPO  # noqa: F401
+
+        # Monitor should be importable (pandas import is lazy in load_results)
+        from stable_baselines3.common.monitor import Monitor  # noqa: F401
+
+        # But plotting module should fail
+        with pytest.raises(ImportError):
+            import stable_baselines3.common.results_plotter  # noqa: F401

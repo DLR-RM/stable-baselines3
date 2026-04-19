@@ -10,13 +10,13 @@ Stable-Baselines3 Docs - Reliable Reinforcement Learning Implementations
 It is the next major version of `Stable Baselines <https://github.com/hill-a/stable-baselines>`_.
 
 
-Github repository: https://github.com/DLR-RM/stable-baselines3
+GitHub repository: https://github.com/DLR-RM/stable-baselines3
 
 Paper: https://jmlr.org/papers/volume22/20-1364/20-1364.pdf
 
 RL Baselines3 Zoo (training framework for SB3): https://github.com/DLR-RM/rl-baselines3-zoo
 
-RL Baselines3 Zoo provides a collection of pre-trained agents, scripts for training, evaluating agents, tuning hyperparameters, plotting results and recording videos.
+RL Baselines3 Zoo provides a collection of pre-trained agents, scripts for training, evaluating agents, tuning hyperparameters, plotting results, and recording videos.
 
 SB3 Contrib (experimental RL code, latest algorithms): https://github.com/Stable-Baselines-Team/stable-baselines3-contrib
 
@@ -27,11 +27,11 @@ Main Features
 --------------
 
 - Unified structure for all algorithms
-- PEP8 compliant (unified code style)
+- PEP 8 compliant (unified code style)
 - Documented functions and classes
-- Tests, high code coverage and type hints
+- Tests, high code coverage, and type hints
 - Clean code
-- Tensorboard support
+- TensorBoard support
 - **The performance of each algorithm was tested** (see *Results* section in their respective page)
 
 
@@ -121,7 +121,7 @@ Note: If you need to refer to a specific version of SB3, you can also use the `Z
 Contributing
 ------------
 
-To any interested in making the rl baselines better, there are still some improvements
+For anyone interested in making the RL baselines better, there are still some improvements
 that need to be done.
 You can check issues in the `repository <https://github.com/DLR-RM/stable-baselines3/labels/help%20wanted>`_.
 

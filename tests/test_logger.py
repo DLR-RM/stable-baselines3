@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import os
 import sys
 import time
@@ -8,6 +9,7 @@ from unittest import mock
 
 import gymnasium as gym
 import numpy as np
+import pandas
 import pytest
 import torch as th
 from gymnasium import spaces
@@ -30,10 +32,33 @@ from stable_baselines3.common.logger import (
     Video,
     configure,
     make_output_format,
-    read_csv,
-    read_json,
 )
 from stable_baselines3.common.monitor import Monitor
+
+
+def read_csv(filename: str):
+    """
+    read a csv file using pandas
+
+    :param filename: the file path to read
+    :return: the data in the csv
+    """
+    return pandas.read_csv(filename, index_col=None, comment="#")
+
+
+def read_json(filename: str):
+    """
+    read a json file using pandas
+
+    :param filename: the file path to read
+    :return: the data in the json
+    """
+    data = []
+    with open(filename) as file_handler:
+        for line in file_handler:
+            data.append(json.loads(line))
+    return pandas.DataFrame(data)
+
 
 KEY_VALUES = {
     "test": 1,
@@ -634,3 +659,38 @@ def test_rollout_success_rate_onpolicy_algo(tmp_path):
     assert logger.name_to_value["rollout/success_rate"] == 0.5
     model.learn(total_timesteps=steps_per_log * ep_steps, log_interval=1)
     assert logger.name_to_value["rollout/success_rate"] == 0.8
+
+
+def test_pandas_import_error(tmp_path):
+    """Test that a clear ImportError is raised when pandas is not available."""
+    # Mock the import to simulate pandas not being installed
+    with mock.patch.dict("sys.modules", {"pandas": None}):
+        # First, remove the modules from cache if they exist
+        if "stable_baselines3.common.results_plotter" in sys.modules:
+            del sys.modules["stable_baselines3.common.results_plotter"]
+        if "stable_baselines3.common.monitor" in sys.modules:
+            del sys.modules["stable_baselines3.common.monitor"]
+
+        # Test results_plotter raises ImportError at import time
+        with pytest.raises(ImportError, match="pandas is required for plotting"):
+            import stable_baselines3.common.results_plotter  # noqa: F401
+
+        # Test load_results raises ImportError at call time
+        # monitor module can still be imported (pandas import is lazy)
+        from stable_baselines3.common.monitor import load_results
+
+        with pytest.raises(ImportError, match="pandas is required for loading results"):
+            load_results(str(tmp_path))
+
+
+def test_matplotlib_import_error():
+    """Test that a clear ImportError is raised when matplotlib is not available."""
+    # Mock the import to simulate matplotlib not being installed
+    with mock.patch.dict("sys.modules", {"matplotlib": None, "matplotlib.pyplot": None}):
+        # First, remove the module from cache if it exists
+        if "stable_baselines3.common.results_plotter" in sys.modules:
+            del sys.modules["stable_baselines3.common.results_plotter"]
+
+        # Test results_plotter raises ImportError at import time
+        with pytest.raises(ImportError, match="matplotlib is required for plotting"):
+            import stable_baselines3.common.results_plotter  # noqa: F401

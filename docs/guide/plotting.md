@@ -6,6 +6,17 @@ Stable Baselines3 provides utilities for plotting training results, allowing you
 The plotting functionality is provided by the `results_plotter` module, which can load monitor files created during training and generate various plots.
 
 :::{note}
+Plotting requires `pandas` and `matplotlib`. Install them with:
+```bash
+pip install pandas matplotlib
+```
+Or install the extra dependencies:
+```bash
+pip install 'stable-baselines3[extra]'
+```
+:::
+
+:::{note}
 We recommend using the
 [RL Baselines3 Zoo plotting scripts](https://rl-baselines3-zoo.readthedocs.io/en/master/guide/plot.html)
 which provide plotting capabilities with confidence intervals, and publication-ready visualizations.

@@ -1,11 +1,26 @@
 from collections.abc import Callable
 
 import numpy as np
-import pandas as pd
+
+try:
+    import pandas as pd
+except ImportError as e:
+    raise ImportError(
+        "pandas is required for plotting functionality. "
+        "Install it with `pip install pandas` or install the extra dependencies with "
+        "`pip install 'stable-baselines3[extra]'`."
+    ) from e
 
 # import matplotlib
 # matplotlib.use('TkAgg')  # Can change to 'Agg' for non-interactive mode
-from matplotlib import pyplot as plt
+try:
+    from matplotlib import pyplot as plt
+except ImportError as e:
+    raise ImportError(
+        "matplotlib is required for plotting functionality. "
+        "Install it with `pip install matplotlib` or install the extra dependencies with "
+        "`pip install 'stable-baselines3[extra]'`."
+    ) from e
 
 from stable_baselines3.common.monitor import load_results
 

@@ -5,7 +5,9 @@
 ## Release 2.9.0a1 (WIP)
 
 ### Breaking Changes:
-- Relax Gymnasium version range (from `"gymnasium>=0.29.1,<1.3.0"` to `"gymnasium>=0.29.1,<2.0"`)
+- Relaxed Gymnasium version range (from `"gymnasium>=0.29.1,<1.3.0"` to `"gymnasium>=0.29.1,<2.0"`)
+- `pandas` and `matplotlib` are no longer core dependencies; they are now optional and only only required for plotting functionality (moved to `stable_baselines3[extra]`).
+- Moved `read_json` and `read_csv` helper functions to test files
 
 ### New Features:
 
@@ -21,7 +23,7 @@
 
 ### Others:
 
-- Optimize tests (faster to run)
+- Optimized tests (faster to run)
 
 ### Documentation:
 

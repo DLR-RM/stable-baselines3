@@ -21,6 +21,8 @@
 
 ### Others:
 
+- Optimize tests (faster to run)
+
 ### Documentation:
 
 - Added example for using torch.compile

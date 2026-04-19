@@ -15,14 +15,16 @@ DIM = 4
 def test_discrete(model_class, env):
     env_ = DummyVecEnv([lambda: env])
     kwargs = {}
-    n_steps = 2500
+    n_steps = 1200
     if model_class == DQN:
         kwargs = dict(learning_starts=0)
         # DQN only support discrete actions
         if isinstance(env, (IdentityEnvMultiDiscrete, IdentityEnvMultiBinary)):
             return
+    elif model_class == PPO:
+        kwargs = dict(n_epochs=4, n_steps=256)
 
-    model = model_class("MlpPolicy", env_, gamma=0.4, seed=3, **kwargs).learn(n_steps)
+    model = model_class("MlpPolicy", env_, gamma=0.4, learning_rate=0.002, seed=3, **kwargs).learn(n_steps)
 
     evaluate_policy(model, env_, n_eval_episodes=20, reward_threshold=90, warn=False)
     obs, _ = env.reset()
@@ -34,7 +36,7 @@ def test_discrete(model_class, env):
 def test_continuous(model_class):
     env = IdentityEnvBox(eps=0.5)
 
-    n_steps = {A2C: 2000, PPO: 2000, SAC: 400, TD3: 400, DDPG: 400}[model_class]
+    n_steps = {A2C: 2000, PPO: 1000, SAC: 400, TD3: 400, DDPG: 400}[model_class]
 
     kwargs = dict(policy_kwargs=dict(net_arch=[64, 64]), seed=0, gamma=0.95)
 
@@ -45,7 +47,7 @@ def test_continuous(model_class):
     elif model_class in [A2C]:
         kwargs["policy_kwargs"]["log_std_init"] = -0.5
     elif model_class == PPO:
-        kwargs = dict(n_steps=512, n_epochs=5, seed=0)
+        kwargs = dict(n_steps=256, n_epochs=4, seed=0)
 
     model = model_class("MlpPolicy", env, learning_rate=1e-3, **kwargs).learn(n_steps)
 

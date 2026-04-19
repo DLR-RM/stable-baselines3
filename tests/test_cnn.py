@@ -38,6 +38,7 @@ def test_cnn(tmp_path, model_class, share_features_extractor):
             buffer_size=250,
             policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)),
             seed=1,
+            train_freq=8,
         )
     model = model_class("CnnPolicy", env, **kwargs).learn(250)
 

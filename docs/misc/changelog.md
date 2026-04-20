@@ -42,6 +42,7 @@
 ### New Features:
 
 - Added official support for Python 3.13
+- Added Prioritized Experience Replay for DQN (@AlexPasqua)
 
 ### Bug Fixes:
 

@@ -89,6 +89,11 @@ When using A2C models trained with `use_sde=True`, the automatic noise resetting
 For continuous control tasks, it is recommended to use deterministic behavior during inference (`deterministic=True`). If you need stochastic behavior during inference, you must manually reset the noise by calling `model.policy.reset_noise(env.num_envs)` at appropriate intervals based on your desired `sde_sample_freq`.
 :::
 
+## Beta Distribution for Continuous Actions
+
+A2C supports using a **Beta distribution** for continuous actions via `policy_kwargs=dict(use_beta=True)`.
+See the [PPO documentation](../modules/ppo.md#beta-distribution-for-continuous-actions) for details.
+
 ## Results
 
 ### Atari Games

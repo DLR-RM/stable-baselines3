@@ -42,6 +42,7 @@
 ### New Features:
 
 - Added official support for Python 3.13
+- Added `BetaDistribution` for continuous actions in bounded spaces, based on [Chou et al. (2017)](https://proceedings.mlr.press/v70/chou17a.html) and [arXiv:2111.02202](https://arxiv.org/abs/2111.02202). Can be enabled via `policy_kwargs=dict(use_beta=True)` for PPO and A2C. Actions are sampled from a Beta distribution (in [0, 1]) and rescaled to the action space bounds.
 
 ### Bug Fixes:
 

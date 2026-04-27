@@ -8,6 +8,7 @@ import torch as th
 from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.distributions import (
     BernoulliDistribution,
+    BetaDistribution,
     CategoricalDistribution,
     DiagGaussianDistribution,
     MultiCategoricalDistribution,
@@ -35,6 +36,79 @@ def test_bijector():
     assert th.max(th.abs(squashed_actions)) <= 1.0
     # Check the inverse method
     assert th.isclose(TanhBijector.inverse(squashed_actions), actions).all()
+
+
+@pytest.mark.parametrize("model_class", [A2C, PPO])
+def test_beta_distribution(model_class):
+    """
+    Test run with Beta distribution for continuous actions (cf https://arxiv.org/abs/2111.02202).
+    """
+    model = model_class(
+        "MlpPolicy",
+        "Pendulum-v1",
+        n_steps=64,
+        policy_kwargs=dict(use_beta=True),
+    )
+    model.learn(500)
+
+    # Check that actions are within [0, 1] (the raw Beta space)
+    dist = BetaDistribution(N_ACTIONS)
+    action_net = dist.proba_distribution_net(N_FEATURES)
+    alpha_beta = action_net(th.rand(N_SAMPLES, N_FEATURES))
+    dist = dist.proba_distribution(alpha_beta)
+    actions = dist.get_actions()
+    assert actions.min() >= 0.0
+    assert actions.max() <= 1.0
+
+
+def test_beta_distribution_mode():
+    """
+    Test that the mode of the Beta distribution is correct.
+    """
+    dist = BetaDistribution(N_ACTIONS)
+    action_net = dist.proba_distribution_net(N_FEATURES)
+    alpha_beta = action_net(th.rand(5, N_FEATURES))
+    dist = dist.proba_distribution(alpha_beta)
+    mode = dist.mode()
+    # Mode should be in [0, 1]
+    assert mode.min() >= 0.0
+    assert mode.max() <= 1.0
+
+    # Mode of Beta(alpha, beta) = (alpha - 1) / (alpha + beta - 2) for alpha, beta > 1
+    alpha = dist.distribution.concentration1
+    beta = dist.distribution.concentration0
+    expected_mode = (alpha - 1.0) / (alpha + beta - 2.0)
+    assert th.allclose(mode, expected_mode)
+
+
+def test_beta_entropy():
+    """
+    Test that the entropy of the Beta distribution can be approximated by -E[log_prob].
+    """
+    set_random_seed(1)
+    dist = BetaDistribution(N_ACTIONS)
+    action_net = dist.proba_distribution_net(N_FEATURES)
+    alpha_beta = action_net(th.rand(1, N_FEATURES)).repeat(N_SAMPLES, 1)
+    dist = dist.proba_distribution(alpha_beta)
+    actions = dist.get_actions()
+    entropy = dist.entropy()
+    log_prob = dist.log_prob(actions)
+    assert th.allclose(entropy.mean(), -log_prob.mean(), rtol=5e-3)
+
+
+def test_beta_rescaling():
+    """
+    Test that Beta distribution actions are properly rescaled
+    from [0, 1] to [low, high] during prediction.
+    """
+    env = gym.make("Pendulum-v1")
+    model = PPO("MlpPolicy", env, policy_kwargs=dict(use_beta=True), seed=1)
+    obs, _ = env.reset()
+    action, _ = model.predict(obs, deterministic=True)
+    low = env.action_space.low
+    high = env.action_space.high
+    assert np.all(action >= low), f"Action {action} below lower bound {low}"
+    assert np.all(action <= high), f"Action {action} above upper bound {high}"
 
 
 @pytest.mark.parametrize("model_class", [A2C, PPO])
@@ -162,6 +236,7 @@ def test_categorical(dist, CAT_ACTIONS):
     "dist_type",
     [
         BernoulliDistribution(N_ACTIONS).proba_distribution(th.rand(N_ACTIONS)),
+        BetaDistribution(N_ACTIONS).proba_distribution(th.rand(1, 2 * N_ACTIONS)),
         CategoricalDistribution(N_ACTIONS).proba_distribution(th.rand(N_ACTIONS)),
         DiagGaussianDistribution(N_ACTIONS).proba_distribution(th.rand(N_ACTIONS), th.rand(N_ACTIONS)),
         MultiCategoricalDistribution([N_ACTIONS, N_ACTIONS]).proba_distribution(th.rand(1, sum([N_ACTIONS, N_ACTIONS]))),
@@ -180,7 +255,12 @@ def test_kl_divergence(dist_type):
     assert th.allclose(kl_divergence(dist1, dist2).sum(), th.tensor(0.0))
 
     # Test 2: KL Div = E(Unbiased approx KL Div)
-    if isinstance(dist_type, CategoricalDistribution):
+    if isinstance(dist_type, BetaDistribution):
+        alpha_beta1 = th.rand(1, 2 * N_ACTIONS).repeat(N_SAMPLES, 1)
+        alpha_beta2 = th.rand(1, 2 * N_ACTIONS).repeat(N_SAMPLES, 1)
+        dist1 = dist_type.proba_distribution(alpha_beta1)
+        dist2 = deepcopy(dist_type).proba_distribution(alpha_beta2)
+    elif isinstance(dist_type, CategoricalDistribution):
         dist1 = dist_type.proba_distribution(th.rand(N_ACTIONS).repeat(N_SAMPLES, 1))
         # deepcopy needed to assign new memory to new distribution instance
         dist2 = deepcopy(dist_type).proba_distribution(th.rand(N_ACTIONS).repeat(N_SAMPLES, 1))
@@ -209,7 +289,12 @@ def test_kl_divergence(dist_type):
         dist1 = dist1.proba_distribution(mean_actions1, log_std, state)
         dist2 = dist2.proba_distribution(mean_actions2, log_std, state)
 
-    full_kl_div = kl_divergence(dist1, dist2).mean(dim=0)
+    full_kl_div = kl_divergence(dist1, dist2)
+    # For distributions where kl_divergence returns per-dimension values (e.g. Beta, Normal),
+    # sum across action dimensions to match log_prob which already sums across dimensions.
+    if len(full_kl_div.shape) > 1:
+        full_kl_div = full_kl_div.sum(dim=-1)
+    full_kl_div = full_kl_div.mean(dim=0)
     actions = dist1.get_actions()
     approx_kl_div = (dist1.log_prob(actions) - dist2.log_prob(actions)).mean(dim=0)
 

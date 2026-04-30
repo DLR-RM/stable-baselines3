@@ -20,6 +20,7 @@
 ### [SBX] (SB3 + Jax)
 
 ### Deprecations:
+- Fixed deprecated Taxi-v3 from gymnasium 1.3.0
 
 ### Others:
 

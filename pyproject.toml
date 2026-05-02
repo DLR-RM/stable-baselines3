@@ -39,8 +39,8 @@ exclude = """(?x)(
 env = ["PYTHONHASHSEED=0"]
 
 filterwarnings = [
-    # multiprocessing and fork method
-    "ignore:This process.*is multi-threaded, use of fork\\(\\).*may lead to deadlocks:DeprecationWarning:multiprocessing.popen_fork.py",
+    # multiprocessing and fork method, use of fork may lead to deadlocks
+    "ignore::DeprecationWarning:multiprocessing.popen_fork",
     # A2C/PPO on GPU
     "ignore:You are trying to run (PPO|A2C) on the GPU",
     # Tensorboard warnings

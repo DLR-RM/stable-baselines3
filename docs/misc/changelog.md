@@ -12,6 +12,7 @@
 ### New Features:
 
 ### Bug Fixes:
+- Fixed deprecated error Taxi-v3 from gymnasium v1.3.0 in tests
 
 ### [SB3-Contrib]
 

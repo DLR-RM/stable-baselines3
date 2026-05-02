@@ -428,6 +428,7 @@ class TensorBoardOutputFormat(KVWriter):
                 self.writer.add_image(key, value.image, step, dataformats=value.dataformats)
 
             if isinstance(value, HParam):
+                assert self.writer.file_writer is not None
                 # we don't use `self.writer.add_hparams` to have control over the log_dir
                 experiment, session_start_info, session_end_info = hparams(value.hparam_dict, metric_dict=value.metric_dict)
                 self.writer.file_writer.add_summary(experiment)

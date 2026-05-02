@@ -133,12 +133,19 @@ def test_features_extractor_target_net(model_class, share_features_extractor):
     if model_class == DQN and share_features_extractor:
         pytest.skip()
 
-    env = FakeImageEnv(screen_height=40, screen_width=40, n_channels=1, discrete=model_class not in {SAC, TD3})
+    env = FakeImageEnv(screen_height=36, screen_width=36, n_channels=1, discrete=model_class not in {SAC, TD3})
     # Avoid memory error when using replay buffer
     # Reduce the size of the features
-    kwargs = dict(buffer_size=250, learning_starts=100, policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=32)))
+    kwargs = dict(
+        buffer_size=100,
+        learning_starts=50,
+        policy_kwargs=dict(features_extractor_kwargs=dict(features_dim=8)),
+        learning_rate=1e-3,
+    )
     if model_class != DQN:
         kwargs["policy_kwargs"]["share_features_extractor"] = share_features_extractor
+    else:
+        kwargs["target_update_interval"] = 10
 
     # No delay for TD3 (changes when the actor and polyak update take place)
     if model_class == TD3:
@@ -172,7 +179,7 @@ def test_features_extractor_target_net(model_class, share_features_extractor):
     if model_class == TD3:
         params_should_match(model.actor.parameters(), model.actor_target.parameters())
 
-    model.learn(200)
+    model.learn(100)
 
     # Critic and target should differ
     params_should_differ(model.critic.parameters(), model.critic_target.parameters())

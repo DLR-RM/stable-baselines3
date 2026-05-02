@@ -39,17 +39,18 @@ exclude = """(?x)(
 env = ["PYTHONHASHSEED=0"]
 
 filterwarnings = [
+    # multiprocessing and fork method
+    "ignore:This process.*is multi-threaded, use of fork\\(\\).*may lead to deadlocks:DeprecationWarning:multiprocessing.popen_fork.py",
     # A2C/PPO on GPU
     "ignore:You are trying to run (PPO|A2C) on the GPU",
     # Tensorboard warnings
     "ignore::DeprecationWarning:tensorboard",
     # Gymnasium warnings
     "ignore::UserWarning:gymnasium",
+    # Taxi-v3 and CliffWalking-v0
+    "ignore::DeprecationWarning:gymnasium.envs.registration",
     # tqdm warning about rich being experimental
     "ignore:rich is experimental",
-    # Pygame warnings about pkg_resources
-    "ignore:pkg_resources is deprecated",
-    "ignore:Deprecated call to `pkg_resources",
 ]
 markers = [
     "expensive: marks tests as expensive (deselect with '-m \"not expensive\"')",

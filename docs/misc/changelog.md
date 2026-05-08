@@ -8,6 +8,7 @@
 - Relaxed Gymnasium version range (from `"gymnasium>=0.29.1,<1.3.0"` to `"gymnasium>=0.29.1,<2.0"`)
 - `pandas` and `matplotlib` are no longer core dependencies; they are now optional and only required for loading results and plotting (moved to `stable-baselines3[extra]`).
 - Moved `read_json` and `read_csv` helper functions to test files
+- Raised `torch` minimum version from 2.3 to 2.8 to mitigate https://github.com/advisories/GHSA-887c-mr87-cxwp
 
 ### New Features:
 

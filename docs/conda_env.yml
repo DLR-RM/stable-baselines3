@@ -1,12 +1,11 @@
 name: root
 channels:
-  - pytorch
   - conda-forge
 dependencies:
   - cpuonly=1.0=0
   - pip=24.2
   - python=3.11
-  - pytorch=2.5.0=py3.11_cpu_0
+  - pytorch=2.9.1
   - pip:
     - gymnasium>=0.29.1,<1.1.0
     - cloudpickle

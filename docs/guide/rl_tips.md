@@ -57,7 +57,7 @@ For instance, in this [work](https://www.youtube.com/watch?v=aTDkYFZFWug) by ETH
 As general advice, to obtain better performance, you should increase the budget of the agent (number of training timesteps).
 
 In order to achieve the desired behavior, expert knowledge is often required to design an adequate reward function.
-This *reward engineering* (or *RewArt* as coined by [Freek Stulp](http://www.freekstulp.net/)), necessitates several iterations. As a good example of reward shaping,
+This *reward engineering* (or *RewArt* as coined by [Freek Stulp](https://www.freekstulp.net/)), necessitates several iterations. As a good example of reward shaping,
 you can take a look at [Deep Mimic paper](https://xbpeng.github.io/projects/DeepMimic/index.html) which combines imitation learning and reinforcement learning to do acrobatic moves.
 
 A final limitation of RL is the instability of training. That is, you can observe a huge drop in performance during training.
@@ -222,7 +222,7 @@ We have a [video on YouTube about reliable RL](https://www.youtube.com/watch?v=7
 this section in more details. You can also find the [slides online](https://araffin.github.io/slides/tips-reliable-rl/).
 :::
 
-When you try to reproduce a RL paper by implementing the algorithm, the [nuts and bolts of RL research](http://joschu.net/docs/nuts-and-bolts.pdf)
+When you try to reproduce a RL paper by implementing the algorithm, the [nuts and bolts of RL research](https://joschu.net/docs/nuts-and-bolts.pdf)
 by John Schulman are quite useful ([video](https://www.youtube.com/watch?v=8EcdaCk9KaQ)).
 
 We *recommend following those steps to have a working RL algorithm*:

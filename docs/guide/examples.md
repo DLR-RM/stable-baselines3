@@ -639,7 +639,7 @@ Policies also offers a simple way to save/load weights as a NumPy vector, using 
 and `load_from_vector()` method.
 
 Following example demonstrates reading parameters, modifying some of them and loading them to model
-by implementing [evolution strategy (es)](http://blog.otoro.net/2017/10/29/visual-evolution-strategies/)
+by implementing [evolution strategy (es)](https://blog.otoro.net/2017/10/29/visual-evolution-strategies/)
 for solving the `CartPole-v1` environment. The initial guess for parameters is obtained by running
 A2C policy gradient updates on the model.
 

@@ -20,6 +20,8 @@
 
 ### [SBX] (SB3 + Jax)
 
+- Added support for `rollout_buffer_class` and `rollout_buffer_kwargs` arguments in `PPO` and `OnPolicyAlgorithmJax` constructors, as in Stable Baselines3. (@Trenza1ore)
+
 ### Deprecations:
 
 ### Others:

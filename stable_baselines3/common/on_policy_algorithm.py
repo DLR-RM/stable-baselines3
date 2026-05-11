@@ -10,6 +10,7 @@ from gymnasium import spaces
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.buffers import DictRolloutBuffer, RolloutBuffer
 from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.distributions import BetaDistribution
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import obs_as_tensor, safe_mean
@@ -210,6 +211,11 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                     # Unscale the actions to match env bounds
                     # if they were previously squashed (scaled in [-1, 1])
                     clipped_actions = self.policy.unscale_action(clipped_actions)
+                elif isinstance(self.policy.action_dist, BetaDistribution):
+                    # Beta distribution outputs actions in [0, 1],
+                    # rescale to [low, high] for the environment
+                    low, high = self.action_space.low, self.action_space.high
+                    clipped_actions = low + (high - low) * clipped_actions
                 else:
                     # Otherwise, clip the actions to avoid out of bound error
                     # as we are sampling from an unbounded Gaussian distribution

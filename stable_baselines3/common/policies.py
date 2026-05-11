@@ -14,6 +14,7 @@ from torch import nn
 
 from stable_baselines3.common.distributions import (
     BernoulliDistribution,
+    BetaDistribution,
     CategoricalDistribution,
     DiagGaussianDistribution,
     Distribution,
@@ -373,6 +374,11 @@ class BasePolicy(BaseModel, ABC):
             if self.squash_output:
                 # Rescale to proper domain when using squashing
                 actions = self.unscale_action(actions)  # type: ignore[assignment, arg-type]
+            elif hasattr(self, "action_dist") and isinstance(self.action_dist, BetaDistribution):
+                # Beta distribution outputs actions in [0, 1],
+                # rescale to [low, high] for the environment
+                low, high = self.action_space.low, self.action_space.high
+                actions = low + (high - low) * actions  # type: ignore[assignment]
             else:
                 # Actions could be on arbitrary scale, so clip the actions to avoid
                 # out of bound error (e.g. if sampling from a Gaussian distribution)
@@ -425,6 +431,8 @@ class ActorCriticPolicy(BasePolicy):
     :param activation_fn: Activation function
     :param ortho_init: Whether to use or not orthogonal initialization
     :param use_sde: Whether to use State Dependent Exploration or not
+    :param use_beta: Whether to use a Beta distribution instead of a Gaussian for continuous actions.
+        See https://arxiv.org/abs/2111.02202. Cannot be used together with ``use_sde``.
     :param log_std_init: Initial value for the log standard deviation
     :param full_std: Whether to use (n_features x n_actions) parameters
         for the std instead of only (n_features,) when using gSDE
@@ -454,6 +462,7 @@ class ActorCriticPolicy(BasePolicy):
         activation_fn: type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
+        use_beta: bool = False,
         log_std_init: float = 0.0,
         full_std: bool = True,
         use_expln: bool = False,
@@ -527,10 +536,11 @@ class ActorCriticPolicy(BasePolicy):
             }
 
         self.use_sde = use_sde
+        self.use_beta = use_beta
         self.dist_kwargs = dist_kwargs
 
         # Action distribution
-        self.action_dist = make_proba_distribution(action_space, use_sde=use_sde, dist_kwargs=dist_kwargs)
+        self.action_dist = make_proba_distribution(action_space, use_sde=use_sde, use_beta=use_beta, dist_kwargs=dist_kwargs)
 
         self._build(lr_schedule)
 
@@ -544,6 +554,7 @@ class ActorCriticPolicy(BasePolicy):
                 net_arch=self.net_arch,
                 activation_fn=self.activation_fn,
                 use_sde=self.use_sde,
+                use_beta=self.use_beta,
                 log_std_init=self.log_std_init,
                 squash_output=default_none_kwargs["squash_output"],
                 full_std=default_none_kwargs["full_std"],
@@ -601,7 +612,9 @@ class ActorCriticPolicy(BasePolicy):
             self.action_net, self.log_std = self.action_dist.proba_distribution_net(
                 latent_dim=latent_dim_pi, latent_sde_dim=latent_dim_pi, log_std_init=self.log_std_init
             )
-        elif isinstance(self.action_dist, (CategoricalDistribution, MultiCategoricalDistribution, BernoulliDistribution)):
+        elif isinstance(
+            self.action_dist, (CategoricalDistribution, MultiCategoricalDistribution, BernoulliDistribution, BetaDistribution)
+        ):
             self.action_net = self.action_dist.proba_distribution_net(latent_dim=latent_dim_pi)
         else:
             raise NotImplementedError(f"Unsupported distribution '{self.action_dist}'.")
@@ -701,6 +714,9 @@ class ActorCriticPolicy(BasePolicy):
         elif isinstance(self.action_dist, BernoulliDistribution):
             # Here mean_actions are the logits (before rounding to get the binary actions)
             return self.action_dist.proba_distribution(action_logits=mean_actions)
+        elif isinstance(self.action_dist, BetaDistribution):
+            # Here mean_actions are the raw alpha/beta parameters (2 * action_dim)
+            return self.action_dist.proba_distribution(alpha_beta=mean_actions)
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
             return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_pi)
         else:
@@ -775,6 +791,8 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
     :param activation_fn: Activation function
     :param ortho_init: Whether to use or not orthogonal initialization
     :param use_sde: Whether to use State Dependent Exploration or not
+    :param use_beta: Whether to use a Beta distribution instead of a Gaussian for continuous actions.
+        See https://arxiv.org/abs/2111.02202. Cannot be used together with ``use_sde``.
     :param log_std_init: Initial value for the log standard deviation
     :param full_std: Whether to use (n_features x n_actions) parameters
         for the std instead of only (n_features,) when using gSDE
@@ -804,6 +822,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         activation_fn: type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
+        use_beta: bool = False,
         log_std_init: float = 0.0,
         full_std: bool = True,
         use_expln: bool = False,
@@ -823,6 +842,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
             activation_fn,
             ortho_init,
             use_sde,
+            use_beta,
             log_std_init,
             full_std,
             use_expln,
@@ -848,6 +868,8 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
     :param activation_fn: Activation function
     :param ortho_init: Whether to use or not orthogonal initialization
     :param use_sde: Whether to use State Dependent Exploration or not
+    :param use_beta: Whether to use a Beta distribution instead of a Gaussian for continuous actions.
+        See https://arxiv.org/abs/2111.02202. Cannot be used together with ``use_sde``.
     :param log_std_init: Initial value for the log standard deviation
     :param full_std: Whether to use (n_features x n_actions) parameters
         for the std instead of only (n_features,) when using gSDE
@@ -877,6 +899,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         activation_fn: type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
+        use_beta: bool = False,
         log_std_init: float = 0.0,
         full_std: bool = True,
         use_expln: bool = False,
@@ -896,6 +919,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
             activation_fn,
             ortho_init,
             use_sde,
+            use_beta,
             log_std_init,
             full_std,
             use_expln,

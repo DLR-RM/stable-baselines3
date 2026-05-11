@@ -256,7 +256,7 @@ To cite this repository in publications:
   volume  = {22},
   number  = {268},
   pages   = {1-8},
-  url     = {http://jmlr.org/papers/v22/20-1364.html}
+  url     = {https://jmlr.org/papers/v22/20-1364.html}
 }
 ```
 
@@ -279,7 +279,7 @@ If you want to contribute, please read [**CONTRIBUTING.md**](./CONTRIBUTING.md) 
 
 The initial work to develop Stable Baselines3 was partially funded by the project *Reduced Complexity Models* from the *Helmholtz-Gemeinschaft Deutscher Forschungszentren*, and by the EU Horizon 2020 Research and Innovation Programme under grant number 951992 ([VeriDream](https://www.veridream.eu/)).
 
-The original version, Stable Baselines, was created in the [robotics lab U2IS](http://u2is.ensta-paristech.fr/index.php?lang=en) ([INRIA Flowers](https://flowers.inria.fr/) team) at [ENSTA ParisTech](http://www.ensta-paristech.fr/en).
+The original version, Stable Baselines, was created in the [robotics lab U2IS](http://u2is.ensta-paris.fr/?lang=en) ([INRIA Flowers](https://flowers.inria.fr/) team) at [ENSTA ParisTech](https://www.ensta.fr/en).
 
 
 Logo credits: [L.M. Tenkes](https://www.instagram.com/lucillehue/)

@@ -101,7 +101,7 @@ Note: if you are using a proxy, you need to pass extra params during
 build and do some [tweaks]:
 
 ```bash
---network=host --build-arg HTTP_PROXY=http://your.proxy.fr:8080/ --build-arg http_proxy=http://your.proxy.fr:8080/ --build-arg HTTPS_PROXY=https://your.proxy.fr:8080/ --build-arg https_proxy=https://your.proxy.fr:8080/
+--network=host --build-arg HTTPS_PROXY=https://your.proxy.fr:8080/ --build-arg https_proxy=https://your.proxy.fr:8080/
 ```
 
 ### Run the images (CPU/GPU)

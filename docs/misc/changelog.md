@@ -29,6 +29,7 @@
 ### Documentation:
 
 - Added example for using torch.compile
+- Fixed many broken links and updated links to https whenever possible
 
 ## Release 2.8.0 (2026-04-01)
 

@@ -124,7 +124,7 @@ class ImageRecorderCallback(BaseCallback):
         image = self.training_env.render(mode="rgb_array")
         # "HWC" specify the dataformat of the image, here channel last
         # (H for height, W for width, C for channel)
-        # See https://pytorch.org/docs/stable/tensorboard.html
+        # See https://docs.pytorch.org/docs/stable/tensorboard.html
         # for supported formats
         self.logger.record("trajectory/image", Image(image, "HWC"), exclude=("stdout", "log", "json", "csv"))
         return True
@@ -223,7 +223,7 @@ class VideoRecorderCallback(BaseCallback):
                 """
                 # We expect `render()` to return a uint8 array with values in [0, 255] or a float array
                 # with values in [0, 1], as described in
-                # https://pytorch.org/docs/stable/tensorboard.html#torch.utils.tensorboard.writer.SummaryWriter.add_video
+                # https://docs.pytorch.org/docs/stable/tensorboard.html#torch.utils.tensorboard.writer.SummaryWriter.add_video
                 screen = self._eval_env.render(mode="rgb_array")
                 # PyTorch uses CxHxW vs HxWxC gym (and tensorflow) image convention
                 screens.append(screen.transpose(2, 0, 1))
@@ -297,7 +297,7 @@ model.learn(total_timesteps=int(5e4), callback=HParamCallback())
 
 ## Directly Accessing The Summary Writer
 
-If you would like to log arbitrary data (in one of the formats supported by [pytorch](https://pytorch.org/docs/stable/tensorboard.html)), you
+If you would like to log arbitrary data (in one of the formats supported by [PyTorch](https://docs.pytorch.org/docs/stable/tensorboard.html)), you
 can get direct access to the underlying SummaryWriter in a callback:
 
 :::{warning}
@@ -306,7 +306,7 @@ This is method is not recommended and should only be used by advanced users.
 
 :::{note}
 If you want a concrete example, you can watch [how to log lap time with donkeycar env](https://www.youtube.com/watch?v=v8j2bpcE4Rg&t=4619s),
-or read the code in the [RL Zoo](https://github.com/DLR-RM/rl-baselines3-zoo/blob/feat/gym-donkeycar/rl_zoo3/callbacks.py#L251-L270).
+or read the code in the [RL Zoo](https://github.com/DLR-RM/rl-baselines3-zoo/blob/eb5d9c7770abe9a60f5511193ebcb260dfdc2706/rl_zoo3/callbacks.py#L262).
 You might also want to take a look at [issue #1160](https://github.com/DLR-RM/stable-baselines3/issues/1160) and [issue #1219](https://github.com/DLR-RM/stable-baselines3/issues/1219).
 :::
 

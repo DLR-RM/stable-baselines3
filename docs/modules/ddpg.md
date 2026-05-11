@@ -31,7 +31,7 @@ they share the same policies and same implementation.
 
 ## Notes
 
-- Deterministic Policy Gradient: <http://proceedings.mlr.press/v32/silver14.pdf>
+- Deterministic Policy Gradient: <https://proceedings.mlr.press/v32/silver14.pdf>
 - DDPG Paper: <https://arxiv.org/abs/1509.02971>
 - OpenAI Spinning Guide for DDPG: <https://spinningup.openai.com/en/latest/algorithms/ddpg.html>
 

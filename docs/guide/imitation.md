@@ -13,5 +13,5 @@ imitation learning algorithms on top of Stable-Baselines3, including:
 
 You can install imitation with `pip install imitation`. The [imitation
 documentation](https://imitation.readthedocs.io/en/latest/) has more details
-on how to use the library, including [a quick start guide](https://imitation.readthedocs.io/en/latest/getting-started/first-steps.html)
+on how to use the library, including [a quick start guide](https://imitation.readthedocs.io/en/latest/getting-started/first_steps.html)
 for the impatient.

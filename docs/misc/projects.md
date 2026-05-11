@@ -13,7 +13,7 @@ Authors: Parth Kothari, Christian Perone, Luca Bergamini, Alexandre Alahi, Peter
 
 Github: 
 
-<https://github.com/lyft/l5kit>
+<https://github.com/woven-by-toyota/l5kit>
 
 Paper: 
 
@@ -100,7 +100,7 @@ Author: Jacopo Panerati
 
 Github: 
 
-<https://github.com/utiasDSL/gym-pybullet-drones/>
+<https://github.com/learnsyslab/gym-pybullet-drones>
 
 Paper: 
 
@@ -118,11 +118,8 @@ Author: Justin Terry
 
 GitHub: 
 
-<https://github.com/PettingZoo-Team/SuperSuit>
+<https://github.com/Farama-Foundation/SuperSuit>
 
-Tutorial on multi-agent support in stable baselines: 
-
-<https://towardsdatascience.com/multi-agent-deep-reinforcement-learning-in-15-lines-of-code-using-pettingzoo-e0b963c0820b>
 
 ## Rocket League Gym
 
@@ -140,9 +137,6 @@ GitHub:
 
 <https://github.com/lucas-emery/rocket-league-gym>
 
-Website: 
-
-<https://rlgym.github.io>
 
 ## gym-electric-motor
 
@@ -193,11 +187,11 @@ Authors: Junyeob Baek
 
 GitHub: 
 
-<https://github.com/CUN-bjy/policy-distillation-baselines>
+<https://github.com/dion-jy/policy-distillation-baselines>
 
 Demo: 
 
-[link](https://github.com/CUN-bjy/policy-distillation-baselines/issues/3#issuecomment-817730173)
+[link](https://github.com/dion-jy/policy-distillation-baselines/issues/3#issuecomment-817730173)
 
 ## highway-env
 
@@ -211,11 +205,11 @@ Author:
 
 GitHub: 
 
-<https://github.com/eleurent/highway-env>
+<https://github.com/Farama-Foundation/HighwayEnv>
 
 Examples: 
 
-[Colab Links](https://github.com/eleurent/highway-env/tree/master/scripts#using-stable-baselines3)
+[Colab Links](https://github.com/Farama-Foundation/HighwayEnv/tree/master/scripts#using-stable-baselines3)
 
 ## tactile-gym
 
@@ -231,9 +225,6 @@ Paper:
 
 <https://arxiv.org/abs/2106.08796>
 
-Website: 
-
-[tactile-gym website](https://sites.google.com/my.bristol.ac.uk/tactile-gym-sim2real/home)
 
 ## RLeXplore
 
@@ -247,7 +238,7 @@ Author: Mingqi Yuan
 
 GitHub: 
 
-<https://github.com/yuanmingqi/rl-exploration-baselines>
+<https://github.com/RLE-Foundation/RLeXplore>
 
 ## UAV_Navigation_DRL_AirSim
 

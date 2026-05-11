@@ -35,7 +35,7 @@ See documentation for the full list of included features.
 - [Augmented Random Search (ARS)](https://arxiv.org/abs/1803.07055)
 - [Quantile Regression DQN (QR-DQN)]
 - [PPO with invalid action masking (Maskable PPO)](https://arxiv.org/abs/2006.14171)
-- [PPO with recurrent policy (RecurrentPPO aka PPO LSTM)](https://ppo-details.cleanrl.dev//2021/11/05/ppo-implementation-details/)
+- [PPO with recurrent policy (RecurrentPPO aka PPO LSTM)](https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/)
 - [Truncated Quantile Critics (TQC)]
 - [Trust Region Policy Optimization (TRPO)](https://arxiv.org/abs/1502.05477)
 - [Batch Normalization in Deep Reinforcement Learning (CrossQ)](https://openreview.net/forum?id=PczQtTsTIX)

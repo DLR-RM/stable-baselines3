@@ -8,7 +8,7 @@ Stable-Baselines3 requires python 3.10+ and PyTorch >= 2.3
 
 ### Windows
 
-We recommend using [Anaconda](https://conda.io/docs/user-guide/install/windows.html) for Windows users for easier installation of Python packages and required libraries. You need an environment with Python version 3.8 or above.
+We recommend using [miniforge](https://github.com/conda-forge/miniforge#windows) for Windows users for easier installation of Python packages and required libraries. You need an environment with Python version 3.10 or above.
 
 For a quick start you can move straight to installing Stable-Baselines3 in the next step.
 
@@ -22,7 +22,7 @@ issue with atari-py package. [See this discussion for more information](https://
 To install Stable Baselines3 with pip, execute:
 
 ```bash
-pip install stable-baselines3[extra]
+pip install 'stable-baselines3[extra]'
 ```
 
 :::{note}
@@ -58,7 +58,7 @@ To contribute to Stable-Baselines3, with support for running tests and building 
 
 ```bash
 git clone https://github.com/DLR-RM/stable-baselines3 && cd stable-baselines3
-pip install -e .[docs,tests,extra]
+pip install -e '.[docs,tests,extra]'
 ```
 
 ## Using Docker Images
@@ -101,7 +101,7 @@ Note: if you are using a proxy, you need to pass extra params during
 build and do some [tweaks]:
 
 ```bash
---network=host --build-arg HTTP_PROXY=http://your.proxy.fr:8080/ --build-arg http_proxy=http://your.proxy.fr:8080/ --build-arg HTTPS_PROXY=https://your.proxy.fr:8080/ --build-arg https_proxy=https://your.proxy.fr:8080/
+--network=host --build-arg HTTPS_PROXY=https://your.proxy.fr:8080/ --build-arg https_proxy=https://your.proxy.fr:8080/
 ```
 
 ### Run the images (CPU/GPU)

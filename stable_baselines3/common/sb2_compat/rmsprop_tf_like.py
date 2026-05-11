@@ -20,7 +20,7 @@ class RMSpropTFLike(Optimizer):
         - Initialize squared gradient to ones rather than zeros
 
     Proposed by G. Hinton in his
-    `course <http://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf>`_.
+    `course <https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf>`_.
 
     The centered version first appears in `Generating Sequences
     With Recurrent Neural Networks <https://arxiv.org/pdf/1308.0850v5.pdf>`_.

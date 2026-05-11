@@ -113,7 +113,7 @@ To cite this project in publications:
     volume  = {22},
     number  = {268},
     pages   = {1-8},
-    url     = {http://jmlr.org/papers/v22/20-1364.html}
+    url     = {https://jmlr.org/papers/v22/20-1364.html}
   }
 
 Note: If you need to refer to a specific version of SB3, you can also use the `Zenodo DOI <https://doi.org/10.5281/zenodo.8123988>`_.

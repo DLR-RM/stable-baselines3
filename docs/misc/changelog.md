@@ -29,6 +29,7 @@
 ### Documentation:
 
 - Added example for using torch.compile
+- Fixed many broken links and updated links to https whenever possible
 
 ## Release 2.8.0 (2026-04-01)
 
@@ -684,7 +685,7 @@ We highly recommended you to upgrade to Python >= 3.8.
 :::{warning}
 Stable-Baselines3 (SB3) v1.8.0 will be the last one to use Gym as a backend.
 Starting with v2.0.0, Gymnasium will be the default backend (though SB3 will have compatibility layers for Gym envs).
-You can find a migration guide here: <https://gymnasium.farama.org/content/migration-guide/>.
+You can find a migration guide here: <https://gymnasium.farama.org/introduction/migration_guide/>.
 If you want to try the SB3 v2.0 alpha version, you can take a look at [PR #1327](https://github.com/DLR-RM/stable-baselines3/pull/1327).
 :::
 
@@ -1872,7 +1873,7 @@ And all the contributors:
 [antonin raffin]: https://araffin.github.io/
 [ashley hill]: https://github.com/hill-a
 [maximilian ernestus]: https://github.com/ernestum
-[quentin gallouédec]: https://gallouedec.com/
+[quentin gallouédec]: https://github.com/qgallouedec
 [rl zoo]: https://github.com/DLR-RM/rl-baselines3-zoo
 [sb3-contrib]: https://github.com/Stable-Baselines-Team/stable-baselines3-contrib
 [sbx]: https://github.com/araffin/sbx

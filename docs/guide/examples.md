@@ -448,7 +448,7 @@ model = PPO.load(log_dir / "ppo_halfcheetah", env=vec_env)
 
 ## Hindsight Experience Replay (HER)
 
-For this example, we use [Highway-Env](https://github.com/eleurent/highway-env) by [@eleurent](https://github.com/eleurent).
+For this example, we use [Highway-Env](https://github.com/Farama-Foundation/HighwayEnv) by [@eleurent](https://github.com/eleurent).
 
 ```{image} ../_static/img/colab-badge.svg
 :target: https://colab.research.google.com/github/Stable-Baselines-Team/rl-colab-notebooks/blob/sb3/stable_baselines_her.ipynb
@@ -639,7 +639,7 @@ Policies also offers a simple way to save/load weights as a NumPy vector, using 
 and `load_from_vector()` method.
 
 Following example demonstrates reading parameters, modifying some of them and loading them to model
-by implementing [evolution strategy (es)](http://blog.otoro.net/2017/10/29/visual-evolution-strategies/)
+by implementing [evolution strategy (es)](https://blog.otoro.net/2017/10/29/visual-evolution-strategies/)
 for solving the `CartPole-v1` environment. The initial guess for parameters is obtained by running
 A2C policy gradient updates on the model.
 
@@ -722,7 +722,7 @@ Some massively parallel simulation environments such as [EnvPool](https://github
 To use SB3 with these tools, you need to wrap the environment with tool-specific `VecEnvWrapper` that preprocesses the data for SB3,
 you can find links to some of these wrappers in [issue #772](https://github.com/DLR-RM/stable-baselines3/issues/772#issuecomment-1048657002).
 
-- Isaac Lab wrapper: [link](https://github.com/isaac-sim/IsaacLab/blob/main/source/extensions/omni.isaac.lab_tasks/omni/isaac/lab_tasks/utils/wrappers/sb3.py)
+- Isaac Lab wrapper: [link](https://github.com/isaac-sim/IsaacLab/blob/3e73d6dd79080fd7632488c061052a6edd52e230/source/isaaclab_rl/isaaclab_rl/sb3.py#L93)
 - Brax: [link](https://gist.github.com/araffin/a7a576ec1453e74d9bb93120918ef7e7)
 - EnvPool: [link](https://github.com/sail-sg/envpool/blob/main/examples/sb3_examples/ppo.py)
 - Getting SAC to Work on a Massive Parallel Simulator: <https://araffin.github.io/post/sac-massive-sim/>

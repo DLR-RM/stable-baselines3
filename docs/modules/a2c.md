@@ -20,7 +20,7 @@ Read more [here](https://github.com/DLR-RM/stable-baselines3/pull/110#issuecomme
 ## Notes
 
 - Original paper: <https://arxiv.org/abs/1602.01783>
-- OpenAI blog post: <https://openai.com/blog/baselines-acktr-a2c/>
+- OpenAI blog post: <https://openai.com/index/openai-baselines-acktr-a2c/>
 
 ## Can I use?
 
@@ -82,7 +82,7 @@ For more information, see [Vectorized Environments](../guide/vec_envs.md), [Issu
 :::
 
 :::{note}
-Using gSDE (Generalized State-Dependent Exploration) during inference (see [PR #1767](https://github.com/DLR-RM/stable-baselines3/pull/1767)):
+Using gSDE (Generalized State-Dependent Exploration) during inference (see [issue #1767](https://github.com/DLR-RM/stable-baselines3/issues/1767)):
 
 When using A2C models trained with `use_sde=True`, the automatic noise resetting that occurs during training (controlled by `sde_sample_freq`) does not happen when using `model.predict()` for inference. This results in deterministic behavior even when `deterministic=False`.
 

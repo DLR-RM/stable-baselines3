@@ -3,7 +3,7 @@
 #
 # This file does only contain a selection of the most common options. For a
 # full list see the documentation:
-# http://www.sphinx-doc.org/en/master/config
+# https://www.sphinx-doc.org/en/master/config
 
 # -- Path setup --------------------------------------------------------------
 
@@ -223,6 +223,6 @@ myst_enable_extensions = [
 # Example configuration for intersphinx: refer to the Python standard library.
 # intersphinx_mapping = {
 #     'python': ('https://docs.python.org/3/', None),
-#     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
-#     'torch': ('http://pytorch.org/docs/master/', None),
+#     'numpy': ('https://docs.scipy.org/doc/numpy/', None),
+#     'torch': ('https://pytorch.org/docs/master/', None),
 # }

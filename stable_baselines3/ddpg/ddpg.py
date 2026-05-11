@@ -15,7 +15,7 @@ class DDPG(TD3):
     """
     Deep Deterministic Policy Gradient (DDPG).
 
-    Deterministic Policy Gradient: http://proceedings.mlr.press/v32/silver14.pdf
+    Deterministic Policy Gradient: https://proceedings.mlr.press/v32/silver14.pdf
     DDPG Paper: https://arxiv.org/abs/1509.02971
     Introduction to DDPG: https://spinningup.openai.com/en/latest/algorithms/ddpg.html
 

@@ -6,6 +6,7 @@ import torch as th
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
+from stable_baselines3.common.prioritized_replay_buffer import PrioritizedReplayBuffer
 
 normal_action_noise = NormalActionNoise(np.zeros(1), 0.1 * np.ones(1))
 
@@ -101,7 +102,8 @@ def test_n_critics(n_critics):
     model.learn(total_timesteps=200)
 
 
-def test_dqn():
+@pytest.mark.parametrize("replay_buffer_class", [None, PrioritizedReplayBuffer])
+def test_dqn(replay_buffer_class):
     model = DQN(
         "MlpPolicy",
         "CartPole-v1",
@@ -110,6 +112,7 @@ def test_dqn():
         buffer_size=500,
         learning_rate=3e-4,
         verbose=1,
+        replay_buffer_class=replay_buffer_class,
     )
     model.learn(total_timesteps=200)
 

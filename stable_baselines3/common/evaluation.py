@@ -42,7 +42,9 @@ def evaluate_policy(
     :param env: The gym environment or ``VecEnv`` environment.
     :param n_eval_episodes: Number of episode to evaluate the agent
     :param deterministic: Whether to use deterministic or stochastic actions
-    :param render: Whether to render the environment or not
+    :param render: Whether to render the environment or not.
+        The initial state of each episode is rendered, but the last (post-terminal)
+        frame is not, because ``VecEnv`` resets sub-environments automatically.
     :param callback: callback function to perform additional checks,
         called ``n_envs`` times after each step.
         Gets locals() and globals() passed as parameters.
@@ -88,6 +90,15 @@ def evaluate_policy(
     observations = env.reset()
     states = None
     episode_starts = np.ones((env.num_envs,), dtype=bool)
+
+    if render:
+        # Render the initial state (after reset, before the first action).
+        # Note: because ``VecEnv`` automatically resets sub-environments when an
+        # episode ends, the very last (post-terminal) frame of each episode is not
+        # rendered. If you need to render that final frame, wrap your ``gym.Env``
+        # with a custom wrapper that calls ``render()`` inside ``step()``.
+        env.render()
+
     while (episode_counts < episode_count_targets).any():
         actions, states = model.predict(
             observations,  # type: ignore[arg-type]

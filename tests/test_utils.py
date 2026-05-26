@@ -285,6 +285,53 @@ def test_evaluate_vector_env(n_envs):
     assert count_callback.count == n_eval_episodes
 
 
+def test_evaluate_policy_renders_initial_state():
+    # Regression test for https://github.com/DLR-RM/stable-baselines3/issues/1692
+    # ``evaluate_policy`` must render the initial state of each episode
+    # (after reset, before the first action) so that environments with
+    # dynamic/random initial states are rendered correctly.
+    events: list[str] = []
+
+    class RecordingEnv(gym.Env):
+        metadata = {"render_modes": ["human"]}
+
+        def __init__(self):
+            self.observation_space = spaces.Box(-1.0, 1.0, (1,), dtype=np.float32)
+            self.action_space = spaces.Discrete(2)
+            self.render_mode = "human"
+            self.step_count = 0
+
+        def reset(self, *, seed=None, options=None):
+            self.step_count = 0
+            events.append("reset")
+            return np.zeros(1, dtype=np.float32), {}
+
+        def step(self, action):
+            self.step_count += 1
+            events.append("step")
+            terminated = self.step_count >= 3
+            return np.zeros(1, dtype=np.float32), 0.0, terminated, False, {}
+
+        def render(self):
+            events.append("render")
+
+    class DummyModel:
+        def predict(self, observation, state=None, episode_start=None, deterministic=True):
+            events.append("predict")
+            return np.array([0]), None
+
+    env = DummyVecEnv([lambda: RecordingEnv()])
+    evaluate_policy(DummyModel(), env, n_eval_episodes=1, render=True, warn=False)
+
+    # The very first render must happen after the reset but before the first predict,
+    # i.e. the initial state is rendered. On the old (buggy) behavior, render was only
+    # called after the first step, so the first event after reset was "predict".
+    first_render = events.index("render")
+    first_predict = events.index("predict")
+    assert first_render < first_predict, f"Initial state not rendered before first predict: {events}"
+    assert events[:2] == ["reset", "render"], f"Expected initial state to be rendered right after reset: {events}"
+
+
 @pytest.mark.parametrize("vec_env_class", [None, DummyVecEnv, SubprocVecEnv])
 def test_evaluate_policy_monitors(vec_env_class):
     # Make numpy warnings throw exception

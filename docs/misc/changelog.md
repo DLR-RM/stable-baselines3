@@ -13,6 +13,7 @@
 
 ### Bug Fixes:
 - Fixed deprecated error Taxi-v3 from gymnasium v1.3.0 in tests
+- Fixed `evaluate_policy()` not rendering the initial state of each episode when `render=True` (used by `EvalCallback`); the last (post-terminal) frame is still not rendered because `VecEnv` resets sub-environments automatically (documented in the docstring) (@midhunxavier)
 
 ### [SB3-Contrib]
 
@@ -1864,7 +1865,7 @@ And all the contributors:
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
 @marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
 @brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto @Trenza1ore @JonathanColetti @unexploredtest
-@m-abr
+@m-abr @midhunxavier
 
 [@adamgleave]: https://github.com/adamgleave
 [@araffin]: https://github.com/araffin

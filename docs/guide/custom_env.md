@@ -20,6 +20,15 @@ Although SB3 supports both channel-last and channel-first images as input, we re
 Under the hood, when a channel-last image is passed, SB3 uses a `VecTransposeImage` wrapper to re-order the channels.
 :::
 
+:::{warning}
+Do not use Gymnasium's `FrameStackObservation` wrapper to stack image frames for SB3.
+It adds a new leading dimension (e.g. an image of shape `(3, 64, 64)` becomes `(2, 3, 64, 64)` when stacking 2 frames),
+which SB3's `is_image_space` check treats as a non-image (a batch of images) rather than an image.
+As a consequence, a `FlattenExtractor` is used instead of a CNN, and the CNN policy is silently not applied.
+Use SB3's `VecFrameStack` instead, which stacks frames along the channel dimension and keeps the observation
+recognized as an image (see [issue #2090](https://github.com/DLR-RM/stable-baselines3/issues/2090)).
+:::
+
 :::{note}
 SB3 doesn't support `Discrete` and `MultiDiscrete` spaces with `start!=0`. However, you can update your environment or use a wrapper to make your env compatible with SB3:
 

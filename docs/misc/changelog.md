@@ -32,6 +32,7 @@
 
 - Added example for using torch.compile
 - Fixed many broken links and updated links to https whenever possible
+- Added a warning about using Gymnasium's `FrameStackObservation` with image observations (use `VecFrameStack` instead) (@midhunxavier)
 
 ## Release 2.8.0 (2026-04-01)
 
@@ -1864,7 +1865,7 @@ And all the contributors:
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
 @marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
 @brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto @Trenza1ore @JonathanColetti @unexploredtest
-@m-abr
+@m-abr @midhunxavier
 
 [@adamgleave]: https://github.com/adamgleave
 [@araffin]: https://github.com/araffin

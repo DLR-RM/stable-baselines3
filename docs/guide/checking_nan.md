@@ -152,4 +152,4 @@ As some datasets will sometimes fill missing values with NaNs as a surrogate val
 
 Here is some reading material about finding NaNs: <https://pandas.pydata.org/pandas-docs/stable/user_guide/missing_data.html>
 
-And filling the missing values with something else (imputation): <https://towardsdatascience.com/how-to-handle-missing-data-8646b18db0d4>
+And filling the missing values with something else (imputation): <https://towardsdatascience.com/missing-data-in-time-series-machine-learning-techniques-6b2273ff8b45/>

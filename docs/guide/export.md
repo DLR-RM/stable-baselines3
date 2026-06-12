@@ -338,7 +338,7 @@ motivation for the code example above).
 
 The Coral chip is fast, with very low power consumption, but only has limited
 on-device training abilities. More information is on the webpage here:
-<https://coral.ai>.
+<https://developers.google.com/coral>.
 
 To deploy to a Coral, one must work via TFLite, and quantize the
 network to reflect the Coral's capabilities. The full chain to go from

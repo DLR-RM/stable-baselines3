@@ -2,7 +2,7 @@ Large portion of the code of Stable-Baselines3 (in `common/`) were ported from S
 both licensed under the MIT License:
 
 before the fork (June 2018):
-Copyright (c) 2017 OpenAI (http://openai.com)
+Copyright (c) 2017 OpenAI (https://openai.com)
 
 after the fork (June 2018):
 Copyright (c) 2018-2019 Stable-Baselines Team

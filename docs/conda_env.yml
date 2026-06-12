@@ -2,11 +2,11 @@ name: root
 channels:
   - conda-forge
 dependencies:
-  - pip=24.2
-  - python=3.11
+  - pip=26.1.2
+  - python=3.12
   - pytorch-cpu=2.9.1
   - pip:
-    - gymnasium>=0.29.1,<1.1.0
+    - gymnasium>=0.29.1,<2.0
     - cloudpickle
     - opencv-python-headless
     - pandas

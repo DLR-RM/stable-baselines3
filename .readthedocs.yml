@@ -18,4 +18,4 @@ conda:
 build:
   os: ubuntu-24.04
   tools:
-    python: "mambaforge-23.11"
+    python: "miniforge3-25.11"

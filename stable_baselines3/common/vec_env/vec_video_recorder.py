@@ -7,6 +7,7 @@ from gymnasium import error, logger
 
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvObs, VecEnvStepReturn, VecEnvWrapper
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env.pool_vec_env import PoolVecEnv
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
 
 
@@ -51,7 +52,7 @@ class VecVideoRecorder(VecEnvWrapper):
         while isinstance(temp_env, VecEnvWrapper):
             temp_env = temp_env.venv
 
-        if isinstance(temp_env, DummyVecEnv) or isinstance(temp_env, SubprocVecEnv):
+        if isinstance(temp_env, PoolVecEnv) or isinstance(temp_env, DummyVecEnv) or isinstance(temp_env, SubprocVecEnv):
             metadata = temp_env.get_attr("metadata")[0]
         else:  # pragma: no cover # assume gym interface
             metadata = temp_env.metadata

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: 'Publish to PyPI publish'
+        description: "Publish to PyPI publish"
         required: false
         default: false
         type: boolean
@@ -36,5 +36,5 @@ jobs:
         run: python -m build
 
       - name: Publish package to PyPI
-        if: ${{ github.event_name == 'push' || inputs.publish == 'true' }}
+        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish) }}
         uses: pypa/gh-action-pypi-publish@release/v1

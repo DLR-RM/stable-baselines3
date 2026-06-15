@@ -2,7 +2,9 @@
 
 # Changelog
 
-## Release 2.9.0a4 (WIP)
+## Release 2.9.0 (2026-06-15)
+
+**Updated dependencies (pandas is now optional, gymnasium 1.3.0 support, torch>=2.8)**
 
 ### Breaking Changes:
 - Relaxed Gymnasium version range (from `"gymnasium>=0.29.1,<1.3.0"` to `"gymnasium>=0.29.1,<2.0"`)
@@ -16,12 +18,16 @@
 - Fixed deprecated error Taxi-v3 from gymnasium v1.3.0 in tests
 
 ### [SB3-Contrib]
+- Optimized tests (faster to run)
+- Fixed dead link for `RecurrentPPO`.
 
 ### [RL Zoo]
+- 
 
 ### [SBX] (SB3 + Jax)
 
 - Added support for `rollout_buffer_class` and `rollout_buffer_kwargs` arguments in `PPO` and `OnPolicyAlgorithmJax` constructors, as in Stable Baselines3. (@Trenza1ore)
+- Updated Jax dependency
 
 ### Deprecations:
 

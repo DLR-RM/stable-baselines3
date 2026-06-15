@@ -1,0 +1,40 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish to PyPI publish'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  pypi-publish:
+    name: Upload release to PyPI
+    runs-on: ubuntu-latest
+    # Specifying a GitHub environment is optional, but strongly encouraged
+    # environment: pypi
+    permissions:
+      # IMPORTANT: this permission is mandatory for Trusted Publishing
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install build tool
+        run: pip install build
+
+      # Create wheel and source dist
+      - name: Build
+        run: python -m build
+
+      - name: Publish package to PyPI
+        if: ${{ github.event_name == 'push' || inputs.publish == 'true' }}
+        uses: pypa/gh-action-pypi-publish@release/v1

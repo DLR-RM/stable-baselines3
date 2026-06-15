@@ -28,6 +28,7 @@
 ### Others:
 
 - Optimized tests (faster to run)
+- Add workflow to automatically publish to PyPi when a new tag is created
 
 ### Documentation:
 

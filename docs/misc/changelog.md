@@ -22,7 +22,7 @@
 - Fixed dead link for `RecurrentPPO`.
 
 ### [RL Zoo]
-- 
+
 
 ### [SBX] (SB3 + Jax)
 

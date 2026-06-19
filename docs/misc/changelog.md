@@ -2,6 +2,88 @@
 
 # Changelog
 
+## Release 2.10.0a0 (TBD)
+
+**Secure deserialization by default (CWE-502 mitigation)**
+
+:::{warning}
+Models saved with cloudpickle that contain arbitrary Python code (e.g. lambda functions, local classes, or custom spaces) will now produce warnings and skip the affected entries when loaded with the new default `deserialization_mode="safe"`. Use `deserialization_mode="legacy"` to restore the old behavior. You can find more information in the [Saving and Loading](https://stable-baselines3.readthedocs.io/en/master/guide/save_reload.html) documentation.
+:::
+
+### Breaking Changes:
+
+- `deserialization_mode` now defaults to `"safe"` for all load methods (`BaseAlgorithm.load`, `json_to_data`, `load_from_pkl`, `load_from_zip_file`, `load_replay_buffer`, `VecNormalize.load`). This blocks arbitrary code execution during deserialization at the cost of skipping non-whitelisted serialized entries.
+- `BaseModel.load()` now uses `torch.load(..., weights_only=True)` with a safe-globals allowlist for policy state-dicts.
+
+### New Features:
+
+- Added `deserialization_mode` parameter to all load methods (`"safe"` or `"legacy"`) to mitigate CWE-502 (Deserialization of Untrusted Data). `"safe"` mode uses a restricted unpickler that only allows a fixed allowlist of known-safe SB3/gymnasium/numpy types.
+- Added `add_safe_globals()` function to register custom classes as safe for restricted deserialization (a la `torch.serialization.add_safe_globals`).
+- Added `safe_globals` context manager to temporarily extend the safe-globals allowlist for a single load call.
+- Added `DeserializationMode` type alias (`Literal["safe", "legacy"]`) to `stable_baselines3.common.type_aliases`.
+
+### Bug Fixes:
+
+- Fixed loading of checkpoints saved with numpy 1.x (legacy `numpy.core.*` module paths are now in the safe allowlist alongside modern `numpy._core.*` paths).
+
+### [SB3-Contrib]
+
+### [RL Zoo]
+
+### [SBX] (SB3 + Jax)
+
+### Deprecations:
+
+### Others:
+
+- Added 15 new security-focused tests in `tests/test_security_deserialization.py`.
+- Centralized safe-globals registration in `stable_baselines3/common/safe_globals.py`.
+
+### Documentation:
+
+- Updated save/reload guide with a dedicated section on secure deserialization, explaining safe vs. legacy mode and how to handle `custom_objects` in safe mode.
+
+## Release 2.10.0a0 (TBD)
+
+**Secure deserialization by default (CWE-502 mitigation)**
+
+:::{warning}
+Models saved with cloudpickle that contain arbitrary Python code (e.g. lambda functions, local classes, or custom spaces) will now produce warnings and skip the affected entries when loaded with the new default `deserialization_mode="safe"`. Use `deserialization_mode="legacy"` to restore the old behavior. You can find more information in the [Saving and Loading](https://stable-baselines3.readthedocs.io/en/master/guide/save_format.html) documentation.
+:::
+
+### Breaking Changes:
+
+- `deserialization_mode` now defaults to `"safe"` for all load methods (`BaseAlgorithm.load`, `json_to_data`, `load_from_pkl`, `load_from_zip_file`, `load_replay_buffer`, `VecNormalize.load`). This blocks arbitrary code execution during deserialization at the cost of skipping non-whitelisted serialized entries.
+- `BaseModel.load()` now uses `torch.load(..., weights_only=True)` with a safe-globals allowlist for policy state-dicts.
+
+### New Features:
+
+- Added `deserialization_mode` parameter to all load methods (`"safe"` or `"legacy"`) to mitigate CWE-502 (Deserialization of Untrusted Data). `"safe"` mode uses a restricted unpickler that only allows a fixed allowlist of known-safe SB3/gymnasium/numpy types.
+- Added `add_safe_globals()` function to register custom classes as safe for restricted deserialization (a la `torch.serialization.add_safe_globals`).
+- Added `safe_globals` context manager to temporarily extend the safe-globals allowlist for a single load call.
+- Added `DeserializationMode` type alias (`Literal["safe", "legacy"]`) to `stable_baselines3.common.type_aliases`.
+
+### Bug Fixes:
+
+- Fixed loading of checkpoints saved with numpy 1.x (legacy `numpy.core.*` module paths are now in the safe allowlist alongside modern `numpy._core.*` paths).
+
+### [SB3-Contrib]
+
+### [RL Zoo]
+
+### [SBX] (SB3 + Jax)
+
+### Deprecations:
+
+### Others:
+
+- Added 15 new security-focused tests in `tests/test_security_deserialization.py`.
+- Centralized safe-globals registration in `stable_baselines3/common/safe_globals.py`.
+
+### Documentation:
+
+- Updated save/reload guide with a dedicated section on secure deserialization, explaining safe vs. legacy mode and how to handle `custom_objects` in safe mode.
+
 ## Release 2.9.0 (2026-06-15)
 
 **Updated dependencies (pandas is now optional, gymnasium 1.3.0 support, torch>=2.8)**

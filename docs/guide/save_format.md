@@ -58,3 +58,80 @@ Cons:
 - More complex implementation.
 - Still relies partly on cloudpickle for complex objects (e.g. custom functions)
   with can lead to [incompatibilities](https://github.com/DLR-RM/stable-baselines3/issues/172) between Python versions.
+
+## Secure Deserialization
+
+:::{warning}
+**Loading untrusted checkpoints can execute arbitrary Python code.**
+Starting with SB3 2.10, all `load()` methods use `deserialization_mode="safe"` by default, which blocks
+arbitrary code execution during deserialization at the cost of skipping non-whitelisted serialized entries.
+:::
+
+The `deserialization_mode` parameter is available on all load methods:
+
+- `{py:meth}` ~`stable_baselines3.common.base_class.BaseAlgorithm.load`
+- `{py:func}` ~`stable_baselines3.common.save_util.json_to_data`
+- `{py:func}` ~`stable_baselines3.common.save_util.load_from_pkl`
+- `{py:func}` ~`stable_baselines3.common.save_util.load_from_zip_file`
+- `{py:func}` ~`stable_baselines3.common.off_policy_algorithm.OffPolicyAlgorithm.load_replay_buffer`
+- `{py:func}` ~`stable_baselines3.common.vec_env.vec_normalize.VecNormalize.load`
+
+Each accepts one of two modes:
+
+### Safe mode (default)
+
+In `deserialization_mode="safe"`, SB3 uses a restricted unpickler that only allows a fixed allowlist of
+known-safe types (SB3 classes, gymnasium spaces, numpy types, PyTorch types, cloudpickle internals).
+If a serialized entry references a type outside the allowlist, it is skipped with a warning, and the
+user must supply a safe replacement via the `custom_objects` argument.
+
+```python
+from stable_baselines3 import PPO
+
+# If the checkpoint contains a custom learning-rate schedule that is not
+# in the allowlist, you must provide it via custom_objects:
+loaded = PPO.load(
+    "model.zip",
+    custom_objects={
+        "learning_rate": 0.0003,
+        "lr_schedule": lambda progress: progress * 0.0003,
+    },
+)
+```
+
+### Legacy mode
+
+In `deserialization_mode="legacy"`, SB3 falls back to the standard `cloudpickle` / `pickle` loader.
+This preserves full backward compatibility with models saved before SB3 2.10 but **executes arbitrary
+Python code** embedded in the checkpoint. A `{py:class}` ~`warnings.SecurityWarning` is emitted.
+
+```python
+# Restores the pre-2.10 loading behavior for checkpoints that contain
+# lambda functions, local classes, or custom gym environments:
+loaded = PPO.load("model.zip", deserialization_mode="legacy")
+```
+
+### Extending the Safe Allowlist
+
+If you have custom types (e.g. a custom environment or a custom space) that are safe to deserialize,
+you can register them with the allowlist using `{py:func}` ~`stable_baselines3.common.safe_globals.add_safe_globals`:
+
+```python
+from stable_baselines3.common.safe_globals import add_safe_globals
+from my_module import MyCustomSpace
+
+add_safe_globals(MyCustomSpace)
+loaded = PPO.load("model.zip", deserialization_mode="safe")
+```
+
+For a temporary, scope-limited registration, use the `{py:class}` ~`stable_baselines3.common.safe_globals.safe_globals`
+context manager:
+
+```python
+from stable_baselines3.common.safe_globals import safe_globals
+from my_module import MyCustomSpace
+
+with safe_globals(MyCustomSpace):
+    loaded = PPO.load("model.zip", deserialization_mode="safe")
+# MyCustomSpace is automatically removed from the allowlist on exit
+```

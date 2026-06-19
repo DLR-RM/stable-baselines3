@@ -810,6 +810,10 @@ def test_no_resource_warning(tmp_path):
 
 
 def test_cast_lr_schedule(tmp_path):
+    from cloudpickle.cloudpickle import subimport
+
+    from stable_baselines3.common.safe_globals import SafeGlobals
+
     # See GH#1900
     model = PPO("MlpPolicy", "Pendulum-v1", learning_rate=lambda t: t * np.sin(1.0))
     # Note: for recent version of numpy, np.float64 is a subclass of float
@@ -818,7 +822,8 @@ def test_cast_lr_schedule(tmp_path):
     assert type(model.lr_schedule(1.0)) is float
     assert np.allclose(model.lr_schedule(0.5), 0.5 * np.sin(1.0))
     model.save(tmp_path / "ppo.zip")
-    model = PPO.load(tmp_path / "ppo.zip")
+    with SafeGlobals([subimport]):
+        model = PPO.load(tmp_path / "ppo.zip")
     assert type(model.lr_schedule(1.0)) is float
     assert np.allclose(model.lr_schedule(0.5), 0.5 * np.sin(1.0))
 

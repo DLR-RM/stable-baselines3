@@ -128,10 +128,10 @@ For a temporary, scope-limited registration, use the `stable_baselines3.common.s
 context manager:
 
 ```python
-from stable_baselines3.common.safe_globals import safe_globals
+from stable_baselines3.common.safe_globals import SafeGlobals
 from my_module import MyCustomSpace
 
-with safe_globals(MyCustomSpace):
+with SafeGlobals(MyCustomSpace):
     loaded = PPO.load("model.zip", deserialization_mode="safe")
 # MyCustomSpace is automatically removed from the allowlist on exit
 ```

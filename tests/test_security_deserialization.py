@@ -373,7 +373,7 @@ def test_json_to_data_safe_with_custom_objects(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Test 7: add_safe_globals and safe_globals context manager
+# Test 7: add_safe_globals and SafeGlobals context manager
 # ---------------------------------------------------------------------------
 
 
@@ -413,8 +413,8 @@ def test_safe_globals_context_manager(tmp_path):
 
     from stable_baselines3.common.safe_globals import (
         _USER_SAFE_GLOBALS,
+        SafeGlobals,
         get_safe_globals,
-        safe_globals,
     )
 
     # Clear user globals to start fresh
@@ -429,7 +429,7 @@ def test_safe_globals_context_manager(tmp_path):
     assert qualname not in get_safe_globals()
 
     # Inside context: should be in allowlist
-    with safe_globals([ScopedType]):
+    with SafeGlobals([ScopedType]):
         assert qualname in get_safe_globals()
         # Verify the type can actually be deserialized
         payload = cloudpickle.dumps(ScopedType())

@@ -264,7 +264,7 @@ def _collect_base_types() -> list[type | Callable[..., Any]]:
     types += [
         collections.deque,
         collections.OrderedDict,
-        getattr,
+        getattr,  # getattr is somehow needed for save/load policy with weight_only=True
         setattr,
     ]
 
@@ -362,7 +362,8 @@ def _register_safe_globals() -> None:
         "cloudpickle.cloudpickle.restore_function",
         "cloudpickle.cloudpickle._class_setstate",
         "cloudpickle.cloudpickle._fillvar",
-        "cloudpickle.cloudpickle.subimport",
+        # subimport need to be manually whitelisted for learning schedule
+        # "cloudpickle.cloudpickle.subimport",
         "cloudpickle.cloudpickle._lookup_module_and_obj_in_qualname",
         "cloudpickle.cloudpickle.whichmodule",
         "types.FunctionType",
@@ -666,7 +667,7 @@ def add_safe_globals(
             _USER_SAFE_GLOBALS.add(f"{item.__module__}.{item.__qualname__}")
 
 
-class safe_globals:
+class SafeGlobals:
     """Context-manager that temporarily adds globals to the safe allowlist.
 
     The added types are automatically removed when the block exits.
@@ -675,9 +676,9 @@ class safe_globals:
 
     .. code-block:: python
 
-       from stable_baselines3.common.safe_globals import safe_globals
+       from stable_baselines3.common.safe_globals import SafeGlobals
 
-       with safe_globals([MyCustomSpace]):
+       with SafeGlobals([MyCustomSpace]):
            model = PPO.load("checkpoint.zip", deserialization_mode="safe")
     """
 
@@ -687,7 +688,7 @@ class safe_globals:
     ) -> None:
         self._items = safe_globals if isinstance(safe_globals, list) else [safe_globals]
 
-    def __enter__(self) -> safe_globals:
+    def __enter__(self) -> SafeGlobals:
         self._backup = _USER_SAFE_GLOBALS.copy()
         add_safe_globals(self._items)
         return self

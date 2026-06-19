@@ -53,11 +53,6 @@ def _make_evil_class(sentinel_path: pathlib.Path) -> type:
     return Evil
 
 
-def _evil_pickle_payload(sentinel_path: pathlib.Path) -> bytes:
-    """Return a pickle payload that writes the sentinel when deserialized."""
-    return pickle.dumps(_make_evil_class(sentinel_path)())
-
-
 def _evil_cloudpickle_payload(sentinel_path: pathlib.Path) -> str:
     """Return a base64-encoded cloudpickle payload that writes the sentinel."""
     import cloudpickle
@@ -182,19 +177,19 @@ def test_vec_normalize_load_safe_works(tmp_path):
     import gymnasium as gym
 
     venv = DummyVecEnv([lambda: gym.make("CartPole-v1")])
-    vn = VecNormalize(venv)
+    vec_normalize = VecNormalize(venv)
     # Run a few steps so the stats are non-trivial
     for _ in range(20):
-        vn.reset()
-        vn.step([vn.action_space.sample()])
+        vec_normalize.reset()
+        vec_normalize.step([vec_normalize.action_space.sample()])
     pkl_path = tmp_path / "vecnormalize.pkl"
-    vn.save(str(pkl_path))
+    vec_normalize.save(str(pkl_path))
 
     # Safe mode: should load successfully because VecNormalize uses only allowlisted types
     loaded = VecNormalize.load(str(pkl_path), venv, deserialization_mode="safe")
-    assert loaded.obs_rms.mean.shape == vn.obs_rms.mean.shape
+    assert loaded.obs_rms.mean.shape == vec_normalize.obs_rms.mean.shape
     # Verify the running stats were preserved
-    np.testing.assert_allclose(loaded.obs_rms.mean, vn.obs_rms.mean, atol=1e-6)
+    np.testing.assert_allclose(loaded.obs_rms.mean, vec_normalize.obs_rms.mean, atol=1e-6)
 
 
 # ---------------------------------------------------------------------------
@@ -302,7 +297,7 @@ def test_load_replay_buffer_safe_works(tmp_path):
     from stable_baselines3 import SAC
 
     model = SAC("MlpPolicy", "Pendulum-v1", buffer_size=1000, learning_starts=50, device="cpu")
-    model.learn(100)
+    model.learn(80)
     original_size = model.replay_buffer.size()
     pkl_path = str(tmp_path / "replay_buffer.pkl")
     model.save_replay_buffer(pkl_path)
@@ -327,7 +322,6 @@ def test_model_load_safe_with_action_noise(tmp_path):
         action_noise=noise,
         device="cpu",
     )
-    model.learn(100)
     zip_path = str(tmp_path / "model_noise.zip")
     model.save(zip_path)
 

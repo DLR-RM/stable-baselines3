@@ -158,7 +158,7 @@ def json_to_data(
         - ``"safe"`` (default): Deserialize using a restricted unpickler that
           only allows a fixed allowlist of known-safe SB3/gymnasium/numpy types.
           Any cloudpickle payload referencing a type outside this allowlist is
-          rejected with a clear error.  A single ``SecurityWarning`` is emitted.
+          skipped with a warning.
         - ``"legacy"``: Deserialize all ``:serialized:`` entries with the
           unrestricted cloudpickle loader.  This preserves full backward
           compatibility but **executes arbitrary Python code** embedded in the
@@ -428,7 +428,7 @@ def load_from_pkl(
           with a clear error.
         - ``"legacy"``: Deserialize with ``pickle.load()``.  This preserves
           backward compatibility but **executes arbitrary Python code** embedded
-          in the pickle file.  A ``SecurityWarning`` is emitted.
+          in the pickle file.  A ``UserWarning`` is emitted.
     """
     if deserialization_mode not in ("legacy", "safe"):
         raise ValueError(f"deserialization_mode must be 'legacy' or 'safe', got {deserialization_mode!r}")

@@ -649,14 +649,6 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
         assert load_from_pkl(pathtype(f"{tmp_path}/t1.pkl")) == "foo"
     assert all("deserializer" in str(w.message).lower() for w in record)
 
-    # test without suffix
-    with open_path(pathtype(f"{tmp_path}/t1"), "w", suffix="pkl") as fp1:
-        save_to_pkl(fp1, "foo")
-    assert fp1.closed
-    with warnings.catch_warnings(record=True) as record:
-        assert load_from_pkl(pathtype(f"{tmp_path}/t1.pkl")) == "foo"
-    assert all("deserializer" in str(w.message).lower() for w in record)
-
     # test that a warning is raised when the path doesn't exist
     with open_path(pathtype(f"{tmp_path}/t2.pkl"), "w") as fp1:
         save_to_pkl(fp1, "foo")

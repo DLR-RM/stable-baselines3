@@ -41,7 +41,14 @@ gym.register_envs(ale_py)
 @pytest.mark.parametrize("vec_env_cls", [None, SubprocVecEnv])
 @pytest.mark.parametrize("wrapper_class", [None, gym.wrappers.RecordEpisodeStatistics])
 def test_make_vec_env(env_id, n_envs, vec_env_cls, wrapper_class):
-    env = make_vec_env(env_id, n_envs, vec_env_cls=vec_env_cls, wrapper_class=wrapper_class, monitor_dir=None, seed=0)
+    env = make_vec_env(
+        env_id,
+        n_envs,
+        vec_env_cls=vec_env_cls,
+        wrapper_class=wrapper_class,
+        monitor_dir=None,
+        seed=0,
+    )
 
     assert env.num_envs == n_envs
 
@@ -76,7 +83,13 @@ def test_make_vec_env_func_checker():
 @pytest.mark.parametrize("terminal_on_life_loss", [True, False])
 @pytest.mark.parametrize("clip_reward", [True])
 def test_make_atari_env(
-    env_id, noop_max, action_repeat_probability, frame_skip, screen_size, terminal_on_life_loss, clip_reward
+    env_id,
+    noop_max,
+    action_repeat_probability,
+    frame_skip,
+    screen_size,
+    terminal_on_life_loss,
+    clip_reward,
 ):
     n_envs = 2
     wrapper_kwargs = {
@@ -124,7 +137,13 @@ def test_vec_env_kwargs():
 
 
 def test_vec_env_wrapper_kwargs():
-    env = make_vec_env("MountainCarContinuous-v0", n_envs=1, seed=0, wrapper_class=MaxAndSkipEnv, wrapper_kwargs={"skip": 3})
+    env = make_vec_env(
+        "MountainCarContinuous-v0",
+        n_envs=1,
+        seed=0,
+        wrapper_class=MaxAndSkipEnv,
+        wrapper_kwargs={"skip": 3},
+    )
     assert env.get_attr("_skip")[0] == 3
 
 
@@ -629,6 +648,7 @@ def test_deprecated_schedules():
         assert np.allclose(fn(0.5), 1.0)
         assert np.allclose(fn(0.5), schedule(0.5))
         assert np.allclose(fn(0.5), float_schedule(0.5))
+        assert np.allclose(fn(0.5), float_schedule_2(0.5))
 
 
 class TestRMSpropTFLike:

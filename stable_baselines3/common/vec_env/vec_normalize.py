@@ -328,7 +328,7 @@ class VecNormalize(VecEnvWrapper):
               rejected with a clear error.
             - ``"legacy"``: Deserialize with ``pickle.load()``.  This preserves
               backward compatibility but **executes arbitrary Python code**
-              embedded in the pickle file.  A ``SecurityWarning`` is emitted.
+              embedded in the pickle file.  A ``UserWarning`` is emitted.
         :return:
         """
         if deserialization_mode not in ("legacy", "safe"):

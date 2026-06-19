@@ -684,10 +684,10 @@ class BaseAlgorithm(ABC):
             - ``"legacy"``: Deserialize with cloudpickle for full
               backward compatibility.  A security warning is emitted because
               cloudpickle deserialization can execute arbitrary Python code.
-            - ``"safe"`` (default): Skip all ``:serialized:`` entries not already provided
-              via ``custom_objects``.  Prevents arbitrary code execution but may
-              fail if required parameters cannot be deserialized.
-
+            - ``"safe"`` (default): Attempt restricted deserialization using an
+              allowlist of known-safe globals. Entries that cannot be safely
+              deserialized (and are not provided via ``custom_objects``) are skipped
+              with a warning.
         :param kwargs: extra arguments to change the model when loading
         :return: new model instance with loaded parameters
         """

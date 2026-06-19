@@ -317,7 +317,7 @@ def check_vecenv_obs(obs, space):
         assert space.contains(value)
 
 
-@pytest.mark.parametrize("vec_env_class,space", itertools.product(VEC_ENV_CLASSES, SPACES.values()))
+@pytest.mark.parametrize("vec_env_class,space", list(itertools.product(VEC_ENV_CLASSES, SPACES.values())))
 def test_vecenv_single_space(vec_env_class, space):
     def obs_assert(obs):
         return check_vecenv_obs(obs, space)

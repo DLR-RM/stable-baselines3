@@ -246,6 +246,17 @@ def _register_safe_globals() -> None:
             except AttributeError:
                 pass
 
+    # Explicit string entries for legacy numpy paths (numpy 1.x used numpy.core
+    # while numpy 2.x uses numpy._core; models saved with older numpy will
+    # embed the legacy path).  The modern numpy._core.* paths are already
+    # registered dynamically above via __module__ inspection.
+    for _name in (
+        "numpy.core.multiarray._reconstruct",
+        "numpy.core.multiarray.scalar",
+        "numpy.core.numeric._frombuffer",
+    ):
+        _SAFE_GLOBALS_STR.add(_name)
+
     # Explicit string entries for builtins and cloudpickle internals (these are
     # functions/objects whose module/qualname doesn't match what pickle embeds)
     for _name in (

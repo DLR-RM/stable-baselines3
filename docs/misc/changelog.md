@@ -36,6 +36,7 @@ Models saved with cloudpickle that contain arbitrary Python code (e.g. lambda fu
 
 - Added regression tests in `tests/test_security_deserialization.py`.
 - Improved test coverage for `save_util.py`: added tests for `BadZipFile` error handling in `load_from_zip_file` and `IsADirectoryError`/`FileNotFoundError` handling in `open_path_pathlib`.
+- Improved test coverage for `sb2_compat/rmsprop_tf_like.py`: added `TestRMSpropTFLike` test class covering parameter validation, centered/momentum/weight_decay branches, closure support, and pickle roundtrip.
 
 ### Documentation:
 

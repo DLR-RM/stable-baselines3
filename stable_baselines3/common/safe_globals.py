@@ -38,7 +38,17 @@ _TORCH_REGISTRATION_DONE = False
 
 
 def _collect_numpy_types() -> list[type | Callable[..., Any]]:
-    """Collect numpy types needed for gymnasium spaces and array reconstruction."""
+    """Collect numpy types needed for gymnasium spaces and array reconstruction.
+
+    For the **string allowlist** (restricted unpickler), numpy-internal pickle
+    helpers are handled by ``_NUMPY_PICKLE_INTERNALS_STR`` so that both
+    numpy 1.x and 2.x module paths are accepted without crashing on import.
+
+    For **torch.serialization.add_safe_globals** (``weights_only=True``), we
+    also need the *live objects* of the currently installed numpy version.
+    Those are imported here inside try/except blocks so the code works on
+    either numpy 1.x or 2.x.
+    """
     types: list[type | Callable[..., Any]] = [
         np.ndarray,
         np.dtype,
@@ -82,29 +92,81 @@ def _collect_numpy_types() -> list[type | Callable[..., Any]]:
         np.random.mtrand.RandomState,
     ]
 
-    # numpy pickle reconstruction helpers (functions)
-    import numpy._core.multiarray as np_ma
-    import numpy._core.numeric as np_numeric
-    import numpy.random._pickle as np_rp
+    # numpy pickle reconstruction helpers (functions) — try the numpy 2.x path
+    # first, then fall back to the numpy 1.x path.  If neither works, we skip
+    # registration with torch (the string allowlist still covers pickle).
+    try:
+        import numpy._core.multiarray as np_ma
+        import numpy._core.numeric as np_numeric
 
-    types += [
-        np_ma._reconstruct,
-        np_ma.scalar,
-        np_numeric._frombuffer,  # type: ignore[attr-defined]
-        np_rp.__generator_ctor,
-        np_rp.__bit_generator_ctor,
-        np_rp.__randomstate_ctor,
-    ]
+        types += [
+            np_ma._reconstruct,  # type: ignore[attr-defined]
+            np_ma.scalar,  # type: ignore[attr-defined]
+            np_numeric._frombuffer,  # type: ignore[attr-defined]
+        ]
+    except ModuleNotFoundError:  # pragma: no cover
+        try:
+            import numpy.core.multiarray as np_ma_np1
+            import numpy.core.numeric as np_numeric_np1
+
+            types += [
+                np_ma_np1._reconstruct,  # type: ignore[attr-defined]
+                np_ma_np1.scalar,  # type: ignore[attr-defined]
+                np_numeric_np1._frombuffer,  # type: ignore[attr-defined]
+            ]
+        except ModuleNotFoundError:
+            pass
+
+    try:
+        import numpy.random._pickle as np_rp
+
+        types += [
+            np_rp.__generator_ctor,
+            np_rp.__bit_generator_ctor,
+            np_rp.__randomstate_ctor,
+        ]
+    except ModuleNotFoundError:
+        pass
 
     # Cython unpickle helpers in numpy random
-    import numpy.random.bit_generator as np_bg
+    try:
+        import numpy.random.bit_generator as np_bg
 
-    types += [
-        np_bg.__pyx_unpickle_SeedSequence,  # type: ignore[attr-defined]
-        np_bg.__pyx_unpickle_SeedlessSeedSequence,  # type: ignore[attr-defined]
-    ]
+        types += [
+            np_bg.__pyx_unpickle_SeedSequence,  # type: ignore[attr-defined]
+            np_bg.__pyx_unpickle_SeedlessSeedSequence,  # type: ignore[attr-defined]
+        ]
+    except ModuleNotFoundError:
+        pass
 
     return types
+
+
+# ---------------------------------------------------------------------------
+# Explicit string allowlist for numpy internal pickle helpers.
+# These cover BOTH numpy 1.x (numpy.core.*) and numpy 2.x (numpy._core.*)
+# module paths, because we cannot import them reliably at module load time.
+# The restricted unpickler relies on these strings, so checkpoints saved
+# with either numpy version load correctly.
+# ---------------------------------------------------------------------------
+
+_NUMPY_PICKLE_INTERNALS_STR: tuple[str, ...] = (
+    # numpy 2.x paths
+    "numpy._core.multiarray._reconstruct",
+    "numpy._core.multiarray.scalar",
+    "numpy._core.numeric._frombuffer",
+    # numpy 1.x paths
+    "numpy.core.multiarray._reconstruct",
+    "numpy.core.multiarray.scalar",
+    "numpy.core.numeric._frombuffer",
+    # numpy random pickle helpers (shared across versions)
+    "numpy.random._pickle.__generator_ctor",
+    "numpy.random._pickle.__bit_generator_ctor",
+    "numpy.random._pickle.__randomstate_ctor",
+    # Cython unpickle helpers in numpy.random.bit_generator
+    "numpy.random.bit_generator.__pyx_unpickle_SeedSequence",
+    "numpy.random.bit_generator.__pyx_unpickle_SeedlessSeedSequence",
+)
 
 
 def _collect_cloudpickle_types() -> list:
@@ -153,7 +215,7 @@ def _collect_base_types() -> list[type | Callable[..., Any]]:
     ]
 
     # Try to also register old gym spaces (for models saved with gym <= 0.26)
-    try:
+    try:  # pragma: no cover
         import gym
 
         types += [
@@ -248,15 +310,9 @@ def _register_safe_globals() -> None:
             except AttributeError:
                 pass
 
-    # Explicit string entries for legacy numpy paths (numpy 1.x used numpy.core
-    # while numpy 2.x uses numpy._core; models saved with older numpy will
-    # embed the legacy path).  The modern numpy._core.* paths are already
-    # registered dynamically above via __module__ inspection.
-    for _name in (
-        "numpy.core.multiarray._reconstruct",
-        "numpy.core.multiarray.scalar",
-        "numpy.core.numeric._frombuffer",
-    ):
+    # Numpy-internal pickle helpers: both numpy 1.x (numpy.core.*) and
+    # numpy 2.x (numpy._core.*) paths, plus random pickle helpers.
+    for _name in _NUMPY_PICKLE_INTERNALS_STR:
         _SAFE_GLOBALS_STR.add(_name)
 
     # Explicit string entries for builtins and cloudpickle internals (these are

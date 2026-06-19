@@ -368,6 +368,25 @@ def _register_safe_globals() -> None:
         "types.FunctionType",
         "types.ModuleType",
         "types.CellType",
+        # PyTorch tensor/storage reconstruction helpers (needed for optimizer state
+        # and model weight pickles).  These are safe: they only reconstruct tensors,
+        # storages, and parameters from serialised data.
+        "torch._utils._rebuild_tensor",
+        "torch._utils._rebuild_tensor_v2",
+        "torch._utils._rebuild_tensor_v3",
+        "torch._utils._rebuild_parameter",
+        "torch._utils._rebuild_parameter_with_state",
+        "torch._utils._rebuild_sparse_tensor",
+        "torch._utils._rebuild_nested_tensor",
+        "torch._utils._rebuild_qtensor",
+        "torch._utils._rebuild_device_tensor_from_cpu_tensor",
+        "torch._utils._rebuild_device_tensor_from_numpy",
+        "torch._utils._rebuild_wrapper_subclass",
+        "torch._utils._get_restore_location",
+        "torch._tensor._rebuild_from_type",
+        "torch._tensor._rebuild_from_type_v2",
+        "torch.storage._load_from_bytes",
+        "torch.storage._get_storage_from_sequence",
         "copyreg.__newobj_ex__",
         "copyreg.__newobj__",
         "copyreg._reconstruct",
@@ -470,6 +489,8 @@ def register_sb3_safe_globals() -> None:
     from stable_baselines3.dqn.policies import (
         QNetwork,
     )
+    from stable_baselines3.her.goal_selection_strategy import GoalSelectionStrategy
+    from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
     from stable_baselines3.ppo.policies import (
         ActorCriticPolicy as PpoActorCriticPolicy,
     )
@@ -506,6 +527,8 @@ def register_sb3_safe_globals() -> None:
         ReplayBuffer,
         DictReplayBuffer,
         RolloutBuffer,
+        HerReplayBuffer,
+        GoalSelectionStrategy,
         # Schedules
         FloatSchedule,
         ConstantSchedule,

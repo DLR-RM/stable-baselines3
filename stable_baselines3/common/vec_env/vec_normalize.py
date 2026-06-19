@@ -312,7 +312,7 @@ class VecNormalize(VecEnvWrapper):
     def load(
         load_path: str,
         venv: VecEnv,
-        deserialization_mode: str = "legacy",
+        deserialization_mode: str = "safe",
     ) -> "VecNormalize":
         """
         Loads a saved VecNormalize object.
@@ -321,14 +321,13 @@ class VecNormalize(VecEnvWrapper):
         :param venv: the VecEnv to wrap.
         :param deserialization_mode: How to handle pickle deserialization.
 
-            - ``"legacy"`` (default): Deserialize with ``pickle.load()``.  This
-              preserves backward compatibility but **executes arbitrary Python
-              code** embedded in the pickle file.  A ``SecurityWarning`` is
-              emitted.
-            - ``"safe"``: Deserialize using a restricted unpickler that only
-              allows a fixed allowlist of known-safe SB3/gymnasium/numpy types.
+            - ``"safe"`` (default): Deserialize using a restricted unpickler that
+              only allows a fixed allowlist of known-safe SB3/gymnasium/numpy types.
               Any pickle payload referencing a type outside this allowlist is
               rejected with a clear error.
+            - ``"legacy"``: Deserialize with ``pickle.load()``.  This preserves
+              backward compatibility but **executes arbitrary Python code**
+              embedded in the pickle file.  A ``SecurityWarning`` is emitted.
         :return:
         """
         if deserialization_mode not in ("legacy", "safe"):
@@ -337,8 +336,12 @@ class VecNormalize(VecEnvWrapper):
             )
 
         if deserialization_mode == "safe":
-            from stable_baselines3.common.save_util import _RestrictedUnpickler
+            from stable_baselines3.common.safe_globals import (
+                _RestrictedUnpickler,
+                register_sb3_safe_globals,
+            )
 
+            register_sb3_safe_globals()
             warnings.warn(
                 "Loading a VecNormalize pickle file with a restricted (safe) "
                 "deserializer. Only known-safe SB3/gymnasium/numpy types are "

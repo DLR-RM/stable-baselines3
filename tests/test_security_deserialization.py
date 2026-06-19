@@ -25,6 +25,10 @@ import torch as th
 
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
+from stable_baselines3.common.safe_globals import (
+    add_safe_globals,
+    safe_globals,
+)
 from stable_baselines3.common.save_util import (
     json_to_data,
     load_from_pkl,
@@ -316,6 +320,30 @@ def test_load_replay_buffer_safe_works(tmp_path):
     assert any("restricted" in str(w.message).lower() for w in rec)
 
 
+def test_model_load_safe_with_action_noise(tmp_path):
+    """Model checkpoints with action noise load in safe mode."""
+    from stable_baselines3 import DDPG
+    from stable_baselines3.common.noise import NormalActionNoise
+
+    noise = NormalActionNoise(mean=[0], sigma=[0.1])
+    model = DDPG(
+        "MlpPolicy",
+        "Pendulum-v1",
+        buffer_size=1000,
+        learning_starts=50,
+        action_noise=noise,
+        device="cpu",
+    )
+    model.learn(100)
+    zip_path = str(tmp_path / "model_noise.zip")
+    model.save(zip_path)
+
+    # Safe mode: should load successfully with action noise intact
+    loaded = DDPG.load(zip_path, device="cpu", deserialization_mode="safe")
+    assert loaded.action_noise is not None
+    assert isinstance(loaded.action_noise, NormalActionNoise)
+
+
 def test_vec_normalize_load_safe_blocks_evil(tmp_path):
     """VecNormalize.load with deserialization_mode='safe' blocks evil globals."""
     import cloudpickle
@@ -363,11 +391,10 @@ def test_json_to_data_safe_with_custom_objects(tmp_path):
 
 def test_add_safe_globals_persists():
     """add_safe_globals() should persist across calls."""
-    from stable_baselines3.common.save_util import (
+    from stable_baselines3.common.safe_globals import (
         _USER_SAFE_GLOBALS,
-        _SAFE_CLOUDPICKLE_GLOBALS,
-        _get_safe_globals,
         add_safe_globals,
+        get_safe_globals,
     )
 
     # Clear user globals to start fresh
@@ -377,7 +404,7 @@ def test_add_safe_globals_persists():
         pass
 
     # Before registration: MyCustomType should NOT be in the allowlist
-    before = _get_safe_globals()
+    before = get_safe_globals()
     qualname = f"{MyCustomType.__module__}.{MyCustomType.__qualname__}"
     assert qualname not in before, "Custom type should not be in allowlist yet"
 
@@ -385,7 +412,7 @@ def test_add_safe_globals_persists():
     add_safe_globals([MyCustomType])
 
     # After registration: MyCustomType should be in the allowlist
-    after = _get_safe_globals()
+    after = get_safe_globals()
     assert qualname in after, "Custom type should be in allowlist after add_safe_globals"
 
     # Clean up
@@ -394,9 +421,9 @@ def test_add_safe_globals_persists():
 
 def test_safe_globals_context_manager(tmp_path):
     """safe_globals context manager should restore allowlist on exit."""
-    from stable_baselines3.common.save_util import (
+    from stable_baselines3.common.safe_globals import (
         _USER_SAFE_GLOBALS,
-        _get_safe_globals,
+        get_safe_globals,
         safe_globals,
     )
     import cloudpickle
@@ -414,11 +441,11 @@ def test_safe_globals_context_manager(tmp_path):
     qualname = f"{ScopedType.__module__}.{ScopedType.__qualname__}"
 
     # Before context: not in allowlist
-    assert qualname not in _get_safe_globals()
+    assert qualname not in get_safe_globals()
 
     # Inside context: should be in allowlist
     with safe_globals([ScopedType]):
-        assert qualname in _get_safe_globals()
+        assert qualname in get_safe_globals()
         # Verify the type can actually be deserialized
         payload = cloudpickle.dumps(ScopedType())
         from stable_baselines3.common.save_util import _cloudpickle_loads_safe
@@ -426,6 +453,6 @@ def test_safe_globals_context_manager(tmp_path):
         assert obj.value == 42
 
     # After context: should be removed
-    assert qualname not in _get_safe_globals(), (
+    assert qualname not in get_safe_globals(), (
         "safe_globals context manager did not restore allowlist on exit"
     )

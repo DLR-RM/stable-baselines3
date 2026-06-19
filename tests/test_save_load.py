@@ -631,7 +631,7 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(pathtype(f"{tmp_path}/t1")) == "foo"
     # Only the expected security warning from load_from_pkl; no path-related warnings
-    assert all("pickle deserialization" in str(w.message).lower() for w in record)
+    assert all("deserializer" in str(w.message).lower() for w in record)
 
     # test custom suffix
     with open_path(pathtype(f"{tmp_path}/t1.custom_ext"), "w") as fp1:
@@ -639,7 +639,7 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     assert fp1.closed
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(pathtype(f"{tmp_path}/t1.custom_ext")) == "foo"
-    assert all("pickle deserialization" in str(w.message).lower() for w in record)
+    assert all("deserializer" in str(w.message).lower() for w in record)
 
     # test without suffix
     with open_path(pathtype(f"{tmp_path}/t1"), "w", suffix="pkl") as fp1:
@@ -647,7 +647,15 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     assert fp1.closed
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(pathtype(f"{tmp_path}/t1.pkl")) == "foo"
-    assert all("pickle deserialization" in str(w.message).lower() for w in record)
+    assert all("deserializer" in str(w.message).lower() for w in record)
+
+    # test without suffix
+    with open_path(pathtype(f"{tmp_path}/t1"), "w", suffix="pkl") as fp1:
+        save_to_pkl(fp1, "foo")
+    assert fp1.closed
+    with warnings.catch_warnings(record=True) as record:
+        assert load_from_pkl(pathtype(f"{tmp_path}/t1.pkl")) == "foo"
+    assert all("deserializer" in str(w.message).lower() for w in record)
 
     # test that a warning is raised when the path doesn't exist
     with open_path(pathtype(f"{tmp_path}/t2.pkl"), "w") as fp1:
@@ -656,12 +664,12 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl")) == "foo"
     # Only security warning, no "path not found" warning
-    assert all("pickle deserialization" in str(w.message).lower() for w in record)
+    assert all("deserializer" in str(w.message).lower() for w in record)
 
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl", verbose=2)) == "foo"
     # Security warning + path-not-found verbose warning
-    non_security = [w for w in record if "pickle deserialization" not in str(w.message).lower()]
+    non_security = [w for w in record if "deserializer" not in str(w.message).lower()]
     assert len(non_security) == 1
 
     fp = pathlib.Path(f"{tmp_path}/t2").open("w")

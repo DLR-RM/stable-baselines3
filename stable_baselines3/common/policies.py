@@ -33,6 +33,248 @@ from stable_baselines3.common.torch_layers import (
 from stable_baselines3.common.type_aliases import PyTorchObs, Schedule
 from stable_baselines3.common.utils import get_device, is_vectorized_observation, obs_as_tensor
 
+# ---------------------------------------------------------------------------
+# Security: register types as safe globals for torch.load with weights_only=True.
+# This mirrors the allowlist used by _RestrictedUnpickler in save_util.py so
+# that BaseModel.load can use the safe PyTorch loading path.
+# ---------------------------------------------------------------------------
+
+# Gymnasium spaces
+_safe_types = [
+    spaces.Box,
+    spaces.Discrete,
+    spaces.MultiBinary,
+    spaces.MultiDiscrete,
+    spaces.Dict,
+    spaces.Tuple,
+    spaces.Space,
+]
+
+# Numpy types (including numpy random internals needed for gymnasium spaces
+# that store internal RNG state, e.g. after .sample())
+_safe_types += [
+    np.ndarray,
+    np.dtype,
+    np.float32,
+    np.float64,
+    np.int32,
+    np.int64,
+    np.bool_,
+    np.uint32,
+    np.uint64,
+    np.int8,
+    np.int16,
+    np.uint8,
+    np.uint16,
+    np.dtypes.Float32DType,
+    np.dtypes.Float64DType,
+    np.dtypes.Int32DType,
+    np.dtypes.Int64DType,
+    np.dtypes.BoolDType,
+    np.dtypes.UInt32DType,
+    np.dtypes.UInt64DType,
+    np.dtypes.UInt8DType,
+    np.dtypes.UInt16DType,
+    np.dtypes.Int8DType,
+    np.dtypes.Int16DType,
+    np.random.bit_generator.BitGenerator,
+    np.random.bit_generator.SeedSequence,
+    np.random._pcg64.PCG64,
+    np.random._mt19937.MT19937,
+    np.random._philox.Philox,
+    np.random._sfc64.SFC64,
+    np.random._generator.Generator,
+    np.random.mtrand.RandomState,
+]
+
+# Numpy pickle reconstruction helpers (functions)
+import numpy._core.multiarray as np_ma
+import numpy._core.numeric as np_numeric
+import numpy.random._pickle as np_rp
+_safe_types += [
+    np_ma._reconstruct,
+    np_ma.scalar,
+    np_numeric._frombuffer,
+    np_rp.__generator_ctor,
+    np_rp.__bit_generator_ctor,
+    np_rp.__randomstate_ctor,
+]
+
+# Cython unpickle helpers in numpy random
+import numpy.random.bit_generator as np_bg
+_safe_types += [
+    np_bg.__pyx_unpickle_SeedSequence,
+    np_bg.__pyx_unpickle_SeedlessSeedSequence,
+]
+
+# PyTorch types
+_safe_types += [
+    th.optim.RMSprop,
+    th.optim.Adam,
+    th.optim.SGD,
+    th.device,
+]
+
+# SB3 features extractors
+_safe_types += [
+    FlattenExtractor,
+    NatureCNN,
+    CombinedExtractor,
+    MlpExtractor,
+    BaseFeaturesExtractor,
+]
+
+# SB3 utility classes
+from stable_baselines3.common.buffers import (
+    DictReplayBuffer,
+    ReplayBuffer,
+    RolloutBuffer,
+)
+from stable_baselines3.common.running_mean_std import RunningMeanStd
+from stable_baselines3.common.type_aliases import TrainFreq, TrainFrequencyUnit
+from stable_baselines3.common.utils import (
+    ConstantSchedule,
+    FloatSchedule,
+    LinearSchedule,
+)
+from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
+
+_safe_types += [
+    FloatSchedule,
+    ConstantSchedule,
+    LinearSchedule,
+    TrainFreq,
+    TrainFrequencyUnit,
+    RolloutBuffer,
+    ReplayBuffer,
+    DictReplayBuffer,
+    RunningMeanStd,
+    VecNormalize,
+]
+
+# PyTorch nn.Module subclasses used as policy constructor parameters
+_safe_types += [
+    nn.Linear,
+    nn.Conv2d,
+    nn.Flatten,
+    nn.Sequential,
+    nn.Tanh,
+    nn.ReLU,
+    nn.ELU,
+    nn.LeakyReLU,
+    nn.SiLU,
+    nn.GELU,
+    nn.LayerNorm,
+    nn.BatchNorm2d,
+]
+
+# Try to also register old gym spaces (for models saved with gym <= 0.26)
+try:
+    import gym
+    _safe_types += [
+        gym.spaces.Box,
+        gym.spaces.Discrete,
+        gym.spaces.MultiBinary,
+        gym.spaces.MultiDiscrete,
+        gym.spaces.Dict,
+        gym.spaces.Tuple,
+        gym.spaces.Space,
+    ]
+except ImportError:
+    pass
+
+# Cloudpickle 3.x internals (needed because cloudpickle serializes lambdas,
+# schedules, etc. and torch's weights_only needs these to reconstruct them)
+import cloudpickle.cloudpickle as _cp
+_safe_cloudpickle = [
+    _cp._make_function,
+    _cp._make_cell,
+    _cp._make_empty_cell,
+    _cp._make_skeleton_class,
+    _cp._make_skeleton_enum,
+    _cp._builtin_type,
+    _cp._function_setstate,
+]
+try:
+    _safe_cloudpickle.append(_cp._make_dict_items)
+    _safe_cloudpickle.append(_cp._make_dict_keys)
+    _safe_cloudpickle.append(_cp._make_dict_values)
+    _safe_cloudpickle.append(_cp._make_typevar)
+except AttributeError:
+    pass  # older cloudpickle may not have these
+
+_safe_types += _safe_cloudpickle
+
+# Standard library containers and builtins
+_safe_types.append(collections.deque)
+_safe_types.append(getattr)
+_safe_types.append(setattr)
+
+# Register all at once
+th.serialization.add_safe_globals(_safe_types)
+
+
+def _register_policy_safe_globals() -> None:
+    """Register SB3 policy classes as safe globals for torch.load.
+
+    This must be called lazily (not at module import time) to avoid
+    circular imports: algo-specific policy modules import from here.
+    """
+    policy_types = []
+
+    from stable_baselines3.a2c.policies import (
+        ActorCriticPolicy as A2CActorCriticPolicy,
+        CnnPolicy as A2CCnnPolicy,
+        MlpPolicy as A2CMlpPolicy,
+        MultiInputPolicy as A2CMultiInputPolicy,
+    )
+    from stable_baselines3.common.policies import (
+        ActorCriticCnnPolicy,
+        ActorCriticPolicy,
+        ContinuousCritic,
+        MultiInputActorCriticPolicy,
+    )
+    from stable_baselines3.ddpg.policies import (
+        CnnPolicy as DdpgCnnPolicy,
+        MlpPolicy as DdpgMlpPolicy,
+        MultiInputPolicy as DdpgMultiInputPolicy,
+    )
+    from stable_baselines3.dqn.policies import (
+        CnnPolicy as DqnCnnPolicy,
+        MlpPolicy as DqnMlpPolicy,
+        MultiInputPolicy as DqnMultiInputPolicy,
+        QNetwork,
+    )
+    from stable_baselines3.ppo.policies import (
+        ActorCriticPolicy as PpoActorCriticPolicy,
+        CnnPolicy as PpoCnnPolicy,
+        MlpPolicy as PpoMlpPolicy,
+        MultiInputPolicy as PpoMultiInputPolicy,
+    )
+    from stable_baselines3.sac.policies import (
+        CnnPolicy as SacCnnPolicy,
+        MlpPolicy as SacMlpPolicy,
+        MultiInputPolicy as SacMultiInputPolicy,
+    )
+    from stable_baselines3.td3.policies import (
+        CnnPolicy as Td3CnnPolicy,
+        MlpPolicy as Td3MlpPolicy,
+        MultiInputPolicy as Td3MultiInputPolicy,
+    )
+
+    policy_types += [
+        A2CActorCriticPolicy, A2CCnnPolicy, A2CMlpPolicy, A2CMultiInputPolicy,
+        PpoActorCriticPolicy, PpoCnnPolicy, PpoMlpPolicy, PpoMultiInputPolicy,
+        DdpgCnnPolicy, DdpgMlpPolicy, DdpgMultiInputPolicy,
+        DqnCnnPolicy, DqnMlpPolicy, DqnMultiInputPolicy, QNetwork,
+        SacCnnPolicy, SacMlpPolicy, SacMultiInputPolicy,
+        Td3CnnPolicy, Td3MlpPolicy, Td3MultiInputPolicy,
+        ActorCriticPolicy, ActorCriticCnnPolicy, MultiInputActorCriticPolicy,
+        ContinuousCritic,
+    ]
+
+    th.serialization.add_safe_globals(policy_types)
+
 SelfBaseModel = TypeVar("SelfBaseModel", bound="BaseModel")
 
 
@@ -173,9 +415,11 @@ class BaseModel(nn.Module):
         :return:
         """
         device = get_device(device)
-        # Note(antonin): we cannot use `weights_only=True` here because we need to allow
-        # gymnasium imports for the policy to be loaded successfully
-        saved_variables = th.load(path, map_location=device, weights_only=False)
+        # The types needed for gymnasium spaces, numpy, cloudpickle, etc. are
+        # registered as safe globals at module import time (torch.serialization.add_safe_globals).
+        # Policy-specific types are registered lazily to avoid circular imports.
+        _register_policy_safe_globals()
+        saved_variables = th.load(path, map_location=device, weights_only=True)
 
         # Create policy object
         model = cls(**saved_variables["data"])
@@ -985,3 +1229,37 @@ class ContinuousCritic(BaseModel):
         with th.no_grad():
             features = self.extract_features(obs, self.features_extractor)
         return self.q_networks[0](th.cat([features, actions], dim=1))
+
+
+# ---------------------------------------------------------------------------
+# Register base policy classes for torch.load with weights_only=True.
+# These are defined in this module, so registration must happen after
+# their class definitions (i.e. at the end of the file).
+# ---------------------------------------------------------------------------
+
+# Policy classes defined in this module
+_safe_base_policies = [
+    BasePolicy,
+    ActorCriticPolicy,
+    ActorCriticCnnPolicy,
+    MultiInputActorCriticPolicy,
+    ContinuousCritic,
+]
+
+# Additional classes used by policy serialization
+from stable_baselines3.common.distributions import (
+    BernoulliDistribution,
+    CategoricalDistribution,
+    DiagGaussianDistribution,
+    MultiCategoricalDistribution,
+    StateDependentNoiseDistribution,
+)
+_safe_base_policies += [
+    BernoulliDistribution,
+    CategoricalDistribution,
+    DiagGaussianDistribution,
+    MultiCategoricalDistribution,
+    StateDependentNoiseDistribution,
+]
+
+th.serialization.add_safe_globals(_safe_base_policies)

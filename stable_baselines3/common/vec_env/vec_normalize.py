@@ -1,5 +1,6 @@
 import inspect
 import pickle
+import warnings
 from copy import deepcopy
 from typing import Any
 
@@ -308,16 +309,53 @@ class VecNormalize(VecEnvWrapper):
         return self.normalize_obs(obs)
 
     @staticmethod
-    def load(load_path: str, venv: VecEnv) -> "VecNormalize":
+    def load(
+        load_path: str,
+        venv: VecEnv,
+        deserialization_mode: str = "legacy",
+    ) -> "VecNormalize":
         """
         Loads a saved VecNormalize object.
 
         :param load_path: the path to load from.
         :param venv: the VecEnv to wrap.
+        :param deserialization_mode: How to handle pickle deserialization.
+
+            - ``"legacy"`` (default): Deserialize with ``pickle.load()``.  This
+              preserves backward compatibility but **executes arbitrary Python
+              code** embedded in the pickle file.  A ``SecurityWarning`` is
+              emitted.
+            - ``"safe"``: Deserialize using a restricted unpickler that only
+              allows a fixed allowlist of known-safe SB3/gymnasium/numpy types.
+              Any pickle payload referencing a type outside this allowlist is
+              rejected with a clear error.
         :return:
         """
-        with open(load_path, "rb") as file_handler:
-            vec_normalize = pickle.load(file_handler)
+        if deserialization_mode not in ("legacy", "safe"):
+            raise ValueError(
+                f"deserialization_mode must be 'legacy' or 'safe', got {deserialization_mode!r}"
+            )
+
+        if deserialization_mode == "safe":
+            from stable_baselines3.common.save_util import _RestrictedUnpickler
+
+            warnings.warn(
+                "Loading a VecNormalize pickle file with a restricted (safe) "
+                "deserializer. Only known-safe SB3/gymnasium/numpy types are "
+                "allowed.",
+                UserWarning,
+            )
+            with open(load_path, "rb") as file_handler:
+                vec_normalize = _RestrictedUnpickler(file_handler).load()
+        else:
+            warnings.warn(
+                "Loading a VecNormalize pickle file with pickle deserialization "
+                "(deserialization_mode='legacy'). This can execute arbitrary Python "
+                "code from the file. Only load pickle files from trusted sources. ",
+                UserWarning,
+            )
+            with open(load_path, "rb") as file_handler:
+                vec_normalize = pickle.load(file_handler)
         vec_normalize.set_venv(venv)
         return vec_normalize
 

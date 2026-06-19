@@ -21,6 +21,384 @@ import stable_baselines3 as sb3
 from stable_baselines3.common.type_aliases import TensorDict
 from stable_baselines3.common.utils import get_device, get_system_info
 
+# ---------------------------------------------------------------------------
+# Restricted unpickler for safe deserialization
+# ---------------------------------------------------------------------------
+#
+# Cloudpickle serialises objects into a byte stream whose deserialization
+# invokes ``find_class(module, name)`` for each global referenced.  By
+# overriding ``find_class`` we can block arbitrary code execution while
+# still allowing the small set of types that SB3 legitimately serialises.
+#
+# The allowlist is populated lazily to avoid circular imports (many SB3
+# modules import save_util).
+# ---------------------------------------------------------------------------
+
+_SAFE_CLOUDPICKLE_GLOBALS: set[str] | None = None
+_USER_SAFE_GLOBALS: set[str] = set()
+
+
+def _get_safe_globals() -> set[str]:
+    """Return the allowlist of safe globals, populating it lazily.
+
+    Also includes any types registered by the user via ``add_safe_globals()``.
+    """
+    global _SAFE_CLOUDPICKLE_GLOBALS
+    if _SAFE_CLOUDPICKLE_GLOBALS is None:
+        _build_safe_globals()
+    return _SAFE_CLOUDPICKLE_GLOBALS | _USER_SAFE_GLOBALS
+
+
+def _build_safe_globals() -> None:
+    """Populate _SAFE_CLOUDPICKLE_GLOBALS with built-in safe types."""
+    global _SAFE_CLOUDPICKLE_GLOBALS
+    _SAFE_CLOUDPICKLE_GLOBALS = set()
+
+    # --- gymnasium spaces ---
+    from gymnasium import spaces as gym_spaces
+
+    for _cls in (
+        gym_spaces.Box,
+        gym_spaces.Discrete,
+        gym_spaces.MultiBinary,
+        gym_spaces.MultiDiscrete,
+        gym_spaces.Dict,
+        gym_spaces.Tuple,
+        gym_spaces.Space,
+    ):
+        _SAFE_CLOUDPICKLE_GLOBALS.add(f"{_cls.__module__}.{_cls.__qualname__}")
+
+    # --- old gym spaces (models saved with gym <= 0.26) ---
+    try:
+        import gym
+        for _cls in (
+            gym.spaces.Box,
+            gym.spaces.Discrete,
+            gym.spaces.MultiBinary,
+            gym.spaces.MultiDiscrete,
+            gym.spaces.Dict,
+            gym.spaces.Tuple,
+            gym.spaces.Space,
+        ):
+            _SAFE_CLOUDPICKLE_GLOBALS.add(f"{_cls.__module__}.{_cls.__qualname__}")
+    except ImportError:
+        pass
+
+    # --- SB3 utility classes ---
+    from stable_baselines3.common.buffers import (
+        DictReplayBuffer,
+        ReplayBuffer,
+        RolloutBuffer,
+    )
+    from stable_baselines3.common.type_aliases import TrainFreq
+    from stable_baselines3.common.utils import (
+        ConstantSchedule,
+        FloatSchedule,
+        LinearSchedule,
+    )
+
+    from stable_baselines3.common.type_aliases import TrainFrequencyUnit
+
+    for _cls in (
+        FloatSchedule,
+        ConstantSchedule,
+        LinearSchedule,
+        TrainFreq,
+        TrainFrequencyUnit,
+        RolloutBuffer,
+        ReplayBuffer,
+        DictReplayBuffer,
+    ):
+        _SAFE_CLOUDPICKLE_GLOBALS.add(f"{_cls.__module__}.{_cls.__qualname__}")
+
+    # --- SB3 policy and extractor classes ---
+    from stable_baselines3.a2c.policies import (
+        ActorCriticPolicy as A2CActorCriticPolicy,
+        CnnPolicy as A2CCnnPolicy,
+        MlpPolicy as A2CMlpPolicy,
+        MultiInputPolicy as A2CMultiInputPolicy,
+    )
+    from stable_baselines3.common.policies import (
+        ActorCriticCnnPolicy,
+        ActorCriticPolicy,
+        ContinuousCritic,
+        MultiInputActorCriticPolicy,
+    )
+    from stable_baselines3.common.torch_layers import (
+        BaseFeaturesExtractor,
+        CombinedExtractor,
+        FlattenExtractor,
+        MlpExtractor,
+        NatureCNN,
+    )
+    from stable_baselines3.ddpg.policies import (
+        CnnPolicy as DdpgCnnPolicy,
+        MlpPolicy as DdpgMlpPolicy,
+        MultiInputPolicy as DdpgMultiInputPolicy,
+    )
+    from stable_baselines3.dqn.policies import (
+        CnnPolicy as DqnCnnPolicy,
+        MlpPolicy as DqnMlpPolicy,
+        MultiInputPolicy as DqnMultiInputPolicy,
+        QNetwork,
+    )
+    from stable_baselines3.ppo.policies import (
+        ActorCriticPolicy as PpoActorCriticPolicy,
+        CnnPolicy as PpoCnnPolicy,
+        MlpPolicy as PpoMlpPolicy,
+        MultiInputPolicy as PpoMultiInputPolicy,
+    )
+    from stable_baselines3.sac.policies import (
+        CnnPolicy as SacCnnPolicy,
+        MlpPolicy as SacMlpPolicy,
+        MultiInputPolicy as SacMultiInputPolicy,
+    )
+    from stable_baselines3.td3.policies import (
+        CnnPolicy as Td3CnnPolicy,
+        MlpPolicy as Td3MlpPolicy,
+        MultiInputPolicy as Td3MultiInputPolicy,
+    )
+
+    for _cls in (
+        A2CActorCriticPolicy, A2CCnnPolicy, A2CMlpPolicy, A2CMultiInputPolicy,
+        PpoActorCriticPolicy, PpoCnnPolicy, PpoMlpPolicy, PpoMultiInputPolicy,
+        DdpgCnnPolicy, DdpgMlpPolicy, DdpgMultiInputPolicy,
+        DqnCnnPolicy, DqnMlpPolicy, DqnMultiInputPolicy, QNetwork,
+        SacCnnPolicy, SacMlpPolicy, SacMultiInputPolicy,
+        Td3CnnPolicy, Td3MlpPolicy, Td3MultiInputPolicy,
+        ActorCriticPolicy, ActorCriticCnnPolicy, MultiInputActorCriticPolicy,
+        ContinuousCritic,
+        BaseFeaturesExtractor, CombinedExtractor, FlattenExtractor,
+        MlpExtractor, NatureCNN,
+    ):
+        _SAFE_CLOUDPICKLE_GLOBALS.add(f"{_cls.__module__}.{_cls.__qualname__}")
+
+    # --- numpy internals ---
+    for _name in (
+        "numpy.core.multiarray._reconstruct",
+        "numpy.core.multiarray.scalar",
+        "numpy._core.multiarray._reconstruct",
+        "numpy._core.multiarray.scalar",
+        "numpy._core.numeric._frombuffer",
+        "numpy.dtype",
+        "numpy.ndarray",
+        "numpy.float32", "numpy.float64",
+        "numpy.int32", "numpy.int64",
+        "numpy.bool_",
+        "numpy.dtypes.Float32DType", "numpy.dtypes.Float64DType",
+        "numpy.dtypes.Int32DType", "numpy.dtypes.Int64DType",
+        "numpy.dtypes.BoolDType",
+        "numpy.random._pickle.__generator_ctor",
+        "numpy.random._pickle.__bit_generator_ctor",
+        "numpy.random._pickle.__randomstate_ctor",
+        "numpy.random._pickle.GeneratorState",
+        "numpy.random.bit_generator.BitGenerator",
+        "numpy.random.bit_generator.SeedSequence",
+        "numpy.random.bit_generator.__pyx_unpickle_SeedSequence",
+        "numpy.random.bit_generator.__pyx_unpickle_SeedlessSeedSequence",
+        "numpy.random._pcg64.PCG64",
+        "numpy.random._mt19937.MT19937",
+        "numpy.random._philox.Philox",
+        "numpy.random._sfc64.SFC64",
+        "numpy.random._generator.Generator",
+        "numpy.random.mtrand.RandomState",
+    ):
+        _SAFE_CLOUDPICKLE_GLOBALS.add(_name)
+
+    # --- PyTorch types used by policies and buffers ---
+    _SAFE_CLOUDPICKLE_GLOBALS.add("torch.optim.rmsprop.RMSprop")
+    _SAFE_CLOUDPICKLE_GLOBALS.add("torch.device")
+
+    # --- SB3 VecNormalize and running stats ---
+    from stable_baselines3.common.running_mean_std import RunningMeanStd
+    from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
+    for _cls in (RunningMeanStd, VecNormalize):
+        _SAFE_CLOUDPICKLE_GLOBALS.add(f"{_cls.__module__}.{_cls.__qualname__}")
+
+    # --- Python builtins ---
+    for _name in (
+        "builtins.tuple", "builtins.dict", "builtins.list", "builtins.set",
+        "builtins.frozenset", "builtins.str", "builtins.int", "builtins.float",
+        "builtins.bool", "builtins.bytes", "builtins.bytearray",
+        "builtins.object", "builtins.type",
+    ):
+        _SAFE_CLOUDPICKLE_GLOBALS.add(_name)
+
+    # --- cloudpickle internals ---
+    # cloudpickle 3.x uses different internal names than 2.x.
+    # We allow the full set of known cloudpickle helpers so that
+    # checkpoints saved with either major version can be loaded.
+    for _name in (
+        "cloudpickle.cloudpickle",
+        "cloudpickle.cloudpickle.__newobj__",
+        "cloudpickle.cloudpickle._make_skeleton_class",
+        "cloudpickle.cloudpickle._make_skeleton_enum",
+        "cloudpickle.cloudpickle._make_skeleton_function",
+        "cloudpickle.cloudpickle._make_cell",
+        "cloudpickle.cloudpickle._make_empty_cell",
+        "cloudpickle.cloudpickle._make_stepfunc",
+        "cloudpickle.cloudpickle._make_fileless_lambda",
+        "cloudpickle.cloudpickle._make_function",
+        "cloudpickle.cloudpickle._make_dict_items",
+        "cloudpickle.cloudpickle._make_dict_keys",
+        "cloudpickle.cloudpickle._make_dict_values",
+        "cloudpickle.cloudpickle._make_typevar",
+        "cloudpickle.cloudpickle._builtin_type",
+        "cloudpickle.cloudpickle._function_setstate",
+        "cloudpickle.cloudpickle.make_dict_fromnamedtuple",
+        "cloudpickle.cloudpickle.make_dict_fromnamedtuple_with_defaults",
+        "cloudpickle.cloudpickle.make_dynamic_classlookup",
+        "cloudpickle.cloudpickle.make_function_from_globals",
+        "cloudpickle.cloudpickle.make_instance_from_reduce",
+        "cloudpickle.cloudpickle.make_local_from_global",
+        "cloudpickle.cloudpickle.make_numpy_array",
+        "cloudpickle.cloudpickle.make_numpy_scalar",
+        "cloudpickle.cloudpickle.make_opaque_object",
+        "cloudpickle.cloudpickle.make_object_from_newargs",
+        "cloudpickle.cloudpickle.make_object_from_newargsreduce",
+        "cloudpickle.cloudpickle.make_repr_from_name",
+        "cloudpickle.cloudpickle.make_seq",
+        "cloudpickle.cloudpickle.make_set",
+        "cloudpickle.cloudpickle.make_skeleton_class",
+        "cloudpickle.cloudpickle.make_skeleton_enum",
+        "cloudpickle.cloudpickle.make_super",
+        "cloudpickle.cloudpickle.make_type_var",
+        "cloudpickle.cloudpickle.make_type_var_tuple",
+        "cloudpickle.cloudpickle.make_typed_dict",
+        "cloudpickle.cloudpickle.make_unordered_set",
+        "cloudpickle.cloudpickle.restore_class",
+        "cloudpickle.cloudpickle.restore_class_attr_descriptors",
+        "cloudpickle.cloudpickle.restore_function",
+        "cloudpickle.cloudpickle._class_setstate",
+        "cloudpickle.cloudpickle._fillvar",
+        "cloudpickle.cloudpickle.subimport",
+        "cloudpickle.cloudpickle._lookup_module_and_obj_in_qualname",
+        "cloudpickle.cloudpickle.whichmodule",
+        "types.FunctionType",
+        "types.ModuleType",
+        "types.CellType",
+        "copyreg.__newobj_ex__",
+        "copyreg.__newobj__",
+        "copyreg._reconstruct",
+        "copyreg.reconstructor",
+        "copyreg._reduce_ex",
+    ):
+        _SAFE_CLOUDPICKLE_GLOBALS.add(_name)
+
+    # --- Python standard-library containers ---
+    for _name in (
+        "collections.deque",
+        "operator.getstate",
+    ):
+        _SAFE_CLOUDPICKLE_GLOBALS.add(_name)
+
+
+class _RestrictedUnpickler(pickle.Unpickler):
+    """Unpickler that only allows globals from a predefined allowlist.
+
+    Blocks cloudpickle payloads that contain arbitrary code execution
+    while still permitting the types that SB3 legitimately serialises.
+    """
+
+    def find_class(self, module: str, name: str):
+        global_full = f"{module}.{name}"
+        if global_full in _get_safe_globals():
+            return super().find_class(module, name)
+        raise pickle.UnpicklingError(
+            f"Global {global_full!r} is not in the safe deserialization allowlist. "
+            "This is likely an attempt to execute arbitrary code via a crafted "
+            "checkpoint. Use deserialization_mode='legacy' if you trust this file, "
+            "or report the type to the SB3 maintainers."
+        )
+
+
+def _cloudpickle_loads_safe(data: bytes) -> Any:
+    """Deserialize cloudpickle data using the restricted allowlist unpickler."""
+    return _RestrictedUnpickler(io.BytesIO(data)).load()
+
+
+# ---------------------------------------------------------------------------
+# Public API: extend the safe-globals allowlist (a la torch.serialization)
+# ---------------------------------------------------------------------------
+
+
+def add_safe_globals(
+    safe_globals: list[type | tuple[type, str]] | type | tuple[type, str],
+) -> None:
+    """
+    Register one or more classes/functions as safe for ``deserialization_mode='safe'``.
+
+    This is the SB3 equivalent of :func:`torch.serialization.add_safe_globals`.
+    Types registered here will be permitted by the restricted unpickler when
+    ``deserialization_mode='safe'`` is used, for *all* subsequent loads in the
+    current process.
+
+    Each item can be:
+
+    * A class or function object.  Its fully-qualified name
+      ``module.qualname`` will be used automatically.
+    * A ``(class_or_function, "explicit.module.Path")`` tuple when the
+      pickle payload uses a different module path than the live object
+      (e.g., the checkpoint was saved on a machine with a different
+      package name).
+
+    **Only register types you trust.**  The security guarantee of
+    ``deserialization_mode='safe'`` is that *only* allowlisted globals can
+    be invoked during unpickling.
+
+    **Example**
+
+    .. code-block:: python
+
+       from stable_baselines3.common.save_util import add_safe_globals
+
+       class MyCustomSpace(gymnasium.spaces.Space):
+           ...
+
+       add_safe_globals([MyCustomSpace])
+       model = PPO.load("checkpoint.zip", deserialization_mode="safe")
+    """
+    if not isinstance(safe_globals, list):
+        safe_globals = [safe_globals]
+
+    for item in safe_globals:
+        if isinstance(item, tuple):
+            obj, explicit_path = item
+            _USER_SAFE_GLOBALS.add(explicit_path)
+        else:
+            _USER_SAFE_GLOBALS.add(f"{item.__module__}.{item.__qualname__}")
+
+
+class safe_globals:
+    """Context-manager that temporarily adds globals to the safe allowlist.
+
+    The added types are automatically removed when the block exits.
+
+    **Example**
+
+    .. code-block:: python
+
+       from stable_baselines3.common.save_util import safe_globals
+
+       with safe_globals([MyCustomSpace]):
+           model = PPO.load("checkpoint.zip", deserialization_mode="safe")
+    """
+
+    def __init__(
+        self,
+        safe_globals: list[type | tuple[type, str]] | type | tuple[type, str],
+    ) -> None:
+        self._items = safe_globals if isinstance(safe_globals, list) else [safe_globals]
+
+    def __enter__(self) -> "safe_globals":
+        self._backup = _USER_SAFE_GLOBALS.copy()
+        add_safe_globals(self._items)
+        return self
+
+    def __exit__(self, *args: Any) -> None:
+        _USER_SAFE_GLOBALS.clear()
+        _USER_SAFE_GLOBALS.update(self._backup)
+
 
 def recursive_getattr(obj: Any, attr: str, *args) -> Any:
     """
@@ -128,7 +506,11 @@ def data_to_json(data: dict[str, Any]) -> str:
     return json_string
 
 
-def json_to_data(json_string: str, custom_objects: dict[str, Any] | None = None) -> dict[str, Any]:
+def json_to_data(
+    json_string: str,
+    custom_objects: dict[str, Any] | None = None,
+    deserialization_mode: str = "safe",
+) -> dict[str, Any]:
     """
     Turn JSON serialization of class-parameters back into dictionary.
 
@@ -140,14 +522,31 @@ def json_to_data(json_string: str, custom_objects: dict[str, Any] | None = None)
         will be used instead. Similar to custom_objects in
         ``keras.models.load_model``. Useful when you have an object in
         file that can not be deserialized.
+    :param deserialization_mode: How to handle cloudpickle-serialized objects
+        stored in the checkpoint's ``data`` JSON.
+
+        - ``"safe"`` (default): Deserialize using a restricted unpickler that
+          only allows a fixed allowlist of known-safe SB3/gymnasium/numpy types.
+          Any cloudpickle payload referencing a type outside this allowlist is
+          rejected with a clear error.  A single ``SecurityWarning`` is emitted.
+        - ``"legacy"``: Deserialize all ``:serialized:`` entries with the
+          unrestricted cloudpickle loader.  This preserves full backward
+          compatibility but **executes arbitrary Python code** embedded in the
+          checkpoint.
     :return: Loaded class parameters.
     """
     if custom_objects is not None and not isinstance(custom_objects, dict):
         raise ValueError("custom_objects argument must be a dict or None")
 
+    if deserialization_mode not in ("legacy", "safe"):
+        raise ValueError(
+            f"deserialization_mode must be 'legacy' or 'safe', got {deserialization_mode!r}"
+        )
+
     json_dict = json.loads(json_string)
     # This will be filled with deserialized data
     return_data = {}
+    warned_once = False
     for data_key, data_item in json_dict.items():
         if custom_objects is not None and data_key in custom_objects.keys():
             # If item is provided in custom_objects, replace
@@ -156,14 +555,34 @@ def json_to_data(json_string: str, custom_objects: dict[str, Any] | None = None)
         elif isinstance(data_item, dict) and ":serialized:" in data_item.keys():
             # If item is dictionary with ":serialized:"
             # key, this means it is serialized with cloudpickle.
+            if not warned_once:
+                warned_once = True
+                if deserialization_mode == "safe":
+                    pass
+                    # warnings.warn(
+                    #     "Loading a model checkpoint that contains cloudpickle-serialized "
+                    #     "objects with a restricted (safe) deserializer. Only known-safe "
+                    #     "SB3/gymnasium/numpy types are allowed. "
+                    #     UserWarning,
+                    # )
+                else:
+                    warnings.warn(
+                        "Loading a model checkpoint that contains cloudpickle-serialized "
+                        "objects (deserialization_mode='legacy'). This allows arbitrary "
+                        "Python code execution from the checkpoint file. Only load "
+                        "checkpoints from trusted sources. To enable safe deserialization, "
+                        "use deserialization_mode='safe'. ",
+                        UserWarning,
+                    )
+
             serialization = data_item[":serialized:"]
-            # Try-except deserialization in case we run into
-            # errors. If so, we can tell bit more information to
-            # user.
             try:
                 base64_object = base64.b64decode(serialization.encode())
-                deserialized_object = cloudpickle.loads(base64_object)
-            except (RuntimeError, TypeError, AttributeError) as e:
+                if deserialization_mode == "safe":
+                    deserialized_object = _cloudpickle_loads_safe(base64_object)
+                else:
+                    deserialized_object = cloudpickle.loads(base64_object)
+            except (RuntimeError, TypeError, AttributeError, pickle.UnpicklingError) as e:
                 warnings.warn(
                     f"Could not deserialize object {data_key}. "
                     "Consider using `custom_objects` argument to replace "
@@ -356,7 +775,11 @@ def save_to_pkl(path: str | pathlib.Path | io.BufferedIOBase, obj: Any, verbose:
         file.close()
 
 
-def load_from_pkl(path: str | pathlib.Path | io.BufferedIOBase, verbose: int = 0) -> Any:
+def load_from_pkl(
+    path: str | pathlib.Path | io.BufferedIOBase,
+    verbose: int = 0,
+    deserialization_mode: str = "legacy",
+) -> Any:
     """
     Load an object from the path. If a suffix is provided in the path, it will use that suffix.
     If the path does not exist, it will attempt to load using the .pkl suffix.
@@ -365,9 +788,38 @@ def load_from_pkl(path: str | pathlib.Path | io.BufferedIOBase, verbose: int = 0
         if save_path is a str or pathlib.Path and mode is "w", single dispatch ensures that the
         path actually exists. If path is a io.BufferedIOBase the path exists.
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
+    :param deserialization_mode: How to handle pickle deserialization.
+
+        - ``"legacy"`` (default): Deserialize with ``pickle.load()``.  This preserves
+          backward compatibility but **executes arbitrary Python code** embedded in
+          the pickle file.  A ``SecurityWarning`` is emitted.
+        - ``"safe"``: Deserialize using a restricted unpickler that only allows a
+          fixed allowlist of known-safe SB3/gymnasium/numpy types.  Any pickle
+          payload referencing a type outside this allowlist is rejected with a
+          clear error.
     """
+    if deserialization_mode not in ("legacy", "safe"):
+        raise ValueError(
+            f"deserialization_mode must be 'legacy' or 'safe', got {deserialization_mode!r}"
+        )
+
     file = open_path(path, "r", verbose=verbose, suffix="pkl")
-    obj = pickle.load(file)
+
+    if deserialization_mode == "safe":
+        warnings.warn(
+            "Loading a .pkl file with a restricted (safe) deserializer. Only known-safe "
+            "SB3/gymnasium/numpy types are allowed. ",
+            UserWarning,
+        )
+        obj = _RestrictedUnpickler(file).load()
+    else:
+        warnings.warn(
+            "Loading a .pkl file with pickle deserialization (deserialization_mode='legacy'). "
+            "This can execute arbitrary Python code from the file. Only load pickle files "
+            "from trusted sources. ",
+            UserWarning,
+        )
+        obj = pickle.load(file)
     if isinstance(path, (str, pathlib.Path)):
         file.close()
     return obj
@@ -380,6 +832,7 @@ def load_from_zip_file(
     device: th.device | str = "auto",
     verbose: int = 0,
     print_system_info: bool = False,
+    deserialization_mode: str = "legacy",
 ) -> tuple[dict[str, Any] | None, TensorDict, TensorDict | None]:
     """
     Load model data from a .zip archive
@@ -397,6 +850,9 @@ def load_from_zip_file(
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     :param print_system_info: Whether to print or not the system info
         about the saved model.
+    :param deserialization_mode: How to handle cloudpickle-serialized objects
+        in the checkpoint's ``data`` JSON.  See :func:`json_to_data` for details.
+        Default is ``"legacy"`` for backward compatibility.
     :return: Class parameters, model state_dicts (aka "params", dict of state_dict)
         and dict of pytorch variables
     """
@@ -431,7 +887,11 @@ def load_from_zip_file(
                 # Load class parameters that are stored
                 # with either JSON or pickle (not PyTorch variables).
                 json_data = archive.read("data").decode()
-                data = json_to_data(json_data, custom_objects=custom_objects)
+                data = json_to_data(
+                    json_data,
+                    custom_objects=custom_objects,
+                    deserialization_mode=deserialization_mode,
+                )
 
             # Check for all .pth files and load them using th.load.
             # "pytorch_variables.pth" stores PyTorch variables, and any other .pth

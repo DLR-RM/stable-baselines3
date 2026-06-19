@@ -228,6 +228,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self,
         path: str | pathlib.Path | io.BufferedIOBase,
         truncate_last_traj: bool = True,
+        deserialization_mode: str = "legacy",
     ) -> None:
         """
         Load a replay buffer from a pickle file.
@@ -237,8 +238,17 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             If set to ``True``, we assume that the last trajectory in the replay buffer was finished
             (and truncate it).
             If set to ``False``, we assume that we continue the same trajectory (same episode).
+        :param deserialization_mode: How to handle pickle deserialization.
+
+            - ``"legacy"`` (default): Deserialize with ``pickle.load()``.  This
+              preserves backward compatibility but can **execute arbitrary
+              Python code** embedded in the pickle file.
+            - ``"safe"``: Refuse to deserialize.  Raises a ``ValueError``.
+
         """
-        self.replay_buffer = load_from_pkl(path, self.verbose)
+        self.replay_buffer = load_from_pkl(
+            path, self.verbose, deserialization_mode=deserialization_mode
+        )
         assert isinstance(self.replay_buffer, ReplayBuffer), "The replay buffer must inherit from ReplayBuffer class"
 
         # Backward compatibility with SB3 < 2.1.0 replay buffer

@@ -648,6 +648,7 @@ class BaseAlgorithm(ABC):
         custom_objects: dict[str, Any] | None = None,
         print_system_info: bool = False,
         force_reset: bool = True,
+        deserialization_mode: str = "safe",
         **kwargs,
     ) -> SelfBaseAlgorithm:
         """
@@ -671,6 +672,16 @@ class BaseAlgorithm(ABC):
         :param force_reset: Force call to ``reset()`` before training
             to avoid unexpected behavior.
             See https://github.com/DLR-RM/stable-baselines3/issues/597
+        :param deserialization_mode: How to handle cloudpickle-serialized objects
+            in the checkpoint's ``data`` JSON.
+
+            - ``"legacy"``: Deserialize with cloudpickle for full
+              backward compatibility.  A security warning is emitted because
+              cloudpickle deserialization can execute arbitrary Python code.
+            - ``"safe"`` (default): Skip all ``:serialized:`` entries not already provided
+              via ``custom_objects``.  Prevents arbitrary code execution but may
+              fail if required parameters cannot be deserialized.
+
         :param kwargs: extra arguments to change the model when loading
         :return: new model instance with loaded parameters
         """
@@ -683,6 +694,7 @@ class BaseAlgorithm(ABC):
             device=device,
             custom_objects=custom_objects,
             print_system_info=print_system_info,
+            deserialization_mode=deserialization_mode,
         )
 
         assert data is not None, "No data found in the saved file"

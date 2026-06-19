@@ -630,7 +630,8 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     assert fp1.closed
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(pathtype(f"{tmp_path}/t1")) == "foo"
-    assert not record
+    # Only the expected security warning from load_from_pkl; no path-related warnings
+    assert all("pickle deserialization" in str(w.message).lower() for w in record)
 
     # test custom suffix
     with open_path(pathtype(f"{tmp_path}/t1.custom_ext"), "w") as fp1:
@@ -638,7 +639,7 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     assert fp1.closed
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(pathtype(f"{tmp_path}/t1.custom_ext")) == "foo"
-    assert not record
+    assert all("pickle deserialization" in str(w.message).lower() for w in record)
 
     # test without suffix
     with open_path(pathtype(f"{tmp_path}/t1"), "w", suffix="pkl") as fp1:
@@ -646,7 +647,7 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     assert fp1.closed
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(pathtype(f"{tmp_path}/t1.pkl")) == "foo"
-    assert not record
+    assert all("pickle deserialization" in str(w.message).lower() for w in record)
 
     # test that a warning is raised when the path doesn't exist
     with open_path(pathtype(f"{tmp_path}/t2.pkl"), "w") as fp1:
@@ -654,11 +655,14 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     assert fp1.closed
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl")) == "foo"
-    assert len(record) == 0
+    # Only security warning, no "path not found" warning
+    assert all("pickle deserialization" in str(w.message).lower() for w in record)
 
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl", verbose=2)) == "foo"
-    assert len(record) == 1
+    # Security warning + path-not-found verbose warning
+    non_security = [w for w in record if "pickle deserialization" not in str(w.message).lower()]
+    assert len(non_security) == 1
 
     fp = pathlib.Path(f"{tmp_path}/t2").open("w")
     fp.write("rubbish")
@@ -750,10 +754,13 @@ def test_load_invalid_object(tmp_path):
     os.system(f"cd {tmp_path}; zip ppo_pendulum.zip data")
     with pytest.warns(UserWarning, match=r"custom_objects"):
         PPO.load(path)
-    # Load with custom object, no warnings
+    # Load with custom object: the only warning should be the security warning
+    # (no "Could not deserialize" or "custom_objects" warnings)
     with warnings.catch_warnings(record=True) as record:
         PPO.load(path, custom_objects=dict(learning_rate=lambda _: 1.0))
-    assert len(record) == 0
+    # Filter out the expected security warning
+    non_security = [w for w in record if "cloudpickle-serialized" not in str(w.message)]
+    assert len(non_security) == 0
 
 
 def test_dqn_target_update_interval(tmp_path):
@@ -767,8 +774,8 @@ def test_dqn_target_update_interval(tmp_path):
     assert model.target_update_interval == 100
 
 
-# Turn warnings into errors
-@pytest.mark.filterwarnings("error")
+# Turn ResourceWarnings into errors (not our security warnings)
+@pytest.mark.filterwarnings("error::ResourceWarning")
 def test_no_resource_warning(tmp_path):
     # Check behavior of save/load
     # see https://github.com/DLR-RM/stable-baselines3/issues/1751

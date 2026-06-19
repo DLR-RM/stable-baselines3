@@ -20,9 +20,6 @@ import torch as th
 import stable_baselines3 as sb3
 from stable_baselines3.common.safe_globals import (
     _RestrictedUnpickler,
-    add_safe_globals,
-    get_safe_globals,
-    safe_globals,
 )
 from stable_baselines3.common.type_aliases import TensorDict
 from stable_baselines3.common.utils import get_device, get_system_info
@@ -176,9 +173,7 @@ def json_to_data(
         raise ValueError("custom_objects argument must be a dict or None")
 
     if deserialization_mode not in ("legacy", "safe"):
-        raise ValueError(
-            f"deserialization_mode must be 'legacy' or 'safe', got {deserialization_mode!r}"
-        )
+        raise ValueError(f"deserialization_mode must be 'legacy' or 'safe', got {deserialization_mode!r}")
 
     json_dict = json.loads(json_string)
     # This will be filled with deserialized data
@@ -436,9 +431,7 @@ def load_from_pkl(
           in the pickle file.  A ``SecurityWarning`` is emitted.
     """
     if deserialization_mode not in ("legacy", "safe"):
-        raise ValueError(
-            f"deserialization_mode must be 'legacy' or 'safe', got {deserialization_mode!r}"
-        )
+        raise ValueError(f"deserialization_mode must be 'legacy' or 'safe', got {deserialization_mode!r}")
 
     file = open_path(path, "r", verbose=verbose, suffix="pkl")
 

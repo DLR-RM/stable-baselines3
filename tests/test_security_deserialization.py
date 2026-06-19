@@ -21,26 +21,19 @@ import zipfile
 
 import numpy as np
 import pytest
-import torch as th
 
-from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
-from stable_baselines3.common.off_policy_algorithm import OffPolicyAlgorithm
-from stable_baselines3.common.safe_globals import (
-    add_safe_globals,
-    safe_globals,
-)
+from stable_baselines3 import PPO
 from stable_baselines3.common.save_util import (
     json_to_data,
     load_from_pkl,
-    load_from_zip_file,
     save_to_pkl,
 )
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
-
 # ---------------------------------------------------------------------------
 # Helpers: craft malicious payloads that would execute code on deserialization
 # ---------------------------------------------------------------------------
+
 
 def _make_evil_class(sentinel_path: pathlib.Path) -> type:
     """
@@ -97,6 +90,7 @@ def _inject_malicious_entry(zip_path: str, sentinel_path: pathlib.Path) -> None:
 # Test 1: json_to_data blocks malicious cloudpickle in safe mode
 # ---------------------------------------------------------------------------
 
+
 def test_json_to_data_safe_blocks_malicious(tmp_path):
     """json_to_data with deserialization_mode='safe' must skip :serialized: entries."""
     sentinel = tmp_path / "sentinel"
@@ -136,7 +130,7 @@ def test_json_to_data_legacy_allows_malicious(tmp_path):
     # Legacy mode: should deserialize and execute the payload
     with warnings.catch_warnings(record=True):
         warnings.simplefilter("always")
-        result = json_to_data(json_str, deserialization_mode="legacy")
+        _ = json_to_data(json_str, deserialization_mode="legacy")
 
     # In legacy mode the evil payload runs
     assert sentinel.exists(), "Legacy mode should have deserialized the payload"
@@ -145,6 +139,7 @@ def test_json_to_data_legacy_allows_malicious(tmp_path):
 # ---------------------------------------------------------------------------
 # Test 2: load_from_pkl blocks in safe mode
 # ---------------------------------------------------------------------------
+
 
 def test_load_from_pkl_safe_blocks_evil(tmp_path):
     """load_from_pkl with deserialization_mode='safe' blocks evil globals."""
@@ -181,6 +176,7 @@ def test_load_from_pkl_legacy_warns(tmp_path):
 # Test 3: VecNormalize.load blocks in safe mode
 # ---------------------------------------------------------------------------
 
+
 def test_vec_normalize_load_safe_works(tmp_path):
     """VecNormalize.load with deserialization_mode='safe' succeeds for trusted data."""
     import gymnasium as gym
@@ -204,6 +200,7 @@ def test_vec_normalize_load_safe_works(tmp_path):
 # ---------------------------------------------------------------------------
 # Test 4: BaseAlgorithm.load / PPO.load with malicious checkpoint
 # ---------------------------------------------------------------------------
+
 
 def test_ppo_load_safe_blocks_rce(tmp_path):
     """
@@ -248,9 +245,7 @@ def test_ppo_load_safe_blocks_rce(tmp_path):
             custom_objects=custom_objects,
         )
 
-    assert not sentinel.exists(), (
-        "Sentinel file created after PPO.load(safe): RCE was NOT blocked!"
-    )
+    assert not sentinel.exists(), "Sentinel file created after PPO.load(safe): RCE was NOT blocked!"
     # Verify the loaded model works
     obs = loaded.get_env().reset()
     loaded.predict(obs, deterministic=True)
@@ -281,6 +276,7 @@ def test_ppo_load_legacy_allows_rce(tmp_path):
 # Test 5: Invalid deserialization_mode raises
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize(
     "func_and_args",
     [
@@ -299,6 +295,7 @@ def test_invalid_deserialization_mode_raises(func_and_args):
 # ---------------------------------------------------------------------------
 # Test 6: custom_objects overrides still work in safe mode
 # ---------------------------------------------------------------------------
+
 
 def test_load_replay_buffer_safe_works(tmp_path):
     """load_replay_buffer with deserialization_mode='safe' succeeds for trusted buffers."""
@@ -389,6 +386,7 @@ def test_json_to_data_safe_with_custom_objects(tmp_path):
 # Test 7: add_safe_globals and safe_globals context manager
 # ---------------------------------------------------------------------------
 
+
 def test_add_safe_globals_persists():
     """add_safe_globals() should persist across calls."""
     from stable_baselines3.common.safe_globals import (
@@ -421,16 +419,13 @@ def test_add_safe_globals_persists():
 
 def test_safe_globals_context_manager(tmp_path):
     """safe_globals context manager should restore allowlist on exit."""
+    import cloudpickle
+
     from stable_baselines3.common.safe_globals import (
         _USER_SAFE_GLOBALS,
         get_safe_globals,
         safe_globals,
     )
-    import cloudpickle
-    import pickle
-    import io
-    import base64
-    import json as json_mod
 
     # Clear user globals to start fresh
     _USER_SAFE_GLOBALS.clear()
@@ -449,10 +444,9 @@ def test_safe_globals_context_manager(tmp_path):
         # Verify the type can actually be deserialized
         payload = cloudpickle.dumps(ScopedType())
         from stable_baselines3.common.save_util import _cloudpickle_loads_safe
+
         obj = _cloudpickle_loads_safe(payload)
         assert obj.value == 42
 
     # After context: should be removed
-    assert qualname not in get_safe_globals(), (
-        "safe_globals context manager did not restore allowlist on exit"
-    )
+    assert qualname not in get_safe_globals(), "safe_globals context manager did not restore allowlist on exit"

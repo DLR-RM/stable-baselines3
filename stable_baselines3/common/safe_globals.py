@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import collections
 import pickle
+from collections.abc import Callable
 from typing import Any
 
 import numpy as np
@@ -36,9 +37,9 @@ _SAFE_GLOBALS_STR: set[str] | None = None
 _TORCH_REGISTRATION_DONE = False
 
 
-def _collect_numpy_types() -> list[type]:
+def _collect_numpy_types() -> list[type | Callable[..., Any]]:
     """Collect numpy types needed for gymnasium spaces and array reconstruction."""
-    types = [
+    types: list[type | Callable[..., Any]] = [
         np.ndarray,
         np.dtype,
         np.float32,
@@ -89,7 +90,7 @@ def _collect_numpy_types() -> list[type]:
     types += [
         np_ma._reconstruct,
         np_ma.scalar,
-        np_numeric._frombuffer,
+        np_numeric._frombuffer,  # type: ignore[attr-defined]
         np_rp.__generator_ctor,
         np_rp.__bit_generator_ctor,
         np_rp.__randomstate_ctor,
@@ -99,8 +100,8 @@ def _collect_numpy_types() -> list[type]:
     import numpy.random.bit_generator as np_bg
 
     types += [
-        np_bg.__pyx_unpickle_SeedSequence,
-        np_bg.__pyx_unpickle_SeedlessSeedSequence,
+        np_bg.__pyx_unpickle_SeedSequence,  # type: ignore[attr-defined]
+        np_bg.__pyx_unpickle_SeedlessSeedSequence,  # type: ignore[attr-defined]
     ]
 
     return types
@@ -133,12 +134,12 @@ def _collect_cloudpickle_types() -> list:
     return types
 
 
-def _collect_base_types() -> list[type]:
+def _collect_base_types() -> list[type | Callable[..., Any]]:
     """Collect types that don't depend on SB3 internal imports (no circular import risk)."""
     from gymnasium import spaces
     from torch import nn
 
-    types: list[type] = []
+    types: list[type | Callable[..., Any]] = []
 
     # Gymnasium spaces
     types += [
@@ -213,6 +214,7 @@ def _get_safe_globals_str() -> set[str]:
     global _SAFE_GLOBALS_STR
     if _SAFE_GLOBALS_STR is None:
         _register_safe_globals()
+    assert _SAFE_GLOBALS_STR is not None
     return _SAFE_GLOBALS_STR
 
 
@@ -319,7 +321,7 @@ def _register_safe_globals() -> None:
         _SAFE_GLOBALS_STR.add(_name)
 
     # Register with torch.serialization
-    th.serialization.add_safe_globals(base_types)
+    th.serialization.add_safe_globals(base_types)  # type: ignore[arg-type]
     _TORCH_REGISTRATION_DONE = True
 
 
@@ -341,8 +343,14 @@ def register_sb3_safe_globals() -> None:
 
     from stable_baselines3.a2c.policies import (
         ActorCriticPolicy as A2CActorCriticPolicy,
+    )
+    from stable_baselines3.a2c.policies import (
         CnnPolicy as A2CCnnPolicy,
+    )
+    from stable_baselines3.a2c.policies import (
         MlpPolicy as A2CMlpPolicy,
+    )
+    from stable_baselines3.a2c.policies import (
         MultiInputPolicy as A2CMultiInputPolicy,
     )
     from stable_baselines3.common.buffers import (
@@ -357,18 +365,18 @@ def register_sb3_safe_globals() -> None:
         MultiCategoricalDistribution,
         StateDependentNoiseDistribution,
     )
+    from stable_baselines3.common.noise import (
+        ActionNoise,
+        NormalActionNoise,
+        OrnsteinUhlenbeckActionNoise,
+        VectorizedActionNoise,
+    )
     from stable_baselines3.common.policies import (
         ActorCriticCnnPolicy,
         ActorCriticPolicy,
         BasePolicy,
         ContinuousCritic,
         MultiInputActorCriticPolicy,
-    )
-    from stable_baselines3.common.noise import (
-        ActionNoise,
-        NormalActionNoise,
-        OrnsteinUhlenbeckActionNoise,
-        VectorizedActionNoise,
     )
     from stable_baselines3.common.running_mean_std import RunningMeanStd
     from stable_baselines3.common.torch_layers import (
@@ -387,29 +395,53 @@ def register_sb3_safe_globals() -> None:
     from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
     from stable_baselines3.ddpg.policies import (
         CnnPolicy as DdpgCnnPolicy,
+    )
+    from stable_baselines3.ddpg.policies import (
         MlpPolicy as DdpgMlpPolicy,
+    )
+    from stable_baselines3.ddpg.policies import (
         MultiInputPolicy as DdpgMultiInputPolicy,
     )
     from stable_baselines3.dqn.policies import (
         CnnPolicy as DqnCnnPolicy,
+    )
+    from stable_baselines3.dqn.policies import (
         MlpPolicy as DqnMlpPolicy,
+    )
+    from stable_baselines3.dqn.policies import (
         MultiInputPolicy as DqnMultiInputPolicy,
+    )
+    from stable_baselines3.dqn.policies import (
         QNetwork,
     )
     from stable_baselines3.ppo.policies import (
         ActorCriticPolicy as PpoActorCriticPolicy,
+    )
+    from stable_baselines3.ppo.policies import (
         CnnPolicy as PpoCnnPolicy,
+    )
+    from stable_baselines3.ppo.policies import (
         MlpPolicy as PpoMlpPolicy,
+    )
+    from stable_baselines3.ppo.policies import (
         MultiInputPolicy as PpoMultiInputPolicy,
     )
     from stable_baselines3.sac.policies import (
         CnnPolicy as SacCnnPolicy,
+    )
+    from stable_baselines3.sac.policies import (
         MlpPolicy as SacMlpPolicy,
+    )
+    from stable_baselines3.sac.policies import (
         MultiInputPolicy as SacMultiInputPolicy,
     )
     from stable_baselines3.td3.policies import (
         CnnPolicy as Td3CnnPolicy,
+    )
+    from stable_baselines3.td3.policies import (
         MlpPolicy as Td3MlpPolicy,
+    )
+    from stable_baselines3.td3.policies import (
         MultiInputPolicy as Td3MultiInputPolicy,
     )
 
@@ -480,7 +512,7 @@ def register_sb3_safe_globals() -> None:
             _SAFE_GLOBALS_STR.add(f"{t.__module__}.{t.__qualname__}")
 
     # Register with torch.serialization
-    th.serialization.add_safe_globals(sb3_types)
+    th.serialization.add_safe_globals(sb3_types)  # type: ignore[arg-type]
 
 
 class _RestrictedUnpickler(pickle.Unpickler):
@@ -549,7 +581,7 @@ def add_safe_globals(
 
     for item in safe_globals:
         if isinstance(item, tuple):
-            obj, explicit_path = item
+            _, explicit_path = item
             _USER_SAFE_GLOBALS.add(explicit_path)
         else:
             _USER_SAFE_GLOBALS.add(f"{item.__module__}.{item.__qualname__}")
@@ -576,7 +608,7 @@ class safe_globals:
     ) -> None:
         self._items = safe_globals if isinstance(safe_globals, list) else [safe_globals]
 
-    def __enter__(self) -> "safe_globals":
+    def __enter__(self) -> safe_globals:
         self._backup = _USER_SAFE_GLOBALS.copy()
         add_safe_globals(self._items)
         return self

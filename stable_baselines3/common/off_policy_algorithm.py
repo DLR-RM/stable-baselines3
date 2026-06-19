@@ -249,9 +249,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
               embedded in the pickle file.
 
         """
-        self.replay_buffer = load_from_pkl(
-            path, self.verbose, deserialization_mode=deserialization_mode
-        )
+        self.replay_buffer = load_from_pkl(path, self.verbose, deserialization_mode=deserialization_mode)
         assert isinstance(self.replay_buffer, ReplayBuffer), "The replay buffer must inherit from ReplayBuffer class"
 
         # Backward compatibility with SB3 < 2.1.0 replay buffer

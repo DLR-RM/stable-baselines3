@@ -331,9 +331,7 @@ class VecNormalize(VecEnvWrapper):
         :return:
         """
         if deserialization_mode not in ("legacy", "safe"):
-            raise ValueError(
-                f"deserialization_mode must be 'legacy' or 'safe', got {deserialization_mode!r}"
-            )
+            raise ValueError(f"deserialization_mode must be 'legacy' or 'safe', got {deserialization_mode!r}")
 
         if deserialization_mode == "safe":
             from stable_baselines3.common.safe_globals import (

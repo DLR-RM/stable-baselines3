@@ -1001,17 +1001,6 @@ _safe_base_policies = [
     ActorCriticCnnPolicy,
     MultiInputActorCriticPolicy,
     ContinuousCritic,
-]
-
-# Additional classes used by policy serialization
-from stable_baselines3.common.distributions import (
-    BernoulliDistribution,
-    CategoricalDistribution,
-    DiagGaussianDistribution,
-    MultiCategoricalDistribution,
-    StateDependentNoiseDistribution,
-)
-_safe_base_policies += [
     BernoulliDistribution,
     CategoricalDistribution,
     DiagGaussianDistribution,
@@ -1019,4 +1008,4 @@ _safe_base_policies += [
     StateDependentNoiseDistribution,
 ]
 
-th.serialization.add_safe_globals(_safe_base_policies)
+th.serialization.add_safe_globals(_safe_base_policies)  # type: ignore[arg-type]

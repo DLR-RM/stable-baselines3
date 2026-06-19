@@ -440,11 +440,6 @@ def load_from_pkl(
         from stable_baselines3.common.safe_globals import register_sb3_safe_globals
 
         register_sb3_safe_globals()
-        warnings.warn(
-            "Loading a .pkl file with a restricted (safe) deserializer. Only known-safe "
-            "SB3/gymnasium/numpy types are allowed. ",
-            UserWarning,
-        )
         obj = _RestrictedUnpickler(file).load()
     else:
         warnings.warn(

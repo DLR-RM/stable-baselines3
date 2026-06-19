@@ -1,5 +1,5 @@
 """
-Central safe-globals registration for safe deserialization (CWE-502 mitigation).
+Central safe-globals registration for safe deserialization.
 
 This module collects the allowlist of types that are permitted during
 restricted deserialization.  The same allowlist is used by two mechanisms:

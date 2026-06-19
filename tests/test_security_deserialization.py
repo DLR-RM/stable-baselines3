@@ -1,5 +1,5 @@
 """
-Security tests for CWE-502 (Deserialization of Untrusted Data) remediation.
+Security tests for deserialization of untrusted data remediation.
 
 These tests verify that the ``deserialization_mode`` parameter correctly gates
 unsafe deserialization across all SB3 load paths:
@@ -308,13 +308,9 @@ def test_load_replay_buffer_safe_works(tmp_path):
     model.save_replay_buffer(pkl_path)
 
     # Safe mode: should load successfully
-    with warnings.catch_warnings(record=True) as rec:
-        warnings.simplefilter("always")
-        model.load_replay_buffer(pkl_path, deserialization_mode="safe")
+    model.load_replay_buffer(pkl_path, deserialization_mode="safe")
 
     assert model.replay_buffer.size() == original_size
-    # Verify the warning was about safe mode
-    assert any("restricted" in str(w.message).lower() for w in rec)
 
 
 def test_model_load_safe_with_action_noise(tmp_path):

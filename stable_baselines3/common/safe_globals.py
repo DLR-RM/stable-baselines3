@@ -125,7 +125,7 @@ def _collect_numpy_types() -> list[type | Callable[..., Any]]:
             np_rp.__bit_generator_ctor,
             np_rp.__randomstate_ctor,
         ]
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         pass
 
     # Cython unpickle helpers in numpy random
@@ -136,7 +136,7 @@ def _collect_numpy_types() -> list[type | Callable[..., Any]]:
             np_bg.__pyx_unpickle_SeedSequence,  # type: ignore[attr-defined]
             np_bg.__pyx_unpickle_SeedlessSeedSequence,  # type: ignore[attr-defined]
         ]
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # pragma: no cover
         pass
 
     return types
@@ -227,7 +227,7 @@ def _collect_base_types() -> list[type | Callable[..., Any]]:
             gym.spaces.Tuple,
             gym.spaces.Space,
         ]
-    except ImportError:
+    except ImportError:  # pragma: no cover
         pass
 
     # Numpy types
@@ -293,7 +293,7 @@ def _register_safe_globals() -> None:
     """
     global _SAFE_GLOBALS_STR, _TORCH_REGISTRATION_DONE
 
-    if _TORCH_REGISTRATION_DONE:
+    if _TORCH_REGISTRATION_DONE:  # pragma: no cover
         return
 
     base_types = _collect_base_types()
@@ -303,7 +303,7 @@ def _register_safe_globals() -> None:
     for t in base_types:
         if hasattr(t, "__module__") and hasattr(t, "__qualname__"):
             _SAFE_GLOBALS_STR.add(f"{t.__module__}.{t.__qualname__}")
-        else:
+        else:  # pragma: no cover
             # Some objects (like numpy random functions) may not have these
             try:
                 _SAFE_GLOBALS_STR.add(f"{type(t).__module__}.{t.__name__}")

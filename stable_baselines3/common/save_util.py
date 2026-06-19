@@ -505,7 +505,7 @@ def load_from_zip_file(
                 if "system_info.txt" in namelist:
                     print("== SAVED MODEL SYSTEM INFO ==")
                     print(archive.read("system_info.txt").decode())
-                else:
+                else:  # pragma: no cover
                     warnings.warn(
                         "The model was saved with SB3 <= 1.2.0 and thus cannot print system information.",
                         UserWarning,

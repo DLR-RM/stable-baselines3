@@ -986,26 +986,3 @@ class ContinuousCritic(BaseModel):
         with th.no_grad():
             features = self.extract_features(obs, self.features_extractor)
         return self.q_networks[0](th.cat([features, actions], dim=1))
-
-
-# ---------------------------------------------------------------------------
-# Register base policy classes for torch.load with weights_only=True.
-# These are defined in this module, so registration must happen after
-# their class definitions (i.e. at the end of the file).
-# ---------------------------------------------------------------------------
-
-# Policy classes defined in this module
-_safe_base_policies = [
-    BasePolicy,
-    ActorCriticPolicy,
-    ActorCriticCnnPolicy,
-    MultiInputActorCriticPolicy,
-    ContinuousCritic,
-    BernoulliDistribution,
-    CategoricalDistribution,
-    DiagGaussianDistribution,
-    MultiCategoricalDistribution,
-    StateDependentNoiseDistribution,
-]
-
-th.serialization.add_safe_globals(_safe_base_policies)  # type: ignore[arg-type]

@@ -21,7 +21,7 @@ import stable_baselines3 as sb3
 from stable_baselines3.common.safe_globals import (
     _RestrictedUnpickler,
 )
-from stable_baselines3.common.type_aliases import TensorDict
+from stable_baselines3.common.type_aliases import DeserializationMode, TensorDict
 from stable_baselines3.common.utils import get_device, get_system_info
 
 
@@ -139,7 +139,7 @@ def data_to_json(data: dict[str, Any]) -> str:
 def json_to_data(
     json_string: str,
     custom_objects: dict[str, Any] | None = None,
-    deserialization_mode: str = "safe",
+    deserialization_mode: DeserializationMode = "safe",
 ) -> dict[str, Any]:
     """
     Turn JSON serialization of class-parameters back into dictionary.
@@ -410,7 +410,7 @@ def save_to_pkl(path: str | pathlib.Path | io.BufferedIOBase, obj: Any, verbose:
 def load_from_pkl(
     path: str | pathlib.Path | io.BufferedIOBase,
     verbose: int = 0,
-    deserialization_mode: str = "safe",
+    deserialization_mode: DeserializationMode = "safe",
 ) -> Any:
     """
     Load an object from the path. If a suffix is provided in the path, it will use that suffix.
@@ -466,7 +466,7 @@ def load_from_zip_file(
     device: th.device | str = "auto",
     verbose: int = 0,
     print_system_info: bool = False,
-    deserialization_mode: str = "safe",
+    deserialization_mode: DeserializationMode = "safe",
 ) -> tuple[dict[str, Any] | None, TensorDict, TensorDict | None]:
     """
     Load model data from a .zip archive

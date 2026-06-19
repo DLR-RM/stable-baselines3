@@ -10,6 +10,7 @@ from gymnasium import spaces
 from stable_baselines3.common import utils
 from stable_baselines3.common.preprocessing import is_image_space
 from stable_baselines3.common.running_mean_std import RunningMeanStd
+from stable_baselines3.common.type_aliases import DeserializationMode
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvStepReturn, VecEnvWrapper
 
 
@@ -312,7 +313,7 @@ class VecNormalize(VecEnvWrapper):
     def load(
         load_path: str,
         venv: VecEnv,
-        deserialization_mode: str = "safe",
+        deserialization_mode: DeserializationMode = "safe",
     ) -> "VecNormalize":
         """
         Loads a saved VecNormalize object.

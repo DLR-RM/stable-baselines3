@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Any, NamedTuple, Protocol, SupportsFloat, Union
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Protocol, SupportsFloat, Union
 
 import gymnasium as gym
 import numpy as np
@@ -23,6 +23,9 @@ TensorDict = dict[str, th.Tensor]
 OptimizerStateDict = dict[str, Any]
 MaybeCallback = Union[None, Callable, list["BaseCallback"], "BaseCallback"]
 PyTorchObs = Union[th.Tensor, TensorDict]  # noqa: UP007
+
+# Deserialization mode for secure checkpoint loading
+DeserializationMode = Literal["safe", "legacy"]
 
 # A schedule takes the remaining progress as input
 # and outputs a scalar (e.g. learning rate, clip range, ...)

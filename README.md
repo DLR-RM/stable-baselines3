@@ -283,3 +283,7 @@ The original version, Stable Baselines, was created in the [robotics lab U2IS](h
 
 
 Logo credits: [L.M. Tenkes](https://www.instagram.com/lucillehue/)
+
+---
+
+*[Mukller](https://github.com/Mukller)*

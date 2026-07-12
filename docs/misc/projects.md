@@ -11,11 +11,11 @@ An open-source Gym-compatible environment specifically tailored for developing R
 
 Authors: Parth Kothari, Christian Perone, Luca Bergamini, Alexandre Alahi, Peter Ondruska
 
-Github: 
+Github:
 
 <https://github.com/woven-by-toyota/l5kit>
 
-Paper: 
+Paper:
 
 <https://arxiv.org/abs/2111.06889>
 
@@ -25,11 +25,11 @@ A platform for running reproducible reinforcement learning experiments for custo
 
 Authors: Pierre Aumjaud, David McAuliffe, Francisco Javier Rodríguez Lera, Philip Cardiff
 
-Github: 
+Github:
 
 <https://github.com/PierreExeter/rl_reach>
 
-Paper: 
+Paper:
 
 <https://arxiv.org/abs/2102.04916>
 
@@ -40,11 +40,11 @@ It was the starting point of Stable-Baselines3.
 
 Author: Antonin Raffin, Freek Stulp
 
-Github: 
+Github:
 
 <https://github.com/DLR-RM/stable-baselines3/tree/sde>
 
-Paper: 
+Paper:
 
 <https://arxiv.org/abs/2005.05719>
 
@@ -55,7 +55,7 @@ The Github repository contains code, CAD files and a bill of materials for you t
 
 Authors: Armand du Parc Locmaria, Pierre Fabre
 
-Github: 
+Github:
 
 <https://github.com/Armandpl/furuta>
 
@@ -70,7 +70,7 @@ It is an example of:
 
 Author: Marios Koulakis
 
-Github: 
+Github:
 
 <https://github.com/koulakis/reacher-deep-reinforcement-learning>
 
@@ -84,7 +84,7 @@ A simple interface to instantiate RL environments with SUMO for Traffic Signal C
 
 Author: Lucas Alegre
 
-Github: 
+Github:
 
 <https://github.com/LucasAlegre/sumo-rl>
 
@@ -98,11 +98,11 @@ PyBullet Gym environments for single and multi-agent reinforcement learning of q
 
 Author: Jacopo Panerati
 
-Github: 
+Github:
 
 <https://github.com/learnsyslab/gym-pybullet-drones>
 
-Paper: 
+Paper:
 
 <https://arxiv.org/abs/2103.02142>
 
@@ -116,7 +116,7 @@ SuperSuit contains easy to use wrappers for Gym (and multi-agent PettingZoo) env
 
 Author: Justin Terry
 
-GitHub: 
+GitHub:
 
 <https://github.com/Farama-Foundation/SuperSuit>
 
@@ -133,7 +133,7 @@ A fully custom python API and C++ DLL to treat the popular game Rocket League li
 
 Authors: Lucas Emery, Matthew Allen
 
-GitHub: 
+GitHub:
 
 <https://github.com/lucas-emery/rocket-league-gym>
 
@@ -152,27 +152,27 @@ Think of Matlab/Simulink for electric motors, inverters, and load profiles, but 
 
 SB3 is used as an example in one of many tutorials showcasing the easy usage of `gym-electric-motor`.
 
-Author: 
+Author:
 
 [Paderborn University, LEA department](https://github.com/upb-lea)
 
-GitHub: 
+GitHub:
 
 <https://github.com/upb-lea/gym-electric-motor>
 
-SB3 Tutorial: 
+SB3 Tutorial:
 
 [Colab Link](https://colab.research.google.com/github/upb-lea/gym-electric-motor/blob/master/examples/reinforcement_learning_controllers/stable_baselines3_dqn_disc_pmsm_example.ipynb)
 
-Paper: 
+Paper:
 
 [JOSS](https://joss.theoj.org/papers/10.21105/joss.02498)
 
-, 
+,
 
 [TNNLS](https://ieeexplore.ieee.org/document/9241851)
 
-, 
+,
 
 [ArXiv](https://arxiv.org/abs/1910.09434)
 
@@ -185,11 +185,11 @@ A PyTorch implementation of Policy Distillation for control, which has well-trai
 
 Authors: Junyeob Baek
 
-GitHub: 
+GitHub:
 
 <https://github.com/dion-jy/policy-distillation-baselines>
 
-Demo: 
+Demo:
 
 [link](https://github.com/dion-jy/policy-distillation-baselines/issues/3#issuecomment-817730173)
 
@@ -199,15 +199,15 @@ A minimalist environment for decision-making in Autonomous Driving.
 
 Driving policies can be trained in different scenarios, and several notebooks using SB3 are provided as examples.
 
-Author: 
+Author:
 
 [Edouard Leurent](https://edouardleurent.com)
 
-GitHub: 
+GitHub:
 
 <https://github.com/Farama-Foundation/HighwayEnv>
 
-Examples: 
+Examples:
 
 [Colab Links](https://github.com/Farama-Foundation/HighwayEnv/tree/master/scripts#using-stable-baselines3)
 
@@ -217,11 +217,11 @@ Suite of RL environments focused on using a simulated tactile sensor as the prim
 
 Author: Alex Church
 
-GitHub: 
+GitHub:
 
 <https://github.com/ac-93/tactile_gym>
 
-Paper: 
+Paper:
 
 <https://arxiv.org/abs/2106.08796>
 
@@ -236,7 +236,7 @@ RLeXplore is a set of implementations of intrinsic reward driven-exploration app
 
 Author: Mingqi Yuan
 
-GitHub: 
+GitHub:
 
 <https://github.com/RLE-Foundation/RLeXplore>
 
@@ -252,7 +252,7 @@ Try to train your own autonomous flight policy and even transfer it to real UAVs
 
 Author: Lei He
 
-Github: 
+Github:
 
 <https://github.com/heleidsn/UAV_Navigation_DRL_AirSim>
 
@@ -262,11 +262,11 @@ A simple library for pink noise exploration with deterministic (DDPG / TD3) and 
 
 Authors: Onno Eberhard, Jakob Hollenstein, Cristina Pinneri, Georg Martius
 
-Github: 
+Github:
 
 <https://github.com/martius-lab/pink-noise-rl>
 
-Paper: 
+Paper:
 
 <https://openreview.net/forum?id=hQ9V5QN27eS>
 
@@ -283,11 +283,11 @@ It allows simulating various scenarios with moving users in a cellular network w
 
 Authors: Stefan Schneider, Stefan Werner
 
-Github: 
+Github:
 
 <https://github.com/stefanbschneider/mobile-env>
 
-Paper: 
+Paper:
 
 <https://ris.uni-paderborn.de/download/30236/30237>
 
@@ -306,15 +306,15 @@ intelligent agents to perform network slice placement.
 
 Author: Alex Pasquali
 
-Github: 
+Github:
 
 <https://github.com/AlexPasqua/DeepNetSlice>
 
-Paper: 
+Paper:
 
 <https://ieeexplore.ieee.org/document/10625023>
 
-Associated Master's Thesis: 
+Associated Master's Thesis:
 
 <https://etd.adm.unipi.it/theses/available/etd-01182023-110038/unrestricted/Tesi_magistrale_Pasquali_Alex.pdf>
 
@@ -324,11 +324,11 @@ Playing Pokemon Red with Reinforcement Learning.
 
 Author: Peter Whidden
 
-Github: 
+Github:
 
 <https://github.com/PWhiddy/PokemonRedExperiments>
 
-Video: 
+Video:
 
 <https://www.youtube.com/watch?v=DcYLT37ImBY>
 
@@ -339,11 +339,11 @@ It enables solving environments involving partial observability or locomotion (e
 
 Authors: Corentin Léger, Gautier Hamon, Eleni Nisioti, Xavier Hinaut, Clément Moulin-Frier
 
-Github: 
+Github:
 
 <https://github.com/corentinlger/ER-MRL>
 
-Paper: 
+Paper:
 
 <https://arxiv.org/abs/2312.06695>
 
@@ -355,11 +355,11 @@ Real world experiments were conducted during RoboCup competitions on the Sigmaba
 
 Authors: Clément Gaspard, Grégoire Passault, Mélodie Daniel, Olivier Ly
 
-Github: 
+Github:
 
 <https://github.com/Rhoban/footstepnet_envs>
 
-Paper: 
+Paper:
 
 <https://arxiv.org/abs/2403.12589>
 
@@ -374,15 +374,15 @@ various external disturbances and stand up in a few seconds.
 
 Authors: Marc Duclusaud, Clément Gaspard, Grégoire Passault, Mélodie Daniel, Olivier Ly
 
-Github: 
+Github:
 
 <https://github.com/Rhoban/frasa>
 
-Paper: 
+Paper:
 
 <https://arxiv.org/abs/2410.08655>
 
-Video: 
+Video:
 
 <https://www.youtube.com/watch?v=NL65XW0O0mk>
 
@@ -397,11 +397,11 @@ Benchmark results and documentations are on Github, feel free to submit feature 
 
 Authors: Hugo Huang
 
-Github: 
+Github:
 
 <https://github.com/Trenza1ore/sb3-extra-buffers>
 
-Relevant project for training RL agents that play Doom with Semantic Segmentation: 
+Relevant project for training RL agents that play Doom with Semantic Segmentation:
 
 <https://github.com/Trenza1ore/SegDoom>
 
@@ -415,6 +415,6 @@ multi-output policy feature requested in the community and provides a practical 
 
 Author: Adyson Maia
 
-Github: 
+Github:
 
 <https://github.com/adysonmaia/sb3-plus>

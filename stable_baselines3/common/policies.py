@@ -257,7 +257,7 @@ class BaseModel(nn.Module):
                     obs_ = np.array(obs)
                 vectorized_env = vectorized_env or is_vectorized_observation(obs_, obs_space)
                 # Add batch dimension if needed
-                observation[key] = obs_.reshape((-1, *self.observation_space[key].shape))  # type: ignore[misc]
+                observation[key] = obs_.reshape((-1, *self.observation_space[key].shape))  # type: ignore[misc, arg-type]
 
         elif is_image_space(self.observation_space):
             # Handle the different cases for images
@@ -271,7 +271,7 @@ class BaseModel(nn.Module):
             # Dict obs need to be handled separately
             vectorized_env = is_vectorized_observation(observation, self.observation_space)
             # Add batch dimension if needed
-            observation = observation.reshape((-1, *self.observation_space.shape))  # type: ignore[misc]
+            observation = observation.reshape((-1, *self.observation_space.shape))  # type: ignore[misc, arg-type]
 
         obs_tensor = obs_as_tensor(observation, self.device)
         return obs_tensor, vectorized_env
@@ -367,7 +367,7 @@ class BasePolicy(BaseModel, ABC):
         with th.no_grad():
             actions = self._predict(obs_tensor, deterministic=deterministic)
         # Convert to numpy, and reshape to the original action shape
-        actions = actions.cpu().numpy().reshape((-1, *self.action_space.shape))  # type: ignore[misc, assignment]
+        actions = actions.cpu().numpy().reshape((-1, *self.action_space.shape))  # type: ignore[misc, assignment, arg-type]
 
         if isinstance(self.action_space, spaces.Box):
             if self.squash_output:

@@ -1,4 +1,5 @@
 import os
+import pickle
 import shutil
 
 import ale_py
@@ -15,6 +16,7 @@ from stable_baselines3.common.env_util import is_wrapped, make_atari_env, make_v
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise, VectorizedActionNoise
+from stable_baselines3.common.sb2_compat.rmsprop_tf_like import RMSpropTFLike
 from stable_baselines3.common.utils import (
     ConstantSchedule,
     FloatSchedule,
@@ -628,3 +630,57 @@ def test_deprecated_schedules():
         assert np.allclose(fn(0.5), schedule(0.5))
         assert np.allclose(fn(0.5), float_schedule(0.5))
         assert np.allclose(fn(0.5), float_schedule_2(0.5))
+
+
+class TestRMSpropTFLike:
+    """Tests for the RMSpropTFLike optimizer (sb2_compat)."""
+
+    def test_invalid_params(self):
+        """Test that invalid optimizer parameters raise ValueError."""
+        param = th.nn.Parameter(th.zeros(2))
+        with pytest.raises(ValueError, match="Invalid learning rate"):
+            RMSpropTFLike([param], lr=-1.0)
+        with pytest.raises(ValueError, match="Invalid epsilon"):
+            RMSpropTFLike([param], eps=-1.0)
+        with pytest.raises(ValueError, match="Invalid momentum"):
+            RMSpropTFLike([param], momentum=-1.0)
+        with pytest.raises(ValueError, match="Invalid weight_decay"):
+            RMSpropTFLike([param], weight_decay=-1.0)
+        with pytest.raises(ValueError, match="Invalid alpha"):
+            RMSpropTFLike([param], alpha=-1.0)
+
+    def test_centered_momentum_weight_decay(self):
+        """Test centered=True, momentum>0, weight_decay>0 branches in step()."""
+        param = th.nn.Parameter(th.tensor([1.0, 2.0]))
+        opt = RMSpropTFLike(
+            [param],
+            lr=0.1,
+            momentum=0.9,
+            alpha=0.99,
+            eps=1e-8,
+            centered=True,
+            weight_decay=0.01,
+        )
+        # Compute gradient
+        loss = (param**2).sum()
+        loss.backward()
+
+        # Run step with closure (covers closure branch)
+        def closure():
+            param.grad.zero_()
+            return float((param**2).sum().detach())
+
+        opt.step(closure=closure)
+        # Check state keys exist (covers centered + momentum init)
+        state = opt.state[param]
+        assert "grad_avg" in state  # centered=True
+        assert "momentum_buffer" in state  # momentum > 0
+
+    def test_pickle_roundtrip(self):
+        """Test that optimizer survives pickle roundtrip (covers __setstate__)."""
+        param = th.nn.Parameter(th.tensor([1.0, 2.0]))
+        opt = RMSpropTFLike([param], lr=0.1, momentum=0.5, centered=True)
+        opt2 = pickle.loads(pickle.dumps(opt))
+        assert opt2.param_groups[0]["lr"] == 0.1
+        assert opt2.param_groups[0]["momentum"] == 0.5
+        assert opt2.param_groups[0]["centered"] is True

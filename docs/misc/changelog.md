@@ -2,6 +2,31 @@
 
 # Changelog
 
+## Release 2.9.2a0 (2026-07-18)
+
+### Breaking Changes:
+
+### New Features:
+
+### Bug Fixes:
+
+### [SB3-Contrib]
+
+### [RL Zoo]
+
+### [SBX] (SB3 + Jax)
+
+### Deprecations:
+
+### Others:
+
+- Fixed moviepy test compatibility with moviepy >= 2.0 (PyTorch doesn't support it yet)
+- Added filter for numpy `newshape` deprecation warning from torch tensorboard
+- Fixed mypy error in test_vec_envs.py by wrapping `itertools.product` with `list()`
+- Added tests for RMSpropTFLike optimizer (invalid params, centered/momentum/weight_decay branches, pickle roundtrip)
+
+### Documentation:
+
 ## Release 2.9.0 (2026-06-15)
 
 **Updated dependencies (pandas is now optional, gymnasium 1.3.0 support, torch>=2.8)**

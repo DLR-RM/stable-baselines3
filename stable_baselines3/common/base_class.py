@@ -654,7 +654,7 @@ class BaseAlgorithm(ABC):
         custom_objects: dict[str, Any] | None = None,
         print_system_info: bool = False,
         force_reset: bool = True,
-        deserialization_mode: DeserializationMode = "safe",
+        deserialization_mode: DeserializationMode = DeserializationMode.SAFE,
         **kwargs,
     ) -> SelfBaseAlgorithm:
         """

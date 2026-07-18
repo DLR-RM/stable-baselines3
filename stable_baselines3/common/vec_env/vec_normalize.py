@@ -313,7 +313,7 @@ class VecNormalize(VecEnvWrapper):
     def load(
         load_path: str,
         venv: VecEnv,
-        deserialization_mode: DeserializationMode = "safe",
+        deserialization_mode: DeserializationMode = DeserializationMode.SAFE,
     ) -> "VecNormalize":
         """
         Loads a saved VecNormalize object.
@@ -331,10 +331,10 @@ class VecNormalize(VecEnvWrapper):
               embedded in the pickle file.  A ``UserWarning`` is emitted.
         :return:
         """
-        if deserialization_mode not in ("legacy", "safe"):
+        if deserialization_mode not in (DeserializationMode.SAFE, DeserializationMode.LEGACY):
             raise ValueError(f"deserialization_mode must be 'legacy' or 'safe', got {deserialization_mode!r}")
 
-        if deserialization_mode == "safe":
+        if deserialization_mode == DeserializationMode.SAFE:
             from stable_baselines3.common.safe_globals import (
                 _RestrictedUnpickler,
                 register_sb3_safe_globals,

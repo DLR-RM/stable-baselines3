@@ -236,7 +236,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self,
         path: str | pathlib.Path | io.BufferedIOBase,
         truncate_last_traj: bool = True,
-        deserialization_mode: DeserializationMode = "safe",
+        deserialization_mode: DeserializationMode = DeserializationMode.SAFE,
     ) -> None:
         """
         Load a replay buffer from a pickle file.

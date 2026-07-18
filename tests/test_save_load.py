@@ -631,7 +631,7 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(pathtype(f"{tmp_path}/t1")) == "foo"
     # Only the expected security warning from load_from_pkl; no path-related warnings
-    assert all("deserializer" in str(w.message).lower() for w in record)
+    assert all("deserializer" in str(warning.message).lower() for warning in record)
 
     # test custom suffix
     with open_path(pathtype(f"{tmp_path}/t1.custom_ext"), "w") as fp1:
@@ -639,7 +639,7 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     assert fp1.closed
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(pathtype(f"{tmp_path}/t1.custom_ext")) == "foo"
-    assert all("deserializer" in str(w.message).lower() for w in record)
+    assert all("deserializer" in str(warning.message).lower() for warning in record)
 
     # test without suffix
     with open_path(pathtype(f"{tmp_path}/t1"), "w", suffix="pkl") as fp1:
@@ -647,7 +647,7 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     assert fp1.closed
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(pathtype(f"{tmp_path}/t1.pkl")) == "foo"
-    assert all("deserializer" in str(w.message).lower() for w in record)
+    assert all("deserializer" in str(warning.message).lower() for warning in record)
 
     # test that a warning is raised when the path doesn't exist
     with open_path(pathtype(f"{tmp_path}/t2.pkl"), "w") as fp1:
@@ -656,12 +656,12 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl")) == "foo"
     # Only security warning, no "path not found" warning
-    assert all("deserializer" in str(w.message).lower() for w in record)
+    assert all("deserializer" in str(warning.message).lower() for warning in record)
 
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl", verbose=2)) == "foo"
     # Security warning + path-not-found verbose warning
-    non_security = [w for w in record if "deserializer" not in str(w.message).lower()]
+    non_security = [warning for warning in record if "deserializer" not in str(warning.message).lower()]
     assert len(non_security) == 1
 
     fp = pathlib.Path(f"{tmp_path}/t2").open("w")
@@ -759,14 +759,14 @@ def test_load_invalid_object(tmp_path):
         warnings.simplefilter("always")
         PPO.load(path, deserialization_mode="legacy")
     assert len(record) == 2
-    assert any("cloudpickle-serialized" in str(w.message) for w in record)
-    assert any("custom_objects" in str(w.message) for w in record)
+    assert any("cloudpickle-serialized" in str(warning.message) for warning in record)
+    assert any("custom_objects" in str(warning.message) for warning in record)
     # Load with custom object: the only warning should be the security warning
     # (no "Could not deserialize" or "custom_objects" warnings)
     with warnings.catch_warnings(record=True) as record:
         PPO.load(path, custom_objects=dict(learning_rate=lambda _: 1.0), deserialization_mode="legacy")
     # Filter out the expected security warning
-    non_security = [w for w in record if "cloudpickle-serialized" not in str(w.message)]
+    non_security = [warning for warning in record if "cloudpickle-serialized" not in str(warning.message)]
     assert len(non_security) == 0
 
 
@@ -927,7 +927,7 @@ def test_open_path_directory_and_missing_parent(tmp_path):
     dir_path.mkdir()
     with warnings.catch_warnings(record=True) as record:
         open_path(dir_path, "w", suffix="pkl").close()
-    assert any("is a folder" in str(w.message) for w in record)
+    assert any("is a folder" in str(warning.message) for warning in record)
     # Verify the fallback file was created
     assert (tmp_path / "is_a_folder.pkl_2").exists()
 
@@ -935,6 +935,6 @@ def test_open_path_directory_and_missing_parent(tmp_path):
     missing_parent_path = tmp_path / "nonexistent_parent" / "sub" / "file"
     with warnings.catch_warnings(record=True) as record:
         open_path(missing_parent_path, "w", suffix="pkl").close()
-    assert any("does not exist" in str(w.message) for w in record)
+    assert any("does not exist" in str(warning.message) for warning in record)
     # Verify the parent was created and file was written
     assert (tmp_path / "nonexistent_parent" / "sub" / "file.pkl").exists()

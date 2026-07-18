@@ -303,13 +303,13 @@ def _register_safe_globals() -> None:
 
     # Build string allowlist for _RestrictedUnpickler
     _SAFE_GLOBALS_STR = set()
-    for t in base_types:
-        if hasattr(t, "__module__") and hasattr(t, "__qualname__"):
-            _SAFE_GLOBALS_STR.add(f"{t.__module__}.{t.__qualname__}")
+    for safe_type in base_types:
+        if hasattr(safe_type, "__module__") and hasattr(safe_type, "__qualname__"):
+            _SAFE_GLOBALS_STR.add(f"{safe_type.__module__}.{safe_type.__qualname__}")
         else:  # pragma: no cover
             # Some objects (like numpy random functions) may not have these
             try:
-                _SAFE_GLOBALS_STR.add(f"{type(t).__module__}.{t.__name__}")
+                _SAFE_GLOBALS_STR.add(f"{type(safe_type).__module__}.{safe_type.__name__}")
             except AttributeError:
                 pass
 
@@ -595,9 +595,9 @@ def register_sb3_safe_globals() -> None:
     ]
 
     # Add to string allowlist
-    for t in sb3_types:
-        if _SAFE_GLOBALS_STR is not None and hasattr(t, "__module__") and hasattr(t, "__qualname__"):
-            _SAFE_GLOBALS_STR.add(f"{t.__module__}.{t.__qualname__}")
+    for safe_type in sb3_types:
+        if _SAFE_GLOBALS_STR is not None and hasattr(safe_type, "__module__") and hasattr(safe_type, "__qualname__"):
+            _SAFE_GLOBALS_STR.add(f"{safe_type.__module__}.{safe_type.__qualname__}")
 
     # Register with torch.serialization
     th.serialization.add_safe_globals(sb3_types)  # type: ignore[arg-type]

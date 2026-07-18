@@ -166,7 +166,7 @@ def test_load_from_pkl_legacy_warns(tmp_path):
     with warnings.catch_warnings(record=True) as rec:
         result = load_from_pkl(path, deserialization_mode="legacy")
     assert result == {"key": "value"}
-    assert any("pickle deserialization" in str(w.message).lower() for w in rec)
+    assert any("pickle deserialization" in str(warning.message).lower() for warning in rec)
 
 
 # ---------------------------------------------------------------------------

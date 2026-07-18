@@ -107,7 +107,6 @@ def test_json_to_data_safe_blocks_malicious(tmp_path):
 
     # Safe mode: should skip the malicious entry
     with warnings.catch_warnings(record=True) as rec:
-        warnings.simplefilter("always")
         result = json_to_data(json_str, deserialization_mode="safe")
 
     assert not sentinel.exists(), "Sentinel file created: RCE was NOT blocked!"
@@ -131,7 +130,6 @@ def test_json_to_data_legacy_allows_malicious(tmp_path):
 
     # Legacy mode: should deserialize and execute the payload
     with warnings.catch_warnings(record=True):
-        warnings.simplefilter("always")
         _ = json_to_data(json_str, deserialization_mode="legacy")
 
     # In legacy mode the evil payload runs
@@ -166,7 +164,6 @@ def test_load_from_pkl_legacy_warns(tmp_path):
     save_to_pkl(path, {"key": "value"})
 
     with warnings.catch_warnings(record=True) as rec:
-        warnings.simplefilter("always")
         result = load_from_pkl(path, deserialization_mode="legacy")
     assert result == {"key": "value"}
     assert any("pickle deserialization" in str(w.message).lower() for w in rec)
@@ -234,7 +231,6 @@ def test_ppo_load_safe_blocks_rce(tmp_path):
         "clip_range": lambda _: 0.0,
     }
     with warnings.catch_warnings(record=True):
-        warnings.simplefilter("always")
         loaded = PPO.load(
             zip_path,
             env=env,
@@ -264,7 +260,6 @@ def test_ppo_load_legacy_allows_rce(tmp_path):
 
     # Legacy mode: payload executes
     with warnings.catch_warnings(record=True):
-        warnings.simplefilter("always")
         PPO.load(zip_path, device="cpu", deserialization_mode="legacy")
 
     assert sentinel.exists(), "Legacy mode should have executed the payload"

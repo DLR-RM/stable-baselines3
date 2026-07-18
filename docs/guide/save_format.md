@@ -128,7 +128,7 @@ add_safe_globals(MyCustomSpace)
 loaded = PPO.load("model.zip", deserialization_mode="safe")
 ```
 
-For a temporary, scope-limited registration, use the `stable_baselines3.common.safe_globals.safe_globals`
+For a temporary, scope-limited registration, use the `stable_baselines3.common.safe_globals.SafeGlobals`
 context manager:
 
 ```python

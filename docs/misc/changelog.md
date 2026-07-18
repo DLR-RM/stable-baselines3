@@ -18,9 +18,7 @@ Models saved with cloudpickle that contain arbitrary Python code (e.g. lambda fu
 ### New Features:
 
 - Added `deserialization_mode` parameter to all load methods (`"safe"` or `"legacy"`) to mitigate deserialization of Untrusted Data. `"safe"` mode uses a restricted unpickler that only allows a fixed allowlist of known-safe SB3/gymnasium/numpy types.
-- Added `add_safe_globals()` function to register custom classes as safe for restricted deserialization (a la `torch.serialization.add_safe_globals`).
-- Added `safe_globals` context manager to temporarily extend the safe-globals allowlist for a single load call.
-- Added `DeserializationMode` type alias (`Literal["safe", "legacy"]`) to `stable_baselines3.common.type_aliases`.
+- Added `add_safe_globals()` function and context manager to register custom classes as safe for restricted deserialization (à la `torch.serialization.add_safe_globals`).
 
 ### Bug Fixes:
 

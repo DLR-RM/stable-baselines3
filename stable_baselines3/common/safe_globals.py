@@ -656,25 +656,15 @@ def add_safe_globals(
        add_safe_globals([MyCustomSpace])
        model = PPO.load("checkpoint.zip", deserialization_mode="safe")
     """
-    global _TORCH_REGISTRATION_DONE
-
     if not isinstance(safe_globals, list):
         safe_globals = [safe_globals]
 
-    # Extract the actual types from tuples (if any) for torch registration
-    types_for_torch = []
     for item in safe_globals:
         if isinstance(item, tuple):
-            type_obj, explicit_path = item
-            types_for_torch.append(type_obj)
+            _, explicit_path = item
             _USER_SAFE_GLOBALS.add(explicit_path)
         else:
-            types_for_torch.append(item)
             _USER_SAFE_GLOBALS.add(f"{item.__module__}.{item.__qualname__}")
-
-    # Also register with torch if base registration is already done
-    if _TORCH_REGISTRATION_DONE and types_for_torch:
-        th.serialization.add_safe_globals(types_for_torch)  # type: ignore[arg-type]
 
 
 class SafeGlobals:

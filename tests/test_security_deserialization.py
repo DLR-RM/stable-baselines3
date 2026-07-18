@@ -19,10 +19,19 @@ import pickle
 import warnings
 import zipfile
 
+import cloudpickle
+import gymnasium as gym
 import numpy as np
 import pytest
 
-from stable_baselines3 import PPO
+from stable_baselines3 import DDPG, PPO, SAC
+from stable_baselines3.common.noise import NormalActionNoise
+from stable_baselines3.common.safe_globals import (
+    _USER_SAFE_GLOBALS,
+    SafeGlobals,
+    add_safe_globals,
+    get_safe_globals,
+)
 from stable_baselines3.common.save_util import (
     json_to_data,
     load_from_pkl,
@@ -55,8 +64,6 @@ def _make_evil_class(sentinel_path: pathlib.Path) -> type:
 
 def _evil_cloudpickle_payload(sentinel_path: pathlib.Path) -> str:
     """Return a base64-encoded cloudpickle payload that writes the sentinel."""
-    import cloudpickle
-
     return base64.b64encode(cloudpickle.dumps(_make_evil_class(sentinel_path)())).decode()
 
 
@@ -138,8 +145,6 @@ def test_json_to_data_legacy_allows_malicious(tmp_path):
 
 def test_load_from_pkl_safe_blocks_evil(tmp_path):
     """load_from_pkl with deserialization_mode='safe' blocks evil globals."""
-    import cloudpickle
-
     path = tmp_path / "test.pkl"
     sentinel = tmp_path / "sentinel"
     evil_class = _make_evil_class(sentinel)
@@ -174,7 +179,6 @@ def test_load_from_pkl_legacy_warns(tmp_path):
 
 def test_vec_normalize_load_safe_works(tmp_path):
     """VecNormalize.load with deserialization_mode='safe' succeeds for trusted data."""
-    import gymnasium as gym
 
     venv = DummyVecEnv([lambda: gym.make("CartPole-v1")])
     vec_normalize = VecNormalize(venv)
@@ -207,7 +211,6 @@ def test_ppo_load_safe_blocks_rce(tmp_path):
     custom_objects or pass an env. Here we pass custom_objects to supply
     the required objects.
     """
-    import gymnasium as gym
 
     sentinel = tmp_path / "sentinel"
 
@@ -279,6 +282,15 @@ def test_ppo_load_legacy_allows_rce(tmp_path):
         lambda: (json_to_data, (json.dumps({}), None, "bad_mode")),
         # load_from_pkl
         lambda: (load_from_pkl, (io.BytesIO(pickle.dumps("x")), 0, "bad_mode")),
+        # VecNormalize.load
+        lambda: (VecNormalize.load, ("dummy.pkl", None, "bad_mode")),
+        # OffPolicyAlgorithm.load_replay_buffer (via SAC)
+        lambda: (
+            lambda path, mode: SAC("MlpPolicy", "Pendulum-v1", device="cpu").load_replay_buffer(
+                path, deserialization_mode=mode
+            ),
+            ("dummy.pkl", "bad_mode"),
+        ),
     ],
 )
 def test_invalid_deserialization_mode_raises(func_and_args):
@@ -294,8 +306,6 @@ def test_invalid_deserialization_mode_raises(func_and_args):
 
 def test_load_replay_buffer_safe_works(tmp_path):
     """load_replay_buffer with deserialization_mode='safe' succeeds for trusted buffers."""
-    from stable_baselines3 import SAC
-
     model = SAC("MlpPolicy", "Pendulum-v1", buffer_size=1000, learning_starts=50, device="cpu")
     model.learn(80)
     original_size = model.replay_buffer.size()
@@ -310,9 +320,6 @@ def test_load_replay_buffer_safe_works(tmp_path):
 
 def test_model_load_safe_with_action_noise(tmp_path):
     """Model checkpoints with action noise load in safe mode."""
-    from stable_baselines3 import DDPG
-    from stable_baselines3.common.noise import NormalActionNoise
-
     noise = NormalActionNoise(mean=[0], sigma=[0.1])
     model = DDPG(
         "MlpPolicy",
@@ -334,7 +341,6 @@ def test_model_load_safe_with_action_noise(tmp_path):
 def test_vec_normalize_load_safe_blocks_evil(tmp_path):
     """VecNormalize.load with deserialization_mode='safe' blocks evil globals."""
     import cloudpickle
-    import gymnasium as gym
 
     sentinel = tmp_path / "sentinel"
     venv = DummyVecEnv([lambda: gym.make("CartPole-v1")])
@@ -379,12 +385,6 @@ def test_json_to_data_safe_with_custom_objects(tmp_path):
 
 def test_add_safe_globals_persists():
     """add_safe_globals() should persist across calls."""
-    from stable_baselines3.common.safe_globals import (
-        _USER_SAFE_GLOBALS,
-        add_safe_globals,
-        get_safe_globals,
-    )
-
     # Clear user globals to start fresh
     _USER_SAFE_GLOBALS.clear()
 
@@ -410,12 +410,6 @@ def test_add_safe_globals_persists():
 def test_safe_globals_context_manager(tmp_path):
     """safe_globals context manager should restore allowlist on exit."""
     import cloudpickle
-
-    from stable_baselines3.common.safe_globals import (
-        _USER_SAFE_GLOBALS,
-        SafeGlobals,
-        get_safe_globals,
-    )
 
     # Clear user globals to start fresh
     _USER_SAFE_GLOBALS.clear()

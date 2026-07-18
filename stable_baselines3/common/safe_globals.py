@@ -362,7 +362,9 @@ def _register_safe_globals() -> None:
         "cloudpickle.cloudpickle.restore_function",
         "cloudpickle.cloudpickle._class_setstate",
         "cloudpickle.cloudpickle._fillvar",
-        # subimport need to be manually whitelisted for learning schedule
+        # SECURITY: subimport is intentionally NOT whitelisted as it allows arbitrary
+        # module imports during deserialization, which would defeat the entire
+        # allowlist mechanism. Do NOT add this to the allowlist.
         # "cloudpickle.cloudpickle.subimport",
         "cloudpickle.cloudpickle._lookup_module_and_obj_in_qualname",
         "cloudpickle.cloudpickle.whichmodule",

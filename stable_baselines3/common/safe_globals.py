@@ -669,10 +669,12 @@ def add_safe_globals(
 
     for item in safe_globals:
         if isinstance(item, tuple):
-            _, explicit_path = item
+            obj, explicit_path = item
             _USER_SAFE_GLOBALS.add(explicit_path)
+            th.serialization.add_safe_globals([item])  # type: ignore[arg-type]
         else:
             _USER_SAFE_GLOBALS.add(f"{item.__module__}.{item.__qualname__}")
+            th.serialization.add_safe_globals([item])  # type: ignore[arg-type]
 
 
 class SafeGlobals:

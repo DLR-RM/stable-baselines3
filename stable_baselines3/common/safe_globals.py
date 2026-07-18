@@ -174,13 +174,16 @@ def _collect_cloudpickle_types() -> list:
     import cloudpickle.cloudpickle as cp
 
     types = [
-        cp._make_function,
-        cp._make_cell,
-        cp._make_empty_cell,
+        # SECURITY: Function reconstruction helpers are commented out because they
+        # allow arbitrary code execution by reconstructing malicious functions.
+        # These should NOT be in the allowlist for safe deserialization.
+        # cp._make_function,
+        # cp._make_cell,
+        # cp._make_empty_cell,
+        # cp._function_setstate,
         cp._make_skeleton_class,
         cp._make_skeleton_enum,
         cp._builtin_type,
-        cp._function_setstate,
     ]
 
     # cloudpickle 3.x extras (may not exist in older versions)
@@ -333,13 +336,15 @@ def _register_safe_globals() -> None:
         "builtins.type",
         "cloudpickle.cloudpickle",
         "cloudpickle.cloudpickle.__newobj__",
-        "cloudpickle.cloudpickle._make_skeleton_function",
-        "cloudpickle.cloudpickle._make_stepfunc",
-        "cloudpickle.cloudpickle._make_fileless_lambda",
+        # SECURITY: Function reconstruction helpers are commented out because they
+        # allow arbitrary code execution. Do NOT add these to the allowlist.
+        # "cloudpickle.cloudpickle._make_skeleton_function",
+        # "cloudpickle.cloudpickle._make_stepfunc",
+        # "cloudpickle.cloudpickle._make_fileless_lambda",
+        # "cloudpickle.cloudpickle.make_function_from_globals",
         "cloudpickle.cloudpickle.make_dict_fromnamedtuple",
         "cloudpickle.cloudpickle.make_dict_fromnamedtuple_with_defaults",
         "cloudpickle.cloudpickle.make_dynamic_classlookup",
-        "cloudpickle.cloudpickle.make_function_from_globals",
         "cloudpickle.cloudpickle.make_instance_from_reduce",
         "cloudpickle.cloudpickle.make_local_from_global",
         "cloudpickle.cloudpickle.make_numpy_array",
@@ -359,7 +364,8 @@ def _register_safe_globals() -> None:
         "cloudpickle.cloudpickle.make_unordered_set",
         "cloudpickle.cloudpickle.restore_class",
         "cloudpickle.cloudpickle.restore_class_attr_descriptors",
-        "cloudpickle.cloudpickle.restore_function",
+        # SECURITY: restore_function allows arbitrary code execution
+        # "cloudpickle.cloudpickle.restore_function",
         "cloudpickle.cloudpickle._class_setstate",
         "cloudpickle.cloudpickle._fillvar",
         # SECURITY: subimport is intentionally NOT whitelisted as it allows arbitrary

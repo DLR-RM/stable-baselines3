@@ -1,4 +1,3 @@
-import importlib.util
 import json
 import os
 import sys
@@ -273,7 +272,13 @@ def test_report_video_to_tensorboard(tmp_path, read_log, capsys):
 
 
 def is_moviepy_installed():
-    return importlib.util.find_spec("moviepy") is not None
+    try:
+        import moviepy
+        # PyTorch doesn't support moviepy >= 2.0
+        # See: https://github.com/pytorch/pytorch/issues/147317
+        return moviepy.__version__ < "2.0"
+    except (ImportError, AttributeError):
+        return False
 
 
 @pytest.mark.parametrize("unsupported_format", ["stdout", "log", "json", "csv"])

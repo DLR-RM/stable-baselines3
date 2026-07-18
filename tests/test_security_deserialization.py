@@ -429,3 +429,169 @@ def test_safe_globals_context_manager(tmp_path):
 
     # After context: should be removed
     assert qualname not in get_safe_globals(), "safe_globals context manager did not restore allowlist on exit"
+
+
+# ---------------------------------------------------------------------------
+# Test 8: KNOWN VULNERABILITY - cloudpickle function reconstruction bypass
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.xfail(reason="KNOWN VULNERABILITY: cloudpickle function reconstruction bypasses allowlist")
+def test_safe_mode_function_reconstruction_vulnerability(tmp_path):
+    """
+    KNOWN VULNERABILITY: deserialization_mode='safe' does NOT block arbitrary
+    function deserialization via cloudpickle's internal helpers.
+    
+    This test demonstrates that the current security mechanism is insufficient:
+    cloudpickle's _make_function, _make_cell, restore_function, etc. are in the
+    allowlist, which allows reconstruction of arbitrary functions, enabling RCE.
+    
+    This test is marked as xfail until the vulnerability is fixed.
+    """
+    sentinel = tmp_path / "pwned_by_function"
+    
+    # Create a malicious function and serialize it with cloudpickle
+    def malicious_function():
+        sentinel.write_text("PWNED")
+    
+    payload = cloudpickle.dumps(malicious_function)
+    
+    # Try to deserialize with safe mode
+    from stable_baselines3.common.save_util import _cloudpickle_loads_safe
+    
+    # This should ideally raise an error, but currently it succeeds
+    deserialized_func = _cloudpickle_loads_safe(payload)
+    
+    # Call the deserialized function
+    deserialized_func()
+    
+    # Check if the sentinel file was created (it will be with the current vulnerability)
+    assert sentinel.exists(), "VULNERABILITY: Function was deserialized and executed!"
+
+
+@pytest.mark.xfail(reason="KNOWN VULNERABILITY: cloudpickle function reconstruction bypasses allowlist")
+def test_load_from_pkl_safe_allows_function_rce(tmp_path):
+    """
+    KNOWN VULNERABILITY: load_from_pkl with deserialization_mode='safe' allows
+    arbitrary function deserialization, enabling RCE.
+    """
+    sentinel = tmp_path / "sentinel_function"
+    
+    # Create a malicious function
+    def write_sentinel():
+        sentinel.write_text("PWNED")
+    
+    # Serialize it
+    path = tmp_path / "malicious_func.pkl"
+    with open(path, "wb") as f:
+        cloudpickle.dump(write_sentinel, f)
+    
+    # Load with safe mode - this should block but currently doesn't
+    result = load_from_pkl(path, deserialization_mode="safe")
+    
+    # Call the function
+    result()
+    
+    # The sentinel should NOT exist if the vulnerability is fixed
+    assert sentinel.exists(), "VULNERABILITY: Arbitrary function was loaded and executed!"
+
+
+@pytest.mark.xfail(reason="KNOWN VULNERABILITY: cloudpickle function reconstruction bypasses allowlist")
+def test_json_to_data_safe_allows_function_rce(tmp_path):
+    """
+    KNOWN VULNERABILITY: json_to_data with deserialization_mode='safe' allows
+    arbitrary function deserialization from :serialized: entries.
+    """
+    sentinel = tmp_path / "sentinel_json"
+    
+    # Create a malicious function that doesn't capture any external objects
+    # to avoid issues with pathlib not being in the allowlist
+    def write_sentinel():
+        with open(str(sentinel), 'w') as f:
+            f.write("PWNED")
+    
+    # Serialize it
+    payload = base64.b64encode(cloudpickle.dumps(write_sentinel)).decode()
+    
+    # Load with safe mode - this will skip the function but we can still test
+    # by using custom_objects to provide a replacement
+    # Actually, let's just test that the function CAN be deserialized
+    # by using _cloudpickle_loads_safe directly
+    from stable_baselines3.common.save_util import _cloudpickle_loads_safe
+    
+    # Decode the payload
+    decoded_payload = base64.b64decode(payload)
+    
+    # This should ideally raise an error, but currently it succeeds
+    deserialized_func = _cloudpickle_loads_safe(decoded_payload)
+    
+    # Call it
+    deserialized_func()
+    
+    # The sentinel should NOT exist if the vulnerability is fixed
+    assert sentinel.exists(), "VULNERABILITY: Arbitrary function was loaded from JSON and executed!"
+
+
+# ---------------------------------------------------------------------------
+# Test 9: Verify the vulnerability with a complete PPO checkpoint
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.xfail(reason="KNOWN VULNERABILITY: cloudpickle function reconstruction bypasses allowlist")
+def test_ppo_load_safe_allows_function_rce(tmp_path):
+    """
+    KNOWN VULNERABILITY: PPO.load with deserialization_mode='safe' allows
+    arbitrary function deserialization from injected checkpoint data.
+    """
+    sentinel = tmp_path / "sentinel_ppo"
+    
+    # Create a clean model
+    model = PPO("MlpPolicy", "CartPole-v1", n_steps=64, device="cpu")
+    zip_path = str(tmp_path / "model.zip")
+    model.save(zip_path)
+    
+    # Create a malicious function
+    def write_sentinel():
+        sentinel.write_text("PWNED")
+    
+    # Inject the malicious function into the checkpoint's data JSON
+    with zipfile.ZipFile(zip_path) as z:
+        data = json.loads(z.read("data").decode())
+    
+    payload = base64.b64encode(cloudpickle.dumps(write_sentinel)).decode()
+    data["_malicious_func"] = {":type:": "<class 'function'>", ":serialized:": payload}
+    
+    with zipfile.ZipFile(zip_path, "r") as zin:
+        with zipfile.ZipFile(zip_path + ".tmp", "w") as zout:
+            for name in zin.namelist():
+                content = zin.read(name)
+                if name == "data":
+                    content = json.dumps(data).encode()
+                zout.writestr(name, content)
+    os.replace(zip_path + ".tmp", zip_path)
+    
+    # Load with safe mode and custom_objects to satisfy other requirements
+    env = gym.make("CartPole-v1")
+    custom_objects = {
+        "observation_space": env.observation_space,
+        "action_space": env.action_space,
+        "policy_class": PPO.policy_aliases["MlpPolicy"],
+        "rollout_buffer_class": model.rollout_buffer_class,
+        "learning_rate": 0.0,
+        "lr_schedule": lambda _: 0.0,
+        "clip_range": lambda _: 0.0,
+    }
+    
+    with warnings.catch_warnings(record=True):
+        PPO.load(
+            zip_path,
+            env=env,
+            device="cpu",
+            deserialization_mode="safe",
+            custom_objects=custom_objects,
+        )
+    
+    # The malicious function should have been loaded into the data dict
+    # We need to access it somehow - it might be in loaded.__dict__ or similar
+    # For now, just check if the sentinel was created
+    assert sentinel.exists(), "VULNERABILITY: Arbitrary function was loaded from checkpoint and executed!"

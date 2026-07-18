@@ -755,8 +755,12 @@ def test_load_invalid_object(tmp_path):
     # Replace with the corrupted file
     # probably doesn't work on windows
     os.system(f"cd {tmp_path}; zip ppo_pendulum.zip data")
-    with pytest.warns(UserWarning, match=r"custom_objects"):
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
         PPO.load(path, deserialization_mode="legacy")
+    assert len(record) == 2
+    assert any("cloudpickle-serialized" in str(w.message) for w in record)
+    assert any("custom_objects" in str(w.message) for w in record)
     # Load with custom object: the only warning should be the security warning
     # (no "Could not deserialize" or "custom_objects" warnings)
     with warnings.catch_warnings(record=True) as record:
@@ -821,7 +825,8 @@ def test_cast_lr_schedule(tmp_path):
     assert type(model.lr_schedule(1.0)) is float
     assert np.allclose(model.lr_schedule(0.5), 0.5 * np.sin(1.0))
     model.save(tmp_path / "ppo.zip")
-    model = PPO.load(tmp_path / "ppo.zip", deserialization_mode="legacy")
+    with pytest.warns(UserWarning, match=r"cloudpickle-serialized"):
+        model = PPO.load(tmp_path / "ppo.zip", deserialization_mode="legacy")
     assert type(model.lr_schedule(1.0)) is float
     assert np.allclose(model.lr_schedule(0.5), 0.5 * np.sin(1.0))
 
@@ -864,7 +869,8 @@ def test_save_load_backward_compatible(tmp_path, model_class):
 
     model.save(tmp_path / "test_schedule_safe.zip")
 
-    model = model_class.load(tmp_path / "test_schedule_safe.zip", env=env, deserialization_mode="legacy")
+    with pytest.warns(UserWarning, match=r"cloudpickle-serialized"):
+        model = model_class.load(tmp_path / "test_schedule_safe.zip", env=env, deserialization_mode="legacy")
 
     assert model.learning_rate(0) == 0.001
     assert model.learning_rate.__name__ == "<lambda>"

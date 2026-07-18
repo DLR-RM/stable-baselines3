@@ -507,7 +507,8 @@ def test_json_to_data_safe_blocks_function_rce(tmp_path):
     json_str = json.dumps({"lr_schedule": {":type:": "<class 'function'>", ":serialized:": payload}})
 
     # Load with safe mode - this should now skip/block the function
-    result = json_to_data(json_str, deserialization_mode="safe")
+    with pytest.warns(UserWarning, match=r"Could not deserialize object lr_schedule"):
+        result = json_to_data(json_str, deserialization_mode="safe")
     
     # The function should have been skipped (not loaded)
     assert "lr_schedule" not in result, "Function should have been skipped"
@@ -565,13 +566,14 @@ def test_ppo_load_safe_blocks_function_rce(tmp_path):
         "clip_range": lambda _: 0.0,
     }
 
-    PPO.load(
-        zip_path,
-        env=env,
-        device="cpu",
-        deserialization_mode="safe",
-        custom_objects=custom_objects,
-    )
+    with pytest.warns(UserWarning, match=r"Could not deserialize object _malicious_func"):
+        PPO.load(
+            zip_path,
+            env=env,
+            device="cpu",
+            deserialization_mode="safe",
+            custom_objects=custom_objects,
+        )
     
     # Verify the sentinel was NOT created
     assert not sentinel.exists(), "Function should NOT have been loaded from checkpoint and executed"

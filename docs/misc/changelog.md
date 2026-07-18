@@ -32,13 +32,36 @@ Models saved with cloudpickle that contain arbitrary Python code (e.g. lambda fu
 
 ### Others:
 
-- Added regression tests in `tests/test_security_deserialization.py`.
-- Improved test coverage for `save_util.py`: added tests for `BadZipFile` error handling in `load_from_zip_file` and `IsADirectoryError`/`FileNotFoundError` handling in `open_path_pathlib`.
-- Improved test coverage for `sb2_compat/rmsprop_tf_like.py`: added `TestRMSpropTFLike` test class covering parameter validation, centered/momentum/weight_decay branches, closure support, and pickle roundtrip.
-
 ### Documentation:
 
 - Updated save/reload guide with a dedicated section on secure deserialization, explaining safe vs. legacy mode and how to handle `custom_objects` in safe mode.
+
+
+## Release 2.9.2a0 (2026-07-18)
+
+### Breaking Changes:
+
+### New Features:
+
+### Bug Fixes:
+
+### [SB3-Contrib]
+
+### [RL Zoo]
+
+### [SBX] (SB3 + Jax)
+
+### Deprecations:
+
+### Others:
+
+- Fixed moviepy test compatibility with moviepy >= 2.0 (PyTorch doesn't support it yet)
+- Added filter for numpy `newshape` deprecation warning from torch tensorboard
+- Fixed mypy error in test_vec_envs.py by wrapping `itertools.product` with `list()`
+- Improved tests coverage for RMSpropTFLike optimizer (invalid params, centered/momentum/weight_decay branches, pickle roundtrip)
+- Improved test coverage for `save_util.py`: added tests for `BadZipFile` error handling in `load_from_zip_file` and `IsADirectoryError`/`FileNotFoundError` handling in `open_path`
+
+### Documentation:
 
 
 ## Release 2.9.0 (2026-06-15)

@@ -45,6 +45,8 @@ filterwarnings = [
     "ignore:You are trying to run (PPO|A2C) on the GPU",
     # Tensorboard warnings
     "ignore::DeprecationWarning:tensorboard",
+    # Torch tensorboard numpy newshape deprecation
+    "ignore:`newshape` keyword argument is deprecated:DeprecationWarning:torch.utils.tensorboard._utils",
     # Gymnasium warnings
     "ignore::UserWarning:gymnasium",
     # Taxi-v3 and CliffWalking-v0

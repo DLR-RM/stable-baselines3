@@ -274,6 +274,7 @@ def test_report_video_to_tensorboard(tmp_path, read_log, capsys):
 def is_moviepy_installed():
     try:
         import moviepy
+
         # PyTorch doesn't support moviepy >= 2.0
         # See: https://github.com/pytorch/pytorch/issues/147317
         return moviepy.__version__ < "2.0"

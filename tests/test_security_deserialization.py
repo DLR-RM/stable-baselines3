@@ -509,7 +509,7 @@ def test_json_to_data_safe_blocks_function_rce(tmp_path):
     # Load with safe mode - this should now skip/block the function
     with pytest.warns(UserWarning, match=r"Could not deserialize object lr_schedule"):
         result = json_to_data(json_str, deserialization_mode="safe")
-    
+
     # The function should have been skipped (not loaded)
     assert "lr_schedule" not in result, "Function should have been skipped"
 
@@ -574,6 +574,6 @@ def test_ppo_load_safe_blocks_function_rce(tmp_path):
             deserialization_mode="safe",
             custom_objects=custom_objects,
         )
-    
+
     # Verify the sentinel was NOT created
     assert not sentinel.exists(), "Function should NOT have been loaded from checkpoint and executed"

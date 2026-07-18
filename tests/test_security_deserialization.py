@@ -434,3 +434,33 @@ def test_safe_globals_context_manager(tmp_path):
 
     # After context: should be removed
     assert qualname not in get_safe_globals(), "safe_globals context manager did not restore allowlist on exit"
+
+
+def test_add_safe_globals_registers_with_torch():
+    """add_safe_globals() should register types with torch.serialization.add_safe_globals."""
+    import torch as th
+
+    # Clear user globals to start fresh
+    _USER_SAFE_GLOBALS.clear()
+
+    # Ensure base torch registration is done
+    from stable_baselines3.common.safe_globals import _register_safe_globals
+
+    _register_safe_globals()
+
+    class MyCustomType:
+        value = 123
+
+    qualname = f"{MyCustomType.__module__}.{MyCustomType.__qualname__}"
+
+    # Before registration: not in allowlist
+    assert qualname not in get_safe_globals()
+
+    # Register the type
+    add_safe_globals([MyCustomType])
+
+    # After registration: should be in allowlist
+    assert qualname in get_safe_globals()
+
+    # Check that torch has the type registered
+    assert MyCustomType in th.serialization.get_safe_globals()

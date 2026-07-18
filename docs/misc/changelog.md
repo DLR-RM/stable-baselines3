@@ -23,7 +23,8 @@
 - Fixed moviepy test compatibility with moviepy >= 2.0 (PyTorch doesn't support it yet)
 - Added filter for numpy `newshape` deprecation warning from torch tensorboard
 - Fixed mypy error in test_vec_envs.py by wrapping `itertools.product` with `list()`
-- Added tests for RMSpropTFLike optimizer (invalid params, centered/momentum/weight_decay branches, pickle roundtrip)
+- Improved tests coverage for RMSpropTFLike optimizer (invalid params, centered/momentum/weight_decay branches, pickle roundtrip)
+- Improved test coverage for `save_util.py`: added tests for `BadZipFile` error handling in `load_from_zip_file` and `IsADirectoryError`/`FileNotFoundError` handling in `open_path`
 
 ### Documentation:
 

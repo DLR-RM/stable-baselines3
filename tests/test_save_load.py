@@ -891,3 +891,34 @@ def test_save_load_clip_range_portable(tmp_path, model_class):
     assert isinstance(model.clip_range, FloatSchedule)
     assert isinstance(model.clip_range.value_schedule, ConstantSchedule)
     assert model.clip_range.value_schedule.val == 0.2
+
+
+def test_load_bad_zip(tmp_path):
+    """Test that loading a non-zip file raises a ValueError."""
+    # Write a plain text file to the path
+    bad_path = tmp_path / "not_a_zip.zip"
+    bad_path.write_text("this is not a zip file")
+
+    with pytest.raises(ValueError, match="wasn't a zip-file"):
+        PPO.load(str(bad_path))
+
+
+@pytest.mark.filterwarnings("error::ResourceWarning")
+def test_open_path_directory_and_missing_parent(tmp_path):
+    """Test IsADirectoryError and FileNotFoundError handling in open_path."""
+    # Test IsADirectoryError: path already has the suffix and is a folder
+    dir_path = tmp_path / "is_a_folder.pkl"
+    dir_path.mkdir()
+    with warnings.catch_warnings(record=True) as record:
+        open_path(dir_path, "w", suffix="pkl").close()
+    assert any("is a folder" in str(warning.message) for warning in record)
+    # Verify the fallback file was created
+    assert (tmp_path / "is_a_folder.pkl_2").exists()
+
+    # Test FileNotFoundError: parent folder doesn't exist
+    missing_parent_path = tmp_path / "nonexistent_parent" / "sub" / "file"
+    with warnings.catch_warnings(record=True) as record:
+        open_path(missing_parent_path, "w", suffix="pkl").close()
+    assert any("does not exist" in str(warning.message) for warning in record)
+    # Verify the parent was created and file was written
+    assert (tmp_path / "nonexistent_parent" / "sub" / "file.pkl").exists()

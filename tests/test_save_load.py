@@ -733,6 +733,9 @@ def test_save_load_large_model(tmp_path):
 def test_load_invalid_object(tmp_path):
     # See GH Issue #1122 for an example
     # of invalid object loading
+    # Note: This test uses deserialization_mode="legacy" because it tests with lambda
+    # functions which cannot be deserialized in safe mode (they require _make_function
+    # which is intentionally not in the allowlist for security reasons).
     path = str(tmp_path / "ppo_pendulum.zip")
     PPO("MlpPolicy", "Pendulum-v1", learning_rate=lambda _: 1.0).save(path)
 
@@ -753,11 +756,11 @@ def test_load_invalid_object(tmp_path):
     # probably doesn't work on windows
     os.system(f"cd {tmp_path}; zip ppo_pendulum.zip data")
     with pytest.warns(UserWarning, match=r"custom_objects"):
-        PPO.load(path)
+        PPO.load(path, deserialization_mode="legacy")
     # Load with custom object: the only warning should be the security warning
     # (no "Could not deserialize" or "custom_objects" warnings)
     with warnings.catch_warnings(record=True) as record:
-        PPO.load(path, custom_objects=dict(learning_rate=lambda _: 1.0))
+        PPO.load(path, custom_objects=dict(learning_rate=lambda _: 1.0), deserialization_mode="legacy")
     # Filter out the expected security warning
     non_security = [w for w in record if "cloudpickle-serialized" not in str(w.message)]
     assert len(non_security) == 0
@@ -810,10 +813,6 @@ def test_no_resource_warning(tmp_path):
 
 
 def test_cast_lr_schedule(tmp_path):
-    from cloudpickle.cloudpickle import subimport
-
-    from stable_baselines3.common.safe_globals import SafeGlobals
-
     # See GH#1900
     model = PPO("MlpPolicy", "Pendulum-v1", learning_rate=lambda t: t * np.sin(1.0))
     # Note: for recent version of numpy, np.float64 is a subclass of float
@@ -822,8 +821,7 @@ def test_cast_lr_schedule(tmp_path):
     assert type(model.lr_schedule(1.0)) is float
     assert np.allclose(model.lr_schedule(0.5), 0.5 * np.sin(1.0))
     model.save(tmp_path / "ppo.zip")
-    with SafeGlobals([subimport]):
-        model = PPO.load(tmp_path / "ppo.zip")
+    model = PPO.load(tmp_path / "ppo.zip", deserialization_mode="legacy")
     assert type(model.lr_schedule(1.0)) is float
     assert np.allclose(model.lr_schedule(0.5), 0.5 * np.sin(1.0))
 
@@ -866,7 +864,7 @@ def test_save_load_backward_compatible(tmp_path, model_class):
 
     model.save(tmp_path / "test_schedule_safe.zip")
 
-    model = model_class.load(tmp_path / "test_schedule_safe.zip", env=env)
+    model = model_class.load(tmp_path / "test_schedule_safe.zip", env=env, deserialization_mode="legacy")
 
     assert model.learning_rate(0) == 0.001
     assert model.learning_rate.__name__ == "<lambda>"

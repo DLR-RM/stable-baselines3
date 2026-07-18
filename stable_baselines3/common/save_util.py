@@ -189,15 +189,7 @@ def json_to_data(
             # key, this means it is serialized with cloudpickle.
             if not warned_once:
                 warned_once = True
-                if deserialization_mode == DeserializationMode.SAFE:
-                    pass
-                    # warnings.warn(
-                    #     "Loading a model checkpoint that contains cloudpickle-serialized "
-                    #     "objects with a restricted (safe) deserializer. Only known-safe "
-                    #     "SB3/gymnasium/numpy types are allowed. "
-                    #     UserWarning,
-                    # )
-                else:
+                if deserialization_mode == DeserializationMode.LEGACY:
                     warnings.warn(
                         "Loading a model checkpoint that contains cloudpickle-serialized "
                         "objects (deserialization_mode='legacy'). This allows arbitrary "

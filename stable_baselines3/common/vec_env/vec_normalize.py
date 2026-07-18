@@ -341,12 +341,6 @@ class VecNormalize(VecEnvWrapper):
             )
 
             register_sb3_safe_globals()
-            # warnings.warn(
-            #     "Loading a VecNormalize pickle file with a restricted (safe) "
-            #     "deserializer. Only known-safe SB3/gymnasium/numpy types are "
-            #     "allowed.",
-            #     UserWarning,
-            # )
             with open(load_path, "rb") as file_handler:
                 vec_normalize = _RestrictedUnpickler(file_handler).load()
         else:

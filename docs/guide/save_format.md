@@ -109,6 +109,10 @@ Python code** embedded in the checkpoint. A `UserWarning` is emitted.
 # Restores the pre-2.10 loading behavior for checkpoints that contain
 # lambda functions, local classes, or custom gym environments:
 loaded = PPO.load("model.zip", deserialization_mode="legacy")
+
+# If you only load models from trusted sources, you can silence the warning with:
+# import warnings
+# warnings.filterwarnings("ignore", message="Loading a model checkpoint that contains cloudpickle-serialized objects", category=UserWarning)
 ```
 
 ### Extending the Safe Allowlist

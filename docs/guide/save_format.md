@@ -102,7 +102,7 @@ loaded = PPO.load(
 ### Legacy mode
 
 In `deserialization_mode="legacy"`, SB3 falls back to the standard `cloudpickle` / `pickle` loader.
-This preserves full backward compatibility with models saved before SB3 2.10 but **executes arbitrary
+This preserves full backward compatibility with models saved before SB3 2.10 but **may execute arbitrary
 Python code** embedded in the checkpoint. A `UserWarning` is emitted.
 
 ```python
@@ -139,3 +139,10 @@ with SafeGlobals(MyCustomSpace):
     loaded = PPO.load("model.zip", deserialization_mode="safe")
 # MyCustomSpace is automatically removed from the allowlist on exit
 ```
+
+:::{note}
+With the default `deserialization_mode="safe"`, you may encounter a `pickle.UnpicklingError`  or `Could not deserialize object` warning when loading checkpoints containing custom types that are not in the allowlist. The error message 
+will indicate the missing type (e.g., `Global 'my_module.MyCustomType' is not in the safe deserialization allowlist`).
+You can either use `add_safe_globals()` or `SafeGlobals` to register your custom types, pass `custom_objects=...` at load time, or switch to `deserialization_mode="legacy"` 
+if you trust the checkpoint source.
+:::

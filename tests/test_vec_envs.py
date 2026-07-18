@@ -589,6 +589,28 @@ def test_vec_seeding(vec_env_class):
 
 
 @pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
+def test_vec_seed_no_adjacent_base_seed_overlap(vec_env_class):
+    """Adjacent base seeds must not share sub-env seeds (issue #2268).
+
+    The old ``seed + i`` scheme made ``seed(0)`` with 4 envs use {0,1,2,3} and
+    ``seed(1)`` use {1,2,3,4}, so three of four streams were identical.
+    """
+    n_envs = 4
+    vec_a = vec_env_class([lambda: CustomGymEnv(spaces.Box(low=np.zeros(2), high=np.ones(2))) for _ in range(n_envs)])
+    vec_b = vec_env_class([lambda: CustomGymEnv(spaces.Box(low=np.zeros(2), high=np.ones(2))) for _ in range(n_envs)])
+    seeds_a = vec_a.seed(0)
+    seeds_b = vec_b.seed(1)
+    assert seeds_a is not None and seeds_b is not None
+    assert len(set(seeds_a)) == n_envs
+    assert len(set(seeds_b)) == n_envs
+    assert set(seeds_a).isdisjoint(set(seeds_b))
+    # Same base seed is still deterministic / reproducible.
+    assert vec_a.seed(0) == seeds_a
+    vec_a.close()
+    vec_b.close()
+
+
+@pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
 def test_render(vec_env_class):
     # Skip if no X-Server
     if not os.environ.get("DISPLAY"):

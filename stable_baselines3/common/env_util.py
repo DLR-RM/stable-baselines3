@@ -3,6 +3,7 @@ from collections.abc import Callable
 from typing import Any
 
 import gymnasium as gym
+import numpy as np
 
 from stable_baselines3.common.atari_wrappers import AtariWrapper
 from stable_baselines3.common.monitor import Monitor
@@ -80,6 +81,14 @@ def make_vec_env(
     wrapper_kwargs = wrapper_kwargs or {}
     assert vec_env_kwargs is not None  # for mypy
 
+    # Independent per-rank action-space seeds (same SeedSequence idea as VecEnv.seed).
+    action_seeds: list[int] | None = None
+    if seed is not None:
+        n_action_seeds = n_envs + start_index
+        action_seeds = [
+            int(s) for s in np.random.SeedSequence(int(seed)).generate_state(n_action_seeds)
+        ]
+
     def make_env(rank: int) -> Callable[[], gym.Env]:
         def _init() -> gym.Env:
             # For type checker:
@@ -100,10 +109,10 @@ def make_vec_env(
                 # Patch to support gym 0.21/0.26 and gymnasium
                 env = _patch_env(env)
 
-            if seed is not None:
+            if action_seeds is not None:
                 # Note: here we only seed the action space
-                # We will seed the env at the next reset
-                env.action_space.seed(seed + rank)
+                # We will seed the env at the next reset (issue #2268).
+                env.action_space.seed(action_seeds[rank])
             # Wrap the env in a Monitor wrapper
             # to have additional training information
             monitor_path = os.path.join(monitor_dir, str(rank)) if monitor_dir is not None else None

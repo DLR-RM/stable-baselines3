@@ -14,6 +14,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecFrameStack, VecNormalize, VecVideoRecorder
+from stable_baselines3.common.vec_env.base_vec_env import get_env_seeds
 
 try:
     import moviepy  # noqa: F401
@@ -586,6 +587,144 @@ def test_vec_seeding(vec_env_class):
         assert not np.allclose(rewards[1], rewards[2])
 
         vec_env.close()
+
+
+def _box_env():
+    return CustomGymEnv(spaces.Box(low=np.zeros(2), high=np.ones(2)))
+
+
+@pytest.mark.parametrize("independent_seeds", [None, False])
+def test_get_env_seeds_legacy(independent_seeds):
+    # None (current default) and False both use the legacy `seed + i` scheme
+    assert get_env_seeds(0, 4, independent_seeds=independent_seeds) == [0, 1, 2, 3]
+    assert get_env_seeds(10, 1, independent_seeds=independent_seeds) == [10]
+    # Adjacent base seeds overlap on 3 of the 4 sub-envs under the legacy scheme (the bug in #2268)
+    assert get_env_seeds(0, 4, independent_seeds=independent_seeds)[1:] == get_env_seeds(1, 4)[:3]
+
+
+def test_get_env_seeds_independent():
+    seeds_0 = get_env_seeds(0, 4, independent_seeds=True)
+    seeds_1 = get_env_seeds(1, 4, independent_seeds=True)
+    # Unique within a run, disjoint across adjacent base seeds
+    assert len(seeds_0) == 4
+    assert len(set(seeds_0)) == 4
+    assert set(seeds_0).isdisjoint(seeds_1)
+    # Reproducible, distinct from the legacy mapping, and plain python ints (clean downstream seeding)
+    assert get_env_seeds(0, 4, independent_seeds=True) == seeds_0
+    assert seeds_0 != get_env_seeds(0, 4)
+    assert all(isinstance(seed, int) for seed in seeds_0)
+
+
+@pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)
+def test_vec_env_seed_modes(vec_env_class):
+    n_envs = 4
+    vec_env = vec_env_class([_box_env] * n_envs)
+    # Explicit legacy mode stores `seed + i`
+    assert list(vec_env.seed(0, independent_seeds=False)) == [0, 1, 2, 3]
+    # Independent mode stores non-overlapping, reproducible seeds matching the helper
+    seeds = list(vec_env.seed(0, independent_seeds=True))
+    assert seeds == get_env_seeds(0, n_envs, independent_seeds=True)
+    assert list(vec_env.seed(0, independent_seeds=True)) == seeds
+    # Random seeding (seed=None) still returns one seed per env
+    assert len(list(vec_env.seed())) == n_envs
+    vec_env.close()
+
+
+def test_vec_env_seed_warning_behavior():
+    vec_env = DummyVecEnv([_box_env, _box_env])
+    # Unset default with more than one sub-env warns, and the message is actionable
+    with pytest.warns(UserWarning, match="independent_seeds=True") as record:
+        vec_env.seed(0)
+    assert "2268" in str(record[0].message)
+
+    # An explicit choice (either way) and random seeding are silent
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        vec_env.seed(0, independent_seeds=False)
+        vec_env.seed(0, independent_seeds=True)
+        vec_env.seed()
+    vec_env.close()
+
+    # A single sub-env cannot overlap, so the default never warns
+    single_env = DummyVecEnv([_box_env])
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        single_env.seed(0)
+    single_env.close()
+
+
+def test_vec_env_wrapper_seed_passthrough():
+    vec_env = DummyVecEnv([_box_env, _box_env, _box_env])
+    wrapped = VecNormalize(vec_env)
+    # The flag is forwarded to the wrapped env: independent mode is silent and matches the helper
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        seeds = list(wrapped.seed(0, independent_seeds=True))
+    assert seeds == get_env_seeds(0, 3, independent_seeds=True)
+    assert list(vec_env.seed(0, independent_seeds=True)) == seeds
+    # The default path still warns through the wrapper
+    with pytest.warns(UserWarning, match="independent_seeds"):
+        wrapped.seed(0)
+    wrapped.close()
+
+
+@pytest.mark.parametrize("independent_seeds", [False, True])
+def test_make_vec_env_seed_overlap(independent_seeds):
+    n_envs = 4
+    reset_obs = {
+        base: make_vec_env("Pendulum-v1", n_envs=n_envs, seed=base, independent_seeds=independent_seeds).reset()
+        for base in (0, 1)
+    }
+    # Under the legacy scheme sub-envs 1..3 of the seed=0 run reuse the streams of sub-envs 0..2
+    # of the seed=1 run; the independent scheme breaks that overlap.
+    overlap = bool(np.allclose(reset_obs[0][1:], reset_obs[1][:3]))
+    assert overlap != independent_seeds
+    # Same seed + mode is reproducible either way
+    again = make_vec_env("Pendulum-v1", n_envs=n_envs, seed=0, independent_seeds=independent_seeds).reset()
+    assert np.allclose(again, reset_obs[0])
+
+
+@pytest.mark.parametrize("independent_seeds", [False, True])
+def test_make_vec_env_action_space_seed_consistency(independent_seeds):
+    # The action-space seeding in make_vec_env must move together with VecEnv.seed's env seeding,
+    # otherwise one site could be fixed while the other stays correlated (regression guard).
+    n_envs = 4
+
+    def action_space_samples(base):
+        vec_env = make_vec_env("Pendulum-v1", n_envs=n_envs, seed=base, independent_seeds=independent_seeds)
+        return [env.action_space.sample() for env in vec_env.envs]
+
+    overlap = bool(np.allclose(action_space_samples(0)[1:], action_space_samples(1)[:3]))
+    assert overlap != independent_seeds
+
+
+def test_make_vec_env_independent_seeds_with_start_index():
+    # start_index shifts the legacy action-space seeds (seed + rank); the independent path must
+    # index its precomputed per-env seeds by `rank - start_index` (guards the offset arithmetic).
+    n_envs = 3
+    vec_env = make_vec_env("Pendulum-v1", n_envs=n_envs, seed=0, start_index=5, independent_seeds=True)
+    # Env RNG seeds come from the helper regardless of start_index
+    assert list(vec_env._seeds) == get_env_seeds(0, n_envs, independent_seeds=True)
+    shifted_samples = [env.action_space.sample() for env in vec_env.envs]
+    # The action-space seeds must not depend on start_index (indexing is offset-corrected)
+    baseline = make_vec_env("Pendulum-v1", n_envs=n_envs, seed=0, start_index=0, independent_seeds=True)
+    baseline_samples = [env.action_space.sample() for env in baseline.envs]
+    assert np.allclose(shifted_samples, baseline_samples)
+
+
+def test_make_vec_env_default_warns_once():
+    # The default path emits exactly one heads-up (only via VecEnv.seed, not duplicated per env)
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        make_vec_env("Pendulum-v1", n_envs=3, seed=0)
+    assert len([w for w in record if "independent_seeds" in str(w.message)]) == 1
+
+    # A single env, an explicit choice, or random seeding must not emit our warning
+    for kwargs in (dict(n_envs=1, seed=0), dict(n_envs=3, seed=0, independent_seeds=False), dict(n_envs=3)):
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            make_vec_env("Pendulum-v1", **kwargs)
+        assert not any("independent_seeds" in str(w.message) for w in record)
 
 
 @pytest.mark.parametrize("vec_env_class", VEC_ENV_CLASSES)

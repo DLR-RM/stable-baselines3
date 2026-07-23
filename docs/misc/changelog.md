@@ -8,6 +8,9 @@
 
 ### New Features:
 
+- Added an opt-in ``independent_seeds`` argument to ``VecEnv.seed()`` and ``make_vec_env()`` to derive
+  statistically independent, non-overlapping sub-environment seeds via ``np.random.SeedSequence`` (see #2268)
+
 ### Bug Fixes:
 
 ### [SB3-Contrib]
@@ -17,6 +20,11 @@
 ### [SBX] (SB3 + Jax)
 
 ### Deprecations:
+
+- The default ``VecEnv`` seeding scheme (``seed + i`` per sub-environment) now warns when used with more than
+  one env, as adjacent base seeds share most of their RNG streams; pass ``independent_seeds=True`` for independent
+  runs or ``independent_seeds=False`` to keep the legacy behavior. The default will switch to independent seeding
+  in a future release (see #2268)
 
 ### Others:
 

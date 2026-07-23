@@ -7,6 +7,7 @@ import gymnasium as gym
 from stable_baselines3.common.atari_wrappers import AtariWrapper
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv
+from stable_baselines3.common.vec_env.base_vec_env import get_env_seeds
 from stable_baselines3.common.vec_env.patch_gym import _patch_env
 
 
@@ -42,6 +43,7 @@ def make_vec_env(
     n_envs: int = 1,
     seed: int | None = None,
     start_index: int = 0,
+    independent_seeds: bool | None = None,
     monitor_dir: str | None = None,
     wrapper_class: Callable[[gym.Env], gym.Env] | None = None,
     env_kwargs: dict[str, Any] | None = None,
@@ -59,6 +61,12 @@ def make_vec_env(
     :param n_envs: the number of environments you wish to have in parallel
     :param seed: the initial seed for the random number generator
     :param start_index: start rank index
+    :param independent_seeds: How to derive the per-environment seeds from ``seed``.
+        ``None`` (default) and ``False`` use the legacy ``seed + i`` scheme, so runs with
+        adjacent base seeds share most of their sub-environment RNG streams; ``True`` derives
+        independent, non-overlapping seeds via ``np.random.SeedSequence``. The default will
+        switch to ``True`` in a future release. See
+        https://github.com/DLR-RM/stable-baselines3/issues/2268
     :param monitor_dir: Path to a folder where the monitor files will be saved.
         If None, no file will be written, however, the env will still be wrapped
         in a Monitor wrapper to provide additional information about training.
@@ -79,6 +87,10 @@ def make_vec_env(
     monitor_kwargs = monitor_kwargs or {}
     wrapper_kwargs = wrapper_kwargs or {}
     assert vec_env_kwargs is not None  # for mypy
+
+    # When using independent seeds, precompute the per-env seeds so that the action spaces
+    # are seeded consistently with the observation/env RNG seeding done by ``VecEnv.seed`` below.
+    action_space_seeds = get_env_seeds(seed, n_envs, independent_seeds) if (seed is not None and independent_seeds) else None
 
     def make_env(rank: int) -> Callable[[], gym.Env]:
         def _init() -> gym.Env:
@@ -103,7 +115,11 @@ def make_vec_env(
             if seed is not None:
                 # Note: here we only seed the action space
                 # We will seed the env at the next reset
-                env.action_space.seed(seed + rank)
+                if independent_seeds:
+                    assert action_space_seeds is not None  # for mypy
+                    env.action_space.seed(action_space_seeds[rank - start_index])
+                else:
+                    env.action_space.seed(seed + rank)
             # Wrap the env in a Monitor wrapper
             # to have additional training information
             monitor_path = os.path.join(monitor_dir, str(rank)) if monitor_dir is not None else None
@@ -125,7 +141,7 @@ def make_vec_env(
 
     vec_env = vec_env_cls([make_env(i + start_index) for i in range(n_envs)], **vec_env_kwargs)
     # Prepare the seeds for the first reset
-    vec_env.seed(seed)
+    vec_env.seed(seed, independent_seeds=independent_seeds)
     return vec_env
 
 

@@ -21,6 +21,28 @@ VecEnvObs = Union[np.ndarray, dict[str, np.ndarray], tuple[np.ndarray, ...]]  # 
 VecEnvStepReturn = tuple[VecEnvObs, np.ndarray, np.ndarray, list[dict]]
 
 
+def get_env_seeds(seed: int, num_envs: int, independent_seeds: bool | None = None) -> list[int | None]:
+    """
+    Derive one seed per sub-environment from a single base seed.
+
+    :param seed: The base seed.
+    :param num_envs: The number of sub-environments.
+    :param independent_seeds: How to derive the per-env seeds from ``seed``:
+
+        - ``True``: derive statistically independent, non-overlapping seeds using
+          ``np.random.SeedSequence`` so that adjacent base seeds (e.g. ``0`` and ``1``)
+          no longer share sub-environment RNG streams.
+        - ``False``: use the legacy ``seed + i`` scheme.
+        - ``None`` (current default): behaves like ``False`` for now, but the default
+          will switch to independent seeding in a future release. See
+          https://github.com/DLR-RM/stable-baselines3/issues/2268
+    :return: A list of ``num_envs`` integer seeds.
+    """
+    if independent_seeds:
+        return [int(child_seed) for child_seed in np.random.SeedSequence(seed).generate_state(num_envs)]
+    return [seed + idx for idx in range(num_envs)]
+
+
 def tile_images(images_nhwc: Sequence[np.ndarray]) -> np.ndarray:  # pragma: no cover
     """
     Tile N images into one big PxQ image
@@ -289,7 +311,7 @@ class VecEnv(ABC):
             self.env_method("render")
         return None
 
-    def seed(self, seed: int | None = None) -> Sequence[None | int]:
+    def seed(self, seed: int | None = None, *, independent_seeds: bool | None = None) -> Sequence[int | None]:
         """
         Sets the random seeds for all environments, based on a given seed.
         Each individual environment will still get its own seed, by incrementing the given seed.
@@ -297,6 +319,13 @@ class VecEnv(ABC):
         at the next reset.
 
         :param seed: The random seed. May be None for completely random seeding.
+        :param independent_seeds: How to derive the per-env seeds from ``seed``.
+            With the legacy scheme, sub-environment ``i`` is seeded with ``seed + i``, so runs
+            with adjacent base seeds (e.g. ``0`` and ``1``) share most of their RNG streams.
+            Pass ``True`` to derive independent, non-overlapping seeds via ``np.random.SeedSequence``
+            (recommended for statistically independent runs), or ``False`` to keep the legacy
+            scheme and silence the warning. The default will switch to ``True`` in a future release.
+            See https://github.com/DLR-RM/stable-baselines3/issues/2268
         :return: Returns a list containing the seeds for each individual env.
             Note that all list elements may be None, if the env does not return anything when being seeded.
         """
@@ -304,8 +333,17 @@ class VecEnv(ABC):
             # To ensure that subprocesses have different seeds,
             # we still populate the seed variable when no argument is passed
             seed = int(np.random.randint(0, np.iinfo(np.uint32).max, dtype=np.uint32))
+        elif independent_seeds is None and self.num_envs > 1:
+            warnings.warn(
+                "The default VecEnv seeding scheme assigns `seed + i` to sub-environment `i`, so runs "
+                "with adjacent base seeds (e.g. 0 and 1) share most of their sub-environment RNG streams. "
+                "Pass `independent_seeds=True` to derive independent, non-overlapping seeds, or "
+                "`independent_seeds=False` to keep the current behavior and silence this warning. "
+                "The default will switch to independent seeding in a future release. "
+                "See https://github.com/DLR-RM/stable-baselines3/issues/2268"
+            )
 
-        self._seeds = [seed + idx for idx in range(self.num_envs)]
+        self._seeds = get_env_seeds(seed, self.num_envs, independent_seeds)
         return self._seeds
 
     def set_options(self, options: list[dict] | dict | None = None) -> None:
@@ -392,8 +430,8 @@ class VecEnvWrapper(VecEnv):
     def step_wait(self) -> VecEnvStepReturn:
         pass
 
-    def seed(self, seed: int | None = None) -> Sequence[None | int]:
-        return self.venv.seed(seed)
+    def seed(self, seed: int | None = None, *, independent_seeds: bool | None = None) -> Sequence[int | None]:
+        return self.venv.seed(seed, independent_seeds=independent_seeds)
 
     def set_options(self, options: list[dict] | dict | None = None) -> None:
         return self.venv.set_options(options)

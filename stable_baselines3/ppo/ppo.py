@@ -88,7 +88,7 @@ class PPO(OnPolicyAlgorithm):
         gamma: float = 0.99,
         gae_lambda: float = 0.95,
         clip_range: float | Schedule = 0.2,
-        clip_range_vf: None | float | Schedule = None,
+        clip_range_vf: float | Schedule | None = None,
         normalize_advantage: bool = True,
         ent_coef: float = 0.0,
         vf_coef: float = 0.5,

@@ -18,8 +18,16 @@ import cloudpickle
 import torch as th
 
 import stable_baselines3 as sb3
-from stable_baselines3.common.type_aliases import TensorDict
+from stable_baselines3.common.safe_globals import (
+    _RestrictedUnpickler,
+)
+from stable_baselines3.common.type_aliases import DeserializationMode, TensorDict
 from stable_baselines3.common.utils import get_device, get_system_info
+
+
+def _cloudpickle_loads_safe(data: bytes) -> Any:
+    """Deserialize cloudpickle data using the restricted allowlist unpickler."""
+    return _RestrictedUnpickler(io.BytesIO(data)).load()
 
 
 def recursive_getattr(obj: Any, attr: str, *args) -> Any:
@@ -128,7 +136,11 @@ def data_to_json(data: dict[str, Any]) -> str:
     return json_string
 
 
-def json_to_data(json_string: str, custom_objects: dict[str, Any] | None = None) -> dict[str, Any]:
+def json_to_data(
+    json_string: str,
+    custom_objects: dict[str, Any] | None = None,
+    deserialization_mode: DeserializationMode = DeserializationMode.SAFE,
+) -> dict[str, Any]:
     """
     Turn JSON serialization of class-parameters back into dictionary.
 
@@ -140,14 +152,33 @@ def json_to_data(json_string: str, custom_objects: dict[str, Any] | None = None)
         will be used instead. Similar to custom_objects in
         ``keras.models.load_model``. Useful when you have an object in
         file that can not be deserialized.
+    :param deserialization_mode: How to handle cloudpickle-serialized objects
+        stored in the checkpoint's ``data`` JSON.
+
+        - ``"safe"`` (default): Deserialize using a restricted unpickler that
+          only allows a fixed allowlist of known-safe SB3/gymnasium/numpy types.
+          Any cloudpickle payload referencing a type outside this allowlist is
+          skipped with a warning.
+        - ``"legacy"``: Deserialize all ``:serialized:`` entries with the
+          unrestricted cloudpickle loader.  This preserves full backward
+          compatibility but **executes arbitrary Python code** embedded in the
+          checkpoint.
     :return: Loaded class parameters.
     """
+    # Ensure SB3 types are registered for safe deserialization
+    from stable_baselines3.common.safe_globals import register_sb3_safe_globals
+
+    register_sb3_safe_globals()
     if custom_objects is not None and not isinstance(custom_objects, dict):
         raise ValueError("custom_objects argument must be a dict or None")
+
+    if deserialization_mode not in (DeserializationMode.SAFE, DeserializationMode.LEGACY):
+        raise ValueError(f"deserialization_mode must be 'legacy' or 'safe', got {deserialization_mode!r}")
 
     json_dict = json.loads(json_string)
     # This will be filled with deserialized data
     return_data = {}
+    warned_once = False
     for data_key, data_item in json_dict.items():
         if custom_objects is not None and data_key in custom_objects.keys():
             # If item is provided in custom_objects, replace
@@ -156,14 +187,26 @@ def json_to_data(json_string: str, custom_objects: dict[str, Any] | None = None)
         elif isinstance(data_item, dict) and ":serialized:" in data_item.keys():
             # If item is dictionary with ":serialized:"
             # key, this means it is serialized with cloudpickle.
+            if not warned_once:
+                warned_once = True
+                if deserialization_mode == DeserializationMode.LEGACY:
+                    warnings.warn(
+                        "Loading a model checkpoint that contains cloudpickle-serialized "
+                        "objects (deserialization_mode='legacy'). This allows arbitrary "
+                        "Python code execution from the checkpoint file. Only load "
+                        "checkpoints from trusted sources. To enable safe deserialization, "
+                        "use deserialization_mode='safe'. ",
+                        UserWarning,
+                    )
+
             serialization = data_item[":serialized:"]
-            # Try-except deserialization in case we run into
-            # errors. If so, we can tell bit more information to
-            # user.
             try:
                 base64_object = base64.b64decode(serialization.encode())
-                deserialized_object = cloudpickle.loads(base64_object)
-            except (RuntimeError, TypeError, AttributeError) as e:
+                if deserialization_mode == DeserializationMode.SAFE:
+                    deserialized_object = _cloudpickle_loads_safe(base64_object)
+                else:
+                    deserialized_object = cloudpickle.loads(base64_object)
+            except (RuntimeError, TypeError, AttributeError, pickle.UnpicklingError) as e:
                 warnings.warn(
                     f"Could not deserialize object {data_key}. "
                     "Consider using `custom_objects` argument to replace "
@@ -356,7 +399,11 @@ def save_to_pkl(path: str | pathlib.Path | io.BufferedIOBase, obj: Any, verbose:
         file.close()
 
 
-def load_from_pkl(path: str | pathlib.Path | io.BufferedIOBase, verbose: int = 0) -> Any:
+def load_from_pkl(
+    path: str | pathlib.Path | io.BufferedIOBase,
+    verbose: int = 0,
+    deserialization_mode: DeserializationMode = DeserializationMode.SAFE,
+) -> Any:
     """
     Load an object from the path. If a suffix is provided in the path, it will use that suffix.
     If the path does not exist, it will attempt to load using the .pkl suffix.
@@ -365,9 +412,35 @@ def load_from_pkl(path: str | pathlib.Path | io.BufferedIOBase, verbose: int = 0
         if save_path is a str or pathlib.Path and mode is "w", single dispatch ensures that the
         path actually exists. If path is a io.BufferedIOBase the path exists.
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
+    :param deserialization_mode: How to handle pickle deserialization.
+
+        - ``"safe"`` (default): Deserialize using a restricted unpickler that only
+          allows a fixed allowlist of known-safe SB3/gymnasium/numpy types.  Any
+          pickle payload referencing a type outside this allowlist is rejected
+          with a clear error.
+        - ``"legacy"``: Deserialize with ``pickle.load()``.  This preserves
+          backward compatibility but **executes arbitrary Python code** embedded
+          in the pickle file.  A ``UserWarning`` is emitted.
     """
+    if deserialization_mode not in (DeserializationMode.SAFE, DeserializationMode.LEGACY):
+        raise ValueError(f"deserialization_mode must be 'legacy' or 'safe', got {deserialization_mode!r}")
+
     file = open_path(path, "r", verbose=verbose, suffix="pkl")
-    obj = pickle.load(file)
+
+    if deserialization_mode == DeserializationMode.SAFE:
+        # Ensure SB3 types are registered for safe deserialization
+        from stable_baselines3.common.safe_globals import register_sb3_safe_globals
+
+        register_sb3_safe_globals()
+        obj = _RestrictedUnpickler(file).load()
+    else:
+        warnings.warn(
+            "Loading a .pkl file with pickle deserialization (deserialization_mode='legacy'). "
+            "This can execute arbitrary Python code from the file. Only load pickle files "
+            "from trusted sources. ",
+            UserWarning,
+        )
+        obj = pickle.load(file)
     if isinstance(path, (str, pathlib.Path)):
         file.close()
     return obj
@@ -380,6 +453,7 @@ def load_from_zip_file(
     device: th.device | str = "auto",
     verbose: int = 0,
     print_system_info: bool = False,
+    deserialization_mode: DeserializationMode = DeserializationMode.SAFE,
 ) -> tuple[dict[str, Any] | None, TensorDict, TensorDict | None]:
     """
     Load model data from a .zip archive
@@ -397,6 +471,8 @@ def load_from_zip_file(
     :param verbose: Verbosity level: 0 for no output, 1 for info messages, 2 for debug messages
     :param print_system_info: Whether to print or not the system info
         about the saved model.
+    :param deserialization_mode: How to handle cloudpickle-serialized objects
+        in the checkpoint's ``data`` JSON.  See :func:`json_to_data` for details.
     :return: Class parameters, model state_dicts (aka "params", dict of state_dict)
         and dict of pytorch variables
     """
@@ -421,7 +497,7 @@ def load_from_zip_file(
                 if "system_info.txt" in namelist:
                     print("== SAVED MODEL SYSTEM INFO ==")
                     print(archive.read("system_info.txt").decode())
-                else:
+                else:  # pragma: no cover
                     warnings.warn(
                         "The model was saved with SB3 <= 1.2.0 and thus cannot print system information.",
                         UserWarning,
@@ -431,7 +507,11 @@ def load_from_zip_file(
                 # Load class parameters that are stored
                 # with either JSON or pickle (not PyTorch variables).
                 json_data = archive.read("data").decode()
-                data = json_to_data(json_data, custom_objects=custom_objects)
+                data = json_to_data(
+                    json_data,
+                    custom_objects=custom_objects,
+                    deserialization_mode=deserialization_mode,
+                )
 
             # Check for all .pth files and load them using th.load.
             # "pytorch_variables.pth" stores PyTorch variables, and any other .pth

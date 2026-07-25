@@ -16,7 +16,15 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.noise import ActionNoise, VectorizedActionNoise
 from stable_baselines3.common.policies import BasePolicy
 from stable_baselines3.common.save_util import load_from_pkl, save_to_pkl
-from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, RolloutReturn, Schedule, TrainFreq, TrainFrequencyUnit
+from stable_baselines3.common.type_aliases import (
+    DeserializationMode,
+    GymEnv,
+    MaybeCallback,
+    RolloutReturn,
+    Schedule,
+    TrainFreq,
+    TrainFrequencyUnit,
+)
 from stable_baselines3.common.utils import safe_mean, should_collect_more_steps
 from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
@@ -228,6 +236,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self,
         path: str | pathlib.Path | io.BufferedIOBase,
         truncate_last_traj: bool = True,
+        deserialization_mode: DeserializationMode = DeserializationMode.SAFE,
     ) -> None:
         """
         Load a replay buffer from a pickle file.
@@ -237,8 +246,18 @@ class OffPolicyAlgorithm(BaseAlgorithm):
             If set to ``True``, we assume that the last trajectory in the replay buffer was finished
             (and truncate it).
             If set to ``False``, we assume that we continue the same trajectory (same episode).
+        :param deserialization_mode: How to handle pickle deserialization.
+
+            - ``"safe"`` (default): Deserialize using a restricted unpickler that
+              only allows a fixed allowlist of known-safe SB3/gymnasium/numpy types.
+              Any pickle payload referencing a type outside this allowlist is
+              rejected with a clear error.
+            - ``"legacy"``: Deserialize with ``pickle.load()``.  This preserves
+              backward compatibility but can **execute arbitrary Python code**
+              embedded in the pickle file.
+
         """
-        self.replay_buffer = load_from_pkl(path, self.verbose)
+        self.replay_buffer = load_from_pkl(path, self.verbose, deserialization_mode=deserialization_mode)
         assert isinstance(self.replay_buffer, ReplayBuffer), "The replay buffer must inherit from ReplayBuffer class"
 
         # Backward compatibility with SB3 < 2.1.0 replay buffer

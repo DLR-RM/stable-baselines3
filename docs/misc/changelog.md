@@ -2,6 +2,41 @@
 
 # Changelog
 
+## Release 2.10.0a0 (TBD)
+
+**Secure deserialization by default**
+
+:::{warning}
+Models saved with cloudpickle that contain arbitrary Python code (e.g. lambda functions, local classes, or custom spaces) will now produce warnings and skip the affected entries when loaded with the new default `deserialization_mode="safe"`. Use `deserialization_mode="legacy"` to restore the old behavior. You can find more information in the [Saving and Loading](https://stable-baselines3.readthedocs.io/en/master/guide/save_reload.html) documentation.
+:::
+
+### Breaking Changes:
+
+- `deserialization_mode` now defaults to `"safe"` for all load methods (`BaseAlgorithm.load`, `json_to_data`, `load_from_pkl`, `load_from_zip_file`, `load_replay_buffer`, `VecNormalize.load`). This blocks arbitrary code execution during deserialization at the cost of skipping non-whitelisted serialized entries.
+- `BaseModel.load()` now uses `torch.load(..., weights_only=True)` with a safe-globals allowlist for policy state-dicts.
+
+### New Features:
+
+- Added `deserialization_mode` parameter to all load methods (`"safe"` or `"legacy"`) to mitigate deserialization of Untrusted Data. `"safe"` mode uses a restricted unpickler that only allows a fixed allowlist of known-safe SB3/gymnasium/numpy types.
+- Added `add_safe_globals()` function and context manager to register custom classes as safe for restricted deserialization (à la `torch.serialization.add_safe_globals`).
+
+### Bug Fixes:
+
+### [SB3-Contrib]
+
+### [RL Zoo]
+
+### [SBX] (SB3 + Jax)
+
+### Deprecations:
+
+### Others:
+
+### Documentation:
+
+- Updated save/reload guide with a dedicated section on secure deserialization, explaining safe vs. legacy mode and how to handle `custom_objects` in safe mode.
+
+
 ## Release 2.9.2a0 (2026-07-18)
 
 ### Breaking Changes:
@@ -28,6 +63,7 @@
 - Fixed Docker build by adding the missing `--system` flag to `uv pip uninstall opencv-python` (required by recent `uv`)
 
 ### Documentation:
+
 
 ## Release 2.9.0 (2026-06-15)
 

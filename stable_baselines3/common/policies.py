@@ -22,6 +22,7 @@ from stable_baselines3.common.distributions import (
     make_proba_distribution,
 )
 from stable_baselines3.common.preprocessing import get_action_dim, is_image_space, maybe_transpose, preprocess_obs
+from stable_baselines3.common.safe_globals import register_sb3_safe_globals
 from stable_baselines3.common.torch_layers import (
     BaseFeaturesExtractor,
     CombinedExtractor,
@@ -173,9 +174,9 @@ class BaseModel(nn.Module):
         :return:
         """
         device = get_device(device)
-        # Note(antonin): we cannot use `weights_only=True` here because we need to allow
-        # gymnasium imports for the policy to be loaded successfully
-        saved_variables = th.load(path, map_location=device, weights_only=False)
+        # Ensure SB3 policy types are registered for torch.load with weights_only=True
+        register_sb3_safe_globals()
+        saved_variables = th.load(path, map_location=device, weights_only=True)
 
         # Create policy object
         model = cls(**saved_variables["data"])

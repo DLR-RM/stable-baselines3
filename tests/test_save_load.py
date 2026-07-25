@@ -630,7 +630,8 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     assert fp1.closed
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(pathtype(f"{tmp_path}/t1")) == "foo"
-    assert not record
+    # Only the expected security warning from load_from_pkl; no path-related warnings
+    assert all("deserializer" in str(warning.message).lower() for warning in record)
 
     # test custom suffix
     with open_path(pathtype(f"{tmp_path}/t1.custom_ext"), "w") as fp1:
@@ -638,7 +639,7 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     assert fp1.closed
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(pathtype(f"{tmp_path}/t1.custom_ext")) == "foo"
-    assert not record
+    assert all("deserializer" in str(warning.message).lower() for warning in record)
 
     # test without suffix
     with open_path(pathtype(f"{tmp_path}/t1"), "w", suffix="pkl") as fp1:
@@ -646,7 +647,7 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     assert fp1.closed
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(pathtype(f"{tmp_path}/t1.pkl")) == "foo"
-    assert not record
+    assert all("deserializer" in str(warning.message).lower() for warning in record)
 
     # test that a warning is raised when the path doesn't exist
     with open_path(pathtype(f"{tmp_path}/t2.pkl"), "w") as fp1:
@@ -654,11 +655,14 @@ def test_open_file_str_pathlib(tmp_path, pathtype):
     assert fp1.closed
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl")) == "foo"
-    assert len(record) == 0
+    # Only security warning, no "path not found" warning
+    assert all("deserializer" in str(warning.message).lower() for warning in record)
 
     with warnings.catch_warnings(record=True) as record:
         assert load_from_pkl(open_path(pathtype(f"{tmp_path}/t2"), "r", suffix="pkl", verbose=2)) == "foo"
-    assert len(record) == 1
+    # Security warning + path-not-found verbose warning
+    non_security = [warning for warning in record if "deserializer" not in str(warning.message).lower()]
+    assert len(non_security) == 1
 
     fp = pathlib.Path(f"{tmp_path}/t2").open("w")
     fp.write("rubbish")
@@ -729,6 +733,9 @@ def test_save_load_large_model(tmp_path):
 def test_load_invalid_object(tmp_path):
     # See GH Issue #1122 for an example
     # of invalid object loading
+    # Note: This test uses deserialization_mode="legacy" because it tests with lambda
+    # functions which cannot be deserialized in safe mode (they require _make_function
+    # which is intentionally not in the allowlist for security reasons).
     path = str(tmp_path / "ppo_pendulum.zip")
     PPO("MlpPolicy", "Pendulum-v1", learning_rate=lambda _: 1.0).save(path)
 
@@ -748,12 +755,19 @@ def test_load_invalid_object(tmp_path):
     # Replace with the corrupted file
     # probably doesn't work on windows
     os.system(f"cd {tmp_path}; zip ppo_pendulum.zip data")
-    with pytest.warns(UserWarning, match=r"custom_objects"):
-        PPO.load(path)
-    # Load with custom object, no warnings
     with warnings.catch_warnings(record=True) as record:
-        PPO.load(path, custom_objects=dict(learning_rate=lambda _: 1.0))
-    assert len(record) == 0
+        warnings.simplefilter("always")
+        PPO.load(path, deserialization_mode="legacy")
+    assert len(record) == 2
+    assert any("cloudpickle-serialized" in str(warning.message) for warning in record)
+    assert any("custom_objects" in str(warning.message) for warning in record)
+    # Load with custom object: the only warning should be the security warning
+    # (no "Could not deserialize" or "custom_objects" warnings)
+    with warnings.catch_warnings(record=True) as record:
+        PPO.load(path, custom_objects=dict(learning_rate=lambda _: 1.0), deserialization_mode="legacy")
+    # Filter out the expected security warning
+    non_security = [warning for warning in record if "cloudpickle-serialized" not in str(warning.message)]
+    assert len(non_security) == 0
 
 
 def test_dqn_target_update_interval(tmp_path):
@@ -767,8 +781,8 @@ def test_dqn_target_update_interval(tmp_path):
     assert model.target_update_interval == 100
 
 
-# Turn warnings into errors
-@pytest.mark.filterwarnings("error")
+# Turn ResourceWarnings into errors (not our security warnings)
+@pytest.mark.filterwarnings("error::ResourceWarning")
 def test_no_resource_warning(tmp_path):
     # Check behavior of save/load
     # see https://github.com/DLR-RM/stable-baselines3/issues/1751
@@ -811,7 +825,8 @@ def test_cast_lr_schedule(tmp_path):
     assert type(model.lr_schedule(1.0)) is float
     assert np.allclose(model.lr_schedule(0.5), 0.5 * np.sin(1.0))
     model.save(tmp_path / "ppo.zip")
-    model = PPO.load(tmp_path / "ppo.zip")
+    with pytest.warns(UserWarning, match=r"cloudpickle-serialized"):
+        model = PPO.load(tmp_path / "ppo.zip", deserialization_mode="legacy")
     assert type(model.lr_schedule(1.0)) is float
     assert np.allclose(model.lr_schedule(0.5), 0.5 * np.sin(1.0))
 
@@ -854,7 +869,8 @@ def test_save_load_backward_compatible(tmp_path, model_class):
 
     model.save(tmp_path / "test_schedule_safe.zip")
 
-    model = model_class.load(tmp_path / "test_schedule_safe.zip", env=env)
+    with pytest.warns(UserWarning, match=r"cloudpickle-serialized"):
+        model = model_class.load(tmp_path / "test_schedule_safe.zip", env=env, deserialization_mode="legacy")
 
     assert model.learning_rate(0) == 0.001
     assert model.learning_rate.__name__ == "<lambda>"

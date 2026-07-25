@@ -19,7 +19,7 @@ RUN cd ${CODE_DIR}/stable-baselines3 && \
     uv pip install --system torch --default-index ${PYTORCH_DEPS} && \
     uv pip install --system -e .[extra,tests,docs] && \
     # Use headless version for docker
-    uv pip uninstall opencv-python && \
+    uv pip uninstall --system opencv-python && \
     uv pip install --system opencv-python-headless && \
     pip cache purge && \
     uv cache clean

@@ -16,5 +16,4 @@ __all__ = [
     "IdentityEnvMultiBinary",
     "IdentityEnvMultiDiscrete",
     "SimpleMultiObsEnv",
-    "SimpleMultiObsEnv",
 ]

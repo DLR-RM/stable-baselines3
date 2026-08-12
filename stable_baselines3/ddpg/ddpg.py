@@ -45,6 +45,9 @@ class DDPG(TD3):
         at a cost of more complexity.
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param n_steps: When n_step > 1, uses n-step return (with the NStepReplayBuffer) when updating the Q-value network.
+        Note: it is only used when ``replay_buffer_class`` is ``None``, and is not supported for Dict
+        observation spaces yet. When passing a custom ``replay_buffer_class``, configure it directly
+        with ``replay_buffer_kwargs={"n_steps": ..., "gamma": ...}`` instead.
     :param policy_kwargs: additional arguments to be passed to the policy on creation. See :ref:`ddpg_policies`
     :param verbose: Verbosity level: 0 for no output, 1 for info messages (such as device or wrappers used), 2 for
         debug messages

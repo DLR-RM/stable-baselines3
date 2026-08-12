@@ -26,8 +26,11 @@
 - Improved tests coverage for RMSpropTFLike optimizer (invalid params, centered/momentum/weight_decay branches, pickle roundtrip)
 - Improved test coverage for `save_util.py`: added tests for `BadZipFile` error handling in `load_from_zip_file` and `IsADirectoryError`/`FileNotFoundError` handling in `open_path`
 - Fixed Docker build by adding the missing `--system` flag to `uv pip uninstall opencv-python` (required by recent `uv`)
+- Added a warning when `n_steps > 1` is passed together with a custom `replay_buffer_class`, as `n_steps` is only applied when the replay buffer class is selected automatically (@Koustav-github)
 
 ### Documentation:
+
+- Clarified in the `n_steps` docstring that it only applies when `replay_buffer_class` is `None`, and that a custom replay buffer must be configured with `replay_buffer_kwargs={"n_steps": ..., "gamma": ...}` (@Koustav-github)
 
 ## Release 2.9.0 (2026-06-15)
 
@@ -1898,7 +1901,7 @@ And all the contributors:
 @DavyMorgan @luizapozzobon @Bonifatius94 @theSquaredError @harveybellini @DavyMorgan @FieteO @jonasreiher @npit @WeberSamuel @troiganto
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
 @marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
-@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto @Trenza1ore @JonathanColetti @unexploredtest
+@brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto @Trenza1ore @JonathanColetti @unexploredtest @Koustav-github
 @m-abr
 
 [@adamgleave]: https://github.com/adamgleave

@@ -54,6 +54,9 @@ class SAC(OffPolicyAlgorithm):
         at a cost of more complexity.
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param n_steps: When n_step > 1, uses n-step return (with the NStepReplayBuffer) when updating the Q-value network.
+        Note: it is only used when ``replay_buffer_class`` is ``None``, and is not supported for Dict
+        observation spaces yet. When passing a custom ``replay_buffer_class``, configure it directly
+        with ``replay_buffer_kwargs={"n_steps": ..., "gamma": ...}`` instead.
     :param ent_coef: Entropy regularization coefficient. (Equivalent to
         inverse of reward scale in the original SAC paper.)  Controlling exploration/exploitation trade-off.
         Set it to 'auto' to learn it automatically (and 'auto_0.1' for using 0.1 as initial value)

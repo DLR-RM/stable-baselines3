@@ -52,6 +52,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         at a cost of more complexity.
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param n_steps: When n_step > 1, uses n-step return (with the NStepReplayBuffer) when updating the Q-value network.
+        Note: it is only used when ``replay_buffer_class`` is ``None``, and is not supported for Dict
+        observation spaces yet. When passing a custom ``replay_buffer_class``, configure it directly
+        with ``replay_buffer_kwargs={"n_steps": ..., "gamma": ...}`` instead.
     :param policy_kwargs: Additional arguments to be passed to the policy on creation
     :param stats_window_size: Window size for the rollout logging, specifying the number of episodes to average
         the reported success rate, mean episode length, and mean reward over
@@ -174,6 +177,18 @@ class OffPolicyAlgorithm(BaseAlgorithm):
     def _setup_model(self) -> None:
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
+
+        # `n_steps` is only taken into account when the replay buffer class is selected
+        # automatically. With a user-provided class, the buffer must be configured directly
+        # through `replay_buffer_kwargs`, otherwise `n_steps` would be silently ignored.
+        if self.n_steps > 1 and self.replay_buffer_class is not None:
+            warnings.warn(
+                f"`n_steps={self.n_steps}` is ignored because a custom `replay_buffer_class` "
+                f"(`{self.replay_buffer_class.__name__}`) was passed: n-step returns are only set up "
+                "automatically when `replay_buffer_class` is `None`. "
+                "To use n-step returns with a custom replay buffer, configure it explicitly, e.g. "
+                f'`replay_buffer_kwargs={{"n_steps": {self.n_steps}, "gamma": {self.gamma}}}`.'
+            )
 
         if self.replay_buffer_class is None:
             if isinstance(self.observation_space, spaces.Dict):

@@ -49,6 +49,9 @@ class TD3(OffPolicyAlgorithm):
         at a cost of more complexity.
         See https://github.com/DLR-RM/stable-baselines3/issues/37#issuecomment-637501195
     :param n_steps: When n_step > 1, uses n-step return (with the NStepReplayBuffer) when updating the Q-value network.
+        Note: it is only used when ``replay_buffer_class`` is ``None``, and is not supported for Dict
+        observation spaces yet. When passing a custom ``replay_buffer_class``, configure it directly
+        with ``replay_buffer_kwargs={"n_steps": ..., "gamma": ...}`` instead.
     :param policy_delay: Policy and target networks will only be updated once every policy_delay steps
         per training steps. The Q values will be updated policy_delay more often (update every training step).
     :param target_policy_noise: Standard deviation of Gaussian noise added to target policy

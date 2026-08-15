@@ -10,11 +10,6 @@
 
 ### Bug Fixes:
 
-- Fixed `n_steps > 1` being silently ignored by off-policy algorithms when a `replay_buffer_class` was passed explicitly
-  (for instance `HerReplayBuffer`), which made them use 1-step returns without any warning.
-  A `ValueError` is now raised when the replay buffer does not support n-step returns
-  (note: the unsupported Dict observation space case now raises `ValueError` instead of `AssertionError`) (@Koustav-github)
-
 ### [SB3-Contrib]
 
 ### [RL Zoo]

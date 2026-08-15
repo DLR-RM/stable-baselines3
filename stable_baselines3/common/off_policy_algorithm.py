@@ -193,13 +193,25 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         if self.replay_buffer_class is None:
             if isinstance(self.observation_space, spaces.Dict):
                 self.replay_buffer_class = DictReplayBuffer
-                assert self.n_steps == 1, "N-step returns are not supported for Dict observation spaces yet."
             elif self.n_steps > 1:
                 self.replay_buffer_class = NStepReplayBuffer
-                # Add required arguments for computing n-step returns
-                self.replay_buffer_kwargs.update({"n_steps": self.n_steps, "gamma": self.gamma})
             else:
                 self.replay_buffer_class = ReplayBuffer
+
+        # Check that the replay buffer supports n-step returns.
+        # This must be done for the user-provided class too, otherwise `n_steps`
+        # would be silently ignored and the algorithm would use 1-step returns.
+        if self.n_steps > 1:
+            if isinstance(self.observation_space, spaces.Dict):
+                raise ValueError("N-step returns (`n_steps > 1`) are not supported for Dict observation spaces yet.")
+            if not issubclass(self.replay_buffer_class, NStepReplayBuffer):
+                raise ValueError(
+                    f"`n_steps={self.n_steps}` requires a replay buffer that computes n-step returns, but "
+                    f"`replay_buffer_class={self.replay_buffer_class.__name__}` does not derive from `NStepReplayBuffer`. "
+                    "Please pass `n_steps=1` or use a subclass of `NStepReplayBuffer`."
+                )
+            # Add required arguments for computing n-step returns
+            self.replay_buffer_kwargs.update({"n_steps": self.n_steps, "gamma": self.gamma})
 
         if self.replay_buffer is None:
             # Make a local copy as we should not pickle

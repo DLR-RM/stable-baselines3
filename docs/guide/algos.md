@@ -3,24 +3,35 @@
 This table displays the RL algorithms that are implemented in the Stable Baselines3 project,
 along with some useful characteristics: support for discrete/continuous actions, multiprocessing.
 
+:::{note}
+More algorithms (like QR-DQN or TQC) are implemented in our [contrib repo](sb3_contrib.md)
+and in our {ref}`SBX (SB3 + Jax) repo <sbx>` (DroQ, CrossQ, SimBa, ...).
+:::
+
 | Name               | `Box` | `Discrete` | `MultiDiscrete` | `MultiBinary` | Multi Processing |
 | ------------------ | ----- | ---------- | --------------- | ------------- | ---------------- |
-| ARS [^f1]          | ✔️    | ✔️         | ❌              | ❌            | ✔️               |
 | A2C                | ✔️    | ✔️         | ✔️              | ✔️            | ✔️               |
-| CrossQ [^f1]       | ✔️    | ❌         | ❌              | ❌            | ✔️               |
+| ARS [^f1]          | ✔️    | ✔️         | ❌              | ❌            | ✔️               |
+| CrossQ [^f1],[^f2] | ✔️    | ❌         | ❌              | ❌            | ✔️               |
 | DDPG               | ✔️    | ❌         | ❌              | ❌            | ✔️               |
 | DQN                | ❌    | ✔️         | ❌              | ❌            | ✔️               |
+| DroQ [^f2]         | ✔️    | ❌         | ❌              | ❌            | ✔️               |
 | HER                | ✔️    | ✔️         | ❌              | ❌            | ✔️               |
+| Maskable PPO [^f1] | ❌    | ✔️         | ✔️              | ✔️            | ✔️               |
 | PPO                | ✔️    | ✔️         | ✔️              | ✔️            | ✔️               |
 | QR-DQN [^f1]       | ❌    | ️✔️        | ❌              | ❌            | ✔️               |
 | RecurrentPPO [^f1] | ✔️    | ✔️         | ✔️              | ✔️            | ✔️               |
 | SAC                | ✔️    | ❌         | ❌              | ❌            | ✔️               |
+| SAC-N [^f2]        | ✔️    | ❌         | ❌              | ❌            | ✔️               |
+| SimBa [^f2]        | ✔️    | ❌         | ❌              | ❌            | ✔️               |
 | TD3                | ✔️    | ❌         | ❌              | ❌            | ✔️               |
 | TQC [^f1]          | ✔️    | ❌         | ❌              | ❌            | ✔️               |
 | TRPO [^f1]         | ✔️    | ✔️         | ✔️              | ✔️            | ✔️               |
-| Maskable PPO [^f1] | ❌    | ✔️         | ✔️              | ✔️            | ✔️               |
 
 [^f1]: Implemented in [SB3 Contrib](https://github.com/Stable-Baselines-Team/stable-baselines3-contrib)
+
+[^f2]: Implemented in [SBX (SB3 + Jax)](https://github.com/araffin/sbx)
+
 
 :::{note}
 `Tuple` observation spaces are not supported by any environment,
@@ -36,10 +47,6 @@ Actions `gym.spaces`:
 - `MultiDiscrete`: A list of possible actions, where each timestep only one action of each discrete set can be used.
 - `MultiBinary`: A list of possible actions, where each timestep any of the actions can be used in any combination.
 
-:::{note}
-More algorithms (like QR-DQN or TQC) are implemented in our [contrib repo](sb3_contrib.md)
-and in our {ref}`SBX (SB3 + Jax) repo <sbx>` (DroQ, CrossQ, SimBa, ...).
-:::
 
 :::{note}
 Some logging values (like `ep_rew_mean`, `ep_len_mean`) are only available when using a `Monitor` wrapper

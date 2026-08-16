@@ -178,9 +178,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         self._setup_lr_schedule()
         self.set_random_seed(self.seed)
 
-        # `n_steps` is only taken into account when the replay buffer class is selected
-        # automatically. With a user-provided class, the buffer must be configured directly
-        # through `replay_buffer_kwargs`, otherwise `n_steps` would be silently ignored.
         if self.n_steps > 1 and self.replay_buffer_class is not None:
             warnings.warn(
                 f"`n_steps={self.n_steps}` is ignored because a custom `replay_buffer_class` "

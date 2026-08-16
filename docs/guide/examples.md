@@ -66,6 +66,7 @@ from stable_baselines3.common.evaluation import evaluate_policy
 env = gym.make("LunarLander-v3", render_mode="rgb_array")
 
 # Instantiate the agent
+# Note: you can enable multi-step replay buffer by passing `n_steps=3` for instance
 model = DQN("MlpPolicy", env, verbose=1)
 # Train the agent and display a progress bar
 model.learn(total_timesteps=int(2e5), progress_bar=True)

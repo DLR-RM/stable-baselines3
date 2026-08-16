@@ -31,6 +31,7 @@
 ### Documentation:
 
 - Clarified in the `n_steps` docstring that it only applies when `replay_buffer_class` is `None`, and that a custom replay buffer must be configured with `replay_buffer_kwargs={"n_steps": ..., "gamma": ...}` (@Koustav-github)
+- Updated algorithm table (added the ones from SBX and sorted the table)
 
 ## Release 2.9.0 (2026-06-15)
 

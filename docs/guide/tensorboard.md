@@ -51,7 +51,7 @@ You can find explanations about the logger output and names in the {ref}`Logger 
 you can also add past logging folders:
 
 ```bash
-tensorboard --logdir ./a2c_cartpole_tensorboard/;./ppo2_cartpole_tensorboard/
+tensorboard --logdir ./a2c_cartpole_tensorboard/,./ppo2_cartpole_tensorboard/
 ```
 
 It will display information such as the episode reward (when using a `Monitor` wrapper), the model losses and other parameter unique to some models.

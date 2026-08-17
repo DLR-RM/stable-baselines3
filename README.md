@@ -142,8 +142,8 @@ model.learn(total_timesteps=10_000)
 vec_env = model.get_env()
 obs = vec_env.reset()
 for i in range(1000):
-    action, _states = model.predict(obs, deterministic=True)
-    obs, reward, done, info = vec_env.step(action)
+    actions, _states = model.predict(obs, deterministic=True)
+    obs, rewards, dones, info = vec_env.step(actions)
     vec_env.render()
     # VecEnv resets automatically
     # if done:

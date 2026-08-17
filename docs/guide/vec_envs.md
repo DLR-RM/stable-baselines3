@@ -119,7 +119,7 @@ class MyMultiTaskEnv(gym.Env):
 
   def step(self, action):
     # Do something, depending on the action and current value of mu the next state is computed
-    return self._get_obs(), reward, done, truncated, info
+    return self._get_obs(), reward, terminated, truncated, info
 
   def set_mu(self, new_mu: float) -> None:
       # Note: this value should be used only at the next reset
@@ -208,8 +208,8 @@ class VecExtractDictObs(VecEnvWrapper):
         self.venv.step_async(actions)
 
     def step_wait(self) -> VecEnvStepReturn:
-        obs, reward, done, info = self.venv.step_wait()
-        return obs[self.key], reward, done, info
+        obs, rewards, dones, info = self.venv.step_wait()
+        return obs[self.key], rewards, dones, info
 
 env = DummyVecEnv([lambda: gym.make("FetchReach-v1")])
 # Wrap the VecEnv

@@ -20,7 +20,7 @@ so it is enough to export these policies (cf {ref}`examples <examples>`)
 to do inference in another framework.
 
 :::{warning}
-When using CNN policies, the observation is normalized during pre-preprocessing.
+When using CNN policies, the observation is normalized during preprocessing.
 This pre-processing is done *inside* the policy (dividing by 255 to have values in [0, 1])
 :::
 
@@ -356,7 +356,7 @@ that this example covers, including:
 - Making the Gym's observation work with ONNX properly
 - Quantising the TFLite model appropriately to align with Gym
   while still taking advantage of Coral
-- Using OnnxablePolicy described as described in the above example
+- Using OnnxablePolicy as described in the above example
 
 ## Manual export
 

@@ -18,7 +18,7 @@ In the `docs/` folder:
 make html
 ```
 
-if you want to building each time a file is changed:
+for automatic rebuilding each time a file is changed:
 
 ```
 sphinx-autobuild . _build/html

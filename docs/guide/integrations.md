@@ -215,9 +215,9 @@ You need to define three parameters:
 - `filename`: the file you want to push to the Hub.
 - `commit-message`.
 
-## MLFLow
+## MLflow
 
-If you want to use [MLFLow](https://github.com/mlflow/mlflow) to track your SB3 experiments,
+If you want to use [MLflow](https://github.com/mlflow/mlflow) to track your SB3 experiments,
 you can adapt the following code which defines a custom logger output:
 
 ```python

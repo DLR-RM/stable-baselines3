@@ -57,4 +57,4 @@ Cons:
 
 - More complex implementation.
 - Still relies partly on cloudpickle for complex objects (e.g. custom functions)
-  with can lead to [incompatibilities](https://github.com/DLR-RM/stable-baselines3/issues/172) between Python versions.
+  which can lead to [incompatibilities](https://github.com/DLR-RM/stable-baselines3/issues/172) between Python versions.

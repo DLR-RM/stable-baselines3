@@ -81,7 +81,7 @@ instead of `from stable_baselines3.common import make_atari_env`
 
 #### Policies
 
-- `cnn_extractor` -> `features_extractor`, as `features_extractor` in now used with `MlpPolicy` too
+- `cnn_extractor` -> `features_extractor`, as `features_extractor` is now used with `MlpPolicy` too
 
 #### A2C
 

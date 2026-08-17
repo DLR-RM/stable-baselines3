@@ -301,7 +301,7 @@ If you would like to log arbitrary data (in one of the formats supported by [PyT
 can get direct access to the underlying SummaryWriter in a callback:
 
 :::{warning}
-This is method is not recommended and should only be used by advanced users.
+This method is not recommended and should only be used by advanced users.
 :::
 
 :::{note}

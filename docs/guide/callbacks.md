@@ -31,7 +31,7 @@ class CustomCallback(BaseCallback):
         # self.model = None  # type: BaseAlgorithm
         # An alias for self.model.get_env(), the environment used for training
         # self.training_env # type: VecEnv
-        # Number of time the callback was called
+        # Number of times the callback was called
         # self.n_calls = 0  # type: int
         # num_timesteps = n_envs * n times env.step() was called
         # self.num_timesteps = 0  # type: int

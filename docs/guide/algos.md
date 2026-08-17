@@ -65,7 +65,7 @@ via the `replay_buffer_kwargs` argument.
 Completely reproducible results are not guaranteed across PyTorch releases or different platforms.
 Furthermore, results need not be reproducible between CPU and GPU executions, even when using identical seeds.
 
-In order to make computations deterministics, on your specific problem on one specific platform,
+In order to make computations deterministic for your specific problem on one specific platform,
 you need to pass a `seed` argument at the creation of a model.
 If you pass an environment to the model using `set_env()`, then you also need to seed the environment first.
 

@@ -90,10 +90,8 @@ setup(
             # Run tests and coverage
             "pytest",
             "pytest-cov",
-            "pytest-env",
-            "pytest-xdist",
             # Type check
-            "mypy>=1.9.0,<2",
+            "mypy>=1.9.0,<3",
             # Lint code and sort imports (flake8 and isort replacement)
             "ruff>=0.5.6",
             # Reformat

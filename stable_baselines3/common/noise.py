@@ -147,9 +147,9 @@ class VectorizedActionNoise(ActionNoise):
     @base_noise.setter
     def base_noise(self, base_noise: ActionNoise) -> None:
         if base_noise is None:
-            raise ValueError("Expected base_noise to be an instance of ActionNoise, not None", ActionNoise)
+            raise ValueError("Expected base_noise to be an instance of ActionNoise, not None")
         if not isinstance(base_noise, ActionNoise):
-            raise TypeError("Expected base_noise to be an instance of type ActionNoise", ActionNoise)
+            raise TypeError(f"Expected base_noise to be an instance of ActionNoise, not {type(base_noise).__name__}")
         self._base_noise = base_noise
 
     @property
@@ -165,7 +165,8 @@ class VectorizedActionNoise(ActionNoise):
 
         if len(different_types):
             raise ValueError(
-                f"Noise instances at indices {different_types} don't match the type of base_noise", type(self.base_noise)
+                f"Noise instances at indices {different_types} don't match the type of base_noise, "
+                f"{type(self.base_noise).__name__}"
             )
 
         self._noises = noises

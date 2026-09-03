@@ -196,7 +196,8 @@ class ResultsWriter:
         # Prevent newline issue on Windows, see GH issue #692
         self.file_handler = open(filename, f"{mode}t", newline="\n")
         self.logger = csv.DictWriter(self.file_handler, fieldnames=("r", "l", "t", *extra_keys))
-        if override_existing:
+        # Write the header when overriding, or when appending to a new/empty file (nothing to append to)
+        if override_existing or os.path.getsize(filename) == 0:
             self.file_handler.write(f"#{json.dumps(header)}\n")
             self.logger.writeheader()
 

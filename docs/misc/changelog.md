@@ -9,6 +9,7 @@
 ### New Features:
 
 ### Bug Fixes:
+- Fixed `Monitor`/`ResultsWriter` not writing the CSV header when `override_existing=False` and the file does not exist yet, which made `load_results` fail on the produced file (@yurekami)
 
 ### [SB3-Contrib]
 

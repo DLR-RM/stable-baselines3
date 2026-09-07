@@ -159,6 +159,12 @@ class SubprocVecEnv(VecEnv):
             remote.send(("close", None))
         for process in self.processes:
             process.join()
+        # Close the parent side of the pipes: otherwise the sockets stay open
+        # until this instance (and its ``remotes``) is garbage collected,
+        # which can exhaust the file-descriptor limit (``Too many open files``)
+        # in long-running loops (e.g. hyperparameter optimization).
+        for remote in self.remotes:
+            remote.close()
         self.closed = True
 
     def get_images(self) -> Sequence[np.ndarray | None]:

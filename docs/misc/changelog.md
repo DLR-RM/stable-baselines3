@@ -2,13 +2,15 @@
 
 # Changelog
 
-## Release 2.9.1a1 (2026-07-18)
+## Release 2.9.2a0 (WIP)
 
 ### Breaking Changes:
 
 ### New Features:
 
 ### Bug Fixes:
+
+- Fixed file descriptor leak in `SubprocVecEnv.close()` by closing parent-side pipes to prevent "too many open files" errors in long-running loops
 
 ### [SB3-Contrib]
 

@@ -3,6 +3,7 @@ from typing import TypeVar
 
 from stable_baselines3.common.vec_env.base_vec_env import CloudpickleWrapper, VecEnv, VecEnvWrapper
 from stable_baselines3.common.vec_env.dummy_vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env.pool_vec_env import PoolVecEnv
 from stable_baselines3.common.vec_env.stacked_observations import StackedObservations
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv
 from stable_baselines3.common.vec_env.vec_check_nan import VecCheckNan
@@ -87,6 +88,7 @@ def sync_envs_normalization(env: VecEnv, eval_env: VecEnv) -> None:
 __all__ = [
     "CloudpickleWrapper",
     "DummyVecEnv",
+    "PoolVecEnv",
     "StackedObservations",
     "SubprocVecEnv",
     "VecCheckNan",

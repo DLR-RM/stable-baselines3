@@ -8,6 +8,8 @@
 
 ### New Features:
 
+- Added `squash_mean_actions` policy option for A2C/PPO to tanh-squash the mean of `DiagGaussianDistribution`
+
 ### Bug Fixes:
 
 - Fixed file descriptor leak in `SubprocVecEnv.close()` by closing parent-side pipes to prevent "too many open files" errors in long-running loops

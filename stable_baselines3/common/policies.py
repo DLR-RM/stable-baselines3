@@ -433,6 +433,8 @@ class ActorCriticPolicy(BasePolicy):
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param squash_output: Whether to squash the output using a tanh function,
         this allows to ensure boundaries when using gSDE.
+    :param squash_mean_actions: Whether to squash the mean actions using a tanh function.
+        This is only available when using ``DiagGaussianDistribution``.
     :param features_extractor_class: Features extractor to use.
     :param features_extractor_kwargs: Keyword arguments
         to pass to the features extractor.
@@ -464,6 +466,7 @@ class ActorCriticPolicy(BasePolicy):
         normalize_images: bool = True,
         optimizer_class: type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: dict[str, Any] | None = None,
+        squash_mean_actions: bool = False,
     ):
         if optimizer_kwargs is None:
             optimizer_kwargs = {}
@@ -514,9 +517,16 @@ class ActorCriticPolicy(BasePolicy):
             self.vf_features_extractor = self.make_features_extractor()
 
         self.log_std_init = log_std_init
+        self.squash_mean_actions = squash_mean_actions
         dist_kwargs = None
 
         assert not (squash_output and not use_sde), "squash_output=True is only available when using gSDE (use_sde=True)"
+        assert not (
+            squash_mean_actions and use_sde
+        ), "squash_mean_actions=True is only available without gSDE (use_sde=False). Use squash_output=True when using gSDE."
+        assert not (
+            squash_mean_actions and not isinstance(action_space, spaces.Box)
+        ), "squash_mean_actions=True is only available for Box action spaces"
         # Keyword arguments for gSDE distribution
         if use_sde:
             dist_kwargs = {
@@ -546,6 +556,7 @@ class ActorCriticPolicy(BasePolicy):
                 use_sde=self.use_sde,
                 log_std_init=self.log_std_init,
                 squash_output=default_none_kwargs["squash_output"],
+                squash_mean_actions=self.squash_mean_actions,
                 full_std=default_none_kwargs["full_std"],
                 use_expln=default_none_kwargs["use_expln"],
                 lr_schedule=self._dummy_schedule,  # dummy lr schedule, not needed for loading policy alone
@@ -595,7 +606,7 @@ class ActorCriticPolicy(BasePolicy):
 
         if isinstance(self.action_dist, DiagGaussianDistribution):
             self.action_net, self.log_std = self.action_dist.proba_distribution_net(
-                latent_dim=latent_dim_pi, log_std_init=self.log_std_init
+                latent_dim=latent_dim_pi, log_std_init=self.log_std_init, squash_mean_actions=self.squash_mean_actions
             )
         elif isinstance(self.action_dist, StateDependentNoiseDistribution):
             self.action_net, self.log_std = self.action_dist.proba_distribution_net(
@@ -783,6 +794,8 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param squash_output: Whether to squash the output using a tanh function,
         this allows to ensure boundaries when using gSDE.
+    :param squash_mean_actions: Whether to squash the mean actions using a tanh function.
+        This is only available when using ``DiagGaussianDistribution``.
     :param features_extractor_class: Features extractor to use.
     :param features_extractor_kwargs: Keyword arguments
         to pass to the features extractor.
@@ -814,6 +827,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
         normalize_images: bool = True,
         optimizer_class: type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: dict[str, Any] | None = None,
+        squash_mean_actions: bool = False,
     ):
         super().__init__(
             observation_space,
@@ -833,6 +847,7 @@ class ActorCriticCnnPolicy(ActorCriticPolicy):
             normalize_images,
             optimizer_class,
             optimizer_kwargs,
+            squash_mean_actions=squash_mean_actions,
         )
 
 
@@ -856,6 +871,8 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         above zero and prevent it from growing too fast. In practice, ``exp()`` is usually enough.
     :param squash_output: Whether to squash the output using a tanh function,
         this allows to ensure boundaries when using gSDE.
+    :param squash_mean_actions: Whether to squash the mean actions using a tanh function.
+        This is only available when using ``DiagGaussianDistribution``.
     :param features_extractor_class: Uses the CombinedExtractor
     :param features_extractor_kwargs: Keyword arguments
         to pass to the features extractor.
@@ -887,6 +904,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
         normalize_images: bool = True,
         optimizer_class: type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: dict[str, Any] | None = None,
+        squash_mean_actions: bool = False,
     ):
         super().__init__(
             observation_space,
@@ -906,6 +924,7 @@ class MultiInputActorCriticPolicy(ActorCriticPolicy):
             normalize_images,
             optimizer_class,
             optimizer_kwargs,
+            squash_mean_actions=squash_mean_actions,
         )
 
 

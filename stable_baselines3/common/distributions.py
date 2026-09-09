@@ -137,7 +137,9 @@ class DiagGaussianDistribution(Distribution):
         super().__init__()
         self.action_dim = action_dim
 
-    def proba_distribution_net(self, latent_dim: int, log_std_init: float = 0.0) -> tuple[nn.Module, nn.Parameter]:
+    def proba_distribution_net(
+        self, latent_dim: int, log_std_init: float = 0.0, squash_mean_actions: bool = False
+    ) -> tuple[nn.Module, nn.Parameter]:
         """
         Create the layers and parameter that represent the distribution:
         one output will be the mean of the Gaussian, the other parameter will be the
@@ -145,9 +147,11 @@ class DiagGaussianDistribution(Distribution):
 
         :param latent_dim: Dimension of the last layer of the policy (before the action layer)
         :param log_std_init: Initial value for the log standard deviation
+        :param squash_mean_actions: Whether to squash the mean actions using a tanh function.
         :return:
         """
-        mean_actions = nn.Linear(latent_dim, self.action_dim)
+        mean_actions_net = nn.Linear(latent_dim, self.action_dim)
+        mean_actions = nn.Sequential(mean_actions_net, nn.Tanh()) if squash_mean_actions else mean_actions_net
         # TODO: allow action dependent std
         log_std = nn.Parameter(th.ones(self.action_dim) * log_std_init, requires_grad=True)
         return mean_actions, log_std

@@ -172,3 +172,28 @@ def test_monitor_error_cases():
     with pytest.raises(RuntimeError, match="Tried to step environment that needs reset"):
         monitor_env3 = Monitor(env3)
         monitor_env3.step(monitor_env3.action_space.sample())
+
+
+def test_monitor_append_new_file(tmp_path):
+    """
+    Test that the header is written when appending (``override_existing=False``)
+    to a monitor file that does not exist yet.
+    """
+    monitor_file = os.path.join(str(tmp_path), f"stable_baselines-test-{uuid.uuid4()}.monitor.csv")
+    assert not os.path.exists(monitor_file)
+    # Run one episode twice, appending to the same file both times
+    for _ in range(2):
+        monitor_env = Monitor(gym.make("CartPole-v1"), monitor_file, override_existing=False)
+        monitor_env.reset(seed=0)
+        terminated = truncated = False
+        while not (terminated or truncated):
+            _, _, terminated, truncated, _ = monitor_env.step(monitor_env.action_space.sample())
+        monitor_env.close()
+
+    with open(monitor_file) as file_handler:
+        lines = file_handler.read().splitlines()
+    # The header (json + column names) must be written only once, followed by one row per episode
+    assert lines[0].startswith("#")
+    assert lines[1] == "r,l,t"
+    assert len(lines) == 4
+    assert len(load_results(str(tmp_path))) == 2

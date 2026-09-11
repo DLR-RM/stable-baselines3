@@ -678,8 +678,14 @@ class BaseAlgorithm(ABC):
             print("== CURRENT SYSTEM INFO ==")
             get_system_info()
 
+        load_path = path
+        if isinstance(path, str) and path.endswith(".zip"):
+            load_path = path[:-4]
+        elif isinstance(path, pathlib.Path) and path.suffix == ".zip":
+            load_path = pathlib.Path(str(path)[:-4])
+
         data, params, pytorch_variables = load_from_zip_file(
-            path,
+            load_path,
             device=device,
             custom_objects=custom_objects,
             print_system_info=print_system_info,

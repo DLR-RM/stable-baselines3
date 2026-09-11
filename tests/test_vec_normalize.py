@@ -1,4 +1,5 @@
 import operator
+from copy import deepcopy
 from typing import Any
 
 import gymnasium as gym
@@ -7,7 +8,7 @@ import pytest
 from gymnasium import spaces
 
 from stable_baselines3 import SAC, TD3, HerReplayBuffer
-from stable_baselines3.common.envs import FakeImageEnv
+from stable_baselines3.common.envs import FakeImageEnv, SimpleMultiObsEnv
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 from stable_baselines3.common.vec_env import (
@@ -496,3 +497,13 @@ def test_non_dict_obs_keys():
 
     # Test dict obs with norm_obs set to False
     _make_warmstart(lambda: DummyMixedDictEnv(), norm_obs=False)
+
+
+def test_vec_normalize_keeps_the_wrapped_obs_space():
+    venv = DummyVecEnv([lambda: SimpleMultiObsEnv()])
+    original_space = deepcopy(venv.observation_space)
+
+    vec_normalize = VecNormalize(venv)
+
+    assert venv.observation_space == original_space
+    assert vec_normalize.observation_space["img"].dtype == np.float32

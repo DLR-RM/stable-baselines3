@@ -2,6 +2,28 @@
 
 # Changelog
 
+## Release 2.9.3a0 (WIP)
+
+### Breaking Changes:
+
+### New Features:
+
+### Bug Fixes:
+
+- Fixed `VecNormalize` writing the normalized image bounds into the `Dict` observation space of the environment it wraps, which changed how a model built on that environment afterwards treated the image
+
+### [SB3-Contrib]
+
+### [RL Zoo]
+
+### [SBX] (SB3 + Jax)
+
+### Deprecations:
+
+### Others:
+
+### Documentation:
+
 ## Release 2.9.2 (2026-10-26)
 
 :::{warning}

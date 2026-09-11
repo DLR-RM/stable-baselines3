@@ -7,7 +7,7 @@ import numpy as np
 import torch as th
 from gymnasium import spaces
 from torch import nn
-from torch.distributions import Bernoulli, Categorical, Normal
+from torch.distributions import Bernoulli, Beta, Categorical, Normal
 from torch.distributions import Distribution as TorchDistribution
 
 from stable_baselines3.common.preprocessing import get_action_dim
@@ -20,6 +20,7 @@ SelfSquashedDiagGaussianDistribution = TypeVar(
 SelfCategoricalDistribution = TypeVar("SelfCategoricalDistribution", bound="CategoricalDistribution")
 SelfMultiCategoricalDistribution = TypeVar("SelfMultiCategoricalDistribution", bound="MultiCategoricalDistribution")
 SelfBernoulliDistribution = TypeVar("SelfBernoulliDistribution", bound="BernoulliDistribution")
+SelfBetaDistribution = TypeVar("SelfBetaDistribution", bound="BetaDistribution")
 SelfStateDependentNoiseDistribution = TypeVar("SelfStateDependentNoiseDistribution", bound="StateDependentNoiseDistribution")
 
 
@@ -426,6 +427,92 @@ class BernoulliDistribution(Distribution):
         return actions, log_prob
 
 
+class BetaDistribution(Distribution):
+    """
+    Beta distribution for continuous actions in a bounded space.
+
+    Actions are sampled from a Beta distribution and then rescaled to [low, high].
+    The network outputs two heads (alpha and beta parameters), which are passed through
+    softplus to ensure positivity, with +1 added to keep them >= 1 (unimodal regime).
+
+    References: Chou et al. "Improving Stochastic Policy Gradients in Continuous Control with
+    Deep Reinforcement Learning using the Beta Distribution" (ICML 2017)
+    https://proceedings.mlr.press/v70/chou17a.html
+    and https://arxiv.org/abs/2111.02202
+
+    :param action_dim: Dimension of the action space.
+    """
+
+    distribution: Beta
+
+    def __init__(self, action_dim: int):
+        super().__init__()
+        self.action_dim = action_dim
+
+    def proba_distribution_net(self, latent_dim: int) -> nn.Module:
+        """
+        Create the layer that represents the distribution:
+        it outputs both alpha and beta parameters (2 * action_dim outputs).
+
+        :param latent_dim: Dimension of the last layer of the policy (before the action layer)
+        :return: action network (outputs alpha and beta concatenated)
+        """
+        action_net = nn.Linear(latent_dim, 2 * self.action_dim)
+        return action_net
+
+    def proba_distribution(self: SelfBetaDistribution, alpha_beta: th.Tensor) -> SelfBetaDistribution:
+        """
+        Create the distribution given the concatenated alpha/beta parameters.
+
+        :param alpha_beta: Concatenated raw alpha and beta outputs from the network,
+            shape (batch, 2 * action_dim). Will be passed through softplus + 1
+            to ensure alpha, beta >= 1 (unimodal).
+        :return: self
+        """
+        alpha, beta = th.chunk(alpha_beta, 2, dim=-1)
+        # Softplus + 1 ensures alpha, beta >= 1 (unimodal Beta distribution)
+        alpha = th.nn.functional.softplus(alpha) + 1.0
+        beta = th.nn.functional.softplus(beta) + 1.0
+        self.distribution = Beta(alpha, beta)
+        return self
+
+    def log_prob(self, actions: th.Tensor) -> th.Tensor:
+        """
+        Get the log probabilities of actions according to the distribution.
+        Actions are expected in [0, 1] (the raw Beta space).
+
+        :param actions:
+        :return:
+        """
+        # Clamp to avoid log(0) at boundaries
+        # log_prob = self.distribution.log_prob(actions.clamp(1e-6, 1.0 - 1e-6))
+        log_prob = self.distribution.log_prob(actions)
+        return sum_independent_dims(log_prob)
+
+    def entropy(self) -> th.Tensor:
+        return sum_independent_dims(self.distribution.entropy())
+
+    def sample(self) -> th.Tensor:
+        # Reparametrization trick to pass gradients
+        return self.distribution.rsample()
+
+    def mode(self) -> th.Tensor:
+        # Mode of Beta(alpha, beta) = (alpha - 1) / (alpha + beta - 2) when alpha, beta > 1
+        alpha = self.distribution.concentration1
+        beta = self.distribution.concentration0
+        return (alpha - 1.0) / (alpha + beta - 2.0)
+
+    def actions_from_params(self, alpha_beta: th.Tensor, deterministic: bool = False) -> th.Tensor:
+        # Update the proba distribution
+        self.proba_distribution(alpha_beta)
+        return self.get_actions(deterministic=deterministic)
+
+    def log_prob_from_params(self, alpha_beta: th.Tensor) -> tuple[th.Tensor, th.Tensor]:
+        actions = self.actions_from_params(alpha_beta)
+        log_prob = self.log_prob(actions)
+        return actions, log_prob
+
+
 class StateDependentNoiseDistribution(Distribution):
     """
     Distribution class for using generalized State Dependent Exploration (gSDE).
@@ -668,7 +755,10 @@ class TanhBijector:
 
 
 def make_proba_distribution(
-    action_space: spaces.Space, use_sde: bool = False, dist_kwargs: dict[str, Any] | None = None
+    action_space: spaces.Space,
+    use_sde: bool = False,
+    use_beta: bool = False,
+    dist_kwargs: dict[str, Any] | None = None,
 ) -> Distribution:
     """
     Return an instance of Distribution for the correct type of action space
@@ -676,6 +766,8 @@ def make_proba_distribution(
     :param action_space: the input action space
     :param use_sde: Force the use of StateDependentNoiseDistribution
         instead of DiagGaussianDistribution
+    :param use_beta: Force the use of BetaDistribution for continuous actions.
+        See https://arxiv.org/abs/2111.02202
     :param dist_kwargs: Keyword arguments to pass to the probability distribution
     :return: the appropriate Distribution object
     """
@@ -683,7 +775,14 @@ def make_proba_distribution(
         dist_kwargs = {}
 
     if isinstance(action_space, spaces.Box):
-        cls = StateDependentNoiseDistribution if use_sde else DiagGaussianDistribution
+        assert not (use_sde and use_beta), "use_sde and use_beta are mutually exclusive options for Box action spaces."
+        cls: type[BetaDistribution] | type[StateDependentNoiseDistribution] | type[DiagGaussianDistribution]
+        if use_beta:
+            cls = BetaDistribution
+        elif use_sde:
+            cls = StateDependentNoiseDistribution
+        else:
+            cls = DiagGaussianDistribution
         return cls(get_action_dim(action_space), **dist_kwargs)
     elif isinstance(action_space, spaces.Discrete):
         return CategoricalDistribution(int(action_space.n), **dist_kwargs)

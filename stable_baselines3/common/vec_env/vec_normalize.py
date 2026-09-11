@@ -54,6 +54,8 @@ class VecNormalize(VecEnvWrapper):
             self._sanity_checks()
 
             if isinstance(self.observation_space, spaces.Dict):
+                # Copy first: the image bounds below are written into this space, which the wrapped env owns
+                self.observation_space = deepcopy(self.observation_space)
                 self.obs_spaces = self.observation_space.spaces
                 self.obs_rms = {key: RunningMeanStd(shape=self.obs_spaces[key].shape) for key in self.norm_obs_keys}  # type: ignore[arg-type, union-attr]
                 # Update observation space when using image

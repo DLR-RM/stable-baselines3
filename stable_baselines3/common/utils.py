@@ -29,8 +29,8 @@ def set_random_seed(seed: int, using_cuda: bool = False) -> None:
     """
     Seed the different random generators.
 
-    :param seed:
-    :param using_cuda:
+    :param seed: Seed
+    :param using_cuda: Whether CUDA is currently used
     """
     # Seed python RNG
     random.seed(seed)
@@ -224,19 +224,20 @@ def get_device(device: th.device | str = "auto") -> th.device:
     """
     Retrieve PyTorch device.
     It checks that the requested device is available first.
-    For now, it supports only cpu and cuda.
-    By default, it tries to use the gpu.
+    For now, it supports only CPU and CUDA.
+    By default, it tries to use the GPU.
 
-    :param device: One for 'auto', 'cuda', 'cpu'
+    :param device: One of "auto", "cuda", "cpu",
+        or any PyTorch supported device (for instance "mps")
     :return: Supported Pytorch device
     """
-    # Cuda by default
+    # MPS/CUDA by default
     if device == "auto":
-        device = "cuda"
+        device = get_available_accelerator()
     # Force conversion to th.device
     device = th.device(device)
 
-    # Cuda not available
+    # CUDA not available
     if device.type == th.device("cuda").type and not th.cuda.is_available():
         return th.device("cpu")
 
@@ -597,6 +598,20 @@ def should_collect_more_steps(
         )
 
 
+def get_available_accelerator() -> str:
+    """
+    Return the available accelerator
+    (currently checking only for CUDA and MPS device)
+    """
+    if hasattr(th, "backends") and th.backends.mps.is_built():
+        # MacOS Metal GPU
+        return "mps"
+    elif th.cuda.is_available():
+        return "cuda"
+    else:
+        return "cpu"
+
+
 def get_system_info(print_info: bool = True) -> tuple[dict[str, str], str]:
     """
     Retrieve system and python env info for the current system.
@@ -612,7 +627,7 @@ def get_system_info(print_info: bool = True) -> tuple[dict[str, str], str]:
         "Python": platform.python_version(),
         "Stable-Baselines3": sb3.__version__,
         "PyTorch": th.__version__,
-        "GPU Enabled": str(th.cuda.is_available()),
+        "Accelerator": get_available_accelerator(),
         "Numpy": np.__version__,
         "Cloudpickle": cloudpickle.__version__,
         "Gymnasium": gym.__version__,

@@ -215,6 +215,19 @@ def test_vecenv_custom_calls(vec_env_class, vec_env_wrapper):
     vec_env.close()
 
 
+def test_vecenv_options_used_on_episode_end():
+    vec_env = DummyVecEnv([lambda: CustomGymEnv(spaces.Box(low=np.zeros(2), high=np.ones(2)))])
+    vec_env.envs[0].ep_length = 1
+    vec_env.reset()
+
+    options = {"hello": 1}
+    vec_env.set_options(options)
+    vec_env.step([0])
+
+    assert vec_env.get_attr("current_options") == [options]
+    vec_env.close()
+
+
 class StepEnv(gym.Env):
     def __init__(self, max_steps):
         """Gym environment for testing that terminal observation is inserted

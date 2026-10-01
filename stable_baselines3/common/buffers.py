@@ -397,6 +397,7 @@ class RolloutBuffer(BaseBuffer):
         self.values = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.log_probs = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.advantages = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
+        self.gaussian_actions = None
         self.generator_ready = False
         super().reset()
 
@@ -445,6 +446,7 @@ class RolloutBuffer(BaseBuffer):
         episode_start: np.ndarray,
         value: th.Tensor,
         log_prob: th.Tensor,
+        gaussian_actions: th.Tensor | np.ndarray | None = None,
     ) -> None:
         """
         :param obs: Observation
@@ -470,6 +472,15 @@ class RolloutBuffer(BaseBuffer):
 
         self.observations[self.pos] = np.array(obs)
         self.actions[self.pos] = np.array(action)
+        if gaussian_actions is not None:
+            if self.gaussian_actions is None:
+                self.gaussian_actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
+            gaussian = (
+                gaussian_actions.detach().cpu().numpy()
+                if isinstance(gaussian_actions, th.Tensor)
+                else np.asarray(gaussian_actions)
+            )
+            self.gaussian_actions[self.pos] = np.array(gaussian).reshape((self.n_envs, self.action_dim))
         self.rewards[self.pos] = np.array(reward)
         self.episode_starts[self.pos] = np.array(episode_start)
         self.values[self.pos] = value.clone().cpu().numpy().flatten()
@@ -491,6 +502,8 @@ class RolloutBuffer(BaseBuffer):
                 "advantages",
                 "returns",
             ]
+            if self.gaussian_actions is not None:
+                _tensor_names.append("gaussian_actions")
 
             for tensor in _tensor_names:
                 self.__dict__[tensor] = self.swap_and_flatten(self.__dict__[tensor])
@@ -519,7 +532,10 @@ class RolloutBuffer(BaseBuffer):
             self.advantages[batch_inds].flatten(),
             self.returns[batch_inds].flatten(),
         )
-        return RolloutBufferSamples(*tuple(map(self.to_torch, data)))
+        gaussian = None
+        if self.gaussian_actions is not None:
+            gaussian = self.to_torch(self.gaussian_actions[batch_inds].astype(np.float32, copy=False))
+        return RolloutBufferSamples(*tuple(map(self.to_torch, data)), gaussian_actions=gaussian)
 
 
 class DictReplayBuffer(ReplayBuffer):
@@ -756,6 +772,7 @@ class DictRolloutBuffer(RolloutBuffer):
         self.values = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.log_probs = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.advantages = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
+        self.gaussian_actions = None
         self.generator_ready = False
         super(RolloutBuffer, self).reset()
 
@@ -767,6 +784,7 @@ class DictRolloutBuffer(RolloutBuffer):
         episode_start: np.ndarray,
         value: th.Tensor,
         log_prob: th.Tensor,
+        gaussian_actions: th.Tensor | np.ndarray | None = None,
     ) -> None:
         """
         :param obs: Observation
@@ -794,6 +812,15 @@ class DictRolloutBuffer(RolloutBuffer):
         action = action.reshape((self.n_envs, self.action_dim))
 
         self.actions[self.pos] = np.array(action)
+        if gaussian_actions is not None:
+            if self.gaussian_actions is None:
+                self.gaussian_actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
+            gaussian = (
+                gaussian_actions.detach().cpu().numpy()
+                if isinstance(gaussian_actions, th.Tensor)
+                else np.asarray(gaussian_actions)
+            )
+            self.gaussian_actions[self.pos] = np.array(gaussian).reshape((self.n_envs, self.action_dim))
         self.rewards[self.pos] = np.array(reward)
         self.episode_starts[self.pos] = np.array(episode_start)
         self.values[self.pos] = value.clone().cpu().numpy().flatten()
@@ -814,6 +841,8 @@ class DictRolloutBuffer(RolloutBuffer):
                 self.observations[key] = self.swap_and_flatten(obs)
 
             _tensor_names = ["actions", "values", "log_probs", "advantages", "returns"]
+            if self.gaussian_actions is not None:
+                _tensor_names.append("gaussian_actions")
 
             for tensor in _tensor_names:
                 self.__dict__[tensor] = self.swap_and_flatten(self.__dict__[tensor])
@@ -841,6 +870,11 @@ class DictRolloutBuffer(RolloutBuffer):
             old_log_prob=self.to_torch(self.log_probs[batch_inds].flatten()),
             advantages=self.to_torch(self.advantages[batch_inds].flatten()),
             returns=self.to_torch(self.returns[batch_inds].flatten()),
+            gaussian_actions=(
+                self.to_torch(self.gaussian_actions[batch_inds].astype(np.float32, copy=False))
+                if self.gaussian_actions is not None
+                else None
+            ),
         )
 
 

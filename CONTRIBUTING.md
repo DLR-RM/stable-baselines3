@@ -1,6 +1,6 @@
 ## Contributing to Stable-Baselines3
 
-**Important: When submitting issues or pull requests, the use of LLM or code assistants (e.g., Claude or Copilot) must be publicly disclosed.**
+**Important: When submitting issues or pull requests, the use of LLM or code assistants (e.g., Claude, Copilot, OpenCode, ...) must be publicly disclosed. We do not allow generated issue or PR descriptions, and all interactions with maintainers (issue, pr description, comment, reply to comment, ...) must be done without an LLM.**
 
 If you are interested in contributing to Stable-Baselines, your contributions will fall
 into two categories:
@@ -64,7 +64,7 @@ def my_function(arg1: type1, arg2: type2) -> returntype:
 
 ## Pull Request (PR)
 
-**Important: We do not accept PRs that are fully generated using an LLM/code assistant unless triggered by a maintainer. Use of code assistants (e.g., Claude, Copilot) must be publicly disclosed.**
+**Important: We do not accept PRs that are fully generated using an LLM/code assistant unless triggered by a maintainer. Use of code assistants (e.g., Claude, Copilot) must be publicly disclosed. We do not allow generated issue or PR descriptions, and all interactions with maintainers (issue, pr description, comment, reply to comment, ...) must be done without an LLM.**
 
 Before proposing a PR, please open an issue, where the feature will be discussed. This prevents from duplicated PR to be proposed and also ease the code review process.
 

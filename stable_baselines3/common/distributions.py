@@ -562,10 +562,14 @@ class StateDependentNoiseDistribution(Distribution):
         self.distribution = Normal(mean_actions, th.sqrt(variance + self.epsilon))
         return self
 
-    def log_prob(self, actions: th.Tensor) -> th.Tensor:
-        if self.bijector is not None:
+    def log_prob(self, actions: th.Tensor, gaussian_actions: th.Tensor | None = None) -> th.Tensor:
+        # ``actions`` is what the environment saw. With tanh squashing that value
+        # can round to exactly +/- 1 in float32, and the inverse then lands on a
+        # different Gaussian sample from the one that was drawn. Callers that
+        # still have the pre-squash sample pass it in.
+        if self.bijector is not None and gaussian_actions is None:
             gaussian_actions = self.bijector.inverse(actions)
-        else:
+        elif gaussian_actions is None:
             gaussian_actions = actions
         # log likelihood for a gaussian
         log_prob = self.distribution.log_prob(gaussian_actions)
@@ -586,16 +590,18 @@ class StateDependentNoiseDistribution(Distribution):
 
     def sample(self) -> th.Tensor:
         noise = self.get_noise(self._latent_sde)
-        actions = self.distribution.mean + noise
+        gaussian_actions = self.distribution.mean + noise
+        self.gaussian_actions = gaussian_actions if self.bijector is not None else None
         if self.bijector is not None:
-            return self.bijector.forward(actions)
-        return actions
+            return self.bijector.forward(gaussian_actions)
+        return gaussian_actions
 
     def mode(self) -> th.Tensor:
-        actions = self.distribution.mean
+        gaussian_actions = self.distribution.mean
+        self.gaussian_actions = gaussian_actions if self.bijector is not None else None
         if self.bijector is not None:
-            return self.bijector.forward(actions)
-        return actions
+            return self.bijector.forward(gaussian_actions)
+        return gaussian_actions
 
     def get_noise(self, latent_sde: th.Tensor) -> th.Tensor:
         latent_sde = latent_sde if self.learn_features else latent_sde.detach()
@@ -620,7 +626,7 @@ class StateDependentNoiseDistribution(Distribution):
         self, mean_actions: th.Tensor, log_std: th.Tensor, latent_sde: th.Tensor
     ) -> tuple[th.Tensor, th.Tensor]:
         actions = self.actions_from_params(mean_actions, log_std, latent_sde)
-        log_prob = self.log_prob(actions)
+        log_prob = self.log_prob(actions, self.gaussian_actions)
         return actions, log_prob
 
 

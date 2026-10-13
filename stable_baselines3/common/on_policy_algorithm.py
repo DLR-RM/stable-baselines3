@@ -244,6 +244,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                         terminal_value = self.policy.predict_values(terminal_obs)[0]  # type: ignore[arg-type]
                     rewards[idx] += self.gamma * terminal_value
 
+            gaussian_actions = getattr(self.policy.action_dist, "gaussian_actions", None)
             rollout_buffer.add(
                 self._last_obs,  # type: ignore[arg-type]
                 actions,
@@ -251,6 +252,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 self._last_episode_starts,  # type: ignore[arg-type]
                 values,
                 log_probs,
+                gaussian_actions=gaussian_actions,
             )
             self._last_obs = new_obs  # type: ignore[assignment]
             self._last_episode_starts = dones

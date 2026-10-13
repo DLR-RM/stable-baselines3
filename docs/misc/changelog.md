@@ -10,6 +10,7 @@
 
 ### Bug Fixes:
 
+- gSDE with ``squash_output=True`` evaluates the Gaussian likelihood on the pre-tanh sample, so a saturated float32 action no longer changes the PPO surrogate gradient
 - Fixed file descriptor leak in `SubprocVecEnv.close()` by closing parent-side pipes to prevent "too many open files" errors in long-running loops
 
 ### [SB3-Contrib]

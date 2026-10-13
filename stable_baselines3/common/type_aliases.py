@@ -36,6 +36,8 @@ class RolloutBufferSamples(NamedTuple):
     old_log_prob: th.Tensor
     advantages: th.Tensor
     returns: th.Tensor
+    # Pre-tanh Gaussian sample. None unless the policy squashes with tanh.
+    gaussian_actions: th.Tensor | None = None
 
 
 class DictRolloutBufferSamples(NamedTuple):
@@ -45,6 +47,7 @@ class DictRolloutBufferSamples(NamedTuple):
     old_log_prob: th.Tensor
     advantages: th.Tensor
     returns: th.Tensor
+    gaussian_actions: th.Tensor | None = None
 
 
 class ReplayBufferSamples(NamedTuple):

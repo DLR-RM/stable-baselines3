@@ -210,7 +210,9 @@ class PPO(OnPolicyAlgorithm):
                     # Convert discrete action from float to long
                     actions = rollout_data.actions.long().flatten()
 
-                values, log_prob, entropy = self.policy.evaluate_actions(rollout_data.observations, actions)
+                values, log_prob, entropy = self.policy.evaluate_actions(
+                    rollout_data.observations, actions, rollout_data.gaussian_actions
+                )
                 values = values.flatten()
                 # Normalize advantage
                 advantages = rollout_data.advantages

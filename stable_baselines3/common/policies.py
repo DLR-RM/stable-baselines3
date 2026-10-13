@@ -653,7 +653,7 @@ class ActorCriticPolicy(BasePolicy):
         values = self.value_net(latent_vf)
         distribution = self._get_action_dist_from_latent(latent_pi)
         actions = distribution.get_actions(deterministic=deterministic)
-        log_prob = distribution.log_prob(actions)
+        log_prob = distribution.log_prob(actions, getattr(distribution, "gaussian_actions", None))
         actions = actions.reshape((-1, *self.action_space.shape))  # type: ignore[misc]
         return actions, values, log_prob
 
@@ -716,13 +716,17 @@ class ActorCriticPolicy(BasePolicy):
         """
         return self.get_distribution(observation).get_actions(deterministic=deterministic)
 
-    def evaluate_actions(self, obs: PyTorchObs, actions: th.Tensor) -> tuple[th.Tensor, th.Tensor, th.Tensor | None]:
+    def evaluate_actions(
+        self, obs: PyTorchObs, actions: th.Tensor, gaussian_actions: th.Tensor | None = None
+    ) -> tuple[th.Tensor, th.Tensor, th.Tensor | None]:
         """
         Evaluate actions according to the current policy,
         given the observations.
 
         :param obs: Observation
         :param actions: Actions
+        :param gaussian_actions: Pre-tanh sample for a squashed Gaussian. When omitted,
+            the squashed action is inverted, which is not exact once tanh saturates.
         :return: estimated value, log likelihood of taking those actions
             and entropy of the action distribution.
         """
@@ -735,7 +739,7 @@ class ActorCriticPolicy(BasePolicy):
             latent_pi = self.mlp_extractor.forward_actor(pi_features)
             latent_vf = self.mlp_extractor.forward_critic(vf_features)
         distribution = self._get_action_dist_from_latent(latent_pi)
-        log_prob = distribution.log_prob(actions)
+        log_prob = distribution.log_prob(actions, gaussian_actions)
         values = self.value_net(latent_vf)
         entropy = distribution.entropy()
         return values, log_prob, entropy

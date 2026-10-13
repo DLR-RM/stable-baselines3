@@ -147,7 +147,9 @@ class A2C(OnPolicyAlgorithm):
                 # Convert discrete action from float to long
                 actions = actions.long().flatten()
 
-            values, log_prob, entropy = self.policy.evaluate_actions(rollout_data.observations, actions)
+            values, log_prob, entropy = self.policy.evaluate_actions(
+                rollout_data.observations, actions, rollout_data.gaussian_actions
+            )
             values = values.flatten()
 
             # Normalize advantage (not present in the original implementation)

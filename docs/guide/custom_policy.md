@@ -9,6 +9,9 @@ other type of input features (MlpPolicies) and multiple different inputs (MultiI
 For A2C and PPO, continuous actions are clipped during training and testing
 (to avoid out of bound error). SAC, DDPG and TD3 squash the action, using a `tanh()` transformation,
 which handles bounds more correctly.
+
+For A2C and PPO with normalized continuous action spaces, `policy_kwargs=dict(squash_mean_actions=True)` can be used
+to squash the Gaussian distribution mean to `[-1, 1]`.
 :::
 
 ## SB3 Policy

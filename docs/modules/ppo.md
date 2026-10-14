@@ -103,6 +103,37 @@ When using PPO models trained with `use_sde=True`, the automatic noise resetting
 For continuous control tasks, it is recommended to use deterministic behavior during inference (`deterministic=True`). If you need stochastic behavior during inference, you must manually reset the noise by calling `model.policy.reset_noise(env.num_envs)` at appropriate intervals based on your desired `sde_sample_freq`.
 :::
 
+## Beta Distribution for Continuous Actions
+
+For continuous action spaces (`Box`), PPO can use a **Beta distribution** instead of the default Gaussian.
+The idea of using the Beta distribution for continuous control was first introduced by
+[Chou et al. (2017)](https://proceedings.mlr.press/v70/chou17a.html) and further explored
+in [*The Beta Policy for Continuous Control Reinforcement Learning*](https://arxiv.org/abs/2111.02202).
+
+Unlike a Gaussian, the Beta distribution has **bounded support** on [0, 1], which means sampled actions
+naturally stay within bounds without requiring clipping. Actions are then rescaled to the environment's
+action space `[low, high]`. This avoids the boundary effects and bias introduced by clipping
+unbounded Gaussian samples, which can be particularly problematic in environments with frequent
+actions near the edges of the action space.
+
+The policy network outputs raw α and β parameters for each action dimension.
+These are passed through a softplus activation and shifted by +1 to ensure α, β ≥ 1,
+keeping the distribution in the **unimodal regime**.
+
+:::{note}
+`use_beta=True` and `use_sde=True` are **mutually exclusive** and cannot be combined.
+:::
+
+### Example
+
+```python
+from stable_baselines3 import PPO
+
+# Use a Beta distribution instead of Gaussian for continuous actions
+model = PPO("MlpPolicy", "Pendulum-v1", policy_kwargs=dict(use_beta=True), verbose=1)
+model.learn(total_timesteps=100_000)
+```
+
 ## Results
 
 ### Atari Games

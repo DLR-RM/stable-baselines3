@@ -11,6 +11,7 @@
 ### Bug Fixes:
 
 - Fixed file descriptor leak in `SubprocVecEnv.close()` by closing parent-side pipes to prevent "too many open files" errors in long-running loops
+- Fixed `VecNormalize` writing the normalized image bounds into the `Dict` observation space of the environment it wraps, which changed how a model built on that environment afterwards treated the image
 
 ### [SB3-Contrib]
 

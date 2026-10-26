@@ -283,9 +283,9 @@ class CombinedExtractor(BaseFeaturesExtractor):
         cnn_output_dim: int = 256,
         normalized_image: bool = False,
     ) -> None:
-       # DO NOT call super().__init__ here anymore.
-        
-        extractors = {}
+        # DO NOT call super().__init__ here anymore.
+
+        extractors: dict[str, nn.Module] = {}
         total_concat_size = 0
 
         # Loop through the spaces and build the extractors first
@@ -298,12 +298,10 @@ class CombinedExtractor(BaseFeaturesExtractor):
                 extractors[key] = nn.Flatten()
                 total_concat_size += get_flattened_obs_dim(subspace)
 
-        # Now that we have the exact dimension, initialize the parent class 
+        # Now that we have the exact dimension, initialize the parent class
         super().__init__(observation_space, features_dim=total_concat_size)
 
         self.extractors = nn.ModuleDict(extractors)
-
-        
 
     def forward(self, observations: TensorDict) -> th.Tensor:
         encoded_tensor_list = []

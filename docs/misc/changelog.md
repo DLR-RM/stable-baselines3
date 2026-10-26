@@ -2,7 +2,12 @@
 
 # Changelog
 
-## Release 2.9.2a0 (WIP)
+## Release 2.9.2 (2026-10-26)
+
+:::{warning}
+Stable-Baselines3 (SB3) v2.9.2 will be the last one supporting Python 3.10 (end of life in October 2026).
+We highly recommended you to upgrade to Python >= 3.11.
+:::
 
 ### Breaking Changes:
 
@@ -11,12 +16,20 @@
 ### Bug Fixes:
 
 - Fixed file descriptor leak in `SubprocVecEnv.close()` by closing parent-side pipes to prevent "too many open files" errors in long-running loops
+- Fixed Pandas deprecation warnings on `inplace` operations
 
 ### [SB3-Contrib]
+- Upgraded to Stable-Baselines3 >= 2.9.2
 
 ### [RL Zoo]
+- Set `learning_starts` to 500 for `parking-v0` in TQC hyperparameters to ensure the first episode is finished
+- Fixed "too many open files" issue when doing hyperparameter optimization: the trial environments are now closed in a `finally` block and `gc_after_trial=True` is passed to Optuna to free them between trials (also needs latest SB3 master version to fully work)
+- Set `use_expln=True` for pybullet envs when using gSDE to avoid NaNs
+- Add a note regarding pybullet source installation error on macOS due to legacy code
+- Migrate packaging setup from `setup.py` to `pyproject.toml` and integrate `requirements.txt` as a new extra
 
 ### [SBX] (SB3 + Jax)
+- Updated Jax dependency version range
 
 ### Deprecations:
 

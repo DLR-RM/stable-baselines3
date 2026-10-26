@@ -35,6 +35,8 @@ We highly recommended you to upgrade to Python >= 3.11.
 
 ### Others:
 
+- Cleaned up `features_dim` initialization in `CombinedExtractor` (#2295) by @RuchithaManne
+
 - Fixed moviepy test compatibility with moviepy >= 2.0 (PyTorch doesn't support it yet)
 - Added filter for numpy `newshape` deprecation warning from torch tensorboard
 - Fixed mypy error in test_vec_envs.py by wrapping `itertools.product` with `list()`

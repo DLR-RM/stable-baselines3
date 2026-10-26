@@ -66,6 +66,14 @@ def test_only_sde_squashed():
         PPO("MlpPolicy", "Pendulum-v1", use_sde=False, policy_kwargs=dict(squash_output=True))
 
 
+def test_squashed_mean_actions_requires_diag_gaussian():
+    with pytest.raises(AssertionError, match=r"without gSDE"):
+        PPO("MlpPolicy", "Pendulum-v1", use_sde=True, policy_kwargs=dict(squash_mean_actions=True))
+
+    with pytest.raises(AssertionError, match=r"Box action spaces"):
+        PPO("MlpPolicy", "CartPole-v1", policy_kwargs=dict(squash_mean_actions=True))
+
+
 @pytest.mark.parametrize("model_class", [SAC, A2C, PPO])
 @pytest.mark.parametrize("use_expln", [False, True])
 @pytest.mark.parametrize("squash_output", [False, True])

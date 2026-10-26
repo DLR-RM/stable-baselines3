@@ -53,6 +53,45 @@ def test_squashed_gaussian(model_class):
     assert th.max(th.abs(actions)) <= 1.0
 
 
+def test_squashed_mean_diag_gaussian():
+    dist = DiagGaussianDistribution(N_ACTIONS)
+    mean_actions_net, log_std = dist.proba_distribution_net(N_FEATURES, squash_mean_actions=True)
+
+    assert isinstance(mean_actions_net, th.nn.Sequential)
+    mean_actions = mean_actions_net(th.ones(4, N_FEATURES) * 100.0)
+    assert th.max(th.abs(mean_actions)) <= 1.0
+
+    dist = dist.proba_distribution(mean_actions, log_std)
+    assert th.max(th.abs(dist.mode())) <= 1.0
+
+
+@pytest.mark.parametrize("model_class", [A2C, PPO])
+def test_squashed_mean_actions_policy(model_class, tmp_path):
+    kwargs = {"n_steps": 64}
+    if model_class == PPO:
+        kwargs["n_epochs"] = 1
+    model = model_class(
+        "MlpPolicy",
+        "Pendulum-v1",
+        policy_kwargs=dict(net_arch=[], squash_mean_actions=True),
+        **kwargs,
+    )
+
+    assert model.policy.squash_mean_actions
+    assert isinstance(model.policy.action_net, th.nn.Sequential)
+
+    random_obs = np.array([model.observation_space.sample() for _ in range(4)])
+    obs_tensor, _ = model.policy.obs_to_tensor(random_obs)
+    distribution = model.policy.get_distribution(obs_tensor)
+    assert isinstance(distribution, DiagGaussianDistribution)
+    assert th.max(th.abs(distribution.distribution.mean)) <= 1.0
+
+    model.save(tmp_path / "squashed_mean_actions_model.zip")
+    loaded_model = model_class.load(tmp_path / "squashed_mean_actions_model.zip")
+    assert loaded_model.policy.squash_mean_actions
+    assert isinstance(loaded_model.policy.action_net, th.nn.Sequential)
+
+
 @pytest.fixture()
 def dummy_model_distribution_obs_and_actions() -> tuple[A2C, np.ndarray, np.ndarray]:
     """

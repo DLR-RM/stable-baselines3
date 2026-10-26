@@ -62,6 +62,8 @@ We highly recommended you to upgrade to Python >= 3.11.
 
 ### New Features:
 
+- Added `squash_mean_actions` policy option for A2C/PPO to tanh-squash the mean of `DiagGaussianDistribution`
+
 ### Bug Fixes:
 - Fixed deprecated error Taxi-v3 from gymnasium v1.3.0 in tests
 

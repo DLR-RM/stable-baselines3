@@ -283,12 +283,12 @@ class CombinedExtractor(BaseFeaturesExtractor):
         cnn_output_dim: int = 256,
         normalized_image: bool = False,
     ) -> None:
-        # TODO we do not know features-dim here before going over all the items, so put something there. This is dirty!
-        super().__init__(observation_space, features_dim=1)
-
-        extractors: dict[str, nn.Module] = {}
-
+       # DO NOT call super().__init__ here anymore.
+        
+        extractors = {}
         total_concat_size = 0
+
+        # Loop through the spaces and build the extractors first
         for key, subspace in observation_space.spaces.items():
             if is_image_space(subspace, normalized_image=normalized_image):
                 extractors[key] = NatureCNN(subspace, features_dim=cnn_output_dim, normalized_image=normalized_image)
@@ -298,10 +298,12 @@ class CombinedExtractor(BaseFeaturesExtractor):
                 extractors[key] = nn.Flatten()
                 total_concat_size += get_flattened_obs_dim(subspace)
 
+        # Now that we have the exact dimension, initialize the parent class 
+        super().__init__(observation_space, features_dim=total_concat_size)
+
         self.extractors = nn.ModuleDict(extractors)
 
-        # Update the features dim manually
-        self._features_dim = total_concat_size
+        
 
     def forward(self, observations: TensorDict) -> th.Tensor:
         encoded_tensor_list = []

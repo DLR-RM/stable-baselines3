@@ -16,6 +16,7 @@ We highly recommended you to upgrade to Python >= 3.11.
 ### Bug Fixes:
 
 - Fixed file descriptor leak in `SubprocVecEnv.close()` by closing parent-side pipes to prevent "too many open files" errors in long-running loops
+- Fixed Pandas deprecation warnings on `inplace` operations
 
 ### [SB3-Contrib]
 - Upgraded to Stable-Baselines3 >= 2.9.2

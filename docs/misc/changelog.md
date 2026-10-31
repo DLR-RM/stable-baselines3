@@ -14,6 +14,7 @@ We highly recommended you to upgrade to Python >= 3.11.
 ### New Features:
 
 ### Bug Fixes:
+- Fixed `Monitor`/`ResultsWriter` not writing the CSV header when `override_existing=False` and the file does not exist yet, which made `load_results` fail on the produced file (@yurekami)
 
 - Fixed file descriptor leak in `SubprocVecEnv.close()` by closing parent-side pipes to prevent "too many open files" errors in long-running loops
 - Fixed Pandas deprecation warnings on `inplace` operations

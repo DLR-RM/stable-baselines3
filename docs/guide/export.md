@@ -159,6 +159,11 @@ You can use PyTorch JIT to trace and save a trained model that can be reused in 
 
 There is a draft PR in the RL Zoo about C++ export: <https://github.com/DLR-RM/rl-baselines3-zoo/pull/228>
 
+:::{note}
+TorchScript is deprecated in PyTorch. See [Export to ExecuTorch](#export-to-executorch)
+for a `torch.export` based export to C++.
+:::
+
 ```python
 # See "ONNX export" for imports and OnnxablePolicy
 jit_path = "sac_traced.pt"
@@ -177,6 +182,175 @@ dummy_input = th.randn(1, *observation_size)
 loaded_module = th.jit.load(jit_path)
 action_jit = loaded_module(dummy_input)
 ```
+
+## Export to ExecuTorch
+
+[ExecuTorch](https://pytorch.org/executorch/) is PyTorch's solution for deploying models
+on devices. It exports the policy with `torch.export` and saves it to one `.pte` file.
+You can run that file from Python, or from C++ without PyTorch.
+
+:::{warning}
+The exported policy returns raw actions. The example below clips or rescales continuous actions
+afterwards, as `model.predict()` does. For discrete actions, skip that step: the output is the `int64` action.
+The program only accepts inputs with the shape and type of `example_inputs` (batch size 1, `float32`).
+For other batch sizes, see `dynamic_shapes` in the [torch.export docs](https://docs.pytorch.org/docs/stable/export.html).
+It does not include wrappers like `VecNormalize` or the image transpose of `model.predict()`,
+so pass observations after that preprocessing (images channel-first, as `float32`).
+:::
+
+### CPU (XNNPACK)
+
+Install with `pip install stable-baselines3 executorch` (Python 3.11 or newer). It requires a
+matching PyTorch version, so use a fresh virtual environment (tested with ExecuTorch 1.6 and PyTorch 2.15).
+The XNNPACK backend runs the policy on the CPU.
+
+```python
+import numpy as np
+import torch as th
+from executorch.backends.xnnpack.partition.xnnpack_partitioner import XnnpackPartitioner
+from executorch.exir import to_edge_transform_and_lower
+from executorch.runtime import Runtime
+
+from stable_baselines3 import PPO
+from stable_baselines3.common.policies import BasePolicy
+
+
+class ExportablePolicy(th.nn.Module):
+    def __init__(self, policy: BasePolicy):
+        super().__init__()
+        self.policy = policy
+
+    def forward(self, observation: th.Tensor) -> th.Tensor:
+        # policy() returns `actions, values, log_prob` for PPO, keep only the actions
+        return self.policy(observation, deterministic=True)[0]
+
+
+# Example: model = PPO("MlpPolicy", "Pendulum-v1")
+PPO("MlpPolicy", "Pendulum-v1").save("PathToTrainedModel")
+model = PPO.load("PathToTrainedModel.zip", device="cpu")
+
+observation_size = model.observation_space.shape
+example_inputs = (th.randn(1, *observation_size),)
+exported_program = th.export.export(
+    ExportablePolicy(model.policy).eval(), example_inputs
+)
+executorch_program = to_edge_transform_and_lower(
+    exported_program, partitioner=[XnnpackPartitioner()]
+).to_executorch()
+with open("my_ppo_model.pte", "wb") as file:
+    file.write(executorch_program.buffer)
+
+##### Load and test with ExecuTorch
+
+method = Runtime.get().load_program("my_ppo_model.pte").load_method("forward")
+observation = np.random.random((1, *observation_size)).astype(np.float32)
+actions = method.execute([th.as_tensor(observation)])[0].numpy()
+
+# Post-process as model.predict() does: unscale squashed actions, clip the others
+if model.policy.squash_output:
+    actions = model.policy.unscale_action(actions)
+else:
+    actions = np.clip(actions, model.action_space.low, model.action_space.high)
+sb3_actions, _ = model.predict(observation, deterministic=True)
+
+# Check that the predictions are the same
+assert np.allclose(actions, sb3_actions, atol=1e-5)
+```
+
+For SAC, TD3 and DQN, `model.policy(observation, deterministic=True)` returns only the actions, so remove the `[0]`
+in `ExportablePolicy`.
+
+### GPU (TensorRT)
+
+On Linux with an NVIDIA GPU and CUDA 13, install with
+`pip install stable-baselines3 "torch_tensorrt[executorch]>=2.15"` in a fresh virtual environment.
+For Windows, and for the aarch64 and JetPack limits, see the
+[Torch-TensorRT guide](https://docs.pytorch.org/TensorRT/user_guide/runtime_performance/executorch.html).
+By default, operators that TensorRT cannot convert run on the CPU. To keep them on the GPU, add ExecuTorch's
+CUDA backend as the Torch-TensorRT guide shows. If the export then also writes a `.ptd` file, ship it next to
+the `.pte` file and pass it when loading.
+
+:::{note}
+The TensorRT engines inside the `.pte` file are built for the operating system, the GPU
+and the TensorRT version used during export. Export the policy on the same kind of
+machine that will run it.
+:::
+
+```python
+# See the CPU example for imports, ExportablePolicy and observation_size
+import torch_tensorrt
+import torch_tensorrt_executorch_runtime  # noqa: F401, registers the TensorRT backend
+
+model = PPO.load("PathToTrainedModel.zip", device="cuda")
+example_inputs = (th.randn(1, *observation_size, device="cuda"),)
+exported_program = th.export.export(
+    ExportablePolicy(model.policy).eval(), example_inputs
+)
+trt_module = torch_tensorrt.dynamo.compile(exported_program, arg_inputs=example_inputs, min_block_size=1)
+torch_tensorrt.save(trt_module, "my_ppo_model_trt.pte", output_format="executorch")
+```
+
+Load and check `my_ppo_model_trt.pte` as in the CPU example, after `import torch_tensorrt_executorch_runtime`.
+The program takes and returns CPU tensors.
+
+### Run from C++
+
+To run the `.pte` file from C++, use ExecuTorch's `Module` class
+(see [Using ExecuTorch with C++](https://docs.pytorch.org/executorch/stable/using-executorch-cpp.html)).
+Save this as `main.cpp` in the folder with `my_ppo_model.pte`.
+Observations are `float` values, not `double`:
+
+```cpp
+#include <algorithm>
+#include <cstdio>
+#include <vector>
+
+#include <executorch/extension/module/module.h>
+#include <executorch/extension/tensor/tensor.h>
+
+using namespace executorch::extension;
+
+int main() {
+  Module module("my_ppo_model.pte");
+  // Pendulum-v1 has 3 observation values
+  auto observation = make_tensor_ptr({1, 3}, std::vector<float>{0.1f, 0.2f, 0.3f});
+  const auto result = module.forward(observation);
+  if (!result.ok()) {
+    return 1;
+  }
+  // As in Python: clip to Pendulum-v1's [-2, 2], or if squash_output use low + 0.5f * (a + 1) * (high - low)
+  printf("action: %f\n", std::clamp(result->at(0).toTensor().const_data_ptr<float>()[0], -2.0f, 2.0f));
+  return 0;
+}
+```
+
+The `executorch` Python package includes the C++ libraries and a CMake package (install CMake 3.28 or newer
+yourself, for example with `pip install cmake`). Save this as `CMakeLists.txt` next to `main.cpp`:
+
+```cmake
+cmake_minimum_required(VERSION 3.28)
+project(sb3_policy CXX)
+set(CMAKE_CXX_STANDARD 17)
+
+find_package(executorch REQUIRED COMPONENTS backend_xnnpack kernels_optimized)
+
+add_executable(sb3_policy main.cpp)
+target_link_libraries(
+  sb3_policy PRIVATE executorch::runtime executorch::backend_xnnpack executorch::kernels_optimized
+)
+```
+
+Then build and run it on Linux or macOS (for Windows, see the C++ guide above) in the Python environment with `executorch`:
+
+```bash
+ET_DIR=$(python -c "import importlib.metadata as m; print(m.distribution('executorch').locate_file('executorch'))")
+cmake -S . -B build -DCMAKE_PREFIX_PATH="$ET_DIR"
+cmake --build build
+./build/sb3_policy
+```
+
+For the TensorRT `.pte` file, change the file name in `main.cpp` to `my_ppo_model_trt.pte`, and use the
+`CMakeLists.txt` and build lines from the Torch-TensorRT guide linked above instead (they add the CUDA and TensorRT backends).
 
 ## Export to ONNX-JS / ONNX Runtime Web
 

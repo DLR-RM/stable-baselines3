@@ -43,6 +43,7 @@ We highly recommended you to upgrade to Python >= 3.11.
 - Fixed Docker build by adding the missing `--system` flag to `uv pip uninstall opencv-python` (required by recent `uv`)
 - Added a warning when `n_steps > 1` is passed together with a custom `replay_buffer_class`, as `n_steps` is only applied when the replay buffer class is selected automatically (@Koustav-github)
 - Updated tests dependencies
+- Added a test to verify that VecNormalize resets discounted returns on episode truncation (@blessed-maker)
 
 ### Documentation:
 
@@ -1920,7 +1921,7 @@ And all the contributors:
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
 @marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
 @brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto @Trenza1ore @JonathanColetti @unexploredtest @Koustav-github
-@m-abr
+@m-abr @blessed-maker
 
 [@adamgleave]: https://github.com/adamgleave
 [@araffin]: https://github.com/araffin

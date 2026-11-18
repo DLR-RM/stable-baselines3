@@ -265,6 +265,32 @@ def test_obs_rms_vec_normalize():
     assert np.allclose(env.ret_rms.mean, 5.688, atol=1e-3)
 
 
+def test_vec_normalize_truncation_resets_return():
+    env = VecNormalize(DummyVecEnv([DummyRewardEnv]), gamma=0.5)
+    env.reset()
+    action = [0]
+
+    # The discounted return accumulates while the episode is active.
+    expected = 0.0
+    for reward in (1.0, 3.0, 4.0):
+        _, _, dones, _ = env.step(action)
+        expected = 0.5 * expected + reward
+        assert not dones[0]
+        assert np.isclose(env.returns[0], expected)
+
+    # The fourth step truncates the episode and resets the return.
+    _, _, dones, infos = env.step(action)
+    assert dones[0]
+    assert infos[0]["TimeLimit.truncated"]
+    assert "terminal_observation" in infos[0]
+    assert np.isclose(env.returns[0], 0.0)
+
+    # The next episode starts accumulating from zero.
+    _, _, dones, _ = env.step(action)
+    assert not dones[0]
+    assert np.isclose(env.returns[0], 1.0)
+
+
 @pytest.mark.parametrize("make_gym_env", [make_env, make_dict_env, make_image_env])
 def test_vec_env(tmp_path, make_gym_env):
     """Test VecNormalize Object"""

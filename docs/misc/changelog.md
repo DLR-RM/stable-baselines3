@@ -2,6 +2,28 @@
 
 # Changelog
 
+## Release 2.9.3 (WIP)
+
+### Breaking Changes:
+
+### New Features:
+
+### Bug Fixes:
+
+### [SB3-Contrib]
+
+### [RL Zoo]
+
+### [SBX] (SB3 + Jax)
+
+### Deprecations:
+
+### Others: 
+
+- Converted buffer sample `NamedTuple` classes (`RolloutBufferSamples`, `DictRolloutBufferSamples`, `ReplayBufferSamples`, `DictReplayBufferSamples`) to frozen slotted dataclasses (@DavidH2802)
+
+### Documentation:
+
 ## Release 2.9.2 (2026-10-26)
 
 :::{warning}
@@ -1920,7 +1942,7 @@ And all the contributors:
 @lutogniew @lbergmann1 @lukashass @BertrandDecoster @pseudo-rnd-thoughts @stefanbschneider @kyle-he @PatrickHelm @corentinlger
 @marekm4 @stagoverflow @rushitnshah @markscsmith @NickLucche @cschindlbeck @peteole @jak3122 @will-maclean
 @brn-dev @jmacglashan @kplers @MarcDcls @chrisgao99 @pstahlhofen @akanto @Trenza1ore @JonathanColetti @unexploredtest @Koustav-github
-@m-abr
+@m-abr @DavidH2802
 
 [@adamgleave]: https://github.com/adamgleave
 [@araffin]: https://github.com/araffin

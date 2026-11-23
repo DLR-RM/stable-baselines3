@@ -1,6 +1,7 @@
 """Common aliases for type hints"""
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass, fields
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NamedTuple, Protocol, SupportsFloat, Union
 
@@ -29,7 +30,21 @@ PyTorchObs = Union[th.Tensor, TensorDict]  # noqa: UP007
 Schedule = Callable[[float], float]
 
 
-class RolloutBufferSamples(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class BaseBufferSamples:
+    def __iter__(self) -> Iterator[Any]:
+        for field in fields(self):
+            yield getattr(self, field.name)
+
+    def __getitem__(self, index: int | slice) -> Any:
+        field_list = fields(self)
+        if isinstance(index, slice):
+            return tuple(getattr(self, f.name) for f in field_list[index])
+        return getattr(self, field_list[index].name)
+
+
+@dataclass(frozen=True, slots=True)
+class RolloutBufferSamples(BaseBufferSamples):
     observations: th.Tensor
     actions: th.Tensor
     old_values: th.Tensor
@@ -38,7 +53,8 @@ class RolloutBufferSamples(NamedTuple):
     returns: th.Tensor
 
 
-class DictRolloutBufferSamples(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class DictRolloutBufferSamples(BaseBufferSamples):
     observations: TensorDict
     actions: th.Tensor
     old_values: th.Tensor
@@ -47,7 +63,8 @@ class DictRolloutBufferSamples(NamedTuple):
     returns: th.Tensor
 
 
-class ReplayBufferSamples(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class ReplayBufferSamples(BaseBufferSamples):
     observations: th.Tensor
     actions: th.Tensor
     next_observations: th.Tensor
@@ -57,7 +74,8 @@ class ReplayBufferSamples(NamedTuple):
     discounts: th.Tensor | None = None
 
 
-class DictReplayBufferSamples(NamedTuple):
+@dataclass(frozen=True, slots=True)
+class DictReplayBufferSamples(BaseBufferSamples):
     observations: TensorDict
     actions: th.Tensor
     next_observations: TensorDict

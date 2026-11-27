@@ -191,6 +191,19 @@ class ResultsWriter:
         filename = os.path.realpath(filename)
         # Create (if any) missing filename directories
         os.makedirs(os.path.dirname(filename), exist_ok=True)
+        # Align appended episode timestamps with the existing file header's t_start
+        self.t_offset = 0.0
+        if not override_existing and os.path.isfile(filename):
+            with open(filename) as file_handler:
+                first_line = file_handler.readline()
+            if first_line.startswith("#"):
+                existing_header = json.loads(first_line[1:])
+                if (
+                    isinstance(existing_header, dict)
+                    and isinstance(existing_header.get("t_start"), (int, float))
+                    and isinstance(header.get("t_start"), (int, float))
+                ):
+                    self.t_offset = float(header["t_start"]) - float(existing_header["t_start"])
         # Append mode when not overriding existing file
         mode = "w" if override_existing else "a"
         # Prevent newline issue on Windows, see GH issue #692
@@ -209,6 +222,8 @@ class ResultsWriter:
         :param epinfo: the information on episodic return, length, and time
         """
         if self.logger:
+            if self.t_offset != 0.0 and "t" in epinfo:
+                epinfo = {**epinfo, "t": round(epinfo["t"] + self.t_offset, 6)}
             self.logger.writerow(epinfo)
             self.file_handler.flush()
 

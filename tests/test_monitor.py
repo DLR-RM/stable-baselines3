@@ -7,6 +7,7 @@ import gymnasium as gym
 import pandas
 import pytest
 
+from stable_baselines3.common import monitor
 from stable_baselines3.common.monitor import LoadMonitorResultsError, Monitor, get_monitor_files, load_results
 
 DEMO_MONITOR = """#{"t_start": 1771532779.9940808, "env_id": "Pendulum-v1"}
@@ -172,3 +173,52 @@ def test_monitor_error_cases():
     with pytest.raises(RuntimeError, match="Tried to step environment that needs reset"):
         monitor_env3 = Monitor(env3)
         monitor_env3.step(monitor_env3.action_space.sample())
+
+
+def test_monitor_append_preserves_episode_order(tmp_path, monkeypatch):
+    """
+    Appending to an existing monitor file should adjust written timestamps
+    to the file header's t_start while keeping session-relative episode info.
+    """
+    current_time = 100.0
+    monkeypatch.setattr(monitor.time, "time", lambda: current_time)
+
+    class FixedLengthEnv(gym.Env):
+        def __init__(self, ep_len: int):
+            super().__init__()
+            self.ep_len = ep_len
+            self.steps = 0
+            self.observation_space = gym.spaces.Box(low=0.0, high=1.0, shape=(1,))
+            self.action_space = gym.spaces.Discrete(2)
+
+        def reset(self, *, seed=None, options=None):
+            super().reset(seed=seed)
+            self.steps = 0
+            return self.observation_space.sample(), {}
+
+        def step(self, action):
+            self.steps += 1
+            terminated = self.steps >= self.ep_len
+            return self.observation_space.sample(), 1.0, terminated, False, {}
+
+    monitor_path = str(tmp_path / "run")
+    sessions = [
+        (100.0, 108.0, 1, True, 8.0),
+        (200.0, 201.0, 2, False, 1.0),
+        (300.0, 300.5, 3, False, 0.5),
+    ]
+    for t_start, t_end, ep_len, override_existing, expected_session_t in sessions:
+        current_time = t_start
+        with Monitor(FixedLengthEnv(ep_len), monitor_path, override_existing=override_existing) as wrapped:
+            wrapped.reset()
+            current_time = t_end
+            for _ in range(ep_len):
+                _, _, terminated, truncated, info = wrapped.step(0)
+            assert terminated or truncated
+            assert info["episode"]["t"] == pytest.approx(expected_session_t)
+            assert wrapped.get_episode_times() == [pytest.approx(expected_session_t)]
+
+    df = load_results(str(tmp_path))
+    assert list(df["l"]) == [1, 2, 3]
+    assert list(df["r"]) == [1.0, 2.0, 3.0]
+    assert list(df["t"]) == pytest.approx([8.0, 101.0, 200.5])

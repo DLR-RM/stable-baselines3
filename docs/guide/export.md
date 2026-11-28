@@ -159,7 +159,7 @@ You can use PyTorch JIT to trace and save a trained model that can be reused in 
 
 There is a draft PR in the RL Zoo about C++ export: <https://github.com/DLR-RM/rl-baselines3-zoo/pull/228>
 
-:::{note}
+:::{warning}
 TorchScript is deprecated in PyTorch. See [Export to ExecuTorch](#export-to-executorch)
 for a `torch.export` based export to C++.
 :::
@@ -254,7 +254,7 @@ else:
 sb3_actions, _ = model.predict(observation, deterministic=True)
 
 # Check that the predictions are the same
-assert np.allclose(actions, sb3_actions, atol=1e-5)
+assert np.allclose(actions, sb3_actions)
 ```
 
 For SAC, TD3 and DQN, `model.policy(observation, deterministic=True)` returns only the actions, so remove the `[0]`

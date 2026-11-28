@@ -20,12 +20,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
         include:
           # Default version
           - gymnasium-version: "1.0.0"
           # Add a new config to test gym<1.0
-          - python-version: "3.10"
+          - python-version: "3.11"
             gymnasium-version: "0.29.1"
     steps:
       - uses: actions/checkout@v6
@@ -40,18 +40,21 @@ jobs:
           pip install uv
           # cpu version of pytorch
           # See https://github.com/astral-sh/uv/issues/1497
-          # Need Pytorch 2.9+ for Python 3.13
-          uv pip install --system torch==2.9.1+cpu --index https://download.pytorch.org/whl/cpu
+          # torch.compile requires PyTorch 2.10+ on Python 3.14
+          uv pip install --system torch==${{ matrix.python-version == '3.14' && '2.10.0' || '2.9.1' }}+cpu --index https://download.pytorch.org/whl/cpu
 
           uv pip install --system .[extra,tests,docs]
           # Use headless version
           uv pip install --system opencv-python-headless
+
       - name: Install specific version of gym
         run: |
           uv pip install --system gymnasium==${{ matrix.gymnasium-version }}
+          uv pip install --system "pandas<3"
           uv pip install --system "numpy<2"
           uv pip install --system "ale-py==0.10.1"
-        # Only run for python 3.10, downgrade gym to 0.29.1, numpy<2, ale-py==0.10.1
+        # Only run for python 3.11,
+        # downgrade gym to 0.29.1, pandas<3, numpy<2, ale-py==0.10.1
         if: matrix.gymnasium-version != '1.0.0'
       - name: Lint with ruff
         run: |

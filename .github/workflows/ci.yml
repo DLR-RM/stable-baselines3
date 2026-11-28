@@ -40,8 +40,8 @@ jobs:
           pip install uv
           # cpu version of pytorch
           # See https://github.com/astral-sh/uv/issues/1497
-          # Need Pytorch 2.9+ for Python 3.13
-          uv pip install --system torch==2.9.1+cpu --index https://download.pytorch.org/whl/cpu
+          # torch.compile requires PyTorch 2.10+ on Python 3.14
+          uv pip install --system torch==${{ matrix.python-version == '3.14' && '2.10.0' || '2.9.1' }}+cpu --index https://download.pytorch.org/whl/cpu
 
           uv pip install --system .[extra,tests,docs]
           # Use headless version

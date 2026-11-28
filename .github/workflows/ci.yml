@@ -46,12 +46,15 @@ jobs:
           uv pip install --system .[extra,tests,docs]
           # Use headless version
           uv pip install --system opencv-python-headless
+
       - name: Install specific version of gym
         run: |
           uv pip install --system gymnasium==${{ matrix.gymnasium-version }}
+          uv pip install --system "pandas<3"
           uv pip install --system "numpy<2"
           uv pip install --system "ale-py==0.10.1"
-        # Only run for python 3.11, downgrade gym to 0.29.1, numpy<2, ale-py==0.10.1
+        # Only run for python 3.11,
+        # downgrade gym to 0.29.1, pandas<3, numpy<2, ale-py==0.10.1
         if: matrix.gymnasium-version != '1.0.0'
       - name: Lint with ruff
         run: |

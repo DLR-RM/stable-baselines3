@@ -137,7 +137,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     version=__version__,
-    python_requires=">=3.10",
+    python_requires=">=3.11",
     # PyPI package information.
     project_urls={
         "Code": "https://github.com/DLR-RM/stable-baselines3",
@@ -149,14 +149,9 @@ setup(
     },
     classifiers=[
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
     ],
 )
-
-# python setup.py sdist
-# python setup.py bdist_wheel
-# twine upload --repository-url https://test.pypi.org/legacy/ dist/*
-# twine upload dist/*

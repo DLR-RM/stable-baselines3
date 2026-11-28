@@ -5,8 +5,10 @@
 ## Release 2.10.0a0 (WIP)
 
 ### Breaking Changes:
+- Removed support for Python 3.10
 
 ### New Features:
+- Added official support for Python 3.14
 
 ### Bug Fixes:
 
